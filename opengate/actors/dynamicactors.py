@@ -9,27 +9,37 @@ from ..decorators import requires_fatal
 
 
 class DynamicGeometryActor(g4.GateVActor, ActorBase):
+
     type_name = "DynamicGeometryActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.geometry_changers = []  # will become obsolete after actor refactoring
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     user_info.geometry_changers = []  # will become obsolete after actor refactoring
 
-    def __init__(self, user_info):
-        user_info.mother = __world_name__
-        ActorBase.__init__(self, user_info)
-        g4.GateVActor.__init__(self, user_info.__dict__)
+    def __init__(self, *args, **kwargs):
+        kwargs["attached_to"] = __world_name__
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateVActor.__init__(self, self.user_info)
         self.AddActions({"BeginOfRunActionMasterThread"})
+        self.geometry_changers = []
 
     def close(self):
-        for c in self.user_info.geometry_changers:
+        for c in self.geometry_changers:
             c.close()
+        self.geometry_changers = []
         super().close()
 
-    def initialize(self, simulation_engine_wr=None):
-        super().initialize(simulation_engine_wr)
-        for c in self.user_info.geometry_changers:
+    def to_dictionary(self):
+        return_dict = super().to_dictionary()
+        return_dict["geometry_changers"] = dict(
+            [(v.name, v.to_dictionary()) for v in self.geometry_changers]
+        )
+        return return_dict
+
+    def initialize(self):
+        super().initialize()
+        for c in self.geometry_changers:
             if c.volume_manager is None:
                 c.volume_manager = self.simulation.volume_manager
             c.initialize()
@@ -43,7 +53,7 @@ class DynamicGeometryActor(g4.GateVActor, ActorBase):
     def BeginOfRunActionMasterThread(self, run_id):
         gm = g4.G4GeometryManager.GetInstance()
         gm.OpenGeometry(None)
-        for c in self.user_info.geometry_changers:
+        for c in self.geometry_changers:
             c.apply_change(run_id)
         gm.CloseGeometry(True, False, None)
 
@@ -60,7 +70,8 @@ def _setter_hook_attached_to(self, value):
         and self.volume_manager is not volume_manager
     ):
         fatal(
-            f"The volume_manager of the changers is different from the volume_manager which manages the attached_to volume. "
+            f"The volume_manager of the changers is different from the volume_manager "
+            f"which manages the attached_to volume. "
         )
     if volume_manager is not None:
         self.volume_manager = volume_manager
