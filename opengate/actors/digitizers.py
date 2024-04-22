@@ -664,27 +664,61 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
     Output: as many DigiCollections as the number of energy windows
     """
 
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "output": (
+            "EnergyWindows.root",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "channels": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
     type_name = "DigitizerEnergyWindowsActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "EnergyWindows.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.channels = []
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     user_info.attributes = []
+    #     user_info.output = "EnergyWindows.root"
+    #     user_info.input_digi_collection = "Hits"
+    #     user_info.channels = []
+    #     user_info.skip_attributes = []
+    #     user_info.clear_every = 1e5
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerEnergyWindowsActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
-
-    def __str__(self):
-        s = f"DigitizerEnergyWindowsActor {self.user_info.name}"
-        return s
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateDigitizerEnergyWindowsActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def StartSimulationAction(
         self,
@@ -702,26 +736,54 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBas
     - output as root
     """
 
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "output": (
+            "hits.root",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "debug": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "keep_zero_edep": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
     type_name = "DigitizerHitsCollectionActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "hits.root"
-        user_info.debug = False
-        user_info.clear_every = 1e5
-        user_info.keep_zero_edep = False
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     user_info.attributes = []
+    #     user_info.output = "hits.root"
+    #     user_info.debug = False
+    #     user_info.clear_every = 1e5
+    #     user_info.keep_zero_edep = False
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerHitsCollectionActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
-
-    def __str__(self):
-        s = f"DigitizerHitsCollectionActor {self.user_info.name}"
-        return s
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateDigitizerHitsCollectionActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def StartSimulationAction(
         self,
@@ -739,39 +801,77 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
     If there are several runs, images will also be slice-stacked.
     """
 
+    user_info_defaults = {
+        "output": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "input_digi_collections": (
+            ["Hits"],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "spacing": (
+            [4 * g4_units.mm, 4 * g4_units.mm],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "size": (
+            [128, 128],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "physical_volume_index": (
+            0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "origin_as_image_center": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "detector_orientation_matrix": (
+            Rotation.from_euler("x", 0).as_matrix(),
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
     type_name = "DigitizerProjectionActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        mm = g4_units.mm
-        user_info.output = False
-        user_info.input_digi_collections = ["Hits"]
-        user_info.spacing = [4 * mm, 4 * mm]
-        user_info.size = [128, 128]
-        user_info.physical_volume_index = None
-        user_info.origin_as_image_center = True
-        user_info.detector_orientation_matrix = Rotation.from_euler("x", 0).as_matrix()
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     mm = g4_units.mm
+    #     user_info.output = False
+    #     user_info.input_digi_collections = ["Hits"]
+    #     user_info.spacing = [4 * mm, 4 * mm]
+    #     user_info.size = [128, 128]
+    #     user_info.physical_volume_index = None
+    #     user_info.origin_as_image_center = True
+    #     user_info.detector_orientation_matrix = Rotation.from_euler("x", 0).as_matrix()
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerProjectionActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
         self.output_image = None
-        if len(user_info.input_digi_collections) < 1:
-            fatal(f"Error, not input hits collection.")
         self.start_output_origin = None
-
-    def __str__(self):
-        s = f"DigitizerProjectionActor {self.user_info.name}"
-        return s
 
     def __getstate__(self):
-        ActorBase.__getstate__(self)
-        self.output_image = None
-        self.start_output_origin = None
-        return self.__dict__
+        state_dict = ActorBase.__getstate__(self)
+        state_dict["output_image"] = None
+        state_dict["start_output_origin"] = None
+        return state_dict
 
     def compute_thickness(self, volume, channels):
         """
@@ -784,22 +884,24 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         pMax = g4.G4ThreeVector()
         solid.BoundingLimits(pMin, pMax)
         d = np.array([0, 0, 1.0])
-        d = np.dot(self.user_info.detector_orientation_matrix, d)
+        d = np.dot(self.detector_orientation_matrix, d)
         imax = np.argmax(d)
         thickness = (pMax[imax] - pMin[imax]) / channels
         return thickness
 
     def StartSimulationAction(self):
         # check size and spacing
-        if len(self.user_info.size) != 2:
-            fatal(f"Error, the size must be 2D while it is {self.user_info.size}")
-        if len(self.user_info.spacing) != 2:
-            fatal(f"Error, the spacing must be 2D while it is {self.user_info.spacing}")
-        self.user_info.size.append(1)
-        self.user_info.spacing.append(1)
+        if len(self.size) != 2:
+            fatal(f"Error, the size must be 2D while it is {self.size}")
+        if len(self.spacing) != 2:
+            fatal(f"Error, the spacing must be 2D while it is {self.spacing}")
+        if len(self.input_digi_collections) < 1:
+            fatal(f"Error, not input hits collection.")
+        self.size.append(1)
+        self.spacing.append(1)
 
         # for the moment, we cannot use this actor with several volumes
-        m = self.user_info.mother
+        m = self.attached_to
         if hasattr(m, "__len__") and not isinstance(m, str):
             fatal(
                 f"Sorry, cannot (yet) use several mothers volumes for "
@@ -808,28 +910,32 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
 
         # define the new size and spacing according to the nb of channels
         # and according to the volume shape
-        size = np.array(self.user_info.size)
-        spacing = np.array(self.user_info.spacing)
-        size[2] = len(self.user_info.input_digi_collections) * len(
+        size = np.array(self.size)
+        spacing = np.array(self.spacing)
+        size[2] = len(self.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
-        spacing[2] = self.compute_thickness(self.user_info.mother, size[2])
+        spacing[2] = self.compute_thickness(self.mother, size[2])
 
         # create image
         self.output_image = create_3d_image(size, spacing)
 
         # initial position (will be anyway updated in BeginOfRunSimulation)
         pv = None
-        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
-        if self.user_info.physical_volume_index is None:
-            physical_volume_index = 0
-        else:
-            physical_volume_index = self.user_info.physical_volume_index
+        # attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
+        # if self.physical_volume_index is None:
+        #     physical_volume_index = 0
+        # else:
+        #     physical_volume_index = self.physical_volume_index
         try:
-            pv = attached_to_volume.g4_physical_volumes[physical_volume_index]
-        except:  # FIXME: should use a specific exception
-            fatal(f"Error in the DigitizerProjectionActor {self.user_info.name}")
-        align_image_with_physical_volume(attached_to_volume, self.output_image)
+            pv = self.attached_to_volume.g4_physical_volumes[self.physical_volume_index]
+        except KeyError:  # FIXME: should use a specific exception
+            fatal(
+                f"Error in the DigitizerProjectionActor {self.name}. "
+                f"No physical volume found for index {self.physical_volume_index} "
+                f"in volume {self.attached_to_volume.name}"
+            )
+        align_image_with_physical_volume(self.attached_to_volume, self.output_image)
         self.fPhysicalVolumeName = str(pv.GetName())
         # update the cpp image and start
         update_image_py_to_cpp(self.output_image, self.fImage, True)
@@ -848,16 +954,14 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         spacing = self.output_image.GetSpacing()
         origin = self.output_image.GetOrigin()
         # should we center the projection ?
-        if self.user_info.origin_as_image_center:
+        if self.origin_as_image_center:
             origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
         spacing[2] = 1
         origin[2] = 0
         self.output_image.SetSpacing(spacing)
         self.output_image.SetOrigin(origin)
-        if self.user_info.output:
-            write_itk_image(
-                self.output_image, ensure_filename_is_str(self.user_info.output)
-            )
+        if self.output:
+            write_itk_image(self.output_image, ensure_filename_is_str(self.output))
 
 
 class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
@@ -866,29 +970,33 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
     the final position is the center of the volume
     """
 
+    user_info_defaults = {
+        "discretize_volume": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
     type_name = "DigitizerReadoutActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        DigitizerAdderActor.set_default_user_info(user_info)
-        user_info.discretize_volume = None
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     DigitizerAdderActor.set_default_user_info(user_info)
+    #     user_info.discretize_volume = None
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerReadoutActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
-
-    def __str__(self):
-        s = f"DigitizerReadoutActor {self.user_info.name}"
-        return s
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def StartSimulationAction(self):
         DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
             fatal(f'Please, set the option "discretize_volume"')
         depth = self.simulation.volume_manager.get_volume(
-            self.user_info.discretize_volume
+            self.discretize_volume
         ).volume_depth_in_tree
         self.SetDiscretizeVolumeDepth(depth)
         g4.GateDigitizerReadoutActor.StartSimulationAction(self)
@@ -903,31 +1011,53 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
     However only the first hit of given event is stored here.
     """
 
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "output": (
+            "fixme.root",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "store_absorbed_event": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "debug": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
     type_name = "PhaseSpaceActor"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        # options
-        user_info.attributes = []
-        user_info.output = f"{user_info.name}.root"
-        user_info.store_absorbed_event = False
-        user_info.debug = False
+    # @staticmethod
+    # def set_default_user_info(user_info):
+    #     ActorBase.set_default_user_info(user_info)
+    #     # options
+    #     user_info.attributes = []
+    #     user_info.output = f"{user_info.name}.root"
+    #     user_info.store_absorbed_event = False
+    #     user_info.debug = False
 
     def __getstate__(self):
         # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
-        ActorBase.__getstate__(self)
-        return self.__dict__
+        return ActorBase.__getstate__(self)
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        g4.GatePhaseSpaceActor.__init__(self, self.user_info)
         self.fNumberOfAbsorbedEvents = 0
         self.fTotalNumberOfEntries = 0
-
-    def __str__(self):
-        s = f"PhaseSpaceActor {self.user_info.name}"
-        return s
 
     # not needed, only if need to do something from python
     def StartSimulationAction(self):
@@ -937,5 +1067,5 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         self.fNumberOfAbsorbedEvents = self.GetNumberOfAbsorbedEvents()
         self.fTotalNumberOfEntries = self.GetTotalNumberOfEntries()
         if self.fTotalNumberOfEntries == 0:
-            warning(f"Empty output, no particles stored in {self.user_info.output}")
+            warning(f"Empty output, no particles stored in {self.output}")
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
