@@ -20,7 +20,7 @@ public:
   // Constructor
   GateKillActor(py::dict &user_info);
 
-  void ActorInitialize() override;
+  void InitializeCpp() override;
 
   void StartSimulationAction() override;
 

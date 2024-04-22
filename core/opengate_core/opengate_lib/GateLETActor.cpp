@@ -47,7 +47,7 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   fHitType = DictGetStr(user_info, "hit_type");
 }
 
-void GateLETActor::ActorInitialize() {}
+void GateLETActor::InitializeCpp() {}
 
 void GateLETActor::BeginOfRunAction(const G4Run *) {
   // Important ! The volume may have moved, so we re-attach each run

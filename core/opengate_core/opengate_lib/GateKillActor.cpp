@@ -19,7 +19,7 @@ GateKillActor::GateKillActor(py::dict &user_info)
   fNbOfKilledParticles = 0;
 }
 
-void GateKillActor::ActorInitialize() {}
+void GateKillActor::InitializeCpp() {}
 
 void GateKillActor::StartSimulationAction() { fNbOfKilledParticles = 0; }
 

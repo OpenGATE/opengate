@@ -82,7 +82,7 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info)() {
   fSTEofMeanFlag = DictGetBool(user_info, "ste_of_mean");
 }
 
-void GateDoseActor::ActorInitialize() {
+void GateDoseActor::InitializeCpp() {
   NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
 
   if (fUncertaintyFlag) {

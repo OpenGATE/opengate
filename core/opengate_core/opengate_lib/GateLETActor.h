@@ -24,7 +24,7 @@ public:
   // Constructor
   GateLETActor(py::dict &user_info);
 
-  virtual void ActorInitialize();
+  virtual void InitializeCpp();
 
   // Main function called every step in attached volume
   virtual void SteppingAction(G4Step *);

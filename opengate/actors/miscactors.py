@@ -168,7 +168,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         ActorBase.initialize(self)
 
         self.InitializeUserInput(self.user_info)
-        self.ActorInitialize()
+        self.InitializeCpp()
 
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)

@@ -449,7 +449,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.InitializeUserInput(self.user_info)  # C++ side
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
-        self.ActorInitialize()
+        self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("edep", run_index)
@@ -460,6 +460,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
         self.push_to_cpp_image("square", run_index, self.cpp_square_image)
+        # FIXME: how about dose?
 
     def EndOfRunActionMasterThread(self, run_index):
         # edep
@@ -476,6 +477,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             )
             self.update_output_origin("dose", run_index)
+        # else:
+        #     ???
 
         # square
         if any([self.uncertainty, self.ste_of_mean, self.square]):
@@ -639,7 +642,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
-        self.ActorInitialize()
+        self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("let", run_index)
@@ -703,7 +706,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
-        self.ActorInitialize()
+        self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("fluence", run_index)

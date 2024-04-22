@@ -78,7 +78,7 @@ void init_GateVActor(py::module &m) {
       .def("RegisterSD", &GateVActor::RegisterSD)
       .def_readonly("fActions", &GateVActor::fActions)
       .def_readwrite("fFilters", &GateVActor::fFilters)
-      .def("ActorInitialize", &GateVActor::ActorInitialize)
+      .def("InitializeCpp", &GateVActor::InitializeCpp)
       .def("AddActions", &GateVActor::AddActions)
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)

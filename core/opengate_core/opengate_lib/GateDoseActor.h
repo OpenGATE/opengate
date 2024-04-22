@@ -30,7 +30,7 @@ public:
 
   virtual void InitializeUserInput(py::dict &user_info) override;
 
-  virtual void ActorInitialize() override;
+  virtual void InitializeCpp() override;
 
   // Main function called every step in attached volume
   virtual void SteppingAction(G4Step *) override;
