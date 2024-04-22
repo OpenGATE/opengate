@@ -290,8 +290,9 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         g4.GateDigitizerAdderActor.__init__(self, self.user_info)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def initialize(self):
         if (
             self.policy != "EnergyWinnerPosition"
             and self.policy != "EnergyWeightedCentroidPosition"
@@ -300,6 +301,9 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
                 f"Error, the policy for the Adder '{self.name}' must be EnergyWinnerPosition or "
                 f"EnergyWeightedCentroidPosition, while is is '{self.policy}'"
             )
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def set_group_by_depth(self):
         depth = -1
@@ -421,6 +425,9 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
 
     def initialize(self):
         self.initialize_blurring_parameters()
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def initialize_blurring_parameters(self):
         if self.blur_method == "Gaussian":
@@ -573,6 +580,9 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
 
     def initialize(self):
         self.initialize_blurring_parameters()
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def StartSimulationAction(self):
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
@@ -649,6 +659,9 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, ActorBase):
 
     def initialize(self):
         self.initialize_blurring_parameters()
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def StartSimulationAction(self):
         g4.GateDigitizerEfficiencyActor.StartSimulationAction(self)
@@ -720,6 +733,11 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
         g4.GateDigitizerEnergyWindowsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+
     def StartSimulationAction(
         self,
     ):  # not needed, only if need to do something in python
@@ -784,6 +802,11 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBas
         ActorBase.__init__(self, *args, **kwargs)
         g4.GateDigitizerHitsCollectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def StartSimulationAction(
         self,
@@ -872,6 +895,11 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         state_dict["output_image"] = None
         state_dict["start_output_origin"] = None
         return state_dict
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def compute_thickness(self, volume, channels):
         """
@@ -991,6 +1019,11 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+
     def StartSimulationAction(self):
         DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
@@ -1058,6 +1091,11 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
         self.fNumberOfAbsorbedEvents = 0
         self.fTotalNumberOfEntries = 0
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     # not needed, only if need to do something from python
     def StartSimulationAction(self):
