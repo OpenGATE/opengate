@@ -51,7 +51,7 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
   // fActions.insert("EndOfEventAction");
 }
 
-void GateDoseActor::InitializeUserInput(py::dict &user_info)() {
+void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInput(user_info);
   //  Option: compute uncertainty
