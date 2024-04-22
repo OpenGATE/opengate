@@ -35,8 +35,8 @@ class ParticleFilter(g4.GateParticleFilter, FilterBase):
     }
 
     def __init__(self, *args, **kwargs):
-        g4.GateParticleFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, *args, **kwargs)
+        g4.GateParticleFilter.__init__(self)  # no argument in cpp side
 
 
 class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
@@ -56,8 +56,8 @@ class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
     }
 
     def __init__(self, *args, **kwargs):
-        g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, *args, **kwargs)
+        g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
 
 
 class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
@@ -71,8 +71,8 @@ class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
     }
 
     def __init__(self, *args, **kwargs):
-        g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, *args, **kwargs)
+        g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
 
 
 class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
@@ -96,8 +96,8 @@ class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
     }
 
     def __init__(self, *args, **kwargs):
-        g4.GateThresholdAttributeFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, *args, **kwargs)
+        g4.GateThresholdAttributeFilter.__init__(self)  # no argument in cpp side
 
 
 filter_classes = {
