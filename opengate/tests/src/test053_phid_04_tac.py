@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test053_pid_helpers1 import *
+from test053_phid_helpers1 import *
 import matplotlib.pyplot as plt
 import radioactivedecay as rd
 import opengate as gate

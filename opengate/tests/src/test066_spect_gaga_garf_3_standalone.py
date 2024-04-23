@@ -7,7 +7,7 @@ import itk
 from box import Box
 from scipy.spatial.transform import Rotation
 import opengate as gate
-from opengate.contrib.spect import genm670
+from opengate.contrib.spect import ge_discovery_nm670
 import time
 
 if __name__ == "__main__":

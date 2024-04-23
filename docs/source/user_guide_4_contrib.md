@@ -73,6 +73,30 @@ The following models are available:
 - GE Discovery 670 SPECT
 - Siemens Symbia Intevo Bold SPECT
 
+```python
+import opengate as gate
+import opengate.contrib.spect.ge_discovery_nm670 as discovery
+import opengate.contrib.spect.siemens_intevo as intevo
+
+sim = gate.Simulation()
+
+spect = discovery.add_spect_head(sim, "discovery1", collimator_type="melp")
+crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+discovery.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
+
+spect = discovery.add_spect_head(sim, "discovery12", collimator_type="lehr")
+crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+discovery.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
+
+spect = intevo.add_spect_head(sim, "intevo1", collimator_type="melp")
+crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+intevo.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
+
+spect = discovery.add_spect_head(sim, "intevo2", collimator_type="lehr")
+crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+intevo.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
+```
+
 test028
 
 ### PET imaging systems
