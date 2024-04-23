@@ -20,7 +20,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.random_seed = 123456789
+    sim.random_seed = 12345678
     sim.check_volumes_overlap = True
 
     # units

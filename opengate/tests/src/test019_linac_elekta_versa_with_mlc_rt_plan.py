@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
     l_cp = [np.random.randint(0,len(rt_plan_parameters['jaws 1']),1)[0]]
-    versa.linac_head_motion(sim,linac,jaws,mlc,rt_plan_parameters,sad=sad, cp_id = l_cp)
+    versa.linac_head_motion(sim,linac.name,jaws,mlc,rt_plan_parameters,sad=sad, cp_id = l_cp)
 
 
     # physics

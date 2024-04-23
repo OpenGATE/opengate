@@ -27,21 +27,22 @@ def add_linac(sim, linac_name,sad=1000):
     linac.color = [1, 1, 1, 0.8]
 
     # add elements
-    h = linac.size[2]
-    target = add_target(sim, linac.name, h)
-    add_primary_collimator(sim, linac.name, h)
-    add_flattening_filter(sim, linac.name, h)
-    add_ionizing_chamber(sim, linac.name, h)
-    add_back_scatter_plate(sim, linac.name, h)
-    add_mirror(sim, linac.name, h)
+    add_target(sim, linac.name)
+    add_primary_collimator(sim, linac.name)
+    add_flattening_filter(sim, linac.name)
+    add_ionizing_chamber(sim, linac.name)
+    add_back_scatter_plate(sim, linac.name)
+    add_mirror(sim, linac.name)
 
     # kill actor above the target
-    kill_around_target(sim, target)
+    kill_around_target(sim, linac.name)
 
     return linac
 
 
-def add_target(sim, linac_name, z_linac):
+def add_target(sim, linac_name):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     # unit
     mm = g4_units.mm
     nm = g4_units.nm
@@ -60,12 +61,11 @@ def add_target(sim, linac_name, z_linac):
     target_support.material = "G4_AIR"
     target_support.rmin = 0
     target_support.rmax = 15 * mm
-    target_support.dz = 11 * mm / 2.0 + 2 * nm
-    target_support.translation = [0, 0, z_linac / 2 - 5 * mm]  # FIXME
-    target_support.translation = [0, 0, z_linac / 2 - 5.6 * mm]
+    target_support.dz = 11 * mm / 2.0
+    target_support.translation = [0, 0, z_linac/2  - target_support.dz - 1*nm]
     target_support.color = [0, 1, 0, 1]
 
-    target = sim.add_volume("Tubs", "target")
+    target = sim.add_volume("Tubs", f"{linac_name}_target")
     target.mother = target_support.name
     target.material = target_material
     target.rmin = 0
@@ -87,7 +87,6 @@ def add_target(sim, linac_name, z_linac):
         "Tubs", f"{linac_name}_target_support_bottom"
     )
     target_support_bottom.mother = target_support.name
-    #target_support_bottom.material = copper
     target_support_bottom.material =target_material
     target_support_bottom.rmin = 0
     target_support_bottom.rmax = 15 * mm
@@ -98,36 +97,40 @@ def add_target(sim, linac_name, z_linac):
     return target_support
 
 
-def kill_around_target(sim, target):
+def kill_around_target(sim, linac_name):
     mm = g4_units.mm
     nm = g4_units.nm
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
 
     # above the target
-    target_above = sim.add_volume("Tubs", f"{target.name}_kill_volume1")
-    target_above.mother = target
+    target_above = sim.add_volume("Tubs", f"target_kill_volume1")
+    target_above.mother = linac_name
     target_above.material = "G4_AIR"
     target_above.rmin = 0
-    target_above.rmax = 14.9 * mm
-    target_above.dz = 1 * nm
-    target_above.translation = [0, 0, 5.5 * mm + 1 * nm]
+    target_above.rmax = 15 * mm
+    target_above.dz = 0.5 * nm
+    target_above.translation = [0, 0, z_linac/2 - 0.5 * nm]
     target_above.color = [1, 0, 0, 1]
 
     # around the target
-    target_around = sim.add_volume("Tubs", f"{target.name}_kill_volume2")
-    target_around.mother = target.mother
+    target_around = sim.add_volume("Tubs", f"target_kill_volume2")
+    target_around.mother = linac_name
     target_around.material = "G4_AIR"
-    target_around.rmin = 15.01 * mm
-    target_around.rmax = 18 * mm
-    target_around.dz = 5 * mm
-    target_around.translation = target.translation
+    target_around.rmin = 15.1 * mm
+    target_around.rmax = target_around.rmin + 1*nm
+    target_around.dz = 5.5 * mm
+    target_around.translation = [0, 0, z_linac/2 - target_around.dz - 1 * nm]
     target_around.color = [1, 0, 0, 1]
 
     # psycho killer
-    killer = sim.add_actor("KillActor", f"{target.name}_kill")
+    killer = sim.add_actor("KillActor", f"target_kill")
     killer.mother = [target_above.name, target_around.name]
 
 
-def add_primary_collimator(sim, linac_name, z_linac):
+def add_primary_collimator(sim, linac_name):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     mm = g4_units.mm
     deg = g4_units.deg
     primary_collimator = sim.add_volume("Cons", f"{linac_name}_primary_collimator")
@@ -144,13 +147,15 @@ def add_primary_collimator(sim, linac_name, z_linac):
     primary_collimator.color = [0.5, 0.5, 1, 0.8]
 
 
-def add_flattening_filter(sim, linac_name, z_linac):
+def add_flattening_filter(sim, linac_name):
     # unit
     mm = g4_units.mm
     deg = g4_units.deg
 
     # colors
     yellow = [0, 0.7, 0.7, 0.8]
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
 
     # bounding cylinder
     flattening_filter = sim.add_volume("Tubs", f"{linac_name}_flattening_filter")
@@ -197,11 +202,13 @@ def add_flattening_filter(sim, linac_name, z_linac):
         i = i + 1
 
 
-def add_ionizing_chamber(sim, linac_name, z_linac):
+def add_ionizing_chamber(sim, linac_name):
     # unit
     mm = g4_units.mm
 
     # main cylinder
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     ionizing_chamber = sim.add_volume("Tubs", f"{linac_name}_ionizing_chamber")
     ionizing_chamber.mother = linac_name
     ionizing_chamber.material = "G4_AIR"
@@ -247,8 +254,10 @@ def add_ionizing_chamber(sim, linac_name, z_linac):
         i = i + 1
 
 
-def add_back_scatter_plate(sim, linac_name, z_linac):
+def add_back_scatter_plate(sim, linac_name):
     # back_scatter_plate
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     mm = g4_units.mm
     bsp = sim.add_volume("Box", f"{linac_name}_back_scatter_plate")
     bsp.mother = linac_name
@@ -258,12 +267,14 @@ def add_back_scatter_plate(sim, linac_name, z_linac):
     bsp.color = [1, 0.7, 0.7, 0.8]
 
 
-def add_mirror(sim, linac_name, z_linac):
+def add_mirror(sim, linac_name):
     # unit
     mm = g4_units.mm
     blue = [0, 0, 1, 0.8]
 
     # main box
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     m = sim.add_volume("Box", f"{linac_name}_mirror")
     m.mother = linac_name
     m.material = "G4_AIR"
@@ -302,16 +313,17 @@ def enable_brem_splitting(sim, linac_name, splitting_factor):
 def add_electron_source(sim, linac_name, rotation_matrix):
     MeV = g4_units.MeV
     mm = g4_units.mm
+    nm = g4_units.nm
     source = sim.add_source("GenericSource", f"{linac_name}_e-_source")
     source.particle = "e-"
-    source.mother = f"{linac_name}_target_support"
+    source.mother = f"{linac_name}_target"
     source.energy.type = "gauss"
     source.energy.mono = 6.4 * MeV
     source.energy.sigma_gauss = source.energy.mono * (0.03 / 2.35)
     source.position.type = "disc"
     source.position.sigma_x = 0.468 * mm
     source.position.sigma_y = 0.468 * mm
-    source.position.translation = [0, 0, 5.25*mm + 0.1 * mm]
+    source.position.translation = [0, 0, 0.5*mm - 1 * nm]
     source.direction.type = "momentum"
     source.n = 10
     # consider linac rotation
@@ -650,13 +662,10 @@ def add_jaws_visu(sim, linac_name):
 
 def base_jaws(sim, linac_name, side):
     mm = g4_units.mm
-    linac = sim.volume_manager.get_volume(linac_name)
-    center_jaws = 470.5 * mm
     jaws_height = 77 * mm
     jaws_length_x = 201.84 * mm
     jaws_length_tot_X = 229.58 * mm
     jaws_length_y = 205.2 * mm
-    z_linac = linac.size[2]
 
     # Jaws Structure
     box_jaws = volumes.BoxVolume(name=f"{linac_name}_box_jaws" + "_" + side)
@@ -971,26 +980,29 @@ def rectangular_field(sim,mlc,jaws,x_field,y_field,sad = 1000):
 
 
 
-def linac_rotation(sim,linac_box,angle,cp_id ='all_cp'):
+def linac_rotation(sim,linac_name,angle,cp_id ='all_cp'):
+    linac = sim.volume_manager.get_volume(linac_name)
     motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
     motion_LINAC.rotations = []
     motion_LINAC.translations = []
-    motion_LINAC.mother = linac_box.name
+    motion_LINAC.mother = linac_name
     if cp_id == 'all_cp':
         nb_cp_id = len(angle)
         cp_id = np.arange(0,nb_cp_id,1)
-    translation_linac_box = linac_box.translation
+    translation_linac = linac.translation
 
     for n in cp_id:
         rot = Rotation.from_euler("y", angle[n], degrees=True)
         t = gate.geometry.utility.get_translation_from_rotation_with_center(
-            rot, [0, 0, - translation_linac_box[2]]
+            rot, [0, 0, - translation_linac[2]]
         )
         rot = rot.as_matrix()
         motion_LINAC.rotations.append(rot)
-        motion_LINAC.translations.append(np.array(t) + translation_linac_box)
+        motion_LINAC.translations.append(np.array(t) + translation_linac)
 
-def jaw_translation(sim, jaw,jaw_positions, z_linac, side,cp_id = 'all_cp', sad=1000):
+def jaw_translation(sim,linac_name, jaw,jaw_positions, side,cp_id = 'all_cp', sad=1000):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     mm = g4_units.mm
     motion_jaw = sim.add_actor("MotionVolumeActor", "Move_" + side + "_jaw")
     motion_jaw.translations = []
@@ -1026,7 +1038,9 @@ def jaw_translation(sim, jaw,jaw_positions, z_linac, side,cp_id = 'all_cp', sad=
             motion_jaw.rotations.append(rot_jaw)
         motion_jaw.translations.append(jaw_translation)
 
-def mlc_leaves_translation(sim, mlc, leaves_position, z_linac,cp_id = 'all_cp', sad=1000):
+def mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id = 'all_cp', sad=1000):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     mm = g4_units.mm
     center_mlc = 349.3 * mm
     center_curve_mlc = center_mlc - 7.5 * mm
@@ -1062,16 +1076,15 @@ def mlc_leaves_translation(sim, mlc, leaves_position, z_linac,cp_id = 'all_cp', 
             )
             motion_leaves_r[i].append(np.identity(3))
 
-def linac_head_motion(sim,linac_box,jaws,mlc,rt_plan_parameters,cp_id = 'all_cp',sad=1000):
-    z_linac = linac_box.size[2]
+def linac_head_motion(sim,linac_name,jaws,mlc,rt_plan_parameters,cp_id = 'all_cp',sad=1000):
     leaves_position = rt_plan_parameters["leaves"]
     jaw_1_positions = rt_plan_parameters["jaws 1"]
     jaw_2_positions = rt_plan_parameters["jaws 2"]
     linac_head_positions = rt_plan_parameters["gantry angle"]
-    mlc_leaves_translation(sim, mlc, leaves_position, z_linac,cp_id, sad)
-    jaw_translation(sim, jaws[0], jaw_1_positions, z_linac, 'left',cp_id, sad)
-    jaw_translation(sim, jaws[1], jaw_2_positions, z_linac, 'right',cp_id, sad)
-    linac_rotation(sim, linac_box,linac_head_positions, cp_id)
+    mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id, sad)
+    jaw_translation(sim,linac_name, jaws[0], jaw_1_positions, 'left',cp_id, sad)
+    jaw_translation(sim,linac_name, jaws[1], jaw_2_positions, 'right',cp_id, sad)
+    linac_rotation(sim, linac_name,linac_head_positions, cp_id)
 
 
 
