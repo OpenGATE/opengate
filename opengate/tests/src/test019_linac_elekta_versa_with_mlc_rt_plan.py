@@ -34,7 +34,8 @@ def calc_mlc_aperture(
 
     return np.sum(diff) * leaf_width
 
-def add_volume_to_irradiate(sim,name):
+
+def add_volume_to_irradiate(sim, name):
     mm = g4_units.mm
     m = g4_units.m
     plane = sim.add_volume("Box", "water_plane")
@@ -72,6 +73,8 @@ def add_volume_to_irradiate(sim,name):
         rot = rot.as_matrix()
         motion_phsp.rotations.append(rot)
         motion_phsp.translations.append(np.zeros(3))
+
+
 def add_alpha_source(sim, name, pos_Z, nb_part):
     mm = gate.g4_units.mm
     nm = gate.g4_units.nm
@@ -97,22 +100,36 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source.activity = nb_part * Bq / sim.number_of_threads
 
 
-def validation_test_19_rt_plan(theoretical_calculation, MC_calculation,cp_id,rt_plan_parameters,nb_part_init,nb_part_sent, tol=0.1):
+def validation_test_19_rt_plan(
+    theoretical_calculation,
+    MC_calculation,
+    cp_id,
+    rt_plan_parameters,
+    nb_part_init,
+    nb_part_sent,
+    tol=0.1,
+):
     print(
-        "Area from theoretical calculations for the chosen CP:", theoretical_calculation,"mm2"
+        "Area from theoretical calculations for the chosen CP:",
+        theoretical_calculation,
+        "mm2",
     )
-    print("Area from MC simulations for the chosen CP:", MC_calculation,"mm2")
+    print("Area from MC simulations for the chosen CP:", MC_calculation, "mm2")
 
-    print("Number of particles emitted:",nb_part_sent)
+    print("Number of particles emitted:", nb_part_sent)
     percentage_diff = (
         100 * (theoretical_calculation - MC_calculation) / theoretical_calculation
     )
     bool_percentage_diff = np.abs(percentage_diff) > tol * 100
     monitor_units = rt_plan_parameters["weight"][cp_id]
-    nb_part_theo = nb_part_init*monitor_units
-    print("Number of particles theoretically emitted:",int(np.round(nb_part_theo)))
-    err_nb_part= np.sqrt(nb_part_theo)
-    if (nb_part_sent >= nb_part_theo - 4 *err_nb_part) and (nb_part_theo <= nb_part_theo + 4 *err_nb_part) and np.sum(bool_percentage_diff) == 0 :
+    nb_part_theo = nb_part_init * monitor_units
+    print("Number of particles theoretically emitted:", int(np.round(nb_part_theo)))
+    err_nb_part = np.sqrt(nb_part_theo)
+    if (
+        (nb_part_sent >= nb_part_theo - 4 * err_nb_part)
+        and (nb_part_theo <= nb_part_theo + 4 * err_nb_part)
+        and np.sum(bool_percentage_diff) == 0
+    ):
         return True
     else:
         return False
@@ -161,23 +178,23 @@ if __name__ == "__main__":
     linac = sim.add_volume("Box", "linac_box")
     linac.material = "G4_Galactic"
     linac.size = [1 * m, 1 * m, 0.52 * m]
-    translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2]/2])
+    translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
     linac.translation = translation_linac_box
 
     linac.color = [1, 1, 1, 0.8]
-    if sim.visu :
+    if sim.visu:
         jaws = versa.add_jaws_visu(sim, "linac_box")
-    else :
+    else:
         jaws = versa.add_jaws(sim, "linac_box")
 
     mlc = versa.add_mlc(sim, "linac_box")
 
-    #add alpha source :
-    nb_part= 750000
+    # add alpha source :
+    nb_part = 750000
     z_linac = linac.size[2]
     if sim.visu:
-        add_alpha_source(sim,linac.name,z_linac/2 - 5.6 * mm,10)
-    else :
+        add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, 10)
+    else:
         add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, nb_part)
 
     ### Linac head rotation and jaws and mlc translation according to a DICOM rt plan
@@ -195,13 +212,12 @@ if __name__ == "__main__":
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
-    #add water slice with a dose actor and a motion actor
-    add_volume_to_irradiate(sim,world.name)
-
+    # add water slice with a dose actor and a motion actor
+    add_volume_to_irradiate(sim, world.name)
 
     # start simulation
-    #The number of praticles provided (sim.activity) will be adapted regarding the number of MU delivered at each control points.
-    versa.adapt_nb_particles_per_run(sim, rt_plan_parameters, cp_id =l_cp)
+    # The number of praticles provided (sim.activity) will be adapted regarding the number of MU delivered at each control points.
+    versa.adapt_nb_particles_per_run(sim, rt_plan_parameters, cp_id=l_cp)
     sim.run()
 
     # print results
@@ -215,11 +231,17 @@ if __name__ == "__main__":
     jaws = [jaws_1, jaws_2]
     theoretical_area = calc_mlc_aperture(leaves, jaws, sad=sad)
 
-
     dose2 = sim.output.get_actor("dose_water_slice")
     img_MC = itk.imread(paths.output / dose2.user_info.output)
     array_MC = itk.GetArrayFromImage(img_MC)
     bool_MC = array_MC[array_MC != 0]
     simulated_area = len(bool_MC) / 4
-    is_ok = validation_test_19_rt_plan(theoretical_area,simulated_area,l_cp[0],rt_plan_parameters,nb_part,stats.counts.event_count)
+    is_ok = validation_test_19_rt_plan(
+        theoretical_area,
+        simulated_area,
+        l_cp[0],
+        rt_plan_parameters,
+        nb_part,
+        stats.counts.event_count,
+    )
     utility.test_ok(is_ok)

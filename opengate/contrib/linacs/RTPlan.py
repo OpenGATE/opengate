@@ -42,9 +42,7 @@ def extract_dataset(file):
         data_set[dose_weights]["cumulative weight"].append(
             cp[0x300C, 0x0050].value[0][0x300A, 0x010C].value
         )
-        data_set[isocenter]["isocenter"].append(
-            ds.value[0][0x300A, 0x012C].value
-        )
+        data_set[isocenter]["isocenter"].append(ds.value[0][0x300A, 0x012C].value)
         for Sideid in range(2):
             for i in range(nb_leaf):
                 data_set[leaves][Sideid][i]["leaves"].append(
@@ -54,7 +52,7 @@ def extract_dataset(file):
     return data_set
 
 
-def read(file, cp_id ='all_cp'):
+def read(file, cp_id="all_cp"):
     mm = g4_units.mm
     jaws_1 = 0
     jaws_2 = 1
@@ -74,9 +72,9 @@ def read(file, cp_id ='all_cp'):
 
     data_set = extract_dataset(file)
 
-    if cp_id == 'all_cp':
+    if cp_id == "all_cp":
         nb_cp_id = len(data_set[jaws_1]["jaws_1"])
-        cp_id = np.arange(0,nb_cp_id,1)
+        cp_id = np.arange(0, nb_cp_id, 1)
     for id in cp_id:
         l_jaws_1.append(float(data_set[jaws_1]["jaws_1"][id]) * mm)
         l_jaws_2.append(float(data_set[jaws_2]["jaws_2"][id]) * mm)
@@ -85,9 +83,7 @@ def read(file, cp_id ='all_cp'):
         l_isocenter.append(
             np.array(data_set[isocenter]["isocenter"][id], dtype=float) * mm
         )
-        l_dose_weights.append(
-            float(data_set[dose_weights]["cumulative weight"][id])
-        )
+        l_dose_weights.append(float(data_set[dose_weights]["cumulative weight"][id]))
 
     tmp_dir_angle = []
     for i in range(len(l_dir_angle)):
@@ -115,10 +111,10 @@ def read(file, cp_id ='all_cp'):
     l_dose_weights = np.array(l_dose_weights)
     diff_dose_weights = np.diff(l_dose_weights)
     l_angle = np.array(l_angle) * l_dir_angle
-    l_angle[l_angle < 0] = - l_angle[l_angle < 0]
+    l_angle[l_angle < 0] = -l_angle[l_angle < 0]
     diff_angle = np.diff(l_angle)
     diff_angle[diff_angle > 300] = diff_angle[diff_angle > 300] - 360
-    diff_angle[diff_angle < - 300] = diff_angle[diff_angle < - 300] + 360
+    diff_angle[diff_angle < -300] = diff_angle[diff_angle < -300] + 360
     l_angle = l_angle[0:-1] + diff_angle / 2
     l_angle[l_angle > 360] -= 360
     l_angle[l_angle < 0] += 360
@@ -140,11 +136,3 @@ def read(file, cp_id ='all_cp'):
     }
 
     return rt_plan_parameters
-
-
-
-
-
-
-
-

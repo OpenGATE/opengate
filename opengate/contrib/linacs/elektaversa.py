@@ -9,7 +9,7 @@ import numpy as np
 import pydicom
 
 
-def add_linac(sim, linac_name,sad=1000):
+def add_linac(sim, linac_name, sad=1000):
     # units
     mm = g4_units.mm
     m = g4_units.m
@@ -23,7 +23,7 @@ def add_linac(sim, linac_name,sad=1000):
     linac = sim.add_volume("Box", linac_name)
     linac.material = "G4_AIR"
     linac.size = [1 * m, 1 * m, 0.52 * m]
-    linac.translation = np.array([0, 0, sad - linac.size[2]/2])
+    linac.translation = np.array([0, 0, sad - linac.size[2] / 2])
     linac.color = [1, 1, 1, 0.8]
 
     # add elements
@@ -87,6 +87,7 @@ def add_target(sim, linac_name):
         "Tubs", f"{linac_name}_target_support_bottom"
     )
     target_support_bottom.mother = target_support.name
+
     target_support_bottom.material =target_material
     target_support_bottom.rmin = 0
     target_support_bottom.rmax = 15 * mm
@@ -328,7 +329,6 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     source.n = 10
     # consider linac rotation
 
-
     #### To be modified ? A change in Linac rotation will normally modify the source direction accordingly
     dir = np.dot(rotation_matrix, np.array([0, 0, -1]))
     source.direction.momentum = dir
@@ -564,7 +564,7 @@ def add_mlc(sim, linac_name):
     mm = g4_units.mm
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
-    center_mlc = 349.3*mm
+    center_mlc = 349.3 * mm
     interleaf_gap = 0.09 * mm
     leaf_width = 1.76 * mm
     leaf_lenght = 155 * mm
@@ -604,32 +604,54 @@ def add_mlc(sim, linac_name):
     mlc_o_2 = get_grid_repetition(size, tr_blocks)
 
     for i in range(len(mlc_p_1)):
-        mlc_p_1[i] += np.array([-leaf_lenght / 2, leaf_width + interleaf_gap, z_linac/2 - center_mlc])
-        mlc_o_1[i] += np.array([-leaf_lenght / 2, 0, z_linac/2 - center_mlc])
-        mlc_p_2[i] += np.array([leaf_lenght / 2, leaf_width + interleaf_gap, z_linac/2 - center_mlc])
-        mlc_o_2[i] += np.array([leaf_lenght / 2, 0, z_linac/2 - center_mlc])
-
+        mlc_p_1[i] += np.array(
+            [-leaf_lenght / 2, leaf_width + interleaf_gap, z_linac / 2 - center_mlc]
+        )
+        mlc_o_1[i] += np.array([-leaf_lenght / 2, 0, z_linac / 2 - center_mlc])
+        mlc_p_2[i] += np.array(
+            [leaf_lenght / 2, leaf_width + interleaf_gap, z_linac / 2 - center_mlc]
+        )
+        mlc_o_2[i] += np.array([leaf_lenght / 2, 0, z_linac / 2 - center_mlc])
 
     leaf_p_1.translation = mlc_p_1
     leaf_o_1.translation = mlc_o_1
     leaf_p_2.translation = mlc_p_2
     leaf_o_2.translation = mlc_o_2
 
-
     mlc = []
     for i in range(len(mlc_p_1)):
         mlc.append(
-            {"translation": mlc_o_1[i], "mother_name": leaf_o_1.name,"name": leaf_o_1.name + "_rep_" + str(i), "leaf_index":i}
+            {
+                "translation": mlc_o_1[i],
+                "mother_name": leaf_o_1.name,
+                "name": leaf_o_1.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
         mlc.append(
-            {"translation": mlc_p_1[i], "mother_name": leaf_p_1.name,"name": leaf_p_1.name + "_rep_" + str(i), "leaf_index":i}
+            {
+                "translation": mlc_p_1[i],
+                "mother_name": leaf_p_1.name,
+                "name": leaf_p_1.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
     for i in range(len(mlc_p_2)):
         mlc.append(
-            {"translation": mlc_o_2[i], "mother_name": leaf_o_2.name,"name": leaf_o_2.name + "_rep_" + str(i),"leaf_index":i}
+            {
+                "translation": mlc_o_2[i],
+                "mother_name": leaf_o_2.name,
+                "name": leaf_o_2.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
         mlc.append(
-            {"translation": mlc_p_2[i], "mother_name": leaf_p_2.name,"name": leaf_p_2.name + "_rep_" + str(i),"leaf_index":i}
+            {
+                "translation": mlc_p_2[i],
+                "mother_name": leaf_p_2.name,
+                "name": leaf_p_2.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
 
     return mlc
@@ -652,12 +674,14 @@ def trap_g4_param(
 
 
 def add_jaws(sim, linac_name):
-    return([add_jaw(sim,linac_name,"left"),add_jaw(sim,linac_name,"right")])
+    return [add_jaw(sim, linac_name, "left"), add_jaw(sim, linac_name, "right")]
+
 
 def add_jaws_visu(sim, linac_name):
-    return([add_jaw_visu(sim,linac_name,"left"),add_jaw_visu(sim,linac_name,"right")])
-
-
+    return [
+        add_jaw_visu(sim, linac_name, "left"),
+        add_jaw_visu(sim, linac_name, "right"),
+    ]
 
 
 def base_jaws(sim, linac_name, side):
@@ -811,6 +835,7 @@ def base_jaws(sim, linac_name, side):
 
     return bool_box_jaws
 
+
 def add_jaw_visu(sim, linac_name, side):
     mm = g4_units.mm
     linac = sim.volume_manager.get_volume(linac_name)
@@ -823,13 +848,18 @@ def add_jaw_visu(sim, linac_name, side):
     bool_box_jaw.mother = linac_name
     bool_box_jaw.material = "mat_leaf"
 
-    if side == 'left':
-        bool_box_jaw.translation = np.array([0, -jaws_length_y / 2, z_linac / 2 - center_jaws])
+    if side == "left":
+        bool_box_jaw.translation = np.array(
+            [0, -jaws_length_y / 2, z_linac / 2 - center_jaws]
+        )
     if side == "right":
         rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
-        bool_box_jaw.translation = np.array([0, jaws_length_y / 2, z_linac / 2 - center_jaws])
+        bool_box_jaw.translation = np.array(
+            [0, jaws_length_y / 2, z_linac / 2 - center_jaws]
+        )
         bool_box_jaw.rotation = rot_jaw
     return bool_box_jaw
+
 
 def add_jaw(sim, linac_name, side):
     mm = g4_units.mm
@@ -929,7 +959,7 @@ def add_jaw(sim, linac_name, side):
     jaw.mother = linac_name
     jaw.material = "mat_leaf"
 
-    if side == 'left':
+    if side == "left":
         jaw.translation = np.array([0, -jaws_length_y / 2, z_linac / 2 - center_jaws])
     if side == "right":
         rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
@@ -938,8 +968,7 @@ def add_jaw(sim, linac_name, side):
     return jaw
 
 
-
-def define_pos_mlc_jaws_rectangular_field(x_field,y_field,sad = 1000):
+def define_pos_mlc_jaws_rectangular_field(x_field, y_field, sad=1000):
     mm = g4_units.mm
     center_mlc = 349.3 * mm
     center_jaws = 470.5 * mm
@@ -949,23 +978,30 @@ def define_pos_mlc_jaws_rectangular_field(x_field,y_field,sad = 1000):
     center_curve_jaws = center_jaws - (jaws_height / 2 - 35 * mm)
 
     jaws_y_aperture = y_field / 2 * center_curve_jaws / sad
-    mlc_x_aperture = x_field/ 2 * center_curve_mlc / sad
+    mlc_x_aperture = x_field / 2 * center_curve_mlc / sad
     mlc_y_aperture = y_field * center_mlc / sad
     nb_of_leaf_open = int(mlc_y_aperture / leaf_width) + 1
     if nb_of_leaf_open % 2 == 1:
         nb_of_leaf_open += 1
 
     pos_x_leaves = np.zeros(160)
-    pos_x_leaves [0:80] -= 0.0 * mm
-    pos_x_leaves [80:160] += 0.0 * mm
-    pos_x_leaves [39 - int(nb_of_leaf_open / 2) + 1: 39 + int(nb_of_leaf_open / 2) + 1] = - mlc_x_aperture
-    pos_x_leaves [119 - int(nb_of_leaf_open / 2) + 1: 119 + int(nb_of_leaf_open / 2) + 1] = mlc_x_aperture
-    pos_x_leaves = np.array(10 * pos_x_leaves , dtype=int) / 10
-    pos_y_jaws = np.array([- int(10 * jaws_y_aperture) / 10, int(10 * jaws_y_aperture) / 10])
-    return pos_x_leaves,pos_y_jaws
+    pos_x_leaves[0:80] -= 0.0 * mm
+    pos_x_leaves[80:160] += 0.0 * mm
+    pos_x_leaves[
+        39 - int(nb_of_leaf_open / 2) + 1 : 39 + int(nb_of_leaf_open / 2) + 1
+    ] = -mlc_x_aperture
+    pos_x_leaves[
+        119 - int(nb_of_leaf_open / 2) + 1 : 119 + int(nb_of_leaf_open / 2) + 1
+    ] = mlc_x_aperture
+    pos_x_leaves = np.array(10 * pos_x_leaves, dtype=int) / 10
+    pos_y_jaws = np.array(
+        [-int(10 * jaws_y_aperture) / 10, int(10 * jaws_y_aperture) / 10]
+    )
+    return pos_x_leaves, pos_y_jaws
 
-def field(sim,mlc,jaws,pos_x_leaves, pos_y_jaws):
-    for i,mlc_leaf in enumerate(mlc):
+
+def field(sim, mlc, jaws, pos_x_leaves, pos_y_jaws):
+    for i, mlc_leaf in enumerate(mlc):
         mother_leaf_name = mlc_leaf["mother_name"]
         leaf_index = mlc_leaf["leaf_index"]
         leaf = sim.volume_manager.get_volume(mother_leaf_name)
@@ -974,9 +1010,13 @@ def field(sim,mlc,jaws,pos_x_leaves, pos_y_jaws):
     for i, jaw in enumerate(jaws):
         jaw.translation[1] += pos_y_jaws[i]
 
-def rectangular_field(sim,mlc,jaws,x_field,y_field,sad = 1000):
-    pos_x_leaves,pos_y_jaws = define_pos_mlc_jaws_rectangular_field(x_field,y_field,sad)
-    field(sim,mlc,jaws,pos_x_leaves,pos_y_jaws)
+
+def rectangular_field(sim, mlc, jaws, x_field, y_field, sad=1000):
+    pos_x_leaves, pos_y_jaws = define_pos_mlc_jaws_rectangular_field(
+        x_field, y_field, sad
+    )
+    field(sim, mlc, jaws, pos_x_leaves, pos_y_jaws)
+
 
 
 
@@ -990,12 +1030,10 @@ def linac_rotation(sim,linac_name,angle,cp_id ='all_cp'):
         nb_cp_id = len(angle)
         cp_id = np.arange(0,nb_cp_id,1)
     translation_linac = linac.translation
-
     for n in cp_id:
         rot = Rotation.from_euler("y", angle[n], degrees=True)
         t = gate.geometry.utility.get_translation_from_rotation_with_center(
-            rot, [0, 0, - translation_linac[2]]
-        )
+            rot, [0, 0, - translation_linac[2]])
         rot = rot.as_matrix()
         motion_LINAC.rotations.append(rot)
         motion_LINAC.translations.append(np.array(t) + translation_linac)
@@ -1014,9 +1052,9 @@ def jaw_translation(sim,linac_name, jaw,jaw_positions, side,cp_id = 'all_cp', sa
     center_curve_jaw = center_jaw - (jaw_height / 2 - 35 * mm)
     fact_iso = center_curve_jaw / sad
     rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
-    if cp_id == 'all_cp':
+    if cp_id == "all_cp":
         nb_cp_id = len(jaw_positions)
-        cp_id = np.arange(0,nb_cp_id,1)
+        cp_id = np.arange(0, nb_cp_id, 1)
     for n in cp_id:
         if side == "left":
             jaw_translation = np.array(
@@ -1038,6 +1076,7 @@ def jaw_translation(sim,linac_name, jaw,jaw_positions, side,cp_id = 'all_cp', sa
             motion_jaw.rotations.append(rot_jaw)
         motion_jaw.translations.append(jaw_translation)
 
+
 def mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id = 'all_cp', sad=1000):
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
@@ -1058,9 +1097,9 @@ def mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id = 'all_cp'
         motion_leaves_r.append(motion_leaves[i].rotations)
 
     translation_mlc = []
-    if cp_id == 'all_cp':
+    if cp_id == "all_cp":
         nb_cp_id = len(leaves_position)
-        cp_id = np.arange(0,nb_cp_id,1)
+        cp_id = np.arange(0, nb_cp_id, 1)
     for n in cp_id:
         for i in range(len(mlc)):
             translation_mlc.append(np.copy(mlc[i]["translation"]))
@@ -1076,6 +1115,7 @@ def mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id = 'all_cp'
             )
             motion_leaves_r[i].append(np.identity(3))
 
+
 def linac_head_motion(sim,linac_name,jaws,mlc,rt_plan_parameters,cp_id = 'all_cp',sad=1000):
     leaves_position = rt_plan_parameters["leaves"]
     jaw_1_positions = rt_plan_parameters["jaws 1"]
@@ -1088,24 +1128,17 @@ def linac_head_motion(sim,linac_name,jaws,mlc,rt_plan_parameters,cp_id = 'all_cp
 
 
 
-
-def adapt_nb_particles_per_run(sim,rt_plan_parameters,cp_id='all_cp'):
+def adapt_nb_particles_per_run(sim, rt_plan_parameters, cp_id="all_cp"):
     MU = rt_plan_parameters["weight"]
     sec = gate.g4_units.s
     sim.run_timing_intervals = []
-    if cp_id == 'all_cp':
+    if cp_id == "all_cp":
         nb_cp_id = len(MU)
-        cp_id = np.arange(0,nb_cp_id,1)
+        cp_id = np.arange(0, nb_cp_id, 1)
     for i in cp_id:
         if i == 0:
             sim.run_timing_intervals.append([0, MU[0] * sec])
         else:
-            sim.run_timing_intervals.append([np.sum(MU[:i]) * sec, np.sum(MU[:i + 1]) * sec])
-
-
-
-
-
-
-
-
+            sim.run_timing_intervals.append(
+                [np.sum(MU[:i]) * sec, np.sum(MU[: i + 1]) * sec]
+            )

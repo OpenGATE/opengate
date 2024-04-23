@@ -65,7 +65,7 @@ if __name__ == "__main__":
     stats = sim.output.get_actor(s.name)
     print(stats)
 
-    #compare root
+    # compare root
     br = "versa_phsp_plane_phsp"
     root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]

@@ -29,7 +29,7 @@ def create_material(simulation, name):
     )
 
 
-def add_linac(sim, name="linac",sad=1000):
+def add_linac(sim, name="linac", sad=1000):
     # unit
     m = g4_units.m
     mm = g4_units.mm

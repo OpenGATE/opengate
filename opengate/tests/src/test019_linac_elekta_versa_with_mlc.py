@@ -11,36 +11,39 @@ import numpy as np
 import uproot
 
 
-def generalised_normal(x,A,mu,alpha,beta):
-    return A*np.exp(-(abs(x-mu)/alpha)**beta)
+def generalised_normal(x, A, mu, alpha, beta):
+    return A * np.exp(-((abs(x - mu) / alpha) ** beta))
 
-def extract_generalised_normal_fwhm(x,y):
+
+def extract_generalised_normal_fwhm(x, y):
     max_y = np.max(y)
     val_90p_y = np.where(y < (0.9 * max_y))[0]
-    diff_val_90p_y= np.diff(val_90p_y)
+    diff_val_90p_y = np.diff(val_90p_y)
     idx_cut_left = val_90p_y[1:][np.argmax(diff_val_90p_y) - 1]
     idx_cut_right = val_90p_y[1:][np.argmax(diff_val_90p_y)]
-    fwhm = np.interp(0.5 * max_y, y[idx_cut_right:][::-1],
-                           x[idx_cut_right:][::-1]) - np.interp(0.5 * max_y, y[0:idx_cut_left],
-                                                                     x[0:idx_cut_left])
+    fwhm = np.interp(
+        0.5 * max_y, y[idx_cut_right:][::-1], x[idx_cut_right:][::-1]
+    ) - np.interp(0.5 * max_y, y[0:idx_cut_left], x[0:idx_cut_left])
     return fwhm
 
 
-def is_ok_test019(rootfile,x_field,y_field, tol = 0.15):
-    x = rootfile["PrePosition_X"][rootfile["ParticleName"]=="alpha"]
-    y = rootfile["PrePosition_Y"][rootfile["ParticleName"]=="alpha"]
+def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
+    x = rootfile["PrePosition_X"][rootfile["ParticleName"] == "alpha"]
+    y = rootfile["PrePosition_Y"][rootfile["ParticleName"] == "alpha"]
 
-    hist_x_pos  = np.histogram(x, bins = 100, density = 1)
+    hist_x_pos = np.histogram(x, bins=100, density=1)
     x_hist_x_pos = hist_x_pos[1][:-1] + 0.5 * (hist_x_pos[1][1] - hist_x_pos[1][0])
-    median_hist_x_pos = np.median(hist_x_pos[0][hist_x_pos[0] >0])
+    median_hist_x_pos = np.median(hist_x_pos[0][hist_x_pos[0] > 0])
     y_hist_x_pos = hist_x_pos[0]
-    p0_x_pos = [median_hist_x_pos,0,x_field/2,200]
+    p0_x_pos = [median_hist_x_pos, 0, x_field / 2, 200]
 
     x_hist_x_pos = np.asarray(x_hist_x_pos)
     y_hist_x_pos = np.asarray(y_hist_x_pos)
-    popt_x_pos, pcov_x_pos = scipy.optimize.curve_fit(generalised_normal, x_hist_x_pos,y_hist_x_pos,p0 = p0_x_pos)
+    popt_x_pos, pcov_x_pos = scipy.optimize.curve_fit(
+        generalised_normal, x_hist_x_pos, y_hist_x_pos, p0=p0_x_pos
+    )
 
-    hist_y_pos =  np.histogram(y, bins = 100, density = 1)
+    hist_y_pos = np.histogram(y, bins=100, density=1)
     x_hist_y_pos = hist_y_pos[1][:-1] + 0.5 * (hist_y_pos[1][1] - hist_y_pos[1][0])
     median_hist_y_pos = np.median(hist_y_pos[0][hist_y_pos[0] > 0])
     y_hist_y_pos = hist_y_pos[0]
@@ -48,22 +51,24 @@ def is_ok_test019(rootfile,x_field,y_field, tol = 0.15):
     x_hist_y_pos = np.asarray(x_hist_y_pos)
     y_hist_y_pos = np.asarray(y_hist_y_pos)
     p0_y_pos = [median_hist_y_pos, 0, y_field / 2, 200]
-    popt_y_pos, pcov_y_pos = scipy.optimize.curve_fit(generalised_normal, x_hist_y_pos, y_hist_y_pos, p0=p0_y_pos)
+    popt_y_pos, pcov_y_pos = scipy.optimize.curve_fit(
+        generalised_normal, x_hist_y_pos, y_hist_y_pos, p0=p0_y_pos
+    )
 
-    x_plot = np.linspace(-250,250,1000)
-    y_plot_x_pos = generalised_normal(x_plot,*popt_x_pos)
+    x_plot = np.linspace(-250, 250, 1000)
+    y_plot_x_pos = generalised_normal(x_plot, *popt_x_pos)
     y_plot_y_pos = generalised_normal(x_plot, *popt_y_pos)
 
-    fwhm_x_pos = extract_generalised_normal_fwhm(x_plot,y_plot_x_pos)
-    fwhm_y_pos = extract_generalised_normal_fwhm(x_plot,y_plot_y_pos)
+    fwhm_x_pos = extract_generalised_normal_fwhm(x_plot, y_plot_x_pos)
+    fwhm_y_pos = extract_generalised_normal_fwhm(x_plot, y_plot_y_pos)
 
-    bool_x_pos = (fwhm_x_pos > x_field *(1- tol)) & (fwhm_x_pos < x_field *(1 + tol))
-    bool_y_pos = (fwhm_y_pos > y_field*(1 - tol)) & (fwhm_y_pos < y_field*(1 + tol))
+    bool_x_pos = (fwhm_x_pos > x_field * (1 - tol)) & (fwhm_x_pos < x_field * (1 + tol))
+    bool_y_pos = (fwhm_y_pos > y_field * (1 - tol)) & (fwhm_y_pos < y_field * (1 + tol))
 
-    print('field dimension on the x-axis position :',x_field,'mm')
-    print('FWHM measured for the x-axis beam :', fwhm_x_pos,'mm')
-    print('field dimension on the y-axis position :', y_field,'mm')
-    print('FWHM measured for the y-axis beam :', fwhm_y_pos,'mm')
+    print("field dimension on the x-axis position :", x_field, "mm")
+    print("FWHM measured for the x-axis beam :", fwhm_x_pos, "mm")
+    print("field dimension on the y-axis position :", y_field, "mm")
+    print("FWHM measured for the y-axis beam :", fwhm_y_pos, "mm")
     return bool_x_pos and bool_y_pos
 
 
@@ -104,25 +109,24 @@ if __name__ == "__main__":
     file = contrib_paths / "elekta_versa_materials.db"
     sim.volume_manager.add_material_database(str(file))
 
-
     linac = sim.add_volume("Box", "linac_box")
     linac.material = "G4_Galactic"
     linac.size = [1 * m, 1 * m, 0.52 * m]
-    sad = 1000*mm
+    sad = 1000 * mm
     linac.translation = np.array([0, 0, sad - linac.size[2] / 2])
     sad = 1000 * mm
     linac.color = [1, 1, 1, 0.8]
-    if sim.visu :
+    if sim.visu:
         jaws = versa.add_jaws_visu(sim, "linac_box")
-    else :
+    else:
         jaws = versa.add_jaws(sim, "linac_box")
 
     mlc = versa.add_mlc(sim, "linac_box")
-    x_field = np.random.randint(10,20,1)[0]*cm
-    y_field = np.random.randint(10,20,1)[0]*cm
-    versa.rectangular_field(sim,mlc,jaws,x_field,y_field,sad)
+    x_field = np.random.randint(10, 20, 1)[0] * cm
+    y_field = np.random.randint(10, 20, 1)[0] * cm
+    versa.rectangular_field(sim, mlc, jaws, x_field, y_field, sad)
 
-    #add alpha source :
+    # add alpha source :
 
     source = sim.add_source("GenericSource", f"alpha_source")
     source.particle = "alpha"
@@ -147,7 +151,7 @@ if __name__ == "__main__":
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
-    #add phase space
+    # add phase space
 
     mm = g4_units.mm
     m = g4_units.m
@@ -155,7 +159,7 @@ if __name__ == "__main__":
     plane = sim.add_volume("Box", "phsp_plane")
     plane.mother = world
     plane.material = "G4_Galactic"
-    plane.size = [0.5*m,0.5*m,1*nm]
+    plane.size = [0.5 * m, 0.5 * m, 1 * nm]
     plane.color = [1, 0, 0, 1]  # red
 
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
@@ -170,8 +174,7 @@ if __name__ == "__main__":
         "PDGCode",
         "ParticleName",
     ]
-    phsp.output =paths.output / "phsp_versa_mlc.root"
-
+    phsp.output = paths.output / "phsp_versa_mlc.root"
 
     # start simulation
     sim.run()
@@ -185,6 +188,5 @@ if __name__ == "__main__":
     f_phsp = uproot.open(paths.output / "phsp_versa_mlc.root")
     arr = f_phsp["phsp"].arrays()
 
-
-    is_ok = is_ok_test019(arr,x_field,y_field)
+    is_ok = is_ok_test019(arr, x_field, y_field)
     utility.test_ok(is_ok)
