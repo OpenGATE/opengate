@@ -1038,6 +1038,26 @@ def linac_rotation(sim,linac_name,angle,cp_id ='all_cp'):
         motion_LINAC.rotations.append(rot)
         motion_LINAC.translations.append(np.array(t) + translation_linac)
 
+
+
+def translation_from_sad(sim, linac_name,translation, sad = 1000):
+    linac = sim.volume_manager.get_volume(linac_name)
+    linac.translation = np.array(translation)
+    linac.translation[2] +=  sad - linac.size[2]/2
+
+def rotation_around_user_point(sim, linac_name,str_axes,angle_list,point_coordinate = [0,0,0]):
+    point_coordinate = np.array(point_coordinate)
+    linac  = sim.volume_manager.get_volume(linac_name)
+    translation = linac.translation
+    rot = Rotation.from_euler(str_axes, angle_list, degrees=True)
+    new_translation = gate.geometry.utility.get_translation_from_rotation_with_center(
+        rot, point_coordinate - np.array(translation))
+    linac.translation = translation + new_translation
+    linac.rotation = rot.as_matrix()
+
+
+
+
 def jaw_translation(sim,linac_name, jaw,jaw_positions, side,cp_id = 'all_cp', sad=1000):
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]

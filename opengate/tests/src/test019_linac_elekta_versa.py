@@ -21,7 +21,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.output_dir = paths.output  # FIXME (not yet)
-    sim.random_seed = 12345678
+    sim.random_seed = 123456789
     sim.check_volumes_overlap = True
 
     # units
@@ -30,17 +30,18 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [2 * m, 2 * m, 3 * m]
+    world.size = [4 * m, 4 * m, 4 * m]
     world.material = "G4_AIR"
 
     # add a linac
     linac = versa.add_linac(sim, "versa")
-    linac.translation += np.array([50 * mm, 19 * mm, 17 * mm])
-    linac.rotation = Rotation.from_euler("ZY", [38, 29], degrees=True).as_matrix()
+    translation = [50*mm,12*mm,29*mm]
+    versa.translation_from_sad(sim, linac.name,translation, sad = 1000)
+    versa.rotation_around_user_point(sim, linac.name,"ZY",[38,28],[224*mm,-47*mm,456*mm])
 
     # add linac e- source
     source = versa.add_electron_source(sim, linac.name, linac.rotation)
-    source.n = 5e4 / sim.number_of_threads
+    source.n = 8e4 / sim.number_of_threads
     if sim.visu:
         source.n = 200
 
