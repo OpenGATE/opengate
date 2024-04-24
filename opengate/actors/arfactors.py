@@ -42,6 +42,20 @@ def import_garf():
     return garf
 
 
+def check_channel_overlap(ch1, ch2):
+    ch1 = Box(ch1)
+    ch2 = Box(ch2)
+    if ch2.min < ch1.min < ch2.max:
+        return True
+    if ch2.min < ch1.max < ch2.max:
+        return True
+    if ch1.min < ch2.min < ch1.max:
+        return True
+    if ch1.min < ch2.max < ch1.max:
+        return True
+    return False
+
+
 class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
     """
     The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
@@ -76,6 +90,17 @@ class ARFTrainingDatasetActor(g4.GateARFTrainingDatasetActor, ActorBase):
                 f"In the actor '{self.user_info.name}', the parameter 'energy_windows_actor' is {ewa.type_name}"
                 f" while it must be a DigitizerEnergyWindowsActor"
             )
+        # check overlap in channels
+        channels = ewa.channels
+        for i, ch1 in enumerate(channels):
+            for j, ch2 in enumerate(channels[i + 1 :]):
+                is_overlap = check_channel_overlap(ch1, ch2)
+                if is_overlap:
+                    fatal(
+                        f'In the actor "{self.user_info.name}", the energy channels '
+                        f"{i} and {i + 1 + j} overlap. This is not possible for ARF. \n"
+                        f"{ch1} {ch2}"
+                    )
 
     def __str__(self):
         s = f"ARFTrainingDatasetActor {self.user_info.name}"
