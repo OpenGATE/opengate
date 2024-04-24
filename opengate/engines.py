@@ -531,9 +531,8 @@ class ActorEngine(EngineBase):
     def close(self):
         if self.verbose_close:
             warning(f"Closing ActorEngine")
-        for actor in self.actors.values():
+        for actor in self.actor_manager.actors.values():
             actor.close()
-        self.actors = {}
         super().close()
 
     def get_actor(self, name):
