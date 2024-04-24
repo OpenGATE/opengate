@@ -307,6 +307,11 @@ class ActorManager(GateObject):
         s += self.dump_actors()
         return s
 
+    @property
+    def sorted_actors(self):
+        # consider the priority value of the actors
+        return sorted(self.actors.values(), key=lambda a: a.priority)
+
     def reset(self):
         self.__init__(simulation=self.simulation)
 

@@ -533,9 +533,8 @@ class ActorEngine(EngineBase):
         self.actors = {}
 
     @property
-    def sorted_actors(self):
-        # consider the priority value of the actors
-        return sorted(self.actors.values(), key=lambda d: d.priority)
+    def actor_manager(self):
+        return self.simulation_engine.simulation.actor_manager
 
     def close(self):
         if self.verbose_close:
@@ -575,7 +574,7 @@ class ActorEngine(EngineBase):
     #         actor.fFilters = actor.filters_list
 
     def initialize(self, volume_engine=None):
-        for actor in self.sorted_actors:
+        for actor in self.actor_manager.sorted_actors:
             log.debug(f"Actor: initialize [{actor.actor_type}] {actor.name}")
             self.simulation_engine.action_engine.register_all_actions(actor)
             actor.initialize()
@@ -583,7 +582,7 @@ class ActorEngine(EngineBase):
             # called by ConstructSDandField
 
     def register_sensitive_detectors(self, world_name):
-        for actor in self.sorted_actors:
+        for actor in self.actor_manager.sorted_actors:
             if "SteppingAction" not in actor.fActions:
                 continue
 
@@ -606,12 +605,12 @@ class ActorEngine(EngineBase):
 
     def start_simulation(self):
         # consider the priority value of the actors
-        for actor in self.sorted_actors:
+        for actor in self.actor_manager.sorted_actors:
             actor.StartSimulationAction()
 
     def stop_simulation(self):
         # consider the priority value of the actors
-        for actor in self.sorted_actors:
+        for actor in self.actor_manager.sorted_actors:
             actor.EndSimulationAction()
 
 
