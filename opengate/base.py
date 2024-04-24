@@ -51,8 +51,10 @@ def process_cls(cls):
     in a dictionary inside the metaclass which handles the class creation.
     Example: type(cls) yields the metaclass MetaUserInfo for the class GateObject.
     """
-    # if cls not in type(cls)._created_classes:
-    if not hasattr(cls, "inherited_user_info_defaults"):
+    # check if the class already has an attribute inherited_user_info_defaults
+    # cannot use hasattr because it would find the attribute from already processed super classes
+    # -> must use __dict__ which contains only attribute of the specific cls object
+    if "inherited_user_info_defaults" not in cls.__dict__:
         try:
             # type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
             digest_user_info_defaults(cls)
@@ -287,7 +289,9 @@ class GateObject:
         for k, v in self.inherited_user_info_defaults.items():
             default_value = v[0]
             options = v[1]
+            print(f"current inherited user info: {k}")
             if k in kwargs:
+                print("    ... is in kwargs")
                 # if "check_func" in options.keys():
                 #     user_info_value = options["check_func"](kwargs[k])
                 # else:
@@ -298,11 +302,21 @@ class GateObject:
                 self.user_info[k] = user_info_value
                 kwargs.pop(k)
             else:
+                print("    ... is NOT in kwargs")
                 if "required" in options.keys() and options["required"] is True:
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
-        super(GateObject, self).__init__()
+        mro = type(self).__mro__
+        parent = mro[mro.index(__class__) + 1]
+        print(f"next class in line is: {parent}")
+        print(f"args at this point: {args}")
+        print(f"kwargs at this point: {kwargs}")
+        if type(parent).__name__ != "pybind11_type":
+            print("next class is NOT a pybind class ... ")
+            super().__init__(*args, **kwargs)
+        else:
+            print("next class IS a pybind class -> do not call parent class")
 
     def __str__(self):
         ret_string = (
