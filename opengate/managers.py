@@ -359,7 +359,7 @@ class ActorManager(GateObject):
         return s
 
     def dump_actor_types(self):
-        return "\n".join([list(self.actor_types.keys())])
+        return "\n".join(list(self.actor_types.keys()))
 
     def get_actor_user_info(self, name):
         actor = self.get_actor(name)
