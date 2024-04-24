@@ -535,14 +535,6 @@ class ActorEngine(EngineBase):
             actor.close()
         super().close()
 
-    def get_actor(self, name):
-        if name not in self.actors:
-            fatal(
-                f"The actor {name} is not in the current "
-                f"list of actors: {self.actors}"
-            )
-        return self.actors[name]
-
     # FIXME: will be obsolete after refactoring
     # def create_actors(self):
     #     for (
