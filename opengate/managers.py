@@ -154,21 +154,19 @@ class FilterManager:
         return s
 
     def get_filter(self, name):
-        if name not in self.filters:
+        try:
+            return self.filters[name]
+        except KeyError:
             fatal(
                 f"The Filter {name} is not in the current "
                 f"list of Filters: {self.filters}"
             )
-        return self.filters[name]
-
-    def filter_exists(self, f):
-        return f in self.filters
 
     def add_filter(self, filt, name=None):
         if isinstance(filt, str):
             if name is None:
                 fatal("You must provide a name for the filter.")
-            new_filter = self.actor_manager.create_filter(filt, name)
+            new_filter = self.create_filter(filt, name)
         elif isinstance(filt, FilterBase):
             new_filter = filt
         else:
@@ -178,6 +176,8 @@ class FilterManager:
         if new_filter.name in self.filters:
             fatal(f"A filter with the name {new_filter.name} already exists.")
         self.filters[new_filter.name] = new_filter
+        if new_filter is not filt:
+            return new_filter
 
     def create_filter(self, filter_type, name):
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)

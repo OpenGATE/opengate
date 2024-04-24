@@ -602,12 +602,16 @@ class FilterEngine(EngineBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    @property
+    def filter_manager(self):
+        return self.simulation_engine.simulation.filter_manager
+
     def initialize(self):
-        for f in self.simulation_engine.simulation.filter_manager.filters.values():
-            f.Initialize()
+        for f in self.filter_manager.filters.values():
+            f.initialize()
 
     def close(self):
-        for f in self.simulation_engine.simulation.filter_manager.filters.values():
+        for f in self.filter_manager.filters.values():
             f.close()
         super().close()
 
