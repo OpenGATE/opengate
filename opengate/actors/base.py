@@ -93,7 +93,7 @@ class ActorBase(GateObject):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        GateObject.__init__(self, *args, **kwargs)
 
         self.actor_engine = (
             None  # this is set by the actor engine during initialization
@@ -139,7 +139,8 @@ class ActorBase(GateObject):
         # self.RegisterCallBack(
         #     "get_output_path_for_item_string", self.get_output_path_for_item_string
         # )
-        pass
+        for v in self.user_output.values():
+            v.initialize()
 
     def _add_user_output(self, actor_output_class, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
@@ -148,7 +149,6 @@ class ActorBase(GateObject):
             name=name,
             simulation=self.simulation,
             belongs_to=self,
-            actor_user_input=copy.deepcopy(self.user_info),
             **kwargs,
         )
 
