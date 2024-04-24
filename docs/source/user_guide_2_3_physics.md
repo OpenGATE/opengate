@@ -319,7 +319,7 @@ Surface names of available LUTs -
 | POLISHED  | Polished_LUT      | PolishedTeflon_LUT| PolishedESR_LUT   | PolishedESRGrease_LUT   |
 | ROUGH     | Rough_LUT         | RoughTeflon_LUT   | RoughESR_LUT      | RoughESRGrease_LUT      |
 
-The user can extend the list of finishes with custom measured surface data. In GATE V8.0, this can be achieved by contacting the developers of the LUT Davis model. In future releases, a tool to calculate LUTs will be provided in form of a graphical user interface. In the LUT database, typical roughness parameters obtained from the measurements are provided to characterize the type of surface modelled:
+The user can extend the list of finishes with custom measured surface data. In GATE, this can be achieved by utilising [this](https://github.com/LUTDavisModel/Standalone-Application-Installers-User-Guide) tool to calculate LUTs. In the LUT database, typical roughness parameters obtained from the measurements are provided to characterize the type of surface modelled:
 
 - **ROUGH** Ra=0.48 µm, σ=0.57 µm, Rpv=3.12 µm
 - **POLISHED** Ra=20.8 nm, σ=26.2 nm, Rpv=34.7 nm
