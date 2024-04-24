@@ -62,6 +62,19 @@ from .geometry.volumes import (
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
 from .actors.doseactors import DoseActor, LETActor, FluenceActor
+from .actors.dynamicactors import DynamicGeometryActor
+from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
+from .actors.miscactors import SimulationStatisticsActor, KillActor
+from .actors.digitizers import (
+    DigitizerAdderActor,
+    DigitizerBlurringActor,
+    DigitizerSpatialBlurringActor,
+    DigitizerReadoutActor,
+    DigitizerEfficiencyActor,
+    DigitizerProjectionActor,
+    DigitizerEnergyWindowsActor,
+    DigitizerHitsCollectionActor,
+)
 
 
 particle_names_Gate_to_G4 = {
@@ -70,6 +83,26 @@ particle_names_Gate_to_G4 = {
     "positron": "e+",
     "proton": "proton",
     "neutron": "neutron",
+}
+
+
+actor_types = {
+    "DoseActor": DoseActor,
+    "LETActor": LETActor,
+    "FluenceActor": FluenceActor,
+    "DynamicGeometryActor": DynamicGeometryActor,
+    "ARFActor": ARFActor,
+    "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    "SimulationStatisticsActor": SimulationStatisticsActor,
+    "KillActor": KillActor,
+    "DigitizerAdderActor": DigitizerAdderActor,
+    "DigitizerBlurringActor": DigitizerBlurringActor,
+    "DigitizerSpatialBlurringActor": DigitizerSpatialBlurringActor,
+    "DigitizerReadoutActor": DigitizerReadoutActor,
+    "DigitizerEfficiencyActor": DigitizerEfficiencyActor,
+    "DigitizerProjectionActor": DigitizerProjectionActor,
+    "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
+    "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
 }
 
 
@@ -288,12 +321,6 @@ class ActorManager(GateObject):
     """
     Manage all the actors in the simulation
     """
-
-    actor_types = {
-        "DoseActor": DoseActor,
-        "LETActor": LETActor,
-        "FluenceActor": FluenceActor,
-    }
 
     def __init__(self, simulation, *args, **kwargs):
         kwargs["name"] = "actor_manager"
