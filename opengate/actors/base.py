@@ -112,6 +112,10 @@ class ActorBase(GateObject):
     def attached_to_volume(self):
         return self.simulation.volume_manager.get_volume(self.attached_to)
 
+    @property
+    def is_sensitive_detector(self):
+        return "SteppingAction" in self.fActions
+
     def close(self):
         for uo in self.user_output.values():
             uo.close()
