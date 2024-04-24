@@ -370,7 +370,7 @@ class ActorManager(GateObject):
         except KeyError:
             fatal(
                 f"Cannot find actor {actor_name}. "
-                f"Actors included in this simulation are: {self.actors.keys()}"
+                f"Actors included in this simulation are: {list(self.actors.keys())}"
             )
 
     def dump_actors(self):
@@ -396,7 +396,7 @@ class ActorManager(GateObject):
         if isinstance(actor, str):
             if name is None:
                 fatal("You must provide a name for the actor.")
-            new_actor = self.create_actor(actor, name)
+            new_actor = self._create_actor(actor, name)
         elif isinstance(actor, ActorBase):
             new_actor = actor
         else:
@@ -415,7 +415,7 @@ class ActorManager(GateObject):
         if new_actor is not actor:
             return new_actor
 
-    def create_actor(self, actor_type, name):
+    def _create_actor(self, actor_type, name):
         try:
             cls = actor_types[actor_type]
         except KeyError:
@@ -424,7 +424,7 @@ class ActorManager(GateObject):
                 f"Known types are: \n."
                 f"{self.dump_actor_types()}."
             )
-        return cls(name=name)
+        return cls(name=name, simulation=self.simulation)
 
 
 class PhysicsListManager(GateObject):
@@ -985,7 +985,7 @@ class VolumeManager(GateObject):
         # default world volume
         self.volumes = {}
         self.volumes[__world_name__] = BoxVolume(
-            volume_manager=self,
+            simulation=self.simulation,
             name=__world_name__,
             size=[3 * m, 3 * m, 3 * m],
             material="G4_AIR",
@@ -1107,7 +1107,7 @@ class VolumeManager(GateObject):
                 f"The volume name {new_volume.name} already exists. Existing volume names are: {self.volumes.keys()}"
             )
         self.volumes[new_volume.name] = new_volume
-        self.volumes[new_volume.name].volume_manager = self
+        self.volumes[new_volume.name].simulation = self.simulation
         self._need_tree_update = True
         # return the volume if it has not been passed as input, i.e. it was created here
         if new_volume is not volume:
