@@ -79,8 +79,6 @@ class ActorOutputBase(GateObject):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.output_filename is None:
-            self.output_filename = f"output_{self.name}_from_actor_{self.belongs_to_actor.name}.{self.default_suffix}"
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
@@ -105,6 +103,10 @@ class ActorOutputBase(GateObject):
     @property
     def belongs_to_actor(self):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
+
+    def initialize(self):
+        if self.output_filename is None:
+            self.output_filename = f"output_{self.name}_from_actor_{self.belongs_to_actor.name}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
         if self.write_to_disk is True:
