@@ -308,7 +308,7 @@ class ActorManager(GateObject):
         return s
 
     def reset(self):
-        self.__init__(self.simulation)
+        self.__init__(simulation=self.simulation)
 
     def to_dictionary(self):
         d = super().to_dictionary()
