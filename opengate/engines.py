@@ -96,7 +96,7 @@ class SourceEngine(EngineBase):
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
             warning(f"No source: no particle will be generated")
 
-    def initialize_actors(self, actors):
+    def initialize_actors(self):
         """
         Parameters
         ----------
@@ -104,7 +104,9 @@ class SourceEngine(EngineBase):
             The dictionary ActorEngine.actors which contains key-value pairs
             "actor_name" : "Actor object"
         """
-        self.g4_master_source_manager.SetActors(list(actors.values()))
+        self.g4_master_source_manager.SetActors(
+            list(self.simulation_engine.simulation.actor_manager.actors.values())
+        )
 
     def create_master_source_manager(self):
         # create particles table # FIXME in physics ??
@@ -510,7 +512,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
 def register_sensitive_detector_to_children(actor, lv):
     log.debug(
         f'Actor: "{actor.user_info.name}" '
-        f'(attached to "{actor.user_info.mother}") '
+        f'(attached to "{actor.attached_to}") '
         f'set to volume "{lv.GetName()}"'
     )
     actor.RegisterSD(lv)
@@ -1222,11 +1224,6 @@ class SimulationEngine(GateSingletonFatal):
         # i.e. G4RunManager destructor is called
         self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
-        # set pointers to python classes
-        self.g4_RunManager.SetUserInitialization(self.volume_engine)
-        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
-        self.g4_RunManager.SetUserInitialization(self.action_engine)
-
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
 
@@ -1258,15 +1255,15 @@ class SimulationEngine(GateSingletonFatal):
 
         # action
 
-        # Actors initialization (before the RunManager Initialize)
-        log.info("Simulation: initialize Actors")
-        # self.actor_engine.create_actors()  # calls the actors' constructors
-        self.source_engine.initialize_actors(self.actor_engine.actors)
-
         # Visu
         if self.simulation.visu:
             log.info("Simulation: initialize Visualization")
             self.visu_engine.initialize_visualisation()
+
+        # set pointers to python classes
+        self.g4_RunManager.SetUserInitialization(self.volume_engine)
+        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
+        self.g4_RunManager.SetUserInitialization(self.action_engine)
 
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
@@ -1293,6 +1290,10 @@ class SimulationEngine(GateSingletonFatal):
         # This must come after the G4RunManager initialization
         # because the RM initialization calls ActionEngine.Build()
         # which is required for initialize()
+        # Actors initialization (before the RunManager Initialize)
+        log.info("Simulation: initialize Actors")
+        # self.actor_engine.create_actors()  # calls the actors' constructors
+        self.source_engine.initialize_actors()
         self.actor_engine.initialize()
         self.filter_engine.initialize()
 
@@ -1409,7 +1410,7 @@ class SimulationEngine(GateSingletonFatal):
     def enable_user_event_information(self, actors):
         self.user_event_information_flag = False
         for ac in actors:
-            if "attributes" in ac.__dict__:
+            if "attributes" in ac.user_info:
                 if "ParentParticleName" in ac.attributes:
                     self.user_event_information_flag = True
                     return
