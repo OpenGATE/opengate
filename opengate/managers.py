@@ -295,7 +295,9 @@ class ActorManager(GateObject):
         "FluenceActor": FluenceActor,
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, simulation, *args, **kwargs):
+        kwargs["name"] = "actor_manager"
+        kwargs["simulation"] = simulation
         super().__init__(*args, **kwargs)
         self.user_info_actors = {}
         self.actors = (
@@ -943,9 +945,9 @@ class VolumeManager(GateObject):
         """
         Class that store geometry description.
         """
-        self.simulation = simulation
         # force name to VolumeManager
         kwargs["name"] = "VolumeManager"
+        kwargs["simulation"] = simulation
         super().__init__(*args, **kwargs)
 
         self.volume_tree_root = VolumeTreeRoot(
