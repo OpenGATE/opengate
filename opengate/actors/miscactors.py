@@ -132,7 +132,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 f.write(self.__str__())
 
 
-class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
+class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     """
     Store statistics about a simulation run.
     """
