@@ -566,14 +566,15 @@ class ActorEngine(EngineBase):
 
     def register_sensitive_detectors(self, world_name):
         for actor in self.actor_manager.sorted_actors:
-            if "SteppingAction" in actor.fActions:
+            if actor.is_sensitive_detector:
                 # Step: only enabled if attachTo a given volume.
                 # Propagated to all child and sub-child
                 # tree = volume_manager.volumes_tree
-                mothers = actor.user_info.mother
-                if isinstance(mothers, str):
+                if isinstance(actor.attached_to, str):
                     # make a list with one single element
-                    mothers = [mothers]
+                    mothers = [actor.attached_to]
+                else:
+                    mothers = actor.attached_to
                 # add SD for all mothers
                 for volume_name in mothers:
                     volume = (
