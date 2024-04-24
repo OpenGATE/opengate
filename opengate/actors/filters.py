@@ -23,6 +23,9 @@ class FilterBase(GateObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def initialize(self):
+        self.InitializeUserInput(self.user_info)
+
 
 class ParticleFilter(g4.GateParticleFilter, FilterBase):
     user_info_defaults = {
