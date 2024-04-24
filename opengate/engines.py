@@ -556,7 +556,7 @@ class ActorEngine(EngineBase):
     #         # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
     #         actor.fFilters = actor.filters_list
 
-    def initialize(self, volume_engine=None):
+    def initialize(self):
         for actor in self.actor_manager.sorted_actors:
             log.debug(f"Actor: initialize [{actor.actor_type}] {actor.name}")
             self.simulation_engine.action_engine.register_all_actions(actor)
@@ -566,25 +566,25 @@ class ActorEngine(EngineBase):
 
     def register_sensitive_detectors(self, world_name):
         for actor in self.actor_manager.sorted_actors:
-            if "SteppingAction" not in actor.fActions:
-                continue
-
-            # Step: only enabled if attachTo a given volume.
-            # Propagated to all child and sub-child
-            # tree = volume_manager.volumes_tree
-            mothers = actor.user_info.mother
-            if isinstance(mothers, str):
-                # make a list with one single element
-                mothers = [mothers]
-            # add SD for all mothers
-            for volume_name in mothers:
-                volume = self.simulation_engine.simulation.volume_manager.get_volume(
-                    volume_name
-                )
-                if volume.world_volume.name == world_name:
-                    register_sensitive_detector_to_children(
-                        actor, volume.g4_logical_volume
+            if "SteppingAction" in actor.fActions:
+                # Step: only enabled if attachTo a given volume.
+                # Propagated to all child and sub-child
+                # tree = volume_manager.volumes_tree
+                mothers = actor.user_info.mother
+                if isinstance(mothers, str):
+                    # make a list with one single element
+                    mothers = [mothers]
+                # add SD for all mothers
+                for volume_name in mothers:
+                    volume = (
+                        self.simulation_engine.simulation.volume_manager.get_volume(
+                            volume_name
+                        )
                     )
+                    if volume.world_volume.name == world_name:
+                        register_sensitive_detector_to_children(
+                            actor, volume.g4_logical_volume
+                        )
 
     def start_simulation(self):
         # consider the priority value of the actors
