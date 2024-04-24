@@ -524,14 +524,6 @@ class ActorEngine(EngineBase):
     This object manages all actors G4 objects at runtime
     """
 
-    def __init__(self, *args):
-        super().__init__(*args)
-        # self.actor_manager = simulation.actor_manager
-        # we use a weakref because it is a circular dependence
-        # with custom __del__
-        # FIXME: we should not need this weak ref
-        self.actors = {}
-
     @property
     def actor_manager(self):
         return self.simulation_engine.simulation.actor_manager
