@@ -183,14 +183,6 @@ class VolumeBase(DynamicGateObject, NodeMixin):
     }
 
     def __init__(self, *args, **kwargs):
-        # Volume_manager is not compulsory when creating a volume, e.g. for boolean operations,
-        # but without a volume_manager, the volume is not known to the simulation
-        # and certain functionality is unavailable
-        try:
-            self.volume_manager = kwargs["volume_manager"]
-        except KeyError:
-            self.volume_manager = None
-
         # GateObject base class digests all user info provided as kwargs
         super().__init__(*args, **kwargs)
 
@@ -267,10 +259,17 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             )
 
     # # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
-    # @property
-    # @requires_fatal("volume_manager")
-    # def simulation(self):
-    #     return self.volume_manager.simulation
+    @property
+    def volume_manager(self):
+        # It is not compulsory for a GateObject to belong to a simulation,
+        # and the volume might therefore not have any reference to a volume manager
+        # (e.g. in volumes created for boolean operations),
+        # but without a simulation/volume_manager, the volume is not known to the simulation
+        # and certain functionality is unavailable
+        if self.simulation is not None:
+            return self.simulation.volume_manager
+        else:
+            return None
 
     @property
     def volume_type(self):
