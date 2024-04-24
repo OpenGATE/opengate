@@ -386,7 +386,7 @@ class ActorManager(GateObject):
         return s
 
     def dump_actor_types(self):
-        return "\n".join(list(self.actor_types.keys()))
+        return "\n".join(list(actor_types.keys()))
 
     def get_actor_user_info(self, name):
         actor = self.get_actor(name)
@@ -417,7 +417,7 @@ class ActorManager(GateObject):
 
     def create_actor(self, actor_type, name):
         try:
-            cls = self.actor_types[actor_type]
+            cls = actor_types[actor_type]
         except KeyError:
             fatal(
                 f"Unknown actor type {actor_type}. "
