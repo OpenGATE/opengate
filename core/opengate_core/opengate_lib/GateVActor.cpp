@@ -31,7 +31,7 @@ GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
 GateVActor::~GateVActor() {}
 
 void GateVActor::InitializeUserInput(py::dict &user_info) {
-  fMotherVolumeName = DictGetStr(user_info, "attached_to_volume");
+  fMotherVolumeName = DictGetStr(user_info, "attached_to");
   auto op = DictGetStr(user_info, "filters_boolean_operator");
   if (op == "and")
     fOperatorIsAnd = true;
