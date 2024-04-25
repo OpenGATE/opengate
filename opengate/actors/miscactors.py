@@ -1,18 +1,10 @@
-import uuid
 from box import Box
-from datetime import datetime
-import json
-import uproot
-import numpy as np
-import time
 import platform
 import opengate_core as g4
 from .base import ActorBase
-from ..exception import fatal
-from ..geometry.utility import rot_np_as_g4, vec_np_as_g4, vec_g4_as_np
-from ..utility import g4_units
-from ..userinfo import UserInfo
+from ..utility import g4_units, g4_best_unit_tuple
 from .actoroutput import ActorOutputBase
+from ..serialization import dump_json
 
 
 class ActorOutputStatisticsActor(ActorOutputBase):
@@ -73,26 +65,27 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         self.merged_data.update(data)
 
     def get_processed_output(self):
-        print(
-            f"self.merged_data.start_time: {self.merged_data.start_time}, {type(self.merged_data.start_time)}"
-        )
         d = {}
-        sec = g4_units.s
         d["runs"] = {"value": self.merged_data.run_count, "unit": None}
         d["events"] = {"value": self.merged_data.event_count, "unit": None}
         d["tracks"] = {"value": self.merged_data.track_count, "unit": None}
         d["steps"] = {"value": self.merged_data.step_count, "unit": None}
+        val, unit = g4_best_unit_tuple(self.merged_data.init, "Time")
         d["init"] = {
-            "value": self.merged_data.init / sec,
-            "unit": g4.G4BestUnit(self.merged_data.init, "Time"),
+            "value": val,
+            "unit": unit,
         }
+        val, unit = g4_best_unit_tuple(self.merged_data.duration, "Time")
         d["duration"] = {
-            "value": self.merged_data.duration / sec,
-            "unit": g4.G4BestUnit(self.merged_data.duration, "Time"),
+            "value": val,
+            "unit": unit,
         }
-        d["pps"] = {"value": self.pps, "unit": g4.G4BestUnit(self.pps, "Time")}
-        d["tps"] = {"value": self.tps, "unit": g4.G4BestUnit(self.tps, "Time")}
-        d["sps"] = {"value": self.sps, "unit": g4.G4BestUnit(self.sps, "Time")}
+        val, unit = g4_best_unit_tuple(self.pps, "Time")
+        d["pps"] = {"value": val, "unit": unit}
+        val, unit = g4_best_unit_tuple(self.tps, "Time")
+        d["tps"] = {"value": val, "unit": unit}
+        val, unit = g4_best_unit_tuple(self.sps, "Time")
+        d["sps"] = {"value": val, "unit": unit}
         d["start_time"] = {
             "value": self.merged_data.start_time,
             "unit": None,
@@ -101,13 +94,15 @@ class ActorOutputStatisticsActor(ActorOutputBase):
             "value": self.merged_data.stop_time,
             "unit": None,
         }
+        val, unit = g4_best_unit_tuple(self.merged_data.sim_start_time, "Time")
         d["sim_start_time"] = {
-            "value": self.merged_data.sim_start_time,
-            "unit": g4.G4BestUnit(self.merged_data.sim_start_time, "Time"),
+            "value": val,
+            "unit": unit,
         }
+        val, unit = g4_best_unit_tuple(self.merged_data.sim_stop_time, "Time")
         d["sim_stop_time"] = {
-            "value": self.merged_data.sim_stop_time,
-            "unit": g4.G4BestUnit(self.merged_data.sim_stop_time, "Time"),
+            "value": val,
+            "unit": unit,
         }
         d["threads"] = {"value": self.merged_data.nb_threads, "unit": None}
         d["arch"] = {"value": platform.system(), "unit": None}
@@ -135,7 +130,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         """Override virtual method from base class."""
         with open(self.get_output_path("merged"), "w+") as f:
             if self.encoder == "json":
-                json.dump(self.merged_data, f, indent=4)
+                dump_json(self.get_processed_output(), f, indent=4)
             else:
                 f.write(self.__str__())
 
