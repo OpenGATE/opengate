@@ -152,11 +152,18 @@ print(am.GetAvailableDigiAttributeNames())
 
 Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
 
-| Pre version | Post version | default version         |
+| Pre version | Post version | default version         | 
 |-------------|--------------|-------------------------|
-| PreKineticEnergy | PostKineticEnergy | KineticEnergy (**Pre**) |
+| PreKineticEnergy | PostKineticEnergy | KineticEnergy (**Pre**) |  |
 | PrePosition | PostPosition | Position (**Post**)     |
 | PreDirection | PostDirection | Direction (**Post**)    |
+
+Some main attributes and their equivalents for Gate 9.X for Hits and Singles: 
+| Gate 9.X         | Gate 10         |
+|------------------|-----------------|
+| edep or energy | TotalEnergyDeposit 
+| posX/Y/Z of globalPosX/Y/Z| PostPosition_X/Y/Z   |
+| time | GlobalTime |
 
 
 At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is `None` nothing will be written. Note that, like in Gate, every hit such with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using `DigitizerHitsCollectionActor` are proposed: test025, test028, test035, etc.
