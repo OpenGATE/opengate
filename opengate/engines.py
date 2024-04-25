@@ -878,7 +878,7 @@ class SimulationOutput:
         self.hook_log = []
 
     def store_actors(self, simulation_engine):
-        self.actors = simulation_engine.actor_engine.actors
+        self.actors = simulation_engine.simulation.actor_manager.actors
         for actor in self.actors.values():
             actor.close()
 
@@ -971,9 +971,6 @@ class SimulationEngine(GateSingletonFatal):
         # this is only for info.
         # Process handling is done in Simulation class, not in SimulationEngine!
         self.new_process = new_process
-
-        # init only ?
-        self.init_only = False
 
         # LATER : option to wait the end of completion or not
 
@@ -1096,7 +1093,7 @@ class SimulationEngine(GateSingletonFatal):
             self.user_hook_after_init(self)
 
         # if init only, we stop
-        if self.init_only:
+        if self.simulation.init_only:
             output.store_actors(self)
             output.store_sources(self)
             output.store_hook_log(self)
