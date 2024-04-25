@@ -152,16 +152,16 @@ print(am.GetAvailableDigiAttributeNames())
 
 Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
 
-| Pre version | Post version | default version         | 
+| Pre version | Post version | default version         |
 |-------------|--------------|-------------------------|
 | PreKineticEnergy | PostKineticEnergy | KineticEnergy (**Pre**) |  |
 | PrePosition | PostPosition | Position (**Post**)     |
 | PreDirection | PostDirection | Direction (**Post**)    |
 
-Some main attributes and their equivalents for Gate 9.X for Hits and Singles: 
+Some main attributes and their equivalents for Gate 9.X for Hits and Singles:
 | Gate 9.X         | Gate 10         |
 |------------------|-----------------|
-| edep or energy | TotalEnergyDeposit 
+| edep or energy | TotalEnergyDeposit
 | posX/Y/Z of globalPosX/Y/Z| PostPosition_X/Y/Z   |
 | time | GlobalTime |
 
