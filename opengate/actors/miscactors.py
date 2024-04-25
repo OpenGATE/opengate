@@ -16,6 +16,8 @@ from .actoroutput import ActorOutputBase
 
 
 class ActorOutputStatisticsActor(ActorOutputBase):
+    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
+
     user_info_defaults = {
         "encoder": (
             "json",
@@ -28,6 +30,8 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        self.default_suffix = "json"
 
         # predefine the merged_data
         self.merged_data = Box()
@@ -42,7 +46,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         self.merged_data.sim_stop_time = 0
         self.merged_data.init = 0
         self.merged_data.track_types = {}
-        self.merged_data.nb_thread = 1
+        self.merged_data.nb_threads = 1
 
     @property
     def pps(self):
@@ -69,6 +73,9 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         self.merged_data.update(data)
 
     def get_processed_output(self):
+        print(
+            f"self.merged_data.start_time: {self.merged_data.start_time}, {type(self.merged_data.start_time)}"
+        )
         d = {}
         sec = g4_units.s
         d["runs"] = {"value": self.merged_data.run_count, "unit": None}
@@ -86,21 +93,21 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         d["pps"] = {"value": self.pps, "unit": g4.G4BestUnit(self.pps, "Time")}
         d["tps"] = {"value": self.tps, "unit": g4.G4BestUnit(self.tps, "Time")}
         d["sps"] = {"value": self.sps, "unit": g4.G4BestUnit(self.sps, "Time")}
-        d["start"] = {
-            "value": self.merged_data.start,
-            "unit": g4.G4BestUnit(self.merged_data.start, "Time"),
+        d["start_time"] = {
+            "value": self.merged_data.start_time,
+            "unit": None,
         }
-        d["stop"] = {
-            "value": self.merged_data.stop,
-            "unit": g4.G4BestUnit(self.merged_data.stop, "Time"),
+        d["stop_time"] = {
+            "value": self.merged_data.stop_time,
+            "unit": None,
         }
-        d["sim_start"] = {
-            "value": self.merged_data.sim_start,
-            "unit": g4.G4BestUnit(self.merged_data.sim_start, "Time"),
+        d["sim_start_time"] = {
+            "value": self.merged_data.sim_start_time,
+            "unit": g4.G4BestUnit(self.merged_data.sim_start_time, "Time"),
         }
-        d["sim_stop"] = {
-            "value": self.merged_data.sim_stop,
-            "unit": g4.G4BestUnit(self.merged_data.sim_stop, "Time"),
+        d["sim_stop_time"] = {
+            "value": self.merged_data.sim_stop_time,
+            "unit": g4.G4BestUnit(self.merged_data.sim_stop_time, "Time"),
         }
         d["threads"] = {"value": self.merged_data.nb_threads, "unit": None}
         d["arch"] = {"value": platform.system(), "unit": None}
@@ -110,17 +117,18 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
     def __str__(self):
         s = ""
-        for k, v in self.get_processed_output():
-            if k == "track_types" and len(v["value"]) > 0:
-                s += "track_types\n"
-                for t, n in v["value"].items():
-                    s += f"{' ' * 20}{t}: {n}\n"
+        for k, v in self.get_processed_output().items():
+            if k == "track_types":
+                if len(v["value"]) > 0:
+                    s += "track_types\n"
+                    for t, n in v["value"].items():
+                        s += f"{' ' * 24}{t}: {n}\n"
             else:
                 if v["unit"] is None:
                     unit = ""
                 else:
                     unit = str(v["unit"])
-                s += f"{k}{' ' * (12 - len(k))}{v['value']} {unit}\n"
+                s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
         return s
 
     def write_data(self):
@@ -159,10 +167,13 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def __str__(self):
         s = ActorBase.__str__(self)
-        s += "***********\n"
-        s += "User output\n"
+        s += "\n"
+        s += "User output:\n"
         s += self.user_output["stats"].__str__()
         return s
+
+    def store_output_data(self, output_name, run_index, *data):
+        raise NotImplementedError
 
     def initialize(self):
         ActorBase.initialize(self)
