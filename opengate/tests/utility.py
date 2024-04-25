@@ -39,39 +39,40 @@ def read_stat_file(filename):
     p = os.path.abspath(filename)
     f = open(p, "r")
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
-    a = UserInfo("Actor", "SimulationStatisticsActor", r)
-    stat = SimulationStatisticsActor(a)
+    stat = SimulationStatisticsActor(name=r)
     # stat.counts = Box()
+    counts = Box()
     read_track = False
     for line in f:
         if "NumberOfRun" in line:
-            stat.counts.run_count = int(line[len("# NumberOfRun    =") :])
+            counts.run_count = int(line[len("# NumberOfRun    =") :])
         if "NumberOfEvents" in line:
-            stat.counts.event_count = int(line[len("# NumberOfEvents = ") :])
+            counts.event_count = int(line[len("# NumberOfEvents = ") :])
         if "NumberOfTracks" in line:
-            stat.counts.track_count = int(line[len("# NumberOfTracks =") :])
+            counts.track_count = int(line[len("# NumberOfTracks =") :])
         if "NumberOfSteps" in line:
-            stat.counts.step_count = int(line[len("# NumberOfSteps  =") :])
+            counts.step_count = int(line[len("# NumberOfSteps  =") :])
         sec = g4_units.s
         if "ElapsedTimeWoInit" in line:
-            stat.counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
+            counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
         if read_track:
             w = line.split()
             name = w[1]
             value = w[3]
-            stat.counts.track_types[name] = value
+            counts.track_types[name] = value
         if "Track types:" in line:
             read_track = True
-            stat.user_info.track_types_flag = True
-            stat.counts.track_types = {}
+            stat.track_types_flag = True
+            counts.track_types = {}
         if "Date" in line:
             stat.date = line[len("# Date                       =") :]
         if "Threads" in line:
             a = line[len(f"# Threads                    =") :]
             try:
-                stat.nb_thread = int(a)
+                counts.nb_threads = int(a)
             except:
-                stat.nb_thread = "?"
+                counts.nb_threads = "?"
+    stat.user_output.stats.store_data(counts)
     return stat
 
 
@@ -85,82 +86,86 @@ def print_test(b, s):
     return b
 
 
-def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
-    if stat2.counts.event_count != 0:
-        event_d = stat1.counts.event_count / stat2.counts.event_count * 100 - 100
+def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
+    output1 = stats_actor_1.user_output.stats
+    output2 = stats_actor_2.user_output.stats
+    counts1 = output1.merged_data
+    counts2 = output2.merged_data
+    if counts2.event_count != 0:
+        event_d = counts1.event_count / counts2.event_count * 100 - 100
     else:
         event_d = 100
-    if stat2.counts.track_count != 0:
-        track_d = stat1.counts.track_count / stat2.counts.track_count * 100 - 100
+    if counts2.track_count != 0:
+        track_d = counts1.track_count / counts2.track_count * 100 - 100
     else:
         track_d = 100
-    if stat2.counts.step_count != 0:
-        step_d = stat1.counts.step_count / stat2.counts.step_count * 100 - 100
+    if counts1.step_count != 0:
+        step_d = counts1.step_count / counts2.step_count * 100 - 100
     else:
         step_d = 100
-    if stat2.pps != 0:
-        pps_d = stat1.pps / stat2.pps * 100 - 100
+    if output2.pps != 0:
+        pps_d = output1.pps / output2.pps * 100 - 100
     else:
         pps_d = 100
 
-    if stat2.tps != 0:
-        tps_d = stat1.tps / stat2.tps * 100 - 100
+    if output2.tps != 0:
+        tps_d = output1.tps / output2.tps * 100 - 100
     else:
         tps_d = 100
 
-    if stat2.sps != 0:
-        sps_d = stat1.sps / stat2.sps * 100 - 100
+    if output2.sps != 0:
+        sps_d = output1.sps / output2.sps * 100 - 100
     else:
         sps_d = 100
 
-    b = stat1.counts.run_count == stat2.counts.run_count
+    b = counts1.run_count == counts2.run_count
     is_ok = b and is_ok
-    print_test(b, f"Runs:         {stat1.counts.run_count} {stat2.counts.run_count}")
+    print_test(b, f"Runs:         {counts1.run_count} {counts2.run_count}")
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
     st = f"(tol = {tolerance * 100:.2f} %)"
     print_test(
         b,
-        f"Events:       {stat1.counts.event_count} {stat2.counts.event_count} : {event_d:+.2f} %  {st}",
+        f"Events:       {counts1.event_count} {counts2.event_count} : {event_d:+.2f} %  {st}",
     )
 
     b = abs(track_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Tracks:       {stat1.counts.track_count} {stat2.counts.track_count} : {track_d:+.2f} %  {st}",
+        f"Tracks:       {counts1.track_count} {counts2.track_count} : {track_d:+.2f} %  {st}",
     )
 
     b = abs(step_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Steps:        {stat1.counts.step_count} {stat2.counts.step_count} : {step_d:+.2f} %  {st}",
+        f"Steps:        {counts1.step_count} {counts2.step_count} : {step_d:+.2f} %  {st}",
     )
 
     print_test(
         True,
-        f"PPS:          {stat1.pps:.1f} {stat2.pps:.1f} : "
+        f"PPS:          {output1.pps:.1f} {output2.pps:.1f} : "
         f"{pps_d:+.1f}%    speedup = x{(pps_d + 100) / 100:.1f}",
     )
     print_test(
         True,
-        f"TPS:          {stat1.tps:.1f} {stat2.tps:.1f} : "
+        f"TPS:          {output1.tps:.1f} {output2.tps:.1f} : "
         f"{tps_d:+.1f}%    speedup = x{(tps_d + 100) / 100:.1f}",
     )
     print_test(
         True,
-        f"SPS:          {stat1.sps:.1f} {stat2.sps:.1f} : "
+        f"SPS:          {output1.sps:.1f} {output2.sps:.1f} : "
         f"{sps_d:+.1f}%    speedup = x{(sps_d + 100) / 100:.1f}",
     )
 
     # particles types (Track)
-    if stat1.user_info.track_types_flag and stat2.user_info.track_types_flag:
-        for item in stat1.counts.track_types:
-            v1 = stat1.counts.track_types[item]
-            if item in stat2.counts.track_types:
-                v2 = stat2.counts.track_types[item]
+    if stats_actor_1.track_types_flag and stats_actor_1.track_types_flag:
+        for item in counts1.track_types:
+            v1 = counts1.track_types[item]
+            if item in counts2.track_types:
+                v2 = counts2.track_types[item]
             else:
                 print_test(b, f"Track {item:8}{v1} 0")
                 continue
@@ -168,21 +173,21 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
             # b = abs(v_d) <= tolerance * 100
             # is_ok = b and is_ok
             print_test(b, f"Track {item:8}{v1} {v2} : {v_d:+.1f}%")
-        for item in stat2.counts.track_types:
-            v2 = stat2.counts.track_types[item]
-            if item not in stat1.counts.track_types:
+        for item in counts2.track_types:
+            v2 = counts2.track_types[item]
+            if item not in counts1.track_types:
                 print_test(b, f"Track {item:8}0 {v2}")
 
     # consistency check
-    if stat1.user_info.track_types_flag:
+    if stats_actor_1.track_types_flag:
         n = 0
-        for t in stat1.counts.track_types.values():
+        for t in counts1.track_types.values():
             n += int(t)
-        b = n == stat1.counts.track_count
-        print_test(b, f"Tracks      : {stat1.counts.track_types}")
-        if "track_types" in stat2.counts:
-            print_test(b, f"Tracks (ref): {stat2.counts.track_types}")
-        print_test(b, f"Tracks vs track_types : {stat1.counts.track_count} {n}")
+        b = n == counts1.track_count
+        print_test(b, f"Tracks      : {counts1.track_types}")
+        if "track_types" in counts2:
+            print_test(b, f"Tracks (ref): {counts2.track_types}")
+        print_test(b, f"Tracks vs track_types : {counts1.track_count} {n}")
         is_ok = b and is_ok
 
     return is_ok
