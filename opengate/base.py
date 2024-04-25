@@ -314,7 +314,17 @@ class GateObject:
         print(f"kwargs at this point: {kwargs}")
         if type(parent).__name__ != "pybind11_type":
             print("next class is NOT a pybind class ... ")
-            super().__init__(*args, **kwargs)
+            try:
+                super().__init__(*args, **kwargs)
+            except TypeError as e:
+                raise TypeError(
+                    f"There was a problem "
+                    f"while trying to create the {type(self).__name__} called {self.name}. "
+                    f"Check if you have provided unknown keyword arguments. "
+                    f"The user input parameters of {type(self).__name__} are: "
+                    f"{list(self.inherited_user_info_defaults.keys())}.\n"
+                    f"The original exception message was: {e}."
+                )
         else:
             print("next class IS a pybind class -> do not call parent class")
 
