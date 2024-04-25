@@ -37,13 +37,13 @@ def test_ok(is_ok=False):
 
 def read_stat_file(filename):
     p = os.path.abspath(filename)
-    f = open(p, "r")
+    with open(p, "r") as f:
+        lines = f.readlines()
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
     stat = SimulationStatisticsActor(name=r)
-    # stat.counts = Box()
     counts = Box()
     read_track = False
-    for line in f:
+    for line in lines:
         if "NumberOfRun" in line:
             counts.run_count = int(line[len("# NumberOfRun    =") :])
         if "NumberOfEvents" in line:
