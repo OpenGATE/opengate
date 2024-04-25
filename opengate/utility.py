@@ -78,6 +78,11 @@ def g4_best_unit(value, unit_type):
     return g4.G4BestUnit(value, unit_type)
 
 
+def g4_best_unit_tuple(value, unit_type):
+    bu = g4.G4BestUnit(value, unit_type)
+    return bu.GetValue(), str(bu).split()[-1]
+
+
 def assert_key(key: str, d: Box):
     if key not in d:
         fatal(f'The key "{key}" is needed in this structure:\n' f"{d}")
