@@ -127,7 +127,7 @@ def validation_test_19_rt_plan(
     err_nb_part = np.sqrt(nb_part_theo)
     if (
         (nb_part_sent >= nb_part_theo - 4 * err_nb_part)
-        and (nb_part_theo <= nb_part_theo + 4 * err_nb_part)
+        and (nb_part_sent <= nb_part_theo + 4 * err_nb_part)
         and np.sum(bool_percentage_diff) == 0
     ):
         return True
@@ -192,6 +192,13 @@ if __name__ == "__main__":
     # add alpha source :
     nb_part = 750000
     z_linac = linac.size[2]
+    rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
+    l_cp = [np.random.randint(0, len(rt_plan_parameters['jaws 1']), 1)[0]]
+    versa.linac_head_motion(sim, linac.name, jaws, mlc, rt_plan_parameters, sad=sad, cp_id=l_cp)
+    MU = rt_plan_parameters['weight'][l_cp[0]]
+    nb_part = nb_part / MU
+
+
     if sim.visu:
         add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, 10)
     else:
@@ -199,9 +206,6 @@ if __name__ == "__main__":
 
     ### Linac head rotation and jaws and mlc translation according to a DICOM rt plan
 
-    rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
-    l_cp = [np.random.randint(0,len(rt_plan_parameters['jaws 1']),1)[0]]
-    versa.linac_head_motion(sim,linac.name,jaws,mlc,rt_plan_parameters,sad=sad, cp_id = l_cp)
 
 
     # physics
