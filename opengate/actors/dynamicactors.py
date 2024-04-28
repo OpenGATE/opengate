@@ -8,7 +8,7 @@ from .base import ActorBase
 from ..decorators import requires_fatal
 
 
-class DynamicGeometryActor(g4.GateVActor, ActorBase):
+class DynamicGeometryActor(ActorBase, g4.GateVActor):
 
     type_name = "DynamicGeometryActor"
 
@@ -93,6 +93,7 @@ class GeometryChanger(GateObject):
     }
 
     def __init__(self, *args, volume_manager=None, **kwargs):
+        # FIXME: should not need explicit reference to volume manager
         self.volume_manager = None
         super().__init__(*args, **kwargs)
         # the user might have passed an 'attached_to' keyword argument pointing to a Volume object
