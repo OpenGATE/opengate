@@ -87,8 +87,6 @@ class VoxelDepositActor(ActorBase):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        # attached physical volume (at init)
-        self.g4_phys_vol = None
         # internal states
         self.img_origin_during_run = None
         self.first_run = None
@@ -131,7 +129,7 @@ class VoxelDepositActor(ActorBase):
             self.attached_to_volume, self.repeated_volume_index
         )
 
-        image_props = self.user_output[which_output].get_image_properties()
+        image_props = self.user_output[which_output].get_image_properties(run_index)
 
         # compute origin
         origin = (
@@ -143,7 +141,7 @@ class VoxelDepositActor(ActorBase):
             Rotation.from_matrix(rotation_phys_vol).apply(origin) + translation_phys_vol
         )
         self.user_output[which_output].set_image_properties(
-            origin=origin_after_rotation, rotation=rotation_phys_vol
+            run_index, origin=origin_after_rotation, rotation=rotation_phys_vol
         )
 
     def update_output_origin(self, output_name, run_index):
@@ -353,6 +351,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
         g4.GateDoseActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
+
         if self.ste_of_mean_unbiased or self.ste_of_mean:
             self.ste_of_mean = True
             self.use_more_ram = True
@@ -452,6 +452,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
+        print("DEBUG: BeginOfRunActionMasterThread")
         self.prepare_output_for_run("edep", run_index)
         self.prepare_output_for_run("dose", run_index)
         self.prepare_output_for_run("dose_to_water", run_index)
@@ -459,11 +460,12 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.prepare_output_for_run("uncertainty", run_index)
 
         self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
-        self.push_to_cpp_image("square", run_index, self.cpp_square_image)
+        self.push_to_cpp_image("squared", run_index, self.cpp_square_image)
         # FIXME: how about dose?
 
     def EndOfRunActionMasterThread(self, run_index):
         # edep
+        print("DEBUG: EndOfRunActionMasterThread")
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self.update_output_origin("edep", run_index)
 
@@ -585,6 +587,8 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         ## TODO: why not super? what would happen?
         VoxelDepositActor.__init__(self, *args, **kwargs)
         g4.GateLETActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
+
         # default image (py side)
 
         self._add_user_output(ActorOutputQuotientImage, "let")
@@ -689,6 +693,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self)
         g4.GateFluenceActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
         # self.py_fluence_image = None
         self._add_user_output(ActorOutputSingleImage, "fluence")
