@@ -198,11 +198,8 @@ class DataItemContainer(DataContainer):
     def __init__(self, data_item_classes, *args, data=None, **kwargs):
         self._tuple_length = len(data_item_classes)
         for dic in data_item_classes:
-            if dic not in list(available_data_container_classes.values()):
-                fatal(
-                    f"Illegal data item class {dic}. "
-                    f"Available classes are {list(available_data_container_classes.values())}."
-                )
+            if DataItem not in dic.mro():
+                fatal(f"Illegal data item class {dic}. ")
         self.data_item_classes = data_item_classes
         if data is None:
             self.set_data(*([None] * self._tuple_length))
@@ -380,8 +377,8 @@ class QuotientItkImage(DataItemContainer):
 
 
 available_data_container_classes = {
-    "SingleItkImage": ItkImageDataItem,
-    "QuotientImageDataItem": QuotientItkImage,
-    "SingleItkImageDataItem": ArrayDataItem,
-    "QuotientItkImageDataItem": DoubleArray,
+    "SingleItkImage": SingleItkImage,
+    "QuotientItkImage": QuotientItkImage,
+    "SingleArray": SingleArray,
+    "DoubleArray": DoubleArray,
 }
