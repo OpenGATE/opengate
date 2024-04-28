@@ -371,21 +371,25 @@ class ActorOutputImage(AutoMergeActorOutput):
                     f"Illegal argument 'which'. Provide a valid run index or the term 'merged'."
                 )
 
-    def create_empty_image(self, run_index, *args, **kwargs):
-        self.data_per_run[run_index].create_empty_image(*args, **kwargs)
+    def create_empty_image(self, run_index, **kwargs):
+        if run_index not in self.data_per_run:
+            self.data_per_run[run_index] = self.data_container_class()
+        self.data_per_run[run_index].create_empty_image(
+            self.size, self.spacing, **kwargs
+        )
 
 
 # concrete classes usable in Actors:
 class ActorOutputSingleImage(ActorOutputImage):
 
     def __init__(self, *args, **kwargs):
-        super().__init__("SingleItkImageDataItem", *args, **kwargs)
+        super().__init__("SingleItkImage", *args, **kwargs)
 
 
 class ActorOutputQuotientImage(ActorOutputImage):
 
     def __init__(self, *args, **kwargs):
-        super().__init__("QuotientItkImageDataItem", *args, **kwargs)
+        super().__init__("QuotientItkImage", *args, **kwargs)
 
 
 class ActorOutputRoot(ActorOutputBase):
