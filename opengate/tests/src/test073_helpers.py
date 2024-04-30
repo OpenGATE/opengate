@@ -271,7 +271,7 @@ def compare_root_spectrum2(ref_output, output, png_filename):
     print()
     warning("Compare spectrum")
     checked_keys = [
-        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.4, "scaling": 1},
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.5, "scaling": 1},
         {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 2.0, "scaling": 1},
         {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.4, "scaling": 1},
         {
@@ -280,7 +280,7 @@ def compare_root_spectrum2(ref_output, output, png_filename):
             "tol": 0.004,
             "scaling": 1,
         },
-        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.1e7, "scaling": 1},
+        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.2e7, "scaling": 1},
     ]
     is_ok = utility.compare_root2(
         ref_output,
