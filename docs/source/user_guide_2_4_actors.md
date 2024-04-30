@@ -150,15 +150,15 @@ print(am.GetAvailableDigiAttributeNames())
         TrackVolumeName S
         Weight D
 
-Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
+Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate (9.X).
 
 | Pre version | Post version | default version         |
 |-------------|--------------|-------------------------|
-| PreKineticEnergy | PostKineticEnergy | KineticEnergy (**Pre**) |  |
+| PreKineticEnergy | PostKineticEnergy | KineticEnergy (**Pre**) |
 | PrePosition | PostPosition | Position (**Post**)     |
 | PreDirection | PostDirection | Direction (**Post**)    |
 
-Some main attributes and their equivalents for Gate 9.X for Hits and Singles:
+Attributes correspondence with Gate 9.X for Hits and Singles:
 | Gate 9.X         | Gate 10         |
 |------------------|-----------------|
 | edep or energy | TotalEnergyDeposit
@@ -166,9 +166,9 @@ Some main attributes and their equivalents for Gate 9.X for Hits and Singles:
 | time | GlobalTime |
 
 
-At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is `None` nothing will be written. Note that, like in Gate, every hit such with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using `DigitizerHitsCollectionActor` are proposed: test025, test028, test035, etc.
+At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is `None` nothing will be written. Note that, like in Gate, every hit with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using `DigitizerHitsCollectionActor` are proposed: test025, test028, test035, etc.
 
-The two basics actors used to convert some `hits` to one `digi` are "DigitizerHitsAdderActor" and "DigitizerReadoutActor" described in the next sections and illustrated in the figure:
+The two actors used to convert some `hits` to one `digi` are "DigitizerHitsAdderActor" and "DigitizerReadoutActor" described in the next sections and illustrated in the figure:
 
 ![](figures/digitizer_adder_readout.png)
 
