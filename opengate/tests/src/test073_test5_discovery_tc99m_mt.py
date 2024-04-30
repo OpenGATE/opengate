@@ -13,7 +13,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     # sim.visu = True
     head, stats, source = test073_setup_sim(sim, "discovery", collimator_type="lehr")
-    # sim.random_seed = 123456 # FIXME
+    sim.random_seed = 123456789
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
