@@ -3,10 +3,8 @@
 
 import opengate as gate
 import opengate.contrib.linacs.elektaversa as versa
-import opengate.contrib.linacs.RTPlan as rtplan
 import scipy.optimize
 from opengate.tests import utility
-from opengate.utility import g4_units, get_contrib_path
 import numpy as np
 import uproot
 
@@ -31,7 +29,7 @@ def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
     x = rootfile["PrePosition_X"][rootfile["ParticleName"] == "alpha"]
     y = rootfile["PrePosition_Y"][rootfile["ParticleName"] == "alpha"]
 
-    hist_x_pos = np.histogram(x, bins=100, density=1)
+    hist_x_pos = np.histogram(x, bins=100, density=True)
     x_hist_x_pos = hist_x_pos[1][:-1] + 0.5 * (hist_x_pos[1][1] - hist_x_pos[1][0])
     median_hist_x_pos = np.median(hist_x_pos[0][hist_x_pos[0] > 0])
     y_hist_x_pos = hist_x_pos[0]
@@ -43,7 +41,7 @@ def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
         generalised_normal, x_hist_x_pos, y_hist_x_pos, p0=p0_x_pos
     )
 
-    hist_y_pos = np.histogram(y, bins=100, density=1)
+    hist_y_pos = np.histogram(y, bins=100, density=True)
     x_hist_y_pos = hist_y_pos[1][:-1] + 0.5 * (hist_y_pos[1][1] - hist_y_pos[1][0])
     median_hist_y_pos = np.median(hist_y_pos[0][hist_y_pos[0] > 0])
     y_hist_y_pos = hist_y_pos[0]
@@ -102,32 +100,24 @@ if __name__ == "__main__":
     world.material = "G4_Galactic"
     a = np.array([0])
 
-    # just adding an air box
-
-    # materials
-    contrib_paths = get_contrib_path() / "linacs"
-    file = contrib_paths / "elekta_versa_materials.db"
-    sim.volume_manager.add_material_database(str(file))
-
-    linac = sim.add_volume("Box", "linac_box")
-    linac.material = "G4_Galactic"
-    linac.size = [1 * m, 1 * m, 0.52 * m]
+    # linac (empty)
+    versa.add_linac_materials(sim)
     sad = 1000 * mm
-    linac.translation = np.array([0, 0, sad - linac.size[2] / 2])
-    sad = 1000 * mm
-    linac.color = [1, 1, 1, 0.8]
+    linac = versa.add_empty_linac_box(sim, "linac_box", sad)
+
+    # jaws
     if sim.visu:
-        jaws = versa.add_jaws_visu(sim, "linac_box")
+        jaws = versa.add_jaws_visu(sim, linac.name)
     else:
-        jaws = versa.add_jaws(sim, "linac_box")
+        jaws = versa.add_jaws(sim, linac.name)
 
-    mlc = versa.add_mlc(sim, "linac_box")
+    # mlc
+    mlc = versa.add_mlc(sim, linac.name)
     x_field = np.random.randint(10, 20, 1)[0] * cm
     y_field = np.random.randint(10, 20, 1)[0] * cm
-    versa.rectangular_field(sim, mlc, jaws, x_field, y_field, sad)
+    versa.set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad)
 
-    # add alpha source :
-
+    # add alpha source
     source = sim.add_source("GenericSource", f"alpha_source")
     source.particle = "alpha"
     source.mother = linac.name
@@ -152,10 +142,6 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # add phase space
-
-    mm = g4_units.mm
-    m = g4_units.m
-    nm = g4_units.nm
     plane = sim.add_volume("Box", "phsp_plane")
     plane.mother = world
     plane.material = "G4_Galactic"

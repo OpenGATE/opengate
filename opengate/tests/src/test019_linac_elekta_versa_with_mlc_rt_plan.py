@@ -3,9 +3,9 @@
 
 import opengate as gate
 import opengate.contrib.linacs.elektaversa as versa
-import opengate.contrib.linacs.RTPlan as rtplan
+import opengate.contrib.linacs.dicomrtplan as rtplan
 from opengate.tests import utility
-from opengate.utility import g4_units, get_contrib_path
+from opengate.utility import g4_units
 from scipy.spatial.transform import Rotation
 import numpy as np
 import itk
@@ -167,46 +167,37 @@ if __name__ == "__main__":
     world.material = "G4_Galactic"
     a = np.array([0])
 
-    # just adding an air box
-
-    # materials
-    contrib_paths = get_contrib_path() / "linacs"
-    file = contrib_paths / "elekta_versa_materials.db"
-    sim.volume_manager.add_material_database(str(file))
-
+    # linac
+    versa.add_linac_materials(sim)
     sad = 1000 * mm
-    linac = sim.add_volume("Box", "linac_box")
-    linac.material = "G4_Galactic"
-    linac.size = [1 * m, 1 * m, 0.52 * m]
-    translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
-    linac.translation = translation_linac_box
+    linac = versa.add_empty_linac_box(sim, "linac_box", sad)
 
-    linac.color = [1, 1, 1, 0.8]
+    # jaws
     if sim.visu:
-        jaws = versa.add_jaws_visu(sim, "linac_box")
+        jaws = versa.add_jaws_visu(sim, linac.name)
     else:
-        jaws = versa.add_jaws(sim, "linac_box")
+        jaws = versa.add_jaws(sim, linac.name)
 
-    mlc = versa.add_mlc(sim, "linac_box")
+    # mlc
+    mlc = versa.add_mlc(sim, linac.name)
 
     # add alpha source :
     nb_part = 750000
     z_linac = linac.size[2]
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
-    l_cp = [np.random.randint(0, len(rt_plan_parameters['jaws 1']), 1)[0]]
-    versa.linac_head_motion(sim, linac.name, jaws, mlc, rt_plan_parameters, sad=sad, cp_id=l_cp)
-    MU = rt_plan_parameters['weight'][l_cp[0]]
+    l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
+    versa.set_linac_head_motion(
+        sim, linac.name, jaws, mlc, rt_plan_parameters, sad=sad, cp_id=l_cp
+    )
+    MU = rt_plan_parameters["weight"][l_cp[0]]
     nb_part = nb_part / MU
-
 
     if sim.visu:
         add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, 10)
     else:
         add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, nb_part)
 
-    ### Linac head rotation and jaws and mlc translation according to a DICOM rt plan
-
-
+    # Linac head rotation and jaws and mlc translation according to a DICOM rt plan
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -220,8 +211,9 @@ if __name__ == "__main__":
     add_volume_to_irradiate(sim, world.name)
 
     # start simulation
-    # The number of praticles provided (sim.activity) will be adapted regarding the number of MU delivered at each control points.
-    versa.adapt_nb_particles_per_run(sim, rt_plan_parameters, cp_id=l_cp)
+    # The number of particles provided (sim.activity) will be adapted
+    # according to the number of MU delivered at each control points.
+    versa.set_time_intervals_from_rtplan(sim, rt_plan_parameters, cp_id=l_cp)
     sim.run()
 
     # print results

@@ -3,9 +3,9 @@
 
 import opengate as gate
 import opengate.contrib.linacs.elektaversa as versa
-import opengate.contrib.linacs.RTPlan as rtplan
+import opengate.contrib.linacs.dicomrtplan as rtplan
 from opengate.tests import utility
-from opengate.utility import g4_units, get_contrib_path
+from opengate.utility import g4_units
 import numpy as np
 import uproot
 
@@ -31,6 +31,7 @@ def add_phase_space_isocenter(sim, name, pos):
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
     phsp.mother = isocenter_sphere.name
     phsp.attributes = ["EventID"]
+    return phsp
 
 
 def add_alpha_source(sim, name, pos_Z, nb_part):
@@ -95,21 +96,10 @@ if __name__ == "__main__":
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_Galactic"
 
-    # just adding an air box
-
-    # materials
-    contrib_paths = get_contrib_path() / "linacs"
-    file = contrib_paths / "elekta_versa_materials.db"
-    sim.volume_manager.add_material_database(str(file))
-
+    # materials and empty linac
+    versa.add_linac_materials(sim)
     sad = 1000 * mm
-    linac = sim.add_volume("Box", "linac_box")
-    linac.material = "G4_Galactic"
-    linac.size = [1 * m, 1 * m, 0.52 * m]
-    translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
-    linac.translation = translation_linac_box
-
-    linac.color = [1, 1, 1, 0.8]
+    linac = versa.add_empty_linac_box(sim, "linac_box", sad)
 
     # add alpha source :
     nb_part = np.random.randint(1, 100)
@@ -118,6 +108,7 @@ if __name__ == "__main__":
 
     # Linac head rotation and jaws and mlc translation according to a DICOM rt plan
     cp = np.random.randint(1, 230, 1)[0]
+    print(cp)
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
     versa.rotation_around_user_point(
         sim, linac.name, "x", rt_plan_parameters["gantry angle"][cp]
@@ -127,7 +118,6 @@ if __name__ == "__main__":
     # regardless the offset of the image
     # And the isocenter is given the real center of the image. That's why we have
     # to correct the isocenter of the real image center
-
     center_patient_on_DICOM_img = np.array([11 * mm, -194 * mm, 45 * mm])
     vector_translation_isocenter_to_center = (
         center_patient_on_DICOM_img - rt_plan_parameters["isocenter"][cp]
@@ -144,8 +134,9 @@ if __name__ == "__main__":
 
     # add water slice with a dose actor and a motion actor
     volume = add_volume_to_irradiate(sim, world.name)
-    add_phase_space_isocenter(sim, volume.name, vector_translation_isocenter_to_center)
-    phsp = sim.get_actor_user_info(f"phsp")
+    phsp = add_phase_space_isocenter(
+        sim, volume.name, vector_translation_isocenter_to_center
+    )
     phsp.output = paths.output / "phsp_versa_mlc_RT_plan.root"
 
     translation_volume = volume.translation

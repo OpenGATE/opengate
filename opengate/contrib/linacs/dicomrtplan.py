@@ -1,15 +1,9 @@
-from scipy.spatial.transform import Rotation
-from box import Box
-from opengate.utility import g4_units, get_contrib_path
-from opengate.geometry.utility import get_grid_repetition
-from opengate.geometry.volumes import unite_volumes, intersect_volumes, subtract_volumes
-from opengate.geometry import volumes
+from opengate.utility import g4_units
 import numpy as np
 import pydicom
 
 
 def extract_dataset(file):
-
     jaws_1 = 0
     jaws_2 = 1
     leaves = 2

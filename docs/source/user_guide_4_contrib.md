@@ -68,8 +68,15 @@ Doc TODO :
 - explain reference system of the linac (what is default translation), explain "translation_from_sad" and rotation_around_user_point
 - describe add_electron_source
 - describe add_phase_space_plane and add_phase_space
+- describe add_empty_linac_box
+- describe add_jaws add_mlc set_rectangular_field
 
-
+RT PLAN
+- describe rtplan.read (what is the output data structure)
+- describe rotation_around_user_point
+- describe how to compute vector_translation_isocenter_to_center and phsp position
+- describe set_linac_head_motion
+- describe set_time_intervals_from_rtplan
 
 
 ### SPECT imaging systems

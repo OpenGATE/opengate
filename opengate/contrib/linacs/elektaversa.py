@@ -6,25 +6,14 @@ from opengate.geometry.utility import get_grid_repetition
 from opengate.geometry.volumes import unite_volumes, intersect_volumes, subtract_volumes
 from opengate.geometry import volumes
 import numpy as np
-import pydicom
 
 
 def add_linac(sim, linac_name, sad=1000):
-    # units
-    mm = g4_units.mm
-    m = g4_units.m
-
     # materials
-    contrib_paths = get_contrib_path() / "linacs"
-    file = contrib_paths / "elekta_versa_materials.db"
-    sim.volume_manager.add_material_database(str(file))
+    add_linac_materials(sim)
 
     # linac
-    linac = sim.add_volume("Box", linac_name)
-    linac.material = "G4_AIR"
-    linac.size = [1 * m, 1 * m, 0.52 * m]
-    linac.translation = np.array([0, 0, sad - linac.size[2] / 2])
-    linac.color = [1, 1, 1, 0.8]
+    linac = add_empty_linac_box(sim, linac_name, sad)
 
     # add elements
     add_target(sim, linac.name)
@@ -38,6 +27,25 @@ def add_linac(sim, linac_name, sad=1000):
     kill_around_target(sim, linac.name)
 
     return linac
+
+
+def add_empty_linac_box(sim, linac_name, sad=1000):
+    # units
+    m = g4_units.m
+    mm = g4_units.mm
+    linac = sim.add_volume("Box", linac_name)
+    linac.material = "G4_Galactic"
+    linac.size = [1 * m, 1 * m, 0.52 * m]
+    translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
+    linac.translation = translation_linac_box
+    linac.color = [1, 1, 1, 0.8]
+    return linac
+
+
+def add_linac_materials(sim):
+    contrib_paths = get_contrib_path() / "linacs"
+    file = contrib_paths / "elekta_versa_materials.db"
+    sim.volume_manager.add_material_database(str(file))
 
 
 def add_target(sim, linac_name):
@@ -62,7 +70,7 @@ def add_target(sim, linac_name):
     target_support.rmin = 0
     target_support.rmax = 15 * mm
     target_support.dz = 11 * mm / 2.0
-    target_support.translation = [0, 0, z_linac/2  - target_support.dz - 1*nm]
+    target_support.translation = [0, 0, z_linac / 2 - target_support.dz - 1 * nm]
     target_support.color = [0, 1, 0, 1]
 
     target = sim.add_volume("Tubs", f"{linac_name}_target")
@@ -88,7 +96,7 @@ def add_target(sim, linac_name):
     )
     target_support_bottom.mother = target_support.name
 
-    target_support_bottom.material =target_material
+    target_support_bottom.material = target_material
     target_support_bottom.rmin = 0
     target_support_bottom.rmax = 15 * mm
     target_support_bottom.dz = 10 * mm / 2.0
@@ -111,7 +119,7 @@ def kill_around_target(sim, linac_name):
     target_above.rmin = 0
     target_above.rmax = 15 * mm
     target_above.dz = 0.5 * nm
-    target_above.translation = [0, 0, z_linac/2 - 0.5 * nm]
+    target_above.translation = [0, 0, z_linac / 2 - 0.5 * nm]
     target_above.color = [1, 0, 0, 1]
 
     # around the target
@@ -119,9 +127,9 @@ def kill_around_target(sim, linac_name):
     target_around.mother = linac_name
     target_around.material = "G4_AIR"
     target_around.rmin = 15.1 * mm
-    target_around.rmax = target_around.rmin + 1*nm
+    target_around.rmax = target_around.rmin + 1 * nm
     target_around.dz = 5.5 * mm
-    target_around.translation = [0, 0, z_linac/2 - target_around.dz - 1 * nm]
+    target_around.translation = [0, 0, z_linac / 2 - target_around.dz - 1 * nm]
     target_around.color = [1, 0, 0, 1]
 
     # psycho killer
@@ -324,12 +332,12 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     source.position.type = "disc"
     source.position.sigma_x = 0.468 * mm
     source.position.sigma_y = 0.468 * mm
-    source.position.translation = [0, 0, 0.5*mm - 1 * nm]
+    source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
     source.n = 10
     # consider linac rotation
 
-    #### To be modified ? A change in Linac rotation will normally modify the source direction accordingly
+    # To be modified ? A change in Linac rotation will normally modify the source direction accordingly
     dir = np.dot(rotation_matrix, np.array([0, 0, -1]))
     source.direction.momentum = dir
     return source
@@ -1011,54 +1019,56 @@ def field(sim, mlc, jaws, pos_x_leaves, pos_y_jaws):
         jaw.translation[1] += pos_y_jaws[i]
 
 
-def rectangular_field(sim, mlc, jaws, x_field, y_field, sad=1000):
+def set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad=1000):
     pos_x_leaves, pos_y_jaws = define_pos_mlc_jaws_rectangular_field(
         x_field, y_field, sad
     )
     field(sim, mlc, jaws, pos_x_leaves, pos_y_jaws)
 
 
-
-
-def linac_rotation(sim,linac_name,angle,cp_id ='all_cp'):
+def linac_rotation(sim, linac_name, angle, cp_id="all_cp"):
     linac = sim.volume_manager.get_volume(linac_name)
     motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
     motion_LINAC.rotations = []
     motion_LINAC.translations = []
     motion_LINAC.mother = linac_name
-    if cp_id == 'all_cp':
+    if cp_id == "all_cp":
         nb_cp_id = len(angle)
-        cp_id = np.arange(0,nb_cp_id,1)
+        cp_id = np.arange(0, nb_cp_id, 1)
     translation_linac = linac.translation
     for n in cp_id:
         rot = Rotation.from_euler("y", angle[n], degrees=True)
         t = gate.geometry.utility.get_translation_from_rotation_with_center(
-            rot, [0, 0, - translation_linac[2]])
+            rot, [0, 0, -translation_linac[2]]
+        )
         rot = rot.as_matrix()
         motion_LINAC.rotations.append(rot)
         motion_LINAC.translations.append(np.array(t) + translation_linac)
 
 
-
-def translation_from_sad(sim, linac_name,translation, sad = 1000):
+def translation_from_sad(sim, linac_name, translation, sad=1000):
     linac = sim.volume_manager.get_volume(linac_name)
     linac.translation = np.array(translation)
-    linac.translation[2] +=  sad - linac.size[2]/2
+    linac.translation[2] += sad - linac.size[2] / 2
 
-def rotation_around_user_point(sim, linac_name,str_axes,angle_list,point_coordinate = [0,0,0]):
+
+def rotation_around_user_point(
+    sim, linac_name, str_axes, angle_list, point_coordinate=[0, 0, 0]
+):
     point_coordinate = np.array(point_coordinate)
-    linac  = sim.volume_manager.get_volume(linac_name)
+    linac = sim.volume_manager.get_volume(linac_name)
     translation = linac.translation
     rot = Rotation.from_euler(str_axes, angle_list, degrees=True)
     new_translation = gate.geometry.utility.get_translation_from_rotation_with_center(
-        rot, point_coordinate - np.array(translation))
+        rot, point_coordinate - np.array(translation)
+    )
     linac.translation = translation + new_translation
     linac.rotation = rot.as_matrix()
 
 
-
-
-def jaw_translation(sim,linac_name, jaw,jaw_positions, side,cp_id = 'all_cp', sad=1000):
+def jaw_translation(
+    sim, linac_name, jaw, jaw_positions, side, cp_id="all_cp", sad=1000
+):
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
     mm = g4_units.mm
@@ -1097,7 +1107,9 @@ def jaw_translation(sim,linac_name, jaw,jaw_positions, side,cp_id = 'all_cp', sa
         motion_jaw.translations.append(jaw_translation)
 
 
-def mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id = 'all_cp', sad=1000):
+def mlc_leaves_translation(
+    sim, linac_name, mlc, leaves_position, cp_id="all_cp", sad=1000
+):
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
     mm = g4_units.mm
@@ -1136,19 +1148,20 @@ def mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id = 'all_cp'
             motion_leaves_r[i].append(np.identity(3))
 
 
-def linac_head_motion(sim,linac_name,jaws,mlc,rt_plan_parameters,cp_id = 'all_cp',sad=1000):
+def set_linac_head_motion(
+    sim, linac_name, jaws, mlc, rt_plan_parameters, cp_id="all_cp", sad=1000
+):
     leaves_position = rt_plan_parameters["leaves"]
     jaw_1_positions = rt_plan_parameters["jaws 1"]
     jaw_2_positions = rt_plan_parameters["jaws 2"]
     linac_head_positions = rt_plan_parameters["gantry angle"]
-    mlc_leaves_translation(sim,linac_name, mlc, leaves_position,cp_id, sad)
-    jaw_translation(sim,linac_name, jaws[0], jaw_1_positions, 'left',cp_id, sad)
-    jaw_translation(sim,linac_name, jaws[1], jaw_2_positions, 'right',cp_id, sad)
-    linac_rotation(sim, linac_name,linac_head_positions, cp_id)
+    mlc_leaves_translation(sim, linac_name, mlc, leaves_position, cp_id, sad)
+    jaw_translation(sim, linac_name, jaws[0], jaw_1_positions, "left", cp_id, sad)
+    jaw_translation(sim, linac_name, jaws[1], jaw_2_positions, "right", cp_id, sad)
+    linac_rotation(sim, linac_name, linac_head_positions, cp_id)
 
 
-
-def adapt_nb_particles_per_run(sim, rt_plan_parameters, cp_id="all_cp"):
+def set_time_intervals_from_rtplan(sim, rt_plan_parameters, cp_id="all_cp"):
     MU = rt_plan_parameters["weight"]
     sec = gate.g4_units.s
     sim.run_timing_intervals = []
