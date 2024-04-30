@@ -266,7 +266,172 @@ We describe the fluorescein Emission spectrum taken from measurements or literat
 
 When a photon reaches the boundary between two mediums, its behavior is determined by the characteristics of the materials forming the boundary. If the boundary is between two dielectric materials, the photon's reaction – whether it undergoes total internal reflection, refraction, or reflection – depends on factors such as the photon's wavelength, its angle of incidence, and the refractive indices of the materials on either side of the boundary. In contrast, at an interface between a dielectric material and a metal, the photon may either be absorbed by the metal or reflected back into the dielectric material. For simulating a perfectly smooth surface, it's not necessary for the user to input a G4Surface; the only essential property is the refractive index (RINDEX) of the materials on both sides of the interface. In such cases, Geant4 uses Snell’s Law to compute the probabilities of refraction and reflection.
 
-WARNING: DEFINING CUSTOM SURFACES IS STILL IN PROGRESS
+### Defining Surfaces
+
+![](figures/surface-definition.png)
+
+The photon travels through the surface between the two volumes Volume1 and Volume2. To create an optical surface from Volume1 to Volume2, the following command should be used:
+
+```python
+sim.physics_manager.add_optical_surface(
+  volume_from = "name of volume 1",
+  volume_to = "name of volume 2",
+  g4_surface_name = "name of the surface between two volumes"
+)
+```
+
+The surface between Volume1 and Volume2 is NOT the same surface as that between Volume2 and Volume1; the surface definition is directional. When there is optical transport in both directions, two surfaces should be created. Surface name can be any surface defined in the SurfaceProperties.xml file.
+
+##### EXAMPLES -
+
+For instance if the objective is to create a PolishedTeflon_LUT surface from Volume1 to Volume2, and create a different surface like RoughTeflon_LUT from Volume2 to Volume1 -
+
+```python
+sim.physics_manager.add_optical_surface(
+  volume_from = "name of volume 1",
+  volume_to = "name of volume 2",
+  g4_surface_name = "PolishedTeflon_LUT"
+)
+
+sim.physics_manager.add_optical_surface(
+  volume_from = "name of volume 2",
+  volume_to = "name of volume 1",
+  g4_surface_name = "RoughTeflon_LUT"
+)
+```
+The keywords volume_from, volume_to, g4_surface_name are just for clarity. You can also define surfaces without them -
+
+```python
+sim.physics_manager.add_optical_surface("name of volume 1", "name of volume 2", "PolishedTeflon_LUT")
+sim.physics_manager.add_optical_Surface("name of volume 2", "name of volume 1", "PolishedTeflon_LUT")
+```
+
+This creates same surface from Volume1 to Volume2 and from Volume2 to Volume1.
+
+
+#### LUT Davis Model
+
+Available from GATE V8.0 onwards is a model for optical transport called the LUT Davis model [Roncali& Cherry(2013)]. The model is based on measured surface data and allows the user to choose from a list of available surface finishes. Provided are a rough and a polished surface that can be used without reflector, or in combination with a specular reflector (e.g. ESR) or a Lambertian reflector (e.g. Teflon). The specular reflector can be coupled to the crystal with air or optical grease. Teflon tape is wrapped around the crystal with 4 layers.
+
+Surface names of available LUTs -
+|           | BARE              | TEFLON            | ESR AIR           | ESR GREASE              |
+|-----------|-------------------|-------------------|-------------------|-------------------------|
+| POLISHED  | Polished_LUT      | PolishedTeflon_LUT| PolishedESR_LUT   | PolishedESRGrease_LUT   |
+| ROUGH     | Rough_LUT         | RoughTeflon_LUT   | RoughESR_LUT      | RoughESRGrease_LUT      |
+
+The user can extend the list of finishes with custom measured surface data. In GATE, this can be achieved by utilising [this](https://github.com/LUTDavisModel/Standalone-Application-Installers-User-Guide) tool to calculate LUTs. In the LUT database, typical roughness parameters obtained from the measurements are provided to characterize the type of surface modelled:
+
+- **ROUGH** Ra=0.48 µm, σ=0.57 µm, Rpv=3.12 µm
+- **POLISHED** Ra=20.8 nm, σ=26.2 nm, Rpv=34.7 nm
+
+with Ra = average roughness; σ = rms roughness, Rpv = peak-to-valley ratio.
+
+The desired finish should be defined in Surfaces.xml (file available in <https://github.com/OpenGATE/GateContrib/tree/master/imaging/LUTDavisModel>):
+```xml
+ <surface model="DAVIS" name="RoughTeflon_LUT" type="dielectric_LUTDAVIS" finish="RoughTeflon_LUT">
+ </surface>
+```
+
+The detector surface, called **Detector_LUT**, defines a polished surface coupled to a photodetector with optical grease or a glass interface (similar index of refraction 1.5). Any surface can be used as a detector surface when the Efficiency is set according to the following example:
+
+```xml
+ <surface model="DAVIS" name="**Detector_LUT**" type="dielectric_LUTDAVIS" finish="Detector_LUT">
+     <propertiestable>
+      <propertyvector name="**EFFICIENCY**" energyunit="eV">
+        <ve energy="1.84" value="**1**"/>
+        <ve energy="4.08" value="**1**"/>
+      </propertyvector>
+    </propertiestable>
+  </surface>
+```
+
+Running the simulation produces an output in the terminal confirming that the LUT data is read in correctly. The user should check the presence of these lines in the terminal. For example:
+
+```
+===== XML PATH ====: ./Surfaces.xml
+===== XML PATH ====: ...
+LUT DAVIS - data file: .../Rough_LUT.dat read in!
+Reflectivity LUT DAVIS - data file: .../Rough_LUTR.dat read in!
+===== XML PATH ====: ./Surfaces.xml
+===== XML PATH ====: ...
+LUT DAVIS - data file: .../Detector_LUT.dat read in!
+Reflectivity LUT DAVIS - data file: .../Detector_LUTR.dat read in!
+```
+##### Detection of Optical Photons
+
+Once the simulation is finished, the optical photon data can be found in the Hits Tree in the ROOT output. The Hits Tree consists of events that ended their path in the geometry defined as the sensitive detector (SD). Thus, photons can either be detected or absorbed in the crystal material when set as SD. The user can identify the optical photons from other particles using the PDGEncoding (-22 for optical photons).
+
+**NOTE** - From Geant4 10.7, PDG code for optical photon has changed [from 0 (zero) to -22](https://geant4.kek.jp/lxr/diff/particles/bosons/src/G4OpticalPhoton.cc?v=10.6.p3;diffval=10.7;diffvar=v).
+
+##### Example
+
+The example (https://github.com/OpenGATE/GateContrib/tree/master/imaging/LUTDavisModel) includes a 3 mm x 3 mm x 20 mm scintillation crystal coupled to a 3 mm x 3 mm detector area. The source is positioned at the side of the crystal, irradiating it at 10 mm depth. The set surface is RoughTeflon_LUT in combination with the Detector_LUT as the photo detector surface.
+
+![](figures/example_lut_davis_model.png)
+
+
+##### Background
+
+The crystal topography is obtained with atomic force microscopy (AFM). From the AFM data, the probability of reflection (1) and the reflection directions (2) are computationally determined, for incidence angles ranging from 0° to 90°. Each LUT is computed for a given surface and reflector configuration. The reflection probability in the LUT combines two cases: directly reflected photons from the crystal surface and photons that are transmitted to the reflector surface and later re-enter the crystal. The key operations of the reflection process are the following: The angle between the incident photon (Old Momentum) and the surface normal are calculated. The probability of reflection is extracted from the first LUT. A Bernoulli test determines whether the photon is reflected or transmitted. In case of reflection two angles are drawn from the reflection direction LUT.
+
+![](figures/flowchart_lut_model.png)
+
+Old Momentum to New Momentum. The old momentum is the unit vector that describes the incident photon. The reflected/transmitted photon is the New Momentum described by two angles φ, 𝛳.
+
+#### UNIFIED Model
+
+The UNIFIED model allows the user to control the radiant intensity of the surface: Specular lobe, Specular spike, Backscatter spike (enhanced on very rough surfaces) and Reflectivity (Lambertian or diffuse distribution). The sum of the four constants is constrained to unity. In that model, the micro-facet normal vectors follow a Gaussian distribution defined by sigmaalpha ($\sigma_a$) given in degrees. This parameter defines the standard deviation of the Gaussian distribution of micro-facets around the average surface normal. In the case of a perfectly polished surface, the normal used by the G4BoundaryProcess is the normal to the surface.
+
+![](figures/reflection_types_and_microfacets.png)
+
+An example of a surface definition looks like:
+
+```xml
+<surface name="rough_teflon_wrapped" type="dielectric_dielectric" sigmaalpha="0.1" finish="groundbackpainted">
+ <propertiestable>
+   <propertyvector name="SPECULARLOBECONSTANT" energyunit="eV">
+     <ve energy="4.08" value="1"/>
+     <ve energy="1.84" value="1"/>
+   </propertyvector>
+   <propertyvector name="RINDEX" energyunit="eV">
+     <ve energy="4.08" value="1"/>
+     <ve energy="1.84" value="1"/>
+   </propertyvector>
+   <propertyvector name="REFLECTIVITY" energyunit="eV">
+     <ve energy="1.84" value="0.95"/>
+     <ve energy="4.08" value="0.95"/>
+   </propertyvector>
+   <propertyvector name="EFFICIENCY" energyunit="eV">
+     <ve energy="1.84" value="0"/>
+     <ve energy="4.08" value="0"/>
+   </propertyvector>
+ </propertiestable>
+</surface>
+```
+
+The attribute type can be either dielectric_dielectric or dielectric_metal, to model either a surface between two dielectrica or between a dielectricum and a metal. The attribute sigma-alpha models the surface roughness and is discussed in the next section. The attribute finish can have one of the following values: ground, polished, ground-back-painted, polished-back-painted, ground-front-painted and polished-front-painted. It is therefore possible to cover the surface on the inside or outside with a coating that reflects optical photons using Lambertian reflection. In case the finish of the surface is polished, the surface normal is used to calculate the probability of reflection. In case the finish of the surface is ground, the surface is modeled as consisting of small micro-facets. When an optical photon reaches a surface, a random angle $\sigma$ is drawn for the micro facet that is hit by the optical photon. Using the angle of incidence of the optical photon with respect to this micro facet and the refractive indices of the two media, the probability of reflection is calculated.
+
+In case the optical photon is reflected, four kinds of reflection are possible. The probabilities of the first three are given by the following three property vectors:
+
+- **SPECULARSPIKECONSTANT** gives the probability of specular reflection about the average surface normal
+- **SPECULARLOBECONSTANT** gives the probability of specular reflection about the surface normal of the micro facet
+- **BACKSCATTERCONSTANT** gives the probability of reflection in the direction the optical photon came from
+
+LAMBERTIAN (diffuse) reflection occurs when none of the other three types of reflection happens. The probability of Lambertian reflection is thus given by one minus the sum of the other three constants.
+
+When the photon is refracted, the angle of refraction is calculated from the surface normal (of the average surface for polished and of the micro facet for rough) and the refractive indices of the two media.
+
+When an optical photon reaches a painted layer, the probability of reflection is given by the property vector REFLECTIVITY. In case the paint is on the inside of the surface, the refractive indices of the media are ignored, and when the photon is reflected, it undergoes Lambertian reflection.
+
+When the paint is on the outside of the surface, whether the photon is reflected on the interface between the two media is calculated first, using the method described in the previous section. However, in this case the refractive index given by the property vector RINDEX of the surface is used. When the photon is refracted, it is reflected using Lambertian reflection with a probability REFLECTIVITY. It then again has to pass the boundary between the two media. For this, the method described in the previous section is used again and again, until the photon is eventually reflected back into the first medium or is absorbed by the paint.
+
+A dielectric_dielectric surface may have a wavelength dependent property TRANSMITTANCE. If this is specified for a surface it overwrites the Snell’s law’s probability. This allows the simulation of anti-reflective coatings.
+
+##### Detection of optical photons
+
+Optical photons can be detected by using a dielectric-metal boundary. In that case, the probability of reflection should be given by the REFLECTIVITY property vector. When the optical photon is reflected, the UNIFIED model is used to determine the reflection angle. When it is absorbed, it is possible to detect it. The property vector EFFICIENCY gives the probability of detecting a photon given its energy and can therefore be considered to give the internal quantum efficiency. Note that many measurements of the quantum efficiency give the external quantum efficiency, which includes the reflection: external quantum efficiency = efficiency*(1-reflectivity).
+
+The hits generated by the detection of the optical photons are generated in the volume from which the optical photons reached the surface. This volume should therefore be a sensitive detector.
 
 ### Electromagnetic parameters
 

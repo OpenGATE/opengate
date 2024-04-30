@@ -106,19 +106,15 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
-    spots, ntot, energies, G = spots_info_from_txt(
+    beam_data_dict = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-gate_test59_TP_1_old.txt", "ion 6 12", beam_nr=1
     )
-    tps = TreatmentPlanSource("RT_plan", sim)
-    tps.set_beamline_model(IR2HBL)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("z", G, degrees=True)
-    # rt_plan = ref_path / "RP1.2.752.243.1.1.20230119115736709.2000.75541.dcm"
-    # tps.set_spots_from_rtplan(rt_plan) # no need to set rotation here
-    tps.initialize_tpsource()
-    actual_sim_particles = tps.actual_sim_particles
-
+    ntot = beam_data_dict["msw_beam"]
+    tps = sim.add_source("TreatmentPlanPBSource", "TP source")
+    tps.beam_model = IR2HBL
+    tps.n = nSim
+    tps.particle = "ion 6 12"
+    tps.beam_data_dict = beam_data_dict
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
