@@ -71,7 +71,7 @@ if __name__ == "__main__":
     source.energy.mono = 70 * keV
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = "test010-generic_source_angular_distribution_edep.mhd"
+    dose.output = "test010-generic_source_angular_distribution.mhd"
     dose.mother = "image_volume"
     dose.size = [100, 1, 100]
     dose.spacing = [10 * mm, 1 * cm, 10 * mm]
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "test010-generic_source_angular_distribution_edep_ref.mhd",
-            sim.output_dir / "test010-generic_source_angular_distribution_edep.mhd",
+            sim.output_dir / "test010-generic_source_angular_distribution-edep.mhd",
             stat,
             tolerance=13,
             ignore_value=0,
@@ -115,7 +115,7 @@ if __name__ == "__main__":
             ref_path
             / "test010-generic_source_angular_distribution_edep_uncertainty_ref.mhd",
             sim.output_dir
-            / "test010-generic_source_angular_distribution_edep_uncertainty.mhd",
+            / "test010-generic_source_angular_distribution-edep-uncertainty.mhd",
             stat,
             tolerance=30,
             ignore_value=1,
