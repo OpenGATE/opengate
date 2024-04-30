@@ -48,7 +48,7 @@ def init_test019(nt):
     plane.rmin = 0
     plane.rmax = 70 * mm
     plane.dz = 1 * nm  # half height
-    plane.translation = [0, 0,linac.size[2]/2 - 300*mm]
+    plane.translation = [0, 0, linac.size[2] / 2 - 300 * mm]
     plane.color = [1, 0, 0, 1]  # red
 
     # e- source
@@ -60,7 +60,7 @@ def init_test019(nt):
     source.energy.sigma_gauss = 0.077 * MeV
     source.position.type = "disc"
     source.position.radius = 2 * mm  # FIXME not really similar to GATE need sigma etc
-    source.position.translation = [0, 0, 0.5 * mm- 1*nm]
+    source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, -1]
     source.activity = 5000 * Bq / sim.number_of_threads
@@ -146,8 +146,8 @@ def run_test019(sim):
     data, keys, m = phsp.load(fn2)
     # find the good key's names
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(keys_ref)
-    keys1.remove('Z')
-    keys2.remove('PrePosition_Z')
+    keys1.remove("Z")
+    keys2.remove("PrePosition_Z")
     # Do not check some keys
     tols[keys1.index("Weight")] = 0.001
     tols[keys1.index("Ekine")] = 0.1
