@@ -64,6 +64,13 @@ linac1 = synergy.add_linac(sim)
 linac2 = versa.add_linac(sim)
 ```
 
+Doc TODO :
+- explain reference system of the linac (what is default translation), explain "translation_from_sad" and rotation_around_user_point
+- describe add_electron_source
+- describe add_phase_space_plane and add_phase_space
+
+
+
 
 ### SPECT imaging systems
 

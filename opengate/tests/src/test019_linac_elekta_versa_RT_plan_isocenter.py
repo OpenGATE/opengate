@@ -6,17 +6,11 @@ import opengate.contrib.linacs.elektaversa as versa
 import opengate.contrib.linacs.RTPlan as rtplan
 from opengate.tests import utility
 from opengate.utility import g4_units, get_contrib_path
-from scipy.spatial.transform import Rotation
 import numpy as np
 import uproot
-import itk
-
-
-
 
 
 def add_volume_to_irradiate(sim, name):
-    mm = g4_units.mm
     m = g4_units.m
     patient = sim.add_volume("Box", "water_plane")
     patient.mother = name
@@ -25,20 +19,18 @@ def add_volume_to_irradiate(sim, name):
     patient.color = [1, 0, 0, 1]  # red
     return patient
 
-def add_phase_space_isocenter(sim,name, pos):
-    mm = g4_units.mm
-    isocenter_sphere = sim.add_volume("Sphere","sphere")
+
+def add_phase_space_isocenter(sim, name, pos):
+    isocenter_sphere = sim.add_volume("Sphere", "sphere")
     isocenter_sphere.material = "G4_Galactic"
     isocenter_sphere.mother = name
     isocenter_sphere.translation = pos
-    isocenter_sphere.radius = 1*cm
-    isocenter_sphere.color = [0,1, 0, 1]  # red
+    isocenter_sphere.radius = 1 * cm
+    isocenter_sphere.color = [0, 1, 0, 1]  # red
 
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
     phsp.mother = isocenter_sphere.name
     phsp.attributes = ["EventID"]
-
-
 
 
 def add_alpha_source(sim, name, pos_Z, nb_part):
@@ -47,12 +39,11 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     plan_source = sim.add_volume("Box", "plan_alpha_source")
     plan_source.material = "G4_Galactic"
     plan_source.mother = name
-    plan_size = np.array([1 * nm, 1*nm, 1 * nm])
+    plan_size = np.array([1 * nm, 1 * nm, 1 * nm])
     plan_source.size = np.copy(plan_size)
     plan_source.translation = [0 * mm, 0 * mm, -pos_Z / 2 + 300 * mm]
 
     source = sim.add_source("GenericSource", "alpha_source")
-    Bq = gate.g4_units.Bq
     MeV = gate.g4_units.MeV
     source.particle = "alpha"
     source.mother = plan_source.name
@@ -67,9 +58,9 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
 
 
 def validation_test_19_rt_plan(array, nb_part):
-    if len(array['EventID']) == nb_part:
+    if len(array["EventID"]) == nb_part:
         return True
-    else :
+    else:
         return False
 
 
@@ -118,28 +109,29 @@ if __name__ == "__main__":
     translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
     linac.translation = translation_linac_box
 
-
     linac.color = [1, 1, 1, 0.8]
 
-
     # add alpha source :
-    nb_part = np.random.randint(1,100)
+    nb_part = np.random.randint(1, 100)
     z_linac = linac.size[2]
     add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, nb_part)
 
-
-    ### Linac head rotation and jaws and mlc translation according to a DICOM rt plan
-    cp = np.random.randint(1,230,1)[0]
+    # Linac head rotation and jaws and mlc translation according to a DICOM rt plan
+    cp = np.random.randint(1, 230, 1)[0]
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
-    versa.rotation_around_user_point(sim, linac.name, 'x', rt_plan_parameters["gantry angle"][cp])
+    versa.rotation_around_user_point(
+        sim, linac.name, "x", rt_plan_parameters["gantry angle"][cp]
+    )
 
+    # The patient image is simulated at a position which is the center of the simulation
+    # regardless the offset of the image
+    # And the isocenter is given the real center of the image. That's why we have
+    # to correct the isocenter of the real image center
 
-    #The patient image is simulated at a position which is the center of the simulation regardless the offset of the image
-    #And the isocenter is given givben the real center of the image. That's why we have to correct the isocenter of the real image center
-
-
-    center_patient_on_DICOM_img = np.array([11*mm,-194*mm,45*mm])
-    vector_translation_isocenter_to_center =center_patient_on_DICOM_img - rt_plan_parameters['isocenter'][cp]
+    center_patient_on_DICOM_img = np.array([11 * mm, -194 * mm, 45 * mm])
+    vector_translation_isocenter_to_center = (
+        center_patient_on_DICOM_img - rt_plan_parameters["isocenter"][cp]
+    )
     print(vector_translation_isocenter_to_center)
 
     # physics
@@ -152,16 +144,19 @@ if __name__ == "__main__":
 
     # add water slice with a dose actor and a motion actor
     volume = add_volume_to_irradiate(sim, world.name)
-    add_phase_space_isocenter(sim,volume.name,vector_translation_isocenter_to_center)
+    add_phase_space_isocenter(sim, volume.name, vector_translation_isocenter_to_center)
     phsp = sim.get_actor_user_info(f"phsp")
     phsp.output = paths.output / "phsp_versa_mlc_RT_plan.root"
 
     translation_volume = volume.translation
-    new_translation = np.array(translation_volume) - vector_translation_isocenter_to_center
+    new_translation = (
+        np.array(translation_volume) - vector_translation_isocenter_to_center
+    )
     volume.translation = new_translation
 
     # start simulation
-    # The number of praticles provided (sim.activity) will be adapted regarding the number of MU delivered at each control points.
+    # The number of particles provided (sim.activity) will be adapted regarding
+    # the number of MU delivered at each control points.
     sim.run()
 
     # print results
@@ -170,6 +165,7 @@ if __name__ == "__main__":
 
     f_phsp = uproot.open(paths.output / "phsp_versa_mlc_RT_plan.root")
     arr = f_phsp["phsp"].arrays()
+
     # test
-    is_ok = validation_test_19_rt_plan(arr,nb_part)
+    is_ok = validation_test_19_rt_plan(arr, nb_part)
     utility.test_ok(is_ok)

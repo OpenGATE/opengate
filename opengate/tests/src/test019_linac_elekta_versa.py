@@ -4,8 +4,6 @@
 import opengate as gate
 import opengate.contrib.linacs.elektaversa as versa
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
-import numpy as np
 
 if __name__ == "__main__":
     # paths
@@ -35,9 +33,11 @@ if __name__ == "__main__":
 
     # add a linac
     linac = versa.add_linac(sim, "versa")
-    translation = [50*mm,12*mm,29*mm]
-    versa.translation_from_sad(sim, linac.name,translation, sad = 1000)
-    versa.rotation_around_user_point(sim, linac.name,"ZY",[38,28],[224*mm,-47*mm,456*mm])
+    translation = [50 * mm, 12 * mm, 29 * mm]
+    versa.translation_from_sad(sim, linac.name, translation, sad=1000)
+    versa.rotation_around_user_point(
+        sim, linac.name, "ZY", [38, 28], [224 * mm, -47 * mm, 456 * mm]
+    )
 
     # add linac e- source
     source = versa.add_electron_source(sim, linac.name, linac.rotation)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     br = "versa_phsp_plane_phsp"
     root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
-    tols = [0.1,2.5,2.5]
+    tols = [0.1, 2.5, 2.5]
     is_ok = utility.compare_root3(
         root_ref,
         phsp.output,
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         "PrePositionLocal_X",
         "PrePositionLocal_Y",
     ]
-    tols = [0.1, 2.5,2.5,2.5,2.5]
+    tols = [0.1, 2.5, 2.5, 2.5, 2.5]
     is_ok = (
         utility.compare_root3(
             root_ref,

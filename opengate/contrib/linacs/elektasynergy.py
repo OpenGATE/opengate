@@ -32,7 +32,6 @@ def create_material(simulation, name):
 def add_linac(sim, name="linac", sad=1000):
     # unit
     m = g4_units.m
-    mm = g4_units.mm
     create_material(sim, name)
 
     # for debug : should be the same as create_material
@@ -48,23 +47,23 @@ def add_linac(sim, name="linac", sad=1000):
     linac = sim.add_volume("Box", name)
     linac.material = "G4_AIR"
     linac.size = [1 * m, 1 * m, 0.6 * m]
-    linac.translation = np.array([0,0,sad - linac.size[2]/2])
+    linac.translation = np.array([0, 0, sad - linac.size[2] / 2])
     linac.color = white
 
     # target
     add_target(sim, linac.name)
 
-    #Primary collimator
-    add_primary_collimator(sim,linac.name)
+    # Primary collimator
+    add_primary_collimator(sim, linac.name)
 
-    #Flattening filter
+    # Flattening filter
     add_flattening_filter(sim, linac.name)
 
-    #Ionizing chamber
+    # Ionizing chamber
     add_ionizing_chamber(sim, linac.name)
 
     # back_scatter_plate
-    add_back_scatter_plate(sim,linac.name)
+    add_back_scatter_plate(sim, linac.name)
 
     # mirror
     add_mirror(sim, linac.name)
@@ -97,7 +96,7 @@ def add_target(sim, linac_name):
     target_support.rmin = 0
     target_support.rmax = 15 * mm
     target_support.dz = 11 * mm / 2.0
-    target_support.translation = [0, 0, z_linac/2  - target_support.dz - 1*nm]
+    target_support.translation = [0, 0, z_linac / 2 - target_support.dz - 1 * nm]
     target_support.color = [0, 1, 0, 1]
 
     target = sim.add_volume("Tubs", f"{linac_name}_target")
@@ -130,8 +129,6 @@ def add_target(sim, linac_name):
     target_support_bottom.color = green
 
 
-
-
 def kill_around_target(sim, linac_name):
     mm = g4_units.mm
     nm = g4_units.nm
@@ -146,7 +143,7 @@ def kill_around_target(sim, linac_name):
     target_above.rmin = 0
     target_above.rmax = 15 * mm
     target_above.dz = 0.5 * nm
-    target_above.translation = [0, 0, z_linac/2 - 0.5 * nm]
+    target_above.translation = [0, 0, z_linac / 2 - 0.5 * nm]
     target_above.color = [1, 0, 0, 1]
 
     # around the target
@@ -154,14 +151,15 @@ def kill_around_target(sim, linac_name):
     target_around.mother = linac_name
     target_around.material = "G4_AIR"
     target_around.rmin = 15.1 * mm
-    target_around.rmax = target_around.rmin + 1*nm
+    target_around.rmax = target_around.rmin + 1 * nm
     target_around.dz = 5.5 * mm
-    target_around.translation = [0, 0, z_linac/2 - target_around.dz - 1 * nm]
+    target_around.translation = [0, 0, z_linac / 2 - target_around.dz - 1 * nm]
     target_around.color = [1, 0, 0, 1]
 
     # psycho killer
     killer = sim.add_actor("KillActor", f"{target.name}_kill")
     killer.mother = [target_above.name, target_around.name]
+
 
 def add_primary_collimator(sim, linac_name):
     mm = g4_units.mm
@@ -200,7 +198,7 @@ def add_flattening_filter(sim, linac_name):
     flattening_filter.rmin = 0
     flattening_filter.rmax = 40 * mm
     flattening_filter.dz = 24.1 * mm / 2
-    flattening_filter.translation = [0, 0, z_linac/2 -146.05 * mm]
+    flattening_filter.translation = [0, 0, z_linac / 2 - 146.05 * mm]
     flattening_filter.color = [0, 0, 0, 0]  # invisible
 
     # create all cones
@@ -251,7 +249,7 @@ def add_ionizing_chamber(sim, linac_name):
     ionizing_chamber.rmin = 0
     ionizing_chamber.rmax = 45 * mm
     ionizing_chamber.dz = 9.28 * mm / 2
-    ionizing_chamber.translation = [0, 0, z_linac/2 -169 * mm]
+    ionizing_chamber.translation = [0, 0, z_linac / 2 - 169 * mm]
     ionizing_chamber.color = [0, 0, 0, 0]
 
     # layers
@@ -304,6 +302,7 @@ def add_back_scatter_plate(sim, linac_name):
     bsp.translation = [0, 0, z_linac / 2 - 183 * mm]
     bsp.color = red
 
+
 def add_mirror(sim, linac_name):
     # unit
     mm = g4_units.mm
@@ -316,7 +315,7 @@ def add_mirror(sim, linac_name):
     m.mother = linac_name
     m.material = "G4_AIR"
     m.size = [137 * mm, 137 * mm, 1.5 * mm]
-    m.translation = [0, 0, z_linac/2  - 225 * mm]
+    m.translation = [0, 0, z_linac / 2 - 225 * mm]
     rot = Rotation.from_euler("x", 37.5, degrees=True)
     m.rotation = rot.as_matrix()
 
@@ -360,7 +359,7 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     source.energy.sigma_gauss = 0.077 * MeV
     source.position.type = "disc"
     source.position.radius = 2 * mm  # FIXME not really similar to GATE need sigma etc
-    source.position.translation = [0, 0, target.dz - 1 *nm]
+    source.position.translation = [0, 0, target.dz - 1 * nm]
     source.direction.type = "momentum"
     source.n = 10
     # consider linac rotation
@@ -380,7 +379,7 @@ def add_phase_space_plane(sim, linac_name):
     plane.rmin = 0
     plane.rmax = 70 * mm
     plane.dz = 1 * nm  # half height
-    plane.translation = [0, 0, z_linac/2 -299.99 * mm]
+    plane.translation = [0, 0, z_linac / 2 - 299.99 * mm]
     plane.color = [1, 0, 0, 1]  # red
     return plane
 
