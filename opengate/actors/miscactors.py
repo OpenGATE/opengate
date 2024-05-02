@@ -478,22 +478,22 @@ class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateBOptrBremSplittingActor.__init__(self, user_info.__dict__)
-        
 
-class KillNonInteractingParticleActor(g4.GateKillNonInteractingParticleActor, ActorBase):
+
+class KillNonInteractingParticleActor(
+    g4.GateKillNonInteractingParticleActor, ActorBase
+):
     type_name = "KillNonInteractingParticleActor"
 
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         user_info.list_of_volume_name = []
 
-
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateKillNonInteractingParticleActor.__init__(self, user_info.__dict__)
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
-
 
     def initialize(self, volume_engine=None):
 
@@ -503,10 +503,8 @@ class KillNonInteractingParticleActor(g4.GateKillNonInteractingParticleActor, Ac
         for pre, _, node in RenderTree(volume_tree):
             dico_of_volume_tree[str(node.name)] = node
         volume_name = self.user_info.mother
-        while volume_name != 'world':
+        while volume_name != "world":
             node = dico_of_volume_tree[volume_name]
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
-
-
