@@ -6,7 +6,7 @@ The "contrib" folder contains additional functions that are useful, but do not b
 
 The functions are used in several tests.
 
-A readme file can be found : https://github.com/OpenGATE/opengate/tree/master/opengate/contrib/readme.md
+A readme file can be found : [here](https://github.com/OpenGATE/opengate/tree/master/opengate/contrib/readme.md)
 
 ### Dose rate computation
 

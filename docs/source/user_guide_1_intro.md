@@ -37,7 +37,6 @@ Some key features of this software include:
 - Convenient installation via a single pip install opengate command
 - ...
 
-
 ### Installation (for users, not for developers)
 
 You only have to install the Python module with, the --pre option is mandatory to have the latest release:
@@ -79,14 +78,10 @@ Once installed, we recommend to check the installation by running the tests:
 
 The libraries (libG4processes and libG4geometry) are usually found in the Geant4 folder, something like ```~/build-geant4.11.0.2/BuildProducts/lib64```.
 
-### Additional command lines tools
+### Teaching resources and examples
 
-There is some additional commands lines tools that can also be used. First, type ```opengate_info```, it will print some information about the current installation (Geant4 version, ITK version etc). Also, ```opengate_user_info``` is useful to print all default and possible parameters, see next section.
+*Warning* they are only updated infrequently, you may have to adapt them to changes in the gate version.
 
-### Some (temporary) teaching materials
+-  [exercices](https://gitlab.in2p3.fr/davidsarrut/gate_exercices_2) (initially developed for DQPRM, French medical phyiscs diploma)
 
-Here is a video recorded on 2022-07-28 : [video](https://drive.google.com/file/d/1fdqmzhX0DFZUIO4Ds0PQZ-44obCqWb8R/view?usp=sharing). Please note, it was recorded at early stage of the project, so maybe outdated.
-
-### Notebooks, myBinder (experimental)
-
-You can try the examples without any installation using myBinder. On the [GitHub page](https://github.com/OpenGATE/opengate), click on the myBinder icon to start running a remote notebook. When the jupyter notebook is started (it can take some times), you have access to all examples in the repository: `notebook/notebook`.
+- [exercices](https://drive.google.com/drive/folders/1bcIS5OPLOBzhLo0NvrLJL5IxVQidNYCF) (initially developed for Opengate teaching)

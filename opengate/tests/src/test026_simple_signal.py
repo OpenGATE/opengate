@@ -16,7 +16,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_engine = "MersenneTwister"
-    sim.random_seed = "auto"
+    sim.random_seed = 987654321
 
     print(sim)
 

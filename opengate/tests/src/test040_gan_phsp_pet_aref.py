@@ -129,7 +129,6 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     # 426760*2*0.8883814158496728 = 758251.3
-
     phsp = sim.output.get_actor("phsp")
     ref = 9523
     ae = phsp.fNumberOfAbsorbedEvents

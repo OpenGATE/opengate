@@ -1,0 +1,19 @@
+/* --------------------------------------------------
+   Copyright (C): OpenGATE Collaboration
+   This software is distributed under the terms
+   of the GNU Lesser General  Public Licence (LGPL)
+   See LICENSE.md for further details
+   -------------------------------------------------- */
+
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
+
+#include "G4DecayTable.hh"
+
+void init_G4DecayTable(py::module &m) {
+  py::class_<G4DecayTable>(m, "G4DecayTable")
+      .def("entries", &G4DecayTable::entries)
+      .def("GetDecayChannel", &G4DecayTable::GetDecayChannel,
+           py::return_value_policy::reference);
+}

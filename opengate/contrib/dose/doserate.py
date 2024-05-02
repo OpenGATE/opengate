@@ -27,12 +27,11 @@ def create_simulation(param):
     sim = Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = param.visu
-    ui.visu_type = "vrml"
-    ui.number_of_threads = param.number_of_threads
-    ui.verbose_level = INFO
+    sim.g4_verbose = False
+    sim.visu = param.visu
+    sim.visu_type = "vrml"
+    sim.number_of_threads = param.number_of_threads
+    sim.verbose_level = INFO
 
     param.output_folder = pathlib.Path(param.output_folder)
 
@@ -48,13 +47,13 @@ def create_simulation(param):
     world.size = [2 * m, 2 * m, 2 * m]
 
     # CT image
-    if ui.visu:
+    if sim.visu:
         ct = sim.add_volume("Box", "ct")
         info = read_image_info(param.ct_image)
         ct.size = info.size
         ct.material = "G4_WATER"
         ct.color = [0, 0, 1, 1]
-        ui.number_of_threads = 1
+        sim.number_of_threads = 1
     else:
         ct = sim.add_volume("Image", "ct")
         ct.image = param.ct_image
@@ -86,7 +85,7 @@ def create_simulation(param):
     source.particle = "ion"
     source.ion.Z = rad_list[param.radionuclide]["Z"]
     source.ion.A = rad_list[param.radionuclide]["A"]
-    source.activity = param.activity_bq * Bq / ui.number_of_threads
+    source.activity = param.activity_bq * Bq / sim.number_of_threads
     source.image = param.activity_image
     source.direction.type = "iso"
     source.energy.mono = 0 * keV
@@ -112,7 +111,7 @@ def create_simulation(param):
     # translate the dose the same way as the source
     dose.translation = source.position.translation
     # set the origin of the dose like the source
-    if not ui.visu:
+    if not sim.visu:
         dose.img_coord_system = True
     dose.hit_type = "random"
     dose.uncertainty = False

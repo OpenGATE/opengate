@@ -8,21 +8,32 @@ The source code is divided into two main modules, one in C++, the second in Pyth
 - `opengate` (Python) is the main Python module that form the interface to the user.
   Sources: [opengate](https://github.com/OpenGATE/opengate/tree/master/opengate)
 
-**WARNING** it is highly, highly, *highly* advised to first create a python environment, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv) or [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#).
+:warning: It is highly, highly, *highly* recommended to create a python environment prior to the installation, for example with [venv](https://docs.python.org/3/library/venv.html#module-venv).
 
-To **develop**, you need 1) to compile and create the first `opengate_core` module and 2) pip install the second (Python only) `opengate` module.
+:warning: If you use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#) instead to create your environment, be sure to instruct conda to install python when creating your environment. You do so by adding 'python' after the new environment name. Optionally, you can select a specific python version by adding '=3.XX'.
 
-First, clone the unique repository that contains both modules:
+Example: You can create a new conda environment with Python 3.10 installed in it via:
+
+```bash
+  conda create --name opengate_env python=3.10
+  conda activate opengate_env
+```
+
+To **develop** in GATE 10, you need 1) to compile and create the `opengate_core` subpackage (this is the hardest part) and 2) install the main  `opengate` package (Python only, fast and easy).
+
+First, clone the unique repository that contains both packages:
 
 ```bash
 git clone --recurse-submodules https://github.com/OpenGATE/opengate
 ```
 
-Note that you need to also clone the included submodules (pybind11, all data for tests etc). If you forget the `--recurse-submodules` you can still use `git submodule update --init --recursive` after the clone.
+Note that you also need to clone the included subpackages (pybind11, all data for tests etc). If you forget the `--recurse-submodules`, you can still use `git submodule update --init --recursive` after the clone.
 
-First step: compile `opengate_core` (this is the hardest part). You need to set the path to build Geant4 and ITK libraries ; it means you need first to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org).
+The subpackage `opengate_core` depends on the ITK and Geant4 libraries. Therefore, you first need to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org). Note: In the user install, this step is not necessary because Geant4 and ITK are shipped pre-compiled via pip.
 
 #### STEP 1 - Geant4 and Qt
+
+:warning: When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment.
 
 Installing QT is optional. Currently, QT visualisation is not working on all architectures.
 
@@ -50,9 +61,12 @@ make -j 32
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
-WARNING : from June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
+WARNING : since June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
 
 #### STEP 2 - ITK
+
+**WARNING** When using conda, be sure to activate your environment before compiling Geant4. The reason is that conda comes with its own compiler and you will likely have mismatched libraries, e.g. lib c++, if not all installation steps involving compilaton are performed in the same conda environment.
+
 
 For **ITK**, you need to compile with the following options:
 
@@ -126,7 +140,7 @@ pip install garf
 
 ## How to contribute (for developers)
 
-We are really happy if you want to propose a new feature or changes in Gate. Please contact us and share your ideas with us - this is how Gate was born and how it will keep growing!
+We are really happy if you want to propose a new feature or changes in GATE. Please contact us and share your ideas with us - this is how Gate was born and how it will keep growing!
 
 ### Propose a pull request:
 1) Fork the opengate repository into your own github.
@@ -142,7 +156,7 @@ We are really happy if you want to propose a new feature or changes in Gate. Ple
 More info about [Pull Requests on github](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests).
 
 
-### Tests and docmentation
+### Tests and documentation
 It is important to make sure that Gate keeps working consistently and that simulation outcome is reliable as we keep developing the code. Therefore, we have a large set of tests which are regularly run. If you propose new features or make changes to the inner workings of Gate, please create a little test simulation that goes with it. It should be imlpemented in such a way that it checks whether the feature works as expected. This might be a check of Geant4 parameters, e.g. if production cuts are set correctly, or based on simulation outcome, such as a dose maps or a particle phase space. Best is to look at the folder `tests` in the source code.
 
 
@@ -170,6 +184,34 @@ pre-commit install
 Do not worry, if you forget to install it - you/we will see the error during the automatic testing (Continuous Integration) in Github and can fix it then through another commit.
 
 
+## GATE architecture: Managers and Engines
+
+GATE 10 has two distinct kinds of classes which handle a simulation. Managers provide an interface to the user to set-up and configure a simulation and collect and organize user parameters in a structured way. Engines provide the interface with Geant4 and are responsible for creating all Geant4 objects. Managers and engines are divided in sub-managers and sub-engines responsible for certain logical parts of a simulation. Additionally, many objects in GATE are now implemented as classes which provide interfaces to the managers and engines.
+
+The `Simulation` class is the main manager with which the user interacts. It collects general parameters, e.g. about verbosity and visualization and it manages the way the simulation is run (in a subprocess or not). Sub-managers are: `VolumeManager`, `PhysicsManager` , `ActorManager`, `SourceManager`. These managers can be thought of as bookkeepers. For example, the `VolumeManager` keeps a dictionary with all the volumes added to a simulation, a dictionary with all the parallel world volumes, etc. But it also provides the user with methods to perform certain tasks, e.g. `VolumeManager.add_parallel_world()`.
+
+The `SimulationEngine` is the main driver of the Geant4 simulation: every time the user calls `sim.run()`, the `Simulation` object (here assumed to be called `sim`) creates a new `SimulationEngine` which in turn creates all the sub-engines: `VolumeEngine`, `PhysicsEngine`, `SourceEngine`, `ActorEngine`, `ActionEngine`.
+The method `SimulationEngine.run_engine()` actually triggers the construction and run of the Geant4 simulation. It takes the role of the `main.cc` in a pure Geant4 simulation.
+When the Geant4 simulation has terminated, `SimulationEngine.run_engine()` returns the simulation output which is then collect by the `Simulation` object and remains accessible via `sim.output`.
+
+It is important to understand that the engines only exist while the GATE/Geant4 simulation is running, while the managers exist during the entire duration of the python interpreter session in which the user is setting up the simulation.
+
+The managers and engines are explained in more detail below.
+
+### References among managers and engines
+
+Managers and engines frequently need to access attributes of other managers and engines. They therefore need references to each other. In GATE, these references follow a hierarchical pattern:
+
+- Sub-managers keep a references to the `Simulation` (the main manager). Sub-sub-managers keep references to the sub-manager above them. For example: `PhysicsManager.simulation` refers to the `Simulation` object which created it, and `PhysicsListManager.physics_manager` refers to the `PhysicsManager` which created it.
+- Objects created through a manager keep a reference to the creating manager. For example: all volumes have an attribute `volume_manager`.
+- In a similar fashion, sub-engines keep a references to the `SimulationEngine` from which they originate.
+- The `SimulationEngine` itself keeps a reference to the `Simulation` which created it.
+
+This hierarchical network of references allows reaching objects from any other object. For example: a `Region` object is managed by the `PhysicsManager`, so from a region, a volume can be reached via:
+```python
+my_volume = region.physics_manager.simulation.volume_manager.get_volume('my_volume')
+```
+
 ---
 ## Geant4 bindings
 
@@ -190,6 +232,105 @@ If you want to expose another Geant4 class (or functions), you need to:
 
 - Not clear if G4RunManager should be destructed at the end of the simulation. For the moment we use `py::nodelete` to prevent deletion because seg fault after the run.
 
+
+## Philosophy behind objects implemented as GateObject
+
+Generally, the idea is to encapsulate functionality into classes rather than spreading out the code across managers and engines. The advantage is that the code structure remains less cluttered. Good examples are the `Region` class and, although more complex, the volume classes. In the following, we explain the rationale and design concept. For instructions on how to implement or extend a class, see [here](#how-a-class-in-gate-10-is-usually-set-up).
+
+The GATE classes representing and a Geant4 object (or multiple Geant4 objects combined) are meant to do multiple things:
+1) Be a storage for user parameters. Exmample: the `Region` class holds the user_info `user_limits`, `production_cuts`, and `em_switches`.
+2) Provide interface functions to manager classes (and the user) to configure the object or inquire about it. Examples: `Region.associate_volume()`, `Region.need_step_limiter()`
+3) Provide interface functions such as `initialize()` and `close()` to the engines to handle the Geant4 objects.
+4) Provide convenience functionality such as dumping as dictionary (`to_dictionary()`, `from_dictionary()`), dump info about the object (e.g. `Region.dump_production_cuts()`), clone itself.
+5) Handle technical aspects such as pickling (for subprocesses) in a unified way ([via the method `__getstate__()`](#implement-a-getstate-method-if-needed))
+
+The managers and engines, on the other hand, remain quite sleek and clean. For example, if you look at the `PhysicsEngine` class, you find the method
+```python
+    def initialize_regions(self):
+        for region in self.physics_manager.regions.values():
+            region.initialize()
+```
+which really just iterates over the regions and initializes them.
+
+The advantage of this becomes evident especially if there are multiple variants of a class (via inheritance), such as for volumes. In this case, the `VolumeEngine` does not care about the specific type of volume because it always calls the same interface. For example, `VolumeEngine.Construct()` (which is triggered by the G4RunManager, not GATE) iterates over the volumes and calls `volume.construct()`. The volume object then takes care of taking the correct actions. If the code inside each volume's `construct()` method were implemented inside  `VolumeEngine.Construct()`, it would be cluttered with if statements to pick what should be done.
+
+> **Note**\
+> For now, only a part of GATE implements objects based on the GateObject base class. Actors and Sources still need to be refactored.
+
+## How a class in GATE 10 is (usually) set up:
+
+### Naming convention
+- Use small letters and underscores for python variables. Do **not** use capital letters and camelcase.
+- Use capital letters and camel case for overloaded C++ variables if the class inherits from a base class implemented in C++.
+- All attributes pointing to Geant4 objects should have a “g4_” prepended for easy identification. Example: `self.g4_logical_volume`.
+- Group the `g4_***` definitions in one block for better visual reference.
+
+### `__init__()` method
+- Define all attributes of the object in the `__init__()` method even if their value is set only later/elsewhere.
+- If no value is set in `__init__()`, do:
+  ```python
+  self.my_attribute = None
+  ```
+- By defining all attributes in the `__init__()` method, other developers can easily inspect the class without reading through the entire class. Think of it as a C++ header file.
+
+- If your class inherits from another class, and in particular from `GateObject` or `DynamicGateObject`, include wild card arguments and keyword arguments in your `__init__()` method:
+
+  ```python
+  def __init__(self, your_specific_arguments, *args, your_specific_kwargs, **kwargs):
+      super().__init__(*args, **kwargs)
+      # ... YOUR CODE...
+  ```
+
+### User info: handling parameters set by the user
+If your class handles user input, let it inherit from GateObject, or DynamicGateObject if applicable. Define and configure user input via the `user_info_defaults` class attribute. See section XXX.
+
+**Important**: User input defined and configured in the `user_info_defaults` dictionary should generally not be handled manually in your `__init__()` method. They are passed on to the superclass inside the `kwargs` dictionary. See section XXX for more detail.
+
+### Initialization of Geant4 objects
+Implement an `initialize()` method if Geant4 objects need to be created by the SimulationEngine (or a sub-engine) when the simulation is launched. The `initialize()` method should not take any arguments, but only rely on object attributes (`self.xyz`) which were previously set.
+
+Exception: G4RunManager has an initializatin sequence which GATE relies on. In certain classes, the `g4_XXX` componentes are initialized as part of this sequence on the C++ side. Example: All volumes implement a `construct()` method which is called when the G4RunManager calls the overloaded `Construct()` method of the VolumeEngine.
+
+### Implement a `close()` method if needed
+Explanation: If your class has attributes that point to Geant4 objects which are deleted by the G4RunManager at the end of a simulation, your class must get rid of these references when the SimulationEngine closes down. This is achieved by a hierarchy of calls to a close() method, starting from `SimulationEngine.close()`. In your `close()` method, set all attributes pointing to Geant4 objects which the G4RunManafger will delete to `None`. If your class manages a list of other objects which themselves need to call their `close()` method, add a loop to your `close()` method and close down the list members. If you inherit from another class, do not forget to call the `close()` method from the superclass via `super().close()`.
+Take a look at `VolumeManager.close()` and the volumes classes or `PhysicsManager.close()` and the `Region` class for examples.
+
+### Implement a `__getstate__()` method if needed.
+Explanation: When a GATE simulation is run in a subprocess, all objects need to be serialized so they can be sent to the subprocess, where they are deserialized. The serialization is currently handled by the `pickle` module. If your class contains attributes which refer to objects which cannot be pickled, the serialization will fail. This typically concerns Geant4 objects. To make your class pickleable, you should implement a `__getstate__()` method. This is essentially a hook called within the serialization pipeline which returns a representation of your object (usually a dictionary). You should remove items which cannot be pickled from this dictionary.
+
+**Example**: Assume your class has an attribute `self.g4_funny_object` referring to a Geant4 object. Your `__getstate__()` method should do something like this:
+
+```python
+def __getstate__(self):
+	return_dict = self.__dict__
+	return_dict['g4_funny_object'] = None
+	return return_dict
+```
+
+If your class inherits from another one, e.g. from GateObject, you should call the `__getstate__()` method from the superclass:
+
+```python
+def __getstate__(self):
+	return_dict = super().__getstate__()
+	return_dict['g4_funny_object'] = None
+	return return_dict
+```
+
+**Important**: The `__getstate__()` method should **not** change your object, but only modify the dictionary to be returned. Therefore, avoid `self.g4_funny_object = None` as this also alters your object.
+
+Important: Do **not** use the `close()` method in your `__getstate__()` method. The `close()` method is part of [another mechanism](#implement-a-close-method-if-needed-) and these mechanisms should not be entangled. And: the `close()` method would alter your object and not only the returned dictionary representation.
+
+### Optional: Implement a `__str__()` method
+You might consider implementing a `__str__()` method which, by construction, is required to return a string. If implemented, this method is called when the user places your object inside a `print()` statement: `print(my_object)`. You could implement the `__str__()` method to provide useful information about your object. If your object inherits from another class, call the superclass:
+```python
+def __str__(self):
+	s = super().__str__()
+	s += "*** Additional info: ***\n"
+	s += f"The object as an attribute 'xyz' of value {self.xyz}.\n"
+	return s
+```
+In particular, the GateObject superclass (and variants) implement a `__str__()` method which lists all user_info of the object.
+
 ---
 ## Helpers
 
@@ -205,34 +346,90 @@ gate.exception.warning('This is a warning')
 
 There are several levels: `WARNING INFO DEBUG`. The last one print more information. Logging is handled with logger in `helpers_log.py`.
 
-## OPENGATE Simulation
+## Engines
+As explained [above](#gate-architecture-managers-and-engines), the Engine classes drive the actual Geant4 simulation. This section explains the engines in detail.
 
-Main object:
+### SimulationEngine
+The `SimulationEngine` is the main engine class. Upon instantiation (i.e., in the `__init__()` method), all sub-engines are created which drive the different parts if the Geant4 simulation. The sub-engines keep a reference to the `SimulationEngine` which created them.
 
-```python
-sim = gate.Simulation()
-ui = sim.user_info
-ui.verbose_level = gate.DEBUG
-ui.g4_verbose = False
-ui.g4_verbose_level = 1
-ui.visu = False
-ui.random_engine = 'MersenneTwister'
-ui.random_seed = 'auto'
-```
+The three main methods of the `SimulationEngine` are `SimulationEngine.run_engine()`, `SimulationEngine.initialize()` and `SimulationEngine.start_and_stop()`, where the latter two are called by the former.
+The method `SimulationEngine.run_engine()` essentially takes the role of the `main.cc` in a pure Geant4 simulation. It first initializes the simulation with `SimulationEngine.initialize()` and then starts event loop with `SimulationEngine.start_and_stop()` via the `SourceEngine`.
 
-The `Simulation` class contains:
+The `SimulationEngine` uses the `G4RunManager` via a pybind11 wrapping and many Geant4 objects are created by the `G4RunManager`. In short: The `G4RunManager` is informed about the geometry, physics, and sources via its `SetUserInitialization()` method. The Geant4 initialization procedure is then triggered by `g4_RunManager.Initialize()`, just as a regular Geant4 simulation would.
+For details, please consult the Geant4 user guide.
 
-- some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable (a kind of dict)
-- some managers: volume, source, actor, physics
-- some G4 objects (RunManager, RandomEngine etc)
-- some variables for internal state
+Note that there are subtleties concerning the way the `G4RunManager` works in singlethread and multithread mode which we do not cover in this guide.
 
-And the following methods:
+Complementary to the `g4_RunManager.Initialize()`, there are expicit calls to `initialize()` methods of the sub-engines, some of them before `g4_RunManager.Initialize()` and some afterwards.
 
-- some methods for print and dump
-- `initialize`
-- `apply_g4_command`
-- `start`
+The `SimulationEngine` is implemented as what is known in python as *context manager*. This means, in can be created in a *with-clause*: `with SimulationEngine(self) as se: ...` (see `SimulationEngine._run_simulation_engine()`). What it does is that the `SimulationEngine` object only exists as long as the commands inside the *with-clause* are executed. At the end of the *with-clause*, python calls the method `SimulationEngine.__exit__()` (like an exit hook) which triggers the method `SimulationEngine.close()`. The purpose of the `close()` method is to prepare all python objects that are part of the GATE simulation for the deletion of the `G4RunManager`. In particular, it makes sure that references to those Geant4 objects which the destructor of the `G4RunManager` will delete are set to `None`. Otherwise, segmentation faults will occur. We do not go into further detail here, but it is useful to understand this background of the `close()` mechanism triggered by the *with-clause* because you, as a developer, might need to implement a `close()` method in your class or extend the `close()` in an existing class which your are enhancing (see the section on [how a class is set up in GATE](#how-a-class-in-gate-10-is-usually-set-up-).
+
+It is worth noting that you have probably already come across *context managers* in python elsewhere. For example, when opening a file, you typically do `with open('my_file.txt', 'w') as f: ...`. When the *with-clause* ends, python automatically calls `f.close()`, i.e. closes the IO pipeline.
+
+### VolumeEngine
+
+
+### PhysicsEngine
+
+
+### ActorEngine
+
+
+### SourceEngine
+
+
+### ActionEngine
+
+[//]: # ()
+[//]: # (## OPENGATE Simulation)
+
+[//]: # ()
+[//]: # (Main object:)
+
+[//]: # ()
+[//]: # (```python)
+
+[//]: # (sim = gate.Simulation&#40;&#41;)
+
+[//]: # (ui = sim.user_info)
+
+[//]: # (ui.verbose_level = gate.DEBUG)
+
+[//]: # (ui.g4_verbose = False)
+
+[//]: # (ui.g4_verbose_level = 1)
+
+[//]: # (ui.visu = False)
+
+[//]: # (ui.random_engine = 'MersenneTwister')
+
+[//]: # (ui.random_seed = 'auto')
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (The `Simulation` class contains:)
+
+[//]: # ()
+[//]: # (- some global properties such as verbose, visualisation, multithread. All options are stored in `user_info` variable &#40;a kind of dict&#41;)
+
+[//]: # (- some managers: volume, source, actor, physics)
+
+[//]: # (- some G4 objects &#40;RunManager, RandomEngine etc&#41;)
+
+[//]: # (- some variables for internal state)
+
+[//]: # ()
+[//]: # (And the following methods:)
+
+[//]: # ()
+[//]: # (- some methods for print and dump)
+
+[//]: # (- `initialize`)
+
+[//]: # (- `apply_g4_command`)
+
+[//]: # (- `start`)
 
 ---
 ## OPENGATE elements: volumes, physic, sources, actors
