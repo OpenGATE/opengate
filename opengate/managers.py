@@ -1080,7 +1080,7 @@ class Simulation(GateObject):
             },
         ),
         "visu_type": (
-            "qt",
+            "vrml",
             {
                 "doc": "The type of visualization to be used.",
                 "available_values": (
