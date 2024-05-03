@@ -206,8 +206,9 @@ def test_source_rotation_A(
     tpPhSs = TreatmentPlanPhsSource("RT_plan", sim)
     tpPhSs.set_phaseSpaceList_file_name(phs_list_file_name)
     tpPhSs.set_phaseSpaceFolder(phs_folder_name)
-    spots, ntot, energies, G = spots_info_from_txt(plan_file_name, "", 1)
-    # print(spots, ntot, energies, G)
+    beam_dict = spots_info_from_txt(plan_file_name, "", 1)
+    G = beam_dict["gantry_angle"]
+    spots = beam_dict["spots"]
     tpPhSs.set_spots(spots)
     tpPhSs.set_particles_to_simulate(number_of_particles)
     tpPhSs.set_distance_source_to_isocenter(100 * cm)

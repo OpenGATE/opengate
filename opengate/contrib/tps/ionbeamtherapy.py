@@ -41,14 +41,19 @@ def sequence_check(obj, attr, nmin=1, nmax=0, name="object"):
 
 def spots_info_from_txt(txtFile, ionType, beam_nr):
     # initialize empty variables
-    nFields = 0
-    n_beam = 0
-    energies = []
-    nSpots = []
-    spots = []
-    start_index = []
-    G = 0
+
+    beam_data = dict()
+    beam_data["n_fields"] = 0
+    beam_data["plan_name"] = ""
+    beam_data["msw_beam"] = 0
+    beam_data["energies"] = []
+    beam_data["nb_spots"] = []
+    beam_data["spots"] = []
+    beam_data["gantry_angle"] = 0
+    beam_data["couch_angle"] = 0
+    beam_data["isocenter"] = []
     found_field = False
+    start_index = []
 
     # read  content
     with open(txtFile, "r") as f:
@@ -57,10 +62,14 @@ def spots_info_from_txt(txtFile, ionType, beam_nr):
     # get plan's info
     # TODO: make function to check line tag
     for i, line in enumerate(lines):
+        if check_plan_tag(line, "PlanName"):
+            l = lines[i + 1].split("\n")[0]
+            beam_data["plan_name"] = l
         if check_plan_tag(line, "NumberOfFields"):
             l = lines[i + 1].split("\n")[0]
-            nFields = int(l)
-            if beam_nr > nFields:
+            beam_data["n_fields"] = int(l)
+            if beam_nr > beam_data["n_fields"]:
+
                 raise ValueError(
                     "requested beam number higher than number of beams in the beamset"
                 )
@@ -73,30 +82,38 @@ def spots_info_from_txt(txtFile, ionType, beam_nr):
         if found_field:
             if check_plan_tag(line, "GantryAngle"):
                 l = lines[i + 1].split("\n")[0]
-                G = int(l)
+                beam_data["gantry_angle"] = float(l)
+            if check_plan_tag(line, "PatientSupportAngle"):
+                l = lines[i + 1].split("\n")[0]
+                beam_data["couch_angle"] = float(l)
+            if check_plan_tag(line, "IsocenterPosition"):
+                l = lines[i + 1].split("\n")[0]
+                beam_data["isocenter"] = [float(i) for i in l.split()]
             if check_plan_tag(line, "FinalCumulativeMeterSetWeight"):
                 l = lines[i + 1].split("\n")[0]
-                n_beam = float(l)
+                beam_data["msw_beam"] = float(l)
             if check_plan_tag(line, "Energy"):
                 l = lines[i + 1].split("\n")[0]
-                energies.append(float(l))
+                beam_data["energies"].append(float(l))
             if check_plan_tag(line, "NbOfScannedSpots"):
                 l = lines[i + 1].split("\n")[0]
-                nSpots.append(int(l))
+                beam_data["nb_spots"].append(int(l))
             if check_plan_tag(line, "X Y Weight"):
                 start_index.append(i + 1)
 
-    for i, e in enumerate(energies):
+    for i in range(len(beam_data["energies"])):
+        e = beam_data["energies"][i]
+        # print(f"ENERGY: {e}")
         start = start_index[i]
-        end = start_index[i] + nSpots[i]
+        end = start_index[i] + beam_data["nb_spots"][i]
         for j in range(start, end):
             l = lines[j].split("\n")[0].split()
             spot = SpotInfo(float(l[0]), float(l[1]), float(l[2]), e)
-            spot.beamFraction = float(l[2]) / n_beam
+            spot.beamFraction = float(l[2]) / beam_data["msw_beam"]
             spot.particle_name = ionType
-            spots.append(spot)
+            beam_data["spots"].append(spot)
 
-    return spots, n_beam, energies, G
+    return beam_data
 
 
 def check_plan_tag(txt_line, tag):
@@ -125,7 +142,7 @@ def get_spots_from_beamset(beamset):
 def get_spots_from_beamset_beam(beamset, beam_nr):
     rad_type = beamset.bs_info["Radiation Type Opengate"]
     spots_array = []
-    beam = beamset.beams[beam_nr]
+    beam = beamset.beams[beam_nr - 1]
     mswtot = beam.mswtot
     for energy_layer in beam.layers:
         for spot in energy_layer.spots:
@@ -747,9 +764,9 @@ class TreatmentPlanSource:
     def set_spots(self, spots):
         self.spots = spots
 
-    def set_spots_from_rtplan(self, rt_plan_path, beam_nr=0):
+    def set_spots_from_rtplan(self, rt_plan_path, beam_nr=1):
         beamset = BeamsetInfo(rt_plan_path)
-        gantry_angle = beamset.beam_angles[beam_nr]
+        gantry_angle = beamset.beam_angles[beam_nr - 1]
         spots = get_spots_from_beamset_beam(beamset, beam_nr)
         self.spots = spots
         self.rotation = Rotation.from_euler("z", gantry_angle, degrees=True)

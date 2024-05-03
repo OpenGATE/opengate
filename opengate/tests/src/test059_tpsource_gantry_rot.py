@@ -31,6 +31,7 @@ if __name__ == "__main__":
     km = gate.g4_units.km
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
+    s = gate.g4_units.s
 
     # add a material database
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -137,23 +138,31 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add TPSources
-    spots, ntot, energies, G = spots_info_from_txt(
+    beam_data_dict = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-1D_HBL_120.txt", "ion 6 12", beam_nr=1
     )
-    tps = TreatmentPlanSource("VBL", sim)
-    tps.set_beamline_model(beamline)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("z", 0, degrees=True)
-    tps.initialize_tpsource()
 
-    tps_rot = TreatmentPlanSource("HBL", sim)
-    tps_rot.set_beamline_model(beamline)
-    tps_rot.set_particles_to_simulate(nSim)
-    tps_rot.set_spots(spots)
-    tps_rot.rotation = Rotation.from_euler("z", G, degrees=True)
-    tps_rot.translation = [0.0, 0.0, 1000.0]
-    tps_rot.initialize_tpsource()
+    tps_rot = sim.add_source("TreatmentPlanPBSource", "HBL")
+    tps_rot.n = nSim
+    tps_rot.end_time = 0.5 * s
+    tps_rot.beam_model = beamline
+    tps_rot.beam_data_dict = beam_data_dict
+    tps_rot.beam_nr = 1
+    tps_rot.particle = "ion 6 12"
+    tps_rot.position.translation = [0.0, 0.0, 1000.0]
+    tps_rot.sorted_spot_generation = True
+
+    beam_data_dict_vbl = beam_data_dict.copy()
+    beam_data_dict_vbl["gantry_angle"] = 0
+
+    tps = sim.add_source("TreatmentPlanPBSource", "VBL")
+    tps.n = nSim
+    tps.start_time = 0.5 * s
+    tps.beam_model = beamline
+    tps.beam_data_dict = beam_data_dict_vbl
+    tps.beam_nr = 1
+    tps.particle = "ion 6 12"
+    tps.sorted_spot_generation = True
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")

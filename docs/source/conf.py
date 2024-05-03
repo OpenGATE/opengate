@@ -106,7 +106,7 @@ html_logo = "gate_logo.png"
 
 html_theme_options = {
     "toc_depth": 3,
-    "navigation_depth": 3,  # Shows three levels of TOC in the sidebar
+    "navigation_depth": 2,  # Shows three levels of TOC in the sidebar
 }
 
 # html_theme = 'groundwork'

@@ -1,21 +1,17 @@
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/OpenGATE/opengate?logo=github)
+[![Read the Docs](https://img.shields.io/readthedocs/opengate-python?logo=read-the-docs&style=plastic)](https://opengate-python.readthedocs.io/)
 [![CI](https://github.com/OpenGATE/opengate/actions/workflows/main.yml/badge.svg)](https://github.com/OpenGATE/opengate/actions/workflows/main.yml)
 [![cirrus CI](https://api.cirrus-ci.com/github/OpenGATE/opengate.svg)](https://cirrus-ci.com/github/OpenGATE/opengate)
-[![Read the Docs](https://img.shields.io/readthedocs/opengate-python?logo=read-the-docs&style=plastic)](https://opengate-python.readthedocs.io/)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OpenGATE/opengate/master.svg)](https://results.pre-commit.ci/latest/github/OpenGATE/opengate/master)
-[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/OpenGATE/gam-gate/c65a0d55c616748454f066470aa836331eb107ac)
 
-See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html).
+## This is GATE10 **beta** version. The first non-beta release will be officially announced end of May 2024.
 
-# New since July 2023: there is a Windows version!
+See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html). The current version uses [Geant4 11.1.1](https://geant4.web.cern.ch).
 
-Opengate is now available on Windows. For the moment, MultiThreading, Qt visualization and the "spawn new subprocess" are not (yet) available.
 
-# How to install (short version)
+### How to install (short version)
 
-Compatible with Python 3.8, 3.9, 3.10, 3.11.
-
-**Warning** not available for MacOS Intel with python 3.11 yet.
+*Compatible with Python 3.8, 3.9, 3.10, 3.11. Not available for Python 3.12 yet. On Windows multithreading, Qt visualization and the "spawn new subprocess" are not (yet) available.*
 
 First, create an environment (not mandatory but highly advised)
 
@@ -31,7 +27,7 @@ conda create --name opengate_env python=3.9
 conda activate opengate_env
 ```
 
-Then install the package opengate. The package opengate_core is automatically downloaded. opengate_core installs Geant4 v11.1.1 librairies.
+Then install the package opengate. The package ```opengate_core``` is automatically downloaded. ```opengate_core``` installs Geant4 librairies.
 ```
 pip install --upgrade pip
 pip install --pre opengate
@@ -63,8 +59,6 @@ pip install gaga-phsp
 
 The documentation is here: https://opengate-python.readthedocs.io/en/latest/user_guide.html
 
-# How to install (long version, for developers)
+### How to install (long version, for developers)
 
-See the documentation : https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers
-
-WARNING : need [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html)
+See the documentation: https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers

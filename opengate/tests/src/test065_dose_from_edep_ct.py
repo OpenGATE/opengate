@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
-from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
@@ -64,9 +64,10 @@ if __name__ == "__main__":
     world.size = [600 * cm, 500 * cm, 500 * cm]
 
     # source and beamline info
-    spots, ntot, energies, gantry_angle = spots_info_from_txt(
+    beam_data_dict = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
     )
+    gantry_angle = beam_data_dict["gantry_angle"]
 
     # nozzle box
     box = sim.add_volume("Box", "box")
@@ -143,12 +144,12 @@ if __name__ == "__main__":
 
     ## source
     nSim = 4000  # 328935  # particles to simulate per beam
-    tps = TreatmentPlanSource("RT_plan", sim)
-    tps.set_beamline_model(IR2HBL)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.initialize_tpsource()
-    actual_n_sim = tps.actual_sim_particles
+    tps = sim.add_source("TreatmentPlanPBSource", "TP source")
+    tps.beam_model = IR2HBL
+    tps.n = nSim
+    tps.beam_data_dict = beam_data_dict
+    tps.beam_nr = 1
+    tps.particle = "ion 6 12"
 
     # start simulation
     run_simulation = True

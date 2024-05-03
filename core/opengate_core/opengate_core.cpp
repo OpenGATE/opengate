@@ -39,6 +39,11 @@ void init_G4IonisParamMat(py::module &);
 
 void init_G4MaterialPropertiesTable(py::module &);
 
+// surfaces
+
+void init_G4OpticalSurface(py::module &);
+void init_G4LogicalBorderSurface(py::module &);
+
 // run
 void init_G4RunManager(py::module &);
 
@@ -299,6 +304,8 @@ void init_GateSourceManager(py::module &);
 
 void init_GateGenericSource(py::module &);
 
+void init_GateTreatmentPlanPBSource(py::module &);
+
 void init_GateTemplateSource(py::module &);
 
 void init_GatePencilBeamSource(py::module &m);
@@ -428,6 +435,9 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4PhysicalVolumeStore(m);
   init_G4GeometryManager(m);
 
+  init_G4OpticalSurface(m);
+  init_G4LogicalBorderSurface(m);
+
   init_G4Region(m);
   init_G4RegionStore(m);
 
@@ -519,6 +529,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateVSource(m);
   init_GateSourceManager(m);
   init_GateGenericSource(m);
+  init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
   init_GateVoxelsSource(m);

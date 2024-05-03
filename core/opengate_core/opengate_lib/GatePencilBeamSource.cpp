@@ -34,7 +34,9 @@ void GatePencilBeamSource::InitializeDirection(py::dict puser_info) {
   // GateGenericSource::InitializeDirection(puser_info);
   //  PBS parameters
   auto dir_info = py::dict(puser_info["direction"]);
-  fSPS_PB->SetPBSourceParam(dir_info);
+  auto x_param = DictGetVecDouble(dir_info, "partPhSp_x");
+  auto y_param = DictGetVecDouble(dir_info, "partPhSp_y");
+  fSPS_PB->SetPBSourceParam(x_param, y_param);
 
   // angle acceptance ?
   auto d = py::dict(puser_info["direction"]);

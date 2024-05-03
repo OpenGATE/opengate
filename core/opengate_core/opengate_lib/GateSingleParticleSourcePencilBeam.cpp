@@ -18,9 +18,9 @@ GateSingleParticleSourcePencilBeam::GateSingleParticleSourcePencilBeam(
   mSYPhi = {0, 0, 0, 0};
 }
 
-void GateSingleParticleSourcePencilBeam::SetPBSourceParam(py::dict user_info) {
-  auto x_param = DictGetVecDouble(user_info, "partPhSp_x");
-  auto y_param = DictGetVecDouble(user_info, "partPhSp_y");
+void GateSingleParticleSourcePencilBeam::SetPBSourceParam(
+    std::vector<double> x_param, std::vector<double> y_param) {
+
   // pi = 3.14159265358979323846; # CLHEP value
   sigmaX = x_param[0];
   sigmaY = y_param[0];

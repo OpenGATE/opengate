@@ -28,7 +28,8 @@ public:
 
   void GeneratePrimaryVertex(G4Event *evt) override;
 
-  void SetPBSourceParam(py::dict puser_info);
+  void SetPBSourceParam(std::vector<double> x_param,
+                        std::vector<double> y_param);
 
   void PhaseSpace(double sigma, double theta, double epsilon, double conv,
                   std::vector<double> &symM);
