@@ -343,7 +343,7 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     return source
 
 
-def add_phase_space_plane(sim, linac_name,src_phsp_distance):
+def add_phase_space_plane(sim, linac_name, src_phsp_distance):
     mm = g4_units.mm
     m = g4_units.m
     nm = g4_units.nm
@@ -355,7 +355,7 @@ def add_phase_space_plane(sim, linac_name,src_phsp_distance):
     plane.dz = 1 * nm  # half height
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
-    plane.translation = [0 * mm, 0 * mm, + z_linac / 2  - src_phsp_distance]
+    plane.translation = [0 * mm, 0 * mm, +z_linac / 2 - src_phsp_distance]
     plane.color = [1, 0, 0, 1]  # red
     return plane
 
@@ -374,12 +374,13 @@ def add_phase_space(sim, plane_name):
     ]
     return phsp
 
+
 def add_phase_space_source(sim, plane_name):
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
     source.mother = plane_name
     source.position_key = "PrePositionLocal"
     source.direction_key = "PreDirectionLocal"
-    #source.weight_key = "Weight"
+    # source.weight_key = "Weight"
     source.global_flag = False
     source.particle = ""
     source.batch_size = 100000

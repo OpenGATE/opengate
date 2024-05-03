@@ -53,7 +53,7 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # add phase space
-    plane = synergy.add_phase_space_plane(sim, linac.name, 299.99*mm)
+    plane = synergy.add_phase_space_plane(sim, linac.name, 299.99 * mm)
     plane.rmax = 70 * mm
     phsp = synergy.add_phase_space(sim, plane.name)
     phsp.output = paths.output / "phsp_synergy.root"

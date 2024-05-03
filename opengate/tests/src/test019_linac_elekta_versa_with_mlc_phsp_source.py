@@ -28,7 +28,7 @@ def extract_generalised_normal_fwhm(x, y):
 def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
     x = rootfile["PrePosition_X"][rootfile["ParticleName"] == "alpha"]
     y = rootfile["PrePosition_Y"][rootfile["ParticleName"] == "alpha"]
-    if len(x) < 100 :
+    if len(x) < 100:
         return False
 
     hist_x_pos = np.histogram(x, bins=100, density=True)
@@ -121,17 +121,20 @@ if __name__ == "__main__":
     versa.set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad)
 
     # add alpha source
-    plan  = versa.add_phase_space_plane(sim,linac.name,300)
+    plan = versa.add_phase_space_plane(sim, linac.name, 300)
     source = versa.add_phase_space_source(sim, plan.name)
-    source.phsp_file = paths.data / "output_ref" / "test019_linac" / "phsp_linac_mlc_alpha.root"
-    source.particle = 'alpha'
+    source.phsp_file = (
+        paths.data / "output_ref" / "test019_linac" / "phsp_linac_mlc_alpha.root"
+    )
+    source.particle = "alpha"
     source.weight_key = None
-    f = uproot.open(paths.data / "output_ref" / "test019_linac" / "phsp_linac_mlc_alpha.root")
+    f = uproot.open(
+        paths.data / "output_ref" / "test019_linac" / "phsp_linac_mlc_alpha.root"
+    )
     data = f["linac_box_phsp_plane_phsp"].arrays()
     nb_part = len(data)
 
-
-    source.n = nb_part/ sim.number_of_threads
+    source.n = nb_part / sim.number_of_threads
     if sim.visu:
         source.n = 20
 

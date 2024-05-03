@@ -44,7 +44,7 @@ def add_linac(sim, name="linac", sad=1000):
     sim.g4_check_overlap_flag = True
 
     # global box
-    linac = add_empty_linac_box(sim,name,sad)
+    linac = add_empty_linac_box(sim, name, sad)
 
     # target
     add_target(sim, linac.name)
@@ -68,6 +68,7 @@ def add_linac(sim, name="linac", sad=1000):
     kill_around_target(sim, linac.name)
 
     return linac
+
 
 def add_empty_linac_box(sim, linac_name, sad=1000):
     # units
@@ -376,7 +377,7 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     return source
 
 
-def add_phase_space_plane(sim, linac_name,src_phsp_distance):
+def add_phase_space_plane(sim, linac_name, src_phsp_distance):
     mm = g4_units.mm
     m = g4_units.m
     nm = g4_units.nm
@@ -388,9 +389,11 @@ def add_phase_space_plane(sim, linac_name,src_phsp_distance):
     plane.dz = 1 * nm  # half height
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
-    plane.translation = [0 * mm, 0 * mm, + z_linac / 2  - src_phsp_distance]
+    plane.translation = [0 * mm, 0 * mm, +z_linac / 2 - src_phsp_distance]
     plane.color = [1, 0, 0, 1]  # red
     return plane
+
+
 #
 # def add_phase_space_plane(sim, linac_name):
 #     linac = sim.volume_manager.get_volume(linac_name)

@@ -77,7 +77,7 @@ The "rotation_around_user_point" function enables LINAC head rotation around eit
 
 There are two way to simulate the LINAC photon beam: from an electron source impinging the tungsten target, and from a phase space source provided by the user (only .root extension)
 
-##### Electron source 
+##### Electron source
 
 The function to create an electron is add_electron_source ([test019_linac_elekta_versa.py](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test019_linac_elekta_versa.py)). The electron source replicates the processes undergone by electrons to generate the photon beam. It's positioned at the beginnin of the linac target and characterized as follows:
 
@@ -90,7 +90,7 @@ These parameters delineate the profile of the photon beam derived from the elect
 
 When simulating electron sources becomes too time-consuming, you can switch to using a phase space source. This source have to be put before your custom collimation system for patients. To get started, you'll need a rootfile. The user is free to use its own rootfile, tailored to his photon beam setup.
 
-The prerequisite parameters to include into your rootfile are : 
+The prerequisite parameters to include into your rootfile are :
 
 - Position in X, Y, Z
 - Direction in dX, dY, dZ
@@ -159,7 +159,7 @@ All parameters related to modifying the LINAC head geometry are linearly interpo
 
 ##### Simulation according to the DICOM RT plan
 
-###### LINAC head rotation 
+###### LINAC head rotation
 
 To simulate a VMAT or IMRT session, we opted to realise one GEANT4 run for each LINAC head rotation. Motion actor are used to adjust the geometry based on the DICOM RT plan between each run. The "set_linac_head_motion" function links relevant parameters extracted from the DICOM RT plan with the LINAC head and the collimation system to be moved.
 
