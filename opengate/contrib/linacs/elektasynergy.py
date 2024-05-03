@@ -44,11 +44,7 @@ def add_linac(sim, name="linac", sad=1000):
     sim.g4_check_overlap_flag = True
 
     # global box
-    linac = sim.add_volume("Box", name)
-    linac.material = "G4_AIR"
-    linac.size = [1 * m, 1 * m, 0.6 * m]
-    linac.translation = np.array([0, 0, sad - linac.size[2] / 2])
-    linac.color = white
+    linac = add_empty_linac_box(sim,name,sad)
 
     # target
     add_target(sim, linac.name)
@@ -71,6 +67,18 @@ def add_linac(sim, name="linac", sad=1000):
     # kill actor above the target
     kill_around_target(sim, linac.name)
 
+    return linac
+
+def add_empty_linac_box(sim, linac_name, sad=1000):
+    # units
+    m = g4_units.m
+    mm = g4_units.mm
+    linac = sim.add_volume("Box", linac_name)
+    linac.material = "G4_AIR"
+    linac.size = [1 * m, 1 * m, 0.6 * m]
+    translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
+    linac.translation = translation_linac_box
+    linac.color = [1, 1, 1, 0.8]
     return linac
 
 
@@ -368,20 +376,36 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     return source
 
 
-def add_phase_space_plane(sim, linac_name):
-    linac = sim.volume_manager.get_volume(linac_name)
-    z_linac = linac.size[2]
+def add_phase_space_plane(sim, linac_name,src_phsp_distance):
     mm = g4_units.mm
+    m = g4_units.m
     nm = g4_units.nm
     plane = sim.add_volume("Tubs", f"{linac_name}_phsp_plane")
     plane.mother = linac_name
     plane.material = "G4_AIR"
     plane.rmin = 0
-    plane.rmax = 70 * mm
+    plane.rmax = 0.5 * m / 2 - 0.1 * mm
     plane.dz = 1 * nm  # half height
-    plane.translation = [0, 0, z_linac / 2 - 299.99 * mm]
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
+    plane.translation = [0 * mm, 0 * mm, + z_linac / 2  - src_phsp_distance]
     plane.color = [1, 0, 0, 1]  # red
     return plane
+#
+# def add_phase_space_plane(sim, linac_name):
+#     linac = sim.volume_manager.get_volume(linac_name)
+#     z_linac = linac.size[2]
+#     mm = g4_units.mm
+#     nm = g4_units.nm
+#     plane = sim.add_volume("Tubs", f"{linac_name}_phsp_plane")
+#     plane.mother = linac_name
+#     plane.material = "G4_AIR"
+#     plane.rmin = 0
+#     plane.rmax = 70 * mm
+#     plane.dz = 1 * nm  # half height
+#     plane.translation = [0, 0, z_linac / 2 - 299.99 * mm]
+#     plane.color = [1, 0, 0, 1]  # red
+#     return plane
 
 
 def add_phase_space(sim, plane_name):

@@ -34,7 +34,7 @@ def add_empty_linac_box(sim, linac_name, sad=1000):
     m = g4_units.m
     mm = g4_units.mm
     linac = sim.add_volume("Box", linac_name)
-    linac.material = "G4_Galactic"
+    linac.material = "G4_AIR"
     linac.size = [1 * m, 1 * m, 0.52 * m]
     translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
     linac.translation = translation_linac_box
@@ -343,7 +343,7 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     return source
 
 
-def add_phase_space_plane(sim, linac_name):
+def add_phase_space_plane(sim, linac_name,src_phsp_distance):
     mm = g4_units.mm
     m = g4_units.m
     nm = g4_units.nm
@@ -355,8 +355,7 @@ def add_phase_space_plane(sim, linac_name):
     plane.dz = 1 * nm  # half height
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
-    plane.translation = [0 * mm, 0 * mm, -z_linac / 2 + 0.1 * mm]
-    # plane.translation = [0 * mm, 0 * mm, -1000 * mm]
+    plane.translation = [0 * mm, 0 * mm, + z_linac / 2  - src_phsp_distance]
     plane.color = [1, 0, 0, 1]  # red
     return plane
 
@@ -374,6 +373,19 @@ def add_phase_space(sim, plane_name):
         "PDGCode",
     ]
     return phsp
+
+def add_phase_space_source(sim, plane_name):
+    source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
+    source.mother = plane_name
+    source.position_key = "PrePositionLocal"
+    source.direction_key = "PreDirectionLocal"
+    #source.weight_key = "Weight"
+    source.global_flag = False
+    source.particle = ""
+    source.batch_size = 100000
+    # source.translate_position = True
+    # source.position.translation = [0 * m, 0 * m, -1000 * mm]
+    return source
 
 
 def bool_leaf_x_neg(pair, linac_name, count=1):
