@@ -100,6 +100,7 @@ if __name__ == "__main__":
     versa.add_linac_materials(sim)
     sad = 1000 * mm
     linac = versa.add_empty_linac_box(sim, "linac_box", sad)
+    linac.material  = "G4_Galactic"
 
     # add alpha source :
     nb_part = np.random.randint(1, 100)

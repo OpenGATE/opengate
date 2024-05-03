@@ -23,6 +23,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = True
 
     # units
+    nm = gate.g4_units.nm
     m = gate.g4_units.m
     mm = gate.g4_units.mm
 
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # add phase space
-    plane = versa.add_phase_space_plane(sim, linac.name)
+    plane = versa.add_phase_space_plane(sim, linac.name,linac.size[2] -1*nm)
     phsp = versa.add_phase_space(sim, plane.name)
     phsp.output = paths.output / "phsp_versa.root"
 
