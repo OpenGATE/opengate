@@ -511,41 +511,51 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     fInitialActivity = fActivity;
   }
 
-  if (ene_type == "spectrum_lines") {
-    ene->SetEnergyDisType("spectrum_lines");
-    auto w = DictGetVecDouble(user_info, "spectrum_weight");
-    auto e = DictGetVecDouble(user_info, "spectrum_energy");
-    auto total = 0.0;
-    for (double ww : w)
-      total += ww;
-    // normalize to total
-    for (unsigned long i = 0; i < w.size(); i++) {
-      w[i] = w[i] / total;
-    }
-    // cumulated weights
-    for (unsigned long i = 1; i < w.size(); i++) {
-      w[i] += w[i - 1];
-    }
-    ene->fEnergyCDF = e;
-    ene->fProbabilityCDF = w;
-    if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
-      std::ostringstream oss;
-      oss << "The spectrum lines for source " << fName
-          << " is zero length. Abort";
-      Fatal(oss.str());
-    }
-    if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
-      std::ostringstream oss;
-      oss << "The spectrum vector energy and proba for source " << fName
-          << " must have the same length, while there are  "
-          << ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
-      Fatal(oss.str());
-    }
-    // ! important !
-    // Modify the activity according to the total sum of weights because we
-    // normalize the weights
-    fActivity = fActivity * total;
-    fInitialActivity = fActivity;
+  if (ene_type == "spectrum") {
+		auto spectrum_type = DictGetStr(user_info, "spectrum_type");
+		auto w = DictGetVecDouble(user_info, "spectrum_weight");
+		auto e = DictGetVecDouble(user_info, "spectrum_energy");
+
+		ene->SetEnergyDisType("spectrum_" + spectrum_type);
+
+		if (spectrum_type == "discrete") {
+			auto total = 0.0;
+			for (double ww : w)
+				total += ww;
+			// normalize to total
+			for (unsigned long i = 0; i < w.size(); i++) {
+				w[i] = w[i] / total;
+			}
+			// cumulated weights
+			for (unsigned long i = 1; i < w.size(); i++) {
+				w[i] += w[i - 1];
+			}
+
+			ene->fEnergyCDF = e;
+			ene->fProbabilityCDF = w;
+			if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
+				std::ostringstream oss;
+				oss << "The spectrum lines for source " << fName
+						<< " is zero length. Abort";
+				Fatal(oss.str());
+			}
+			if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
+				std::ostringstream oss;
+				oss << "The spectrum vector energy and proba for source " << fName
+						<< " must have the same length, while there are  "
+						<< ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
+				Fatal(oss.str());
+			}
+			// ! important !
+			// Modify the activity according to the total sum of weights because we
+			// normalize the weights
+			fActivity = fActivity * total;
+			fInitialActivity = fActivity;
+		} else if (spectrum_type == "histogram") {
+			// TODO spectrum
+		} else if (spectrum_type == "continuous") {
+			// TODO spectrum
+		}
   }
 
   if (ene_type == "F18_analytic") {

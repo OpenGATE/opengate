@@ -23,8 +23,10 @@ G4double GateSPSEneDistribution::VGenerateOne(G4ParticleDefinition *d) {
     GenerateFromCDF();
   else if (GetEnergyDisType() == "range")
     GenerateRange();
-  else if (GetEnergyDisType() == "spectrum_lines")
+  else if (GetEnergyDisType() == "spectrum_discrete")
     GenerateSpectrumLines();
+  else if (GetEnergyDisType() == "spectrum_histogram")
+    GenerateSpectrumHistogram();
   else
     fParticleEnergy = G4SPSEneDistribution::GenerateOne(d);
   return fParticleEnergy;
@@ -114,4 +116,8 @@ void GateSPSEneDistribution::GenerateSpectrumLines() {
   while (x >= (fProbabilityCDF[i]))
     i++;
   fParticleEnergy = fEnergyCDF[i];
+}
+
+void GateSPSEneDistribution::GenerateSpectrumHistogram() {
+
 }

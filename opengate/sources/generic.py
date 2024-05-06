@@ -5,14 +5,10 @@ import numpy as np
 
 import opengate_core as g4
 from ..actors.base import _setter_hook_attached_to
-
-# from ..managers import retrieve_g4_physics_constructor_class
 from ..base import GateObject, process_cls
 from ..utility import g4_units
 from ..exception import fatal, warning
 from ..definitions import __world_name__
-
-# from ..userelement import UserElement
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
@@ -180,7 +176,8 @@ def get_rad_gamma_energy_spectrum(rad):
 def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_gamma_energy_spectrum(rad)
     source.particle = "gamma"
-    source.energy.type = "spectrum_lines"
+    source.energy.type = "spectrum"
+    source.energy.spectrum_type = "discrete"
     source.energy.spectrum_weight = w
     source.energy.spectrum_energy = en
 
@@ -502,7 +499,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             "O15_analytic",
             "C11_analytic",
             "histogram",
-            "spectrum_lines",
+            "spectrum",
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
@@ -511,6 +508,19 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
                 f"Available types are {l}"
             )
+
+        # check energy spectrum type if not None
+        valid_spectrum_types = [
+            "discrete",
+            "histogram",
+            "continuous",
+        ]
+        if self.user_info.energy.spectrum_type is not None:
+            if self.user_info.energy.spectrum_type not in valid_spectrum_types:
+                fatal(
+                    f"Cannot find the energy spectrum type {self.user_info.energy.spectrum_type} for the source {self.user_info.name}.\n"
+                    f"Available types are {valid_spectrum_types}"
+                )
 
         # special case for beta plus energy spectra
         # FIXME put this elsewhere
