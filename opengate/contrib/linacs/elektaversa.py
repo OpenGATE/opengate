@@ -1,5 +1,6 @@
 from scipy.spatial.transform import Rotation
 from box import Box
+import opengate as gate
 from opengate.utility import g4_units, get_contrib_path
 from opengate.geometry.utility import get_grid_repetition
 from opengate.geometry.volumes import unite_volumes, intersect_volumes, subtract_volumes
@@ -7,73 +8,49 @@ from opengate.geometry import volumes
 import numpy as np
 
 
-def add_linac(sim, linac_name, cp_param):
-    # units
-    mm = g4_units.mm
-    m = g4_units.m
-
+def add_linac(sim, linac_name, sad=1000):
     # materials
+    add_linac_materials(sim)
+
+    # linac
+    linac = add_empty_linac_box(sim, linac_name, sad)
+
+    # add elements
+    add_target(sim, linac.name)
+    add_primary_collimator(sim, linac.name)
+    add_flattening_filter(sim, linac.name)
+    add_ionizing_chamber(sim, linac.name)
+    add_back_scatter_plate(sim, linac.name)
+    add_mirror(sim, linac.name)
+
+    # kill actor above the target
+    kill_around_target(sim, linac.name)
+
+    return linac
+
+
+def add_empty_linac_box(sim, linac_name, sad=1000):
+    # units
+    m = g4_units.m
+    mm = g4_units.mm
+    linac = sim.add_volume("Box", linac_name)
+    linac.material = "G4_AIR"
+    linac.size = [1 * m, 1 * m, 0.52 * m]
+    translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2])
+    linac.translation = translation_linac_box
+    linac.color = [1, 1, 1, 0.8]
+    return linac
+
+
+def add_linac_materials(sim):
     contrib_paths = get_contrib_path() / "linacs"
     file = contrib_paths / "elekta_versa_materials.db"
     sim.volume_manager.add_material_database(str(file))
 
-    # linac
-    linac = sim.add_volume("Box", linac_name)
-    linac.material = "G4_AIR"
-    linac.size = [0.5 * m, 0.5 * m, 0.52 * m]
-    # linac.translation = translation_linac_box
-    linac.color = [1, 1, 1, 0.8]
 
-    # add elements
-    h = linac.size[2]
-    target = add_target(sim, linac.name, h)
-    add_primary_collimator(sim, linac.name, h)
-    add_flattening_filter(sim, linac.name, h)
-    add_ionizing_chamber(sim, linac.name, h)
-    add_back_scatter_plate(sim, linac.name, h)
-    add_mirror(sim, linac.name, h)
-
-    # kill actor above the target
-    kill_around_target(sim, target)
-
-    # add jaws
-    """cp_param = interpolation_CP(cp_param, seg_cp)
-    y_jaws_1 = cp_param["Y_jaws_1"]
-    y_jaws_2 = cp_param["Y_jaws_2"]
-    x_leaf = cp_param["Leaves"]
-    angle = cp_param["Gantry angle"]
-    len_cp_param = len(y_jaws_1)"""
-
-    # add MLC
-    """# x_leaf_position,position_jaws = define_apertures(field_X,field_Y)
-    MLC = add_MLC(sim, linac.name)
-    left_jaws = add_realistic_jaws(sim, linac.name, "left", visu)
-    right_jaws = add_realistic_jaws(sim, linac.name, "right", visu)
-
-    move_MLC_RT_plan(sim, MLC, x_leaf, len_cp_param, size_linac[2])
-    move_jaws_RT_plan(sim, left_jaws, y_jaws_1, len_cp_param, size_linac[2], "left")
-    move_jaws_RT_plan(sim, right_jaws, y_jaws_2, len_cp_param, size_linac[2], "right")
-    """
-
-    """motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
-    motion_LINAC.rotations = []
-    motion_LINAC.translations = []
-    motion_LINAC.mother = linac.name
-    # print(angle)
-    for n in range(len_cp_param):
-        # print(angle[n])
-        rot = Rotation.from_euler("y", angle[n], degrees=True)
-        t = gate.geometry.utility.get_translation_from_rotation_with_center(
-            rot, [0, 0, -translation_linac_box[2]]
-        )
-        rot = rot.as_matrix()
-        motion_LINAC.rotations.append(rot)
-        motion_LINAC.translations.append(np.array(t) + translation_linac_box)
-    """
-    return linac
-
-
-def add_target(sim, linac_name, z_linac):
+def add_target(sim, linac_name):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     # unit
     mm = g4_units.mm
     nm = g4_units.nm
@@ -92,12 +69,11 @@ def add_target(sim, linac_name, z_linac):
     target_support.material = "G4_AIR"
     target_support.rmin = 0
     target_support.rmax = 15 * mm
-    target_support.dz = 11 * mm / 2.0 + 2 * nm
-    target_support.translation = [0, 0, z_linac / 2 - 5 * mm]  # FIXME
-    target_support.translation = [0, 0, z_linac / 2 - 5.6 * mm]
+    target_support.dz = 11 * mm / 2.0
+    target_support.translation = [0, 0, z_linac / 2 - target_support.dz - 1 * nm]
     target_support.color = [0, 1, 0, 1]
 
-    target = sim.add_volume("Tubs", "target")
+    target = sim.add_volume("Tubs", f"{linac_name}_target")
     target.mother = target_support.name
     target.material = target_material
     target.rmin = 0
@@ -119,7 +95,8 @@ def add_target(sim, linac_name, z_linac):
         "Tubs", f"{linac_name}_target_support_bottom"
     )
     target_support_bottom.mother = target_support.name
-    target_support_bottom.material = copper
+
+    target_support_bottom.material = target_material
     target_support_bottom.rmin = 0
     target_support_bottom.rmax = 15 * mm
     target_support_bottom.dz = 10 * mm / 2.0
@@ -129,36 +106,40 @@ def add_target(sim, linac_name, z_linac):
     return target_support
 
 
-def kill_around_target(sim, target):
+def kill_around_target(sim, linac_name):
     mm = g4_units.mm
     nm = g4_units.nm
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
 
     # above the target
-    target_above = sim.add_volume("Tubs", f"{target.name}_kill_volume1")
-    target_above.mother = target
+    target_above = sim.add_volume("Tubs", f"target_kill_volume1")
+    target_above.mother = linac_name
     target_above.material = "G4_AIR"
     target_above.rmin = 0
-    target_above.rmax = 14.9 * mm
-    target_above.dz = 1 * nm
-    target_above.translation = [0, 0, 5.5 * mm + 1 * nm]
+    target_above.rmax = 15 * mm
+    target_above.dz = 0.5 * nm
+    target_above.translation = [0, 0, z_linac / 2 - 0.5 * nm]
     target_above.color = [1, 0, 0, 1]
 
     # around the target
-    target_around = sim.add_volume("Tubs", f"{target.name}_kill_volume2")
-    target_around.mother = target.mother
+    target_around = sim.add_volume("Tubs", f"target_kill_volume2")
+    target_around.mother = linac_name
     target_around.material = "G4_AIR"
-    target_around.rmin = 15.01 * mm
-    target_around.rmax = 18 * mm
-    target_around.dz = 5 * mm
-    target_around.translation = target.translation
+    target_around.rmin = 15.1 * mm
+    target_around.rmax = target_around.rmin + 1 * nm
+    target_around.dz = 5.5 * mm
+    target_around.translation = [0, 0, z_linac / 2 - target_around.dz - 1 * nm]
     target_around.color = [1, 0, 0, 1]
 
     # psycho killer
-    killer = sim.add_actor("KillActor", f"{target.name}_kill")
+    killer = sim.add_actor("KillActor", f"target_kill")
     killer.mother = [target_above.name, target_around.name]
 
 
-def add_primary_collimator(sim, linac_name, z_linac):
+def add_primary_collimator(sim, linac_name):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     mm = g4_units.mm
     deg = g4_units.deg
     primary_collimator = sim.add_volume("Cons", f"{linac_name}_primary_collimator")
@@ -175,13 +156,15 @@ def add_primary_collimator(sim, linac_name, z_linac):
     primary_collimator.color = [0.5, 0.5, 1, 0.8]
 
 
-def add_flattening_filter(sim, linac_name, z_linac):
+def add_flattening_filter(sim, linac_name):
     # unit
     mm = g4_units.mm
     deg = g4_units.deg
 
     # colors
     yellow = [0, 0.7, 0.7, 0.8]
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
 
     # bounding cylinder
     flattening_filter = sim.add_volume("Tubs", f"{linac_name}_flattening_filter")
@@ -228,11 +211,13 @@ def add_flattening_filter(sim, linac_name, z_linac):
         i = i + 1
 
 
-def add_ionizing_chamber(sim, linac_name, z_linac):
+def add_ionizing_chamber(sim, linac_name):
     # unit
     mm = g4_units.mm
 
     # main cylinder
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     ionizing_chamber = sim.add_volume("Tubs", f"{linac_name}_ionizing_chamber")
     ionizing_chamber.mother = linac_name
     ionizing_chamber.material = "G4_AIR"
@@ -278,8 +263,10 @@ def add_ionizing_chamber(sim, linac_name, z_linac):
         i = i + 1
 
 
-def add_back_scatter_plate(sim, linac_name, z_linac):
+def add_back_scatter_plate(sim, linac_name):
     # back_scatter_plate
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     mm = g4_units.mm
     bsp = sim.add_volume("Box", f"{linac_name}_back_scatter_plate")
     bsp.mother = linac_name
@@ -289,12 +276,14 @@ def add_back_scatter_plate(sim, linac_name, z_linac):
     bsp.color = [1, 0.7, 0.7, 0.8]
 
 
-def add_mirror(sim, linac_name, z_linac):
+def add_mirror(sim, linac_name):
     # unit
     mm = g4_units.mm
     blue = [0, 0, 1, 0.8]
 
     # main box
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
     m = sim.add_volume("Box", f"{linac_name}_mirror")
     m.mother = linac_name
     m.material = "G4_AIR"
@@ -333,24 +322,28 @@ def enable_brem_splitting(sim, linac_name, splitting_factor):
 def add_electron_source(sim, linac_name, rotation_matrix):
     MeV = g4_units.MeV
     mm = g4_units.mm
+    nm = g4_units.nm
     source = sim.add_source("GenericSource", f"{linac_name}_e-_source")
     source.particle = "e-"
-    source.mother = f"{linac_name}_target_support"
+    source.mother = f"{linac_name}_target"
     source.energy.type = "gauss"
-    source.energy.mono = 6.7 * MeV
-    source.energy.sigma_gauss = 0.077 * MeV
+    source.energy.mono = 6.4 * MeV
+    source.energy.sigma_gauss = source.energy.mono * (0.03 / 2.35)
     source.position.type = "disc"
-    source.position.radius = 2 * mm  # FIXME not really similar to GATE need sigma etc
-    source.position.translation = [0, 0, 5.1 * mm]
+    source.position.sigma_x = 0.468 * mm
+    source.position.sigma_y = 0.468 * mm
+    source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
     source.n = 10
     # consider linac rotation
+
+    # To be modified ? A change in Linac rotation will normally modify the source direction accordingly
     dir = np.dot(rotation_matrix, np.array([0, 0, -1]))
     source.direction.momentum = dir
     return source
 
 
-def add_phase_space_plane(sim, linac_name):
+def add_phase_space_plane(sim, linac_name, src_phsp_distance):
     mm = g4_units.mm
     m = g4_units.m
     nm = g4_units.nm
@@ -362,8 +355,7 @@ def add_phase_space_plane(sim, linac_name):
     plane.dz = 1 * nm  # half height
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
-    plane.translation = [0 * mm, 0 * mm, -z_linac / 2 + 0.1 * mm]
-    # plane.translation = [0 * mm, 0 * mm, -1000 * mm]
+    plane.translation = [0 * mm, 0 * mm, +z_linac / 2 - src_phsp_distance]
     plane.color = [1, 0, 0, 1]  # red
     return plane
 
@@ -381,6 +373,20 @@ def add_phase_space(sim, plane_name):
         "PDGCode",
     ]
     return phsp
+
+
+def add_phase_space_source(sim, plane_name):
+    source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
+    source.mother = plane_name
+    source.position_key = "PrePositionLocal"
+    source.direction_key = "PreDirectionLocal"
+    # source.weight_key = "Weight"
+    source.global_flag = False
+    source.particle = ""
+    source.batch_size = 100000
+    # source.translate_position = True
+    # source.position.translation = [0 * m, 0 * m, -1000 * mm]
+    return source
 
 
 def bool_leaf_x_neg(pair, linac_name, count=1):
@@ -577,6 +583,9 @@ def bool_leaf_x_pos(pair, linac_name, count=1):
 
 def add_mlc(sim, linac_name):
     mm = g4_units.mm
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
+    center_mlc = 349.3 * mm
     interleaf_gap = 0.09 * mm
     leaf_width = 1.76 * mm
     leaf_lenght = 155 * mm
@@ -611,39 +620,61 @@ def add_mlc(sim, linac_name):
     tr_blocks = np.array([leaf_lenght, 2 * leaf_width + 2 * interleaf_gap, 0])
 
     mlc_p_1 = get_grid_repetition(size, tr_blocks)
-    leaf_p_1.translation = mlc_p_1
-
     mlc_o_1 = get_grid_repetition(size, tr_blocks)
-    leaf_o_1.translation = mlc_o_1
-
     mlc_p_2 = get_grid_repetition(size, tr_blocks)
-    leaf_p_2.translation = mlc_p_2
-
     mlc_o_2 = get_grid_repetition(size, tr_blocks)
+
+    for i in range(len(mlc_p_1)):
+        mlc_p_1[i] += np.array(
+            [-leaf_lenght / 2, leaf_width + interleaf_gap, z_linac / 2 - center_mlc]
+        )
+        mlc_o_1[i] += np.array([-leaf_lenght / 2, 0, z_linac / 2 - center_mlc])
+        mlc_p_2[i] += np.array(
+            [leaf_lenght / 2, leaf_width + interleaf_gap, z_linac / 2 - center_mlc]
+        )
+        mlc_o_2[i] += np.array([leaf_lenght / 2, 0, z_linac / 2 - center_mlc])
+
+    leaf_p_1.translation = mlc_p_1
+    leaf_o_1.translation = mlc_o_1
+    leaf_p_2.translation = mlc_p_2
     leaf_o_2.translation = mlc_o_2
 
-    for i in range(len(mlc_p_1)):
-        mlc_p_1[i] += np.array([-leaf_lenght / 2, leaf_width + interleaf_gap, 0])
-        mlc_o_1[i] += np.array([-leaf_lenght / 2, 0, 0])
-        mlc_p_2[i] += np.array([leaf_lenght / 2, leaf_width + interleaf_gap, 0])
-        mlc_o_2[i] += np.array([leaf_lenght / 2, 0, 0])
-
     mlc = []
-
     for i in range(len(mlc_p_1)):
         mlc.append(
-            {"translation": mlc_o_1[i], "name": leaf_o_1.name + "_rep_" + str(i)}
+            {
+                "translation": mlc_o_1[i],
+                "mother_name": leaf_o_1.name,
+                "name": leaf_o_1.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
         mlc.append(
-            {"translation": mlc_p_1[i], "name": leaf_p_1.name + "_rep_" + str(i)}
+            {
+                "translation": mlc_p_1[i],
+                "mother_name": leaf_p_1.name,
+                "name": leaf_p_1.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
     for i in range(len(mlc_p_2)):
         mlc.append(
-            {"translation": mlc_o_2[i], "name": leaf_o_2.name + "_rep_" + str(i)}
+            {
+                "translation": mlc_o_2[i],
+                "mother_name": leaf_o_2.name,
+                "name": leaf_o_2.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
         mlc.append(
-            {"translation": mlc_p_2[i], "name": leaf_p_2.name + "_rep_" + str(i)}
+            {
+                "translation": mlc_p_2[i],
+                "mother_name": leaf_p_2.name,
+                "name": leaf_p_2.name + "_rep_" + str(i),
+                "leaf_index": i,
+            }
         )
+
     return mlc
 
 
@@ -663,9 +694,19 @@ def trap_g4_param(
     obj.phi = phi
 
 
-def add_jaws(sim, linac_name, side):
+def add_jaws(sim, linac_name):
+    return [add_jaw(sim, linac_name, "left"), add_jaw(sim, linac_name, "right")]
+
+
+def add_jaws_visu(sim, linac_name):
+    return [
+        add_jaw_visu(sim, linac_name, "left"),
+        add_jaw_visu(sim, linac_name, "right"),
+    ]
+
+
+def base_jaws(sim, linac_name, side):
     mm = g4_units.mm
-    center_jaws = 470.5 * mm
     jaws_height = 77 * mm
     jaws_length_x = 201.84 * mm
     jaws_length_tot_X = 229.58 * mm
@@ -813,6 +854,45 @@ def add_jaws(sim, linac_name, side):
         ],
     )
 
+    return bool_box_jaws
+
+
+def add_jaw_visu(sim, linac_name, side):
+    mm = g4_units.mm
+    linac = sim.volume_manager.get_volume(linac_name)
+    center_jaws = 470.5 * mm
+    jaws_length_y = 205.2 * mm
+    z_linac = linac.size[2]
+
+    bool_box_jaw = base_jaws(sim, linac_name, side)
+    sim.volume_manager.add_volume(bool_box_jaw, "jaws" + "_" + side)
+    bool_box_jaw.mother = linac_name
+    bool_box_jaw.material = "mat_leaf"
+
+    if side == "left":
+        bool_box_jaw.translation = np.array(
+            [0, -jaws_length_y / 2, z_linac / 2 - center_jaws]
+        )
+    if side == "right":
+        rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
+        bool_box_jaw.translation = np.array(
+            [0, jaws_length_y / 2, z_linac / 2 - center_jaws]
+        )
+        bool_box_jaw.rotation = rot_jaw
+    return bool_box_jaw
+
+
+def add_jaw(sim, linac_name, side):
+    mm = g4_units.mm
+    linac = sim.volume_manager.get_volume(linac_name)
+    center_jaws = 470.5 * mm
+    jaws_height = 77 * mm
+    jaws_length_x = 201.84 * mm
+    jaws_length_tot_X = 229.58 * mm
+    jaws_length_y = 205.2 * mm
+    z_linac = linac.size[2]
+
+    bool_box_jaws = base_jaws(sim, linac_name, side)
     # Correction of the front jaw shape
     minibox_to_add = volumes.BoxVolume(name=f"{linac_name}_minibox_to_add" + "_" + side)
     minibox_to_add.size = np.array(
@@ -900,11 +980,211 @@ def add_jaws(sim, linac_name, side):
     jaw.mother = linac_name
     jaw.material = "mat_leaf"
 
-    # if side == 'left' :
-    #     jaw.translation = np.array([0, -jaws_lenght_Y/2, z_linac / 2 - center_jaws])
+    if side == "left":
+        jaw.translation = np.array([0, -jaws_length_y / 2, z_linac / 2 - center_jaws])
     if side == "right":
         rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
-        #     jaw.translation = np.array([0, jaws_lenght_Y/2, z_linac / 2 - center_jaws])
+        jaw.translation = np.array([0, jaws_length_y / 2, z_linac / 2 - center_jaws])
         jaw.rotation = rot_jaw
-    # jaw.translation += np.array([0, position_jaw, 0])
     return jaw
+
+
+def define_pos_mlc_jaws_rectangular_field(x_field, y_field, sad=1000):
+    mm = g4_units.mm
+    center_mlc = 349.3 * mm
+    center_jaws = 470.5 * mm
+    jaws_height = 77 * mm
+    center_curve_mlc = center_mlc - 7.5 * mm
+    leaf_width = 1.76 * mm + 0.09 * mm
+    center_curve_jaws = center_jaws - (jaws_height / 2 - 35 * mm)
+
+    jaws_y_aperture = y_field / 2 * center_curve_jaws / sad
+    mlc_x_aperture = x_field / 2 * center_curve_mlc / sad
+    mlc_y_aperture = y_field * center_mlc / sad
+    nb_of_leaf_open = int(mlc_y_aperture / leaf_width) + 1
+    if nb_of_leaf_open % 2 == 1:
+        nb_of_leaf_open += 1
+
+    pos_x_leaves = np.zeros(160)
+    pos_x_leaves[0:80] -= 0.0 * mm
+    pos_x_leaves[80:160] += 0.0 * mm
+    pos_x_leaves[
+        39 - int(nb_of_leaf_open / 2) + 1 : 39 + int(nb_of_leaf_open / 2) + 1
+    ] = -mlc_x_aperture
+    pos_x_leaves[
+        119 - int(nb_of_leaf_open / 2) + 1 : 119 + int(nb_of_leaf_open / 2) + 1
+    ] = mlc_x_aperture
+    pos_x_leaves = np.array(10 * pos_x_leaves, dtype=int) / 10
+    pos_y_jaws = np.array(
+        [-int(10 * jaws_y_aperture) / 10, int(10 * jaws_y_aperture) / 10]
+    )
+    return pos_x_leaves, pos_y_jaws
+
+
+def field(sim, mlc, jaws, pos_x_leaves, pos_y_jaws):
+    for i, mlc_leaf in enumerate(mlc):
+        mother_leaf_name = mlc_leaf["mother_name"]
+        leaf_index = mlc_leaf["leaf_index"]
+        leaf = sim.volume_manager.get_volume(mother_leaf_name)
+        leaf.translation[leaf_index][0] += pos_x_leaves[i]
+
+    for i, jaw in enumerate(jaws):
+        jaw.translation[1] += pos_y_jaws[i]
+
+
+def set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad=1000):
+    pos_x_leaves, pos_y_jaws = define_pos_mlc_jaws_rectangular_field(
+        x_field, y_field, sad
+    )
+    field(sim, mlc, jaws, pos_x_leaves, pos_y_jaws)
+
+
+def linac_rotation(sim, linac_name, angle, cp_id="all_cp"):
+    linac = sim.volume_manager.get_volume(linac_name)
+    motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
+    motion_LINAC.rotations = []
+    motion_LINAC.translations = []
+    motion_LINAC.mother = linac_name
+    if cp_id == "all_cp":
+        nb_cp_id = len(angle)
+        cp_id = np.arange(0, nb_cp_id, 1)
+    translation_linac = linac.translation
+    for n in cp_id:
+        rot = Rotation.from_euler("y", angle[n], degrees=True)
+        t = gate.geometry.utility.get_translation_from_rotation_with_center(
+            rot, [0, 0, -translation_linac[2]]
+        )
+        rot = rot.as_matrix()
+        motion_LINAC.rotations.append(rot)
+        motion_LINAC.translations.append(np.array(t) + translation_linac)
+
+
+def translation_from_sad(sim, linac_name, translation, sad=1000):
+    linac = sim.volume_manager.get_volume(linac_name)
+    linac.translation = np.array(translation)
+    linac.translation[2] += sad - linac.size[2] / 2
+
+
+def rotation_around_user_point(
+    sim, linac_name, str_axes, angle_list, point_coordinate=[0, 0, 0]
+):
+    point_coordinate = np.array(point_coordinate)
+    linac = sim.volume_manager.get_volume(linac_name)
+    translation = linac.translation
+    rot = Rotation.from_euler(str_axes, angle_list, degrees=True)
+    new_translation = gate.geometry.utility.get_translation_from_rotation_with_center(
+        rot, point_coordinate - np.array(translation)
+    )
+    linac.translation = translation + new_translation
+    linac.rotation = rot.as_matrix()
+
+
+def jaw_translation(
+    sim, linac_name, jaw, jaw_positions, side, cp_id="all_cp", sad=1000
+):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
+    mm = g4_units.mm
+    motion_jaw = sim.add_actor("MotionVolumeActor", "Move_" + side + "_jaw")
+    motion_jaw.translations = []
+    motion_jaw.rotations = []
+    motion_jaw.mother = jaw.name
+    jaw_lenght_y = 205.2 * mm
+    jaw_height = 77 * mm
+    center_jaw = 470.5 * mm
+    center_curve_jaw = center_jaw - (jaw_height / 2 - 35 * mm)
+    fact_iso = center_curve_jaw / sad
+    rot_jaw = Rotation.from_euler("Z", 180, degrees=True).as_matrix()
+    if cp_id == "all_cp":
+        nb_cp_id = len(jaw_positions)
+        cp_id = np.arange(0, nb_cp_id, 1)
+    for n in cp_id:
+        if side == "left":
+            jaw_translation = np.array(
+                [
+                    0,
+                    -jaw_lenght_y / 2 + jaw_positions[n] * fact_iso,
+                    0.5 * z_linac - center_jaw,
+                ]
+            )
+            motion_jaw.rotations.append(np.identity(3))
+        if side == "right":
+            jaw_translation = np.array(
+                [
+                    0,
+                    jaw_lenght_y / 2 + jaw_positions[n] * fact_iso,
+                    0.5 * z_linac - center_jaw,
+                ]
+            )
+            motion_jaw.rotations.append(rot_jaw)
+        motion_jaw.translations.append(jaw_translation)
+
+
+def mlc_leaves_translation(
+    sim, linac_name, mlc, leaves_position, cp_id="all_cp", sad=1000
+):
+    linac = sim.volume_manager.get_volume(linac_name)
+    z_linac = linac.size[2]
+    mm = g4_units.mm
+    center_mlc = 349.3 * mm
+    center_curve_mlc = center_mlc - 7.5 * mm
+    fact_iso = center_curve_mlc / sad
+    nb_leaves = 160
+    motion_leaves = []
+    motion_leaves_t = []
+    motion_leaves_r = []
+    for i in range(nb_leaves):
+        motion_leaves.append(sim.add_actor("MotionVolumeActor", "Move_leaf_" + str(i)))
+        motion_leaves[i].mother = mlc[i]["name"]
+        motion_leaves[i].translations = []
+        motion_leaves[i].rotations = []
+        motion_leaves_t.append(motion_leaves[i].translations)
+        motion_leaves_r.append(motion_leaves[i].rotations)
+
+    translation_mlc = []
+    if cp_id == "all_cp":
+        nb_cp_id = len(leaves_position)
+        cp_id = np.arange(0, nb_cp_id, 1)
+    for n in cp_id:
+        for i in range(len(mlc)):
+            translation_mlc.append(np.copy(mlc[i]["translation"]))
+            motion_leaves_t[i].append(
+                translation_mlc[i]
+                + np.array(
+                    [
+                        leaves_position[n, i] * fact_iso,
+                        -0.88 * mm - 0.045 * mm,
+                        0.5 * z_linac - center_mlc,
+                    ]
+                )
+            )
+            motion_leaves_r[i].append(np.identity(3))
+
+
+def set_linac_head_motion(
+    sim, linac_name, jaws, mlc, rt_plan_parameters, cp_id="all_cp", sad=1000
+):
+    leaves_position = rt_plan_parameters["leaves"]
+    jaw_1_positions = rt_plan_parameters["jaws 1"]
+    jaw_2_positions = rt_plan_parameters["jaws 2"]
+    linac_head_positions = rt_plan_parameters["gantry angle"]
+    mlc_leaves_translation(sim, linac_name, mlc, leaves_position, cp_id, sad)
+    jaw_translation(sim, linac_name, jaws[0], jaw_1_positions, "left", cp_id, sad)
+    jaw_translation(sim, linac_name, jaws[1], jaw_2_positions, "right", cp_id, sad)
+    linac_rotation(sim, linac_name, linac_head_positions, cp_id)
+
+
+def set_time_intervals_from_rtplan(sim, rt_plan_parameters, cp_id="all_cp"):
+    MU = rt_plan_parameters["weight"]
+    sec = gate.g4_units.s
+    sim.run_timing_intervals = []
+    if cp_id == "all_cp":
+        nb_cp_id = len(MU)
+        cp_id = np.arange(0, nb_cp_id, 1)
+    for i in cp_id:
+        if i == 0:
+            sim.run_timing_intervals.append([0, MU[0] * sec])
+        else:
+            sim.run_timing_intervals.append(
+                [np.sum(MU[:i]) * sec, np.sum(MU[: i + 1]) * sec]
+            )

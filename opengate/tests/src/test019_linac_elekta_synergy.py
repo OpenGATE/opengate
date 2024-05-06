@@ -5,6 +5,7 @@ import opengate as gate
 import opengate.contrib.linacs.elektasynergy as synergy
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
+import numpy as np
 
 if __name__ == "__main__":
     # paths
@@ -19,7 +20,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.random_seed = 123456789
+    sim.random_seed = 12345678
     sim.check_volumes_overlap = True
 
     # units
@@ -28,12 +29,12 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [2 * m, 2 * m, 3 * m]
     world.material = "G4_AIR"
 
     # add a linac
     linac = synergy.add_linac(sim, "synergy")
-    linac.translation = [50 * mm, 19 * mm, 17 * mm]
+    linac.translation += np.array([50 * mm, 19 * mm, 17 * mm])
     linac.rotation = Rotation.from_euler("ZY", [38, 29], degrees=True).as_matrix()
 
     # add linac e- source
@@ -52,7 +53,8 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # add phase space
-    plane = synergy.add_phase_space_plane(sim, linac.name)
+    plane = synergy.add_phase_space_plane(sim, linac.name, 299.99 * mm)
+    plane.rmax = 70 * mm
     phsp = synergy.add_phase_space(sim, plane.name)
     phsp.output = paths.output / "phsp_synergy.root"
 

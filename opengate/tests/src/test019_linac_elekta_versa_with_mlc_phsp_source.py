@@ -28,6 +28,8 @@ def extract_generalised_normal_fwhm(x, y):
 def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
     x = rootfile["PrePosition_X"][rootfile["ParticleName"] == "alpha"]
     y = rootfile["PrePosition_Y"][rootfile["ParticleName"] == "alpha"]
+    if len(x) < 100:
+        return False
 
     hist_x_pos = np.histogram(x, bins=100, density=True)
     x_hist_x_pos = hist_x_pos[1][:-1] + 0.5 * (hist_x_pos[1][1] - hist_x_pos[1][0])
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.output_dir = paths.output  # FIXME (not yet)
-    sim.random_seed = 123456789
+    # sim.random_seed = 123456789 # FIXME
     sim.check_volumes_overlap = True
 
     # unit
@@ -119,18 +121,20 @@ if __name__ == "__main__":
     versa.set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad)
 
     # add alpha source
-    source = sim.add_source("GenericSource", f"alpha_source")
+    plan = versa.add_phase_space_plane(sim, linac.name, 300)
+    source = versa.add_phase_space_source(sim, plan.name)
+    source.phsp_file = (
+        paths.data / "output_ref" / "test019_linac" / "phsp_linac_mlc_alpha.root"
+    )
     source.particle = "alpha"
-    source.mother = linac.name
-    z_linac = linac.size[2]
-    source.energy.type = "gauss"
-    source.energy.mono = 1 * MeV
-    source.position.type = "disc"
-    source.position.sigma_x = 0.468 * mm
-    source.position.sigma_y = 0.468 * mm
-    source.position.translation = [0, 0, z_linac / 2 - 5.6 * mm]
-    source.direction.type = "iso"
-    source.n = 5e5 / sim.number_of_threads
+    source.weight_key = None
+    f = uproot.open(
+        paths.data / "output_ref" / "test019_linac" / "phsp_linac_mlc_alpha.root"
+    )
+    data = f["linac_box_phsp_plane_phsp"].arrays()
+    nb_part = len(data)
+
+    source.n = nb_part / sim.number_of_threads
     if sim.visu:
         source.n = 20
 

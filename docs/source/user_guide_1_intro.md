@@ -79,10 +79,14 @@ Once installed, we recommend to check the installation by printing GATE informat
 
 The libraries (libG4processes and libG4geometry) are usually found in the Geant4 folder, something like ```~/build-geant4.11.0.2/BuildProducts/lib64```.
 
+### Additional command lines tools
+
+There is some additional commands lines tools that can also be used, see the [addons section](user_guide_3_addons.md).
+
 ### Teaching resources and examples
 
 *Warning* they are only updated infrequently, you may have to adapt them to changes in the gate version.
 
--  [exercices](https://gitlab.in2p3.fr/davidsarrut/gate_exercices_2) (initially developed for DQPRM, French medical phyiscs diploma)
+- [exercices](https://gitlab.in2p3.fr/davidsarrut/gate_exercices_2) (initially developed for DQPRM, French medical physics diploma)
 
 - [exercices](https://drive.google.com/drive/folders/1bcIS5OPLOBzhLo0NvrLJL5IxVQidNYCF) (initially developed for Opengate teaching)

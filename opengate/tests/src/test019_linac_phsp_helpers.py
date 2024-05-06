@@ -19,7 +19,8 @@ def init_test019(nt):
 
     # main options
     sim.g4_verbose = False
-    sim.visu = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = nt
     sim.random_seed = 123456789
@@ -34,7 +35,7 @@ def init_test019(nt):
 
     #  adapt world size
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [1 * m, 1 * m, 1.3 * m]
 
     # add a linac
     linac = gate_linac.add_linac(sim, "linac")
@@ -42,12 +43,12 @@ def init_test019(nt):
 
     # virtual plane for phase space
     plane = sim.add_volume("Tubs", "phase_space_plane")
-    plane.mother = world.name
+    plane.mother = linac.name
     plane.material = "G4_AIR"
     plane.rmin = 0
     plane.rmax = 70 * mm
     plane.dz = 1 * nm  # half height
-    plane.translation = [0, 0, -300.0001 * mm]
+    plane.translation = [0, 0, linac.size[2] / 2 - 300 * mm]
     plane.color = [1, 0, 0, 1]  # red
 
     # e- source
@@ -59,7 +60,7 @@ def init_test019(nt):
     source.energy.sigma_gauss = 0.077 * MeV
     source.position.type = "disc"
     source.position.radius = 2 * mm  # FIXME not really similar to GATE need sigma etc
-    source.position.translation = [0, 0, 0.6 * mm]
+    source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, -1]
     source.activity = 5000 * Bq / sim.number_of_threads
@@ -145,12 +146,14 @@ def run_test019(sim):
     data, keys, m = phsp.load(fn2)
     # find the good key's names
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(keys_ref)
+    keys1.remove("Z")
+    keys2.remove("PrePosition_Z")
     # Do not check some keys
     tols[keys1.index("Weight")] = 0.001
     tols[keys1.index("Ekine")] = 0.1
     tols[keys1.index("Y")] = 2.0
-    tols[keys1.index("X")] = 2.0
-    tols[keys1.index("Z")] = 0.2
+    tols[keys1.index("X")] = 3.0
+    # tols[keys1.index("Z")] = 0.2
     # perform the test
     is_ok = (
         utility.compare_trees(

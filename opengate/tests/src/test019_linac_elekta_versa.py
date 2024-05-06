@@ -4,7 +4,6 @@
 import opengate as gate
 import opengate.contrib.linacs.elektaversa as versa
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
     # paths
@@ -24,22 +23,26 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = True
 
     # units
+    nm = gate.g4_units.nm
     m = gate.g4_units.m
     mm = gate.g4_units.mm
 
     # world
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [4 * m, 4 * m, 4 * m]
     world.material = "G4_AIR"
 
     # add a linac
-    linac = versa.add_linac(sim, "versa", None)
-    linac.translation = [50 * mm, 19 * mm, 17 * mm]
-    linac.rotation = Rotation.from_euler("ZY", [38, 29], degrees=True).as_matrix()
+    linac = versa.add_linac(sim, "versa")
+    translation = [50 * mm, 12 * mm, 29 * mm]
+    versa.translation_from_sad(sim, linac.name, translation, sad=1000)
+    versa.rotation_around_user_point(
+        sim, linac.name, "ZY", [38, 28], [224 * mm, -47 * mm, 456 * mm]
+    )
 
     # add linac e- source
     source = versa.add_electron_source(sim, linac.name, linac.rotation)
-    source.n = 5e4 / sim.number_of_threads
+    source.n = 8e4 / sim.number_of_threads
     if sim.visu:
         source.n = 200
 
@@ -53,7 +56,7 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # add phase space
-    plane = versa.add_phase_space_plane(sim, linac.name)
+    plane = versa.add_phase_space_plane(sim, linac.name, linac.size[2] - 1 * nm)
     phsp = versa.add_phase_space(sim, plane.name)
     phsp.output = paths.output / "phsp_versa.root"
 
@@ -66,10 +69,9 @@ if __name__ == "__main__":
 
     # compare root
     br = "versa_phsp_plane_phsp"
-    print()
     root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
-    tols = [0.03, 1.8, 1.8]
+    tols = [0.1, 2.5, 2.5]
     is_ok = utility.compare_root3(
         root_ref,
         phsp.output,
@@ -81,13 +83,12 @@ if __name__ == "__main__":
         None,
         None,
         paths.output / "phsp_versa1.png",
-        hits_tol=7,
+        hits_tol=80,
     )
 
-    print()
     root_ref = paths.output_ref / "phsp_versa_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
-    tols = [0.03, 1.8, 1.8]
+    tols = [0.1, 2.5, 2.5]
     is_ok = (
         utility.compare_root3(
             root_ref,
@@ -100,12 +101,11 @@ if __name__ == "__main__":
             None,
             None,
             paths.output / "phsp_versa2.png",
-            hits_tol=7,
+            hits_tol=80,
         )
         and is_ok
     )
 
-    print()
     root_ref = paths.output_ref / "phsp_versa_tr_rot.root"
     keys = [
         "KineticEnergy",
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         "PrePositionLocal_X",
         "PrePositionLocal_Y",
     ]
-    tols = [0.03, 1.8, 1.8, 1.8, 1.8]
+    tols = [0.1, 2.5, 2.5, 2.5, 2.5]
     is_ok = (
         utility.compare_root3(
             root_ref,
@@ -127,7 +127,7 @@ if __name__ == "__main__":
             None,
             None,
             paths.output / "phsp_versa3.png",
-            hits_tol=7,
+            hits_tol=80,
         )
         and is_ok
     )

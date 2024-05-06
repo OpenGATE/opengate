@@ -12,6 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     head, stats, source = test073_setup_sim(sim, "intevo", collimator_type="melp")
+    sim.random_seed = 123456
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
