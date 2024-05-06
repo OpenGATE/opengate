@@ -27,6 +27,8 @@ public:
 
   void GenerateSpectrumLines();
 
+  void GenerateSpectrumHistogram();
+
   // Cannot inherit from GenerateOne
   virtual G4double VGenerateOne(G4ParticleDefinition *);
 

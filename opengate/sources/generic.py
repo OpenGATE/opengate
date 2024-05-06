@@ -175,7 +175,8 @@ def get_rad_gamma_energy_spectrum(rad):
 def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_gamma_energy_spectrum(rad)
     source.particle = "gamma"
-    source.energy.type = "spectrum_lines"
+    source.energy.type = "spectrum"
+    source.energy.spectrum_type = "discrete"
     source.energy.spectrum_weight = w
     source.energy.spectrum_energy = en
 
@@ -351,6 +352,9 @@ class GenericSource(SourceBase):
         user_info.energy.max_energy = None
         user_info.energy.histogram_weight = None
         user_info.energy.histogram_energy = None
+        user_info.energy.spectrum_type = None
+        user_info.energy.spectrum_weight = None
+        user_info.energy.spectrum_energy = None
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -411,7 +415,7 @@ class GenericSource(SourceBase):
             "O15_analytic",
             "C11_analytic",
             "histogram",
-            "spectrum_lines",
+            "spectrum",
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
@@ -420,6 +424,19 @@ class GenericSource(SourceBase):
                 f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
                 f"Available types are {l}"
             )
+
+        # check energy spectrum type if not None
+        valid_spectrum_types = [
+            "discrete",
+            "histogram",
+            "continuous",
+        ]
+        if self.user_info.energy.spectrum_type is not None:
+            if self.user_info.energy.spectrum_type not in valid_spectrum_types:
+                fatal(
+                    f"Cannot find the energy spectrum type {self.user_info.energy.spectrum_type} for the source {self.user_info.name}.\n"
+                    f"Available types are {valid_spectrum_types}"
+                )
 
         # special case for beta plus energy spectra
         # FIXME put this elsewhere
