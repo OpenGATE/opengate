@@ -224,7 +224,8 @@ def add_iec_Tc99m_source(sim, activity_concentration):
     w, e = get_rad_gamma_energy_spectrum("Tc99m")
     for source in sources:
         source.particle = "gamma"
-        source.energy.type = "spectrum_lines"
+        source.energy.type = "spectrum"
+        source.energy.spectrum_type = "discrete"
         source.energy.spectrum_weight = w
         source.energy.spectrum_energy = e
         total_activity += source.activity
