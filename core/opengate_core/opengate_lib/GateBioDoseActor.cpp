@@ -5,6 +5,7 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
+#include <fstream>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
@@ -19,7 +20,7 @@
 #include "GateHelpersImage.h"
 
 GateBioDoseActor::GateBioDoseActor(py::dict &user_info):
-  GateVActor(user_info, true),
+  GateVActor(user_info, false),
   fInitialTranslation(DictGetG4ThreeVector(user_info, "translation")),
   fHitType(DictGetStr(user_info, "hit_type")),
   fBioDoseImage(Image::New()),
@@ -28,7 +29,9 @@ GateBioDoseActor::GateBioDoseActor(py::dict &user_info):
   fAlphaMixFlag(DictGetBool(user_info, "alphamix")),
   fSqrtBetaMixFlag(DictGetBool(user_info, "sqrtbetamix")),
   fRBEFlag(DictGetBool(user_info, "rbe")),
-  fUncertaintyFlag(DictGetBool(user_info, "uncertainty"))
+  fUncertaintyFlag(DictGetBool(user_info, "uncertainty")),
+	fUncertaintyDetailsFlag(DictGetBool(user_info, "uncertainty_details")),
+	fHitEventCountFlag(DictGetBool(user_info, "hit_event_count"))
 {
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
@@ -43,40 +46,69 @@ GateBioDoseActor::GateBioDoseActor(py::dict &user_info):
 }
 
 void GateBioDoseActor::ActorInitialize() {
+	fHitEventCountImage = Image::New();
+
+	fEventEdepImage = Image::New();
+	fEventDoseImage = Image::New();
+	fEventAlphaImage = Image::New();
+	fEventSqrtBetaImage = Image::New();
+
   if(fEdepFlag)         fEdepImage = Image::New();
-  if(fDoseFlag)         fDoseImage = Image::New();
-  if(fAlphaMixFlag)     fAlphaMixImage = Image::New();
-  if(fSqrtBetaMixFlag)  fSqrtBetaMixImage = Image::New();
+	fDoseImage = Image::New();
+  if(fDoseFlag)         fScaledDoseImage = Image::New();
+  fAlphaMixImage = Image::New();
+  fSqrtBetaMixImage = Image::New();
+	fBioDoseImage = Image::New();
   if(fRBEFlag)          fRBEImage = Image::New();
+
   if(fUncertaintyFlag) {
+		fDoseUncertaintyImage = Image::New();
     fBioDoseUncertaintyImage = Image::New();
-    fEventEdepImage = Image::New();
-    fEventDoseImage = Image::New();
     fSquaredDoseImage = Image::New();
-    fEventAlphaImage = Image::New();
     fSquaredAlphaMixImage = Image::New();
-    fEventSqrtBetaImage = Image::New();
     fSquaredSqrtBetaMixImage = Image::New();
     fAlphaMixSqrtBetaMixImage = Image::New();
     fAlphaMixDoseImage = Image::New();
     fSqrtBetaMixDoseImage = Image::New();
+		fUncertaintyImages = {
+			fEventEdepImage, fEventDoseImage, fEventAlphaImage, fEventSqrtBetaImage,
+			fDoseUncertaintyImage, fBioDoseUncertaintyImage,
+			fSquaredDoseImage, fSquaredAlphaMixImage, fSquaredSqrtBetaMixImage,
+			fAlphaMixSqrtBetaMixImage, fAlphaMixDoseImage, fSqrtBetaMixDoseImage
+		};
+
+		if(fUncertaintyDetailsFlag) {
+			fPdBioDoseAlphaMixMean = Image::New();
+			fPdBioDoseSqrtBetaMixMean = Image::New();
+			fPdBioDoseDoseMean = Image::New();
+			fVarAlphaMixMeanImage = Image::New();
+			fVarSqrtBetaMixMeanImage = Image::New();
+			fVarDoseMeanImage = Image::New();
+			fCovAlphaMixMeanDoseMeanImage = Image::New();
+			fCovAlphaMixMeanSqrtBetaMixMeanImage = Image::New();
+			fCovSqrtBetaMixMeanDoseMeanImage = Image::New();
+			fUncertaintyDetailsImages = {
+				fPdBioDoseAlphaMixMean, fPdBioDoseSqrtBetaMixMean, fPdBioDoseDoseMean,
+				fVarAlphaMixMeanImage, fVarSqrtBetaMixMeanImage, fVarDoseMeanImage,
+				fCovAlphaMixMeanDoseMeanImage, fCovAlphaMixMeanSqrtBetaMixMeanImage, fCovSqrtBetaMixMeanDoseMeanImage,
+			};
+		}
   }
 }
 
 void GateBioDoseActor::BeginOfRunAction(const G4Run *) {
   Image::RegionType region = fBioDoseImage->GetLargestPossibleRegion();
   auto regionSize = region.GetSize();
-  if(fUncertaintyFlag) {
-    auto images = {
-      fBioDoseUncertaintyImage, fEventEdepImage, fEventDoseImage, fSquaredDoseImage,
-      fEventAlphaImage, fSquaredAlphaMixImage, fEventSqrtBetaImage, fSquaredSqrtBetaMixImage,
-      fAlphaMixSqrtBetaMixImage, fAlphaMixDoseImage, fSqrtBetaMixDoseImage
-    };
-    for(auto& image: images) {
-      image->SetRegions(regionSize);
-      image->Allocate();
-    }
-  }
+
+	for(auto const& image: fUncertaintyImages) {
+		image->SetRegions(regionSize);
+		image->Allocate();
+	}
+
+	for(auto const& image: fUncertaintyDetailsImages) {
+		image->SetRegions(regionSize);
+		image->Allocate();
+	}
   // Important ! The volume may have moved, so we re-attach each run
   // AttachImageToVolume<Image>(cpp_edep_image, fPhysicalVolumeName, fInitialTranslation);
   // // compute volume of a dose voxel
@@ -85,40 +117,38 @@ void GateBioDoseActor::BeginOfRunAction(const G4Run *) {
 }
 
 void GateBioDoseActor::BeginOfEventAction(const G4Event *event) {
-  {
-    G4AutoLock lock(&fNbOfEventMutex);
-    ++fNbOfEvent;
-  }
-
-  {
-    G4AutoLock lock(&fEventVoxelIndicesMutex);
-    fEventVoxelIndices.clear();
-  }
-
-  {
-    G4AutoLock lock(&fUncertaintyImagesMutex);
-    fEventEdepImage->Initialize();
-    fEventDoseImage->Initialize();
-    fEventAlphaImage->Initialize();
-    fEventSqrtBetaImage->Initialize();
-  }
+	fEventEdepImage->Initialize();
+	fEventDoseImage->Initialize();
+	fEventAlphaImage->Initialize();
+	fEventSqrtBetaImage->Initialize();
 }
 
 void GateBioDoseActor::EndOfEventAction(const G4Event *) {
-  // TODO MT?
   for(auto const& index: fEventVoxelIndices) {
 		auto const eventEdep = fEventEdepImage->GetPixel(index);
 		auto const eventDose = fEventDoseImage->GetPixel(index);
 		auto const eventAlphaMix = fEventAlphaImage->GetPixel(index) / eventEdep;
 		auto const eventSqrtBetaMix = fEventSqrtBetaImage->GetPixel(index) / eventEdep;
 
-		ImageAddValue<Image>(fSquaredDoseImage, index, eventDose * eventDose);
-		ImageAddValue<Image>(fSquaredAlphaMixImage, index, eventAlphaMix * eventAlphaMix);
-		ImageAddValue<Image>(fSquaredSqrtBetaMixImage, index, eventSqrtBetaMix * eventSqrtBetaMix);
+		fVoxelIndices.insert(index);
+		ImageAddValue<Image>(fHitEventCountImage, index, 1);
 
-		ImageAddValue<Image>(fAlphaMixSqrtBetaMixImage, index, eventAlphaMix * eventSqrtBetaMix);
-		ImageAddValue<Image>(fAlphaMixDoseImage, index, eventAlphaMix * eventDose);
-		ImageAddValue<Image>(fSqrtBetaMixDoseImage, index, eventSqrtBetaMix * eventDose);
+		if(fEdepFlag)
+			ImageAddValue<Image>(fEdepImage, index, eventEdep);
+
+		ImageAddValue<Image>(fDoseImage, index, eventDose);
+		ImageAddValue<Image>(fAlphaMixImage, index, eventAlphaMix);
+		ImageAddValue<Image>(fSqrtBetaMixImage, index, eventSqrtBetaMix);
+
+		if(fUncertaintyFlag) {
+			ImageAddValue<Image>(fSquaredDoseImage, index, eventDose * eventDose);
+			ImageAddValue<Image>(fSquaredAlphaMixImage, index, eventAlphaMix * eventAlphaMix);
+			ImageAddValue<Image>(fSquaredSqrtBetaMixImage, index, eventSqrtBetaMix * eventSqrtBetaMix);
+
+			ImageAddValue<Image>(fAlphaMixSqrtBetaMixImage, index, eventAlphaMix * eventSqrtBetaMix);
+			ImageAddValue<Image>(fAlphaMixDoseImage, index, eventAlphaMix * eventDose);
+			ImageAddValue<Image>(fSqrtBetaMixDoseImage, index, eventSqrtBetaMix * eventDose);
+		}
   }
 }
 
@@ -162,25 +192,6 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
 
   if(energyDep == 0)  return;
 
-  decltype(fDepositedMap.begin()) it;
-  {
-    G4AutoLock lock(&fDepositedMutex);
-
-    it = fDepositedMap.find(index);
-    if(it == std::end(fDepositedMap)) {
-      fDepositedMap[index] = {0, 0, 0, 0};
-      it = fDepositedMap.find(index);
-    }
-  }
-
-  auto& deposited = (*it).second;
-
-  // Accumulate energy inconditionnaly
-  {
-    G4AutoLock lock(&fDepositedMutex);
-    deposited.energy += energyDep;
-  }
-
   auto* currentMaterial = step->GetPreStepPoint()->GetMaterial();
   double density = currentMaterial->GetDensity();
   auto sp = fBioDoseImage->GetSpacing(); // TODO move to run only once
@@ -188,27 +199,21 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
   double mass = voxelVolume * density;
   double dose = energyDep / mass / CLHEP::gray;
 
-  {
-    G4AutoLock lock(&fDepositedMutex);
-    deposited.dose += dose;
-  }
-
-  if(fUncertaintyFlag) {
-    G4AutoLock lock(&fUncertaintyImagesMutex);
-    ImageAddValue<Image>(fEventDoseImage, index, dose);
-  }
+  // Accumulate energy and dose inconditionnaly
+	ImageAddValue<Image>(fEventEdepImage, index, energyDep);
+	ImageAddValue<Image>(fEventDoseImage, index, dose);
 
   // Get information from step
   // Particle
   G4int nZ = step->GetTrack()->GetDefinition()->GetAtomicNumber();
   double kineticEnergyPerNucleon = (step->GetPreStepPoint()->GetKineticEnergy()) / (step->GetTrack()->GetDefinition()->GetAtomicMass());
 
-  // ++_stepCount;
+  ++fStepCount;
 
   // Accumulation of alpha/beta if ion type if known
   // -> check if the ion type is known
   if(fEnergyMaxForZ.count(nZ) != 0) {
-    // ++_stepWithKnownIonCount;
+    ++fStepWithKnownIonCount;
 
     double energyMax = fEnergyMaxForZ.at(nZ);
 
@@ -231,31 +236,123 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
     if(sqrtBeta < 0) sqrtBeta = 0;
 
     // Accumulate alpha/beta
-    {
-      G4AutoLock lock(&fDepositedMutex);
-      deposited.alpha     += alpha;
-      deposited.sqrtBeta  += sqrtBeta;
-    }
+		ImageAddValue<Image>(fEventAlphaImage, index, alpha);
+		ImageAddValue<Image>(fEventSqrtBetaImage, index, sqrtBeta);
 
-    if(fUncertaintyFlag) {
-      G4AutoLock lock(&fUncertaintyImagesMutex);
-
-      ImageAddValue<Image>(fEventEdepImage, index, energyDep);
-      ImageAddValue<Image>(fEventAlphaImage, index, alpha);
-      ImageAddValue<Image>(fEventSqrtBetaImage, index, sqrtBeta);
-    }
-
-    {
-      G4AutoLock lock(&fEventVoxelIndicesMutex);
-      fEventVoxelIndices.insert(index);
-    }
+		fEventVoxelIndices.insert(index);
   }
 }
 
 void GateBioDoseActor::EndSimulationAction() {
+	std::ofstream of{"/tmp/g10log", std::ios_base::app};
+	of << "GateBioDoseActor::EndSimulationAction()\n";
   if(fUncertaintyFlag) {
     // ??
   }
+}
+
+void GateBioDoseActor::updateData() {
+	auto const sqAlphaRef = fAlphaRef * fAlphaRef;
+	double const n = fNbOfEvent;
+
+	for(auto const& index: fVoxelIndices) {
+		auto const hitEventCount = fHitEventCountImage->GetPixel(index);
+
+		auto const alphaMixMean = fAlphaMixImage->GetPixel(index) / hitEventCount;
+		auto const sqrtBetaMixMean = fSqrtBetaMixImage->GetPixel(index) / hitEventCount;
+		auto const dose = fDoseImage->GetPixel(index);
+		auto const scaledDose = fDoseScaleFactor * dose;
+		auto const sqScaledDose = scaledDose * scaledDose;
+		auto const delta = sqAlphaRef + 4 * fBetaRef *
+			(alphaMixMean * scaledDose + sqrtBetaMixMean * sqrtBetaMixMean * sqScaledDose);
+
+		double sqrtDelta = 0;
+		if(delta >= 0)
+			sqrtDelta = std::sqrt(delta);
+
+		// Calculate biological dose and RBE
+		double biodose  = 0;
+		double rbe      = 0;
+
+		if(scaledDose > 0 && alphaMixMean != 0 && sqrtBetaMixMean != 0)
+			biodose = (-fAlphaRef + sqrtDelta) / (2 * fBetaRef);
+		if(biodose < 0) biodose = 0; // TODO improve
+
+		if(scaledDose > 0)
+			rbe = biodose / scaledDose;
+
+		if(fUncertaintyFlag) {
+			if(scaledDose > 0 && alphaMixMean != 0 && sqrtBetaMixMean != 0 && sqrtDelta > 0 && fNbOfEvent > 0) {
+				auto const doseMean = dose / n;
+				auto const scaledDoseMean = scaledDose / n;
+				auto const sqScaledDoseMean = sqScaledDose / n / n;
+				auto const biodoseMean = biodose / n;
+				auto const deltaMean = sqAlphaRef + 4 * fBetaRef *
+					(alphaMixMean * scaledDoseMean + sqrtBetaMixMean * sqrtBetaMixMean * sqScaledDoseMean);
+				double sqrtDeltaMean = 0.;
+				if(deltaMean >= 0)
+					sqrtDeltaMean = std::sqrt(deltaMean);
+
+				auto sumSquaredAlphaMix = fSquaredAlphaMixImage->GetPixel(index);
+				auto sumSquaredSqrtBetaMix = fSquaredSqrtBetaMixImage->GetPixel(index);
+				auto sumSquaredDose = fSquaredDoseImage->GetPixel(index);
+
+				auto pdBiodoseAlphaMixMean = scaledDoseMean / sqrtDeltaMean;
+				auto pdBiodoseSqrtBetaMixMean = 2 * sqScaledDoseMean * sqrtBetaMixMean / sqrtDeltaMean;
+				auto pdBiodoseDoseMean = (
+					(alphaMixMean * fDoseScaleFactor) +
+					2 * sqrtBetaMixMean * sqrtBetaMixMean * fDoseScaleFactor * scaledDoseMean
+				) / sqrtDeltaMean;
+
+				auto varAlphaMixMean = (sumSquaredAlphaMix / hitEventCount - alphaMixMean * alphaMixMean) / hitEventCount;
+				auto varSqrtBetaMixMean = (sumSquaredSqrtBetaMix / hitEventCount - sqrtBetaMixMean * sqrtBetaMixMean) / hitEventCount;
+				auto varDoseMean = (sumSquaredDose / n - doseMean * doseMean) / n;
+
+				auto sumAlphaMixSqrtBetaMix = fAlphaMixSqrtBetaMixImage->GetPixel(index);
+				auto sumAlphaMixDose = fAlphaMixDoseImage->GetPixel(index);
+				auto sumSqrtBetaMixDose = fSqrtBetaMixDoseImage->GetPixel(index);
+				auto covAlphaMixMeanSqrtBetaMixMean = (sumAlphaMixSqrtBetaMix / hitEventCount - alphaMixMean * sqrtBetaMixMean) / hitEventCount;
+				auto covAlphaMixMeanDoseMean = (sumAlphaMixDose / n - alphaMixMean * doseMean) / n;
+				auto covSqrtBetaMixMeanDoseMean = (sumSqrtBetaMixDose / n - sqrtBetaMixMean * doseMean) / n;
+
+				auto partAlphaMix = pdBiodoseAlphaMixMean * pdBiodoseAlphaMixMean * varAlphaMixMean;
+				auto partSqrtBetaMix = pdBiodoseSqrtBetaMixMean * pdBiodoseSqrtBetaMixMean * varSqrtBetaMixMean;
+				auto partDose = pdBiodoseDoseMean * pdBiodoseDoseMean * varDoseMean;
+				auto partAlphaMixSqrtBetaMix = 2 * pdBiodoseAlphaMixMean * pdBiodoseSqrtBetaMixMean * covAlphaMixMeanSqrtBetaMixMean;
+				auto partAlphaMixDose = 2 * pdBiodoseAlphaMixMean * pdBiodoseDoseMean * covAlphaMixMeanDoseMean;
+				auto partSqrtBetaMixDose = 2 * pdBiodoseSqrtBetaMixMean * pdBiodoseDoseMean * covSqrtBetaMixMeanDoseMean;
+
+				auto uncertaintyDose = std::sqrt(varDoseMean) / doseMean;
+				auto uncertaintyBiodose = std::sqrt(
+					partAlphaMix + partSqrtBetaMix + partDose +
+					partAlphaMixSqrtBetaMix + partAlphaMixDose + partSqrtBetaMixDose
+				) / biodoseMean;
+
+				if(fUncertaintyDetailsFlag) {
+					fPdBioDoseAlphaMixMean->SetPixel(index, pdBiodoseAlphaMixMean);
+					fPdBioDoseSqrtBetaMixMean->SetPixel(index, pdBiodoseSqrtBetaMixMean);
+					fPdBioDoseDoseMean->SetPixel(index, pdBiodoseDoseMean);
+					fVarAlphaMixMeanImage->SetPixel(index, varAlphaMixMean);
+					fVarSqrtBetaMixMeanImage->SetPixel(index, varSqrtBetaMixMean);
+					fVarDoseMeanImage->SetPixel(index, varDoseMean);
+					fCovAlphaMixMeanSqrtBetaMixMeanImage->SetPixel(index, covAlphaMixMeanSqrtBetaMixMean);
+					fCovAlphaMixMeanDoseMeanImage->SetPixel(index, covAlphaMixMeanDoseMean);
+					fCovSqrtBetaMixMeanDoseMeanImage->SetPixel(index, covSqrtBetaMixMeanDoseMean);
+				}
+
+				fDoseUncertaintyImage->SetPixel(index, uncertaintyDose);
+				fBioDoseUncertaintyImage->SetPixel(index, uncertaintyBiodose);
+			} else {
+				fDoseUncertaintyImage->SetPixel(index, 1);
+				fBioDoseUncertaintyImage->SetPixel(index, 1);
+			}
+		}
+
+		// Write data
+		if(fDoseFlag) fScaledDoseImage->SetPixel(index, scaledDose);
+		fBioDoseImage->SetPixel(index, biodose);
+		if(fRBEFlag)  fRBEImage->SetPixel(index, rbe);
+	}
 }
 
 void GateBioDoseActor::loadBiophysicalModel(std::string const& filepath) {

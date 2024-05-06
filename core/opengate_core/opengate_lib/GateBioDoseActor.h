@@ -19,13 +19,6 @@ class GateBioDoseActor : public GateVActor {
 public:
 	using Image = itk::Image<double, 3>;
 
-	struct Deposited {
-		double alpha;
-		double sqrtBeta;
-		double energy;
-		double dose;
-	};
-
 	struct Coefficients {
 		double a, b;
 	};
@@ -36,7 +29,6 @@ public:
 	};
 
 	using VoxelIndex = Image::IndexType;
-	using DepositedMap = std::map<VoxelIndex, Deposited>;
 	using VoxelIndices = std::set<VoxelIndex>;
 
 	using Fragment = std::pair<int, double>;
@@ -61,6 +53,7 @@ public:
   void EndSimulationAction() override;
 
 protected:
+	void updateData();
 	void loadBiophysicalModel(std::string const&);
 
 private:
@@ -84,36 +77,55 @@ private:
 	double fDoseScaleFactor = 1.;
 	double fSOBPWeight;
 
-	DepositedMap fDepositedMap;
 	AlphaBetaInterpolTable fAlphaBetaInterpolTable;
-	VoxelIndices fEventVoxelIndices;
 
-	Image::Pointer fEdepImage;
-	Image::Pointer fDoseImage;
-	Image::Pointer fBioDoseImage;
-	Image::Pointer fAlphaMixImage;
-	Image::Pointer fSqrtBetaMixImage;
-	Image::Pointer fRBEImage;
-	Image::Pointer fBioDoseUncertaintyImage;
+	VoxelIndices fEventVoxelIndices;
+	VoxelIndices fVoxelIndices;
+
+	Image::Pointer fHitEventCountImage;
 
 	Image::Pointer fEventEdepImage;
 	Image::Pointer fEventDoseImage;
-	Image::Pointer fSquaredDoseImage;
 	Image::Pointer fEventAlphaImage;
-	Image::Pointer fSquaredAlphaMixImage;
 	Image::Pointer fEventSqrtBetaImage;
-	Image::Pointer fSquaredSqrtBetaMixImage;
 
+	Image::Pointer fEdepImage;
+	Image::Pointer fDoseImage;
+	Image::Pointer fScaledDoseImage;
+	Image::Pointer fAlphaMixImage;
+	Image::Pointer fSqrtBetaMixImage;
+	Image::Pointer fBioDoseImage;
+	Image::Pointer fRBEImage;
+
+	Image::Pointer fDoseUncertaintyImage;
+	Image::Pointer fBioDoseUncertaintyImage;
+	Image::Pointer fSquaredDoseImage;
+	Image::Pointer fSquaredAlphaMixImage;
+	Image::Pointer fSquaredSqrtBetaMixImage;
 	Image::Pointer fAlphaMixSqrtBetaMixImage;
 	Image::Pointer fAlphaMixDoseImage;
 	Image::Pointer fSqrtBetaMixDoseImage;
+	std::vector<Image::Pointer> fUncertaintyImages;
+
+	Image::Pointer fPdBioDoseAlphaMixMean;
+	Image::Pointer fPdBioDoseSqrtBetaMixMean;
+	Image::Pointer fPdBioDoseDoseMean;
+	Image::Pointer fVarAlphaMixMeanImage;
+	Image::Pointer fVarSqrtBetaMixMeanImage;
+	Image::Pointer fVarDoseMeanImage;
+	Image::Pointer fCovAlphaMixMeanSqrtBetaMixMeanImage;
+	Image::Pointer fCovAlphaMixMeanDoseMeanImage;
+	Image::Pointer fCovSqrtBetaMixMeanDoseMeanImage;
+	std::vector<Image::Pointer> fUncertaintyDetailsImages;
 
 	bool fEdepFlag = false;
-	bool fDoseFlag = true;
+	bool fDoseFlag = false;
 	bool fAlphaMixFlag = false;
 	bool fSqrtBetaMixFlag = false;
 	bool fRBEFlag = false;
-	bool fUncertaintyFlag = true;
+	bool fUncertaintyFlag = false;
+	bool fUncertaintyDetailsFlag = false;
+	bool fHitEventCountFlag = false;
 
 	int fStepCount = 0;
 	int fStepWithKnownIonCount = 0;
