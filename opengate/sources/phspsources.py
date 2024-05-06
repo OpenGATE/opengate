@@ -196,7 +196,7 @@ class PhaseSpaceSourceGenerator:
         source.SetEnergyBatch(batch[ui.energy_key])
 
         # set weight
-        if ui.weight_key != "" or ui.weight_key is not None:
+        if ui.weight_key != "" and ui.weight_key is not None:
             if ui.weight_key in batch:
                 source.SetWeightBatch(batch[ui.weight_key])
             else:

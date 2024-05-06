@@ -2,6 +2,7 @@ from box import Box
 from scipy.spatial.transform import Rotation
 import pathlib
 import numpy as np
+
 import opengate_core
 from ..utility import g4_units
 from ..exception import fatal, warning

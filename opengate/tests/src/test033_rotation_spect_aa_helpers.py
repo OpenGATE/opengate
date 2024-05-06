@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
 from opengate.element import copy_user_info
 
@@ -44,7 +44,7 @@ def create_test(sim, nb_thread=1):
     world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect1, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect1, colli, crystal = gate_spect.add_spect_head(
         sim, "spect1", collimator_type="lehr", debug=sim.visu
     )
     spect1.translation, spect1.rotation = gate.geometry.utility.get_transform_orbiting(
@@ -52,7 +52,7 @@ def create_test(sim, nb_thread=1):
     )
 
     # spect head (debug mode = very small collimator)
-    spect2, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect2, colli, crystal = gate_spect.add_spect_head(
         sim, "spect2", collimator_type="lehr", debug=sim.visu
     )
     spect2.translation, spect2.rotation = gate.geometry.utility.get_transform_orbiting(
@@ -97,11 +97,11 @@ def create_test(sim, nb_thread=1):
     stat.output = paths.output / "test033_stats.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
-    proj = gate_spect.add_simplified_digitizer_Tc99m(
+    proj = gate_spect.add_simplified_digitizer_tc99m(
         sim, "spect1_crystal", paths.output / "test033_proj_1.mhd"
     )
     proj.origin_as_image_center = False
-    proj = gate_spect.add_simplified_digitizer_Tc99m(
+    proj = gate_spect.add_simplified_digitizer_tc99m(
         sim, "spect2_crystal", paths.output / "test033_proj_2.mhd"
     )
     proj.origin_as_image_center = False
