@@ -284,6 +284,8 @@ void init_GateKineticEnergyFilter(py::module &);
 
 void init_GateDoseActor(py::module &m);
 
+void init_GateDoseActorSecondariesFromPhotons(py::module &m);
+
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
@@ -542,6 +544,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateEventAction(m);
   init_GateTrackingAction(m);
   init_GateDoseActor(m);
+  init_GateDoseActorSecondariesFromPhotons(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateSimulationStatisticsActor(m);
