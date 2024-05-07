@@ -1,5 +1,5 @@
 from .arfactors import ARFActor, ARFTrainingDatasetActor
-from .doseactors import DoseActor, LETActor, FluenceActor
+from .doseactors import DoseActor,DoseActorSecondariesFromPhotons, LETActor, FluenceActor
 from .digitizers import (
     DigitizerAdderActor,
     DigitizerReadoutActor,
@@ -27,6 +27,7 @@ from ..utility import make_builders
 actor_type_names = {
     SimulationStatisticsActor,
     DoseActor,
+    DoseActorSecondariesFromPhotons,
     FluenceActor,
     LETActor,
     SourceInfoActor,
