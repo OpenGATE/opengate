@@ -8,6 +8,7 @@ from ..utility import g4_units, ensure_filename_is_str
 from ..exception import fatal
 from .digitizers import DigitizerHitsCollectionActor
 from .base import ActorBase
+from ..image import write_itk_image
 
 
 def import_garf():
@@ -297,7 +298,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
 
         # write ?
         if self.user_info.output:
-            itk.imwrite(
+            write_itk_image(
                 self.output_image, ensure_filename_is_str(self.user_info.output)
             )
 

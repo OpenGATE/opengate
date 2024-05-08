@@ -40,7 +40,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--path", "-p", default="", help="Path", required=True)
-def utils_paths(path):
+def go(path):
     """
     Tool to have the path of folders
     """
@@ -54,4 +54,4 @@ def utils_paths(path):
 
 # -----------------------------------------------------------------------------
 if __name__ == "__main__":
-    utils_paths()
+    go()

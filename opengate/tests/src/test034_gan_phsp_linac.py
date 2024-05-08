@@ -85,7 +85,7 @@ if __name__ == "__main__":
     dose.mother = waterbox.name
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose.size = [75, 75, 75]
-    dose.output = paths.output / "test034_edep.mhd"
+    dose.output = paths.output / "test034.mhd"
     dose.uncertainty = True
 
     """
@@ -115,12 +115,13 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     gate.exception.warning(f"Check dose")
-    h = sim.output.get_actor("dose")
-    print(h)
+    dose = sim.output.get_actor("dose")
+    print(dose)
+
     is_ok = (
         utility.assert_images(
             paths.gate / "dose-Edep.mhd",
-            dose.output,
+            paths.output / dose.user_info.output,
             stats,
             tolerance=58,
             ignore_value=0,
