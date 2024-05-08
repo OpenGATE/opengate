@@ -37,6 +37,12 @@ class ActorBase(GateObject):
                 "setter_hook": _setter_hook_attached_to,
             },
         ),
+        "mother": (
+            None,
+            {
+                "deprecated": "The user input parameter 'mother' is deprecated. Use 'attached_to' instead. ",
+            },
+        ),
         "filters": (
             [],
             {
