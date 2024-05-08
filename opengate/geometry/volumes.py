@@ -835,6 +835,26 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     def spacing(self):
         return np.array(self.itk_image.GetSpacing())
 
+    # @requires_fatal("itk_image")
+    @property
+    def native_translation(self):
+        if self.itk_image is not None:
+            origin = np.array(self.itk_image.GetOrigin())
+            spacing = np.array(self.itk_image.GetSpacing())
+            size = np.array(self.itk_image.GetLargestPossibleRegion().GetSize())
+            center = (size - 1.0) * spacing / 2.0
+            return origin + Rotation.from_matrix(self.native_rotation).apply(center)
+        else:
+            return None
+
+    # @requires_fatal("itk_image")
+    @property
+    def native_rotation(self):
+        if self.itk_image is not None:
+            return np.array(self.itk_image.GetDirection())
+        else:
+            return None
+
     @requires_fatal("volume_engine")
     def construct(self):
         self.material_to_label_lut = self.create_material_to_label_lut()
