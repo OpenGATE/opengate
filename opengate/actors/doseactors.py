@@ -50,6 +50,12 @@ class VoxelDepositActor(ActorBase):
                 "doc": "FIXME: Translation with respect to the XXX ",
             },
         ),
+        "rotation": (
+            Rotation.identity().as_matrix(),
+            {
+                "doc": "FIXME",
+            },
+        ),
         "repeated_volume_index": (
             0,
             {
@@ -72,15 +78,18 @@ class VoxelDepositActor(ActorBase):
             },
         ),
         "img_coord_system": (
-            False,
-            {
-                "doc": "FIXME",
-            },
-        ),
-        "output_origin": (
             None,
             {
+                "deprecated": f"The user input parameter 'img_coord_system' is deprecated. "
+                f"Use my_actor.output_coordinate_system='attached_to_image' instead, "
+                f"where my_actor should be replaced with your actor object. ",
+            },
+        ),
+        "output_coordinate_system": (
+            "local",
+            {
                 "doc": "FIXME",
+                "allowed_values": ("local", "global", "attached_to_image", None),
             },
         ),
     }
@@ -101,6 +110,17 @@ class VoxelDepositActor(ActorBase):
         )
         # for initialization during the first run
         self.first_run = True
+
+    def check_user_input(self):
+        if self.output_coordinate_system == "attached_to_image":
+            if not hasattr(
+                self.attached_to_volume, "native_translation"
+            ) or not hasattr(self.attached_to_volume, "native_rotation"):
+                fatal(
+                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} is not compatible "
+                    f"with the volume to which this actor is attached: "
+                    f"{self.attached_to} ({self.attached_to_volume.volume_type})"
+                )
 
     def get_physical_volume_name(self):
         # init the origin and direction according to the physical volume
@@ -132,72 +152,140 @@ class VoxelDepositActor(ActorBase):
         image_props = self.user_output[which_output].get_image_properties(run_index)
 
         # compute origin
-        origin = (
-            -image_props.size * image_props.spacing / 2.0
-            + image_props.spacing / 2.0
-            + self.translation
-        )
+        # origin = (
+        #     -image_props.size * image_props.spacing / 2.0
+        #     + image_props.spacing / 2.0
+        #     + self.translation
+        # )
         origin_after_rotation = (
-            Rotation.from_matrix(rotation_phys_vol).apply(origin) + translation_phys_vol
+            Rotation.from_matrix(rotation_phys_vol).apply(image_props.origin)
+            + translation_phys_vol
         )
         self.user_output[which_output].set_image_properties(
             run_index, origin=origin_after_rotation, rotation=rotation_phys_vol
         )
 
-    def update_output_origin(self, output_name, run_index):
-        # If attached to a voxelized volume, we may want to use its coord system.
-        # So, we compute in advance what will be the final origin of the dose map
-        self._assert_output_exists(output_name)
+    def _update_output_coordinate_system(self, which_output, run_index):
+        """Method to be called at the end of a run.
+        Note: The output image is aligned with the volume to which the actor as attached
+        at the beginning of a run. So for the option output_coordinate_system='global',
+        nothing has to be done here.
+        """
+        size = np.array(self.size)
+        spacing = np.array(self.spacing)
+        origin = -size * spacing / 2.0 + spacing / 2.0
 
-        output_origin = self.img_origin_during_run
+        translation = np.array(self.translation)
+        origin_local = Rotation.from_matrix(self.rotation).apply(origin) + translation
 
-        vol_type = self.simulation.volume_manager.get_volume(
-            self.attached_to
-        ).volume_type
+        # image centered at (0,0,0), no rotation
+        if self.output_coordinate_system is None:
+            self.user_output[which_output].set_image_properties(
+                run_index,
+                origin=origin.tolist(),
+                rotation=Rotation.identity().as_matrix(),
+            )
+        # image centered at self.translation and rotated by self.rotation,
+        # i.e. in the reference frame of the volume to which the actor is attached.
+        elif self.output_coordinate_system in ("local",):
+            self.user_output[which_output].set_image_properties(
+                run_index, origin=origin_local.tolist(), rotation=self.rotation
+            )
+        # only applicable if the attached_to volume is an image volume
+        # as 'local', but considering the origin and direction (rotation) of the image
+        # used to create the image volume. Useful overlay output and image volume for further analysis
+        elif self.output_coordinate_system in ("attached_to_image",):
+            native_origin_image = self.attached_to_volume.native_translation
+            native_rotation_image = self.attached_to_volume.native_rotation
+            origin_wrt_image = (
+                Rotation.from_matrix(native_rotation_image).apply(origin_local)
+                + native_origin_image
+            )
+            rotation_wrt_image = np.matmul(native_rotation_image, self.rotation)
 
-        if self.output_origin in ["image", "img_coord_system", "image_coord_system"]:
-            if vol_type == "ImageVolume":
-                # Translate the output dose map so that its center correspond to the image center.
-                # The origin is thus the center of the first voxel.
-                volume_image_info = get_info_from_image(
-                    self.attached_to_volume.itk_image
-                )
-                self._assert_output_exists(output_name)
-                output_image_info = self.user_output[output_name].data_per_run[
-                    run_index
-                ]
-                output_origin = get_origin_wrt_images_g4_position(
-                    volume_image_info, output_image_info, self.translation
-                )
-            else:
-                fatal(
-                    f"{self.actor_type} '{self.name}' has "
-                    f"the user input parameter 'output_origin' set to {self.output_origin}, "
-                    f"but it is not attached to an ImageVolume. Instead, it is attached to "
-                    f"volume '{self.attached_to_volume.name}' of type '{vol_type}'). "
-                )
-        # take the user-defined output origin
-        elif self.output_origin is not None:
-            output_origin = self.output_origin
+            self.user_output[which_output].set_image_properties(
+                run_index, origin=origin_wrt_image.tolist(), rotation=rotation_wrt_image
+            )
+        elif self.output_coordinate_system in ("global",):
+            translation_phys_vol, rotation_phys_vol = get_transform_world_to_local(
+                self.attached_to_volume, self.repeated_volume_index
+            )
+            origin_global = (
+                Rotation.from_matrix(rotation_phys_vol).apply(origin_local)
+                + translation_phys_vol
+            )
+            rotation_global = np.matmul(rotation_phys_vol, self.rotation)
+            self.user_output[which_output].set_image_properties(
+                run_index, origin=origin_global.tolist(), rotation=rotation_global
+            )
+        else:
+            fatal(
+                f"Illegal parameter 'output_coordinate_system': {self.output_coordinate_system}"
+            )
 
-        self.user_output[output_name].set_image_properties(
-            run_index, origin=output_origin
-        )
-
-        return output_origin
+    # def update_output_origin(self, output_name, run_index):
+    #     # If attached to a voxelized volume, we may want to use its coord system.
+    #     # So, we compute in advance what will be the final origin of the dose map
+    #     self._assert_output_exists(output_name)
+    #
+    #     output_origin = self.img_origin_during_run
+    #
+    #     vol_type = self.simulation.volume_manager.get_volume(
+    #         self.attached_to
+    #     ).volume_type
+    #
+    #     if self.output_origin in ["image", "img_coord_system", "image_coord_system"]:
+    #         if vol_type == "ImageVolume":
+    #             # Translate the output dose map so that its center correspond to the image center.
+    #             # The origin is thus the center of the first voxel.
+    #             volume_image_info = get_info_from_image(
+    #                 self.attached_to_volume.itk_image
+    #             )
+    #             self._assert_output_exists(output_name)
+    #             output_image_info = self.user_output[output_name].data_per_run[
+    #                 run_index
+    #             ]
+    #             output_origin = get_origin_wrt_images_g4_position(
+    #                 volume_image_info, output_image_info, self.translation
+    #             )
+    #         else:
+    #             fatal(
+    #                 f"{self.actor_type} '{self.name}' has "
+    #                 f"the user input parameter 'output_origin' set to {self.output_origin}, "
+    #                 f"but it is not attached to an ImageVolume. Instead, it is attached to "
+    #                 f"volume '{self.attached_to_volume.name}' of type '{vol_type}'). "
+    #             )
+    #     # take the user-defined output origin
+    #     elif self.output_origin is not None:
+    #         output_origin = self.output_origin
+    #
+    #     self.user_output[output_name].set_image_properties(
+    #         run_index, origin=output_origin
+    #     )
+    #
+    #     return output_origin
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         self._assert_output_exists(output_name)
-        self.user_output[output_name].size = self.size
-        self.user_output[output_name].spacing = self.spacing
-        self.user_output[output_name].create_empty_image(run_index, **kwargs)
+        # self.user_output[output_name].size = self.size
+        # self.user_output[output_name].spacing = self.spacing
+        self.user_output[output_name].create_empty_image(
+            run_index, self.size, self.spacing, origin=self.translation, **kwargs
+        )
         self.align_output_with_physical_volume(output_name, run_index)
 
     def fetch_from_cpp_image(self, output_name, run_index, *cpp_image):
         self._assert_output_exists(output_name)
-        self.user_output[output_name].store_data(
-            run_index, *[get_py_image_from_cpp_image(cppi) for cppi in cpp_image]
-        )
+        data = []
+        for i, cppi in enumerate(cpp_image):
+            py_image = get_py_image_from_cpp_image(cppi)
+            # There is an empty image already which has served as storage for meta info like size and spacing.
+            # So we get this info back
+            py_image.CopyInformation(
+                self.user_output[output_name].get_data(run_index, i)
+            )
+            data.append(py_image)
+        self.user_output[output_name].store_data(run_index, *data)
 
     def push_to_cpp_image(self, output_name, run_index, *cpp_image, copy_data=False):
         self._assert_output_exists(output_name)
@@ -211,13 +299,19 @@ class VoxelDepositActor(ActorBase):
     def EndOfRunActionMasterThread(self, run_index):
         # inform actor output that this run is over
         for u in self.user_output.values():
-            u.end_of_run(run_index)
+            print(
+                f"DEBUG: in VoxelDepositActor.EndOfRunActionMasterThread: u.name = {u.name}"
+            )
+            if u.active:
+                u.end_of_run(run_index)
+        return 0
 
     def EndSimulationAction(self):
         # inform actor output that this simulation is over and write data
         for u in self.user_output.values():
-            u.end_of_simulation()
-            u.write_data_if_requested("all")
+            if u.active:
+                u.end_of_simulation()
+                # u.write_data_if_requested("all")
 
 
 def compute_std_from_sample(
@@ -262,6 +356,31 @@ def compute_std_from_sample(
     return unc
 
 
+def _setter_hook_ste_of_mean_unbiased(self, value):
+    if value is True:
+        self.ste_of_mean = True
+    return value
+
+
+def _setter_hook_ste_of_mean(self, value):
+    if value is True:
+        self.square = True
+        self.use_more_ram = True
+    return value
+
+
+def _setter_hook_uncertainty(self, value):
+    if value is True:
+        self.square = True
+    return value
+
+
+def _setter_hook_goal_uncertainty(self, value):
+    if value < 0.0 or value > 1.0:
+        fatal(f"Goal uncertainty must be > 0 and < 1. The provided value is: {value}")
+    return value
+
+
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     """
     DoseActor: compute a 3D edep/dose map for deposited
@@ -302,6 +421,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             True,
             {
                 "doc": "FIXME",
+                "setter_hook": _setter_hook_uncertainty,
             },
         ),
         "dose": (
@@ -320,18 +440,21 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             False,
             {
                 "doc": "FIXME",
+                "setter_hook": _setter_hook_ste_of_mean,
             },
         ),
         "ste_of_mean_unbiased": (
             False,
             {
                 "doc": "FIXME",
+                "setter_hook": _setter_hook_ste_of_mean_unbiased,
             },
         ),
         "goal_uncertainty": (
             0,
             {
                 "doc": "FIXME",
+                "setter_hook": _setter_hook_goal_uncertainty,
             },
         ),
         "thresh_voxel_edep_for_unc_calc": (
@@ -353,15 +476,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         g4.GateDoseActor.__init__(self, self.user_info)
         self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
-        if self.ste_of_mean_unbiased or self.ste_of_mean:
-            self.ste_of_mean = True
-            self.use_more_ram = True
-
         self._add_user_output(ActorOutputSingleImage, "edep")
-        self._add_user_output(ActorOutputSingleImage, "dose")
-        self._add_user_output(ActorOutputSingleImage, "dose_to_water")
-        self._add_user_output(ActorOutputSingleImage, "squared")
-        self._add_user_output(ActorOutputSingleImage, "uncertainty")
+        self._add_user_output(ActorOutputSingleImage, "dose", active=False)
+        self._add_user_output(ActorOutputSingleImage, "dose_to_water", active=False)
+        self._add_user_output(ActorOutputSingleImage, "square", active=False)
+        self._add_user_output(ActorOutputSingleImage, "uncertainty", active=False)
 
     def __getstate__(self):
         # superclass getstate
@@ -370,14 +489,15 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         return return_dict
 
     def check_user_input(self):
+        VoxelDepositActor.check_user_input(self)
         if self.goal_uncertainty < 0.0 or self.goal_uncertainty > 1.0:
             raise ValueError("goal uncertainty must be > 0 and < 1")
 
-        if self.ste_of_mean_unbiased:
-            self.ste_of_mean = True
+        # if self.ste_of_mean_unbiased:
+        #     self.ste_of_mean = True
 
-        if self.ste_of_mean:
-            self.use_more_RAM = True
+        # if self.ste_of_mean:
+        #     self.use_more_RAM = True
 
         if self.ste_of_mean is True and self.simulation.number_of_threads <= 4:
             raise ValueError(
@@ -446,28 +566,37 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
+        # activate output if requested
+        self.user_output.square._active = self.square
+        self.user_output.uncertainty._active = self.uncertainty
+
         self.InitializeUserInput(self.user_info)  # C++ side
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
-        print("DEBUG: BeginOfRunActionMasterThread")
+        print("DEBUG: DoseActor.BeginOfRunActionMasterThread (python) ... start")
         self.prepare_output_for_run("edep", run_index)
         self.prepare_output_for_run("dose", run_index)
         self.prepare_output_for_run("dose_to_water", run_index)
-        self.prepare_output_for_run("squared", run_index)
-        self.prepare_output_for_run("uncertainty", run_index)
-
         self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
-        self.push_to_cpp_image("squared", run_index, self.cpp_square_image)
+
+        if self.user_output.uncertainty.active:
+            print("DEBUG: prepare_output_for_run uncertainty")
+            self.prepare_output_for_run("uncertainty", run_index)
+        if self.user_output.square.active:
+            print("DEBUG: prepare_output_for_run square")
+            self.prepare_output_for_run("square", run_index)
+            self.push_to_cpp_image("square", run_index, self.cpp_square_image)
         # FIXME: how about dose?
+        print("DEBUG: DoseActor.BeginOfRunActionMasterThread (python) ... done")
 
     def EndOfRunActionMasterThread(self, run_index):
         # edep
         print("DEBUG: EndOfRunActionMasterThread")
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
-        self.update_output_origin("edep", run_index)
+        self._update_output_coordinate_system("edep", run_index)
 
         # dose
         if not self.dose_calc_on_the_fly and self.dose:
@@ -478,14 +607,15 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                     self.user_output["edep"].get_data(run_index)
                 ),
             )
-            self.update_output_origin("dose", run_index)
+            self._update_output_coordinate_system("dose", run_index)
         # else:
         #     ???
 
         # square
+        print("DEBUG: fetch_from_cpp_image")
         if any([self.uncertainty, self.ste_of_mean, self.square]):
             self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
-            self.update_output_origin("square", run_index)
+            self._update_output_coordinate_system("square", run_index)
 
         # uncertainty
         if any([self.uncertainty, self.ste_of_mean]):
@@ -512,9 +642,12 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 self.user_output["edep"].get_data(run_index)
             )
             self.user_output["uncertainty"].store_data(run_index, uncertainty_image)
-            self.update_output_origin("uncertainty", run_index)
+            self._update_output_coordinate_system("uncertainty", run_index)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+
+        # FIXME: should check if uncertainty goal is reached, but the current mechanism is quite hacky!
+        return 0
 
     def EndSimulationAction(self):
         g4.GateDoseActor.EndSimulationAction(self)
@@ -605,6 +738,8 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         return return_dict
 
     def check_user_input(self):
+        VoxelDepositActor.check_user_input(self)
+
         if self.dose_average == self.track_average:
             fatal(
                 f"Ambiguous to enable dose and track averaging: \ndose_average: {self.user_info.dose_average} \ntrack_average: {self.user_info.track_average} \nOnly one option can and must be set to True"
@@ -662,6 +797,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
         )
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+        return 0
 
     def EndSimulationAction(self):
         g4.GateLETActor.EndSimulationAction(self)
@@ -704,6 +840,8 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def initialize(self):
         VoxelDepositActor.initialize(self)
 
+        VoxelDepositActor.check_user_input(self)
+
         # no options yet
         if self.uncertainty or self.scatter:
             fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
@@ -720,6 +858,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+        return 0
 
     def EndSimulationAction(self):
         g4.GateFluenceActor.EndSimulationAction(self)
