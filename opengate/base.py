@@ -4,7 +4,7 @@ from pathlib import Path
 from box import Box
 import sys
 
-from .exception import fatal, warning
+from .exception import fatal, warning, GateDeprecatedFeatureError
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
@@ -200,6 +200,8 @@ def _make_property(property_name, options=None, container_dict=None):
 
         @prop.setter
         def prop(self, value):
+            if "deprecated" in options:
+                raise GateDeprecatedFeatureError(options["deprecated"])
             if container_dict is None:
                 if "setter_hook" in options:
                     value_to_be_set = options["setter_hook"](self, value)
@@ -219,26 +221,31 @@ def _make_property(property_name, options=None, container_dict=None):
 
 
 def make_docstring(cls, user_info_defaults):
+    indent = 4 * " "
     if cls.__doc__ is not None:
         docstring = cls.__doc__
         docstring += "\n"
     else:
         docstring = ""
     docstring += 20 * "*" + "\n\n"
-    docstring += "This class has the following user infos and default values:\n\n"
+    docstring += (
+        "This class has the following user input parameters and default values:\n\n"
+    )
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
-        docstring += f"{k}:"
-        docstring += (15 - len(k)) * " "
-        docstring += f"{v[0]}"
+        docstring += f"{k}"
         if "required" in options and options["required"] is True:
-            docstring += "  (must be provided)"
-        docstring += "\n"
+            docstring += " (must be provided)"
+        docstring += ":\n"
+        # docstring += (20 - len(k)) * " "
+        docstring += f"{indent}Default value: {default_value}\n"
+        if "allowed_values" in options:
+            docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
         if "doc" in options:
-            doc = options["doc"]
-            doc += f" Default: {default_value}"
-            docstring += doc
+            docstring += indent
+            docstring += options["doc"]
+            docstring += "\n"
         docstring += "\n"
     docstring += 20 * "*"
     docstring += "\n"
@@ -289,9 +296,9 @@ class GateObject:
         for k, v in self.inherited_user_info_defaults.items():
             default_value = v[0]
             options = v[1]
-            print(f"current inherited user info: {k}")
+            # print(f"current inherited user info: {k}")
             if k in kwargs:
-                print("    ... is in kwargs")
+                # print("    ... is in kwargs")
                 # if "check_func" in options.keys():
                 #     user_info_value = options["check_func"](kwargs[k])
                 # else:
@@ -302,18 +309,18 @@ class GateObject:
                 self.user_info[k] = user_info_value
                 kwargs.pop(k)
             else:
-                print("    ... is NOT in kwargs")
+                # print("    ... is NOT in kwargs")
                 if "required" in options.keys() and options["required"] is True:
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
         mro = type(self).__mro__
         parent = mro[mro.index(__class__) + 1]
-        print(f"next class in line is: {parent}")
-        print(f"args at this point: {args}")
-        print(f"kwargs at this point: {kwargs}")
+        # print(f"next class in line is: {parent}")
+        # print(f"args at this point: {args}")
+        # print(f"kwargs at this point: {kwargs}")
         if type(parent).__name__ != "pybind11_type":
-            print("next class is NOT a pybind class ... ")
+            # print("next class is NOT a pybind class ... ")
             try:
                 super().__init__(*args, **kwargs)
             except TypeError as e:
@@ -325,8 +332,8 @@ class GateObject:
                     f"{list(self.inherited_user_info_defaults.keys())}.\n"
                     f"The original exception message was: {e}."
                 )
-        else:
-            print("next class IS a pybind class -> do not call parent class")
+        # else:
+        #     print("next class IS a pybind class -> do not call parent class")
 
     def __str__(self):
         ret_string = (
@@ -342,7 +349,7 @@ class GateObject:
 
     def __getstate__(self):
         """Method needed for pickling. May be overridden in inheriting classes."""
-        if self.simulation.verbose_getstate:
+        if self.simulation is not None and self.simulation.verbose_getstate:
             warning(
                 f"__getstate__() called in object '{self.name}' of type {type(self).__name__}."
             )
@@ -538,7 +545,10 @@ class DynamicGateObject(GateObject):
 
 
 class GateUserInputSwitchDict(Box):
-    """Specialized version of a Box (dict) to represent a dictionary with boolean switches.
+    """
+    NOT USED YET!
+
+    Specialized version of a Box (dict) to represent a dictionary with boolean switches.
 
     The switches handled by the object need to be defined when the object is created
     via a dictionary passed as argument 'default_switches'.
