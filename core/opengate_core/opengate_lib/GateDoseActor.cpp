@@ -85,10 +85,10 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
 void GateDoseActor::InitializeCpp() {
   NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
 
-  if (fUncertaintyFlag) {
+  if (fUncertaintyFlag || fSTEofMeanFlag) {
     fSquareFlag = true;
   }
-  if (fSquareFlag || fSTEofMeanFlag) {
+  if (fSquareFlag) {
     cpp_square_image = Image3DType::New();
   }
   //
@@ -99,6 +99,9 @@ void GateDoseActor::InitializeCpp() {
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
+  std::cout << "DEBUG: In GateDoseActor::BeginOfRunActionMasterThread start"
+            << std::endl;
+
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
   if (fcpImageForThreadsFlag) {
@@ -106,7 +109,7 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
     cpp_edep_image->Allocate();
     cpp_edep_image->FillBuffer(0.0);
   }
-  if (fSTEofMeanFlag != 0) {
+  if (fSquareFlag) {
     cpp_square_image->SetRegions(size_edep);
     cpp_square_image->Allocate();
     cpp_square_image->FillBuffer(0.0);
@@ -114,21 +117,27 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
+  std::cout << "DEBUG: In GateDoseActor::BeginOfRunAction start" << std::endl;
 
   // Important ! The volume may have moved, so we re-attach each run
+  // FIXME: check if this is still needed after refactoring
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
                                    fInitialTranslation);
   // compute volume of a dose voxel
   auto sp = cpp_edep_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
+  Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
+  size_edep = region.GetSize();
   int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
   auto &l = fThreadLocalData.Get();
   if (fSquareFlag) {
     l.edepSquared_worker_flatimg.resize(N_voxels);
     std::fill(l.edepSquared_worker_flatimg.begin(),
               l.edepSquared_worker_flatimg.end(), 0.0);
-
+    std::cout << "DEBUG: l.lastid_worker_flatimg.resize(N_voxels);" << N_voxels
+              << std::endl;
     l.lastid_worker_flatimg.resize(N_voxels);
+    std::cout << "DEBUG:     ... done" << std::endl;
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
@@ -146,6 +155,7 @@ void GateDoseActor::BeginOfEventAction(const G4Event *event) {
 }
 
 void GateDoseActor::SteppingAction(G4Step *step) {
+  //  std::cout << "DEBUG: GateDoseActor::SteppingAction start" << std::endl;
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -165,6 +175,9 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     auto direction = postGlobal - preGlobal;
     position = preGlobal + 0.5 * direction;
   }
+
+  //  std::cout << "DEBUG: In GateDoseActor::SteppingAction localPosition = ..."
+  //  << std::endl;
   auto localPosition =
       touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
@@ -223,7 +236,11 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   }
 
   Image3DType::IndexType index;
+  //  std::cout << "DEBUG: In GateDoseActor::SteppingAction isInside =
+  //  cpp_edep_image->TransformPhysicalPointToIndex(point, index);" <<
+  //  std::endl;
   bool isInside = cpp_edep_image->TransformPhysicalPointToIndex(point, index);
+  //  std::cout << "DEBUG:     ... done" << std::endl;
 
   // set value
   if (isInside) {
@@ -237,12 +254,23 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     } else {
       G4AutoLock mutex(&SetPixelMutex);
 
+      //      std::cout << "DEBUG: In GateDoseActor::SteppingAction:
+      //      ImageAddValue<Image3DType>(cpp_edep_image, index,
+      //      scoring_quantity);" << std::endl;
       ImageAddValue<Image3DType>(cpp_edep_image, index, scoring_quantity);
+      //      std::cout << "DEBUG:     ... done" << std::endl;
       // If uncertainty: consider edep per event
       if (fSquareFlag) {
         auto event_id =
             G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+        //        std::cout << "DEBUG: In GateDoseActor::SteppingAction: auto
+        //        previous_id = locald.lastid_worker_flatimg[index_flat];" <<
+        //        std::endl; std::cout << "DEBUG: index_flat " << index_flat <<
+        //        std::endl; std::cout << "DEBUG:
+        //        locald.lastid_worker_flatimg.size() " <<
+        //        locald.lastid_worker_flatimg.size() << std::endl;
         auto previous_id = locald.lastid_worker_flatimg[index_flat];
+        //        std::cout << "DEBUG:     ... done" << std::endl;
         locald.lastid_worker_flatimg[index_flat] = event_id;
         if (event_id == previous_id) {
           // Same event : continue temporary edep
@@ -252,6 +280,9 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         } else {
           // Different event : update previoupyths and start new event
           auto e = locald.edepSquared_worker_flatimg[index_flat];
+          //          std::cout << "DEBUG: In GateDoseActor::SteppingAction:
+          //          ImageAddValue<Image3DType>(cpp_square_image, index, e *
+          //          e);" << std::endl;
           ImageAddValue<Image3DType>(cpp_square_image, index, e * e);
           // new temp value
           locald.edepSquared_worker_flatimg[index_flat] = scoring_quantity;
