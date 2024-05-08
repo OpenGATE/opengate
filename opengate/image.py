@@ -35,7 +35,9 @@ def itk_dir_to_rotation(dir):
     return itk.GetArrayFromVnlMatrix(dir.GetVnlMatrix().as_matrix())
 
 
-def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value=0):
+def create_3d_image(
+    size, spacing, origin=None, pixel_type="float", allocate=True, fill_value=0
+):
     dim = 3
     pixel_type = itk.ctype(pixel_type)
     image_type = itk.Image[pixel_type, dim]
@@ -47,6 +49,8 @@ def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value
     # spacing = np.array(spacing)
     img.SetRegions(region)
     img.SetSpacing(spacing)
+    if origin is not None:
+        img.SetOrigin(origin)
     # (default origin and direction)
     if allocate:
         img.Allocate()
@@ -193,7 +197,7 @@ def align_image_with_physical_volume(
     volume,
     image,
     initial_translation=None,
-    initial_rotation=Rotation.identity(),
+    initial_rotation=Rotation.identity().as_matrix(),
     copy_index=0,
 ):
     if initial_translation is None:
