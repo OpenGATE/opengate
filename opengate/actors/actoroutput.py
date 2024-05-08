@@ -77,17 +77,23 @@ class ActorOutputBase(GateObject):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, active=True, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
+
+        self._active = active
 
     def __len__(self):
         return len(self.data_per_run)
 
     def __getitem__(self, which):
         return self.get_data(which, None)
+
+    @property
+    def active(self):
+        return self._active
 
     @property
     def data(self):
@@ -112,7 +118,7 @@ class ActorOutputBase(GateObject):
         if self.write_to_disk is True:
             self.write_data(*args, **kwargs)
 
-    def get_output_path(self, which):
+    def get_output_path(self, which, **kwargs):
         full_data_path = insert_suffix_before_extension(
             self.simulation.get_output_path(self.output_filename), self.extra_suffix
         )
@@ -201,20 +207,24 @@ class AutoMergeActorOutput(ActorOutputBase):
         self.merged_data = self.merge_data(list(self.data_per_run.values()))
 
     def merge_into_merged_data(self, data):
-        self.merged_data = self.merge_data([self.merged_data, data])
+        if self.merged_data is None:
+            self.merged_data = data
+        else:
+            self.merged_data = self.merge_data([self.merged_data, data])
 
     def end_of_run(self, run_index):
+        if self.auto_merge is True:
+            self.merge_into_merged_data(self.data_per_run[run_index])
         if self.keep_data_per_run is False:
-            if self.auto_merge is True:
-                self.merge_into_merged_data(self.data_per_run[run_index])
             self.data_per_run[run_index] = None
 
     def end_of_simulation(self):
-        if self.auto_merge is True:
-            self.merge_data_from_runs()
-        if self.keep_data_per_run is False:
-            for k in self.data_per_run:
-                self.data_per_run[k] = None
+        self.write_data_if_requested("all")
+        # if self.auto_merge is True:
+        #     self.merge_data_from_runs()
+        # if self.keep_data_per_run is False:
+        #     for k in self.data_per_run:
+        #         self.data_per_run[k] = None
 
     def get_data_container(self, which):
         if which == "merged":
@@ -239,27 +249,32 @@ class AutoMergeActorOutput(ActorOutputBase):
         return self.get_data_container(which).get_data(item)
 
     def store_data(self, which, *data):
+        """data can be either the user data to be wrapped into a DataContainer class or
+        an already wrapped DataContainer class.
+        """
+
         if isinstance(data, self.data_container_class):
             data_item = data
         else:
             data_item = self.data_container_class(data=data)
+        # FIXME: use store_data if target data exists, otherwise create new container
         if which == "merged":
             self.merged_data = data_item
         else:
             try:
                 run_index = int(which)  # might be a run_index
-                if run_index not in self.data_per_run:
-                    self.data_per_run[run_index] = data_item
-                else:
-                    fatal(
-                        f"A data item is already set for run index {run_index}. "
-                        f"You can only merge additional data into it. Overwriting is not allowed. "
-                    )
+                # if run_index not in self.data_per_run:
+                # else:
+                #     fatal(
+                #         f"A data item is already set for run index {run_index}. "
+                #         f"You can only merge additional data into it. Overwriting is not allowed. "
+                #     )
             except ValueError:
                 fatal(
                     f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
+            self.data_per_run[run_index] = data_item
 
     def load_data(self, which):
         raise NotImplementedError(
@@ -312,8 +327,8 @@ class AutoMergeActorOutput(ActorOutputBase):
             if data is not None:
                 data.write(self.get_output_path(which))
 
-    def get_output_path_for_item(self, which, item):
-        output_path = self.get_output_path(which)
+    def get_output_path(self, which="merged", item=None):
+        output_path = super().get_output_path(which)
         if which == "merged":
             data = self.merged_data
         else:
@@ -324,24 +339,27 @@ class AutoMergeActorOutput(ActorOutputBase):
                     f"Invalid argument 'which' in method get_output_path_for_item(): {which}. "
                     f"Allowed values are 'merged' or a valid run_index. "
                 )
-        return data.get_output_path_to_item(output_path, item)
+        if data is not None:
+            return data.get_output_path_to_item(output_path, item)
+        else:
+            return None
 
 
 class ActorOutputImage(AutoMergeActorOutput):
-    user_info_defaults = {
-        "size": (
-            None,
-            {
-                "doc": "Size of the image in voxels.",
-            },
-        ),
-        "spacing": (
-            None,
-            {
-                "doc": "Spacing of the image.",
-            },
-        ),
-    }
+    # user_info_defaults = {
+    #     "size": (
+    #         None,
+    #         {
+    #             "doc": "Size of the image in voxels.",
+    #         },
+    #     ),
+    #     "spacing": (
+    #         None,
+    #         {
+    #             "doc": "Spacing of the image.",
+    #         },
+    #     ),
+    # }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -365,17 +383,24 @@ class ActorOutputImage(AutoMergeActorOutput):
                     fatal(f"No data found for run index {run_index}.")
                 if image_data_container is not None:
                     return image_data_container.get_image_properties()[item]
-
             except ValueError:
                 fatal(
                     f"Illegal argument 'which'. Provide a valid run index or the term 'merged'."
                 )
 
-    def create_empty_image(self, run_index, **kwargs):
+    def create_empty_image(self, run_index, size, spacing, origin=None, **kwargs):
+        # if 'size' in kwargs:
+        #     fatal("You cannot provide a size parameter manually. "
+        #           "This is taken from the actor to which this output belongs. ")
+        # if 'spacing' in kwargs:
+        #     fatal("You cannot provide a spacing parameter manually. "
+        #           "This is taken from the actor to which this output belongs. ")
+        # if self.size is None or self.spacing is None:
+        #     fatal("Cannot create an empty image. Set the parameters 'size' and 'spacing' first.")
         if run_index not in self.data_per_run:
             self.data_per_run[run_index] = self.data_container_class()
         self.data_per_run[run_index].create_empty_image(
-            self.size, self.spacing, **kwargs
+            size, spacing, origin=origin, **kwargs
         )
 
 
