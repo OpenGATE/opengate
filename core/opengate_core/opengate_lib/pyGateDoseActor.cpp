@@ -12,10 +12,31 @@ namespace py = pybind11;
 
 #include "GateDoseActor.h"
 
+class PyGateDoseActor : public GateDoseActor {
+public:
+  // Inherit the constructors
+  using GateDoseActor::GateDoseActor;
+
+  void BeginOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(void, GateDoseActor, BeginOfRunActionMasterThread,
+                      run_id);
+  }
+
+  int EndOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(int, GateDoseActor, EndOfRunActionMasterThread, run_id);
+  }
+};
+
 void init_GateDoseActor(py::module &m) {
-  py::class_<GateDoseActor, std::unique_ptr<GateDoseActor, py::nodelete>,
-             GateVActor>(m, "GateDoseActor")
+  py::class_<GateDoseActor, PyGateDoseActor,
+             std::unique_ptr<GateDoseActor, py::nodelete>, GateVActor>(
+      m, "GateDoseActor")
       .def(py::init<py::dict &>())
+      .def("InitializeUserInput", &GateDoseActor::InitializeUserInput)
+      .def("BeginOfRunActionMasterThread",
+           &GateDoseActor::BeginOfRunActionMasterThread)
+      .def("EndOfRunActionMasterThread",
+           &GateDoseActor::EndOfRunActionMasterThread)
       .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)
       .def_readwrite("cpp_edep_image", &GateDoseActor::cpp_edep_image)
       .def_readwrite("cpp_square_image", &GateDoseActor::cpp_square_image)
