@@ -167,6 +167,10 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         s += self.user_output["stats"].__str__()
         return s
 
+    @property
+    def counts(self):
+        return self.user_output.stats.merged_data
+
     def store_output_data(self, output_name, run_index, *data):
         raise NotImplementedError
 
