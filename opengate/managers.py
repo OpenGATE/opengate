@@ -1506,7 +1506,7 @@ class Simulation(GateObject):
                 directory /= p_out.parts[i + 1]
             ensure_directory_exists(directory)
 
-        return p_out.absolute()
+        return p_out.absolute().resolve()
 
     def add_g4_command_after_init(self, command):
         """
