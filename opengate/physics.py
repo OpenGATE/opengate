@@ -177,13 +177,11 @@ class Region(GateObject):
     )
 
     def __init__(self, *args, **kwargs) -> None:
+        # references to upper hierarchy level
+        # FIXME: should rely on self.simulation via GateObject -> need to update PhysicsManager.add_region()
+        self.physics_manager = kwargs.pop("physics_manager", None)
         super().__init__(*args, **kwargs)
 
-        # references to upper hierarchy level
-        try:
-            self.physics_manager = kwargs["physics_manager"]
-        except KeyError:
-            self.physics_manager = None
         self.physics_engine = None
 
         # dictionaries to hold volumes to which this region is associated
