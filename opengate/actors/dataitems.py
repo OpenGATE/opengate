@@ -1,3 +1,4 @@
+import itk
 import numpy as np
 import json
 
@@ -18,7 +19,7 @@ class DataItem:
     def __init__(self, *args, data=None, **kwargs):
         self.set_data(data)
 
-    def set_data(self, data):
+    def set_data(self, data, **kwargs):
         self.data = data
 
     @property
@@ -162,9 +163,17 @@ class ItkImageDataItem(DataItem):
         return get_info_from_image(self.data)
 
     def create_empty_image(
-        self, size, spacing, pixel_type="float", allocate=True, fill_value=0
+        self,
+        size,
+        spacing,
+        origin=None,
+        pixel_type="float",
+        allocate=True,
+        fill_value=0,
     ):
-        self.set_data(create_3d_image(size, spacing, pixel_type, allocate, fill_value))
+        self.set_data(
+            create_3d_image(size, spacing, origin, pixel_type, allocate, fill_value)
+        )
 
     def write(self, path):
         write_itk_image(self.data, ensure_filename_is_str(path))
@@ -279,7 +288,7 @@ class DataItemContainer(DataContainer):
 
     def write(self, path):
         for k, v in self._get_output_config().items():
-            full_path = insert_suffix_before_extension(path, v)
+            full_path = self.get_output_path_to_item(path, v)
             data_to_write = None
             try:
                 identifier = int(k)
@@ -300,15 +309,21 @@ class DataItemContainer(DataContainer):
                     warning(f"Cannot write output in data item {identifier}. ")
                     continue
 
-    def get_output_path_to_item(self, actor_output_path, item):
+    def get_output_path_to_item(self, actor_output_path, item=None):
         """This method is intended to be called from an ActorOutput object which provides the path.
         It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
         Do not override this method.
         """
         if self._tuple_length > 1:
-            return insert_suffix_before_extension(
-                actor_output_path, self._get_output_config()[item]
-            )
+            if item is None:
+                paths = []
+                for k, v in self._get_output_config().items():
+                    paths.append(insert_suffix_before_extension(actor_output_path, v))
+                return paths
+            else:
+                return insert_suffix_before_extension(
+                    actor_output_path, self._get_output_config()[item]
+                )
         else:
             return actor_output_path
 
@@ -358,6 +373,10 @@ class SingleItkImage(DataItemContainer):
         # specify the data item classes
         super().__init__((ItkImageDataItem,), *args, **kwargs)
 
+    @property
+    def image(self):
+        return self.data[0].image
+
 
 class QuotientItkImage(DataItemContainer):
 
@@ -374,6 +393,18 @@ class QuotientItkImage(DataItemContainer):
     @property
     def quotient(self):
         return self.numerator / self.denominator
+
+    @property
+    def images(self):
+        return self.data[0].image, self.data[0].image
+
+    @property
+    def numerator_image(self):
+        return self.numerator.image
+
+    @property
+    def denominator_image(self):
+        return self.denominator.image
 
 
 available_data_container_classes = {
