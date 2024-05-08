@@ -157,7 +157,7 @@ class SourceEngine(EngineBase):
     def start(self):
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # to allow better control on geometry between the different runs
-        # (2) : check estimated nb of particle, warning if too large
+        # FIXME (2) : check estimated nb of particle, warning if too large
         # start the master thread (only main thread)
         self.g4_master_source_manager.StartMasterThread()
 
