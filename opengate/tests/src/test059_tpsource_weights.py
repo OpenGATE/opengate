@@ -22,6 +22,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    # sim.number_of_threads = 16
 
     # units
     km = gate.g4_units.km
@@ -116,16 +117,16 @@ if __name__ == "__main__":
     beamline.epsilon_y_coeffs = [0.00249161e-3]
 
     # tps
-    nSim = 60000  # particles to simulate per beam
-    spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan2Spots.txt", "proton"
-    )
-    tps = TreatmentPlanSource("test", sim)
-    tps.set_beamline_model(beamline)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("x", 90, degrees=True)
-    tps.initialize_tpsource()
+    nSim = 80000  # particles to simulate per beam
+
+    tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
+    tps.n = nSim
+    tps.beam_model = beamline
+    tps.plan_path = ref_path / "TreatmentPlan2Spots.txt"
+    tps.beam_nr = 1
+    tps.gantry_rot_axis = "x"
+    # tps.sorted_spot_gneration = True
+    tps.particle = "proton"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -156,8 +157,8 @@ if __name__ == "__main__":
 
     print("Compare tps Edep to single pb sources")
     print(" --------------------------------------- ")
-    mhd_1 = "phantom_a_1.mhd"
-    mhd_2 = "phantom_a_2.mhd"
+    mhd_1 = output.get_actor("doseInYZ_1").user_info.output
+    mhd_2 = output.get_actor("doseInYZ_2").user_info.output
     test = True
 
     # check first spot

@@ -14,3 +14,9 @@
 
 ```{include} user_guide_3_addons.md
 ```
+
+------------
+------------
+
+```{include} user_guide_4_contrib.md
+```

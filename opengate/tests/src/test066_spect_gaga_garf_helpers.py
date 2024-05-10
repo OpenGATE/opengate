@@ -5,7 +5,7 @@ import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 import opengate.sources.gansources as gansources
 from opengate.sources.generic import get_rad_gamma_energy_spectrum
-from opengate.contrib.spect import genm670
+from opengate.contrib.spect import ge_discovery_nm670
 from scipy.spatial.transform import Rotation
 
 
@@ -18,8 +18,7 @@ def create_world(sim):
 
 def set_phys(sim):
     m = gate.g4_units.m
-    p = sim.get_physics_user_info()
-    p.physics_list_name = "G4EmStandardPhysics_option3"
+    sim.physics_manager.physics_list = "G4EmStandardPhysics_option3"
     sim.physics_manager.set_production_cut("world", "all", 1e3 * m)
 
 
@@ -31,10 +30,10 @@ def create_simu_with_genm670(sim, collimator_type="lehr", debug=False):
     create_world(sim)
 
     # spect system
-    head1, crystal1 = genm670.add_ge_nm67_spect_head(
+    head1, crystal1 = genm670.add_spect_head(
         sim, "spect1", collimator_type=collimator_type, debug=debug
     )
-    head2, crystal2 = genm670.add_ge_nm67_spect_head(
+    head2, crystal2 = genm670.add_spect_head(
         sim, "spect2", collimator_type=collimator_type, debug=debug
     )
 
