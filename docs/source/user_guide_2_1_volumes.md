@@ -214,6 +214,7 @@ print("volume: ",sim.volume_manager.get_volume(
 #an alternative way read the volume of the generated solid
 print("same volume: ",tes.solid_info.cubic_volume)
 ```
+See test test067_stl_volume for example.
 
 ### Repeated volumes
 
