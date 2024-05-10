@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     test43.sim_set_world(sim)
 
     # fake spect head
-    head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
+    head = gate_spect.add_fake_spect_head(sim, "spect")
     head.translation = [0, 0, -15 * cm]
 
     # detector input plane (+ 1nm to avoid overlap)

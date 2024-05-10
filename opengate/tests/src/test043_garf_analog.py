@@ -3,7 +3,7 @@
 
 import itk
 import numpy as np
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     test43.sim_set_world(sim)
 
     # spect head
-    spect, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect, colli, crystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type=colli, debug=sim.visu
     )
     spect.translation = [0, 0, -15 * cm]

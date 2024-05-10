@@ -232,6 +232,11 @@ def get_release_date(opengate_version):
         return "unknown"
 
 
+def get_contrib_path():
+    module_path = os.path.dirname(__file__)
+    return Path(module_path) / "contrib"
+
+
 def print_opengate_info():
     """
     Print information about OpenGate and the environment

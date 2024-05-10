@@ -4,7 +4,7 @@
 from box import Box
 import json
 import numpy as np
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 from opengate.tests import utility
 
