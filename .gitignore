@@ -87,6 +87,14 @@ opengate_temporaire
 /opengate/tests/src/pb212
 /opengate/tests/src/*.gdml
 /opengate/tests/src/stl_tests
+/opengate/tests/src/label_to*
+/opengate/tests/src/test*speed*txt
+/opengate/tests/test*speed*txt
+/opengate/tests/label_to*
+/opengate/tests/src/demo_code_*.py
+
+/opengate/data/isomeric_transition/save
+/opengate/data/isomeric_transition/save2
 
 /cmake-build-debug
 /cmake-build-release

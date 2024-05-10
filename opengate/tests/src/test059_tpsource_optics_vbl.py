@@ -105,16 +105,11 @@ if __name__ == "__main__":
     # --------START PENCIL BEAM SCANNING----------
     # nSim = 328935  # particles to simulate per beam
     nSim = 20000
-    spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-gate_test59tps_v.txt", "ion 6 12", beam_nr=1
-    )
-    tps = TreatmentPlanSource("RT_plan", sim)
-    tps.set_beamline_model(IR2VBL)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("z", G, degrees=True)
-    tps.initialize_tpsource()
-    actual_sim_particles = tps.actual_sim_particles
+    tps = sim.add_source("TreatmentPlanPBSource", "TP source")
+    tps.beam_model = IR2VBL
+    tps.n = nSim
+    tps.particle = "ion 6 12"
+    tps.plan_path = ref_path / "TreatmentPlan4Gate-gate_test59tps_v.txt"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -176,7 +171,7 @@ if __name__ == "__main__":
     spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
     spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
 
-    thresh = 0.1
+    thresh = 0.105
 
     # 1D
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))

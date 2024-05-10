@@ -39,7 +39,7 @@ from .utility import (
     insert_suffix_before_extension,
 )
 from .logger import INFO, log
-from .physics import Region, cut_particle_names
+from .physics import Region, OpticalSurface, cut_particle_names
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
@@ -262,6 +262,11 @@ class SourceManager:
         # return the info
         return s
 
+    def initialize_before_g4_engine(self):
+        for source in self.user_info_sources.values():
+            if source.initialize_source_before_g4_engine:
+                source.initialize_source_before_g4_engine(source)
+
 
 class ActorManager:
     """
@@ -475,6 +480,16 @@ class PhysicsManager(GateObject):
                 "is_input_file": True,
             },
         ),
+        "surface_properties_file": (
+            Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml",
+            {
+                "doc": "Path to the xml file containing the surface material properties to be used by "
+                "optical surface, i.e. G4LogicalBorderSurface."
+                f"The default file shipped with GATE located is in "
+                f"{Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
+                "is_input_file": True,
+            },
+        ),
         "user_limits_particles": (
             Box(
                 [
@@ -532,26 +547,10 @@ class PhysicsManager(GateObject):
                 ]
             ),
             {
-                "doc": "Define the process to bias (if wanted) on the different particles types "
+                "doc": "Define the process to bias (if wanted) on the different particle types."
             },
         ),
     }
-
-    user_info_defaults["processes_to_bias"] = (
-        Box(
-            [
-                ("all", None),
-                ("all_charged", None),
-                ("gamma", None),
-                ("electron", None),
-                ("positron", None),
-                ("proton", None),
-            ]
-        ),
-        {
-            "doc": "Define the process to bias (if wanted) on the different particles types "
-        },
-    )
 
     def __init__(self, simulation, *args, **kwargs):
         super().__init__(name="physics_manager", *args, **kwargs)
@@ -570,12 +569,18 @@ class PhysicsManager(GateObject):
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
+        # dictionary containing all the optical surface objects
+        self.optical_surfaces = {}
+
     def reset(self):
         self.__init__(self.simulation)
 
     def to_dictionary(self):
         d = super().to_dictionary()
         d["regions"] = dict([(k, v.to_dictionary()) for k, v in self.regions.items()])
+        d["optical_surfaces"] = dict(
+            [(k, v.to_dictionary()) for k, v in self.optical_surfaces.items()]
+        )
         return d
 
     def from_dictionary(self, d):
@@ -584,6 +589,13 @@ class PhysicsManager(GateObject):
         for r in d["regions"].values():
             region = self.add_region(r["user_info"]["name"])
             region.from_dictionary(r)
+        for s in d["optical_surfaces"].values():
+            optical_surface = self.add_optical_surface(
+                s["user_info"]["volume_from"],
+                s["user_info"]["volume_to"],
+                s["user_info"]["g4_surface_name"],
+            )
+            optical_surface.from_dictionary(s)
 
     def __str__(self):
         s = ""
@@ -631,6 +643,17 @@ class PhysicsManager(GateObject):
             s += "*** No cuts per region defined. ***\n"
         return s
 
+    def dump_optical_surfaces(self):
+        """
+        Prints each volume's name and its associated surfaces' details (surface name and connected volumes)
+        from the `volume_surfaces` dictionary in a readable format.
+        """
+        s = "The PhysicsManager is storing the following optical surfaces:\n\n"
+        for surf in self.optical_surfaces.values():
+            s += str(surf)
+            s += "\n"
+        return s
+
     @property
     def enable_decay(self):
         """Properties to quickly enable decay.
@@ -655,6 +678,33 @@ class PhysicsManager(GateObject):
     def enable_decay(self, value):
         self.special_physics_constructors["G4DecayPhysics"] = value
         self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value
+
+    def add_optical_surface(self, volume_from, volume_to, g4_surface_name):
+        """
+        Creates an object of class OpticalSurface with surface info.
+
+        :param volume_from: Name of the first volume (str)
+
+        :param volume_to: Name of the second volume (str)
+
+        :param g4_surface_name: Name of the surface between volumes (str)
+        """
+
+        name = "optical_surface_" + volume_from + "_" + volume_to
+
+        # Throw an error if the optical surface already exists
+        if name in self.optical_surfaces.keys():
+            fatal("An optical surface between these volumes already exists")
+
+        self.optical_surfaces[name] = OpticalSurface(
+            name=name,
+            physics_manager=self,
+            volume_from=volume_from,
+            volume_to=volume_to,
+            g4_surface_name=g4_surface_name,
+        )
+
+        return self.optical_surfaces[name]
 
     def add_region(self, name):
         if name in self.regions.keys():
@@ -1033,7 +1083,7 @@ class Simulation(GateObject):
             },
         ),
         "visu_type": (
-            "qt",
+            "vrml",
             {
                 "doc": "The type of visualization to be used.",
                 "available_values": (
@@ -1164,6 +1214,12 @@ class Simulation(GateObject):
             {
                 "doc": "Geant4 commands which will be called after the G4 runmanager has initialized the simulation.",
                 "required_type": str,
+            },
+        ),
+        "init_only": (
+            False,
+            {
+                "doc": "Start G4 engine initialisation but do not start the simulation.",
             },
         ),
     }
@@ -1340,6 +1396,10 @@ class Simulation(GateObject):
     def add_volume(self, volume, name=None):
         return self.volume_manager.add_volume(volume, name)
 
+    # call this add optical surface, from_volume, to_volume,
+    def add_surface(self, volume_1, volume_2, surface_name):
+        return self.physics_manager.add_surface(volume_1, volume_2, surface_name)
+
     def add_parallel_world(self, name):
         self.volume_manager.add_parallel_world(name)
 
@@ -1374,7 +1434,8 @@ class Simulation(GateObject):
             :obj:SimulationOutput : The output of the simulation run.
         """
         with SimulationEngine(self) as se:
-            se.new_process = start_new_process  # this attribute is only used by the engine to display an info
+            se.new_process = start_new_process
+            se.init_only = self.init_only
             output = se.run_engine()
         return output
 
@@ -1468,6 +1529,13 @@ class Simulation(GateObject):
             return labels, image, outpath_mhd
         else:
             return labels, image
+
+    def initialize_source_before_g4_engine(self):
+        """
+        Some sources need to perform computation once everything is defined in user_info but *before* the
+        initialization of the G4 engine starts. This can be done via this function.
+        """
+        self.source_manager.initialize_before_g4_engine()
 
     def _get_voxelized_geometry(self, extent, spacing, margin):
         """Private method which returns a voxelized image of the simulation geometry

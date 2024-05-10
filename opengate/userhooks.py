@@ -1,6 +1,21 @@
 import opengate.engines
 import opengate_core as g4
+
+import opengate.physics
 from opengate.utility import get_material_name_variants
+
+
+def get_ions_generated_per_spot(simulation_engine):
+    sources = [
+        s
+        for s in simulation_engine.source_engine.sources
+        if s.type_name == "TreatmentPlanPBSource"
+    ]
+    generated_primaries = {}
+    for i, s in enumerate(sources):
+        print(s.user_info.name)
+        generated_primaries[s.user_info.name + f"_{i}"] = s.get_generated_primaries()
+    print(generated_primaries)
 
 
 def check_production_cuts(simulation_engine):
@@ -39,7 +54,7 @@ def user_hook_dump_material_properties(simulation_engine):
     print("*** In user hook dump_material_properties ***")
     for vol in simulation_engine.simulation.volume_manager.volumes.values():
         material_name = vol.g4_material.GetName()
-        material_dict = opengate.engines.load_optical_properties_from_xml(
+        material_dict = opengate.physics.load_optical_properties_from_xml(
             simulation_engine.simulation.physics_manager.optical_properties_file,
             material_name,
         )

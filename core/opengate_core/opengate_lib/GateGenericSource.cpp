@@ -112,7 +112,7 @@ void GateGenericSource::UpdateActivityWithTAC(double time) {
   auto i = std::distance(fTAC_Times.begin(), lower);
 
   // Last element ?
-  if (i == fTAC_Times.size() - 1) {
+  if (i >= fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
     return;
   }
@@ -131,7 +131,6 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     fEffectiveEventTime = current_simulation_time;
   }
   UpdateActivity(fEffectiveEventTime);
-
   fTotalSkippedEvents += fCurrentSkippedEvents;
   fTotalZeroEvents += fCurrentZeroEvents;
   fCurrentZeroEvents = 0;
@@ -387,9 +386,10 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto *ang = fSPS->GetAngDist();
   auto ang_type = DictGetStr(user_info, "type");
   fangType = ang_type;
-  std::vector<std::string> ll = {"iso", "momentum", "focused",
-                                 "beam2d"}; // FIXME check on py side ?
+  std::vector<std::string> ll = {"iso", "histogram", "momentum", "focused",
+                                 "beam2d"};
   CheckIsIn(ang_type, ll);
+
   if (ang_type == "iso") {
     ang->SetAngDistType("iso");
 
@@ -401,23 +401,42 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
     ang->SetMinPhi(phi[0]);
     ang->SetMaxPhi(phi[1]);
   }
+
   if (ang_type == "momentum") {
     ang->SetAngDistType("planar"); // FIXME really ??
     auto d = DictGetG4ThreeVector(user_info, "momentum");
     fInitializeMomentum = d;
     ang->SetParticleMomentumDirection(d);
   }
+
   if (ang_type == "focused") {
     ang->SetAngDistType("focused");
     auto f = DictGetG4ThreeVector(user_info, "focus_point");
     fInitiliazeFocusPoint = f;
     ang->SetFocusPoint(f);
   }
+
   if (ang_type == "beam2d") {
     ang->SetAngDistType("beam2d");
     auto sigma = DictGetVecDouble(user_info, "sigma");
     ang->SetBeamSigmaInAngX(sigma[0]);
     ang->SetBeamSigmaInAngY(sigma[1]);
+  }
+
+  if (ang_type == "histogram") {
+    ang->SetAngDistType("user");
+    auto theta_w = DictGetVecDouble(user_info, "histogram_theta_weight");
+    auto theta_e = DictGetVecDouble(user_info, "histogram_theta_angle");
+    for (unsigned long i = 0; i < theta_w.size(); i++) {
+      G4ThreeVector x(theta_e[i], theta_w[i], 0);
+      ang->UserDefAngTheta(x);
+    }
+    auto phi_w = DictGetVecDouble(user_info, "histogram_phi_weight");
+    auto phi_e = DictGetVecDouble(user_info, "histogram_phi_angle");
+    for (unsigned long i = 0; i < phi_w.size(); i++) {
+      G4ThreeVector x(phi_e[i], phi_w[i], 0);
+      ang->UserDefAngPhi(x);
+    }
   }
 
   // set the angle acceptance volume if needed
@@ -488,17 +507,34 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     auto w = DictGetVecDouble(user_info, "spectrum_weight");
     auto e = DictGetVecDouble(user_info, "spectrum_energy");
     auto total = 0.0;
-    for (double i : w)
-      total += i;
+    for (double ww : w)
+      total += ww;
+    // normalize to total
     for (unsigned long i = 0; i < w.size(); i++) {
       w[i] = w[i] / total;
     }
+    // cumulated weights
     for (unsigned long i = 1; i < w.size(); i++) {
       w[i] += w[i - 1];
     }
     ene->fEnergyCDF = e;
     ene->fProbabilityCDF = w;
-    // Modify the activity according to the total sum of weights
+    if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
+      std::ostringstream oss;
+      oss << "The spectrum lines for source " << fName
+          << " is zero length. Abort";
+      Fatal(oss.str());
+    }
+    if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
+      std::ostringstream oss;
+      oss << "The spectrum vector energy and proba for source " << fName
+          << " must have the same length, while there are  "
+          << ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
+      Fatal(oss.str());
+    }
+    // ! important !
+    // Modify the activity according to the total sum of weights because we
+    // normalize the weights
     fActivity = fActivity * total;
     fInitialActivity = fActivity;
   }

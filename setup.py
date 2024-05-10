@@ -24,6 +24,9 @@ setup(
         "matplotlib",
         "GitPython",
         "colorlog",
+        "radioactivedecay",
+        "jsonpickle",
+        "pandas",
     ]
     + install_requires_windows,
 )

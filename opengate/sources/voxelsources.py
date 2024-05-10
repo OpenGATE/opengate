@@ -37,6 +37,7 @@ class VoxelsSource(GenericSource):
         user_info.energy.mono = 0
 
     def __init__(self, user_info):
+        ## FIXME
         super().__init__(user_info)
         self.image = None
 

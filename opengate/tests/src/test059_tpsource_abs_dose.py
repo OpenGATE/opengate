@@ -116,18 +116,17 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
 
     nSim = 50000  # 328935  # particles to simulate per beam
-
-    spots, ntot, energies, G = spots_info_from_txt(
+    beam_data_dict = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
     )
-    tps = TreatmentPlanSource("RT_plan", sim)
-    tps.set_beamline_model(IR2HBL)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("z", G, degrees=True)
-    tps.initialize_tpsource()
-
-    actual_sim_particles = tps.actual_sim_particles
+    tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
+    tps.n = nSim
+    tps.sorted_spot_generation = True
+    tps.beam_model = IR2HBL
+    tps.beam_data_dict = beam_data_dict
+    tps.beam_nr = 1
+    tps.particle = "ion 6 12"
+    ntot = beam_data_dict["msw_beam"]
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -149,7 +148,7 @@ if __name__ == "__main__":
     ## ------ TESTS -------##
     dose_path = utility.scale_dose(
         str(dose.output),
-        ntot / actual_sim_particles,
+        ntot / nSim,
         output_path / "abs_dose_roos-Scaled.mhd",
     )
 
