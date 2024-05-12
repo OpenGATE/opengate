@@ -252,7 +252,7 @@ class DataItemContainer(DataContainer):
 
     @property
     def data_is_none(self):
-        return any([d is None or d.data_is_none() for d in self.data])
+        return any([d is None or d.data_is_none for d in self.data])
 
     def _assert_data_is_not_none(self):
         if self.data_is_none:
