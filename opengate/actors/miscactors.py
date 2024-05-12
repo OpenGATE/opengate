@@ -154,10 +154,11 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         # if not user_info:
         #     user_info = UserInfo("Actor", self.type_name, name=uuid.uuid4().__str__())
         ActorBase.__init__(self, *args, **kwargs)
-        g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
-
         self._add_user_output(ActorOutputStatisticsActor, "stats")
+        self.__initcpp__()
 
+    def __initcpp__(self):
+        g4.GateSimulationStatisticsActor.__init__(self, {"name": self.name})
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def __str__(self):
