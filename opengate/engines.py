@@ -570,6 +570,10 @@ class ActorEngine(EngineBase):
             # warning : the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
 
+    def register_to_actors(self):
+        for actor in self.actor_manager.actors.values():
+            actor.actor_engine = self
+
     def register_sensitive_detectors(self, world_name):
         for actor in self.actor_manager.sorted_actors:
             if actor.is_sensitive_detector:
