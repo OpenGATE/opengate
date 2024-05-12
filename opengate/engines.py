@@ -1288,6 +1288,7 @@ class SimulationEngine(GateSingletonFatal):
         else:
             self.g4_RunManager.Initialize()
 
+        log.info("Simulation: initialize PhysicsEngine after RunManager initialization")
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
 
@@ -1300,8 +1301,8 @@ class SimulationEngine(GateSingletonFatal):
         # because the RM initialization calls ActionEngine.Build()
         # which is required for initialize()
         # Actors initialization (before the RunManager Initialize)
-        log.info("Simulation: initialize Actors")
         # self.actor_engine.create_actors()  # calls the actors' constructors
+        log.info("Simulation: initialize actors")
         self.source_engine.initialize_actors()
         self.actor_engine.initialize()
         self.filter_engine.initialize()
