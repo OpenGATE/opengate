@@ -16,19 +16,21 @@
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
   // register this actor to the global list of actors
-  GateActorManager::AddActor(this);
-  // MT ?
   fMultiThreadReady = MT_ready;
-  // Do not work (yet) with multi-thread
+}
+
+GateVActor::~GateVActor() {}
+
+void GateVActor::InitializeCpp() {
+  GateActorManager::AddActor(this);
+  // Complain if the actor is not (yet) ready for multi-threading
   if (!fMultiThreadReady && G4Threading::IsMultithreadedApplication()) {
     std::ostringstream oss;
     oss << "Sorry, the actor '" << GetName()
         << "' cannot (yet) be used in multi-threads mode. ";
     Fatal(oss.str());
   }
-}
-
-GateVActor::~GateVActor() {}
+};
 
 void GateVActor::InitializeUserInput(py::dict &user_info) {
   fMotherVolumeName = DictGetStr(user_info, "attached_to");

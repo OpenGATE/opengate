@@ -27,7 +27,7 @@ public:
   virtual void AddActions(std::set<std::string> &actions);
 
   // Called at initialisation
-  virtual void InitializeCpp() {}
+  virtual void InitializeCpp();
 
   // get user input parameters from python side
   virtual void InitializeUserInput(py::dict &user_info);
