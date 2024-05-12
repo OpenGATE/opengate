@@ -1270,7 +1270,9 @@ class SimulationEngine(GateSingletonFatal):
         # set pointers to python classes
         self.g4_RunManager.SetUserInitialization(self.volume_engine)
         self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
-        self.g4_RunManager.SetUserInitialization(self.action_engine)
+        self.g4_RunManager.SetUserInitialization(
+            self.action_engine
+        )  # G4 internally calls action_engine.Build()
 
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
