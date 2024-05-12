@@ -17,6 +17,7 @@ from ..image import (
     create_3d_image,
     write_itk_image,
 )
+from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
 
 
 def ene_win_peak(name, energy, energy_width_percent):
