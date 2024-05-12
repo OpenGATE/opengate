@@ -289,6 +289,10 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "added_singles")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateDigitizerAdderActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
@@ -315,6 +319,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
 
     def StartSimulationAction(self):
         self.set_group_by_depth()
+        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
         g4.GateDigitizerAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
