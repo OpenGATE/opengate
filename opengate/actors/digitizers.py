@@ -1051,8 +1051,6 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         ),
     }
 
-    type_name = "DigitizerReadoutActor"
-
     # @staticmethod
     # def set_default_user_info(user_info):
     #     DigitizerAdderActor.set_default_user_info(user_info)
@@ -1060,6 +1058,10 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "readout_singles")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
@@ -1069,6 +1071,7 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
         DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
             fatal(f'Please, set the option "discretize_volume"')
