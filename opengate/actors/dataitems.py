@@ -218,9 +218,8 @@ class DataItemContainer(DataContainer):
             if DataItem not in dic.mro():
                 fatal(f"Illegal data item class {dic}. ")
         self.data_item_classes = data_item_classes
-        if data is None:
-            self.set_data(*([None] * self._tuple_length))
-        else:
+        self.data = [dic(data=None) for dic in self.data_item_classes]
+        if data is not None:
             self.set_data(*data)
         self.custom_output_config = {}
 
