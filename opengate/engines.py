@@ -526,6 +526,10 @@ class ActorEngine(EngineBase):
     This object manages all actors G4 objects at runtime
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.register_to_actors()
+
     @property
     def actor_manager(self):
         return self.simulation_engine.simulation.actor_manager
