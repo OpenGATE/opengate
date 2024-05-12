@@ -1,4 +1,5 @@
 import sys
+import logging
 import time
 
 from box import Box
@@ -37,7 +38,8 @@ from .utility import (
     ensure_filename_is_str,
     insert_suffix_before_extension,
 )
-from .logger import INFO, log
+from . import logger
+from .logger import log
 from .physics import Region, OpticalSurface, cut_particle_names
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
@@ -1179,7 +1181,11 @@ class VolumeManager(GateObject):
 
 
 def setter_hook_verbose_level(self, verbose_level):
-    log.setLevel(verbose_level)
+    try:
+        level = int(verbose_level)
+    except ValueError:
+        level = getattr(logging, verbose_level)
+    log.setLevel(level)
     return verbose_level
 
 
@@ -1196,9 +1202,17 @@ class Simulation(GateObject):
 
     user_info_defaults = {
         "verbose_level": (
-            INFO,
+            logger.INFO,
             {
-                "doc": "Gate pre-run verbosity. Possible values: NONE, INFO, DEBUG.",
+                "doc": "Gate pre-run verbosity. ",
+                "allowed_values": (
+                    "NONE",
+                    "INFO",
+                    "DEBUG",
+                    logger.NONE,
+                    logger.INFO,
+                    logger.DEBUG,
+                ),
                 "setter_hook": setter_hook_verbose_level,
             },
         ),
