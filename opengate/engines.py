@@ -915,8 +915,10 @@ class SimulationOutput:
 
     def get_actor(self, name):
         if name not in self.actors:
-            s = self.actors.keys
-            fatal(f'The actor "{name}" does not exist. Here is the list of actors: {s}')
+            fatal(
+                f'The actor "{name}" does not exist. '
+                f"These are the actors known to this simulation: {list(self.actors.keys())}"
+            )
         return self.actors[name]
 
     def get_source(self, name):
