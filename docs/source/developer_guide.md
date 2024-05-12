@@ -331,6 +331,10 @@ def __str__(self):
 ```
 In particular, the GateObject superclass (and variants) implement a `__str__()` method which lists all user_info of the object.
 
+### Inheritance in actor classes
+FIXME: Inherit first from python base class and then from C++ base class.
+
+
 ---
 ## Helpers
 
