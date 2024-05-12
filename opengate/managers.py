@@ -1598,14 +1598,21 @@ class Simulation(GateObject):
 
             log.info("Dispatching simulation to subprocess ...")
             self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
-        else:
-            self.output = self._run_simulation_engine(False)
 
-        # FIXME: should this not be done in a __setstate__ method?
-        # put back the simulation object to all actors
-        for actor in self.output.actors.values():
-            actor.simulation = self
-        self.output.simulation = self
+            # FIXME: should this not be done in a __setstate__ method?
+            # put back the simulation object to all actors
+            for actor in self.output.actors.values():
+                actor.simulation = self
+            self.output.simulation = self
+
+            # Recover output from unpickled actors coming from sub-process queue
+            for actor in self.actor_manager.actors.values():
+                returned_actor = self.output.get_actor(actor.name)
+                actor.user_output = returned_actor.user_output
+        else:
+            # Nothing special to do if the simulation engine ran in the native python process
+            # because everything is already in place.
+            self.output = self._run_simulation_engine(False)
 
         if self.store_json_archive is True:
             self.to_json_file()
