@@ -216,7 +216,7 @@ class AutoMergeActorOutput(ActorOutputBase):
         if self.auto_merge is True:
             self.merge_into_merged_data(self.data_per_run[run_index])
         if self.keep_data_per_run is False:
-            self.data_per_run[run_index] = None
+            self.data_per_run.pop(run_index)
 
     def end_of_simulation(self):
         self.write_data_if_requested("all")
