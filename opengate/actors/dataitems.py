@@ -39,12 +39,18 @@ class DataItem:
 
     def __getattr__(self, item):
         # check if any of the data items has this attribute
-        if hasattr(self.data, item) and callable(getattr(self.data, item)):
+        # exclude 'data' to avoid infinite recursion
+        # exclude '__setstate__' and '__getstate__' to avoid interference with pickling
+        if item not in ("data", "__setstate__", "__getstate__"):
+            if hasattr(self.data, item):
+                if callable(getattr(self.data, item)):
 
-            def hand_down(*args, **kwargs):
-                getattr(self.data, item)(*args, **kwargs)
+                    def hand_down(*args, **kwargs):
+                        getattr(self.data, item)(*args, **kwargs)
 
-            return hand_down
+                    return hand_down
+            else:
+                raise AttributeError(f"No such attribute '{item}'")
         else:
             raise AttributeError(f"No such attribute '{item}'")
 
