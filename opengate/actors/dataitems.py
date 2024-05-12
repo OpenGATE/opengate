@@ -17,7 +17,9 @@ from ..image import (
 class DataItem:
 
     def __init__(self, *args, data=None, **kwargs):
-        self.set_data(data)
+        self.data = None
+        if data is not None:
+            self.set_data(data)
 
     def set_data(self, data, **kwargs):
         self.data = data
