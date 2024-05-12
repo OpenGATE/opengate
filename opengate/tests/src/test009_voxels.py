@@ -15,6 +15,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
+    sim.output_dir = paths.output / __file__.rstrip(".py")
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
@@ -87,10 +88,10 @@ if __name__ == "__main__":
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
     dose.output = paths.output / "test009.mhd"
-    dose.mother = "patient"
+    dose.attached_to = "patient"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.img_coord_system = True
+    dose.output_coordinate_system = "attached_to_image"
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.hit_type = "random"
 
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stat, stats_ref, 0.15)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / dose.user_info.output,
+        dose.user_output.edep.get_output_path(),
         stat,
         tolerance=35,
     )
