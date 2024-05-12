@@ -1098,12 +1098,12 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
                 "doc": "FIXME",
             },
         ),
-        "output": (
-            "fixme.root",
-            {
-                "doc": "FIXME",
-            },
-        ),
+        # "output": (
+        #     "fixme.root",
+        #     {
+        #         "doc": "FIXME",
+        #     },
+        # ),
         "store_absorbed_event": (
             False,
             {
@@ -1129,23 +1129,27 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
     #     user_info.store_absorbed_event = False
     #     user_info.debug = False
 
-    def __getstate__(self):
-        # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
-        return ActorBase.__getstate__(self)
-
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "phsp")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
         self.fNumberOfAbsorbedEvents = 0
         self.fTotalNumberOfEntries = 0
+
+    def __getstate__(self):
+        # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
+        return ActorBase.__getstate__(self)
 
     def initialize(self):
         ActorBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
-    # not needed, only if need to do something from python
     def StartSimulationAction(self):
+        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
