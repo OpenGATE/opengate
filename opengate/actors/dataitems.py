@@ -343,19 +343,25 @@ class DataItemContainer(DataContainer):
 
     def __getattr__(self, item):
         # check if any of the data items has this attribute
-        methods_in_data = []
-        for d in self.data:
-            if hasattr(d, item) and callable(getattr(d, item)):
-                methods_in_data.append(getattr(d, item))
-        if len(methods_in_data) > 0:
+        # exclude 'data' to avoid infinite recursion
+        # exclude '__setstate__' and '__getstate__' to avoid interference with pickling
+        if item not in ("data", "__setstate__", "__getstate__"):
+            methods_in_data = []
+            for d in self.data:
+                if hasattr(d, item):
+                    if callable(getattr(d, item)):
+                        methods_in_data.append(getattr(d, item))
+            if len(methods_in_data) > 0:
 
-            def hand_down(*args, **kwargs):
-                return_values = []
-                for m in methods_in_data:
-                    return_values.append(m(*args, **kwargs))
-                return tuple(return_values)
+                def hand_down(*args, **kwargs):
+                    return_values = []
+                    for m in methods_in_data:
+                        return_values.append(m(*args, **kwargs))
+                    return tuple(return_values)
 
-            return hand_down
+                return hand_down
+            else:
+                raise AttributeError(f"No such attribute '{item}'")
         else:
             raise AttributeError(f"No such attribute '{item}'")
 
