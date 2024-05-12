@@ -411,7 +411,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             },
         ),
         "square": (
-            False,
+            True,
             {
                 "doc": "FIXME",
             },
