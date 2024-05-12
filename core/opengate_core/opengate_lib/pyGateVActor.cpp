@@ -76,9 +76,11 @@ void init_GateVActor(py::module &m) {
              std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
       .def(py::init<py::dict &>())
       .def("RegisterSD", &GateVActor::RegisterSD)
-      .def_readonly("fActions", &GateVActor::fActions)
+      //      .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
+      //      this -> problems with pickle
       .def_readwrite("fFilters", &GateVActor::fFilters)
       .def("InitializeCpp", &GateVActor::InitializeCpp)
+      .def("InitializeUserInput", &GateVActor::InitializeUserInput)
       .def("AddActions", &GateVActor::AddActions)
       .def("IsSensitiveDetector", &GateVActor::IsSensitiveDetector)
       .def("HasAction", &GateVActor::HasAction)
