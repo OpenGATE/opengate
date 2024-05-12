@@ -125,10 +125,6 @@ class ActorBase(GateObject):
     def attached_to_volume(self):
         return self.simulation.volume_manager.get_volume(self.attached_to)
 
-    @property
-    def is_sensitive_detector(self):
-        return "SteppingAction" in self.fActions
-
     def close(self):
         for uo in self.user_output.values():
             uo.close()
@@ -152,8 +148,11 @@ class ActorBase(GateObject):
         # self.RegisterCallBack(
         #     "get_output_path_for_item_string", self.get_output_path_for_item_string
         # )
-        for v in self.user_output.values():
+        print("DEBUG: ActorBase.initialize() ...")
+        for k, v in self.user_output.items():
+            print(f"DEBUG: user_output '{k}' initialize")
             v.initialize()
+        print("DEBUG: ActorBase.initialize() ... done")
 
     def _add_user_output(self, actor_output_class, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
