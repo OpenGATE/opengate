@@ -155,7 +155,6 @@ void GateDoseActor::BeginOfEventAction(const G4Event *event) {
 }
 
 void GateDoseActor::SteppingAction(G4Step *step) {
-  //  std::cout << "DEBUG: GateDoseActor::SteppingAction start" << std::endl;
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -176,8 +175,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     position = preGlobal + 0.5 * direction;
   }
 
-  //  std::cout << "DEBUG: In GateDoseActor::SteppingAction localPosition = ..."
-  //  << std::endl;
   auto localPosition =
       touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
@@ -254,11 +251,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     } else {
       G4AutoLock mutex(&SetPixelMutex);
 
-      //      std::cout << "DEBUG: In GateDoseActor::SteppingAction:
-      //      ImageAddValue<Image3DType>(cpp_edep_image, index,
-      //      scoring_quantity);" << std::endl;
       ImageAddValue<Image3DType>(cpp_edep_image, index, scoring_quantity);
-      //      std::cout << "DEBUG:     ... done" << std::endl;
       // If uncertainty: consider edep per event
       if (fSquareFlag) {
         auto event_id =
@@ -280,9 +273,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         } else {
           // Different event : update previoupyths and start new event
           auto e = locald.edepSquared_worker_flatimg[index_flat];
-          //          std::cout << "DEBUG: In GateDoseActor::SteppingAction:
-          //          ImageAddValue<Image3DType>(cpp_square_image, index, e *
-          //          e);" << std::endl;
           ImageAddValue<Image3DType>(cpp_square_image, index, e * e);
           // new temp value
           locald.edepSquared_worker_flatimg[index_flat] = scoring_quantity;
