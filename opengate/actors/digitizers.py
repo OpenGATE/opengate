@@ -705,12 +705,12 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
                 "doc": "Attributes to be considered. ",
             },
         ),
-        "output": (
-            "EnergyWindows.root",
-            {
-                "doc": "FIXME",
-            },
-        ),
+        # "output": (
+        #     "EnergyWindows.root",
+        #     {
+        #         "doc": "FIXME",
+        #     },
+        # ),
         "input_digi_collection": (
             "Hits",
             {
@@ -751,6 +751,10 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "singles_per_energy_window")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateDigitizerEnergyWindowsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
@@ -759,9 +763,8 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
-    def StartSimulationAction(
-        self,
-    ):  # not needed, only if need to do something in python
+    def StartSimulationAction(self):
+        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
