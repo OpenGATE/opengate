@@ -1,12 +1,11 @@
 import pathlib
-from opengate.exception import fatal
 from opengate.geometry.volumes import unite_volumes
 from opengate.geometry.volumes import RepeatParametrisedVolume, BoxVolume
 from opengate.actors.digitizers import *
 from opengate.managers import Simulation
-from opengate.contrib.spect import genm670
 from opengate.utility import g4_units
 from box import Box
+from opengate.contrib.spect import ge_discovery_nm670 as discovery
 
 # colors
 red = [1, 0.7, 0.7, 0.8]
@@ -17,7 +16,7 @@ yellow = [1, 1, 0, 1]
 green = [0, 1, 0, 1]
 
 
-def add_intevo_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
+def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     """
     Collimator:
     - False or "none" : no collimator
@@ -737,7 +736,6 @@ def add_digitizer_lu177(sim, crystal_name, name):
 
     # energy blurring
     keV = g4_units.keV
-    MeV = g4_units.MeV
     eb = digitizer.add_module("DigitizerBlurringActor")
     eb.blur_attribute = "TotalEnergyDeposit"
     eb.blur_method = "InverseSquare"
@@ -800,7 +798,7 @@ def add_digitizer_tc99m(sim, crystal_name, name):
 
     # detection efficiency
     ea = digitizer.add_module("DigitizerEfficiencyActor")
-    ea.efficiency = 0.86481
+    ea.efficiency = 0.86481  # FAKE
 
     # energy blurring
     keV = g4_units.keV
@@ -870,13 +868,11 @@ def get_plane_position_and_distance_to_crystal(collimator_type):
 
 def compute_plane_position_and_distance_to_crystal(collimator_type):
     sim = Simulation()
-    spect, colli, crystal = add_intevo_spect_head(
-        sim, "spect", collimator_type, debug=True
-    )
-    pos = genm670.get_volume_position_in_head(
+    spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
+    pos = discovery.get_volume_position_in_head(
         sim, "spect", f"{collimator_type}_collimator", "min", axis=0
     )
-    y = genm670.get_volume_position_in_head(sim, "spect", "crystal", "center", axis=0)
+    y = discovery.get_volume_position_in_head(sim, "spect", "crystal", "center", axis=0)
     crystal_distance = y - pos
     psd = spect.size[2] / 2.0 - pos
     return pos, crystal_distance, psd
@@ -942,7 +938,7 @@ def create_simu_for_arf_training_dataset(
     sim.world.material = "G4_Galactic"
 
     # spect
-    head, _, crystal = add_intevo_spect_head(sim, "spect", colli_type, debug=ui.visu)
+    head, _, crystal = add_spect_head(sim, "spect", colli_type, debug=ui.visu)
 
     # rotation like default
     set_head_orientation(head, colli_type, radius)

@@ -5,6 +5,19 @@ import opengate.physics
 from opengate.utility import get_material_name_variants
 
 
+def get_ions_generated_per_spot(simulation_engine):
+    sources = [
+        s
+        for s in simulation_engine.source_engine.sources
+        if s.type_name == "TreatmentPlanPBSource"
+    ]
+    generated_primaries = {}
+    for i, s in enumerate(sources):
+        print(s.user_info.name)
+        generated_primaries[s.user_info.name + f"_{i}"] = s.get_generated_primaries()
+    print(generated_primaries)
+
+
 def check_production_cuts(simulation_engine):
     """Function to be called by opengate after initialization
     of the simulation, i.e. when G4 volumes and regions exist.

@@ -1,6 +1,4 @@
 import pathlib
-from opengate.exception import fatal
-from opengate.utility import g4_units
 from opengate.managers import Simulation
 from opengate.geometry.volumes import RepeatParametrisedVolume, HexagonVolume
 from opengate.geometry.utility import (
@@ -8,19 +6,21 @@ from opengate.geometry.utility import (
     get_transform_orbiting,
     vec_g4_as_np,
 )
+from opengate.actors.digitizers import *
 from scipy.spatial.transform import Rotation
 from box import Box
 
 
 def get_collimator(rad):
-    radionuclides = ["Tc99m", "Lu177", "In111", "I131"]
+    radionuclides = ["tc99m", "lu177", "in111", "i131"]
     ref_collimators = ["lehr", "megp", "megp", "hegp"]
+    rad = rad.lower()
     if rad not in radionuclides:
         fatal(f'The radionuclide "{rad}" is unknown. Known are: {radionuclides}')
     return ref_collimators[radionuclides.index(rad)]
 
 
-def add_ge_nm67_fake_spect_head(sim, name="spect"):
+def add_fake_spect_head(sim, name="spect"):
     white = [1, 1, 1, 1]
     cm = g4_units.cm
     spect_length = 19 * cm
@@ -31,7 +31,7 @@ def add_ge_nm67_fake_spect_head(sim, name="spect"):
     return head
 
 
-def get_orientation_for_CT(colli_type, table_shift, radius):
+def get_orientation_for_ct(colli_type, table_shift, radius):
     nm = g4_units.nm
     pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal(colli_type)
     pos += 1 * nm
@@ -39,7 +39,7 @@ def get_orientation_for_CT(colli_type, table_shift, radius):
     return get_transform_orbiting(p, "x", 90)
 
 
-def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
+def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     """
     Collimators:
     - False : no collimator
@@ -61,16 +61,17 @@ def add_ge_nm67_spect_head(sim, name="spect", collimator_type="lehr", debug=Fals
     sim.g4_check_overlap_flag = False  # set to True for debug
 
     # spect head
-    head, lead_cover = add_ge_nm670_spect_box(sim, name, collimator_type)
+    head, lead_cover = add_spect_box(sim, name)
 
     # spect head
-    crystal = add_ge_nm670_spect_crystal(sim, name, lead_cover)
+    crystal = add_crystal(sim, name, lead_cover)
 
     # spect collimator
+    colli = None
     if collimator_type:
-        add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug)
+        colli = add_collimator(sim, name, head, collimator_type, debug)
 
-    return head, crystal
+    return head, colli, crystal
 
 
 def distance_to_center_of_crystal(sim, name="spect"):
@@ -82,7 +83,7 @@ def distance_to_center_of_crystal(sim, name="spect"):
     return d
 
 
-def add_ge_nm670_spect_box(sim, name, collimator_type):
+def add_spect_box(sim, name):
     cm = g4_units.cm
 
     # colors
@@ -147,7 +148,7 @@ def add_ge_nm670_spect_box(sim, name, collimator_type):
     return head, lead_cover
 
 
-def add_ge_nm670_spect_crystal(sim, name, lead_cover):
+def add_crystal(sim, name, lead_cover):
     cm = g4_units.cm
     yellow = [1, 1, 0, 1]
     # mono-bloc crystal thickness 3/8 of inch = 0.9525 cm
@@ -161,7 +162,7 @@ def add_ge_nm670_spect_crystal(sim, name, lead_cover):
     return crystal
 
 
-def add_ge_nm670_spect_collimator(sim, name, head, collimator_type, debug):
+def add_collimator(sim, name, head, collimator_type, debug):
     """
     Start with default lehr collimator description,
     then change some parameters for the other types
@@ -337,30 +338,7 @@ def lehr_collimator_repeater(sim, name, core, debug):
     return holep
 
 
-def UNUSED_megp_collimator_repeater_parametrised(sim, name, core, debug):
-    """# because this volume will be parameterised, we need to prevent
-    # the creation of the physical volume
-    hole.build_physical_volume = False
-
-    # parameterised holes
-    holep = sim.add_volume('RepeatParametrised', f'{name}_collimator_hole_param')
-    holep.mother = core.name
-    holep.translation = None
-    holep.rotation = None
-    holep.repeated_volume_name = hole.name
-    # number of repetition
-    holep.linear_repeat = [183, 235, 1]
-    if debug:
-        holep.linear_repeat = [10, 10, 1]
-    # translation for each repetition
-    holep.translation = [2.94449 * mm, 1.7 * mm, 0]
-    # starting position
-    holep.start = [-(holep.linear_repeat[0] * holep.translation[0]) / 2.0,
-                   -(holep.linear_repeat[1] * holep.translation[1]) / 2.0, 0]
-    """
-
-
-def add_simplified_digitizer_Tc99m(
+def add_simplified_digitizer_tc99m(
     sim, crystal_volume_name, output_name, scatter_flag=False
 ):
     # units
@@ -436,6 +414,112 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     return cc
 
 
+def add_digitizer_tc99m(sim, crystal_name, name):
+    # create main chain
+    mm = g4_units.mm
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # detection efficiency
+    ea = digitizer.add_module("DigitizerEfficiencyActor")
+    ea.efficiency = 0.86481  # FAKE
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.063  # FAKE
+    eb.blur_reference_value = 140.57 * keV
+
+    # spatial blurring
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor")
+    sb.blur_attribute = "PostPosition"
+    sb.blur_fwhm = 7.6 * mm  # FAKE
+    sb.keep_in_solid_limits = True
+
+    # energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    channels = [
+        {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
+        {"name": f"scatter", "min": 108.57749938965 * keV, "max": 129.5924987793 * keV},
+        {"name": f"peak140", "min": 129.5924987793 * keV, "max": 150.60751342773 * keV},
+    ]
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+    proj.size = [128, 128]
+
+    # end
+    return digitizer
+
+
+def add_digitizer_lu177(sim, crystal_name, name):
+    # create main chain
+    mm = g4_units.mm
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # detection efficiency
+    ea = digitizer.add_module("DigitizerEfficiencyActor")
+    ea.efficiency = 0.86481  # FAKE
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.063  # FAKE
+    eb.blur_reference_value = 140.57 * keV
+    # eb.blur_resolution = 0.13
+    # eb.blur_reference_value = 80 * keV
+    # eb.blur_slope = -0.09 * 1 / MeV  # fixme unsure about unit
+
+    # spatial blurring
+    # Source: HE4SPECS - FWHM = 3.9 mm
+    # FWHM = 2.sigma.sqrt(2ln2) -> sigma = 1.656 mm
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor")
+    sb.blur_attribute = "PostPosition"
+    sb.blur_fwhm = 7.6 * mm  # FAKE
+    sb.keep_in_solid_limits = True
+
+    # energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    keV = g4_units.keV
+    # 112.9498 keV  = 6.20 %
+    # 208.3662 keV  = 10.38 %
+    p1 = 112.9498 * keV
+    p2 = 208.3662 * keV
+    channels = [
+        {"name": "spectrum", "min": 35 * keV, "max": 588 * keV},
+        *energy_windows_peak_scatter("peak113", "scatter1", "scatter2", p1, 0.2, 0.1),
+        *energy_windows_peak_scatter("peak208", "scatter3", "scatter4", p2, 0.2, 0.1),
+    ]
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+    proj.size = [128, 128]
+
+    # end
+    return digitizer
+
+
 # FIXME : put this elsewhere
 def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
     vol = sim.volume_manager.volumes[f"{spect_name}_{vol_name}"]
@@ -452,7 +536,7 @@ def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
 
 def compute_plane_position_and_distance_to_crystal(collimator_type):
     sim = Simulation()
-    spect, crystal = add_ge_nm67_spect_head(sim, "spect", collimator_type, debug=True)
+    spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
     pos = get_volume_position_in_head(sim, "spect", "collimator_psd", "max")
     y = get_volume_position_in_head(sim, "spect", "crystal", "center")
     crystal_distance = pos - y

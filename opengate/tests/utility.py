@@ -834,6 +834,11 @@ def compare_root3(
     if scalings2 is None:
         scalings2 = [1] * len(keys2)
 
+    if keys1 is None:
+        keys1 = hits1.keys()
+    if keys2 is None:
+        keys2 = hits2.keys()
+
     # keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (
         compare_trees(
