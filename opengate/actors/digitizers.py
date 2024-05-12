@@ -505,12 +505,12 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
                 "doc": "Attributes to be considered. ",
             },
         ),
-        "output": (
-            "singles.root",
-            {
-                "doc": "FIXME",
-            },
-        ),
+        # "output": (
+        #     "singles.root",
+        #     {
+        #         "doc": "FIXME",
+        #     },
+        # ),
         "input_digi_collection": (
             "Hits",
             {
@@ -555,7 +555,7 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
         ),
     }
 
-    type_name = "DigitizerSpatialBlurringActor"
+    # type_name = "DigitizerSpatialBlurringActor"
 
     # @staticmethod
     # def set_default_user_info(user_info):
@@ -573,6 +573,10 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
     def __init__(self, *args, **kwargs):
         # base classes
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "blurred_singles")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateDigitizerSpatialBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
@@ -596,6 +600,7 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
