@@ -332,7 +332,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
     Usually for energy or time.
     """
 
-    type_name = "DigitizerBlurringActor"
+    # type_name = "DigitizerBlurringActor"
 
     user_info_defaults = {
         "attributes": (
@@ -341,12 +341,12 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
                 "doc": "Attributes to be considered. ",
             },
         ),
-        "output": (
-            "singles.root",
-            {
-                "doc": "FIXME",
-            },
-        ),
+        # "output": (
+        #     "singles.root",
+        #     {
+        #         "doc": "FIXME",
+        #     },
+        # ),
         "input_digi_collection": (
             "Hits",
             {
@@ -425,6 +425,10 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "blurred_singles")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateDigitizerBlurringActor(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
@@ -481,6 +485,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
             )
 
     def StartSimulationAction(self):
+        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
