@@ -785,12 +785,12 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBas
                 "doc": "Attributes to be considered. ",
             },
         ),
-        "output": (
-            "hits.root",
-            {
-                "doc": "FIXME",
-            },
-        ),
+        # "output": (
+        #     "hits.root",
+        #     {
+        #         "doc": "FIXME",
+        #     },
+        # ),
         "clear_every": (
             1e5,
             {
@@ -824,6 +824,10 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBas
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "hits")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateDigitizerHitsCollectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
@@ -832,13 +836,34 @@ class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBas
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
-    def StartSimulationAction(
-        self,
-    ):  # not needed, only if need to do something in python
+    def StartSimulationAction(self):
+        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
+
+
+def _setter_hook_size_projection_actor(self, size):
+    size = list(size)
+    if len(size) != 2:
+        fatal(
+            f"Error, the size must be a 2-vector (2D) while it is {size}. "
+            f"Note: The size along the third dimension is automatically set to 1."
+        )
+    size.append(1)
+    return size
+
+
+def _setter_hook_spacing_projection_actor(self, spacing):
+    spacing = list(spacing)
+    if len(spacing) != 2:
+        fatal(
+            f"Error, the spacing must be a 2-vector (2D) while it is {spacing}. "
+            f"Note: The spacing along the third dimension is automatically determined."
+        )
+    spacing.append(1)
+    return spacing
 
 
 class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
@@ -849,12 +874,6 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
     """
 
     user_info_defaults = {
-        "output": (
-            False,
-            {
-                "doc": "FIXME",
-            },
-        ),
         "input_digi_collections": (
             ["Hits"],
             {
@@ -865,12 +884,14 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
             [4 * g4_units.mm, 4 * g4_units.mm],
             {
                 "doc": "FIXME",
+                "setter_hook": _setter_hook_spacing_projection_actor,
             },
         ),
         "size": (
             [128, 128],
             {
                 "doc": "FIXME",
+                "setter_hook": _setter_hook_size_projection_actor,
             },
         ),
         "physical_volume_index": (
@@ -893,7 +914,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         ),
     }
 
-    type_name = "DigitizerProjectionActor"
+    # type_name = "DigitizerProjectionActor"
 
     # @staticmethod
     # def set_default_user_info(user_info):
@@ -909,19 +930,26 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
-        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
-        self.output_image = None
+        self._add_user_output(ActorOutputSingleImage, "projection")
         self.start_output_origin = None
 
-    def __getstate__(self):
-        state_dict = ActorBase.__getstate__(self)
-        state_dict["output_image"] = None
-        state_dict["start_output_origin"] = None
-        return state_dict
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def initialize(self):
+        # for the moment, we cannot use this actor with several volumes
+        m = self.attached_to
+        if hasattr(m, "__len__") and not isinstance(m, str):
+            fatal(
+                f"Sorry, cannot (yet) use several mothers volumes for "
+                f"DigitizerProjectionActor {self.user_info.name}"
+            )
+
         ActorBase.initialize(self)
+
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
@@ -942,78 +970,70 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         return thickness
 
     def StartSimulationAction(self):
-        # check size and spacing
-        if len(self.size) != 2:
-            fatal(f"Error, the size must be 2D while it is {self.size}")
-        if len(self.spacing) != 2:
-            fatal(f"Error, the spacing must be 2D while it is {self.spacing}")
-        if len(self.input_digi_collections) < 1:
-            fatal(f"Error, not input hits collection.")
-        self.size.append(1)
-        self.spacing.append(1)
-
-        # for the moment, we cannot use this actor with several volumes
-        m = self.attached_to
-        if hasattr(m, "__len__") and not isinstance(m, str):
-            fatal(
-                f"Sorry, cannot (yet) use several mothers volumes for "
-                f"DigitizerProjectionActor {self.user_info.name}"
-            )
 
         # define the new size and spacing according to the nb of channels
         # and according to the volume shape
-        size = np.array(self.size)
-        spacing = np.array(self.spacing)
+        size = self.size
+        spacing = self.spacing
         size[2] = len(self.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
-        spacing[2] = self.compute_thickness(self.mother, size[2])
+        spacing[2] = self.compute_thickness(self.attached_to, size[2])
 
-        # create image
-        self.output_image = create_3d_image(size, spacing)
+        # we use the image associated with run 0 for the entire simulation
+        # in the future, this actor should implement a BeginOfRunActionMasterThread
+        # to be able to work on a per-run basis
+        self.user_output.projection.create_empty_image(0, size, spacing)
 
         # initial position (will be anyway updated in BeginOfRunSimulation)
-        pv = None
-        # attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
-        # if self.physical_volume_index is None:
-        #     physical_volume_index = 0
-        # else:
-        #     physical_volume_index = self.physical_volume_index
         try:
             pv = self.attached_to_volume.g4_physical_volumes[self.physical_volume_index]
-        except KeyError:  # FIXME: should use a specific exception
+        except KeyError:
             fatal(
                 f"Error in the DigitizerProjectionActor {self.name}. "
                 f"No physical volume found for index {self.physical_volume_index} "
                 f"in volume {self.attached_to_volume.name}"
             )
-        align_image_with_physical_volume(self.attached_to_volume, self.output_image)
+        align_image_with_physical_volume(
+            self.attached_to_volume, self.user_output.projection.data_per_run[0].image
+        )
         self.fPhysicalVolumeName = str(pv.GetName())
+
         # update the cpp image and start
-        update_image_py_to_cpp(self.output_image, self.fImage, True)
-        g4.GateDigitizerProjectionActor.StartSimulationAction(self)
+        update_image_py_to_cpp(
+            self.user_output.projection.data_per_run[0].image, self.fImage, True
+        )
         # keep initial origin
-        self.start_output_origin = self.output_image.GetOrigin()
+        self.start_output_origin = list(
+            self.user_output.projection.data_per_run[0].GetOrigin()
+        )
+        g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
+
         # retrieve the image
-        self.output_image = get_py_image_from_cpp_image(self.fImage)
-        # put back the origin
-        self.output_image.SetOrigin(self.start_output_origin)
-        info = get_info_from_image(self.output_image)
-        # change the spacing / origin for the third dimension
-        spacing = self.output_image.GetSpacing()
-        origin = self.output_image.GetOrigin()
-        # should we center the projection ?
+        self.user_output.projection.store_data(
+            "merged", get_py_image_from_cpp_image(self.fImage)
+        )
+
+        # set its properties
+        info = self.user_output.projection.data_per_run[0].get_image_properties()
+        spacing = info.spacing
         if self.origin_as_image_center:
-            origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
-        spacing[2] = 1
+            origin = -info.size * spacing / 2.0 + spacing / 2.0
+        else:
+            origin = self.start_output_origin
         origin[2] = 0
-        self.output_image.SetSpacing(spacing)
-        self.output_image.SetOrigin(origin)
-        if self.output:
-            write_itk_image(self.output_image, ensure_filename_is_str(self.output))
+        spacing[2] = 1
+        self.user_output.projection.merged_data.SetSpacing(list(spacing))
+        self.user_output.projection.merged_data.SetOrigin(list(origin))
+
+        self.user_output.projection.data_per_run.pop(
+            0
+        )  # remove the image for run 0 as result is in merged_data
+
+        self.user_output.projection.write_data_if_requested(which="merged")
 
 
 class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
