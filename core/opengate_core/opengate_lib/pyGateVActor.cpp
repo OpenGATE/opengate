@@ -80,6 +80,8 @@ void init_GateVActor(py::module &m) {
       .def_readwrite("fFilters", &GateVActor::fFilters)
       .def("InitializeCpp", &GateVActor::InitializeCpp)
       .def("AddActions", &GateVActor::AddActions)
+      .def("IsSensitiveDetector", &GateVActor::IsSensitiveDetector)
+      .def("HasAction", &GateVActor::HasAction)
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)
       .def("BeginOfRunAction", &GateVActor::BeginOfRunAction)

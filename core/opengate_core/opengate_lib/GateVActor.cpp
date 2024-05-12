@@ -43,6 +43,14 @@ void GateVActor::AddActions(std::set<std::string> &actions) {
   fActions.insert(actions.begin(), actions.end());
 }
 
+const bool GateVActor::HasAction(std::string action) {
+  return fActions.find(action) != fActions.end();
+};
+
+const bool GateVActor::IsSensitiveDetector() {
+  return GateVActor::HasAction("SteppingAction");
+};
+
 void GateVActor::PreUserTrackingAction(const G4Track *track) {
   for (auto f : fFilters) {
     if (!f->Accept(track))

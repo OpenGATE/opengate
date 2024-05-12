@@ -36,6 +36,10 @@ public:
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
 
+  const bool HasAction(std::string);
+
+  const bool IsSensitiveDetector();
+
   // Called when the simulation start (master thread only)
   virtual void StartSimulationAction() {}
 

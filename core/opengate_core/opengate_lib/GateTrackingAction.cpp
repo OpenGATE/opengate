@@ -14,14 +14,10 @@ GateTrackingAction::GateTrackingAction() : G4UserTrackingAction() {
 }
 
 void GateTrackingAction::RegisterActor(GateVActor *actor) {
-  auto actions = actor->fActions;
-  auto beg = std::find(actions.begin(), actions.end(), "PreUserTrackingAction");
-  if (beg != actions.end()) {
+  if (actor->HasAction("PreUserTrackingAction")) {
     fPreUserTrackingActionActors.push_back(actor);
   }
-  auto end =
-      std::find(actions.begin(), actions.end(), "PostUserTrackingAction");
-  if (end != actions.end()) {
+  if (actor->HasAction("PostUserTrackingAction")) {
     fPostUserTrackingActionActors.push_back(actor);
   }
 }

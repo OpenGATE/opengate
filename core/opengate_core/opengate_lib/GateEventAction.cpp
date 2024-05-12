@@ -10,13 +10,10 @@
 GateEventAction::GateEventAction() : G4UserEventAction() {}
 
 void GateEventAction::RegisterActor(GateVActor *actor) {
-  auto actions = actor->fActions;
-  auto beg = std::find(actions.begin(), actions.end(), "BeginOfEventAction");
-  if (beg != actions.end()) {
+  if (actor->HasAction("BeginOfEventAction")) {
     fBeginOfEventAction_actors.push_back(actor);
   }
-  auto end = std::find(actions.begin(), actions.end(), "EndOfEventAction");
-  if (end != actions.end()) {
+  if (actor->HasAction("EndOfEventAction")) {
     fEndOfEventAction_actors.push_back(actor);
   }
 }
