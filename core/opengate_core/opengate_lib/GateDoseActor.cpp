@@ -99,9 +99,6 @@ void GateDoseActor::InitializeCpp() {
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
-  std::cout << "DEBUG: In GateDoseActor::BeginOfRunActionMasterThread start"
-            << std::endl;
-
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
   if (fcpImageForThreadsFlag) {
@@ -117,8 +114,6 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
-  std::cout << "DEBUG: In GateDoseActor::BeginOfRunAction start" << std::endl;
-
   // Important ! The volume may have moved, so we re-attach each run
   // FIXME: check if this is still needed after refactoring
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
@@ -134,10 +129,7 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
     l.edepSquared_worker_flatimg.resize(N_voxels);
     std::fill(l.edepSquared_worker_flatimg.begin(),
               l.edepSquared_worker_flatimg.end(), 0.0);
-    std::cout << "DEBUG: l.lastid_worker_flatimg.resize(N_voxels);" << N_voxels
-              << std::endl;
     l.lastid_worker_flatimg.resize(N_voxels);
-    std::cout << "DEBUG:     ... done" << std::endl;
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
@@ -233,11 +225,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   }
 
   Image3DType::IndexType index;
-  //  std::cout << "DEBUG: In GateDoseActor::SteppingAction isInside =
-  //  cpp_edep_image->TransformPhysicalPointToIndex(point, index);" <<
-  //  std::endl;
   bool isInside = cpp_edep_image->TransformPhysicalPointToIndex(point, index);
-  //  std::cout << "DEBUG:     ... done" << std::endl;
 
   // set value
   if (isInside) {
@@ -256,14 +244,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       if (fSquareFlag) {
         auto event_id =
             G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-        //        std::cout << "DEBUG: In GateDoseActor::SteppingAction: auto
-        //        previous_id = locald.lastid_worker_flatimg[index_flat];" <<
-        //        std::endl; std::cout << "DEBUG: index_flat " << index_flat <<
-        //        std::endl; std::cout << "DEBUG:
-        //        locald.lastid_worker_flatimg.size() " <<
-        //        locald.lastid_worker_flatimg.size() << std::endl;
         auto previous_id = locald.lastid_worker_flatimg[index_flat];
-        //        std::cout << "DEBUG:     ... done" << std::endl;
         locald.lastid_worker_flatimg[index_flat] = event_id;
         if (event_id == previous_id) {
           // Same event : continue temporary edep
