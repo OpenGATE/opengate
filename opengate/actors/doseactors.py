@@ -472,14 +472,18 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-        g4.GateDoseActor.__init__(self, self.user_info)
-        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
         self._add_user_output(ActorOutputSingleImage, "edep")
         self._add_user_output(ActorOutputSingleImage, "dose", active=False)
         self._add_user_output(ActorOutputSingleImage, "dose_to_water", active=False)
         self._add_user_output(ActorOutputSingleImage, "square", active=False)
         self._add_user_output(ActorOutputSingleImage, "uncertainty", active=False)
+
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDoseActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
     def __getstate__(self):
         # superclass getstate
