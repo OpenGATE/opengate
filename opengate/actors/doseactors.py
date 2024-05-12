@@ -298,9 +298,6 @@ class VoxelDepositActor(ActorBase):
     def EndOfRunActionMasterThread(self, run_index):
         # inform actor output that this run is over
         for u in self.user_output.values():
-            print(
-                f"DEBUG: in VoxelDepositActor.EndOfRunActionMasterThread: u.name = {u.name}"
-            )
             if u.active:
                 u.end_of_run(run_index)
         return 0
@@ -579,25 +576,20 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
-        print("DEBUG: DoseActor.BeginOfRunActionMasterThread (python) ... start")
         self.prepare_output_for_run("edep", run_index)
         self.prepare_output_for_run("dose", run_index)
         self.prepare_output_for_run("dose_to_water", run_index)
         self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
 
         if self.user_output.uncertainty.active:
-            print("DEBUG: prepare_output_for_run uncertainty")
             self.prepare_output_for_run("uncertainty", run_index)
         if self.user_output.square.active:
-            print("DEBUG: prepare_output_for_run square")
             self.prepare_output_for_run("square", run_index)
             self.push_to_cpp_image("square", run_index, self.cpp_square_image)
         # FIXME: how about dose?
-        print("DEBUG: DoseActor.BeginOfRunActionMasterThread (python) ... done")
 
     def EndOfRunActionMasterThread(self, run_index):
         # edep
-        print("DEBUG: EndOfRunActionMasterThread")
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self._update_output_coordinate_system("edep", run_index)
 
@@ -615,7 +607,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         #     ???
 
         # square
-        print("DEBUG: fetch_from_cpp_image")
         if any([self.uncertainty, self.ste_of_mean, self.square]):
             self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
             self._update_output_coordinate_system("square", run_index)
