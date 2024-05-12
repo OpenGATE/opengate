@@ -368,7 +368,7 @@ class GateObject:
         The return arguments are:
         1) A callable used to create the instance when unpickling
         2) A tuple of arguments to be passed to the callable in 1
-        3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
+        3) The dictionary of the object's properties to be passed to the __setstate__ method (if defined)
         """
         state_dict = self.__getstate__()
         return (
