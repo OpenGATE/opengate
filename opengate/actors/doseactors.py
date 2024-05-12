@@ -97,17 +97,16 @@ class VoxelDepositActor(ActorBase):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         # internal states
-        self.img_origin_during_run = None
         self.first_run = None
 
     def initialize(self):
         super().initialize()
-        size = np.array(self.size)
-        spacing = np.array(self.spacing)
+        # size = np.array(self.size)
+        # spacing = np.array(self.spacing)
         # compute the center, using translation and half pixel spacing
-        self.img_origin_during_run = (
-            -size * spacing / 2.0 + spacing / 2.0 + self.translation
-        )
+        # self.img_origin_during_run = (
+        #     -size * spacing / 2.0 + spacing / 2.0 + self.translation
+        # )
         # for initialization during the first run
         self.first_run = True
 
