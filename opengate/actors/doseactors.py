@@ -722,14 +722,14 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     def __init__(self, *args, **kwargs):
         ## TODO: why not super? what would happen?
         VoxelDepositActor.__init__(self, *args, **kwargs)
-        g4.GateLETActor.__init__(self, self.user_info)
-        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
-
-        # default image (py side)
 
         self._add_user_output(ActorOutputQuotientImage, "let")
-        # self._add_user_output("image", "let_denominator", write_to_disk=False)
-        # self._add_user_output("image", "let_numerator", write_to_disk=False)
+
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateLETActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
     def __getstate__(self):
         # superclass getstate
