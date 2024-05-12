@@ -56,6 +56,12 @@ public:
   // Get the id of the last energy window
   int GetLastEnergyWindowId();
 
+  inline void SetOutputFilename(std::string filename) {
+    fOutputFilename = filename;
+  }
+
+  inline std::string GetOutputFilename() { return fOutputFilename; }
+
 protected:
   std::string fOutputFilename;
   std::string fInputDigiCollectionName;

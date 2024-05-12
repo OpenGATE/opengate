@@ -15,5 +15,7 @@ void init_GatePhaseSpaceActor(py::module &m) {
       .def("GetNumberOfAbsorbedEvents",
            &GatePhaseSpaceActor::GetNumberOfAbsorbedEvents)
       .def("GetTotalNumberOfEntries",
-           &GatePhaseSpaceActor::GetTotalNumberOfEntries);
+           &GatePhaseSpaceActor::GetTotalNumberOfEntries)
+      .def("GetOutputFilename", &GatePhaseSpaceActor::GetOutputFilename)
+      .def("SetOutputFilename", &GatePhaseSpaceActor::SetOutputFilename);
 }

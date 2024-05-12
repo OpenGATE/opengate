@@ -59,6 +59,12 @@ public:
 
   int GetTotalNumberOfEntries();
 
+  inline void SetOutputFilename(std::string filename) {
+    fOutputFilename = filename;
+  }
+
+  inline std::string GetOutputFilename() { return fOutputFilename; }
+
 protected:
   // Local data for the threads (each one has a copy)
   struct threadLocalT {
