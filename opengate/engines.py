@@ -576,7 +576,7 @@ class ActorEngine(EngineBase):
 
     def register_sensitive_detectors(self, world_name):
         for actor in self.actor_manager.sorted_actors:
-            if actor.is_sensitive_detector:
+            if actor.IsSensitiveDetector() is True:
                 # Step: only enabled if attachTo a given volume.
                 # Propagated to all child and sub-child
                 # tree = volume_manager.volumes_tree
