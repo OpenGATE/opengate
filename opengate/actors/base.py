@@ -148,11 +148,8 @@ class ActorBase(GateObject):
         # self.RegisterCallBack(
         #     "get_output_path_for_item_string", self.get_output_path_for_item_string
         # )
-        print("DEBUG: ActorBase.initialize() ...")
         for k, v in self.user_output.items():
-            print(f"DEBUG: user_output '{k}' initialize")
             v.initialize()
-        print("DEBUG: ActorBase.initialize() ... done")
 
     def _add_user_output(self, actor_output_class, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
