@@ -106,6 +106,13 @@ class ActorBase(GateObject):
         )
         self.user_output = Box()
 
+    def __initcpp__(self):
+        """Nothing to do in the base class."""
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__initcpp__()
+
     @property
     def actor_type(self):
         return str(type(self).__name__)
