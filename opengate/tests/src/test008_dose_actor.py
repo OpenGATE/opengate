@@ -114,7 +114,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep-Uncertainty.mhd",
-            dose.user_output.uncertainty.get_output_path("merged"),
+            dose.user_output.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
             ignore_value=1,
