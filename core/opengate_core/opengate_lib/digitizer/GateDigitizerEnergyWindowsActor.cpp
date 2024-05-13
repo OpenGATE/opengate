@@ -28,7 +28,7 @@ GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
 void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
   GateVActor::InitializeUserInput(user_info);
   // options
-  fOutputFilename = DictGetStr(user_info, "output");
+  //  fOutputFilename = DictGetStr(user_info, "output");
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
   fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");

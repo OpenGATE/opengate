@@ -17,7 +17,7 @@ void GateThresholdAttributeFilter::InitializeUserInput(py::dict &user_info) {
   fAttributeName = DictGetStr(user_info, "attribute");
   fValueMin = DictGetDouble(user_info, "value_min");
   fValueMax = DictGetDouble(user_info, "value_max");
-  fFilterName = DictGetStr(user_info, "_name");
+  fFilterName = DictGetStr(user_info, "name");
   fPolicy = DictGetStr(user_info, "policy");
   if (fPolicy == "keep")
     fKeep = true;

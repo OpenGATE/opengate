@@ -26,8 +26,8 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
 
   // options for output
-  fOutputFilename = DictGetStr(user_info, "output");
-  fOutputDigiCollectionName = DictGetStr(user_info, "_name");
+  //  fOutputFilename = DictGetStr(user_info, "output");
+  fOutputDigiCollectionName = DictGetStr(user_info, "name");
   fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
 

@@ -29,8 +29,8 @@ void GateDigitizerHitsCollectionActor::InitializeUserInput(
     py::dict &user_info) {
   GateVActor::InitializeUserInput(user_info);
   // options
-  fOutputFilename = DictGetStr(user_info, "output");
-  fHitsCollectionName = DictGetStr(user_info, "_name");
+  //  fOutputFilename = DictGetStr(user_info, "output");
+  fHitsCollectionName = DictGetStr(user_info, "name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fDebug = DictGetBool(user_info, "debug");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
