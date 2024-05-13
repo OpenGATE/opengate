@@ -408,6 +408,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             False,
             {
                 "doc": "FIXME",
+                "deactivated": True,
             },
         ),
         "square": (
@@ -448,6 +449,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "setter_hook": _setter_hook_ste_of_mean,
+                "deactivated": True,
             },
         ),
         "ste_of_mean_unbiased": (
@@ -455,6 +457,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "setter_hook": _setter_hook_ste_of_mean_unbiased,
+                "deactivated": True,
             },
         ),
         "goal_uncertainty": (
@@ -471,9 +474,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             },
         ),
         "dose_calc_on_the_fly": (
-            True,
+            False,
             {
                 "doc": "FIXME",
+                "deactivated": True,
             },
         ),
     }
