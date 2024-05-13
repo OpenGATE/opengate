@@ -198,7 +198,7 @@ class Digitizer:
         return None
 
 
-class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
+class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
     """
     Equivalent to Gate "adder": gather all hits of an event in the same volume.
     Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
@@ -327,7 +327,7 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
         g4.GateDigitizerAdderActor.EndSimulationAction(self)
 
 
-class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
+class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
     """
     Digitizer module for blurring an attribute (single value only, not a vector).
     Usually for energy or time.
@@ -493,7 +493,7 @@ class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorBase):
+class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringActor):
     """
     Digitizer module for blurring a (global) spatial position.
     """
@@ -607,7 +607,7 @@ class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorB
         g4.GateDigitizerSpatialBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, ActorBase):
+class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
     """
     Digitizer module for simulating efficiency.
     """
@@ -691,7 +691,7 @@ class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, ActorBase):
         g4.GateDigitizerEfficiencyActor.EndSimulationAction(self)
 
 
-class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase):
+class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor):
     """
     Consider a list of hits and arrange them according to energy intervals.
     Input: one DigiCollection
@@ -771,7 +771,7 @@ class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase)
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
 
 
-class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBase):
+class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActor):
     """
     Build a list of hits in a given volume.
     - the list of attributes to be stored is given in the 'attributes' options
@@ -866,7 +866,7 @@ def _setter_hook_spacing_projection_actor(self, spacing):
     return spacing
 
 
-class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
+class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
     """
     This actor takes as input HitsCollections and performed binning in 2D images.
     If there are several HitsCollection as input, the slices will correspond to each HC.
@@ -1036,7 +1036,7 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         self.user_output.projection.write_data_if_requested(which="merged")
 
 
-class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
+class DigitizerReadoutActor(ActorBase, g4.GateDigitizerReadoutActor):
     """
     This actor is a DigitizerAdderActor + a discretization step:
     the final position is the center of the volume
@@ -1085,7 +1085,7 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         g4.GateDigitizerReadoutActor.EndSimulationAction(self)
 
 
-class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
+class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
     """
     Similar to HitsCollectionActor : store a list of hits.
     However only the first hit of given event is stored here.
