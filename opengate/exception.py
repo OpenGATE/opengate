@@ -5,7 +5,7 @@ import opengate_core as g4
 from .logger import log
 
 
-class GateDeprecatedFeatureError(Exception):
+class GateDeprecationError(Exception):
     """Raise this if a deprecated feature is used.
     Provide the user with information on how to update their code.
     """
