@@ -1619,7 +1619,6 @@ class Simulation(GateObject):
             # put back the simulation object to all actors
             for actor in self.output.actors.values():
                 actor.simulation = self
-            self.output.simulation = self
 
             # Recover output from unpickled actors coming from sub-process queue
             for actor in self.actor_manager.actors.values():
@@ -1629,6 +1628,8 @@ class Simulation(GateObject):
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             self.output = self._run_simulation_engine(False)
+
+        self.output.simulation = self
 
         if self.store_json_archive is True:
             self.to_json_file()
