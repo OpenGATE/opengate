@@ -50,7 +50,7 @@ const bool GateVActor::HasAction(std::string action) {
 };
 
 const bool GateVActor::IsSensitiveDetector() {
-  return GateVActor::HasAction("SteppingAction");
+  return HasAction("SteppingAction");
 };
 
 void GateVActor::PreUserTrackingAction(const G4Track *track) {
