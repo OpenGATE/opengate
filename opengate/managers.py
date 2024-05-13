@@ -76,6 +76,7 @@ from .actors.digitizers import (
     DigitizerProjectionActor,
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
+    PhaseSpaceActor,
 )
 
 
@@ -105,6 +106,7 @@ actor_types = {
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "PhaseSpaceActor": PhaseSpaceActor,
 }
 
 
