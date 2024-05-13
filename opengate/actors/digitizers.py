@@ -7,7 +7,6 @@ from .base import ActorBase
 from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 
-
 from ..utility import g4_units, ensure_filename_is_str
 from ..image import (
     align_image_with_physical_volume,
@@ -275,19 +274,6 @@ class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
 
     type_name = "DigitizerAdderActor"
 
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    # user_info.attributes = []
-    # user_info.output = "singles.root"
-    # user_info.input_digi_collection = "Hits"
-    # user_info.policy = "EnergyWinnerPosition"  # EnergyWeightedCentroidPosition
-    # user_info.time_difference = False
-    # user_info.number_of_hits = False
-    # user_info.skip_attributes = []
-    # user_info.clear_every = 1e5
-    # user_info.group_volume = None
-
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputRoot, "added_singles")
@@ -344,12 +330,6 @@ class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
                 "doc": "Attributes to be considered. ",
             },
         ),
-        # "output": (
-        #     "singles.root",
-        #     {
-        #         "doc": "FIXME",
-        #     },
-        # ),
         "input_digi_collection": (
             "Hits",
             {
@@ -409,22 +389,6 @@ class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
             },
         ),
     }
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     # user_info.attributes = []
-    #     user_info.output = "singles.root"
-    #     user_info.input_digi_collection = "Hits"
-    #     user_info.skip_attributes = []
-    #     user_info.clear_every = 1e5
-    #     user_info.blur_attribute = None
-    #     user_info.blur_method = "Gaussian"
-    #     user_info.blur_fwhm = None
-    #     user_info.blur_sigma = None
-    #     user_info.blur_reference_value = None
-    #     user_info.blur_resolution = None
-    #     user_info.blur_slope = None
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -509,12 +473,6 @@ class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringAc
                 "doc": "Attributes to be considered. ",
             },
         ),
-        # "output": (
-        #     "singles.root",
-        #     {
-        #         "doc": "FIXME",
-        #     },
-        # ),
         "input_digi_collection": (
             "Hits",
             {
@@ -558,21 +516,6 @@ class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringAc
             },
         ),
     }
-
-    # type_name = "DigitizerSpatialBlurringActor"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     user_info.attributes = []
-    #     user_info.output = "singles.root"
-    #     user_info.input_digi_collection = "Hits"
-    #     user_info.skip_attributes = []
-    #     user_info.clear_every = 1e5
-    #     user_info.blur_attribute = None
-    #     user_info.blur_fwhm = None
-    #     user_info.blur_sigma = None
-    #     user_info.keep_in_solid_limits = True
 
     def __init__(self, *args, **kwargs):
         # base classes
@@ -625,12 +568,6 @@ class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
                 "doc": "Attributes to be considered. ",
             },
         ),
-        # "output": (
-        #     "singles.root",
-        #     {
-        #         "doc": "FIXME",
-        #     },
-        # ),
         "input_digi_collection": (
             "Hits",
             {
@@ -656,18 +593,6 @@ class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
             },
         ),
     }
-
-    # type_name = "DigitizerEfficiencyActor"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     user_info.attributes = []
-    #     user_info.output = "efficiency.root"
-    #     user_info.input_digi_collection = "Hits"
-    #     user_info.skip_attributes = []
-    #     user_info.clear_every = 1e5
-    #     user_info.efficiency = 1.0  # keep everything
 
     def __init__(self, *args, **kwargs):
         # base classes
@@ -715,12 +640,6 @@ class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor)
                 "doc": "Attributes to be considered. ",
             },
         ),
-        # "output": (
-        #     "EnergyWindows.root",
-        #     {
-        #         "doc": "FIXME",
-        #     },
-        # ),
         "input_digi_collection": (
             "Hits",
             {
@@ -748,16 +667,6 @@ class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor)
     }
 
     type_name = "DigitizerEnergyWindowsActor"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     user_info.attributes = []
-    #     user_info.output = "EnergyWindows.root"
-    #     user_info.input_digi_collection = "Hits"
-    #     user_info.channels = []
-    #     user_info.skip_attributes = []
-    #     user_info.clear_every = 1e5
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -799,12 +708,6 @@ class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActo
                 "doc": "Attributes to be considered. ",
             },
         ),
-        # "output": (
-        #     "hits.root",
-        #     {
-        #         "doc": "FIXME",
-        #     },
-        # ),
         "clear_every": (
             1e5,
             {
@@ -826,15 +729,6 @@ class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActo
     }
 
     type_name = "DigitizerHitsCollectionActor"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     user_info.attributes = []
-    #     user_info.output = "hits.root"
-    #     user_info.debug = False
-    #     user_info.clear_every = 1e5
-    #     user_info.keep_zero_edep = False
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -929,20 +823,6 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
             },
         ),
     }
-
-    # type_name = "DigitizerProjectionActor"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     mm = g4_units.mm
-    #     user_info.output = False
-    #     user_info.input_digi_collections = ["Hits"]
-    #     user_info.spacing = [4 * mm, 4 * mm]
-    #     user_info.size = [128, 128]
-    #     user_info.physical_volume_index = None
-    #     user_info.origin_as_image_center = True
-    #     user_info.detector_orientation_matrix = Rotation.from_euler("x", 0).as_matrix()
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -1067,11 +947,6 @@ class DigitizerReadoutActor(ActorBase, g4.GateDigitizerReadoutActor):
         ),
     }
 
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     DigitizerAdderActor.set_default_user_info(user_info)
-    #     user_info.discretize_volume = None
-
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputRoot, "readout_singles")
@@ -1116,12 +991,6 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
                 "doc": "FIXME",
             },
         ),
-        # "output": (
-        #     "fixme.root",
-        #     {
-        #         "doc": "FIXME",
-        #     },
-        # ),
         "store_absorbed_event": (
             False,
             {
@@ -1135,17 +1004,6 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
             },
         ),
     }
-
-    # type_name = "PhaseSpaceActor"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     # options
-    #     user_info.attributes = []
-    #     user_info.output = f"{user_info.name}.root"
-    #     user_info.store_absorbed_event = False
-    #     user_info.debug = False
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)

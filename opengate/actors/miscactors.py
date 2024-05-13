@@ -124,7 +124,8 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 else:
                     unit = str(v["unit"])
                 s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
-        return s
+        # remove last line break
+        return s.rstrip("\n")
 
     def write_data(self):
         """Override virtual method from base class."""
@@ -154,7 +155,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         # if not user_info:
         #     user_info = UserInfo("Actor", self.type_name, name=uuid.uuid4().__str__())
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputStatisticsActor, "stats")
+        output = self._add_user_output(ActorOutputStatisticsActor, "stats")
+        # no default output for this actor
+        output.write_to_disk = False
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -162,10 +165,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def __str__(self):
-        s = ActorBase.__str__(self)
-        s += "\n"
-        s += "User output:\n"
-        s += self.user_output["stats"].__str__()
+        s = self.user_output["stats"].__str__()
         return s
 
     @property
@@ -177,7 +177,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
@@ -219,216 +218,15 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 """
 
 
-# class SourceInfoActor(g4.GateVActor, ActorBase):
-#     """
-#     TODO
-#     """
-#
-#     type_name = "SourceInfoActor"
-#
-#     def __init__(self, name):
-#         g4.GateVActor.__init__(self, self.type_name)
-#         ActorBase.__init__(self, name)
-#         # default actions
-#         self.actions = ["BeginOfRunAction", "EndOfRunAction", "BeginOfEventAction"]
-#         # parameters
-#         self.user_info.filename = None
-#         self.tree = None
-#         self.file = None
-#         # FIXME --> do it by batch
-#         self.positions = []
-#
-#     def initialize(self, volume_engine=None):
-#         super().initialize(volume_engine)
-#         if not self.user_info.filename:
-#             fatal(f"Provide a filename to the actor {self.user_info.physics_list_name}")
-#         # create the root tree
-#         self.file = uproot.recreate(self.user_info.filename)
-#         self.file[self.user_info.physics_list_name] = uproot.newtree(
-#             {
-#                 "position_x": np.float64,
-#                 "position_y": np.float64,
-#                 "position_z": np.float64,
-#             }
-#         )
-#         self.tree = self.file[self.user_info.physics_list_name]
-#         print(self.tree)
-#
-#     def BeginOfRunAction(self, run):
-#         print("Start run SourceInfoActor")
-#
-#     def EndOfRunAction(self, run):
-#         print("End run SourceInfoActor")
-#         print(len(self.positions))
-#         self.positions = np.array(self.positions)
-#         self.tree.extend(
-#             {
-#                 "position_x": self.positions[:, 0],
-#                 "position_y": self.positions[:, 1],
-#                 "position_z": self.positions[:, 2],
-#             }
-#         )
-#
-#     def BeginOfEventAction(self, event):
-#         p = event.GetPrimaryVertex(0).GetPosition()
-#         # print('BeginOfEventAction')
-#         self.positions.append(vec_g4_as_np(p))
-
-
-# class TestActor(g4.GateVActor, ActorBase):
-#     """
-#     Test actor: only py side (no cpp)
-#     For prototyping (slow)
-#     """
-#
-#     user_info_defaults = {
-#         "track_types_flag": (
-#             False,
-#             {
-#                 "doc": "How should the output be encoded?",
-#                 "allowed_values": ("json", "legacy"),
-#             },
-#         ),
-#     }
-#
-#     type_name = "TestActor"
-#
-#     # @staticmethod
-#     # def set_default_user_info(user_info):
-#     #     ActorBase.set_default_user_info(user_info)
-#     #     user_info.track_types_flag = False
-#
-#     def __init__(self, *args, **kwargs):
-#         ActorBase.__init__(self, *args, **kwargs)
-#         g4.GateVActor.__init__(self, self.user_info)
-#         self.AddActions({
-#             "StartSimulationAction",
-#             "EndSimulationAction",
-#             "BeginOfEventAction",
-#             "EndOfRunAction",
-#             "PreUserTrackingAction",
-#             "SteppingAction",
-#         })
-#         # empty results for the moment
-#         self.run_count = 0
-#         self.event_count = 0
-#         self.track_count = 0
-#         self.step_count = 0
-#         self.duration = 0
-#         self.track_types = {}
-#         self.start_time = 0
-#         self.end_time = 0
-#
-#     @property
-#     def pps(self):
-#         sec = g4_units.s
-#         if self.duration != 0:
-#             return self.event_count / self.duration * sec
-#         return 0
-#
-#     @property
-#     def tps(self):
-#         sec = g4_units.s
-#         if self.duration != 0:
-#             return self.track_count / self.duration * sec
-#         return 0
-#
-#     @property
-#     def sps(self):
-#         sec = g4_units.s
-#         if self.duration != 0:
-#             return self.step_count / self.duration * sec
-#         return 0
-#
-#     def __str__(self):
-#         if not self:
-#             return ""
-#         s = (
-#             f"Runs     {self.run_count}\n"
-#             f"Events   {self.event_count}\n"
-#             f"Tracks   {self.track_count}\n"
-#             f"Step     {self.step_count}\n"
-#             f'Duration {g4.G4BestUnit(self.duration, "Time")}\n'
-#             f"PPS      {self.pps:.0f}\n"
-#             f"TPS      {self.tps:.0f}\n"
-#             f"SPS      {self.sps:.0f}"
-#         )
-#         if self.track_types_flag:
-#             s += f"\n" f"Track types: {self.track_types}"
-#         return s
-#
-#     def StartSimulationAction(self):
-#         self.start_time = time.time()
-#
-#     def BeginOfEventAction(self, event):
-#         pass
-#
-#     def PreUserTrackingAction(self, track):
-#         self.track_count += 1
-#         if self.user_info.track_types_flag:
-#             p = track.GetParticleName()
-#             try:
-#                 self.track_types[p] += 1
-#             except:
-#                 self.track_types[p] = 1
-#
-#     def EndOfRunAction(self, run):
-#         self.run_count += 1
-#         self.event_count += run.GetNumberOfEvent()
-#
-#     def SteppingAction(self, step, touchable):
-#         self.step_count += 1
-#
-#     def EndSimulationAction(self):
-#         self.end_time = time.time()
-#         sec = g4_units.s
-#         self.duration = (self.end_time - self.start_time) * sec
-#
-#     def write(self, filename):
-#         sec = g4_units.s
-#         f = open(filename, "w+")
-#         s = f"# NumberOfRun    = {self.run_count}\n"
-#         s += f"# NumberOfEvents = {self.event_count}\n"
-#         s += f"# NumberOfTracks = {self.track_count}\n"
-#         s += f"# NumberOfSteps  = {self.step_count}\n"
-#         s += f"# NumberOfGeometricalSteps  = ?\n"
-#         s += f"# NumberOfPhysicalSteps     = ?\n"
-#         s += f"# ElapsedTime           = {self.duration / sec}\n"
-#         s += f"# ElapsedTimeWoInit     = {self.duration / sec}\n"
-#         s += f"# StartDate             = ?\n"
-#         s += f"# EndDate               = ?\n"
-#         s += f"# PPS (Primary per sec)      = {self.pps:.0f}\n"
-#         s += f"# TPS (Track per sec)        = {self.tps:.0f}\n"
-#         s += f"# SPS (Step per sec)         = {self.sps:.0f}\n"
-#         if self.track_types_flag:
-#             s += f"# Track types:\n"
-#             for t in self.track_types:
-#                 s += f"# {t} = {self.track_types[t]}\n"
-#         f.write(s)
-
-
-class KillActor(g4.GateKillActor, ActorBase):
+class KillActor(ActorBase, g4.GateKillActor):
     type_name = "KillActor"
-
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        g4.GateKillActor.__init__(self, self.user_info)
+        self.__initcpp__()
 
-
-"""
-class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
-    type_name = "ComptonSplittingActor"
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.SplittingFactor = 0
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateComptonSplittingActor.__init__(self, user_info.__dict__)
-"""
+    def __initcpp__(self):
+        g4.GateKillActor.__init__(self, {"name": self.name})
 
 
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):

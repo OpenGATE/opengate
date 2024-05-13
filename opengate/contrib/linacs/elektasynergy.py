@@ -31,14 +31,10 @@ def create_material(simulation, name):
 
 def add_linac(sim, name="linac", sad=1000):
     # unit
-    m = g4_units.m
     create_material(sim, name)
 
     # for debug : should be the same as create_material
     # sim.volume_manager.add_material_database('../contrib/elekta_synergy_materials.db')
-
-    # colors
-    white = [1, 1, 1, 0.8]
 
     # check overlap
     sim.g4_check_overlap_flag = True
@@ -167,7 +163,7 @@ def kill_around_target(sim, linac_name):
 
     # psycho killer
     killer = sim.add_actor("KillActor", f"{target.name}_kill")
-    killer.mother = [target_above.name, target_around.name]
+    killer.attached_to = [target_above.name, target_around.name]
 
 
 def add_primary_collimator(sim, linac_name):
@@ -413,7 +409,7 @@ def add_phase_space_plane(sim, linac_name, src_phsp_distance):
 
 def add_phase_space(sim, plane_name):
     phsp = sim.add_actor("PhaseSpaceActor", f"{plane_name}_phsp")
-    phsp.mother = plane_name
+    phsp.attached_to = plane_name
     phsp.attributes = [
         "KineticEnergy",
         "Weight",

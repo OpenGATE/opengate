@@ -35,8 +35,6 @@ if __name__ == "__main__":
 
     # run
     sim.run(start_new_process=True)
-
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # Comparison with gate simulation

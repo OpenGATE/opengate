@@ -1,8 +1,8 @@
-from ..definitions import __world_name__
-from ..exception import warning, fatal
-from ..base import GateObject
 from box import Box
-import copy
+
+from ..definitions import __world_name__
+from ..exception import fatal
+from ..base import GateObject
 
 
 def _setter_hook_attached_to(self, attached_to):
@@ -28,8 +28,26 @@ def _setter_hook_attached_to(self, attached_to):
         return attached_to_names
 
 
+def _setter_hook_output_filename(self, value):
+    if len(self.user_output) != 1:
+        fatal(
+            f"Cannot use output_filename, there are several outputs. "
+            f"Current outputs are: {self.user_output}"
+        )
+    # get the first (and only) key (as a list because it is a dict)
+    k = list(self.user_output.keys())
+    self.user_output[k[0]].output_filename = value
+
+
 class ActorBase(GateObject):
     user_info_defaults = {
+        "output_filename": (
+            None,
+            {
+                "doc": "Filename of the output (only when there is only one output file)",
+                "setter_hook": _setter_hook_output_filename,
+            },
+        ),
         "attached_to": (
             __world_name__,
             {
@@ -98,7 +116,6 @@ class ActorBase(GateObject):
 
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
-
         self.actor_engine = (
             None  # this is set by the actor engine during initialization
         )
@@ -162,6 +179,7 @@ class ActorBase(GateObject):
             belongs_to=self,
             **kwargs,
         )
+        return self.user_output[name]
 
     def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)
@@ -175,7 +193,19 @@ class ActorBase(GateObject):
         if output_name not in self.user_output:
             fatal(f"No output named '{output_name}' found for actor {self.name}.")
 
-    def get_output_path(self, output_name, which):
+    def get_output_path(self, output_name=None, which=None):
+        if output_name is None:
+            # if no output_name, we check if there is only one single output
+            if len(self.user_output) != 1:
+                fatal(
+                    f"Cannot use get_output_path without setting which output_name. "
+                    f"Current output_name are: {self.user_output}"
+                )
+            # get the first (and only) key (as a list because it is a dict)
+            k = list(self.user_output.keys())
+            if which is None:
+                which = 0
+            return self.user_output[k[0]].get_output_path(which)
         return self.user_output[output_name].get_output_path(which)
 
     def get_output_path_for_item(self, output_name, which, item):

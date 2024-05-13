@@ -62,8 +62,8 @@ if __name__ == "__main__":
     source.n = 200000 / sim.number_of_threads
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # start simulation
     # sim.add_g4_command_after_init("/run/verbose 0")
@@ -71,7 +71,6 @@ if __name__ == "__main__":
     sim.run()
 
     # get results
-    stats = sim.output.get_actor("Stats")
     print(stats)
     print("track type", stats.counts.track_types)
 

@@ -1,18 +1,8 @@
-import numpy as np
 from pathlib import Path
 
 from ..base import GateObject
-from ..image import (
-    write_itk_image,
-    update_image_py_to_cpp,
-    create_3d_image,
-    get_py_image_from_cpp_image,
-    sum_itk_images,
-    divide_itk_images,
-)
-from ..utility import ensure_filename_is_str, insert_suffix_before_extension
+from ..utility import insert_suffix_before_extension
 from ..exception import warning, fatal
-
 from .dataitems import available_data_container_classes
 
 
