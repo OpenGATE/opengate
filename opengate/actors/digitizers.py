@@ -320,7 +320,9 @@ class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
 
     def StartSimulationAction(self):
         self.set_group_by_depth()
-        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.added_singles.get_output_path())
+        )
         g4.GateDigitizerAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -486,7 +488,9 @@ class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
             )
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(self.user_output.blurred_singles.get_output_path())
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.blurred_singles.get_output_path())
+        )
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -600,7 +604,9 @@ class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringAc
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(self.user_output.blurred_singles.get_output_path())
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.blurred_singles.get_output_path())
+        )
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -685,7 +691,9 @@ class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
 
     def StartSimulationAction(self):
         self.SetOutputFilename(
-            self.user_output.efficiency_filtered_singles.get_output_path()
+            ensure_filename_is_str(
+                self.user_output.efficiency_filtered_singles.get_output_path()
+            )
         )
         g4.GateDigitizerEfficiencyActor.StartSimulationAction(self)
 
@@ -767,7 +775,9 @@ class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor)
 
     def StartSimulationAction(self):
         self.SetOutputFilename(
-            self.user_output.singles_per_energy_window.get_output_path()
+            ensure_filename_is_str(
+                self.user_output.singles_per_energy_window.get_output_path()
+            )
         )
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
@@ -841,7 +851,9 @@ class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActo
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(self.user_output.hits.get_output_path())
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.hits.get_output_path())
+        )
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -1075,7 +1087,9 @@ class DigitizerReadoutActor(ActorBase, g4.GateDigitizerReadoutActor):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(self.user_output.readout_singles.get_output_path())
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.readout_singles.get_output_path())
+        )
         DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
             fatal(f'Please, set the option "discretize_volume"')
