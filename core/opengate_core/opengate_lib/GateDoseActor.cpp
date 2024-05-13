@@ -61,7 +61,7 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   // Option: compute dose in Gray
   fDoseFlag = DictGetBool(user_info, "dose");
   // Option: compute dose to water
-  fToWaterFlag = DictGetBool(user_info, "to_water");
+  fScoreIn = DictGetBool(user_info, "score_in");
   // Option: calculate only edep/edepToWater, and divide by mass image on python
   // side
   fOnFlyCalcFlag = DictGetBool(user_info, "dose_calc_on_the_fly");
@@ -181,7 +181,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
   auto scoring_quantity = edep;
 
-  if (fToWaterFlag) {
+  if (fScoreIn == "water") {
     auto *current_material = step->GetPreStepPoint()->GetMaterial();
     double dedx_cut = DBL_MAX;
     // dedx

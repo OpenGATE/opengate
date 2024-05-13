@@ -75,6 +75,8 @@ public:
   // Option: indicate if we must compute dose in Gray also
   bool fDoseFlag;
 
+  std::string fScoreIn;
+
   // Option: indicate we must convert to dose to water
   bool fToWaterFlag;
 
