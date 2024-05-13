@@ -74,7 +74,10 @@ class VoxelDepositActor(ActorBase):
         "output": (
             None,
             {
-                "doc": "File (path) to which the output image should be written. ",
+                "deprecated": "The output filename is now generated automatically. "
+                "An extra suffix can be defined via my_dose_actor.extra_suffix (for every output alike),"
+                "or individually via my_dose_actor.user_output.OUTPUTNAME.extra_suffix=..., "
+                "where OUTPUTNAME can be 'edep', 'dose', 'sqaure', depending on the specific actor.",
             },
         ),
         "img_coord_system": (
