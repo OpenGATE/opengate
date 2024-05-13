@@ -12,20 +12,29 @@ def _setter_hook_attached_to(self, attached_to):
 
     if isinstance(attached_to, str):
         return attached_to
-    elif isinstance(
-        attached_to,
-        (
-            list,
-            tuple,
-        ),
-    ):
-        attached_to_names = []
-        for a in attached_to:
-            try:
-                attached_to_names.append(a.name)
-            except AttributeError:
-                attached_to_names.append(a)
-        return attached_to_names
+    else:
+        try:
+            return attached_to.name
+        except AttributeError:
+            if isinstance(
+                attached_to,
+                (
+                    list,
+                    tuple,
+                ),
+            ):
+                attached_to_names = []
+                for a in attached_to:
+                    try:
+                        attached_to_names.append(a.name)
+                    except AttributeError:
+                        attached_to_names.append(a)
+                return attached_to_names
+
+    # something went wrong if we reached this point
+    fatal(f"attached_to must be a volume, a volume name, "
+          f"or a list/tuple of volumes or volume names. "
+          f"Received: {attached_to}")
 
 
 def _setter_hook_output_filename(self, value):
