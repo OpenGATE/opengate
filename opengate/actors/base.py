@@ -17,17 +17,6 @@ def _setter_hook_attached_to(self, attached_to):
     return attached_to_name
 
 
-def _setter_hook_filter_boolean_operator(self, value):
-    allowed_values = ["and", "or"]
-    if value not in allowed_values:
-        fatal(
-            f'The "filters_boolean_operator" option of the actor '
-            f'"{self.name}" must be one of the following words: {allowed_values}. '
-            f'The provided value is "value"'
-        )
-    return value
-
-
 class ActorBase(GateObject):
     user_info_defaults = {
         "attached_to": (
@@ -53,7 +42,10 @@ class ActorBase(GateObject):
             "and",
             {
                 "doc": "Boolean operator to join the filters of this actor. ",
-                "setter_hook": _setter_hook_filter_boolean_operator,
+                "allowed_values": (
+                    "and",
+                    "or",
+                ),
             },
         ),
         "priority": (
