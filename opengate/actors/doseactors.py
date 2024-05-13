@@ -432,7 +432,15 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "to_water": (
             False,
             {
-                "doc": "FIXME",
+                "deprecated": "Use my_dose_actor.score_in='water' instead. ",
+            },
+        ),
+        "score_in": (
+            'material',
+            {
+                "doc": "In which kind of material should the deposited quantities be scored? "
+                       "'material' means the material defined by the volume to which the actor is attached. ",
+                "allowed_values": ('material', 'water', )
             },
         ),
         "ste_of_mean": (
