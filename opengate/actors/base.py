@@ -74,18 +74,6 @@ class ActorBase(GateObject):
                 "You can also set 'extra_suffix' for specific outputs individually. ",
             },
         ),
-        # "output_filename": (
-        #     "auto",
-        #     {
-        #         "doc": "Where should the output of this actor be stored? "
-        #         "If a filename or a relative path is provided, "
-        #         "this is considered relative to the global simulation output folder "
-        #         "specified in Simulation.output_path. "
-        #         "Use an absolute path to write somewhere else on your system. "
-        #         "If output_filename is set to 'auto', the filename is constructed automatically from "
-        #         "the type of actor and the actor name. "
-        #     },
-        # ),
         "keep_output_data": (
             False,
             {
