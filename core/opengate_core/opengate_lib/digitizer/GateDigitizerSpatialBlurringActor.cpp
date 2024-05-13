@@ -28,6 +28,7 @@ GateDigitizerSpatialBlurringActor::~GateDigitizerSpatialBlurringActor() =
 
 void GateDigitizerSpatialBlurringActor::InitializeUserInput(
     py::dict &user_info) {
+  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
   // blurring method
   fBlurAttributeName = DictGetStr(user_info, "blur_attribute");
   fBlurSigma3 = DictGetG4ThreeVector(user_info, "blur_sigma");

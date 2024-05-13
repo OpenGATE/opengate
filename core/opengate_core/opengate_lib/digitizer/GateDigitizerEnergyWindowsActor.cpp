@@ -26,6 +26,7 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
 GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
 
 void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   // options
   fOutputFilename = DictGetStr(user_info, "output");
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");

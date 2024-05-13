@@ -27,6 +27,7 @@ GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() {}
 
 void GateDigitizerHitsCollectionActor::InitializeUserInput(
     py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   // options
   fOutputFilename = DictGetStr(user_info, "output");
   fHitsCollectionName = DictGetStr(user_info, "_name");
