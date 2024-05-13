@@ -486,10 +486,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         self._add_user_output(ActorOutputSingleImage, "edep")
+        self._add_user_output(ActorOutputSingleImage, "edep_uncertainty", active=False)
         self._add_user_output(ActorOutputSingleImage, "dose", active=False)
-        self._add_user_output(ActorOutputSingleImage, "dose_to_water", active=False)
+        self._add_user_output(ActorOutputSingleImage, "dose_uncertainty", active=False)
         self._add_user_output(ActorOutputSingleImage, "square", active=False)
-        self._add_user_output(ActorOutputSingleImage, "uncertainty", active=False)
 
         self.__initcpp__()
 
