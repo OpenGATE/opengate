@@ -1122,7 +1122,7 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
         ),
     }
 
-    type_name = "PhaseSpaceActor"
+    # type_name = "PhaseSpaceActor"
 
     # @staticmethod
     # def set_default_user_info(user_info):
