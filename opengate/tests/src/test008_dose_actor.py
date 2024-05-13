@@ -78,6 +78,7 @@ if __name__ == "__main__":
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.uncertainty = True
+    dose.dose = True
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
 
