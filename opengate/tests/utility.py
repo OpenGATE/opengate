@@ -684,7 +684,7 @@ def get_default_test_paths(f, gate_folder=None, output_folder=None):
         p.gate_output = p.gate / "output"
         p.gate_data = p.gate / "data"
     # output
-    p.output = p.current / ".." / "output"
+    p.output = (p.current / ".." / "output").resolve()
     if output_folder is not None:
         p.output = p.output / output_folder
         if not pathlib.Path.is_dir(p.output):
