@@ -65,7 +65,7 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
-//  Image3DType::Pointer cpp_dose_image;
+  //  Image3DType::Pointer cpp_dose_image;
   Image3DType::Pointer cpp_square_image;
   Image3DType::SizeType size_edep;
 
@@ -94,7 +94,6 @@ public:
   bool fSTEofMeanFlag;
 
   // For uncertainty computation, we need temporary images
-
 
   double fVoxelVolume;
   int NbOfEvent = 0;

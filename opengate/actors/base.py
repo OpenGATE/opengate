@@ -32,9 +32,11 @@ def _setter_hook_attached_to(self, attached_to):
                 return attached_to_names
 
     # something went wrong if we reached this point
-    fatal(f"attached_to must be a volume, a volume name, "
-          f"or a list/tuple of volumes or volume names. "
-          f"Received: {attached_to}")
+    fatal(
+        f"attached_to must be a volume, a volume name, "
+        f"or a list/tuple of volumes or volume names. "
+        f"Received: {attached_to}"
+    )
 
 
 class ActorBase(GateObject):

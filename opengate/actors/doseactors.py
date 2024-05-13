@@ -437,11 +437,14 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             },
         ),
         "score_in": (
-            'material',
+            "material",
             {
                 "doc": "In which kind of material should the deposited quantities be scored? "
-                       "'material' means the material defined by the volume to which the actor is attached. ",
-                "allowed_values": ('material', 'water', )
+                "'material' means the material defined by the volume to which the actor is attached. ",
+                "allowed_values": (
+                    "material",
+                    "water",
+                ),
             },
         ),
         "ste_of_mean": (
@@ -546,7 +549,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             material_database = (
                 self.simulation.volume_manager.material_database.g4_materials
             )
-            if self.score_in == 'water':
+            if self.score_in == "water":
                 # for dose to water, divide by density of water and not density of material
                 scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
             else:
@@ -561,12 +564,14 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             scaled_image = scale_itk_image(scaled_image, 1 / (Gy * voxel_volume))
 
         else:
-            if self.score_in == 'water':
+            if self.score_in == "water":
                 # for dose to water, divide by density of water and not density of material
                 density = 1.0 * gcm3
             else:
                 density = vol.g4_material.GetDensity()
-            scaled_image = scale_itk_image(input_image, 1 / (voxel_volume * density * Gy))
+            scaled_image = scale_itk_image(
+                input_image, 1 / (voxel_volume * density * Gy)
+            )
 
         return scaled_image
 
@@ -637,9 +642,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             # else:
             n = self.NbOfEvent
 
-            edep = itk.array_view_from_image(
-                self.user_output.edep.get_data(run_index)
-            )
+            edep = itk.array_view_from_image(self.user_output.edep.get_data(run_index))
             square = itk.array_view_from_image(
                 self.user_output.square.get_data(run_index)
             )
@@ -652,14 +655,20 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             edep_uncertainty_image.CopyInformation(
                 self.user_output.edep.get_data(run_index)
             )
-            self.user_output.edep_uncertainty.store_data(run_index, edep_uncertainty_image)
+            self.user_output.edep_uncertainty.store_data(
+                run_index, edep_uncertainty_image
+            )
             self._update_output_coordinate_system("edep_uncertainty", run_index)
 
             if self.dose:
                 # scale by density
-                dose_uncertainty_image = self.compute_dose_from_edep_img(edep_uncertainty_image)
+                dose_uncertainty_image = self.compute_dose_from_edep_img(
+                    edep_uncertainty_image
+                )
                 dose_uncertainty_image.CopyInformation(edep_uncertainty_image)
-                self.user_output.dose_uncertainty.store_data(run_index, dose_uncertainty_image)
+                self.user_output.dose_uncertainty.store_data(
+                    run_index, dose_uncertainty_image
+                )
                 self._update_output_coordinate_system("dose_uncertainty", run_index)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)

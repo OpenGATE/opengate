@@ -201,10 +201,12 @@ def _make_property(property_name, options=None, container_dict=None):
 
         @prop.setter
         def prop(self, value):
-            if 'deactivated' in options and options['deactivated'] is True:
+            if "deactivated" in options and options["deactivated"] is True:
                 if value != self.inherited_user_info_defaults[property_name][0]:
-                    raise GateFeatureUnavailableError(f"The user input parameter {property_name} "
-                                                      f"is currently deactivated and cannot be set.")
+                    raise GateFeatureUnavailableError(
+                        f"The user input parameter {property_name} "
+                        f"is currently deactivated and cannot be set."
+                    )
             if "deprecated" in options:
                 raise GateDeprecationError(options["deprecated"])
             if container_dict is None:

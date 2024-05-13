@@ -204,7 +204,8 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         p = G4Electron::Electron();
       auto &emc = fThreadLocalData.Get().emcalc;
 
-      dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+      dedx_currstep =
+          emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
       dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
       if (dedx_currstep == 0 || dedx_water == 0) {
         edep = 0.;
@@ -252,7 +253,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
           // Same event : continue temporary edep
           locald.edepSquared_worker_flatimg[index_flat] +=
               edep; // FIXME: why do we add edep to edepSquared
-                                // image? I think bad naming
+                    // image? I think bad naming
         } else {
           // Different event : update previoupyths and start new event
           auto e = locald.edepSquared_worker_flatimg[index_flat];
