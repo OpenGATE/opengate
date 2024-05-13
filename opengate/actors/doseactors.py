@@ -612,8 +612,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self._update_output_coordinate_system("edep", run_index)
 
-        # dose
-        if not self.dose_calc_on_the_fly and self.dose:
+        if self.dose:  # and not self.dose_calc_on_the_fly:
             self.store_output_data(
                 "dose",
                 run_index,
