@@ -67,16 +67,11 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
-        "output_filename": (
-            "auto",
+        "extra_suffix": (
+            None,
             {
-                "doc": "Where should the output of this actor be stored? "
-                "If a filename or a relative path is provided, "
-                "this is considered relative to the global simulation output folder "
-                "specified in Simulation.output_path. "
-                "Use an absolute path to write somewhere else on your system. "
-                "If output_filename is set to 'auto', the filename is constructed automatically from "
-                "the type of actor and the actor name. "
+                "doc": "Extra suffix to be appended to filename of all user outputs of this actor. "
+                "You can also set 'extra_suffix' for specific outputs individually. ",
             },
         ),
         # "output_filename": (
@@ -164,6 +159,10 @@ class ActorBase(GateObject):
         #     "get_output_path_for_item_string", self.get_output_path_for_item_string
         # )
         for k, v in self.user_output.items():
+            # apply extra suffix defined at actor level to all user output items
+            # unless they have their own specific extra suffix set
+            if self.extra_suffix is not None and v.extra_suffix is None:
+                v.extra_suffix = self.extra_suffix
             v.initialize()
 
     def _add_user_output(self, actor_output_class, name, **kwargs):
