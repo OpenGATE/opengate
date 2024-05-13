@@ -21,7 +21,7 @@ def coincidences_sorter(
     DEV NOTES:
     1) potential bug while having several chunks: couple of coincidences too much
     2) filtering during sorting or after? so far done after but maybe better do during for execution speed
-    3) removeMultiples policy is applied on EventID maybe should be done differently: checking while time window is opened
+    3) removeMultiples policy is applied on EventID maybe should be done differently: checking while time window is open
 
 
     """
