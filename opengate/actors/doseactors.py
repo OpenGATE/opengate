@@ -606,7 +606,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         if self.square:  # uncertainty=True implies square=True
             self.prepare_output_for_run("square", run_index)
             self.push_to_cpp_image("square", run_index, self.cpp_square_image)
-        # FIXME: how about dose?
 
     def EndOfRunActionMasterThread(self, run_index):
         # edep
