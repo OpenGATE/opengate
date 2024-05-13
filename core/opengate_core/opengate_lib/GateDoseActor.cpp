@@ -38,9 +38,6 @@ G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
 
 GateDoseActor::GateDoseActor(py::dict &user_info)
     : GateVActor(user_info, true) {
-  // Create the image pointer
-  // (the size and allocation will be performed on the py side)
-  cpp_edep_image = Image3DType::New();
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
@@ -84,6 +81,10 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
 
 void GateDoseActor::InitializeCpp() {
   NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
+
+  // Create the image pointers
+  // (the size and allocation will be performed on the py side)
+  cpp_edep_image = Image3DType::New();
 
   if (fUncertaintyFlag || fSTEofMeanFlag) {
     fSquareFlag = true;
