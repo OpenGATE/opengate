@@ -211,7 +211,7 @@ class ActorBase(GateObject):
         if output_name not in self.user_output:
             fatal(f"No output named '{output_name}' found for actor {self.name}.")
 
-    def get_output_path(self, output_name=None, which=None):
+    def get_output_path(self, output_name=None, **kwargs):
         if output_name is None:
             # if no output_name, we check if there is only one single output
             if len(self.user_output) != 1:
@@ -219,12 +219,12 @@ class ActorBase(GateObject):
                     f"Cannot use get_output_path without setting which output_name. "
                     f"Current output_name are: {self.user_output}"
                 )
-            # get the first (and only) key (as a list because it is a dict)
-            k = list(self.user_output.keys())
-            if which is None:
-                which = 0
-            return self.user_output[k[0]].get_output_path(which)
-        return self.user_output[output_name].get_output_path(which)
+            # get the first (and only) item from user_output
+            output_name = list(self.user_output.keys())[0]
+        if output_name not in self.user_output:
+            fatal(f"This actor does not have any output named '{output_name}'."
+                  f"Available outputs are: {list(self.user_output.keys())}")
+        return self.user_output[output_name].get_output_path(**kwargs)
 
     def get_output_path_for_item(self, output_name, which, item):
         return self.user_output[output_name].get_output_path(which, item)
