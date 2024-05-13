@@ -31,8 +31,9 @@ GatePhaseSpaceActor::~GatePhaseSpaceActor() {
 }
 
 void GatePhaseSpaceActor::InitializeUserInput(py::dict &user_info) {
-  fOutputFilename = DictGetStr(user_info, "output");
-  fDigiCollectionName = DictGetStr(user_info, "_name");
+  GateVActor::InitializeUserInput(user_info);
+  //  fOutputFilename = DictGetStr(user_info, "output");
+  fDigiCollectionName = DictGetStr(user_info, "name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");
