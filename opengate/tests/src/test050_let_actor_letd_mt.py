@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from scipy.spatial.transform import Rotation
+from pathlib import Path
 
 import opengate as gate
 from opengate.tests import utility
@@ -11,6 +12,7 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "test050_let_actor_letd")
 
     ref_path = paths.output_ref
+    print(ref_path)
 
     # create the simulation
     sim = gate.Simulation()
@@ -21,6 +23,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 1234567891
     sim.number_of_threads = 2
+    sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem
 
     numPartSimTest = 40000 / sim.number_of_threads
     numPartSimRef = 1e5
@@ -87,8 +90,8 @@ if __name__ == "__main__":
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
-    doseIDD.output = paths.output / ("test050-" + doseActorName_IDD_d + ".mhd")
-    doseIDD.mother = phantom_off.name
+    # doseIDD.output = paths.output / ("test050-" + doseActorName_IDD_d + ".mhd")
+    doseIDD.attached_to = phantom_off
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
@@ -96,8 +99,8 @@ if __name__ == "__main__":
 
     LETActorName_IDD_d = "LETActorOG_d"
     LETActor_IDD_d = sim.add_actor("LETActor", LETActorName_IDD_d)
-    LETActor_IDD_d.output = paths.output / ("test050-" + LETActorName_IDD_d + ".mhd")
-    LETActor_IDD_d.mother = phantom_off.name
+    # LETActor_IDD_d.output = paths.output / ("test050-" + LETActorName_IDD_d + ".mhd")
+    LETActor_IDD_d.attached_to = phantom_off
     LETActor_IDD_d.size = size
     LETActor_IDD_d.spacing = spacing
     LETActor_IDD_d.hit_type = "random"
@@ -110,8 +113,8 @@ if __name__ == "__main__":
 
     LETActorName_IDD_t = "LETActorOG_t"
     LETActor_IDD_t = sim.add_actor("LETActor", LETActorName_IDD_t)
-    LETActor_IDD_t.output = paths.output / ("test050-" + LETActorName_IDD_t + ".mhd")
-    LETActor_IDD_t.mother = phantom_off.name
+    # LETActor_IDD_t.output = paths.output / ("test050-" + LETActorName_IDD_t + ".mhd")
+    LETActor_IDD_t.attached_to = phantom_off
     LETActor_IDD_t.size = size
     LETActor_IDD_t.spacing = spacing
     LETActor_IDD_t.hit_type = "random"
@@ -119,10 +122,10 @@ if __name__ == "__main__":
 
     LETActorName_IDD_d2w = "LETActorOG_d2w"
     LETActor_IDD_d2w = sim.add_actor("LETActor", LETActorName_IDD_d2w)
-    LETActor_IDD_d2w.output = paths.output / (
-        "test050-" + LETActorName_IDD_d2w + ".mhd"
-    )
-    LETActor_IDD_d2w.mother = phantom_off.name
+    # LETActor_IDD_d2w.output = paths.output / (
+    #     "test050-" + LETActorName_IDD_d2w + ".mhd"
+    # )
+    LETActor_IDD_d2w.attached_to = phantom_off
     LETActor_IDD_d2w.size = size
     LETActor_IDD_d2w.spacing = spacing
     LETActor_IDD_d2w.hit_type = "random"
@@ -131,8 +134,8 @@ if __name__ == "__main__":
 
     LET_primaries = "LETprimaries"
     LETActor_primaries = sim.add_actor("LETActor", LET_primaries)
-    LETActor_primaries.output = paths.output / ("test050-" + LET_primaries + ".mhd")
-    LETActor_primaries.mother = phantom_off.name
+    # LETActor_primaries.output = paths.output / ("test050-" + LET_primaries + ".mhd")
+    LETActor_primaries.attached_to = phantom_off
     LETActor_primaries.size = size
     LETActor_primaries.spacing = spacing
     LETActor_primaries.hit_type = "random"
@@ -172,12 +175,13 @@ if __name__ == "__main__":
     # stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
     # is_ok = utility.assert_stats(stat, stats_ref, 0.14)
 
-    LETActor_doseAveraged = sim.output.get_actor(LETActorName_IDD_d)
-    LETActor_trackAveraged = sim.output.get_actor(LETActorName_IDD_t)
+    # LETActor_doseAveraged = sim.output.get_actor(LETActorName_IDD_d)
+    # LETActor_trackAveraged = sim.output.get_actor(LETActorName_IDD_t)
+    #
+    # LETActor_primaries = sim.output.get_actor(LET_primaries)
 
-    LETActor_primaries = sim.output.get_actor(LET_primaries)
-
-    fNameIDD = sim.output.get_actor(doseActorName_IDD_d).user_info.output
+    # fNameIDD = sim.output.get_actor(doseActorName_IDD_d).user_info.output
+    fNameIDD = "test050-" + doseIDD.name + ".mhd"
     """
     is_ok = utility.assert_images(
         ref_path / fNameIDD,
@@ -194,7 +198,7 @@ if __name__ == "__main__":
         ref_filter_filename1=ref_path / fNameIDD,
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
-        filename2=paths.output / LETActor_doseAveraged.user_info.output,
+        filename2=LETActor_IDD_d.get_output_path(item='let'),
         tolerance=20,
         plt_ylim=[0, 25],
     )
@@ -204,7 +208,7 @@ if __name__ == "__main__":
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
-            filename2=paths.output / LETActor_trackAveraged.user_info.output,
+            filename2=LETActor_IDD_t.get_output_path(item='let'),
             tolerance=8,
             plt_ylim=[0, 18],
         )
@@ -214,7 +218,7 @@ if __name__ == "__main__":
         utility.assert_filtered_imagesprofile1D(
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
-            filename2=paths.output / LETActor_primaries.user_info.output,
+            filename2=LET_primaries.get_output_path(item='let'),
             tolerance=8,
             plt_ylim=[0, 25],
         )
