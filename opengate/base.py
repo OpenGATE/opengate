@@ -4,7 +4,7 @@ from pathlib import Path
 from box import Box
 import sys
 
-from .exception import fatal, warning, GateDeprecationError
+from .exception import fatal, warning, GateDeprecationError, GateFeatureUnavailableError
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
@@ -201,6 +201,10 @@ def _make_property(property_name, options=None, container_dict=None):
 
         @prop.setter
         def prop(self, value):
+            if 'deactivated' in options and options['deactivated'] is True:
+                if value != self.inherited_user_info_defaults[property_name][0]:
+                    raise GateFeatureUnavailableError(f"The user input parameter {property_name} "
+                                                      f"is currently deactivated and cannot be set.")
             if "deprecated" in options:
                 raise GateDeprecationError(options["deprecated"])
             if container_dict is None:
