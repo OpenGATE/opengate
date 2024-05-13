@@ -677,7 +677,7 @@ def get_default_test_paths(f, gate_folder=None, output_folder=None):
     p = Box()
     p.current = pathlib.Path(f).parent.resolve()
     # data
-    p.data = p.current / ".." / "data"
+    p.data = (p.current / ".." / "data").resolve()
     # gate
     if gate_folder:
         p.gate = p.current / ".." / "data" / "gate" / gate_folder
@@ -686,13 +686,13 @@ def get_default_test_paths(f, gate_folder=None, output_folder=None):
     # output
     p.output = (p.current / ".." / "output").resolve()
     if output_folder is not None:
-        p.output = p.output / output_folder
+        p.output = (p.output / output_folder).resolve()
         if not pathlib.Path.is_dir(p.output):
             pathlib.Path.mkdir(p.output)
     # output ref
-    p.output_ref = p.current / ".." / "data" / "output_ref"
+    p.output_ref = (p.current / ".." / "data" / "output_ref").resolve()
     if output_folder is not None:
-        p.output_ref = p.output_ref / output_folder
+        p.output_ref = (p.output_ref / output_folder).resolve()
         if not pathlib.Path.is_dir(p.output_ref):
             pathlib.Path.mkdir(p.output_ref)
     return p
