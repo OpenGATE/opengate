@@ -177,59 +177,60 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   point[1] = localPosition[1];
   point[2] = localPosition[2];
 
-  // get edep in MeV (take weight into account)
-  auto w = step->GetTrack()->GetWeight();
-  auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-  auto scoring_quantity = edep;
-
-  if (fScoreIn == "water") {
-    auto *current_material = step->GetPreStepPoint()->GetMaterial();
-    double dedx_cut = DBL_MAX;
-    // dedx
-    double dedx_currstep = 0., dedx_water = 0.;
-    // other material
-    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-    static G4Material *water =
-        G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-    auto energy = (energy1 + energy2) / 2;
-    if (p == G4Gamma::Gamma())
-      p = G4Electron::Electron();
-    auto &emc = fThreadLocalData.Get().emcalc;
-
-    dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
-    dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
-    if (dedx_currstep == 0 || dedx_water == 0) {
-      edep = 0.;
-    } else {
-      edep *= (dedx_water / dedx_currstep);
-    }
-
-    scoring_quantity = edep;
-
-    if (fDoseFlag && fOnFlyCalcFlag) {
-      double density_water = 1.0;
-      density_water = water->GetDensity();
-      auto dose = edep / density_water / fVoxelVolume / CLHEP::gray;
-      scoring_quantity = dose;
-    }
-  }
-
-  // Compute the dose in Gray
-  else if (fDoseFlag && fOnFlyCalcFlag) {
-    auto *current_material = step->GetPreStepPoint()->GetMaterial();
-    auto density = current_material->GetDensity();
-    auto dose = edep / density / fVoxelVolume / CLHEP::gray;
-
-    scoring_quantity = dose;
-  }
-
   Image3DType::IndexType index;
   bool isInside = cpp_edep_image->TransformPhysicalPointToIndex(point, index);
 
   // set value
   if (isInside) {
+
+    // get edep in MeV (take weight into account)
+    auto w = step->GetTrack()->GetWeight();
+    auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
+    auto scoring_quantity = edep;
+
+    if (fScoreIn == "water") {
+      auto *current_material = step->GetPreStepPoint()->GetMaterial();
+      double dedx_cut = DBL_MAX;
+      // dedx
+      double dedx_currstep = 0., dedx_water = 0.;
+      // other material
+      const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+      static G4Material *water =
+          G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+      auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+      auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+      auto energy = (energy1 + energy2) / 2;
+      if (p == G4Gamma::Gamma())
+        p = G4Electron::Electron();
+      auto &emc = fThreadLocalData.Get().emcalc;
+
+      dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+      dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
+      if (dedx_currstep == 0 || dedx_water == 0) {
+        edep = 0.;
+      } else {
+        edep *= (dedx_water / dedx_currstep);
+      }
+
+      scoring_quantity = edep;
+
+      if (fDoseFlag && fOnFlyCalcFlag) {
+        double density_water = 1.0;
+        density_water = water->GetDensity();
+        auto dose = edep / density_water / fVoxelVolume / CLHEP::gray;
+        scoring_quantity = dose;
+      }
+    }
+
+    // Compute the dose in Gray
+    else if (fDoseFlag && fOnFlyCalcFlag) {
+      auto *current_material = step->GetPreStepPoint()->GetMaterial();
+      auto density = current_material->GetDensity();
+      auto dose = edep / density / fVoxelVolume / CLHEP::gray;
+
+      scoring_quantity = dose;
+    }
+
     int index_flat = sub2ind(index);
 
     auto &locald = fThreadLocalData.Get();
