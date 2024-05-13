@@ -12,6 +12,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
+    sim.output_dir = paths.output
     sim.g4_verbose = False
     sim.visu = False
     sim.visu_type = "vrml"
@@ -53,12 +54,12 @@ if __name__ == "__main__":
     source.n = 66
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor.track_types_flag = True
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta2.mother = plane.name
+    ta2.attached_to = plane
     ta2.attributes = [
         "KineticEnergy",
         "PostPosition",
@@ -74,14 +75,13 @@ if __name__ == "__main__":
         "EventPosition",
         "PDGCode",
     ]
-    ta2.output = paths.output / "test019_phsp_actor.root"
     ta2.debug = False
 
     # run the simulation once with no particle in the phsp
     source.direction.momentum = [0, 0, 1]
-    ta2.output = paths.output / "test019_phsp_actor_empty.root"
+    ta2.user_output.phsp.output_filename = "test019_phsp_actor_empty.root"
     sim.run(start_new_process=True)
-    print(sim.output.get_actor("Stats"))
+    print(stats_actor)
 
     # check if empty (the root file does not exist)
     phsp = sim.output.get_actor("PhaseSpace")
@@ -91,12 +91,12 @@ if __name__ == "__main__":
 
     # redo with the right direction
     source.direction.momentum = [0, 0, -1]
-    ta2.output = paths.output / "test019_phsp_actor.root"
+    ta2.user_output.phsp.output_filename = "test019_phsp_actor.root"
     sim.run(start_new_process=True)
-    print(sim.output.get_actor("Stats"))
+    print(stats_actor)
 
     # check if exists and NOT empty
-    hits = uproot.open(ta2.output)["PhaseSpace"]
+    hits = uproot.open(ta2.user_output.phsp.get_output_path())["PhaseSpace"]
     is_ok2 = source.n - 10 < hits.num_entries < source.n + 10
     utility.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
     print()
