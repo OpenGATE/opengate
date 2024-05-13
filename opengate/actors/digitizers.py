@@ -1153,12 +1153,16 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(self.user_output.added_singles.get_output_path())
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.phsp.get_output_path())
+        )
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         self.fNumberOfAbsorbedEvents = self.GetNumberOfAbsorbedEvents()
         self.fTotalNumberOfEntries = self.GetTotalNumberOfEntries()
         if self.fTotalNumberOfEntries == 0:
-            warning(f"Empty output, no particles stored in {self.output}")
+            warning(
+                f"Empty output, no particles stored in {self.user_output.phsp.get_output_path()}"
+            )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
