@@ -56,7 +56,7 @@ class ActorOutputBase(GateObject):
             },
         ),
         "extra_suffix": (
-            "",
+            None,
             {
                 "doc": "Extra suffix to be appended to file name. ",
             },
@@ -119,9 +119,13 @@ class ActorOutputBase(GateObject):
             self.write_data(*args, **kwargs)
 
     def get_output_path(self, which, **kwargs):
-        full_data_path = insert_suffix_before_extension(
-            self.simulation.get_output_path(self.output_filename), self.extra_suffix
-        )
+        if self.extra_suffix is not None:
+            full_data_path = insert_suffix_before_extension(
+                self.simulation.get_output_path(self.output_filename), self.extra_suffix
+            )
+        else:
+            full_data_path = self.simulation.get_output_path(self.output_filename)
+
         if which == "merged":
             return insert_suffix_before_extension(full_data_path, "merged")
         else:
