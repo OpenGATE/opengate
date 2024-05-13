@@ -29,7 +29,7 @@ def add_phase_space_isocenter(sim, name, pos):
     isocenter_sphere.color = [0, 1, 0, 1]  # red
 
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
-    phsp.mother = isocenter_sphere.name
+    phsp.attached_to = isocenter_sphere.name
     phsp.attributes = ["EventID"]
     return phsp
 
@@ -81,6 +81,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output  # FIXME (not yet)
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
+    sim.output_dir = paths.output
 
     # unit
     nm = gate.g4_units.nm
@@ -130,15 +131,16 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * m)
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # add water slice with a dose actor and a motion actor
     volume = add_volume_to_irradiate(sim, world.name)
     phsp = add_phase_space_isocenter(
         sim, volume.name, vector_translation_isocenter_to_center
     )
-    phsp.output = paths.output / "phsp_versa_mlc_RT_plan.root"
+    phsp.output_filename = "phsp_versa_mlc_RT_plan.root"
+    print(phsp.get_output_path())
 
     translation_volume = volume.translation
     new_translation = (
@@ -152,10 +154,9 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor(s.name)
     print(stats)
 
-    f_phsp = uproot.open(paths.output / "phsp_versa_mlc_RT_plan.root")
+    f_phsp = uproot.open(phsp.get_output_path())
     arr = f_phsp["phsp"].arrays()
 
     # test

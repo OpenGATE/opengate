@@ -24,6 +24,7 @@ def init_test019(nt):
     sim.check_volumes_overlap = False
     sim.number_of_threads = nt
     sim.random_seed = 123456789
+    sim.output_dir = paths.output
     print(sim)
 
     # units
@@ -71,7 +72,7 @@ def init_test019(nt):
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta2.mother = plane.name
+    ta2.attached_to = plane.name
     ta2.attributes = [
         "KineticEnergy",
         "Weight",
@@ -88,7 +89,7 @@ def init_test019(nt):
         "EventPosition",
         "PDGCode",
     ]
-    ta2.output = paths.output / "test019_hits.root"
+    ta2.output_filename = "test019_hits.root"
     ta2.debug = False
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
@@ -139,7 +140,7 @@ def run_test019(sim):
     # compare the phsp tree
     print()
     fn1 = paths.gate_output / "output-PhS-g.root"
-    fn2 = paths.output / "test019_hits.root"
+    fn2 = h.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
     data_ref, keys_ref, m_ref = phsp.load(fn1)
@@ -182,6 +183,7 @@ def create_simu_test019_phsp_source(sim):
     # sim.running_verbose_level = gate.logger.EVENT
     sim.number_of_threads = 1
     sim.random_seed = 987654321
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -241,7 +243,7 @@ def create_simu_test019_phsp_source(sim):
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
-    ta1.mother = plane.name
+    ta1.attached_to = plane.name
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
@@ -257,7 +259,7 @@ def create_simu_test019_phsp_source(sim):
         "LocalTime",
         "EventPosition",
     ]
-    ta1.output = paths.output / "test019_hits_phsp_source_local.root"
+    ta1.output_filename = "test019_hits_phsp_source_local.root"
     ta1.debug = False
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
@@ -265,7 +267,7 @@ def create_simu_test019_phsp_source(sim):
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
-    ta2.mother = plane2.name
+    ta2.attached_to = plane2.name
     ta2.attributes = [
         "KineticEnergy",
         "Weight",
@@ -281,9 +283,9 @@ def create_simu_test019_phsp_source(sim):
         "LocalTime",
         "EventPosition",
     ]
-    ta2.output = paths.output / "test019_hits_phsp_source_global.root"
+    ta2.output_filename = "test019_hits_phsp_source_global.root"
     ta2.debug = False
-    f = sim.add_filter("ParticleFilter", "f")
+    f = sim.add_filter("ParticleFilter", "f2")
     f.particle = "gamma"
     ta2.filters.append(f)
 
@@ -312,8 +314,8 @@ def analyse_test019_phsp_source(sim):
     print()
     print("Test GLOBAL position")
     fn1 = paths.output_ref / "test019_hits.root"
-    ta1 = output.get_actor("PhaseSpace1").user_info
-    fn2 = ta1.output
+    ta1 = output.get_actor("PhaseSpace1")
+    fn2 = ta1.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
     data, keys, _ = phsp.load(fn2, "PhaseSpace1")
@@ -345,8 +347,8 @@ def analyse_test019_phsp_source(sim):
     print()
     print("Test GLOBAL position")
     fn1 = paths.output_ref / "test019_hits.root"
-    ta2 = output.get_actor("PhaseSpace2").user_info
-    fn2 = ta2.output
+    ta2 = output.get_actor("PhaseSpace2")
+    fn2 = ta2.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
     data, keys, _ = phsp.load(fn2, "PhaseSpace2")

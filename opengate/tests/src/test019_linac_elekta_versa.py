@@ -21,6 +21,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output  # FIXME (not yet)
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
+    sim.output_dir = paths.output
 
     # units
     nm = gate.g4_units.nm
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     # add phase space
     plane = versa.add_phase_space_plane(sim, linac.name, linac.size[2] - 1 * nm)
     phsp = versa.add_phase_space(sim, plane.name)
-    phsp.output = paths.output / "phsp_versa.root"
+    phsp.output = "phsp_versa.root"
 
     # start simulation
     sim.run()
@@ -74,7 +75,7 @@ if __name__ == "__main__":
     tols = [0.1, 2.5, 2.5]
     is_ok = utility.compare_root3(
         root_ref,
-        phsp.output,
+        phsp.get_output_path(),
         br,
         br,
         keys,
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             root_ref,
-            phsp.output,
+            phsp.get_output_path(),
             br,
             br,
             keys,
@@ -118,7 +119,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             root_ref,
-            phsp.output,
+            phsp.get_output_path(),
             br,
             br,
             keys,

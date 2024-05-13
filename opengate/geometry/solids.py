@@ -17,7 +17,6 @@ from .utility import (
 class SolidBase(GateObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.g4_solid = None
 
     def close(self):

@@ -134,7 +134,7 @@ def kill_around_target(sim, linac_name):
 
     # psycho killer
     killer = sim.add_actor("KillActor", f"target_kill")
-    killer.mother = [target_above.name, target_around.name]
+    killer.attached_to = [target_above.name, target_around.name]
 
 
 def add_primary_collimator(sim, linac_name):
@@ -362,7 +362,7 @@ def add_phase_space_plane(sim, linac_name, src_phsp_distance):
 
 def add_phase_space(sim, plane_name):
     phsp = sim.add_actor("PhaseSpaceActor", f"{plane_name}_phsp")
-    phsp.mother = plane_name
+    phsp.attached_to = plane_name
     phsp.attributes = [
         "KineticEnergy",
         "Weight",
@@ -705,7 +705,7 @@ def add_jaws_visu(sim, linac_name):
     ]
 
 
-def base_jaws(sim, linac_name, side):
+def add_base_jaws(sim, linac_name, side):
     mm = g4_units.mm
     jaws_height = 77 * mm
     jaws_length_x = 201.84 * mm
@@ -864,7 +864,7 @@ def add_jaw_visu(sim, linac_name, side):
     jaws_length_y = 205.2 * mm
     z_linac = linac.size[2]
 
-    bool_box_jaw = base_jaws(sim, linac_name, side)
+    bool_box_jaw = add_base_jaws(sim, linac_name, side)
     sim.volume_manager.add_volume(bool_box_jaw, "jaws" + "_" + side)
     bool_box_jaw.mother = linac_name
     bool_box_jaw.material = "mat_leaf"
@@ -892,7 +892,7 @@ def add_jaw(sim, linac_name, side):
     jaws_length_y = 205.2 * mm
     z_linac = linac.size[2]
 
-    bool_box_jaws = base_jaws(sim, linac_name, side)
+    bool_box_jaws = add_base_jaws(sim, linac_name, side)
     # Correction of the front jaw shape
     minibox_to_add = volumes.BoxVolume(name=f"{linac_name}_minibox_to_add" + "_" + side)
     minibox_to_add.size = np.array(
@@ -1044,7 +1044,7 @@ def linac_rotation(sim, linac_name, angle, cp_id="all_cp"):
     motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
     motion_LINAC.rotations = []
     motion_LINAC.translations = []
-    motion_LINAC.mother = linac_name
+    motion_LINAC.attached_to = linac_name
     if cp_id == "all_cp":
         nb_cp_id = len(angle)
         cp_id = np.arange(0, nb_cp_id, 1)
@@ -1088,7 +1088,7 @@ def jaw_translation(
     motion_jaw = sim.add_actor("MotionVolumeActor", "Move_" + side + "_jaw")
     motion_jaw.translations = []
     motion_jaw.rotations = []
-    motion_jaw.mother = jaw.name
+    motion_jaw.attached_to = jaw.name
     jaw_lenght_y = 205.2 * mm
     jaw_height = 77 * mm
     center_jaw = 470.5 * mm
@@ -1135,7 +1135,7 @@ def mlc_leaves_translation(
     motion_leaves_r = []
     for i in range(nb_leaves):
         motion_leaves.append(sim.add_actor("MotionVolumeActor", "Move_leaf_" + str(i)))
-        motion_leaves[i].mother = mlc[i]["name"]
+        motion_leaves[i].attached_to = mlc[i]["name"]
         motion_leaves[i].translations = []
         motion_leaves[i].rotations = []
         motion_leaves_t.append(motion_leaves[i].translations)

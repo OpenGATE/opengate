@@ -19,6 +19,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.random_seed = 321654
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta2.attached_to = plane
+    ta2.attached_to = plane.name
     ta2.attributes = [
         "KineticEnergy",
         "PostPosition",
@@ -79,7 +80,9 @@ if __name__ == "__main__":
 
     # run the simulation once with no particle in the phsp
     source.direction.momentum = [0, 0, 1]
-    ta2.user_output.phsp.output_filename = "test019_phsp_actor_empty.root"
+    ta2.output_filename = "test019_phsp_actor_empty.root"
+
+    # run
     sim.run(start_new_process=True)
     print(stats_actor)
 
@@ -91,7 +94,7 @@ if __name__ == "__main__":
 
     # redo with the right direction
     source.direction.momentum = [0, 0, -1]
-    ta2.user_output.phsp.output_filename = "test019_phsp_actor.root"
+    ta2.output_filename = "test019_phsp_actor.root"
     sim.run(start_new_process=True)
     print(stats_actor)
 

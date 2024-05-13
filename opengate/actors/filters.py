@@ -27,7 +27,7 @@ class FilterBase(GateObject):
         self.InitializeUserInput(self.user_info)
 
 
-class ParticleFilter(g4.GateParticleFilter, FilterBase):
+class ParticleFilter(FilterBase, g4.GateParticleFilter):
     user_info_defaults = {
         "particle": (
             "",
@@ -39,7 +39,10 @@ class ParticleFilter(g4.GateParticleFilter, FilterBase):
 
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
-        g4.GateParticleFilter.__init__(self)  # no argument in cpp side
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateParticleFilter.__init__(self)
 
 
 class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
