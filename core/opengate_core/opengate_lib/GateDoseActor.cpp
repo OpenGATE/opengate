@@ -240,7 +240,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     } else {
       G4AutoLock mutex(&SetPixelMutex);
 
-      ImageAddValue<Image3DType>(cpp_edep_image, index, scoring_quantity);
+      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
       // If uncertainty: consider edep per event
       if (fSquareFlag) {
         auto event_id =
@@ -250,14 +250,14 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         if (event_id == previous_id) {
           // Same event : continue temporary edep
           locald.edepSquared_worker_flatimg[index_flat] +=
-              scoring_quantity; // FIXME: why do we add edep to edepSquared
+              edep; // FIXME: why do we add edep to edepSquared
                                 // image? I think bad naming
         } else {
           // Different event : update previoupyths and start new event
           auto e = locald.edepSquared_worker_flatimg[index_flat];
           ImageAddValue<Image3DType>(cpp_square_image, index, e * e);
           // new temp value
-          locald.edepSquared_worker_flatimg[index_flat] = scoring_quantity;
+          locald.edepSquared_worker_flatimg[index_flat] = edep;
         }
       }
     } // else : outside the image
