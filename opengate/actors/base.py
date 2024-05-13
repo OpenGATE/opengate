@@ -9,12 +9,23 @@ def _setter_hook_attached_to(self, attached_to):
     """Hook to be attached to property setter of user input 'attached_to' in all actors.
     Allows the user input 'attached_to_volume' to be volume object or a volume name.
     """
-    # duck typing: allow volume objects or their name
-    try:
-        attached_to_name = attached_to.name
-    except AttributeError:
-        attached_to_name = attached_to
-    return attached_to_name
+
+    if isinstance(attached_to, str):
+        return attached_to
+    elif isinstance(
+        attached_to,
+        (
+            list,
+            tuple,
+        ),
+    ):
+        attached_to_names = []
+        for a in attached_to:
+            try:
+                attached_to_names.append(a.name)
+            except AttributeError:
+                attached_to_names.append(a)
+        return attached_to_names
 
 
 class ActorBase(GateObject):
