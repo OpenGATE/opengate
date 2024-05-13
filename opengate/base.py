@@ -4,7 +4,7 @@ from pathlib import Path
 from box import Box
 import sys
 
-from .exception import fatal, warning, GateDeprecatedFeatureError
+from .exception import fatal, warning, GateDeprecationError
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
@@ -142,34 +142,35 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
-        if not hasattr(cls, p_name):
-            check_property_name(p_name)
-            setattr(cls, p_name, _make_property(p_name, options=options))
+        if "deprecated" not in options:
+            if not hasattr(cls, p_name):
+                check_property_name(p_name)
+                setattr(cls, p_name, _make_property(p_name, options=options))
 
-            try:
-                expose_items = options["expose_items"]
-            except KeyError:
-                expose_items = False
-            if expose_items is True:
-                # expose_items can only be used on dictionary-type user infos
-                # try to get keys and fail of impossible (=not dict type)
                 try:
-                    for item_name, item_default_value in default_value.items():
-                        check_property_name(item_name)
-                        if not hasattr(cls, item_name):
-                            setattr(
-                                cls,
-                                item_name,
-                                _make_property(item_name, container_dict=p_name),
-                            )
-                        else:
-                            fatal(
-                                f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
-                            )
-                except AttributeError:
-                    fatal(
-                        "Option 'expose_items=True' not available for default_user_info {p_name}."
-                    )
+                    expose_items = options["expose_items"]
+                except KeyError:
+                    expose_items = False
+                if expose_items is True:
+                    # expose_items can only be used on dictionary-type user infos
+                    # try to get keys and fail of impossible (=not dict type)
+                    try:
+                        for item_name, item_default_value in default_value.items():
+                            check_property_name(item_name)
+                            if not hasattr(cls, item_name):
+                                setattr(
+                                    cls,
+                                    item_name,
+                                    _make_property(item_name, container_dict=p_name),
+                                )
+                            else:
+                                fatal(
+                                    f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
+                                )
+                    except AttributeError:
+                        fatal(
+                            "Option 'expose_items=True' not available for default_user_info {p_name}."
+                        )
     return cls
 
 
@@ -201,7 +202,7 @@ def _make_property(property_name, options=None, container_dict=None):
         @prop.setter
         def prop(self, value):
             if "deprecated" in options:
-                raise GateDeprecatedFeatureError(options["deprecated"])
+                raise GateDeprecationError(options["deprecated"])
             if container_dict is None:
                 if "setter_hook" in options:
                     value_to_be_set = options["setter_hook"](self, value)
@@ -235,17 +236,24 @@ def make_docstring(cls, user_info_defaults):
         default_value = v[0]
         options = v[1]
         docstring += f"{k}"
-        if "required" in options and options["required"] is True:
-            docstring += " (must be provided)"
-        docstring += ":\n"
-        # docstring += (20 - len(k)) * " "
-        docstring += f"{indent}Default value: {default_value}\n"
-        if "allowed_values" in options:
-            docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
-        if "doc" in options:
+        if "deprecated" in options:
+            docstring += " -> DEPRECATED\n"
             docstring += indent
-            docstring += options["doc"]
+            docstring += "Info: "
+            docstring += options["deprecated"]
             docstring += "\n"
+        else:
+            if "required" in options and options["required"] is True:
+                docstring += " (must be provided)"
+            docstring += ":\n"
+            # docstring += (20 - len(k)) * " "
+            docstring += f"{indent}Default value: {default_value}\n"
+            if "allowed_values" in options:
+                docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
+            if "doc" in options:
+                docstring += indent
+                docstring += options["doc"]
+                docstring += "\n"
         docstring += "\n"
     docstring += 20 * "*"
     docstring += "\n"
@@ -376,6 +384,19 @@ class GateObject:
             (self.__class__, state_dict),
             state_dict,
         )
+
+    def __setattr__(self, key, value):
+        # raise an error if the user tries to set an attributed
+        # associated with a deprecated user input parameter
+        if not hasattr(self, key):
+            try:
+                raise GateDeprecationError(
+                    self.inherited_user_info_defaults[key][1]["deprecated"]
+                )
+            except KeyError:
+                super().__setattr__(key, value)
+        else:
+            super().__setattr__(key, value)
 
     @property
     def type_name(self):
