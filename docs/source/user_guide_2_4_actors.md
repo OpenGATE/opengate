@@ -267,7 +267,7 @@ A more detailed example can be found in [test 57](https://github.com/OpenGATE/op
 
 *Please, be aware that the current version of the Coincidence sorter is still work in progress. Coincidence sorter is only offline yet.*
 
-The Coincidence Sorter searches, into the singles list, for pairs of coincident singles. Whenever two or more singles are found within a coincidence window, these singles are grouped to form a Coincidence event.
+The Coincidence Sorter searches, into the singles list, for pairs of coincident singles. Whenever two or more singles are found within a coincidence time window, these singles are grouped to form a Coincidence event.
 
 As an example, a Coincidence Sorter is shown here:
 ```python
@@ -285,12 +285,12 @@ As parameters Coincidence Sorter expects as input:
 
 * **Singles Tree**
 * Defined coincidence **time window**
-* **Minimum sector difference**  or minimal distance  between the detectors triggered the coincidence needed for removing geometrically impossible coincidences(Not yet implemented),
-* **Policy** to treat the multiple coincidences. When more than two singles are found in coincidence, several types of behavior could be implemented.
+* **Minimum sector difference**  or minimal distance  between the detectors triggered the coincidence needed for removing geometrically impossible coincidences (Not yet implemented),
+* **Policy** to process the multiple coincidences. When more than two singles are found in coincidence, several types of behavior could be implemented.
 * **Chunk size** important for very large root files to avoid loading everything in memory.
 
 GATE allows to model so far 2 different **policy** rules that can be used in such a case:
-| Policy         |      Description                             |Equivqlent in Gate 9.X|
+| Policy         |      Description                             |Equivalent in Gate 9.X|
 |----------------|----------------------------------------------|----------------------|
 | keepAll        | Each good pairs are considered               |  takeAllGoods        |
 | removeMultiples| No multiple coincidences are accepted, no matter how many good pairs are present |  killAll |

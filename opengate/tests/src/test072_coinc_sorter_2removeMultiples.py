@@ -13,7 +13,7 @@ import os
 if __name__ == "__main__":
     # test paths
     paths = utility.get_default_test_paths(
-        __file__, output_folder="test72_coinc_sorter"
+        __file__, output_folder="test072_coinc_sorter"
     )
 
     # open root file
@@ -42,12 +42,11 @@ if __name__ == "__main__":
 
     # save to file
     # WARNING root version >= 5.2.2 needed
-    output_file = uproot.recreate("output.root")
+    output_file = uproot.recreate(paths.output / "coinc2removeMultiples.root")
     output_file["Coincidences"] = coincidences
     output_file["Singles_crystal"] = copy_tree_for_dump(singles_tree)
 
     nc_ref = 2275
-
     nc_tol = nc * 0.03  # 3%
 
     is_ok = utility.check_diff_abs(int(nc), int(nc_ref), tolerance=nc_tol, txt="")

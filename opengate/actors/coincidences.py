@@ -19,7 +19,7 @@ def coincidences_sorter(
     Chunk size is important for very large root file to avoid loading everything in memory
 
     DEV NOTES:
-    1) potential bug while having several chunks: couple of coincidecnes too much
+    1) potential bug while having several chunks: couple of coincidences too much
     2) filtering during sorting or after? so far done after but maybe better do during for execution speed
     3) removeMultiples policy is applied on EventID maybe should be done differently: checking while time window is opened
 
@@ -54,7 +54,7 @@ def coincidences_sorter(
         coincidences_filtered[f"{k}"] = []
 
     if policy == "removeMultiples":
-        ids_to_keep = removeMultiples(coincidences)
+        ids_to_keep = remove_multiples(coincidences)
     # TODO add other filters
 
     elif policy == "keepAll":
@@ -79,13 +79,13 @@ def process_chunk(keys, chunk, coincidences, time_window, policy):
 
     print("-----Sorting------")
     for i in tqdm(range(nsingles - 1)):
-        time_windiow_open = singles[i]["GlobalTime"]
+        time_window_open = singles[i]["GlobalTime"]
         for j in range(i + 1, nsingles):
 
             time = singles[j]["GlobalTime"]
             coinc_events = []
 
-            if abs(time - time_windiow_open) <= time_window:
+            if abs(time - time_window_open) <= time_window:
 
                 # remove if in the same volume
                 if (
@@ -117,7 +117,7 @@ def copy_tree_for_dump(input_tree):
     return branches
 
 
-def removeMultiples(coincidences):
+def remove_multiples(coincidences):
     # return EventID1 to keep
     ids = coincidences["EventID1"]
     ids = [i for i in ids if ids.count(i) == 1]
