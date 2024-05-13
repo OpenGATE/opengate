@@ -37,26 +37,8 @@ def _setter_hook_attached_to(self, attached_to):
           f"Received: {attached_to}")
 
 
-def _setter_hook_output_filename(self, value):
-    if len(self.user_output) != 1:
-        fatal(
-            f"Cannot use output_filename, there are several outputs. "
-            f"Current outputs are: {self.user_output}"
-        )
-    # get the first (and only) key (as a list because it is a dict)
-    k = list(self.user_output.keys())
-    self.user_output[k[0]].output_filename = value
-
-
 class ActorBase(GateObject):
     user_info_defaults = {
-        "output_filename": (
-            None,
-            {
-                "doc": "Filename of the output (only when there is only one output file)",
-                "setter_hook": _setter_hook_output_filename,
-            },
-        ),
         "attached_to": (
             __world_name__,
             {
@@ -136,6 +118,31 @@ class ActorBase(GateObject):
     def __setstate__(self, state):
         self.__dict__ = state
         self.__initcpp__()
+
+    def _get_error_msg_output_filename(self):
+        s = (
+            f"The shortcut attribute output_filename is not available for this actor "
+            f"because it handles more than one output. You need to set the output_filename "
+            f"parameter for each output individually: \n"
+        )
+        for k in self.user_output:
+            s += f"ACTOR.user_output.{k}.output_filename = ...\n"
+        s += "... where ACTOR is your actor object."
+        return s
+
+    @property
+    def output_filename(self):
+        if len(self.user_output) > 1:
+            fatal(self._get_error_msg_output_filename())
+        else:
+            return list(self.user_output.values())[0].output_filename
+
+    @output_filename.setter
+    def output_filename(self, filename):
+        if len(self.user_output) > 1:
+            fatal(self._get_error_msg_output_filename())
+        else:
+            list(self.user_output.values())[0].output_filename = filename
 
     @property
     def actor_type(self):
