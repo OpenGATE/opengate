@@ -44,7 +44,8 @@ import opengate.image
 import opengate.physics
 import opengate.base
 import opengate.engines
-import opengate.postprocessors
+
+# import opengate.postprocessors
 
 # These objects are imported at the top level of the package
 # because users will frequently use them
