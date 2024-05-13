@@ -74,9 +74,9 @@ class VoxelDepositActor(ActorBase):
         "output": (
             None,
             {
-                "deprecated": "The output filename is now generated automatically. "
-                "An extra suffix can be defined via my_dose_actor.extra_suffix (for every output alike),"
-                "or individually via my_dose_actor.user_output.OUTPUTNAME.extra_suffix=..., "
+                "deprecated": "The output filename is now generated automatically. \n"
+                "An extra suffix can be defined via my_dose_actor.extra_suffix (for every output alike), \n"
+                "or individually via my_dose_actor.user_output.OUTPUTNAME.extra_suffix=..., \n"
                 "where OUTPUTNAME can be 'edep', 'dose', 'sqaure', depending on the specific actor.",
             },
         ),
