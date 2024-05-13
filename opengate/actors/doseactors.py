@@ -530,7 +530,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "select only one way to calculate uncertainty: uncertainty or ste_of_mean"
             )
 
-    def compute_dose_from_edep_img(self, edep_image):
+    def compute_dose_from_edep_img(self, input_image):
         """
         * create mass image:
             - from ct HU units, if dose actor attached to ImageVolume.
@@ -548,17 +548,17 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
             if self.to_water:
                 # for dose to water, divide by density of water and not density of material
-                dose_image = scale_itk_image(edep_image, 1 / (1.0 * gcm3))
+                scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
             else:
                 density_img = create_density_img(vol, material_database)
-                dose_image = divide_itk_images(
-                    img1_numerator=edep_image,
+                scaled_image = divide_itk_images(
+                    img1_numerator=input_image,
                     img2_denominator=density_img,
                     filterVal=0,
                     replaceFilteredVal=0,
                 )
             # divide by voxel volume and convert unit
-            dose_image = scale_itk_image(dose_image, 1 / (Gy * voxel_volume))
+            scaled_image = scale_itk_image(scaled_image, 1 / (Gy * voxel_volume))
 
         else:
             if self.to_water:
@@ -566,9 +566,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 density = 1.0 * gcm3
             else:
                 density = vol.g4_material.GetDensity()
-            dose_image = scale_itk_image(edep_image, 1 / (voxel_volume * density * Gy))
+            scaled_image = scale_itk_image(input_image, 1 / (voxel_volume * density * Gy))
 
-        return dose_image
+        return scaled_image
 
     def initialize(self, *args):
         """
