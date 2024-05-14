@@ -222,8 +222,10 @@ class ActorBase(GateObject):
             # get the first (and only) item from user_output
             output_name = list(self.user_output.keys())[0]
         if output_name not in self.user_output:
-            fatal(f"This actor does not have any output named '{output_name}'."
-                  f"Available outputs are: {list(self.user_output.keys())}")
+            fatal(
+                f"This actor does not have any output named '{output_name}'."
+                f"Available outputs are: {list(self.user_output.keys())}"
+            )
         return self.user_output[output_name].get_output_path(**kwargs)
 
     def get_output_path_for_item(self, output_name, which, item):

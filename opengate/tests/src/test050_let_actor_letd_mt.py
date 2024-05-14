@@ -198,7 +198,7 @@ if __name__ == "__main__":
         ref_filter_filename1=ref_path / fNameIDD,
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
-        filename2=LETActor_IDD_d.get_output_path(item='let'),
+        filename2=LETActor_IDD_d.get_output_path(item="let"),
         tolerance=20,
         plt_ylim=[0, 25],
     )
@@ -208,7 +208,7 @@ if __name__ == "__main__":
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
-            filename2=LETActor_IDD_t.get_output_path(item='let'),
+            filename2=LETActor_IDD_t.get_output_path(item="let"),
             tolerance=8,
             plt_ylim=[0, 18],
         )
@@ -218,7 +218,7 @@ if __name__ == "__main__":
         utility.assert_filtered_imagesprofile1D(
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
-            filename2=LET_primaries.get_output_path(item='let'),
+            filename2=LET_primaries.get_output_path(item="let"),
             tolerance=8,
             plt_ylim=[0, 25],
         )
