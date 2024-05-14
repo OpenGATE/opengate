@@ -329,7 +329,7 @@ class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
         "input_digi_collection": (
             "Hits",
             {
-                "doc": "FIXME",
+                "doc": "Name of the digit collection to be used as input. ",
             },
         ),
         "skip_attributes": (

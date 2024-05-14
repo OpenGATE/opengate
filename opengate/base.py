@@ -410,10 +410,12 @@ class GateObject:
 
     def close(self):
         """Dummy implementation for inherited classes which do not implement this method."""
-        if self.simulation.verbose_close:
-            warning(
-                f"close() called in object '{self.name}' of type {type(self).__name__}."
-            )
+        print(f"close GateObject", self.name, self.type_name)
+        if "simulation" in self.__dict__ and self.simulation is not None:
+            if self.simulation.verbose_close:
+                warning(
+                    f"close() called in object '{self.name}' of type {type(self).__name__}."
+                )
         pass
 
     def release_g4_references(self):
@@ -558,7 +560,7 @@ class DynamicGateObject(GateObject):
             name = f"parametrisation_{len(self.dynamic_params)}"
         self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
         # issue debugging message
-        s = f"Added the folowing dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
+        s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
         log.debug(s)
