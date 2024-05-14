@@ -272,8 +272,6 @@ class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
         ),
     }
 
-    type_name = "DigitizerAdderActor"
-
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputRoot, "added_singles")
@@ -320,8 +318,6 @@ class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
     Digitizer module for blurring an attribute (single value only, not a vector).
     Usually for energy or time.
     """
-
-    # type_name = "DigitizerBlurringActor"
 
     user_info_defaults = {
         "attributes": (
@@ -668,8 +664,6 @@ class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor)
         ),
     }
 
-    type_name = "DigitizerEnergyWindowsActor"
-
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputRoot, "singles_per_energy_window")
@@ -729,8 +723,6 @@ class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActo
             },
         ),
     }
-
-    type_name = "DigitizerHitsCollectionActor"
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)

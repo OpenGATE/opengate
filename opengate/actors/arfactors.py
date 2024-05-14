@@ -1,16 +1,13 @@
-import sys
 from box import Box
 import numpy as np
 import itk
 import threading
 import opengate_core as g4
-from ..utility import g4_units, ensure_filename_is_str
+from ..utility import g4_units
 from ..exception import fatal
 from .base import ActorBase
-from ..image import write_itk_image
 
 from .digitizers import DigitizerEnergyWindowsActor
-from .actoroutput import ActorOutputRoot
 
 
 def import_garf():

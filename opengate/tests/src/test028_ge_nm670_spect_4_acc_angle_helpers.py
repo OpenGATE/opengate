@@ -249,7 +249,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
 
     # read image and force change the offset to be similar to old Gate
     gate.exception.warning("Compare projection image")
-    img = itk.imread(str(paths.output / "proj028_colli-merged.mhd"))
+    img = itk.imread(str(paths.output / "proj028_colli.mhd"))
     spacing = np.array([proj.spacing[0], proj.spacing[1], 1])
     print("spacing", spacing)
     origin = spacing / 2.0

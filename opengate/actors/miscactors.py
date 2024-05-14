@@ -151,9 +151,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     }
 
     def __init__(self, *args, **kwargs):
-        # # user_info can be null when create empty actor (that read file)
-        # if not user_info:
-        #     user_info = UserInfo("Actor", self.type_name, name=uuid.uuid4().__str__())
         ActorBase.__init__(self, *args, **kwargs)
         output = self._add_user_output(ActorOutputStatisticsActor, "stats")
         # no default output for this actor
@@ -219,7 +216,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
 
 class KillActor(ActorBase, g4.GateKillActor):
-    type_name = "KillActor"
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -230,7 +226,6 @@ class KillActor(ActorBase, g4.GateKillActor):
 
 
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
-    type_name = "ComptSplittingActor"
 
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
@@ -252,7 +247,6 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
 
 
 class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
-    type_name = "BremSplittingActor"
 
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)

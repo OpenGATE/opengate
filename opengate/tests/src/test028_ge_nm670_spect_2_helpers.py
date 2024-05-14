@@ -341,7 +341,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     print()
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
-    img = itk.imread(str(paths.output / "proj028-merged.mhd"))
+    img = itk.imread(str(paths.output / "proj028.mhd"))
     spacing = np.array(proj.user_info.spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
@@ -372,7 +372,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj028_ref.mhd",
-            paths.output / "proj028-merged.mhd",
+            paths.output / "proj028.mhd",
             stats,
             tolerance=14,
             ignore_value=0,
