@@ -49,22 +49,22 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
 
 
 def _setter_hook_attached_to(self, value):
-    # try to pick up the volume_manager from the attached_to volume
+    # try to pick up the simulation from the attached_to volume
     try:
-        volume_manager = value.volume_manager
+        simulation = value.simulation
     except AttributeError:
-        volume_manager = None
+        simulation = None
     if (
-        self.volume_manager is not None
-        and volume_manager is not None
-        and self.volume_manager is not volume_manager
+        self.simulation is not None
+        and simulation is not None
+        and self.simulation is not simulation
     ):
         fatal(
-            f"The volume_manager of the changers is different from the volume_manager "
+            f"The simulation of the changers is different from the simulation "
             f"which manages the attached_to volume. "
         )
-    if volume_manager is not None:
-        self.volume_manager = volume_manager
+    if simulation is not None:
+        self.simulation = simulation
     try:
         return value.name
     except AttributeError:
@@ -82,24 +82,31 @@ class GeometryChanger(GateObject):
         ),
     }
 
-    def __init__(self, *args, volume_manager=None, **kwargs):
-        # FIXME: should not need explicit reference to volume manager
-        self.volume_manager = None
+    def __init__(self, *args, **kwargs):
+        simulation = kwargs.pop('simulation', None)  # intercept simulation from kwargs if present
         super().__init__(*args, **kwargs)
+
         # the user might have passed an 'attached_to' keyword argument pointing to a Volume object
-        # in that case, the volume_manager was picked up from the volume
+        # in that case, the simulation was picked up from the volume
         # check for consistency
         if (
-            self.volume_manager is not None
-            and volume_manager is not None
-            and self.volume_manager is not volume_manager
+            self.simulation is not None
+            and simulation is not None
+            and self.simulation is not simulation
         ):
             fatal(
-                f"The volume_manager passed as keyword argument is different "
-                f"from the volume_manager which manages the attached_to volume. "
+                f"The simulation passed as keyword argument is different "
+                f"from the simulation which manages the attached_to volume. "
             )
-        if volume_manager is not None:
-            self.volume_manager = volume_manager
+        if simulation is not None:
+            self.simulation = simulation
+
+    @property
+    def volume_manager(self):
+        if self.simulation is not None:
+            return self.simulation.volume_manager
+        else:
+            return None
 
     @property
     @requires_fatal("volume_manager")
