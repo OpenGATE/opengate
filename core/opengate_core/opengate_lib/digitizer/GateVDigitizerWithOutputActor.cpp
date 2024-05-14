@@ -22,6 +22,22 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
 
+  // init
+  fOutputDigiCollection = nullptr;
+  fInputDigiCollection = nullptr;
+  fInitializeRootTupleForMasterFlag = true;
+}
+
+GateVDigitizerWithOutputActor::~GateVDigitizerWithOutputActor() = default;
+
+// Called at initialisation
+void GateVDigitizerWithOutputActor::InitializeCpp() {
+  GateVActor::InitializeCpp();
+}
+
+// get user input parameters from python side
+void GateVDigitizerWithOutputActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   // options for input
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
 
@@ -30,14 +46,7 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   fOutputDigiCollectionName = DictGetStr(user_info, "name");
   fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
-
-  // init
-  fOutputDigiCollection = nullptr;
-  fInputDigiCollection = nullptr;
-  fInitializeRootTupleForMasterFlag = true;
 }
-
-GateVDigitizerWithOutputActor::~GateVDigitizerWithOutputActor() = default;
 
 void GateVDigitizerWithOutputActor::StartSimulationAction() {
   // Get the input hits collection

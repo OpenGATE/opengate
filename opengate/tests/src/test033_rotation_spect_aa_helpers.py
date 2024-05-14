@@ -19,6 +19,7 @@ def create_test(sim, nb_thread=1):
     sim.visu_verbose = False
     sim.check_volumes_overlap = False
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -94,15 +95,15 @@ def create_test(sim, nb_thread=1):
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test033_stats.txt"
+    stat.output_filename = "test033_stats.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
     proj = gate_spect.add_simplified_digitizer_tc99m(
-        sim, "spect1_crystal", paths.output / "test033_proj_1.mhd"
+        sim, "spect1_crystal", "test033_proj_1.mhd"
     )
     proj.origin_as_image_center = False
     proj = gate_spect.add_simplified_digitizer_tc99m(
-        sim, "spect2_crystal", paths.output / "test033_proj_2.mhd"
+        sim, "spect2_crystal", "test033_proj_2.mhd"
     )
     proj.origin_as_image_center = False
 
@@ -113,7 +114,7 @@ def create_test(sim, nb_thread=1):
     n = 9
     sim.run_timing_intervals = gate.runtiming.range_timing(0, 1 * sec, n)
     for head in heads:
-        motion = sim.add_actor("MotionVolumeActor", f"Move_{head.name}")
+        """motion = sim.add_actor("MotionVolumeActor", f"Move_{head.name}")
         motion.mother = head.name
         (
             motion.translations,
@@ -121,7 +122,12 @@ def create_test(sim, nb_thread=1):
         ) = gate.geometry.utility.volume_orbiting_transform(
             "x", 0, 180, n, head.translation, head.rotation
         )
-        motion.priority = 5
+        motion.priority = 5"""
+        head.translations, head.rotations = (
+            gate.geometry.utility.volume_orbiting_transform(
+                "x", 0, 180, n, head.translation, head.rotation
+            )
+        )
 
     return sources
 
