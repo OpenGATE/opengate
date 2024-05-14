@@ -372,7 +372,7 @@ class GateObject:
                         f"Probably, a line self.{k}=None is needed in {self.type_name}.close().")
         if self.simulation is not None and self.simulation.verbose_getstate:
             warning(
-                f"__getstate__() called in object '{self.name}' of type {type(self).__name__}."
+                f"__getstate__() called in object '{self.name}' of type {self.type_name}."
             )
         return self.__dict__
 
