@@ -117,6 +117,11 @@ class ActorBase(GateObject):
     def __initcpp__(self):
         """Nothing to do in the base class."""
 
+    def __getstate__(self):
+        state_dict = super().__getstate__()
+        state_dict['actor_engine'] = None
+        return state_dict
+
     def __setstate__(self, state):
         self.__dict__ = state
         self.__initcpp__()
