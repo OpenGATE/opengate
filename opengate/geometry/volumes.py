@@ -214,6 +214,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
 
     def close(self):
         self.release_g4_references()
+        self.volume_engine = None
         super().close()
 
     def release_g4_references(self):
