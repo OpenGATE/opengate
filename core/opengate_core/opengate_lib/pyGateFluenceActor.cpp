@@ -12,10 +12,29 @@ namespace py = pybind11;
 
 #include "GateFluenceActor.h"
 
+class PyGateFluenceActor : public GateFluenceActor {
+public:
+  // Inherit the constructors
+  using GateFluenceActor::GateFluenceActor;
+
+  void BeginOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(void, GateFluenceActor, BeginOfRunActionMasterThread,
+                      run_id);
+  }
+
+  int EndOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(int, GateFluenceActor, EndOfRunActionMasterThread, run_id);
+  }
+};
+
 void init_GateFluenceActor(py::module &m) {
-  py::class_<GateFluenceActor, std::unique_ptr<GateFluenceActor, py::nodelete>,
+  py::class_<GateFluenceActor, PyGateFluenceActor, std::unique_ptr<GateFluenceActor, py::nodelete>,
              GateVActor>(m, "GateFluenceActor")
       .def(py::init<py::dict &>())
+      .def("BeginOfRunActionMasterThread",
+           &GateFluenceActor::BeginOfRunActionMasterThread)
+      .def("EndOfRunActionMasterThread",
+           &GateFluenceActor::EndOfRunActionMasterThread)
       .def_readwrite("cpp_fluence_image", &GateFluenceActor::cpp_fluence_image)
       .def_readwrite("fPhysicalVolumeName",
                      &GateFluenceActor::fPhysicalVolumeName);
