@@ -236,4 +236,4 @@ class VolumeRotationChanger(GeometryChanger):
             self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
                 self.repetition_index
             )
-        self.g4_physical_volume.SetRotationList(self.g4_rotations[run_id])
+        self.g4_physical_volume.SetRotationHepRep3x3(self.g4_rotations[run_id])

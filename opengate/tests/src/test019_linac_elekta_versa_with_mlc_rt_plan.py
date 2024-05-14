@@ -63,23 +63,15 @@ def add_volume_to_irradiate(sim, name, l_cp):
     dose.square = False
     dose.hit_type = "random"
 
-    """motion_phsp = sim.add_actor("MotionVolumeActor", "Move_phsp")
-    motion_phsp.mother = plane.name
-    motion_phsp.rotations = []
-    motion_phsp.translations = []"""
+    # move the plane
     rotations = []
     translations = []
     rotation_angle = rt_plan_parameters["gantry angle"]
     for n in l_cp:
         rot = Rotation.from_euler("y", rotation_angle[n], degrees=True)
         rot = rot.as_matrix()
-        # motion_phsp.rotations.append(rot)
-        # motion_phsp.translations.append(np.zeros(3))
         rotations.append(rot)
         translations.append(np.zeros(3))
-    print(rotations)
-    print(translations)
-    print(l_cp, len(l_cp))
     plane.add_dynamic_parametrisation(rotation=rotations, translation=translations)
 
 
@@ -140,6 +132,11 @@ def validation_test_19_rt_plan(
     ):
         return True
     else:
+        print()
+        print(f"mm2 -> {percentage_diff=}")
+        print(f"{np.sum(bool_percentage_diff)=}")
+        print(f"{nb_part_sent/nb_part_theo=}")
+        print(f"{err_nb_part=}")
         return False
 
 
@@ -195,11 +192,9 @@ if __name__ == "__main__":
     z_linac = linac.size[2]
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
     l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
-    print("lcp=", l_cp)
     versa.set_linac_head_motion(
         sim, linac.name, jaws, mlc, rt_plan_parameters, sad=sad, cp_id=l_cp
     )
-    print("lcp=", l_cp)
     MU = rt_plan_parameters["weight"][l_cp[0]]
     nb_part = nb_part / MU
 

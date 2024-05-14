@@ -410,7 +410,6 @@ class GateObject:
 
     def close(self):
         """Dummy implementation for inherited classes which do not implement this method."""
-        print(f"close GateObject", self.name, self.type_name)
         if "simulation" in self.__dict__ and self.simulation is not None:
             if self.simulation.verbose_close:
                 warning(
