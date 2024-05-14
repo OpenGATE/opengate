@@ -327,8 +327,10 @@ class DataItemContainer(DataContainer):
         """
         if self._tuple_length > 1:
             if item is None:
-                fatal(f"This data container holds {self._tuple_length} data items. "
-                      f"You must provide an item=... argument. ")
+                fatal(
+                    f"This data container holds {self._tuple_length} data items. "
+                    f"You must provide an item=... argument. "
+                )
             return insert_suffix_before_extension(
                 actor_output_path, self._get_suffix_for_item(item)
             )
@@ -406,7 +408,8 @@ class QuotientItkImage(DataItemContainer):
         self.data_items_to_write = {
             "numerator": "numerator",
             "denominator": "denominator",
-            "quotient": "quotient"}
+            "quotient": "quotient",
+        }
 
     @property
     def numerator(self):

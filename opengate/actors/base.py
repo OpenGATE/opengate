@@ -216,7 +216,7 @@ class ActorBase(GateObject):
         if output_name not in self.user_output:
             fatal(f"No output named '{output_name}' found for actor {self.name}.")
 
-    def get_output_path(self, output_name=None, which='merged', **kwargs):
+    def get_output_path(self, output_name=None, which="merged", **kwargs):
         if output_name is None:
             # if no output_name, we check if there is only one single output
             if len(self.user_output) != 1:

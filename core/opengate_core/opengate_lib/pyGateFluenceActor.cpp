@@ -23,13 +23,15 @@ public:
   }
 
   int EndOfRunActionMasterThread(int run_id) override {
-    PYBIND11_OVERLOAD(int, GateFluenceActor, EndOfRunActionMasterThread, run_id);
+    PYBIND11_OVERLOAD(int, GateFluenceActor, EndOfRunActionMasterThread,
+                      run_id);
   }
 };
 
 void init_GateFluenceActor(py::module &m) {
-  py::class_<GateFluenceActor, PyGateFluenceActor, std::unique_ptr<GateFluenceActor, py::nodelete>,
-             GateVActor>(m, "GateFluenceActor")
+  py::class_<GateFluenceActor, PyGateFluenceActor,
+             std::unique_ptr<GateFluenceActor, py::nodelete>, GateVActor>(
+      m, "GateFluenceActor")
       .def(py::init<py::dict &>())
       .def("BeginOfRunActionMasterThread",
            &GateFluenceActor::BeginOfRunActionMasterThread)

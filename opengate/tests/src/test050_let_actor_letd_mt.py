@@ -113,7 +113,7 @@ if __name__ == "__main__":
     LETActor_IDD_t.size = size
     LETActor_IDD_t.spacing = spacing
     LETActor_IDD_t.hit_type = "random"
-    LETActor_IDD_t.averaging_method = 'track_average'
+    LETActor_IDD_t.averaging_method = "track_average"
 
     LETActorName_IDD_d2w = "LETActorOG_d2w"
     LETActor_IDD_d2w = sim.add_actor("LETActor", LETActorName_IDD_d2w)
@@ -188,7 +188,7 @@ if __name__ == "__main__":
 
     """
     is_ok = utility.assert_filtered_imagesprofile1D(
-        ref_filter_filename1=str(doseIDD.get_output_path(output_name='edep')),
+        ref_filter_filename1=str(doseIDD.get_output_path(output_name="edep")),
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
         filename2=str(LETActor_IDD_d.get_output_path(item="quotient")),

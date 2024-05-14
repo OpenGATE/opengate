@@ -18,8 +18,7 @@ public:
   using GateLETActor::GateLETActor;
 
   void BeginOfRunActionMasterThread(int run_id) override {
-    PYBIND11_OVERLOAD(void, GateLETActor, BeginOfRunActionMasterThread,
-                      run_id);
+    PYBIND11_OVERLOAD(void, GateLETActor, BeginOfRunActionMasterThread, run_id);
   }
 
   int EndOfRunActionMasterThread(int run_id) override {
@@ -28,8 +27,9 @@ public:
 };
 
 void init_GateLETActor(py::module &m) {
-  py::class_<GateLETActor, PyGateLETActor, std::unique_ptr<GateLETActor, py::nodelete>,
-             GateVActor>(m, "GateLETActor")
+  py::class_<GateLETActor, PyGateLETActor,
+             std::unique_ptr<GateLETActor, py::nodelete>, GateVActor>(
+      m, "GateLETActor")
       .def(py::init<py::dict &>())
       .def("BeginOfRunActionMasterThread",
            &GateLETActor::BeginOfRunActionMasterThread)

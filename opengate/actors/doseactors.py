@@ -725,39 +725,39 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             },
         ),
         "score_in": (
-            'G4_WATER',
+            "G4_WATER",
             {
                 "doc": "In which material should the LET be scored? "
-                       "You can provide a valid G4 material name, the term 'water', "
-                       "or the term 'material' which means 'the local material where LET is scored. ",
+                "You can provide a valid G4 material name, the term 'water', "
+                "or the term 'material' which means 'the local material where LET is scored. ",
             },
         ),
         "let_to_other_material": (
             False,
             {
                 "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. "
+                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
             },
         ),
         "let_to_water": (
             True,
             {
                 "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. "
+                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
             },
         ),
         "other_material": (
             None,
             {
                 "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. "
+                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
             },
         ),
         "separate_output": (
             False,
             {
                 "doc": "FIXME",
-                "deprecated": "Denominator and numerator images are automatically handled and stored. "
+                "deprecated": "Denominator and numerator images are automatically handled and stored. ",
             },
         ),
     }
@@ -768,9 +768,9 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         self._add_user_output(ActorOutputQuotientImage, "let")
         self.user_output.let.data_container_class.data_items_to_write = {
-            'quotient': None,
-            'numerator': 'numerator',
-            'denominator': 'denominator',
+            "quotient": None,
+            "numerator": "numerator",
+            "denominator": "denominator",
         }
 
         self.__initcpp__()
@@ -791,9 +791,9 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.check_user_input()
 
         extra_suffix = ""
-        if self.averaging_method == 'dose_average':
+        if self.averaging_method == "dose_average":
             extra_suffix = "letd"
-        elif self.averaging_method == 'track_average':
+        elif self.averaging_method == "track_average":
             extra_suffix = "lett"
 
         extra_suffix += f"_scoredin_{self.score_in}"

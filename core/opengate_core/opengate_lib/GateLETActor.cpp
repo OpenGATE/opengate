@@ -146,12 +146,14 @@ void GateLETActor::SteppingAction(G4Step *step) {
         CLHEP::MeV * CLHEP::mm;
 
     if (fScoreInOtherMaterial) {
-      auto dedx_other_material = l.emcalc.ComputeElectronicDEDX(energy, p, l.materialToScoreIn, dedx_cut) /
-                        CLHEP::MeV * CLHEP::mm;
+      auto dedx_other_material = l.emcalc.ComputeElectronicDEDX(
+                                     energy, p, l.materialToScoreIn, dedx_cut) /
+                                 CLHEP::MeV * CLHEP::mm;
 
       // Do we not need to consider the density ratio as well?
-//      auto density_other_material = l.materialToScoreIn->GetDensity() / CLHEP::g * CLHEP::cm3;
-//      auto density_current_material = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
+      //      auto density_other_material = l.materialToScoreIn->GetDensity() /
+      //      CLHEP::g * CLHEP::cm3; auto density_current_material =
+      //      current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
 
       auto SPR_otherMaterial = dedx_other_material / dedx_currstep;
       edep *= SPR_otherMaterial;
