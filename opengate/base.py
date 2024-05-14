@@ -363,6 +363,13 @@ class GateObject:
 
     def __getstate__(self):
         """Method needed for pickling. May be overridden in inheriting classes."""
+        for k, v in self.__dict__.items():
+            if "engine" in k and v is not None:
+                warning(f"Potential bug: Object {self.name} of type {self.type_name} "
+                        f"had a reference to {k} that was not None when being pickled. "
+                        f"That should not be the case! \n"
+                        f"Info for developers: \n"
+                        f"Probably, a line self.{k}=None is needed in {self.type_name}.close().")
         if self.simulation is not None and self.simulation.verbose_getstate:
             warning(
                 f"__getstate__() called in object '{self.name}' of type {type(self).__name__}."
