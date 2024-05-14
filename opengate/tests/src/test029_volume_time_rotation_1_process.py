@@ -16,12 +16,15 @@ if __name__ == "__main__":
     # create sim without AA
     test029.create_simulation(sim, False, paths)
 
+    # for later reference, get the actors that were created by the helper function above
+    proj_actor = sim.actor_manager.get_actor('Projection')
+    stats = sim.actor_manager.get_actor('Stats')
+
     # initialize & start
     sim.run(start_new_process=True)
 
     # -------------------------
     gate.exception.warning("Compare stats")
-    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "stats029.txt")
     print(
@@ -36,7 +39,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj029.mhd",
-            paths.output / "proj029.mhd",
+            proj_actor.get_output_path(),  # get the path by asking the actor; better than hard-code the path
             stats,
             tolerance=59,
             ignore_value=0,
