@@ -964,7 +964,7 @@ class SimulationEngine(GateSingletonFatal):
         # LATER : option to wait the end of completion or not
 
         # UI
-        self.ui_session = None
+        self.g4_ui_session = None
         self.g4_ui = None
 
         # random engine
@@ -1012,6 +1012,7 @@ class SimulationEngine(GateSingletonFatal):
         self.visu_engine = None
 
     def release_g4_references(self):
+        self.g4_ui_session = None
         self.g4_ui = None
         self.g4_HepRandomEngine = None
         self.g4_StateManager = None
@@ -1176,7 +1177,7 @@ class SimulationEngine(GateSingletonFatal):
             )
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
-        self.ui_session = ui
+        self.g4_ui_session = ui
         # we must keep a ref to ui_manager
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         if self.g4_ui is None:
