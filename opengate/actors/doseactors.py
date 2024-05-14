@@ -703,40 +703,61 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     """
 
     user_info_defaults = {
+        "averaging_method": (
+            "dose_average",
+            {
+                "doc": "How to calculate the LET?",
+                "allowed_values": ("dose_average", "track_average"),
+            },
+        ),
         "dose_average": (
             False,
             {
                 "doc": "Calculate dose-averaged LET?",
+                "deprecated": "Use averaging_method='dose_average' instead",
             },
         ),
         "track_average": (
             False,
             {
                 "doc": "Calculate track-averaged LET?",
+                "deprecated": "Use averaging_method='track_average' instead",
+            },
+        ),
+        "score_in": (
+            'G4_WATER',
+            {
+                "doc": "In which material should the LET be scored? "
+                       "You can provide a valid G4 material name, the term 'water', "
+                       "or the term 'material' which means 'the local material where LET is scored. ",
             },
         ),
         "let_to_other_material": (
             False,
             {
                 "doc": "FIXME",
+                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. "
             },
         ),
         "let_to_water": (
-            False,
+            True,
             {
                 "doc": "FIXME",
+                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. "
             },
         ),
         "other_material": (
-            "",
+            None,
             {
                 "doc": "FIXME",
+                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. "
             },
         ),
         "separate_output": (
             False,
             {
                 "doc": "FIXME",
+                "deprecated": "Denominator and numerator images are automatically handled and stored. "
             },
         ),
     }
@@ -753,23 +774,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         g4.GateLETActor.__init__(self, self.user_info)
         self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
-    def check_user_input(self):
-        VoxelDepositActor.check_user_input(self)
-
-        if self.dose_average == self.track_average:
-            fatal(
-                f"Ambiguous to enable dose and track averaging: \ndose_average: {self.user_info.dose_average} \ntrack_average: {self.user_info.track_average} \nOnly one option can and must be set to True"
-            )
-
-        if self.other_material:
-            self.let_to_other_material = True
-        if self.let_to_other_material and not self.other_material:
-            fatal(
-                f"let_to_other_material enabled, but other_material not set: {self.other_material}"
-            )
-        if self.let_to_water:
-            self.other_material = "G4_WATER"
-
     def initialize(self):
         """
         At the start of the run, the image is centered according to the coordinate system of
@@ -782,12 +786,12 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.check_user_input()
 
         extra_suffix = ""
-        if self.dose_average:
+        if self.averaging_method == 'dose_average':
             extra_suffix = "letd"
-        elif self.track_average:
+        elif self.averaging_method == 'track_average':
             extra_suffix = "lett"
-        if self.let_to_other_material or self.let_to_water:
-            extra_suffix += f"_convto_{self.other_material}"
+
+        extra_suffix += f"_scoredin_{self.score_in}"
         extra_suffix.lstrip(
             "_"
         )  # make sure to remove left-sided underscore in case there is one
