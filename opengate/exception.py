@@ -18,6 +18,13 @@ class GateFeatureUnavailableError(Exception):
     """
 
 
+class GateImplementationError(Exception):
+    """Raise this if a feature is used that is (currently) unavailable.
+    Ideally, provide the user with information about alternatives.
+    Can be used as temporary workaround during refactorings.
+    """
+
+
 try:
     color_error = colored.fg("red") + colored.attr("bold")
     color_warning = colored.fg("orange_1")
