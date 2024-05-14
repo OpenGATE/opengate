@@ -81,7 +81,7 @@ class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
         g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
 
 
-class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
+class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
     user_info_defaults = {
         "value_min": (
             0,
@@ -103,7 +103,10 @@ class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
 
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
-        g4.GateThresholdAttributeFilter.__init__(self)  # no argument in cpp side
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateThresholdAttributeFilter.__init__(self)
 
 
 filter_classes = {
