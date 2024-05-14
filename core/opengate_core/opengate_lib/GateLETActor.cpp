@@ -38,11 +38,12 @@ void GateLETActor::InitializeUserInput(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInput(user_info);
 
-  fdoseAverage = DictGetBool(user_info, "dose_average");
-  ftrackAverage = DictGetBool(user_info, "track_average");
-  fLETtoOtherMaterial = DictGetBool(user_info, "let_to_other_material");
-  fotherMaterial = DictGetStr(user_info, "other_material");
-  // fQAverage = DictGetBool(user_info, "qAverage");
+  fAveragingMethod = DictGetStr(user_info, "averaging_method");
+  fScoreIn = DictGetStr(user_info, "score_in");
+  if (fScoreIn != "material") {
+    fScoreInOtherMaterial = true;
+  }
+
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
   fHitType = DictGetStr(user_info, "hit_type");
@@ -64,11 +65,16 @@ void GateLETActor::BeginOfRunAction(const G4Run *) {
   // compute volume of a dose voxel
   auto sp = cpp_numerator_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
-  static G4Material *water =
-      G4NistManager::Instance()->FindOrBuildMaterial(fotherMaterial);
+
+  if (fScoreInOtherMaterial) {
+    auto &l = fThreadLocalData.Get();
+    l.materialToScoreIn =
+        G4NistManager::Instance()->FindOrBuildMaterial(fScoreIn);
+  }
 }
 
 void GateLETActor::SteppingAction(G4Step *step) {
+
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -112,12 +118,9 @@ void GateLETActor::SteppingAction(G4Step *step) {
     auto w = step->GetTrack()->GetWeight();
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
     double dedx_cut = DBL_MAX;
-    // dedx
+
     auto *current_material = step->GetPreStepPoint()->GetMaterial();
     auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
-    // double dedx_currstep = 0., dedx_water = 0.;
-    // double density_water = 1.0;
-    //  other material
     const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
 
     auto energy1 = step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
@@ -134,30 +137,35 @@ void GateLETActor::SteppingAction(G4Step *step) {
     // G4_WATER (we are systematically missing a little bit of dose of
     // course with this solution)
 
-    if (p == G4Gamma::Gamma())
+    if (p == G4Gamma::Gamma()) {
       p = G4Electron::Electron();
-    auto &l = fThreadLocalData.Get().emcalc;
+    }
+    auto &l = fThreadLocalData.Get();
     auto dedx_currstep =
-        l.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
+        l.emcalc.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
         CLHEP::MeV * CLHEP::mm;
 
-    auto steplength = step->GetStepLength() / CLHEP::mm;
-    double scor_val_num = 0.;
-    double scor_val_den = 0.;
-
-    if (fLETtoOtherMaterial) {
-      auto density_water = water->GetDensity() / CLHEP::g * CLHEP::cm3;
-      auto dedx_water = l.ComputeElectronicDEDX(energy, p, water, dedx_cut) /
+    if (fScoreInOtherMaterial) {
+      auto dedx_other_material = l.emcalc.ComputeElectronicDEDX(energy, p, l.materialToScoreIn, dedx_cut) /
                         CLHEP::MeV * CLHEP::mm;
-      auto SPR_otherMaterial = dedx_water / dedx_currstep;
+
+      // Do we not need to consider the density ratio as well?
+//      auto density_other_material = l.materialToScoreIn->GetDensity() / CLHEP::g * CLHEP::cm3;
+//      auto density_current_material = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
+
+      auto SPR_otherMaterial = dedx_other_material / dedx_currstep;
       edep *= SPR_otherMaterial;
       dedx_currstep *= SPR_otherMaterial;
     }
 
-    if (fdoseAverage) {
+    double scor_val_num = 0.;
+    double scor_val_den = 0.;
+
+    if (fAveragingMethod == "dose_average") {
       scor_val_num = edep * dedx_currstep / CLHEP::MeV / CLHEP::MeV * CLHEP::mm;
       scor_val_den = edep / CLHEP::MeV;
-    } else if (ftrackAverage) {
+    } else if (fAveragingMethod == "track_average") {
+      auto steplength = step->GetStepLength() / CLHEP::mm;
       scor_val_num = steplength * dedx_currstep * w / CLHEP::MeV;
       scor_val_den = steplength * w / CLHEP::mm;
     }

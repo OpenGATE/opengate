@@ -46,6 +46,8 @@ public:
 
   // Option: indicate if we must compute dose in Gray also
   std::string fPhysicalVolumeName;
+  std::string fAveragingMethod;
+  std::string fScoreIn;
   bool fdoseAverage;
   bool ftrackAverage;
   bool fLETtoOtherMaterial;
@@ -57,10 +59,11 @@ private:
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
 
-  G4Material *water;
+  bool fScoreInOtherMaterial = false;
 
   struct threadLocalT {
     G4EmCalculator emcalc;
+    G4Material *materialToScoreIn;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };
