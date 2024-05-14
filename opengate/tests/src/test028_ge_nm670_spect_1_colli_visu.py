@@ -6,7 +6,9 @@ import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test028_ge_nm670_spect", output_folder="test028"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -32,7 +34,7 @@ if __name__ == "__main__":
     sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect, crystal = gate_spect.add_spect_head(sim, "spect", debug=True)
+    spect, colli, crystal = gate_spect.add_spect_head(sim, "spect", debug=True)
     psd = 6.11 * cm
     spect.translation = [0, 0, -(20 * cm + psd)]
 

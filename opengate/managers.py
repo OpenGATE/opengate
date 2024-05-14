@@ -79,7 +79,6 @@ from .actors.digitizers import (
     PhaseSpaceActor,
 )
 
-
 particle_names_Gate_to_G4 = {
     "gamma": "gamma",
     "electron": "e-",
@@ -87,7 +86,6 @@ particle_names_Gate_to_G4 = {
     "proton": "proton",
     "neutron": "neutron",
 }
-
 
 actor_types = {
     "DoseActor": DoseActor,
@@ -360,13 +358,6 @@ class ActorManager(GateObject):
         for k, v in d["actors"].items():
             a = self.add_actor(v["object_type"], name=v["user_info"]["name"])
             a.from_dictionary(v)
-
-    """def __getstate__(self):
-        if self.simulation.verbose_getstate:
-            gate.exception.warning("Getstate ActorManager")
-        # needed to not pickle. Need to reset user_info_actors to avoid to store the actors
-        self.user_info_actors = {}
-        return self.__dict__"""
 
     def get_actor(self, actor_name):
         try:
@@ -1568,11 +1559,6 @@ class Simulation(GateObject):
 
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
-
-    # def start(self, start_new_process=False):
-    #     se = SimulationEngine(self, start_new_process=start_new_process)
-    #     self.output = se.start()
-    #     return self.output
 
     @property
     def multithreaded(self):

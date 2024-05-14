@@ -7,7 +7,9 @@ import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import itk
 import numpy as np
 
-paths = utility.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
+paths = utility.get_default_test_paths(
+    __file__, "gate_test028_ge_nm670_spect", output_folder="test028"
+)
 
 
 def create_spect_simu(
@@ -25,6 +27,7 @@ def create_spect_simu(
     sim.check_volumes_overlap = False
     sim.random_engine = "MixMaxRng"
     sim.random_seed = 123456789
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -127,8 +130,8 @@ def create_spect_simu(
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
             crystal = v
-    hc.mother = crystal.name
-    hc.output = ""  # No output paths.output / 'test028.root'
+    hc.attached_to = crystal.name
+    hc.output_filename = "test028_4.root"  # No output paths.output / 'test028.root'
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -139,23 +142,24 @@ def create_spect_simu(
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.mother = crystal.name
+    sc.attached_to = crystal.name
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     # sc.policy = 'EnergyWeightedCentroidPosition'
     sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep", "KineticEnergy"]
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     # EnergyWindows
     cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
-    cc.mother = crystal.name
+    cc.attached_to = crystal.name
     cc.input_digi_collection = "Singles"
     cc.channels = [
         {"name": "scatter", "min": 114 * keV, "max": 126 * keV},
         {"name": "peak140", "min": 126 * keV, "max": 154.55 * keV},
         # {'name': 'spectrum', 'min': 0 * keV, 'max': 5000 * keV}  # should be strictly equal to 'Singles'
     ]
-    cc.output = hc.output
+    cc.output_filename = hc.output_filename
+    print("ene win digit output path", cc.get_output_path())
 
     # projection
     for k, v in sim.volume_manager.volumes.items():
@@ -163,13 +167,15 @@ def create_spect_simu(
             crystal = v
     # 2D binning projection
     proj = sim.add_actor("DigitizerProjectionActor", "Projection")
-    proj.mother = crystal.name
+    proj.attached_to = crystal.name
     # we set two times the spectrum channel to compare with Gate output
     proj.input_digi_collections = ["Singles", "scatter", "peak140", "Singles"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet
-    proj.output = paths.output / "proj028_colli.mhd"
+    proj.output_filename = "proj028_colli.mhd"
+    print("proj filename", proj.output_filename)
+    print("proj output path", proj.get_output_path())
 
     # rotate spect
     cm = gate.g4_units.cm
@@ -243,7 +249,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
 
     # read image and force change the offset to be similar to old Gate
     gate.exception.warning("Compare projection image")
-    img = itk.imread(str(paths.output / "proj028_colli.mhd"))
+    img = itk.imread(str(paths.output / "proj028_colli-merged.mhd"))
     spacing = np.array([proj.spacing[0], proj.spacing[1], 1])
     print("spacing", spacing)
     origin = spacing / 2.0

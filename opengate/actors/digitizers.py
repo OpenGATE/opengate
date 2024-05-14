@@ -528,13 +528,15 @@ class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringAc
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def initialize_blurring_parameters(self):
-        if not hasattr(self.blur_sigma, "__len__"):
-            self.blur_sigma = [self.blur_sigma] * 3
         if self.blur_fwhm is not None and self.blur_sigma is not None:
             fatal(
                 f"Error, use blur_sigma or blur_fwhm, not both "
                 f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
             )
+        if not hasattr(self.blur_sigma, "__len__"):
+            self.blur_sigma = [self.blur_sigma] * 3
+        if not hasattr(self.blur_fwhm, "__len__"):
+            self.blur_fwhm = [self.blur_fwhm] * 3
         if self.blur_fwhm is not None:
             self.blur_sigma = np.array(self.blur_fwhm) * fwhm_to_sigma
         if self.blur_sigma is None:
@@ -854,7 +856,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         Get the thickness of the detector volume, in the correct direction.
         By default, it is Z. We use the 'projection_orientation' to get the correct one.
         """
-        vol = self.volume_engine.get_volume(volume)
+        vol = self.actor_engine.simulation_engine.volume_engine.get_volume(volume)
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()
@@ -901,7 +903,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         )
         # keep initial origin
         self.start_output_origin = list(
-            self.user_output.projection.data_per_run[0].GetOrigin()
+            self.user_output.projection.data_per_run[0].get_image_properties()[0].origin
         )
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
@@ -914,7 +916,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         )
 
         # set its properties
-        info = self.user_output.projection.data_per_run[0].get_image_properties()
+        info = self.user_output.projection.data_per_run[0].get_image_properties()[0]
         spacing = info.spacing
         if self.origin_as_image_center:
             origin = -info.size * spacing / 2.0 + spacing / 2.0

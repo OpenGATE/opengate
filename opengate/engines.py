@@ -541,27 +541,6 @@ class ActorEngine(EngineBase):
             actor.close()
         super().close()
 
-    # FIXME: will be obsolete after refactoring
-    # def create_actors(self):
-    #     for (
-    #         ui
-    #     ) in (
-    #         self.simulation_engine.simulation.actor_manager.user_info_actors.values()
-    #     ):
-    #         actor = new_element(ui, self.simulation_engine.simulation)
-    #         log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
-    #         actor.initialize(self.simulation_engine)
-    #         self.actors[ui.name] = actor
-    #
-    #         # create filters
-    #         actor.filters_list = []
-    #         for f in actor.user_info.filters:
-    #             e = new_element(f, self.simulation_engine.simulation)
-    #             e.Initialize(f.__dict__)
-    #             actor.filters_list.append(e)
-    #         # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
-    #         actor.fFilters = actor.filters_list
-
     def initialize(self):
         for actor in self.actor_manager.sorted_actors:
             log.debug(f"Actor: initialize [{actor.actor_type}] {actor.name}")

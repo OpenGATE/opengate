@@ -341,20 +341,6 @@ class AutoMergeActorOutput(ActorOutputBase):
 
 
 class ActorOutputImage(AutoMergeActorOutput):
-    # user_info_defaults = {
-    #     "size": (
-    #         None,
-    #         {
-    #             "doc": "Size of the image in voxels.",
-    #         },
-    #     ),
-    #     "spacing": (
-    #         None,
-    #         {
-    #             "doc": "Spacing of the image.",
-    #         },
-    #     ),
-    # }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -384,14 +370,6 @@ class ActorOutputImage(AutoMergeActorOutput):
                 )
 
     def create_empty_image(self, run_index, size, spacing, origin=None, **kwargs):
-        # if 'size' in kwargs:
-        #     fatal("You cannot provide a size parameter manually. "
-        #           "This is taken from the actor to which this output belongs. ")
-        # if 'spacing' in kwargs:
-        #     fatal("You cannot provide a spacing parameter manually. "
-        #           "This is taken from the actor to which this output belongs. ")
-        # if self.size is None or self.spacing is None:
-        #     fatal("Cannot create an empty image. Set the parameters 'size' and 'spacing' first.")
         if run_index not in self.data_per_run:
             self.data_per_run[run_index] = self.data_container_class()
         self.data_per_run[run_index].create_empty_image(
@@ -420,6 +398,14 @@ class ActorOutputRoot(ActorOutputBase):
 
     def get_output_path(self, *args, **kwargs):
         return super().get_output_path("merged")
+
+    def initialize(self):
+        super().initialize()
+        if self.simulation.multithreaded and not self.write_to_disk:
+            fatal(
+                f"Digitizer actors required root output in multithreaded mode. "
+                f'Please provide output_filename for the digitizer "{self.belongs_to_actor.name}"'
+            )
 
 
 class ActorOutputCppImage(ActorOutputBase):
