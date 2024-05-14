@@ -755,15 +755,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         g4.GateLETActor.__init__(self, self.user_info)
         self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
-    def __getstate__(self):
-        # superclass getstate
-        return_dict = VoxelDepositActor.__getstate__(self)
-        # do not pickle itk images
-        # return_dict["py_numerator_image"] = None
-        # return_dict["py_denominator_image"] = None
-        # return_dict["py_output_image"] = None
-        return return_dict
-
     def check_user_input(self):
         VoxelDepositActor.check_user_input(self)
 
