@@ -221,7 +221,7 @@ class DataItemContainer(DataContainer):
         self.data = [dic(data=None) for dic in self.data_item_classes]
         if data is not None:
             self.set_data(*data)
-        self.custom_output_config = {}
+        self.data_items_to_write = {}
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
@@ -293,20 +293,24 @@ class DataItemContainer(DataContainer):
             ],
         )
 
-    def write(self, path):
-        for k, v in self._get_output_config().items():
-            full_path = self.get_output_path_to_item(path, v)
-            data_to_write = None
+    def write(self, path, item=None):
+        if item is None:
+            items_to_write = self.data_items_to_write
+        else:
+            items_to_write = [item]
+        for k in items_to_write:
+            full_path = self.get_output_path_to_item(path, k)
             try:
                 identifier = int(k)
                 try:
                     data_to_write = self.data[identifier]
                     # self.data[i].write(full_path)
                 except IndexError:
+                    data_to_write = None
                     warning(
                         f"No data for item number {identifier}. Cannot write this output"
                     )
-            except TypeError:
+            except ValueError:
                 identifier = str(k)
                 data_to_write = getattr(self, identifier)  # .write(full_path)
             if data_to_write is not None:
@@ -323,23 +327,23 @@ class DataItemContainer(DataContainer):
         """
         if self._tuple_length > 1:
             if item is None:
-                paths = []
-                for k, v in self._get_output_config().items():
-                    paths.append(insert_suffix_before_extension(actor_output_path, v))
-                return paths
-            else:
-                return insert_suffix_before_extension(
-                    actor_output_path, self._get_output_config()[item]
-                )
+                fatal(f"This data container holds {self._tuple_length} data items. "
+                      f"You must provide an item=... argument. ")
+            return insert_suffix_before_extension(
+                actor_output_path, self._get_suffix_for_item(item)
+            )
         else:
             return actor_output_path
 
-    def _get_output_config(self):
-        output_config = dict([(k, v) for k, v in self.custom_output_config.items()])
-        for i, d in enumerate(self.data):
-            if i not in output_config:
-                output_config[i] = f"item_{i}"
-        return output_config
+    def _get_suffix_for_item(self, identifier):
+        try:
+            suffix = self.data_items_to_write[identifier]
+        except KeyError:
+            try:
+                suffix = f"dataitem_{int(identifier)}"
+            except ValueError:
+                suffix = str(identifier)
+        return suffix
 
     def __getattr__(self, item):
         # check if any of the data items has this attribute
@@ -399,9 +403,18 @@ class QuotientItkImage(DataItemContainer):
         # extend configuration from super class which suffix should be used for which output
         # here: 'numerator' for self.data[0], 'denominator' for self.data[1],
         # and 'quotient' for the property 'quotient', i.e. this data item writes the quotient as additional output
-        self.custom_output_config.update(
-            {0: "numerator", 1: "denominator", "quotient": "quotient"}
-        )
+        self.data_items_to_write = {
+            "numerator": "numerator",
+            "denominator": "denominator",
+            "quotient": "quotient"}
+
+    @property
+    def numerator(self):
+        return self.data[0]
+
+    @property
+    def denominator(self):
+        return self.data[1]
 
     @property
     def quotient(self):
