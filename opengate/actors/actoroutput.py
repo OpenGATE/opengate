@@ -322,23 +322,6 @@ class AutoMergeActorOutput(ActorOutputBase):
             if data is not None:
                 data.write(self.get_output_path(which))
 
-    def get_output_path(self, which="merged", item=None):
-        output_path = super().get_output_path(which)
-        if which == "merged":
-            data = self.merged_data
-        else:
-            try:
-                data = self.data_per_run[which]
-            except KeyError:
-                fatal(
-                    f"Invalid argument 'which' in method get_output_path_for_item(): {which}. "
-                    f"Allowed values are 'merged' or a valid run_index. "
-                )
-        if data is not None:
-            return data.get_output_path_to_item(output_path, item)
-        else:
-            return None
-
 
 class ActorOutputImage(AutoMergeActorOutput):
 
