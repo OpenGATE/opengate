@@ -401,6 +401,7 @@ class ActorOutputRoot(ActorOutputBase):
 
     def initialize(self):
         super().initialize()
+        # FIXME: check why this is actually needed
         if self.simulation.multithreaded and not self.write_to_disk:
             fatal(
                 f"Digitizer actors required root output in multithreaded mode. "
