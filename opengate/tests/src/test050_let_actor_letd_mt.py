@@ -104,12 +104,7 @@ if __name__ == "__main__":
     LETActor_IDD_d.size = size
     LETActor_IDD_d.spacing = spacing
     LETActor_IDD_d.hit_type = "random"
-    LETActor_IDD_d.separate_output = True
-    # both lines do the same thing,
-    setattr(
-        LETActor_IDD_d, "dose_average", True
-    )  # usesful for looping over several options
-    # LETActor_IDD_d.track_average = True ## same as above line
+    LETActor_IDD_d.averaging_method = "dose_average"
 
     LETActorName_IDD_t = "LETActorOG_t"
     LETActor_IDD_t = sim.add_actor("LETActor", LETActorName_IDD_t)
@@ -118,7 +113,7 @@ if __name__ == "__main__":
     LETActor_IDD_t.size = size
     LETActor_IDD_t.spacing = spacing
     LETActor_IDD_t.hit_type = "random"
-    LETActor_IDD_t.track_average = True
+    LETActor_IDD_t.averaging_method = 'track_average'
 
     LETActorName_IDD_d2w = "LETActorOG_d2w"
     LETActor_IDD_d2w = sim.add_actor("LETActor", LETActorName_IDD_d2w)
@@ -129,8 +124,8 @@ if __name__ == "__main__":
     LETActor_IDD_d2w.size = size
     LETActor_IDD_d2w.spacing = spacing
     LETActor_IDD_d2w.hit_type = "random"
-    LETActor_IDD_d2w.other_material = "G4_WATER"
-    setattr(LETActor_IDD_d2w, "dose_average", True)
+    LETActor_IDD_d2w.score_in = "G4_WATER"
+    LETActor_IDD_d2w.averaging_method = "dose_average"
 
     LET_primaries = "LETprimaries"
     LETActor_primaries = sim.add_actor("LETActor", LET_primaries)
@@ -139,7 +134,7 @@ if __name__ == "__main__":
     LETActor_primaries.size = size
     LETActor_primaries.spacing = spacing
     LETActor_primaries.hit_type = "random"
-    LETActor_primaries.dose_average = True
+    LETActor_primaries.averaging_method = "dose_average"
 
     # # add dose actor, without e- (to check)
     fe = sim.add_filter("ParticleFilter", "f")
@@ -151,8 +146,8 @@ if __name__ == "__main__":
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
     print(paths)
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "stats")
+    stat.track_types_flag = True
     # s.filters.append(f)
 
     print("Filters: ", sim.filter_manager)
@@ -164,8 +159,6 @@ if __name__ == "__main__":
     # paths.gate_output
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
-
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -195,10 +188,10 @@ if __name__ == "__main__":
 
     """
     is_ok = utility.assert_filtered_imagesprofile1D(
-        ref_filter_filename1=ref_path / fNameIDD,
+        ref_filter_filename1=str(doseIDD.get_output_path(output_name='edep')),
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
-        filename2=LETActor_IDD_d.get_output_path(item="let"),
+        filename2=str(LETActor_IDD_d.get_output_path(item="quotient")),
         tolerance=20,
         plt_ylim=[0, 25],
     )
@@ -208,7 +201,7 @@ if __name__ == "__main__":
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
-            filename2=LETActor_IDD_t.get_output_path(item="let"),
+            filename2=LETActor_IDD_t.get_output_path(item="quotient"),
             tolerance=8,
             plt_ylim=[0, 18],
         )
@@ -218,7 +211,7 @@ if __name__ == "__main__":
         utility.assert_filtered_imagesprofile1D(
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
-            filename2=LET_primaries.get_output_path(item="let"),
+            filename2=LET_primaries.get_output_path(item="quotient"),
             tolerance=8,
             plt_ylim=[0, 25],
         )
