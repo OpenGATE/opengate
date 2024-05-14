@@ -767,6 +767,11 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         self._add_user_output(ActorOutputQuotientImage, "let")
+        self.user_output.let.data_container_class.data_items_to_write = {
+            'quotient': None,
+            'numerator': 'numerator',
+            'denominator': 'denominator',
+        }
 
         self.__initcpp__()
 
