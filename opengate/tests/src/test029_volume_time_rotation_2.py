@@ -15,7 +15,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # create sim without AA
-    test029.create_simulation(sim, True)
+    test029.create_simulation(sim, True, paths)
 
     # initialize & start
     sim.run()

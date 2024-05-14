@@ -12,13 +12,14 @@ paths = utility.get_default_test_paths(
 )
 
 
-def create_simulation(sim, aa_flag):
+def create_simulation(sim, aa_flag, paths):
     # main options
     sim.g4_verbose = False
     # sim.visu = True
     # sim.visu_type = 'vrml'
     sim.number_of_threads = 1
     sim.random_seed = 3456789
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -120,8 +121,8 @@ def create_simulation(sim, aa_flag):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = "spect_crystal"
-    hc.output = ""  # No output
+    hc.attached_to = "spect_crystal"
+    hc.output_filename = ""  # No output
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -131,33 +132,33 @@ def create_simulation(sim, aa_flag):
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.mother = hc.mother
+    sc.attached_to = hc.attached_to
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWeightedCentroidPosition"
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     # EnergyWindows
     cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
-    cc.mother = hc.mother
+    cc.attached_to = hc.attached_to
     cc.input_digi_collection = "Singles"
     cc.channels = [
         {"name": "scatter", "min": 114 * keV, "max": 126 * keV},
         {"name": "peak140", "min": 126 * keV, "max": 154.55 * keV},
     ]
-    cc.output = hc.output
+    cc.output_filename = hc.output_filename
 
     # projections
     proj = sim.add_actor("DigitizerProjectionActor", "Projection")
-    proj.mother = hc.mother
+    proj.attached_to = hc.attached_to
     proj.input_digi_collections = ["Singles", "scatter", "peak140"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     proj.origin_as_image_center = False
-    proj.output = paths.output / "proj029.mhd"
+    proj.output_filename = "proj029.mhd"
 
     # motion of the spect, create also the run time interval
     motion = sim.add_actor("MotionVolumeActor", "Move")
-    motion.mother = spect.name
+    motion.attached_to = spect.name
     motion.translations = []
     motion.rotations = []
     n = 9
