@@ -7,6 +7,7 @@
 #include <pybind11/pybind11.h>
 
 #include "G4LogicalVolume.hh"
+#include "G4RotationMatrix.hh"
 #include "G4VPVParameterisation.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4Version.hh"
@@ -77,10 +78,15 @@ void init_G4VPhysicalVolume(py::module &m) {
       .def("SetRotation", &G4VPhysicalVolume::SetRotation)
       .def("SetTranslation", &G4VPhysicalVolume::SetTranslation)
 
-      // .def("GetRotation",          f1_GetRotation,
-      //      return_internal_reference<>())
-      // .def("GetRotation",          f2_GetRotation,
-      //      return_internal_reference<>())
+      .def("SetRotationHepRep3x3",
+           [](G4VPhysicalVolume &s, const CLHEP::HepRep3x3 &mat) -> void {
+             // FIXME : seg fault at the end of the execution
+             // probably due to the RotationMatrix
+             // Workaround: we create the pointer here and do no delete it
+             auto *r = new G4RotationMatrix();
+             r->set(mat);
+             s.SetRotation(r);
+           })
       /*
         .def("GetRotation",
         py::overload_cast<const

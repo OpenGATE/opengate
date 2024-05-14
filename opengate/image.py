@@ -43,8 +43,7 @@ def create_3d_image(
     image_type = itk.Image[pixel_type, dim]
     img = image_type.New()
     region = itk.ImageRegion[dim]()
-    # size = np.array(size)
-    region.SetSize(size)
+    region.SetSize([int(s) for s in size])
     region.SetIndex([0, 0, 0])
     # spacing = np.array(spacing)
     img.SetRegions(region)

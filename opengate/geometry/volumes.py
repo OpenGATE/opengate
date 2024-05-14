@@ -466,10 +466,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                     changers.append(new_changer)
                 if "rotation" in dp:
                     new_changer = VolumeRotationChanger(
-                        name=f"{self.name}_volume_translation_changer_{len(changers)}",
+                        name=f"{self.name}_volume_rotation_changer_{len(changers)}",
+                        rotations=dp["rotation"],
                         attached_to=self,
                         volume_manager=self.volume_manager,
-                        rotations=dp["rotation"],
                         repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
                     changers.append(new_changer)
@@ -672,8 +672,6 @@ class RepeatParametrisedVolume(VolumeBase):
         "offset_nb": (1, {"doc": "FIXME"}),
         "start": ("auto", {"doc": "FIXME"}),
     }
-
-    type_name = "RepeatParametrised"
 
     def __init__(self, repeated_volume, *args, **kwargs):
         # FIXME: This should probably be a user_info

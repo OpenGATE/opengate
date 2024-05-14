@@ -5,18 +5,13 @@ import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from scipy.spatial.transform import Rotation
-from opengate.tests import utility
-
-paths = utility.get_default_test_paths(
-    __file__, "gate_test029_volume_time_rotation", "test029"
-)
 
 
 def create_simulation(sim, aa_flag, paths):
     # main options
     sim.g4_verbose = False
     # sim.visu = True
-    # sim.visu_type = 'vrml'
+    sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 3456789
     sim.output_dir = paths.output
@@ -41,12 +36,6 @@ def create_simulation(sim, aa_flag, paths):
     spect, colli, crystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
-    # will be overriden by MotionActor
-    """initial_rot = Rotation.from_euler("X", 90, degrees=True)
-    t, rot = gate.geometry.utility.get_transform_orbiting([0, 25 * cm, 0], "Z", 0)
-    rot = Rotation.from_matrix(rot)
-    spect.translation = t
-    spect.rotation = (rot * initial_rot).as_matrix()"""
 
     # iec phantom
     gate_iec.add_iec_phantom(sim)
@@ -88,7 +77,7 @@ def create_simulation(sim, aa_flag, paths):
         s.particle = "gamma"
         s.energy.type = "mono"
         s.energy.mono = 140 * keV
-        # WARNING : to speed up, this is not a iso source,
+        # WARNING : to speed up, this is not an iso source,
         # s.direction.type = "iso"
         s.direction.type = "momentum"
         s.direction.momentum = [1, 0, 0]
@@ -99,10 +88,7 @@ def create_simulation(sim, aa_flag, paths):
     # physic list
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
-    # either set global cuts like this:
-    # sim.physics_mansager.global_production_cuts.all = 10 * mm
-
-    # ... or like this
+    # set cuts
     sim.physics_manager.set_production_cut(
         volume_name="world",
         particle_name="all",
@@ -117,7 +103,7 @@ def create_simulation(sim, aa_flag, paths):
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "stats029.txt"
+    stat.output_filename = "stats029.txt"
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
@@ -156,11 +142,8 @@ def create_simulation(sim, aa_flag, paths):
     proj.origin_as_image_center = False
     proj.output_filename = "proj029.mhd"
 
-    # motion of the spect, create also the run time interval
-    motion = sim.add_actor("MotionVolumeActor", "Move")
-    motion.attached_to = spect.name
-    motion.translations = []
-    motion.rotations = []
+    translations = []
+    rotations = []
     n = 9
     sim.run_timing_intervals = []
     gantry_rotation = -90
@@ -174,17 +157,18 @@ def create_simulation(sim, aa_flag, paths):
         rot = Rotation.from_matrix(rot)
         rot = rot * initial_rot
         rot = rot.as_matrix()
-        motion.translations.append(t)
-        motion.rotations.append(rot)
+        translations.append(t)
+        rotations.append(rot)
         sim.run_timing_intervals.append([start_t, end])
         gantry_rotation += 10
         start_t = end
         end += 1 * sec / n
+    spect.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
     # Warning : we set the initial position for the spect
     # is it not really used (because the motion actor) but needed to test overlap
-    spect.translation = motion.translations[0]
-    spect.rotation = motion.rotations[0]
+    spect.translation = translations[0]
+    spect.rotation = rotations[0]
 
     print(f"Run {len(sim.run_timing_intervals)} intervals: {sim.run_timing_intervals}")
 

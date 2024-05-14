@@ -10,19 +10,15 @@ from ..decorators import requires_fatal
 
 class DynamicGeometryActor(ActorBase, g4.GateVActor):
 
-    type_name = "DynamicGeometryActor"
-
-    # @staticmethod
-    # def set_default_user_info(user_info):
-    #     ActorBase.set_default_user_info(user_info)
-    #     user_info.geometry_changers = []  # will become obsolete after actor refactoring
-
     def __init__(self, *args, **kwargs):
         kwargs["attached_to"] = __world_name__
         ActorBase.__init__(self, *args, **kwargs)
-        g4.GateVActor.__init__(self, self.user_info)
-        self.AddActions({"BeginOfRunActionMasterThread"})
         self.geometry_changers = []
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateVActor.__init__(self, {"name": self.name})
+        self.AddActions({"BeginOfRunActionMasterThread"})
 
     def close(self):
         for c in self.geometry_changers:
@@ -38,17 +34,11 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
         return return_dict
 
     def initialize(self):
-        super().initialize()
+        ActorBase.initialize(self)
         for c in self.geometry_changers:
             if c.volume_manager is None:
                 c.volume_manager = self.simulation.volume_manager
             c.initialize()
-
-    # such as method will work after actor refactoring
-    # def add_geometry_changer(self, changer):
-    #     """Add geometry changer(s) to the actor. Input can be a single changer or a list of changers.
-    #     """
-    #     self.geometry_changers.extend(list(changer))
 
     def BeginOfRunActionMasterThread(self, run_id):
         gm = g4.G4GeometryManager.GetInstance()
@@ -218,6 +208,7 @@ class VolumeRotationChanger(GeometryChanger):
         super().__init__(*args, **kwargs)
         self.g4_rotations = []
         self.g4_physical_volume = None
+        self.r = []
 
     def close(self):
         self.g4_rotations = []
@@ -235,8 +226,7 @@ class VolumeRotationChanger(GeometryChanger):
         for r in self.rotations:
             g4_rot = rot_np_as_g4(r)
             g4_rot.invert()
-            g4_rot.rep3x3()
-            self.g4_rotations.append(g4_rot)
+            self.g4_rotations.append(g4_rot.rep3x3())
 
     def apply_change(self, run_id):
         # This should better go in initialize, but the initialize() is called before the RunManager is initialized
@@ -246,4 +236,4 @@ class VolumeRotationChanger(GeometryChanger):
             self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
                 self.repetition_index
             )
-        self.g4_physical_volume.SetRotation(self.g4_rotations[run_id])
+        self.g4_physical_volume.SetRotationList(self.g4_rotations[run_id])

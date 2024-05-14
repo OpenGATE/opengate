@@ -35,7 +35,7 @@ def calc_mlc_aperture(
     return np.sum(diff) * leaf_width
 
 
-def add_volume_to_irradiate(sim, name):
+def add_volume_to_irradiate(sim, name, l_cp):
     mm = g4_units.mm
     m = g4_units.m
     plane = sim.add_volume("Box", "water_plane")
@@ -55,24 +55,32 @@ def add_volume_to_irradiate(sim, name):
         1,
     ]
     dose = sim.add_actor("DoseActor", "dose_water_slice")
-    dose.mother = plane.name
-    dose.output = paths.output / "dose_actor_versa_rt_plan.mhd"
+    dose.attached_to = plane.name
+    # dose.output_filename = "dose_actor_versa_rt_plan.mhd" # FIXME
     dose.size = [int(dim_box[0]), int(dim_box[1]), int(dim_box[2])]
     dose.spacing = [voxel_size_x, voxel_size_y, voxel_size_z]
     dose.uncertainty = False
     dose.square = False
     dose.hit_type = "random"
 
-    motion_phsp = sim.add_actor("MotionVolumeActor", "Move_phsp")
+    """motion_phsp = sim.add_actor("MotionVolumeActor", "Move_phsp")
     motion_phsp.mother = plane.name
     motion_phsp.rotations = []
-    motion_phsp.translations = []
+    motion_phsp.translations = []"""
+    rotations = []
+    translations = []
     rotation_angle = rt_plan_parameters["gantry angle"]
     for n in l_cp:
         rot = Rotation.from_euler("y", rotation_angle[n], degrees=True)
         rot = rot.as_matrix()
-        motion_phsp.rotations.append(rot)
-        motion_phsp.translations.append(np.zeros(3))
+        # motion_phsp.rotations.append(rot)
+        # motion_phsp.translations.append(np.zeros(3))
+        rotations.append(rot)
+        translations.append(np.zeros(3))
+    print(rotations)
+    print(translations)
+    print(l_cp, len(l_cp))
+    plane.add_dynamic_parametrisation(rotation=rotations, translation=translations)
 
 
 def add_alpha_source(sim, name, pos_Z, nb_part):
@@ -187,9 +195,11 @@ if __name__ == "__main__":
     z_linac = linac.size[2]
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
     l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
+    print("lcp=", l_cp)
     versa.set_linac_head_motion(
         sim, linac.name, jaws, mlc, rt_plan_parameters, sad=sad, cp_id=l_cp
     )
+    print("lcp=", l_cp)
     MU = rt_plan_parameters["weight"][l_cp[0]]
     nb_part = nb_part / MU
 
@@ -209,7 +219,7 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # add water slice with a dose actor and a motion actor
-    add_volume_to_irradiate(sim, world.name)
+    add_volume_to_irradiate(sim, world.name, l_cp)
 
     # start simulation
     # The number of particles provided (sim.activity) will be adapted
@@ -229,7 +239,7 @@ if __name__ == "__main__":
     theoretical_area = calc_mlc_aperture(leaves, jaws, sad=sad)
 
     dose2 = sim.output.get_actor("dose_water_slice")
-    img_MC = itk.imread(paths.output / dose2.user_info.output)
+    img_MC = itk.imread(dose2.get_output_path("edep"))
     array_MC = itk.GetArrayFromImage(img_MC)
     bool_MC = array_MC[array_MC != 0]
     simulated_area = len(bool_MC) / 4

@@ -101,6 +101,8 @@ class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
         ),
     }
 
+    # FIXME required test dans initialize
+
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()

@@ -85,8 +85,8 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.output_dir = paths.output  # FIXME (not yet)
-    # sim.random_seed = 123456789 # FIXME
+    sim.output_dir = paths.output
+    sim.random_seed = 123456789
     sim.check_volumes_overlap = True
 
     # unit
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     plane.color = [1, 0, 0, 1]  # red
 
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
-    phsp.mother = plane.name
+    phsp.attached_to = plane.name
     phsp.attributes = [
         "KineticEnergy",
         "Weight",
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         "PDGCode",
         "ParticleName",
     ]
-    phsp.output = paths.output / "phsp_versa_mlc.root"
+    phsp.output_filename = "phsp_versa_mlc.root"
 
     # start simulation
     sim.run()

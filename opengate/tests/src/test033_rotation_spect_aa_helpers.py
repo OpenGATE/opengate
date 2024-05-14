@@ -123,11 +123,10 @@ def create_test(sim, nb_thread=1):
             "x", 0, 180, n, head.translation, head.rotation
         )
         motion.priority = 5"""
-        head.translations, head.rotations = (
-            gate.geometry.utility.volume_orbiting_transform(
-                "x", 0, 180, n, head.translation, head.rotation
-            )
+        tr, rot = gate.geometry.utility.volume_orbiting_transform(
+            "x", 0, 180, n, head.translation, head.rotation
         )
+        head.add_dynamic_parametrisation(translation=tr, rotation=rot)
 
     return sources
 
