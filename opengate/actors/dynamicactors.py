@@ -180,18 +180,15 @@ class VolumeTranslationChanger(GeometryChanger):
         return return_dict
 
     def initialize(self):
+        self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
+            self.repetition_index
+        )
+
         self.g4_translations = []
         for t in self.translations:
             self.g4_translations.append(vec_np_as_g4(t))
 
     def apply_change(self, run_id):
-        # This should better go in initialize, but the initialize() is called before the RunManager is initialized
-        # so the physical volumes do not yet exist.
-        # FIXME: revisit after source/actor refactoring
-        if self.g4_physical_volume is None:
-            self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
-                self.repetition_index
-            )
         self.g4_physical_volume.SetTranslation(self.g4_translations[run_id])
 
 
@@ -229,6 +226,10 @@ class VolumeRotationChanger(GeometryChanger):
         return return_dict
 
     def initialize(self):
+        self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
+            self.repetition_index
+        )
+
         self.g4_rotations = []
         for r in self.rotations:
             g4_rot = rot_np_as_g4(r)
@@ -236,11 +237,4 @@ class VolumeRotationChanger(GeometryChanger):
             self.g4_rotations.append(g4_rot.rep3x3())
 
     def apply_change(self, run_id):
-        # This should better go in initialize, but the initialize() is called before the RunManager is initialized
-        # so the physical volumes do not yet exist.
-        # FIXME: revisit after source/actor refactoring
-        if self.g4_physical_volume is None:
-            self.g4_physical_volume = self.attached_to_volume.get_g4_physical_volume(
-                self.repetition_index
-            )
         self.g4_physical_volume.SetRotationHepRep3x3(self.g4_rotations[run_id])
