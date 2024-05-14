@@ -83,7 +83,9 @@ class GeometryChanger(GateObject):
     }
 
     def __init__(self, *args, **kwargs):
-        simulation = kwargs.pop('simulation', None)  # intercept simulation from kwargs if present
+        simulation = kwargs.pop(
+            "simulation", None
+        )  # intercept simulation from kwargs if present
         super().__init__(*args, **kwargs)
 
         # the user might have passed an 'attached_to' keyword argument pointing to a Volume object
