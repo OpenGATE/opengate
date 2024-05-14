@@ -11,7 +11,7 @@ from anytree import PreOrderIter
 
 import opengate_core as g4
 
-from .exception import fatal, warning
+from .exception import fatal, warning, GateImplementationError
 from .decorators import requires_fatal, requires_warning
 from .logger import log
 from .runtiming import assert_run_timing
@@ -1042,12 +1042,15 @@ class SimulationEngine(GateSingletonFatal):
         self.close()
 
     def __getstate__(self):
-        if self.simulation.verbose_getstate:
-            warning("Getstate SimulationEngine")
-        self.g4_StateManager = None
-        # if self.user_fct_after_init is not None:
-        #    gate.warning(f'Warning')
-        return self.__dict__
+        raise GateImplementationError("The __getstate__() method of the SimulationEngine class got called. "
+                                      "That should not happen because it should be closed before anything is pickled "
+                                      "at the end of a subprocess. ")
+        # if self.simulation.verbose_getstate:
+        #     warning("Getstate SimulationEngine")
+        # self.g4_StateManager = None
+        # # if self.user_fct_after_init is not None:
+        # #    gate.warning(f'Warning')
+        # return self.__dict__
 
     def __setstate__(self, d):
         self.__dict__ = d
