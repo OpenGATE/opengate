@@ -119,7 +119,7 @@ class ActorBase(GateObject):
 
     def __getstate__(self):
         state_dict = super().__getstate__()
-        state_dict['actor_engine'] = None
+        state_dict["actor_engine"] = None
         return state_dict
 
     def __setstate__(self, state):
