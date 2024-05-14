@@ -461,7 +461,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                         name=f"{self.name}_volume_translation_changer_{len(changers)}",
                         translations=dp["translation"],
                         attached_to=self,
-                        volume_manager=self.volume_manager,
+                        simulation=self.simulation,
                         repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
                     changers.append(new_changer)
@@ -470,7 +470,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                         name=f"{self.name}_volume_rotation_changer_{len(changers)}",
                         rotations=dp["rotation"],
                         attached_to=self,
-                        volume_manager=self.volume_manager,
+                        simulation=self.simulation,
                         repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
                     changers.append(new_changer)
@@ -1060,7 +1060,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
                         attached_to=self,
-                        volume_manager=self.volume_manager,
+                        simulation=self.simulation,
                         images=dp["image"],
                         label_image=label_image,
                     )
