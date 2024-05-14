@@ -5,7 +5,9 @@ import opengate as gate
 import opengate_core as g4
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "gate_test025_hits_collection")
+paths = utility.get_default_test_paths(
+    __file__, "gate_test025_hits_collection", output_folder="test025"
+)
 
 
 def create_simulation(nb_threads):

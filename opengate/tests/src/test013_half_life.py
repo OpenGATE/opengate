@@ -68,6 +68,7 @@ if __name__ == "__main__":
     beta_src.direction.type = "iso"
     beta_src.half_life = hl
     total_yield = gate.sources.generic.get_rad_yield("F18")
+    print(f"{total_yield=}")
     beta_src.activity = activity * total_yield
 
     # add stat actor

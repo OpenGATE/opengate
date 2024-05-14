@@ -1,5 +1,4 @@
 import json
-import sys
 import numpy as np
 from pathlib import Path, PurePath
 

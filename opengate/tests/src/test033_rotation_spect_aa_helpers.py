@@ -114,15 +114,6 @@ def create_test(sim, nb_thread=1):
     n = 9
     sim.run_timing_intervals = gate.runtiming.range_timing(0, 1 * sec, n)
     for head in heads:
-        """motion = sim.add_actor("MotionVolumeActor", f"Move_{head.name}")
-        motion.mother = head.name
-        (
-            motion.translations,
-            motion.rotations,
-        ) = gate.geometry.utility.volume_orbiting_transform(
-            "x", 0, 180, n, head.translation, head.rotation
-        )
-        motion.priority = 5"""
         tr, rot = gate.geometry.utility.volume_orbiting_transform(
             "x", 0, 180, n, head.translation, head.rotation
         )
