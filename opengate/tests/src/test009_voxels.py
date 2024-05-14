@@ -87,8 +87,8 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test009.mhd"
     dose.attached_to = "patient"
+    dose.user_output.edep_uncertainty.active = True
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.output_coordinate_system = "attached_to_image"

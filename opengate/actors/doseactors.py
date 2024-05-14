@@ -11,8 +11,6 @@ from ..utility import (
 )
 from ..image import (
     update_image_py_to_cpp,
-    get_info_from_image,
-    get_origin_wrt_images_g4_position,
     get_py_image_from_cpp_image,
     itk_image_view_from_array,
     divide_itk_images,

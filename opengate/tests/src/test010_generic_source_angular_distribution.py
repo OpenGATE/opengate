@@ -1,7 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import opengate as gate
 from opengate.tests import utility
-import gatetools
-import numpy as np
 import pathlib
 
 
@@ -40,7 +41,7 @@ if __name__ == "__main__":
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_AIR"
 
-    # set daugther volume for doseactor
+    # set daughter volume for doseactor
     image_volume = sim.add_volume("Box", "image_volume")
     image_volume.material = "G4_Pb"
     image_volume.mother = "world"
@@ -72,7 +73,7 @@ if __name__ == "__main__":
 
     dose = sim.add_actor("DoseActor", "dose")
     dose.output = "test010-generic_source_angular_distribution.mhd"
-    dose.mother = "image_volume"
+    dose.attached_to = "image_volume"
     dose.size = [100, 1, 100]
     dose.spacing = [10 * mm, 1 * cm, 10 * mm]
 
