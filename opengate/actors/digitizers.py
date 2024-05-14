@@ -1,5 +1,4 @@
 import numpy as np
-import itk
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
@@ -12,9 +11,6 @@ from ..image import (
     align_image_with_physical_volume,
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    get_info_from_image,
-    create_3d_image,
-    write_itk_image,
 )
 from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
 
@@ -160,8 +156,8 @@ class Digitizer:
         hc = self.simulation.add_actor(
             "DigitizerHitsCollectionActor", f"{self.name}_hits"
         )
-        hc.mother = self.volume_name
-        hc.output = ""
+        hc.attached_to = self.volume_name
+        hc.output_filename = ""
         hc.attributes = [
             "PostPosition",
             "TotalEnergyDeposit",
@@ -177,10 +173,10 @@ class Digitizer:
         if module_name is None:
             module_name = f"{self.name}_{index}"
         mod = self.simulation.add_actor(module_type, module_name)
-        mod.mother = self.actors[index - 1].mother
+        mod.attached_to = self.actors[index - 1].attached_to
         if "input_digi_collection" in mod.__dict__:
             mod.input_digi_collection = self.actors[index - 1].name
-        mod.output = ""
+        mod.output_filename = ""
         self.actors.append(mod)
         return mod
 
@@ -739,9 +735,12 @@ class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActo
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(
-            ensure_filename_is_str(self.user_output.hits.get_output_path())
-        )
+        if self.user_output.hits.write_to_disk is True:
+            self.SetOutputFilename(
+                ensure_filename_is_str(self.user_output.hits.get_output_path())
+            )
+        else:
+            self.SetOutputFilename("")
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -834,7 +833,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         m = self.attached_to
         if hasattr(m, "__len__") and not isinstance(m, str):
             fatal(
-                f"Sorry, cannot (yet) use several mothers volumes for "
+                f"Sorry, cannot (yet) use several attached_to volumes for "
                 f"DigitizerProjectionActor {self.user_info.name}"
             )
 

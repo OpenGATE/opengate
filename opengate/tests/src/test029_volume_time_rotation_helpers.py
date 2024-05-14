@@ -12,7 +12,6 @@ def create_simulation(sim, aa_flag, paths):
     sim.g4_verbose = False
     # sim.visu = True
     sim.visu_type = "vrml"
-    sim.number_of_threads = 1
     sim.random_seed = 3456789
     sim.output_dir = paths.output
 
@@ -108,7 +107,9 @@ def create_simulation(sim, aa_flag, paths):
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = "spect_crystal"
-    hc.output_filename = ""  # No output
+    hc.output_filename = "test029.root"
+    if sim.number_of_threads == 1:
+        hc.user_output.hits.write_to_disk = False
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
