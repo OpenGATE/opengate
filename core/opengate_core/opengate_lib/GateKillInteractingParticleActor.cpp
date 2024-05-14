@@ -53,17 +53,18 @@ void GateKillInteractingParticleActor::SteppingAction(G4Step *step) {
                                            ->GetLogicalVolume()
                                            ->GetName();
 
-  if (step->GetPostStepPoint()->GetStepStatus() == 1){
+  if (step->GetPostStepPoint()->GetStepStatus() == 1) {
     if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(),
                   logicalVolumeNamePostStep) != fListOfVolumeAncestor.end()) {
       if ((step->GetTrack()->GetTrackID() != ftrackIDAtTheEntrance) ||
-          (step->GetPostStepPoint()->GetKineticEnergy() != fKineticEnergyAtTheEntrance)) {
+          (step->GetPostStepPoint()->GetKineticEnergy() !=
+           fKineticEnergyAtTheEntrance)) {
         auto track = step->GetTrack();
         track->SetTrackStatus(fStopAndKill);
         fNbOfKilledParticles++;
       }
-    fKineticEnergyAtTheEntrance = 0;
-    ftrackIDAtTheEntrance = 0;
+      fKineticEnergyAtTheEntrance = 0;
+      ftrackIDAtTheEntrance = 0;
     }
   }
   fIsFirstStep = false;

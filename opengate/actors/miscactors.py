@@ -430,9 +430,7 @@ class KillActor(g4.GateKillActor, ActorBase):
         g4.GateKillActor.__init__(self, user_info.__dict__)
 
 
-class KillInteractingParticleActor(
-    g4.GateKillInteractingParticleActor, ActorBase
-):
+class KillInteractingParticleActor(g4.GateKillInteractingParticleActor, ActorBase):
     type_name = "KillInteractingParticleActor"
 
     def set_default_user_info(user_info):
@@ -458,6 +456,7 @@ class KillInteractingParticleActor(
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
+
 
 """
 class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
