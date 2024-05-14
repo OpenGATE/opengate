@@ -45,8 +45,8 @@ class EngineBase:
     def __getstate__(self):
         raise GateImplementationError(
             f"The __getstate__() method of the {type(self).__name__} class got called. "
-            "That should not happen because it should be closed before anything is pickled "
-            "at the end of a subprocess. "
+            f"That should not happen because it should be closed before anything is pickled "
+            f"at the end of a subprocess. Check warning messages for clues!"
         )
 
 
@@ -1052,7 +1052,7 @@ class SimulationEngine(GateSingletonFatal):
         raise GateImplementationError(
             "The __getstate__() method of the SimulationEngine class got called. "
             "That should not happen because it should be closed before anything is pickled "
-            "at the end of a subprocess. "
+            "at the end of a subprocess. Check warning messages for clues!"
         )
         # if self.simulation.verbose_getstate:
         #     warning("Getstate SimulationEngine")
