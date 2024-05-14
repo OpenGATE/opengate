@@ -59,6 +59,7 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
     def close(self):
         self.g4_step_limiter_storage = None
         self.g4_special_user_cuts_storage = None
+        self.physics_engine = None
 
     @requires_fatal("physics_engine")
     def ConstructParticle(self):
@@ -212,6 +213,7 @@ class Region(GateObject):
 
     def close(self):
         self.release_g4_references()
+        self.physics_engine = None
 
     def release_g4_references(self):
         self.g4_region = None
