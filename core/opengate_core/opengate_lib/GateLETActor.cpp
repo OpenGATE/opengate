@@ -28,15 +28,16 @@
 G4Mutex SetLETPixelMutex = G4MUTEX_INITIALIZER;
 
 GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
-  // Create the image pointer
-  // (the size and allocation will be performed on the py side)
-  cpp_numerator_image = ImageType::New();
-  cpp_denominator_image = ImageType::New();
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
   fActions.insert("EndSimulationAction");
-  // Option: compute uncertainty
+}
+
+void GateLETActor::InitializeUserInput(py::dict &user_info) {
+  // IMPORTANT: call the base class method
+  GateVActor::InitializeUserInput(user_info);
+
   fdoseAverage = DictGetBool(user_info, "dose_average");
   ftrackAverage = DictGetBool(user_info, "track_average");
   fLETtoOtherMaterial = DictGetBool(user_info, "let_to_other_material");
@@ -47,7 +48,12 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   fHitType = DictGetStr(user_info, "hit_type");
 }
 
-void GateLETActor::InitializeCpp() {}
+void GateLETActor::InitializeCpp() {
+  // Create the image pointer
+  // (the size and allocation will be performed on the py side)
+  cpp_numerator_image = ImageType::New();
+  cpp_denominator_image = ImageType::New();
+}
 
 void GateLETActor::BeginOfRunAction(const G4Run *) {
   // Important ! The volume may have moved, so we re-attach each run
