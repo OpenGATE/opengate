@@ -18,8 +18,8 @@ if __name__ == "__main__":
     test029.create_simulation(sim, True, paths)
 
     # for later reference, get the actors that were created by the helper function above
-    proj_actor = sim.actor_manager.get_actor('Projection')
-    stats = sim.actor_manager.get_actor('Stats')
+    proj_actor = sim.actor_manager.get_actor("Projection")
+    stats = sim.actor_manager.get_actor("Stats")
 
     # initialize & start
     sim.run()

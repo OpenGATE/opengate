@@ -43,9 +43,11 @@ class EngineBase:
         self.simulation_engine = None
 
     def __getstate__(self):
-        raise GateImplementationError(f"The __getstate__() method of the {type(self).__name__} class got called. "
-                                      "That should not happen because it should be closed before anything is pickled "
-                                      "at the end of a subprocess. ")
+        raise GateImplementationError(
+            f"The __getstate__() method of the {type(self).__name__} class got called. "
+            "That should not happen because it should be closed before anything is pickled "
+            "at the end of a subprocess. "
+        )
 
 
 class SourceEngine(EngineBase):
@@ -275,7 +277,7 @@ class PhysicsEngine(EngineBase):
 
     def initialize_parallel_world_physics(self):
         for (
-                world
+            world
         ) in self.physics_manager.simulation.volume_manager.parallel_world_names:
             pwp = g4.G4ParallelWorldPhysics(world, True)
             self.g4_parallel_world_physics.append(pwp)
@@ -346,12 +348,12 @@ class PhysicsEngine(EngineBase):
         # set the deex switches only if the user has touched them.
         # Let G4 set its defaults otherwise (i.e. of all are None)
         if any(
-                [v is not None for v in self.physics_manager.em_switches_world.values()]
+            [v is not None for v in self.physics_manager.em_switches_world.values()]
         ):
             # check that all switches were set in case at least one has been set
             # either all must be set or none
             if any(
-                    [v is None for v in self.physics_manager.em_switches_world.values()]
+                [v is None for v in self.physics_manager.em_switches_world.values()]
             ):
                 fatal(
                     f"Some EM switches for the world region were not set. You must either set all switches or none. The following switches exist: {self.physics_manager.em_switches_world.keys()}"
@@ -371,12 +373,12 @@ class PhysicsEngine(EngineBase):
         # Load optical material properties if special physics constructor "G4OpticalPhysics"
         # is set to True in PhysicsManager's user info
         if (
-                self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
-                is True
+            self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
+            is True
         ):
             # retrieve path to file from physics manager
             for (
-                    vol
+                vol
             ) in self.simulation_engine.simulation.volume_manager.volumes.values():
                 material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
@@ -796,8 +798,8 @@ class VisualisationEngine(EngineBase):
     def initialize_visualisation(self):
         # check if filename is set when needed
         if (
-                "only" in self.simulation.visu_type
-                and self.simulation.visu_filename is None
+            "only" in self.simulation.visu_type
+            and self.simulation.visu_filename is None
         ):
             fatal(
                 f'You must define a visu_filename with "{self.simulation.visu_type}" is set'
@@ -882,7 +884,7 @@ class SimulationOutput:
         if simulation_engine.simulation.multithreaded is True:
             th = {}
             self.sources_by_thread = [{}] * (
-                    simulation_engine.simulation.number_of_threads + 1
+                simulation_engine.simulation.number_of_threads + 1
             )
             for source in simulation_engine.source_engine.sources:
                 n = source.user_info.name
@@ -907,8 +909,8 @@ class SimulationOutput:
 
     def get_source(self, name):
         if (
-                self.simulation.number_of_threads > 1
-                or self.simulation.force_multithread_mode
+            self.simulation.number_of_threads > 1
+            or self.simulation.force_multithread_mode
         ):
             return self.get_source_mt(name, 0)
         if name not in self.sources:
@@ -920,8 +922,8 @@ class SimulationOutput:
 
     def get_source_mt(self, name, thread):
         if (
-                self.simulation.number_of_threads <= 1
-                and not self.simulation.force_multithread_mode
+            self.simulation.number_of_threads <= 1
+            and not self.simulation.force_multithread_mode
         ):
             fatal(f"Cannot use get_source_mt in monothread mode")
         if thread >= len(self.sources_by_thread):
@@ -1047,9 +1049,11 @@ class SimulationEngine(GateSingletonFatal):
         self.close()
 
     def __getstate__(self):
-        raise GateImplementationError("The __getstate__() method of the SimulationEngine class got called. "
-                                      "That should not happen because it should be closed before anything is pickled "
-                                      "at the end of a subprocess. ")
+        raise GateImplementationError(
+            "The __getstate__() method of the SimulationEngine class got called. "
+            "That should not happen because it should be closed before anything is pickled "
+            "at the end of a subprocess. "
+        )
         # if self.simulation.verbose_getstate:
         #     warning("Getstate SimulationEngine")
         # self.g4_StateManager = None
