@@ -182,22 +182,20 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, template=None, **kwargs):
         # GateObject base class digests all user info provided as kwargs
+        # template = kwargs.pop('template', None)
         super().__init__(*args, **kwargs)
 
         # if a template volume is provided, clone all user info items from it
         # except for the name of course
-        if "template" in kwargs:
-            # FIXME: use from_dictionary()
-            self.copy_user_info(kwargs["template"])
+        if template is not None:
+            # FIXME: consider using from_dictionary()
+            self.copy_user_info(template)
             # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
-                if k != "name":
-                    try:
-                        setattr(self, k, kwargs[k])
-                    except KeyError:
-                        pass
+                if k != "name" and k in kwargs:
+                    setattr(self, k, kwargs[k])
 
         # this attribute is used internally for the volumes tree
         # do not set it manually!
