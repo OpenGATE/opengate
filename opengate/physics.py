@@ -662,6 +662,7 @@ class OpticalSurface(GateObject):
 
         # Set the physics manager if present in kwargs,
         # else set to None
+        # FIXME: rely on reference to simulation provided by all GateObjects!
         try:
             self.physics_manager = kwargs["physics_manager"]
         except KeyError:
