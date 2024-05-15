@@ -130,6 +130,21 @@ class PhaseSpaceSourceGenerator:
             entry_stop=self.current_index + current_batch_size,
             library="numpy",
         )
+        # Get the file name
+        # print("root file name: ", self.root_file.file.file_path)
+        # print(
+        #    "threadID: ",
+        #    opengate_core.G4GetThreadId(),
+        #    "batch entry_start: ",
+        #    self.current_index,
+        #    "batch entry_stop: ",
+        #    self.current_index + current_batch_size,
+        #    "batch_size: ",
+        #    current_batch_size,
+        # )
+        # print("batch entry_stop: ", self.current_index + current_batch_size)
+        # print("batch_size: ", current_batch_size)
+
         batch = self.batch
 
         # update index if end of file
@@ -270,6 +285,7 @@ class PhaseSpaceSource(SourceBase):
         user_info.generate_until_next_primary = False
         user_info.primary_lower_energy_threshold = 0
         user_info.primary_PDGCode = 0
+        user_info.verbose = False
         # user_info.time_key = None # FIXME TODO later
         # for debug
         user_info.verbose_batch = False
@@ -312,7 +328,21 @@ class PhaseSpaceSource(SourceBase):
                 gate.fatal(
                     f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
+        # print("threads: ", self.simulation.user_info.number_of_threads)
 
+        # if not set, initialize the entry_start to 0 or to a list for multithreading
+        if ui.entry_start is None:
+            if not opengate_core.IsMultithreadedApplication():
+                ui.entry_start = 0
+            else:
+                # create a entry_start array with the correct number of start entries
+                # all entries are spaced by the number of particles/thread
+                n_threads = self.simulation.user_info.number_of_threads
+                step = np.ceil(ui.n / n_threads) + 1  # Specify the increment value
+                ui.entry_start = [i * step for i in range(n_threads)]
+            print("INFO: entry_start not set. Using default values: ", ui.entry_start)
+
+        # print("intialize entry_start: ", ui.entry_start)
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)
 
