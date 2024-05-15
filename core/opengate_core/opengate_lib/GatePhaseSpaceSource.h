@@ -53,10 +53,12 @@ public:
 
   G4ParticleDefinition *fParticleDefinition;
   G4ParticleTable *fParticleTable;
-  double fCharge;
-  double fMass;
+
+  float fCharge;
+  float fMass;
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
+  bool fVerbose;
 
   // unsigned long fMaxN;
   long fNumberOfGeneratedEvents;
@@ -64,28 +66,28 @@ public:
 
   void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 
-  void SetEnergyBatch(const py::array_t<double> &fEnergy) const;
+  void SetEnergyBatch(const py::array_t<std::float_t> &fEnergy) const;
 
-  void SetWeightBatch(const py::array_t<double> &fWeight) const;
+  void SetWeightBatch(const py::array_t<std::float_t> &fWeight) const;
 
-  void SetPositionXBatch(const py::array_t<double> &fPositionX) const;
+  void SetPositionXBatch(const py::array_t<std::float_t> &fPositionX) const;
 
-  void SetPositionYBatch(const py::array_t<double> &fPositionY) const;
+  void SetPositionYBatch(const py::array_t<std::float_t> &fPositionY) const;
 
-  void SetPositionZBatch(const py::array_t<double> &fPositionZ) const;
+  void SetPositionZBatch(const py::array_t<std::float_t> &fPositionZ) const;
 
-  void SetDirectionXBatch(const py::array_t<double> &fDirectionX) const;
+  void SetDirectionXBatch(const py::array_t<std::float_t> &fDirectionX) const;
 
-  void SetDirectionYBatch(const py::array_t<double> &fDirectionY) const;
+  void SetDirectionYBatch(const py::array_t<std::float_t> &fDirectionY) const;
 
-  void SetDirectionZBatch(const py::array_t<double> &fDirectionZ) const;
+  void SetDirectionZBatch(const py::array_t<std::float_t> &fDirectionZ) const;
 
   // For MT, all threads local variables are gathered here
   struct threadLocalTPhsp {
 
     bool fgenerate_until_next_primary;
     int fprimary_PDGCode;
-    double fprimary_lower_energy_threshold;
+    float fprimary_lower_energy_threshold;
 
     ParticleGeneratorType fGenerator;
     unsigned long fNumberOfGeneratedEvents;
@@ -94,16 +96,16 @@ public:
 
     int *fPDGCode;
 
-    double *fPositionX;
-    double *fPositionY;
-    double *fPositionZ;
+    float *fPositionX;
+    float *fPositionY;
+    float *fPositionZ;
 
-    double *fDirectionX;
-    double *fDirectionY;
-    double *fDirectionZ;
+    float *fDirectionX;
+    float *fDirectionY;
+    float *fDirectionZ;
 
-    double *fEnergy;
-    double *fWeight;
+    float *fEnergy;
+    float *fWeight;
     // double * fTime;
   };
   G4Cache<threadLocalTPhsp> fThreadLocalDataPhsp;

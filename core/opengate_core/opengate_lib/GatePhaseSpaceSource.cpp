@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GatePhaseSpaceSource.h"
+#include "G4IonTable.hh"
 #include "G4ParticleTable.hh"
 #include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
@@ -17,6 +18,7 @@ GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCurrentBatchSize = 0;
   // fMaxN = 0;
   fGlobalFag = false;
+  fVerbose = false;
 }
 
 GatePhaseSpaceSource::~GatePhaseSpaceSource() {
@@ -37,6 +39,8 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   // global (world) or local (mother volume) coordinate system
   fGlobalFag = DictGetBool(user_info, "global_flag");
 
+  fVerbose = DictGetInt(user_info, "verbose");
+
   // This is done in GateSingleParticleSource, but we need charge/mass later
   auto pname = DictGetStr(user_info, "particle");
   fParticleTable = G4ParticleTable::GetParticleTable();
@@ -47,6 +51,9 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   else {
     fUseParticleTypeFromFile = false;
     fParticleDefinition = fParticleTable->FindParticle(pname);
+    if (fParticleDefinition == 0) {
+      Fatal("GatePhaseSpaceSource: PDGCode not found. Aborting.");
+    }
     fCharge = fParticleDefinition->GetPDGCharge();
     fMass = fParticleDefinition->GetPDGMass();
   }
@@ -116,6 +123,13 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
   // check if we should simulate until next primary
   // in this case, generate until a second primary is in the list, excluding the
   // second primary
+
+  // If batch is empty, we generate some particles, could happen at the first
+  // execution
+  if (l.fCurrentBatchSize == 0) {
+    GenerateBatchOfParticles();
+  }
+
   if (l.fgenerate_until_next_primary) {
     int num_primaries = 0;
     while (num_primaries <= 2) {
@@ -129,14 +143,13 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
 
       // don't generate the second primary
       if (num_primaries < 2) {
-        // Go
+        // Create vertex and particle, if called more than once
+        // multiple vertices and particles exist in the event
+        // Geant4 will only print the first one, but generate all of them
         GenerateOnePrimary(event, current_simulation_time);
 
-        // update the index;
+        // update the root file index;
         l.fCurrentIndex++;
-
-        // // update the number of generated event
-        // fNumberOfGeneratedEvents++;
       } else
         break;
     }
@@ -148,11 +161,10 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
     // If batch is empty, we generate some particles
     if (l.fCurrentIndex >= l.fCurrentBatchSize)
       GenerateBatchOfParticles();
-
     // Go
     GenerateOnePrimary(event, current_simulation_time);
 
-    // update the index;
+    // update the root file index;
     l.fCurrentIndex++;
 
     // update the number of generated event
@@ -182,7 +194,6 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
     direction = direction / direction.mag();
     direction = ls.fGlobalRotation * direction;
   }
-
   // Create the final vertex
   AddOnePrimaryVertex(event, position, direction, energy,
                       current_simulation_time, weight);
@@ -197,8 +208,18 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
   auto &l = fThreadLocalDataPhsp.Get();
   if (fUseParticleTypeFromFile) {
     if (l.fPDGCode[l.fCurrentIndex] != 0) {
+      // find if particle exists
       fParticleDefinition =
-          fParticleTable->FindParticle(l.fPDGCode[l.fCurrentIndex]);
+          fParticleTable->FindParticle((int)l.fPDGCode[l.fCurrentIndex]);
+      // if not, find if it is an ion
+      if (fParticleDefinition == 0) {
+        G4IonTable *ionTable = fParticleTable->GetIonTable();
+        fParticleDefinition =
+            ionTable->GetIon((G4int)l.fPDGCode[l.fCurrentIndex]);
+      }
+      if (fParticleDefinition == 0) {
+        Fatal("GatePhaseSpaceSource: PDGCode not found. Aborting.");
+      }
       particle->SetParticleDefinition(fParticleDefinition);
     } else {
       Fatal("GatePhaseSpaceSource: PDGCode not available. Aborting.");
@@ -215,9 +236,15 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
   auto *vertex = new G4PrimaryVertex(position, time);
   vertex->SetPrimary(particle);
   event->AddPrimaryVertex(vertex);
-
   // weights
   event->GetPrimaryVertex(0)->SetWeight(w);
+  if (fVerbose) {
+    std::cout << "Particle PDGCode: " << fParticleDefinition->GetPDGEncoding()
+              << " Energy: " << energy << " Weight: " << w
+              << " Position: " << position << " Direction: " << direction
+              << " Time: " << time << " EventID: " << event->GetEventID()
+              << std::endl;
+  }
 }
 
 void GatePhaseSpaceSource::SetPDGCodeBatch(
@@ -227,49 +254,49 @@ void GatePhaseSpaceSource::SetPDGCodeBatch(
 }
 
 void GatePhaseSpaceSource::SetEnergyBatch(
-    const py::array_t<double> &fEnergy) const {
+    const py::array_t<std::float_t> &fEnergy) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fEnergy = PyBindGetVector(fEnergy);
 }
 
 void GatePhaseSpaceSource::SetWeightBatch(
-    const py::array_t<double> &fWeight) const {
+    const py::array_t<std::float_t> &fWeight) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fWeight = PyBindGetVector(fWeight);
 }
 
 void GatePhaseSpaceSource::SetPositionXBatch(
-    const py::array_t<double> &fPositionX) const {
+    const py::array_t<std::float_t> &fPositionX) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fPositionX = PyBindGetVector(fPositionX);
 }
 
 void GatePhaseSpaceSource::SetPositionYBatch(
-    const py::array_t<double> &fPositionY) const {
+    const py::array_t<std::float_t> &fPositionY) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fPositionY = PyBindGetVector(fPositionY);
 }
 
 void GatePhaseSpaceSource::SetPositionZBatch(
-    const py::array_t<double> &fPositionZ) const {
+    const py::array_t<std::float_t> &fPositionZ) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fPositionZ = PyBindGetVector(fPositionZ);
 }
 
 void GatePhaseSpaceSource::SetDirectionXBatch(
-    const py::array_t<double> &fDirectionX) const {
+    const py::array_t<std::float_t> &fDirectionX) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fDirectionX = PyBindGetVector(fDirectionX);
 }
 
 void GatePhaseSpaceSource::SetDirectionYBatch(
-    const py::array_t<double> &fDirectionY) const {
+    const py::array_t<std::float_t> &fDirectionY) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fDirectionY = PyBindGetVector(fDirectionY);
 }
 
 void GatePhaseSpaceSource::SetDirectionZBatch(
-    const py::array_t<double> &fDirectionZ) const {
+    const py::array_t<std::float_t> &fDirectionZ) const {
   auto &l = fThreadLocalDataPhsp.Get();
   l.fDirectionZ = PyBindGetVector(fDirectionZ);
 }
