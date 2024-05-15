@@ -17,6 +17,7 @@ from .miscactors import (
     SourceInfoActor,
     TestActor,
     KillActor,
+    KillInteractingParticleActor,
     BremSplittingActor,
     ComptSplittingActor,
 )
@@ -45,6 +46,7 @@ actor_type_names = {
     ARFTrainingDatasetActor,
     TestActor,
     KillActor,
+    KillInteractingParticleActor,
     BremSplittingActor,
     ComptSplittingActor,
     DynamicGeometryActor,
