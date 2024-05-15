@@ -11,8 +11,6 @@ import uproot
 
 def test077_test(entry_data, exit_data_1, exit_data_2):
 
-
-
     liste_ekin = []
     liste_evtID = []
     liste_trackID = []
@@ -28,7 +26,6 @@ def test077_test(entry_data, exit_data_1, exit_data_2):
             TID_exit = exit_data_1["TrackID"][j]
             Ekin_entry = entry_data["KineticEnergy"][i]
             Ekin_exit = exit_data_1["KineticEnergy"][j]
-
 
             if (TID_entry != TID_exit) or (Ekin_exit != Ekin_entry):
                 liste_ekin.append(exit_data_1["KineticEnergy"][j])

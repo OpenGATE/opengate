@@ -63,15 +63,13 @@ public:
   double ComputeMeanUncertainty();
   double GetMaxValueOfImage(Image3DType::Pointer imageP);
 
-
-  void EnableEnergyDeposition(G4Step* step);
+  void EnableEnergyDeposition(G4Step *step);
 
   G4int *fTIDElectron = nullptr;
   G4Track *fElectronTrack = nullptr;
   G4bool fIsFirstInteraction;
   G4bool fIsFirstStep;
   G4bool fDepositeTheDose = false;
-
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
@@ -99,7 +97,6 @@ public:
   bool fSTEofMeanFlag;
 
   // For uncertainty computation, we need temporary images
-
 
   G4int fPhotonTID;
 

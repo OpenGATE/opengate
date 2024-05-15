@@ -412,9 +412,11 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         write_itk_image(self.py_temp_image, "temp.mhd")
         write_itk_image(self.py_last_id_image, "lastid.mhd")
         write_itk_image(self.uncertainty_image, "uncer.mhd")"""
-        
-        
-class DoseActorSecondariesFromPhotons(g4.GateDoseActorSecondariesFromPhotons, ActorBase):
+
+
+class DoseActorSecondariesFromPhotons(
+    g4.GateDoseActorSecondariesFromPhotons, ActorBase
+):
     """
     DoseActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume

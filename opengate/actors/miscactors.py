@@ -431,20 +431,19 @@ class KillActor(g4.GateKillActor, ActorBase):
         g4.GateKillActor.__init__(self, user_info.__dict__)
 
 
-
 class KillInteractingParticleActor(g4.GateKillInteractingParticleActor, ActorBase):
     type_name = "KillInteractingParticleActor"
-    
+
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         user_info.list_of_volume_name = []
-    
+
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateKillInteractingParticleActor.__init__(self, user_info.__dict__)
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
-    
+
     def initialize(self, volume_engine=None):
 
         super().initialize(volume_engine)
@@ -459,15 +458,15 @@ class KillInteractingParticleActor(g4.GateKillInteractingParticleActor, ActorBas
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
 
-        
 
-class KillNonInteractingParticleActor(g4.GateKillNonInteractingParticleActor, ActorBase):
+class KillNonInteractingParticleActor(
+    g4.GateKillNonInteractingParticleActor, ActorBase
+):
     type_name = "KillNonInteractingParticleActor"
 
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         user_info.list_of_volume_name = []
-
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
@@ -475,7 +474,6 @@ class KillNonInteractingParticleActor(g4.GateKillNonInteractingParticleActor, Ac
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
 
-
     def initialize(self, volume_engine=None):
 
         super().initialize(volume_engine)
@@ -489,8 +487,6 @@ class KillNonInteractingParticleActor(g4.GateKillNonInteractingParticleActor, Ac
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
-
-
 
 
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
@@ -528,4 +524,3 @@ class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateBOptrBremSplittingActor.__init__(self, user_info.__dict__)
-

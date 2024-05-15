@@ -1,5 +1,10 @@
 from .arfactors import ARFActor, ARFTrainingDatasetActor
-from .doseactors import DoseActor,DoseActorSecondariesFromPhotons, LETActor, FluenceActor
+from .doseactors import (
+    DoseActor,
+    DoseActorSecondariesFromPhotons,
+    LETActor,
+    FluenceActor,
+)
 from .digitizers import (
     DigitizerAdderActor,
     DigitizerReadoutActor,

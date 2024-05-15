@@ -27,15 +27,14 @@ public:
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
-  void PreUserTrackingAction(const G4Track*) override;
+  void PreUserTrackingAction(const G4Track *) override;
 
   std::vector<G4String> fParticlesTypeToKill;
-  G4bool fPassedByTheMotherVolume= false;
+  G4bool fPassedByTheMotherVolume = false;
   G4double fKineticEnergyAtTheEntrance = 0;
   G4int ftrackIDAtTheEntrance = 0;
   G4bool fIsFirstStep = true;
   std::vector<std::string> fListOfVolumeAncestor;
-
 
   long fNbOfKilledParticles{};
 };

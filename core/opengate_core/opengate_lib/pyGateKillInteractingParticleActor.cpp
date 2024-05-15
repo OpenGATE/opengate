@@ -15,8 +15,7 @@ void init_GateKillInteractingParticleActor(py::module &m) {
   py::class_<GateKillInteractingParticleActor,
              std::unique_ptr<GateKillInteractingParticleActor, py::nodelete>,
              GateVActor>(m, "GateKillInteractingParticleActor")
-      .def_readwrite(
-          "fListOfVolumeAncestor",
-          &GateKillInteractingParticleActor::fListOfVolumeAncestor)
+      .def_readwrite("fListOfVolumeAncestor",
+                     &GateKillInteractingParticleActor::fListOfVolumeAncestor)
       .def(py::init<py::dict &>());
 }

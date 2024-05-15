@@ -36,8 +36,8 @@ G4Mutex SetPixelMutexSec = G4MUTEX_INITIALIZER;
 G4Mutex ComputeUncertaintyMutexSec = G4MUTEX_INITIALIZER;
 G4Mutex SetNbEventMutexSec = G4MUTEX_INITIALIZER;
 
-
-GateDoseActorSecondariesFromPhotons::GateDoseActorSecondariesFromPhotons(py::dict &user_info)
+GateDoseActorSecondariesFromPhotons::GateDoseActorSecondariesFromPhotons(
+    py::dict &user_info)
     : GateVActor(user_info, false) {
   // Create the image pointer
   // (the size and allocation will be performed on the py side)
@@ -96,8 +96,8 @@ void GateDoseActorSecondariesFromPhotons::ActorInitialize() {
   //   std::cout<<"fSquareFlag: "<<fSquareFlag<<std::endl;
 }
 
-
-void GateDoseActorSecondariesFromPhotons::BeginOfRunActionMasterThread(int run_id) {
+void GateDoseActorSecondariesFromPhotons::BeginOfRunActionMasterThread(
+    int run_id) {
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
   if (fcpImageForThreadsFlag) {
@@ -137,31 +137,34 @@ void GateDoseActorSecondariesFromPhotons::BeginOfRunAction(const G4Run *run) {
   }
 }
 
-void GateDoseActorSecondariesFromPhotons::BeginOfEventAction(const G4Event *event) {
-  fPhotonTID =0;
+void GateDoseActorSecondariesFromPhotons::BeginOfEventAction(
+    const G4Event *event) {
+  fPhotonTID = 0;
   G4AutoLock mutex(&SetNbEventMutexSec);
   NbOfEvent++;
   threadLocalT &data = fThreadLocalData.Get();
   data.NbOfEvent_worker++;
 }
 
-
-void GateDoseActorSecondariesFromPhotons::PreUserTrackingAction(const G4Track *track) {
-fIsFirstStep = true;
-fIsFirstInteraction = true;
-
+void GateDoseActorSecondariesFromPhotons::PreUserTrackingAction(
+    const G4Track *track) {
+  fIsFirstStep = true;
+  fIsFirstInteraction = true;
 }
 
 void GateDoseActorSecondariesFromPhotons::SteppingAction(G4Step *step) {
 
-  G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName)->GetName();
+  G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()
+                                     ->GetVolume(fMotherVolumeName)
+                                     ->GetName();
 
-  if (step->GetTrack()->GetDynamicParticle()->GetPDGcode() == 22){
-    if ((fIsFirstStep) && (step->GetPreStepPoint()->GetStepStatus() == 1) && (step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() != logNameMotherVolume)){
+  if (step->GetTrack()->GetDynamicParticle()->GetPDGcode() == 22) {
+    if ((fIsFirstStep) && (step->GetPreStepPoint()->GetStepStatus() == 1) &&
+        (step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() !=
+         logNameMotherVolume)) {
       fPhotonTID = step->GetTrack()->GetTrackID();
       fTIDElectron = 0;
       fDepositeTheDose = false;
-      
     }
   }
   fIsFirstStep = false;
@@ -193,15 +196,12 @@ void GateDoseActorSecondariesFromPhotons::SteppingAction(G4Step *step) {
   point[1] = localPosition[1];
   point[2] = localPosition[2];
 
-
-  //Boolean to allow or not the energy deposition
-
-
+  // Boolean to allow or not the energy deposition
 
   // get edep in MeV (take weight into account)
   EnableEnergyDeposition(step);
   auto w = step->GetTrack()->GetWeight();
-  auto edep = 0/ CLHEP::MeV;
+  auto edep = 0 / CLHEP::MeV;
   if (fDepositeTheDose) {
     edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
   }
@@ -309,52 +309,54 @@ void GateDoseActorSecondariesFromPhotons::SteppingAction(G4Step *step) {
 //    }
 //}
 
-// void GateDoseActorSecondariesFromPhotons::EndOfEventAction(const G4Event *event) {}
-
-
+// void GateDoseActorSecondariesFromPhotons::EndOfEventAction(const G4Event
+// *event) {}
 
 void GateDoseActorSecondariesFromPhotons::EnableEnergyDeposition(G4Step *step) {
-  G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName)->GetName();
+  G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()
+                                     ->GetVolume(fMotherVolumeName)
+                                     ->GetName();
 
-  G4String postStepProcessName  = "";
+  G4String postStepProcessName = "";
   G4int nbOfSecondaries = 0;
-  if (step ->GetPostStepPoint()->GetProcessDefinedStep() != 0) {
-    postStepProcessName = step ->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
-
+  if (step->GetPostStepPoint()->GetProcessDefinedStep() != 0) {
+    postStepProcessName =
+        step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
   }
   if (step->GetTrack()->GetTrackID() == fPhotonTID) {
 
-     if (!fIsFirstInteraction){
-        fDepositeTheDose = true;
-      }
-    
-    if(postStepProcessName == "compt"){
-        if (fIsFirstInteraction){
-          nbOfSecondaries = step->GetSecondaryInCurrentStep()->size();
-          if (nbOfSecondaries == 1){
-            G4TrackVector electronTracks = *step->GetfSecondary();
-            fElectronTrack = electronTracks[0];
-          }
+    if (!fIsFirstInteraction) {
+      fDepositeTheDose = true;
+    }
+
+    if (postStepProcessName == "compt") {
+      if (fIsFirstInteraction) {
+        nbOfSecondaries = step->GetSecondaryInCurrentStep()->size();
+        if (nbOfSecondaries == 1) {
+          G4TrackVector electronTracks = *step->GetfSecondary();
+          fElectronTrack = electronTracks[0];
         }
+      }
       fIsFirstInteraction = false;
     }
-  } 
-  if (fElectronTrack != nullptr){
-    if (step->GetTrack()->GetTrackID() == fElectronTrack->GetTrackID()){
-    fDepositeTheDose = false;
-    fElectronTrack = nullptr;
+  }
+  if (fElectronTrack != nullptr) {
+    if (step->GetTrack()->GetTrackID() == fElectronTrack->GetTrackID()) {
+      fDepositeTheDose = false;
+      fElectronTrack = nullptr;
     }
   }
 
-G4String CreatorProcessName ="";
-if (step->GetTrack()->GetCreatorProcess() != 0){
-  CreatorProcessName = step->GetTrack()->GetCreatorProcess()->GetProcessName();
-}
-
-  if ((step->GetTrack()->GetDynamicParticle()->GetPDGcode() == 22) && (step->GetTrack()->GetTrackID() != fPhotonTID)){
-    fDepositeTheDose = true;
+  G4String CreatorProcessName = "";
+  if (step->GetTrack()->GetCreatorProcess() != 0) {
+    CreatorProcessName =
+        step->GetTrack()->GetCreatorProcess()->GetProcessName();
   }
 
+  if ((step->GetTrack()->GetDynamicParticle()->GetPDGcode() == 22) &&
+      (step->GetTrack()->GetTrackID() != fPhotonTID)) {
+    fDepositeTheDose = true;
+  }
 }
 
 double GateDoseActorSecondariesFromPhotons::ComputeMeanUncertainty() {
@@ -455,12 +457,14 @@ void GateDoseActorSecondariesFromPhotons::ComputeSquareImage() {
   }
 }
 
-int GateDoseActorSecondariesFromPhotons::sub2ind(Image3DType::IndexType index3D) {
+int GateDoseActorSecondariesFromPhotons::sub2ind(
+    Image3DType::IndexType index3D) {
 
   return index3D[0] + size_edep[0] * (index3D[1] + size_edep[1] * index3D[2]);
 }
 
-void GateDoseActorSecondariesFromPhotons::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
+void GateDoseActorSecondariesFromPhotons::ind2sub(
+    int index_flat, Image3DType::IndexType &index3D) {
   int z = index_flat / (size_edep[0] * size_edep[1]);
   index_flat %= size_edep[0] * size_edep[1];
   int y = index_flat / size_edep[0];
@@ -471,9 +475,12 @@ void GateDoseActorSecondariesFromPhotons::ind2sub(int index_flat, Image3DType::I
   index3D[2] = z;
 }
 
-void GateDoseActorSecondariesFromPhotons::EndOfRunAction(const G4Run *run) { ComputeSquareImage(); }
+void GateDoseActorSecondariesFromPhotons::EndOfRunAction(const G4Run *run) {
+  ComputeSquareImage();
+}
 
-int GateDoseActorSecondariesFromPhotons::EndOfRunActionMasterThread(int run_id) {
+int GateDoseActorSecondariesFromPhotons::EndOfRunActionMasterThread(
+    int run_id) {
   if (goalUncertainty != 0.0) {
     double unc = ComputeMeanUncertainty();
     if (unc <= goalUncertainty) {
@@ -486,7 +493,8 @@ int GateDoseActorSecondariesFromPhotons::EndOfRunActionMasterThread(int run_id) 
   }
 }
 
-double GateDoseActorSecondariesFromPhotons::GetMaxValueOfImage(Image3DType::Pointer imageP) {
+double GateDoseActorSecondariesFromPhotons::GetMaxValueOfImage(
+    Image3DType::Pointer imageP) {
   itk::ImageRegionIterator<Image3DType> iterator3D(
       imageP, imageP->GetLargestPossibleRegion());
   Image3DType::PixelType max = 0;
