@@ -188,6 +188,14 @@ void init_G4UnionSolid(py::module &);
 
 void init_G4IntersectionSolid(py::module &);
 
+void init_G4VFacet(py::module &m);
+
+void init_G4TessellatedSolid(py::module &m);
+
+void init_G4TriangularFacet(py::module &m);
+
+void init_G4QuadrangularFacet(py::module &m);
+
 // geometry/volume
 void init_G4PVPlacement(py::module &);
 
@@ -424,6 +432,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4UserSteppingAction(m);
 
   init_G4VSolid(m);
+  init_G4VFacet(m);
   init_G4VPhysicalVolume(m);
   init_G4PVReplica(m);
   init_G4VVolumeMaterialScanner(m);
@@ -452,6 +461,9 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4SubtractionSolid(m);
   init_G4UnionSolid(m);
   init_G4IntersectionSolid(m);
+  init_G4TessellatedSolid(m);
+  init_G4TriangularFacet(m);
+  init_G4QuadrangularFacet(m);
 
   init_G4PVPlacement(m);
   init_G4TouchableHistory(m);

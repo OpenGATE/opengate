@@ -53,6 +53,7 @@ from .geometry.volumes import (
     TubsVolume,
     PolyhedraVolume,
     HexagonVolume,
+    TesselatedVolume,
     ConsVolume,
     TrdVolume,
     BooleanVolume,
@@ -824,11 +825,13 @@ class VolumeManager(GateObject):
         "ImageVolume": ImageVolume,
         "TubsVolume": TubsVolume,
         "PolyhedraVolume": PolyhedraVolume,
+        "TextTesselatedVolume": TesselatedVolume,
         "HexagonVolume": HexagonVolume,
         "ConsVolume": ConsVolume,
         "TrdVolume": TrdVolume,
         "BooleanVolume": BooleanVolume,
         "RepeatParametrisedVolume": RepeatParametrisedVolume,
+        "TesselatedVolume": TesselatedVolume,
     }
 
     def __init__(self, simulation, *args, **kwargs):
