@@ -5,6 +5,7 @@ import uproot
 import numpy as np
 import time
 import platform
+from anytree import Node, RenderTree
 import opengate_core as g4
 from anytree import Node, RenderTree
 from .base import ActorBase
@@ -430,20 +431,47 @@ class KillActor(g4.GateKillActor, ActorBase):
         g4.GateKillActor.__init__(self, user_info.__dict__)
 
 
-class KillInteractingParticleActor(
-    g4.GateKillInteractingParticleActor, ActorBase
-):
+
+class KillInteractingParticleActor(g4.GateKillInteractingParticleActor, ActorBase):
     type_name = "KillInteractingParticleActor"
-
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.list_of_volume_name = []
-
+    
+    
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateKillInteractingParticleActor.__init__(self, user_info.__dict__)
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
+    
+    def initialize(self, volume_engine=None):
+
+        super().initialize(volume_engine)
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.mother
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+        
+
+class KillNonInteractingParticleActor(g4.GateKillNonInteractingParticleActor, ActorBase):
+    type_name = "KillNonInteractingParticleActor"
+
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        user_info.list_of_volume_name = []
+
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateKillNonInteractingParticleActor.__init__(self, user_info.__dict__)
+        self.list_of_volume_name = user_info.list_of_volume_name
+        self.user_info.mother = user_info.mother
+
 
     def initialize(self, volume_engine=None):
 
@@ -459,17 +487,7 @@ class KillInteractingParticleActor(
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
 
-"""
-class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
-    type_name = "ComptonSplittingActor"
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.SplittingFactor = 0
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateComptonSplittingActor.__init__(self, user_info.__dict__)
-"""
 
 
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
@@ -507,3 +525,4 @@ class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateBOptrBremSplittingActor.__init__(self, user_info.__dict__)
+
