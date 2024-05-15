@@ -47,8 +47,9 @@ void GateKillInteractingParticleActor::SteppingAction(G4Step *step) {
       ftrackIDAtTheEntrance = step->GetTrack()->GetTrackID();
     }
   }
-
-  G4String logicalVolumeNamePostStep = step->GetPostStepPoint()
+  G4String logicalVolumeNamePostStep = "None";
+  if(step->GetPostStepPoint()->GetPhysicalVolume() !=0)
+    logicalVolumeNamePostStep = step->GetPostStepPoint()
                                            ->GetPhysicalVolume()
                                            ->GetLogicalVolume()
                                            ->GetName();

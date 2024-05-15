@@ -435,6 +435,9 @@ class KillActor(g4.GateKillActor, ActorBase):
 class KillInteractingParticleActor(g4.GateKillInteractingParticleActor, ActorBase):
     type_name = "KillInteractingParticleActor"
     
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        user_info.list_of_volume_name = []
     
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)

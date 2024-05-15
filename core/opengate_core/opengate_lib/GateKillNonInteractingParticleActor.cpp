@@ -49,8 +49,9 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
         ftrackIDAtTheEntrance = step->GetTrack()->GetTrackID();
     }
   }
-
-  G4String logicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
+  G4String logicalVolumeNamePostStep = "None";
+  if(step->GetPostStepPoint()->GetPhysicalVolume() !=0)
+    logicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
   if ((fPassedByTheMotherVolume) && (step->GetPostStepPoint()->GetStepStatus() == 1)){
     if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(),logicalVolumeNamePostStep  ) !=fListOfVolumeAncestor.end()){
       if ((step->GetTrack()->GetTrackID() == ftrackIDAtTheEntrance) && (step->GetPostStepPoint()->GetKineticEnergy() == fKineticEnergyAtTheEntrance)){
