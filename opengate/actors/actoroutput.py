@@ -181,9 +181,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             class_template = data_container_class
         else:
             try:
-                class_template = available_data_container_classes[
-                    data_container_class
-                ]
+                class_template = available_data_container_classes[data_container_class]
             except KeyError:
                 fatal(
                     f"Unknown data item class {data_container_class}. "
@@ -191,12 +189,14 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 )
         # create a version of the data container class specific to this instance
         # _d = dict(class_template.__dict__)
-        # make a deepcopy of writable_data_items because it is a mutable object (dict) and 
+        # make a deepcopy of writable_data_items because it is a mutable object (dict) and
         # we do not want the attribute in the new class to refer back to the base class
         writable_data_items = deepcopy(class_template.writable_data_items)
-        self.data_container_class = type(f"{class_template.__name__}_of_{self.type_name}",
-                                         (class_template, ),
-                                         {"writable_data_items": writable_data_items})
+        self.data_container_class = type(
+            f"{class_template.__name__}_of_{self.type_name}",
+            (class_template,),
+            {"writable_data_items": writable_data_items},
+        )
 
     # def __contains__(self, item):
     #     return item in self.data_per_run

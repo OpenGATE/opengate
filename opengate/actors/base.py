@@ -42,7 +42,7 @@ def _setter_hook_attached_to(self, attached_to):
 
 def shortcut_for_single_output_actor(func):
     """Decorator for shortcut methods and properties that may be used only
-    with actors that handle a single user output. """
+    with actors that handle a single user output."""
 
     @wraps(func)
     def _with_check(self, *args):

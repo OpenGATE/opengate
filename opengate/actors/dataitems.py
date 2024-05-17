@@ -237,12 +237,17 @@ class DataItemContainer(DataContainer):
         # default configuration in case the inheriting class does not define a writable_data_items class attribute
         if len(self.writable_data_items) == 0:
             if self._tuple_length > 1:
-                self.writable_data_items = Box([(i, Box({'suffix': f"dataitem_{i}",
-                                                      'write_to_disk': True}))
-                                                 for i in range(self._tuple_length)])
+                self.writable_data_items = Box(
+                    [
+                        (i, Box({"suffix": f"dataitem_{i}", "write_to_disk": True}))
+                        for i in range(self._tuple_length)
+                    ]
+                )
             else:
                 # no special suffix for single-item containers
-                self.writable_data_items = Box({0: Box({'suffix': None, 'write_to_disk': True})})
+                self.writable_data_items = Box(
+                    {0: Box({"suffix": None, "write_to_disk": True})}
+                )
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
@@ -316,7 +321,11 @@ class DataItemContainer(DataContainer):
 
     def write(self, path, item=None):
         if item is None:
-            items_to_write = [k for k, v in self.writable_data_items.items() if v['write_to_disk'] is True]
+            items_to_write = [
+                k
+                for k, v in self.writable_data_items.items()
+                if v["write_to_disk"] is True
+            ]
         else:
             items_to_write = [item]
         for k in items_to_write:
@@ -347,11 +356,11 @@ class DataItemContainer(DataContainer):
         Do not override this method.
         """
         if self._tuple_length > 1 and item is None:
-                fatal(
-                    f"This data container holds {self._tuple_length} data items. "
-                    f"You must provide an item=... argument. "
-                    f"Valid items of this container are: {list(self.writable_data_items.keys())}."
-                )
+            fatal(
+                f"This data container holds {self._tuple_length} data items. "
+                f"You must provide an item=... argument. "
+                f"Valid items of this container are: {list(self.writable_data_items.keys())}."
+            )
         return insert_suffix_before_extension(
             actor_output_path, self._get_suffix_for_item(item)
         )
@@ -360,10 +369,12 @@ class DataItemContainer(DataContainer):
 
     def _get_suffix_for_item(self, identifier):
         if identifier in self.writable_data_items:
-            return self.writable_data_items[identifier]['suffix']
+            return self.writable_data_items[identifier]["suffix"]
         else:
-            fatal(f"No data item found with identifier {identifier} "
-                  f"in container class {type(self).__name__}.")
+            fatal(
+                f"No data item found with identifier {identifier} "
+                f"in container class {type(self).__name__}."
+            )
             # try:
             #     suffix = f"dataitem_{int(identifier)}"
             # except ValueError:
@@ -425,11 +436,13 @@ class QuotientItkImage(DataItemContainer):
     # override the configuration from the super class
     # which items should be written to disk and how
     # Important: define this at the class level, NOT in the __init__ method
-    writable_data_items = Box({
-        "numerator": Box({'suffix': "numerator", 'write_to_disk': True}),
-        "denominator": Box({'suffix': "denominator", 'write_to_disk': True}),
-        "quotient": Box({'suffix': "quotient", 'write_to_disk': True}),
-    })
+    writable_data_items = Box(
+        {
+            "numerator": Box({"suffix": "numerator", "write_to_disk": True}),
+            "denominator": Box({"suffix": "denominator", "write_to_disk": True}),
+            "quotient": Box({"suffix": "quotient", "write_to_disk": True}),
+        }
+    )
 
     def __init__(self, *args, **kwargs):
         # specify the data item classes

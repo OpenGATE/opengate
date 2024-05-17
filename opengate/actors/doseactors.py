@@ -768,11 +768,13 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         self._add_user_output(ActorOutputQuotientImage, "let")
-        self.user_output.let.writable_data_items = Box({
-            "quotient": Box({'suffix': None, 'write_to_disk': True}),
-            "numerator": Box({'suffix': "numerator", 'write_to_disk': False}),
-            "denominator": Box({'suffix': "denominator", 'write_to_disk': False}),
-        })
+        self.user_output.let.writable_data_items = Box(
+            {
+                "quotient": Box({"suffix": None, "write_to_disk": True}),
+                "numerator": Box({"suffix": "numerator", "write_to_disk": False}),
+                "denominator": Box({"suffix": "denominator", "write_to_disk": False}),
+            }
+        )
 
         self.__initcpp__()
 
