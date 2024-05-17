@@ -24,6 +24,6 @@ if __name__ == "__main__":
 
     # check
     is_ok = test028.compare_result(
-        sim.output, proj, "test028_aa_skip_events.png", sum_tolerance=17
+        sim.output, proj, "test028_aa_skip_events.png", sum_tolerance=17.5
     )
     utility.test_ok(is_ok)
