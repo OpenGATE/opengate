@@ -656,6 +656,10 @@ class TubsVolume(RepeatableVolume, solids.TubsSolid):
     """Volume with a tube or cylindrical section shape."""
 
 
+class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
+    """Volume based on a mesh volume by reading an STL file."""
+
+
 class RepeatParametrisedVolume(VolumeBase):
     """
     Volume created from another volume via translations.
@@ -1159,3 +1163,4 @@ process_cls(TrdVolume)
 process_cls(TubsVolume)
 process_cls(RepeatParametrisedVolume)
 process_cls(ImageVolume)
+process_cls(TesselatedVolume)
