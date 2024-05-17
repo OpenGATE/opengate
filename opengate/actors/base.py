@@ -187,6 +187,13 @@ class ActorBase(GateObject):
     @property
     def actor_type(self):
         return str(type(self).__name__)
+    @shortcut_for_single_output_actor
+    def writable_data_items(self):
+        return list(self.user_output.values())[0].writable_data_items
+
+    @writable_data_items.setter
+    def writable_data_items(self, value):
+        list(self.user_output.values())[0].writable_data_items = value
 
     @property
     def actor_manager(self):
