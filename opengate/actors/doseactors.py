@@ -1,6 +1,7 @@
 import itk
 import numpy as np
 from scipy.spatial.transform import Rotation
+from box import Box
 
 import opengate_core as g4
 from .base import ActorBase
@@ -767,11 +768,11 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         self._add_user_output(ActorOutputQuotientImage, "let")
-        self.user_output.let.data_container_class.data_items_to_write = {
-            "quotient": None,
-            "numerator": "numerator",
-            "denominator": "denominator",
-        }
+        self.user_output.let.writable_data_items = Box({
+            "quotient": Box({'suffix': None, 'write_to_disk': True}),
+            "numerator": Box({'suffix': "numerator", 'write_to_disk': False}),
+            "denominator": Box({'suffix': "denominator", 'write_to_disk': False}),
+        })
 
         self.__initcpp__()
 
