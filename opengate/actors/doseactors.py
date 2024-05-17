@@ -136,7 +136,7 @@ class VoxelDepositActor(ActorBase):
             ]
         except IndexError:
             fatal(
-                f"Error in the {self.actor_type} named {self.name}. "
+                f"Error in the actor {self.type_name} named {self.name}. "
                 f"Could not find the physical volume with index {repeated_volume_index} "
                 f"in volume '{self.attached_to}' to which this actor is attached. "
             )

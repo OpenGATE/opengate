@@ -550,7 +550,7 @@ class ActorEngine(EngineBase):
 
     def initialize(self):
         for actor in self.actor_manager.sorted_actors:
-            log.debug(f"Actor: initialize [{actor.actor_type}] {actor.name}")
+            log.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
             self.simulation_engine.action_engine.register_all_actions(actor)
             actor.initialize()
             # warning : the step actions will be registered by register_sensitive_detectors

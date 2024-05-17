@@ -102,7 +102,7 @@ class ActorOutputBase(GateObject):
 
     def initialize(self):
         if self.output_filename is None:
-            self.output_filename = f"{self.name}_from_{self.belongs_to_actor.actor_type.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
+            self.output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
         if self.write_to_disk is True:
