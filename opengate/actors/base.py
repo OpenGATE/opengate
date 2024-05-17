@@ -170,18 +170,19 @@ class ActorBase(GateObject):
     #     return s
 
     @property
+    @shortcut_for_single_output_actor
     def output_filename(self):
-        if len(self.user_output) > 1:
-            fatal(self._get_error_msg_output_filename())
-        else:
-            return list(self.user_output.values())[0].output_filename
+        # if len(self.user_output) > 1:
+        #     fatal(self._get_error_msg_output_filename())
+        # else:
+        return list(self.user_output.values())[0].output_filename
 
     @output_filename.setter
     def output_filename(self, filename):
-        if len(self.user_output) > 1:
-            fatal(self._get_error_msg_output_filename())
-        else:
-            list(self.user_output.values())[0].output_filename = filename
+        # if len(self.user_output) > 1:
+        #     fatal(self._get_error_msg_output_filename())
+        # else:
+        list(self.user_output.values())[0].output_filename = filename
 
     @property
     def actor_type(self):
