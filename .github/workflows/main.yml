@@ -282,7 +282,7 @@ jobs:
           mv dist/opengate-* dist_opengate/
     - name: Publish to PyPI opengate_core
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE_CORE }}
@@ -290,7 +290,7 @@ jobs:
         skip_existing: true
     - name: Publish to PyPI opengate
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE }}
