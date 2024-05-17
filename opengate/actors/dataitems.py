@@ -1,6 +1,7 @@
 import itk
 import numpy as np
 import json
+from box import Box
 
 from ..exception import fatal, warning
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str, g4_units
@@ -212,16 +213,35 @@ class DataDictionary(DataContainer):
 class DataItemContainer(DataContainer):
     """This is a base class. Inherit from it to implement specific containers."""
 
+    # define writable_data_items here at the class level
+    # because we want changes to it to apply to all instances
+    # of the container class created in an actor output
+    # we fill the dictionary in the __init__ method because we need to know
+    # how many data items the container handles. Nonetheless, this remains a
+    # class-level attribute.
+    # Important: Derived container classes may define their own writable_data_items,
+    # but MUST do so also at the class level
+    writable_data_items = {}
+
     def __init__(self, data_item_classes, *args, data=None, **kwargs):
         self._tuple_length = len(data_item_classes)
         for dic in data_item_classes:
             if DataItem not in dic.mro():
                 fatal(f"Illegal data item class {dic}. ")
         self.data_item_classes = data_item_classes
+
         self.data = [dic(data=None) for dic in self.data_item_classes]
         if data is not None:
             self.set_data(*data)
-        self.data_items_to_write = {}
+
+        # default configuration; inheriting classes may define this differently
+        if self._tuple_length > 1:
+            self.writable_data_items = Box([(i, Box({'suffix': f"dataitem_{i}",
+                                                  'write_to_disk': True}))
+                                             for i in range(self._tuple_length)])
+        else:
+            # no special suffix for single-item containers
+            self.writable_data_items = Box({0: Box({'suffix': None, 'write_to_disk': True})})
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
@@ -399,17 +419,18 @@ class SingleItkImage(DataItemContainer):
 
 class QuotientItkImage(DataItemContainer):
 
+    # override the configuration from the super class
+    # which items should be written to disk and how
+    # Important: define this at the class level, NOT in the __init__ method
+    writable_data_items = Box({
+        "numerator": Box({'suffix': "numerator", 'write_to_disk': True}),
+        "denominator": Box({'suffix': "denominator", 'write_to_disk': True}),
+        "quotient": Box({'suffix': "quotient", 'write_to_disk': True}),
+    })
+
     def __init__(self, *args, **kwargs):
         # specify the data item classes
         super().__init__((ItkImageDataItem, ItkImageDataItem), *args, **kwargs)
-        # extend configuration from super class which suffix should be used for which output
-        # here: 'numerator' for self.data[0], 'denominator' for self.data[1],
-        # and 'quotient' for the property 'quotient', i.e. this data item writes the quotient as additional output
-        self.data_items_to_write = {
-            "numerator": "numerator",
-            "denominator": "denominator",
-            "quotient": "quotient",
-        }
 
     @property
     def numerator(self):
