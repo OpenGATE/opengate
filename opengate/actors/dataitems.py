@@ -315,7 +315,7 @@ class DataItemContainer(DataContainer):
 
     def write(self, path, item=None):
         if item is None:
-            items_to_write = self.data_items_to_write
+            items_to_write = [k for k, v in self.writable_data_items.items() if v['write_to_disk'] is True]
         else:
             items_to_write = [item]
         for k in items_to_write:
