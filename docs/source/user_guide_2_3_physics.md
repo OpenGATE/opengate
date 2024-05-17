@@ -72,6 +72,14 @@ G4EmLivermorePhysics
 G4EmLivermorePolarizedPhysics
 G4EmPenelopePhysics
 G4EmDNAPhysics
+G4EmDNAPhysics_option1
+G4EmDNAPhysics_option2
+G4EmDNAPhysics_option3
+G4EmDNAPhysics_option4
+G4EmDNAPhysics_option5
+G4EmDNAPhysics_option6
+G4EmDNAPhysics_option7
+G4EmDNAPhysics_option8
 G4OpticalPhysics
 ```
 
@@ -91,6 +99,13 @@ Under the hood, this will add two processed to the Geant4 list of processes, G4D
 - <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html>
 - <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>
 - <http://www.lnhb.fr/nuclear-data/nuclear-data-table/>
+
+**WARNING** The chemistry modules, if needed, must be added explicitly. This is done with:
+
+```
+sim.enable_dnachemistry(???)
+```
+<!-- TODO -->
 
 ### Optical Physics Processes
 

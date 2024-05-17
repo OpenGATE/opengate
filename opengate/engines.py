@@ -437,6 +437,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def close(self):
         if self.verbose_close:
@@ -450,6 +451,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = None
         self.g4_EventAction = None
         self.g4_TrackingAction = None
+        self.g4_StackingAction = None
 
     def BuildForMaster(self):
         # This function is call only in MT mode, for the master thread
@@ -491,6 +493,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
+
+        # add chemistry stage
+        sa = g4.GateStackingAction()
+        self.SetUserAction(sa)
+        self.g4_StackingAction.append(sa)
 
 
 class ActorEngine(EngineBase):
@@ -566,6 +573,9 @@ class ActorEngine(EngineBase):
         # Track
         for ta in self.simulation_engine_wr().action_engine.g4_TrackingAction:
             ta.RegisterActor(actor)
+        # Stacking
+        for sa in self.simulation_engine_wr().action_engine.g4_StackingAction:
+            sa.RegisterActor(actor)
         # initialization
         actor.ActorInitialize()
 
