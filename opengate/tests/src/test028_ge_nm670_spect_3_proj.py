@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # main description
     spect = test028.create_spect_simu(sim, paths, 1)
-    test028.test_add_proj(sim, paths)
+    test028.test_add_proj(sim)
 
     # rotate spect
     psd = 6.11 * cm
@@ -29,6 +29,7 @@ if __name__ == "__main__":
 
     sim.run_timing_intervals = [[1 * sec, 2 * sec]]
 
+    # go
     sim.run()
 
     # check

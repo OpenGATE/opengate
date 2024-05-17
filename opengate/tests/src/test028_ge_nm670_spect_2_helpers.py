@@ -172,7 +172,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     return spect
 
 
-def test_add_proj(sim, paths):
+def test_add_proj(sim):
     mm = gate.g4_units.mm
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
