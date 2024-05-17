@@ -14,7 +14,10 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--test_id", "-i", default="all", help="Start test from this number")
+@click.option(
+    "--test_id_start", "-i", default="all", help="Start test from this number"
+)
+@click.option("--test_id_stop", "-s", default="all", help="Stop test from this number")
 @click.option(
     "--random_tests",
     "-r",
@@ -22,7 +25,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     default=False,
     help="Start the last 10 tests and 1/4 of the others randomly",
 )
-def go(test_id, random_tests):
+def go(test_id_start, test_id_stop, random_tests):
     pathFile = pathlib.Path(__file__).parent.resolve()
     if "src" in os.listdir(pathFile):
         mypath = os.path.join(pathFile, "../tests/src")
@@ -39,7 +42,7 @@ def go(test_id, random_tests):
         return False
 
     # Look if torch is installed
-    torch = True
+    torch_is_installed = True
     torch_tests = [
         "test034_gan_phsp_linac.py",
         "test038_gan_phsp_spect_gan_my.py",
@@ -56,7 +59,7 @@ def go(test_id, random_tests):
     try:
         import torch
     except:
-        torch = False
+        torch_is_installed = False
 
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
@@ -75,7 +78,7 @@ def go(test_id, random_tests):
     files = []
     for f in onlyfiles:
         if "wip" in f:
-            print(f"Ignoring: {f:<40} ")
+            print(f"Ignoring: {f:<40} (work in progress)")
             continue
         if "visu" in f:
             continue
@@ -99,33 +102,37 @@ def go(test_id, random_tests):
             continue
         if f in ignored_tests:
             continue
-        if not torch and f in torch_tests:
+        if not torch_is_installed and f in torch_tests:
             print(f"Ignoring: {f:<40} (Torch is not available) ")
             continue
         files.append(f)
 
     files = sorted(files)
-    if test_id != "all":
-        test_id = int(test_id)
-        files_new = []
-        for f in files:
-            id = int(f[4:7])
-            if id >= test_id:
-                files_new.append(f)
-            else:
-                print(f"Ignoring: {f:<40} (< {test_id}) ")
-        files = files_new
-    elif random_tests:
+    if test_id_start == "all":
+        test_id_start = 0
+    if test_id_stop == "all":
+        test_id_stop = len(files)
+    if random_tests:
         files_new = files[-10:]
         prob = 0.25
         files = files_new + random.sample(files[:-10], int(prob * (len(files) - 10)))
         files = sorted(files)
+    else:
+        test_id_start = int(test_id_start)
+        test_id_stop = int(test_id_stop)
+        files_new = []
+        for f in files:
+            id = int(f[4:7])
+            if test_id_start <= id <= test_id_stop:
+                files_new.append(f)
+            else:
+                print(f"Ignore: {f:<40} (< {test_id_start} or > {test_id_stop}) ")
+        files = files_new
 
     print(f"Running {len(files)} tests")
     print(f"-" * 70)
 
     failure = False
-
     for f in files:
         start = time.time()
         print(f"Running: {f:<46}  ", end="")
