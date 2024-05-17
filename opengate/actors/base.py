@@ -195,6 +195,23 @@ class ActorBase(GateObject):
     def writable_data_items(self, value):
         list(self.user_output.values())[0].writable_data_items = value
 
+    def get_output_path(self, output_name=None, which="merged", **kwargs):
+        if output_name is None:
+            # if no output_name, we check if there is only one single output
+            if len(self.user_output) != 1:
+                fatal(
+                    f"Cannot use get_output_path without setting which output_name. "
+                    f"Current output_name are: {self.user_output}"
+                )
+            # get the first (and only) item from user_output
+            output_name = list(self.user_output.keys())[0]
+        if output_name not in self.user_output:
+            fatal(
+                f"This actor does not have any output named '{output_name}'."
+                f"Available outputs are: {list(self.user_output.keys())}"
+            )
+        return self.user_output[output_name].get_output_path(which, **kwargs)
+
     @property
     def actor_manager(self):
         return self.simulation.actor_manager
@@ -255,23 +272,6 @@ class ActorBase(GateObject):
     def _assert_output_exists(self, output_name):
         if output_name not in self.user_output:
             fatal(f"No output named '{output_name}' found for actor {self.name}.")
-
-    def get_output_path(self, output_name=None, which="merged", **kwargs):
-        if output_name is None:
-            # if no output_name, we check if there is only one single output
-            if len(self.user_output) != 1:
-                fatal(
-                    f"Cannot use get_output_path without setting which output_name. "
-                    f"Current output_name are: {self.user_output}"
-                )
-            # get the first (and only) item from user_output
-            output_name = list(self.user_output.keys())[0]
-        if output_name not in self.user_output:
-            fatal(
-                f"This actor does not have any output named '{output_name}'."
-                f"Available outputs are: {list(self.user_output.keys())}"
-            )
-        return self.user_output[output_name].get_output_path(which, **kwargs)
 
     def get_output_path_for_item(self, output_name, which, item):
         return self.user_output[output_name].get_output_path(which, item)
