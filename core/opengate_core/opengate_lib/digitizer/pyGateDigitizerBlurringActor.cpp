@@ -16,6 +16,6 @@ void init_GateDigitizerBlurringActor(py::module &m) {
 
   py::class_<GateDigitizerBlurringActor,
              std::unique_ptr<GateDigitizerBlurringActor, py::nodelete>,
-             GateVActor>(m, "GateDigitizerBlurringActor")
+             GateVDigitizerWithOutputActor>(m, "GateDigitizerBlurringActor")
       .def(py::init<py::dict &>());
 }

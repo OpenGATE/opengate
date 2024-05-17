@@ -4,7 +4,7 @@ from pathlib import Path
 from box import Box
 import sys
 
-from .exception import fatal, warning
+from .exception import fatal, warning, GateDeprecationError, GateFeatureUnavailableError
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
@@ -14,7 +14,28 @@ from .decorators import requires_fatal
 from .logger import log
 
 
-# META CLASSES
+# Singletons
+class MetaSingletonFatal(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in MetaSingletonFatal._instances:
+            MetaSingletonFatal._instances[cls] = super(
+                MetaSingletonFatal, cls
+            ).__call__(*args, **kwargs)
+            return MetaSingletonFatal._instances[cls]
+        else:
+            fatal(
+                f"You are trying to create another instance of {cls.__name__}, but an instance also exists "
+                f"in this process. Only one instance per process can be created. "
+            )
+
+
+class GateSingletonFatal(metaclass=MetaSingletonFatal):
+    pass
+
+
+# base class for objects handling user input
 class MetaUserInfo(type):
     _created_classes = {}
 
@@ -25,28 +46,18 @@ class MetaUserInfo(type):
         )
 
 
-class MetaUserInfoSingleton(type):
-    _instances = {}
-    _created_classes = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in MetaUserInfoSingleton._instances:
-            process_cls(cls)
-            MetaUserInfoSingleton._instances[cls] = super(
-                MetaUserInfoSingleton, type(cls)._created_classes[cls]
-            ).__call__(*args, **kwargs)
-        return MetaUserInfoSingleton._instances[cls]
-
-
 def process_cls(cls):
     """Digest the class's user_infos and store the augmented class
-    in a dictionary inside the meta class which handles the class creation.
-    Note: type(cls) yields the meta class MetaUserInfo or MetaUserInfoSingleton,
-    depending on the class in question (e.g. GateObject, GateObjectSingleton).
+    in a dictionary inside the metaclass which handles the class creation.
+    Example: type(cls) yields the metaclass MetaUserInfo for the class GateObject.
     """
-    if cls not in type(cls)._created_classes:
+    # check if the class already has an attribute inherited_user_info_defaults
+    # cannot use hasattr because it would find the attribute from already processed super classes
+    # -> must use __dict__ which contains only attribute of the specific cls object
+    if "inherited_user_info_defaults" not in cls.__dict__:
         try:
-            type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+            # type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+            digest_user_info_defaults(cls)
         except AttributeError:
             fatal(
                 "Developer error: Looks like you are calling process_cls on a class "
@@ -131,34 +142,35 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
-        if not hasattr(cls, p_name):
-            check_property_name(p_name)
-            setattr(cls, p_name, _make_property(p_name, options=options))
+        if "deprecated" not in options:
+            if not hasattr(cls, p_name):
+                check_property_name(p_name)
+                setattr(cls, p_name, _make_property(p_name, options=options))
 
-            try:
-                expose_items = options["expose_items"]
-            except KeyError:
-                expose_items = False
-            if expose_items is True:
-                # expose_items can only be used on dictionary-type user infos
-                # try to get keys and fail of impossible (=not dict type)
                 try:
-                    for item_name, item_default_value in default_value.items():
-                        check_property_name(item_name)
-                        if not hasattr(cls, item_name):
-                            setattr(
-                                cls,
-                                item_name,
-                                _make_property(item_name, container_dict=p_name),
-                            )
-                        else:
-                            fatal(
-                                f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
-                            )
-                except AttributeError:
-                    fatal(
-                        "Option 'expose_items=True' not available for default_user_info {p_name}."
-                    )
+                    expose_items = options["expose_items"]
+                except KeyError:
+                    expose_items = False
+                if expose_items is True:
+                    # expose_items can only be used on dictionary-type user infos
+                    # try to get keys and fail of impossible (=not dict type)
+                    try:
+                        for item_name, item_default_value in default_value.items():
+                            check_property_name(item_name)
+                            if not hasattr(cls, item_name):
+                                setattr(
+                                    cls,
+                                    item_name,
+                                    _make_property(item_name, container_dict=p_name),
+                                )
+                            else:
+                                fatal(
+                                    f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
+                                )
+                    except AttributeError:
+                        fatal(
+                            "Option 'expose_items=True' not available for default_user_info {p_name}."
+                        )
     return cls
 
 
@@ -189,11 +201,26 @@ def _make_property(property_name, options=None, container_dict=None):
 
         @prop.setter
         def prop(self, value):
+            if "deactivated" in options and options["deactivated"] is True:
+                if value != self.inherited_user_info_defaults[property_name][0]:
+                    raise GateFeatureUnavailableError(
+                        f"The user input parameter {property_name} "
+                        f"is currently deactivated and cannot be set."
+                    )
+            if "deprecated" in options:
+                raise GateDeprecationError(options["deprecated"])
             if container_dict is None:
                 if "setter_hook" in options:
-                    self.user_info[property_name] = options["setter_hook"](self, value)
+                    value_to_be_set = options["setter_hook"](self, value)
                 else:
-                    self.user_info[property_name] = value
+                    value_to_be_set = value
+                if "allowed_values" in options:
+                    if value_to_be_set not in options["allowed_values"]:
+                        fatal(
+                            f"Object {self.name} received illegal value {value_to_be_set} "
+                            f"for user input {property_name}. Allow values are: {options['allowed_values']}."
+                        )
+                self.user_info[property_name] = value_to_be_set
             else:
                 self.user_info[container_dict][property_name] = value
 
@@ -201,24 +228,38 @@ def _make_property(property_name, options=None, container_dict=None):
 
 
 def make_docstring(cls, user_info_defaults):
+    indent = 4 * " "
     if cls.__doc__ is not None:
         docstring = cls.__doc__
         docstring += "\n"
     else:
         docstring = ""
     docstring += 20 * "*" + "\n\n"
-    docstring += "This class has the following user infos and default values:\n\n"
+    docstring += (
+        "This class has the following user input parameters and default values:\n\n"
+    )
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
-        docstring += f"{k}:"
-        docstring += (15 - len(k)) * " "
-        docstring += f"{v[0]}"
-        if "required" in options and options["required"] is True:
-            docstring += "  (must be provided)"
-        docstring += "\n"
-        if "doc" in options:
-            docstring += options["doc"]
+        docstring += f"{k}"
+        if "deprecated" in options:
+            docstring += " -> DEPRECATED\n"
+            docstring += indent
+            docstring += "Info: "
+            docstring += options["deprecated"]
+            docstring += "\n"
+        else:
+            if "required" in options and options["required"] is True:
+                docstring += " (must be provided)"
+            docstring += ":\n"
+            # docstring += (20 - len(k)) * " "
+            docstring += f"{indent}Default value: {default_value}\n"
+            if "allowed_values" in options:
+                docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
+            if "doc" in options:
+                docstring += indent
+                docstring += options["doc"]
+                docstring += "\n"
         docstring += "\n"
     docstring += 20 * "*"
     docstring += "\n"
@@ -226,7 +267,7 @@ def make_docstring(cls, user_info_defaults):
 
 
 def restore_userinfo_properties(cls, attributes):
-    # In the context of subprocessing and pickling,
+    # In the context of sub-processing and pickling,
     # the following line makes sure the class is processed by the function
     # which sets handles the user_info definitions
     # before the class is used to create a new object instance.
@@ -238,18 +279,26 @@ def restore_userinfo_properties(cls, attributes):
     return obj
 
 
-def attach_methods(GateObjectClass):
-    """Convenience function to avoid redundant code.
-    Can be used to add common methods to classes
-    that differ otherwise, e.g. GateObject and GateObjectSingleton.
+# class GateObject(metaclass=MetaUserInfo):
+class GateObject:
+    """This is the base class used for all objects that handle user input in GATE.
 
+    The class is assumed to be processed by process_cls(), either explicitly
+    or via the metaclass MetaUserInfo, before any instances of the class are created.
+    Some class attributes, e.g. inherited_user_info_defaults, are created as part of this processing.
     """
 
+    user_info_defaults = {"name": (None, {"required": True})}
+
     def __new__(cls, *args, **kwargs):
-        new_instance = super(GateObjectClass, cls).__new__(cls)
+        process_cls(cls)
+        new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, simulation=None, **kwargs):
+        self.simulation = None
+        if simulation is not None:
+            self.simulation = simulation
         # prefill user info with defaults
         self.user_info = Box(
             [
@@ -261,7 +310,9 @@ def attach_methods(GateObjectClass):
         for k, v in self.inherited_user_info_defaults.items():
             default_value = v[0]
             options = v[1]
+            # print(f"current inherited user info: {k}")
             if k in kwargs:
+                # print("    ... is in kwargs")
                 # if "check_func" in options.keys():
                 #     user_info_value = options["check_func"](kwargs[k])
                 # else:
@@ -272,11 +323,31 @@ def attach_methods(GateObjectClass):
                 self.user_info[k] = user_info_value
                 kwargs.pop(k)
             else:
+                # print("    ... is NOT in kwargs")
                 if "required" in options.keys() and options["required"] is True:
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
-        super(GateObjectClass, self).__init__()
+        mro = type(self).__mro__
+        parent = mro[mro.index(__class__) + 1]
+        # print(f"next class in line is: {parent}")
+        # print(f"args at this point: {args}")
+        # print(f"kwargs at this point: {kwargs}")
+        if type(parent).__name__ != "pybind11_type":
+            # print("next class is NOT a pybind class ... ")
+            try:
+                super().__init__(*args, **kwargs)
+            except TypeError as e:
+                raise TypeError(
+                    f"There was a problem "
+                    f"while trying to create the {type(self).__name__} called {self.name}. \n"
+                    f"Check if you have provided unknown keyword arguments. "
+                    f"You provided: {list(kwargs.keys())}. \n"
+                    f"Hint: The user input parameters of {type(self).__name__} are: "
+                    f"{list(self.inherited_user_info_defaults.keys())}.\n"
+                )
+        # else:
+        #     print("next class IS a pybind class -> do not call parent class")
 
     def __str__(self):
         ret_string = (
@@ -286,16 +357,29 @@ def attach_methods(GateObjectClass):
         )
         for k, v in self.user_info.items():
             if k != "name":
-                ret_string += f"{__one_indent__}{k}:\n{2*__one_indent__}{v}\n"
+                ret_string += f"{__one_indent__}{k}:\n{2 * __one_indent__}{v}\n"
         ret_string += "***\n"
         return ret_string
 
     def __getstate__(self):
-        """Method needed for pickling. May be be overridden in inheriting classes."""
+        """Method needed for pickling. May be overridden in inheriting classes."""
+        for k, v in self.__dict__.items():
+            if "engine" in k and v is not None:
+                warning(
+                    f"Potential bug: Object {self.name} of type {self.type_name} "
+                    f"had a reference to {k} that was not None when being pickled. "
+                    f"That should not be the case! \n"
+                    f"Info for developers: \n"
+                    f"Probably, a line self.{k}=None is needed in {self.type_name}.close()."
+                )
+        if self.simulation is not None and self.simulation.verbose_getstate:
+            warning(
+                f"__getstate__() called in object '{self.name}' of type {self.type_name}."
+            )
         return self.__dict__
 
     def __setstate__(self, d):
-        """Method needed for pickling. May be be overridden in inheriting classes."""
+        """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
 
     def __reduce__(self):
@@ -307,7 +391,7 @@ def attach_methods(GateObjectClass):
         The return arguments are:
         1) A callable used to create the instance when unpickling
         2) A tuple of arguments to be passed to the callable in 1
-        3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
+        3) The dictionary of the object's properties to be passed to the __setstate__ method (if defined)
         """
         state_dict = self.__getstate__()
         return (
@@ -316,39 +400,35 @@ def attach_methods(GateObjectClass):
             state_dict,
         )
 
+    def __setattr__(self, key, value):
+        # raise an error if the user tries to set an attributed
+        # associated with a deprecated user input parameter
+        if not hasattr(self, key):
+            try:
+                raise GateDeprecationError(
+                    self.inherited_user_info_defaults[key][1]["deprecated"]
+                )
+            except KeyError:
+                super().__setattr__(key, value)
+        else:
+            super().__setattr__(key, value)
+
+    @property
+    def type_name(self):
+        return str(type(self).__name__)
+
     def close(self):
         """Dummy implementation for inherited classes which do not implement this method."""
+        if "simulation" in self.__dict__ and self.simulation is not None:
+            if self.simulation.verbose_close:
+                warning(
+                    f"close() called in object '{self.name}' of type {type(self).__name__}."
+                )
         pass
 
     def release_g4_references(self):
         """Dummy implementation for inherited classes which do not implement this method."""
         pass
-
-    GateObjectClass.__new__ = __new__
-    GateObjectClass.__init__ = __init__
-    GateObjectClass.__str__ = __str__
-    GateObjectClass.__getstate__ = __getstate__
-    GateObjectClass.__setstate__ = __setstate__
-    GateObjectClass.__reduce__ = __reduce__
-    GateObjectClass.close = close
-    GateObjectClass.release_g4_references = release_g4_references
-
-
-# GateObject classes
-class GateObjectSingleton(metaclass=MetaUserInfoSingleton):
-    user_info_defaults = {
-        "name": (
-            None,
-            {"required": True, "doc": "Unique name of this object. Required."},
-        )
-    }
-
-
-attach_methods(GateObjectSingleton)
-
-
-class GateObject(metaclass=MetaUserInfo):
-    user_info_defaults = {"name": (None, {"required": True})}
 
     def copy_user_info(self, other_obj):
         for k in self.user_info.keys():
@@ -393,9 +473,6 @@ class GateObject(metaclass=MetaUserInfo):
                     warning(
                         f"Could not find user info {k} while populating object {self.name} of type {type(self).__name__} from dictionary."
                     )
-
-
-attach_methods(GateObject)
 
 
 class DynamicGateObject(GateObject):
@@ -491,7 +568,7 @@ class DynamicGateObject(GateObject):
             name = f"parametrisation_{len(self.dynamic_params)}"
         self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
         # issue debugging message
-        s = f"Added the folowing dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
+        s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
         log.debug(s)
@@ -502,6 +579,58 @@ class DynamicGateObject(GateObject):
 
 
 # DICTIONARY HANDLING
+
+
+class GateUserInputSwitchDict(Box):
+    """
+    NOT USED YET!
+
+    Specialized version of a Box (dict) to represent a dictionary with boolean switches.
+
+    The switches handled by the object need to be defined when the object is created
+    via a dictionary passed as argument 'default_switches'.
+    No switches can be added later, nor can switches be removed.
+    Switch values are automatically converted to Bool if possible.
+    """
+
+    def __init__(self, default_switches, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._switches = tuple(default_switches.keys())
+        for k, v in default_switches.items():
+            self[k] = v
+
+    def __setitem__(self, key, value):
+        # Do not allow setting entries under the key '_switches' which is used as special attribute
+        if key == "_switches":
+            raise KeyError(f"Keyword '_switches' is not allowed.")
+        # only try setting the item if the key is known
+        elif key in self._switches:
+            try:
+                value_bool = bool(value)
+            except ValueError:
+                raise ValueError(
+                    "You must provide a boolean (or compatible) input, i.e. True or False."
+                )
+            super().__setitem__(key, value_bool)
+        else:
+            raise KeyError(
+                "You cannot add additional switches. You can only turn on/off existing switches."
+            )
+
+    def __delitem__(self, key):
+        """The 'del' operator applied on items is blocked so no entries can be removed."""
+        raise NotImplementedError("You cannot remove switches.")
+
+    def __setattr__(self, key, value):
+        """Make sure to by-pass the __setattr__ method from the Box class for the key '_switches'
+        because Box would otherwise turn this into an entry in self, but we want it to be a pure attribute.
+        """
+        if key == "_switches":
+            object.__setattr__(self, key, value)
+        else:
+            super().__setattr__(key, value)
+
+
 def recursive_userinfo_to_dict(obj):
     """Walk recursively across entries of user_info and convert to appropriate structure.
     Dictionary-like structures are mapped to dictionary and walked across recursively.
@@ -518,7 +647,7 @@ def recursive_userinfo_to_dict(obj):
         ret = []
         for e in obj:
             ret.append(recursive_userinfo_to_dict(e))
-    elif isinstance(obj, (GateObject, GateObjectSingleton)):
+    elif isinstance(obj, (GateObject)):
         ret = obj.to_dictionary()
     else:
         ret = obj

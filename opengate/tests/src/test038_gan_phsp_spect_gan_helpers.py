@@ -170,7 +170,7 @@ def create_simulation(sim, paths, colli="lehr"):
 
     # add default digitizer (it is easy to change parameters if needed)
     gate_spect.add_simplified_digitizer_tc99m(
-        sim, "spect1_crystal", paths.output / "test038_gan_proj.mhd"
+        sim, "spect1_crystal", "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
     singles_actor = sim.get_actor_user_info(f"Singles_spect1_crystal")

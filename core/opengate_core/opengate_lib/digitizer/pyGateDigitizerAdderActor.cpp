@@ -16,7 +16,7 @@ void init_GateHitsAdderActor(py::module &m) {
 
   py::class_<GateDigitizerAdderActor,
              std::unique_ptr<GateDigitizerAdderActor, py::nodelete>,
-             GateVActor>(m, "GateDigitizerAdderActor")
+             GateVDigitizerWithOutputActor>(m, "GateDigitizerAdderActor")
       .def(py::init<py::dict &>())
       .def("SetGroupVolumeDepth",
            &GateDigitizerAdderActor::SetGroupVolumeDepth);

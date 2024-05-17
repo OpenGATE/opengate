@@ -17,6 +17,7 @@ def create_simulation(nb_threads):
     sim.visu = False
     sim.number_of_threads = nb_threads
     sim.check_volumes_overlap = False
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -89,11 +90,11 @@ def create_simulation(nb_threads):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = [crystal1.name, crystal2.name]
-    mt = ""
+    hc.attached_to = [crystal1, crystal2]
+
     if sim.number_of_threads > 1:
-        mt = "_MT"
-    hc.output = paths.output / ("test025_hits" + mt + ".root")
+        hc.extra_suffix = "MT"
+
     hc.attributes = [
         "TotalEnergyDeposit",
         "KineticEnergy",
@@ -126,8 +127,11 @@ def create_simulation(nb_threads):
 
     # hits collection #2
     hc2 = sim.add_actor("DigitizerHitsCollectionActor", "Hits2")
-    hc2.mother = [crystal1.name, crystal2.name]
-    hc2.output = paths.output / ("test025_secondhits" + mt + ".root")
+    hc2.attached_to = [crystal1, crystal2]
+
+    if sim.number_of_threads > 1:
+        hc2.extra_suffix = "MT"
+
     hc2.attributes = ["TotalEnergyDeposit", "GlobalTime"]
 
     # --------------------------------------------------------------------------------------------------
@@ -156,7 +160,7 @@ def test_simulation_results(output):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor("Hits").user_info.output
+    hc_file = output.get_actor("Hits").user_output.hits.get_output_path()
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X
@@ -172,7 +176,7 @@ def test_simulation_results(output):
             tols,
             [1] * len(scalings),
             scalings,
-            paths.output / "test025.png",
+            output.simulation.get_output_path("test025.png"),
         )
         and is_ok
     )
@@ -187,7 +191,7 @@ def test_simulation_results(output):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor("Hits2").user_info.output
+    hc_file = output.get_actor("Hits2").user_output.hits.get_output_path()
     checked_keys = ["time", "edep"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep
@@ -202,7 +206,7 @@ def test_simulation_results(output):
             tols,
             [1] * len(scalings),
             scalings,
-            paths.output / "test025_secondhits.png",
+            output.simulation.get_output_path("test025_secondhits.png"),
         )
         and is_ok
     )

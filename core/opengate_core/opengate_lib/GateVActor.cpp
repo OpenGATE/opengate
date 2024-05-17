@@ -14,31 +14,44 @@
 #include "GateMultiFunctionalDetector.h"
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
-    : G4VPrimitiveScorer(DictGetStr(user_info, "_name")) {
-  fMotherVolumeName = DictGetStr(user_info, "mother");
-  auto op = DictGetStr(user_info, "filters_boolean_operator");
-  if (op == "and")
-    fOperatorIsAnd = true;
-  else
-    fOperatorIsAnd = false;
+    : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
   // register this actor to the global list of actors
-  GateActorManager::AddActor(this);
-  // MT ?
   fMultiThreadReady = MT_ready;
-  // Do not work (yet) with multi-thread
+}
+
+GateVActor::~GateVActor() {}
+
+void GateVActor::InitializeCpp() {
+  GateActorManager::AddActor(this);
+  // Complain if the actor is not (yet) ready for multi-threading
   if (!fMultiThreadReady && G4Threading::IsMultithreadedApplication()) {
     std::ostringstream oss;
     oss << "Sorry, the actor '" << GetName()
         << "' cannot (yet) be used in multi-threads mode. ";
     Fatal(oss.str());
   }
-}
+};
 
-GateVActor::~GateVActor() {}
+void GateVActor::InitializeUserInput(py::dict &user_info) {
+  fMotherVolumeName = DictGetStr(user_info, "attached_to");
+  auto op = DictGetStr(user_info, "filters_boolean_operator");
+  if (op == "and")
+    fOperatorIsAnd = true;
+  else
+    fOperatorIsAnd = false;
+}
 
 void GateVActor::AddActions(std::set<std::string> &actions) {
   fActions.insert(actions.begin(), actions.end());
 }
+
+const bool GateVActor::HasAction(std::string action) {
+  return fActions.find(action) != fActions.end();
+};
+
+const bool GateVActor::IsSensitiveDetector() {
+  return HasAction("SteppingAction");
+};
 
 void GateVActor::PreUserTrackingAction(const G4Track *track) {
   for (auto f : fFilters) {
@@ -116,3 +129,33 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
   // Register the actor to the GateMultiFunctionalDetector
   mfd->RegisterPrimitive(this);
 }
+
+// void RegisterCallBack(std::string callback_name, std::function func) {
+//     std::cout << "Register callback " << callback_name << " (not yet
+//     implemented)" << std::endl;
+//   if (fcallBacks.count(callback_name) > 0) {
+//     std::ostringstream oss;
+//     oss << "You are trying to register a callback function with the name "
+//         << callback_name
+//         << ", but a callback with this name is already registered.";
+//     FatalKeyError(oss.str());
+//   } else {
+//     fallBacks.insert({callback_name, func});
+//   }
+// }
+
+// std::string GetOutputPathString(std::string output_type, int run_index) {
+//   CallbackMap::const_iterator pos =
+//   fcallBacks.find("get_output_path_string");
+//
+//   if (pos == fcallBacks.end()) {
+//     std::ostringstream oss;
+//     oss << "No callback function 'get_output_path_string' found for output "
+//            "type "
+//         << output_type;
+//     FatalKeyError(oss.str());
+//   }
+//   auto func = pos->second;
+//   string::path path = func(output_type, run_index);
+//   return path
+// }

@@ -15,6 +15,10 @@ GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("BeginOfRunAction");
   fActions.insert("EndOfRunAction");
   // User option: batch size
+}
+
+void GateARFActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   fBatchSize = DictGetInt(user_info, "batch_size");
   fKeepNegativeSide = DictGetBool(user_info, "flip_plane");
 }

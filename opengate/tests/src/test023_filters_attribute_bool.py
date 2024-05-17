@@ -17,6 +17,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.visu_type = "vrml"
     sim.random_seed = 321456987
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -70,9 +71,9 @@ if __name__ == "__main__":
 
     # phsp
     phsp_and = sim.add_actor("PhaseSpaceActor", "phsp_and")
-    phsp_and.mother = plane1a.name
+    phsp_and.attached_to = plane1a.name
     phsp_and.attributes = ["GlobalTime", "KineticEnergy", "ParticleName"]
-    phsp_and.output = paths.output / f"{sim_name}_and.root"
+    phsp_and.output_filename = f"{sim_name}_and.root"
     phsp_and.filters.append(filter1)
     phsp_and.filters.append(filter2)
     phsp_and.filters.append(filter3)
@@ -80,9 +81,9 @@ if __name__ == "__main__":
 
     # phsp
     phsp_or = sim.add_actor("PhaseSpaceActor", "phsp_or")
-    phsp_or.mother = plane1a.name
+    phsp_or.attached_to = plane1a.name
     phsp_or.attributes = ["GlobalTime", "KineticEnergy"]
-    phsp_or.output = paths.output / f"{sim_name}_or.root"
+    phsp_or.output_filename = f"{sim_name}_or.root"
     phsp_or.filters.append(filter1)
     phsp_or.filters.append(filter2)
     phsp_or.filters_boolean_operator = "or"  # default is and
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     # check 'or'
     print()
     print()
-    tree = uproot.open(phsp_and.output)["phsp_and"]
+    tree = uproot.open(phsp_and.get_output_path())["phsp_and"]
     print("nb entries", tree.num_entries)
     ene = tree.arrays(["GlobalTime", "KineticEnergy"])["KineticEnergy"]
     emin = np.min(ene)
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     # check 'or'
     print()
     print()
-    tree = uproot.open(phsp_or.output)["phsp_or"]
+    tree = uproot.open(phsp_or.get_output_path())["phsp_or"]
     print("nb entries", tree.num_entries)
     ene = tree.arrays(
         ["GlobalTime", "KineticEnergy"],

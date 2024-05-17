@@ -12,6 +12,7 @@
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
+#include <functional>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -26,11 +27,18 @@ public:
   virtual void AddActions(std::set<std::string> &actions);
 
   // Called at initialisation
-  virtual void ActorInitialize() {}
+  virtual void InitializeCpp();
+
+  // get user input parameters from python side
+  virtual void InitializeUserInput(py::dict &user_info);
 
   // Used to add a callback to a given volume.
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
+
+  const bool HasAction(std::string);
+
+  const bool IsSensitiveDetector();
 
   // Called when the simulation start (master thread only)
   virtual void StartSimulationAction() {}
@@ -42,6 +50,9 @@ public:
   // Take care about the filters
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
+  std::string GetOutputPathString(std::string outputType, int runIndex) {
+    return "Not implemented";
+  }
   /*
 
    ************ WARNING ************
@@ -96,6 +107,12 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
+  //  void RegisterCallBack(std::string, std::function);
+
+  // convenience function to get the output path of this actor via the callback
+  // function
+  //  std::string GetOutputPathString(std::string output_type, int run_index);
+
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
   std::set<std::string> fActions;
@@ -105,6 +122,10 @@ public:
 
   // List of active filters
   std::vector<GateVFilter *> fFilters;
+
+  // callback functions
+  //  typedef CallbackMap std::map<std::string, std::function>;
+  //  CallbackMap fcallBacks;
 
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;

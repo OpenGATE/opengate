@@ -29,13 +29,16 @@ class GateDigiCollectionIterator;
  *  - if root output:
  *    1) SetFilenameAndInitRoot
  *    2) RootInitializeTupleForMaster after attributes initialisation, in
- * StartSimulationAction 3) RootInitializeTupleForWorker in RunAction  !! ONLY
- * DURING FIRST RUN !! 4) FillToRoot to copy the values in the root file Can be,
- * for example each Event or each Run Clear is needed once FillToRootIfNeeded.
- *        This function also set the internal event index (needed).
+ *       StartSimulationAction
+      3) RootInitializeTupleForWorker in RunAction  !! ONLY DURING FIRST RUN !!
+      4) FillToRoot to copy the values in the root file
+          Can be, e.g., each Event or each Run
+          Clear is needed once FillToRootIfNeeded.
+ *        This function also sets the internal event index (needed).
  *    5) Write
  *       If MT, need Write for all threads (EndOfRunAction) and for Master
- * (EndSimulationAction) * 6) Close may not be needed (unsure)
+ *       (EndSimulationAction) *
+      6) Close may not be needed (unsure)
  *
  */
 

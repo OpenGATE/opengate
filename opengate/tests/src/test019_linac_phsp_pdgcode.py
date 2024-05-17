@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# ~ import test019_linac_phsp_helpers as t
 import test019_linac_phsp_helpers as test019
 from opengate.tests import utility
 
@@ -21,7 +20,7 @@ if __name__ == "__main__":
     # check the phsp tree if PDGCode is in there
     # PDGCode of gamma is 22
     print()
-    fn2 = test019.paths.output / "test019_hits.root"
+    fn2 = h.get_output_path()
     print("Checked Tree : ", fn2)
     data, keys, m = test019.phsp.load(fn2)
     print(data, keys)

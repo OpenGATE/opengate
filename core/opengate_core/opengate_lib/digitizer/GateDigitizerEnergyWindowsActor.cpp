@@ -21,9 +21,14 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+}
 
+GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
+
+void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   // options
-  fOutputFilename = DictGetStr(user_info, "output");
+  //  fOutputFilename = DictGetStr(user_info, "output");
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
   fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
@@ -35,12 +40,12 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
     fChannelMin.push_back(DictGetDouble(d, "min"));
     fChannelMax.push_back(DictGetDouble(d, "max"));
   }
+}
 
+void GateDigitizerEnergyWindowsActor::InitializeCpp() {
   // init
   fInputDigiCollection = nullptr;
 }
-
-GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
 
 // Called when the simulation start
 void GateDigitizerEnergyWindowsActor::StartSimulationAction() {

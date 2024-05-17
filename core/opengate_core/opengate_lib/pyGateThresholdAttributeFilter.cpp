@@ -15,5 +15,6 @@ void init_GateThresholdAttributeFilter(py::module &m) {
   py::class_<GateThresholdAttributeFilter, GateVFilter>(
       m, "GateThresholdAttributeFilter")
       .def(py::init())
-      .def("Initialize", &GateThresholdAttributeFilter::Initialize);
+      .def("InitializeUserInput",
+           &GateThresholdAttributeFilter::InitializeUserInput);
 }

@@ -7,16 +7,16 @@ from .base import ActorBase
 from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 
-
 from ..utility import g4_units, ensure_filename_is_str
 from ..image import (
     align_image_with_physical_volume,
     update_image_py_to_cpp,
-    get_cpp_image,
+    get_py_image_from_cpp_image,
     get_info_from_image,
     create_3d_image,
     write_itk_image,
 )
+from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
 
 
 def ene_win_peak(name, energy, energy_width_percent):
@@ -197,7 +197,7 @@ class Digitizer:
         return None
 
 
-class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
+class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
     """
     Equivalent to Gate "adder": gather all hits of an event in the same volume.
     Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
@@ -211,38 +211,88 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
 
     """
 
-    type_name = "DigitizerAdderActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "output": (
+            "singles.root",
+            {
+                "doc": "Output path - will become obsolete soon. ",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "Digi collection to be used as input. ",
+            },
+        ),
+        "policy": (
+            "EnergyWinnerPosition",
+            {
+                "doc": "Digi collection to be used as input. ",
+                "allowed_values": (
+                    "EnergyWeightedCentroidPosition",
+                    "EnergyWinnerPosition",
+                ),
+            },
+        ),
+        "time_difference": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "number_of_hits": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "group_volume": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "singles.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.policy = "EnergyWinnerPosition"  # EnergyWeightedCentroidPosition
-        user_info.time_difference = False
-        user_info.number_of_hits = False
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
-        user_info.group_volume = None
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "added_singles")
+        self.__initcpp__()
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerAdderActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+    def __initcpp__(self):
+        g4.GateDigitizerAdderActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def initialize(self):
         if (
-            user_info.policy != "EnergyWinnerPosition"
-            and user_info.policy != "EnergyWeightedCentroidPosition"
+            self.policy != "EnergyWinnerPosition"
+            and self.policy != "EnergyWeightedCentroidPosition"
         ):
             fatal(
-                f"Error, the policy for the Adder '{user_info.name}' must be EnergyWinnerPosition or "
-                f"EnergyWeightedCentroidPosition, while is is '{user_info.policy}'"
+                f"Error, the policy for the Adder '{self.name}' must be EnergyWinnerPosition or "
+                f"EnergyWeightedCentroidPosition, while is is '{self.policy}'"
             )
-
-    def __str__(self):
-        s = f"DigitizerAdderActor {self.user_info.name}"
-        return s
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def set_group_by_depth(self):
         depth = -1
@@ -254,435 +304,666 @@ class DigitizerAdderActor(g4.GateDigitizerAdderActor, ActorBase):
 
     def StartSimulationAction(self):
         self.set_group_by_depth()
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.added_singles.get_output_path())
+        )
         g4.GateDigitizerAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerAdderActor.EndSimulationAction(self)
 
 
-class DigitizerBlurringActor(g4.GateDigitizerBlurringActor, ActorBase):
+class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
     """
     Digitizer module for blurring an attribute (single value only, not a vector).
     Usually for energy or time.
     """
 
-    type_name = "DigitizerBlurringActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "Name of the digit collection to be used as input. ",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_attribute": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_method": (
+            "Gaussian",
+            {"doc": "FIXME", "allowed_values": ("Gaussian", "InverseSquare", "Linear")},
+        ),
+        "blur_fwhm": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_sigma": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_reference_value": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_resolution": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_slope": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "singles.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
-        user_info.blur_attribute = None
-        user_info.blur_method = "Gaussian"
-        user_info.blur_fwhm = None
-        user_info.blur_sigma = None
-        user_info.blur_reference_value = None
-        user_info.blur_resolution = None
-        user_info.blur_slope = None
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "blurred_singles")
+        self.__initcpp__()
 
-    def __init__(self, user_info):
-        # check and adjust parameters
-        self.set_param(user_info)
-        # base classes
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerBlurringActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+    def __initcpp__(self):
+        g4.GateDigitizerBlurringActor(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def set_param(self, user_info):
-        am = ["Gaussian", "InverseSquare", "Linear"]
-        m = user_info.blur_method
-        if m not in am:
-            fatal(
-                f"Error, the blur_method must be within {am}, while it is {user_info.blur_method}"
-            )
-        if m == "Gaussian":
-            self.set_param_gauss(user_info)
-        if m == "InverseSquare":
-            self.set_param_inverse_square(user_info)
-        if m == "Linear":
-            self.set_param_linear(user_info)
+    def initialize(self):
+        self.initialize_blurring_parameters()
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
-    def set_param_gauss(self, user_info):
-        if user_info.blur_fwhm is not None and user_info.blur_sigma is not None:
+    def initialize_blurring_parameters(self):
+        if self.blur_method == "Gaussian":
+            self.set_param_gauss()
+        if self.blur_method == "InverseSquare":
+            self.set_param_inverse_square()
+        if self.blur_method == "Linear":
+            self.set_param_linear()
+
+    def set_param_gauss(self):
+        if self.blur_fwhm is not None and self.blur_sigma is not None:
             fatal(
                 f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
+                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
             )
-        if user_info.blur_fwhm is not None:
-            user_info.blur_sigma = user_info.blur_fwhm * fwhm_to_sigma
-        if user_info.blur_sigma is None:
+        if self.blur_fwhm is not None:
+            self.blur_sigma = self.blur_fwhm * fwhm_to_sigma
+        if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
-        user_info.blur_reference_value = -1
-        user_info.blur_resolution = -1
-        user_info.blur_slope = 0
+        self.blur_reference_value = -1
+        self.blur_resolution = -1
+        self.blur_slope = 0
 
-    def set_param_inverse_square(self, user_info):
-        if user_info.blur_reference_value < 0 or user_info.blur_reference_value is None:
+    def set_param_inverse_square(self):
+        if self.blur_reference_value < 0 or self.blur_reference_value is None:
             fatal(
                 f"Error, use positive blur_reference_value "
-                f"(current value =  {user_info.blur_reference_value}"
+                f"(current value =  {self.blur_reference_value}"
             )
-        if user_info.blur_resolution < 0 or user_info.blur_resolution is None:
+        if self.blur_resolution < 0 or self.blur_resolution is None:
             fatal(
                 f"Error, use positive blur_resolution "
-                f"(current value =  {user_info.blur_resolution}"
+                f"(current value =  {self.blur_resolution}"
             )
-        user_info.blur_fwhm = -1
-        user_info.blur_sigma = -1
-        if user_info.blur_slope is None:
-            user_info.blur_slope = 0
+        self.blur_fwhm = -1
+        self.blur_sigma = -1
+        if self.blur_slope is None:
+            self.blur_slope = 0
 
-    def set_param_linear(self, user_info):
-        self.set_param_inverse_square(user_info)
-        if user_info.blur_slope is None:
+    def set_param_linear(self):
+        self.set_param_inverse_square()
+        if self.blur_slope is None:
             fatal(
                 f"Error, use positive blur_slope "
-                f"(current value =  {user_info.blur_slope}"
+                f"(current value =  {self.blur_slope}"
             )
 
-    def __str__(self):
-        s = f"DigitizerBlurringActor {self.user_info.name}"
-        return s
-
     def StartSimulationAction(self):
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.blurred_singles.get_output_path())
+        )
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerSpatialBlurringActor(g4.GateDigitizerSpatialBlurringActor, ActorBase):
+class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringActor):
     """
     Digitizer module for blurring a (global) spatial position.
     """
 
-    type_name = "DigitizerSpatialBlurringActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_attribute": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_fwhm": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_sigma": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "keep_in_solid_limits": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "singles.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
-        user_info.blur_attribute = None
-        user_info.blur_fwhm = None
-        user_info.blur_sigma = None
-        user_info.keep_in_solid_limits = True
-
-    def __init__(self, user_info):
-        # check and adjust parameters
-        self.set_param(user_info)
+    def __init__(self, *args, **kwargs):
         # base classes
-        ActorBase.__init__(self, user_info)
-        if not hasattr(user_info.blur_sigma, "__len__"):
-            user_info.blur_sigma = [user_info.blur_sigma] * 3
-        g4.GateDigitizerSpatialBlurringActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "blurred_singles")
+        self.__initcpp__()
 
-    def set_param(self, user_info):
-        if user_info.blur_fwhm is not None and user_info.blur_sigma is not None:
+    def __initcpp__(self):
+        g4.GateDigitizerSpatialBlurringActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def initialize_blurring_parameters(self):
+        if self.blur_fwhm is not None and self.blur_sigma is not None:
             fatal(
                 f"Error, use blur_sigma or blur_fwhm, not both "
-                f"(there are: {user_info.blur_sigma} and {user_info.blur_fwhm}"
+                f"(there are: {self.blur_sigma} and {self.blur_fwhm}"
             )
-        if user_info.blur_fwhm is not None:
-            user_info.blur_sigma = np.array(user_info.blur_fwhm) * fwhm_to_sigma
-        if user_info.blur_sigma is None:
+        if not hasattr(self.blur_sigma, "__len__"):
+            self.blur_sigma = [self.blur_sigma] * 3
+        if not hasattr(self.blur_fwhm, "__len__"):
+            self.blur_fwhm = [self.blur_fwhm] * 3
+        if self.blur_fwhm is not None:
+            self.blur_sigma = np.array(self.blur_fwhm) * fwhm_to_sigma
+        if self.blur_sigma is None:
             fatal(f"Error, use blur_sigma or blur_fwhm")
 
-    def __str__(self):
-        s = f"DigitizerSpatialBlurringActor {self.user_info.name}"
-        return s
+    def initialize(self):
+        self.initialize_blurring_parameters()
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def StartSimulationAction(self):
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.blurred_singles.get_output_path())
+        )
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerSpatialBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerEfficiencyActor(g4.GateDigitizerEfficiencyActor, ActorBase):
+class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
     """
     Digitizer module for simulating efficiency.
     """
 
-    type_name = "DigitizerEfficiencyActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "efficiency": (
+            1.0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "efficiency.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
-        user_info.efficiency = 1.0  # keep everything
-
-    def __init__(self, user_info):
-        # check and adjust parameters
-        self.set_param(user_info)
+    def __init__(self, *args, **kwargs):
         # base classes
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerEfficiencyActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "efficiency_filtered_singles")
+        self.__initcpp__()
 
-    def set_param(self, user_info):
-        efficiency = user_info.efficiency
-        if not (0.0 <= efficiency <= 1.0):
-            warning(f"Efficency set to {efficiency}, which is not in [0;1].")
+    def __initcpp__(self):
+        g4.GateDigitizerEfficiencyActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def __str__(self):
-        s = f"DigitizerEfficiencyActor {self.user_info.name}"
-        return s
+    def initialize_blurring_parameters(self):
+        if not (0.0 <= self.efficiency <= 1.0):
+            warning(f"Efficency set to {self.efficiency}, which is not in [0;1].")
+
+    def initialize(self):
+        self.initialize_blurring_parameters()
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def StartSimulationAction(self):
+        self.SetOutputFilename(
+            ensure_filename_is_str(
+                self.user_output.efficiency_filtered_singles.get_output_path()
+            )
+        )
         g4.GateDigitizerEfficiencyActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerEfficiencyActor.EndSimulationAction(self)
 
 
-class DigitizerEnergyWindowsActor(g4.GateDigitizerEnergyWindowsActor, ActorBase):
+class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor):
     """
     Consider a list of hits and arrange them according to energy intervals.
     Input: one DigiCollection
     Output: as many DigiCollections as the number of energy windows
     """
 
-    type_name = "DigitizerEnergyWindowsActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "input_digi_collection": (
+            "Hits",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "channels": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "EnergyWindows.root"
-        user_info.input_digi_collection = "Hits"
-        user_info.channels = []
-        user_info.skip_attributes = []
-        user_info.clear_every = 1e5
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "singles_per_energy_window")
+        self.__initcpp__()
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerEnergyWindowsActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+    def __initcpp__(self):
+        g4.GateDigitizerEnergyWindowsActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def __str__(self):
-        s = f"DigitizerEnergyWindowsActor {self.user_info.name}"
-        return s
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
-    def StartSimulationAction(
-        self,
-    ):  # not needed, only if need to do something in python
+    def StartSimulationAction(self):
+        self.SetOutputFilename(
+            ensure_filename_is_str(
+                self.user_output.singles_per_energy_window.get_output_path()
+            )
+        )
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
 
 
-class DigitizerHitsCollectionActor(g4.GateDigitizerHitsCollectionActor, ActorBase):
+class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActor):
     """
     Build a list of hits in a given volume.
     - the list of attributes to be stored is given in the 'attributes' options
     - output as root
     """
 
-    type_name = "DigitizerHitsCollectionActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "debug": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "keep_zero_edep": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.attributes = []
-        user_info.output = "hits.root"
-        user_info.debug = False
-        user_info.clear_every = 1e5
-        user_info.keep_zero_edep = False
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "hits")
+        self.__initcpp__()
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerHitsCollectionActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+    def __initcpp__(self):
+        g4.GateDigitizerHitsCollectionActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def __str__(self):
-        s = f"DigitizerHitsCollectionActor {self.user_info.name}"
-        return s
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
-    def StartSimulationAction(
-        self,
-    ):  # not needed, only if need to do something in python
+    def StartSimulationAction(self):
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.hits.get_output_path())
+        )
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
 
 
-class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
+def _setter_hook_size_projection_actor(self, size):
+    size = list(size)
+    if len(size) != 2:
+        fatal(
+            f"Error, the size must be a 2-vector (2D) while it is {size}. "
+            f"Note: The size along the third dimension is automatically set to 1."
+        )
+    size.append(1)
+    return size
+
+
+def _setter_hook_spacing_projection_actor(self, spacing):
+    spacing = list(spacing)
+    if len(spacing) != 2:
+        fatal(
+            f"Error, the spacing must be a 2-vector (2D) while it is {spacing}. "
+            f"Note: The spacing along the third dimension is automatically determined."
+        )
+    spacing.append(1)
+    return spacing
+
+
+class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
     """
     This actor takes as input HitsCollections and performed binning in 2D images.
     If there are several HitsCollection as input, the slices will correspond to each HC.
     If there are several runs, images will also be slice-stacked.
     """
 
-    type_name = "DigitizerProjectionActor"
+    user_info_defaults = {
+        "input_digi_collections": (
+            ["Hits"],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "spacing": (
+            [4 * g4_units.mm, 4 * g4_units.mm],
+            {
+                "doc": "FIXME",
+                "setter_hook": _setter_hook_spacing_projection_actor,
+            },
+        ),
+        "size": (
+            [128, 128],
+            {
+                "doc": "FIXME",
+                "setter_hook": _setter_hook_size_projection_actor,
+            },
+        ),
+        "physical_volume_index": (
+            0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "origin_as_image_center": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "detector_orientation_matrix": (
+            Rotation.from_euler("x", 0).as_matrix(),
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        mm = g4_units.mm
-        user_info.output = False
-        user_info.input_digi_collections = ["Hits"]
-        user_info.spacing = [4 * mm, 4 * mm]
-        user_info.size = [128, 128]
-        user_info.physical_volume_index = None
-        user_info.origin_as_image_center = True
-        user_info.detector_orientation_matrix = Rotation.from_euler("x", 0).as_matrix()
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerProjectionActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
-        self.output_image = None
-        if len(user_info.input_digi_collections) < 1:
-            fatal(f"Error, not input hits collection.")
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputSingleImage, "projection")
         self.start_output_origin = None
 
-    def __str__(self):
-        s = f"DigitizerProjectionActor {self.user_info.name}"
-        return s
+        self.__initcpp__()
 
-    def __getstate__(self):
-        ActorBase.__getstate__(self)
-        self.output_image = None
-        self.start_output_origin = None
-        return self.__dict__
+    def __initcpp__(self):
+        g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def compute_thickness(self, volume, channels):
-        """
-        Get the thickness of the detector volume, in the correct direction.
-        By default, it is Z. We use the 'projection_orientation' to get the correct one.
-        """
-        vol = self.volume_engine.get_volume(volume)
-        solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
-        pMin = g4.G4ThreeVector()
-        pMax = g4.G4ThreeVector()
-        solid.BoundingLimits(pMin, pMax)
-        d = np.array([0, 0, 1.0])
-        d = np.dot(self.user_info.detector_orientation_matrix, d)
-        imax = np.argmax(d)
-        thickness = (pMax[imax] - pMin[imax]) / channels
-        return thickness
-
-    def StartSimulationAction(self):
-        # check size and spacing
-        if len(self.user_info.size) != 2:
-            fatal(f"Error, the size must be 2D while it is {self.user_info.size}")
-        if len(self.user_info.spacing) != 2:
-            fatal(f"Error, the spacing must be 2D while it is {self.user_info.spacing}")
-        self.user_info.size.append(1)
-        self.user_info.spacing.append(1)
-
+    def initialize(self):
         # for the moment, we cannot use this actor with several volumes
-        m = self.user_info.mother
+        m = self.attached_to
         if hasattr(m, "__len__") and not isinstance(m, str):
             fatal(
                 f"Sorry, cannot (yet) use several mothers volumes for "
                 f"DigitizerProjectionActor {self.user_info.name}"
             )
 
+        ActorBase.initialize(self)
+
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+
+    def compute_thickness(self, volume, channels):
+        """
+        Get the thickness of the detector volume, in the correct direction.
+        By default, it is Z. We use the 'projection_orientation' to get the correct one.
+        """
+        vol = self.actor_engine.simulation_engine.volume_engine.get_volume(volume)
+        solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
+        pMin = g4.G4ThreeVector()
+        pMax = g4.G4ThreeVector()
+        solid.BoundingLimits(pMin, pMax)
+        d = np.array([0, 0, 1.0])
+        d = np.dot(self.detector_orientation_matrix, d)
+        imax = np.argmax(d)
+        thickness = (pMax[imax] - pMin[imax]) / channels
+        return thickness
+
+    def StartSimulationAction(self):
+
         # define the new size and spacing according to the nb of channels
         # and according to the volume shape
-        size = np.array(self.user_info.size)
-        spacing = np.array(self.user_info.spacing)
-        size[2] = len(self.user_info.input_digi_collections) * len(
+        size = self.size
+        spacing = self.spacing
+        size[2] = len(self.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
-        spacing[2] = self.compute_thickness(self.user_info.mother, size[2])
+        spacing[2] = self.compute_thickness(self.attached_to, size[2])
 
-        # create image
-        self.output_image = create_3d_image(size, spacing)
+        # we use the image associated with run 0 for the entire simulation
+        # in the future, this actor should implement a BeginOfRunActionMasterThread
+        # to be able to work on a per-run basis
+        self.user_output.projection.create_empty_image(0, size, spacing)
 
         # initial position (will be anyway updated in BeginOfRunSimulation)
-        pv = None
-        attached_to_volume = self.volume_engine.get_volume(self.user_info.mother)
-        if self.user_info.physical_volume_index is None:
-            physical_volume_index = 0
-        else:
-            physical_volume_index = self.user_info.physical_volume_index
         try:
-            pv = attached_to_volume.g4_physical_volumes[physical_volume_index]
-        except:  # FIXME: should use a specific exception
-            fatal(f"Error in the DigitizerProjectionActor {self.user_info.name}")
-        align_image_with_physical_volume(attached_to_volume, self.output_image)
+            pv = self.attached_to_volume.g4_physical_volumes[self.physical_volume_index]
+        except KeyError:
+            fatal(
+                f"Error in the DigitizerProjectionActor {self.name}. "
+                f"No physical volume found for index {self.physical_volume_index} "
+                f"in volume {self.attached_to_volume.name}"
+            )
+        align_image_with_physical_volume(
+            self.attached_to_volume, self.user_output.projection.data_per_run[0].image
+        )
         self.fPhysicalVolumeName = str(pv.GetName())
+
         # update the cpp image and start
-        update_image_py_to_cpp(self.output_image, self.fImage, True)
-        g4.GateDigitizerProjectionActor.StartSimulationAction(self)
+        update_image_py_to_cpp(
+            self.user_output.projection.data_per_run[0].image, self.fImage, True
+        )
         # keep initial origin
-        self.start_output_origin = self.output_image.GetOrigin()
+        self.start_output_origin = list(
+            self.user_output.projection.data_per_run[0].get_image_properties()[0].origin
+        )
+        g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
+
         # retrieve the image
-        self.output_image = get_cpp_image(self.fImage)
-        # put back the origin
-        self.output_image.SetOrigin(self.start_output_origin)
-        info = get_info_from_image(self.output_image)
-        # change the spacing / origin for the third dimension
-        spacing = self.output_image.GetSpacing()
-        origin = self.output_image.GetOrigin()
-        # should we center the projection ?
-        if self.user_info.origin_as_image_center:
-            origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
-        spacing[2] = 1
+        self.user_output.projection.store_data(
+            "merged", get_py_image_from_cpp_image(self.fImage)
+        )
+
+        # set its properties
+        info = self.user_output.projection.data_per_run[0].get_image_properties()[0]
+        spacing = info.spacing
+        if self.origin_as_image_center:
+            origin = -info.size * spacing / 2.0 + spacing / 2.0
+        else:
+            origin = self.start_output_origin
         origin[2] = 0
-        self.output_image.SetSpacing(spacing)
-        self.output_image.SetOrigin(origin)
-        if self.user_info.output:
-            write_itk_image(
-                self.output_image, ensure_filename_is_str(self.user_info.output)
-            )
+        spacing[2] = 1
+        self.user_output.projection.merged_data.SetSpacing(list(spacing))
+        self.user_output.projection.merged_data.SetOrigin(list(origin))
+
+        self.user_output.projection.data_per_run.pop(
+            0
+        )  # remove the image for run 0 as result is in merged_data
+
+        self.user_output.projection.write_data_if_requested(which="merged")
 
 
-class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
+class DigitizerReadoutActor(ActorBase, g4.GateDigitizerReadoutActor):
     """
     This actor is a DigitizerAdderActor + a discretization step:
     the final position is the center of the volume
     """
 
-    type_name = "DigitizerReadoutActor"
+    user_info_defaults = {
+        "discretize_volume": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        DigitizerAdderActor.set_default_user_info(user_info)
-        user_info.discretize_volume = None
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "readout_singles")
+        self.__initcpp__()
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateDigitizerReadoutActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
+    def __initcpp__(self):
+        g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    def __str__(self):
-        s = f"DigitizerReadoutActor {self.user_info.name}"
-        return s
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def StartSimulationAction(self):
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.readout_singles.get_output_path())
+        )
         DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
             fatal(f'Please, set the option "discretize_volume"')
         depth = self.simulation.volume_manager.get_volume(
-            self.user_info.discretize_volume
+            self.discretize_volume
         ).volume_depth_in_tree
         self.SetDiscretizeVolumeDepth(depth)
         g4.GateDigitizerReadoutActor.StartSimulationAction(self)
@@ -691,45 +972,63 @@ class DigitizerReadoutActor(g4.GateDigitizerReadoutActor, ActorBase):
         g4.GateDigitizerReadoutActor.EndSimulationAction(self)
 
 
-class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
+class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
     """
     Similar to HitsCollectionActor : store a list of hits.
     However only the first hit of given event is stored here.
     """
 
-    type_name = "PhaseSpaceActor"
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "store_absorbed_event": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "debug": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        # options
-        user_info.attributes = []
-        user_info.output = f"{user_info.name}.root"
-        user_info.store_absorbed_event = False
-        user_info.debug = False
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "phsp")
+        self.__initcpp__()
 
-    def __getstate__(self):
-        # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
-        ActorBase.__getstate__(self)
-        return self.__dict__
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
+    def __initcpp__(self):
+        g4.GatePhaseSpaceActor.__init__(self, self.user_info)
         self.fNumberOfAbsorbedEvents = 0
         self.fTotalNumberOfEntries = 0
 
-    def __str__(self):
-        s = f"PhaseSpaceActor {self.user_info.name}"
-        return s
+    def __getstate__(self):
+        # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
+        return ActorBase.__getstate__(self)
 
-    # not needed, only if need to do something from python
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+
     def StartSimulationAction(self):
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.phsp.get_output_path())
+        )
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
         self.fNumberOfAbsorbedEvents = self.GetNumberOfAbsorbedEvents()
         self.fTotalNumberOfEntries = self.GetTotalNumberOfEntries()
         if self.fTotalNumberOfEntries == 0:
-            warning(f"Empty output, no particles stored in {self.user_info.output}")
+            warning(
+                f"Empty output, no particles stored in {self.user_output.phsp.get_output_path()}"
+            )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)

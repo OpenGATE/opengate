@@ -59,6 +59,7 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
     def close(self):
         self.g4_step_limiter_storage = None
         self.g4_special_user_cuts_storage = None
+        self.physics_engine = None
 
     @requires_fatal("physics_engine")
     def ConstructParticle(self):
@@ -177,13 +178,11 @@ class Region(GateObject):
     )
 
     def __init__(self, *args, **kwargs) -> None:
+        # references to upper hierarchy level
+        # FIXME: should rely on self.simulation via GateObject -> need to update PhysicsManager.add_region()
+        self.physics_manager = kwargs.pop("physics_manager", None)
         super().__init__(*args, **kwargs)
 
-        # references to upper hierarchy level
-        try:
-            self.physics_manager = kwargs["physics_manager"]
-        except KeyError:
-            self.physics_manager = None
         self.physics_engine = None
 
         # dictionaries to hold volumes to which this region is associated
@@ -214,6 +213,7 @@ class Region(GateObject):
 
     def close(self):
         self.release_g4_references()
+        self.physics_engine = None
 
     def release_g4_references(self):
         self.g4_region = None
@@ -664,6 +664,7 @@ class OpticalSurface(GateObject):
 
         # Set the physics manager if present in kwargs,
         # else set to None
+        # FIXME: rely on reference to simulation provided by all GateObjects!
         try:
             self.physics_manager = kwargs["physics_manager"]
         except KeyError:

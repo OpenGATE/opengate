@@ -35,18 +35,21 @@ def itk_dir_to_rotation(dir):
     return itk.GetArrayFromVnlMatrix(dir.GetVnlMatrix().as_matrix())
 
 
-def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value=0):
+def create_3d_image(
+    size, spacing, origin=None, pixel_type="float", allocate=True, fill_value=0
+):
     dim = 3
     pixel_type = itk.ctype(pixel_type)
     image_type = itk.Image[pixel_type, dim]
     img = image_type.New()
     region = itk.ImageRegion[dim]()
-    size = np.array(size)
-    region.SetSize(size.tolist())
+    region.SetSize([int(s) for s in size])
     region.SetIndex([0, 0, 0])
-    spacing = np.array(spacing)
+    # spacing = np.array(spacing)
     img.SetRegions(region)
     img.SetSpacing(spacing)
+    if origin is not None:
+        img.SetOrigin(origin)
     # (default origin and direction)
     if allocate:
         img.Allocate()
@@ -147,7 +150,7 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
     return origin
 
 
-def get_cpp_image(cpp_image):
+def get_py_image_from_cpp_image(cpp_image):
     arr = cpp_image.to_pyarray()
     image = itk_image_view_from_array(arr)
     image.SetOrigin(cpp_image.origin())
@@ -193,24 +196,21 @@ def align_image_with_physical_volume(
     volume,
     image,
     initial_translation=None,
-    initial_rotation=Rotation.identity(),
+    initial_rotation=Rotation.identity().as_matrix(),
     copy_index=0,
 ):
     if initial_translation is None:
         initial_translation = [0, 0, 0]
     # FIXME rotation not implemented yet
     # get transform from world
-    translation, rotation = get_transform_world_to_local(volume)
+    translation, rotation = get_transform_world_to_local(volume, copy_index)
     # compute origin
     info = get_info_from_image(image)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0 + initial_translation
-    origin = (
-        Rotation.from_matrix(rotation[copy_index]).apply(origin)
-        + translation[copy_index]
-    )
+    origin = Rotation.from_matrix(rotation).apply(origin) + translation
     # set origin and direction
     image.SetOrigin(origin)
-    image.SetDirection(rotation[copy_index])
+    image.SetDirection(rotation)
 
 
 def create_image_with_extent(extent, spacing=(1, 1, 1), margin=0):
@@ -265,7 +265,7 @@ def voxelize_volume(se, image):
     vox = g4.GateVolumeVoxelizer()
     update_image_py_to_cpp(image, vox.fImage, False)
     vox.Voxelize()
-    image = get_cpp_image(vox.fImage)
+    image = get_py_image_from_cpp_image(vox.fImage)
     labels = vox.fLabels
     return labels, image
 
@@ -345,6 +345,18 @@ def divide_itk_images(
     imgarrOut = itk.image_from_array(imgarrOut)
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
+
+
+def sum_itk_images(images):
+    image_type = type(images[0])
+    add_image_filter = itk.AddImageFilter[image_type, image_type, image_type].New()
+    output = images[0]
+    for img in images[1:]:
+        add_image_filter.SetInput1(output)
+        add_image_filter.SetInput2(img)
+        add_image_filter.Update()
+        output = add_image_filter.GetOutput()
+    return output
 
 
 def split_spect_projections(input_filenames, nb_ene):

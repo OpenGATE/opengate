@@ -182,30 +182,20 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
-        # Volume_manager is not compulsory when creating a volume, e.g. for boolean operations,
-        # but without a volume_manager, the volume is not known to the simulation
-        # and certain functionality is unavailable
-        try:
-            self.volume_manager = kwargs["volume_manager"]
-        except KeyError:
-            self.volume_manager = None
-
+    def __init__(self, *args, template=None, **kwargs):
         # GateObject base class digests all user info provided as kwargs
+        # template = kwargs.pop('template', None)
         super().__init__(*args, **kwargs)
 
         # if a template volume is provided, clone all user info items from it
         # except for the name of course
-        if "template" in kwargs:
-            # FIXME: use from_dictionary()
-            self.copy_user_info(kwargs["template"])
+        if template is not None:
+            # FIXME: consider using from_dictionary()
+            self.copy_user_info(template)
             # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
-                if k != "name":
-                    try:
-                        setattr(self, k, kwargs[k])
-                    except KeyError:
-                        pass
+                if k != "name" and k in kwargs:
+                    setattr(self, k, kwargs[k])
 
         # this attribute is used internally for the volumes tree
         # do not set it manually!
@@ -224,6 +214,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
 
     def close(self):
         self.release_g4_references()
+        self.volume_engine = None
         super().close()
 
     def release_g4_references(self):
@@ -266,11 +257,18 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 "Probably the volume has not yet been added to the simulation. "
             )
 
-    # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
+    # # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
     @property
-    @requires_fatal("volume_manager")
-    def simulation(self):
-        return self.volume_manager.simulation
+    def volume_manager(self):
+        # It is not compulsory for a GateObject to belong to a simulation,
+        # and the volume might therefore not have any reference to a volume manager
+        # (e.g. in volumes created for boolean operations),
+        # but without a simulation/volume_manager, the volume is not known to the simulation
+        # and certain functionality is unavailable
+        if self.simulation is not None:
+            return self.simulation.volume_manager
+        else:
+            return None
 
     @property
     def volume_type(self):
@@ -463,16 +461,16 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                         name=f"{self.name}_volume_translation_changer_{len(changers)}",
                         translations=dp["translation"],
                         attached_to=self,
-                        volume_manager=self.volume_manager,
+                        simulation=self.simulation,
                         repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
                     changers.append(new_changer)
                 if "rotation" in dp:
                     new_changer = VolumeRotationChanger(
-                        name=f"{self.name}_volume_translation_changer_{len(changers)}",
-                        attached_to=self,
-                        volume_manager=self.volume_manager,
+                        name=f"{self.name}_volume_rotation_changer_{len(changers)}",
                         rotations=dp["rotation"],
+                        attached_to=self,
+                        simulation=self.simulation,
                         repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
                     changers.append(new_changer)
@@ -680,8 +678,6 @@ class RepeatParametrisedVolume(VolumeBase):
         "start": ("auto", {"doc": "FIXME"}),
     }
 
-    type_name = "RepeatParametrised"
-
     def __init__(self, repeated_volume, *args, **kwargs):
         # FIXME: This should probably be a user_info
         self.repeated_volume = repeated_volume
@@ -839,6 +835,26 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     @property
     def spacing(self):
         return np.array(self.itk_image.GetSpacing())
+
+    # @requires_fatal("itk_image")
+    @property
+    def native_translation(self):
+        if self.itk_image is not None:
+            origin = np.array(self.itk_image.GetOrigin())
+            spacing = np.array(self.itk_image.GetSpacing())
+            size = np.array(self.itk_image.GetLargestPossibleRegion().GetSize())
+            center = (size - 1.0) * spacing / 2.0
+            return origin + Rotation.from_matrix(self.native_rotation).apply(center)
+        else:
+            return None
+
+    # @requires_fatal("itk_image")
+    @property
+    def native_rotation(self):
+        if self.itk_image is not None:
+            return np.array(self.itk_image.GetDirection())
+        else:
+            return None
 
     @requires_fatal("volume_engine")
     def construct(self):
@@ -1048,7 +1064,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
                         attached_to=self,
-                        volume_manager=self.volume_manager,
+                        simulation=self.simulation,
                         images=dp["image"],
                         label_image=label_image,
                     )

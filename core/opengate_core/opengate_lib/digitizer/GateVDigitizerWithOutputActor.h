@@ -30,6 +30,12 @@ public:
 
   ~GateVDigitizerWithOutputActor() override;
 
+  // Called at initialisation
+  void InitializeCpp() override;
+
+  // get user input parameters from python side
+  void InitializeUserInput(py::dict &user_info) override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
@@ -46,6 +52,12 @@ public:
   void EndOfRunAction(const G4Run *run) override;
 
   void EndOfSimulationWorkerAction(const G4Run * /*unused*/) override;
+
+  inline void SetOutputFilename(std::string filename) {
+    fOutputFilename = filename;
+  }
+
+  inline std::string GetOutputFilename() { return fOutputFilename; }
 
 protected:
   std::string fOutputFilename;

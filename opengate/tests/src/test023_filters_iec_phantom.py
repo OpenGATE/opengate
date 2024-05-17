@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 12332567
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -54,7 +55,7 @@ if __name__ == "__main__":
     dose = sim.add_actor("DoseActor", "dose")
     dose.output = paths.output / "test023_iec_phantom.mhd"
     # dose.output = paths.output_ref / "test023_iec_phantom.mhd"
-    dose.mother = "iec"
+    dose.attached_to = "iec"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.filters.append(fp)

@@ -42,7 +42,7 @@ if __name__ == "__main__":
     source.activity = 200000 * Bq
 
     # add stat actor
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # print before init
     print(sim)
@@ -59,9 +59,9 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run()
-    print(sim.source_manager.dump_sources())
 
-    stats = sim.output.get_actor("Stats")
+    # after the simulation
+    print(sim.source_manager.dump_sources())
     print(stats)
 
     # gate_test4_simulation_stats_actor

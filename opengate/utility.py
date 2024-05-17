@@ -78,6 +78,11 @@ def g4_best_unit(value, unit_type):
     return g4.G4BestUnit(value, unit_type)
 
 
+def g4_best_unit_tuple(value, unit_type):
+    bu = g4.G4BestUnit(value, unit_type)
+    return bu.GetValue(), str(bu).split()[-1]
+
+
 def assert_key(key: str, d: Box):
     if key not in d:
         fatal(f'The key "{key}" is needed in this structure:\n' f"{d}")
@@ -150,22 +155,14 @@ def ensure_filename_is_str(filename):
 
 
 def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
-    print(file_path)
-    print(suffix)
+    path = Path(file_path)
     if suffix:
         suffix = suffix.strip("_- *")
         suffix = suffix.lower()
+        new_path = path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
+        return new_path
     else:
-        return file_path
-    if not isinstance(file_path, Path):
-        path = Path(file_path)
-    else:
-        path = file_path
-
-    new_file_name = path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
-    print(new_file_name)
-
-    return new_file_name
+        return path
 
 
 def get_random_folder_name(size=8, create=True):

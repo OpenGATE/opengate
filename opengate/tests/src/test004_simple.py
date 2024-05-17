@@ -119,7 +119,6 @@ if __name__ == "__main__":
     """
     Now the simulation is terminated. The results are retrieved and can be displayed.
     """
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # Comparison with gate simulation

@@ -17,5 +17,9 @@ void init_GateHitsCollectionActor(py::module &m) {
   py::class_<GateDigitizerHitsCollectionActor,
              std::unique_ptr<GateDigitizerHitsCollectionActor, py::nodelete>,
              GateVActor>(m, "GateDigitizerHitsCollectionActor")
-      .def(py::init<py::dict &>());
+      .def(py::init<py::dict &>())
+      .def("GetOutputFilename",
+           &GateDigitizerHitsCollectionActor::GetOutputFilename)
+      .def("SetOutputFilename",
+           &GateDigitizerHitsCollectionActor::SetOutputFilename);
 }

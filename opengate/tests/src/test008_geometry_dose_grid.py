@@ -9,7 +9,9 @@ from scipy.spatial.transform import Rotation
 
 
 def main():
-    paths = utility.get_default_test_paths(__file__, "gate_test042_gauss_gps")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test042_gauss_gps", "test008"
+    )
     out_path = paths.output
 
     # create the simulation
@@ -20,6 +22,7 @@ def main():
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # units
     mm = gate.g4_units.mm
@@ -64,7 +67,7 @@ def main():
             v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], mother=m.name
             )
-            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
+            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name)
             dose_actors[
                 f"{geom}_{grid_size}_mother_not_rotated_daughter_not_rotated"
             ] = d
@@ -80,7 +83,7 @@ def main():
             v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], rot=rot, mother=m.name
             )
-            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
+            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name)
             dose_actors[f"{geom}_{grid_size}_mother_not_rotated_daughter_rotated"] = d
             i = i + 1
 
@@ -99,7 +102,7 @@ def main():
             v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], mother=m.name
             )
-            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
+            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name)
             dose_actors[f"{geom}_{grid_size}_mother_rotated_daughter_not_rotated"] = d
             i = i + 1
 
@@ -119,7 +122,7 @@ def main():
             v = my_add_volume(
                 sim, geom, f"vol_{i}", size, color=[1, 0, 1, 1], rot=rot, mother=m.name
             )
-            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name, out_path)
+            d = add_dose_actor(sim, f"dose_{i}", grid_size, spacing, v.name)
             dose_actors[f"{geom}_{grid_size}_mother_rotated_daughter_rotated"] = d
             i = i + 1
 
@@ -130,7 +133,10 @@ def main():
     ok = True
     for test_name, dose in dose_actors.items():
         print(test_name)
-        ok = check_dose_grid_geometry(dose.output, dose) and ok
+        ok = (
+            check_dose_grid_geometry(dose.user_output.edep.get_output_path(), dose)
+            and ok
+        )
 
     utility.test_ok(ok)
 
@@ -182,10 +188,9 @@ def my_add_volume(
     return phantom
 
 
-def add_dose_actor(sim, name, size, spacing, mother, out_path):
+def add_dose_actor(sim, name, size, spacing, mother):
     dose = sim.add_actor("DoseActor", name)
-    dose.output = out_path / f"{name}.mhd"
-    dose.mother = mother
+    dose.attached_to = mother
     dose.size = size
     dose.spacing = spacing
     dose.hit_type = "random"

@@ -24,15 +24,17 @@ public:
   // Constructor
   GateLETActor(py::dict &user_info);
 
-  virtual void ActorInitialize();
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
+  virtual void InitializeCpp() override;
 
   // Main function called every step in attached volume
-  virtual void SteppingAction(G4Step *);
+  virtual void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run);
+  virtual void BeginOfRunAction(const G4Run *run) override;
 
-  virtual void EndSimulationAction();
+  virtual void EndSimulationAction() override;
 
   // Image type is 3D float by default
   // TODO double precision required
@@ -44,6 +46,8 @@ public:
 
   // Option: indicate if we must compute dose in Gray also
   std::string fPhysicalVolumeName;
+  std::string fAveragingMethod;
+  std::string fScoreIn;
   bool fdoseAverage;
   bool ftrackAverage;
   bool fLETtoOtherMaterial;
@@ -55,10 +59,11 @@ private:
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
 
-  G4Material *water;
+  bool fScoreInOtherMaterial = false;
 
   struct threadLocalT {
     G4EmCalculator emcalc;
+    G4Material *materialToScoreIn;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

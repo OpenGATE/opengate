@@ -45,6 +45,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.number_of_threads = 1
     sim.random_seed = 123654
+    sim.output_dir = paths.output
 
     # materials
     sim.volume_manager.material_database.add_material_weights(
@@ -77,8 +78,8 @@ if __name__ == "__main__":
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     phspActor = sim.add_actor("PhaseSpaceActor", "phspActor")
-    phspActor.output = paths.output / "test010-thetaphi-phsp.root"
-    phspActor.mother = "phsp"
+    phspActor.output_filename = "test010-thetaphi-phsp.root"
+    phspActor.attached_to = "phsp"
     phspActor.attributes = [
         "Position",
     ]
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     g9_zmin, g9_zmax = min(g9_zs), max(g9_zs)
 
     g10_xs, g10_ys, g10_zs = root_load_xyz(
-        phspActor.output, ["Position_X", "Position_Y", "Position_Z"]
+        phspActor.get_output_path(), ["Position_X", "Position_Y", "Position_Z"]
     )
     g10_xmin, g10_xmax = min(g10_xs), max(g10_xs)
     g10_ymin, g10_ymax = min(g10_ys), max(g10_ys)

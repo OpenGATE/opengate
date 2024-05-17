@@ -16,6 +16,6 @@ void init_GateDigitizerEfficiencyActor(py::module &m) {
 
   py::class_<GateDigitizerEfficiencyActor,
              std::unique_ptr<GateDigitizerEfficiencyActor, py::nodelete>,
-             GateVActor>(m, "GateDigitizerEfficiencyActor")
+             GateVDigitizerWithOutputActor>(m, "GateDigitizerEfficiencyActor")
       .def(py::init<py::dict &>());
 }

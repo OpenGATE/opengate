@@ -11,7 +11,7 @@ from anytree import PreOrderIter
 
 import opengate_core as g4
 
-from .exception import fatal, warning
+from .exception import fatal, warning, GateImplementationError
 from .decorators import requires_fatal, requires_warning
 from .logger import log
 from .runtiming import assert_run_timing
@@ -25,6 +25,7 @@ from .physics import (
     create_g4_optical_properties_table,
     load_optical_properties_from_xml,
 )
+from .base import GateSingletonFatal
 
 
 class EngineBase:
@@ -39,7 +40,14 @@ class EngineBase:
         self.verbose_close = simulation_engine.verbose_close
 
     def close(self):
-        pass  # nothing do to, but kept as dummy for the future
+        self.simulation_engine = None
+
+    def __getstate__(self):
+        raise GateImplementationError(
+            f"The __getstate__() method of the {type(self).__name__} class got called. "
+            f"That should not happen because it should be closed before anything is pickled "
+            f"at the end of a subprocess. Check warning messages for clues!"
+        )
 
 
 class SourceEngine(EngineBase):
@@ -72,9 +80,6 @@ class SourceEngine(EngineBase):
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = []
 
-        # internal variables
-        self.g4_particle_table = None
-
         # Options dict for cpp SourceManager
         # will be set in create_g4_source_manager
         # FIXME: Why is this separate dictionary needed? Would be better to access the source manager directly
@@ -89,7 +94,6 @@ class SourceEngine(EngineBase):
     def release_g4_references(self):
         self.g4_master_source_manager = None
         self.g4_thread_source_managers = None
-        self.g4_particle_table = None
         # a source object contains a reference to a G4 source
         self.sources = None
 
@@ -99,7 +103,7 @@ class SourceEngine(EngineBase):
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
             warning(f"No source: no particle will be generated")
 
-    def initialize_actors(self, actors):
+    def initialize_actors(self):
         """
         Parameters
         ----------
@@ -107,7 +111,9 @@ class SourceEngine(EngineBase):
             The dictionary ActorEngine.actors which contains key-value pairs
             "actor_name" : "Actor object"
         """
-        self.g4_master_source_manager.SetActors(list(actors.values()))
+        self.g4_master_source_manager.SetActors(
+            list(self.simulation_engine.simulation.actor_manager.actors.values())
+        )
 
     def create_master_source_manager(self):
         # create particles table # FIXME in physics ??
@@ -158,7 +164,7 @@ class SourceEngine(EngineBase):
     def start(self):
         # FIXME (1) later : may replace BeamOn with DoEventLoop
         # to allow better control on geometry between the different runs
-        # (2) : check estimated nb of particle, warning if too large
+        # FIXME (2) : check estimated nb of particle, warning if too large
         # start the master thread (only main thread)
         self.g4_master_source_manager.StartMasterThread()
 
@@ -451,8 +457,25 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_EventAction = None
         self.g4_TrackingAction = None
 
+    def register_all_actions(self, actor):
+        self.register_run_actions(actor)
+        self.register_event_actions(actor)
+        self.register_tracking_actions(actor)
+
+    def register_run_actions(self, actor):
+        for ra in self.g4_RunAction:
+            ra.RegisterActor(actor)
+
+    def register_event_actions(self, actor):
+        for ea in self.g4_EventAction:
+            ea.RegisterActor(actor)
+
+    def register_tracking_actions(self, actor):
+        for ta in self.g4_TrackingAction:
+            ta.RegisterActor(actor)
+
     def BuildForMaster(self):
-        # This function is call only in MT mode, for the master thread
+        # This function is called only in MT mode, for the master thread
         if not self.g4_main_PrimaryGenerator:
             self.g4_main_PrimaryGenerator = (
                 self.simulation_engine.source_engine.create_master_source_manager()
@@ -493,128 +516,100 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_TrackingAction.append(ta)
 
 
+def register_sensitive_detector_to_children(actor, lv):
+    log.debug(
+        f'Actor: "{actor.user_info.name}" '
+        f'(attached to "{actor.attached_to}") '
+        f'set to volume "{lv.GetName()}"'
+    )
+    actor.RegisterSD(lv)
+    for i in range(lv.GetNoDaughters()):
+        child = lv.GetDaughter(i).GetLogicalVolume()
+        register_sensitive_detector_to_children(actor, child)
+
+
 class ActorEngine(EngineBase):
     """
     This object manages all actors G4 objects at runtime
     """
 
-    def __init__(self, simulation_engine):
-        super().__init__(simulation_engine)
-        # self.actor_manager = simulation.actor_manager
-        # we use a weakref because it is a circular dependence
-        # with custom __del__
-        # FIXME: we should not need this weak ref
-        self.simulation_engine_wr = weakref.ref(simulation_engine)
-        self.actors = {}
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.register_to_actors()
+
+    @property
+    def actor_manager(self):
+        return self.simulation_engine.simulation.actor_manager
 
     def close(self):
         if self.verbose_close:
             warning(f"Closing ActorEngine")
-        for actor in self.actors.values():
+        for actor in self.actor_manager.actors.values():
             actor.close()
-        self.actors = {}
-        self.simulation_engine_wr = None
         super().close()
 
-    def get_actor(self, name):
-        if name not in self.actors:
-            fatal(
-                f"The actor {name} is not in the current "
-                f"list of actors: {self.actors}"
-            )
-        return self.actors[name]
-
-    def create_actors(self):
-        for (
-            ui
-        ) in (
-            self.simulation_engine_wr().simulation.actor_manager.user_info_actors.values()
-        ):
-            actor = new_element(ui, self.simulation_engine_wr().simulation)
-            log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
-            actor.initialize(self.simulation_engine_wr)
-            self.actors[ui.name] = actor
-
-            # create filters
-            actor.filters_list = []
-            for f in actor.user_info.filters:
-                e = new_element(f, self.simulation_engine.simulation)
-                e.Initialize(f.__dict__)
-                actor.filters_list.append(e)
-            # this is a copy to cpp ('append' cannot be used because fFilters is a std::vector)
-            actor.fFilters = actor.filters_list
-
-    def initialize(self, volume_engine=None):
-        # consider the priority value of the actors
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-        # for actor in self.actors.values():
-        for actor in sorted_actors:
-            log.debug(
-                f"Actor: initialize [{actor.user_info.type_name}] {actor.user_info.name}"
-            )
-            self.register_all_actions(actor)
+    def initialize(self):
+        for actor in self.actor_manager.sorted_actors:
+            log.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
+            self.simulation_engine.action_engine.register_all_actions(actor)
+            actor.initialize()
             # warning : the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
 
-    def register_all_actions(self, actor):
-        # Run
-        for ra in self.simulation_engine_wr().action_engine.g4_RunAction:
-            ra.RegisterActor(actor)
-        # Event
-        for ea in self.simulation_engine_wr().action_engine.g4_EventAction:
-            ea.RegisterActor(actor)
-        # Track
-        for ta in self.simulation_engine_wr().action_engine.g4_TrackingAction:
-            ta.RegisterActor(actor)
-        # initialization
-        actor.ActorInitialize()
+    def register_to_actors(self):
+        for actor in self.actor_manager.actors.values():
+            actor.actor_engine = self
 
     def register_sensitive_detectors(self, world_name):
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-
-        for actor in sorted_actors:
-            if "SteppingAction" not in actor.fActions:
-                continue
-
-            # Step: only enabled if attachTo a given volume.
-            # Propagated to all child and sub-child
-            # tree = volume_manager.volumes_tree
-            mothers = actor.user_info.mother
-            if isinstance(mothers, str):
-                # make a list with one single element
-                mothers = [mothers]
-            # add SD for all mothers
-            for volume_name in mothers:
-                volume = self.simulation_engine.simulation.volume_manager.volumes[
-                    volume_name
-                ]
-                if volume.world_volume.name == world_name:
-                    self.register_sensitive_detector_to_children(
-                        actor, volume.g4_logical_volume
+        for actor in self.actor_manager.sorted_actors:
+            if actor.IsSensitiveDetector() is True:
+                # Step: only enabled if attachTo a given volume.
+                # Propagated to all child and sub-child
+                # tree = volume_manager.volumes_tree
+                if isinstance(actor.attached_to, str):
+                    # make a list with one single element
+                    mothers = [actor.attached_to]
+                else:
+                    mothers = actor.attached_to
+                # add SD for all mothers
+                for volume_name in mothers:
+                    volume = (
+                        self.simulation_engine.simulation.volume_manager.get_volume(
+                            volume_name
+                        )
                     )
-
-    def register_sensitive_detector_to_children(self, actor, lv):
-        log.debug(
-            f'Actor: "{actor.user_info.name}" '
-            f'(attached to "{actor.user_info.mother}") '
-            f'set to volume "{lv.GetName()}"'
-        )
-        actor.RegisterSD(lv)
-        for i in range(lv.GetNoDaughters()):
-            child = lv.GetDaughter(i).GetLogicalVolume()
-            self.register_sensitive_detector_to_children(actor, child)
+                    if volume.world_volume.name == world_name:
+                        register_sensitive_detector_to_children(
+                            actor, volume.g4_logical_volume
+                        )
 
     def start_simulation(self):
         # consider the priority value of the actors
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-        for actor in sorted_actors:
+        for actor in self.actor_manager.sorted_actors:
             actor.StartSimulationAction()
 
     def stop_simulation(self):
         # consider the priority value of the actors
-        sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
-        for actor in sorted_actors:
+        for actor in self.actor_manager.sorted_actors:
             actor.EndSimulationAction()
+
+
+class FilterEngine(EngineBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def filter_manager(self):
+        return self.simulation_engine.simulation.filter_manager
+
+    def initialize(self):
+        for f in self.filter_manager.filters.values():
+            f.initialize()
+
+    def close(self):
+        for f in self.filter_manager.filters.values():
+            f.close()
+        super().close()
 
 
 class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
@@ -744,6 +739,7 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
                                 f"Use Geant4's verbose output to know which ones. \n"
                                 f"Aborting."
                             )
+                    # FIXME: What causes the exceptions?
                     except:
                         warning(f"Could not check overlap for volume {volume.name}.")
 
@@ -876,7 +872,7 @@ class SimulationOutput:
         self.hook_log = []
 
     def store_actors(self, simulation_engine):
-        self.actors = simulation_engine.actor_engine.actors
+        self.actors = simulation_engine.simulation.actor_manager.actors
         for actor in self.actors.values():
             actor.close()
 
@@ -905,8 +901,10 @@ class SimulationOutput:
 
     def get_actor(self, name):
         if name not in self.actors:
-            s = self.actors.keys
-            fatal(f'The actor "{name}" does not exist. Here is the list of actors: {s}')
+            fatal(
+                f'The actor "{name}" does not exist. '
+                f"These are the actors known to this simulation: {list(self.actors.keys())}"
+            )
         return self.actors[name]
 
     def get_source(self, name):
@@ -941,9 +939,9 @@ class SimulationOutput:
         return self.sources_by_thread[thread][name]
 
 
-class SimulationEngine:
+class SimulationEngine(GateSingletonFatal):
     """
-    Main class to execute a Simulation (optionally in a separate subProcess)
+    Main class to execute a Simulation. Can only be created once per process because Geant4 dictates so.
     """
 
     def __init__(self, simulation, new_process=False):
@@ -958,6 +956,7 @@ class SimulationEngine:
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)
         self.actor_engine = ActorEngine(self)
+        self.filter_engine = FilterEngine(self)
         self.visu_engine = VisualisationEngine(self)
 
         # current state of the engine
@@ -965,15 +964,14 @@ class SimulationEngine:
         self.is_initialized = False
 
         # do we create a subprocess or not ?
+        # this is only for info.
+        # Process handling is done in Simulation class, not in SimulationEngine!
         self.new_process = new_process
-
-        # init only ?
-        self.init_only = False
 
         # LATER : option to wait the end of completion or not
 
         # UI
-        self.ui_session = None
+        self.g4_ui_session = None
         self.g4_ui = None
 
         # random engine
@@ -1021,6 +1019,7 @@ class SimulationEngine:
         self.visu_engine = None
 
     def release_g4_references(self):
+        self.g4_ui_session = None
         self.g4_ui = None
         self.g4_HepRandomEngine = None
         self.g4_StateManager = None
@@ -1046,16 +1045,21 @@ class SimulationEngine:
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, _type, value, traceback):
         self.close()
 
     def __getstate__(self):
-        if self.simulation.verbose_getstate:
-            warning("Getstate SimulationEngine")
-        self.g4_StateManager = None
-        # if self.user_fct_after_init is not None:
-        #    gate.warning(f'Warning')
-        return self.__dict__
+        raise GateImplementationError(
+            "The __getstate__() method of the SimulationEngine class got called. "
+            "That should not happen because it should be closed before anything is pickled "
+            "at the end of a subprocess. Check warning messages for clues!"
+        )
+        # if self.simulation.verbose_getstate:
+        #     warning("Getstate SimulationEngine")
+        # self.g4_StateManager = None
+        # # if self.user_fct_after_init is not None:
+        # #    gate.warning(f'Warning')
+        # return self.__dict__
 
     def __setstate__(self, d):
         self.__dict__ = d
@@ -1091,7 +1095,7 @@ class SimulationEngine:
             self.user_hook_after_init(self)
 
         # if init only, we stop
-        if self.init_only:
+        if self.simulation.init_only:
             output.store_actors(self)
             output.store_sources(self)
             output.store_hook_log(self)
@@ -1185,7 +1189,7 @@ class SimulationEngine:
             )
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
-        self.ui_session = ui
+        self.g4_ui_session = ui
         # we must keep a ref to ui_manager
         self.g4_ui = g4.G4UImanager.GetUIpointer()
         if self.g4_ui is None:
@@ -1211,7 +1215,13 @@ class SimulationEngine:
         self.simulation.initialize_source_before_g4_engine()
 
         # create the run manager (assigned to self.g4_RunManager)
-        self.create_run_manager()
+        if self.g4_RunManager:
+            fatal("A G4RunManager as already been created.")
+        self.g4_RunManager = self.create_run_manager()
+        # this creates a finalizer for the run manager which assures that
+        # the close() method is called before the run manager is garbage collected,
+        # i.e. G4RunManager destructor is called
+        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
 
         # create the handler for the exception
         self.g4_exception_handler = ExceptionHandler()
@@ -1221,47 +1231,45 @@ class SimulationEngine:
         # FIXME: put this assertion in a setter hook
         assert_run_timing(self.run_timing_intervals)
 
+        # check if some actors need UserEventInformation
+        # FIXME: should go to ActorEngine
+        self.enable_user_event_information(
+            self.simulation.actor_manager.user_info_actors.values()
+        )
+
         # Geometry initialization
         log.info("Simulation: initialize Geometry")
-
-        # Set the userDetector pointer of the Geant4 run manager
-        # to VolumeEngine object defined here in open-gate
         self.volume_engine.initialize()
-        self.g4_RunManager.SetUserInitialization(self.volume_engine)
-        # Important: The volumes are constructed
-        # when the G4RunManager calls the Construct method of the VolumeEngine,
-        # which happens in the InitializeGeometry method of the
-        # G4RunManager (Geant4 code)
 
         # Physics initialization
         log.info("Simulation: initialize Physics")
         self.physics_engine.initialize_before_runmanager()
-        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
 
         # Apply G4 commands *before* init (after phys init)
         self.apply_all_g4_commands_before_init()
-
-        # check if some actors need UserEventInformation
-        self.enable_user_event_information(
-            self.simulation.actor_manager.user_info_actors.values()
-        )
 
         # sources
         log.info("Simulation: initialize Source")
         self.source_engine.initialize(self.simulation.run_timing_intervals)
 
         # action
-        self.g4_RunManager.SetUserInitialization(self.action_engine)
-
-        # Actors initialization (before the RunManager Initialize)
-        log.info("Simulation: initialize Actors")
-        self.actor_engine.create_actors()  # calls the actors' constructors
-        self.source_engine.initialize_actors(self.actor_engine.actors)
 
         # Visu
         if self.simulation.visu:
             log.info("Simulation: initialize Visualization")
             self.visu_engine.initialize_visualisation()
+
+        # set pointers to python classes
+        self.g4_RunManager.SetUserInitialization(self.volume_engine)
+        self.g4_RunManager.SetUserInitialization(self.physics_engine.g4_physics_list)
+        self.g4_RunManager.SetUserInitialization(
+            self.action_engine
+        )  # G4 internally calls action_engine.Build()
+
+        # Important: The volumes are constructed
+        # when the G4RunManager calls the Construct method of the VolumeEngine,
+        # which happens in the InitializeGeometry() method of the
+        # G4RunManager within Initialize() (Geant4 code)
 
         # Note: In serial mode, SetUserInitialization() would only be needed
         # for geometry and physics, but in MT mode the fake run for worker
@@ -1272,6 +1280,7 @@ class SimulationEngine:
         else:
             self.g4_RunManager.Initialize()
 
+        log.info("Simulation: initialize PhysicsEngine after RunManager initialization")
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
 
@@ -1280,8 +1289,15 @@ class SimulationEngine:
             self.g4_RunManager.FakeBeamOn()
 
         # Actions initialization
-        self.actor_engine.action_engine = self.action_engine
+        # This must come after the G4RunManager initialization
+        # because the RM initialization calls ActionEngine.Build()
+        # which is required for initialize()
+        # Actors initialization (before the RunManager Initialize)
+        # self.actor_engine.create_actors()  # calls the actors' constructors
+        log.info("Simulation: initialize actors")
+        self.source_engine.initialize_actors()
         self.actor_engine.initialize()
+        self.filter_engine.initialize()
 
         self.is_initialized = True
 
@@ -1304,9 +1320,6 @@ class SimulationEngine:
         and make some basic settings.
 
         """
-        if self.g4_RunManager:
-            fatal("A G4RunManager as already been created.")
-
         if self.simulation.multithreaded is True:
             # GetOptions() returns a set which should contain 'MT'
             # if Geant4 was compiled with G4MULTITHREADED
@@ -1318,20 +1331,17 @@ class SimulationEngine:
             log.info(
                 f"Simulation: create MTRunManager with {self.simulation.number_of_threads} threads"
             )
-            self.g4_RunManager = g4.WrappedG4MTRunManager()
-            self.g4_RunManager.SetNumberOfThreads(self.simulation.number_of_threads)
+            g4_RunManager = g4.WrappedG4MTRunManager()
+            g4_RunManager.SetNumberOfThreads(self.simulation.number_of_threads)
         else:
             log.info("Simulation: create RunManager (single thread)")
-            self.g4_RunManager = g4.WrappedG4RunManager()
+            g4_RunManager = g4.WrappedG4RunManager()
 
-        if self.g4_RunManager is None:
+        if g4_RunManager is None:
             fatal("Unable to create RunManager")
 
-        self.g4_RunManager.SetVerboseLevel(self.simulation.g4_verbose_level)
-        # this creates a finalizer for the run manager which assures that
-        # the close() method is called before the run manager is garbage collected,
-        # i.e. G4RunManager destructor is called
-        self.run_manager_finalizer = weakref.finalize(self.g4_RunManager, self.close)
+        g4_RunManager.SetVerboseLevel(self.simulation.g4_verbose_level)
+        return g4_RunManager
 
     def apply_all_g4_commands_after_init(self):
         for command in self.simulation.g4_commands_after_init:
@@ -1402,7 +1412,7 @@ class SimulationEngine:
     def enable_user_event_information(self, actors):
         self.user_event_information_flag = False
         for ac in actors:
-            if "attributes" in ac.__dict__:
+            if "attributes" in ac.user_info:
                 if "ParentParticleName" in ac.attributes:
                     self.user_event_information_flag = True
                     return

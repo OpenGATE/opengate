@@ -45,6 +45,8 @@ import opengate.physics
 import opengate.base
 import opengate.engines
 
+# import opengate.postprocessors
+
 # These objects are imported at the top level of the package
 # because users will frequently use them
 from opengate.managers import Simulation

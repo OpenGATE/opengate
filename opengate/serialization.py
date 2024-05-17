@@ -5,6 +5,8 @@ from pathlib import Path, PurePath
 
 from .exception import fatal
 
+import opengate_core as g4
+
 
 class GateJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -16,6 +18,8 @@ class GateJSONEncoder(json.JSONEncoder):
             }
         elif isinstance(obj, Path):
             return {"__pathlib_path__": PurePath(obj).parts}
+        elif isinstance(obj, g4.G4BestUnit):
+            return str(obj).split()
         elif hasattr(obj, "to_dictionary"):
             fatal(
                 f"Implementation error: Serializer found GateObject named {obj.name}. "

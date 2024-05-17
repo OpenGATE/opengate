@@ -21,15 +21,19 @@ GateDigitizerSpatialBlurringActor::GateDigitizerSpatialBlurringActor(
 
   // actions
   fActions.insert("EndOfEventAction");
+}
 
+GateDigitizerSpatialBlurringActor::~GateDigitizerSpatialBlurringActor() =
+    default;
+
+void GateDigitizerSpatialBlurringActor::InitializeUserInput(
+    py::dict &user_info) {
+  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
   // blurring method
   fBlurAttributeName = DictGetStr(user_info, "blur_attribute");
   fBlurSigma3 = DictGetG4ThreeVector(user_info, "blur_sigma");
   fKeepInSolidLimits = DictGetBool(user_info, "keep_in_solid_limits");
 }
-
-GateDigitizerSpatialBlurringActor::~GateDigitizerSpatialBlurringActor() =
-    default;
 
 void GateDigitizerSpatialBlurringActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {

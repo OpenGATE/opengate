@@ -52,6 +52,7 @@ void init_G4UnitsTable(py::module &m) {
              oss << a;
              return oss.str();
            })
+      .def("GetValue", &G4BestUnit::GetValue, py::return_value_policy::copy)
       .def("GetIndexOfCategory", &G4BestUnit::GetIndexOfCategory);
 
   // py::bind_vector<std::vector<G4UnitsCategory*>>(m, "G4UnitsTable");

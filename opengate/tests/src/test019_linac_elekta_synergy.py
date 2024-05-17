@@ -22,6 +22,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.random_seed = 12345678
     sim.check_volumes_overlap = True
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -49,20 +50,20 @@ if __name__ == "__main__":
     synergy.enable_brem_splitting(sim, linac.name, splitting_factor=100)
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # add phase space
     plane = synergy.add_phase_space_plane(sim, linac.name, 299.99 * mm)
     plane.rmax = 70 * mm
     phsp = synergy.add_phase_space(sim, plane.name)
-    phsp.output = paths.output / "phsp_synergy.root"
+    phsp.output_filename = "phsp_synergy.root"
+    print(f"Output filename {phsp.get_output_path()}")
 
     # start simulation
     sim.run()
 
     # print results
-    stats = sim.output.get_actor(s.name)
     print(stats)
 
     # compare root
@@ -73,7 +74,7 @@ if __name__ == "__main__":
     tols = [0.03, 1.8, 1.8]
     is_ok = utility.compare_root3(
         root_ref,
-        phsp.output,
+        phsp.get_output_path(),
         br,
         br,
         keys,
@@ -92,7 +93,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             root_ref,
-            phsp.output,
+            phsp.get_output_path(),
             br,
             br,
             keys,
@@ -119,7 +120,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             root_ref,
-            phsp.output,
+            phsp.get_output_path(),
             br,
             br,
             keys,

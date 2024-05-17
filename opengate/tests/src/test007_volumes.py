@@ -212,7 +212,7 @@ if __name__ == "__main__":
     print(stats)
 
     # check
-    stats_ref = gate.actors.miscactors.SimulationStatisticsActor()
+    stats_ref = gate.actors.miscactors.SimulationStatisticsActor(name="ref")
     c = stats_ref.counts
     c.run_count = 1
     c.event_count = 1280

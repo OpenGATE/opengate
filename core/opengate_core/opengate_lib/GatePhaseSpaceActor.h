@@ -25,6 +25,10 @@ public:
 
   virtual ~GatePhaseSpaceActor();
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
+  virtual void InitializeCpp() override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
@@ -54,6 +58,12 @@ public:
   int GetNumberOfAbsorbedEvents();
 
   int GetTotalNumberOfEntries();
+
+  inline void SetOutputFilename(std::string filename) {
+    fOutputFilename = filename;
+  }
+
+  inline std::string GetOutputFilename() { return fOutputFilename; }
 
 protected:
   // Local data for the threads (each one has a copy)

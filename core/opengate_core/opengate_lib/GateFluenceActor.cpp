@@ -34,7 +34,7 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 
-void GateFluenceActor::ActorInitialize() {}
+void GateFluenceActor::InitializeCpp() {}
 
 void GateFluenceActor::BeginOfRunAction(const G4Run *) {
   Image3DType::RegionType region =

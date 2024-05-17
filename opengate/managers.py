@@ -1,4 +1,5 @@
 import sys
+import logging
 import time
 
 from box import Box
@@ -7,11 +8,10 @@ import shutil
 import opengate_core as g4
 import os
 from pathlib import Path
-import itk
+import weakref
 
 from .base import (
     GateObject,
-    GateObjectSingleton,
     process_cls,
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
@@ -26,7 +26,7 @@ from .image import (
     create_image_with_extent,
     voxelize_volume,
     update_image_py_to_cpp,
-    get_cpp_image,
+    get_py_image_from_cpp_image,
     write_itk_image,
 )
 from .utility import (
@@ -38,7 +38,8 @@ from .utility import (
     ensure_filename_is_str,
     insert_suffix_before_extension,
 )
-from .logger import INFO, log
+from . import logger
+from .logger import log
 from .physics import Region, OpticalSurface, cut_particle_names
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
@@ -61,7 +62,23 @@ from .geometry.volumes import (
     ParallelWorldVolume,
     VolumeTreeRoot,
 )
-
+from .actors.filters import get_filter_class, FilterBase, filter_classes
+from .actors.base import ActorBase
+from .actors.doseactors import DoseActor, LETActor, FluenceActor
+from .actors.dynamicactors import DynamicGeometryActor
+from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
+from .actors.miscactors import SimulationStatisticsActor, KillActor
+from .actors.digitizers import (
+    DigitizerAdderActor,
+    DigitizerBlurringActor,
+    DigitizerSpatialBlurringActor,
+    DigitizerReadoutActor,
+    DigitizerEfficiencyActor,
+    DigitizerProjectionActor,
+    DigitizerEnergyWindowsActor,
+    DigitizerHitsCollectionActor,
+    PhaseSpaceActor,
+)
 
 particle_names_Gate_to_G4 = {
     "gamma": "gamma",
@@ -69,6 +86,26 @@ particle_names_Gate_to_G4 = {
     "positron": "e+",
     "proton": "proton",
     "neutron": "neutron",
+}
+
+actor_types = {
+    "DoseActor": DoseActor,
+    "LETActor": LETActor,
+    "FluenceActor": FluenceActor,
+    "DynamicGeometryActor": DynamicGeometryActor,
+    "ARFActor": ARFActor,
+    "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    "SimulationStatisticsActor": SimulationStatisticsActor,
+    "KillActor": KillActor,
+    "DigitizerAdderActor": DigitizerAdderActor,
+    "DigitizerBlurringActor": DigitizerBlurringActor,
+    "DigitizerSpatialBlurringActor": DigitizerSpatialBlurringActor,
+    "DigitizerReadoutActor": DigitizerReadoutActor,
+    "DigitizerEfficiencyActor": DigitizerEfficiencyActor,
+    "DigitizerProjectionActor": DigitizerProjectionActor,
+    "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
+    "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "PhaseSpaceActor": PhaseSpaceActor,
 }
 
 
@@ -136,6 +173,10 @@ class FilterManager:
         s = f'{" ".join(v)} ({len(self.user_info_filters)})'
         return s
 
+    @property
+    def available_filters(self):
+        return list(filter_classes.keys())
+
     def dump(self):
         n = len(self.user_info_filters)
         s = f"Number of filters: {n}"
@@ -149,29 +190,33 @@ class FilterManager:
         return s
 
     def get_filter(self, name):
-        if name not in self.filters:
+        try:
+            return self.filters[name]
+        except KeyError:
             fatal(
                 f"The Filter {name} is not in the current "
                 f"list of Filters: {self.filters}"
             )
-        return self.filters[name]
 
-    def add_filter(self, filter_type, name):
-        # check that another element with the same name does not already exist
-        assert_unique_element_name(self.filters, name)
-        # build it
-        a = UserInfo("Filter", filter_type, name)
-        # append to the list
-        self.user_info_filters[name] = a
-        # return the info
-        return a
+    def add_filter(self, filt, name=None):
+        if isinstance(filt, str):
+            if name is None:
+                fatal("You must provide a name for the filter.")
+            new_filter = self.create_filter(filt, name)
+        elif isinstance(filt, FilterBase):
+            new_filter = filt
+        else:
+            fatal(
+                "You need to either provide a volume type and name, or a volume object."
+            )
+        if new_filter.name in self.filters:
+            fatal(f"A filter with the name {new_filter.name} already exists.")
+        self.filters[new_filter.name] = new_filter
+        if new_filter is not filt:
+            return new_filter
 
-    def initialize(self):
-        for ui in self.user_info_filters.values():
-            filter = new_element(ui, self.simulation)
-            log.debug(f"Filter: initialize [{ui.type_name}] {ui.name}")
-            filter.Initialize(ui)
-            self.filters[ui.name] = filter
+    def create_filter(self, filter_type, name):
+        return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
 
 class SourceManager:
@@ -268,31 +313,59 @@ class SourceManager:
                 source.initialize_source_before_g4_engine(source)
 
 
-class ActorManager:
+class ActorManager(GateObject):
     """
     Manage all the actors in the simulation
     """
 
-    def __init__(self, simulation):
-        self.simulation = simulation
+    def __init__(self, simulation, *args, **kwargs):
+        kwargs["name"] = "actor_manager"
+        kwargs["simulation"] = simulation
+        super().__init__(*args, **kwargs)
         self.user_info_actors = {}
+        self.actors = (
+            {}
+        )  # dictionary of actor objects. Do not fill manually. Use add_actor() method.
 
     def __str__(self):
-        v = [v.name for v in self.user_info_actors.values()]
-        s = f'{" ".join(v)} ({len(self.user_info_actors)})'
+        s = "The actor manager contains the following actors: \n"
+        s += self.dump_actors()
         return s
 
-    """def __getstate__(self):
-        if self.simulation.verbose_getstate:
-            gate.exception.warning("Getstate ActorManager")
-        # needed to not pickle. Need to reset user_info_actors to avoid to store the actors
-        self.user_info_actors = {}
-        return self.__dict__"""
+    @property
+    def sorted_actors(self):
+        # consider the priority value of the actors
+        return sorted(self.actors.values(), key=lambda a: a.priority)
+
+    def reset(self):
+        self.__init__(simulation=self.simulation)
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["actors"] = dict([(k, v.to_dictionary()) for k, v in self.actors.items()])
+        return d
+
+    def from_dictionary(self, d):
+        self.reset()
+        super().from_dictionary(d)
+        # Create all actors
+        for k, v in d["actors"].items():
+            a = self.add_actor(v["object_type"], name=v["user_info"]["name"])
+            a.from_dictionary(v)
+
+    def get_actor(self, actor_name):
+        try:
+            return self.actors[actor_name]
+        except KeyError:
+            fatal(
+                f"Cannot find actor {actor_name}. "
+                f"Actors included in this simulation are: {list(self.actors.keys())}"
+            )
 
     def dump_actors(self):
-        n = len(self.user_info_actors)
+        n = len(self.actors)
         s = f"Number of Actors: {n}"
-        for actor in self.user_info_actors.values():
+        for actor in self.actors.values():
             if n > 1:
                 a = "\n" + "-" * 20
             else:
@@ -302,31 +375,51 @@ class ActorManager:
         return s
 
     def dump_actor_types(self):
-        s = f""
-        # FIXME: workaround to avoid circular import, will be solved when refactoring actors
-        from opengate.actors.actorbuilders import actor_builders
-
-        for t in actor_builders:
-            s += f"{t} "
-        return s
+        return "\n".join(list(actor_types.keys()))
 
     def get_actor_user_info(self, name):
-        if name not in self.user_info_actors:
-            fatal(
-                f"The actor {name} is not in the current "
-                f"list of actors: {self.user_info_actors}"
-            )
-        return self.user_info_actors[name]
+        warning(
+            f"Deprecation warning: This function will soon be removed."
+            f"Use my_actor.user_info instead, where 'my_actor' "
+            f"should be replace by your actor object. "
+            f"You can also access user input parameters directly, e.g. my_actor.attached_to=..."
+        )
+        actor = self.get_actor(name)
+        return actor.user_info
 
-    def add_actor(self, actor_type, name):
-        # check that another element with the same name does not already exist
-        assert_unique_element_name(self.user_info_actors, name)
-        # build it
-        a = UserInfo("Actor", actor_type, name)
-        # append to the list
-        self.user_info_actors[name] = a
-        # return the info
-        return a
+    def add_actor(self, actor, name):
+        if isinstance(actor, str):
+            if name is None:
+                fatal("You must provide a name for the actor.")
+            new_actor = self._create_actor(actor, name)
+        elif isinstance(actor, ActorBase):
+            new_actor = actor
+        else:
+            fatal(
+                "You need to either provide an actor type and name, or an actor object."
+            )
+
+        if new_actor.name in self.actors:
+            fatal(
+                f"The actor name {new_actor.name} already exists. "
+                f"Existing actor names are: {self.actors.keys()}"
+            )
+        self.actors[new_actor.name] = new_actor
+        self.actors[new_actor.name].simulation = self.simulation
+        # return the volume if it has not been passed as input, i.e. it was created here
+        if new_actor is not actor:
+            return new_actor
+
+    def _create_actor(self, actor_type, name):
+        try:
+            cls = actor_types[actor_type]
+        except KeyError:
+            fatal(
+                f"Unknown actor type {actor_type}. "
+                f"Known types are: \n."
+                f"{self.dump_actor_types()}."
+            )
+        return cls(name=name, simulation=self.simulation)
 
 
 class PhysicsListManager(GateObject):
@@ -812,6 +905,44 @@ class PhysicsManager(GateObject):
             self.user_info.user_limits_particles[pn] = True
 
 
+class PostProcessingManager(GateObject):
+    """
+    Everything related to post-processing.
+    """
+
+    user_info_defaults = {
+        "auto_process": (
+            True,
+            {
+                "doc": "Should the post-processing automatically be started at the end of the simulation?"
+            },
+        ),
+    }
+
+    def __init__(self, simulation, *args, **kwargs):
+        super().__init__(
+            *args, name="post_processing_manager", simulation=simulation, **kwargs
+        )
+
+        self.finalizers = {}
+        self.post_processors = {}
+
+    def add_post_processor(self, post_processor):
+        try:
+            name = post_processor.name
+        except AttributeError:
+            fatal(f"Cannot retrieve the name of the post-processor.")
+        if name not in self.post_processors:
+            self.post_processors[name] = post_processor
+            # add finalizers to make sure the post-processor is shut down gracefully
+            # when the managers is garbage collected
+            self.finalizers[name] = weakref.finalize(
+                post_processor, post_processor.close
+            )
+        else:
+            fatal(f"A post-processor with this name has already been added. ")
+
+
 class VolumeManager(GateObject):
     """
     Store and manage a hierarchical list of geometrical volumes and associated materials.
@@ -838,9 +969,9 @@ class VolumeManager(GateObject):
         """
         Class that store geometry description.
         """
-        self.simulation = simulation
         # force name to VolumeManager
         kwargs["name"] = "VolumeManager"
+        kwargs["simulation"] = simulation
         super().__init__(*args, **kwargs)
 
         self.volume_tree_root = VolumeTreeRoot(
@@ -851,7 +982,7 @@ class VolumeManager(GateObject):
         # default world volume
         self.volumes = {}
         self.volumes[__world_name__] = BoxVolume(
-            volume_manager=self,
+            simulation=self.simulation,
             name=__world_name__,
             size=[3 * m, 3 * m, 3 * m],
             material="G4_AIR",
@@ -973,7 +1104,7 @@ class VolumeManager(GateObject):
                 f"The volume name {new_volume.name} already exists. Existing volume names are: {self.volumes.keys()}"
             )
         self.volumes[new_volume.name] = new_volume
-        self.volumes[new_volume.name].volume_manager = self
+        self.volumes[new_volume.name].simulation = self.simulation
         self._need_tree_update = True
         # return the volume if it has not been passed as input, i.e. it was created here
         if new_volume is not volume:
@@ -1039,7 +1170,11 @@ class VolumeManager(GateObject):
 
 
 def setter_hook_verbose_level(self, verbose_level):
-    log.setLevel(verbose_level)
+    try:
+        level = int(verbose_level)
+    except ValueError:
+        level = getattr(logging, verbose_level)
+    log.setLevel(level)
     return verbose_level
 
 
@@ -1056,11 +1191,27 @@ class Simulation(GateObject):
 
     user_info_defaults = {
         "verbose_level": (
-            INFO,
+            logger.INFO,
             {
-                "doc": "Gate pre-run verbosity. Possible values: NONE, INFO, DEBUG.",
+                "doc": "Gate pre-run verbosity. ",
+                "allowed_values": (
+                    "NONE",
+                    "INFO",
+                    "DEBUG",
+                    logger.NONE,
+                    logger.INFO,
+                    logger.DEBUG,
+                ),
                 "setter_hook": setter_hook_verbose_level,
             },
+        ),
+        "verbose_close": (
+            False,
+            {"doc": "Switch on/off verbose output in close() methods."},
+        ),
+        "verbose_getstate": (
+            False,
+            {"doc": "Switch on/off verbose output in __getstate__() methods."},
         ),
         "running_verbose_level": (0, {"doc": "Gate verbosity during running."}),
         "g4_verbose_level": (
@@ -1174,13 +1325,6 @@ class Simulation(GateObject):
             {
                 "doc": "Directory to which any output is written, "
                 "unless an absolute path is provided for a specific output."
-            },
-        ),
-        "output_path_insert_suffix": (
-            True,
-            {
-                "doc": "Manipulates and inserts the name of the scored quantity into the filename. If False, the user defined output name is not changed."
-                "Default: True"
             },
         ),
         "store_json_archive": (
@@ -1343,7 +1487,7 @@ class Simulation(GateObject):
         for f in input_files:
             shutil.copy2(f, directory)
 
-    def get_output_path(self, path=None, is_file_or_directory="file", suffix=""):
+    def get_output_path(self, path=None, is_file_or_directory="file", suffix=None):
         if path is None:
             # no input -> return global output directory
             p_out = Path(self.output_dir)
@@ -1357,7 +1501,7 @@ class Simulation(GateObject):
                 # or just keep it
                 p_out = p
 
-        if self.output_path_insert_suffix:
+        if suffix is not None:
             p_out = insert_suffix_before_extension(p_out, suffix)
 
         # Make sure the directory exists
@@ -1371,7 +1515,7 @@ class Simulation(GateObject):
                 directory /= p_out.parts[i + 1]
             ensure_directory_exists(directory)
 
-        return p_out.absolute()
+        return p_out.absolute().resolve()
 
     def add_g4_command_after_init(self, command):
         """
@@ -1411,11 +1555,6 @@ class Simulation(GateObject):
 
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
-
-    # def start(self, start_new_process=False):
-    #     se = SimulationEngine(self, start_new_process=start_new_process)
-    #     self.output = se.start()
-    #     return self.output
 
     @property
     def multithreaded(self):
@@ -1457,13 +1596,21 @@ class Simulation(GateObject):
 
             log.info("Dispatching simulation to subprocess ...")
             self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
+
+            # FIXME: should this not be done in a __setstate__ method?
+            # put back the simulation object to all actors
+            for actor in self.output.actors.values():
+                actor.simulation = self
+
+            # Recover output from unpickled actors coming from sub-process queue
+            for actor in self.actor_manager.actors.values():
+                returned_actor = self.output.get_actor(actor.name)
+                actor.user_output = returned_actor.user_output
         else:
+            # Nothing special to do if the simulation engine ran in the native python process
+            # because everything is already in place.
             self.output = self._run_simulation_engine(False)
 
-        # FIXME: should this not be done in a __setstate__ method?
-        # put back the simulation object to all actors
-        for actor in self.output.actors.values():
-            actor.simulation = self
         self.output.simulation = self
 
         if self.store_json_archive is True:
@@ -1567,7 +1714,7 @@ class Simulation(GateObject):
             vox = g4.GateVolumeVoxelizer()
             update_image_py_to_cpp(image, vox.fImage, False)
             vox.Voxelize()
-            image = get_cpp_image(vox.fImage)
+            image = get_py_image_from_cpp_image(vox.fImage)
             labels = vox.fLabels
 
         return labels, image

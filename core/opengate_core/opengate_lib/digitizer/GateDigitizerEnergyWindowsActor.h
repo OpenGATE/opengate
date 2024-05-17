@@ -28,6 +28,10 @@ public:
 
   virtual ~GateDigitizerEnergyWindowsActor();
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
+  virtual void InitializeCpp() override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
@@ -51,6 +55,12 @@ public:
 
   // Get the id of the last energy window
   int GetLastEnergyWindowId();
+
+  inline void SetOutputFilename(std::string filename) {
+    fOutputFilename = filename;
+  }
+
+  inline std::string GetOutputFilename() { return fOutputFilename; }
 
 protected:
   std::string fOutputFilename;

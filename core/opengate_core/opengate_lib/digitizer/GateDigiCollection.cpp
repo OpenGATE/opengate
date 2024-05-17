@@ -135,6 +135,7 @@ void GateDigiCollection::Close() const {
 }
 
 void GateDigiCollection::InitDigiAttributeFromName(const std::string &name) {
+  // FIXME: redundant check. this is also checked in InitDigiAttribute()
   if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name

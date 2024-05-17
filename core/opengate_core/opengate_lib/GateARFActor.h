@@ -23,6 +23,8 @@ public:
   // Constructor
   explicit GateARFActor(py::dict &user_info);
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
   // Beginning run callback
   virtual void BeginOfRunAction(const G4Run * /*run*/) override;
 

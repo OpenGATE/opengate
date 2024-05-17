@@ -28,7 +28,9 @@ public:
   // explicit GateDoseActor(py::dict &user_info);
   // virtual ~GateDoseActor();
 
-  virtual void ActorInitialize() override;
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
+  virtual void InitializeCpp() override;
 
   // Main function called every step in attached volume
   virtual void SteppingAction(G4Step *) override;
@@ -63,6 +65,9 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
+  //  Image3DType::Pointer cpp_dose_image;
+  Image3DType::Pointer cpp_square_image;
+  Image3DType::SizeType size_edep;
 
   // Option: indicate if we must compute uncertainty
   bool fUncertaintyFlag;
@@ -72,6 +77,8 @@ public:
 
   // Option: indicate if we must compute dose in Gray also
   bool fDoseFlag;
+
+  std::string fScoreIn;
 
   // Option: indicate we must convert to dose to water
   bool fToWaterFlag;
@@ -87,9 +94,6 @@ public:
   bool fSTEofMeanFlag;
 
   // For uncertainty computation, we need temporary images
-
-  Image3DType::Pointer cpp_square_image;
-  Image3DType::SizeType size_edep;
 
   double fVoxelVolume;
   int NbOfEvent = 0;

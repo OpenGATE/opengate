@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.visu = False
     sim.random_seed = 983456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -64,8 +65,8 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test030.mhd"
-    dose.mother = "waterbox"
+    # dose.output = paths.output / "test030.mhd" # FIXME
+    dose.attached_to = "waterbox"
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -75,13 +76,11 @@ if __name__ == "__main__":
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
-    s.output = paths.output / "stats030.txt"
+    s.output_filename = "stats030.txt"
 
     # motion
-    motion = sim.add_actor("MotionVolumeActor", "Orbiting")
-    motion.mother = fake.name
-    motion.translations = []
-    motion.rotations = []
+    translations = []
+    rotations = []
     sim.run_timing_intervals = []
     n = 3
     start = 0
@@ -91,12 +90,15 @@ if __name__ == "__main__":
         t, rot = gate.geometry.utility.get_transform_orbiting(
             fake.translation, "Y", gantry_rotation
         )
-        motion.translations.append(t)
-        motion.rotations.append(rot)
+        translations.append(t)
+        rotations.append(rot)
         sim.run_timing_intervals.append([start, end])
         gantry_rotation += 20
         start = end
         end += 1 * sec / n
+    print(translations)
+    print(rotations)
+    fake.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
     # start simulation
     sim.run()
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep.mhd",
-            dose.user_info.output,
+            dose.get_output_path("edep"),
             stat,
             tolerance=30,
             ignore_value=0,
@@ -130,7 +132,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test030-edep_uncertainty.mhd",
-            dose.user_info.output_uncertainty,
+            dose.get_output_path("edep_uncertainty"),
             stat,
             tolerance=15,
             ignore_value=1,

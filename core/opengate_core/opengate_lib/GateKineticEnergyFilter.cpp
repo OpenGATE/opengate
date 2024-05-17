@@ -9,7 +9,7 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
-void GateKineticEnergyFilter::Initialize(py::dict &user_info) {
+void GateKineticEnergyFilter::InitializeUserInput(py::dict &user_info) {
   fEnergyMin = DictGetDouble(user_info, "energy_min");
   fEnergyMax = DictGetDouble(user_info, "energy_max");
 }

@@ -21,6 +21,10 @@ public:
 
   virtual ~GateDigitizerHitsCollectionActor();
 
+  void InitializeUserInput(py::dict &user_info) override;
+
+  void InitializeCpp() override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
@@ -41,6 +45,12 @@ public:
 
   // Called when the simulation end (master thread only)
   void EndSimulationAction() override;
+
+  inline void SetOutputFilename(std::string filename) {
+    fOutputFilename = filename;
+  }
+
+  inline std::string GetOutputFilename() { return fOutputFilename; }
 
 protected:
   std::string fOutputFilename;
