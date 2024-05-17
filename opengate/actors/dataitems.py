@@ -234,14 +234,15 @@ class DataItemContainer(DataContainer):
         if data is not None:
             self.set_data(*data)
 
-        # default configuration; inheriting classes may define this differently
-        if self._tuple_length > 1:
-            self.writable_data_items = Box([(i, Box({'suffix': f"dataitem_{i}",
-                                                  'write_to_disk': True}))
-                                             for i in range(self._tuple_length)])
-        else:
-            # no special suffix for single-item containers
-            self.writable_data_items = Box({0: Box({'suffix': None, 'write_to_disk': True})})
+        # default configuration in case the inheriting class does not define a writable_data_items class attribute
+        if len(self.writable_data_items) == 0:
+            if self._tuple_length > 1:
+                self.writable_data_items = Box([(i, Box({'suffix': f"dataitem_{i}",
+                                                      'write_to_disk': True}))
+                                                 for i in range(self._tuple_length)])
+            else:
+                # no special suffix for single-item containers
+                self.writable_data_items = Box({0: Box({'suffix': None, 'write_to_disk': True})})
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
