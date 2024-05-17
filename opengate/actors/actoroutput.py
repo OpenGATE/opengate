@@ -152,7 +152,7 @@ class ActorOutputBase(GateObject):
         )
 
 
-class AutoMergeActorOutput(ActorOutputBase):
+class ActorOutputUsingDataItemContainer(ActorOutputBase):
     user_info_defaults = {
         "merge_method": (
             "sum",
@@ -323,7 +323,7 @@ class AutoMergeActorOutput(ActorOutputBase):
                 data.write(self.get_output_path(which))
 
 
-class ActorOutputImage(AutoMergeActorOutput):
+class ActorOutputImage(ActorOutputUsingDataItemContainer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
