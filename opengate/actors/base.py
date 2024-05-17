@@ -169,6 +169,7 @@ class ActorBase(GateObject):
     #     s += "... where ACTOR is your actor object."
     #     return s
 
+    # *** shortcut properties ***
     @property
     @shortcut_for_single_output_actor
     def output_filename(self):
