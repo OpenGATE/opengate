@@ -1,4 +1,5 @@
 from box import Box
+from functools import wraps
 
 from ..definitions import __world_name__
 from ..exception import fatal
@@ -37,6 +38,37 @@ def _setter_hook_attached_to(self, attached_to):
         f"or a list/tuple of volumes or volume names. "
         f"Received: {attached_to}"
     )
+
+
+def shortcut_for_single_output_actor(func):
+    """Decorator for shortcut methods and properties that may be used only
+    with actors that handle a single user output. """
+
+    @wraps(func)
+    def _with_check(self, *args):
+        if len(self.user_output) > 1:
+            try:
+                # func could be a method,
+                name = func.__name__
+            except AttributeError:
+                try:
+                    # or a property
+                    name = func.fget.__name__
+                except AttributeError:
+                    name = ""
+            s = (
+                f"The shortcut {name} is not available for actor {self.type_name} "
+                f"because the actor handles more than one output, namely {list(self.user_output.keys())}. "
+                f"You need to set the parameter for each output individually.\n"
+            )
+            if len(name) > 0:
+                for k in self.user_output:
+                    s += f"ACTOR.user_output.{k}.{name} = ...\n"
+                s += "... where ACTOR is your actor object."
+            fatal(s)
+        return func(self, *args)
+
+    return _with_check
 
 
 class ActorBase(GateObject):
@@ -126,16 +158,16 @@ class ActorBase(GateObject):
         self.__dict__ = state
         self.__initcpp__()
 
-    def _get_error_msg_output_filename(self):
-        s = (
-            f"The shortcut attribute output_filename is not available for this actor "
-            f"because it handles more than one output. You need to set the output_filename "
-            f"parameter for each output individually: \n"
-        )
-        for k in self.user_output:
-            s += f"ACTOR.user_output.{k}.output_filename = ...\n"
-        s += "... where ACTOR is your actor object."
-        return s
+    # def _get_error_msg_output_filename(self):
+    #     s = (
+    #         f"The shortcut attribute output_filename is not available for this actor "
+    #         f"because it handles more than one output. You need to set the output_filename "
+    #         f"parameter for each output individually: \n"
+    #     )
+    #     for k in self.user_output:
+    #         s += f"ACTOR.user_output.{k}.output_filename = ...\n"
+    #     s += "... where ACTOR is your actor object."
+    #     return s
 
     @property
     def output_filename(self):
