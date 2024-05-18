@@ -6,7 +6,9 @@ import test038_gan_phsp_spect_gan_helpers as t38
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test038_gan_phsp_spect")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test038_gan_phsp_spect", "test038"
+    )
     paths.output_ref = paths.output_ref / "test038"
 
     # create the simulation
@@ -23,11 +25,11 @@ if __name__ == "__main__":
     # gsource.batch_size = 2e4
 
     # change output names
-    stat = sim.get_actor_user_info("Stats")
+    stat = sim.actor_manager.get_actor("Stats")
     stat.output = paths.output / "test038_gan_aa_stats.txt"
-    proj = sim.get_actor_user_info("Projection_spect1_crystal")
+    proj = sim.actor_manager.get_actor("Projection_spect1_crystal")
     proj.output = paths.output / "test038_gan_aa_proj.mhd"
-    singles = sim.get_actor_user_info("Singles_spect1_crystal")
+    singles = sim.actor_manager.get_actor("Singles_spect1_crystal")
     singles.output = paths.output / "test038_gan_aa_singles.root"
 
     # go (cannot be spawn in another process)

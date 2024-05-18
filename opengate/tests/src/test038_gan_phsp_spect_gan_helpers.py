@@ -58,6 +58,7 @@ def create_simulation(sim, paths, colli="lehr"):
     sim.visu = False
     # sim.running_verbose_level = gate.EVENT
     # sim.g4_verbose = True
+    sim.output_dir = paths.output
 
     # world size
     world = sim.world
@@ -166,15 +167,15 @@ def create_simulation(sim, paths, colli="lehr"):
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test038_gan_stats.txt"
+    stat.output_filename = "test038_gan_stats.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
     gate_spect.add_simplified_digitizer_tc99m(
         sim, "spect1_crystal", "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
-    singles_actor = sim.get_actor_user_info(f"Singles_spect1_crystal")
-    singles_actor.output = paths.output / "test038_gan_singles.root"
+    singles_actor = sim.actor_manager.get_actor(f"Singles_spect1_crystal")
+    singles_actor.output_filename = "test038_gan_singles.root"
 
     # motion of the spect, create also the run time interval
     """heads = [spect1]  # [spect1, spect2]
@@ -191,7 +192,7 @@ def create_simulation(sim, paths, colli="lehr"):
         motion.priority = 5"""
 
     phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp_actor.mother = phase_space_sphere.name
+    phsp_actor.attached_to = phase_space_sphere.name
     phsp_actor.attributes = [
         "KineticEnergy",
         "PrePosition",
@@ -201,13 +202,13 @@ def create_simulation(sim, paths, colli="lehr"):
         "EventDirection",
         "EventKineticEnergy",
     ]
-    phsp_actor.output = paths.output / "test038_gan_phsp.root"
+    phsp_actor.output_filename = "test038_gan_phsp.root"
 
     return condition_generator
 
 
 def analyze_results(output, paths, all_cond):
-    phsp_actor = output.get_actor("phsp").user_info
+    phsp_actor = output.get_actor("phsp")
     print(phsp_actor)
 
     # print stats
@@ -304,7 +305,7 @@ def analyze_results(output, paths, all_cond):
     print()
     gate.exception.warning(f"Check output phsp")
     ref_file = paths.output_ref / "test038_ref_phsp.root"
-    hc_file = phsp_actor.output
+    hc_file = phsp_actor.get_output_path()
     checked_keys = [
         "GlobalTime",
         "KineticEnergy",

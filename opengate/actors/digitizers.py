@@ -138,7 +138,7 @@ def get_simplified_digitizer_channels_rad(spect_name, rad, scatter_flag):
 class Digitizer:
     """
     Simple helper class to reduce the code size when creating a digitizer.
-    It only avoids repeating mother, output and input_digi_collection parameters.
+    It only avoids repeating attached_to, output and input_digi_collection parameters.
     """
 
     def __init__(self, sim, volume_name, digit_name):
@@ -925,7 +925,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         self.user_output.projection.write_data_if_requested(which="merged")
 
 
-class DigitizerReadoutActor(ActorBase, g4.GateDigitizerReadoutActor):
+class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
     """
     This actor is a DigitizerAdderActor + a discretization step:
     the final position is the center of the volume
@@ -941,6 +941,8 @@ class DigitizerReadoutActor(ActorBase, g4.GateDigitizerReadoutActor):
     }
 
     def __init__(self, *args, **kwargs):
+        # warning : inherit from DigitizerAdderActor but should not use its
+        # constructor because it adds an output
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputRoot, "readout_singles")
         self.__initcpp__()
@@ -948,11 +950,6 @@ class DigitizerReadoutActor(ActorBase, g4.GateDigitizerReadoutActor):
     def __initcpp__(self):
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
-
-    def initialize(self):
-        ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
-        self.InitializeCpp()
 
     def StartSimulationAction(self):
         self.SetOutputFilename(
