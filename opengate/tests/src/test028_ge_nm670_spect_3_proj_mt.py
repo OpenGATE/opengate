@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     # main description
     spect = test028.create_spect_simu(sim, paths, 4)
-    proj = test028.test_add_proj(sim, paths)
+    proj = test028.test_add_proj(sim)
 
     # rotate spect
     psd = 6.11 * cm

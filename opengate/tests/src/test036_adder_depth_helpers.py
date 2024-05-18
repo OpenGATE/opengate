@@ -7,10 +7,8 @@ from scipy.spatial.transform import Rotation
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "gate_test036_adder_depth")
 
-
-def create_simulation(geom):
+def create_simulation(geom, paths):
     # create the simulation
     sim = gate.Simulation()
 
@@ -19,6 +17,7 @@ def create_simulation(geom):
     sim.visu = False
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -118,8 +117,8 @@ def create_simulation(geom):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
-    hc.output = paths.output / "test036.root"
+    hc.attached_to = crystal.name
+    hc.output_filename = "test036.root"
     hc.attributes = [
         "KineticEnergy",
         "PostPosition",
@@ -134,12 +133,12 @@ def create_simulation(geom):
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.mother = crystal.name
+    sc.attached_to = crystal.name
     sc.input_digi_collection = "Hits"
     # sc.policy = 'EnergyWinnerPosition'
     sc.policy = "EnergyWeightedCentroidPosition"
     # same filename, there will be two branches in the file
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     sec = gate.g4_units.second
     sim.running_verbose_level = 2
@@ -155,7 +154,7 @@ def create_simulation(geom):
     return sim
 
 
-def test_output(output):
+def test_output(output, paths):
     # retrieve the information about the touched volumes
     man = g4.GateUniqueVolumeIDManager.GetInstance()
     vols = man.GetAllVolumeIDs()
@@ -178,7 +177,7 @@ def test_output(output):
 
     # root compare HITS
     print()
-    hc = output.get_actor("Hits").user_info
+    hc = output.get_actor("Hits")
     gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
@@ -188,7 +187,7 @@ def test_output(output):
     # tols[4] = 0.01  # energy
     is_ok = utility.compare_root3(
         gate_file,
-        hc.output,
+        hc.get_output_path(),
         "Hits",
         "Hits",
         keys1,
@@ -201,7 +200,7 @@ def test_output(output):
 
     # Root compare SINGLES
     print()
-    sc = output.get_actor("Singles").user_info
+    sc = output.get_actor("Singles")
     gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
@@ -214,7 +213,7 @@ def test_output(output):
     is_ok = (
         utility.compare_root3(
             gate_file,
-            sc.output,
+            sc.get_output_path(),
             "Singles",
             "Singles",
             keys1,

@@ -49,8 +49,6 @@ void GateVDigitizerWithOutputActor::InitializeUserInput(py::dict &user_info) {
 }
 
 void GateVDigitizerWithOutputActor::StartSimulationAction() {
-  DDD(fOutputFilename);
-  DDD(G4Threading::IsMultithreadedApplication());
   // Get the input hits collection
   auto *hcm = GateDigiCollectionManager::GetInstance();
   fInputDigiCollection = hcm->GetDigiCollection(fInputDigiCollectionName);

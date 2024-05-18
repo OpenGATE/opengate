@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
     # main description
     spect = test028.create_spect_simu(sim, paths, number_of_threads=1)
-    proj = test028.test_add_proj(sim, paths)
+    proj = test028.test_add_proj(sim)
 
     # change the digitizer to add blurring between the adder and the energy window
     mm = gate.g4_units.mm
