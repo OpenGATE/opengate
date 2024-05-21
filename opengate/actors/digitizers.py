@@ -735,12 +735,9 @@ class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActo
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        if self.user_output.hits.write_to_disk is True:
-            self.SetOutputFilename(
-                ensure_filename_is_str(self.user_output.hits.get_output_path())
-            )
-        else:
-            self.SetOutputFilename("")
+        self.SetOutputFilename(
+            ensure_filename_is_str(self.user_output.hits.get_output_path())
+        )
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):

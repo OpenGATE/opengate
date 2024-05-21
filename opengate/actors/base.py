@@ -137,6 +137,10 @@ class ActorBase(GateObject):
                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
             },
         ),
+        "write_to_disk": (
+            True,  # FIXME set it to False by default ?
+            {"doc": "TODO "},
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -248,6 +252,13 @@ class ActorBase(GateObject):
             if self.extra_suffix is not None and v.extra_suffix is None:
                 v.extra_suffix = self.extra_suffix
             v.initialize()
+
+        # special case for one single output
+        # this is important for root output
+        if len(self.user_output) == 1:
+            v = list(self.user_output.values())[0]
+            if v.write_to_disk is False:
+                self.write_to_disk = False
 
     def _add_user_output(self, actor_output_class, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods

@@ -93,6 +93,7 @@ def create_simulation(nb_threads):
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = [crystal1, crystal2]
+    hc.output_filename = "test025.root"
 
     if sim.number_of_threads > 1:
         hc.extra_suffix = "MT"
@@ -130,6 +131,7 @@ def create_simulation(nb_threads):
     # hits collection #2
     hc2 = sim.add_actor("DigitizerHitsCollectionActor", "Hits2")
     hc2.attached_to = [crystal1, crystal2]
+    hc2.output_filename = "test025_hits2.root"
 
     if sim.number_of_threads > 1:
         hc2.extra_suffix = "MT"
@@ -162,7 +164,7 @@ def test_simulation_results(output):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor("Hits").user_output.hits.get_output_path()
+    hc_file = output.get_actor("Hits").get_output_path()
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X

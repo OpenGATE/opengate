@@ -12,8 +12,8 @@ from ..base import DynamicGateObject, process_cls
 from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
-from ..image import update_image_py_to_cpp, write_itk_image
-from ..image import create_3d_image, update_image_py_to_cpp
+from ..image import write_itk_image
+from ..image import update_image_py_to_cpp
 from .utility import (
     vec_np_as_g4,
     rot_np_as_g4,

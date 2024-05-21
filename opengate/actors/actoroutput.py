@@ -402,13 +402,11 @@ class ActorOutputRoot(ActorOutputBase):
         return super().get_output_path("merged")
 
     def initialize(self):
+        # for ROOT output, do not set a default output_filename
+        # we just DON'T want to dump the file
+        if self.output_filename == "" or self.output_filename is None:
+            self.write_to_disk = False
         super().initialize()
-        # FIXME: check why this is actually needed
-        if self.simulation.multithreaded and not self.write_to_disk:
-            fatal(
-                f"Digitizer actors required root output in multithreaded mode. "
-                f'Please provide output_filename for the digitizer "{self.belongs_to_actor.name}"'
-            )
 
 
 class ActorOutputCppImage(ActorOutputBase):

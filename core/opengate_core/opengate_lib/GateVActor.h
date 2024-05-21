@@ -130,6 +130,7 @@ public:
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
   bool fOperatorIsAnd;
+  bool fWriteToDisk;
 };
 
 #endif // GateVActor_h

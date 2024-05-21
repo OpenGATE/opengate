@@ -1,10 +1,9 @@
 from anytree import RenderTree
 import numpy as np
 from scipy.spatial.transform import Rotation
-from box import Box
 
 import opengate_core as g4
-from ..definitions import __world_name__, __gate_list_objects__
+from ..definitions import __world_name__
 from ..exception import fatal
 
 """

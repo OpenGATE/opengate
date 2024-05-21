@@ -388,7 +388,8 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal_volume_name}")
     hc.attached_to = crystal_volume_name
-    # hc.output_filename = ""  # No output
+    # no output by default
+    hc.output_filename = None
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -401,7 +402,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     sc.attached_to = hc.attached_to
     sc.input_digi_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
-    # sc.output_filename = ""  # No output
+    sc.output_filename = None
 
     # energy windows
     cc = sim.add_actor(
@@ -410,7 +411,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     cc.attached_to = sc.attached_to
     cc.input_digi_collection = sc.name
     cc.channels = channels
-    # cc.output_filename = ""  # No output
+    cc.output_filename = None
 
     return cc
 

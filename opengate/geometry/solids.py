@@ -1,21 +1,15 @@
 from box import Box
 from scipy.spatial.transform import Rotation
-import sys
 import stl
 import logging
 
 from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
-from ..exception import fatal, warning
+from ..exception import fatal
 import opengate_core as g4
 from ..decorators import requires_fatal
 
-from .utility import (
-    ensure_is_g4_rotation,
-    ensure_is_g4_translation,
-    vec_np_as_g4,
-    vec_g4_as_np,
-)
+from .utility import ensure_is_g4_rotation, ensure_is_g4_translation, vec_np_as_g4
 
 
 logger = logging.getLogger(__name__)

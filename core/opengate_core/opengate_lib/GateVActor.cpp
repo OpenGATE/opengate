@@ -39,6 +39,7 @@ void GateVActor::InitializeUserInput(py::dict &user_info) {
     fOperatorIsAnd = true;
   else
     fOperatorIsAnd = false;
+  fWriteToDisk = DictGetBool(user_info, "write_to_disk");
 }
 
 void GateVActor::AddActions(std::set<std::string> &actions) {

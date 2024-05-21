@@ -62,6 +62,8 @@ void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
   // Create the output digi collections (one for each energy window channel)
   for (const auto &name : fChannelNames) {
     auto *hc = hcm->NewDigiCollection(name);
+    if (!fWriteToDisk)
+      fOutputFilename = "";
     hc->SetFilenameAndInitRoot(fOutputFilename);
     // hc->InitDigiAttributesFromNames(names);
     hc->InitDigiAttributesFromCopy(fInputDigiCollection,
