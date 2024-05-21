@@ -40,6 +40,7 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
+    sim.output_dir = paths.output
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 123456
@@ -166,12 +167,12 @@ if __name__ == "__main__":
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test040_gan_stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output = paths.output / "test040_gan_stats.txt"
 
     # phsp actor
     phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp_actor.mother = phsp_sphere_surface.name
+    phsp_actor.attached_to = phsp_sphere_surface.name
     phsp_actor.attributes = [
         "KineticEnergy",
         "PrePosition",
@@ -182,11 +183,11 @@ if __name__ == "__main__":
         "TimeFromBeginOfEvent",
         "EventKineticEnergy",
     ]
-    phsp_actor.output = paths.output / "test040_gan_phsp.root"
+    phsp_actor.output_filename = "test040_gan_phsp.root"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     phsp_actor.filters.append(f)
-    f = sim.add_filter("KineticEnergyFilter", "f")
+    f = sim.add_filter("KineticEnergyFilter", "f2")
     f.energy_min = 100 * keV
     phsp_actor.filters.append(f)
 
@@ -211,7 +212,6 @@ if __name__ == "__main__":
     b = gate.sources.generic.get_source_zero_events(sim.output, gsource.name)
     print(f"Source, nb of zerosE particles (check) : {b}")
 
-    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
     r = (
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     ke = hits1["KineticEnergy"]
     print("Nb of event (non E==0)", ke.shape)
 
-    hc_file = phsp_actor.output
+    hc_file = phsp_actor.get_output_path()
     hits2, hits2_keys, hits2_n = phsp.load(hc_file)
 
     checked_keys = [

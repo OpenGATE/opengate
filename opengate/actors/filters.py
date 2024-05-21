@@ -45,7 +45,7 @@ class ParticleFilter(FilterBase, g4.GateParticleFilter):
         g4.GateParticleFilter.__init__(self)
 
 
-class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
+class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
     user_info_defaults = {
         "energy_min": (
             0,
@@ -63,10 +63,13 @@ class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
 
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
 
 
-class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
+class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
     user_info_defaults = {
         "process_name": (
             "none",
@@ -78,6 +81,9 @@ class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
 
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
 
 

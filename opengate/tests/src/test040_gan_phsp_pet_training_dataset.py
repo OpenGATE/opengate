@@ -25,6 +25,7 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
+    sim.output_dir = paths.output
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 123456
@@ -74,8 +75,8 @@ if __name__ == "__main__":
     bg.energy.type = "Ga68"
 
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test040_train_stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output = paths.output / "test040_train_stats.txt"
 
     # filter gamma only
     f = sim.add_filter("ParticleFilter", "f")
@@ -83,7 +84,7 @@ if __name__ == "__main__":
 
     # phsp
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
-    phsp.mother = "phase_space_sphere"
+    phsp.attached_to = "phase_space_sphere"
     # we use PrePosition because this is the first step in the volume
     phsp.attributes = [
         "KineticEnergy",
@@ -97,7 +98,7 @@ if __name__ == "__main__":
         "EventPosition",
         "EventDirection",
     ]
-    phsp.output = paths.output / "test040_train.root"
+    phsp.output_filename = "test040_train.root"
     phsp.store_absorbed_event = (
         True  # this option allow to store all events even if absorbed
     )
@@ -113,7 +114,6 @@ if __name__ == "__main__":
     # check stats
     print()
     gate.exception.warning(f"Check stats")
-    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test040_train_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.03)
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     p = sim.output.get_actor("phase_space")
     print(f"Number of absorbed : {p.fNumberOfAbsorbedEvents}")
     ref_file = paths.output_ref / "test040_train.root"
-    hc_file = phsp.output
+    hc_file = phsp.get_output_path()
     checked_keys = [
         "TimeFromBeginOfEvent",
         "KineticEnergy",

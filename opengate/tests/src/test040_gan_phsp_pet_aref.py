@@ -25,6 +25,7 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
+    sim.output_dir = paths.output
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 1386
@@ -89,12 +90,12 @@ if __name__ == "__main__":
     # bg = gate_iec.add_background_source(sim, 'iec', 'source_bg', ac / 10, verbose=True)
 
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test040_ref_stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output = paths.output / "test040_ref_stats.txt"
 
     # store phsp of exiting particles (gamma only)
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp.mother = phsp_sphere_surface.name
+    phsp.attached_to = phsp_sphere_surface.name
     phsp.attributes = [
         "KineticEnergy",
         "PrePosition",
@@ -106,12 +107,12 @@ if __name__ == "__main__":
         "EventDirection",
         "EventKineticEnergy",
     ]
-    phsp.output = paths.output / "test040_ref_phsp.root"
+    phsp.output_filename = "test040_ref_phsp.root"
     phsp.store_absorbed_event = True
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     phsp.filters.append(f)
-    f = sim.add_filter("KineticEnergyFilter", "f")
+    f = sim.add_filter("KineticEnergyFilter", "f2")
     f.energy_min = 100 * keV
     phsp.filters.append(f)
 
@@ -123,15 +124,13 @@ if __name__ == "__main__":
     # check stats
     print()
     gate.exception.warning(f"Check stats")
-    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     # 426760*2*0.8883814158496728 = 758251.3
-    phsp = sim.output.get_actor("phsp")
     ref = 9523
-    ae = phsp.fNumberOfAbsorbedEvents
+    ae = phsp.fNumberOfAbsorbedEvents  # !!! FIXME
     err = abs(ae - ref) / ref
     tol = 0.055
     is_ok = err < tol and is_ok
