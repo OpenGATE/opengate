@@ -1033,7 +1033,11 @@ class VolumeManager(GateObject):
         for vt in self.volume_types:
             s += f"{vt} "
         return s
-
+        
+    def get_volume_tree(self):
+        return self.volume_tree_root
+        
+        
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
 
