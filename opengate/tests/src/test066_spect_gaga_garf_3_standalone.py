@@ -3,12 +3,13 @@
 
 from opengate.tests import utility
 import gaga_phsp as gaga
+import garf
 import itk
-from box import Box
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.contrib.spect import ge_discovery_nm670
 import time
+import numpy as np
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, "test066")
@@ -21,8 +22,8 @@ if __name__ == "__main__":
     # info about ge nm670
     mm = gate.g4_units.mm
     head_radius = 280 * mm
-    pos, crystal_dist, psd = genm670.compute_plane_position_and_distance_to_crystal(
-        "lehr"
+    pos, crystal_dist, psd = (
+        ge_discovery_nm670.compute_plane_position_and_distance_to_crystal("lehr")
     )
 
     # parameters
@@ -31,34 +32,6 @@ if __name__ == "__main__":
         g / "gate_test038_gan_phsp_spect" / "pth2" / "test001_GP_0GP_10_50000.pth"
     )
     garf_pth_filename = g / "gate_test043_garf" / "data" / "pth" / "arf_Tc99m_v3.pth"
-    gaga_user_info = Box(
-        {
-            "pth_filename": gaga_pth_filename,
-            "activity_source": activity_source,
-            "batch_size": 1e5,
-            "gpu_mode": "auto",
-            "backward_distance": 50 * mm,
-            "verbose": 0,
-        }
-    )
-    garf_user_info = Box(
-        {
-            "pth_filename": garf_pth_filename,
-            "image_size": [128, 128],
-            "image_spacing": [3 * mm, 3 * mm],
-            "plane_distance": head_radius,
-            "distance_to_crystal": crystal_dist,
-            "batch_size": 1e5,
-            "gpu_mode": "auto",
-            "verbose": 0,
-            "hit_slice": False,
-        }
-    )
-
-    print(f"{garf_user_info.plane_distance=}")
-
-    # initialize gaga and garf (read the NN)
-    gaga.gaga_garf_load_nets_and_initialize(gaga_user_info, garf_user_info)
 
     # Initial rotation of the iec -> X90 inverted
     r_iec = Rotation.from_euler("x", -90, degrees=True)
@@ -66,24 +39,45 @@ if __name__ == "__main__":
     # Initial rotation angle of the head
     r = Rotation.from_euler("x", 90, degrees=True)
     r = r * r_iec
-    garf_user_info.plane_rotation = r
 
-    # define the angles
-    angle_rotations = [
-        Rotation.from_euler("y", 0, degrees=True),
-        Rotation.from_euler("y", 180, degrees=True),  # FIXME why Y ?????
-    ]
+    # garf parameters
+    garf_detector = garf.GarfDetector()
+    garf_detector.pth_filename = garf_pth_filename
+    garf_detector.radius = head_radius
+    garf_detector.crystal_distance = crystal_dist
+    garf_detector.image_size = [128, 128]
+    garf_detector.image_spacing = np.array([3 * mm, 3 * mm])  # FIXME
+    garf_detector.initial_plane_rotation = r
+    garf_detector.batch_size = 1e5
 
-    # GO
+    # gaga parameters
+    gaga_source = gaga.GagaSource()
+    gaga_source.activity_filename = activity_source
+    gaga_source.pth_filename = gaga_pth_filename
+    gaga_source.batch_size = 1e5
+    gaga_source.backward_distance = 50 * mm
+    gaga_source.cond_translation = [0, 0, 0]
+
+    # rotations
+    gantry_angles = [0, 180]
+    gantry_rotations = []
+    deg = gate.g4_units.deg
+    for angle in gantry_angles:
+        r = Rotation.from_euler("z", angle / deg, degrees=True)
+        gantry_rotations.append(r)
+
+    # initialize
+    garf_detector.initialize(gantry_rotations)
+    gaga_source.initialize()
+
+    # go
     n = 127008708 / 4
     t1 = time.time()
-    images = gaga.gaga_garf_generate_spect(
-        gaga_user_info, garf_user_info, n, angle_rotations
-    )
+    images = gaga_source.generate_projections_numpy(garf_detector, n)
     t2 = time.time()
     t = t2 - t1
     print(f"Computation time is {t:.2f} seconds")
-    print(f"Computation PPS is {n/t:.0f} ")
+    print(f"Computation PPS is {n / t:.0f} ")
 
     # save image
     i = 0

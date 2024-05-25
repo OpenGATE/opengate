@@ -145,8 +145,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
         if self.garf is None:
             print("Cannot run GANSource")
             sys.exit()
-        # create the default detector
-        # self.user_info.arf_detector = gate.ARFDetector(self.user_info)
+
         # prepare output
         self.user_info.output_image = None
         self.g4_actor = None
@@ -189,8 +188,9 @@ class ARFActor(g4.GateARFActor, ActorBase):
         self.debug_nb_hits = 0
 
         # load the pth file
-        self.nn, self.model = self.garf.load_nn(self.pth_filename, verbose=False)
-        # FIXME self.user_info.batch_size = int(float(self.user_info.batch_size))
+        self.nn, self.model = self.garf.load_nn(
+            self.pth_filename, verbose=False, gpu_mode=self.user_info.gpu_mode
+        )
 
         # size and spacing (2D)
         self.image_plane_spacing = np.array(
@@ -242,14 +242,6 @@ class ARFActor(g4.GateARFActor, ActorBase):
             self.arf_build_image_from_projected_points(actor)
 
     def arf_build_image_from_projected_points(self, actor):
-        """
-        Input : position, direction on the detector plane, energy
-        Compute
-        - garf.arf_from_points_to_image_counts
-        - garf.image_from_coordinates_add
-        """
-        # Also see GarfDetector::arf_build_image_from_projected_points_torch
-        # or arf_build_image_from_projected_points_numpy
 
         # get values from cpp side
         energy = np.array(actor.GetEnergy())
@@ -297,7 +289,7 @@ class ARFActor(g4.GateARFActor, ActorBase):
             run_id = actor.GetCurrentRunId()
             s = self.nb_ene * run_id
             img = self.output_image[s : s + self.nb_ene]
-            self.garf.image_from_coordinates_add(img, u, v, w_pred)
+            self.garf.image_from_coordinates_add_numpy(img, u, v, w_pred)
             self.debug_nb_hits += u.shape[0]
 
     def EndSimulationAction(self):

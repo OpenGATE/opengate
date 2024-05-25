@@ -249,8 +249,6 @@ class VoxelizedSourceConditionGenerator:
         # x,y,z are in the image coord system
         # they are offset according to the coord system (image center or image offset)
         p = np.column_stack((x, y, z)) + self.points_offset + self.translation
-        print(f"{self.points_offset=}")
-        print(f"{self.translation=}")
 
         # rotation
         p = np.dot(p, self.rotation.T)

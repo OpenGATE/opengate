@@ -32,11 +32,10 @@ if __name__ == "__main__":
     simu_name = "test066_1_reference"
 
     # options
-    ui = sim.user_info
-    ui.number_of_threads = 10
+    sim.number_of_threads = 10
     # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.random_seed = "auto"
+    sim.visu_type = "vrml"
+    sim.random_seed = "auto"
 
     # units
     mm = gate.g4_units.mm
@@ -46,7 +45,7 @@ if __name__ == "__main__":
     BqmL = Bq / cm3
 
     # main elements : spect + phantom
-    proj1, proj2 = create_simu_with_genm670(sim, debug=ui.visu)
+    proj1, proj2 = create_simu_with_genm670(sim, debug=sim.visu)
     proj1.output = f"{output_path}/{simu_name}_0.mhd"
     proj2.output = f"{output_path}/{simu_name}_1.mhd"
 
@@ -57,7 +56,7 @@ if __name__ == "__main__":
 
     # sources IEC
     ac = 1e5 * BqmL  # 1e5 = about 10 min with 10 threads linux
-    if ui.visu:
+    if sim.visu:
         ac = 0.01 * BqmL
     total_activity, w, e = add_iec_Tc99m_source(sim, ac)
 
