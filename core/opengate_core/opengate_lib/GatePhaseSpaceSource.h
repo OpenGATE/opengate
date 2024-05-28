@@ -54,8 +54,8 @@ public:
   G4ParticleDefinition *fParticleDefinition;
   G4ParticleTable *fParticleTable;
 
-  float fCharge;
-  float fMass;
+  std::float_t fCharge;
+  std::float_t fMass;
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
   bool fVerbose;
@@ -86,26 +86,26 @@ public:
   struct threadLocalTPhsp {
 
     bool fgenerate_until_next_primary;
-    int fprimary_PDGCode;
-    float fprimary_lower_energy_threshold;
+    std::int32_t fprimary_PDGCode;
+    std::float_t fprimary_lower_energy_threshold;
 
     ParticleGeneratorType fGenerator;
     unsigned long fNumberOfGeneratedEvents;
     size_t fCurrentIndex;
     size_t fCurrentBatchSize;
 
-    int *fPDGCode;
+    std::int32_t *fPDGCode;
 
-    float *fPositionX;
-    float *fPositionY;
-    float *fPositionZ;
+    std::float_t *fPositionX;
+    std::float_t *fPositionY;
+    std::float_t *fPositionZ;
 
-    float *fDirectionX;
-    float *fDirectionY;
-    float *fDirectionZ;
+    std::float_t *fDirectionX;
+    std::float_t *fDirectionY;
+    std::float_t *fDirectionZ;
 
-    float *fEnergy;
-    float *fWeight;
+    std::float_t *fEnergy;
+    std::float_t *fWeight;
     // double * fTime;
   };
   G4Cache<threadLocalTPhsp> fThreadLocalDataPhsp;
