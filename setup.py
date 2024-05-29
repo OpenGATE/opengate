@@ -24,6 +24,7 @@ setup(
         "matplotlib",
         "GitPython",
         "colorlog",
+        "numpy-stl",
         "radioactivedecay",
         "jsonpickle",
         "pandas",

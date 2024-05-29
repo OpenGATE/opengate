@@ -56,7 +56,8 @@ def create_sim_test053(sim, sim_name, output=paths.output):
 
     if "ref" in sim_name:
         f = sim.add_filter("TrackCreatorProcessFilter", "f2")
-        f.process_name = "RadioactiveDecay"
+        # f.process_name = "RadioactiveDecay" # G4 11.1
+        f.process_name = "Radioactivation"  # G4 11.2
         # phsp.debug = True
         phsp.filters.append(f)
 

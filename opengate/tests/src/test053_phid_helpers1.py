@@ -66,6 +66,9 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     phsp.attributes = [
         "KineticEnergy",
         "EventID",
+        # "EventPosition",
+        # "EventKineticEnergy",
+        # "EventDirection",
         "TrackID",
         "ParentID",
         "TrackCreatorProcess",
@@ -73,6 +76,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
         "ParticleName",
     ]
     phsp.output = paths.output / f"test053_{ion_name}.root"
+    # phsp.store_absorbed_event = True
     # phsp.debug = True
 
     return ion_name, direct_daughters
@@ -119,7 +123,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     print("Source n  = ", source.n)
     print("Source ac  = ", source.activity / Bq)
     print(f"Source HL = {half_life / sec} sec")
-    print(f"Source HL = {half_life / sec/3600/24} days")
+    print(f"Source HL = {half_life / sec / 3600 / 24} days")
     print(f"Source LT = {lifetime / sec} sec")
 
     # ui = sim.user_info
@@ -143,18 +147,37 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     event = -1
     g_by_ion = {}
     track = {}
-    keV = g4_units.keV
-    for batch in tree.iterate():
+    for batch in tree.iterate(step_size="50MB"):
+        # (one single batch)
+        print(f"batch len {len(batch)}")
         for e in batch:
             # update current list of track
             if event != e["EventID"]:
-                # print(i, len(track))
+                # print(f'New EVENT {e}')
                 track = {}
                 event = e["EventID"]
             track[e["TrackID"]] = e
+            # print(
+            #    f'    current list of track {len(track)} -> {e["EventID"]} parent={e["ParentID"]} track={e["TrackID"]} '
+            #    f'{e["ParticleName"]} ')
+
+            # sometimes the parent is not in the root file, because this is the track
+            # of the primary ion which decay without step
             if e["ParticleName"] == "gamma":
-                # if e["TrackCreatorProcess"] == "RadioactiveDecay":
+                # if e["TrackCreatorProcess"] == "RadioactiveDecay": # G4 11.1
+                # if e["TrackCreatorProcess"] == "Radioactivation": # G4 11.2
                 if e["TrackCreatorModelIndex"] == 130:
+                    pid = e["ParentID"]
+                    if pid not in track:
+                        if pid == 1:
+                            # it means, the parent is the initial ion (not in the phsp because no step)
+                            continue
+                        print()
+                        print(e)
+                        print("event id", e["EventID"])
+                        print(f"track {len(track)}")
+                        print(f"track {track}")
+                        exit(0)
                     ion = track[e["ParentID"]]["ParticleName"]
                     # ene = e["KineticEnergy"]
                     # if ene < 100 * keV:
@@ -205,7 +228,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
     # print
     keV = g4_units.keV
     for e, w in zip(gp_ene, gp_w):
-        print(f"{e/keV:.4f} keV \t -> {w*100:.4f} %")
+        print(f"{e / keV:.4f} keV \t -> {w * 100:.4f} %")
 
     return gp_ene, gp_w
 
@@ -303,8 +326,8 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
                     ok = d < tol
                     print_test(
                         ok,
-                        f"model={e/keV} keV    MC={e2/keV} keV"
-                        f"   {w*100:.4f}%  {w2*100:.4f}%   => {d*100:.4f}% (tol={tol})",
+                        f"model={e / keV} keV    MC={e2 / keV} keV"
+                        f"   {w * 100:.4f}%  {w2 * 100:.4f}%   => {d * 100:.4f}% (tol={tol})",
                     )
                     is_ok = ok and is_ok
 

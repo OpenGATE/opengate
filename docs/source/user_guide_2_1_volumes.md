@@ -193,6 +193,29 @@ The input parameters of the function `HounsfieldUnit_to_material` are
 
 Examples of such files can be found in the `opengate/tests/data` folder. See test `test009` as example.
 
+
+### Tesselated (STL) volumes
+
+It is possible to create a tesselated volume shape based on an Standard Triangle Language (STL) data file. Such a file contains a mesh of triangles for one object. It is a typical output format of Computer Aided Design (CAD) software.
+To create such a volume add a volume of type "Tesselated". Please keep in mind, that no material information is provided, it has to be specified by the user. A Tesselated volume inherits the the same basic options as other solids described above such as translation or rotation. A basic example how to import an STL file into a geometry "MyTesselatedVolume" and assign the material G4_WATER to it can be found below. In order to verify the correct generation of the solid, one could look at the volume.
+
+
+```python
+import opengate as gate
+sim = gate.Simulation()
+tes = sim.add_volume("Tesselated", name="MyTesselatedVolume")
+tes.material = "G4_WATER"
+tes.mother = "world"  # by default
+tes.file_name = "myTesselatedVolume.stl"
+#to read the volume of the generated solid
+print("volume: ",sim.volume_manager.get_volume(
+        "MyTesselatedVolume"
+    ).solid_info.cubic_volume)
+#an alternative way read the volume of the generated solid
+print("same volume: ",tes.solid_info.cubic_volume)
+```
+See test test067_stl_volume for example.
+
 ### Repeated volumes
 
 The first method, described in this section, is controlled via the `translation` and `rotation` parameters. To instruct Geant4 to repeat a volume in multiple locations, it is sufficient to provide a list of translation vectors to the volume parameter `translation`. Gate will make sure that a G4PhysicalVolume is created for each entry. Consequently, the length of the list of translations determines the number of copies. If only a single rotation matrix is provided as volume parameter `rotation`, this will be used for all copies. If each copies requires a separate individual rotation, e.g. when repeating volume around a circle, then the volume parameter `rotation` should receive a list of rotation matrices. Obviously, the number of rotations and translation should match.

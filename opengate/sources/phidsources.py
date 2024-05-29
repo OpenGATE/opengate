@@ -184,6 +184,13 @@ class PhotonIonDecayIsomericTransitionExtractor:
     """
 
     def __init__(self, z, a, verbose=False):
+        """
+        WARNING
+        PhotonIonDecayIsomericTransitionExtractor does NOT work anymore
+        Now PHID extract data from the IAEA database, not directly from G4
+        """
+        fatal("PhotonIonDecayIsomericTransitionExtractor NOT implemented")
+
         self.z = z
         self.a = a
         self.channels = None

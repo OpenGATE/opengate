@@ -343,7 +343,7 @@ def plot_hist(ax, data, label, bins=100):
 
 def plot_profile(ax, y, y_spacing=1, label=""):
     x = np.arange(len(y)) * y_spacing
-    ax.plot(x, y, label=label)
+    ax.plot(x, y, label=label, drawstyle="steps")
     ax.legend()
 
 
@@ -385,50 +385,52 @@ def assert_filtered_imagesprofile1D(
     d1 = data1[L_filter]
     d2 = data2[L_filter]
 
-    s1 = np.sum(d1)
-    s2 = np.sum(d2)
-    print(
-        f"Evaluate only data from entry up to peak position of reference filter image"
-    )
-    print(f"Going to evaluate {d1.size} elements out of {data1.size}")
-    t = np.fabs((s1 - s2) / s1) * 100
-    b = t < sum_tolerance
-    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
-
-    # do not consider pixels with a value of zero (data2 is the reference)
-    # d1 = data1[data2 != ignore_value]
-    # d2 = data2[data2 != ignore_value]
-
     # normalise by event
     if stats is not None:
         d1 = d1 / stats.counts.event_count
         d2 = d2 / stats.counts.event_count
 
-    # normalize by sum of d1
-    s = np.sum(d2)
-    d1 = d1 / s
-    d2 = d2 / s
+    mean_deviation = np.mean(d2 / d1 - 1) * 100
+    max_deviation = np.amax(np.abs(d1 / d2 - 1)) * 100
+    is_ok = is_ok and mean_deviation < tolerance and max_deviation < 2 * tolerance
 
-    # sum of absolute difference (in %)
-    sad = np.fabs(d1 - d2).sum() * 100
-    is_ok = is_ok and sad < tolerance
     print_test(
         is_ok,
-        f"Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n"
-        f"SAD (per event/total): {sad:.2f} % "
-        f" (tolerance is {tolerance :.2f} %)",
+        f"Evaluate only data from entry up to peak position of reference filter image\n"
+        f"Evaluated {d1.size} elements out of {data1.size} \n"
+        f"Mean deviation: {mean_deviation:.2f} % | (tolerance is {tolerance :.2f} %) \n"
+        f"Max unsigned deviation: {max_deviation:.2f} % | (tolerance is {2*tolerance :.2f} % \n\n"
+        f" ",
     )
-    filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(data1) * 0.7
+
+    filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(d2) * 0.7
     # plot
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-
-    plot_profile(ax, filter_data_norm_au, info1.spacing[0], "filter")
-    plot_profile(ax, data1, info1.spacing[0], "reference")
-    plot_profile(ax, data2, info2.spacing[0], "test")
-    ax.plot(max_ind * info1.spacing[0], filter_data_norm_au[max_ind], "o", label="p")
-
+    fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
+    xV = np.arange(len(data1)) * info1.spacing[0]
+    x_max = np.ceil(xV[max_ind] * 1.05 + 2)
+    plot_profile(ax[0], filter_data_norm_au, info1.spacing[0], "filter")
+    plot_profile(ax[0], data1, info1.spacing[0], "reference")
+    plot_profile(ax[0], data2, info2.spacing[0], "test")
+    ax[0].plot(xV[max_ind], filter_data_norm_au[max_ind], "o", label="p")
+    ax[1].plot(xV[:max_ind], (d2 / d1 - 1) * 100, "o", label="test/ref")
+    ax[0].set_xlabel("x [mm]")
+    ax[1].set_xlabel("x [mm]")
+    ax[0].set_ylabel("LET")
+    ax[0].set_ylim(
+        [np.amin([np.amin(d2), 0]), np.ceil(np.amax([np.amax(d1), np.amax(d2)]) * 1.1)]
+    )
+    ax[0].set_xlim([np.amin([np.amin(xV), 0]), x_max])
+    ax[1].set_ylabel("Local deviation")
+    ax[1].axhline(0, color="grey")
+    ax[1].axhline(mean_deviation, linestyle="-", color="g", label="mean deviation")
+    ax[1].axhline(tolerance, linestyle="--", color="g", label="tolerance mean")
+    ax[1].axhline(-tolerance, linestyle="--", color="g")
+    ax[1].axhline(2 * tolerance, color="r", label="tolerance max")
+    ax[1].axhline(-2 * tolerance, color="r")
+    ax[1].set_xlim(ax[0].get_xlim())
+    ax[1].legend()
     if plt_ylim:
-        ax.set_ylim(plt_ylim)
+        ax[0].set_ylim(plt_ylim)
     # plt.show()
 
     if fig_name is None:

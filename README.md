@@ -6,7 +6,7 @@
 
 ## This is GATE10 **beta** version. The first non-beta release will be officially announced end of May 2024.
 
-See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html). The current version uses [Geant4 11.1.1](https://geant4.web.cern.ch).
+See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html). The current version uses [Geant4 11.2.1](https://geant4.web.cern.ch).
 
 
 ### How to install (short version)

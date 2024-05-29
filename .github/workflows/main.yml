@@ -21,7 +21,7 @@ jobs:
         python-version: [3.8, 3.9, '3.10', '3.11']
 
     env:
-      GEANT4_VERSION: 'v11.1.1'
+      GEANT4_VERSION: 'v11.2.1'
       ITK_VERSION: 'v5.2.1'
 
     steps:
@@ -66,8 +66,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build5
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build5
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
     - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -105,6 +105,7 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v3
       if: (matrix.os == 'macos-12') || (matrix.os == 'windows-latest')
       with:
+          miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
           python-version: ${{ matrix.python-version }}
@@ -138,7 +139,7 @@ jobs:
           python --version
           export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
           pip install wget colored
-          pip install cibuildwheel==2.12.0
+          pip install cibuildwheel==2.17.0
           conda install -c conda-forge qt==5.15.6
           mkdir -p $HOME/software
           if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
@@ -173,7 +174,7 @@ jobs:
               make -j4
           fi
           cd $GITHUB_WORKSPACE
-          ls /usr/local/miniconda/envs/opengate_core/plugins/platforms
+          ls /Users/runner/miniconda3/envs/opengate_core/plugins/platforms
           source $HOME/software/geant4/bin/geant4make.sh
           export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
           cd core
@@ -189,6 +190,7 @@ jobs:
           elif [ ${{ matrix.python-version }} == "3.11" ]; then
             export CIBW_BUILD="cp311-macosx_x86_64"
           fi
+          export CIBW_ENVIRONMENT='MACOSX_DEPLOYMENT_TARGET=10.14'
           export CIBW_BEFORE_BUILD="python -m pip install colored"
           python -m cibuildwheel --output-dir dist
           cd dist
@@ -280,7 +282,7 @@ jobs:
           mv dist/opengate-* dist_opengate/
     - name: Publish to PyPI opengate_core
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE_CORE }}
@@ -288,7 +290,7 @@ jobs:
         skip_existing: true
     - name: Publish to PyPI opengate
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_OPENGATE }}
@@ -296,19 +298,46 @@ jobs:
         skip_existing: true
 
 #  ssh_session:
-#    runs-on: windows-latest
-#    needs: [build_wheel]
+#    env:
+#      GEANT4_VERSION: 'v11.2.1'
+#      ITK_VERSION: 'v5.2.1'
+#    runs-on: macos-12
 #    steps:
-#    - uses: actions/download-artifact@v4
-#      with:
-#        pattern: dist-*
-#        merge-multiple: true
-#        path: dist/
-#    - name: Set up Python 3.9
+#    - name: Checkout github repo
+#      uses: actions/checkout@v4
+#    - name: Checkout submodules
+#      shell: bash -l {0}
+#      run: |
+#        export GIT_SSL_NO_VERIFY=1
+#        git submodule update --init --recursive
+#    - name: Set up Python
 #      uses: actions/setup-python@v5
 #      with:
-#       python-version: 3.9
-#       architecture: 'x64'
+#        python-version: 3.9
+#        architecture: 'x64'
+#    - name: Get OS version
+#      id: get-os-version
+#      shell: bash -l {0}
+#      run: |
+#        varOS=`sw_vers | grep "ProductVersion:"`
+#        varOS="${varOS#*:}"
+#        echo "release=${varOS:1}" >> $GITHUB_OUTPUT
+#    - name: Cache modules
+#      id: cache_opengate_core_dependencies
+#      uses: actions/cache@v4
+#      with:
+#        path: ~/software
+#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+#    - uses: conda-incubator/setup-miniconda@v3
+#      with:
+#          miniconda-version: "latest"
+#          auto-update-conda: true
+#          activate-environment: opengate_core
+#          python-version: 3.9
+#    - name: Set up Homebrew
+#      id: set-up-homebrew
+#      uses: Homebrew/actions/setup-homebrew@master
 #    - name: Start SSH session
 #      uses: luchihoratiu/debug-via-ssh@main
 #      with:
