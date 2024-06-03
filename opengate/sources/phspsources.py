@@ -28,7 +28,6 @@ class PhaseSpaceSourceGenerator:
 
     def __getstate__(self):
         ## FIXME
-        self.lock = None
         return self.__dict__
 
     def initialize(self, user_info):
@@ -257,9 +256,6 @@ class PhaseSpaceSourceGenerator:
             print("source.fDirectionY: ", batch[ui.direction_key_y])
             print("source.fDirectionZ: ", batch[ui.direction_key_z])
             print("source.fEnergy dtype: ", batch[ui.energy_key].dtype)
-
-        # Release the lock when the function execution is complete
-        # self.lock.release()
 
         return current_batch_size
 
