@@ -16,7 +16,7 @@ if __name__ == "__main__":
     output_path = paths.output
 
     # create the simulation
-    simu_name = "test066_3_standalone"
+    simu_name = "test066_3_standalone_torch"
     g = paths.data / "gate"
 
     # info about ge nm670
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     # go
     n = 127008708 / 4
     t1 = time.time()
-    images = gaga_source.generate_projections_numpy(garf_detector, n)
+    images = gaga_source.generate_projections_torch(garf_detector, n)
     t2 = time.time()
     t = t2 - t1
     print(f"Computation time is {t:.2f} seconds")

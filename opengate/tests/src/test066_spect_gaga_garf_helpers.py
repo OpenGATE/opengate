@@ -72,7 +72,7 @@ def create_simu_with_gaga(
 
     # add gaga source
     gsource = add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename)
-    gsource.position.rotation = Rotation.from_euler("x", 90, degrees=True).as_matrix()
+    # gsource.position.rotation = Rotation.from_euler("x", 90, degrees=True).as_matrix()
 
     # add arf plane
     mm = gate.g4_units.mm
@@ -127,6 +127,7 @@ def add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename):
     gsource.weight_key = None
     gsource.time_key = None
     gsource.batch_size = 5e4  # OSX
+    gsource.backward_force = True  # because we don't care about timing
     # Linux 5e4 with 1 thread, 1e4 with 8 threads
     gsource.batch_size = 2e5 / sim.user_info.number_of_threads
     gsource.verbose_generator = False  # True

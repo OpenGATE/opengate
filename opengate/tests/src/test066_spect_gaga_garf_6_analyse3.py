@@ -11,7 +11,7 @@ if __name__ == "__main__":
     # folders and names
     ref_simu_name = "test066_2"
     ref_output_folder = output_path
-    test_simu_name = "test066_3_standalone_numpy"
+    test_simu_name = "test066_3_standalone_torch"
     test_output_folder = output_path
 
     # image filenames

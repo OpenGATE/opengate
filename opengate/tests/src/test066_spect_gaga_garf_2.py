@@ -32,7 +32,7 @@ if __name__ == "__main__":
     # Estimated gammas 127,008,708 gammas (weights = 0.8850)
     # so, because we use ARF, about 1/2 particles needed
     total_activity = 127008708 / 30 * Bq / sim.number_of_threads / 2
-    # total_activity = 127008708 / 30 * Bq / sim.number_of_threads / 40  # FIXME
+    total_activity = total_activity / 10  # FIXME
     print(f"Total activity: {total_activity/Bq:.0f} Bq")
     if sim.visu:
         total_activity = 1 * Bq
