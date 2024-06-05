@@ -202,24 +202,27 @@ class VoxelizedSourceConditionGenerator:
         self.image = None
         self.cdf_x = self.cdf_y = self.cdf_z = None
         self.rs = rs
-        self.img_info = None
+        self.source_img_info = None
         self.sampler = None
         self.points_offset = None
         # init
         self.is_initialized = False
 
     def initialize_source(self):
-        self.image = itk.imread(self.activity_source_filename)
-        self.img_info = get_info_from_image(self.image)
-        self.sampler = VoxelizedSourcePDFSampler(self.image)
+        # FIXME warning, this is call in the same thread but several time (???)
+        if self.image is None:
+            self.image = itk.imread(self.activity_source_filename)
+        self.source_img_info = get_info_from_image(self.image)
+        if self.sampler is None:
+            self.sampler = VoxelizedSourcePDFSampler(self.image)
         self.rs = np.random
         # we set the points in the g4 coord system (according to the center of the image)
         # or according to the activity source image origin
         if self.use_activity_origin is True:
-            self.points_offset = self.img_info.origin
+            self.points_offset = self.source_img_info.origin
         else:
-            hs = self.img_info.spacing / 2.0
-            self.points_offset = -hs * self.img_info.size + hs
+            hs = self.source_img_info.spacing / 2.0
+            self.points_offset = -hs * self.source_img_info.size + hs
         self.is_initialized = True
 
     def generate_condition(self, n):
@@ -231,7 +234,7 @@ class VoxelizedSourceConditionGenerator:
         i, j, k = self.sampler.sample_indices(n, self.rs)
 
         # half pixel size
-        hs = self.img_info.spacing / 2.0
+        hs = self.source_img_info.spacing / 2.0
 
         # sample within the voxel
         rx = self.rs.uniform(-hs[0], hs[0], size=n)
@@ -239,12 +242,12 @@ class VoxelizedSourceConditionGenerator:
         rz = self.rs.uniform(-hs[2], hs[2], size=n)
 
         # warning order np is z,y,x while itk is x,y,z
-        x = self.img_info.spacing[2] * k + rz
-        y = self.img_info.spacing[1] * j + ry
-        z = self.img_info.spacing[0] * i + rx
+        x = self.source_img_info.spacing[2] * k + rz
+        y = self.source_img_info.spacing[1] * j + ry
+        z = self.source_img_info.spacing[0] * i + rx
 
         # x,y,z are in the image coord system
-        # tey are offset according to the coord system (image center or image offset)
+        # they are offset according to the coord system (image center or image offset)
         p = np.column_stack((x, y, z)) + self.points_offset + self.translation
 
         # rotation

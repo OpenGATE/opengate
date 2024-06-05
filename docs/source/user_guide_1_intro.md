@@ -87,6 +87,6 @@ There is some additional commands lines tools that can also be used, see the [ad
 
 *Warning* they are only updated infrequently, you may have to adapt them to changes in the gate version.
 
--  [exercices](https://gitlab.in2p3.fr/davidsarrut/gate_exercices_2) (initially developed for DQPRM, French medical physics diploma)
+- [exercices](https://gitlab.in2p3.fr/davidsarrut/gate_exercices_2) (initially developed for DQPRM, French medical physics diploma)
 
 - [exercices](https://drive.google.com/drive/folders/1bcIS5OPLOBzhLo0NvrLJL5IxVQidNYCF) (initially developed for Opengate teaching)

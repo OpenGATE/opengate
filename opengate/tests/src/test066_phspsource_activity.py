@@ -25,14 +25,13 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = 987654321
 
     # units
     m = gate.g4_units.m

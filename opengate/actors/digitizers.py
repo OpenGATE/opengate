@@ -589,7 +589,10 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
             fatal(f"Error, the size must be 2D while it is {self.user_info.size}")
         if len(self.user_info.spacing) != 2:
             fatal(f"Error, the spacing must be 2D while it is {self.user_info.spacing}")
+        # make a copy before setting to 3 dim
+        self.user_info.size = self.user_info.size.copy()
         self.user_info.size.append(1)
+        self.user_info.spacing = self.user_info.spacing.copy()
         self.user_info.spacing.append(1)
 
         # for the moment, we cannot use this actor with several volumes
