@@ -345,6 +345,7 @@ class PhysicsListManager(GateObject):
         "G4EmDNAPhysics",
         "G4OpticalPhysics",
         "G4GenericBiasingPhysics",
+        "G4LightIonQMDPhysics",
     ]
 
     special_physics_constructor_classes = {}
@@ -356,6 +357,9 @@ class PhysicsListManager(GateObject):
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
     special_physics_constructor_classes["G4GenericBiasingPhysics"] = (
         g4.G4GenericBiasingPhysics
+    )
+    special_physics_constructor_classes["G4LightIonQMDPhysics"] = (
+        g4.G4LightIonQMDPhysics
     )
 
     def __init__(self, physics_manager, *args, **kwargs):
