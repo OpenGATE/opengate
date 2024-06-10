@@ -21,6 +21,7 @@ namespace py = pybind11;
 #include "FTF_BIC.hh"
 #include "LBE.hh"
 
+#include "G4LightIonQMDPhysics.hh"
 #include "NuBeam.hh"
 #include "QBBC.hh"
 #include "QGSP_BERT.hh"
@@ -33,7 +34,6 @@ namespace py = pybind11;
 #include "QGSP_INCLXX_HP.hh"
 #include "QGS_BIC.hh"
 #include "Shielding.hh"
-#include "G4LightIonQMDPhysics.hh"
 
 #include "G4EmStandardPhysics.hh"
 #include "G4EmStandardPhysics_option1.hh"
@@ -76,9 +76,9 @@ namespace py = pybind11;
 // macro for adding physics constructor: one int parameter (verbosity),
 // nodelete is needed because the G4 run manager deletes the physics list
 // on the cpp side, python should not delete the object
-#define ADD_PHYSICS_CONSTRUCTOR(plname)                         \
-  py::class_<plname, G4VPhysicsConstructor,                     \
-             std::unique_ptr<plname, py::nodelete>>(m, #plname) \
+#define ADD_PHYSICS_CONSTRUCTOR(plname)                                        \
+  py::class_<plname, G4VPhysicsConstructor,                                    \
+             std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
       .def(py::init<G4int>());
 
 // FIXME ? A bit different for the biasing classe which do not take as argument
@@ -93,38 +93,32 @@ namespace py = pybind11;
                &G4GenericBiasingPhysics::PhysicsBias),                         \
            py::return_value_policy::reference_internal);
 
-namespace pyPhysicsLists
-{
+namespace pyPhysicsLists {
 
-  static std::vector<std::string> plList;
+static std::vector<std::string> plList;
 
-  void AddPhysicsList(const G4String &plname)
-  {
-    std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
-    plList.push_back(plname);
+void AddPhysicsList(const G4String &plname) {
+  std::cout << "[pyg4bind11] AddPhysicsList " << plname << std::endl;
+  plList.push_back(plname);
+}
+
+void ListPhysicsList() {
+  for (auto &i : plList) {
+    G4cout << i << G4endl;
   }
+}
 
-  void ListPhysicsList()
-  {
-    for (auto &i : plList)
-    {
-      G4cout << i << G4endl;
-    }
-  }
-
-  void ClearPhysicsList()
-  {
-    // G4cout << "Clear PL" << std::endl;
-    plList.clear();
-    // G4cout << "Clear PL ok" << std::endl;
-  }
+void ClearPhysicsList() {
+  // G4cout << "Clear PL" << std::endl;
+  plList.clear();
+  // G4cout << "Clear PL ok" << std::endl;
+}
 
 } // namespace pyPhysicsLists
 
 using namespace pyPhysicsLists;
 
-void init_G4PhysicsLists(py::module &m)
-{
+void init_G4PhysicsLists(py::module &m) {
 
   m.def("ListPhysicsList", ListPhysicsList);
   m.def("ClearPhysicsList", ClearPhysicsList);

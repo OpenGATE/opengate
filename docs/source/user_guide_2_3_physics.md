@@ -93,14 +93,14 @@ Under the hood, this will add two processed to the Geant4 list of processes, G4D
 - <http://www.lnhb.fr/nuclear-data/nuclear-data-table/>
 
 
-#### Special Physics Constructor 
+#### Special Physics Constructor
 The special physics constructor allows to register or replace certain physical processes.
 This is mostly relevant for optical or chemical processes (see below).
 The special physics constructor employs the Geant4 routine ReplacePhysics. It can be used to exchange certain physical process constructors.
 Internally Geant4 checks the "physics type", if it alread exists in a used routine, this one is unloaded and replaced with the passed one. Alternatively, the new constructor is added.
 
-In Geant4.11.2 a new light ion QMD modell became available (see Sato et al., PMB 2022(67) DOI:10.1088/1361-6560/ac9a9a), but it is not yet easily useable with the physics lists. 
-As a workaround, a special physics constructur is added. 
+In Geant4.11.2 a new light ion QMD modell became available (see Sato et al., PMB 2022(67) DOI:10.1088/1361-6560/ac9a9a), but it is not yet easily useable with the physics lists.
+As a workaround, a special physics constructur is added.
 
 The following code replaces the physics constructer for physics type 8 (QMD, etc) with LightIonQMD physics. So far this was tested only in conjunction with the physics list Shielding.
 ```
