@@ -67,6 +67,7 @@ def go(test_id, random_tests):
         "test066_spect_gaga_garf_3_standalone_torch.py",  # ignored because too long (GPU)
         "test066_spect_gaga_garf_4_analyse1.py",
         "test066_spect_gaga_garf_5_analyse2.py",
+        "test066_spect_gaga_garf_6_analyse3.py",
     ]
 
     onlyfiles = [
