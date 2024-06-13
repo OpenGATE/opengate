@@ -10,13 +10,12 @@
 #include "G4PrimaryVertex.hh"
 #include "G4RunManager.hh"
 #include "GateHelpers.h"
-
 #include "GateRandomMultiGauss.h"
 
 GateSingleParticleSource::GateSingleParticleSource(
     std::string /*mother_volume*/) {
   fPositionGenerator = new GateSPSPosDistribution();
-  fDirectionGenerator = new G4SPSAngDistribution();
+  fDirectionGenerator = new GateSPSAngDistribution();
   fEnergyGenerator = new GateSPSEneDistribution();
 
   // needed
@@ -64,7 +63,8 @@ GateSingleParticleSource::GenerateDirectionWithAA(const G4ThreeVector &position,
   fAAManager->StartAcceptLoop();
   while (!accept_angle) {
     // direction
-    direction = fDirectionGenerator->GenerateOne();
+    direction = fDirectionGenerator->VGenerateOne();
+
     // accept ?
     accept_angle = fAAManager->TestIfAccept(position, direction);
     if (!accept_angle && fAAManager->GetPolicy() ==
