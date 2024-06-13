@@ -29,17 +29,15 @@
 #ifndef GateOptrLastVertexInteractionSplittingActor_h
 #define GateOptrLastVertexInteractionSplittingActor_h 1
 
-#include "G4VBiasingOperator.hh"
-
 #include "GateVActor.h"
+#include "G4ParticleChangeForGamma.hh"
 #include <iostream>
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
 class GateOptnComptSplitting;
 
-class GateOptrLastVertexInteractionSplittingActor : public G4VBiasingOperator,
-                                    public GateVActor {
+class GateOptrLastVertexInteractionSplittingActor : public GateVActor {
 public:
   GateOptrLastVertexInteractionSplittingActor(py::dict &user_info);
   virtual ~GateOptrLastVertexInteractionSplittingActor() {}
@@ -57,63 +55,50 @@ public:
   // virtual void PreUserTrackingAction( const G4Track* track );
 
   G4double fSplittingFactor;
-  G4double fMinWeightOfParticle;
-  G4double fWeightThreshold;
-  G4bool fBiasPrimaryOnly;
-  G4bool fBiasOnlyOnce;
-  G4int fNInteractions = 0;
-  G4bool fRussianRoulette;
+  G4bool fRussianRouletteForAngle = false;
   G4bool fRotationVectorDirector;
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
-  G4Track fTrackInformation;
-  G4Step fStepInformation;
-  G4String fProcessToSplit = "None";
-  G4int fIDOfSplittedTrack = 0;
+  G4int fTrackIDOfSplittedTrack = 0;
   G4bool fIsSplitted = false;
+  G4bool fSecondaries = false;
+  G4int fParentID = -1;
+  G4int fEventID;
+  G4int fEventIDOfSplittedTrack;
+  G4int fEventIDOfInitialSplittedTrack;
+  G4int fTrackIDOfInitialTrack;
+  G4int fTrackIDOfInitialSplittedTrack = 0;
+  G4int ftmpTrackID;
+  G4bool fIsFirstStep = true;
+  G4bool fSuspendForAnnihil = false;
+  std::vector<G4Track> fTracksToPostpone;
+  
+  std::map<G4int,std::vector<G4Track>> fRememberedTracks;
+  std::map<G4int,std::vector<G4String>> fRememberedProcesses;
+
   std::vector<std::string> fListOfVolumeAncestor;
 
-  std::vector<G4String> fListOfProcesses = {"compt","conv","eBrem"}; 
+  std::vector<G4String> fListOfProcesses = {"compt","eBrem","annihil","conv","phot"}; 
   // Unused but mandatory
 
-  virtual void StartSimulationAction();
   virtual void SteppingAction(G4Step *) override;
   virtual void BeginOfEventAction(const G4Event *) override;
-  virtual void StartRun();
-  virtual void StartTracking(const G4Track *);
-  virtual void EndTracking() {}
+  virtual void BeginOfRunAction(const G4Run *run) override;
+  virtual void PreUserTrackingAction(const G4Track* track) override;
+  virtual void PostUserTrackingAction(const G4Track* track) override;
 
-protected:
-  // -----------------------------
-  // -- Mandatory from base class:
-  // -----------------------------
-  // -- Unused:
-  void AttachToAllLogicalDaughtersVolumes(G4LogicalVolume *);
-  void ComptonSplitting(G4Step* CurrentStep,G4Track track,G4Step step,G4VProcess* process,G4int splittingFactor);
-  void SecondariesSplitting(G4Step* CurrentStep,G4Track track,G4Step step,G4VProcess* process,G4int splittingFactor);
+  G4Track* CreateComptonTrack(G4ParticleChangeForGamma*,G4Track, G4double);
+  void ComptonSplitting(G4Step* CurrentStep,G4Track track,const G4Step* step,G4VProcess* process);
+  void SecondariesSplitting(G4Step* CurrentStep,G4Track track,const G4Step* step,G4VProcess* process);
   void RememberLastProcessInformation(G4Step*);
-  void CreateNewParticleAtTheLastVertex(G4Step*,G4Track,G4Step,G4String);
-  virtual G4VBiasingOperation *ProposeNonPhysicsBiasingOperation(
-      const G4Track * /* track */,
-      const G4BiasingProcessInterface * /* callingProcess */) {
-    return 0;
-  }
-  virtual G4VBiasingOperation *ProposeOccurenceBiasingOperation(
-      const G4Track * /* track */,
-      const G4BiasingProcessInterface * /* callingProcess */) {
-    return 0;
-  }
+  void CreateNewParticleAtTheLastVertex(G4Step*,G4Track,const G4Step*,G4String);
+  void ResetProcessesForEnteringParticles(G4Step * step);
+  void PostponeFirstAnnihilationTrackIfInteraction(G4Step *step,G4String processName);
+  void RegenerationOfPostponedAnnihilationTrack(G4Step *step);
+  void HandleTrackIDIfPostponedAnnihilation(G4Step* step);
+  G4double RussianRouletteForAngleSurvival(G4ThreeVector, G4ThreeVector, G4double, G4double);
 
-  // -- Used:
-  virtual G4VBiasingOperation *ProposeFinalStateBiasingOperation(
-      const G4Track *track, const G4BiasingProcessInterface *callingProcess){
-        return 0;
-      }
 
-private:
-  // -- Avoid compiler complaining for (wrong) method shadowing,
-  // -- this is because other virtual method with same name exists.
-  using G4VBiasingOperator::OperationApplied;
 
 private:
   GateOptnComptSplitting *fComptSplittingOperation;

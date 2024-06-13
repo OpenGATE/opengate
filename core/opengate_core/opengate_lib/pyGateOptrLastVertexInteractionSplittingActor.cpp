@@ -7,12 +7,11 @@
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
-#include "G4VBiasingOperator.hh"
 #include "GateOptrLastVertexInteractionSplittingActor.h"
 
 void init_GateOptrLastVertexInteractionSplittingActor(py::module &m) {
 
-  py::class_<GateOptrLastVertexInteractionSplittingActor, G4VBiasingOperator, GateVActor,
+  py::class_<GateOptrLastVertexInteractionSplittingActor, GateVActor,
              std::unique_ptr<GateOptrLastVertexInteractionSplittingActor, py::nodelete>>(
       m, "GateOptrLastVertexInteractionSplittingActor")
       .def_readwrite(

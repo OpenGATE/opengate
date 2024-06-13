@@ -461,14 +461,9 @@ class LastVertexInteractionSplittingActor(g4.GateOptrLastVertexInteractionSplitt
         ActorBase.set_default_user_info(user_info)
         deg = g4_units.deg
         user_info.splitting_factor = 1
-        user_info.weight_threshold = 0
-        user_info.bias_primary_only = True
-        user_info.min_weight_of_particle = 0
-        user_info.bias_only_once = True
-        user_info.processes = ["phot"]
-        user_info.russian_roulette = False
+        user_info.russian_roulette_for_angle = False
         user_info.rotation_vector_director = False
-        user_info.vector_director = [0, 0, 1]
+        user_info.vector_director = [0, 0, -1]
         user_info.max_theta = 90 * deg
         user_info.list_of_volume_name = []
 
