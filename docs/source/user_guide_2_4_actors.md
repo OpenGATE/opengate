@@ -290,12 +290,12 @@ As parameters Coincidence Sorter expects as input:
 * **Policy** to process the multiple coincidences. When more than two singles are found in coincidence, several types of behavior could be implemented.
 * **Chunk size** important for very large root files to avoid loading everything in memory.
 
-#### Policies 
+#### Policies
 
 When more than two singles are found in coincidence, several type of behavior could be implemented. GATE allows to model 5 different rules to treat multiple coincidences that can be used. Mutliple coincidences or "multicoincidence" are composed of at least three singles detected in the same **time window** that could form coincidence. The list of rules along with their explanation are given in Table below. The 5 rules, same as in [Gate9.X](https://opengate.readthedocs.io/en/latest/digitizer_and_detector_modeling.html#id43), were selected for the implementation as the most used. If an option that you need is missing, please, don't hesiate to report it in [Issues](https://github.com/OpenGATE/opengate/issues).
 
 
-**Available multiple policy and associated meaning**. When a multiple coincidence involving n *singles* is peocessed, it is first decomposed into a list of n·(n−1) pairs which are analyzed individually. 
+**Available multiple policy and associated meaning**. When a multiple coincidence involving n *singles* is peocessed, it is first decomposed into a list of n·(n−1) pairs which are analyzed individually.
 The naming convention:
 * "Good" means that a pair of singles are in coincidence and passes all filters **minDisntanceXY** and **maxDistanceZ**
 * "take" means that 1 or more pairs of coincidences will be stored
@@ -304,11 +304,11 @@ The naming convention:
 
 | Policy name             | Description                                                                                            |
 |-------------------------|--------------------------------------------------------------------------------------------------------|
-| takeAllGoods            | Each good pairs are considered                                                                         | 
-| takeWinnerOfGoods       | Only the good pair with the highest energy is considered                                               | 
-| takeWinnerIfIsGood      | If the pair with the highest energy is good, take it, otherwise, kill the event                        | 
-| keepIfOnlyOneGood       | If exactly one pair is good, keep the multicoincidence                                                 | 
-| removeMultiples         | No multiple coincidences are accepted, no matter how many good pairs are present (*killAll in Gate9.X) | 
+| takeAllGoods            | Each good pairs are considered                                                                         |
+| takeWinnerOfGoods       | Only the good pair with the highest energy is considered                                               |
+| takeWinnerIfIsGood      | If the pair with the highest energy is good, take it, otherwise, kill the event                        |
+| keepIfOnlyOneGood       | If exactly one pair is good, keep the multicoincidence                                                 |
+| removeMultiples         | No multiple coincidences are accepted, no matter how many good pairs are present (*killAll in Gate9.X) |
 
 The folliwing figure illustrates an example of different policies application. The stars represent the detected singles. The size of the star, as well as the number next to it, indicate the energy level of the single (ie. single no 1 has more energy than single no 2, which has itself more energy than the single no 3). The lines represent the possible **good** coincidences.
 
@@ -321,11 +321,11 @@ In the table:
 
 | Policy name             | Case 1 | Case 2              | Case 3       | Case 4       |
 |-------------------------|--------|---------------------|--------------|--------------|
-| takeAllGoods            | (1,2)  | (1,2); (1,3); (2,3) | (1,2); (2,3) | (1,3); (2,3) | 
-| takeWinnerOfGoods       | (1,2)  | (1,2)               | (1,2)        | (1,3)        | 
-| takeWinnerIfIsGood      | (1,2)  | (1,2)               | (1,2)        | \-           | 
-| keepIfOnlyOneGood       | \*     | \-                  | \-           | \-           | 
-| removeMultiples         | \-     | \-                  | \-           | \-           | 
+| takeAllGoods            | (1,2)  | (1,2); (1,3); (2,3) | (1,2); (2,3) | (1,3); (2,3) |
+| takeWinnerOfGoods       | (1,2)  | (1,2)               | (1,2)        | (1,3)        |
+| takeWinnerIfIsGood      | (1,2)  | (1,2)               | (1,2)        | \-           |
+| keepIfOnlyOneGood       | \*     | \-                  | \-           | \-           |
+| removeMultiples         | \-     | \-                  | \-           | \-           |
 
 A more detailed example can be found in [test 072](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/).
 
