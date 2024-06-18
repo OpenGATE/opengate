@@ -24,35 +24,24 @@
 // ********************************************************************
 //
 ///
-/// \file GateOptrLastVertexInteractionSplittingActor.h
-/// \brief Definition of the GateOptrLastVertexInteractionSplittingActor class
-#ifndef GateOptrLastVertexInteractionSplittingActor_h
-#define GateOptrLastVertexInteractionSplittingActor_h 1
+/// \file GateLastVertexInteractionSplittingActor.h
+/// \brief Definition of the GateLastVertexInteractionSplittingActor class
+#ifndef GateLastVertexInteractionSplittingActor_h
+#define GateLastVertexInteractionSplittingActor_h 1
 
 #include "GateVActor.h"
 #include "G4ParticleChangeForGamma.hh"
+#include "G4VEnergyLossProcess.hh"
 #include <iostream>
 #include <pybind11/stl.h>
 namespace py = pybind11;
 
-class GateOptnComptSplitting;
 
-class GateOptrLastVertexInteractionSplittingActor : public GateVActor {
+
+class GateLastVertexInteractionSplittingActor : public GateVActor {
 public:
-  GateOptrLastVertexInteractionSplittingActor(py::dict &user_info);
-  virtual ~GateOptrLastVertexInteractionSplittingActor() {}
-
-public:
-  // -------------------------
-  // Optional from base class:
-  // -------------------------
-  // -- Call at run start:
-  // virtual void BeginOfRunAction(const G4Run *run);
-
-  // virtual void SteppingAction(G4Step* step);
-
-  // -- Call at each track starting:
-  // virtual void PreUserTrackingAction( const G4Track* track );
+  GateLastVertexInteractionSplittingActor(py::dict &user_info);
+  virtual ~GateLastVertexInteractionSplittingActor() {}
 
   G4double fSplittingFactor;
   G4bool fRussianRouletteForAngle = false;
@@ -60,8 +49,6 @@ public:
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
   G4int fTrackIDOfSplittedTrack = 0;
-  G4bool fIsSplitted = false;
-  G4bool fSecondaries = false;
   G4int fParentID = -1;
   G4int fEventID;
   G4int fEventIDOfSplittedTrack;
@@ -71,15 +58,16 @@ public:
   G4int ftmpTrackID;
   G4bool fIsFirstStep = true;
   G4bool fSuspendForAnnihil = false;
+  G4double fWeightOfEnteringParticle = 0;
   std::vector<G4Track> fTracksToPostpone;
   
-  std::map<G4int,std::vector<G4Track>> fRememberedTracks;
+  std::map<G4int,G4TrackVector> fRememberedTracks;
+  std::map<G4int,std::vector<G4Step*>> fRememberedSteps;
   std::map<G4int,std::vector<G4String>> fRememberedProcesses;
 
   std::vector<std::string> fListOfVolumeAncestor;
 
-  std::vector<G4String> fListOfProcesses = {"compt","eBrem","annihil","conv","phot"}; 
-  // Unused but mandatory
+  std::vector<G4String> fListOfProcesses = {"compt","annihil","eBrem","conv","phot"}; 
 
   virtual void SteppingAction(G4Step *) override;
   virtual void BeginOfEventAction(const G4Event *) override;
@@ -87,21 +75,28 @@ public:
   virtual void PreUserTrackingAction(const G4Track* track) override;
   virtual void PostUserTrackingAction(const G4Track* track) override;
 
+  //Pure splitting functions
+  G4double RussianRouletteForAngleSurvival(G4ThreeVector, G4ThreeVector, G4double, G4double);
   G4Track* CreateComptonTrack(G4ParticleChangeForGamma*,G4Track, G4double);
   void ComptonSplitting(G4Step* CurrentStep,G4Track track,const G4Step* step,G4VProcess* process);
   void SecondariesSplitting(G4Step* CurrentStep,G4Track track,const G4Step* step,G4VProcess* process);
+
+
+  //Handling the remembered processes to replay
   void RememberLastProcessInformation(G4Step*);
   void CreateNewParticleAtTheLastVertex(G4Step*,G4Track,const G4Step*,G4String);
   void ResetProcessesForEnteringParticles(G4Step * step);
+  void ClearRememberedTracksAndSteps(std::map<G4int, G4TrackVector>, std::map<G4int, std::vector<G4Step *>>);
+
+
+  //Edge case to handle the bias in annihilation
+  //FIXME : The triple annihilation is not handled for the moment
   void PostponeFirstAnnihilationTrackIfInteraction(G4Step *step,G4String processName);
   void RegenerationOfPostponedAnnihilationTrack(G4Step *step);
   void HandleTrackIDIfPostponedAnnihilation(G4Step* step);
-  G4double RussianRouletteForAngleSurvival(G4ThreeVector, G4ThreeVector, G4double, G4double);
+  
+  
 
-
-
-private:
-  GateOptnComptSplitting *fComptSplittingOperation;
 };
 
 #endif

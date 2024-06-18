@@ -338,7 +338,7 @@ void init_GatePhaseSpaceActor(py::module &);
 
 void init_GateOptrComptSplittingActor(py::module &m);
 
-void init_GateOptrLastVertexInteractionSplittingActor(py::module &m); 
+void init_GateLastVertexInteractionSplittingActor(py::module &m); 
 
 void init_GateBOptrBremSplittingActor(py::module &m);
 
@@ -560,7 +560,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GatePhaseSpaceActor(m);
   init_GateBOptrBremSplittingActor(m);
   init_GateOptrComptSplittingActor(m);
-  init_GateOptrLastVertexInteractionSplittingActor(m);
+  init_GateLastVertexInteractionSplittingActor(m);
   init_GateHitsCollectionActor(m);
   init_GateMotionVolumeActor(m);
   init_GateHitsAdderActor(m);

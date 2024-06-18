@@ -7,15 +7,15 @@
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
-#include "GateOptrLastVertexInteractionSplittingActor.h"
+#include "GateLastVertexInteractionSplittingActor.h"
 
-void init_GateOptrLastVertexInteractionSplittingActor(py::module &m) {
+void init_GateLastVertexInteractionSplittingActor(py::module &m) {
 
-  py::class_<GateOptrLastVertexInteractionSplittingActor, GateVActor,
-             std::unique_ptr<GateOptrLastVertexInteractionSplittingActor, py::nodelete>>(
-      m, "GateOptrLastVertexInteractionSplittingActor")
+  py::class_<GateLastVertexInteractionSplittingActor, GateVActor,
+             std::unique_ptr<GateLastVertexInteractionSplittingActor, py::nodelete>>(
+      m, "GateLastVertexInteractionSplittingActor")
       .def_readwrite(
           "fListOfVolumeAncestor",
-          &GateOptrLastVertexInteractionSplittingActor::fListOfVolumeAncestor)
+          &GateLastVertexInteractionSplittingActor::fListOfVolumeAncestor)
       .def(py::init<py::dict &>());
 }

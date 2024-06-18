@@ -454,7 +454,7 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
         g4.GateOptrComptSplittingActor.__init__(self, user_info.__dict__)
 
 
-class LastVertexInteractionSplittingActor(g4.GateOptrLastVertexInteractionSplittingActor, ActorBase):
+class LastVertexInteractionSplittingActor(g4.GateLastVertexInteractionSplittingActor, ActorBase):
     type_name = "LastVertexInteractionSplittingActor"
    
     def set_default_user_info(user_info):
@@ -469,7 +469,7 @@ class LastVertexInteractionSplittingActor(g4.GateOptrLastVertexInteractionSplitt
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
-        g4.GateOptrLastVertexInteractionSplittingActor.__init__(self, user_info.__dict__)
+        g4.GateLastVertexInteractionSplittingActor.__init__(self, user_info.__dict__)
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
         
