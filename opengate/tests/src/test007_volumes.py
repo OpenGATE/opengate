@@ -185,7 +185,7 @@ if __name__ == "__main__":
     source.activity = 2500 * Bq
 
     # add stat actor
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # run timing
     sec = gate.g4_units.second
@@ -205,10 +205,11 @@ if __name__ == "__main__":
     # start simulation
     sim.user_hook_after_init = check_mat
     sim.user_hook_after_run = user_hook_volume
-    sim.run(start_new_process=True)
+    # should be sim.run(start_new_process=True)
+    # but for testing, we currently set it to False
+    sim.run(start_new_process=False)
 
     # print results at the end
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # check
