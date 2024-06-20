@@ -183,8 +183,8 @@ def _make_property(property_name, default_value, options=None, container_dict=No
     if options is None:
         options = {}
 
-    @property
-    def prop(self):
+    # @property
+    def prop_getter(self):
         if container_dict is None:
             if "getter_hook" in options:
                 return options["getter_hook"](self, self.user_info[property_name])
@@ -199,8 +199,8 @@ def _make_property(property_name, default_value, options=None, container_dict=No
         read_only = False
     if read_only is False:
 
-        @prop.setter
-        def prop(self, value):
+        # @prop.setter
+        def prop_setter(self, value):
             if "deactivated" in options and options["deactivated"] is True:
                 if value != self.inherited_user_info_defaults[property_name][0]:
                     raise GateFeatureUnavailableError(
@@ -223,6 +223,12 @@ def _make_property(property_name, default_value, options=None, container_dict=No
                 self.user_info[property_name] = value_to_be_set
             else:
                 self.user_info[container_dict][property_name] = value
+    else:
+        prop_setter = None
+
+    prop_doc = f"This is a property linked to user_info['{property_name}']:\n\n"
+    prop_doc += make_docstring_for_user_info(property_name, default_value, options)
+    prop = property(fget=prop_getter, fset=prop_setter, doc=prop_doc)
 
     return prop
 
