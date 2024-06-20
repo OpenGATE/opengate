@@ -1416,6 +1416,7 @@ class Simulation(GateObject):
         d = super().to_dictionary()
         d["volume_manager"] = self.volume_manager.to_dictionary()
         d["physics_manager"] = self.physics_manager.to_dictionary()
+        d["actor_manager"] = self.actor_manager.to_dictionary()
         return d
 
     def from_dictionary(self, d):
