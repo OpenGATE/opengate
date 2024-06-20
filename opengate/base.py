@@ -128,12 +128,12 @@ def add_properties_to_class(cls, user_info_defaults):
     """Add user_info defaults as properties to class if not yet present."""
     for p_name, default_value_and_options in user_info_defaults.items():
         _ok = False
-        if isinstance(default_value_and_options, tuple):
-            if len(default_value_and_options) == 2:
-                default_value = default_value_and_options[0]
-                options = default_value_and_options[1]
-                _ok = True
-        if not _ok:
+        if isinstance(default_value_and_options, tuple) and len(default_value_and_options) == 2:
+            default_value = default_value_and_options[0]
+            options = default_value_and_options[1]
+            # _ok = True
+        # if not _ok:
+        else:
             s = (
                 f"*** DEVELOPER WARNING ***"
                 f"User info defaults possibly not implemented correctly for class {cls}.\n"
