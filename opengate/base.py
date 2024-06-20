@@ -145,7 +145,7 @@ def add_properties_to_class(cls, user_info_defaults):
         if "deprecated" not in options:
             if not hasattr(cls, p_name):
                 check_property_name(p_name)
-                setattr(cls, p_name, _make_property(p_name, options=options))
+                setattr(cls, p_name, _make_property(p_name, default_value, options=options))
 
                 try:
                     expose_items = options["expose_items"]
@@ -161,7 +161,7 @@ def add_properties_to_class(cls, user_info_defaults):
                                 setattr(
                                     cls,
                                     item_name,
-                                    _make_property(item_name, container_dict=p_name),
+                                    _make_property(item_name, item_default_value, container_dict=p_name),
                                 )
                             else:
                                 fatal(
@@ -174,7 +174,7 @@ def add_properties_to_class(cls, user_info_defaults):
     return cls
 
 
-def _make_property(property_name, options=None, container_dict=None):
+def _make_property(property_name, default_value, options=None, container_dict=None):
     """Return a property that stores the user_info item in a
     dictionary which is an attribute of the object (self).
 
@@ -227,6 +227,31 @@ def _make_property(property_name, options=None, container_dict=None):
     return prop
 
 
+def make_docstring_for_user_info(name, default_value, options):
+    indent = 4 * " "
+    docstring = f"{name}"
+    if "deprecated" in options:
+        docstring += " -> DEPRECATED\n"
+        docstring += indent
+        docstring += "Info: "
+        docstring += options["deprecated"]
+        docstring += "\n"
+    else:
+        if "required" in options and options["required"] is True:
+            docstring += " (must be provided)"
+        docstring += ":\n"
+        # docstring += (20 - len(k)) * " "
+        docstring += f"{indent}Default value: {default_value}\n"
+        if "allowed_values" in options:
+            docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
+        if "doc" in options:
+            docstring += indent
+            docstring += options["doc"]
+            docstring += "\n"
+    docstring += "\n"
+    return docstring
+
+
 def make_docstring(cls, user_info_defaults):
     indent = 4 * " "
     if cls.__doc__ is not None:
@@ -241,26 +266,27 @@ def make_docstring(cls, user_info_defaults):
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
-        docstring += f"{k}"
-        if "deprecated" in options:
-            docstring += " -> DEPRECATED\n"
-            docstring += indent
-            docstring += "Info: "
-            docstring += options["deprecated"]
-            docstring += "\n"
-        else:
-            if "required" in options and options["required"] is True:
-                docstring += " (must be provided)"
-            docstring += ":\n"
-            # docstring += (20 - len(k)) * " "
-            docstring += f"{indent}Default value: {default_value}\n"
-            if "allowed_values" in options:
-                docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
-            if "doc" in options:
-                docstring += indent
-                docstring += options["doc"]
-                docstring += "\n"
-        docstring += "\n"
+        docstring += make_docstring_for_user_info(k, default_value, options)
+        # docstring += f"{k}"
+        # if "deprecated" in options:
+        #     docstring += " -> DEPRECATED\n"
+        #     docstring += indent
+        #     docstring += "Info: "
+        #     docstring += options["deprecated"]
+        #     docstring += "\n"
+        # else:
+        #     if "required" in options and options["required"] is True:
+        #         docstring += " (must be provided)"
+        #     docstring += ":\n"
+        #     # docstring += (20 - len(k)) * " "
+        #     docstring += f"{indent}Default value: {default_value}\n"
+        #     if "allowed_values" in options:
+        #         docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
+        #     if "doc" in options:
+        #         docstring += indent
+        #         docstring += options["doc"]
+        #         docstring += "\n"
+        # docstring += "\n"
     docstring += 20 * "*"
     docstring += "\n"
     cls.__doc__ = docstring
