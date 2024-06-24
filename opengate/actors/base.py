@@ -137,10 +137,6 @@ class ActorBase(GateObject):
                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
             },
         ),
-        "write_to_disk": (
-            True,  # FIXME set it to False by default ?
-            {"doc": "TODO "},
-        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -188,6 +184,21 @@ class ActorBase(GateObject):
         #     fatal(self._get_error_msg_output_filename())
         # else:
         list(self.user_output.values())[0].output_filename = filename
+
+    @property
+    @shortcut_for_single_output_actor
+    def write_to_disk(self):
+        # if len(self.user_output) > 1:
+        #     fatal(self._get_error_msg_output_filename())
+        # else:
+        return list(self.user_output.values())[0].write_to_disk
+
+    @output_filename.setter
+    def write_to_disk(self, write_to_disk):
+        # if len(self.user_output) > 1:
+        #     fatal(self._get_error_msg_output_filename())
+        # else:
+        list(self.user_output.values())[0].write_to_disk = write_to_disk
 
     @property
     @shortcut_for_single_output_actor
