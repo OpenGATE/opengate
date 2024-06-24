@@ -600,11 +600,6 @@ class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(
-            ensure_filename_is_str(
-                self.user_output.efficiency_filtered_singles.get_output_path()
-            )
-        )
         g4.GateDigitizerEfficiencyActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
