@@ -535,9 +535,6 @@ class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringAc
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(
-            ensure_filename_is_str(self.user_output.blurred_singles.get_output_path())
-        )
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
