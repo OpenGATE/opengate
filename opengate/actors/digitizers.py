@@ -987,9 +987,6 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(
-            ensure_filename_is_str(self.user_output.phsp.get_output_path())
-        )
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
