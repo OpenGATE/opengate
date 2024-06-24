@@ -17,10 +17,6 @@ def _setter_hook_belongs_to(self, belongs_to):
     return belongs_to_name
 
 
-def _setter_hook_path(self, path):
-    return Path(path)
-
-
 class ActorOutputBase(GateObject):
     user_info_defaults = {
         "belongs_to": (
