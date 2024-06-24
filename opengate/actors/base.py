@@ -250,7 +250,8 @@ class ActorBase(GateObject):
         return return_dict
 
     def initialize(self):
-        """'Virtual' method to allow for inheritance."""
+        """This base class method initializes common settings and should be called in all inheriting classes.
+        """
         # Prepare the output entries for those items
         # where the user wants to keep the data in memory
         # self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
