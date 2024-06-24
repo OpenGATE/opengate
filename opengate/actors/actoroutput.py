@@ -28,7 +28,7 @@ class ActorOutputBase(GateObject):
             },
         ),
         "output_filename": (
-            None,
+            "auto",
             {
                 "doc": "Filename for the data represented by this actor output. "
                 "Relative paths and filenames are taken "
@@ -98,7 +98,12 @@ class ActorOutputBase(GateObject):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def initialize(self):
-        if self.output_filename is None:
+        if (self.output_filename == "" or self.output_filename is None) and self.write_to_disk is True:
+            fatal(f"The actor output {self.name} of actor {self.belongs_to_actor.type_name} has write_to_disk=True, "
+                  f"but output_filename={self.output_filename}. "
+                  f"Set output_filename='auto' to let GATE generate it automatically, "
+                  f"or manually provide an output_filename. ")
+        elif self.output_filename == "auto":
             self.output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
