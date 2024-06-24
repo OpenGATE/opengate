@@ -300,9 +300,6 @@ class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
 
     def StartSimulationAction(self):
         self.set_group_by_depth()
-        self.SetOutputFilename(
-            ensure_filename_is_str(self.user_output.added_singles.get_output_path())
-        )
         g4.GateDigitizerAdderActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
