@@ -265,12 +265,15 @@ class ActorBase(GateObject):
                 v.extra_suffix = self.extra_suffix
             v.initialize()
 
-        # special case for one single output
-        # this is important for root output
-        if len(self.user_output) == 1:
-            v = list(self.user_output.values())[0]
-            if v.write_to_disk is False:
-                self.write_to_disk = False
+        # Create structs on C++ side for each actor output
+        # This struct is only needed by actors that handle output writing in C++
+        # But it does not hurt to populate the info in C++ regardless of the actor
+        # The output path can also be (re-)set by the specific actor in
+        # StartSimulation or BeginOfRunActionMasterThread, if needed
+        for k, v in self.user_output.items():
+            self.AddActorOutputInfo(k)
+            self.SetWriteToDisk(k, v.write_to_disk)
+            self.SetOutputPath(k, v.get_output_path_as_string())
 
     def _add_user_output(self, actor_output_class, name, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
