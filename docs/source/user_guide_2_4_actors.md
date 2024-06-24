@@ -281,7 +281,7 @@ minSecDiff=1 #NOT YET IMPLEMENTED
 # apply coincidences sorter
 coincidences = coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=1000000)
 ```
-As parameters Coincidence Sorter expects as input:
+As parameters, Coincidence Sorter expects as input:
 
 * **Singles Tree**
 * Defined coincidence **time window**
@@ -292,12 +292,12 @@ As parameters Coincidence Sorter expects as input:
 
 #### Policies
 
-When more than two singles are found in coincidence, several type of behavior could be implemented. GATE allows to model 5 different rules to treat multiple coincidences that can be used. Mutliple coincidences or "multicoincidence" are composed of at least three singles detected in the same **time window** that could form coincidence. The list of rules along with their explanation are given in Table below. The 5 rules, same as in [Gate9.X](https://opengate.readthedocs.io/en/latest/digitizer_and_detector_modeling.html#id43), were selected for the implementation as the most used. If an option that you need is missing, please, don't hesiate to report it in [Issues](https://github.com/OpenGATE/opengate/issues).
+When more than two singles are found in coincidence, several type of behavior could be implemented. GATE allows to model 5 different policies to treat multiple coincidences that can be used. Mutliple coincidences or "multicoincidence" are composed of at least three singles detected in the same **time window** that could form coincidence. The list of policies along with their explanation are given in Table below. The 5 policies, same as in [Gate9.X](https://opengate.readthedocs.io/en/latest/digitizer_and_detector_modeling.html#id43), were selected for the implementation as the most used. If an option that you need is missing, please, don't hesitate to report it in [Issues](https://github.com/OpenGATE/opengate/issues).
 
 
-**Available multiple policy and associated meaning**. When a multiple coincidence involving n *singles* is peocessed, it is first decomposed into a list of n·(n−1) pairs which are analyzed individually.
+**Available multiple policies and associated meaning**. When a multiple coincidence involving n *singles* is processed, it is first decomposed into a list of n·(n−1) pairs which are analyzed individually.
 The naming convention:
-* "Good" means that a pair of singles are in coincidence and passes all filters **minDisntanceXY** and **maxDistanceZ**
+* "Good" means that a pair of singles are in coincidence and passes all filters **minDistanceXY** and **maxDistanceZ**
 * "take" means that 1 or more pairs of coincidences will be stored
 * "keep" means that a unique coincidence, composed of at least three singles will be kept in the data flow and is called "multicoincidence". *TO DO: In the latter case, the multicoincidence will not be written to the disk, but may participate to a possible deadtime or bandwidth occupancy. The user may clear the multicoincidence at any desired step of the acquisition, by using the multipleKiller pulse processor (described in #Multiple coincidence removal).*
 * "remove" prefix means that all events will be discarded and will not produce any coincidence
@@ -310,7 +310,7 @@ The naming convention:
 | keepIfOnlyOneGood       | If exactly one pair is good, keep the multicoincidence                                                 |
 | removeMultiples         | No multiple coincidences are accepted, no matter how many good pairs are present (*killAll in Gate9.X) |
 
-The folliwing figure illustrates an example of different policies application. The stars represent the detected singles. The size of the star, as well as the number next to it, indicate the energy level of the single (ie. single no 1 has more energy than single no 2, which has itself more energy than the single no 3). The lines represent the possible **good** coincidences.
+The following figure illustrates an example of different policies application. The stars represent the detected singles. The size of the star, as well as the number next to it, indicate the energy level of the single (ie. single no 1 has more energy than single no 2, which has itself more energy than the single no 3). The lines represent the possible **good** coincidences.
 
 ![](figures/MultipleCases.jpg)
 
