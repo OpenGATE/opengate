@@ -193,9 +193,9 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_array = None
 
         self._add_user_output(
-            "image",
-            "projection",
-            output_filename=self.output_filename,
+            ActorOutputSingleImage,
+            "arf_projection",
+            output_filename="arf_projection.mhd",
             keep_in_memory=True,
         )
 
