@@ -2,7 +2,7 @@ from pathlib import Path
 from copy import deepcopy
 
 from ..base import GateObject
-from ..utility import insert_suffix_before_extension
+from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal
 from .dataitems import available_data_container_classes
 
@@ -131,6 +131,9 @@ class ActorOutputBase(GateObject):
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
+
+    def get_output_path_as_string(self, which='merged', **kwargs):
+        return ensure_filename_is_str(self.get_output_path(which, **kwargs))
 
     def close(self):
         if self.keep_data_in_memory is False:
