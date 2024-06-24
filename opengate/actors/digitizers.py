@@ -661,11 +661,6 @@ class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(
-            ensure_filename_is_str(
-                self.user_output.singles_per_energy_window.get_output_path()
-            )
-        )
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
