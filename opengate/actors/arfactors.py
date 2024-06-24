@@ -152,12 +152,6 @@ class ARFActor(ActorBase, g4.GateARFActor):
                 "doc": "FIXME",
             },
         ),
-        "output_filename": (
-            None,
-            {
-                "doc": "FIXME",
-            },
-        ),
         "enable_hit_slice": (
             False,
             {
