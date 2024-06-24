@@ -8,6 +8,7 @@ from ..exception import fatal
 from .base import ActorBase
 
 from .digitizers import DigitizerEnergyWindowsActor
+from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
 
 
 def import_garf():
