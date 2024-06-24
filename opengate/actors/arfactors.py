@@ -70,15 +70,17 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
+        self._add_user_output(
+            ActorOutputRoot,
+            "arf_training_data",
+            output_filename="arf_training.root",
+            keep_in_memory=False,
+        )
+
 
     def initialize(self):
         ActorBase.initialize(self)
-        self._add_user_output(
-            "root",
-            "arf_training_data",
-            data_path=self.output_path,
-            keep_in_memory=False,
-        )
+
         self.check_energy_window_actor()
 
         # initialize C++ side
