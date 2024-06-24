@@ -441,9 +441,6 @@ class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
             )
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(
-            ensure_filename_is_str(self.user_output.blurred_singles.get_output_path())
-        )
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
