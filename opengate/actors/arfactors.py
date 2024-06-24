@@ -57,12 +57,6 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
                 "doc": "FIXME",
             },
         ),
-        "output_path": (
-            "arf_training.root",
-            {
-                "doc": "Path where the output should be written. ",
-            },
-        ),
         "debug": (False, {"doc": "FIXME"}),
         "energy_windows_actor": (
             None,
