@@ -110,7 +110,7 @@ class ActorOutputBase(GateObject):
         if self.write_to_disk is True:
             self.write_data(*args, **kwargs)
 
-    def get_output_path(self, which, **kwargs):
+    def get_output_path(self, which='merged', **kwargs):
         if self.extra_suffix is not None:
             full_data_path = insert_suffix_before_extension(
                 self.simulation.get_output_path(self.output_filename), self.extra_suffix
