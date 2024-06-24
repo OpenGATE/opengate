@@ -33,7 +33,7 @@ class ActorOutputBase(GateObject):
                 "doc": "Filename for the data represented by this actor output. "
                 "Relative paths and filenames are taken "
                 "relative to the global simulation output folder "
-                "set via the Simulation.output_path option. ",
+                "set via the Simulation.output_dir option. ",
             },
         ),
         "write_to_disk": (
