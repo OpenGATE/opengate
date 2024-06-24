@@ -716,9 +716,6 @@ class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActo
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        self.SetOutputFilename(
-            ensure_filename_is_str(self.user_output.hits.get_output_path())
-        )
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
