@@ -94,7 +94,7 @@ if (theta > fMaxTheta){
     weightToApply = split;
   }
   else{
-    G4double weightToApply = 0;
+    weightToApply = 0;
   }
 }
 return weightToApply;

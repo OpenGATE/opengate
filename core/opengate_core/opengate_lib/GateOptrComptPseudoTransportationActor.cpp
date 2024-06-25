@@ -52,6 +52,7 @@
 #include "GateOptrComptPseudoTransportationActor.h"
 #include "G4UImanager.hh"
 #include "G4eplusAnnihilation.hh"
+#include "GateOptnVGenericSplitting.h"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -163,12 +164,14 @@ void GateOptrComptPseudoTransportationActor::StartRun() {
 
 void GateOptrComptPseudoTransportationActor::SteppingAction(G4Step *step) {
 
+
+
   
   if ((isSplitted == true) && (step->GetPostStepPoint()->GetStepStatus() != fWorldBoundary)) {
       G4String LogicalVolumeName = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
       if (!(std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeName ) !=fNameOfBiasedLogicalVolume.end())
       && (LogicalVolumeName  != fMotherVolumeName)) {
-        step->GetTrack()->SetTrackStatus(G4TrackStatus::fStopAndKill);
+        step->GetTrack()->SetTrackStatus(fStopAndKill);
         isSplitted = false;
     }
   }
@@ -262,7 +265,7 @@ GateOptrComptPseudoTransportationActor::ProposeFinalStateBiasingOperation(
   
   
    if (!(std::find(fCreationProcessNameList.begin(), fCreationProcessNameList.end(),CreationProcessName) !=  fCreationProcessNameList.end())){
-    if ((callingProcess->GetWrappedProcess()->GetProcessName() == "compt") || (callingProcess->GetWrappedProcess()->GetProcessName() == "Rayl")){
+    if (callingProcess->GetWrappedProcess()->GetProcessName() == "compt"){
       isSplitted = true;
       return fScatteredGammaSplittingOperation;
     }
