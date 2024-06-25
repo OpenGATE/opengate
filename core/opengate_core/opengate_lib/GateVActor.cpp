@@ -35,10 +35,12 @@ void GateVActor::InitializeCpp() {
 void GateVActor::InitializeUserInput(py::dict &user_info) {
   fMotherVolumeName = DictGetStr(user_info, "attached_to");
   auto op = DictGetStr(user_info, "filters_boolean_operator");
-  if (op == "and")
+  if (op == "and") {
     fOperatorIsAnd = true;
-  else
+  } else {
     fOperatorIsAnd = false;
+  }
+}
 
 void GateVActor::AddActorOutputInfo(std::string outputName) {
   ActorOutputInfo_t aInfo;
