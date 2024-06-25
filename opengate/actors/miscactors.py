@@ -225,7 +225,7 @@ class KillActor(ActorBase, g4.GateKillActor):
         g4.GateKillActor.__init__(self, {"name": self.name})
 
 
-class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
+class ComptSplittingActor(ActorBase, g4.GateOptrComptSplittingActor):
 
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
@@ -246,7 +246,7 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
         g4.GateOptrComptSplittingActor.__init__(self, user_info.__dict__)
 
 
-class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
+class BremSplittingActor(ActorBase, g4.GateBOptrBremSplittingActor):
 
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)

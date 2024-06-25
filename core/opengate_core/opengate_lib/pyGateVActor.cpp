@@ -96,6 +96,11 @@ void init_GateVActor(py::module &m) {
       .def("EndOfEventAction", &GateVActor::EndOfEventAction)
       .def("PreUserTrackingAction", &GateVActor::PreUserTrackingAction)
       .def("PostUserTrackingAction", &GateVActor::PostUserTrackingAction)
+      .def("GetOutputPath", &GateVActor::GetOutputPath)
+      .def("SetOutputPath", &GateVActor::SetOutputPath)
+      .def("GetWriteToDisk", &GateVActor::GetWriteToDisk)
+      .def("SetWriteToDisk", &GateVActor::SetWriteToDisk)
+      .def("AddActorOutputInfo", &GateVActor::AddActorOutputInfo)
       .def("SteppingAction", &GateVActor::SteppingAction);
   //      .def("RegisterCallBack", &GateVActor::RegisterCallBack);
 }

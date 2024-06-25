@@ -40,6 +40,11 @@ void GateVActor::InitializeUserInput(py::dict &user_info) {
   else
     fOperatorIsAnd = false;
   fWriteToDisk = DictGetBool(user_info, "write_to_disk");
+
+void GateVActor::AddActorOutputInfo(std::string outputName) {
+  ActorOutputInfo_t aInfo;
+  aInfo.outputName = outputName;
+  fActorOutputInfos[outputName] = aInfo;
 }
 
 void GateVActor::SetOutputPath(std::string outputName, std::string outputPath) {

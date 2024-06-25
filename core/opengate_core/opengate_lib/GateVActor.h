@@ -50,9 +50,6 @@ public:
   // Take care about the filters
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
-  std::string GetOutputPathString(std::string outputType, int runIndex) {
-    return "Not implemented";
-  }
   /*
 
    ************ WARNING ************
@@ -107,11 +104,32 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
+  void SetOutputPath(std::string outputName, std::string outputPath);
+
+  std::string GetOutputPath(std::string outputName);
+
+  void SetWriteToDisk(std::string outputName, bool writeToDisk);
+
+  bool GetWriteToDisk(std::string outputName);
+
+  void AddActorOutputInfo(std::string outputName);
+
   //  void RegisterCallBack(std::string, std::function);
 
   // convenience function to get the output path of this actor via the callback
   // function
   //  std::string GetOutputPathString(std::string output_type, int run_index);
+
+
+  struct ActorOutputInfo {
+    std::string outputName;
+    std::string outputPath;
+    bool writeToDisk;
+  };
+
+  typedef ActorOutputInfo ActorOutputInfo_t;
+
+  std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
 
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
