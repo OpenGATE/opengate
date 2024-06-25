@@ -59,12 +59,6 @@ public:
 
   int GetTotalNumberOfEntries();
 
-  inline void SetOutputFilename(std::string filename) {
-    fOutputFilename = filename;
-  }
-
-  inline std::string GetOutputFilename() { return fOutputFilename; }
-
 protected:
   // Local data for the threads (each one has a copy)
   struct threadLocalT {
@@ -73,7 +67,6 @@ protected:
   };
   G4Cache<threadLocalT> fThreadLocalData;
 
-  std::string fOutputFilename;
   std::string fDigiCollectionName;
   std::vector<std::string> fUserDigiAttributeNames;
   GateDigiCollection *fHits;
