@@ -55,7 +55,7 @@ void GatePhaseSpaceActor::InitializeCpp() {
 void GatePhaseSpaceActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fDigiCollectionName);
-  fHits->SetFilenameAndInitRoot(fOutputFilename);
+  fHits->SetFilenameAndInitRoot(GetOutputPath("phsp"));
   fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
   fHits->RootInitializeTupleForMaster();
   if (fStoreAbsorbedEvent) {
