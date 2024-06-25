@@ -42,6 +42,41 @@ void GateVActor::InitializeUserInput(py::dict &user_info) {
   fWriteToDisk = DictGetBool(user_info, "write_to_disk");
 }
 
+void GateVActor::SetOutputPath(std::string outputName, std::string outputPath) {
+  fActorOutputInfos[outputName].outputPath = outputPath;
+}
+
+std::string GateVActor::GetOutputPath(std::string outputName) {
+  try {
+    ActorOutputInfo_t aInfo;
+    aInfo = fActorOutputInfos.at(outputName);
+    return aInfo.outputPath;
+  }
+  catch(std::out_of_range& e) {
+    std::ostringstream msg;
+    msg << "No actor output with the name" << outputName << " exists.";
+    Fatal(msg.str());
+  }
+}
+
+void GateVActor::SetWriteToDisk(std::string outputName, bool writeToDisk) {
+  fActorOutputInfos[outputName].writeToDisk = writeToDisk;
+}
+
+bool GateVActor::GetWriteToDisk(std::string outputName) {
+  try {
+    ActorOutputInfo_t aInfo;
+    aInfo = fActorOutputInfos.at(outputName);
+    return aInfo.writeToDisk;
+  }
+  catch(std::out_of_range& e) {
+    std::ostringstream msg;
+    msg << "No actor output with the name" << outputName << " exists.";
+    Fatal(msg.str());
+  }
+}
+
+
 void GateVActor::AddActions(std::set<std::string> &actions) {
   fActions.insert(actions.begin(), actions.end());
 }
