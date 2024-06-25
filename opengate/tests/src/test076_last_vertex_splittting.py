@@ -111,10 +111,9 @@ if __name__ == "__main__":
     ui.check_volumes_overlap = False
     # ui.running_verbose_level = gate.logger.EVENT
     ui.number_of_threads = 1
-    #123456 bug free
-    # 4665 seg fault
-    #46656 annihil
-    ui.random_seed = 641
+    # 1236566 seg fault
+    #12745 double compt
+    ui.random_seed = 73
 
     # units
     m = gate.g4_units.m
@@ -147,7 +146,7 @@ if __name__ == "__main__":
     W_tubs.mother = world.name
 
     W_tubs.rmin = 0
-    W_tubs.rmax = 0.5 *cm
+    W_tubs.rmax = 0.4*cm
     W_tubs.dz = 0.05 * m
     W_tubs.color = [0.8, 0.2, 0.1, 1]
     angle_x = 45
@@ -160,22 +159,19 @@ if __name__ == "__main__":
     W_tubs.rotation = rotation
 
     ####### Compton Splitting ACTOR #########
-    nb_split = 4
+    nb_split = 25
     vertex_splitting_actor = sim.add_actor("LastVertexInteractionSplittingActor", "vertexSplittingW")
     vertex_splitting_actor.mother = W_tubs.name
     vertex_splitting_actor.splitting_factor = nb_split
     vertex_splitting_actor.russian_roulette_for_angle = False
-    vertex_splitting_actor.rotation_vector_director = False
-    vertex_splitting_actor.max_theta = 10 * deg
-    vertex_splitting_actor.vector_director = [0,0,-1]
 
     ##### PHASE SPACE plan ######"
     plan_tubs = sim.add_volume("Tubs", "phsp_tubs")
     plan_tubs.material = "G4_Galactic"
     plan_tubs.mother = world.name
-    plan_tubs.rmin = W_tubs.rmax + 1*nm
+    plan_tubs.rmin = W_tubs.rmax + 1*cm
     plan_tubs.rmax = plan_tubs.rmin + 1 * nm
-    plan_tubs.dz = 0.5 * m
+    plan_tubs.dz = 0.05 * m
     plan_tubs.color = [0.2, 1, 0.8, 1]
     plan_tubs.rotation = rotation
 
@@ -189,7 +185,7 @@ if __name__ == "__main__":
     # source.direction.momentum = [0,0,-1]
     source.direction.momentum = np.dot(rotation, np.array([0, 0, -1]))
     source.energy.type = "mono"
-    source.energy.mono = 4 * MeV
+    source.energy.mono = 4* MeV
 
     ####### PHASE SPACE ACTOR ##############
 
@@ -219,7 +215,7 @@ if __name__ == "__main__":
     sim.add_g4_command_before_init(s)
 
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
-    sim.physics_manager.global_production_cuts.electron = 1 * um
+    sim.physics_manager.global_production_cuts.electron = 1 * km
     sim.physics_manager.global_production_cuts.positron = 1 * um
 
     output = sim.run()

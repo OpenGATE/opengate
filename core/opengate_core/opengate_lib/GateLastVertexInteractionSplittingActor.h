@@ -59,6 +59,13 @@ public:
   G4bool fIsFirstStep = true;
   G4bool fSuspendForAnnihil = false;
   G4double fWeightOfEnteringParticle = 0;
+  G4double fSplitCounter = 0;
+  G4bool fIsSplitted = false;
+
+  G4Track* fTrackToSplit = nullptr;
+  G4Step* fStepToSplit = nullptr;
+  G4String fProcessToSplit = "None";
+
   std::vector<G4Track> fTracksToPostpone;
   
   std::map<G4int,G4TrackVector> fRememberedTracks;
@@ -78,13 +85,13 @@ public:
   //Pure splitting functions
   G4double RussianRouletteForAngleSurvival(G4ThreeVector, G4ThreeVector, G4double, G4double);
   G4Track* CreateComptonTrack(G4ParticleChangeForGamma*,G4Track, G4double);
-  void ComptonSplitting(G4Step* CurrentStep,G4Track track,const G4Step* step,G4VProcess* process);
-  void SecondariesSplitting(G4Step* CurrentStep,G4Track track,const G4Step* step,G4VProcess* process);
+  void ComptonSplitting(G4Step* CurrentStep,G4Track* track,const G4Step* step,G4VProcess* process);
+  void SecondariesSplitting(G4Step* CurrentStep,G4Track* track,const G4Step* step,G4VProcess* process);
 
 
   //Handling the remembered processes to replay
   void RememberLastProcessInformation(G4Step*);
-  void CreateNewParticleAtTheLastVertex(G4Step*,G4Track,const G4Step*,G4String);
+  void CreateNewParticleAtTheLastVertex(G4Step*,G4Track*,const G4Step*,G4String);
   void ResetProcessesForEnteringParticles(G4Step * step);
   void ClearRememberedTracksAndSteps(std::map<G4int, G4TrackVector>, std::map<G4int, std::vector<G4Step *>>);
 
