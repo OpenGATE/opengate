@@ -88,7 +88,7 @@ G4double GateOptnVGenericSplitting::RussianRouletteForAngleSurvival(G4ThreeVecto
 G4double cosTheta =vectorDirector * dir;
 G4double theta = std::acos(cosTheta);
 G4double weightToApply = 1;
-if (theta > fMaxTheta){
+if (theta > maxTheta){
   G4double probability = G4UniformRand();
   if (probability <= 1 / split) {
     weightToApply = split;
