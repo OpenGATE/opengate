@@ -36,7 +36,6 @@
 #include "G4Gamma.hh"
 #include "G4GammaConversion.hh"
 #include "G4ParticleChange.hh"
-#include "GateOptnVGenericSplitting.h"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4ParticleChangeForLoss.hh"
 #include "G4PhotoElectricEffect.hh"
@@ -46,53 +45,59 @@
 #include "G4TrackStatus.hh"
 #include "G4TrackingManager.hh"
 #include "G4VEmProcess.hh"
+#include "GateOptnVGenericSplitting.h"
 #include <memory>
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptneBremSplitting::
-    GateOptneBremSplitting(G4String name)
-    :GateOptnVGenericSplitting(name), fParticleChange() {}
+GateOptneBremSplitting::GateOptneBremSplitting(G4String name)
+    : GateOptnVGenericSplitting(name), fParticleChange() {}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptneBremSplitting::
-    ~GateOptneBremSplitting() {}
+GateOptneBremSplitting::~GateOptneBremSplitting() {}
 
-G4VParticleChange *
-GateOptneBremSplitting::ApplyFinalStateBiasing(const G4BiasingProcessInterface *callingProcess, const G4Track *track, const G4Step *step, G4bool &) {
+G4VParticleChange *GateOptneBremSplitting::ApplyFinalStateBiasing(
+    const G4BiasingProcessInterface *callingProcess, const G4Track *track,
+    const G4Step *step, G4bool &) {
 
   G4int splittingFactor = ceil(fSplittingFactor);
-  G4double survivalProbabilitySplitting = 1 - (splittingFactor - fSplittingFactor) / splittingFactor;
-  G4VParticleChange* processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
-  if ( fSplittingFactor == 1 ) return processFinalState;
-  if ( processFinalState->GetNumberOfSecondaries() == 0 )  return processFinalState;
+  G4double survivalProbabilitySplitting =
+      1 - (splittingFactor - fSplittingFactor) / splittingFactor;
+  G4VParticleChange *processFinalState =
+      callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+  if (fSplittingFactor == 1)
+    return processFinalState;
+  if (processFinalState->GetNumberOfSecondaries() == 0)
+    return processFinalState;
 
-  TrackInitializationChargedParticle(&fParticleChange,processFinalState, track,fSplittingFactor);
-  
+  TrackInitializationChargedParticle(&fParticleChange, processFinalState, track,
+                                     fSplittingFactor);
 
-  processFinalState->Clear(); 
-
+  processFinalState->Clear();
 
   G4int nCalls = 1;
-  while ( nCalls <= fSplittingFactor ){ 
+  while (nCalls <= fSplittingFactor) {
     G4double splittingProbability = G4UniformRand();
-    if (splittingProbability <= survivalProbabilitySplitting || survivalProbabilitySplitting == 1) {
-      processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
-      if ( processFinalState->GetNumberOfSecondaries() >= 1 ) {
-        for(int i =0; i < processFinalState->GetNumberOfSecondaries();i++){
+    if (splittingProbability <= survivalProbabilitySplitting ||
+        survivalProbabilitySplitting == 1) {
+      processFinalState =
+          callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+      if (processFinalState->GetNumberOfSecondaries() >= 1) {
+        for (int i = 0; i < processFinalState->GetNumberOfSecondaries(); i++) {
           G4double gammaWeight = track->GetWeight() / fSplittingFactor;
-          G4Track* gammaTrack = processFinalState->GetSecondary(i);
-          if (fRussianRouletteForAngle == true){
-            G4double weightToApply = RussianRouletteForAngleSurvival(gammaTrack->GetMomentumDirection(),fVectorDirector,fMaxTheta,fSplittingFactor);
-            if (weightToApply != 0){
+          G4Track *gammaTrack = processFinalState->GetSecondary(i);
+          if (fRussianRouletteForAngle == true) {
+            G4double weightToApply = RussianRouletteForAngleSurvival(
+                gammaTrack->GetMomentumDirection(), fVectorDirector, fMaxTheta,
+                fSplittingFactor);
+            if (weightToApply != 0) {
               gammaWeight = gammaWeight * weightToApply;
-              gammaTrack->SetWeight( gammaWeight);
-              fParticleChange.AddSecondary( gammaTrack );
+              gammaTrack->SetWeight(gammaWeight);
+              fParticleChange.AddSecondary(gammaTrack);
             }
-          }
-          else {
-            gammaTrack->SetWeight( gammaWeight);
+          } else {
+            gammaTrack->SetWeight(gammaWeight);
             fParticleChange.AddSecondary(gammaTrack);
           }
         }
@@ -100,8 +105,8 @@ GateOptneBremSplitting::ApplyFinalStateBiasing(const G4BiasingProcessInterface *
       processFinalState->Clear();
     }
     nCalls++;
-    }
-    return &fParticleChange;
+  }
+  return &fParticleChange;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

@@ -49,54 +49,49 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptnPairProdSplitting::
-    GateOptnPairProdSplitting(G4String name)
+GateOptnPairProdSplitting::GateOptnPairProdSplitting(G4String name)
     : GateOptnVGenericSplitting(name), fParticleChange() {}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptnPairProdSplitting::
-    ~GateOptnPairProdSplitting() {}
+GateOptnPairProdSplitting::~GateOptnPairProdSplitting() {}
 
-G4VParticleChange *
-GateOptnPairProdSplitting::ApplyFinalStateBiasing( const G4BiasingProcessInterface *callingProcess, const G4Track *track, const G4Step *step, G4bool &) {
+G4VParticleChange *GateOptnPairProdSplitting::ApplyFinalStateBiasing(
+    const G4BiasingProcessInterface *callingProcess, const G4Track *track,
+    const G4Step *step, G4bool &) {
 
-  
   G4int splittingFactor = ceil(fSplittingFactor);
-  G4double survivalProbabilitySplitting = 1 - (splittingFactor - fSplittingFactor) / splittingFactor;
+  G4double survivalProbabilitySplitting =
+      1 - (splittingFactor - fSplittingFactor) / splittingFactor;
   G4double particleWeight = 0;
 
-  G4VParticleChange* processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+  G4VParticleChange *processFinalState =
+      callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
 
-  if (fSplittingFactor == 1 && fRussianRouletteForAngle == false) return processFinalState;
-  TrackInitializationGamma(&fParticleChange,processFinalState,track,fSplittingFactor);
+  if (fSplittingFactor == 1 && fRussianRouletteForAngle == false)
+    return processFinalState;
+  TrackInitializationGamma(&fParticleChange, processFinalState, track,
+                           fSplittingFactor);
 
   processFinalState->Clear();
 
   G4int nCalls = 1;
   while (nCalls <= splittingFactor) {
     G4double splittingProbability = G4UniformRand();
-    if (splittingProbability <= survivalProbabilitySplitting || survivalProbabilitySplitting == 1) {
+    if (splittingProbability <= survivalProbabilitySplitting ||
+        survivalProbabilitySplitting == 1) {
       particleWeight = track->GetWeight() / fSplittingFactor;
-      G4VParticleChange *processFinalState = callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
-      if (processFinalState->GetNumberOfSecondaries() >= 1 ) {
-        for(int i =0; i < processFinalState->GetNumberOfSecondaries();i++){
-          G4Track *SecondaryTrack =processFinalState->GetSecondary(i);
+      G4VParticleChange *processFinalState =
+          callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
+      if (processFinalState->GetNumberOfSecondaries() >= 1) {
+        for (int i = 0; i < processFinalState->GetNumberOfSecondaries(); i++) {
+          G4Track *SecondaryTrack = processFinalState->GetSecondary(i);
           SecondaryTrack->SetWeight(particleWeight);
           fParticleChange.AddSecondary(SecondaryTrack);
-       }
-     }
+        }
+      }
     }
     nCalls++;
   }
   return &fParticleChange;
 }
-
-
-
-
-   
-
-
-
-

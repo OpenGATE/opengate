@@ -32,27 +32,30 @@
 
 #include "CLHEP/Units/SystemOfUnits.h"
 #include "G4BiasingProcessInterface.hh"
+#include "G4Electron.hh"
 #include "G4EmCalculator.hh"
 #include "G4Exception.hh"
 #include "G4Gamma.hh"
-#include "G4Positron.hh"
-#include "G4Electron.hh"
 #include "G4LogicalVolumeStore.hh"
 #include "G4ParticleTable.hh"
 #include "G4PhysicalVolumeStore.hh"
+#include "G4Positron.hh"
 #include "G4ProcessManager.hh"
 #include "G4ProcessVector.hh"
 #include "G4RunManager.hh"
 #include "G4TrackStatus.hh"
+#include "G4UImanager.hh"
 #include "G4UserTrackingAction.hh"
 #include "G4VEmProcess.hh"
+#include "G4eplusAnnihilation.hh"
+#include "GateOptnPairProdSplitting.h"
 #include "GateOptnScatteredGammaSplitting.h"
 #include "GateOptneBremSplitting.h"
-#include "GateOptnPairProdSplitting.h"
 #include "GateOptrComptPseudoTransportationActor.h"
 #include "G4UImanager.hh"
 #include "G4eplusAnnihilation.hh"
 #include "GateOptnVGenericSplitting.h"
+
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -76,15 +79,16 @@ GateOptrComptPseudoTransportationActor::GateOptrComptPseudoTransportationActor(
       DictGetBool(user_info, "russian_roulette_for_weights");
   fMaxTheta = DictGetDouble(user_info, "max_theta");
   fFreeFlightOperation = new GateOptnForceFreeFlight("freeFlightOperation");
-  fScatteredGammaSplittingOperation = new GateOptnScatteredGammaSplitting("comptSplittingOperation");
-  feBremSplittingOperation = new GateOptneBremSplitting("eBremSplittingOperation");
-  fPairProdSplittingOperation = new GateOptnPairProdSplitting("PairProdSplittingOperation");
+  fScatteredGammaSplittingOperation =
+      new GateOptnScatteredGammaSplitting("comptSplittingOperation");
+  feBremSplittingOperation =
+      new GateOptneBremSplitting("eBremSplittingOperation");
+  fPairProdSplittingOperation =
+      new GateOptnPairProdSplitting("PairProdSplittingOperation");
   fActions.insert("StartSimulationAction");
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfEventAction");
   isSplitted = false;
-
-
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -98,18 +102,22 @@ void GateOptrComptPseudoTransportationActor::AttachAllLogicalDaughtersVolumes(
       AttachTo(volume);
     }
   }
-  if (fAttachToLogicalHolder == true){
+  if (fAttachToLogicalHolder == true) {
     AttachTo(volume);
   }
   G4int nbOfDaughters = volume->GetNoDaughters();
   if (nbOfDaughters > 0) {
     for (int i = 0; i < nbOfDaughters; i++) {
-      G4String LogicalVolumeName = volume->GetDaughter(i)->GetLogicalVolume()->GetName();
+      G4String LogicalVolumeName =
+          volume->GetDaughter(i)->GetLogicalVolume()->GetName();
       G4LogicalVolume *logicalDaughtersVolume =
           volume->GetDaughter(i)->GetLogicalVolume();
       AttachAllLogicalDaughtersVolumes(logicalDaughtersVolume);
-      if (!(std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeName ) !=fNameOfBiasedLogicalVolume.end()))
-        fNameOfBiasedLogicalVolume.push_back(volume->GetDaughter(i)->GetLogicalVolume()->GetName());
+      if (!(std::find(fNameOfBiasedLogicalVolume.begin(),
+                      fNameOfBiasedLogicalVolume.end(),
+                      LogicalVolumeName) != fNameOfBiasedLogicalVolume.end()))
+        fNameOfBiasedLogicalVolume.push_back(
+            volume->GetDaughter(i)->GetLogicalVolume()->GetName());
     }
   }
 }
@@ -122,17 +130,22 @@ void GateOptrComptPseudoTransportationActor::StartSimulationAction() {
   // to the biasing operator. To do that, I use the function
   // AttachAllLogicalDaughtersVolumes.
   AttachAllLogicalDaughtersVolumes(biasingVolume);
+
   fScatteredGammaSplittingOperation->SetSplittingFactor(fSplittingFactor);
+
   fScatteredGammaSplittingOperation->SetMaxTheta(fMaxTheta);
-  fScatteredGammaSplittingOperation->SetRussianRouletteForAngle(fRussianRouletteForAngle);
+  fScatteredGammaSplittingOperation->SetRussianRouletteForAngle(
+      fRussianRouletteForAngle);
 
   feBremSplittingOperation->SetSplittingFactor(fSplittingFactor);
   feBremSplittingOperation->SetMaxTheta(fMaxTheta);
-  feBremSplittingOperation->SetRussianRouletteForAngle(fRussianRouletteForAngle);
+  feBremSplittingOperation->SetRussianRouletteForAngle(
+      fRussianRouletteForAngle);
 
   fPairProdSplittingOperation->SetSplittingFactor(fSplittingFactor);
 
   fFreeFlightOperation->SetRussianRouletteForWeights(fRussianRouletteForWeights);
+
 
 }
 
@@ -156,12 +169,11 @@ void GateOptrComptPseudoTransportationActor::StartRun() {
   feBremSplittingOperation->SetVectorDirector(fVectorDirector);
 }
 
-
-
 void GateOptrComptPseudoTransportationActor::SteppingAction(G4Step *step) {
   G4String creationProcessName = "None";
   if (step->GetTrack()->GetCreatorProcess() != 0){
     creationProcessName = step->GetTrack()->GetCreatorProcess()->GetProcessName();
+
   }
   
 if ((fIsFirstStep) && (fRussianRouletteForAngle)){
@@ -196,11 +208,10 @@ fIsFirstStep = false;
 void GateOptrComptPseudoTransportationActor::BeginOfEventAction(
     const G4Event *event) {
   fKillOthersParticles = false;
-  fPassedByABiasedVolume=false;
+  fPassedByABiasedVolume = false;
   fEventID = event->GetEventID();
-  fEventIDKineticEnergy = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
-
-
+  fEventIDKineticEnergy =
+      event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
 }
 
 void GateOptrComptPseudoTransportationActor::StartTracking(
@@ -215,6 +226,7 @@ void GateOptrComptPseudoTransportationActor::StartTracking(
   if (track->GetParticleDefinition()->GetParticleName() == "gamma"){
     G4String LogicalVolumeNameOfCreation = track->GetLogicalVolumeAtVertex()->GetName();
     if (std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeNameOfCreation ) !=fNameOfBiasedLogicalVolume.end()){
+
       fInitialWeight = track->GetWeight();
       fFreeFlightOperation->SetInitialWeight(fInitialWeight);
     }
@@ -235,11 +247,16 @@ void GateOptrComptPseudoTransportationActor::StartTracking(
 G4VBiasingOperation *
 GateOptrComptPseudoTransportationActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  
-  if  (track->GetParticleDefinition()->GetParticleName() == "gamma"){
-   G4String LogicalVolumeNameOfCreation = track->GetLogicalVolumeAtVertex()->GetName();
-    if (std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeNameOfCreation ) !=fNameOfBiasedLogicalVolume.end()){
-      fFreeFlightOperation->SetMinWeight(fInitialWeight/fRelativeMinWeightOfParticle);
+
+  if (track->GetParticleDefinition()->GetParticleName() == "gamma") {
+    G4String LogicalVolumeNameOfCreation =
+        track->GetLogicalVolumeAtVertex()->GetName();
+    if (std::find(fNameOfBiasedLogicalVolume.begin(),
+                  fNameOfBiasedLogicalVolume.end(),
+                  LogicalVolumeNameOfCreation) !=
+        fNameOfBiasedLogicalVolume.end()) {
+      fFreeFlightOperation->SetMinWeight(fInitialWeight /
+                                         fRelativeMinWeightOfParticle);
       fFreeFlightOperation->SetTrackWeight(track->GetWeight());
       fFreeFlightOperation->SetCountProcess(0);
       return fFreeFlightOperation;
@@ -259,44 +276,44 @@ G4VBiasingOperation *
 GateOptrComptPseudoTransportationActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   G4String particleName = track->GetParticleDefinition()->GetParticleName();
-  
-  G4String LogicalVolumeNameOfCreation = track->GetLogicalVolumeAtVertex()->GetName();
+
+  G4String LogicalVolumeNameOfCreation =
+      track->GetLogicalVolumeAtVertex()->GetName();
   G4String CreationProcessName = "";
-  if (track->GetCreatorProcess() != 0){
+  if (track->GetCreatorProcess() != 0) {
     CreationProcessName = track->GetCreatorProcess()->GetProcessName();
   }
-  
 
-  if  (track->GetParticleDefinition()->GetParticleName() == "gamma"){
-    if (std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeNameOfCreation ) !=fNameOfBiasedLogicalVolume.end()){
+  if (track->GetParticleDefinition()->GetParticleName() == "gamma") {
+    if (std::find(fNameOfBiasedLogicalVolume.begin(),
+                  fNameOfBiasedLogicalVolume.end(),
+                  LogicalVolumeNameOfCreation) !=
+        fNameOfBiasedLogicalVolume.end()) {
       return callingProcess->GetCurrentOccurenceBiasingOperation();
     }
   }
 
-
-  if (((CreationProcessName != "biasWrapper(conv)") && (CreationProcessName != "biasWrapper(compt)"))
-   && (callingProcess->GetWrappedProcess()->GetProcessName() == "eBrem")){
+  if (((CreationProcessName != "biasWrapper(conv)") &&
+       (CreationProcessName != "biasWrapper(compt)")) &&
+      (callingProcess->GetWrappedProcess()->GetProcessName() == "eBrem")) {
     return feBremSplittingOperation;
-   }
+  }
 
-  
-  
    if (!(std::find(fCreationProcessNameList.begin(), fCreationProcessNameList.end(),CreationProcessName) !=  fCreationProcessNameList.end())){
     if (callingProcess->GetWrappedProcess()->GetProcessName() == "compt"){
+
       isSplitted = true;
       return fScatteredGammaSplittingOperation;
     }
-    if ((callingProcess->GetWrappedProcess()->GetProcessName() == "conv")){
-      return fPairProdSplittingOperation;  
+    if ((callingProcess->GetWrappedProcess()->GetProcessName() == "conv")) {
+      return fPairProdSplittingOperation;
     }
-   }
-      return 0;
   }
-
+  return 0;
+}
 
 void GateOptrComptPseudoTransportationActor::EndTracking() {
   isSplitted = false;
 }
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

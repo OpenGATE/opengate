@@ -56,7 +56,9 @@ public:
   // --Used:
   virtual G4VParticleChange *
   ApplyFinalStateBiasing(const G4BiasingProcessInterface *, const G4Track *,
-                         const G4Step *, G4bool &){return 0;};
+                         const G4Step *, G4bool &) {
+    return 0;
+  };
 
   // -- Unsued:
   virtual G4double DistanceToApplyOperation(const G4Track *, G4double,
@@ -67,6 +69,7 @@ public:
                                                        const G4Step *) {
     return 0;
   }
+
 
 // ----------------------------------------------
 // -- Methods for the generic splitting
