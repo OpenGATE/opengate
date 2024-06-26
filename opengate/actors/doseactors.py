@@ -488,10 +488,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         self._add_user_output(ActorOutputSingleImage, "edep")
-        self._add_user_output(ActorOutputSingleImage, "edep_uncertainty", active=False)
-        self._add_user_output(ActorOutputSingleImage, "dose", active=False)
-        self._add_user_output(ActorOutputSingleImage, "dose_uncertainty", active=False)
-        self._add_user_output(ActorOutputSingleImage, "square", active=False)
+        self._add_user_output(ActorOutputSingleImage, "edep_uncertainty", can_be_deactivated=True, active=False)
+        self._add_user_output(ActorOutputSingleImage, "dose", can_be_deactivated=True, active=False)
+        self._add_user_output(ActorOutputSingleImage, "dose_uncertainty", can_be_deactivated=True, active=False)
+        self._add_user_output(ActorOutputSingleImage, "square", can_be_deactivated=True, active=False)
 
         self.__initcpp__()
 
@@ -586,10 +586,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.initialize(self)
 
         # activate output if requested
-        self.user_output.dose._active = self.dose
-        self.user_output.square._active = self.square
-        self.user_output.edep_uncertainty._active = self.uncertainty
-        self.user_output.dose_uncertainty._active = self.uncertainty
+        self.user_output.dose.active = self.dose
+        self.user_output.square.active = self.square
+        self.user_output.edep_uncertainty.active = self.uncertainty
+        self.user_output.dose_uncertainty.active = self.uncertainty
 
         self.InitializeUserInput(self.user_info)  # C++ side
         # Set the physical volume name on the C++ side

@@ -2,7 +2,7 @@ from box import Box
 from functools import wraps
 
 from ..definitions import __world_name__
-from ..exception import fatal
+from ..exception import fatal, warning
 from ..base import GateObject
 
 
@@ -258,6 +258,10 @@ class ActorBase(GateObject):
         # self.RegisterCallBack(
         #     "get_output_path_for_item_string", self.get_output_path_for_item_string
         # )
+
+        if all([v.active is False for v in self.user_output.values()]):
+            warning(f"The actor {self.name} has no active output. ")
+
         for k, v in self.user_output.items():
             # apply extra suffix defined at actor level to all user output items
             # unless they have their own specific extra suffix set
@@ -275,15 +279,29 @@ class ActorBase(GateObject):
             self.SetWriteToDisk(k, v.write_to_disk)
             self.SetOutputPath(k, v.get_output_path_as_string())
 
-    def _add_user_output(self, actor_output_class, name, **kwargs):
+    def _add_user_output(self, actor_output_class, name, can_be_deactivated=False, **kwargs):
         """Method to be called internally (not by user) from the initialize_output() methods
         of the specific actor class implementations."""
+
+        # extract the user info "active" if passed via kwargs
+        try:
+            active = kwargs.pop('active')
+        except KeyError:
+            active = None
+
         self.user_output[name] = actor_output_class(
             name=name,
             simulation=self.simulation,
             belongs_to=self,
             **kwargs,
         )
+        # specify whether this instance of actor output can be deactivated
+        # (relevant for the setter hook of the "active" parameter)
+        self.user_output[name].__can_be_deactivated__ = bool(can_be_deactivated)
+        # Now the setter of active can be used
+        if active is not None:
+            self.user_output[name].active = active
+
         return self.user_output[name]
 
     def store_output_data(self, output_name, run_index, *data):

@@ -17,6 +17,15 @@ def _setter_hook_belongs_to(self, belongs_to):
     return belongs_to_name
 
 
+def _setter_hook_active(self, active):
+    if self.__can_be_deactivated__ is True:
+        return bool(active)
+    else:
+        if bool(active) is not True:
+            warning(f"The output {self.name} of actor {self.belongs_to_actor.name} cannot be deactivated.")
+        return True
+
+
 class ActorOutputBase(GateObject):
     user_info_defaults = {
         "belongs_to": (
@@ -62,6 +71,14 @@ class ActorOutputBase(GateObject):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
+        "active": (
+            True,
+            {
+                "doc": "Should this output be calculated by the actor? "
+                       "Note: Output can be deactivated on in certain actors. ",
+                "setter_hook": _setter_hook_active
+            },
+        ),
     }
 
     def __init__(self, *args, active=True, **kwargs):
@@ -69,8 +86,13 @@ class ActorOutputBase(GateObject):
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
-
-        self._active = active
+        # internal flag which can set by the actor when it creating an actor output
+        # via _add_actor_output
+        # __can_be_deactivated = False forces the "active" user info to True
+        # This is the expected behavior in most digitizers
+        # In the DoseActor, on the other hand, users might not want to calculate uncertainty
+        self.__can_be_deactivated__ = False
+        # self._active = active
 
     def __len__(self):
         return len(self.data_per_run)
@@ -78,9 +100,9 @@ class ActorOutputBase(GateObject):
     def __getitem__(self, which):
         return self.get_data(which, None)
 
-    @property
-    def active(self):
-        return self._active
+    # @property
+    # def active(self):
+    #     return self._active
 
     @property
     def data(self):
