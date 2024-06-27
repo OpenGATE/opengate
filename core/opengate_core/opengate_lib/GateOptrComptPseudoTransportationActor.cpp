@@ -50,12 +50,9 @@
 #include "G4eplusAnnihilation.hh"
 #include "GateOptnPairProdSplitting.h"
 #include "GateOptnScatteredGammaSplitting.h"
+#include "GateOptnVGenericSplitting.h"
 #include "GateOptneBremSplitting.h"
 #include "GateOptrComptPseudoTransportationActor.h"
-#include "G4UImanager.hh"
-#include "G4eplusAnnihilation.hh"
-#include "GateOptnVGenericSplitting.h"
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -144,9 +141,8 @@ void GateOptrComptPseudoTransportationActor::StartSimulationAction() {
 
   fPairProdSplittingOperation->SetSplittingFactor(fSplittingFactor);
 
-  fFreeFlightOperation->SetRussianRouletteForWeights(fRussianRouletteForWeights);
-
-
+  fFreeFlightOperation->SetRussianRouletteForWeights(
+      fRussianRouletteForWeights);
 }
 
 void GateOptrComptPseudoTransportationActor::StartRun() {
@@ -171,38 +167,47 @@ void GateOptrComptPseudoTransportationActor::StartRun() {
 
 void GateOptrComptPseudoTransportationActor::SteppingAction(G4Step *step) {
   G4String creationProcessName = "None";
-  if (step->GetTrack()->GetCreatorProcess() != 0){
-    creationProcessName = step->GetTrack()->GetCreatorProcess()->GetProcessName();
-
+  if (step->GetTrack()->GetCreatorProcess() != 0) {
+    creationProcessName =
+        step->GetTrack()->GetCreatorProcess()->GetProcessName();
   }
-  
-if ((fIsFirstStep) && (fRussianRouletteForAngle)){
-  G4String LogicalVolumeNameOfCreation = step->GetTrack()->GetLogicalVolumeAtVertex()->GetName();
-  if (std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeNameOfCreation ) !=fNameOfBiasedLogicalVolume.end()){
-      if (creationProcessName == "biasWrapper(annihil)"){
+
+  if ((fIsFirstStep) && (fRussianRouletteForAngle)) {
+    G4String LogicalVolumeNameOfCreation =
+        step->GetTrack()->GetLogicalVolumeAtVertex()->GetName();
+    if (std::find(fNameOfBiasedLogicalVolume.begin(),
+                  fNameOfBiasedLogicalVolume.end(),
+                  LogicalVolumeNameOfCreation) !=
+        fNameOfBiasedLogicalVolume.end()) {
+      if (creationProcessName == "biasWrapper(annihil)") {
         auto dir = step->GetPreStepPoint()->GetMomentumDirection();
-        G4double w = GateOptnVGenericSplitting::RussianRouletteForAngleSurvival(dir,fVectorDirector,fMaxTheta,fSplittingFactor);
-        if (w == 0)
-        {
+        G4double w = GateOptnVGenericSplitting::RussianRouletteForAngleSurvival(
+            dir, fVectorDirector, fMaxTheta, fSplittingFactor);
+        if (w == 0) {
           step->GetTrack()->SetTrackStatus(fStopAndKill);
-        }
-        else {
+        } else {
           step->GetTrack()->SetWeight(step->GetTrack()->GetWeight() * w);
         }
       }
+    }
   }
-}
-  
-if ((isSplitted == true) && (step->GetPostStepPoint()->GetStepStatus() != fWorldBoundary)) {
-    G4String LogicalVolumeName = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
-    if (!(std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeName ) !=fNameOfBiasedLogicalVolume.end())
-    && (LogicalVolumeName  != fMotherVolumeName)) {
+
+  if ((isSplitted == true) &&
+      (step->GetPostStepPoint()->GetStepStatus() != fWorldBoundary)) {
+    G4String LogicalVolumeName = step->GetPostStepPoint()
+                                     ->GetPhysicalVolume()
+                                     ->GetLogicalVolume()
+                                     ->GetName();
+    if (!(std::find(fNameOfBiasedLogicalVolume.begin(),
+                    fNameOfBiasedLogicalVolume.end(),
+                    LogicalVolumeName) != fNameOfBiasedLogicalVolume.end()) &&
+        (LogicalVolumeName != fMotherVolumeName)) {
       step->GetTrack()->SetTrackStatus(fStopAndKill);
       isSplitted = false;
+    }
   }
-}
 
-fIsFirstStep = false;
+  fIsFirstStep = false;
 }
 
 void GateOptrComptPseudoTransportationActor::BeginOfEventAction(
@@ -218,14 +223,17 @@ void GateOptrComptPseudoTransportationActor::StartTracking(
     const G4Track *track) {
   G4String creationProcessName = "None";
   fIsFirstStep = true;
-  if (track->GetCreatorProcess() != 0){
+  if (track->GetCreatorProcess() != 0) {
     creationProcessName = track->GetCreatorProcess()->GetProcessName();
   }
-  
 
-  if (track->GetParticleDefinition()->GetParticleName() == "gamma"){
-    G4String LogicalVolumeNameOfCreation = track->GetLogicalVolumeAtVertex()->GetName();
-    if (std::find(fNameOfBiasedLogicalVolume.begin(), fNameOfBiasedLogicalVolume.end(),LogicalVolumeNameOfCreation ) !=fNameOfBiasedLogicalVolume.end()){
+  if (track->GetParticleDefinition()->GetParticleName() == "gamma") {
+    G4String LogicalVolumeNameOfCreation =
+        track->GetLogicalVolumeAtVertex()->GetName();
+    if (std::find(fNameOfBiasedLogicalVolume.begin(),
+                  fNameOfBiasedLogicalVolume.end(),
+                  LogicalVolumeNameOfCreation) !=
+        fNameOfBiasedLogicalVolume.end()) {
 
       fInitialWeight = track->GetWeight();
       fFreeFlightOperation->SetInitialWeight(fInitialWeight);
@@ -299,8 +307,10 @@ GateOptrComptPseudoTransportationActor::ProposeFinalStateBiasingOperation(
     return feBremSplittingOperation;
   }
 
-   if (!(std::find(fCreationProcessNameList.begin(), fCreationProcessNameList.end(),CreationProcessName) !=  fCreationProcessNameList.end())){
-    if (callingProcess->GetWrappedProcess()->GetProcessName() == "compt"){
+  if (!(std::find(fCreationProcessNameList.begin(),
+                  fCreationProcessNameList.end(),
+                  CreationProcessName) != fCreationProcessNameList.end())) {
+    if (callingProcess->GetWrappedProcess()->GetProcessName() == "compt") {
 
       isSplitted = true;
       return fScatteredGammaSplittingOperation;
