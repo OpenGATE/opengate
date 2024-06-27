@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.carm.siemensciosalpha as ciosalpha
+from opengate.contrib.carm.siemensciosalpha import Ciosalpha
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 import numpy as np
@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # paths
-    paths = utility.get_default_test_paths(__file__, output_folder="test075_siemens_cios_alpha")
+    #paths = utility.get_default_test_paths(__file__, output_folder="test075_siemens_cios_alpha")
 
     # create the simulation
     sim = gate.Simulation()
@@ -36,22 +36,19 @@ if __name__ == "__main__":
     world.size = [5* m, 5 * m, 5 * m]
     world.material = "G4_AIR"
 
-    # add a carm
-    carm = ciosalpha.add_carm(sim, "cios_alpha")
-    carm.rotation = Rotation.from_euler("ZYX", [0,20,180], degrees=True).as_matrix()
-
     # xray tube spectrum parameters
     # tube potential [kV]
     kvp = 100
 
-    # add carm source
-    source = ciosalpha.add_carm_source(sim, carm.name, kvp)
-    source.n = 1e6
-    if sim.visu:
-        source.n = 1
+    # add a carm
+    carm = Ciosalpha(sim, kvp)
+    carm.rotation = Rotation.from_euler("ZYX", [0,20,0], degrees=True).as_matrix()
+    carm.translation = [0 * cm, 0 * cm, 0 * cm]
+    carm.collimation = [30 * mm, 10 * mm]
 
-    # opening of the collimators [0, 50 *mm]
-    ciosalpha.update_collimation(sim, carm.name, 20 * mm, 20 * mm)
+    carm.source.n = 1e6
+    if sim.visu:
+        carm.source.n = 1000
 
     # aluminum table
     table = sim.add_volume("Box", "aluminum_table")
