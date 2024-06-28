@@ -26,26 +26,26 @@ class Ciosalpha:
     def add_carm_box(self):
         carmbox = self.sim.volume_manager.create_volume("Box", "carmbox")
         carmbox.material = "G4_AIR"
-        carmbox.size = [200 * cm, 30 * cm, 200 * cm]
+        carmbox.size = [200 * cm, 30 * cm, 120 * cm]
         carmbox.translation = [0 * cm, 0 * cm, 0 * cm]
         carmbox.color = [1, 1, 1, 0.8]
 
         hole1 = self.sim.volume_manager.create_volume("Box", "hole")
-        hole1.size = [191 * cm, 31 * cm, 160 * cm]
+        hole1.size = [191 * cm, 31 * cm, 80 * cm]
         hole1.color = [1, 1, 1, 0.8]
         hole2 = self.sim.volume_manager.create_volume("Box", "hole2")
-        hole2.size = [80 * cm, 31 * cm, 31 * cm]
+        hole2.size = [100 * cm, 31 * cm, 31 * cm]
         hole2.color = [1, 1, 1, 0.8]
         hole3 = self.sim.volume_manager.create_volume("Box", "hole3")
-        hole3.size = [80 * cm, 31 * cm, 31 * cm]
+        hole3.size = [100 * cm, 31 * cm, 31 * cm]
         hole3.color = [1, 1, 1, 0.8]
 
         hole1and2 = gate.geometry.volumes.unite_volumes(
-            hole1, hole2, translation=[-55.5 * cm, 0 * cm, 95 * cm]
+            hole1, hole2, translation=[-55.5 * cm, 0 * cm, 55 * cm]
         )
 
         t_shape = gate.geometry.volumes.unite_volumes(
-            hole1and2, hole3, translation=[-55.5 * cm, 0 * cm, -95 * cm]
+            hole1and2, hole3, translation=[-55.5 * cm, 0 * cm, -55 * cm]
         )
 
         carm = gate.geometry.volumes.subtract_volumes(
@@ -62,8 +62,8 @@ class Ciosalpha:
         xray_tank = self.sim.add_volume("Box", f"{self.machine_name}_xray_tank")
         xray_tank.mother = self.machine_name
         xray_tank.material = "G4_AIR"
-        xray_tank.size = [40 * cm, 20 * cm, 30 * cm]
-        xray_tank.translation = [0 * cm, 0, 85 * cm]
+        xray_tank.size = [20 * cm, 20 * cm, 30 * cm]
+        xray_tank.translation = [0 * cm, 0, 45 * cm]
         xray_tank.color = [1, 1, 1, 0.8]
 
     def add_carm_source(self, kvp):
