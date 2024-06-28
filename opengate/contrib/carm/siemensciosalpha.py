@@ -1,8 +1,17 @@
 import opengate as gate
-from opengate.utility import g4_units, get_contrib_path
-from scipy.spatial.transform import Rotation
+from opengate.utility import g4_units
 import numpy as np
 import spekpy as sp
+
+# useful units
+MeV = gate.g4_units.MeV
+keV = gate.g4_units.keV
+Bq = gate.g4_units.Bq
+deg = gate.g4_units.deg
+nm = gate.g4_units.nm
+mm = gate.g4_units.mm
+m = gate.g4_units.m
+cm = gate.g4_units.cm
 
 class Ciosalpha:
     def __init__(self, sim, kvp):
@@ -85,54 +94,55 @@ class Ciosalpha:
         xray_tank = self.sim.volume_manager.get_volume(f"{self.machine_name}_xray_tank")
         z_xray_tank = xray_tank.size[2]
 
-        collimator1 = self.sim.add_volume("Box", f"{self.machine_name}_collimator1")
-        collimator1.mother = f"{self.machine_name}_xray_tank"
-        collimator1.color = red
-        collimator1.translation = [75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm]
-        collimator1.size = [5 * cm, 10 * cm, 1 * mm]
+        collimators = [
+            {
+                "translation": [75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+                "size": [5 * cm, 10 * cm, 1 * mm]
+            },
+            {
+                "translation": [-75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+                "size": [5 * cm, 10 * cm, 1 * mm]
+            },
+            {
+                "translation": [0 * cm, 75 * mm, -z_xray_tank / 2 * mm + 3 * mm],
+                "size": [10 * cm, 5 * cm, 1 * mm]
+            },
+            {
+                "translation": [0 * cm, -75 * mm, -z_xray_tank / 2 * mm + 3 * mm],
+                "size": [10 * cm, 5 * cm, 1 * mm]
+            }
+        ]
 
-        collimator2 = self.sim.add_volume("Box", f"{self.machine_name}_collimator2")
-        collimator2.mother = f"{self.machine_name}_xray_tank"
-        collimator2.color = red
-        collimator2.translation = [-75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm]
-        collimator2.size = [5 * cm, 10 * cm, 1 * mm]
-
-        collimator3 = self.sim.add_volume("Box", f"{self.machine_name}_collimator3")
-        collimator3.mother = f"{self.machine_name}_xray_tank"
-        collimator3.color = red
-        collimator3.translation = [0 * cm, 75 * mm, -z_xray_tank / 2 * mm + 3 * mm]
-        collimator3.size = [10 * cm, 5 * cm, 1 * mm]
-
-        collimator4 = self.sim.add_volume("Box", f"{self.machine_name}_collimator4")
-        collimator4.mother = f"{self.machine_name}_xray_tank"
-        collimator4.color = red
-        collimator4.translation = [0 * cm, -75 * mm, -z_xray_tank / 2 * mm + 3 * mm]
-        collimator4.size = [10 * cm, 5 * cm, 1 * mm]
+        for i, colli in enumerate(collimators):
+            collimator = self.sim.add_volume("Box", f"{self.machine_name}_collimator{i+1}")
+            collimator.mother = f"{self.machine_name}_xray_tank"
+            collimator.color = [1, 0.7, 0.7, 0.8]
+            collimator.translation = colli["translation"]
+            collimator.size = colli["size"]
 
         killer = self.sim.add_actor("KillActor", f"target_kill")
-        killer.mother = [collimator1.name, collimator2.name, collimator3.name, collimator4.name]
+        killer.mother = [f"{self.machine_name}_collimator{i+1}" for i in range(4)]
 
-    def update_collimation(self, num, num2):
-        if not 0 <= num <= 50 or not 0 <= num2 <= 50:
-            raise ValueError("Wrong values for collimation")
+    def set_collimation(self, collimation1, collimation2):
+        if not 0 <= collimation1 <= 50 or not 0 <= collimation2 <= 50:
+            raise ValueError("Collimation values must be between 0 and 50 mm")
 
-        num = 50 - num
-        num2 = 50 - num2
+        collimation1 = 50 - collimation1
+        collimation2 = 50 - collimation2
 
         xray_tank = self.sim.volume_manager.get_volume(f"{self.machine_name}_xray_tank")
         z_xray_tank = xray_tank.size[2]
 
-        collimator1 = self.sim.volume_manager.get_volume(f"{self.machine_name}_collimator1")
-        collimator1.translation = [75 * mm - num, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm]
+        translations = [
+            [75 * mm - collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+            [-75 * mm + collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+            [0 * cm, 75 * mm - collimation2, -z_xray_tank / 2 * mm + 3 * mm],
+            [0 * cm, -75 * mm + collimation2, -z_xray_tank / 2 * mm + 3 * mm]
+        ]
 
-        collimator2 = self.sim.volume_manager.get_volume(f"{self.machine_name}_collimator2")
-        collimator2.translation = [-75 * mm + num, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm]
-
-        collimator3 = self.sim.volume_manager.get_volume(f"{self.machine_name}_collimator3")
-        collimator3.translation = [0 * cm, 75 * mm - num2, -z_xray_tank / 2 * mm + 3 * mm]
-
-        collimator4 = self.sim.volume_manager.get_volume(f"{self.machine_name}_collimator4")
-        collimator4.translation = [0 * cm, -75 * mm + num2, -z_xray_tank / 2 * mm + 3 * mm]
+        for i, translation in enumerate(translations):
+            collimator = self.sim.volume_manager.get_volume(f"{self.machine_name}_collimator{i+1}")
+            collimator.translation = translation
 
     @property
     def collimation(self):
@@ -141,7 +151,7 @@ class Ciosalpha:
     @collimation.setter
     def collimation(self, value):
         self._collimation = value
-        self.update_collimation(value[0] / mm, value[1] / mm)
+        self.set_collimation(value[0], value[1])
 
     @property
     def rotation(self):
@@ -158,19 +168,3 @@ class Ciosalpha:
     @translation.setter
     def translation(self, value):
         self.volume.translation = value
-
-
-# useful units
-MeV = gate.g4_units.MeV
-keV = gate.g4_units.keV
-Bq = gate.g4_units.Bq
-deg = gate.g4_units.deg
-nm = gate.g4_units.nm
-mm = gate.g4_units.mm
-m = gate.g4_units.m
-cm = gate.g4_units.cm
-
-# colors
-red = [1, 0.7, 0.7, 0.8]
-blue = [0.5, 0.5, 1, 0.8]
-green = [0, 1, 0, 1]
