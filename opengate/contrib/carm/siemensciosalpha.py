@@ -15,9 +15,10 @@ cm = gate.g4_units.cm
 
 
 class Ciosalpha:
-    def __init__(self, sim, kvp):
+    def __init__(self, sim, kvp, source_only=False):
         self.sim = sim
         self.machine_name = "ciosalpha"
+        self.source_only = source_only
         self.volume = self.add_carm_box()
         self.add_xray_tank()
         self.add_collimators()
@@ -34,23 +35,42 @@ class Ciosalpha:
         hole1.size = [191 * cm, 31 * cm, 80 * cm]
         hole1.color = [1, 1, 1, 0.8]
         hole2 = self.sim.volume_manager.create_volume("Box", "hole2")
-        hole2.size = [100 * cm, 31 * cm, 31 * cm]
+        hole2.size = [90 * cm, 31 * cm, 31 * cm]
         hole2.color = [1, 1, 1, 0.8]
         hole3 = self.sim.volume_manager.create_volume("Box", "hole3")
-        hole3.size = [100 * cm, 31 * cm, 31 * cm]
+        hole3.size = [90 * cm, 31 * cm, 31 * cm]
         hole3.color = [1, 1, 1, 0.8]
 
         hole1and2 = gate.geometry.volumes.unite_volumes(
-            hole1, hole2, translation=[-55.5 * cm, 0 * cm, 55 * cm]
+            hole1, hole2, translation=[-50.5 * cm, 0 * cm, 55 * cm]
         )
 
-        t_shape = gate.geometry.volumes.unite_volumes(
-            hole1and2, hole3, translation=[-55.5 * cm, 0 * cm, -55 * cm]
+        subtract_to_carm = gate.geometry.volumes.unite_volumes(
+            hole1and2, hole3, translation=[-50.5 * cm, 0 * cm, -55 * cm]
         )
+
+        if self.source_only:
+            hole4 = self.sim.volume_manager.create_volume("Box", "hole4")
+            hole4.size = [45 * cm, 31 * cm, 31 * cm]
+            hole4.color = [1, 1, 1, 0.8]
+            # hole4 = self.sim.volume_manager.create_volume("Box", "hole4")
+            # hole4.size = [90 * cm, 31 * cm, 31 * cm]
+            # hole4.color = [1, 1, 1, 0.8]
+            hole5 = self.sim.volume_manager.create_volume("Box", "hole5")
+            hole5.size = [90 * cm, 31 * cm, 121* cm]
+            hole5.color = [1, 1, 1, 0.8]
+
+            hole4and5 = gate.geometry.volumes.unite_volumes(
+                hole4, hole5, translation=[55 * cm, 0 * cm, 45 * cm]
+            )
+
+            subtract_to_carm = gate.geometry.volumes.unite_volumes(
+                subtract_to_carm, hole4and5, translation=[5 * cm, 0 * cm, -35* cm]
+            )
 
         carm = gate.geometry.volumes.subtract_volumes(
             carmbox,
-            t_shape,
+            subtract_to_carm,
             new_name=self.machine_name,
             translation=[-5 * cm, 0 * cm, -10 * cm],
         )
