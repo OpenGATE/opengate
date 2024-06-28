@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     # paths
-    #paths = utility.get_default_test_paths(__file__, output_folder="test075_siemens_cios_alpha")
+    # paths = utility.get_default_test_paths(__file__, output_folder="test075_siemens_cios_alpha")
 
     # create the simulation
     sim = gate.Simulation()
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [5* m, 5 * m, 5 * m]
+    world.size = [5 * m, 5 * m, 5 * m]
     world.material = "G4_AIR"
 
     # xray tube spectrum parameters
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     # add a carm
     carm = Ciosalpha(sim, kvp)
-    carm.rotation = Rotation.from_euler("ZYX", [0,20,0], degrees=True).as_matrix()
+    carm.rotation = Rotation.from_euler("ZYX", [0, 20, 0], degrees=True).as_matrix()
     carm.translation = [0 * cm, 0 * cm, 0 * cm]
     carm.collimation = [30 * mm, 10 * mm]
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # aluminum table
     table = sim.add_volume("Box", "aluminum_table")
-    table.size = [60 * cm, 2 * m, 0.9 * mm ]
+    table.size = [60 * cm, 2 * m, 0.9 * mm]
     table.material = "G4_Al"
     table.translation = [0 * m, 0 * cm, 0 * cm]
     table.color = [0.8, 0.8, 0.8, 1]

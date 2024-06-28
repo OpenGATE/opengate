@@ -13,6 +13,7 @@ mm = gate.g4_units.mm
 m = gate.g4_units.m
 cm = gate.g4_units.cm
 
+
 class Ciosalpha:
     def __init__(self, sim, kvp):
         self.sim = sim
@@ -48,7 +49,10 @@ class Ciosalpha:
         )
 
         carm = gate.geometry.volumes.subtract_volumes(
-            carmbox, t_shape, new_name=self.machine_name, translation=[-5 * cm, 0 * cm, -10 * cm]
+            carmbox,
+            t_shape,
+            new_name=self.machine_name,
+            translation=[-5 * cm, 0 * cm, -10 * cm],
         )
         self.sim.add_volume(carm)
 
@@ -63,8 +67,8 @@ class Ciosalpha:
         xray_tank.color = [1, 1, 1, 0.8]
 
     def add_carm_source(self, kvp):
-        s = sp.Spek(kvp, th=10, physics='kqp')
-        s.filter('Al', 3.0).filter('Cu', 0.1)
+        s = sp.Spek(kvp, th=10, physics="kqp")
+        s.filter("Al", 3.0).filter("Cu", 0.1)
 
         energy_bins, weights = s.get_spectrum()
 
@@ -97,24 +101,26 @@ class Ciosalpha:
         collimators = [
             {
                 "translation": [75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-                "size": [5 * cm, 10 * cm, 1 * mm]
+                "size": [5 * cm, 10 * cm, 1 * mm],
             },
             {
                 "translation": [-75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-                "size": [5 * cm, 10 * cm, 1 * mm]
+                "size": [5 * cm, 10 * cm, 1 * mm],
             },
             {
                 "translation": [0 * cm, 75 * mm, -z_xray_tank / 2 * mm + 3 * mm],
-                "size": [10 * cm, 5 * cm, 1 * mm]
+                "size": [10 * cm, 5 * cm, 1 * mm],
             },
             {
                 "translation": [0 * cm, -75 * mm, -z_xray_tank / 2 * mm + 3 * mm],
-                "size": [10 * cm, 5 * cm, 1 * mm]
-            }
+                "size": [10 * cm, 5 * cm, 1 * mm],
+            },
         ]
 
         for i, colli in enumerate(collimators):
-            collimator = self.sim.add_volume("Box", f"{self.machine_name}_collimator{i+1}")
+            collimator = self.sim.add_volume(
+                "Box", f"{self.machine_name}_collimator{i+1}"
+            )
             collimator.mother = f"{self.machine_name}_xray_tank"
             collimator.color = [1, 0.7, 0.7, 0.8]
             collimator.translation = colli["translation"]
@@ -137,11 +143,13 @@ class Ciosalpha:
             [75 * mm - collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
             [-75 * mm + collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
             [0 * cm, 75 * mm - collimation2, -z_xray_tank / 2 * mm + 3 * mm],
-            [0 * cm, -75 * mm + collimation2, -z_xray_tank / 2 * mm + 3 * mm]
+            [0 * cm, -75 * mm + collimation2, -z_xray_tank / 2 * mm + 3 * mm],
         ]
 
         for i, translation in enumerate(translations):
-            collimator = self.sim.volume_manager.get_volume(f"{self.machine_name}_collimator{i+1}")
+            collimator = self.sim.volume_manager.get_volume(
+                f"{self.machine_name}_collimator{i+1}"
+            )
             collimator.translation = translation
 
     @property
