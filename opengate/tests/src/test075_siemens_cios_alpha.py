@@ -20,7 +20,6 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.visu = True
     sim.visu_type = "vrml"
-    sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.random_seed = 12345678
     sim.check_volumes_overlap = True
@@ -41,7 +40,7 @@ if __name__ == "__main__":
     kvp = 100
 
     # add a carm
-    carm = Ciosalpha(sim, kvp)
+    carm = Ciosalpha(sim, kvp, source_only=True)
     carm.rotation = Rotation.from_euler("ZYX", [0, 20, 0], degrees=True).as_matrix()
     carm.translation = [0 * cm, 0 * cm, 0 * cm]
     carm.collimation = [30 * mm, 10 * mm]
