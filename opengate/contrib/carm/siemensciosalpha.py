@@ -57,7 +57,7 @@ class Ciosalpha:
             # hole4.size = [90 * cm, 31 * cm, 31 * cm]
             # hole4.color = [1, 1, 1, 0.8]
             hole5 = self.sim.volume_manager.create_volume("Box", "hole5")
-            hole5.size = [90 * cm, 31 * cm, 121* cm]
+            hole5.size = [90 * cm, 31 * cm, 121 * cm]
             hole5.color = [1, 1, 1, 0.8]
 
             hole4and5 = gate.geometry.volumes.unite_volumes(
@@ -65,7 +65,7 @@ class Ciosalpha:
             )
 
             subtract_to_carm = gate.geometry.volumes.unite_volumes(
-                subtract_to_carm, hole4and5, translation=[5 * cm, 0 * cm, -35* cm]
+                subtract_to_carm, hole4and5, translation=[5 * cm, 0 * cm, -35 * cm]
             )
 
         carm = gate.geometry.volumes.subtract_volumes(
