@@ -60,7 +60,7 @@ public:
   G4bool fSuspendForAnnihil = false;
   G4double fWeightOfEnteringParticle = 0;
   G4double fSplitCounter = 0;
-  G4bool fIsSplitted = false;
+  G4bool fNotSplitted = true;
 
   G4Track* fTrackToSplit = nullptr;
   G4Step* fStepToSplit = nullptr;
