@@ -430,8 +430,6 @@ class KillActor(g4.GateKillActor, ActorBase):
         g4.GateKillActor.__init__(self, user_info.__dict__)
 
 
-
-
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     type_name = "ComptSplittingActor"
 
@@ -454,9 +452,11 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
         g4.GateOptrComptSplittingActor.__init__(self, user_info.__dict__)
 
 
-class LastVertexInteractionSplittingActor(g4.GateLastVertexInteractionSplittingActor, ActorBase):
+class LastVertexInteractionSplittingActor(
+    g4.GateLastVertexInteractionSplittingActor, ActorBase
+):
     type_name = "LastVertexInteractionSplittingActor"
-   
+
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         deg = g4_units.deg
@@ -472,7 +472,7 @@ class LastVertexInteractionSplittingActor(g4.GateLastVertexInteractionSplittingA
         g4.GateLastVertexInteractionSplittingActor.__init__(self, user_info.__dict__)
         self.list_of_volume_name = user_info.list_of_volume_name
         self.user_info.mother = user_info.mother
-        
+
     def initialize(self, volume_engine=None):
 
         super().initialize(volume_engine)

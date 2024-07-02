@@ -338,7 +338,7 @@ void init_GatePhaseSpaceActor(py::module &);
 
 void init_GateOptrComptSplittingActor(py::module &m);
 
-void init_GateLastVertexInteractionSplittingActor(py::module &m); 
+void init_GateLastVertexInteractionSplittingActor(py::module &m);
 
 void init_GateBOptrBremSplittingActor(py::module &m);
 

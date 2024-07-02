@@ -99,8 +99,8 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, "test076_last_vertex_splitting", output_folder="test076"
     )
-    for simu_ID in range(1,2) :
-    # create the simulation
+    for simu_ID in range(1, 2):
+        # create the simulation
         sim = gate.Simulation()
 
         # main options
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         W_tubs.mother = world.name
 
         W_tubs.rmin = 0
-        W_tubs.rmax = 1* cm
+        W_tubs.rmax = 1 * cm
         W_tubs.dz = 0.5 * m
         W_tubs.color = [0.8, 0.2, 0.1, 1]
         angle_x = 0
@@ -156,10 +156,12 @@ if __name__ == "__main__":
             "xyz", [angle_y, angle_y, angle_z], degrees=True
         ).as_matrix()
         W_tubs.rotation = rotation
-        if simu_ID == 1 :
-        ####### Last vertex splitting ACTOR #########
+        if simu_ID == 1:
+            ####### Last vertex splitting ACTOR #########
             nb_split = 1
-            vertex_splitting_actor = sim.add_actor("LastVertexInteractionSplittingActor", "vertexSplittingW")
+            vertex_splitting_actor = sim.add_actor(
+                "LastVertexInteractionSplittingActor", "vertexSplittingW"
+            )
             vertex_splitting_actor.mother = W_tubs.name
             vertex_splitting_actor.splitting_factor = nb_split
             vertex_splitting_actor.russian_roulette_for_angle = False
@@ -168,7 +170,7 @@ if __name__ == "__main__":
         plan_tubs = sim.add_volume("Tubs", "phsp_tubs")
         plan_tubs.material = "G4_Galactic"
         plan_tubs.mother = world.name
-        plan_tubs.rmin = W_tubs.rmax + 1*cm
+        plan_tubs.rmin = W_tubs.rmax + 1 * cm
         plan_tubs.rmax = plan_tubs.rmin + 1 * nm
         plan_tubs.dz = 0.05 * m
         plan_tubs.color = [0.2, 1, 0.8, 1]
@@ -178,17 +180,17 @@ if __name__ == "__main__":
         source = sim.add_source("GenericSource", "source1")
         source.particle = "gamma"
         source.n = 1000000
-        if simu_ID == 1 :
-            source.n = source.n/(nb_split)
+        if simu_ID == 1:
+            source.n = source.n / (nb_split)
         source.position.type = "sphere"
         source.position.radius = 1 * nm
         source.direction.type = "momentum"
         # source.direction.momentum = [0,0,-1]
         source.direction.momentum = np.dot(rotation, np.array([0, 0, -1]))
         source.energy.type = "mono"
-        source.position.translation = [0.4*cm,0.4*cm,0]
-        source.force_rotation=True
-        source.energy.mono = 4* MeV
+        source.position.translation = [0.4 * cm, 0.4 * cm, 0]
+        source.force_rotation = True
+        source.energy.mono = 4 * MeV
 
         ####### PHASE SPACE ACTOR ##############
 
@@ -205,7 +207,7 @@ if __name__ == "__main__":
         ]
         if simu_ID == 0:
             phsp_actor.output = paths.output / "test076_output_data_ref.root"
-        else :
+        else:
             phsp_actor.output = paths.output / "test076_output_data_split.root"
 
         ##### MODIFIED PHYSICS LIST ###############
@@ -230,5 +232,3 @@ if __name__ == "__main__":
         stats = sim.output.get_actor("Stats")
         h = sim.output.get_actor("PhaseSpace")
         print(stats)
-
-

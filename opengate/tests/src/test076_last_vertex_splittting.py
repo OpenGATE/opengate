@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # ui.running_verbose_level = gate.logger.EVENT
     ui.number_of_threads = 1
     # 1236566 seg fault
-    #12745 double compt
+    # 12745 double compt
     ui.random_seed = 73
 
     # units
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     W_tubs.mother = world.name
 
     W_tubs.rmin = 0
-    W_tubs.rmax = 0.4*cm
+    W_tubs.rmax = 0.4 * cm
     W_tubs.dz = 0.05 * m
     W_tubs.color = [0.8, 0.2, 0.1, 1]
     angle_x = 45
@@ -160,7 +160,9 @@ if __name__ == "__main__":
 
     ####### Compton Splitting ACTOR #########
     nb_split = 25
-    vertex_splitting_actor = sim.add_actor("LastVertexInteractionSplittingActor", "vertexSplittingW")
+    vertex_splitting_actor = sim.add_actor(
+        "LastVertexInteractionSplittingActor", "vertexSplittingW"
+    )
     vertex_splitting_actor.mother = W_tubs.name
     vertex_splitting_actor.splitting_factor = nb_split
     vertex_splitting_actor.russian_roulette_for_angle = False
@@ -169,7 +171,7 @@ if __name__ == "__main__":
     plan_tubs = sim.add_volume("Tubs", "phsp_tubs")
     plan_tubs.material = "G4_Galactic"
     plan_tubs.mother = world.name
-    plan_tubs.rmin = W_tubs.rmax + 1*cm
+    plan_tubs.rmin = W_tubs.rmax + 1 * cm
     plan_tubs.rmax = plan_tubs.rmin + 1 * nm
     plan_tubs.dz = 0.05 * m
     plan_tubs.color = [0.2, 1, 0.8, 1]
@@ -185,7 +187,7 @@ if __name__ == "__main__":
     # source.direction.momentum = [0,0,-1]
     source.direction.momentum = np.dot(rotation, np.array([0, 0, -1]))
     source.energy.type = "mono"
-    source.energy.mono = 4* MeV
+    source.energy.mono = 4 * MeV
 
     ####### PHASE SPACE ACTOR ##############
 
@@ -233,4 +235,3 @@ if __name__ == "__main__":
     # #
     # is_ok = validation_test(arr_ref_data, arr_data, nb_split)
     # utility.test_ok(is_ok)
-
