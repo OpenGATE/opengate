@@ -626,11 +626,33 @@ def add_mlc(sim, linac_name):
 
     for i in range(len(mlc_p_1)):
         mlc_p_1[i] += np.array(
-            [-leaf_lenght / 2, leaf_width + interleaf_gap - (leaf_width + interleaf_gap) / 2, z_linac / 2 - center_mlc])
-        mlc_o_1[i] += np.array([-leaf_lenght / 2, - (leaf_width + interleaf_gap) / 2, z_linac / 2 - center_mlc])
+            [
+                -leaf_lenght / 2,
+                leaf_width + interleaf_gap - (leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
+        )
+        mlc_o_1[i] += np.array(
+            [
+                -leaf_lenght / 2,
+                -(leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
+        )
         mlc_p_2[i] += np.array(
-            [leaf_lenght / 2, leaf_width + interleaf_gap - (leaf_width + interleaf_gap) / 2, z_linac / 2 - center_mlc])
-        mlc_o_2[i] += np.array([leaf_lenght / 2, - (leaf_width + interleaf_gap) / 2, z_linac / 2 - center_mlc])
+            [
+                leaf_lenght / 2,
+                leaf_width + interleaf_gap - (leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
+        )
+        mlc_o_2[i] += np.array(
+            [
+                leaf_lenght / 2,
+                -(leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
+        )
 
     leaf_p_1.translation = mlc_p_1
     leaf_o_1.translation = mlc_o_1
@@ -1146,7 +1168,9 @@ def mlc_leaves_translation(
     for n in cp_id:
         for i in range(len(mlc)):
             translation_mlc.append(np.copy(mlc[i]["translation"]))
-            motion_leaves_t[i].append(translation_mlc[i] + np.array([leaves_position[n, i] * fact_iso, 0, 0]))
+            motion_leaves_t[i].append(
+                translation_mlc[i] + np.array([leaves_position[n, i] * fact_iso, 0, 0])
+            )
             motion_leaves_r[i].append(np.identity(3))
 
 

@@ -195,7 +195,6 @@ if __name__ == "__main__":
         sim, linac.name, jaws, mlc, rt_plan_parameters, sad=sad, cp_id=l_cp
     )
 
-
     if sim.visu:
         add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, 10)
     else:
