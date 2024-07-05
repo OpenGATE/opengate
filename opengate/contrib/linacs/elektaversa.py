@@ -334,7 +334,7 @@ def add_electron_source(sim, linac_name):
     source.position.sigma_y = 0.468 * mm
     source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
-    source.direction.momentum = [0,0,-1]
+    source.direction.momentum = [0, 0, -1]
     source.n = 10
     source.direction_relative_to_attached_volume = True
     return source

@@ -91,7 +91,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   fTotalSkippedEvents = 0;
   fEffectiveEventTime = -1;
 
-  fDirectionRelativeToAttachedVolume = DictGetBool(user_info, "direction_relative_to_attached_volume");
+  fDirectionRelativeToAttachedVolume =
+      DictGetBool(user_info, "direction_relative_to_attached_volume");
 }
 
 void GateGenericSource::UpdateActivity(double time) {
