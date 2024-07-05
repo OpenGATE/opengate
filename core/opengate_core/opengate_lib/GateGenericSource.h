@@ -83,7 +83,7 @@ protected:
 
   // Force the rotation of momentum and focal point to follow rotation of the
   // source, eg: needed for motion actor
-  bool fforceRotation;
+  bool fSetDirectionAccordingToSourceRotation;
 
   // angular acceptance management
   struct threadLocalT {
