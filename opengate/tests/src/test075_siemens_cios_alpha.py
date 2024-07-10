@@ -40,10 +40,10 @@ if __name__ == "__main__":
     kvp = 100
 
     # add a carm
-    carm = Ciosalpha(sim, kvp, source_only=True)
+    carm = Ciosalpha(sim, kvp, source_only=False)
     carm.rotation = Rotation.from_euler("ZYX", [0, 20, 0], degrees=True).as_matrix()
     carm.translation = [0 * cm, 0 * cm, 0 * cm]
-    carm.collimation = [30 * mm, 10 * mm]
+    carm.collimation = [25* mm, 25 * mm]
 
     carm.source.n = 1e6
     if sim.visu:

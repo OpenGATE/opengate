@@ -1,7 +1,8 @@
 import opengate as gate
-from opengate.utility import g4_units
+from scipy.spatial.transform import Rotation
 import numpy as np
 import spekpy as sp
+import pathlib
 
 # useful units
 MeV = gate.g4_units.MeV
@@ -13,6 +14,7 @@ mm = gate.g4_units.mm
 m = gate.g4_units.m
 cm = gate.g4_units.cm
 
+current_path = pathlib.Path(__file__).parent.resolve()
 
 class Ciosalpha:
     def __init__(self, sim, kvp, source_only=False):
@@ -27,7 +29,7 @@ class Ciosalpha:
     def add_carm_box(self):
         carmbox = self.sim.volume_manager.create_volume("Box", "carmbox")
         carmbox.material = "G4_AIR"
-        carmbox.size = [200 * cm, 30 * cm, 120 * cm]
+        carmbox.size = [200 * cm, 10 * cm, 120 * cm]
         carmbox.translation = [0 * cm, 0 * cm, 0 * cm]
         carmbox.color = [1, 1, 1, 0.8]
 
@@ -35,7 +37,7 @@ class Ciosalpha:
         hole1.size = [191 * cm, 31 * cm, 80 * cm]
         hole1.color = [1, 1, 1, 0.8]
         hole2 = self.sim.volume_manager.create_volume("Box", "hole2")
-        hole2.size = [90 * cm, 31 * cm, 31 * cm]
+        hole2.size = [101 * cm, 31 * cm, 31 * cm]
         hole2.color = [1, 1, 1, 0.8]
         hole3 = self.sim.volume_manager.create_volume("Box", "hole3")
         hole3.size = [90 * cm, 31 * cm, 31 * cm]
@@ -53,11 +55,8 @@ class Ciosalpha:
             hole4 = self.sim.volume_manager.create_volume("Box", "hole4")
             hole4.size = [45 * cm, 31 * cm, 31 * cm]
             hole4.color = [1, 1, 1, 0.8]
-            # hole4 = self.sim.volume_manager.create_volume("Box", "hole4")
-            # hole4.size = [90 * cm, 31 * cm, 31 * cm]
-            # hole4.color = [1, 1, 1, 0.8]
             hole5 = self.sim.volume_manager.create_volume("Box", "hole5")
-            hole5.size = [90 * cm, 31 * cm, 121 * cm]
+            hole5.size = [100 * cm, 31 * cm, 121 * cm]
             hole5.color = [1, 1, 1, 0.8]
 
             hole4and5 = gate.geometry.volumes.unite_volumes(
@@ -82,7 +81,7 @@ class Ciosalpha:
         xray_tank = self.sim.add_volume("Box", f"{self.machine_name}_xray_tank")
         xray_tank.mother = self.machine_name
         xray_tank.material = "G4_AIR"
-        xray_tank.size = [20 * cm, 20 * cm, 30 * cm]
+        xray_tank.size = [10 * cm, 10 * cm, 30 * cm]
         xray_tank.translation = [0 * cm, 0, 45 * cm]
         xray_tank.color = [1, 1, 1, 0.8]
 
@@ -92,25 +91,37 @@ class Ciosalpha:
 
         energy_bins, weights = s.get_spectrum()
 
-        b = self.sim.add_volume("Box", f"{self.machine_name}_sourcebox")
-        b.mother = f"{self.machine_name}_xray_tank"
-        b.translation = [0 * cm, 0 * cm, 10 * cm]
-        b.size = [1 * cm, 1 * cm, 1 * cm]
+        sourcebox = self.sim.add_volume("Box", f"{self.machine_name}_sourcebox")
+        sourcebox.mother = f"{self.machine_name}_xray_tank"
+        sourcebox.translation = [0 * cm, 0 * cm, 10 * cm]
+        sourcebox.size = [1 * cm, 1 * cm, 1 * cm]
+        sourcebox.rotation = Rotation.from_euler("ZYX", [0, 90, 90], degrees=True).as_matrix()
 
         source = self.sim.add_source("GenericSource", f"{self.machine_name}_source")
-        source.mother = f"{self.machine_name}_sourcebox"
+        source.mother = sourcebox.name
         source.particle = "gamma"
         source.position.type = "disc"
         source.position.radius = 0 * mm
 
         source.direction_relative_to_volume = True
-        source.direction.type = "iso"
-        source.direction.theta = [0 * deg, 10 * deg]
-        source.direction.phi = [0 * deg, 360 * deg]
+        source.direction.type = "histogram"
+        source.direction.histogram_theta_weight = [0, 1]
+        source.direction.histogram_theta_angle = [85 * deg, 95 * deg]
+
+        # TODO: Need real values for the anode heel effect
+        data = np.load(current_path / 'anodeheeleffect.npz')
+        source.direction.histogram_phi_weight = data['weight']
+        source.direction.histogram_phi_angle = data['angle']
 
         source.energy.type = "histogram"
         source.energy.histogram_weight = weights
         source.energy.histogram_energy = energy_bins
+
+        source.direction.acceptance_angle.volumes = [sourcebox.name]
+        source.direction.acceptance_angle.normal_flag = True
+        source.direction.acceptance_angle.normal_vector = [1, 0, 0]
+        source.direction.acceptance_angle.normal_tolerance = 5 * deg
+        source.direction.acceptance_angle.skip_policy = "SkipEvents"
 
         return source
 
@@ -120,20 +131,20 @@ class Ciosalpha:
 
         collimators = [
             {
-                "translation": [75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-                "size": [5 * cm, 10 * cm, 1 * mm],
+                "translation": [37.5 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+                "size": [2.5 * cm, 5 * cm, 1 * mm],
             },
             {
-                "translation": [-75 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-                "size": [5 * cm, 10 * cm, 1 * mm],
+                "translation": [-37.5 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+                "size": [2.5 * cm, 5 * cm, 1 * mm],
             },
             {
-                "translation": [0 * cm, 75 * mm, -z_xray_tank / 2 * mm + 3 * mm],
-                "size": [10 * cm, 5 * cm, 1 * mm],
+                "translation": [0 * cm, 37.5 * mm, -z_xray_tank / 2 * mm + 3 * mm],
+                "size": [5 * cm, 2.5 * cm, 1 * mm],
             },
             {
-                "translation": [0 * cm, -75 * mm, -z_xray_tank / 2 * mm + 3 * mm],
-                "size": [10 * cm, 5 * cm, 1 * mm],
+                "translation": [0 * cm, -37.5 * mm, -z_xray_tank / 2 * mm + 3 * mm],
+                "size": [5 * cm, 2.5 * cm, 1 * mm],
             },
         ]
 
@@ -150,20 +161,20 @@ class Ciosalpha:
         killer.mother = [f"{self.machine_name}_collimator{i+1}" for i in range(4)]
 
     def set_collimation(self, collimation1, collimation2):
-        if not 0 <= collimation1 <= 50 or not 0 <= collimation2 <= 50:
-            raise ValueError("Collimation values must be between 0 and 50 mm")
+        if not 0 <= collimation1 <= 25 or not 0 <= collimation2 <= 25:
+            raise ValueError("Collimation values must be between 0 and 25 mm")
 
-        collimation1 = 50 - collimation1
-        collimation2 = 50 - collimation2
+        collimation1 = 25 - collimation1
+        collimation2 = 25 - collimation2
 
         xray_tank = self.sim.volume_manager.get_volume(f"{self.machine_name}_xray_tank")
         z_xray_tank = xray_tank.size[2]
 
         translations = [
-            [75 * mm - collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-            [-75 * mm + collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-            [0 * cm, 75 * mm - collimation2, -z_xray_tank / 2 * mm + 3 * mm],
-            [0 * cm, -75 * mm + collimation2, -z_xray_tank / 2 * mm + 3 * mm],
+            [37.5 * mm - collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+            [-37.5 * mm + collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+            [0 * cm, 37.5 * mm - collimation2, -z_xray_tank / 2 * mm + 3 * mm],
+            [0 * cm, -37.5 * mm + collimation2, -z_xray_tank / 2 * mm + 3 * mm],
         ]
 
         for i, translation in enumerate(translations):
