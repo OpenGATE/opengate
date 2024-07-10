@@ -449,10 +449,10 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   // set the angle acceptance volume if needed
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
-  auto is_iso = ang->GetDistType() == "iso";
+  auto is_valid_type = ang->GetDistType() == "iso" || ang->GetDistType() == "user";
   auto &l = fThreadLocalDataAA.Get();
   l.fAAManager = new GateAcceptanceAngleTesterManager;
-  l.fAAManager->Initialize(dd, is_iso);
+  l.fAAManager->Initialize(dd, is_valid_type);
   fSPS->SetAAManager(l.fAAManager);
 }
 
