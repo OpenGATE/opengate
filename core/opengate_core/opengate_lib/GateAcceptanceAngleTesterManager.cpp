@@ -42,7 +42,8 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
   // Cannot use SkipEvent with not a valid type of source
   if (!is_valid_type && fPolicy == AASkipEvent) {
     std::ostringstream oss;
-    oss << "Cannot use 'SkipEvent' mode without 'iso' or 'histogram' direction type";
+    oss << "Cannot use 'SkipEvent' mode without 'iso' or 'histogram' direction "
+           "type";
     Fatal(oss.str());
   }
 }

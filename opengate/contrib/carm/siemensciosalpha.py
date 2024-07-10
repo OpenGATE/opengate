@@ -16,6 +16,7 @@ cm = gate.g4_units.cm
 
 current_path = pathlib.Path(__file__).parent.resolve()
 
+
 class Ciosalpha:
     def __init__(self, sim, kvp, source_only=False):
         self.sim = sim
@@ -95,7 +96,9 @@ class Ciosalpha:
         sourcebox.mother = f"{self.machine_name}_xray_tank"
         sourcebox.translation = [0 * cm, 0 * cm, 10 * cm]
         sourcebox.size = [1 * cm, 1 * cm, 1 * cm]
-        sourcebox.rotation = Rotation.from_euler("ZYX", [0, 90, 90], degrees=True).as_matrix()
+        sourcebox.rotation = Rotation.from_euler(
+            "ZYX", [0, 90, 90], degrees=True
+        ).as_matrix()
 
         source = self.sim.add_source("GenericSource", f"{self.machine_name}_source")
         source.mother = sourcebox.name
@@ -109,9 +112,9 @@ class Ciosalpha:
         source.direction.histogram_theta_angle = [85 * deg, 95 * deg]
 
         # TODO: Need real values for the anode heel effect
-        data = np.load(current_path / 'anodeheeleffect.npz')
-        source.direction.histogram_phi_weight = data['weight']
-        source.direction.histogram_phi_angle = data['angle']
+        data = np.load(current_path / "anodeheeleffect.npz")
+        source.direction.histogram_phi_weight = data["weight"]
+        source.direction.histogram_phi_angle = data["angle"]
 
         source.energy.type = "histogram"
         source.energy.histogram_weight = weights
