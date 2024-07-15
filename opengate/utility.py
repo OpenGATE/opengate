@@ -37,8 +37,7 @@ def assert_equal_dic(d1, d2, name=""):
 
 def ensure_directory_exists(directory):
     p = Path(directory)
-    if p.exists() is False:
-        p.mkdir(parents=True)
+    p.mkdir(parents=True, exist_ok=True)
 
 
 g4_units = Box()
@@ -171,11 +170,12 @@ def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
 def get_random_folder_name(size=8, create=True):
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=size))
     r = "run." + r
+    directory = Path(r)
     if create:
-        if not os.path.exists(r):
+        if not directory.exists():
             print(f"Creating output folder {r}")
-            os.mkdir(r)
-        if not os.path.isdir(r):
+            directory.mkdir(parents=True, exist_ok=True)
+        if not directory.isdir():
             fatal(f"Error, while creating {r}.")
     return r
 
@@ -279,7 +279,7 @@ def print_opengate_info():
     print(f"GATE tests       {get_tests_folder()}")
 
     # check if from a git version ?
-    git_path = module_path / ".."
+    git_path = Path(module_path).parent
     try:
         git_repo = git.Repo(git_path)
         sha = git_repo.head.object.hexsha

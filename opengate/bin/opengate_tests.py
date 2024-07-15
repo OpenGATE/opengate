@@ -24,16 +24,18 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 )
 def go(test_id, random_tests):
     pathFile = pathlib.Path(__file__).parent.resolve()
-    if "src" in os.listdir(pathFile):
-        mypath = os.path.join(pathFile, "../tests/src")
+    if "src" in pathFile.iterdir():
+        mypath = pathFile.parent / "tests" / "src"
     else:
         import opengate.tests
 
-        mypath = os.path.join(
-            pathlib.Path(opengate.tests.__file__).resolve().parent, "../tests/src"
+        mypath = (
+            pathlib.Path(opengate.tests.__file__).resolve().parent.parent
+            / "tests"
+            / "src"
         )
 
-    print("Looking for tests in: " + mypath)
+    print("Looking for tests in: " + str(mypath))
 
     if not check_tests_data_folder():
         return False
@@ -62,9 +64,7 @@ def go(test_id, random_tests):
         "test045_speedup",  # this is a binary (still work in progress)
     ]
 
-    onlyfiles = [
-        f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))
-    ]
+    onlyfiles = [f.name for f in mypath.glob("**/*") if f.is_file()]
 
     files = []
     for f in onlyfiles:
@@ -116,15 +116,15 @@ def go(test_id, random_tests):
         files = sorted(files)
 
     print(f"Running {len(files)} tests")
-    print(f"-" * 70)
+    print("-" * 70)
 
     failure = False
 
     for f in files:
         start = time.time()
         print(f"Running: {f:<46}  ", end="")
-        cmd = "python " + os.path.join(mypath, f"{f}")
-        log = os.path.join(os.path.dirname(mypath), f"log/{f}.log")
+        cmd = "python " + str(mypath / f)
+        log = str(mypath.parent / "log" / f) + ".log"
         r = os.system(f"{cmd} > {log} 2>&1")
         # subprocess.run(cmd, stdout=f, shell=True, check=True)
         if r == 0:
