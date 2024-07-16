@@ -963,7 +963,7 @@ def isomeric_transition_load_all_gammas(nuclide: rd.Nuclide, half_life=None):
 
 def isomeric_transition_read_g4_data(z, a, ignore_zero_deex=True):
     # get folder
-    data_paths = g4.get_G4_data_paths()
+    data_paths = g4.get_g4_data_paths()
     folder = pathlib.Path(data_paths["G4LEVELGAMMADATA"])
     ion_filename = folder / f"z{z}.a{a}"
     with open(ion_filename) as file:

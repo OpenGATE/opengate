@@ -256,7 +256,7 @@ def print_opengate_info():
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
     print(f"Geant4 GDML      {gi.get_G4GDML()}")
     print(f"Geant4 date      {gi.get_G4Date()}")
-    print(f"Geant4 data      {g4.get_G4_data_folder()}")
+    print(f"Geant4 data      {g4.get_g4_data_folder()}")
 
     print(f"ITK version      {gi.get_ITKVersion()}")
 
