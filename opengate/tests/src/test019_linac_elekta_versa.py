@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # main options
     sim.g4_verbose = False
-    # sim.visu = True
+    sim.visu = False
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     )
 
     # add linac e- source
-    source = versa.add_electron_source(sim, linac.name, linac.rotation)
+    source = versa.add_electron_source(sim, linac.name)
     source.n = 8e4 / sim.number_of_threads
     if sim.visu:
         source.n = 200

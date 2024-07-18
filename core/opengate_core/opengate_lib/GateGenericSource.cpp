@@ -29,7 +29,7 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
   fEffectiveEventTime = -1;
-  fforceRotation = false;
+  fDirectionRelativeToAttachedVolume = false;
 }
 
 GateGenericSource::~GateGenericSource() {
@@ -91,7 +91,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   fTotalSkippedEvents = 0;
   fEffectiveEventTime = -1;
 
-  fforceRotation = DictGetDouble(user_info, "force_rotation");
+  fDirectionRelativeToAttachedVolume =
+      DictGetBool(user_info, "direction_relative_to_attached_volume");
 }
 
 void GateGenericSource::UpdateActivity(double time) {
@@ -181,11 +182,11 @@ void GateGenericSource::PrepareNextRun() {
 
   auto *ang = fSPS->GetAngDist();
 
-  if (fangType == "momentum" && fforceRotation) {
+  if (fangType == "momentum" && fDirectionRelativeToAttachedVolume) {
     auto new_d = rotation * fInitializeMomentum;
     ang->SetParticleMomentumDirection(new_d);
   }
-  if (fangType == "focused" && fforceRotation) {
+  if (fangType == "focused" && fDirectionRelativeToAttachedVolume) {
     auto vec_f = fInitiliazeFocusPoint - fInitTranslation;
     auto rot_f = rotation * vec_f;
     auto new_f = rot_f + l.fGlobalTranslation;
