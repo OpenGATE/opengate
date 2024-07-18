@@ -5,6 +5,7 @@ import uproot
 import numpy as np
 import time
 import platform
+from anytree import Node, RenderTree
 import opengate_core as g4
 from .base import ActorBase
 from ..exception import fatal
@@ -429,19 +430,6 @@ class KillActor(g4.GateKillActor, ActorBase):
         g4.GateKillActor.__init__(self, user_info.__dict__)
 
 
-"""
-class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
-    type_name = "ComptonSplittingActor"
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.SplittingFactor = 0
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateComptonSplittingActor.__init__(self, user_info.__dict__)
-"""
-
-
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     type_name = "ComptSplittingActor"
 
@@ -462,6 +450,43 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateOptrComptSplittingActor.__init__(self, user_info.__dict__)
+
+
+class LastVertexInteractionSplittingActor(
+    g4.GateLastVertexInteractionSplittingActor, ActorBase
+):
+    type_name = "LastVertexInteractionSplittingActor"
+
+    def set_default_user_info(user_info):
+        ActorBase.set_default_user_info(user_info)
+        deg = g4_units.deg
+        user_info.splitting_factor = 1
+        user_info.russian_roulette_for_angle = False
+        user_info.rotation_vector_director = False
+        user_info.vector_director = [0, 0, -1]
+        user_info.max_theta = 90 * deg
+        user_info.list_of_volume_name = []
+
+    def __init__(self, user_info):
+        ActorBase.__init__(self, user_info)
+        g4.GateLastVertexInteractionSplittingActor.__init__(self, user_info.__dict__)
+        self.list_of_volume_name = user_info.list_of_volume_name
+        self.user_info.mother = user_info.mother
+
+    def initialize(self, volume_engine=None):
+
+        super().initialize(volume_engine)
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.mother
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+        print(self.fListOfVolumeAncestor)
 
 
 class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
