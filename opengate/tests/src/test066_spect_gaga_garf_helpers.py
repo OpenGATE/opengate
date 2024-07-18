@@ -5,7 +5,7 @@ import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 import opengate.sources.gansources as gansources
 from opengate.sources.generic import get_rad_gamma_energy_spectrum
-from opengate.contrib.spect import ge_discovery_nm670
+from opengate.contrib.spect import ge_discovery_nm670 as genm670
 from scipy.spatial.transform import Rotation
 
 
@@ -30,10 +30,10 @@ def create_simu_with_genm670(sim, collimator_type="lehr", debug=False):
     create_world(sim)
 
     # spect system
-    head1, crystal1 = genm670.add_spect_head(
+    head1, colli, crystal1 = genm670.add_spect_head(
         sim, "spect1", collimator_type=collimator_type, debug=debug
     )
-    head2, crystal2 = genm670.add_spect_head(
+    head2, colli, crystal2 = genm670.add_spect_head(
         sim, "spect2", collimator_type=collimator_type, debug=debug
     )
 
@@ -72,7 +72,7 @@ def create_simu_with_gaga(
 
     # add gaga source
     gsource = add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename)
-    gsource.position.rotation = Rotation.from_euler("x", 90, degrees=True).as_matrix()
+    # gsource.position.rotation = Rotation.from_euler("x", 90, degrees=True).as_matrix()
 
     # add arf plane
     mm = gate.g4_units.mm
@@ -127,6 +127,7 @@ def add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename):
     gsource.weight_key = None
     gsource.time_key = None
     gsource.batch_size = 5e4  # OSX
+    gsource.backward_force = True  # because we don't care about timing
     # Linux 5e4 with 1 thread, 1e4 with 8 threads
     gsource.batch_size = 2e5 / sim.user_info.number_of_threads
     gsource.verbose_generator = False  # True
@@ -189,6 +190,7 @@ def add_arf_actor(sim, detector_plane, size, spacing, crystal_dist, name, pth_fi
     arf.gpu_mode = "auto"
     arf.enable_hit_slice = False
     arf.pth_filename = pth_filename
+    arf.flip_plane = True
     return arf
 
 

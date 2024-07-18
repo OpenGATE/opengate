@@ -232,6 +232,19 @@ def get_release_date(opengate_version):
         return "unknown"
 
 
+def get_gate_folder():
+    module_path = os.path.dirname(__file__)
+    return Path(module_path)
+
+
+def get_data_folder():
+    return get_gate_folder() / "data"
+
+
+def get_tests_folder():
+    return get_gate_folder() / "tests" / "src"
+
+
 def get_contrib_path():
     module_path = os.path.dirname(__file__)
     return Path(module_path) / "contrib"
@@ -245,7 +258,7 @@ def print_opengate_info():
     gi = g4.GateInfo
     v = gi.get_G4Version().replace("$Name: ", "")
     v = v.replace("$", "")
-    module_path = os.path.dirname(__file__)
+    module_path = get_gate_folder()
 
     pv = sys.version.replace("\n", "")
     print(f"Python version   {pv}")
@@ -255,16 +268,18 @@ def print_opengate_info():
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
     print(f"Geant4 GDML      {gi.get_G4GDML()}")
-    print(f"Geant4 date      {gi.get_G4Date()}")
+    print(f"Geant4 date      {gi.get_G4Date().replace(')','').replace('(','')}")
     print(f"Geant4 data      {g4.get_g4_data_folder()}")
 
     print(f"ITK version      {gi.get_ITKVersion()}")
 
     print(f"GATE version     {version('opengate')}")
     print(f"GATE folder      {module_path}")
+    print(f"GATE data        {get_data_folder()}")
+    print(f"GATE tests       {get_tests_folder()}")
 
     # check if from a git version ?
-    git_path = Path(module_path) / ".."
+    git_path = module_path / ".."
     try:
         git_repo = git.Repo(git_path)
         sha = git_repo.head.object.hexsha

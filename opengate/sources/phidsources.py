@@ -896,7 +896,7 @@ def isomeric_transition_load_from_iaea_website(a, rad_name):
         df2 = lc_read_csv(url)
         if not df2.empty:
             # Identify overlapping columns
-            overlapping_columns = df.columns.intersection(df2.columns)
+            overlapping_columns = df.columns.plane_intersection(df2.columns)
 
             # Convert columns in df2 to the same type as df1
             for col in overlapping_columns:

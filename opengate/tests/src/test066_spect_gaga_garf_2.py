@@ -14,11 +14,10 @@ if __name__ == "__main__":
     simu_name = "test066_2"
 
     # options
-    ui = sim.user_info
-    ui.number_of_threads = 5
-    # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.random_seed = "auto"
+    sim.number_of_threads = 5
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.random_seed = "auto"
 
     # units
     mm = gate.g4_units.mm
@@ -32,10 +31,10 @@ if __name__ == "__main__":
     w, e = get_rad_gamma_energy_spectrum("Tc99m")
     # Estimated gammas 127,008,708 gammas (weights = 0.8850)
     # so, because we use ARF, about 1/2 particles needed
-    total_activity = 127008708 / 30 * Bq / ui.number_of_threads / 2
-    # total_activity = 127008708 / 30 * Bq / ui.number_of_threads / 40  # FIXME
+    total_activity = 127008708 / 30 * Bq / sim.number_of_threads / 2
+    total_activity = total_activity / 10  # FIXME
     print(f"Total activity: {total_activity/Bq:.0f} Bq")
-    if ui.visu:
+    if sim.visu:
         total_activity = 1 * Bq
 
     # source
