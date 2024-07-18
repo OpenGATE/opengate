@@ -1,11 +1,9 @@
 import os
-import sys
 import shutil
-import wget
-import json
 import zipfile
 import requests
 import colored
+from .g4DataSetup import *
 
 try:
     color_error = colored.fg("red") + colored.attr("bold")
@@ -73,9 +71,9 @@ def check_tests_data_folder():
 
 
 # Download opengate tests data:
-def download_tests_data(dataLocation):
-    os.mkdir(dataLocation)
-    f = open(os.path.join(dataLocation, "..", "HEAD"), "r")
+def download_tests_data(data_location):
+    os.mkdir(data_location)
+    f = open(os.path.join(data_location, "..", "HEAD"), "r")
     checkoutDataGit = str(f.readline()).strip()
     url = (
         "https://gitlab.in2p3.fr/api/v4/projects/15155/repository/commits/"
@@ -97,16 +95,21 @@ def download_tests_data(dataLocation):
         + idPipeline
         + "/artifacts"
     )
-    filename = wget.download(url)
-    if filename == checkoutDataGit + ".zip":
-        with zipfile.ZipFile(filename, "r") as zip_ref:
-            zip_ref.extractall(dataLocation)
-    os.remove(filename)
+
+    # download the archive (with resume if the connexion failed)
+    filename = url.split("/")[-1]
+    out = os.path.join(data_location, filename)
+    download_with_resume(url, out)
+
+    if filename == "artifacts":
+        with zipfile.ZipFile(os.path.join(data_location, filename), "r") as zip_ref:
+            zip_ref.extractall(data_location)
+    os.remove(os.path.join(data_location, filename))
     with zipfile.ZipFile(
-        os.path.join(dataLocation, "artifact_zip", checkoutDataGit + ".zip"), "r"
+        os.path.join(data_location, "artifact_zip", checkoutDataGit + ".zip"), "r"
     ) as zip_ref:
-        zip_ref.extractall(dataLocation)
-    shutil.rmtree(os.path.join(dataLocation, "artifact_zip"))
+        zip_ref.extractall(data_location)
+    shutil.rmtree(os.path.join(data_location, "artifact_zip"))
 
 
 # Return opengate tests data folder:

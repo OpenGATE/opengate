@@ -3,7 +3,6 @@ import re
 import sys
 import platform
 import subprocess
-import glob
 import json
 import setuptools
 import sysconfig
