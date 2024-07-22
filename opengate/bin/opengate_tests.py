@@ -60,14 +60,6 @@ def go(test_id, random_tests):
 
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
-        "test066_spect_gaga_garf_0_orientation.py",  # ignored because visu only
-        "test066_spect_gaga_garf_1_reference.py",  # ignored because reference data (too long)
-        "test066_spect_gaga_garf_2.py",  # ignored because reference data (too long, GPU)
-        "test066_spect_gaga_garf_3_standalone_numpy.py",  # ignored because too long (GPU)
-        "test066_spect_gaga_garf_3_standalone_torch.py",  # ignored because too long (GPU)
-        "test066_spect_gaga_garf_4_analyse1.py",
-        "test066_spect_gaga_garf_5_analyse2.py",
-        "test066_spect_gaga_garf_6_analyse3.py",
     ]
 
     onlyfiles = [
