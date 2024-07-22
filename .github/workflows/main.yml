@@ -423,3 +423,49 @@ jobs:
           else
               exit 0
           fi
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: results_csv-${{ matrix.os }}-${{ matrix.python-version }}
+        path: results*.csv
+
+  publish_test:
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    needs: [test_wheel]
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: results_csv-*
+        merge-multiple: true
+        path: ./
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          activate-environment: vega-altair
+          python-version: '3.10'
+    - name: Merge the results
+      shell: bash -el {0}
+      run: |
+          ls
+          git clone https://github.com/OpenGATE/opengate_tests_results.git
+          cd opengate_tests_results
+          cp ../results_*.csv .
+          ls /home/runner/miniconda3/
+          ls /home/runner/miniconda3/condabin/
+          ls /home/runner/miniconda3/bin
+          #export PATH=/home/runner/miniconda3/bin:$PATH
+          conda install -c conda-forge altair-all
+          pip install pandas numpy
+          which conda
+          which pip
+          pip list
+          which python
+          python compile_opengate_tests_results.py
+          ls -lrt
+          git status
+          git diff
