@@ -21,6 +21,7 @@ namespace py = pybind11;
 #include "FTF_BIC.hh"
 #include "LBE.hh"
 
+#include "G4LightIonQMDPhysics.hh"
 #include "NuBeam.hh"
 #include "QBBC.hh"
 #include "QGSP_BERT.hh"
@@ -168,6 +169,7 @@ void init_G4PhysicsLists(py::module &m) {
 
   ADD_PHYSICS_CONSTRUCTOR(G4DecayPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4RadioactiveDecayPhysics)
+  ADD_PHYSICS_CONSTRUCTOR(G4LightIonQMDPhysics)
 
   // sort PL vector
   std::sort(plList.begin(), plList.end());
