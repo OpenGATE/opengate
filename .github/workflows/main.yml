@@ -451,21 +451,20 @@ jobs:
     - name: Merge the results
       shell: bash -el {0}
       run: |
-          ls
           git clone https://github.com/OpenGATE/opengate_tests_results.git
           cd opengate_tests_results
+          echo $pwd
           cp ../results_*.csv .
-          ls /home/runner/miniconda3/
-          ls /home/runner/miniconda3/condabin/
-          ls /home/runner/miniconda3/bin
-          #export PATH=/home/runner/miniconda3/bin:$PATH
           conda install -c conda-forge altair-all
           pip install pandas numpy
-          which conda
-          which pip
-          pip list
-          which python
           python compile_opengate_tests_results.py
-          ls -lrt
-          git status
-          git diff
+    - name: Pushes to another repository
+      uses: cpina/github-action-push-to-another-repository@main
+      env:
+          API_TOKEN_GITHUB: ${{ secrets.PUSH_OPENGATE_TESTS_RESULTS }}
+      with:
+          source-directory: 'opengate_tests_results'
+          destination-github-username: 'OpenGATE'
+          destination-repository-name: 'opengate_tests_results'
+          user-email: tbaudier@creatis.insa-lyon.fr
+          target-branch: master
