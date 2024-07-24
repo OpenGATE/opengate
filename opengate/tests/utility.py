@@ -260,7 +260,7 @@ def assert_images(
     sum_tolerance=5,
     scaleImageValuesFactor=None,
 ):
-    # read image and info (size, spacing etc)
+    # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
     img1 = itk.imread(ref_filename1)
@@ -309,7 +309,7 @@ def assert_images(
     is_ok = is_ok and sad < tolerance
     print_test(
         is_ok,
-        f"Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n"
+        f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
         f"SAD (per event/total): {sad:.2f} % "
         f" (tolerance is {tolerance :.2f} %)",
     )
