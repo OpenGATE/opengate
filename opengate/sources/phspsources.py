@@ -55,7 +55,7 @@ class PhaseSpaceSourceGenerator:
             self.root_file = self.root_file[branches[0]]
         else:
             gate.fatal(
-                f"PhaseSpaceSourceGenerator: No useable branches in the root file {self.user_info.phsp_file}. Aborting."
+                f"PhaseSpaceSourceGenerator: No usable branches in the root file {self.user_info.phsp_file}. Aborting."
             )
             exit()
 
@@ -129,20 +129,6 @@ class PhaseSpaceSourceGenerator:
             entry_stop=self.current_index + current_batch_size,
             library="numpy",
         )
-        # Get the file name
-        # print("root file name: ", self.root_file.file.file_path)
-        # print(
-        #    "threadID: ",
-        #    opengate_core.G4GetThreadId(),
-        #    "batch entry_start: ",
-        #    self.current_index,
-        #    "batch entry_stop: ",
-        #    self.current_index + current_batch_size,
-        #    "batch_size: ",
-        #    current_batch_size,
-        # )
-        # print("batch entry_stop: ", self.current_index + current_batch_size)
-        # print("batch_size: ", current_batch_size)
 
         batch = self.batch
         # ensure encoding is float32
@@ -164,8 +150,6 @@ class PhaseSpaceSourceGenerator:
             )
             self.current_index = 0
 
-        # prepare data
-
         # set particle type
         if ui.particle == "" or ui.particle is None:
             # check if the keys for PDGCode are in the root file
@@ -181,14 +165,6 @@ class PhaseSpaceSourceGenerator:
             batch[ui.position_key_x] += float(ui.position.translation[0])
             batch[ui.position_key_y] += float(ui.position.translation[1])
             batch[ui.position_key_z] += float(ui.position.translation[2])
-
-        # source.SetPositionXBatch(batch[ui.position_key_x])
-        # source.SetPositionYBatch(batch[ui.position_key_y])
-        # source.SetPositionZBatch(batch[ui.position_key_z])
-        # else:
-        #     source.SetPositionXBatch(batch[ui.position_key_x])
-        #     source.SetPositionYBatch(batch[ui.position_key_y])
-        #     source.SetPositionZBatch(batch[ui.position_key_z])
 
         # direction is a rotation of the stored direction
         # if rotate_direction is set to True, the direction
@@ -213,12 +189,8 @@ class PhaseSpaceSourceGenerator:
             batch[ui.direction_key_y] = points[:, 1].astype(np.float32)
             batch[ui.direction_key_z] = points[:, 2].astype(np.float32)
 
-        # source.SetDirectionXBatch(batch[ui.direction_key_x])
-        # source.SetDirectionYBatch(batch[ui.direction_key_y])
-        # source.SetDirectionZBatch(batch[ui.direction_key_z])
-
         # set weight
-        if ui.weight_key != "" or ui.weight_key is not None:
+        if ui.weight_key != "" and ui.weight_key is not None:
             if ui.weight_key not in batch:
                 fatal(
                     f"PhaseSpaceSource: no Weight key ({ui.weight_key}) in the phsp file."
@@ -239,14 +211,16 @@ class PhaseSpaceSourceGenerator:
         # set energy
         source.SetEnergyBatch(batch[ui.energy_key])
         # set PDGCode
-        source.SetPDGCodeBatch(batch[ui.PDGCode_key])
+        if ui.PDGCode_key in batch:
+            source.SetPDGCodeBatch(batch[ui.PDGCode_key])
         # set weight
         source.SetWeightBatch(batch[ui.weight_key])
 
         if ui.verbose:
             print("PhaseSpaceSourceGenerator: batch generated: ")
             print("particle name: ", ui.particle)
-            print("source.fPDGCode: ", batch[ui.PDGCode_key])
+            if ui.PDGCode_key in batch:
+                print("source.fPDGCode: ", batch[ui.PDGCode_key])
             print("source.fEnergy: ", batch[ui.energy_key])
             print("source.fWeight: ", batch[ui.weight_key])
             print("source.fPositionX: ", batch[ui.position_key_x])
