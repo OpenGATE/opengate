@@ -380,7 +380,7 @@ def add_phase_space_source(sim, plane_name):
     source.mother = plane_name
     source.position_key = "PrePositionLocal"
     source.direction_key = "PreDirectionLocal"
-    # source.weight_key = "Weight"
+    source.weight_key = None
     source.global_flag = False
     source.particle = ""
     source.batch_size = 100000
