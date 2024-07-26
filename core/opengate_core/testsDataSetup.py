@@ -48,7 +48,7 @@ def check_tests_data_folder():
                 print("")
                 print("Done")
         # Check if the size of one .raw file is correct to detect lfs
-        if "ct_4mm.raw" in data_location.iterdir():
+        if (data_location / "ct_4mm.raw").is_file():
             filesize = (data_location / "ct_4mm.raw").stat().st_size
             if filesize < 4000000:
                 print(
@@ -120,12 +120,12 @@ def download_tests_data(data_location: Path):
 
 # Return opengate tests data folder:
 def get_tests_data_folder() -> Path:
-    packageLocation = Path(__file__).resolve().parent
-    dataLocation = ""
-    for parent in packageLocation.parents:
-        if (parent / "opengate" / "tests" / "data").exists():
-            dataLocation = parent / "opengate" / "tests" / "data"
+    package_location = Path(__file__).resolve().parent
+    data_location = package_location.parent / "opengate" / "tests" / "data"
+    for parent in package_location.parents:
+        if (parent / "opengate").exists():
+            data_location = parent / "opengate" / "tests" / "data"
             break
-    if not dataLocation:
-        print("Cannot find opengate folder near: " + str(packageLocation))
-    return dataLocation
+    if not data_location:
+        print("Cannot find opengate folder near: " + str(package_location))
+    return data_location

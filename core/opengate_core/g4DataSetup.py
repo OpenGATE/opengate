@@ -51,7 +51,7 @@ def check_g4_data():
 
 
 def download_with_resume(url, out, retries=5, delay=10):
-    temp_file = out + ".part"
+    temp_file = str(out) + ".part"
     headers = {}
     if os.path.exists(temp_file):
         file_size = os.path.getsize(temp_file)
@@ -65,7 +65,7 @@ def download_with_resume(url, out, retries=5, delay=10):
                     for chunk in r.iter_content(chunk_size=8192):
                         if chunk:
                             f.write(chunk)
-            os.rename(temp_file, out)
+            os.rename(temp_file, str(out))
             print(f"Downloaded {url} successfully.")
             return
         except requests.exceptions.RequestException as e:

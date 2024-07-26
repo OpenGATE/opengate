@@ -64,7 +64,7 @@ def go(test_id, random_tests):
         "test045_speedup",  # this is a binary (still work in progress)
     ]
 
-    onlyfiles = [f.name for f in mypath.glob("**/*") if f.is_file()]
+    onlyfiles = [f for f in os.listdir(str(mypath)) if (mypath / f).is_file()]
 
     files = []
     for f in onlyfiles:
