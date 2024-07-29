@@ -6,6 +6,7 @@ import time
 import pathlib
 import click
 import random
+import sys
 
 from opengate.exception import fatal, colored, color_ok, color_error
 from opengate_core.testsDataSetup import check_tests_data_folder
@@ -23,6 +24,8 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Start the last 10 tests and 1/4 of the others randomly",
 )
 def go(test_id, random_tests):
+    import pandas as pd
+
     pathFile = pathlib.Path(__file__).parent.resolve()
     if "src" in pathFile.iterdir():
         mypath = pathFile.parent / "tests" / "src"
@@ -99,6 +102,9 @@ def go(test_id, random_tests):
         files.append(f)
 
     files = sorted(files)
+    dictFiles = {}
+    for file in files:
+        dictFiles[file] = [""]
     if test_id != "all":
         test_id = int(test_id)
         files_new = []
@@ -129,6 +135,7 @@ def go(test_id, random_tests):
         # subprocess.run(cmd, stdout=f, shell=True, check=True)
         if r == 0:
             print(colored.stylize(" OK", color_ok), end="")
+            dictFiles[f] = [True]
         else:
             if r == 2:
                 # this is probably a Ctrl+C, so we stop
@@ -137,9 +144,21 @@ def go(test_id, random_tests):
                 print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True
                 os.system("cat " + log)
+                dictFiles[f] = [False]
         end = time.time()
         print(f"   {end - start:5.1f} s     {log:<65}")
 
+    df = pd.DataFrame(dictFiles)
+    outputCsvFile = (
+        "results_"
+        + sys.platform
+        + "_"
+        + str(sys.version_info[0])
+        + "."
+        + str(sys.version_info[1])
+        + ".csv"
+    )
+    df.to_csv(outputCsvFile)
     print(not failure)
 
 

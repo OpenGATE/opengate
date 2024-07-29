@@ -423,3 +423,48 @@ jobs:
           else
               exit 0
           fi
+    - name: Upload results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: results_csv-${{ matrix.os }}-${{ matrix.python-version }}
+        path: results*.csv
+
+  publish_test:
+    runs-on: ubuntu-latest
+    if: ${{ (always()) && (github.ref == 'refs/heads/master') }}
+    needs: [test_wheel]
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: results_csv-*
+        merge-multiple: true
+        path: ./
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          activate-environment: vega-altair
+          python-version: '3.10'
+    - name: Merge the results
+      shell: bash -el {0}
+      run: |
+          git clone https://github.com/OpenGATE/opengate_tests_results.git
+          cd opengate_tests_results
+          echo $pwd
+          cp ../results_*.csv .
+          conda install -c conda-forge altair-all
+          pip install pandas numpy
+          python compile_opengate_tests_results.py
+    - name: Pushes to another repository
+      uses: cpina/github-action-push-to-another-repository@main
+      env:
+          API_TOKEN_GITHUB: ${{ secrets.PUSH_OPENGATE_TESTS_RESULTS }}
+      with:
+          source-directory: 'opengate_tests_results'
+          destination-github-username: 'OpenGATE'
+          destination-repository-name: 'opengate_tests_results'
+          user-email: tbaudier@creatis.insa-lyon.fr
+          target-branch: master
