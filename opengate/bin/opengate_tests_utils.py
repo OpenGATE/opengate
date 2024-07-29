@@ -3,35 +3,30 @@
 import site
 import os
 import click
+from pathlib import Path
 
 
-def return_site_packages_dir():
+def return_site_packages_dir() -> Path:
     site_package = [p for p in site.getsitepackages() if "site-packages" in p][0]
-    return site_package
+    return Path(site_package)
 
 
 def get_site_packages_dir():
-    print(return_site_packages_dir())
+    print(str(return_site_packages_dir()))
 
 
 def get_libG4processes_path():
-    for element in os.listdir(
-        os.path.join(return_site_packages_dir(), "opengate_core.libs")
-    ):
-        if "libG4processes" in element:
-            print(
-                os.path.join(return_site_packages_dir(), "opengate_core.libs", element)
-            )
+    lib_path = return_site_packages_dir() / "opengate_core.libs"
+    for element in lib_path.iterdir():
+        if "libG4processes" in element.name:
+            print(str(element))
 
 
 def get_libG4geometry_path():
-    for element in os.listdir(
-        os.path.join(return_site_packages_dir(), "opengate_core.libs")
-    ):
-        if "libG4geometry" in element:
-            print(
-                os.path.join(return_site_packages_dir(), "opengate_core.libs", element)
-            )
+    lib_path = return_site_packages_dir() / "opengate_core.libs"
+    for element in lib_path.iterdir():
+        if "libG4geometry" in element.name:
+            print(str(element))
 
 
 # -----------------------------------------------------------------------------

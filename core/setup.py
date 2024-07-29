@@ -13,7 +13,7 @@ def warning(s):
     print(s)
 
 
-def get_cmake_dir():
+def get_cmake_dir() -> Path:
     plat_name = sysconfig.get_platform()
     python_version = sysconfig.get_python_version()
     dir_name = f"cmake.{plat_name}-{sys.implementation.name}-{python_version}"
@@ -22,14 +22,14 @@ def get_cmake_dir():
     return cmake_dir
 
 
-def get_base_dir():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+def get_base_dir() -> Path:
+    return Path(__file__).parent.parent.resolve()
 
 
 with open("../VERSION", "r") as fh:
     version = fh.read()[:-1]
 
-from setuptools import setup, Extension, find_packages
+from setuptools import Extension, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 

@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     source_1 = sim.add_source("PhaseSpaceSource", "phsp_source_global_1")
     source_1.mother = plane_1.name
-    source_1.phsp_file = paths.output_ref / ".." / "test019" / "test019_hits.root"
+    source_1.phsp_file = paths.output_ref.parent / "test019" / "test019_hits.root"
     source_1.position_key = "PrePosition"
     source_1.direction_key = "PreDirection"
     source_1.weight_key = "Weight"

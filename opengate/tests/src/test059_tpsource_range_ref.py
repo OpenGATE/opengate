@@ -123,8 +123,7 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # create output dir, if it doesn't exist
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
