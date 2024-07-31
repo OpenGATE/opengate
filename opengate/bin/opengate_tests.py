@@ -7,6 +7,7 @@ import pathlib
 import click
 import random
 import sys
+import json
 
 from opengate.exception import fatal, colored, color_ok, color_error
 from opengate_core.testsDataSetup import check_tests_data_folder
@@ -24,8 +25,6 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Start the last 10 tests and 1/4 of the others randomly",
 )
 def go(test_id, random_tests):
-    import pandas as pd
-
     pathFile = pathlib.Path(__file__).parent.resolve()
     if "src" in pathFile.iterdir():
         mypath = pathFile.parent / "tests" / "src"
@@ -148,17 +147,17 @@ def go(test_id, random_tests):
         end = time.time()
         print(f"   {end - start:5.1f} s     {log:<65}")
 
-    df = pd.DataFrame(dictFiles)
-    outputCsvFile = (
+    outputJsonFile = (
         "results_"
         + sys.platform
         + "_"
         + str(sys.version_info[0])
         + "."
         + str(sys.version_info[1])
-        + ".csv"
+        + ".json"
     )
-    df.to_csv(outputCsvFile)
+    with open(outputJsonFile, 'w') as fp:
+        json.dump(dictFiles, fp, indent=4)
     print(not failure)
 
 
