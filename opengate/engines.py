@@ -268,6 +268,7 @@ class PhysicsEngine(EngineBase):
         self.initialize_regions()
         self.initialize_optical_material_properties()
         self.initialize_optical_surfaces()
+        self.initialize_optigan()
 
     def initialize_parallel_world_physics(self):
         for (
@@ -375,9 +376,26 @@ class PhysicsEngine(EngineBase):
                 vol
             ) in self.simulation_engine.simulation.volume_manager.volumes.values():
                 material_name = vol.g4_material.GetName()
+                python_material_name = str(material_name)
+                # print(f"The python material name is {python_material_name}")
+
                 material_properties = load_optical_properties_from_xml(
                     self.physics_manager.optical_properties_file, material_name
                 )
+                # print(f"The material properties of the material {python_material_name} is {material_properties}")
+                # python_material_name = str(material_name)
+                # print(f"The type of python material name is {type(python_material_name)}")
+
+                # if python_material_name.startswith("G4_"):
+                #     print("The python material name starts with G4")
+                #     continue
+
+                # material_properties = None
+                
+                # if not python_material_name.startswith("G4_"):
+                    # material_properties = load_optical_properties_from_xml(
+                    #     self.physics_manager.optical_properties_file, material_name
+                    # )
                 if material_properties is not None:
                     self.g4_optical_material_tables[str(material_name)] = (
                         create_g4_optical_properties_table(material_properties)
@@ -390,6 +408,19 @@ class PhysicsEngine(EngineBase):
                         f"Could not load the optical material properties for material {material_name} "
                         f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
+
+    def initialize_optigan(self):
+        if self.simulation_engine.simulation.physics_manager.use_optigan == True:
+            print("Optigan is set to True. Further work needs to be done.")
+            print("Trying to access more info about the actors")
+            actor_list = self.simulation_engine.simulation.actor_manager.user_info_actors
+            for key in actor_list.keys():
+                print(f"The key value is {key}")
+                if actor_list[key].type_name != "KillActor":
+                    print(f"More info about the actor list - {actor_list[key]}")
+                    print(f"the output path is {actor_list[key].output}")
+
+        # get the actor and see where it is storing the output. 
 
     @requires_fatal("physics_manager")
     def initialize_optical_surfaces(self):
