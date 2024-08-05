@@ -26,6 +26,8 @@ from .physics import (
     load_optical_properties_from_xml,
 )
 
+from optigan_helpers import OptiganHelpers
+
 
 class EngineBase:
     """
@@ -419,6 +421,12 @@ class PhysicsEngine(EngineBase):
                 if actor_list[key].type_name != "KillActor":
                     print(f"More info about the actor list - {actor_list[key]}")
                     print(f"the output path is {actor_list[key].output}")
+
+                    root_output_path = actor_list[key].output
+                    optigan_helpers_obj = OptiganHelpers(root_output_path)
+                    print(optigan_helpers_obj.get_optigan_input())
+
+
 
         # get the actor and see where it is storing the output. 
 
