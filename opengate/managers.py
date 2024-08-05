@@ -460,6 +460,12 @@ class PhysicsManager(GateObject):
                 "doc": "Flag to turn of cuts 'on the fly'. Still under development in Gate."
             },
         ),
+        "use_optigan": (
+            False,
+            {
+                "doc": "Flag to turn on OptiGAN. This replaces the optical photon generation and detection with a trained GAN model."
+            }
+        ),
         "energy_range_min": (
             None,
             {
