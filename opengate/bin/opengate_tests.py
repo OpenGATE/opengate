@@ -156,7 +156,7 @@ def go(test_id, random_tests):
         + str(sys.version_info[1])
         + ".json"
     )
-    with open(outputJsonFile, 'w') as fp:
+    with open(outputJsonFile, "w") as fp:
         json.dump(dictFiles, fp, indent=4)
     print(not failure)
 
