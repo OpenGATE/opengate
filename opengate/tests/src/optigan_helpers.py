@@ -1,4 +1,10 @@
 import uproot
+import opengate.tests.utility as tu
+import os
+import shutil
+import pandas as pd
+
+paths = tu.get_default_test_paths(__file__, "")
 
 class OptiganHelpers:
     """
@@ -31,6 +37,45 @@ class OptiganHelpers:
             num_optical_photons = detail['optical_photon_count']
             print(f"Event ID: {event_id}, Gamma Position: {gamma_pos}, Number of Electrons: {num_electrons}, Number of Optical Photons: {num_optical_photons}")
             print()
+    
+    def save_optigan_inputs(self):
+        print("We are inside save_optigan_inputs function")
+
+        optigan_input_folder = os.path.join(paths.data, "optigan_inputs")
+
+        # check if the folder exists
+        if os.path.exists(optigan_input_folder):
+            # delete all files in the folder
+            shutil.rmtree(optigan_input_folder)
+        
+        os.makedirs(optigan_input_folder)
+        
+        print(f"The optigan input files will be saved at {optigan_input_folder}")
+
+
+        for event_id, detail in enumerate(self.extracted_events_details):
+            gamma_pos_x = detail['gamma_position'][0]
+            gamma_pos_y = detail['gamma_position'][1]
+            gamma_pos_z = detail['gamma_position'][2]
+            num_optical_photons = detail['optical_photon_count']
+
+            filename = f"optigan_input_{event_id}.csv"
+            filepath = os.path.join(optigan_input_folder, filename)
+
+            data = {
+                "gamma_pos_x": [gamma_pos_x],
+                "gamma_pos_y": [gamma_pos_y],
+                "gamma_pos_z": [gamma_pos_z],
+                "num_optical_photons": [num_optical_photons]
+            }
+
+            df = pd.DataFrame(data)
+            df.to_csv(filepath, index=False)
+
+            print(f"Event ID: {event_id}, Gamma Position: {gamma_pos_x}, {gamma_pos_y}, {gamma_pos_z}, Number of Optical Photons: {num_optical_photons}")
+            print()
+
+
 
     
     def get_optigan_input(self):
@@ -39,7 +84,8 @@ class OptiganHelpers:
         self.events = self.process_root_output_into_events()
         self.extracted_events_details = self.extract_event_details()
         # self.pretty_print_events()
-        self.print_details_of_events()
+        # self.print_details_of_events()
+        self.save_optigan_inputs()
         return self.extracted_events_details
         
     def process_root_output_into_events(self):
@@ -111,9 +157,11 @@ class OptiganHelpers:
                     # FIX_ME: maybe implement this in process_roo_output func
                     event_info['electron_count'] += 1
                 elif particle['type'] == "opticalphoton":
-                    event_info['optical_photon_count'] = particle['optical_photon_count']  
+                    event_info['optical_photon_count'] = particle['optical_photon_count'] 
 
-            event_details.append(event_info)
+            if event_info['optical_photon_count'] != 0:
+                event_details.append(event_info)
+
         return event_details
           
         # print(f"This is for test.\nThe length of position_x, position_y, position_z, and particle_type are {len(position_x)}, {len(position_y)}, {len(position_z)}, and {len(particle_types)}")
