@@ -460,6 +460,7 @@ class PhysicsManager(GateObject):
                 "doc": "Flag to turn of cuts 'on the fly'. Still under development in Gate."
             },
         ),
+        # added this flag to use for optigan
         "use_optigan": (
             False,
             {
