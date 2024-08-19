@@ -3,7 +3,6 @@
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
-import matplotlib.pyplot as plt
 import numpy as np
 from opengate.tests import utility
 
@@ -22,13 +21,10 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     Ntotal = 10000 * (30 / n_thr) ** 2
     N_per_trhead = Ntotal / ui.number_of_threads
     # units
-    m = gate.g4_units.m
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
     km = gate.g4_units.km
     MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
-    kBq = 1000 * Bq
 
     # add a material database
     # sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -36,7 +32,6 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     #  change world size
     world = sim.world
     world.size = [600 * cm, 500 * cm, 500 * cm]
-    # world.material = "Vacuum"
 
     # waterbox
     phantom = sim.add_volume("Box", "phantom")
@@ -47,7 +42,6 @@ def run_sim(n_thr, c4_ref=None, paths=None):
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMY"
-    # sim.set_cut("world", "all", 1000 * km)
     sim.physics_manager.global_production_cuts.all = 1000 * km
 
     # default source for tests
@@ -238,6 +232,7 @@ if __name__ == "__main__":
         is_ok = True
     else:
         print("Failed because of incorrect calculation of c4 correction function")
+    print()
     if all(is_ok_uncert):
         is_ok = is_ok and True
     else:
