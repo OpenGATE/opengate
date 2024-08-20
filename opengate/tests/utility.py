@@ -25,7 +25,7 @@ from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
 plt = LazyModuleLoader("matplotlib.pyplot")
-phsp = LazyModuleLoader("gatetools.phsp")
+gatetools = LazyModuleLoader("gatetools")
 
 
 def test_ok(is_ok=False):
@@ -646,14 +646,14 @@ def compare_trees(
 ):
     if fig:
         nb_fig = len(keys1)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(keys1)):
         if fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -672,7 +672,7 @@ def compare_trees(
         )
         is_ok = ia and is_ok
     if fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 
@@ -1598,14 +1598,14 @@ def compare_trees4(p1, p2, param):
     ax = None
     if param.fig:
         nb_fig = len(p1.the_keys)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(p2.the_keys)):
         if param.fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -1627,7 +1627,7 @@ def compare_trees4(p1, p2, param):
         )
 
     if param.fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 

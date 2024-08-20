@@ -5,7 +5,7 @@ import gatetools.phsp as phsp
 import os
 from opengate.tests import utility
 from opengate.contrib.tps.treatmentPlanPhsSource import TreatmentPlanPhsSource
-from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
 from pathlib import Path
 
 # units
@@ -18,13 +18,15 @@ MeV = gate.g4_units.MeV
 deg: float = gate.g4_units.deg
 
 
-def create_test_Phs(
+def create_test_phsp(
     particle="proton",
     phs_name=Path("output") / "test_proton.root",
     number_of_particles=1,
-    translation=[0 * mm, 0 * mm, 0 * mm],
+    translation=None,
 ):
     # create the simulation
+    if translation is None:
+        translation = [0 * mm, 0 * mm, 0 * mm]
     sim = gate.Simulation()
 
     # main options
@@ -108,7 +110,7 @@ def create_test_Phs(
     output = sim.output
 
 
-def create_PhS_withoutSource(
+def create_phsp_without_source(
     phs_name=Path("output") / "test_proton.root",
 ):
     # create the simulation
@@ -189,13 +191,13 @@ def create_PhS_withoutSource(
     return sim, plane
 
 
-def test_source_rotation_A(
+def test_source_rotation_a(
     plan_file_name=Path("output") / "test_proton_offset.root",
     phs_list_file_name="PhsList.txt",
     phs_folder_name="",
     phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
-    sim, plane = create_PhS_withoutSource(
+    sim, plane = create_phsp_without_source(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 1
@@ -220,19 +222,14 @@ def test_source_rotation_A(
     plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
     sim.run()
-    output = sim.output
 
 
 def get_first_entry_of_key(
     file_name_root=Path("output") / "test_source_electron.root", key="ParticleName"
-) -> None:
+):
     # read root file
     data_ref, keys_ref, m_ref = phsp.load(file_name_root)
-    # print(data_ref)
-    # print(keys_ref)
     index = keys_ref.index(key)
-    # print(index)
-    # print(data_ref[index][0])
     return data_ref[0][index]
 
 
@@ -247,14 +244,9 @@ def check_value_from_root_file(
         is_ok = utility.check_diff_abs(
             float(value), float(ref_value), tolerance=1e-3, txt=key
         )
-    # utility.check_diff_abs(float(value), float(ref_value), tolerance=1e-6, txt=key)
     else:
         if value == ref_value:
-            # print("Is correct")
             is_ok = True
         else:
-            # print("Is not correct")
             is_ok = False
-    # print("ref_value: ", ref_value)
-    # print("value: ", value)
     return is_ok
