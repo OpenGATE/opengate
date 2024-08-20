@@ -319,7 +319,7 @@ def enable_brem_splitting(sim, linac_name, splitting_factor):
     sim.add_g4_command_after_init(s)
 
 
-def add_electron_source(sim, linac_name, rotation_matrix):
+def add_electron_source(sim, linac_name):
     MeV = g4_units.MeV
     mm = g4_units.mm
     nm = g4_units.nm
@@ -334,12 +334,9 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     source.position.sigma_y = 0.468 * mm
     source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
+    source.direction.momentum = [0, 0, -1]
     source.n = 10
-    # consider linac rotation
-
-    # To be modified ? A change in Linac rotation will normally modify the source direction accordingly
-    dir = np.dot(rotation_matrix, np.array([0, 0, -1]))
-    source.direction.momentum = dir
+    source.direction_relative_to_attached_volume = True
     return source
 
 
