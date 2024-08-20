@@ -319,7 +319,7 @@ def enable_brem_splitting(sim, linac_name, splitting_factor):
     sim.add_g4_command_after_init(s)
 
 
-def add_electron_source(sim, linac_name, rotation_matrix):
+def add_electron_source(sim, linac_name):
     MeV = g4_units.MeV
     mm = g4_units.mm
     nm = g4_units.nm
@@ -334,12 +334,9 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     source.position.sigma_y = 0.468 * mm
     source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
+    source.direction.momentum = [0, 0, -1]
     source.n = 10
-    # consider linac rotation
-
-    # To be modified ? A change in Linac rotation will normally modify the source direction accordingly
-    dir = np.dot(rotation_matrix, np.array([0, 0, -1]))
-    source.direction.momentum = dir
+    source.direction_relative_to_attached_volume = True
     return source
 
 
@@ -626,13 +623,33 @@ def add_mlc(sim, linac_name):
 
     for i in range(len(mlc_p_1)):
         mlc_p_1[i] += np.array(
-            [-leaf_lenght / 2, leaf_width + interleaf_gap, z_linac / 2 - center_mlc]
+            [
+                -leaf_lenght / 2,
+                leaf_width + interleaf_gap - (leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
         )
-        mlc_o_1[i] += np.array([-leaf_lenght / 2, 0, z_linac / 2 - center_mlc])
+        mlc_o_1[i] += np.array(
+            [
+                -leaf_lenght / 2,
+                -(leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
+        )
         mlc_p_2[i] += np.array(
-            [leaf_lenght / 2, leaf_width + interleaf_gap, z_linac / 2 - center_mlc]
+            [
+                leaf_lenght / 2,
+                leaf_width + interleaf_gap - (leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
         )
-        mlc_o_2[i] += np.array([leaf_lenght / 2, 0, z_linac / 2 - center_mlc])
+        mlc_o_2[i] += np.array(
+            [
+                leaf_lenght / 2,
+                -(leaf_width + interleaf_gap) / 2,
+                z_linac / 2 - center_mlc,
+            ]
+        )
 
     leaf_p_1.translation = mlc_p_1
     leaf_o_1.translation = mlc_o_1
@@ -1149,14 +1166,7 @@ def mlc_leaves_translation(
         for i in range(len(mlc)):
             translation_mlc.append(np.copy(mlc[i]["translation"]))
             motion_leaves_t[i].append(
-                translation_mlc[i]
-                + np.array(
-                    [
-                        leaves_position[n, i] * fact_iso,
-                        -0.88 * mm - 0.045 * mm,
-                        0.5 * z_linac - center_mlc,
-                    ]
-                )
+                translation_mlc[i] + np.array([leaves_position[n, i] * fact_iso, 0, 0])
             )
             motion_leaves_r[i].append(np.identity(3))
 
