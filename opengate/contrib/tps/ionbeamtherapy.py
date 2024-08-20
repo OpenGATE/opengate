@@ -10,11 +10,9 @@ import pydicom
 import os
 import re
 import numpy as np
+import logging
 from scipy.spatial.transform import Rotation
 import opengate as gate
-
-# from utils.dose_info import dose_info
-import logging
 
 logger = logging.getLogger(__name__)
 

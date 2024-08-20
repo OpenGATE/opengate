@@ -1,18 +1,13 @@
-import numpy as np
 from scipy.spatial.transform import Rotation
-import opengate as gate
 import opengate_core
-
-
 from opengate.contrib.tps.ionbeamtherapy import *
-
 import os
-
-# TreatmentPlanSource
 
 
 class TreatmentPlanPhsSource(TreatmentPlanSource):
+
     def __init__(self, name, sim):
+        super().__init__(name, sim)
         self.name = name
         self.rotation = Rotation.identity()
         self.translation = [0, 0, 0]

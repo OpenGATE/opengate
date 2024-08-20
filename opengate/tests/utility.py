@@ -10,16 +10,22 @@ import pathlib
 import uproot
 import sys
 from pathlib import Path
-import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
-import gatetools.phsp as phsp
 from matplotlib.patches import Circle
+import gatetools.phsp
 
-from ..utility import g4_units, ensure_filename_is_str, insert_suffix_before_extension
+from ..utility import (
+    g4_units,
+    ensure_filename_is_str,
+    insert_suffix_before_extension,
+    LazyModuleLoader,
+)
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array, write_itk_image
 from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
+
+plt = LazyModuleLoader("matplotlib.pyplot")
 
 
 def test_ok(is_ok=False):
@@ -399,7 +405,7 @@ def assert_filtered_imagesprofile1D(
         f"Evaluate only data from entry up to peak position of reference filter image\n"
         f"Evaluated {d1.size} elements out of {data1.size} \n"
         f"Mean deviation: {mean_deviation:.2f} % | (tolerance is {tolerance :.2f} %) \n"
-        f"Max unsigned deviation: {max_deviation:.2f} % | (tolerance is {2*tolerance :.2f} % \n\n"
+        f"Max unsigned deviation: {max_deviation:.2f} % | (tolerance is {2 * tolerance :.2f} % \n\n"
         f" ",
     )
 
@@ -640,14 +646,14 @@ def compare_trees(
 ):
     if fig:
         nb_fig = len(keys1)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(keys1)):
         if fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -666,7 +672,7 @@ def compare_trees(
         )
         is_ok = ia and is_ok
     if fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 
@@ -884,7 +890,6 @@ def dict_compare(d1, d2):
 
 # Edit by Andreas and Martina
 def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False):
-
     # Extract gauss param along the two dim of each plane
     sigma_values = []
     mu_values = []
@@ -1593,14 +1598,14 @@ def compare_trees4(p1, p2, param):
     ax = None
     if param.fig:
         nb_fig = len(p1.the_keys)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(p2.the_keys)):
         if param.fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -1622,7 +1627,7 @@ def compare_trees4(p1, p2, param):
         )
 
     if param.fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 
