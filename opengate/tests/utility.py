@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 from matplotlib.ticker import StrMethodFormatter
 from matplotlib.patches import Circle
+import gatetools.phsp
 
 from ..utility import (
     g4_units,
@@ -25,7 +26,6 @@ from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
 plt = LazyModuleLoader("matplotlib.pyplot")
-gatetools = LazyModuleLoader("gatetools")
 
 
 def test_ok(is_ok=False):
