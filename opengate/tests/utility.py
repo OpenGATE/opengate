@@ -10,16 +10,22 @@ import pathlib
 import uproot
 import sys
 from pathlib import Path
-import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
-import gatetools.phsp as phsp
 from matplotlib.patches import Circle
 
-from ..utility import g4_units, ensure_filename_is_str, insert_suffix_before_extension
+from ..utility import (
+    g4_units,
+    ensure_filename_is_str,
+    insert_suffix_before_extension,
+    LazyModuleLoader,
+)
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array, write_itk_image
 from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
+
+plt = LazyModuleLoader("matplotlib.pyplot")
+phsp = LazyModuleLoader("gatetools.phsp")
 
 
 def test_ok(is_ok=False):
@@ -399,7 +405,7 @@ def assert_filtered_imagesprofile1D(
         f"Evaluate only data from entry up to peak position of reference filter image\n"
         f"Evaluated {d1.size} elements out of {data1.size} \n"
         f"Mean deviation: {mean_deviation:.2f} % | (tolerance is {tolerance :.2f} %) \n"
-        f"Max unsigned deviation: {max_deviation:.2f} % | (tolerance is {2*tolerance :.2f} % \n\n"
+        f"Max unsigned deviation: {max_deviation:.2f} % | (tolerance is {2 * tolerance :.2f} % \n\n"
         f" ",
     )
 
@@ -884,7 +890,6 @@ def dict_compare(d1, d2):
 
 # Edit by Andreas and Martina
 def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False):
-
     # Extract gauss param along the two dim of each plane
     sigma_values = []
     mu_values = []

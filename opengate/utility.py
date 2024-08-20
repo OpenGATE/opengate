@@ -13,11 +13,42 @@ import string
 import os
 import re
 import json
+import importlib
+import importlib.util
 from importlib.metadata import version
-import git
 
 import opengate_core as g4
 from .exception import fatal
+
+
+class LazyModuleLoader:
+    """
+    Lazy loading allows you to delay the loading of a module until it's actually needed.
+    This can be useful if a module is expensive to load or if it may not be used in
+    every execution of the program.
+    We use it for some modules that was found to delay the startup time, in particular:
+    - radioactivedecay and pandas in phidsources
+    - torch and gaga in gansources (only required for some features)
+    """
+
+    def __init__(self, module_name):
+        self.module_name = module_name
+        self.module = None
+
+    def __getattr__(self, name):
+        if self.module is None:
+            # Check module existence and import it
+            try:
+                self.module = importlib.import_module(self.module_name)
+            except ModuleNotFoundError:
+                fatal(
+                    f"The module '{self.module_name}' is not installed. "
+                    f"Please install it before proceeding."
+                )
+        return getattr(self.module, name)
+
+
+git = LazyModuleLoader("git")
 
 
 def assert_equal_dic(d1, d2, name=""):
@@ -106,7 +137,7 @@ def assert_unique_element_name(elements, name):
 
 def make_builders(class_names):
     """
-    Consider a list of Classname. For each, it build a key/value, with:
+    Consider a list of Classname. For each, it builds a key/value, with:
     - the type of the class as key
     - and a lambda function that create an object of this class as value
     """
@@ -268,7 +299,7 @@ def print_opengate_info():
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
     print(f"Geant4 GDML      {gi.get_G4GDML()}")
-    print(f"Geant4 date      {gi.get_G4Date().replace(')','').replace('(','')}")
+    print(f"Geant4 date      {gi.get_G4Date().replace(')', '').replace('(', '')}")
     print(f"Geant4 data      {g4.get_g4_data_folder()}")
 
     print(f"ITK version      {gi.get_ITKVersion()}")

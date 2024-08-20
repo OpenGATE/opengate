@@ -13,6 +13,11 @@ from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
 from scipy.spatial.transform import Rotation
+from ..utility import LazyModuleLoader
+
+#
+torch = LazyModuleLoader("torch")
+gaga = LazyModuleLoader("gaga_phsp")
 
 
 def import_gaga_phsp():
@@ -394,7 +399,7 @@ class GANSourceDefaultGenerator:
 
     def __init__(self, user_info):
         self.user_info = user_info
-        self.gaga = None
+        # self.gaga = None
         self.indexes_are_build = None
         self.lock = None
         self.initialize_is_done = False
@@ -404,18 +409,13 @@ class GANSourceDefaultGenerator:
 
     def __getstate__(self):
         self.lock = None
-        self.gaga = None
+        # self.gaga = None
         self.gan_info = None
         return self.__dict__
 
     def initialize(self):
         self.lock = threading.Lock()
         with self.lock:
-            if self.gaga is None:
-                self.gaga = import_gaga_phsp()
-            if self.gaga is None:
-                print("Cannot run GANSource, gaga_phsp not installed?")
-                sys.exit()
             self.gpu_mode = self.user_info.gpu_mode
             if not self.initialize_is_done:
                 self.read_gan_and_keys()
@@ -430,7 +430,7 @@ class GANSourceDefaultGenerator:
         # read pth and create the gan info structure
         self.gan_info = Box()
         g = self.gan_info
-        g.params, g.G, g.D, g.optim = self.gaga.load(
+        g.params, g.G, g.D, g.optim = gaga.load(
             self.user_info.pth_filename, self.gpu_mode
         )
 
@@ -580,7 +580,7 @@ class GANSourceDefaultGenerator:
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples_non_cond(
+        fake = gaga.generate_samples_non_cond(
             g.params,
             g.G,
             n=n,
@@ -688,7 +688,6 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
 
     def __getstate__(self):
         self.lock = None
-        self.gaga = None
         self.gan_info = None
         return self.__dict__
 
@@ -750,7 +749,7 @@ class GANSourceDefaultPairsGenerator(GANSourceDefaultGenerator):
             print(f"Generate {n} particles from GAN ", end="")
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples_non_cond(
+        fake = gaga.generate_samples_non_cond(
             g.params,
             g.G,
             n=n,
@@ -898,7 +897,7 @@ class GANSourceConditionalGenerator(GANSourceDefaultGenerator):
             # needed by test 047
             fake = cond
         else:
-            fake = self.gaga.generate_samples3(
+            fake = gaga.generate_samples3(
                 g.params,
                 g.G,
                 n=n,
@@ -944,7 +943,6 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
     def __getstate__(self):
         # needed to not pickle. Need to reset some attributes
         self.gan = None
-        self.gaga = None
         self.generate_condition = None
         self.lock = None
         return self.__dict__
@@ -972,9 +970,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
         cond = self.generate_condition(n)
 
         # generate samples (this is the most time-consuming part)
-        fake = self.gaga.generate_samples3(
-            g.params, g.G, to_numpy=False, n=n, cond=cond
-        )
+        fake = gaga.generate_samples3(g.params, g.G, to_numpy=False, n=n, cond=cond)
 
         # parametrisation
         keys = g.params["keys_list"]
@@ -987,7 +983,7 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
             "radius": self.sphere_radius,
             "ignore_directions": False,
         }
-        fake = self.gaga.from_tlor_to_pairs(fake, params)
+        fake = gaga.from_tlor_to_pairs(fake, params)
         keys = params["keys_output"]
         g.params["keys_output"] = keys
 

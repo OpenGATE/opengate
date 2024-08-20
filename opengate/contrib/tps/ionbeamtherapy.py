@@ -10,11 +10,12 @@ import pydicom
 import os
 import re
 import numpy as np
-from scipy.spatial.transform import Rotation
-import opengate as gate
-
-# from utils.dose_info import dose_info
 import logging
+
+import opengate as gate
+from ...utility import LazyModuleLoader
+
+Rotation = LazyModuleLoader("scipy.spatial.transform.Rotation")
 
 logger = logging.getLogger(__name__)
 
