@@ -1,5 +1,10 @@
 from .arfactors import ARFActor, ARFTrainingDatasetActor
-from .doseactors import DoseActor, LETActor, FluenceActor
+from .doseactors import (
+    DoseActor,
+    DoseActorSecondariesFromPhotons,
+    LETActor,
+    FluenceActor,
+)
 from .digitizers import (
     DigitizerAdderActor,
     DigitizerReadoutActor,
@@ -17,8 +22,10 @@ from .miscactors import (
     SourceInfoActor,
     TestActor,
     KillActor,
+    KillInteractingParticleActor,
     BremSplittingActor,
     ComptSplittingActor,
+    KillNonInteractingParticleActor,
 )
 from .dynamicactors import DynamicGeometryActor
 from ..utility import make_builders
@@ -27,6 +34,7 @@ from ..utility import make_builders
 actor_type_names = {
     SimulationStatisticsActor,
     DoseActor,
+    DoseActorSecondariesFromPhotons,
     FluenceActor,
     LETActor,
     SourceInfoActor,
@@ -44,8 +52,10 @@ actor_type_names = {
     ARFTrainingDatasetActor,
     TestActor,
     KillActor,
+    KillInteractingParticleActor,
     BremSplittingActor,
     ComptSplittingActor,
+    KillNonInteractingParticleActor,
     DynamicGeometryActor,
 }
 actor_builders = make_builders(actor_type_names)

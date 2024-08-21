@@ -292,6 +292,8 @@ void init_GateKineticEnergyFilter(py::module &);
 
 void init_GateDoseActor(py::module &m);
 
+void init_GateDoseActorSecondariesFromPhotons(py::module &m);
+
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
@@ -301,6 +303,10 @@ void init_GateARFActor(py::module &m);
 void init_GateARFTrainingDatasetActor(py::module &m);
 
 void init_GateKillActor(py::module &);
+
+void init_GateKillInteractingParticleActor(py::module &);
+
+void init_GateKillNonInteractingParticleActor(py::module &);
 
 void init_itk_image(py::module &);
 
@@ -554,6 +560,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateEventAction(m);
   init_GateTrackingAction(m);
   init_GateDoseActor(m);
+  init_GateDoseActorSecondariesFromPhotons(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateSimulationStatisticsActor(m);
@@ -573,6 +580,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
+  init_GateKillInteractingParticleActor(m);
+  init_GateKillNonInteractingParticleActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
