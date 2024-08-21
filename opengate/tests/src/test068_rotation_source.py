@@ -103,7 +103,7 @@ if __name__ == "__main__":
     source3.direction.type = "iso"
     source3.direction.theta = [0 * deg, 10 * deg]
     source3.direction.phi = [0 * deg, 360 * deg]
-    source3.direction_relative_to_volume = True
+    source3.direction_relative_to_attached_volume = True
     source3.energy.type = "mono"
     source3.energy.mono = 1 * MeV
     source3.activity = n * Bq / sim.number_of_threads

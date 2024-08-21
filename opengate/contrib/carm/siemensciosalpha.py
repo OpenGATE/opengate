@@ -106,7 +106,7 @@ class Ciosalpha:
         source.position.type = "disc"
         source.position.radius = 0 * mm
 
-        source.direction_relative_to_volume = True
+        source.direction_relative_to_attached_volume = True
         source.direction.type = "histogram"
         source.direction.histogram_theta_weight = [0, 1]
         source.direction.histogram_theta_angle = [85 * deg, 95 * deg]
