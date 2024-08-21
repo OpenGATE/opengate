@@ -10,15 +10,14 @@
 
 #include "G4AffineTransform.hh"
 #include "G4ParticleDefinition.hh"
-#include "G4SPSAngDistribution.hh"
 #include "G4VPrimaryGenerator.hh"
 #include "GateAcceptanceAngleTester.h"
 #include "GateAcceptanceAngleTesterManager.h"
 #include "GateHelpers.h"
+#include "GateRandomMultiGauss.h"
+#include "GateSPSAngDistribution.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
-
-#include "GateRandomMultiGauss.h"
 
 /*
     Single Particle Source generator.
@@ -37,7 +36,7 @@ public:
 
   GateSPSPosDistribution *GetPosDist() { return fPositionGenerator; }
 
-  G4SPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
+  GateSPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
 
   GateSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
 
@@ -62,7 +61,7 @@ protected:
   double fCharge;
   double fMass;
   GateSPSPosDistribution *fPositionGenerator;
-  G4SPSAngDistribution *fDirectionGenerator;
+  GateSPSAngDistribution *fDirectionGenerator;
   GateSPSEneDistribution *fEnergyGenerator;
   G4SPSRandomGenerator *fBiasRndm;
   bool fAccolinearityFlag;

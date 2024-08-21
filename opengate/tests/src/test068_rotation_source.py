@@ -8,7 +8,7 @@ import numpy as np
 import uproot
 
 
-# The test generates two different generic sources, momentum and focused, which is attached to a plan.
+# The test generates three differents generic sources, momentum, focused and iso, which are attached to a plan.
 # The plan is randomly rotated and we verify that the generated particles have a direction which is in accordance
 # with the applied rotations and the transmissions.
 
@@ -50,6 +50,7 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
     sec = gate.g4_units.s
     gcm3 = gate.g4_units["g/cm3"]
+    deg = gate.g4_units.deg
 
     #  adapt world size
     world = sim.world
@@ -60,7 +61,7 @@ if __name__ == "__main__":
     n = 100
 
     # Plan to attach the source
-    nb_source = 2
+    nb_source = 3
     plan = sim.add_volume("Box", "source_plan")
     plan.mother = world.name
     plan.material = "G4_Galactic"
@@ -92,6 +93,20 @@ if __name__ == "__main__":
     source2.energy.type = "mono"
     source2.energy.mono = 1 * MeV
     source2.activity = n * Bq / sim.number_of_threads
+
+    source3 = sim.add_source("GenericSource", "photon_source_3")
+    source3.particle = "gamma"
+    source3.position.type = "disc"
+    source3.position.radius = 0 * mm
+    source3.mother = plan.name
+    source3.position.size = [10 * cm, 10 * cm, 1 * nm]
+    source3.direction.type = "iso"
+    source3.direction.theta = [0 * deg, 10 * deg]
+    source3.direction.phi = [0 * deg, 360 * deg]
+    source3.direction_relative_to_attached_volume = True
+    source3.energy.type = "mono"
+    source3.energy.mono = 1 * MeV
+    source3.activity = n * Bq / sim.number_of_threads
 
     # Phase Space
 
@@ -171,5 +186,5 @@ if __name__ == "__main__":
         + str(int(+3 * err + nb_run * nb_part * nb_source))
         + "]"
     )
-    is_ok = test068(arr, len(sim.run_timing_intervals), nb_part, 2)
+    is_ok = test068(arr, len(sim.run_timing_intervals), nb_part, nb_source)
     utility.test_ok(is_ok)

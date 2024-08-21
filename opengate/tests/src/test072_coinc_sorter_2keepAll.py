@@ -7,6 +7,8 @@ from opengate.actors.coincidences import (
     coincidences_sorter,
     copy_tree_for_dump,
 )
+import os
+import subprocess
 import uproot
 
 if __name__ == "__main__":
@@ -14,6 +16,13 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, output_folder="test072_coinc_sorter"
     )
+
+    # The test needs the output of test072_coinc_sorter_1.py
+    # If the output of test072_coinc_sorter_1.py does not exist, create it
+    if not os.path.isfile(paths.output / "test72_output_1.root"):
+        print("---------- Begin of test072_coinc_sorter_1.py ----------")
+        subprocess.call(["python", paths.current / "test072_coinc_sorter_1.py"])
+        print("----------- End of test072_coinc_sorter_1.py -----------")
 
     # open root file
     root_filename = paths.output / "test72_output_1.root"
