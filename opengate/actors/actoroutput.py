@@ -341,8 +341,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
         if isinstance(data, self.data_container_class):
             data_item = data
+            data_item.belongs_to = self
         else:
-            data_item = self.data_container_class(data=data)
+            data_item = self.data_container_class(belongs_to=self, data=data)
         # FIXME: use store_data if target data exists, otherwise create new container
         if which == "merged":
             self.merged_data = data_item
