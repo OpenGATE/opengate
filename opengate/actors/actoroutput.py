@@ -150,7 +150,11 @@ class ActorOutputBase(GateObject):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def initialize(self):
-        if (self.output_filename == "" or self.output_filename is None) and self.write_to_disk is True:
+        self.initialize_output_filename()
+
+    def initialize_output_filename(self):
+        write_to_disk_any = any([v['write_to_disk'] for v in self.data_write_config.values()])
+        if (self.output_filename == "" or self.output_filename is None) and write_to_disk_any is True:
             fatal(f"The actor output {self.name} of actor {self.belongs_to_actor.type_name} has write_to_disk=True, "
                   f"but output_filename={self.output_filename}. "
                   f"Set output_filename='auto' to let GATE generate it automatically, "
