@@ -18,13 +18,13 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # analyse 1
-    is_ok = analyse(sim.output)
+    is_ok = analyse(sim)
 
     # run in MT
     sim.number_of_threads = 2
     sim.run(start_new_process=True)
 
     # analyse 2
-    is_ok = analyse(sim.output) and is_ok
+    is_ok = analyse(sim) and is_ok
 
     utility.test_ok(is_ok)

@@ -12,6 +12,8 @@ def create_simulation(sim, paths, name):
     mm = gate.g4_units.mm
     nm = gate.g4_units.nm
 
+    sim.output_dir = paths.output
+
     # waterworld
     world = sim.world
     world.size = [100 * m, 100 * m, 100 * m]
@@ -51,19 +53,20 @@ def create_simulation(sim, paths, name):
         "ProcessDefinedStep",
     ]
     phsp.debug = False
-    phsp.output = paths.output / f"test061_{name}.root"
+    phsp.output_filename = f"test061_{name}.root"
 
 
-def analyse(output):
+def analyse(simulation):
     # end
-    stats = output.get_actor("stats")
+    stats = simulation.actor_manager.get_actor("stats")
     print(stats)
 
     # open root file
-    phsp = output.get_actor("phsp").user_info
-    root_ref = phsp.output
-    root = uproot.open(root_ref)
+    phsp = simulation.actor_manager.get_actor("phsp")
+    root = uproot.open(phsp.get_output_path())
     tree = root[root.keys()[0]]
+
+    print(f"phsp.number_of_absorbed_events: {phsp.number_of_absorbed_events}")
 
     # Get the arrays from the tree
     events = tree.arrays(
@@ -98,7 +101,7 @@ def analyse(output):
             if pid in parent_by_track:
                 parent_particle_array_ref[lindex] = parent_by_track[pid]
             else:
-                # the events are not store in the phsp because they do not do a single step,
+                # the events are not stored in the phsp because they do not do a single step,
                 # for the test we force to Ac225
                 parent_particle_array_ref[lindex] = "Ac225"
             ok = parent_particle_array_ref[lindex] == parent_particle_array[lindex]
