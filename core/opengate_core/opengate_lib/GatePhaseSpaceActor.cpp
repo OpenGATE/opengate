@@ -24,6 +24,8 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+  fTotalNumberOfEntries = 0;
+  fNumberOfAbsorbedEvents = 0;
 }
 
 GatePhaseSpaceActor::~GatePhaseSpaceActor() {

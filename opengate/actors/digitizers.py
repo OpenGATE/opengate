@@ -995,12 +995,12 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputRoot, "phsp")
+        self.total_number_of_entries = 0
+        self.number_of_absorbed_events = 0
         self.__initcpp__()
 
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
-        self.fNumberOfAbsorbedEvents = 0
-        self.fTotalNumberOfEntries = 0
 
     def __getstate__(self):
         # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
@@ -1015,9 +1015,9 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        self.fNumberOfAbsorbedEvents = self.GetNumberOfAbsorbedEvents()
-        self.fTotalNumberOfEntries = self.GetTotalNumberOfEntries()
-        if self.fTotalNumberOfEntries == 0:
+        self.number_of_absorbed_events = self.GetNumberOfAbsorbedEvents()
+        self.total_number_of_entries = self.GetTotalNumberOfEntries()
+        if self.total_number_of_entries == 0:
             warning(
                 f"Empty output, no particles stored in {self.user_output.phsp.get_output_path()}"
             )
