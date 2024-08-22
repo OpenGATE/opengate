@@ -1138,6 +1138,9 @@ class VolumeManager(GateObject):
             s += indent(2, f"\n{vol}")
         return s
 
+    def print_volumes(self):
+        print(self.dump_volumes())
+
     def dump_volume_tree(self):
         self.update_volume_tree_if_needed()
         s = ""
