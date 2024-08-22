@@ -390,7 +390,10 @@ class GateObject:
         )
         for k, v in self.user_info.items():
             if k != "name":
-                ret_string += f"{__one_indent__}{k}:\n{2 * __one_indent__}{v}\n"
+                ret_string += f"{__one_indent__}{k}"
+                if 'deprecated' in self.inherited_user_info_defaults[k][1]:
+                    ret_string += " (deprecated)"
+                ret_string += f":\n{2 * __one_indent__}{v}\n"
         ret_string += "***\n"
         return ret_string
 
