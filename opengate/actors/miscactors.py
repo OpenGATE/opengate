@@ -163,7 +163,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateSimulationStatisticsActor.__init__(self, {"name": self.name})
+        g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def __str__(self):
