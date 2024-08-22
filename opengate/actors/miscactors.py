@@ -64,6 +64,11 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def store_data(self, data):
         self.merged_data.update(data)
 
+    def get_data(self):
+        # the statistics actor currently only handles merged data, so we return it
+        # no input variable 'which' as in other output classes
+        return self.merged_data
+
     def get_processed_output(self):
         d = {}
         d["runs"] = {"value": self.merged_data.run_count, "unit": None}
