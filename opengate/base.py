@@ -26,8 +26,9 @@ class MetaSingletonFatal(type):
             return MetaSingletonFatal._instances[cls]
         else:
             fatal(
-                f"You are trying to create another instance of {cls.__name__}, but an instance also exists "
+                f"You are trying to create another instance of {cls.__name__}, but an instance already exists "
                 f"in this process. Only one instance per process can be created. "
+                f"Please open a new python session and run the simulation again. "
             )
 
 
