@@ -378,6 +378,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             True,
             {
                 "doc": "FIXME",
+                "deprecated": "Use: my_actor.user_output.square.active=True/False "
+                              "to request uncertainty scoring of the respective quantity, "
+                              "where 'my_actor' should be your actor object. "
+                              "Note: activating user_output.edep_uncertainty or user_output.dose_uncertainty "
+                              "implies activating user_output.square. "
             },
         ),
         "uncertainty": (
