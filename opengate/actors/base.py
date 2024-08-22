@@ -208,13 +208,19 @@ class ActorBase(GateObject):
             list(self.user_output.values())[0].output_filename = filename
 
     @property
-    @shortcut_for_single_output_actor
     def write_to_disk(self):
-        return list(self.user_output.values())[0].write_to_disk
+        if len(self.user_output) > 1:
+            return Box([(k, v.write_to_disk) for k, v in self.user_output.items()])
+        else:
+            return list(self.user_output.values())[0].write_to_disk
 
     @write_to_disk.setter
     def write_to_disk(self, write_to_disk):
-        list(self.user_output.values())[0].write_to_disk = write_to_disk
+        if len(self.user_output) > 1:
+            for k, v in self.user_output.items():
+                v.write_to_disk = write_to_disk
+        else:
+            list(self.user_output.values())[0].write_to_disk = write_to_disk
 
     @property
     @shortcut_for_single_output_actor
