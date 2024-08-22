@@ -224,10 +224,14 @@ class KillActor(ActorBase, g4.GateKillActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self.number_of_killed_particles = 0
         self.__initcpp__()
 
     def __initcpp__(self):
         g4.GateKillActor.__init__(self, {"name": self.name})
+
+    def EndSimulationAction(self):
+        self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
 
