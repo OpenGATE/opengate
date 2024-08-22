@@ -819,10 +819,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
     def __initcpp__(self):
         g4.GateFluenceActor.__init__(self, self.user_info)
-        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
-
-    def __getstate__(self):
-        return VoxelDepositActor.__getstate__(self)
+        self.AddActions({"BeginOfRunActionMasterThread",
+                         "EndOfRunActionMasterThread",
+                         "EndSimulationAction"})
 
     def initialize(self):
         VoxelDepositActor.initialize(self)
