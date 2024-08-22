@@ -810,7 +810,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     }
 
     def __init__(self, *args, **kwargs):
-        VoxelDepositActor.__init__(self)
+        VoxelDepositActor.__init__(self, *args, **kwargs)
 
         # self.py_fluence_image = None
         self._add_user_output(ActorOutputSingleImage, "fluence")
