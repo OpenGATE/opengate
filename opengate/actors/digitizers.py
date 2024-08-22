@@ -239,7 +239,7 @@ class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
         "output": (
             "singles.root",
             {
-                "doc": "Output path - will become obsolete soon. ",
+                "deprecated": "Use output_filename instead. ",
             },
         ),
         "input_digi_collection": (
