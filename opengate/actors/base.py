@@ -218,6 +218,15 @@ class ActorBase(GateObject):
 
     @property
     @shortcut_for_single_output_actor
+    def extra_suffix(self):
+        return list(self.user_output.values())[0].extra_suffix
+
+    @extra_suffix.setter
+    def extra_suffix(self, extra_suffix):
+        list(self.user_output.values())[0].extra_suffix = extra_suffix
+
+    @property
+    @shortcut_for_single_output_actor
     def data_write_config(self):
         return list(self.user_output.values())[0].data_write_config
 
