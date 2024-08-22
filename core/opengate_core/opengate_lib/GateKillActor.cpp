@@ -14,8 +14,6 @@ G4Mutex SetNbKillMutex = G4MUTEX_INITIALIZER;
 
 GateKillActor::GateKillActor(py::dict &user_info)
     : GateVActor(user_info, true) {
-  fActions.insert("StartSimulationAction");
-  fActions.insert("SteppingAction");
   fNbOfKilledParticles = 0;
 }
 
