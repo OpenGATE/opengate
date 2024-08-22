@@ -1164,6 +1164,9 @@ class VolumeManager(GateObject):
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
 
+    def print_material_database_names(self):
+        print(self.dump_material_database_names())
+
 
 def setter_hook_verbose_level(self, verbose_level):
     try:
