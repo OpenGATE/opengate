@@ -120,6 +120,7 @@ public:
   // function
   //  std::string GetOutputPathString(std::string output_type, int run_index);
 
+  inline static std::string fOutputNameRoot = "root_output";
 
   struct ActorOutputInfo {
     std::string outputName;
