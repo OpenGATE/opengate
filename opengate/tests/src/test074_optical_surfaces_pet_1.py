@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     # add phase actor
     phase = sim.add_actor("PhaseSpaceActor", "Phase")
-    phase.mother = crystal.name
+    phase.attached_to = crystal
     phase.attributes = [
         "Position",
         "PostPosition",
