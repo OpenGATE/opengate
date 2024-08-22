@@ -51,32 +51,32 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
 void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInput(user_info);
-  //  Option: compute uncertainty
-  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
+//  //  Option: compute uncertainty
+//  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
   fSquareFlag = DictGetBool(user_info, "square");
-  // Option: compute dose in Gray
-  fDoseFlag = DictGetBool(user_info, "dose");
+//  // Option: compute dose in Gray
+//  fDoseFlag = DictGetBool(user_info, "dose");
   // Option: compute dose to water
   fScoreIn = DictGetBool(user_info, "score_in");
-  // Option: calculate only edep/edepToWater, and divide by mass image on python
-  // side
-  fOnFlyCalcFlag = DictGetBool(user_info, "dose_calc_on_the_fly");
+//  // Option: calculate only edep/edepToWater, and divide by mass image on python
+//  // side
+//  fOnFlyCalcFlag = DictGetBool(user_info, "dose_calc_on_the_fly");
 
-  // Option to stop the simulation when a stat goal is reached (for now only
-  // uncertainty goal)
-  goalUncertainty = DictGetDouble(user_info, "goal_uncertainty");
+//  // Option to stop the simulation when a stat goal is reached (for now only
+//  // uncertainty goal)
+//  goalUncertainty = DictGetDouble(user_info, "goal_uncertainty");
   threshEdepPerc = DictGetDouble(user_info, "thresh_voxel_edep_for_unc_calc");
 
   // translation
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
   fHitType = DictGetStr(user_info, "hit_type");
-  // Option: make a copy of the image for each thread, instead of writing on
-  // same image
-  fcpImageForThreadsFlag = DictGetBool(user_info, "use_more_ram");
-  // Option: calculate the standard error of the mean
-  fSTEofMeanFlag = DictGetBool(user_info, "ste_of_mean");
+//  // Option: make a copy of the image for each thread, instead of writing on
+//  // same image
+//  fcpImageForThreadsFlag = DictGetBool(user_info, "use_more_ram");
+//  // Option: calculate the standard error of the mean
+//  fSTEofMeanFlag = DictGetBool(user_info, "ste_of_mean");
 }
 
 void GateDoseActor::InitializeCpp() {
