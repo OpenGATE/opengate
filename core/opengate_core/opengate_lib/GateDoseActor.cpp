@@ -178,7 +178,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-    auto scoring_quantity = edep;
 
     if (GetToWaterFlag()) {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
@@ -195,7 +194,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       if (p == G4Gamma::Gamma())
         p = G4Electron::Electron();
       auto &emc = fThreadLocalData.Get().emcalc;
-
       dedx_currstep =
           emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
       dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
@@ -204,58 +202,34 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       } else {
         edep *= (dedx_water / dedx_currstep);
       }
-
-      scoring_quantity = edep;
-
-      if (fDoseFlag && fOnFlyCalcFlag) {
-        double density_water = 1.0;
-        density_water = water->GetDensity();
-        auto dose = edep / density_water / fVoxelVolume / CLHEP::gray;
-        scoring_quantity = dose;
-      }
     }
 
-    // Compute the dose in Gray
-    else if (fDoseFlag && fOnFlyCalcFlag) {
-      auto *current_material = step->GetPreStepPoint()->GetMaterial();
-      auto density = current_material->GetDensity();
-      auto dose = edep / density / fVoxelVolume / CLHEP::gray;
-
-      scoring_quantity = dose;
-    }
-
-    int index_flat = sub2ind(index);
+    ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
 
     auto &locald = fThreadLocalData.Get();
-    if (fcpImageForThreadsFlag) {
+    G4AutoLock mutex(&SetPixelMutex);
 
-      locald.edep_worker_flatimg[index_flat] += scoring_quantity;
-
-    } else {
-      G4AutoLock mutex(&SetPixelMutex);
-
-      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
-      // If uncertainty: consider edep per event
-      if (fSquareFlag) {
-        auto event_id =
-            G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-        auto previous_id = locald.lastid_worker_flatimg[index_flat];
-        locald.lastid_worker_flatimg[index_flat] = event_id;
-        if (event_id == previous_id) {
-          // Same event : continue temporary edep
-          locald.edepSquared_worker_flatimg[index_flat] +=
-              edep; // FIXME: why do we add edep to edepSquared
-                    // image? I think bad naming
-        } else {
-          // Different event : update previoupyths and start new event
-          auto e = locald.edepSquared_worker_flatimg[index_flat];
-          ImageAddValue<Image3DType>(cpp_square_image, index, e * e);
-          // new temp value
-          locald.edepSquared_worker_flatimg[index_flat] = edep;
-        }
+    if (fSquareFlag) {
+      int index_flat = sub2ind(index);
+      auto event_id =
+          G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+      auto previous_id = locald.lastid_worker_flatimg[index_flat];
+      locald.lastid_worker_flatimg[index_flat] = event_id;
+      if (event_id == previous_id) {
+        // Same event: sum the deposited energy associated with this event ID
+        // and square once a new event ID is found (case below)
+        locald.edepSquared_worker_flatimg[index_flat] +=
+            edep;
+      } else {
+        // Different event : square deposited energy from the last event ID
+        // and start accumulating deposited energy for this new event ID
+        auto e = locald.edepSquared_worker_flatimg[index_flat];
+        ImageAddValue<Image3DType>(cpp_square_image, index, e * e);
+        // new temp value
+        locald.edepSquared_worker_flatimg[index_flat] = edep;
       }
-    } // else : outside the image
-  }
+    }
+  } // else: outside of the image
 }
 
 // void GateDoseActor::EndSimulationAction() {
