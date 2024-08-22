@@ -93,12 +93,12 @@ void GateDoseActor::InitializeCpp() {
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
-  size_edep = region.GetSize();
-  if (fcpImageForThreadsFlag) {
-    cpp_edep_image->SetRegions(size_edep);
-    cpp_edep_image->Allocate();
-    cpp_edep_image->FillBuffer(0.0);
-  }
+  auto size_edep = region.GetSize();
+
+  cpp_edep_image->SetRegions(size_edep);
+  cpp_edep_image->Allocate();
+  cpp_edep_image->FillBuffer(0.0);
+
   if (fSquareFlag) {
     cpp_square_image->SetRegions(size_edep);
     cpp_square_image->Allocate();
