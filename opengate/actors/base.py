@@ -162,6 +162,24 @@ class ActorBase(GateObject):
         for k, v in d["user_output"].items():
             self.user_output[k].from_dictionary(v)
 
+    def get_output_data(self, output_name=None, **kwargs):
+        if len(self.user_output) > 1:
+            if output_name is None:
+                fatal(f"This actor handles multiple outputs. "
+                      f"Therefore, you need to specify which. "
+                      f"Example: '.get_output_data(output_name='{list(self.user_output.keys())[0]}'). "
+                      f"The available output names are: {list(self.user_output.keys())}"
+                      )
+            try:
+                user_output = self.user_output[output_name]
+            except KeyError:
+                fatal(f"No user output '{output_name}' is handled by the {self.type_name} actor '{self.name}'. "
+                      f"The available output names are: {list(self.user_output.keys())}"
+                      )
+        else:
+            user_output = list(self.user_output.values())[0]
+        return user_output.get_data(**kwargs)
+
     # def _get_error_msg_output_filename(self):
     #     s = (
     #         f"The shortcut attribute output_filename is not available for this actor "
