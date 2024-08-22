@@ -203,7 +203,10 @@ class PhysicsEngine(EngineBase):
         self.g4_physical_volumes = []
         self.g4_surface_properties = None
 
-        # physics constructors implement on the Gate/python side
+        # We need to keep a reference to physics constructors
+        # implemented on the python side
+        # Physics constructor linked via pybind have the nodelete pointer option,
+        # so python will not delete them and no reference needs to be kept
         self.gate_physics_constructors = []
 
         self.optical_surfaces_properties_dict = {}
