@@ -45,16 +45,15 @@ class ActorOutputBase(GateObject):
                 "set via the Simulation.output_dir option. ",
             },
         ),
-        "write_to_disk": (
-            True,
+        "data_write_config": (
+            Box(
+                {0: Box({"suffix": None, "write_to_disk": True})}
+            ),
             {
-                "doc": "Should the data be written to disk?",
-            },
-        ),
-        "extra_suffix": (
-            None,
-            {
-                "doc": "Extra suffix to be appended to file name. ",
+                "doc": "Dictionary (Box) to specify which"
+                       "should be written to disk and how. "
+                       "The default is picked up from the data container class during instantiation, "
+                       "and can be changed by the user afterwards. "
             },
         ),
         "keep_data_in_memory": (
