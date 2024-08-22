@@ -775,6 +775,8 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
     """
 
     user_info_defaults = {
+        # FIXME: implement a setter hook so the user can provided digitizer instances instead of their name,
+        # like in attached_to
         "input_digi_collections": (
             ["Hits"],
             {
