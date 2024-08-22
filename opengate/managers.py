@@ -789,7 +789,7 @@ class PhysicsManager(GateObject):
 
         self.optical_surfaces[name] = OpticalSurface(
             name=name,
-            physics_manager=self,
+            simulation=self.simulation,
             volume_from=volume_from,
             volume_to=volume_to,
             g4_surface_name=g4_surface_name,

@@ -662,14 +662,6 @@ class OpticalSurface(GateObject):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        # Set the physics manager if present in kwargs,
-        # else set to None
-        # FIXME: rely on reference to simulation provided by all GateObjects!
-        try:
-            self.physics_manager = kwargs["physics_manager"]
-        except KeyError:
-            self.physics_manager = None
-
         self.physics_engine = None
 
         # dictionary holding optical surface properties
@@ -683,6 +675,14 @@ class OpticalSurface(GateObject):
         self.g4_logical_border_surface = None
         # Store Geant4 object for material properties table
         self.g4_optical_surface_table = None
+
+    # shortcut for convenience
+    @property
+    def physics_manager(self):
+        if self.simulation is not None:
+            return self.simulation.physics_manager
+        else:
+            return None
 
     def release_g4_references(self):
         self.g4_optical_surface = None
