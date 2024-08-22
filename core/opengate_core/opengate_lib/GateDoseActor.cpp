@@ -261,11 +261,13 @@ double GateDoseActor::ComputeMeanUncertainty() {
   double mean_unc = 0.0;
   int n_voxel_unc = 0;
   double n = 2.0;
-  if (fcpImageForThreadsFlag) {
-    n = NbOfThreads;
-  } else {
-    n = NbOfEvent;
-  }
+//  if (fcpImageForThreadsFlag) {
+//    n = NbOfThreads;
+//  } else {
+//    n = NbOfEvent;
+//  }
+  n = NbOfEvent;
+
 
   if (n < 2.0) {
     n = 2.0;
