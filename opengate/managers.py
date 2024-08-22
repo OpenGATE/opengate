@@ -800,7 +800,7 @@ class PhysicsManager(GateObject):
     def add_region(self, name):
         if name in self.regions.keys():
             fatal("A region with this name already exists.")
-        self.regions[name] = Region(name=name, physics_manager=self)
+        self.regions[name] = Region(name=name, simulation=self.simulation)
         return self.regions[name]
 
     def find_or_create_region(self, volume_name):

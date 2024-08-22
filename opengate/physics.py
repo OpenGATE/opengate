@@ -179,8 +179,6 @@ class Region(GateObject):
 
     def __init__(self, *args, **kwargs) -> None:
         # references to upper hierarchy level
-        # FIXME: should rely on self.simulation via GateObject -> need to update PhysicsManager.add_region()
-        self.physics_manager = kwargs.pop("physics_manager", None)
         super().__init__(*args, **kwargs)
 
         self.physics_engine = None
@@ -199,8 +197,12 @@ class Region(GateObject):
         self._g4_user_limits_initialized = False
         self._g4_production_cuts_initialized = False
 
+    @property
+    def physics_manager(self):
+        return self.simulation.physics_manager
+
     def reset(self):
-        super().__init__(name=self.name, physics_manager=self.physics_manager)
+        super().__init__(name=self.name, simulation=self.simulation)
         self.root_logical_volumes = {}
 
     # this version will work when Volume inherits from GateObject
