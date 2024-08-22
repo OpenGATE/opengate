@@ -843,6 +843,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
+        self._update_output_coordinate_system("fluence", run_index)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 
