@@ -287,10 +287,6 @@ class ActorBase(GateObject):
             warning(f"The actor {self.name} has no active output. ")
 
         for k, v in self.user_output.items():
-            # apply extra suffix defined at actor level to all user output items
-            # unless they have their own specific extra suffix set
-            if self.extra_suffix is not None and v.extra_suffix is None:
-                v.extra_suffix = self.extra_suffix
             v.initialize()
 
         # Create structs on C++ side for each actor output
