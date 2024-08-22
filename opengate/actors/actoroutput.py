@@ -327,8 +327,12 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
 
-    def get_data(self, which, item=None):
-        return self.get_data_container(which).get_data(item)
+    def get_data(self, which="merged", item=None):
+        container = self.get_data_container(which)
+        if container is None:
+            return None
+        else:
+            return container.get_data(item)
 
     def store_data(self, which, *data):
         """data can be either the user data to be wrapped into a DataContainer class or
