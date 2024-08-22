@@ -77,8 +77,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
-    dose.uncertainty = True
-    dose.dose = True
+    dose.user_output.edep_uncertainty.active = True
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
 
