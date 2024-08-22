@@ -98,8 +98,6 @@ class VoxelDepositActor(ActorBase):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        # internal states
-        self.first_run = None
 
     def initialize(self):
         super().initialize()
@@ -109,8 +107,6 @@ class VoxelDepositActor(ActorBase):
         # self.img_origin_during_run = (
         #     -size * spacing / 2.0 + spacing / 2.0 + self.translation
         # )
-        # for initialization during the first run
-        self.first_run = True
 
     def check_user_input(self):
         if self.output_coordinate_system == "attached_to_image":
