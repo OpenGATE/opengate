@@ -438,7 +438,6 @@ class PhysicsListManager(GateObject):
         "G4EmPenelopePhysics",
         "G4EmDNAPhysics",
         "G4OpticalPhysics",
-        "G4GenericBiasingPhysics",
     ]
 
     special_physics_constructor_classes = {}
