@@ -371,11 +371,7 @@ class ActorManager(GateObject):
         n = len(self.actors)
         s = f"Number of Actors: {n}"
         for actor in self.actors.values():
-            if n > 1:
-                a = "\n" + "-" * 20
-            else:
-                a = ""
-            a += f"\n {actor}"
+            a = f"\n- {actor.name}"
             s += indent(2, a)
         return s
 
