@@ -514,9 +514,13 @@ class GateObject:
                     if getattr(type(self), k).fset is not None:
                         setattr(self, k, d["user_info"][k])
                 else:
-                    warning(
-                        f"Could not find user info {k} while populating object {self.name} of type {type(self).__name__} from dictionary."
-                    )
+                    if 'deprecated' not in self.inherited_user_info_defaults[k][1]:
+                        warning(
+                            f"Could not find user info {k} while populating object {self.name} "
+                            f"of type {type(self).__name__} from dictionary. "
+                            f"The reason could be that the user parameter is marked as deprecated. "
+                            f"In that case, simply ignore the warning. "
+                        )
 
 
 class DynamicGateObject(GateObject):
