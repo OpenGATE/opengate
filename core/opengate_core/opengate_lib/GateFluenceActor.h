@@ -39,7 +39,6 @@ public:
 
   // Image type is 3D float by default
   typedef itk::Image<float, 3> Image3DType;
-
   typedef itk::Image<float, 4> Image4DType;
   typedef itk::Image<int, 4> ImageInt4DType;
   using Size4DType = Image4DType::SizeType;
