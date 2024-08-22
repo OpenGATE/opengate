@@ -180,7 +180,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
     auto scoring_quantity = edep;
 
-    if (fScoreIn == "water") {
+    if (GetToWaterFlag()) {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
       double dedx_cut = DBL_MAX;
       // dedx
