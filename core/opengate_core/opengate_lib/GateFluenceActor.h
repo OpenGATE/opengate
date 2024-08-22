@@ -29,6 +29,7 @@ public:
   // This where the scoring takes place
   virtual void SteppingAction(G4Step *) override;
 
+  virtual void BeginOfRunActionMasterThread(int run_id) override;
 
   virtual void BeginOfEventAction(const G4Event *event);
 
