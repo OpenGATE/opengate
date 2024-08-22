@@ -21,8 +21,7 @@ if __name__ == "__main__":
         subprocess.call(["python", paths.current / "test065_sim_as_dict.py"])
 
     # create the simulation
-    sim = gate.Simulation()
-    sim.from_json_file(paths.output / "test065" / "simu_test065.json")
+    sim = gate.create_sim_from_json(paths.output / "test065" / "simu_test065.json")
 
     # Assert that objects have been read back correctly
     assert "rod" in sim.volume_manager.volumes
