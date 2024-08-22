@@ -191,7 +191,8 @@ class ItkImageDataItem(DataItem):
 class DataContainer:
     """Common base class for all containers. Nothing implemented here for now."""
 
-    pass
+    def __init__(self, belongs_to, *args, **kwargs):
+        self.belongs_to = belongs_to
 
 
 class DataDictionary(DataContainer):
