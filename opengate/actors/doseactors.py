@@ -130,29 +130,6 @@ class VoxelDepositActor(ActorBase):
         # Return the real physical volume name
         return str(g4_phys_volume.GetName())
 
-    def align_output_with_physical_volume(self, which_output, run_index):
-        self._assert_output_exists(which_output)
-
-        translation_phys_vol, rotation_phys_vol = get_transform_world_to_local(
-            self.attached_to_volume, self.repeated_volume_index
-        )
-
-        image_props = self.user_output[which_output].get_image_properties(run_index)
-
-        # compute origin
-        # origin = (
-        #     -image_props.size * image_props.spacing / 2.0
-        #     + image_props.spacing / 2.0
-        #     + self.translation
-        # )
-        origin_after_rotation = (
-            Rotation.from_matrix(rotation_phys_vol).apply(image_props.origin)
-            + translation_phys_vol
-        )
-        self.user_output[which_output].set_image_properties(
-            run_index, origin=origin_after_rotation, rotation=rotation_phys_vol
-        )
-
     def _update_output_coordinate_system(self, which_output, run_index):
         """Method to be called at the end of a run.
         Note: The output image is aligned with the volume to which the actor as attached
@@ -260,7 +237,7 @@ class VoxelDepositActor(ActorBase):
         self.user_output[output_name].create_empty_image(
             run_index, self.size, self.spacing, origin=self.translation, **kwargs
         )
-        self.align_output_with_physical_volume(output_name, run_index)
+        # self.align_output_with_physical_volume(output_name, run_index)
 
     def fetch_from_cpp_image(self, output_name, run_index, *cpp_image):
         self._assert_output_exists(output_name)
