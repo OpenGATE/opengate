@@ -278,15 +278,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             # set the parameters provided by the user via the constructor
             self.data_write_config = data_write_config
 
-    # Shortcut to the attribute of the container class
-    @property
-    def writable_data_items(self):
-        return self.data_container_class.writable_data_items
-
-    @writable_data_items.setter
-    def writable_data_items(self, value):
-        self.data_container_class.writable_data_items = value
-
     def merge_data(self, list_of_data):
         if self.merge_method == "sum":
             merged_data = list_of_data[0]
