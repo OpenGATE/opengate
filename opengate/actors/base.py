@@ -151,6 +151,17 @@ class ActorBase(GateObject):
         self.__dict__ = state
         self.__initcpp__()
 
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["user_output"] = dict([(k, v.to_dictionary()) for k, v in self.user_output.items()])
+        return d
+
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        # Create all actor output objects
+        for k, v in d["user_output"].items():
+            self.user_output[k].from_dictionary(v)
+
     # def _get_error_msg_output_filename(self):
     #     s = (
     #         f"The shortcut attribute output_filename is not available for this actor "
