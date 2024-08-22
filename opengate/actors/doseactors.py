@@ -252,7 +252,7 @@ class VoxelDepositActor(ActorBase):
             data.append(py_image)
         self.user_output[output_name].store_data(run_index, *data)
 
-    def push_to_cpp_image(self, output_name, run_index, *cpp_image, copy_data=False):
+    def push_to_cpp_image(self, output_name, run_index, *cpp_image, copy_data=True):
         self._assert_output_exists(output_name)
         for i, cppi in enumerate(cpp_image):
             update_image_py_to_cpp(
