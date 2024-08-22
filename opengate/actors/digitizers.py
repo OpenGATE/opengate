@@ -193,7 +193,29 @@ class Digitizer:
         return None
 
 
-class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
+class DigitizerBase(ActorBase):
+
+    _output_name_root = 'root_output'
+
+    def _add_user_output_root(self):
+        """Specialized method to add a root user output in digitizers.
+        The output name is hard-coded at the class-level and the same for all digitizers,
+        i.e. in all digitizers, the user can do:
+        digitizer.user_output.root_output
+        Additionally, the C++ classes expect an output with this name.
+        """
+
+        if self._output_name_root in self.user_output:
+            fatal(f"The actor '{self.name}' already has a user_output called '{self._output_name_root}'."
+                  f"Probably, the method _add_user_output_root() was called more than once, "
+                  f"while it can be used only to add a single root output as in most digitizers. ")
+        return self._add_user_output(ActorOutputRoot, self._output_name_root)
+
+    def StartSimulationAction(self):
+        self.SetOutputPath(self._output_name_root, self.user_output.root_output.get_output_path_as_string())
+
+
+class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
     """
     Equivalent to Gate "adder": gather all hits of an event in the same volume.
     Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
@@ -306,7 +328,7 @@ class DigitizerAdderActor(ActorBase, g4.GateDigitizerAdderActor):
         g4.GateDigitizerAdderActor.EndSimulationAction(self)
 
 
-class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
+class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
     """
     Digitizer module for blurring an attribute (single value only, not a vector).
     Usually for energy or time.
@@ -447,7 +469,7 @@ class DigitizerBlurringActor(ActorBase, g4.GateDigitizerBlurringActor):
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringActor):
+class DigitizerSpatialBlurringActor(DigitizerBase, g4.GateDigitizerSpatialBlurringActor):
     """
     Digitizer module for blurring a (global) spatial position.
     """
@@ -541,7 +563,7 @@ class DigitizerSpatialBlurringActor(ActorBase, g4.GateDigitizerSpatialBlurringAc
         g4.GateDigitizerSpatialBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
+class DigitizerEfficiencyActor(DigitizerBase, g4.GateDigitizerEfficiencyActor):
     """
     Digitizer module for simulating efficiency.
     """
@@ -606,7 +628,7 @@ class DigitizerEfficiencyActor(ActorBase, g4.GateDigitizerEfficiencyActor):
         g4.GateDigitizerEfficiencyActor.EndSimulationAction(self)
 
 
-class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor):
+class DigitizerEnergyWindowsActor(DigitizerBase, g4.GateDigitizerEnergyWindowsActor):
     """
     Consider a list of hits and arrange them according to energy intervals.
     Input: one DigiCollection
@@ -667,7 +689,7 @@ class DigitizerEnergyWindowsActor(ActorBase, g4.GateDigitizerEnergyWindowsActor)
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
 
 
-class DigitizerHitsCollectionActor(ActorBase, g4.GateDigitizerHitsCollectionActor):
+class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollectionActor):
     """
     Build a list of hits in a given volume.
     - the list of attributes to be stored is given in the 'attributes' options
