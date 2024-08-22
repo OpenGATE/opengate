@@ -194,12 +194,18 @@ class ActorBase(GateObject):
     # *** shortcut properties ***
     @property
     def output_filename(self):
-        return Box([(k, v.output_filename) for k, v in self.user_output.items()])
+        if len(self.user_output) > 1:
+            return Box([(k, v.output_filename) for k, v in self.user_output.items()])
+        else:
+            return list(self.user_output.values())[0].output_filename
 
     @output_filename.setter
     def output_filename(self, filename):
-        for k, v in self.user_output.items():
-            v.output_filename = insert_suffix_before_extension(filename, k, suffix_separator='_')
+        if len(self.user_output) > 1:
+            for k, v in self.user_output.items():
+                v.output_filename = insert_suffix_before_extension(filename, k, suffix_separator='_')
+        else:
+            list(self.user_output.values())[0].output_filename = filename
 
     @property
     @shortcut_for_single_output_actor
