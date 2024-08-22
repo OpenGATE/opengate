@@ -50,7 +50,7 @@ def create_3d_image(
     img.SetSpacing(spacing)
     if origin is not None:
         img.SetOrigin(origin)
-    # (default origin and direction)
+    # (default direction)
     if allocate:
         img.Allocate()
         img.FillBuffer(fill_value)
