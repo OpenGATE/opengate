@@ -446,7 +446,7 @@ class ActorOutputImage(ActorOutputUsingDataItemContainer):
 
     def create_empty_image(self, run_index, size, spacing, origin=None, **kwargs):
         if run_index not in self.data_per_run:
-            self.data_per_run[run_index] = self.data_container_class()
+            self.data_per_run[run_index] = self.data_container_class(belongs_to=self)
         self.data_per_run[run_index].create_empty_image(
             size, spacing, origin=origin, **kwargs
         )
