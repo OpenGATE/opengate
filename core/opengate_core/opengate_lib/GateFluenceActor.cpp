@@ -80,5 +80,3 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
     } // else : outside the image
   }
 }
-
-void GateFluenceActor::EndSimulationAction() {}
