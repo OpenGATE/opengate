@@ -7,12 +7,10 @@ import itk
 
 
 def create_test_mesh(file_name="myTesselatedBoxVolume.stl"):
-    mode = stl.Mode(1)  # ASCII
-    # file_name = "myTesselatedBoxVolume.stl"
     my_mesh = create_box_mesh()
     translate_mesh_to_center(my_mesh)
     show_mesh_info(my_mesh)
-    store_mesh_to_file(my_mesh, file_name, mode=mode)
+    store_mesh_to_file(my_mesh, file_name, mode=stl.stl.ASCII)
 
 
 def create_box_mesh():
@@ -95,7 +93,7 @@ def store_mesh_to_file(mesh_to_store, file_name, mode=0):
     mesh_to_store.save(file_name, mode=mode)
 
 
-def simulation():
+def create_simulation():
     output_path = paths.output
 
     # units
@@ -116,16 +114,15 @@ def simulation():
 
     # simulation object
     sim = gate.Simulation()
-    ui = sim.user_info
 
     #
     # Visualization
-    ui.visu = False
-    ui.visu_verbose = False
+    sim.visu = False
+    sim.visu_verbose = False
 
-    ui.random_engine = "MersenneTwister"
-    ui.random_seed = "auto"
-    ui.number_of_threads = 1
+    sim.random_engine = "MersenneTwister"
+    sim.random_seed = "auto"
+    sim.number_of_threads = 1
 
     # geometry
     # There is a default volume called world (lowercase)
@@ -136,15 +133,13 @@ def simulation():
 
     tes = sim.add_volume("Tesselated", name="MyTesselatedVolume")
     tes.material = "G4_WATER"
-    tes.mother = "world"  # by default
     tes.file_name = output_path / "myTesselatedBoxVolume.stl"
 
     # print the list of available volumes types:
-    print("Volume types :", sim.volume_manager.dump_volume_types())
+    sim.volume_manager.print_volume_types()
 
     # sources
     source = sim.add_source("GenericSource", "particle")
-    source.mother = "world"
     source.particle = "proton"
 
     source.position.type = "point"
@@ -167,28 +162,26 @@ def simulation():
     # Actors
     # Statistics Actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output = output_path / "Statistics.txt"
+    stats.output_filename = "Statistics.txt"
     stats.track_types_flag = True
 
     # Dose Actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.mother = "MyTesselatedVolume"
+    dose.attached_to = tes
     # number of voxels per dimension
     dose.size = [1, 1, 300]
     # size of the voxels
     dose.spacing = [30 * cm, 30 * cm, 1 * mm]
-    dose.uncertainty = False
+    dose.user_output.dose.active = True
+    dose.user_output.square.active = True
     dose.hit_type = "random"
-    dose.output = output_path / "Edep.mhd"
 
-    # start simulation
-    sim.run()
     return sim
 
 
-def eval_results(simLink):
+def eval_results(sim):
     # access to the results
-    eval_Volume = simLink.volume_manager.get_volume(
+    eval_Volume = sim.volume_manager.get_volume(
         "MyTesselatedVolume"
     ).solid_info.cubic_volume
     print("volume: ", eval_Volume)
@@ -196,8 +189,8 @@ def eval_results(simLink):
         float(eval_Volume), float(27000000.0), tolerance=1e-1, txt="volume"
     )
 
-    dose = simLink.output.get_actor("dose")
-    image = dose.py_edep_image
+    dose = sim.actor_manager.get_actor("dose")
+    image = dose.get_output_data(output_name='edep')
     np_image = itk.GetArrayFromImage(image)
     # For 1D images, the array is squeezed
     np_image = np.squeeze(np_image)
@@ -228,16 +221,15 @@ paths = utility.get_default_test_paths(
 )
 
 
-def main():
+if __name__ == "__main__":
     print("Generating STL data")
     create_test_mesh(file_name=paths.output / "myTesselatedBoxVolume.stl")
-    print("Running Gate Simulation")
-    simLink = simulation()
+    sim = create_simulation()
+    print("Running GATE simulation")
+    sim.run()
+    stats_actor = sim.actor_manager.get_actor('Stats')
+    print(stats_actor)
     print("Simulation finished")
     print("Evaluating results")
-    is_ok = eval_results(simLink)
+    is_ok = eval_results(sim)
     utility.test_ok(is_ok)
-
-
-if __name__ == "__main__":
-    main()
