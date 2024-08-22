@@ -256,31 +256,27 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     }
 
     def __init__(self, data_container_class, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
-        if data_container_class in available_data_container_classes.values():
-            class_template = data_container_class
+        if type(data_container_class) is type:
+            if DataItemContainer not in data_container_class.mro():
+                fatal(f"Illegal data container class {data_container_class}. ")
+            self.data_container_class = data_container_class
         else:
             try:
-                class_template = available_data_container_classes[data_container_class]
+                self.data_container_class = available_data_container_classes[data_container_class]
             except KeyError:
                 fatal(
                     f"Unknown data item class {data_container_class}. "
                     f"Available classes are: {list(available_data_container_classes.keys())}"
                 )
-        # create a version of the data container class specific to this instance
-        # _d = dict(class_template.__dict__)
-        # make a deepcopy of writable_data_items because it is a mutable object (dict) and
-        # we do not want the attribute in the new class to refer back to the base class
-        writable_data_items = deepcopy(class_template.writable_data_items)
-        self.data_container_class = type(
-            f"{class_template.__name__}_of_{self.type_name}",
-            (class_template,),
-            {"writable_data_items": writable_data_items},
-        )
-
-    # def __contains__(self, item):
-    #     return item in self.data_per_run
+        data_write_config = kwargs.pop('data_write_config', None)
+        super().__init__(*args, **kwargs)
+        if data_write_config is None:
+            # get the default write config from the container class
+            self.data_write_config = self.data_container_class.get_default_data_write_config()
+        else:
+            # set the parameters provided by the user via the constructor
+            self.data_write_config = data_write_config
 
     # Shortcut to the attribute of the container class
     @property
