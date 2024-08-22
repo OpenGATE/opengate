@@ -193,12 +193,8 @@ class ActorBase(GateObject):
 
     # *** shortcut properties ***
     @property
-    @shortcut_for_single_output_actor
     def output_filename(self):
-        # if len(self.user_output) > 1:
-        #     fatal(self._get_error_msg_output_filename())
-        # else:
-        return list(self.user_output.values())[0].output_filename
+        return Box([(k, v.output_filename) for k, v in self.user_output.items()])
 
     @output_filename.setter
     def output_filename(self, filename):
