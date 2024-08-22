@@ -46,9 +46,6 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_fluence_image;
-  Image3DType::SizeType size_fluence;
-  double fVoxelVolume;
-  int NbOfThreads = 0;
 
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
