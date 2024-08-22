@@ -202,10 +202,8 @@ class ActorBase(GateObject):
 
     @output_filename.setter
     def output_filename(self, filename):
-        # if len(self.user_output) > 1:
-        #     fatal(self._get_error_msg_output_filename())
-        # else:
-        list(self.user_output.values())[0].output_filename = filename
+        for k, v in self.user_output.items():
+            v.output_filename = insert_suffix_before_extension(filename, k, suffix_separator='_')
 
     @property
     @shortcut_for_single_output_actor
