@@ -225,36 +225,115 @@ class KillActor(ActorBase, g4.GateKillActor):
         g4.GateKillActor.__init__(self, {"name": self.name})
 
 
-class ComptSplittingActor(ActorBase, g4.GateOptrComptSplittingActor):
 
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        deg = g4_units.deg
-        user_info.splitting_factor = 1
-        user_info.weight_threshold = 0
-        user_info.bias_primary_only = True
-        user_info.min_weight_of_particle = 0
-        user_info.bias_only_once = True
-        user_info.processes = ["compt"]
-        user_info.russian_roulette = False
-        user_info.rotation_vector_director = False
-        user_info.vector_director = [0, 0, 1]
-        user_info.max_theta = 90 * deg
+class SplittingActorBase(ActorBase):
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateOptrComptSplittingActor.__init__(self, user_info.__dict__)
+    user_info_defaults = {
+        "splitting_factor": (
+            1,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "bias_primary_only": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "bias_only_once": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "particles": (
+            ['all',],
+            {
+                "doc": "FIXME",
+                "setter_hook": _setter_hook_particles,
+            },
+        ),
+    }
 
 
-class BremSplittingActor(ActorBase, g4.GateBOptrBremSplittingActor):
+class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.splitting_factor = 1
-        user_info.bias_primary_only = True
-        user_info.bias_only_once = True
-        user_info.processes = ["eBrem"]
+    user_info_defaults = {
+        "weight_threshold": (
+            0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "min_weight_of_particle": (
+            0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "russian_roulette": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "rotation_vector_director": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "vector_director": (
+            [0, 0, 1],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "max_theta": (
+            90 * g4_units.deg,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateBOptrBremSplittingActor.__init__(self, user_info.__dict__)
+    processes = ("compt", )
+
+    def __init__(self, *args, **kwargs):
+        SplittingActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
+
+    def initialize(self):
+        SplittingActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+
+
+class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+
+    user_info_defaults = {
+        "processes": (
+            ["eBrem"],
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
+    processes = ("eBrem", )
+
+    def __init__(self, *args, **kwargs):
+        SplittingActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})
+
+    def initialize(self):
+        SplittingActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()

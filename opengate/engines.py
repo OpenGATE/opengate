@@ -262,6 +262,7 @@ class PhysicsEngine(EngineBase):
         self.initialize_physics_list()
         self.initialize_g4_em_parameters()
         self.initialize_user_limits_physics()
+        self.initialize_physics_biasing()
         self.initialize_parallel_world_physics()
 
     def initialize_after_runmanager(self):
@@ -366,6 +367,19 @@ class PhysicsEngine(EngineBase):
             )
         for region in self.physics_manager.regions.values():
             region.initialize_em_switches()
+
+    def initialize_physics_biasing(self):
+        # get a dictionary {particle:[processes]}
+        particles_processes = self.physics_manager.get_biasing_particles_and_processes()
+
+        # check if there are any processes requested for any particle
+        if any([len(v) > 0 for v in particles_processes.values()]):
+            g4_biasing_physics = g4.G4GenericBiasingPhysics()
+            for particle, processes in particles_processes.items():
+                if len(processes) > 0:
+                    print(f"DEBUG: Initialize bias for particle {particle} and processes {processes}. ")
+                    g4_biasing_physics.PhysicsBias(particle, processes)
+            self.g4_physics_list.RegisterPhysics(g4_biasing_physics)
 
     # This function deals with calling the parse function
     # and setting the returned MaterialPropertyTable to G4Material object

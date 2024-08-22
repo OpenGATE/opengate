@@ -97,6 +97,8 @@ actor_types = {
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
+    "BremSplittingActor": BremSplittingActor,
+    "ComptSplittingActor": ComptSplittingActor,
     "DigitizerAdderActor": DigitizerAdderActor,
     "DigitizerBlurringActor": DigitizerBlurringActor,
     "DigitizerSpatialBlurringActor": DigitizerSpatialBlurringActor,
@@ -447,9 +449,6 @@ class PhysicsListManager(GateObject):
     )
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
-    special_physics_constructor_classes["G4GenericBiasingPhysics"] = (
-        g4.G4GenericBiasingPhysics
-    )
 
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -501,17 +500,11 @@ class PhysicsListManager(GateObject):
         ) in self.physics_manager.special_physics_constructors.items():
             if switch is True:
                 try:
-                    if spc == "G4GenericBiasingPhysics":
-                        Bias = self.physics_manager.add_physics_bias()
-                        physics_list.RegisterPhysics(Bias)
-
-                    else:
-                        physics_list.ReplacePhysics(
-                            self.special_physics_constructor_classes[spc](
-                                self.physics_manager.simulation.g4_verbose_level
-                            )
+                    physics_list.ReplacePhysics(
+                        self.special_physics_constructor_classes[spc](
+                            self.physics_manager.simulation.g4_verbose_level
                         )
-
+                    )
                 except KeyError:
                     fatal(
                         f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
@@ -813,6 +806,38 @@ class PhysicsManager(GateObject):
             region = self.volumes_regions_lut[volume_name]
         return region
 
+    def get_biasing_particles_and_processes(self):
+        """Build a dictionary {particles:list[processes]} by collecting information
+        from all biasing actors present in the simulation.
+        """
+
+        charged_particles = {'e-', 'e+', 'proton'}
+        all_particles = charged_particles.union({'gamma'})
+
+        # create a dictionary with sets as entries (to ensure uniqueness)
+        particles_processes = dict([(p, set()) for p in all_particles])
+
+        for actor in self.simulation.actor_manager.actors.values():
+            if isinstance(actor, SplittingActorBase):
+                particles = set()
+                if 'all' in actor.particles:
+                    particles.update(all_particles)
+                elif 'all_charged' in actor.particles:
+                    particles.update(charged_particles)
+                else:
+                    for particle in actor.particles:
+                        p_ = translate_particle_name_gate_to_geant4(particle)
+                        if p_ in all_particles:
+                            particles.add(p_)
+                        else:
+                            fatal(f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
+                                  f"This is not possible. Compatible particles are: {list(all_particles)}. ")
+                for p in particles:
+                    particles_processes[p].update(actor.processes)
+
+        # convert the dictionary entries back from set to list
+        return dict([(particle, list(processes)) for particle, processes in particles_processes.items()])
+
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):
         if volume_name == self.simulation.world.name:
@@ -820,49 +845,6 @@ class PhysicsManager(GateObject):
         else:
             region = self.find_or_create_region(volume_name)
             region.production_cuts[particle_name] = value
-
-    def add_physics_bias(self):
-        self.processes_to_bias = self.user_info["processes_to_bias"]
-        BiasToApply = self.physics_list_manager.special_physics_constructor_classes[
-            "G4GenericBiasingPhysics"
-        ]()
-        list_of_particles = self.processes_to_bias.keys()
-        try:
-            if self.processes_to_bias["all"] != None:
-                for particle in list_of_particles:
-                    if particle != "all" and particle != "all_charged":
-                        BiasToApply.PhysicsBias(
-                            particle_names_Gate_to_G4[particle],
-                            self.processes_to_bias["all"],
-                        )
-            elif self.processes_to_bias["all_charged"] != None:
-                for particle in list_of_particles:
-                    if (
-                        particle != "all"
-                        and particle != "all_charged"
-                        and particle != "gamma"
-                        and particle != "neutron"
-                    ):
-                        BiasToApply.PhysicsBias(
-                            particle_names_Gate_to_G4[particle],
-                            self.processes_to_bias["all_charged"],
-                        )
-            else:
-                for particle in list_of_particles:
-                    list_of_process = self.processes_to_bias[particle]
-                    if list_of_process != None:
-                        BiasToApply.PhysicsBias(
-                            particle_names_Gate_to_G4[particle], list_of_process
-                        )
-        except KeyError:
-            fatal(
-                f"Found unknown particle name '{particle}' in processes_to_bias()."
-                f" Eligible names are "
-                + ", ".join(self.user_info_defaults["processes_to_bias"][0].keys())
-                + "."
-            )
-
-        return BiasToApply
 
     # set methods for the user_info parameters
     # logic: every volume with user_infos must be associated
