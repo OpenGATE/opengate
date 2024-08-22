@@ -32,8 +32,12 @@ public:
   virtual void BeginOfRunActionMasterThread(int run_id) override;
 
   virtual void BeginOfEventAction(const G4Event *event);
+  inline std::string GetPhysicalVolumeName() {return fPhysicalVolumeName;}
 
   virtual void EndSimulationAction();
+  inline void SetPhysicalVolumeName(std::string s){
+    fPhysicalVolumeName = s;
+  }
 
   // Image type is 3D float by default
   typedef itk::Image<float, 3> Image3DType;
