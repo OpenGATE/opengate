@@ -4,7 +4,7 @@ from functools import wraps
 from ..definitions import __world_name__
 from ..exception import fatal, warning
 from ..base import GateObject
-
+from ..utility import insert_suffix_before_extension
 
 def _setter_hook_attached_to(self, attached_to):
     """Hook to be attached to property setter of user input 'attached_to' in all actors.
