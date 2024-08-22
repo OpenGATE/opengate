@@ -60,6 +60,7 @@ public:
   inline std::string GetOutputFilename() { return fOutputFilename; }
 
 protected:
+  inline static std::string fOutputNameRoot = "root_output";
   std::string fOutputFilename;
   std::string fInputDigiCollectionName;
   std::string fOutputDigiCollectionName;
