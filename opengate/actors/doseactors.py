@@ -722,7 +722,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     }
 
     def __init__(self, *args, **kwargs):
-        ## TODO: why not super? what would happen?
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         self._add_user_output(ActorOutputQuotientImage, "let")
