@@ -99,15 +99,6 @@ class VoxelDepositActor(ActorBase):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
 
-    def initialize(self):
-        super().initialize()
-        # size = np.array(self.size)
-        # spacing = np.array(self.spacing)
-        # compute the center, using translation and half pixel spacing
-        # self.img_origin_during_run = (
-        #     -size * spacing / 2.0 + spacing / 2.0 + self.translation
-        # )
-
     def check_user_input(self):
         if self.output_coordinate_system == "attached_to_image":
             if not hasattr(
