@@ -529,8 +529,10 @@ class DynamicGateObject(GateObject):
             None,
             {
                 "doc": "List of dictionaries, where each dictionary specifies how the parameters "
-                "of this object should evolve over time during the simulation. "
-                "If None, the object is static (default).",
+                       "of this object should evolve over time during the simulation. "
+                       "You cannot set this parameter directly. "
+                       "Instead, use the 'add_dynamic_parametrisation()' method of your object."
+                       "If None, the object is static (default).",
                 "read_only": True,
             },
         )
