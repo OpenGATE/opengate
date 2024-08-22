@@ -35,10 +35,6 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
 void GateFluenceActor::InitializeCpp() {
   GateVActor::InitializeCpp();
 
-void GateFluenceActor::BeginOfRunAction(const G4Run *) {
-  Image3DType::RegionType region =
-      cpp_fluence_image->GetLargestPossibleRegion();
-  size_fluence = region.GetSize();
   cpp_fluence_image = Image3DType::New();
 }
 
