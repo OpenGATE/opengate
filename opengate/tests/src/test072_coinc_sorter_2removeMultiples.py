@@ -16,10 +16,17 @@ if __name__ == "__main__":
         __file__, output_folder="test072_coinc_sorter"
     )
 
+    # # reload the simulation to have access to all parameters
+    # sim = gate.create_sim_from_json(paths.output / 'simulation.json')
+    # # get the path that was set in the simulation
+    # crystal = sim.volume_manager.get_volume('crystal')
+    # sc = sim.actor_manager.get_actor(f"Singles_{crystal.name}")
+    # path_to_rootfile = sc.get_output_path()
+
     # open root file
-    root_filename = paths.output / "test72_output_1.root"
-    print(f"Opening {root_filename} ...")
-    root_file = uproot.open(root_filename)
+    path_to_rootfile = paths.output / "test72_output_1.root"
+    print(f"Opening {path_to_rootfile} ...")
+    root_file = uproot.open(path_to_rootfile)
 
     # consider the tree of "singles"
     singles_tree = root_file["Singles_crystal"]
@@ -42,7 +49,8 @@ if __name__ == "__main__":
 
     # save to file
     # WARNING root version >= 5.2.2 needed
-    output_file = uproot.recreate(paths.output / "coinc2removeMultiples.root")
+    # output_file = uproot.recreate(paths.output / "coinc2removeMultiples.root")
+    output_file = uproot.recreate(sim.get_output_path("coinc2removeMultiples.root"))
     output_file["Coincidences"] = coincidences
     output_file["Singles_crystal"] = copy_tree_for_dump(singles_tree)
 
