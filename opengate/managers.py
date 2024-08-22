@@ -1,6 +1,5 @@
 import sys
 import logging
-import time
 
 from box import Box
 from anytree import RenderTree, LoopError
@@ -17,14 +16,12 @@ from .base import (
     find_paths_in_gate_object_dictionary,
 )
 from .definitions import __world_name__, __gate_list_objects__
-from .element import new_element
 from .engines import SimulationEngine
 from .exception import fatal, warning
 from .geometry.materials import MaterialDatabase
 from .image import (
     create_image_with_volume_extent,
     create_image_with_extent,
-    voxelize_volume,
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
     write_itk_image,
@@ -40,7 +37,7 @@ from .utility import (
 )
 from . import logger
 from .logger import log
-from .physics import Region, OpticalSurface, cut_particle_names
+from .physics import Region, OpticalSurface, cut_particle_names, translate_particle_name_gate_to_geant4
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
@@ -67,7 +64,13 @@ from .actors.base import ActorBase
 from .actors.doseactors import DoseActor, LETActor, FluenceActor
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
-from .actors.miscactors import SimulationStatisticsActor, KillActor
+from .actors.miscactors import (
+    SimulationStatisticsActor,
+    KillActor,
+    SplittingActorBase,
+    ComptSplittingActor,
+    BremSplittingActor,
+)
 from .actors.digitizers import (
     DigitizerAdderActor,
     DigitizerBlurringActor,
