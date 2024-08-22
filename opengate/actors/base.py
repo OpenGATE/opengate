@@ -218,12 +218,12 @@ class ActorBase(GateObject):
 
     @property
     @shortcut_for_single_output_actor
-    def writable_data_items(self):
-        return list(self.user_output.values())[0].writable_data_items
+    def data_write_config(self):
+        return list(self.user_output.values())[0].data_write_config
 
-    @writable_data_items.setter
-    def writable_data_items(self, value):
-        list(self.user_output.values())[0].writable_data_items = value
+    @data_write_config.setter
+    def data_write_config(self, value):
+        list(self.user_output.values())[0].data_write_config = value
 
     def get_output_path(self, output_name=None, which="merged", **kwargs):
         if output_name is None:
