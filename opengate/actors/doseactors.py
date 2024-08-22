@@ -444,6 +444,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "setter_hook": _setter_hook_goal_uncertainty,
+                "deprecated": "Currently not implemented. ",
+
             },
         ),
         "thresh_voxel_edep_for_unc_calc": (
