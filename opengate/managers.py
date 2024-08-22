@@ -448,14 +448,21 @@ class PhysicsListManager(GateObject):
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
 
-    def __init__(self, physics_manager, *args, **kwargs):
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.physics_manager = physics_manager
         # declare the attribute here as None;
         # set to dict in create_physics_list_classes()
         self.created_physics_list_classes = None
         self.create_physics_list_classes()
         self.particle_with_biased_process_dictionary = {}
+
+    @property
+    def physics_manager(self):
+        if self.simulation is not None:
+            return self.simulation.physics_manager
+        else:
+            return None
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
@@ -641,7 +648,7 @@ class PhysicsManager(GateObject):
 
         # Keep a pointer to the current simulation
         self.simulation = simulation
-        self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
+        self.physics_list_manager = PhysicsListManager(simulation=self.simulation, name="PhysicsListManager")
 
         # dictionary containing all the region objects
         # key=region_name, value=region_object
@@ -697,7 +704,7 @@ class PhysicsManager(GateObject):
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self.physics_list_manager = PhysicsListManager(self, name="PhysicsListManager")
+        self.physics_list_manager = PhysicsListManager(simulation=self.simulation, name="PhysicsListManager")
 
     def _simulation_engine_closing(self):
         """This function should be called from the simulation engine
