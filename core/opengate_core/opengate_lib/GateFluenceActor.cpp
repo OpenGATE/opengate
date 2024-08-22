@@ -26,8 +26,6 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
-  fActions.insert("BeginOfEventAction");
-  fActions.insert("EndSimulationAction");
   // translation
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
@@ -35,6 +33,8 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
 void GateFluenceActor::InitializeCpp() {
   GateVActor::InitializeCpp();
 
+  // Create the image pointer
+  // (the size and allocation will be performed on the py side)
   cpp_fluence_image = Image3DType::New();
 }
 
