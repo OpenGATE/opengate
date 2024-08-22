@@ -29,6 +29,7 @@ public:
     return fNbOfKilledParticles;
   }
 
+private:
   long fNbOfKilledParticles{};
 };
 
