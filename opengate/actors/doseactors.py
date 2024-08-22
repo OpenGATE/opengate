@@ -555,11 +555,16 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.prepare_output_for_run("edep", run_index)
         self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
 
+        if self.user_output.square.active:  # uncertainty=True implies square=True
+            self.prepare_output_for_run("square", run_index)
+            self.push_to_cpp_image("square", run_index, self.cpp_square_image)
+
         # there is only one image on the cpp-side, namely cpp_edep_image;
         # there is no image for dose
 
-        if self.uncertainty:
+        if self.user_output.edep_uncertainty.active:
             self.prepare_output_for_run("edep_uncertainty", run_index)
+        if self.user_output.dose_uncertainty.active:
             self.prepare_output_for_run("dose_uncertainty", run_index)
 
         if self.square:  # uncertainty=True implies square=True
