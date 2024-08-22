@@ -449,6 +449,14 @@ class GateObject:
         else:
             super().__setattr__(key, value)
 
+    def __add_to_simulation__(self):
+        """Hook method which can be called by managers.
+        Specific classes can use this to implement actions to be taken
+        when an object is being added to the simulation,
+        e.g. adding a certain actor implies switching on certein physics options.
+        """
+        pass
+
     @property
     def type_name(self):
         return str(type(self).__name__)
