@@ -5,6 +5,7 @@ from ..definitions import __world_name__
 from ..exception import fatal, warning
 from ..base import GateObject
 from ..utility import insert_suffix_before_extension
+from .actoroutput import ActorOutputRoot
 
 def _setter_hook_attached_to(self, attached_to):
     """Hook to be attached to property setter of user input 'attached_to' in all actors.
@@ -310,6 +311,11 @@ class ActorBase(GateObject):
 
     def _add_user_output(self, actor_output_class, name, can_be_deactivated=False, **kwargs):
         """Method to be called internally (not by user) in the specific actor class implementations."""
+
+        if (actor_output_class.__name__ == ActorOutputRoot.__name__) \
+            and any([type(v).__name__ == ActorOutputRoot.__name__
+                     for v in self.user_output.values()]):
+            fatal("Implementation error: Only one ROOT output per actor supported. ")
 
         # extract the user info "active" if passed via kwargs
         try:
