@@ -204,16 +204,10 @@ class ActorBase(GateObject):
     @property
     @shortcut_for_single_output_actor
     def write_to_disk(self):
-        # if len(self.user_output) > 1:
-        #     fatal(self._get_error_msg_output_filename())
-        # else:
         return list(self.user_output.values())[0].write_to_disk
 
-    @output_filename.setter
+    @write_to_disk.setter
     def write_to_disk(self, write_to_disk):
-        # if len(self.user_output) > 1:
-        #     fatal(self._get_error_msg_output_filename())
-        # else:
         list(self.user_output.values())[0].write_to_disk = write_to_disk
 
     @property
