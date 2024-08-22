@@ -33,7 +33,6 @@ public:
 
   inline std::string GetPhysicalVolumeName() {return fPhysicalVolumeName;}
 
-  virtual void EndSimulationAction();
   inline void SetPhysicalVolumeName(std::string s){
     fPhysicalVolumeName = s;
   }
