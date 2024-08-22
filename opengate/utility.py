@@ -154,12 +154,12 @@ def ensure_filename_is_str(filename):
     return filename
 
 
-def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
+def insert_suffix_before_extension(file_path, suffix, suffix_separator="-"):
     path = Path(file_path)
     if suffix:
         suffix = suffix.strip("_- *")
         suffix = suffix.lower()
-        new_path = path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
+        new_path = path.with_name(path.stem + suffix_separator + suffix + path.suffix)
         return new_path
     else:
         return path
