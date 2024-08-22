@@ -1721,6 +1721,11 @@ class Simulation(GateObject):
         return labels, image
 
 
+def create_sim_from_json(path):
+    sim = Simulation()
+    sim.from_json_file(path)
+    return sim
+
 process_cls(PhysicsManager)
 process_cls(PhysicsListManager)
 process_cls(Simulation)
