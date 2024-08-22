@@ -104,6 +104,44 @@ class ActorOutputBase(GateObject):
     #     return self._active
 
     @property
+    def write_to_disk(self):
+        d = Box([(k, v['write_to_disk']) for k, v in self.data_write_config.items()])
+        if len(d) > 1:
+            return d
+        elif len(d) == 1:
+            return list(d.values())[0]
+        else:
+            fatal("Nothing defined in data_write_config. ")
+
+    @write_to_disk.setter
+    def write_to_disk(self, value):
+        try:
+            bool_value = bool(value)
+        except ValueError:
+            fatal(f"write_to_disk must be a boolean value (True/False), but you provided: {value}")
+        for v in self.data_write_config.values():
+            v['write_to_disk'] = bool_value
+
+    @property
+    def extra_suffix(self):
+        d = Box([(k, v['suffix']) for k, v in self.data_write_config.items()])
+        if len(d) > 1:
+            return d
+        elif len(d) == 1:
+            return list(d.values())[0]
+        else:
+            fatal("Nothing defined in data_write_config. ")
+
+    @extra_suffix.setter
+    def extra_suffix(self, value):
+        if len(self.data_write_config) > 1:
+            fatal(f"The actor output '{self.name}' handles multiple data items. "
+                  f"You need to specify the suffix individually for each item "
+                  f"via the user parameter 'data_write_config'.")
+        for v in self.data_write_config.values():
+            v['suffix'] = str(value)
+
+    @property
     def data(self):
         if len(self.data_per_run) > 1:
             warning(
