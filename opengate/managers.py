@@ -1149,6 +1149,9 @@ class VolumeManager(GateObject):
             s += len(pre) * " " + f"{node.name}\n"
         return s
 
+    def print_volume_tree(self):
+        print(self.dump_volume_tree())
+
     def dump_volume_types(self):
         s = f""
         for vt in self.volume_types:
