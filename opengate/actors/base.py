@@ -236,8 +236,10 @@ class ActorBase(GateObject):
             # if no output_name, we check if there is only one single output
             if len(self.user_output) != 1:
                 fatal(
-                    f"Cannot use get_output_path without setting which output_name. "
-                    f"Current output_name are: {self.user_output}"
+                    f"This actor handles multiple outputs. "
+                    f"Therefore, you need to specify which. "
+                    f"Example: '.get_output_path(output_name='{list(self.user_output.keys())[0]}'). "
+                    f"The available output names are: {list(self.user_output.keys())}"
                 )
             # get the first (and only) item from user_output
             output_name = list(self.user_output.keys())[0]
