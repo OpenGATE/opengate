@@ -22,9 +22,7 @@ G4Mutex SetPixelFluenceMutex = G4MUTEX_INITIALIZER;
 
 GateFluenceActor::GateFluenceActor(py::dict &user_info)
     : GateVActor(user_info, true) {
-  // Create the image pointer
-  // (the size and allocation will be performed on the py side)
-  cpp_fluence_image = Image3DType::New();
+
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
@@ -34,12 +32,15 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 
-void GateFluenceActor::InitializeCpp() {}
+void GateFluenceActor::InitializeCpp() {
+  GateVActor::InitializeCpp();
 
 void GateFluenceActor::BeginOfRunAction(const G4Run *) {
   Image3DType::RegionType region =
       cpp_fluence_image->GetLargestPossibleRegion();
   size_fluence = region.GetSize();
+  cpp_fluence_image = Image3DType::New();
+}
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
