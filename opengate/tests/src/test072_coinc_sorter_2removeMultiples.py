@@ -49,8 +49,7 @@ if __name__ == "__main__":
 
     # save to file
     # WARNING root version >= 5.2.2 needed
-    # output_file = uproot.recreate(paths.output / "coinc2removeMultiples.root")
-    output_file = uproot.recreate(sim.get_output_path("coinc2removeMultiples.root"))
+    output_file = uproot.recreate(paths.output / "coinc2removeMultiples.root")
     output_file["Coincidences"] = coincidences
     output_file["Singles_crystal"] = copy_tree_for_dump(singles_tree)
 
