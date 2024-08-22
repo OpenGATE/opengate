@@ -154,7 +154,7 @@ def create_simulation(geom, paths):
     return sim
 
 
-def test_output(output, paths):
+def test_output(sim, paths):
     # retrieve the information about the touched volumes
     man = g4.GateUniqueVolumeIDManager.GetInstance()
     vols = man.GetAllVolumeIDs()
@@ -168,7 +168,7 @@ def test_output(output, paths):
 
     # stat
     gate.exception.warning("Compare stats")
-    stats = output.get_actor("Stats")
+    stats = sim.actor_manager.get_actor("Stats")
     print(stats)
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1
@@ -177,7 +177,7 @@ def test_output(output, paths):
 
     # root compare HITS
     print()
-    hc = output.get_actor("Hits")
+    hc = sim.actor_manager.get_actor("Hits")
     gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
@@ -200,7 +200,7 @@ def test_output(output, paths):
 
     # Root compare SINGLES
     print()
-    sc = output.get_actor("Singles")
+    sc = sim.actor_manager.get_actor("Singles")
     gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]

@@ -16,6 +16,6 @@ if __name__ == "__main__":
     sim.run()
 
     # test the output
-    is_ok = t036.test_output(sim.output, paths)
+    is_ok = t036.test_output(sim, paths)
 
     utility.test_ok(is_ok)
