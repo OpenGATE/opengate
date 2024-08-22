@@ -537,10 +537,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.initialize(self)
 
         # activate output if requested
-        self.user_output.dose.active = self.dose
-        self.user_output.square.active = self.square
-        self.user_output.edep_uncertainty.active = self.uncertainty
-        self.user_output.dose_uncertainty.active = self.uncertainty
+        if self.user_output.dose_uncertainty.active is True:
+            self.user_output.edep_uncertainty.active = True
+
+        if self.user_output.edep_uncertainty.active is True or self.user_output.dose_uncertainty.active is True:
+            self.user_output.square.active = True
 
         self.InitializeUserInput(self.user_info)  # C++ side
         # Set the physical volume name on the C++ side
