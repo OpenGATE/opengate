@@ -126,10 +126,10 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
-  if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
-    l.edep_worker_flatimg.resize(N_voxels);
-    std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(), 0.0);
-  }
+//  if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
+//    l.edep_worker_flatimg.resize(N_voxels);
+//    std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(), 0.0);
+//  }
 }
 
 void GateDoseActor::BeginOfEventAction(const G4Event *event) {
