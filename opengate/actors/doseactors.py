@@ -576,7 +576,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self._update_output_coordinate_system("edep", run_index)
 
-        if self.dose:  # and not self.dose_calc_on_the_fly:
+        if self.user_output.dose.active:  # and not self.dose_calc_on_the_fly:
             self.store_output_data(
                 "dose",
                 run_index,
@@ -587,13 +587,13 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self._update_output_coordinate_system("dose", run_index)
 
         # square is True if uncertainty is True
-        if self.square:
+        if self.user_output.square.active:
             self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
             self._update_output_coordinate_system("square", run_index)
 
         # uncertainty
         # if any([self.uncertainty, self.ste_of_mean]):
-        if self.uncertainty:
+        if self.user_output.edep_uncertainty.active:
             # if self.ste_of_mean:
             #     n = (
             #         self.simulation.number_of_threads
@@ -608,7 +608,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
             edep_uncertainty_image = itk_image_view_from_array(
                 compute_std_from_sample(
-                    n, edep, square, correct_bias=self.ste_of_mean_unbiased
+                    n, edep, square, correct_bias=False  # used to be: self.ste_of_mean_unbiased
                 )
             )
             edep_uncertainty_image.CopyInformation(
@@ -619,20 +619,21 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
             self._update_output_coordinate_system("edep_uncertainty", run_index)
 
-            if self.dose:
-                # scale by density
-                dose_uncertainty_image = self.compute_dose_from_edep_img(
-                    edep_uncertainty_image
-                )
-                dose_uncertainty_image.CopyInformation(edep_uncertainty_image)
-                self.user_output.dose_uncertainty.store_data(
-                    run_index, dose_uncertainty_image
-                )
-                self._update_output_coordinate_system("dose_uncertainty", run_index)
+        if self.user_output.dose_uncertainty.active:
+            # scale by density
+            dose_uncertainty_image = self.compute_dose_from_edep_img(
+                edep_uncertainty_image
+            )
+            dose_uncertainty_image.CopyInformation(edep_uncertainty_image)
+            self.user_output.dose_uncertainty.store_data(
+                run_index, dose_uncertainty_image
+            )
+            self._update_output_coordinate_system("dose_uncertainty", run_index)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
-        # FIXME: should check if uncertainty goal is reached, but the current mechanism is quite hacky!
+        # FIXME: should check if uncertainty goal is reached (return value: 0),
+        # but the current mechanism is quite hacky and it is therefore temporarily not in use!
         return 0
 
     def EndSimulationAction(self):
