@@ -726,7 +726,7 @@ class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollection
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "hits")
+        self._add_user_output_root()
         self.__initcpp__()
 
     def __initcpp__(self):
