@@ -481,7 +481,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def __getstate__(self):
         # superclass getstate
         return_dict = super().__getstate__()
-        return_dict["g4_phys_vol"] = None
         return return_dict
 
     def compute_dose_from_edep_img(self, input_image):
