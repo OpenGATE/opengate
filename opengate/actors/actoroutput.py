@@ -143,14 +143,7 @@ class ActorOutputBase(GateObject):
 
     @property
     def data(self):
-        if len(self.data_per_run) > 1:
-            warning(
-                f"You are using the convenience property 'data' to access the data in this actor output. "
-                f"This returns you the data from the first run, but the actor output stores "
-                f"data from {len(self.data_per_run)} runs. "
-                f"To access them, use 'data_per_run[RUN_INDEX]' instead or 'merged_data'. "
-            )
-        return self.data_per_run[0]
+        return self.merged_data
 
     @property
     def belongs_to_actor(self):
