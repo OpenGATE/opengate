@@ -110,13 +110,6 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
-        "extra_suffix": (
-            None,
-            {
-                "doc": "Extra suffix to be appended to filename of all user outputs of this actor. "
-                "You can also set 'extra_suffix' for specific outputs individually. ",
-            },
-        ),
         "keep_output_data": (
             False,
             {
