@@ -63,6 +63,8 @@ public:
   virtual void StartRun();
   virtual void StartTracking(const G4Track *);
   virtual void EndTracking() {}
+  virtual void InitializeUserInput(py::dict &user_info) override;
+  virtual void InitializeCpp() override;
 
 protected:
   // -----------------------------
