@@ -144,7 +144,7 @@ if __name__ == "__main__":
         "PostPosition",
         "PreDirection",
     ]
-    phsp_actor.output = paths.output / "b2b.root"
+    phsp_actor.output_filename = "b2b.root"
 
     # verbose
     # sim.g4_verbose = True
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     sim.run()
 
     # test
-    is_ok = test_back_to_back(phsp_actor.output, nbEvents)
+    is_ok = test_back_to_back(phsp_actor.get_output_path(), nbEvents)
     # FIXME confirm acolin when activated
     # FIXME Other tests?
 
