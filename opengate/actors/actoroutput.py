@@ -1,10 +1,11 @@
 from pathlib import Path
 from copy import deepcopy
+from box import Box
 
 from ..base import GateObject
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal
-from .dataitems import available_data_container_classes
+from .dataitems import available_data_container_classes, DataItemContainer
 
 
 def _setter_hook_belongs_to(self, belongs_to):
