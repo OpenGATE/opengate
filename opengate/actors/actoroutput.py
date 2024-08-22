@@ -166,16 +166,32 @@ class ActorOutputBase(GateObject):
         if self.write_to_disk is True:
             self.write_data(*args, **kwargs)
 
-    def get_output_path(self, which='merged', **kwargs):
+    def get_output_path(self, which='merged', data_item='all', **kwargs):
+        self.initialize_output_filename()
         if self.extra_suffix is not None:
-            full_data_path = insert_suffix_before_extension(
-                self.simulation.get_output_path(self.output_filename), self.extra_suffix
-            )
+            try:
+                extra_suffix_dict = dict(self.extra_suffix)
+                if data_item == 'all':
+                    output_filename_with_suffix = dict([(k, insert_suffix_before_extension(self.output_filename, v))
+                                                   for k, v in extra_suffix_dict.items()])
+                else:
+                    try:
+                        output_filename_with_suffix = {0: insert_suffix_before_extension(self.output_filename,
+                                                                                         extra_suffix_dict[data_item])}
+                    except KeyError:
+                        fatal(f"No data item {data_item} found in actor output {self.name} "
+                              f"of actor {self.belongs_to_actor.name}. "
+                              f"Available data items are {list(self.extra_suffix.keys())}")
+            except ValueError:
+                output_filename_with_suffix = {0: insert_suffix_before_extension(self.output_filename,
+                                                                                 self.extra_suffix)}
+
+            full_data_path = Box([(k, self.simulation.get_output_path(v)) for k, v in output_filename_with_suffix.items()])
         else:
-            full_data_path = self.simulation.get_output_path(self.output_filename)
+            full_data_path = Box({0: self.simulation.get_output_path(self.output_filename)})
 
         if which == "merged":
-            return full_data_path
+            full_data_path_which = full_data_path
             # return insert_suffix_before_extension(full_data_path, "merged")
         else:
             try:
@@ -186,7 +202,15 @@ class ActorOutputBase(GateObject):
                     f"of {type(self).__name__} called {self.name}"
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
-            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
+            full_data_path_which = Box([(k, insert_suffix_before_extension(v, f"run{run_index:04f}"))
+                                        for k, v in full_data_path.items()])
+
+        if len(full_data_path_which) > 1:
+            return full_data_path_which
+        elif len(full_data_path_which) == 1:
+            return list(full_data_path_which.values())[0]
+        else:
+            return None
 
     def get_output_path_as_string(self, which='merged', **kwargs):
         return ensure_filename_is_str(self.get_output_path(which, **kwargs))
