@@ -290,7 +290,7 @@ class ActorBase(GateObject):
             v.initialize()
 
         # Create structs on C++ side for each actor output
-        # This struct is only needed by actors that handle output writing in C++
+        # This struct is only needed by actors that handle output written in C++.
         # But it does not hurt to populate the info in C++ regardless of the actor
         # The output path can also be (re-)set by the specific actor in
         # StartSimulation or BeginOfRunActionMasterThread, if needed
