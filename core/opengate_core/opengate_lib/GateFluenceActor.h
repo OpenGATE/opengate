@@ -47,6 +47,7 @@ public:
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_fluence_image;
 
+private:
   std::string fPhysicalVolumeName;
   G4ThreeVector fTranslation;
   std::string fHitType;
