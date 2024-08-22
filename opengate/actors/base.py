@@ -300,8 +300,7 @@ class ActorBase(GateObject):
             self.SetOutputPath(k, v.get_output_path_as_string())
 
     def _add_user_output(self, actor_output_class, name, can_be_deactivated=False, **kwargs):
-        """Method to be called internally (not by user) from the initialize_output() methods
-        of the specific actor class implementations."""
+        """Method to be called internally (not by user) in the specific actor class implementations."""
 
         # extract the user info "active" if passed via kwargs
         try:
