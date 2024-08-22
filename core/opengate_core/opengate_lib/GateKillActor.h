@@ -20,8 +20,6 @@ public:
   // Constructor
   GateKillActor(py::dict &user_info);
 
-  void InitializeCpp() override;
-
   void StartSimulationAction() override;
 
   // Main function called every step in attached volume

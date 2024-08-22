@@ -19,8 +19,6 @@ GateKillActor::GateKillActor(py::dict &user_info)
   fNbOfKilledParticles = 0;
 }
 
-void GateKillActor::InitializeCpp() {}
-
 void GateKillActor::StartSimulationAction() { fNbOfKilledParticles = 0; }
 
 void GateKillActor::SteppingAction(G4Step *step) {
