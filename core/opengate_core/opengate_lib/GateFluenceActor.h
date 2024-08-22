@@ -31,7 +31,6 @@ public:
 
   virtual void BeginOfRunActionMasterThread(int run_id) override;
 
-  virtual void BeginOfEventAction(const G4Event *event);
   inline std::string GetPhysicalVolumeName() {return fPhysicalVolumeName;}
 
   virtual void EndSimulationAction();
