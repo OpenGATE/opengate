@@ -351,16 +351,17 @@ void GateDoseActor::EndOfRunAction(const G4Run *run) {
 }
 
 int GateDoseActor::EndOfRunActionMasterThread(int run_id) {
-  if (goalUncertainty != 0.0) {
-    double unc = ComputeMeanUncertainty();
-    if (unc <= goalUncertainty) {
-      return 1;
-    } else {
-      return 0;
-    }
-  } else {
-    return 0;
-  }
+//  if (goalUncertainty != 0.0) {
+//    double unc = ComputeMeanUncertainty();
+//    if (unc <= goalUncertainty) {
+//      return 1;
+//    } else {
+//      return 0;
+//    }
+//  } else {
+//    return 0;
+//  }
+  return 0;
 }
 
 double GateDoseActor::GetMaxValueOfImage(Image3DType::Pointer imageP) {
