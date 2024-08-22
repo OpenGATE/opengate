@@ -840,6 +840,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("fluence", run_index)
         self.push_to_cpp_image("fluence", run_index, self.cpp_fluence_image)
+        g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
