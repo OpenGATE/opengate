@@ -55,9 +55,13 @@ void GateVDigitizerWithOutputActor::StartSimulationAction() {
 
   // Create the list of output attributes
   fOutputDigiCollection = hcm->NewDigiCollection(fOutputDigiCollectionName);
-  if (!fWriteToDisk)
-    fOutputFilename = "";
-  fOutputDigiCollection->SetFilenameAndInitRoot(fOutputFilename);
+  std::string outputPath;
+  if (!GetWriteToDisk(fOutputNameRoot)) {
+    outputPath = "";
+  } else {
+    outputPath = GetOutputPath(fOutputNameRoot);
+  }
+  fOutputDigiCollection->SetFilenameAndInitRoot(outputPath);
   fOutputDigiCollection->InitDigiAttributesFromCopy(
       fInputDigiCollection, fUserSkipDigiAttributeNames);
 
