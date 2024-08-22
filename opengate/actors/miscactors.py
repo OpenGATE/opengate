@@ -228,11 +228,18 @@ class KillActor(ActorBase, g4.GateKillActor):
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateKillActor.__init__(self, {"name": self.name})
+        g4.GateKillActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction", "SteppingAction"})
 
     def EndSimulationAction(self):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
+
+def _setter_hook_particles(self, value):
+    if isinstance(value, str):
+        return [value]
+    else:
+        return list(value)
 
 
 class SplittingActorBase(ActorBase):
