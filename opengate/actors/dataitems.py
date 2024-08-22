@@ -214,47 +214,65 @@ class DataDictionary(DataContainer):
 class DataItemContainer(DataContainer):
     """This is a base class. Inherit from it to implement specific containers."""
 
-    # define writable_data_items here at the class level
-    # because we want changes to it to apply to all instances
-    # of the container class created in an actor output
-    # we fill the dictionary in the __init__ method because we need to know
-    # how many data items the container handles. Nonetheless, this remains a
-    # class-level attribute.
-    # Important: Derived container classes may define their own writable_data_items,
-    # but MUST do so also at the class level
-    writable_data_items = {}
+    # No data item classes specified in the base class.
+    # Derived classes must specify this at the class level
+    _data_item_classes = ()
 
-    def __init__(self, data_item_classes, *args, data=None, **kwargs):
-        self._tuple_length = len(data_item_classes)
-        for dic in data_item_classes:
-            if DataItem not in dic.mro():
-                fatal(f"Illegal data item class {dic}. ")
-        self.data_item_classes = data_item_classes
+    def __init__(self, *args, data=None, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        self.data = [dic(data=None) for dic in self.data_item_classes]
+        # create the instances of the data item classes
+        # and populate them with data if provided
+        self.data = [dic(data=None) for dic in self._data_item_classes]
         if data is not None:
             self.set_data(*data)
 
-        # default configuration in case the inheriting class does not define a writable_data_items class attribute
-        if len(self.writable_data_items) == 0:
-            if self._tuple_length > 1:
-                self.writable_data_items = Box(
+    @classmethod
+    def get_default_data_write_config(cls):
+        default_data_write_config = None
+        # try to pick up writable dataitems defined in the specific class
+        for c in cls.mro():
+            try:
+                default_data_write_config = c.__dict__['default_data_write_config']
+                break
+            except KeyError:
+                continue
+        # If none of the classes in the inheritance chain specifies data item,
+        # we fill up a dictionary with the default configuration
+        if default_data_write_config is None:
+            if len(cls._data_item_classes) > 1:
+                default_data_write_config = Box(
                     [
                         (i, Box({"suffix": f"dataitem_{i}", "write_to_disk": True}))
-                        for i in range(self._tuple_length)
+                        for i in range(len(cls._data_item_classes))
                     ]
                 )
             else:
                 # no special suffix for single-item containers
-                self.writable_data_items = Box(
+                default_data_write_config = Box(
                     {0: Box({"suffix": None, "write_to_disk": True})}
                 )
+        return default_data_write_config
+
+    # the actual write config needs to be fetched from the actor output instance
+    # which handles this data item container
+    @property
+    def data_write_config(self):
+        try:
+            belongs_to = self.belongs_to
+        except AttributeError:
+            raise AttributeError("belongs_to unknown")
+        return self.belongs_to.data_write_config
+
+    @property
+    def _tuple_length(self):
+        return len(self._data_item_classes)
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
         # or intended to be the input to the container class
         processed_data = []
-        for d, c in zip(data, self.data_item_classes):
+        for d, c in zip(data, self._data_item_classes):
             if isinstance(d, c):
                 processed_data.append(d)
             else:
@@ -297,7 +315,7 @@ class DataItemContainer(DataContainer):
     def __add__(self, other):
         self._assert_data_is_not_none()
         return type(self)(
-            self.data_item_classes,
+            self._data_item_classes,
             data=[
                 self.data[i].__trueadd__(other.data[i])
                 for i in range(self._tuple_length)
@@ -313,7 +331,7 @@ class DataItemContainer(DataContainer):
     def __truediv__(self, other):
         self._assert_data_is_not_none()
         return type(self)(
-            self.data_item_classes,
+            self._data_item_classes,
             data=[
                 self.data[i].__truediv__(other.data[i])
                 for i in range(self._tuple_length)
@@ -324,7 +342,7 @@ class DataItemContainer(DataContainer):
         if item is None:
             items_to_write = [
                 k
-                for k, v in self.writable_data_items.items()
+                for k, v in self.data_write_config.items()
                 if v["write_to_disk"] is True
             ]
         else:
@@ -360,7 +378,7 @@ class DataItemContainer(DataContainer):
             fatal(
                 f"This data container holds {self._tuple_length} data items. "
                 f"You must provide an item=... argument. "
-                f"Valid items of this container are: {list(self.writable_data_items.keys())}."
+                f"Valid writable items of this container are: {list(self.data_write_config.keys())}."
             )
         return insert_suffix_before_extension(
             actor_output_path, self._get_suffix_for_item(item)
@@ -369,8 +387,8 @@ class DataItemContainer(DataContainer):
         #     return actor_output_path
 
     def _get_suffix_for_item(self, identifier):
-        if identifier in self.writable_data_items:
-            return self.writable_data_items[identifier]["suffix"]
+        if identifier in self.data_write_config:
+            return self.data_write_config[identifier]["suffix"]
         else:
             fatal(
                 f"No data item found with identifier {identifier} "
