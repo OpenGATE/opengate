@@ -484,33 +484,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         return_dict["g4_phys_vol"] = None
         return return_dict
 
-    def check_user_input(self):
-        VoxelDepositActor.check_user_input(self)
-        if self.goal_uncertainty < 0.0 or self.goal_uncertainty > 1.0:
-            raise ValueError("goal uncertainty must be > 0 and < 1")
-
-        # if self.ste_of_mean_unbiased:
-        #     self.ste_of_mean = True
-
-        # if self.ste_of_mean:
-        #     self.use_more_RAM = True
-
-        if self.ste_of_mean is True and self.simulation.number_of_threads <= 4:
-            raise ValueError(
-                "number_of_threads should be > 4 when using dose actor with ste_of_mean flag enabled"
-            )
-
-        if self.goal_uncertainty:
-            if self.uncertainty is False and self.ste_of_mean is False:
-                raise ValueError(
-                    "To set an uncertainty goal, set at least one of this flags to True: uncertainty, ste_of_mean"
-                )
-
-        if self.uncertainty is True and self.ste_of_mean is True:
-            raise ValueError(
-                "select only one way to calculate uncertainty: uncertainty or ste_of_mean"
-            )
-
     def compute_dose_from_edep_img(self, input_image):
         """
         * create mass image:
