@@ -427,23 +427,29 @@ class DataItemContainer(DataContainer):
 
 class SingleArray(DataItemContainer):
 
+    _data_item_classes = (ArrayDataItem,)
+
     def __init__(self, *args, **kwargs):
         # specify the data item classes
-        super().__init__((ArrayDataItem,), *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class DoubleArray(DataItemContainer):
 
+    _data_item_classes = (ArrayDataItem, ArrayDataItem)
+
     def __init__(self, *args, **kwargs):
         # specify the data item classes
-        super().__init__((ArrayDataItem, ArrayDataItem), *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class SingleItkImage(DataItemContainer):
 
+    _data_item_classes = (ItkImageDataItem,)
+
     def __init__(self, *args, **kwargs):
         # specify the data item classes
-        super().__init__((ItkImageDataItem,), *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def image(self):
@@ -452,10 +458,11 @@ class SingleItkImage(DataItemContainer):
 
 class QuotientItkImage(DataItemContainer):
 
-    # override the configuration from the super class
-    # which items should be written to disk and how
+    _data_item_classes = (ItkImageDataItem, ItkImageDataItem),
+
+    # Specify which items should be written to disk and how
     # Important: define this at the class level, NOT in the __init__ method
-    writable_data_items = Box(
+    default_data_write_config = Box(
         {
             "numerator": Box({"suffix": "numerator", "write_to_disk": True}),
             "denominator": Box({"suffix": "denominator", "write_to_disk": True}),
@@ -465,7 +472,7 @@ class QuotientItkImage(DataItemContainer):
 
     def __init__(self, *args, **kwargs):
         # specify the data item classes
-        super().__init__((ItkImageDataItem, ItkImageDataItem), *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def numerator(self):
