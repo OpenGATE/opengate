@@ -66,7 +66,6 @@ public:
 
   int sub2ind(Image3DType::IndexType index3D);
   void ind2sub(int index, Image3DType::IndexType &index3D);
-  void ComputeSquareImage();
   double ComputeMeanUncertainty();
   double GetMaxValueOfImage(Image3DType::Pointer imageP);
 

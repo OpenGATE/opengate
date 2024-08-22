@@ -311,49 +311,6 @@ double GateDoseActor::ComputeMeanUncertainty() {
   return mean_unc;
 }
 
-void GateDoseActor::ComputeSquareImage() {
-  G4AutoLock mutex(&SetWorkerEndRunMutex);
-  threadLocalT &data = fThreadLocalData.Get();
-
-  if (fcpImageForThreadsFlag) {
-
-    itk::ImageRegionIterator<Image3DType> edep_iterator3D(
-        cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
-    for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
-         ++edep_iterator3D) {
-
-      Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
-      Image3DType::PixelType pixelValue3D =
-          data.edep_worker_flatimg[sub2ind(index_f)];
-      ImageAddValue<Image3DType>(cpp_edep_image, edep_iterator3D.GetIndex(),
-                                 pixelValue3D);
-      if (fSTEofMeanFlag) {
-        // Dividing by number of events/img for the unlikely event of having
-        // different number of particles per thread. Probably not needeed.
-        Image3DType::PixelType pixelValue_cpp =
-            pixelValue3D * pixelValue3D; // / double(data.NbOfEvent_worker);
-        ImageAddValue<Image3DType>(cpp_square_image, index_f, pixelValue_cpp);
-      }
-    }
-
-  } else {
-    if (fSquareFlag) {
-
-      itk::ImageRegionIterator<Image3DType> iterator3D(
-          cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
-      for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
-        Image3DType::IndexType index_f = iterator3D.GetIndex();
-        Image3DType::PixelType pixelValue3D =
-            data.edepSquared_worker_flatimg[sub2ind(index_f)];
-        ImageAddValue<Image3DType>(
-            cpp_square_image, index_f,
-            pixelValue3D * pixelValue3D); // FIXME: didn't we calculate this in
-                                          // the stepping action?
-      }
-    }
-  }
-}
-
 int GateDoseActor::sub2ind(Image3DType::IndexType index3D) {
 
   return index3D[0] + size_edep[0] * (index3D[1] + size_edep[1] * index3D[2]);
@@ -370,7 +327,28 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
   index3D[2] = z;
 }
 
-void GateDoseActor::EndOfRunAction(const G4Run *run) { ComputeSquareImage(); }
+void GateDoseActor::EndOfRunAction(const G4Run *run) {
+
+  if (GetSquareFlag()) {
+    // We need to flush the energy deposit from the last event ID of this run
+    // to cpp_square_image because it has only been accumulated in the SteppingAction
+    // It would be flushed to cpp_square_image in the SteppingAction of the next event ID,
+    // but we are at the end of the run.
+    G4AutoLock mutex(&SetWorkerEndRunMutex);
+    threadLocalT &data = fThreadLocalData.Get();
+
+    itk::ImageRegionIterator<Image3DType> iterator3D(
+        cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
+    for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
+      Image3DType::IndexType index_f = iterator3D.GetIndex();
+      Image3DType::PixelType pixelValue3D =
+          data.edepSquared_worker_flatimg[sub2ind(index_f)];
+      ImageAddValue<Image3DType>(
+          cpp_square_image, index_f,
+          pixelValue3D * pixelValue3D);
+    }
+  }
+}
 
 int GateDoseActor::EndOfRunActionMasterThread(int run_id) {
   if (goalUncertainty != 0.0) {
