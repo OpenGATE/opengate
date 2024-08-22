@@ -86,17 +86,9 @@ void GateDoseActor::InitializeCpp() {
   // (the size and allocation will be performed on the py side)
   cpp_edep_image = Image3DType::New();
 
-  if (fUncertaintyFlag || fSTEofMeanFlag) {
-    fSquareFlag = true;
-  }
   if (fSquareFlag) {
     cpp_square_image = Image3DType::New();
   }
-  //
-  //   std::cout<<"fcpImageForThreadsFlag: "<<fcpImageForThreadsFlag<<std::endl;
-  //   std::cout<<"fUncertaintyFlag: "<<fUncertaintyFlag<<std::endl;
-  //   std::cout<<"fSTEofMeanFlag: "<<fSTEofMeanFlag<<std::endl;
-  //   std::cout<<"fSquareFlag: "<<fSquareFlag<<std::endl;
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
