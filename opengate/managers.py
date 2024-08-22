@@ -1422,6 +1422,7 @@ class Simulation(GateObject):
         super().from_dictionary(d)
         self.volume_manager.from_dictionary(d["volume_manager"])
         self.physics_manager.from_dictionary(d["physics_manager"])
+        self.actor_manager.from_dictionary(d["actor_manager"])
 
     def to_json_string(self):
         warning(
