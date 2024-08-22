@@ -400,6 +400,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             False,
             {
                 "doc": "FIXME",
+                "deprecated": "Use: my_actor.user_output.dose.active=True/False "
+                              "to request the actor to score dose, "
+                              "where 'my_actor' should be your actor object. "
+                              "By default, only the deposited energy is scored. "
             },
         ),
         "to_water": (
