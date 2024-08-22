@@ -44,8 +44,6 @@ void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
                                    fTranslation);
 }
 
-void GateFluenceActor::BeginOfEventAction(const G4Event *event) {}
-
 void GateFluenceActor::SteppingAction(G4Step *step) {
   // same method to consider only entering tracks
   if (step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary) {
