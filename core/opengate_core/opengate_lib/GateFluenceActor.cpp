@@ -27,7 +27,7 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
   // translation
-  fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
+  fTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 
 void GateFluenceActor::InitializeCpp() {
@@ -40,7 +40,6 @@ void GateFluenceActor::InitializeCpp() {
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
-                                   fInitialTranslation);
   // compute volume of a dose voxel
   auto sp = cpp_fluence_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];

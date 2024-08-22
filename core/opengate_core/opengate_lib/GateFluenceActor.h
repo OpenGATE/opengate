@@ -50,8 +50,7 @@ public:
   int NbOfThreads = 0;
 
   std::string fPhysicalVolumeName;
-
-  G4ThreeVector fInitialTranslation;
+  G4ThreeVector fTranslation;
   std::string fHitType;
 };
 
