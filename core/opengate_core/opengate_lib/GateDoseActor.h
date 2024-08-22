@@ -52,6 +52,18 @@ public:
   // Called every time a Run ends (all threads)
   virtual void EndOfRunAction(const G4Run *run) override;
 
+  inline bool GetToWaterFlag() {return fToWaterFlag;}
+
+  inline void SetToWaterFlag(const bool b){
+    fToWaterFlag = b;
+  }
+
+  inline bool GetSquareFlag() {return fSquareFlag;}
+
+  inline void SetSquareFlag(const bool b){
+    fSquareFlag = b;
+  }
+
   // virtual void EndSimulationAction();
 
   // Image type needs to be 3D double by default

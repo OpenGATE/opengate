@@ -544,6 +544,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.square.active = True
 
         self.InitializeUserInput(self.user_info)  # C++ side
+        self.SetSquareFlag(self.user_output.square.active)
+        if self.score_in == 'water':
+            self.SetToWaterFlag(True)
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
         self.InitializeCpp()
