@@ -117,6 +117,12 @@ class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
         g4.GateThresholdAttributeFilter.__init__(self)
 
 
+    def initialize(self):
+        if self.attribute is None: 
+            fatal(f"The user input parameter 'attribute' is not set but required in filter '{self.name}'.")
+        super().initialize()
+
+
 filter_classes = {
     "ParticleFilter": ParticleFilter,
     "KineticEnergyFilter": KineticEnergyFilter,
