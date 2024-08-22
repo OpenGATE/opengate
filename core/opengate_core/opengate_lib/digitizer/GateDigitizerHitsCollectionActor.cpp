@@ -48,9 +48,13 @@ void GateDigitizerHitsCollectionActor::StartSimulationAction() {
   fHits = dcm->NewDigiCollection(fHitsCollectionName);
   // This order is important: filename and attributes must be set before Root
   // initialization
-  if (!fWriteToDisk)
-    fOutputFilename = "";
-  fHits->SetFilenameAndInitRoot(fOutputFilename);
+  std::string outputPath;
+  if (!GetWriteToDisk(fOutputNameRoot)) {
+    outputPath = "";
+  } else {
+    outputPath = GetOutputPath(fOutputNameRoot);
+  }
+  fHits->SetFilenameAndInitRoot(outputPath);
   fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
   fHits->RootInitializeTupleForMaster();
 }
