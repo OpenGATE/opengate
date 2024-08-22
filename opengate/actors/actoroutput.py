@@ -252,10 +252,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
             },
         ),
-        # "data_container_class": (
-        #     None,
-        #     {"doc": "FIXME"},
-        # ),
     }
 
     def __init__(self, data_container_class, *args, **kwargs):
