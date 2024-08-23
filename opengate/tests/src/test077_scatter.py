@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
-    # sim.random_seed = 1321654
+    sim.random_seed = 1321654
 
     # units
     m = gate.g4_units.m
@@ -70,6 +70,8 @@ if __name__ == "__main__":
         "ParticleName",
         "EventKineticEnergy",
         "EventDirection",
+        "EventID",
+        "TrackID",
         "KineticEnergy",
         "PreDirection",
         "ScatterFlag",
@@ -81,7 +83,8 @@ if __name__ == "__main__":
     # phsp.debug = True
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
-    phsp.filters.append(f)
+    # f.policy = "discard"
+    # phsp.filters.append(f)
 
     # phsp
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_scatter")
@@ -91,7 +94,7 @@ if __name__ == "__main__":
     # phsp2.debug = True
     fs = sim.add_filter("ScatterFilter", "f_scatter")
     fs.policy = "keep_scatter"
-    phsp2.filters.append(f)
+    # phsp2.filters.append(f)
     phsp2.filters.append(fs)
 
     # phsp
@@ -101,13 +104,16 @@ if __name__ == "__main__":
     phsp3.output = phsp.output
     fs = sim.add_filter("ScatterFilter", "f_no_scatter")
     fs.policy = "keep_no_scatter"
-    phsp3.filters.append(f)
+    # phsp3.filters.append(f)
     phsp3.filters.append(fs)
 
     # start simulation
     sim.run()
     stats = sim.output.get_actor("Stats")
     print(stats)
+
+    # p = sim.output.get_actor("phsp")
+    # print(p.GetTotalNumberOfEntries())
 
     # test
     is_ok = check_scatter(phsp.output)

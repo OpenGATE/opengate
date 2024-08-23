@@ -69,4 +69,6 @@ def check_scatter(root_filename):
         f"Check nb filter {phsp_no_scatter.num_entries} vs {np.sum(scatter_flag3 != 1)}",
     )
 
+    ####
+
     return b1 and b2 and b3 and b4
