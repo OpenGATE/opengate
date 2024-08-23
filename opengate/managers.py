@@ -1554,6 +1554,9 @@ class Simulation(GateObject):
     def add_actor(self, actor_type, name):
         return self.actor_manager.add_actor(actor_type, name)
 
+    def get_actor(self, name):
+        return self.actor_manager.get_actor(name)
+
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
