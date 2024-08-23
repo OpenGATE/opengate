@@ -197,7 +197,7 @@ class DigitizerBase(ActorBase):
 
     _output_name_root = 'root_output'
 
-    def _add_user_output_root(self):
+    def _add_user_output_root(self, **kwargs):
         """Specialized method to add a root user output in digitizers.
         The output name is hard-coded at the class-level and the same for all digitizers,
         i.e. in all digitizers, the user can do:
@@ -209,7 +209,7 @@ class DigitizerBase(ActorBase):
             fatal(f"The actor '{self.name}' already has a user_output called '{self._output_name_root}'."
                   f"Probably, the method _add_user_output_root() was called more than once, "
                   f"while it can be used only to add a single root output as in most digitizers. ")
-        return self._add_user_output(ActorOutputRoot, self._output_name_root)
+        return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
     def StartSimulationAction(self):
         self.SetOutputPath(self._output_name_root, self.user_output.root_output.get_output_path_as_string())
