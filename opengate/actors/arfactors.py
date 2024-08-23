@@ -7,7 +7,7 @@ from ..utility import g4_units
 from ..exception import fatal
 from .base import ActorBase
 
-from .digitizers import DigitizerEnergyWindowsActor
+from .digitizers import DigitizerEnergyWindowsActor, DigitizerBase
 from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
 
 
@@ -42,7 +42,7 @@ def import_garf():
     return garf
 
 
-class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
+class ARFTrainingDatasetActor(DigitizerBase, g4.GateARFTrainingDatasetActor):
     """
     The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
     of a spect detector. To be used by garf_train to train a ARF neural network.
@@ -71,13 +71,9 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
-        self._add_user_output(
-            ActorOutputRoot,
-            "arf_training_data",
+        self._add_user_output_root(
             output_filename="arf_training.root",
-            keep_in_memory=False,
         )
-
 
     def initialize(self):
         ActorBase.initialize(self)

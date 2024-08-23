@@ -33,7 +33,14 @@ void GateARFTrainingDatasetActor::InitializeUserInput(py::dict &user_info) {
 void GateARFTrainingDatasetActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
-  fHits->SetFilenameAndInitRoot(fOutputFilename);
+
+  std::string outputPath;
+  if (!GetWriteToDisk(fOutputNameRoot)) {
+    outputPath = "";
+  } else {
+    outputPath = GetOutputPath(fOutputNameRoot);
+  }
+  fHits->SetFilenameAndInitRoot(outputPath);
   // create the attributes
   auto *att_e = new GateTDigiAttribute<double>("E");
   auto *att_t = new GateTDigiAttribute<double>("Theta");
