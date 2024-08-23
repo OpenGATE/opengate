@@ -48,7 +48,6 @@ public:
   std::string fPhysicalVolumeName;
 
 protected:
-  std::string fOutputFilename;
   std::vector<std::string> fInputDigiCollectionNames;
   std::vector<GateDigiCollection *> fInputDigiCollections;
   G4RotationMatrix fDetectorOrientationMatrix;
