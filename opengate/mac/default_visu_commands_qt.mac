@@ -2,7 +2,7 @@
 # default visualization
 #/vis/open OGLSQt
 
-/vis/open OGLIQt
+/vis/open OGL
 /vis/scene/create
 /vis/drawVolume worlds
 /vis/viewer/flush

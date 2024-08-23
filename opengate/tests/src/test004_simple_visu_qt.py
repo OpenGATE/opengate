@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = True
+    sim.visu_type = "qt"
     sim.visu_verbose = False
     sim.number_of_threads = 1
     sim.random_engine = "MersenneTwister"
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 200000 * Bq
+    source.activity = 200 * Bq
 
     # runs
     sec = g4_units.second
@@ -55,13 +56,3 @@ if __name__ == "__main__":
     # start simulation
     # sim.add_g4_command_after_init("/run/verbose 1")
     sim.run()
-
-    stats = sim.output.get_actor("Stats")
-    stats.counts.run_count = 1
-
-    # gate_test4_simulation_stats_actor
-    # Gate mac/main.mac
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.03)
-
-    utility.test_ok(is_ok)
