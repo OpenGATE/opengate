@@ -109,8 +109,7 @@ def compare_root_hits(crystal, output, root_filename, path, n=1):
     print()
     warning("Compare hits")
     gate_file = root_filename
-    hc_file = output.get_actor(f"Hits_{crystal.name}").user_info.output
-    print(hc_file)
+    hc_file = output.get_actor(f"Hits_{crystal.name}").get_output_path()
     checked_keys = [
         {"k1": "posX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "posY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
@@ -134,7 +133,7 @@ def compare_root_singles(crystal, output, root_filename, path, sname, n=1):
     # Compare root files
     print()
     warning("Compare singles")
-    hc_file = output.get_actor(f"Singles_{crystal.name}").user_info.output
+    hc_file = output.get_actor(f"Singles_{crystal.name}").get_output_path()
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},

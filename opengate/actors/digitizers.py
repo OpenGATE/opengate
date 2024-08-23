@@ -6,7 +6,7 @@ from .base import ActorBase
 from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
 
-from ..utility import g4_units, ensure_filename_is_str
+from ..utility import g4_units
 from ..image import (
     align_image_with_physical_volume,
     update_image_py_to_cpp,
@@ -174,9 +174,7 @@ class Digitizer:
             module_name = f"{self.name}_{index}"
         mod = self.simulation.add_actor(module_type, module_name)
         mod.attached_to = self.actors[index - 1].attached_to
-        if "input_digi_collection" in mod.__dict__:
-            mod.input_digi_collection = self.actors[index - 1].name
-        mod.output_filename = ""
+        mod.input_digi_collection = self.actors[index - 1].name
         self.actors.append(mod)
         return mod
 
@@ -194,7 +192,6 @@ class Digitizer:
 
 
 class DigitizerBase(ActorBase):
-
     _output_name_root = "root_output"
 
     def _add_user_output_root(self, **kwargs):
@@ -407,7 +404,7 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateDigitizerBlurringActor(self, self.user_info)
+        g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def initialize(self):
@@ -530,7 +527,7 @@ class DigitizerSpatialBlurringActor(
     def __init__(self, *args, **kwargs):
         # base classes
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "blurred_singles")
+        self._add_user_output_root()
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -606,7 +603,7 @@ class DigitizerEfficiencyActor(DigitizerBase, g4.GateDigitizerEfficiencyActor):
     def __init__(self, *args, **kwargs):
         # base classes
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "efficiency_filtered_singles")
+        self._add_user_output_root()
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -672,7 +669,7 @@ class DigitizerEnergyWindowsActor(DigitizerBase, g4.GateDigitizerEnergyWindowsAc
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "singles_per_energy_window")
+        self._add_user_output_root()
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -822,7 +819,6 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputSingleImage, "projection")
         self.start_output_origin = None
-
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -953,7 +949,7 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         # warning : inherit from DigitizerAdderActor but should not use its
         # constructor because it adds an output
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "readout_singles")
+        self._add_user_output_root()
         self.__initcpp__()
 
     def __initcpp__(self):

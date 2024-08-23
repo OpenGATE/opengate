@@ -22,11 +22,11 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
     c = {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV}
     ew = digit.find_first_module("energy_window")
-    ew.output = paths.output / "output_tc99m.root"
+    ew.output_filename = paths.output / "output_tc99m.root"
     ew.channels.append(c)
 
     # output
-    stats.output = paths.output / "stats_intevo_tc99m.txt"
+    stats.output_filename = paths.output / "stats_intevo_tc99m.txt"
 
     # source
     Bq = gate.g4_units.Bq
@@ -38,9 +38,7 @@ if __name__ == "__main__":
     output = sim.output
 
     # stat
-    s = output.get_actor("stats")
-    print(s)
-    print(stats.output)
+    print(stats)
 
     # compare stats
     ref_folder = paths.output_ref
@@ -49,7 +47,9 @@ if __name__ == "__main__":
     # compare root
     fr = ref_folder / "output_intevo_tc99m.root"
     is_ok = (
-        compare_root_spectrum(fr, ew.output, paths.output / "test073_intevo_tc99m.png")
+        compare_root_spectrum(
+            fr, ew.get_output_path(), paths.output / "test073_intevo_tc99m.png"
+        )
         and is_ok
     )
 

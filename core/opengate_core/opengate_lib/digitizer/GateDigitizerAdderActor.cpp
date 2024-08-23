@@ -15,6 +15,10 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
   // actions (in addition of the ones in GateVDigitizerWithOutputActor)
   fActions.insert("EndOfEventAction");
+  fGroupVolumeDepth = -1;
+  fPolicy = AdderPolicy::EnergyWinnerPosition;
+  fTimeDifferenceFlag = false;
+  fNumberOfHitsFlag = false;
 }
 
 GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;

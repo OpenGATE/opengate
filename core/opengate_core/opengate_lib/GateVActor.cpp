@@ -59,7 +59,9 @@ std::string GateVActor::GetOutputPath(std::string outputName) {
     return aInfo.outputPath;
   } catch (std::out_of_range &e) {
     std::ostringstream msg;
-    msg << "No actor output with the name " << outputName << " exists.";
+    msg << "(GetOutputPath) No actor output with the name " << outputName
+        << " exists.";
+    msg << fMotherVolumeName << " " << GetName();
     Fatal(msg.str());
   }
 }
@@ -75,7 +77,9 @@ bool GateVActor::GetWriteToDisk(std::string outputName) {
     return aInfo.writeToDisk;
   } catch (std::out_of_range &e) {
     std::ostringstream msg;
-    msg << "No actor output with the name " << outputName << " exists.";
+    msg << "(GetWriteToDisk) No actor output with the name " << outputName
+        << " exists.";
+    msg << fMotherVolumeName << " " << GetName();
     Fatal(msg.str());
   }
 }

@@ -23,18 +23,19 @@ if __name__ == "__main__":
 
     # output
     crystal = sim.volume_manager.get_volume(f"spect_crystal")
-    hits = sim.get_actor_user_info(f"Hits_{crystal.name}")
-    singles = sim.get_actor_user_info(f"Singles_{crystal.name}")
-    eb = sim.get_actor_user_info(f"Singles_{crystal.name}_eblur")
-    sb = sim.get_actor_user_info(f"Singles_{crystal.name}_sblur")
-    proj = sim.get_actor_user_info(f"Projection_{crystal.name}")
-    stats = sim.get_actor_user_info("stats")
-    hits.output = paths.output / "output_test2.root"
-    singles.output = hits.output
-    eb.output = hits.output
-    sb.output = hits.output
-    proj.output = paths.output / "projections_test2.mhd"
-    stats.output = paths.output / "stats2.txt"
+    hits = sim.get_actor(f"Hits_{crystal.name}")
+    singles = sim.get_actor(f"Singles_{crystal.name}")
+    eb = sim.get_actor(f"Singles_{crystal.name}_eblur")
+    sb = sim.get_actor(f"Singles_{crystal.name}_sblur")
+    proj = sim.get_actor(f"Projection_{crystal.name}")
+    stats = sim.get_actor("stats")
+    hits.output_filename = paths.output / "output_test2.root"
+    singles.output_filename = hits.output_filename
+    eb.output_filename = hits.output_filename
+    sb.output_filename = hits.output_filename
+    proj.output_filename = paths.output / "projections_test2.mhd"
+    stats.output_filename = paths.output / "stats2.txt"
+    print(hits.get_output_path())
 
     # start simulation
     sim.run()

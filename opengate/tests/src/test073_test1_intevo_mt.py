@@ -22,22 +22,24 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[0, stop]]
 
     # output filenames
-    stats = sim.get_actor_user_info("stats")
-    stats.output = paths.output / "stats1.txt"
+    stats = sim.get_actor("stats")
+    stats.output_filename = paths.output / "stats1.txt"
+
     crystal = sim.volume_manager.get_volume(f"spect_crystal")
-    proj = sim.get_actor_user_info(f"Projection_{crystal.name}")
-    proj.output = paths.output / "projections_test1.mhd"
-    hits = sim.get_actor_user_info(f"Hits_{crystal.name}")
-    hits.output = paths.output / "output_test1.root"
-    singles = sim.get_actor_user_info(f"Singles_{crystal.name}")
-    singles.output = paths.output / "output_test1.root"
+    proj = sim.get_actor(f"Projection_{crystal.name}")
+    proj.output_filename = paths.output / "projections_test1.mhd"
+
+    hits = sim.get_actor(f"Hits_{crystal.name}")
+    hits.output_filename = paths.output / "output_test1.root"
+
+    singles = sim.get_actor(f"Singles_{crystal.name}")
+    singles.output_filename = paths.output / "output_test1.root"
 
     # start simulation
     sim.run()
 
     # print stats
     output = sim.output
-    stats = output.get_actor("stats")
     print(stats)
 
     # ------------------------------------------------------------------------------------
