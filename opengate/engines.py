@@ -1246,9 +1246,7 @@ class SimulationEngine(GateSingletonFatal):
 
         # check if some actors need UserEventInformation
         # FIXME: should go to ActorEngine
-        self.enable_user_event_information(
-            self.simulation.actor_manager.user_info_actors.values()
-        )
+        self.initialize_user_event_information_flag()
 
         # Geometry initialization
         log.info("Simulation: initialize Geometry")
@@ -1422,13 +1420,12 @@ class SimulationEngine(GateSingletonFatal):
     #         )
     #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)
 
-    def enable_user_event_information(self, actors):
+    def initialize_user_event_information_flag(self):
         self.user_event_information_flag = False
-        for ac in actors:
+        for ac in self.simulation.actor_manager.actors.values():
             if "attributes" in ac.user_info:
                 if "ParentParticleName" in ac.attributes:
                     self.user_event_information_flag = True
-                    return
 
 
 def start_gdml_visu(filename):
