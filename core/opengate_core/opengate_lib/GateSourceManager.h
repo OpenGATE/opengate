@@ -17,15 +17,16 @@
 #include <G4VisExecutive.hh>
 
 #include "GateUserEventInformation.h"
+#include "GateUserTrackInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
 
 // Temporary: later option will be used to control the verbosity
 class UIsessionSilent : public G4UIsession {
 public:
-  virtual G4int ReceiveG4cout(const G4String & /*coutString*/) { return 0; }
+  G4int ReceiveG4cout(const G4String & /*coutString*/) override { return 0; }
 
-  virtual G4int ReceiveG4cerr(const G4String & /*cerrString*/) { return 0; }
+  G4int ReceiveG4cerr(const G4String & /*cerrString*/) override { return 0; }
 };
 
 /*
@@ -48,7 +49,7 @@ public:
 
   explicit GateSourceManager();
 
-  virtual ~GateSourceManager();
+  ~GateSourceManager() override;
 
   // [py side] store the list of run time intervals
   void Initialize(TimeIntervals simulation_times, py::dict &options);
@@ -109,6 +110,7 @@ public:
 
     // User information data
     GateUserEventInformation *fUserEventInformation;
+    GateUserTrackInformation *fUserTrackInformation; // FIXME remove ?
   };
   G4Cache<threadLocalT> fThreadLocalData;
 
@@ -128,6 +130,7 @@ public:
   py::dict fOptions;
 
   bool fUserEventInformationFlag;
+  bool fUserTrackInformationFlag; // FIXME remove
 };
 
 #endif // GateSourceManager_h

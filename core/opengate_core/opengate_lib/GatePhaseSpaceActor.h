@@ -72,6 +72,7 @@ protected:
 
   int fNumberOfAbsorbedEvents;
   int fTotalNumberOfEntries;
+  bool fUserTrackInformationFlag;
 };
 
 #endif // GatePhaseSpaceActor_h

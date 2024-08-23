@@ -249,6 +249,13 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     event->SetUserInformation(l.fUserEventInformation);
   }
 
+  // FIXME remove ?
+  /*if (fUserTrackInformationFlag) {
+    l.fUserTrackInformation = new GateUserTrackInformation;
+    //l.fUserTrackInformation->BeginOfEventAction(event);
+    //event->SetUserInformation(l.fUserTrackInformation);
+  }*/
+
   // prepare the next source
   PrepareNextSource();
 

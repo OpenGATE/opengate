@@ -21,6 +21,8 @@ void init_GateSourceManager(py::module &m) {
       .def("SetActors", &GateSourceManager::SetActors)
       .def_readwrite("fUserEventInformationFlag",
                      &GateSourceManager::fUserEventInformationFlag)
+      .def_readwrite("fUserTrackInformationFlag",
+                     &GateSourceManager::fUserTrackInformationFlag)
       .def("StartMasterThread", &GateSourceManager::StartMasterThread,
            py::call_guard<py::gil_scoped_release>());
 }

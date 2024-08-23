@@ -9,6 +9,7 @@
 #include "G4RunManager.hh"
 #include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
+#include "GateUserTrackInformation.h"
 #include "digitizer/GateDigiCollectionManager.h"
 #include "digitizer/GateHelpersDigitizer.h"
 
@@ -28,6 +29,7 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fDigiCollectionName = DictGetStr(user_info, "_name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
+  fUserTrackInformationFlag = DictGetBool(user_info, "user_track_information");
   fDebug = DictGetBool(user_info, "debug");
   fHits = nullptr;
   fTotalNumberOfEntries = 0;
@@ -83,6 +85,13 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
 void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
+
+  if (fUserTrackInformationFlag) { // FIXME NOT HERE !!
+    // (should be deleted by G4 at track destructor)
+    auto *user_track_info = new GateUserTrackInformation;
+    track->SetUserInformation(user_track_info);
+  }
+
   if (fDebug) {
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << "New track "
@@ -93,19 +102,34 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 
 // Called every time a batch of step must be processed
 void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
+
+  // FIXME NOT HERE
+  if (fUserTrackInformationFlag) {
+    auto *info = dynamic_cast<GateUserTrackInformation *>(
+        step->GetTrack()->GetUserInformation());
+    info->Apply(step);
+  }
+
   // Only store if this is the first time
   // Note we CANNOT use step->IsFirstStepInVolume() because it
   // fails with parallel world geometry
+  // FIXME : also possible to use step->GetPreStepPoint()->GetStepStatus() ==
+  // fGeomBoundary, but track created inside the volume will not be in the phsp.
+  // Could be an option ?
   auto &l = fThreadLocalData.Get();
   if (!l.fFirstStepInVolume)
     return;
   l.fFirstStepInVolume = false;
+
   // Fill the hits
   fHits->FillHits(step);
+
   // Set that at least one step for this event have been stored
   if (fStoreAbsorbedEvent) {
     l.fCurrentEventHasBeenStored = true;
   }
+
+  // debug
   if (fDebug) {
     auto s = fHits->DumpLastDigi();
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();

@@ -290,4 +290,37 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "TrackLength", 'D',
       FILLF { att->FillDValue(step->GetTrack()->GetTrackLength()); });
+
+  // -----------------------------------------------------
+  // Scatter information
+  DefineDigiAttribute(
+      "ScatterFlag", 'B', FILLF {
+        // if any scatter occurs, set the flag to 1
+        // WARNING : "straight" interactions (unlikely) are ignored
+        auto *dp = step->GetTrack()->GetDynamicParticle();
+        auto event_mom = dp->GetPrimaryParticle()->GetMomentum();
+        auto track_mom = dp->GetMomentum();
+        if (event_mom.isNear(track_mom)) {
+          // Also consider scatter if this is a secondary particle
+          if (step->GetTrack()->GetTrackID() &&
+              step->GetTrack()->GetParentID() > 0)
+            att->FillIValue(1);
+          else
+            att->FillIValue(0);
+        } else {
+          att->FillIValue(1);
+        }
+      });
+  // Scatter information with track user info
+  DefineDigiAttribute(
+      "ScatterOrder", 'I', FILLF {
+        auto info = dynamic_cast<GateUserTrackInformation *>(
+            step->GetTrack()->GetUserInformation());
+        if (info == nullptr)
+          att->FillIValue(-1);
+        else {
+          auto order = info->GetScatterOrder();
+          att->FillIValue(order);
+        }
+      });
 }
