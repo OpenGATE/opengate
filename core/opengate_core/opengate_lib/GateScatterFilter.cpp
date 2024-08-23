@@ -18,6 +18,7 @@ int StepHasScatter(const G4Step *step) {
   //   return -1;
   // }
   // G4ThreeVector event_mom;
+  auto event_id = event->GetEventID();
   if (dp->GetPrimaryParticle() == nullptr) {
     DDD(dp->GetParticleDefinition()->GetParticleName());
     DDD(dp->GetDefinition()->GetParticleName());

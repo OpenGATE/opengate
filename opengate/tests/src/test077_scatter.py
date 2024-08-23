@@ -68,6 +68,7 @@ if __name__ == "__main__":
     # phsp
     att_list = [
         "ParticleName",
+        "ParentID",
         "EventKineticEnergy",
         "EventDirection",
         "EventID",
