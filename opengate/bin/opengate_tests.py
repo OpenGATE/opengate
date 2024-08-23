@@ -6,6 +6,8 @@ import time
 import pathlib
 import click
 import random
+import sys
+import json
 
 from opengate.exception import fatal, colored, color_ok, color_error
 from opengate_core.testsDataSetup import check_tests_data_folder
@@ -14,10 +16,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    "--test_id_start", "-i", default="all", help="Start test from this number"
-)
-@click.option("--test_id_stop", "-s", default="all", help="Stop test from this number")
+@click.option("--test_id", "-i", default="all", help="Start test from this number")
 @click.option(
     "--random_tests",
     "-r",
@@ -25,24 +24,26 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     default=False,
     help="Start the last 10 tests and 1/4 of the others randomly",
 )
-def go(test_id_start, test_id_stop, random_tests):
+def go(test_id, random_tests):
     pathFile = pathlib.Path(__file__).parent.resolve()
-    if "src" in os.listdir(pathFile):
-        mypath = os.path.join(pathFile, "../tests/src")
+    if "src" in pathFile.iterdir():
+        mypath = pathFile.parent / "tests" / "src"
     else:
         import opengate.tests
 
-        mypath = os.path.join(
-            pathlib.Path(opengate.tests.__file__).resolve().parent, "../tests/src"
+        mypath = (
+            pathlib.Path(opengate.tests.__file__).resolve().parent.parent
+            / "tests"
+            / "src"
         )
 
-    print("Looking for tests in: " + mypath)
+    print("Looking for tests in: " + str(mypath))
 
     if not check_tests_data_folder():
         return False
 
     # Look if torch is installed
-    torch_is_installed = True
+    torch = True
     torch_tests = [
         "test034_gan_phsp_linac.py",
         "test038_gan_phsp_spect_gan_my.py",
@@ -59,26 +60,18 @@ def go(test_id_start, test_id_stop, random_tests):
     try:
         import torch
     except:
-        torch_is_installed = False
+        torch = False
 
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
-        "test066_spect_gaga_garf_0_orientation.py",  # ignored because visu only
-        "test066_spect_gaga_garf_1_reference.py",  # ignored because reference data (too long)
-        "test066_spect_gaga_garf_2.py",  # ignored because reference data (too long, GPU)
-        "test066_spect_gaga_garf_3_standalone.py",  # ignored because too long (GPU)
-        "test066_spect_gaga_garf_4_analyse1.py",
-        "test066_spect_gaga_garf_5_analyse2.py",
     ]
 
-    onlyfiles = [
-        f for f in os.listdir(mypath) if os.path.isfile(os.path.join(mypath, f))
-    ]
+    onlyfiles = [f for f in os.listdir(str(mypath)) if (mypath / f).is_file()]
 
     files = []
     for f in onlyfiles:
         if "wip" in f:
-            print(f"Ignoring: {f:<40} (work in progress)")
+            print(f"Ignoring: {f:<40} ")
             continue
         if "visu" in f:
             continue
@@ -102,46 +95,46 @@ def go(test_id_start, test_id_stop, random_tests):
             continue
         if f in ignored_tests:
             continue
-        if not torch_is_installed and f in torch_tests:
+        if not torch and f in torch_tests:
             print(f"Ignoring: {f:<40} (Torch is not available) ")
             continue
         files.append(f)
 
     files = sorted(files)
-    if test_id_start == "all":
-        test_id_start = 0
-    if test_id_stop == "all":
-        test_id_stop = len(files)
-    if random_tests:
+    dictFiles = {}
+    for file in files:
+        dictFiles[file] = [""]
+    if test_id != "all":
+        test_id = int(test_id)
+        files_new = []
+        for f in files:
+            id = int(f[4:7])
+            if id >= test_id:
+                files_new.append(f)
+            else:
+                print(f"Ignoring: {f:<40} (< {test_id}) ")
+        files = files_new
+    elif random_tests:
         files_new = files[-10:]
         prob = 0.25
         files = files_new + random.sample(files[:-10], int(prob * (len(files) - 10)))
         files = sorted(files)
-    else:
-        test_id_start = int(test_id_start)
-        test_id_stop = int(test_id_stop)
-        files_new = []
-        for f in files:
-            id = int(f[4:7])
-            if test_id_start <= id <= test_id_stop:
-                files_new.append(f)
-            else:
-                print(f"Ignore: {f:<40} (< {test_id_start} or > {test_id_stop}) ")
-        files = files_new
 
     print(f"Running {len(files)} tests")
-    print(f"-" * 70)
+    print("-" * 70)
 
     failure = False
+
     for f in files:
         start = time.time()
         print(f"Running: {f:<46}  ", end="")
-        cmd = "python " + os.path.join(mypath, f"{f}")
-        log = os.path.join(os.path.dirname(mypath), f"log/{f}.log")
+        cmd = "python " + str(mypath / f)
+        log = str(mypath.parent / "log" / f) + ".log"
         r = os.system(f"{cmd} > {log} 2>&1")
         # subprocess.run(cmd, stdout=f, shell=True, check=True)
         if r == 0:
             print(colored.stylize(" OK", color_ok), end="")
+            dictFiles[f] = [True]
         else:
             if r == 2:
                 # this is probably a Ctrl+C, so we stop
@@ -150,9 +143,21 @@ def go(test_id_start, test_id_stop, random_tests):
                 print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True
                 os.system("cat " + log)
+                dictFiles[f] = [False]
         end = time.time()
         print(f"   {end - start:5.1f} s     {log:<65}")
 
+    outputJsonFile = (
+        "results_"
+        + sys.platform
+        + "_"
+        + str(sys.version_info[0])
+        + "."
+        + str(sys.version_info[1])
+        + ".json"
+    )
+    with open(outputJsonFile, "w") as fp:
+        json.dump(dictFiles, fp, indent=4)
     print(not failure)
 
 

@@ -583,7 +583,9 @@ def add_fake_table(sim, name="table"):
     red = [1, 0.7, 0.7, 0.8]
     white = [1, 1, 1, 1]
 
-    sim.add_material_weights(f"CarbonFiber", ["C"], [1], 1.78 * gcm3)
+    sim.volume_manager.material_database.add_material_weights(
+        f"CarbonFiber", ["C"], [1], 1.78 * gcm3
+    )
 
     # main bed
     table = sim.add_volume("Tubs", f"{name}_table")

@@ -13,11 +13,42 @@ import string
 import os
 import re
 import json
+import importlib
+import importlib.util
 from importlib.metadata import version
-import git
 
 import opengate_core as g4
 from .exception import fatal
+
+
+class LazyModuleLoader:
+    """
+    Lazy loading allows you to delay the loading of a module until it's actually needed.
+    This can be useful if a module is expensive to load or if it may not be used in
+    every execution of the program.
+    We use it for some modules that was found to delay the startup time, in particular:
+    - radioactivedecay and pandas in phidsources
+    - torch and gaga in gansources (only required for some features)
+    """
+
+    def __init__(self, module_name):
+        self.module_name = module_name
+        self.module = None
+
+    def __getattr__(self, name):
+        if self.module is None:
+            # Check module existence and import it
+            try:
+                self.module = importlib.import_module(self.module_name)
+            except ModuleNotFoundError:
+                fatal(
+                    f"The module '{self.module_name}' is not installed. "
+                    f"Please install it before proceeding."
+                )
+        return getattr(self.module, name)
+
+
+git = LazyModuleLoader("git")
 
 
 def assert_equal_dic(d1, d2, name=""):
@@ -37,8 +68,7 @@ def assert_equal_dic(d1, d2, name=""):
 
 def ensure_directory_exists(directory):
     p = Path(directory)
-    if p.exists() is False:
-        p.mkdir(parents=True)
+    p.mkdir(parents=True, exist_ok=True)
 
 
 g4_units = Box()
@@ -112,7 +142,7 @@ def assert_unique_element_name(elements, name):
 
 def make_builders(class_names):
     """
-    Consider a list of Classname. For each, it build a key/value, with:
+    Consider a list of Classname. For each, it builds a key/value, with:
     - the type of the class as key
     - and a lambda function that create an object of this class as value
     """
@@ -168,11 +198,12 @@ def insert_suffix_before_extension(file_path, suffix, suffix_separator="-"):
 def get_random_folder_name(size=8, create=True):
     r = "".join(random.choices(string.ascii_lowercase + string.digits, k=size))
     r = "run." + r
+    directory = Path(r)
     if create:
-        if not os.path.exists(r):
+        if not directory.exists():
             print(f"Creating output folder {r}")
-            os.mkdir(r)
-        if not os.path.isdir(r):
+            directory.mkdir(parents=True, exist_ok=True)
+        if not directory.isdir():
             fatal(f"Error, while creating {r}.")
     return r
 
@@ -229,6 +260,19 @@ def get_release_date(opengate_version):
         return "unknown"
 
 
+def get_gate_folder():
+    module_path = os.path.dirname(__file__)
+    return Path(module_path)
+
+
+def get_data_folder():
+    return get_gate_folder() / "data"
+
+
+def get_tests_folder():
+    return get_gate_folder() / "tests" / "src"
+
+
 def get_contrib_path():
     module_path = os.path.dirname(__file__)
     return Path(module_path) / "contrib"
@@ -242,7 +286,7 @@ def print_opengate_info():
     gi = g4.GateInfo
     v = gi.get_G4Version().replace("$Name: ", "")
     v = v.replace("$", "")
-    module_path = os.path.dirname(__file__)
+    module_path = get_gate_folder()
 
     pv = sys.version.replace("\n", "")
     print(f"Python version   {pv}")
@@ -252,16 +296,18 @@ def print_opengate_info():
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
     print(f"Geant4 GDML      {gi.get_G4GDML()}")
-    print(f"Geant4 date      {gi.get_G4Date()}")
-    print(f"Geant4 data      {g4.get_G4_data_folder()}")
+    print(f"Geant4 date      {gi.get_G4Date().replace(')', '').replace('(', '')}")
+    print(f"Geant4 data      {g4.get_g4_data_folder()}")
 
     print(f"ITK version      {gi.get_ITKVersion()}")
 
     print(f"GATE version     {version('opengate')}")
     print(f"GATE folder      {module_path}")
+    print(f"GATE data        {get_data_folder()}")
+    print(f"GATE tests       {get_tests_folder()}")
 
     # check if from a git version ?
-    git_path = Path(module_path) / ".."
+    git_path = Path(module_path).parent
     try:
         git_repo = git.Repo(git_path)
         sha = git_repo.head.object.hexsha

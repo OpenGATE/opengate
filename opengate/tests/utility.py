@@ -10,16 +10,22 @@ import pathlib
 import uproot
 import sys
 from pathlib import Path
-import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
-import gatetools.phsp as phsp
 from matplotlib.patches import Circle
+import gatetools.phsp
 
-from ..utility import g4_units, ensure_filename_is_str, insert_suffix_before_extension
+from ..utility import (
+    g4_units,
+    ensure_filename_is_str,
+    insert_suffix_before_extension,
+    LazyModuleLoader,
+)
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_view_from_array, write_itk_image
 from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
+
+plt = LazyModuleLoader("matplotlib.pyplot")
 
 
 def test_ok(is_ok=False):
@@ -265,7 +271,7 @@ def assert_images(
     sum_tolerance=5,
     scaleImageValuesFactor=None,
 ):
-    # read image and info (size, spacing etc)
+    # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
     img1 = itk.imread(ref_filename1)
@@ -314,7 +320,7 @@ def assert_images(
     is_ok = is_ok and sad < tolerance
     print_test(
         is_ok,
-        f"Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n"
+        f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
         f"SAD (per event/total): {sad:.2f} % "
         f" (tolerance is {tolerance :.2f} %)",
     )
@@ -348,7 +354,7 @@ def plot_hist(ax, data, label, bins=100):
 
 def plot_profile(ax, y, y_spacing=1, label=""):
     x = np.arange(len(y)) * y_spacing
-    ax.plot(x, y, label=label)
+    ax.plot(x, y, label=label, drawstyle="steps")
     ax.legend()
 
 
@@ -390,50 +396,52 @@ def assert_filtered_imagesprofile1D(
     d1 = data1[L_filter]
     d2 = data2[L_filter]
 
-    s1 = np.sum(d1)
-    s2 = np.sum(d2)
-    print(
-        f"Evaluate only data from entry up to peak position of reference filter image"
-    )
-    print(f"Going to evaluate {d1.size} elements out of {data1.size}")
-    t = np.fabs((s1 - s2) / s1) * 100
-    b = t < sum_tolerance
-    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
-
-    # do not consider pixels with a value of zero (data2 is the reference)
-    # d1 = data1[data2 != ignore_value]
-    # d2 = data2[data2 != ignore_value]
-
     # normalise by event
     if stats is not None:
         d1 = d1 / stats.counts.event_count
         d2 = d2 / stats.counts.event_count
 
-    # normalize by sum of d1
-    s = np.sum(d2)
-    d1 = d1 / s
-    d2 = d2 / s
+    mean_deviation = np.mean(d2 / d1 - 1) * 100
+    max_deviation = np.amax(np.abs(d1 / d2 - 1)) * 100
+    is_ok = is_ok and mean_deviation < tolerance and max_deviation < 2 * tolerance
 
-    # sum of absolute difference (in %)
-    sad = np.fabs(d1 - d2).sum() * 100
-    is_ok = is_ok and sad < tolerance
     print_test(
         is_ok,
-        f"Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n"
-        f"SAD (per event/total): {sad:.2f} % "
-        f" (tolerance is {tolerance :.2f} %)",
+        f"Evaluate only data from entry up to peak position of reference filter image\n"
+        f"Evaluated {d1.size} elements out of {data1.size} \n"
+        f"Mean deviation: {mean_deviation:.2f} % | (tolerance is {tolerance :.2f} %) \n"
+        f"Max unsigned deviation: {max_deviation:.2f} % | (tolerance is {2 * tolerance :.2f} % \n\n"
+        f" ",
     )
-    filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(data1) * 0.7
+
+    filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(d2) * 0.7
     # plot
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-
-    plot_profile(ax, filter_data_norm_au, info1.spacing[0], "filter")
-    plot_profile(ax, data1, info1.spacing[0], "reference")
-    plot_profile(ax, data2, info2.spacing[0], "test")
-    ax.plot(max_ind * info1.spacing[0], filter_data_norm_au[max_ind], "o", label="p")
-
+    fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
+    xV = np.arange(len(data1)) * info1.spacing[0]
+    x_max = np.ceil(xV[max_ind] * 1.05 + 2)
+    plot_profile(ax[0], filter_data_norm_au, info1.spacing[0], "filter")
+    plot_profile(ax[0], data1, info1.spacing[0], "reference")
+    plot_profile(ax[0], data2, info2.spacing[0], "test")
+    ax[0].plot(xV[max_ind], filter_data_norm_au[max_ind], "o", label="p")
+    ax[1].plot(xV[:max_ind], (d2 / d1 - 1) * 100, "o", label="test/ref")
+    ax[0].set_xlabel("x [mm]")
+    ax[1].set_xlabel("x [mm]")
+    ax[0].set_ylabel("LET")
+    ax[0].set_ylim(
+        [np.amin([np.amin(d2), 0]), np.ceil(np.amax([np.amax(d1), np.amax(d2)]) * 1.1)]
+    )
+    ax[0].set_xlim([np.amin([np.amin(xV), 0]), x_max])
+    ax[1].set_ylabel("Local deviation")
+    ax[1].axhline(0, color="grey")
+    ax[1].axhline(mean_deviation, linestyle="-", color="g", label="mean deviation")
+    ax[1].axhline(tolerance, linestyle="--", color="g", label="tolerance mean")
+    ax[1].axhline(-tolerance, linestyle="--", color="g")
+    ax[1].axhline(2 * tolerance, color="r", label="tolerance max")
+    ax[1].axhline(-2 * tolerance, color="r")
+    ax[1].set_xlim(ax[0].get_xlim())
+    ax[1].legend()
     if plt_ylim:
-        ax.set_ylim(plt_ylim)
+        ax[0].set_ylim(plt_ylim)
     # plt.show()
 
     if fig_name is None:
@@ -643,14 +651,14 @@ def compare_trees(
 ):
     if fig:
         nb_fig = len(keys1)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(keys1)):
         if fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -669,7 +677,7 @@ def compare_trees(
         )
         is_ok = ia and is_ok
     if fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 
@@ -677,24 +685,22 @@ def get_default_test_paths(f, gate_folder=None, output_folder=None):
     p = Box()
     p.current = pathlib.Path(f).parent.resolve()
     # data
-    p.data = (p.current / ".." / "data").resolve()
+    p.data = (p.current.parent / "data").resolve()
     # gate
     if gate_folder:
-        p.gate = p.current / ".." / "data" / "gate" / gate_folder
+        p.gate = p.current.parent / "data" / "gate" / gate_folder
         p.gate_output = p.gate / "output"
         p.gate_data = p.gate / "data"
     # output
-    p.output = (p.current / ".." / "output").resolve()
+    p.output = (p.current.parent / "output").resolve()
     if output_folder is not None:
         p.output = (p.output / output_folder).resolve()
-        if not pathlib.Path.is_dir(p.output):
-            pathlib.Path.mkdir(p.output)
+        p.output.mkdir(parents=True, exist_ok=True)
     # output ref
-    p.output_ref = (p.current / ".." / "data" / "output_ref").resolve()
+    p.output_ref = (p.current.parent / "data" / "output_ref").resolve()
     if output_folder is not None:
         p.output_ref = (p.output_ref / output_folder).resolve()
-        if not pathlib.Path.is_dir(p.output_ref):
-            pathlib.Path.mkdir(p.output_ref)
+        p.output_ref.mkdir(parents=True, exist_ok=True)
     return p
 
 
@@ -889,7 +895,6 @@ def dict_compare(d1, d2):
 
 # Edit by Andreas and Martina
 def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False):
-
     # Extract gauss param along the two dim of each plane
     sigma_values = []
     mu_values = []
@@ -1598,14 +1603,14 @@ def compare_trees4(p1, p2, param):
     ax = None
     if param.fig:
         nb_fig = len(p1.the_keys)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(p2.the_keys)):
         if param.fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -1627,7 +1632,7 @@ def compare_trees4(p1, p2, param):
         )
 
     if param.fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 

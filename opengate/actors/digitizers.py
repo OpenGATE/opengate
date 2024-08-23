@@ -856,6 +856,12 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         return thickness
 
     def StartSimulationAction(self):
+        # for the moment, we cannot use this actor with several volumes
+        if hasattr(self.attached_to, "__len__") and not isinstance(self.attached_to, str):
+            fatal(
+                f"Sorry, cannot (yet) use several mothers volumes for "
+                f"DigitizerProjectionActor {self.name}"
+            )
 
         # define the new size and spacing according to the nb of channels
         # and according to the volume shape

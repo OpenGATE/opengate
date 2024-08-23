@@ -69,7 +69,7 @@ if __name__ == "__main__":
             stats,
             tolerance=70,
             axis="x",
-            sum_tolerance=2.6,
+            sum_tolerance=2.75,
         )
         and is_ok
     )

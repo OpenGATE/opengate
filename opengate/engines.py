@@ -2,15 +2,11 @@ import time
 import random
 import sys
 import os
-
-# from multiprocessing import Process, set_start_method, Manager
-# import queue
 import weakref
 from box import Box
 from anytree import PreOrderIter
 
 import opengate_core as g4
-
 from .exception import fatal, warning, GateImplementationError
 from .decorators import requires_fatal, requires_warning
 from .logger import log

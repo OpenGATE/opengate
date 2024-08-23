@@ -35,14 +35,15 @@ def validation_test(arr, nb_split, tol=0.02):
     EventID = arr["EventID"]
     Weights = arr["Weight"][EventID == EventID[0]]
     sum_Weights = np.round(np.sum(Weights), 4)
-    if (
-        sum_Weights > 1 - tol
-        and sum_Weights < 1 + tol
-        and len(Weights) > nb_split * (1 - tol)
-        and len(Weights) < nb_split * (1 + tol)
-    ):
+    if 1 - tol < sum_Weights < 1 + tol and nb_split * (1 - tol) < len(
+        Weights
+    ) < nb_split * (1 + tol):
         return True
     else:
+        print("Test failed:")
+        print(f"{sum_Weights=} vs 1, tol={tol}")
+        print(f"{Weights=}  {len(Weights)=}")
+        print(f"{nb_split=}")
         return False
 
 
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 1
-    sim.random_seed = "auto"
+    sim.random_seed = 123456789
     sim.output_dir = paths.output
 
     # units

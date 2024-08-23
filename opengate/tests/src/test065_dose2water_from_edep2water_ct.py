@@ -14,6 +14,9 @@ if __name__ == "__main__":
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
+    # create output dir, if it doesn't exist
+    output_path.mkdir(parents=True, exist_ok=True)
+
     # create the simulation
     sim = gate.Simulation()
 

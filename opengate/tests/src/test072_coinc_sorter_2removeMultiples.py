@@ -8,6 +8,7 @@ from opengate.actors.coincidences import (
     copy_tree_for_dump,
 )
 import uproot
+import subprocess
 import os
 
 if __name__ == "__main__":
@@ -16,12 +17,12 @@ if __name__ == "__main__":
         __file__, output_folder="test072_coinc_sorter"
     )
 
-    # # reload the simulation to have access to all parameters
-    # sim = gate.create_sim_from_json(paths.output / 'simulation.json')
-    # # get the path that was set in the simulation
-    # crystal = sim.volume_manager.get_volume('crystal')
-    # sc = sim.actor_manager.get_actor(f"Singles_{crystal.name}")
-    # path_to_rootfile = sc.get_output_path()
+    # The test needs the output of test072_coinc_sorter_1.py
+    # If the output of test072_coinc_sorter_1.py does not exist, create it
+    if not os.path.isfile(paths.output / "test72_output_1.root"):
+        print("---------- Begin of test072_coinc_sorter_1.py ----------")
+        subprocess.call(["python", paths.current / "test072_coinc_sorter_1.py"])
+        print("----------- End of test072_coinc_sorter_1.py -----------")
 
     # open root file
     path_to_rootfile = paths.output / "test72_output_1.root"

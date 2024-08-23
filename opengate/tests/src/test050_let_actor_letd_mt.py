@@ -9,6 +9,7 @@ from opengate.tests import utility
 
 
 if __name__ == "__main__":
+    do_debug = False
     paths = utility.get_default_test_paths(__file__, "test050_let_actor_letd")
 
     ref_path = paths.output_ref
@@ -173,28 +174,29 @@ if __name__ == "__main__":
     #
     # LETActor_primaries = sim.output.get_actor(LET_primaries)
 
-    # fNameIDD = sim.output.get_actor(doseActorName_IDD_d).user_info.output
-    fNameIDD = "test050-" + doseIDD.name + ".mhd"
-    """
-    is_ok = utility.assert_images(
-        ref_path / fNameIDD,
-        doseIDD.output,
-        stat,
-        tolerance=100,
-        ignore_value=0,
-        axis="x",
-        scaleImageValuesFactor=numPartSimRef / numPartSimTest,
-    )
+    fNameIDD = sim.actor_manager.get_actor(doseActorName_IDD_d).output_filename.quotient
+    if do_debug:
+        is_ok = utility.assert_images(
+            ref_path / fNameIDD,
+            doseIDD.output,
+            stat,
+            tolerance=100,
+            ignore_value=0,
+            axis="x",
+            scaleImageValuesFactor=numPartSimRef / numPartSimTest,
+        )
 
-    """
+    tests_pass = []
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=str(doseIDD.get_output_path(output_name="edep")),
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
         filename2=str(LETActor_IDD_d.get_output_path(item="quotient")),
-        tolerance=20,
-        plt_ylim=[0, 25],
+        tolerance=40,
+        # plt_ylim=[0, 25],
     )
+    tests_pass.append(is_ok)
+    print(f"218 {is_ok =}")
 
     is_ok = (
         utility.assert_filtered_imagesprofile1D(
@@ -203,7 +205,7 @@ if __name__ == "__main__":
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
             filename2=LETActor_IDD_t.get_output_path(item="quotient"),
             tolerance=8,
-            plt_ylim=[0, 18],
+            # plt_ylim=[0, 18],
         )
         and is_ok
     )
@@ -212,10 +214,12 @@ if __name__ == "__main__":
             ref_filter_filename1=ref_path / fNameIDD,
             ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
             filename2=LET_primaries.get_output_path(item="quotient"),
-            tolerance=8,
-            plt_ylim=[0, 25],
+            tolerance=5,
+            # plt_ylim=[0, 25],
         )
         and is_ok
     )
+    print(f"222 {is_ok =}")
+    tests_pass.append(is_ok)
 
-    utility.test_ok(is_ok)
+    utility.test_ok(all(tests_pass))

@@ -42,6 +42,20 @@ def import_garf():
     return garf
 
 
+def check_channel_overlap(ch1, ch2):
+    ch1 = Box(ch1)
+    ch2 = Box(ch2)
+    if ch2.min < ch1.min < ch2.max:
+        return True
+    if ch2.min < ch1.max < ch2.max:
+        return True
+    if ch1.min < ch2.min < ch1.max:
+        return True
+    if ch1.min < ch2.max < ch1.max:
+        return True
+    return False
+
+
 class ARFTrainingDatasetActor(DigitizerBase, g4.GateARFTrainingDatasetActor):
     """
     The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
@@ -98,6 +112,17 @@ class ARFTrainingDatasetActor(DigitizerBase, g4.GateARFTrainingDatasetActor):
                 f"but {ewa.name} is not the correct type of actor. "
                 f"It should be a DigitizerEnergyWindowsActor, while it is a {type(ewa).__name}. "
             )
+        # check overlap in channels
+        channels = ewa.channels
+        for i, ch1 in enumerate(channels):
+            for j, ch2 in enumerate(channels[i + 1 :]):
+                is_overlap = check_channel_overlap(ch1, ch2)
+                if is_overlap:
+                    fatal(
+                        f'In the actor "{self.user_info.name}", the energy channels '
+                        f"{i} and {i + 1 + j} overlap. This is not possible for ARF. \n"
+                        f"{ch1} {ch2}"
+                    )
 
 
 def _setter_hook_image_spacing(self, image_spacing):
@@ -176,10 +201,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.garf = import_garf()
         if self.garf is None:
             fatal("Cannot run GANSource")
-        # create the default detector
-        # self.user_info.arf_detector = gate.ARFDetector(self.user_info)
         # prepare output
-        self.param = Box()
         self.nn = None
         self.model = None
         self.model_data = None
@@ -187,7 +209,13 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.detected_particles = 0
         # need a lock when the ARF is applied
         self.lock = threading.Lock()
+        # local variables
+        self.image_plane_spacing = None
+        self.image_plane_size_pixel = None
+        self.image_plane_size_mm = None
+        self.output_image = None
         self.output_array = None
+        self.nb_ene = None
 
         self._add_user_output(
             ActorOutputSingleImage,
@@ -225,7 +253,22 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
     def initialize_model(self):
         # load the pth file
-        self.nn, self.model = self.garf.load_nn(self.pth_filename, verbose=False)
+        self.nn, self.model = self.garf.load_nn(
+            self.pth_filename, verbose=False, gpu_mode=self.gpu_mode
+        )
+
+        # size and spacing (2D)
+        self.image_plane_spacing = np.array(
+            [self.user_info.image_spacing[0], self.user_info.image_spacing[1]]
+        )
+        self.image_plane_size_pixel = np.array(
+            [self.user_info.image_size[0], self.user_info.image_size[1]]
+        )
+        self.image_plane_size_mm = (
+            self.image_plane_size_pixel * self.image_plane_spacing
+        )
+
+        # shortcut to model_data
         self.model_data = self.nn["model_data"]
 
     def initialize_device(self):
@@ -239,109 +282,87 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.model.to(current_gpu_device)
 
     def initialize_params(self):
-        self.param.batch_size = int(float(self.batch_size))
-        self.param.image_size = self.image_size
-        self.param.image_spacing = self.image_spacing
-        self.param.distance_to_crystal = self.distance_to_crystal
-
         # output image: nb of energy windows times nb of runs (for rotation)
-        self.param.nb_ene = self.model_data["n_ene_win"]
-        self.param.nb_runs = len(self.simulation.run_timing_intervals)
+        self.nb_ene = self.model_data["n_ene_win"]
+        nb_runs = len(self.simulation.run_timing_intervals)
         # size and spacing in 3D
-        self.param.image_size = [
-            self.param.nb_ene,
-            self.param.image_size[0],
-            self.param.image_size[1],
+        self.output_image = np.array(
+            [
+                self.nb_ene,
+                self.image_plane_size_pixel[0],
+                self.image_plane_size_pixel[1],
+            ]
+        )
+        output_size = [
+            self.nb_ene * nb_runs,
+            self.output_image[1],
+            self.output_image[2],
         ]
-        self.param.image_spacing = [
-            self.param.image_spacing[0],
-            self.param.image_spacing[1],
-            1,
-        ]
-        # create output image as np array
-        self.param.output_size = [
-            self.param.nb_ene * self.param.nb_runs,
-            self.param.image_size[1],
-            self.param.image_size[2],
-        ]
-        # compute offset
-        self.param.psize = [
-            self.param.image_size[1] * self.param.image_spacing[0],
-            self.param.image_size[2] * self.param.image_spacing[1],
-        ]
-        self.param.hsize = np.divide(self.param.psize, 2.0)
-        self.param.offset = [
-            self.param.image_spacing[0] / 2.0,
-            self.param.image_spacing[1] / 2.0,
-        ]
+        self.output_image = np.zeros(output_size, dtype=np.float64)
 
     def apply(self, actor):
         # we need a lock when the ARF is applied
         with self.lock:
-            self.apply_with_lock(actor)
+            self.arf_build_image_from_projected_points(actor)
 
-    def apply_with_lock(self, actor):
+    def arf_build_image_from_projected_points(self, actor):
+
         # get values from cpp side
         energy = np.array(actor.GetEnergy())
-        px = np.array(actor.GetPositionX())
-        py = np.array(actor.GetPositionY())
-        dx = np.array(actor.GetDirectionX())
-        dy = np.array(actor.GetDirectionY())
+        pos_x = np.array(actor.GetPositionX())
+        pos_y = np.array(actor.GetPositionY())
+        dir_x = np.array(actor.GetDirectionX())
+        dir_y = np.array(actor.GetDirectionY())
 
         # do nothing if no hits
         if energy.size == 0:
             return
 
         # convert direction in angles
-        # FIXME would it be faster on CPP side ?
         degree = g4_units.degree
-        theta = np.arccos(dy) / degree
-        phi = np.arccos(dx) / degree
+        theta = np.arccos(dir_y) / degree
+        phi = np.arccos(dir_x) / degree
 
         # update
         self.batch_nb += 1
         self.detected_particles += energy.shape[0]
 
         # build the data
-        x = np.column_stack((px, py, theta, phi, energy))
-        self.debug_nb_hits_before += len(x)
+        px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+        self.debug_nb_hits_before += len(px)
 
-        # apply the neural network
+        # verbose current batch
         if self.verbose_batch:
             print(
                 f"Apply ARF to {energy.shape[0]} hits (device = {self.model_data['current_gpu_mode']})"
             )
 
-        ax = x[:, 2:5]  # two angles and energy # FIXME index ?
-        w = self.garf.nn_predict(self.model, self.nn["model_data"], ax)
-
-        # positions
-        p = self.param
-        angles = x[:, 2:4]
-        t = self.garf.compute_angle_offset(angles, p.distance_to_crystal)
-        cx = x[:, 0:2]
-        cx = cx + t
-        coord = (cx + p.hsize - p.offset) / p.image_spacing[0:2]
-        coord = np.around(coord).astype(int)
-        v = coord[:, 0]
-        u = coord[:, 1]
-        u, v, w_pred = self.garf.remove_out_of_image_boundaries2(
-            u, v, w, self.image_size
+        # from projected points to image counts
+        u, v, w_pred = self.garf.arf_from_points_to_image_counts(
+            px,
+            self.model,
+            self.model_data,
+            self.user_info.distance_to_crystal,
+            self.image_plane_size_mm,
+            self.image_plane_size_pixel,
+            self.image_plane_spacing,
         )
 
         # do nothing if there is no hit in the image
         if u.shape[0] != 0:
             run_id = actor.GetCurrentRunId()
-            s = p.nb_ene * run_id
-            img = self.output_array[s : s + p.nb_ene]
-            self.garf.image_from_coordinates_add(img, u, v, w_pred)
+            s = self.nb_ene * run_id
+            img = self.output_array[s : s + self.nb_ene]
+            self.garf.image_from_coordinates_add_numpy(img, u, v, w_pred)
             self.debug_nb_hits += u.shape[0]
 
     def EndOfRunActionMasterThread(self, run_index):
         # Should we keep the first slice (with all hits) ?
+        nb_slice = self.nb_ene
         if not self.enable_hit_slice:
             self.output_array = self.output_array[1:, :, :]
-            self.param.image_size[0] = self.param.image_size[0] - 1
+            # self.param.image_size[0] = self.param.image_size[0] - 1
+            nb_slice = nb_slice - 1
 
         # convert to itk image
         # FIXME: this should probably go into EndOfRunAction
@@ -350,9 +371,10 @@ class ARFActor(ActorBase, g4.GateARFActor):
         # set spacing and origin like DigitizerProjectionActor
         spacing = self.image_spacing
         spacing = np.array([spacing[0], spacing[1], 1])
-        size = np.array(self.param.image_size)
-        size[0] = self.param.image_size[2]
-        size[2] = self.param.image_size[0]
+        size = np.array([0, 0, 0])
+        size[0] = self.image_plane_size_pixel[0]
+        size[1] = self.image_plane_size_pixel[1]
+        size[2] = nb_slice
         origin = -size / 2.0 * spacing + spacing / 2.0
         origin[2] = 0
         output_image.SetSpacing(spacing)

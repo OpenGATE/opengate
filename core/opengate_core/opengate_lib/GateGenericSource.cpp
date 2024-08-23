@@ -29,7 +29,9 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
   fEffectiveEventTime = -1;
-  fforceRotation = false;
+  fDirectionRelativeToAttachedVolume = false;
+  fUserParticleLifeTime = -1;
+  fBackToBackMode = false;
 }
 
 GateGenericSource::~GateGenericSource() {
@@ -90,8 +92,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   fCurrentSkippedEvents = 0;
   fTotalSkippedEvents = 0;
   fEffectiveEventTime = -1;
-
-  fforceRotation = DictGetDouble(user_info, "force_rotation");
+  fDirectionRelativeToAttachedVolume =
+      DictGetBool(user_info, "direction_relative_to_attached_volume");
 }
 
 void GateGenericSource::UpdateActivity(double time) {
@@ -161,14 +163,13 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
 }
 
 void GateGenericSource::PrepareNextRun() {
-  // The following compute the global transformation from
+  // The following function computes the global transformation from
   // the local volume (mother) to the world
   GateVSource::PrepareNextRun();
+
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
   auto &l = fThreadLocalData.Get();
-  // auto user_info_pos = py::dict(puser_info["position"]);
-  // auto pos_init = DictGetG4ThreeVector(user_info_pos, "translation");
   auto *pos = fSPS->GetPosDist();
   pos->SetCentreCoords(l.fGlobalTranslation);
 
@@ -179,17 +180,23 @@ void GateGenericSource::PrepareNextRun() {
   pos->SetPosRot1(r1);
   pos->SetPosRot2(r2);
 
+  // For the direction, the orientation may or may not be
+  // relative to the volume according to user option
   auto *ang = fSPS->GetAngDist();
-
-  if (fangType == "momentum" && fforceRotation) {
+  ang->fDirectionRelativeToAttachedVolume = fDirectionRelativeToAttachedVolume;
+  ang->fGlobalRotation = l.fGlobalRotation;
+  ang->fGlobalTranslation = l.fGlobalTranslation;
+  if (fangType == "momentum" && fDirectionRelativeToAttachedVolume) {
     auto new_d = rotation * fInitializeMomentum;
     ang->SetParticleMomentumDirection(new_d);
+    ang->fDirectionRelativeToAttachedVolume = false;
   }
-  if (fangType == "focused" && fforceRotation) {
+  if (fangType == "focused" && fDirectionRelativeToAttachedVolume) {
     auto vec_f = fInitiliazeFocusPoint - fInitTranslation;
     auto rot_f = rotation * vec_f;
     auto new_f = rot_f + l.fGlobalTranslation;
     ang->SetFocusPoint(new_f);
+    ang->fDirectionRelativeToAttachedVolume = false;
   }
 }
 
@@ -442,10 +449,11 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   // set the angle acceptance volume if needed
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
-  auto is_iso = ang->GetDistType() == "iso";
+  auto is_valid_type =
+      ang->GetDistType() == "iso" || ang->GetDistType() == "user";
   auto &l = fThreadLocalDataAA.Get();
   l.fAAManager = new GateAcceptanceAngleTesterManager;
-  l.fAAManager->Initialize(dd, is_iso);
+  l.fAAManager->Initialize(dd, is_valid_type);
   fSPS->SetAAManager(l.fAAManager);
 }
 

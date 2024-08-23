@@ -36,10 +36,10 @@ void init_G4ProcessTable(py::module &m) {
               }
             }*/
 
-            auto *pv = t.FindProcesses("RadioactiveDecay");
+            // auto *pv = t.FindProcesses("RadioactiveDecay");
 
             // WARNING this fill change with the next G4 version 11.1.2
-            // auto *pv = t.FindProcesses("Decay");
+            auto *pv = t.FindProcesses("Decay");
             /*
               std::cout << pv << " size=" << pv->size() << std::endl;
               std::cout << p << std::endl;

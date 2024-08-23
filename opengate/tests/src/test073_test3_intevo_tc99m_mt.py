@@ -17,8 +17,13 @@ if __name__ == "__main__":
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
     digit = intevo.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
+
+    # add a channel 'spectrum' (which is not by default because not compatible with ARF)
+    keV = gate.g4_units.keV
+    c = {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV}
     ew = digit.find_first_module("energy_window")
     ew.output = paths.output / "output_tc99m.root"
+    ew.channels.append(c)
 
     # output
     stats.output = paths.output / "stats_intevo_tc99m.txt"

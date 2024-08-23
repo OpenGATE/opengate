@@ -89,7 +89,7 @@ def analyse(simulation):
     parent_id_array = events["ParentID"]
     parent_particle_array_ref = ["unknown"] * len(kinetic_energy_array)
 
-    # we test if the stored ParentParticleName is exactly the same as the one we can retrieve from
+    # we test if the stored ParentParticleName is the same as the one we can retrieve from
     # the TrackID and ParentID
 
     def set_parent_name(parent_by_track, starting_index):
@@ -102,9 +102,13 @@ def analyse(simulation):
                 parent_particle_array_ref[lindex] = parent_by_track[pid]
             else:
                 # the events are not stored in the phsp because they do not do a single step,
-                # for the test we force to Ac225
+                # for the test we force to Ac225 ? NO ! was ok in G4 11.1, but no more valid in G4 11.2
+                # now we check if this is an ion with [] inside the name
                 parent_particle_array_ref[lindex] = "Ac225"
-            ok = parent_particle_array_ref[lindex] == parent_particle_array[lindex]
+            ok = (
+                parent_particle_array_ref[lindex] == parent_particle_array[lindex]
+                or "[" in parent_particle_array[lindex]
+            )
             if not ok or lindex % 100 == 0:
                 utility.print_test(
                     ok,

@@ -31,7 +31,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 1
-    sim.random_seed = "auto"
+    sim.random_seed = 987654321
     sim.output_dir = paths.output
 
     # units
@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     source_1 = sim.add_source("PhaseSpaceSource", "phsp_source_global_1")
     source_1.mother = plane_1.name
-    source_1.phsp_file = paths.output_ref / ".." / "test019" / "test019_hits.root"
+    source_1.phsp_file = paths.output_ref.parent / "test019" / "test019_hits.root"
     source_1.position_key = "PrePosition"
     source_1.direction_key = "PreDirection"
     source_1.weight_key = "Weight"

@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-import gatetools
+import gatetools.phsp
 
 
 def root_load_xyz(root_file: str, keys: [str]):

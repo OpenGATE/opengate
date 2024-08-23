@@ -38,7 +38,7 @@ def check_mat(se):
     dbn = sim.volume_manager.dump_material_database_names()
     mnist = se.volume_engine.get_database_material_names("NIST")
     mdb = se.volume_engine.get_database_material_names(
-        pathFile / ".." / "data" / "GateMaterials.db"
+        pathFile.parent / "data" / "GateMaterials.db"
     )
     dm = se.volume_engine.dump_build_materials()
     print("Material info:")
@@ -48,7 +48,7 @@ def check_mat(se):
     print("\t defined mat  :", dm)
 
     print("dbn", dbn)
-    assert dbn == [pathFile / ".." / "data" / "GateMaterials.db"]
+    assert dbn == [pathFile.parent / "data" / "GateMaterials.db"]
     # assert len(mnist) == 308  # Geant4 11.02
     assert len(mnist) == 309  # Geant4 11.1
     assert mdb == [
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     # add a material database
     sim.volume_manager.add_material_database(
-        pathFile / ".." / "data" / "GateMaterials.db"
+        pathFile.parent / "data" / "GateMaterials.db"
     )
 
     #  change world size

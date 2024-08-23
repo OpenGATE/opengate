@@ -184,6 +184,9 @@ def create_phs_without_source(
     sim.number_of_threads = 1
     sim.random_seed = 987654321
 
+    # ui.g4_verbose = True
+    # ui.g4_verbose_level = 100
+
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
@@ -281,6 +284,7 @@ def test_source_name(
     source.particle = particle
     source.batch_size = 3000
     source.n = number_of_particles
+    source.verbose = False
     # source.position.translation = [0 * cm, 0 * cm, -35 * cm]
 
     sim.run()
@@ -361,6 +365,7 @@ def test_source_rotation(
     source.particle = "proton"
     source.batch_size = 3000
     source.n = number_of_particles
+    source.verbose = False
     # source.translate_position = True
     # source.position.translation = [3 * cm, 1 * cm, 0 * cm]
     source.rotate_direction = True
@@ -406,7 +411,7 @@ def get_first_entry_of_key(
     file_name_root=Path("output") / "test_source_electron.root", key="ParticleName"
 ) -> None:
     # read root file
-    data_ref, keys_ref, m_ref = phsp.load(file_name_root)
+    data_ref, keys_ref, m_ref = phsp.load(str(file_name_root))
     # print(data_ref)
     # print(keys_ref)
     index = keys_ref.index(key)

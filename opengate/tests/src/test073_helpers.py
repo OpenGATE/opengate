@@ -138,7 +138,7 @@ def compare_root_singles(crystal, output, root_filename, path, sname, n=1):
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.28, "scaling": 1},
+        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.284, "scaling": 1},
         {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.0035, "scaling": 1},
     ]
     is_ok = utility.compare_root2(

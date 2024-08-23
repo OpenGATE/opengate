@@ -10,6 +10,15 @@ import numpy as np
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
+    """
+    WARNING
+    PhotonIonDecayIsomericTransitionExtractor does NOT work anymore
+    Now PHID extract data from the IAEA database, not directly from G4
+    """
+    gate.utility.fatal("PhotonIonDecayIsomericTransitionExtractor NOT implemented")
+
+    test_ok(False)
+
     nuclide = phid.get_nuclide_from_name("at211")
     # get all daughters
     daughters = phid.get_nuclide_progeny(nuclide)

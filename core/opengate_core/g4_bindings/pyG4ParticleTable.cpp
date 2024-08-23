@@ -10,6 +10,7 @@
 
 namespace py = pybind11;
 
+#include "G4IonTable.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4ParticleTable.hh"
 #include "G4String.hh"
@@ -107,7 +108,7 @@ void init_G4ParticleTable(py::module &m) {
 
       .def("DumpTable", &G4ParticleTable::DumpTable) //, f_DumpTable())
 
-      //.def("GetIonTable",     &G4ParticleTable::GetIonTable,
+      .def("GetIonTable", &G4ParticleTable::GetIonTable)
       //...)
       //.def("GetShortLivedTable", &G4ParticleTable::GetShortLivedTable,
       //...)
