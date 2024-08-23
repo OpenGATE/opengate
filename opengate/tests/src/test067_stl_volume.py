@@ -119,6 +119,7 @@ def create_simulation():
     sim.random_engine = "MersenneTwister"
     sim.random_seed = 123456
     sim.number_of_threads = 1
+    sim.output_dir = output_path
 
     # geometry
     world = sim.world
@@ -154,7 +155,7 @@ def create_simulation():
     # Actors
     # Statistics Actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output_filename = output_path / "Statistics.txt"
+    stats.output_filename = "Statistics.txt"
     stats.track_types_flag = True
 
     # Dose Actor
@@ -167,7 +168,7 @@ def create_simulation():
     dose.user_output.dose.active = True
     dose.user_output.square.active = True
     dose.hit_type = "random"
-    dose.output_filename = output_path / "test067_dose.mhd"
+    dose.output_filename = "test067_dose.mhd"
 
     return sim
 
