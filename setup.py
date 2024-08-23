@@ -29,6 +29,7 @@ setup(
         "jsonpickle",
         "pandas",
         "requests",
+        "spekpy",
     ]
     + install_requires_windows,
 )

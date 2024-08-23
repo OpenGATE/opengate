@@ -70,7 +70,7 @@ def go(test_id, random_tests):
 
     files = []
     for f in onlyfiles:
-        if "wip" in f:
+        if "wip" in f or "WIP" in f:
             print(f"Ignoring: {f:<40} ")
             continue
         if "visu" in f:
