@@ -17,9 +17,5 @@ void init_GateVDigitizerWithOutputActor(py::module &m) {
   py::class_<GateVDigitizerWithOutputActor,
              std::unique_ptr<GateVDigitizerWithOutputActor, py::nodelete>,
              GateVActor>(m, "GateVDigitizerWithOutputActor")
-      .def(py::init<py::dict &, bool>())
-      .def("GetOutputFilename",
-           &GateVDigitizerWithOutputActor::GetOutputFilename)
-      .def("SetOutputFilename",
-           &GateVDigitizerWithOutputActor::SetOutputFilename);
+      .def(py::init<py::dict &, bool>());
 }
