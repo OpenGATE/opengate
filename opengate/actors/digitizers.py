@@ -211,9 +211,6 @@ class DigitizerBase(ActorBase):
                   f"while it can be used only to add a single root output as in most digitizers. ")
         return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
-    def StartSimulationAction(self):
-        self.SetOutputPath(self._output_name_root, self.user_output.root_output.get_output_path_as_string())
-
 
 class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
     """
