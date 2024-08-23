@@ -708,7 +708,6 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         user_info.attributes = []
         user_info.output = f"{user_info.name}.root"
         user_info.store_absorbed_event = False
-        user_info.user_track_information = False
         user_info.debug = False
 
     def __getstate__(self):
@@ -717,12 +716,6 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         return self.__dict__
 
     def __init__(self, user_info):
-        print("phase space actor python side init")
-        print(f"store absorbed event  = {user_info.store_absorbed_event}")
-        print(f"user_track_information = {user_info.user_track_information}")
-        if "ScatterOrder" in user_info.attributes:
-            user_info.user_track_information = True
-        print(f"user_track_information = {user_info.user_track_information}")
         ActorBase.__init__(self, user_info)
         g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
         self.fNumberOfAbsorbedEvents = 0

@@ -79,7 +79,7 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   // Fake init of the EventModulo (will be changed in StartMasterThread or by
   // the user) thanks to /run/eventModulo 50000 1
   if (G4Threading::IsMultithreadedApplication()) {
-    auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
+    auto mt = dynamic_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
     mt->SetEventModulo(-1);
   }
 }
@@ -248,13 +248,6 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     l.fUserEventInformation->BeginOfEventAction(event);
     event->SetUserInformation(l.fUserEventInformation);
   }
-
-  // FIXME remove ?
-  /*if (fUserTrackInformationFlag) {
-    l.fUserTrackInformation = new GateUserTrackInformation;
-    //l.fUserTrackInformation->BeginOfEventAction(event);
-    //event->SetUserInformation(l.fUserTrackInformation);
-  }*/
 
   // prepare the next source
   PrepareNextSource();

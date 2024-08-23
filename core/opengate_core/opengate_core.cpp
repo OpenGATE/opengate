@@ -284,6 +284,8 @@ void init_GateVFilter(py::module &);
 
 void init_GateParticleFilter(py::module &);
 
+void init_GateScatterFilter(py::module &);
+
 void init_GateThresholdAttributeFilter(py::module &);
 
 void init_GateTrackCreatorProcessFilter(py::module &);
@@ -532,6 +534,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateActorManager(m);
   init_GateVFilter(m);
   init_GateParticleFilter(m);
+  init_GateScatterFilter(m);
   init_GateTrackCreatorProcessFilter(m);
   init_GateKineticEnergyFilter(m);
   init_GateThresholdAttributeFilter(m);

@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+from test077_scatter_helpers import *
 
 if __name__ == "__main__":
     # paths
@@ -18,7 +19,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
-    # sim.random_seed = 12345678
+    # sim.random_seed = 1321654
 
     # units
     m = gate.g4_units.m
@@ -39,7 +40,7 @@ if __name__ == "__main__":
 
     # detector
     det = sim.add_volume("Box", "detector")
-    det.size = [1 * cm, 60 * cm, 60 * cm]
+    det.size = [0.000001 * cm, 60 * cm, 60 * cm]
     det.translation = [40 * cm, 0, 0]
     det.material = "G4_WATER"
 
@@ -58,7 +59,11 @@ if __name__ == "__main__":
     source.position.size = [0 * cm, 8 * cm, 8 * cm]
     source.direction.type = "focused"
     source.direction.focus_point = [-20 * cm, 0, 0]
-    source.n = 1000
+    source.n = 50000
+
+    # stats
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # phsp
     att_list = [
@@ -69,40 +74,41 @@ if __name__ == "__main__":
         "PreDirection",
         "ScatterFlag",
     ]
-    phsp2 = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp2.mother = det.name
-    phsp2.attributes = att_list
-    phsp2.output = paths.output / "test077_scatter.root"
+    phsp = sim.add_actor("PhaseSpaceActor", "phsp")
+    phsp.mother = det.name
+    phsp.attributes = att_list
+    phsp.output = paths.output / "test077_scatter.root"
+    # phsp.debug = True
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
-    phsp2.filters.append(f)
+    phsp.filters.append(f)
 
     # phsp
-    phsp2 = sim.add_actor("PhaseSpaceActor", "phsp2")
+    phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_scatter")
     phsp2.mother = det.name
     phsp2.attributes = att_list
-    phsp2.output = paths.output / "test077_scatter.root"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
+    phsp2.output = phsp.output
+    # phsp2.debug = True
+    fs = sim.add_filter("ScatterFilter", "f_scatter")
+    fs.policy = "keep_scatter"
     phsp2.filters.append(f)
-    f = sim.add_filter("ScatterFilter", "f")
-    f.policy = "keep_scatter"
-    phsp2.filters.append(f)
+    phsp2.filters.append(fs)
 
     # phsp
-    phsp3 = sim.add_actor("PhaseSpaceActor", "phsp3")
+    phsp3 = sim.add_actor("PhaseSpaceActor", "phsp_no_scatter")
     phsp3.mother = det.name
     phsp3.attributes = att_list
-    phsp3.output = paths.output / "test077_scatter.root"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
+    phsp3.output = phsp.output
+    fs = sim.add_filter("ScatterFilter", "f_no_scatter")
+    fs.policy = "keep_no_scatter"
     phsp3.filters.append(f)
-    f = sim.add_filter("ScatterFilter", "f")
-    f.policy = "discard_scatter"
-    phsp3.filters.append(f)
+    phsp3.filters.append(fs)
 
     # start simulation
     sim.run()
+    stats = sim.output.get_actor("Stats")
+    print(stats)
 
-    # TODO: Test
-    utility.test_ok(False)
+    # test
+    is_ok = check_scatter(phsp.output)
+    utility.test_ok(is_ok)

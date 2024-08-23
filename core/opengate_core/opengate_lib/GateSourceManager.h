@@ -17,7 +17,6 @@
 #include <G4VisExecutive.hh>
 
 #include "GateUserEventInformation.h"
-#include "GateUserTrackInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
 
@@ -110,7 +109,6 @@ public:
 
     // User information data
     GateUserEventInformation *fUserEventInformation;
-    GateUserTrackInformation *fUserTrackInformation; // FIXME remove ?
   };
   G4Cache<threadLocalT> fThreadLocalData;
 
@@ -130,7 +128,6 @@ public:
   py::dict fOptions;
 
   bool fUserEventInformationFlag;
-  bool fUserTrackInformationFlag; // FIXME remove
 };
 
 #endif // GateSourceManager_h
