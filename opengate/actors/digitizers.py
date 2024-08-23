@@ -1013,6 +1013,6 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
         self.total_number_of_entries = self.GetTotalNumberOfEntries()
         if self.total_number_of_entries == 0:
             warning(
-                f"Empty output, no particles stored in {self.user_output.phsp.get_output_path()}"
+                f"Empty output, no particles stored in {self.get_output_path()}"
             )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
