@@ -999,10 +999,6 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)
 
-    def __getstate__(self):
-        # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
-        return DigitizerBase.__getstate__(self)
-
     def initialize(self):
         DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
