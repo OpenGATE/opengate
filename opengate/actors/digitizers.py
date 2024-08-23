@@ -400,8 +400,8 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
     }
 
     def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "blurred_singles")
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self._add_user_output_root()
         self.__initcpp__()
 
     def __initcpp__(self):
