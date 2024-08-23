@@ -153,9 +153,9 @@ def create_simulation(nb_threads):
     return sim
 
 
-def test_simulation_results(output):
+def test_simulation_results(sim):
     # Compare stats file
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
     stats.counts.run_count = 1  # force to 1 to compare with gate result
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
@@ -164,7 +164,7 @@ def test_simulation_results(output):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor("Hits").get_output_path()
+    hc_file = sim.get_actor("Hits").get_output_path()
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X
@@ -180,7 +180,7 @@ def test_simulation_results(output):
             tols,
             [1] * len(scalings),
             scalings,
-            output.simulation.get_output_path("test025.png"),
+            sim.get_output_path("test025.png"),
         )
         and is_ok
     )
@@ -195,7 +195,7 @@ def test_simulation_results(output):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor("Hits2").user_output.hits.get_output_path()
+    hc_file = sim.get_actor("Hits2").user_output.root_output.get_output_path()
     checked_keys = ["time", "edep"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep
@@ -210,7 +210,7 @@ def test_simulation_results(output):
             tols,
             [1] * len(scalings),
             scalings,
-            output.simulation.get_output_path("test025_secondhits.png"),
+            sim.get_output_path("test025_secondhits.png"),
         )
         and is_ok
     )
