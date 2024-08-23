@@ -87,9 +87,8 @@ if __name__ == "__main__":
     print(stats_actor)
 
     # check if empty (the root file does not exist)
-    phsp = sim.output.get_actor("PhaseSpace")
-    is_ok = phsp.fTotalNumberOfEntries == 0
-    utility.print_test(is_ok, f"empty phase space = {phsp.fTotalNumberOfEntries}")
+    is_ok = ta2.total_number_of_entries == 0
+    utility.print_test(is_ok, f"empty phase space = {ta2.total_number_of_entries}")
     print()
 
     # redo with the right direction
@@ -99,7 +98,7 @@ if __name__ == "__main__":
     print(stats_actor)
 
     # check if exists and NOT empty
-    hits = uproot.open(ta2.user_output.phsp.get_output_path())["PhaseSpace"]
+    hits = uproot.open(ta2.get_output_path())["PhaseSpace"]
     is_ok2 = source.n - 10 < hits.num_entries < source.n + 10
     utility.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
     print()
