@@ -965,7 +965,7 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         g4.GateDigitizerReadoutActor.EndSimulationAction(self)
 
 
-class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
+class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
     """
     Similar to HitsCollectionActor : store a list of hits.
     However only the first hit of given event is stored here.
@@ -993,8 +993,8 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
     }
 
     def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "phsp")
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self._add_user_output_root()
         self.total_number_of_entries = 0
         self.number_of_absorbed_events = 0
         self.__initcpp__()
@@ -1004,14 +1004,15 @@ class PhaseSpaceActor(ActorBase, g4.GatePhaseSpaceActor):
 
     def __getstate__(self):
         # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
-        return ActorBase.__getstate__(self)
+        return DigitizerBase.__getstate__(self)
 
     def initialize(self):
-        ActorBase.initialize(self)
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction()
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):

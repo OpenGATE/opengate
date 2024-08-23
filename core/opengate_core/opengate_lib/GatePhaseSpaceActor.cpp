@@ -34,7 +34,6 @@ GatePhaseSpaceActor::~GatePhaseSpaceActor() {
 
 void GatePhaseSpaceActor::InitializeUserInput(py::dict &user_info) {
   GateVActor::InitializeUserInput(user_info);
-  //  fOutputFilename = DictGetStr(user_info, "output");
   fDigiCollectionName = DictGetStr(user_info, "name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
@@ -57,7 +56,14 @@ void GatePhaseSpaceActor::InitializeCpp() {
 void GatePhaseSpaceActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fDigiCollectionName);
-  fHits->SetFilenameAndInitRoot(GetOutputPath("phsp"));
+
+  std::string outputPath;
+  if (!GetWriteToDisk(fOutputNameRoot)) {
+    outputPath = "";
+  } else {
+    outputPath = GetOutputPath(fOutputNameRoot);
+  }
+  fHits->SetFilenameAndInitRoot(outputPath);
   fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
   fHits->RootInitializeTupleForMaster();
   if (fStoreAbsorbedEvent) {
