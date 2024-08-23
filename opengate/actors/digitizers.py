@@ -175,6 +175,7 @@ class Digitizer:
         mod = self.simulation.add_actor(module_type, module_name)
         mod.attached_to = self.actors[index - 1].attached_to
         mod.input_digi_collection = self.actors[index - 1].name
+        mod.write_to_disk = False
         self.actors.append(mod)
         return mod
 

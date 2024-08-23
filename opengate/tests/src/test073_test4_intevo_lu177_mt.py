@@ -23,7 +23,7 @@ if __name__ == "__main__":
     c = {"name": "spectrum", "min": 35 * keV, "max": 588 * keV}
     ew = digit.find_first_module("energy_window")
     ew.output_filename = paths.output / "output_intevo_lu177.root"
-    ew.output_filename = paths.output / "output_tc99m.root"
+    ew.write_to_disk = True
     ew.channels.append(c)
 
     # output
