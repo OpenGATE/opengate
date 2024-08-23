@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import opengate as gate
 from opengate.tests import utility
-
 import stl
 import numpy as np
 import itk
@@ -103,11 +105,6 @@ def create_simulation():
     eV = gate.g4_units.eV
     MeV = gate.g4_units.MeV
     um = gate.g4_units.um
-    nm = gate.g4_units.nm
-    km = gate.g4_units.km
-    gcm3 = gate.g4_units.g / gate.g4_units.cm3
-    deg = gate.g4_units.deg
-    mrad = gate.g4_units.mrad
 
     energy = 60 * MeV
     print(f"The energy is {energy/eV} eV")
@@ -119,14 +116,11 @@ def create_simulation():
     # Visualization
     sim.visu = False
     sim.visu_verbose = False
-
     sim.random_engine = "MersenneTwister"
-    sim.random_seed = "auto"
+    sim.random_seed = 123456
     sim.number_of_threads = 1
 
     # geometry
-    # There is a default volume called world (lowercase)
-    #  change world size
     world = sim.world
     world.size = [2 * m, 2 * m, 2 * m]
     world.material = "G4_Galactic"
@@ -141,12 +135,10 @@ def create_simulation():
     # sources
     source = sim.add_source("GenericSource", "particle")
     source.particle = "proton"
-
     source.position.type = "point"
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
     source.position.translation = [0 * cm, 0 * cm, -30 * cm]
-
     source.energy.type = "gauss"
     source.energy.mono = energy
     source.n = 10000
@@ -162,7 +154,7 @@ def create_simulation():
     # Actors
     # Statistics Actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output_filename = "Statistics.txt"
+    stats.output_filename = output_path / "Statistics.txt"
     stats.track_types_flag = True
 
     # Dose Actor
@@ -175,6 +167,7 @@ def create_simulation():
     dose.user_output.dose.active = True
     dose.user_output.square.active = True
     dose.hit_type = "random"
+    dose.output_filename = output_path / "test067_dose.mhd"
 
     return sim
 
@@ -217,7 +210,7 @@ def eval_results(sim):
 
 
 paths = utility.get_default_test_paths(
-    __file__, "test066_stl_volume", output_folder="test066"
+    __file__, "test066_stl_volume", output_folder="test067"
 )
 
 

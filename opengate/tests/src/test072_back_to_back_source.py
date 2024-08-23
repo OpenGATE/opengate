@@ -144,7 +144,7 @@ if __name__ == "__main__":
         "PostPosition",
         "PreDirection",
     ]
-    phsp_actor.output_filename = "b2b.root"
+    phsp_actor.output_filename = paths.output / "b2b.root"
 
     # verbose
     # sim.g4_verbose = True

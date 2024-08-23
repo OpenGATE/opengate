@@ -23,7 +23,7 @@ class MyCustomChanger(gate.actors.dynamicactors.GeometryChanger):
         print("**** ^^^   ^^^ ****")
         print("****  O     O  ****")
         print("****     L     ****")
-        print("****  \_____/  ****")
+        print("****  \\_____/  ****")
         print("****     V     ****")
         print("*******************")
         print(f"This is volume {self.attached_to_volume.name} in run {run_id}.")
