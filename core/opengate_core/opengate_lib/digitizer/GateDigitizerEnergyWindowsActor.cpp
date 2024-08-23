@@ -28,7 +28,6 @@ GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
 void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
   GateVActor::InitializeUserInput(user_info);
   // options
-  //  fOutputFilename = DictGetStr(user_info, "output");
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
   fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
@@ -62,9 +61,13 @@ void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
   // Create the output digi collections (one for each energy window channel)
   for (const auto &name : fChannelNames) {
     auto *hc = hcm->NewDigiCollection(name);
-    if (!fWriteToDisk)
-      fOutputFilename = "";
-    hc->SetFilenameAndInitRoot(fOutputFilename);
+    std::string outputPath;
+    if (!GetWriteToDisk(fOutputNameRoot)) {
+      outputPath = "";
+    } else {
+      outputPath = GetOutputPath(fOutputNameRoot);
+    }
+    hc->SetFilenameAndInitRoot(outputPath);
     // hc->InitDigiAttributesFromNames(names);
     hc->InitDigiAttributesFromCopy(fInputDigiCollection,
                                    fUserSkipDigiAttributeNames);

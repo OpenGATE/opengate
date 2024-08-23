@@ -16,9 +16,5 @@ void init_GateDigitizerEnergyWindowsActor(py::module &m) {
   py::class_<GateDigitizerEnergyWindowsActor,
              std::unique_ptr<GateDigitizerEnergyWindowsActor, py::nodelete>,
              GateVActor>(m, "GateDigitizerEnergyWindowsActor")
-      .def(py::init<py::dict &>())
-      .def("GetOutputFilename",
-           &GateDigitizerEnergyWindowsActor::GetOutputFilename)
-      .def("SetOutputFilename",
-           &GateDigitizerEnergyWindowsActor::SetOutputFilename);
+      .def(py::init<py::dict &>());
 }
