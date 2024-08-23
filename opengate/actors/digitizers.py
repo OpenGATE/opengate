@@ -1005,7 +1005,7 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        DigitizerBase.StartSimulationAction()
+        DigitizerBase.StartSimulationAction(self)
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
