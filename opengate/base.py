@@ -129,7 +129,10 @@ def add_properties_to_class(cls, user_info_defaults):
     """Add user_info defaults as properties to class if not yet present."""
     for p_name, default_value_and_options in user_info_defaults.items():
         _ok = False
-        if isinstance(default_value_and_options, tuple) and len(default_value_and_options) == 2:
+        if (
+            isinstance(default_value_and_options, tuple)
+            and len(default_value_and_options) == 2
+        ):
             default_value = default_value_and_options[0]
             options = default_value_and_options[1]
             # _ok = True
@@ -146,7 +149,9 @@ def add_properties_to_class(cls, user_info_defaults):
         if "deprecated" not in options:
             if not hasattr(cls, p_name):
                 check_property_name(p_name)
-                setattr(cls, p_name, _make_property(p_name, default_value, options=options))
+                setattr(
+                    cls, p_name, _make_property(p_name, default_value, options=options)
+                )
 
                 try:
                     expose_items = options["expose_items"]
@@ -162,7 +167,11 @@ def add_properties_to_class(cls, user_info_defaults):
                                 setattr(
                                     cls,
                                     item_name,
-                                    _make_property(item_name, item_default_value, container_dict=p_name),
+                                    _make_property(
+                                        item_name,
+                                        item_default_value,
+                                        container_dict=p_name,
+                                    ),
                                 )
                             else:
                                 fatal(
@@ -224,6 +233,7 @@ def _make_property(property_name, default_value, options=None, container_dict=No
                 self.user_info[property_name] = value_to_be_set
             else:
                 self.user_info[container_dict][property_name] = value
+
     else:
         prop_setter = None
 
@@ -391,7 +401,7 @@ class GateObject:
         for k, v in self.user_info.items():
             if k != "name":
                 ret_string += f"{__one_indent__}{k}"
-                if 'deprecated' in self.inherited_user_info_defaults[k][1]:
+                if "deprecated" in self.inherited_user_info_defaults[k][1]:
                     ret_string += " (deprecated)"
                 ret_string += f":\n{2 * __one_indent__}{v}\n"
         ret_string += "***\n"
@@ -514,7 +524,7 @@ class GateObject:
                     if getattr(type(self), k).fset is not None:
                         setattr(self, k, d["user_info"][k])
                 else:
-                    if 'deprecated' not in self.inherited_user_info_defaults[k][1]:
+                    if "deprecated" not in self.inherited_user_info_defaults[k][1]:
                         warning(
                             f"Could not find user info {k} while populating object {self.name} "
                             f"of type {type(self).__name__} from dictionary. "
@@ -529,10 +539,10 @@ class DynamicGateObject(GateObject):
             None,
             {
                 "doc": "List of dictionaries, where each dictionary specifies how the parameters "
-                       "of this object should evolve over time during the simulation. "
-                       "You cannot set this parameter directly. "
-                       "Instead, use the 'add_dynamic_parametrisation()' method of your object."
-                       "If None, the object is static (default).",
+                "of this object should evolve over time during the simulation. "
+                "You cannot set this parameter directly. "
+                "Instead, use the 'add_dynamic_parametrisation()' method of your object."
+                "If None, the object is static (default).",
                 "read_only": True,
             },
         )

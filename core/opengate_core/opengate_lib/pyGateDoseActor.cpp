@@ -37,14 +37,10 @@ void init_GateDoseActor(py::module &m) {
            &GateDoseActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
            &GateDoseActor::EndOfRunActionMasterThread)
-      .def("GetSquareFlag",
-           &GateDoseActor::GetSquareFlag)
-      .def("SetSquareFlag",
-           &GateDoseActor::SetSquareFlag)
-      .def("GetToWaterFlag",
-           &GateDoseActor::GetToWaterFlag)
-      .def("SetToWaterFlag",
-           &GateDoseActor::SetToWaterFlag)
+      .def("GetSquareFlag", &GateDoseActor::GetSquareFlag)
+      .def("SetSquareFlag", &GateDoseActor::SetSquareFlag)
+      .def("GetToWaterFlag", &GateDoseActor::GetToWaterFlag)
+      .def("SetToWaterFlag", &GateDoseActor::SetToWaterFlag)
       .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)
       .def_readwrite("cpp_edep_image", &GateDoseActor::cpp_edep_image)
       .def_readwrite("cpp_square_image", &GateDoseActor::cpp_square_image)

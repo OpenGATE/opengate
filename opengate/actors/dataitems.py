@@ -233,7 +233,7 @@ class DataItemContainer(DataContainer):
         # try to pick up writable dataitems defined in the specific class
         for c in cls.mro():
             try:
-                default_data_write_config = c.__dict__['default_data_write_config']
+                default_data_write_config = c.__dict__["default_data_write_config"]
                 break
             except KeyError:
                 continue
@@ -458,7 +458,7 @@ class SingleItkImage(DataItemContainer):
 
 class QuotientItkImage(DataItemContainer):
 
-    _data_item_classes = (ItkImageDataItem, ItkImageDataItem),
+    _data_item_classes = ((ItkImageDataItem, ItkImageDataItem),)
 
     # Specify which items should be written to disk and how
     # Important: define this at the class level, NOT in the __init__ method

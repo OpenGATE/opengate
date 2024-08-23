@@ -126,7 +126,7 @@ if __name__ == "__main__":
     dose_postprocess.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_postprocess.hit_type = "random"
     dose_postprocess.user_output.dose.active = True
-    dose_postprocess.score_in = 'water'
+    dose_postprocess.score_in = "water"
     # OPTION CURRENTLY NOT AVAILABLE
     # dose_postprocess.dose_calc_on_the_fly = (
     #     False  # calc dose as edep/mass after end of simulation
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     dose_in_step.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_in_step.hit_type = "random"
     dose_in_step.user_output.dose.active = True
-    dose_in_step.score_in = 'water'
+    dose_in_step.score_in = "water"
     # CURRENTLY DEACTIVATED OPTION
     # dose_in_step.dose_calc_on_the_fly = (
     #     False  # calculate dose directly in stepping action
@@ -167,8 +167,8 @@ if __name__ == "__main__":
         print(stat)
 
     # read output
-    d_post_path = dose_postprocess.get_output_path(output_name='dose')
-    d_step_path = dose_in_step.get_output_path(output_name='dose')
+    d_post_path = dose_postprocess.get_output_path(output_name="dose")
+    d_step_path = dose_in_step.get_output_path(output_name="dose")
     # img_mhd_out = itk.imread(d_post_path)
     # img_mhd_ref = itk.imread(d_step_path)
 

@@ -51,32 +51,33 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
 void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInput(user_info);
-//  //  Option: compute uncertainty
-//  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
+  //  //  Option: compute uncertainty
+  //  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
   fSquareFlag = DictGetBool(user_info, "square");
-//  // Option: compute dose in Gray
-//  fDoseFlag = DictGetBool(user_info, "dose");
+  //  // Option: compute dose in Gray
+  //  fDoseFlag = DictGetBool(user_info, "dose");
   // Option: compute dose to water
   fScoreIn = DictGetBool(user_info, "score_in");
-//  // Option: calculate only edep/edepToWater, and divide by mass image on python
-//  // side
-//  fOnFlyCalcFlag = DictGetBool(user_info, "dose_calc_on_the_fly");
+  //  // Option: calculate only edep/edepToWater, and divide by mass image on
+  //  python
+  //  // side
+  //  fOnFlyCalcFlag = DictGetBool(user_info, "dose_calc_on_the_fly");
 
-//  // Option to stop the simulation when a stat goal is reached (for now only
-//  // uncertainty goal)
-//  goalUncertainty = DictGetDouble(user_info, "goal_uncertainty");
+  //  // Option to stop the simulation when a stat goal is reached (for now only
+  //  // uncertainty goal)
+  //  goalUncertainty = DictGetDouble(user_info, "goal_uncertainty");
   threshEdepPerc = DictGetDouble(user_info, "thresh_voxel_edep_for_unc_calc");
 
   // translation
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
   fHitType = DictGetStr(user_info, "hit_type");
-//  // Option: make a copy of the image for each thread, instead of writing on
-//  // same image
-//  fcpImageForThreadsFlag = DictGetBool(user_info, "use_more_ram");
-//  // Option: calculate the standard error of the mean
-//  fSTEofMeanFlag = DictGetBool(user_info, "ste_of_mean");
+  //  // Option: make a copy of the image for each thread, instead of writing on
+  //  // same image
+  //  fcpImageForThreadsFlag = DictGetBool(user_info, "use_more_ram");
+  //  // Option: calculate the standard error of the mean
+  //  fSTEofMeanFlag = DictGetBool(user_info, "ste_of_mean");
 }
 
 void GateDoseActor::InitializeCpp() {
@@ -126,10 +127,11 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
   }
-//  if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
-//    l.edep_worker_flatimg.resize(N_voxels);
-//    std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(), 0.0);
-//  }
+  //  if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
+  //    l.edep_worker_flatimg.resize(N_voxels);
+  //    std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(),
+  //    0.0);
+  //  }
 }
 
 void GateDoseActor::BeginOfEventAction(const G4Event *event) {
@@ -218,8 +220,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       if (event_id == previous_id) {
         // Same event: sum the deposited energy associated with this event ID
         // and square once a new event ID is found (case below)
-        locald.edepSquared_worker_flatimg[index_flat] +=
-            edep;
+        locald.edepSquared_worker_flatimg[index_flat] += edep;
       } else {
         // Different event : square deposited energy from the last event ID
         // and start accumulating deposited energy for this new event ID
@@ -261,13 +262,12 @@ double GateDoseActor::ComputeMeanUncertainty() {
   double mean_unc = 0.0;
   int n_voxel_unc = 0;
   double n = 2.0;
-//  if (fcpImageForThreadsFlag) {
-//    n = NbOfThreads;
-//  } else {
-//    n = NbOfEvent;
-//  }
+  //  if (fcpImageForThreadsFlag) {
+  //    n = NbOfThreads;
+  //  } else {
+  //    n = NbOfEvent;
+  //  }
   n = NbOfEvent;
-
 
   if (n < 2.0) {
     n = 2.0;
@@ -331,9 +331,9 @@ void GateDoseActor::EndOfRunAction(const G4Run *run) {
 
   if (GetSquareFlag()) {
     // We need to flush the energy deposit from the last event ID of this run
-    // to cpp_square_image because it has only been accumulated in the SteppingAction
-    // It would be flushed to cpp_square_image in the SteppingAction of the next event ID,
-    // but we are at the end of the run.
+    // to cpp_square_image because it has only been accumulated in the
+    // SteppingAction It would be flushed to cpp_square_image in the
+    // SteppingAction of the next event ID, but we are at the end of the run.
     G4AutoLock mutex(&SetWorkerEndRunMutex);
     threadLocalT &data = fThreadLocalData.Get();
 
@@ -343,24 +343,23 @@ void GateDoseActor::EndOfRunAction(const G4Run *run) {
       Image3DType::IndexType index_f = iterator3D.GetIndex();
       Image3DType::PixelType pixelValue3D =
           data.edepSquared_worker_flatimg[sub2ind(index_f)];
-      ImageAddValue<Image3DType>(
-          cpp_square_image, index_f,
-          pixelValue3D * pixelValue3D);
+      ImageAddValue<Image3DType>(cpp_square_image, index_f,
+                                 pixelValue3D * pixelValue3D);
     }
   }
 }
 
 int GateDoseActor::EndOfRunActionMasterThread(int run_id) {
-//  if (goalUncertainty != 0.0) {
-//    double unc = ComputeMeanUncertainty();
-//    if (unc <= goalUncertainty) {
-//      return 1;
-//    } else {
-//      return 0;
-//    }
-//  } else {
-//    return 0;
-//  }
+  //  if (goalUncertainty != 0.0) {
+  //    double unc = ComputeMeanUncertainty();
+  //    if (unc <= goalUncertainty) {
+  //      return 1;
+  //    } else {
+  //      return 0;
+  //    }
+  //  } else {
+  //    return 0;
+  //  }
   return 0;
 }
 

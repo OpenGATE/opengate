@@ -39,7 +39,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.output_dir = paths.output
     sim.store_json_archive = True
-    sim.json_archive_filename = 'simulation.json'
+    sim.json_archive_filename = "simulation.json"
 
     # world
     sim.world.size = [450 * mm, 450 * mm, 70 * mm]

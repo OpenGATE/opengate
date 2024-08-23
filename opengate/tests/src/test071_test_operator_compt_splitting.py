@@ -22,9 +22,7 @@ def check_process_user_hook(simulaton_engine):
     p = pm.GetProcess("compt")
     # GetProcess returns nullptr if the requested process was not found
     if p is None:
-        raise Exception(
-            f"Could not find the compt process for particle {p_name}."
-        )
+        raise Exception(f"Could not find the compt process for particle {p_name}.")
     else:
         print(f"Hooray, I found the process compt for the particle {p_name}!")
 

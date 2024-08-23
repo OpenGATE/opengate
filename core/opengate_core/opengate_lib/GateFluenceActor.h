@@ -31,11 +31,9 @@ public:
 
   virtual void BeginOfRunActionMasterThread(int run_id) override;
 
-  inline std::string GetPhysicalVolumeName() {return fPhysicalVolumeName;}
+  inline std::string GetPhysicalVolumeName() { return fPhysicalVolumeName; }
 
-  inline void SetPhysicalVolumeName(std::string s){
-    fPhysicalVolumeName = s;
-  }
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
   // Image type is 3D float by default
   typedef itk::Image<float, 3> Image3DType;

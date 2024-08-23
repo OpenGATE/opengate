@@ -229,7 +229,9 @@ class KillActor(ActorBase, g4.GateKillActor):
 
     def __initcpp__(self):
         g4.GateKillActor.__init__(self, self.user_info)
-        self.AddActions({"StartSimulationAction", "EndSimulationAction", "SteppingAction"})
+        self.AddActions(
+            {"StartSimulationAction", "EndSimulationAction", "SteppingAction"}
+        )
 
     def initialize(self):
         ActorBase.initialize(self)
@@ -269,7 +271,9 @@ class SplittingActorBase(ActorBase):
             },
         ),
         "particles": (
-            ['all',],
+            [
+                "all",
+            ],
             {
                 "doc": "FIXME",
                 "setter_hook": _setter_hook_particles,
@@ -319,7 +323,7 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
         ),
     }
 
-    processes = ("compt", )
+    processes = ("compt",)
 
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
@@ -345,7 +349,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
         ),
     }
 
-    processes = ("eBrem", )
+    processes = ("eBrem",)
 
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)

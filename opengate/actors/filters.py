@@ -116,10 +116,11 @@ class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
     def __initcpp__(self):
         g4.GateThresholdAttributeFilter.__init__(self)
 
-
     def initialize(self):
-        if self.attribute is None: 
-            fatal(f"The user input parameter 'attribute' is not set but required in filter '{self.name}'.")
+        if self.attribute is None:
+            fatal(
+                f"The user input parameter 'attribute' is not set but required in filter '{self.name}'."
+            )
         super().initialize()
 
 

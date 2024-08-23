@@ -37,7 +37,12 @@ from .utility import (
 )
 from . import logger
 from .logger import log
-from .physics import Region, OpticalSurface, cut_particle_names, translate_particle_name_gate_to_geant4
+from .physics import (
+    Region,
+    OpticalSurface,
+    cut_particle_names,
+    translate_particle_name_gate_to_geant4,
+)
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
@@ -448,7 +453,6 @@ class PhysicsListManager(GateObject):
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
 
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # declare the attribute here as None;
@@ -648,7 +652,9 @@ class PhysicsManager(GateObject):
 
         # Keep a pointer to the current simulation
         self.simulation = simulation
-        self.physics_list_manager = PhysicsListManager(simulation=self.simulation, name="PhysicsListManager")
+        self.physics_list_manager = PhysicsListManager(
+            simulation=self.simulation, name="PhysicsListManager"
+        )
 
         # dictionary containing all the region objects
         # key=region_name, value=region_object
@@ -704,7 +710,9 @@ class PhysicsManager(GateObject):
 
     def __setstate__(self, d):
         self.__dict__ = d
-        self.physics_list_manager = PhysicsListManager(simulation=self.simulation, name="PhysicsListManager")
+        self.physics_list_manager = PhysicsListManager(
+            simulation=self.simulation, name="PhysicsListManager"
+        )
 
     def _simulation_engine_closing(self):
         """This function should be called from the simulation engine
@@ -816,8 +824,8 @@ class PhysicsManager(GateObject):
         from all biasing actors present in the simulation.
         """
 
-        charged_particles = {'e-', 'e+', 'proton'}
-        all_particles = charged_particles.union({'gamma'})
+        charged_particles = {"e-", "e+", "proton"}
+        all_particles = charged_particles.union({"gamma"})
 
         # create a dictionary with sets as entries (to ensure uniqueness)
         particles_processes = dict([(p, set()) for p in all_particles])
@@ -825,9 +833,9 @@ class PhysicsManager(GateObject):
         for actor in self.simulation.actor_manager.actors.values():
             if isinstance(actor, SplittingActorBase):
                 particles = set()
-                if 'all' in actor.particles:
+                if "all" in actor.particles:
                     particles.update(all_particles)
-                elif 'all_charged' in actor.particles:
+                elif "all_charged" in actor.particles:
                     particles.update(charged_particles)
                 else:
                     for particle in actor.particles:
@@ -835,13 +843,20 @@ class PhysicsManager(GateObject):
                         if p_ in all_particles:
                             particles.add(p_)
                         else:
-                            fatal(f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
-                                  f"This is not possible. Compatible particles are: {list(all_particles)}. ")
+                            fatal(
+                                f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
+                                f"This is not possible. Compatible particles are: {list(all_particles)}. "
+                            )
                 for p in particles:
                     particles_processes[p].update(actor.processes)
 
         # convert the dictionary entries back from set to list
-        return dict([(particle, list(processes)) for particle, processes in particles_processes.items()])
+        return dict(
+            [
+                (particle, list(processes))
+                for particle, processes in particles_processes.items()
+            ]
+        )
 
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):
@@ -1728,6 +1743,7 @@ def create_sim_from_json(path):
     sim = Simulation()
     sim.from_json_file(path)
     return sim
+
 
 process_cls(PhysicsManager)
 process_cls(PhysicsListManager)

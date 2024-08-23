@@ -116,7 +116,9 @@ if __name__ == "__main__":
     dose_in_step.size = [63, 63, 55]
     dose_in_step.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose_in_step.hit_type = "random"
-    dose_in_step.user_output.dose.active = True  # calculate dose directly in stepping action
+    dose_in_step.user_output.dose.active = (
+        True  # calculate dose directly in stepping action
+    )
     # OPTION CURRENTLY UNAVAILABLE
     # dose_in_step.dose_calc_on_the_fly = True
 
@@ -142,8 +144,8 @@ if __name__ == "__main__":
         print(stat)
 
     # read output
-    d_post_path = dose_postprocess.get_output_path(output_name='dose')
-    d_step_path = dose_in_step.get_output_path(output_name='dose')
+    d_post_path = dose_postprocess.get_output_path(output_name="dose")
+    d_step_path = dose_in_step.get_output_path(output_name="dose")
     # img_mhd_out = itk.imread(d_post_path)
     # img_mhd_ref = itk.imread(d_step_path)
 

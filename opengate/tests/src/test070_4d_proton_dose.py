@@ -99,7 +99,7 @@ if __name__ == "__main__":
     dose.attached_to = "patient"
     dose.size = patient.size_pix
     dose.spacing = patient.spacing
-    dose.output_coordinate_system='attached_to_image'
+    dose.output_coordinate_system = "attached_to_image"
     # dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.hit_type = "random"
 

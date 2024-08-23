@@ -7,6 +7,7 @@ from ..base import GateObject
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
 
+
 def _setter_hook_attached_to(self, attached_to):
     """Hook to be attached to property setter of user input 'attached_to' in all actors.
     Allows the user input 'attached_to_volume' to be volume object or a volume name.
@@ -154,7 +155,9 @@ class ActorBase(GateObject):
 
     def to_dictionary(self):
         d = super().to_dictionary()
-        d["user_output"] = dict([(k, v.to_dictionary()) for k, v in self.user_output.items()])
+        d["user_output"] = dict(
+            [(k, v.to_dictionary()) for k, v in self.user_output.items()]
+        )
         return d
 
     def from_dictionary(self, d):
@@ -166,17 +169,19 @@ class ActorBase(GateObject):
     def get_output_data(self, output_name=None, **kwargs):
         if len(self.user_output) > 1:
             if output_name is None:
-                fatal(f"This actor handles multiple outputs. "
-                      f"Therefore, you need to specify which. "
-                      f"Example: '.get_output_data(output_name='{list(self.user_output.keys())[0]}'). "
-                      f"The available output names are: {list(self.user_output.keys())}"
-                      )
+                fatal(
+                    f"This actor handles multiple outputs. "
+                    f"Therefore, you need to specify which. "
+                    f"Example: '.get_output_data(output_name='{list(self.user_output.keys())[0]}'). "
+                    f"The available output names are: {list(self.user_output.keys())}"
+                )
             try:
                 user_output = self.user_output[output_name]
             except KeyError:
-                fatal(f"No user output '{output_name}' is handled by the {self.type_name} actor '{self.name}'. "
-                      f"The available output names are: {list(self.user_output.keys())}"
-                      )
+                fatal(
+                    f"No user output '{output_name}' is handled by the {self.type_name} actor '{self.name}'. "
+                    f"The available output names are: {list(self.user_output.keys())}"
+                )
         else:
             user_output = list(self.user_output.values())[0]
         return user_output.get_data(**kwargs)
@@ -204,7 +209,9 @@ class ActorBase(GateObject):
     def output_filename(self, filename):
         if len(self.user_output) > 1:
             for k, v in self.user_output.items():
-                v.output_filename = insert_suffix_before_extension(filename, k, suffix_separator='_')
+                v.output_filename = insert_suffix_before_extension(
+                    filename, k, suffix_separator="_"
+                )
         else:
             list(self.user_output.values())[0].output_filename = filename
 
@@ -284,8 +291,7 @@ class ActorBase(GateObject):
         return return_dict
 
     def initialize(self):
-        """This base class method initializes common settings and should be called in all inheriting classes.
-        """
+        """This base class method initializes common settings and should be called in all inheriting classes."""
         # Prepare the output entries for those items
         # where the user wants to keep the data in memory
         # self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
@@ -293,7 +299,9 @@ class ActorBase(GateObject):
         #     "get_output_path_for_item_string", self.get_output_path_for_item_string
         # )
 
-        if len(self.user_output) > 0 and all([v.active is False for v in self.user_output.values()]):
+        if len(self.user_output) > 0 and all(
+            [v.active is False for v in self.user_output.values()]
+        ):
             warning(f"The actor {self.name} has no active output. ")
 
         for k, v in self.user_output.items():
@@ -309,17 +317,22 @@ class ActorBase(GateObject):
             self.SetWriteToDisk(k, v.write_to_disk)
             self.SetOutputPath(k, v.get_output_path_as_string())
 
-    def _add_user_output(self, actor_output_class, name, can_be_deactivated=False, **kwargs):
+    def _add_user_output(
+        self, actor_output_class, name, can_be_deactivated=False, **kwargs
+    ):
         """Method to be called internally (not by user) in the specific actor class implementations."""
 
-        if (actor_output_class.__name__ == ActorOutputRoot.__name__) \
-            and any([type(v).__name__ == ActorOutputRoot.__name__
-                     for v in self.user_output.values()]):
+        if (actor_output_class.__name__ == ActorOutputRoot.__name__) and any(
+            [
+                type(v).__name__ == ActorOutputRoot.__name__
+                for v in self.user_output.values()
+            ]
+        ):
             fatal("Implementation error: Only one ROOT output per actor supported. ")
 
         # extract the user info "active" if passed via kwargs
         try:
-            active = kwargs.pop('active')
+            active = kwargs.pop("active")
         except KeyError:
             active = None
 

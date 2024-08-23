@@ -376,7 +376,9 @@ class PhysicsEngine(EngineBase):
             g4_biasing_physics = g4.G4GenericBiasingPhysics()
             for particle, processes in particles_processes.items():
                 if len(processes) > 0:
-                    print(f"DEBUG: Initialize bias for particle {particle} and processes {processes}. ")
+                    print(
+                        f"DEBUG: Initialize bias for particle {particle} and processes {processes}. "
+                    )
                     g4_biasing_physics.PhysicsBias(particle, processes)
             self.g4_physics_list.RegisterPhysics(g4_biasing_physics)
 

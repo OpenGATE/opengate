@@ -52,7 +52,7 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
 void GateOptrComptSplittingActor::InitializeUserInput(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInput(user_info);
-//    fMotherVolumeName = DictGetStr(user_info, "mother");
+  //    fMotherVolumeName = DictGetStr(user_info, "mother");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fWeightThreshold = DictGetDouble(user_info, "weight_threshold");
   fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");

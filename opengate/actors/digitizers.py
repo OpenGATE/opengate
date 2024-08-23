@@ -195,7 +195,7 @@ class Digitizer:
 
 class DigitizerBase(ActorBase):
 
-    _output_name_root = 'root_output'
+    _output_name_root = "root_output"
 
     def _add_user_output_root(self, **kwargs):
         """Specialized method to add a root user output in digitizers.
@@ -206,9 +206,11 @@ class DigitizerBase(ActorBase):
         """
 
         if self._output_name_root in self.user_output:
-            fatal(f"The actor '{self.name}' already has a user_output called '{self._output_name_root}'."
-                  f"Probably, the method _add_user_output_root() was called more than once, "
-                  f"while it can be used only to add a single root output as in most digitizers. ")
+            fatal(
+                f"The actor '{self.name}' already has a user_output called '{self._output_name_root}'."
+                f"Probably, the method _add_user_output_root() was called more than once, "
+                f"while it can be used only to add a single root output as in most digitizers. "
+            )
         return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
 
@@ -467,7 +469,9 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerSpatialBlurringActor(DigitizerBase, g4.GateDigitizerSpatialBlurringActor):
+class DigitizerSpatialBlurringActor(
+    DigitizerBase, g4.GateDigitizerSpatialBlurringActor
+):
     """
     Digitizer module for blurring a (global) spatial position.
     """
@@ -857,7 +861,9 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
 
     def StartSimulationAction(self):
         # for the moment, we cannot use this actor with several volumes
-        if hasattr(self.attached_to, "__len__") and not isinstance(self.attached_to, str):
+        if hasattr(self.attached_to, "__len__") and not isinstance(
+            self.attached_to, str
+        ):
             fatal(
                 f"Sorry, cannot (yet) use several mothers volumes for "
                 f"DigitizerProjectionActor {self.name}"
@@ -1018,7 +1024,5 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
         self.number_of_absorbed_events = self.GetNumberOfAbsorbedEvents()
         self.total_number_of_entries = self.GetTotalNumberOfEntries()
         if self.total_number_of_entries == 0:
-            warning(
-                f"Empty output, no particles stored in {self.get_output_path()}"
-            )
+            warning(f"Empty output, no particles stored in {self.get_output_path()}")
         g4.GatePhaseSpaceActor.EndSimulationAction(self)

@@ -335,12 +335,12 @@ In particular, the GateObject superclass (and variants) implement a `__str__()` 
 
 ### Mandatory basic class structure
 
-1) Implement an `initialize()` method which should at least: 
-  
-  - call the `initialize()` method from the python super class. 
+1) Implement an `initialize()` method which should at least:
+
+  - call the `initialize()` method from the python super class.
   - call the `InitializeCpp()` method from the C++ super class
   - call the `InitializeUserInput()` method from the C++ super class
-  - If you need to perform specific checks, e.g. plausibility of user input parameters, you will probably want to do that before calling the C++ methods. 
+  - If you need to perform specific checks, e.g. plausibility of user input parameters, you will probably want to do that before calling the C++ methods.
   - Example:
     ```python
     def initialize(self):
@@ -350,7 +350,7 @@ In particular, the GateObject superclass (and variants) implement a `__str__()` 
         self.InitializeCpp()
     ```
 
-2) Implement a `__initcpp__()` method. This should at least call the C++ constructor method and add actions if needed. Example: 
+2) Implement a `__initcpp__()` method. This should at least call the C++ constructor method and add actions if needed. Example:
     ```python
     def __initcpp__(self):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
@@ -366,7 +366,7 @@ In particular, the GateObject superclass (and variants) implement a `__str__()` 
     ```python
     class SimulationStatisticsActor( g4.GateSimulationStatisticsActor, ActorBase):
     ```
-4) Refer to the super class explicitly and do **not** use the `super()` builtin from python because it cannot resolve C++ super classes. 
+4) Refer to the super class explicitly and do **not** use the `super()` builtin from python because it cannot resolve C++ super classes.
 
 
 ### Inheritance in actor classes

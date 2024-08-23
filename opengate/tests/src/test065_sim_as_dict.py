@@ -83,7 +83,7 @@ if __name__ == "__main__":
         [800, 6000, "G4_BONE_COMPACT_ICRU"],
     ]
 
-    stat_actor = sim.add_actor("SimulationStatisticsActor", name='stat_actor')
+    stat_actor = sim.add_actor("SimulationStatisticsActor", name="stat_actor")
 
     # add a source so that this simulation can run
     source = sim.add_source("GenericSource", "mysource")

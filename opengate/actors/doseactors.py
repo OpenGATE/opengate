@@ -379,10 +379,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "deprecated": "Use: my_actor.user_output.square.active=True/False "
-                              "to request uncertainty scoring of the respective quantity, "
-                              "where 'my_actor' should be your actor object. "
-                              "Note: activating user_output.edep_uncertainty or user_output.dose_uncertainty "
-                              "implies activating user_output.square. "
+                "to request uncertainty scoring of the respective quantity, "
+                "where 'my_actor' should be your actor object. "
+                "Note: activating user_output.edep_uncertainty or user_output.dose_uncertainty "
+                "implies activating user_output.square. ",
             },
         ),
         "uncertainty": (
@@ -390,9 +390,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "deprecated": "Use: my_actor.user_output.dose_uncertainty.active=True/False and"
-                              "my_actor.user_output.edep_uncertainty.active=True/False "
-                              "to request uncertainty scoring of the respective quantity, "
-                              "where 'my_actor' should be your actor object. "
+                "my_actor.user_output.edep_uncertainty.active=True/False "
+                "to request uncertainty scoring of the respective quantity, "
+                "where 'my_actor' should be your actor object. ",
                 # "setter_hook": _setter_hook_uncertainty,
             },
         ),
@@ -401,9 +401,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "deprecated": "Use: my_actor.user_output.dose.active=True/False "
-                              "to request the actor to score dose, "
-                              "where 'my_actor' should be your actor object. "
-                              "By default, only the deposited energy is scored. "
+                "to request the actor to score dose, "
+                "where 'my_actor' should be your actor object. "
+                "By default, only the deposited energy is scored. ",
             },
         ),
         "to_water": (
@@ -445,7 +445,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "doc": "FIXME",
                 "setter_hook": _setter_hook_goal_uncertainty,
                 "deprecated": "Currently not implemented. ",
-
             },
         ),
         "thresh_voxel_edep_for_unc_calc": (
@@ -467,10 +466,24 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         self._add_user_output(ActorOutputSingleImage, "edep")
-        self._add_user_output(ActorOutputSingleImage, "edep_uncertainty", can_be_deactivated=True, active=False)
-        self._add_user_output(ActorOutputSingleImage, "dose", can_be_deactivated=True, active=False)
-        self._add_user_output(ActorOutputSingleImage, "dose_uncertainty", can_be_deactivated=True, active=False)
-        self._add_user_output(ActorOutputSingleImage, "square", can_be_deactivated=True, active=False)
+        self._add_user_output(
+            ActorOutputSingleImage,
+            "edep_uncertainty",
+            can_be_deactivated=True,
+            active=False,
+        )
+        self._add_user_output(
+            ActorOutputSingleImage, "dose", can_be_deactivated=True, active=False
+        )
+        self._add_user_output(
+            ActorOutputSingleImage,
+            "dose_uncertainty",
+            can_be_deactivated=True,
+            active=False,
+        )
+        self._add_user_output(
+            ActorOutputSingleImage, "square", can_be_deactivated=True, active=False
+        )
 
         self.__initcpp__()
 
@@ -540,12 +553,15 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         if self.user_output.dose_uncertainty.active is True:
             self.user_output.edep_uncertainty.active = True
 
-        if self.user_output.edep_uncertainty.active is True or self.user_output.dose_uncertainty.active is True:
+        if (
+            self.user_output.edep_uncertainty.active is True
+            or self.user_output.dose_uncertainty.active is True
+        ):
             self.user_output.square.active = True
 
         self.InitializeUserInput(self.user_info)  # C++ side
         self.SetSquareFlag(self.user_output.square.active)
-        if self.score_in == 'water':
+        if self.score_in == "water":
             self.SetToWaterFlag(True)
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
@@ -566,7 +582,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.prepare_output_for_run("edep_uncertainty", run_index)
         if self.user_output.dose_uncertainty.active:
             self.prepare_output_for_run("dose_uncertainty", run_index)
-
 
     def EndOfRunActionMasterThread(self, run_index):
         # edep
@@ -605,7 +620,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
             edep_uncertainty_image = itk_image_view_from_array(
                 compute_std_from_sample(
-                    n, edep, square, correct_bias=False  # used to be: self.ste_of_mean_unbiased
+                    n,
+                    edep,
+                    square,
+                    correct_bias=False,  # used to be: self.ste_of_mean_unbiased
                 )
             )
             edep_uncertainty_image.CopyInformation(
@@ -819,9 +837,13 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
     def __initcpp__(self):
         g4.GateFluenceActor.__init__(self, self.user_info)
-        self.AddActions({"BeginOfRunActionMasterThread",
-                         "EndOfRunActionMasterThread",
-                         "EndSimulationAction"})
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "EndSimulationAction",
+            }
+        )
 
     def initialize(self):
         VoxelDepositActor.initialize(self)

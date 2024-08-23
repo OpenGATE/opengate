@@ -57,8 +57,7 @@ std::string GateVActor::GetOutputPath(std::string outputName) {
     ActorOutputInfo_t aInfo;
     aInfo = fActorOutputInfos.at(outputName);
     return aInfo.outputPath;
-  }
-  catch(std::out_of_range& e) {
+  } catch (std::out_of_range &e) {
     std::ostringstream msg;
     msg << "No actor output with the name " << outputName << " exists.";
     Fatal(msg.str());
@@ -74,14 +73,12 @@ bool GateVActor::GetWriteToDisk(std::string outputName) {
     ActorOutputInfo_t aInfo;
     aInfo = fActorOutputInfos.at(outputName);
     return aInfo.writeToDisk;
-  }
-  catch(std::out_of_range& e) {
+  } catch (std::out_of_range &e) {
     std::ostringstream msg;
     msg << "No actor output with the name " << outputName << " exists.";
     Fatal(msg.str());
   }
 }
-
 
 void GateVActor::AddActions(std::set<std::string> &actions) {
   fActions.insert(actions.begin(), actions.end());

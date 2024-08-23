@@ -39,7 +39,7 @@ void GateFluenceActor::InitializeCpp() {
 }
 
 void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
-    // Important ! The volume may have moved, so we (re-)attach each run
+  // Important ! The volume may have moved, so we (re-)attach each run
   AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
                                    fTranslation);
 }

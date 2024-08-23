@@ -190,7 +190,7 @@ def eval_results(sim):
     )
 
     dose = sim.actor_manager.get_actor("dose")
-    image = dose.get_output_data(output_name='edep')
+    image = dose.get_output_data(output_name="edep")
     np_image = itk.GetArrayFromImage(image)
     # For 1D images, the array is squeezed
     np_image = np.squeeze(np_image)
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     sim = create_simulation()
     print("Running GATE simulation")
     sim.run()
-    stats_actor = sim.actor_manager.get_actor('Stats')
+    stats_actor = sim.actor_manager.get_actor("Stats")
     print(stats_actor)
     print("Simulation finished")
     print("Evaluating results")

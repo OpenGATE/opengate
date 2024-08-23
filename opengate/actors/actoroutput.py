@@ -23,7 +23,9 @@ def _setter_hook_active(self, active):
         return bool(active)
     else:
         if bool(active) is not True:
-            warning(f"The output {self.name} of actor {self.belongs_to_actor.name} cannot be deactivated.")
+            warning(
+                f"The output {self.name} of actor {self.belongs_to_actor.name} cannot be deactivated."
+            )
         return True
 
 
@@ -47,14 +49,12 @@ class ActorOutputBase(GateObject):
             },
         ),
         "data_write_config": (
-            Box(
-                {0: Box({"suffix": None, "write_to_disk": True})}
-            ),
+            Box({0: Box({"suffix": None, "write_to_disk": True})}),
             {
                 "doc": "Dictionary (Box) to specify which"
-                       "should be written to disk and how. "
-                       "The default is picked up from the data container class during instantiation, "
-                       "and can be changed by the user afterwards. "
+                "should be written to disk and how. "
+                "The default is picked up from the data container class during instantiation, "
+                "and can be changed by the user afterwards. "
             },
         ),
         "keep_data_in_memory": (
@@ -75,8 +75,8 @@ class ActorOutputBase(GateObject):
             True,
             {
                 "doc": "Should this output be calculated by the actor? "
-                       "Note: Output can be deactivated on in certain actors. ",
-                "setter_hook": _setter_hook_active
+                "Note: Output can be deactivated on in certain actors. ",
+                "setter_hook": _setter_hook_active,
             },
         ),
     }
@@ -106,7 +106,7 @@ class ActorOutputBase(GateObject):
 
     @property
     def write_to_disk(self):
-        d = Box([(k, v['write_to_disk']) for k, v in self.data_write_config.items()])
+        d = Box([(k, v["write_to_disk"]) for k, v in self.data_write_config.items()])
         if len(d) > 1:
             return d
         elif len(d) == 1:
@@ -119,13 +119,15 @@ class ActorOutputBase(GateObject):
         try:
             bool_value = bool(value)
         except ValueError:
-            fatal(f"write_to_disk must be a boolean value (True/False), but you provided: {value}")
+            fatal(
+                f"write_to_disk must be a boolean value (True/False), but you provided: {value}"
+            )
         for v in self.data_write_config.values():
-            v['write_to_disk'] = bool_value
+            v["write_to_disk"] = bool_value
 
     @property
     def extra_suffix(self):
-        d = Box([(k, v['suffix']) for k, v in self.data_write_config.items()])
+        d = Box([(k, v["suffix"]) for k, v in self.data_write_config.items()])
         if len(d) > 1:
             return d
         elif len(d) == 1:
@@ -136,11 +138,13 @@ class ActorOutputBase(GateObject):
     @extra_suffix.setter
     def extra_suffix(self, value):
         if len(self.data_write_config) > 1:
-            fatal(f"The actor output '{self.name}' handles multiple data items. "
-                  f"You need to specify the suffix individually for each item "
-                  f"via the user parameter 'data_write_config'.")
+            fatal(
+                f"The actor output '{self.name}' handles multiple data items. "
+                f"You need to specify the suffix individually for each item "
+                f"via the user parameter 'data_write_config'."
+            )
         for v in self.data_write_config.values():
-            v['suffix'] = str(value)
+            v["suffix"] = str(value)
 
     @property
     def data(self):
@@ -154,12 +158,18 @@ class ActorOutputBase(GateObject):
         self.initialize_output_filename()
 
     def initialize_output_filename(self):
-        write_to_disk_any = any([v['write_to_disk'] for v in self.data_write_config.values()])
-        if (self.output_filename == "" or self.output_filename is None) and write_to_disk_any is True:
-            fatal(f"The actor output {self.name} of actor {self.belongs_to_actor.type_name} has write_to_disk=True, "
-                  f"but output_filename={self.output_filename}. "
-                  f"Set output_filename='auto' to let GATE generate it automatically, "
-                  f"or manually provide an output_filename. ")
+        write_to_disk_any = any(
+            [v["write_to_disk"] for v in self.data_write_config.values()]
+        )
+        if (
+            self.output_filename == "" or self.output_filename is None
+        ) and write_to_disk_any is True:
+            fatal(
+                f"The actor output {self.name} of actor {self.belongs_to_actor.type_name} has write_to_disk=True, "
+                f"but output_filename={self.output_filename}. "
+                f"Set output_filename='auto' to let GATE generate it automatically, "
+                f"or manually provide an output_filename. "
+            )
         elif self.output_filename == "auto":
             self.output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
 
@@ -167,29 +177,48 @@ class ActorOutputBase(GateObject):
         if self.write_to_disk is True:
             self.write_data(*args, **kwargs)
 
-    def get_output_path(self, which='merged', data_item='all', **kwargs):
+    def get_output_path(self, which="merged", data_item="all", **kwargs):
         self.initialize_output_filename()
         if self.extra_suffix is not None:
             try:
                 extra_suffix_dict = dict(self.extra_suffix)
-                if data_item == 'all':
-                    output_filename_with_suffix = dict([(k, insert_suffix_before_extension(self.output_filename, v))
-                                                   for k, v in extra_suffix_dict.items()])
+                if data_item == "all":
+                    output_filename_with_suffix = dict(
+                        [
+                            (k, insert_suffix_before_extension(self.output_filename, v))
+                            for k, v in extra_suffix_dict.items()
+                        ]
+                    )
                 else:
                     try:
-                        output_filename_with_suffix = {0: insert_suffix_before_extension(self.output_filename,
-                                                                                         extra_suffix_dict[data_item])}
+                        output_filename_with_suffix = {
+                            0: insert_suffix_before_extension(
+                                self.output_filename, extra_suffix_dict[data_item]
+                            )
+                        }
                     except KeyError:
-                        fatal(f"No data item {data_item} found in actor output {self.name} "
-                              f"of actor {self.belongs_to_actor.name}. "
-                              f"Available data items are {list(self.extra_suffix.keys())}")
+                        fatal(
+                            f"No data item {data_item} found in actor output {self.name} "
+                            f"of actor {self.belongs_to_actor.name}. "
+                            f"Available data items are {list(self.extra_suffix.keys())}"
+                        )
             except ValueError:
-                output_filename_with_suffix = {0: insert_suffix_before_extension(self.output_filename,
-                                                                                 self.extra_suffix)}
+                output_filename_with_suffix = {
+                    0: insert_suffix_before_extension(
+                        self.output_filename, self.extra_suffix
+                    )
+                }
 
-            full_data_path = Box([(k, self.simulation.get_output_path(v)) for k, v in output_filename_with_suffix.items()])
+            full_data_path = Box(
+                [
+                    (k, self.simulation.get_output_path(v))
+                    for k, v in output_filename_with_suffix.items()
+                ]
+            )
         else:
-            full_data_path = Box({0: self.simulation.get_output_path(self.output_filename)})
+            full_data_path = Box(
+                {0: self.simulation.get_output_path(self.output_filename)}
+            )
 
         if which == "merged":
             full_data_path_which = full_data_path
@@ -203,8 +232,12 @@ class ActorOutputBase(GateObject):
                     f"of {type(self).__name__} called {self.name}"
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
-            full_data_path_which = Box([(k, insert_suffix_before_extension(v, f"run{run_index:04f}"))
-                                        for k, v in full_data_path.items()])
+            full_data_path_which = Box(
+                [
+                    (k, insert_suffix_before_extension(v, f"run{run_index:04f}"))
+                    for k, v in full_data_path.items()
+                ]
+            )
 
         if len(full_data_path_which) > 1:
             return full_data_path_which
@@ -213,7 +246,7 @@ class ActorOutputBase(GateObject):
         else:
             return None
 
-    def get_output_path_as_string(self, which='merged', **kwargs):
+    def get_output_path_as_string(self, which="merged", **kwargs):
         return ensure_filename_is_str(self.get_output_path(which, **kwargs))
 
     def close(self):
@@ -263,17 +296,21 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             self.data_container_class = data_container_class
         else:
             try:
-                self.data_container_class = available_data_container_classes[data_container_class]
+                self.data_container_class = available_data_container_classes[
+                    data_container_class
+                ]
             except KeyError:
                 fatal(
                     f"Unknown data item class {data_container_class}. "
                     f"Available classes are: {list(available_data_container_classes.keys())}"
                 )
-        data_write_config = kwargs.pop('data_write_config', None)
+        data_write_config = kwargs.pop("data_write_config", None)
         super().__init__(*args, **kwargs)
         if data_write_config is None:
             # get the default write config from the container class
-            self.data_write_config = self.data_container_class.get_default_data_write_config()
+            self.data_write_config = (
+                self.data_container_class.get_default_data_write_config()
+            )
         else:
             # set the parameters provided by the user via the constructor
             self.data_write_config = data_write_config

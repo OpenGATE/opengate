@@ -62,7 +62,7 @@ if __name__ == "__main__":
     detector_actor.output_filename = "fluence.mhd"
     detector_actor.spacing = [10 * mm, 5 * mm, 5 * mm]
     detector_actor.size = [1, 100, 100]
-    detector_actor.output_coordinate_system = 'local'
+    detector_actor.output_coordinate_system = "local"
 
     # source
     source = sim.add_source("GenericSource", "mysource")

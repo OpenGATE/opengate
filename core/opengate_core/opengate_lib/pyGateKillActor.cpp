@@ -15,5 +15,6 @@ void init_GateKillActor(py::module &m) {
   py::class_<GateKillActor, std::unique_ptr<GateKillActor, py::nodelete>,
              GateVActor>(m, "GateKillActor")
       .def(py::init<py::dict &>())
-      .def("GetNumberOfKilledParticles", &GateKillActor::GetNumberOfKilledParticles);
+      .def("GetNumberOfKilledParticles",
+           &GateKillActor::GetNumberOfKilledParticles);
 }

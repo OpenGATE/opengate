@@ -113,7 +113,7 @@ if __name__ == "__main__":
     brem_splitting_actor = sim.add_actor("BremSplittingActor", "eBremSplittingW")
     brem_splitting_actor.attached_to = W_tubs.name
     brem_splitting_actor.splitting_factor = nb_split
-    brem_splitting_actor.particles = 'e-', 'e+'
+    brem_splitting_actor.particles = "e-", "e+"
 
     ##### PHASE SPACE plan ######"
     plan_tubs = sim.add_volume("Tubs", "phsp_tubs")

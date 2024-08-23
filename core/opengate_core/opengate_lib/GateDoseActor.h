@@ -47,17 +47,13 @@ public:
   // Called every time a Run ends (all threads)
   virtual void EndOfRunAction(const G4Run *run) override;
 
-  inline bool GetToWaterFlag() {return fToWaterFlag;}
+  inline bool GetToWaterFlag() { return fToWaterFlag; }
 
-  inline void SetToWaterFlag(const bool b){
-    fToWaterFlag = b;
-  }
+  inline void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
 
-  inline bool GetSquareFlag() {return fSquareFlag;}
+  inline bool GetSquareFlag() { return fSquareFlag; }
 
-  inline void SetSquareFlag(const bool b){
-    fSquareFlag = b;
-  }
+  inline void SetSquareFlag(const bool b) { fSquareFlag = b; }
 
   // virtual void EndSimulationAction();
 
@@ -75,29 +71,29 @@ public:
   Image3DType::Pointer cpp_square_image;
   Image3DType::SizeType size_edep;
 
-//  // Option: indicate if we must compute uncertainty
-//  bool fUncertaintyFlag;
+  //  // Option: indicate if we must compute uncertainty
+  //  bool fUncertaintyFlag;
 
   // Option: indicate if we must compute square
   bool fSquareFlag;
 
-//  // Option: indicate if we must compute dose in Gray also
-//  bool fDoseFlag;
+  //  // Option: indicate if we must compute dose in Gray also
+  //  bool fDoseFlag;
 
   std::string fScoreIn;
 
   // Option: indicate we must convert to dose to water
   bool fToWaterFlag;
 
-//  // Option: calculate dose in stepping action. If False, calc only edep and
-//  // divide by masss at the end of the simulation, on py side
-//  bool fOnFlyCalcFlag;
+  //  // Option: calculate dose in stepping action. If False, calc only edep and
+  //  // divide by masss at the end of the simulation, on py side
+  //  bool fOnFlyCalcFlag;
 
-//  // Option: cp image for each thread
-//  bool fcpImageForThreadsFlag;
-//
-//  // Option: calculate the standard error of the mean
-//  bool fSTEofMeanFlag;
+  //  // Option: cp image for each thread
+  //  bool fcpImageForThreadsFlag;
+  //
+  //  // Option: calculate the standard error of the mean
+  //  bool fSTEofMeanFlag;
 
   // For uncertainty computation, we need temporary images
 
@@ -105,7 +101,7 @@ public:
   int NbOfEvent = 0;
   int NbOfThreads = 0;
 
-//  double goalUncertainty;
+  //  double goalUncertainty;
   double threshEdepPerc;
   // struct timeval mTimeOfLastSaveEvent;
 
