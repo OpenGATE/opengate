@@ -12,6 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     create_sim_tests(sim, threads=4, digitizer=1)
+    sim.output_dir = paths.output
 
     # timing
     sim.random_seed = 123654789
@@ -23,23 +24,22 @@ if __name__ == "__main__":
 
     # output filenames
     stats = sim.get_actor("stats")
-    stats.output_filename = paths.output / "stats1.txt"
+    stats.output_filename = "stats1.txt"
 
     crystal = sim.volume_manager.get_volume(f"spect_crystal")
     proj = sim.get_actor(f"Projection_{crystal.name}")
-    proj.output_filename = paths.output / "projections_test1.mhd"
+    proj.output_filename = "projections_test1.mhd"
 
     hits = sim.get_actor(f"Hits_{crystal.name}")
-    hits.output_filename = paths.output / "output_test1.root"
+    hits.output_filename = "output_test1.root"
 
     singles = sim.get_actor(f"Singles_{crystal.name}")
-    singles.output_filename = paths.output / "output_test1.root"
+    singles.output_filename = "output_test1.root"
 
     # start simulation
     sim.run()
 
     # print stats
-    output = sim.output
     print(stats)
 
     # ------------------------------------------------------------------------------------
@@ -53,18 +53,17 @@ if __name__ == "__main__":
     # ------------------------------------------------------------------------------------
 
     # compare stats
-    is_ok = compare_stats(output, paths.gate_output / "stats1.txt")
+    is_ok = compare_stats(sim, paths.gate_output / "stats1.txt")
 
     # compare root
     fr = paths.gate_output / "output1.root"
-    is_ok = compare_root_hits(crystal, output, fr, paths.output) and is_ok
+    is_ok = compare_root_hits(crystal, sim, fr, paths.output) and is_ok
 
     # Compare root files
-    stats = output.get_actor("stats")
     sn = f"Singles_{crystal.name}"
-    is_ok = compare_root_singles(crystal, output, fr, paths.output, sn) and is_ok
+    is_ok = compare_root_singles(crystal, sim, fr, paths.output, sn) and is_ok
 
     # compare images with Gate
     fr = paths.gate_output / "projection1.mhd"
-    is_ok = compare_proj_images(crystal, output, stats, fr, paths.output) and is_ok
+    is_ok = compare_proj_images(crystal, sim, stats, fr, paths.output) and is_ok
     utility.test_ok(is_ok)

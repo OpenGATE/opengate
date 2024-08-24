@@ -13,6 +13,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     head, stats, source = test073_setup_sim(sim, "intevo", collimator_type="lehr")
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
@@ -22,12 +23,12 @@ if __name__ == "__main__":
     keV = gate.g4_units.keV
     c = {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV}
     ew = digit.find_first_module("energy_window")
-    ew.output_filename = paths.output / "output_tc99m.root"
+    ew.output_filename = "output_tc99m.root"
     ew.write_to_disk = True
     ew.channels.append(c)
 
     # output
-    stats.output_filename = paths.output / "stats_intevo_tc99m.txt"
+    stats.output_filename = "stats_intevo_tc99m.txt"
 
     # source
     Bq = gate.g4_units.Bq
@@ -36,14 +37,13 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # stat
     print(stats)
 
     # compare stats
     ref_folder = paths.output_ref
-    is_ok = compare_stats(output, ref_folder / "stats_intevo_tc99m.txt")
+    is_ok = compare_stats(sim, ref_folder / "stats_intevo_tc99m.txt")
 
     # compare root
     fr = ref_folder / "output_intevo_tc99m.root"
