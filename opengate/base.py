@@ -459,6 +459,13 @@ class GateObject:
         else:
             super().__setattr__(key, value)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.close()
+        return False
+
     def __add_to_simulation__(self):
         """Hook method which can be called by managers.
         Specific classes can use this to implement actions to be taken
