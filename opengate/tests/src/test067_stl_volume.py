@@ -183,7 +183,7 @@ def eval_results(sim):
         float(eval_Volume), float(27000000.0), tolerance=1e-1, txt="volume"
     )
 
-    dose = sim.actor_manager.get_actor("dose")
+    dose = sim.get_actor("dose")
     image = dose.get_output_data(output_name="edep")
     np_image = itk.GetArrayFromImage(image)
     # For 1D images, the array is squeezed
