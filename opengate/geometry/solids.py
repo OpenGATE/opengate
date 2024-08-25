@@ -470,8 +470,10 @@ class TesselatedSolid(SolidBase):
         try:
             return stl.mesh.Mesh.from_file(self.file_name)
         except Exception as e:
-            msg = (f"Error in {self.type_name} called {self.name}. Could not read the file {self.file_name}. Aborting. "
-                   f"The error encountered was: \n{e}")
+            msg = (
+                f"Error in {self.type_name} called {self.name}. Could not read the file {self.file_name}. Aborting. "
+                f"The error encountered was: \n{e}"
+            )
             fatal(msg)
 
     def translate_mesh_to_center(self, mesh_to_translate):
