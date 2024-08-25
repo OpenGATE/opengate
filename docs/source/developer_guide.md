@@ -753,11 +753,11 @@ On the python-side in geometry/solids.py:
 
 ```python
 def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    super().__init__(*args, **kwargs)
 
-        self.g4_solid = None
-        self.g4_tessellated_solid = None
-        self.facetArray = None
+    self.g4_solid = None
+    self.g4_tessellated_solid = None
+    self.g4_facets = None
 ```
 
 All data which is sent to Geant4 is included as a variable to the class. As such, it is only deleted at the end of the simulation, not when the function ends.
