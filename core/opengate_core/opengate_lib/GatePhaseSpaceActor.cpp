@@ -69,7 +69,6 @@ void GatePhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
 
 void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
   auto &l = fThreadLocalData.Get();
-  l.fFirstStepInVolume = true;
   if (fStoreAbsorbedEvent) {
     // The current event still have to be stored
     l.fCurrentEventHasBeenStored = false;
@@ -82,7 +81,6 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
 
 void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
-  l.fFirstStepInVolume = true;
   if (fDebug) {
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << "New track "
@@ -94,18 +92,17 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 // Called every time a batch of step must be processed
 void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   /*
-   Only store if this is the first time
-   Note we CANNOT use step->IsFirstStepInVolume() because it
-   fails with parallel world geometry
-
-   FIXME : also possible to use step->GetPreStepPoint()->GetStepStatus() ==
-   fGeomBoundary, but track created inside the volume will not be in the phsp.
-   Could be an option ?
+   Only store if the particle enters the volume.
+   We CANNOT use step->IsFirstStepInVolume() because it fails with parallel
+   world geometry. We use step->GetPreStepPoint()->GetStepStatus() ==
+   fGeomBoundary Warning: some particles can enter several times in the volume
+   (backscatter), there will be two times in the phsp.
    */
-  auto &l = fThreadLocalData.Get();
-  if (!l.fFirstStepInVolume)
+
+  if (step->GetPreStepPoint()->GetStepStatus() != fGeomBoundary)
     return;
-  l.fFirstStepInVolume = false;
+
+  auto &l = fThreadLocalData.Get();
 
   // Fill the hits
   fHits->FillHits(step);
@@ -133,6 +130,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
               << " pre="
               << G4BestUnit(step->GetPreStepPoint()->GetKineticEnergy(),
                             "Energy")
+              << " step_n=" << step->GetTrack()->GetCurrentStepNumber()
               << " edep=" << G4BestUnit(step->GetTotalEnergyDeposit(), "Energy")
               << " proc=" << pname << " lastdigit=(" << s << ")" << std::endl;
   }

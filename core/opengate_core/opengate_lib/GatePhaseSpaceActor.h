@@ -59,7 +59,6 @@ protected:
   // Local data for the threads (each one has a copy)
   struct threadLocalT {
     bool fCurrentEventHasBeenStored;
-    bool fFirstStepInVolume;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

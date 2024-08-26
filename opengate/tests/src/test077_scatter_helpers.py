@@ -42,13 +42,13 @@ def check_scatter(root_filename):
     print()
 
     # check
-    tol = 0.001
-    r = np.abs(n_scatter - phsp_scatter.num_entries) / n_scatter
-    b1 = r < tol
+    # tol = 0.01
+    # r = np.abs(n_scatter - phsp_scatter.num_entries) / n_scatter
+    b1 = n_scatter == phsp_scatter.num_entries
     utility.print_test(
         b1,
         f"Number of scatter flag is {n_scatter} and "
-        f"filtered = {phsp_scatter.num_entries} are close to tol={tol:.5f} -> {r:.5f}",
+        f"filtered = {phsp_scatter.num_entries} entries",
     )
 
     b2 = n_no_scatter == phsp_no_scatter.num_entries
@@ -73,18 +73,13 @@ def check_scatter(root_filename):
     ####
     phsp1_particles = {}
     phsp2_particles = {}
-
-    # Example: Assuming phsp1 and phsp2 are lists of particle dictionaries
     print(phsp1.keys())
-    # phsp1_list = [dict(zip(phsp1.keys(), values)) for values in zip(*phsp1.values())]
-    # filtered_phsp1 = [p for p in phsp1_list if p["PrimaryScatterFlag"] == 1]
     for particle in phsp1.arrays():
         if particle["PrimaryScatterFlag"] != 1:
             continue
         key = (particle["EventID"], particle["TrackID"])
         phsp1_particles[key] = particle
 
-    # phsp2_list = [dict(zip(phsp_scatter.keys(), values)) for values in zip(*phsp_scatter.values())]
     for particle in phsp_scatter.arrays():
         key = (particle["EventID"], particle["TrackID"])
         phsp2_particles[key] = particle

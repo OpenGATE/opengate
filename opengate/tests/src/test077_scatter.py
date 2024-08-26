@@ -40,9 +40,10 @@ if __name__ == "__main__":
 
     # detector
     det = sim.add_volume("Box", "detector")
-    det.size = [0.000001 * cm, 60 * cm, 60 * cm]
+    det.size = [10 * cm, 60 * cm, 60 * cm]
     det.translation = [40 * cm, 0, 0]
     det.material = "G4_WATER"
+    det.material = "G4_Ir"
 
     # phys
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -57,8 +58,10 @@ if __name__ == "__main__":
     source.position.type = "box"
     source.position.translation = [-60 * cm, 0, 0]
     source.position.size = [0 * cm, 8 * cm, 8 * cm]
-    source.direction.type = "focused"
-    source.direction.focus_point = [-20 * cm, 0, 0]
+    # source.direction.type = "focused"
+    # source.direction.focus_point = [-20 * cm, 0, 0]
+    source.direction.type = "momentum"
+    source.direction.momentum = [1, 0, 0]
     source.n = 50000
 
     # stats
@@ -69,17 +72,21 @@ if __name__ == "__main__":
     att_list = [
         "ParticleName",
         "ParentID",
+        "PrePosition",
+        "PostPosition",
         "EventKineticEnergy",
         "EventDirection",
         "EventID",
         "TrackID",
         "KineticEnergy",
         "PreDirection",
+        "PostDirection",
         "PrimaryScatterFlag",
     ]
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.mother = det.name
     phsp.attributes = att_list
+    # phsp.debug = True
     phsp.output = paths.output / "test077_scatter.root"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
@@ -91,6 +98,7 @@ if __name__ == "__main__":
     phsp2.mother = det.name
     phsp2.attributes = att_list
     phsp2.output = phsp.output
+    # phsp2.debug = True
     fs = sim.add_filter("PrimaryScatterFilter", "f_scatter")
     fs.policy = "keep_scatter"
     phsp2.filters.append(f)
@@ -110,18 +118,6 @@ if __name__ == "__main__":
     sim.run()
     stats = sim.output.get_actor("Stats")
     print(stats)
-
-    s = (
-        "WARNING\n"
-        "There are cases where a particle that does not scatter reaches 'phsp', and its information is stored. \n"
-        "When this happens, the PrimaryScatterFlag is set to 0, indicating that no scattering has taken place.\n"
-        "However, the same particle can scatter latter in the volume 'waterbox'.\n"
-        "It is thus excluded in 'phsp' (already counted), but stored in 'phsp_scatter' with flag PrimaryScatterFlag set to 1.\n"
-        "As a result, the number of scatter events recorded in 'phsp' might differ from those 'in phsp_scatter'.\n"
-        "It is up to the user to decide what is more adapted to his/her case."
-    )
-
-    warning(s)
 
     # test
     is_ok = check_scatter(phsp.output)
