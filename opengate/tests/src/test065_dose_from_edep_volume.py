@@ -1,8 +1,7 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import opengate as gate
-import itk
-import os
-import numpy as np
-import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
