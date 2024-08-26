@@ -120,8 +120,8 @@ class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
         # type_name MUST be defined in class that inherit from a Filter
 
 
-class ScatterFilter(g4.GateScatterFilter, FilterBase):
-    type_name = "ScatterFilter"
+class PrimaryScatterFilter(g4.GatePrimaryScatterFilter, FilterBase):
+    type_name = "PrimaryScatterFilter"
 
     def set_default_user_info(user_info):
         FilterBase.set_default_user_info(user_info)
@@ -130,11 +130,11 @@ class ScatterFilter(g4.GateScatterFilter, FilterBase):
         user_info.policy = "keep_scatter"  # or "keep_no_scatter"
 
     def __init__(self, user_info):
-        g4.GateScatterFilter.__init__(self)  # no argument in cpp side
+        g4.GatePrimaryScatterFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter
         if user_info.policy != "keep_scatter" and user_info.policy != "keep_no_scatter":
             fatal(
-                f'ScatterFilter "{user_info.name}" policy must be either "keep_scatter" '
+                f'PrimaryScatterFilter "{user_info.name}" policy must be either "keep_scatter" '
                 f'or "keep_no_scatter", while it is "{user_info.policy}"'
             )

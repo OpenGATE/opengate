@@ -9,11 +9,12 @@
 
 namespace py = pybind11;
 
-#include "GateScatterFilter.h"
+#include "GatePrimaryScatterFilter.h"
 #include "GateVFilter.h"
 
-void init_GateScatterFilter(py::module &m) {
-  py::class_<GateScatterFilter, GateVFilter>(m, "GateScatterFilter")
+void init_GatePrimaryScatterFilter(py::module &m) {
+  py::class_<GatePrimaryScatterFilter, GateVFilter>(m,
+                                                    "GatePrimaryScatterFilter")
       .def(py::init())
-      .def("Initialize", &GateScatterFilter::Initialize);
+      .def("Initialize", &GatePrimaryScatterFilter::Initialize);
 }

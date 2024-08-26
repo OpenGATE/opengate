@@ -5,18 +5,18 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateScatterFilter_h
-#define GateScatterFilter_h
+#ifndef GatePrimaryScatterFilter_h
+#define GatePrimaryScatterFilter_h
 
 #include "GateVFilter.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateScatterFilter : public GateVFilter {
+class GatePrimaryScatterFilter : public GateVFilter {
 
 public:
-  GateScatterFilter() : GateVFilter() {}
+  GatePrimaryScatterFilter() : GateVFilter() {}
 
   void Initialize(py::dict &user_info) override;
 
@@ -29,6 +29,6 @@ public:
   std::string fPolicy;
 };
 
-int StepHasScatter(const G4Step *step);
+int IsPrimaryScatter(const G4Step *step);
 
-#endif // GateScatterFilter_h
+#endif // GatePrimaryScatterFilter_h

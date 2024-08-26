@@ -125,7 +125,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
     std::string pname = "none";
     if (p != nullptr)
       pname = p->GetProcessName();
-    std::cout << GetName() << " "
+    std::cout << GetName()
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name

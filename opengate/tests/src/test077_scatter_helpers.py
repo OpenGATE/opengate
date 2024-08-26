@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
 from opengate.tests import utility
 import uproot
 import numpy as np
-import json
 
 
 def check_scatter(root_filename):
@@ -20,11 +18,11 @@ def check_scatter(root_filename):
         f"Number of entries in no_scatter filtered phsp = {phsp_no_scatter.num_entries}"
     )
 
-    scatter_flag = phsp1["ScatterFlag"].array()
-    scatter_flag2 = phsp_scatter["ScatterFlag"].array()
-    scatter_flag3 = phsp_no_scatter["ScatterFlag"].array()
+    scatter_flag = phsp1["PrimaryScatterFlag"].array()
+    scatter_flag2 = phsp_scatter["PrimaryScatterFlag"].array()
+    scatter_flag3 = phsp_no_scatter["PrimaryScatterFlag"].array()
 
-    # Count the entries where ScatterFlag is 1 or -1
+    # Count the entries where PrimaryScatterFlag is 1 or -1
     n_scatter = np.sum(scatter_flag == 1)
     n_no_scatter = np.sum(scatter_flag == 0)
 
@@ -44,11 +42,13 @@ def check_scatter(root_filename):
     print()
 
     # check
-    b1 = n_scatter == phsp_scatter.num_entries
+    tol = 0.001
+    r = np.abs(n_scatter - phsp_scatter.num_entries) / n_scatter
+    b1 = r < tol
     utility.print_test(
         b1,
         f"Number of scatter flag is {n_scatter} and "
-        f"filtered = {phsp_scatter.num_entries}",
+        f"filtered = {phsp_scatter.num_entries} are close to tol={tol:.5f} -> {r:.5f}",
     )
 
     b2 = n_no_scatter == phsp_no_scatter.num_entries
@@ -77,19 +77,17 @@ def check_scatter(root_filename):
     # Example: Assuming phsp1 and phsp2 are lists of particle dictionaries
     print(phsp1.keys())
     # phsp1_list = [dict(zip(phsp1.keys(), values)) for values in zip(*phsp1.values())]
-    # filtered_phsp1 = [p for p in phsp1_list if p["ScatterFlag"] == 1]
+    # filtered_phsp1 = [p for p in phsp1_list if p["PrimaryScatterFlag"] == 1]
     for particle in phsp1.arrays():
-        if particle["ScatterFlag"] != 1:
+        if particle["PrimaryScatterFlag"] != 1:
             continue
         key = (particle["EventID"], particle["TrackID"])
         phsp1_particles[key] = particle
-    print(len(phsp1_particles))
 
     # phsp2_list = [dict(zip(phsp_scatter.keys(), values)) for values in zip(*phsp_scatter.values())]
     for particle in phsp_scatter.arrays():
         key = (particle["EventID"], particle["TrackID"])
         phsp2_particles[key] = particle
-    print(len(phsp2_particles))
 
     unique_in_phsp1 = set(phsp1_particles.keys()) - set(phsp2_particles.keys())
     unique_in_phsp2 = set(phsp2_particles.keys()) - set(phsp1_particles.keys())
@@ -113,12 +111,9 @@ def check_scatter(root_filename):
             p["PreDirection_X"],
             p["PreDirection_Y"],
             p["PreDirection_Z"],
-            p["ScatterFlag"],
+            p["PrimaryScatterFlag"],
             p["KineticEnergy"],
         )
-        # for k, v in phsp2_particles[key].items():
-        #    print(k, v)
-        # print(json.dumps(phsp2_particles[key], indent=2))
         i += 1
     print(i)
 

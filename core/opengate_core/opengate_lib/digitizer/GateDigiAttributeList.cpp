@@ -5,7 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "../GateScatterFilter.h"
+#include "../GatePrimaryScatterFilter.h"
 #include "../GateUniqueVolumeIDManager.h"
 #include "../GateUserEventInformation.h"
 #include "G4Run.hh"
@@ -295,5 +295,6 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   // -----------------------------------------------------
   // Scatter information
   DefineDigiAttribute(
-      "ScatterFlag", 'I', FILLF { att->FillIValue(StepHasScatter(step)); });
+      "PrimaryScatterFlag", 'I',
+      FILLF { att->FillIValue(IsPrimaryScatter(step)); });
 }
