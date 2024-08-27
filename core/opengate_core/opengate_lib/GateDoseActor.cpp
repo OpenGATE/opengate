@@ -93,28 +93,20 @@ void GateDoseActor::InitializeCpp() {
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
-  Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
-  auto size_edep = region.GetSize();
-
-  cpp_edep_image->SetRegions(size_edep);
-  cpp_edep_image->Allocate();
-  cpp_edep_image->FillBuffer(0.0);
+  // Important ! The volume may have moved, so we re-attach each run
+  AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
+                                   fTranslation);
+  auto sp = cpp_edep_image->GetSpacing();
+  fVoxelVolume = sp[0] * sp[1] * sp[2];
 
   if (fSquareFlag) {
-    cpp_square_image->SetRegions(size_edep);
-    cpp_square_image->Allocate();
-    cpp_square_image->FillBuffer(0.0);
+    AttachImageToVolume<Image3DType>(cpp_square_image, fPhysicalVolumeName,
+                                     fTranslation);
   }
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
-  // Important ! The volume may have moved, so we re-attach each run
-  // FIXME: check if this is still needed after refactoring
-  AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
-                                   fInitialTranslation);
   // compute volume of a dose voxel
-  auto sp = cpp_edep_image->GetSpacing();
-  fVoxelVolume = sp[0] * sp[1] * sp[2];
   Image3DType::RegionType region = cpp_edep_image->GetLargestPossibleRegion();
   size_edep = region.GetSize();
   int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
