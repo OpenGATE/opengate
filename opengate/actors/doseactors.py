@@ -491,11 +491,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         g4.GateDoseActor.__init__(self, self.user_info)
         self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
 
-    def __getstate__(self):
-        # superclass getstate
-        return_dict = super().__getstate__()
-        return return_dict
-
     def compute_dose_from_edep_img(self, input_image):
         """
         * create mass image:
