@@ -64,6 +64,7 @@ std::string GateVActor::GetOutputPath(std::string outputName) {
     msg << fMotherVolumeName << " " << GetName();
     Fatal(msg.str());
   }
+  return ""; // to avoid warning
 }
 
 void GateVActor::SetWriteToDisk(std::string outputName, bool writeToDisk) {
@@ -82,6 +83,7 @@ bool GateVActor::GetWriteToDisk(std::string outputName) {
     msg << fMotherVolumeName << " " << GetName();
     Fatal(msg.str());
   }
+  return ""; // to avoid warning
 }
 
 void GateVActor::AddActions(std::set<std::string> &actions) {
