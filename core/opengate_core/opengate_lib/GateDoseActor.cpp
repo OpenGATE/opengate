@@ -110,9 +110,9 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
-  int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
-  auto &l = fThreadLocalData.Get();
   if (fSquareFlag) {
+    int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+    auto &l = fThreadLocalData.Get();
     l.edepSquared_worker_flatimg.resize(N_voxels);
     std::fill(l.edepSquared_worker_flatimg.begin(),
               l.edepSquared_worker_flatimg.end(), 0.0);
