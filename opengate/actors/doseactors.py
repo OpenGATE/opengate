@@ -13,7 +13,7 @@ from ..utility import (
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    itk_image_view_from_array,
+    itk_image_from_array,
     divide_itk_images,
     scale_itk_image,
 )
@@ -618,7 +618,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 self.user_output.square.get_data(run_index)
             )
 
-            edep_uncertainty_image = itk_image_view_from_array(
+            edep_uncertainty_image = itk_image_from_array(
                 compute_std_from_sample(
                     n,
                     edep,
