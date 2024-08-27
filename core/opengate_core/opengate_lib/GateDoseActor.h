@@ -25,37 +25,37 @@ class GateDoseActor : public GateVActor {
 public:
   // Constructor
   GateDoseActor(py::dict &user_info);
-  // explicit GateDoseActor(py::dict &user_info);
-  // virtual ~GateDoseActor();
 
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInput(py::dict &user_info) override;
 
-  virtual void InitializeCpp() override;
+  void InitializeCpp() override;
 
   // Main function called every step in attached volume
-  virtual void SteppingAction(G4Step *) override;
+  void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run) override;
+  void BeginOfRunAction(const G4Run *run) override;
 
-  virtual void BeginOfRunActionMasterThread(int run_id) override;
+  void BeginOfRunActionMasterThread(int run_id) override;
 
-  virtual int EndOfRunActionMasterThread(int run_id) override;
+  int EndOfRunActionMasterThread(int run_id) override;
 
-  virtual void BeginOfEventAction(const G4Event *event) override;
+  void BeginOfEventAction(const G4Event *event) override;
 
   // Called every time a Run ends (all threads)
-  virtual void EndOfRunAction(const G4Run *run) override;
+  void EndOfRunAction(const G4Run *run) override;
 
-  inline bool GetToWaterFlag() { return fToWaterFlag; }
+  inline bool GetToWaterFlag() const { return fToWaterFlag; }
 
   inline void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
 
-  inline bool GetSquareFlag() { return fSquareFlag; }
+  inline bool GetSquareFlag() const { return fSquareFlag; }
 
   inline void SetSquareFlag(const bool b) { fSquareFlag = b; }
 
-  inline std::string GetPhysicalVolumeName() { return fPhysicalVolumeName; }
+  inline std::string GetPhysicalVolumeName() const {
+    return fPhysicalVolumeName;
+  }
 
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
@@ -73,13 +73,13 @@ public:
   Image3DType::Pointer cpp_edep_image;
   //  Image3DType::Pointer cpp_dose_image;
   Image3DType::Pointer cpp_square_image;
-  Image3DType::SizeType size_edep;
+  Image3DType::SizeType size_edep{};
 
   //  // Option: indicate if we must compute uncertainty
   //  bool fUncertaintyFlag;
 
   // Option: indicate if we must compute square
-  bool fSquareFlag;
+  bool fSquareFlag{};
 
   //  // Option: indicate if we must compute dose in Gray also
   //  bool fDoseFlag;
@@ -87,10 +87,10 @@ public:
   std::string fScoreIn;
 
   // Option: indicate we must convert to dose to water
-  bool fToWaterFlag;
+  bool fToWaterFlag{};
 
   //  // Option: calculate dose in stepping action. If False, calc only edep and
-  //  // divide by masss at the end of the simulation, on py side
+  //  // divide by mass at the end of the simulation, on py side
   //  bool fOnFlyCalcFlag;
 
   //  // Option: cp image for each thread
@@ -101,12 +101,12 @@ public:
 
   // For uncertainty computation, we need temporary images
 
-  double fVoxelVolume;
+  double fVoxelVolume{};
   int NbOfEvent = 0;
   int NbOfThreads = 0;
 
   //  double goalUncertainty;
-  double threshEdepPerc;
+  double threshEdepPerc{};
   // struct timeval mTimeOfLastSaveEvent;
 
   std::string fPhysicalVolumeName;

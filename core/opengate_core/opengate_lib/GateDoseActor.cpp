@@ -5,7 +5,11 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "G4Navigator.hh"
+#include "G4Electron.hh"
+#include "G4EmCalculator.hh"
+#include "G4Gamma.hh"
+#include "G4NistManager.hh"
+#include "G4ParticleDefinition.hh"
 #include "G4RandomTools.hh"
 #include "G4RunManager.hh"
 #include "G4Threading.hh"
@@ -14,21 +18,12 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 
-// #include <ctime>
+#include <cmath>
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkImageRegionIterator.h>
-#include <math.h>
 #include <queue>
 #include <vector>
-
-#include "G4Electron.hh"
-#include "G4EmCalculator.hh"
-#include "G4Gamma.hh"
-#include "G4MaterialTable.hh"
-#include "G4NistManager.hh"
-#include "G4ParticleDefinition.hh"
-#include "G4ParticleTable.hh"
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetWorkerEndRunMutex = G4MUTEX_INITIALIZER;
@@ -58,7 +53,8 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   //  // Option: compute dose in Gray
   //  fDoseFlag = DictGetBool(user_info, "dose");
   // Option: compute dose to water
-  fScoreIn = DictGetBool(user_info, "score_in");
+  fScoreIn = DictGetStr(user_info, "score_in");
+  // DDD(fScoreIn);
   //  // Option: calculate only edep/edepToWater, and divide by mass image on
   //  python
   //  // side
