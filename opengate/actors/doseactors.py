@@ -489,7 +489,14 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
     def __initcpp__(self):
         g4.GateDoseActor.__init__(self, self.user_info)
-        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
+        self.AddActions({
+            "BeginOfRunActionMasterThread",
+            "EndOfRunActionMasterThread",
+            "BeginOfRunAction",
+            "EndOfRunAction",
+            "BeginOfEventAction",
+            "SteppingAction",
+        })
 
     def compute_dose_from_edep_img(self, input_image):
         """

@@ -39,9 +39,10 @@ G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
 GateDoseActor::GateDoseActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   // Action for this actor: during stepping
-  fActions.insert("SteppingAction");
-  fActions.insert("BeginOfRunAction");
-  fActions.insert("BeginOfEventAction");
+//  fActions.insert("SteppingAction");
+//  fActions.insert("BeginOfRunAction");
+//  fActions.insert("EndOfRunAction");
+//  fActions.insert("BeginOfEventAction");
   // fActions.insert("EndOfSimulationWorkerAction");
   // fActions.insert("EndSimulationAction");
   fActions.insert("EndOfRunAction");
