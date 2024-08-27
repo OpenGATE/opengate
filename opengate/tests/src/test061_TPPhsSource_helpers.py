@@ -110,7 +110,8 @@ def create_test_phsp(
     output = sim.output
 
 
-def create_phsp_without_source(output_dir=Path("output"),
+def create_phsp_without_source(
+    output_dir=Path("output"),
     phs_name="test_proton.root",
 ):
     # create the simulation

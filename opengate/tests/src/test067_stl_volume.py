@@ -143,7 +143,6 @@ def create_simulation():
 
     print(f"The energy is {source.energy.mono / eV} eV")
 
-
     # Physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
     global_cut = 500 * um

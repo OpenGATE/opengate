@@ -489,14 +489,16 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
     def __initcpp__(self):
         g4.GateDoseActor.__init__(self, self.user_info)
-        self.AddActions({
-            "BeginOfRunActionMasterThread",
-            "EndOfRunActionMasterThread",
-            "BeginOfRunAction",
-            "EndOfRunAction",
-            "BeginOfEventAction",
-            "SteppingAction",
-        })
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+            }
+        )
 
     def compute_dose_from_edep_img(self, input_image):
         """
@@ -598,8 +600,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         if self.user_output.dose.active:  # and not self.dose_calc_on_the_fly:
             dose_image = self.compute_dose_from_edep_img(
-                    self.user_output.edep.get_data(run_index)
-                )
+                self.user_output.edep.get_data(run_index)
+            )
             dose_image.CopyInformation(self.user_output.edep.get_data(run_index))
 
             self.store_output_data(
@@ -612,7 +614,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         if self.user_output.edep_uncertainty.active:
             n = self.NbOfEvent
 
-            edep_arr = itk.array_view_from_image(self.user_output.edep.get_data(run_index))
+            edep_arr = itk.array_view_from_image(
+                self.user_output.edep.get_data(run_index)
+            )
             square_arr = itk.array_view_from_image(
                 self.user_output.square.get_data(run_index)
             )

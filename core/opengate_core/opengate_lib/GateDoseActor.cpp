@@ -39,10 +39,10 @@ G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
 GateDoseActor::GateDoseActor(py::dict &user_info)
     : GateVActor(user_info, true) {
   // Action for this actor: during stepping
-//  fActions.insert("SteppingAction");
-//  fActions.insert("BeginOfRunAction");
-//  fActions.insert("EndOfRunAction");
-//  fActions.insert("BeginOfEventAction");
+  //  fActions.insert("SteppingAction");
+  //  fActions.insert("BeginOfRunAction");
+  //  fActions.insert("EndOfRunAction");
+  //  fActions.insert("BeginOfEventAction");
   // fActions.insert("EndOfSimulationWorkerAction");
   // fActions.insert("EndSimulationAction");
   // fActions.insert("EndOfEventAction");
@@ -54,7 +54,7 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   //  //  Option: compute uncertainty
   //  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
-//  fSquareFlag = DictGetBool(user_info, "square");
+  //  fSquareFlag = DictGetBool(user_info, "square");
   //  // Option: compute dose in Gray
   //  fDoseFlag = DictGetBool(user_info, "dose");
   // Option: compute dose to water
