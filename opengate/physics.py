@@ -88,7 +88,7 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
 
         if len(particle_keys_to_consider) == 0:
             warning(
-                "user_limits_particles is False for all particles. No tracking cuts will be applied. Use Simulation.set_user_limits_particles()."
+                "user_limits_particles is False for all particles. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
             )
 
         # translate to Geant4 particle names
