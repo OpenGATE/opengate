@@ -54,7 +54,7 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   //  //  Option: compute uncertainty
   //  fUncertaintyFlag = DictGetBool(user_info, "uncertainty");
   // Option: compute square
-  fSquareFlag = DictGetBool(user_info, "square");
+//  fSquareFlag = DictGetBool(user_info, "square");
   //  // Option: compute dose in Gray
   //  fDoseFlag = DictGetBool(user_info, "dose");
   // Option: compute dose to water
