@@ -23,8 +23,20 @@ class FilterBase(GateObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def __initcpp__(self):
+        """Nothing to do in the base class."""
+
     def initialize(self):
         self.InitializeUserInput(self.user_info)
+
+    def __getstate__(self):
+        state_dict = super().__getstate__()
+        state_dict["filter_engine"] = None
+        return state_dict
+
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__initcpp__()
 
 
 class ParticleFilter(FilterBase, g4.GateParticleFilter):

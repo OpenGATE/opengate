@@ -22,9 +22,11 @@ def create_test_phs(
     particle="proton",
     phs_name=Path("output") / "test_proton.root",
     number_of_particles=1,
-    translation=[0 * mm, 0 * mm, 0 * mm],
+    translation=None,
 ):
     # create the simulation
+    if translation is None:
+        translation = [0 * mm, 0 * mm, 0 * mm]
     sim = gate.Simulation()
 
     # main options
@@ -74,7 +76,7 @@ def create_test_phs(
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
-    ta1.mother = plane.name
+    ta1.attached_to = plane.name
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
@@ -86,7 +88,7 @@ def create_test_phs(
         "PDGCode",
     ]
     new_joined_path = os.path.join(directory_path, base_filename + new_extension)
-    ta1.output = new_joined_path
+    ta1.output_filename = new_joined_path
     ta1.debug = False
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = particle
@@ -94,7 +96,7 @@ def create_test_phs(
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
-    ta2.mother = plane.name
+    ta2.attached_to = plane.name
     ta2.attributes = [
         "KineticEnergy",
         "Weight",
@@ -112,7 +114,7 @@ def create_test_phs(
 
     # PhaseSpace Actor
     ta3 = sim.add_actor("PhaseSpaceActor", "PhaseSpace3")
-    ta3.mother = plane.name
+    ta3.attached_to = plane.name
     ta3.attributes = [
         "KineticEnergy",
         "Weight",
@@ -131,7 +133,7 @@ def create_test_phs(
 
     # PhaseSpace Actor
     ta4 = sim.add_actor("PhaseSpaceActor", "PhaseSpace4")
-    ta4.mother = plane.name
+    ta4.attached_to = plane.name
     ta4.attributes = [
         "KineticEnergy",
         "Weight",
@@ -224,7 +226,7 @@ def create_phs_without_source(
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta1.mother = plane.name
+    ta1.attached_to = plane.name
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
