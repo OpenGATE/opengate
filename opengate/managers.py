@@ -959,7 +959,6 @@ class VolumeManager(GateObject):
         "ImageVolume": ImageVolume,
         "TubsVolume": TubsVolume,
         "PolyhedraVolume": PolyhedraVolume,
-        "TextTesselatedVolume": TesselatedVolume,
         "HexagonVolume": HexagonVolume,
         "ConsVolume": ConsVolume,
         "TrdVolume": TrdVolume,
