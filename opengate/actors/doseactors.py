@@ -592,29 +592,24 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self._update_output_coordinate_system("edep", run_index)
 
-        if self.user_output.dose.active:  # and not self.dose_calc_on_the_fly:
-            self.store_output_data(
-                "dose",
-                run_index,
-                self.compute_dose_from_edep_img(
-                    self.user_output["edep"].get_data(run_index)
-                ),
-            )
-            self._update_output_coordinate_system("dose", run_index)
-
-        # square is True if uncertainty is True
         if self.user_output.square.active:
             self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
             self._update_output_coordinate_system("square", run_index)
 
-        # uncertainty
-        # if any([self.uncertainty, self.ste_of_mean]):
+        if self.user_output.dose.active:  # and not self.dose_calc_on_the_fly:
+            dose_image = self.compute_dose_from_edep_img(
+                    self.user_output.edep.get_data(run_index)
+                )
+            dose_image.CopyInformation(self.user_output.edep.get_data(run_index))
+
+            self.store_output_data(
+                "dose",
+                run_index,
+                dose_image,
+            )
+
+        # uncertainty active implies square active
         if self.user_output.edep_uncertainty.active:
-            # if self.ste_of_mean:
-            #     n = (
-            #         self.simulation.number_of_threads
-            #     )  # each thread is considered one subsample.
-            # else:
             n = self.NbOfEvent
 
             edep_arr = itk.array_view_from_image(self.user_output.edep.get_data(run_index))
@@ -636,7 +631,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.edep_uncertainty.store_data(
                 run_index, edep_uncertainty_image
             )
-            self._update_output_coordinate_system("edep_uncertainty", run_index)
 
         if self.user_output.dose_uncertainty.active:
             # scale by density
@@ -647,7 +641,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.dose_uncertainty.store_data(
                 run_index, dose_uncertainty_image
             )
-            self._update_output_coordinate_system("dose_uncertainty", run_index)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
