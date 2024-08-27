@@ -544,7 +544,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def initialize(self, *args):
         """
         At the start of the run, the image is centered according to the coordinate system of
-        the mother volume. This function computes the correct origin = center + translation.
+        the attached volume. This function computes the correct origin = center + translation.
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """
@@ -755,7 +755,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     def initialize(self):
         """
         At the start of the run, the image is centered according to the coordinate system of
-        the mother volume. This function computes the correct origin = center + translation.
+        the attached volume. This function computes the correct origin = center + translation.
         Note that there is a half-pixel shift to align according to the center of the pixel,
         like in ITK.
         """

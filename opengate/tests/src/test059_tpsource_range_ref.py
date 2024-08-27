@@ -25,6 +25,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -81,12 +82,12 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "dose_peak_finder.mhd"
-    dose.mother = peak_finder.name
+    dose.output_filename = "dose_peak_finder.mhd"
+    dose.attached_to = peak_finder.name
     dose.size = [1, 1, 8000]
     dose.spacing = [80.6, 80.6, 0.05]
     dose.hit_type = "random"
-    dose.dose = True
+    dose.user_output.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -135,7 +136,7 @@ if __name__ == "__main__":
     print(stat)
 
     ## ------ TESTS -------##
-    dose_path = output_path / output.get_actor("doseInXYZ").user_info.output
+    dose_path = output_path / output.get_actor("doseInXYZ").get_output_path("dose")
 
     # RANGE
 

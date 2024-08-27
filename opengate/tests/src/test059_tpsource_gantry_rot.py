@@ -26,6 +26,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -121,17 +122,17 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "testTPSgantry.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = "testTPSgantry.mhd"
+    dose.attached_to = phantom.name
     dose.size = [162, 1620, 162]
     dose.spacing = [2.0, 0.2, 2.0]
     dose.hit_type = "random"
-    dose.dose = True
+    dose.user_output.dose.active = True
 
     dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
     gate.element.copy_user_info(dose, dose_rot)
-    dose_rot.mother = phantom_rot.name
-    dose_rot.output = output_path / "testTPSganry_rot.mhd"
+    dose_rot.attached_to = phantom_rot.name
+    dose_rot.output_filename = "testTPSganry_rot.mhd"
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -193,10 +194,10 @@ if __name__ == "__main__":
 
     # read output and ref
     img_mhd_out = itk.imread(
-        output_path / output.get_actor("doseInXYZ_rot").user_info.output
+        output_path / output.get_actor("doseInXYZ_rot").get_output_path("edep")
     )
     img_mhd_ref = itk.imread(
-        output_path / output.get_actor("doseInXYZ").user_info.output
+        output_path / output.get_actor("doseInXYZ").get_output_path("edep")
     )
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)

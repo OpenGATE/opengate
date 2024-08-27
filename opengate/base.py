@@ -351,33 +351,21 @@ class GateObject:
         )
         # now iterate over them and check if kwargs provide user-specific values
         for k, v in self.inherited_user_info_defaults.items():
-            default_value = v[0]
             options = v[1]
-            # print(f"current inherited user info: {k}")
             if k in kwargs:
-                # print("    ... is in kwargs")
-                # if "check_func" in options.keys():
-                #     user_info_value = options["check_func"](kwargs[k])
-                # else:
                 user_info_value = kwargs[k]
-                # check_property(k, user_info_value, default_value)
                 if "setter_hook" in options:
                     user_info_value = options["setter_hook"](self, user_info_value)
                 self.user_info[k] = user_info_value
                 kwargs.pop(k)
             else:
-                # print("    ... is NOT in kwargs")
                 if "required" in options.keys() and options["required"] is True:
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
         mro = type(self).__mro__
         parent = mro[mro.index(__class__) + 1]
-        # print(f"next class in line is: {parent}")
-        # print(f"args at this point: {args}")
-        # print(f"kwargs at this point: {kwargs}")
         if type(parent).__name__ != "pybind11_type":
-            # print("next class is NOT a pybind class ... ")
             try:
                 super().__init__(*args, **kwargs)
             except TypeError as e:
@@ -389,8 +377,6 @@ class GateObject:
                     f"Hint: The user input parameters of {type(self).__name__} are: "
                     f"{list(self.inherited_user_info_defaults.keys())}.\n"
                 )
-        # else:
-        #     print("next class IS a pybind class -> do not call parent class")
 
     def __str__(self):
         ret_string = (

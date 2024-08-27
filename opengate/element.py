@@ -83,9 +83,12 @@ def copy_user_info(v1, v2):
     v2 must have the (at least) the same set of attributes.
     Values are (deep) copied.
     """
-    for k in v1.__dict__:
+    for k in v1.user_info:
         if k == "name":
             continue
         if k == "_name":
             continue
-        setattr(v2, k, copy.deepcopy(v1.__dict__[k]))
+        try:
+            setattr(v2, k, copy.deepcopy(v1.user_info[k]))
+        except:
+            pass  # ignore deprecated items

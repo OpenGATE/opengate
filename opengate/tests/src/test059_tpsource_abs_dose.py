@@ -26,6 +26,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -85,12 +86,12 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "abs_dose_roos.mhd"
-    dose.mother = roos.name
+    dose.output_filename = "abs_dose_roos.mhd"
+    dose.attached_to = roos.name
     dose.size = [1, 1, 800]
     dose.spacing = [15.6, 15.6, 0.5]
     dose.hit_type = "random"
-    dose.dose = True
+    dose.user_output.dose.active = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
     IR2HBL = BeamlineModel()
@@ -130,12 +131,12 @@ if __name__ == "__main__":
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-    # start simulation
+    # s.track_types_flag = True
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
 
+    # start simulation
     sim.run()
     output = sim.output
 
@@ -146,7 +147,7 @@ if __name__ == "__main__":
 
     ## ------ TESTS -------##
     dose_path = utility.scale_dose(
-        str(dose.output),
+        str(dose.get_output_path("dose")),
         ntot / nSim,
         output_path / "abs_dose_roos-Scaled.mhd",
     )

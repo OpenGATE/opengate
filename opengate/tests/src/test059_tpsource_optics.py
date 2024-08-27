@@ -25,6 +25,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -74,12 +75,12 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "testTPSoptics.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = "testTPSoptics.mhd"
+    dose.attached_to = phantom.name
     dose.size = [30, 620, 620]
     dose.spacing = [10.0, 0.5, 0.5]
     dose.hit_type = "random"
-    dose.dose = True
+    dose.user_output.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -128,7 +129,7 @@ if __name__ == "__main__":
     # -------------END SCANNING------------- #
     # print results at the end
     stat = output.get_actor("Stats")
-    d_fPath = output_path / output.get_actor("doseInXYZ").user_info.output
+    d_fPath = output_path / output.get_actor("doseInXYZ").get_output_path("dose")
     print(stat)
 
     # ------ TESTS -------#
@@ -139,7 +140,7 @@ if __name__ == "__main__":
 
     # SPOT POSITIONS COMPARISON
     # read output and ref
-    img_mhd_out = itk.imread(dose.output)
+    img_mhd_out = itk.imread(dose.get_output_path("dose"))
     img_mhd_ref = itk.imread(
         ref_path / "idc-PHANTOM-air_box-gate_test59_TP_1-PLAN-Physical.mhd"
     )

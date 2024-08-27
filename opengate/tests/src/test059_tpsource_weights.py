@@ -23,6 +23,7 @@ if __name__ == "__main__":
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
     # sim.number_of_threads = 16
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -65,8 +66,8 @@ if __name__ == "__main__":
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInYZ_1")
     filename = "phantom_a_1.mhd"
-    dose.output = output_path / filename
-    dose.mother = "phantom_a_1"
+    dose.output_filename = filename
+    dose.attached_to = "phantom_a_1"
     dose.size = [250, 250, 1]
     dose.spacing = [0.4, 0.4, 2]
     dose.hit_type = "random"
@@ -94,8 +95,8 @@ if __name__ == "__main__":
     # add dose actor
     dose2 = sim.add_actor("DoseActor", "doseInYZ_2")
     filename = "phantom_a_2.mhd"
-    dose2.output = output_path / filename
-    dose2.mother = "phantom_a_2"
+    dose2.output_filename = filename
+    dose2.attached_to = "phantom_a_2"
     dose2.size = [250, 250, 1]
     dose2.spacing = [0.4, 0.4, 2]
     dose2.hit_type = "random"
@@ -156,8 +157,8 @@ if __name__ == "__main__":
 
     print("Compare tps Edep to single pb sources")
     print(" --------------------------------------- ")
-    mhd_1 = output.get_actor("doseInYZ_1").user_info.output
-    mhd_2 = output.get_actor("doseInYZ_2").user_info.output
+    mhd_1 = output.get_actor("doseInYZ_1").get_output_path("edep")
+    mhd_2 = output.get_actor("doseInYZ_2").get_output_path("edep")
     test = True
 
     # check first spot
