@@ -26,7 +26,11 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
-  // translation
+}
+
+void GateFluenceActor::InitializeUserInput(py::dict &user_info) {
+  // IMPORTANT: call the base class method
+  GateVActor::InitializeUserInput(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 

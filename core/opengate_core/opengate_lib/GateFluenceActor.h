@@ -25,6 +25,8 @@ public:
 
   virtual void InitializeCpp() override;
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
   // Function called every step in attached volume
   // This where the scoring takes place
   virtual void SteppingAction(G4Step *) override;
