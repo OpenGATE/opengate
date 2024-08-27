@@ -838,7 +838,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             {
                 "BeginOfRunActionMasterThread",
                 "EndOfRunActionMasterThread",
-                "EndSimulationAction",
             }
         )
 
