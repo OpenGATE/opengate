@@ -60,8 +60,6 @@ if __name__ == "__main__":
     phsp_bg = sim.add_actor("PhaseSpaceActor", "phsp_bg")
     phsp_bg.attributes = ["EventPosition"]
     phsp_bg.output = paths.output / "iec_bg.root"
-    phsp_bg.store_first_step = True
-    phsp_bg.store_entering_steps = False
     phsp_bg.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "g")
     f.particle = "gamma"
