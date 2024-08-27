@@ -585,6 +585,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         if self.user_output.dose_uncertainty.active:
             self.prepare_output_for_run("dose_uncertainty", run_index)
 
+        g4.GateDoseActor.BeginOfRunActionMasterThread(self, run_index)
+
     def EndOfRunActionMasterThread(self, run_index):
         # edep
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
