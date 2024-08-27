@@ -94,8 +94,8 @@ The output is a root file that contains a tree. It can be analysed for example w
 By default, the phsp store only the information of the particles that ENTERS the volume the PhaseSpaceActor is attached to. It means that the information are stored when the pre-step is at the boundary of the volume. This behavior may be modified by the following options:
 
 ```python
-phsp.store_first_step = "entering" # this is the default
-phsp.store_first_step = "entering exiting first" # others options (combined)
+phsp.steps_to_store = "entering" # this is the default
+phsp.steps_to_store = "entering exiting first" # others options (combined)
 ```
 
 The keyword "entering" is the default. The keyword "exiting" stores the information if the particle EXITS the volume (post-step is at the volume boundary or at the world boundary if the PhaseSpace is attached to the world). The keyword "first" stores the information if this is the first time we see this particle in the volume, whether it enters, exists or just mode inside the volume. This may be useful for example when the PhaseSpace is attached to the world.
