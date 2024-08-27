@@ -233,7 +233,7 @@ def create_phs_without_source(
         "PDGCode",
     ]
     ta1.output = phs_name
-    ta1.store_exiting_steps = True
+    ta1.steps_to_store = "exiting"
     ta1.debug = True
 
     # ~ phys.physics_list_name = "FTFP_BERT"

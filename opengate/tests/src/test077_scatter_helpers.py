@@ -18,11 +18,11 @@ def check_scatter(root_filename):
         f"Number of entries in no_scatter filtered phsp = {phsp_no_scatter.num_entries}"
     )
 
-    scatter_flag = phsp1["PrimaryScatterFlag"].array()
-    scatter_flag2 = phsp_scatter["PrimaryScatterFlag"].array()
-    scatter_flag3 = phsp_no_scatter["PrimaryScatterFlag"].array()
+    scatter_flag = phsp1["UnscatteredPrimaryFlag"].array()
+    scatter_flag2 = phsp_scatter["UnscatteredPrimaryFlag"].array()
+    scatter_flag3 = phsp_no_scatter["UnscatteredPrimaryFlag"].array()
 
-    # Count the entries where PrimaryScatterFlag is 1 or -1
+    # Count the entries where UnscatteredPrimaryFlag is 1 or -1
     n_scatter = np.sum(scatter_flag == 1)
     n_no_scatter = np.sum(scatter_flag == 0)
 
@@ -75,7 +75,7 @@ def check_scatter(root_filename):
     phsp2_particles = {}
     print(phsp1.keys())
     for particle in phsp1.arrays():
-        if particle["PrimaryScatterFlag"] != 1:
+        if particle["UnscatteredPrimaryFlag"] != 1:
             continue
         key = (particle["EventID"], particle["TrackID"])
         phsp1_particles[key] = particle
@@ -106,7 +106,7 @@ def check_scatter(root_filename):
             p["PreDirection_X"],
             p["PreDirection_Y"],
             p["PreDirection_Z"],
-            p["PrimaryScatterFlag"],
+            p["UnscatteredPrimaryFlag"],
             p["KineticEnergy"],
         )
         i += 1

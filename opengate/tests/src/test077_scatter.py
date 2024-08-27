@@ -81,7 +81,7 @@ if __name__ == "__main__":
         "KineticEnergy",
         "PreDirection",
         "PostDirection",
-        "PrimaryScatterFlag",
+        "UnscatteredPrimaryFlag",
     ]
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.mother = det.name
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     phsp.output = paths.output / "test077_scatter.root"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
-    f.policy = "keep"
+    f.policy = "accept"
     phsp.filters.append(f)
 
     # phsp
@@ -99,8 +99,8 @@ if __name__ == "__main__":
     phsp2.attributes = att_list
     phsp2.output = phsp.output
     # phsp2.debug = True
-    fs = sim.add_filter("PrimaryScatterFilter", "f_scatter")
-    fs.policy = "keep_scatter"
+    fs = sim.add_filter("UnscatteredPrimaryFilter", "f_scatter")
+    fs.policy = "accept"
     phsp2.filters.append(f)
     phsp2.filters.append(fs)
 
@@ -109,8 +109,8 @@ if __name__ == "__main__":
     phsp3.mother = det.name
     phsp3.attributes = att_list
     phsp3.output = phsp.output
-    fs = sim.add_filter("PrimaryScatterFilter", "f_no_scatter")
-    fs.policy = "keep_no_scatter"
+    fs = sim.add_filter("UnscatteredPrimaryFilter", "f_no_scatter")
+    fs.policy = "reject"
     phsp3.filters.append(f)
     phsp3.filters.append(fs)
 

@@ -19,9 +19,9 @@ void GateThresholdAttributeFilter::Initialize(py::dict &user_info) {
   fValueMax = DictGetDouble(user_info, "value_max");
   fFilterName = DictGetStr(user_info, "_name");
   fPolicy = DictGetStr(user_info, "policy");
-  if (fPolicy == "keep")
+  if (fPolicy == "accept")
     fKeep = true;
-  else if (fPolicy == "discard")
+  else if (fPolicy == "reject")
     fKeep = false;
   else {
     std::ostringstream oss;

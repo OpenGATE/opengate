@@ -80,7 +80,7 @@ if __name__ == "__main__":
     att_filter.attribute = "GlobalTime"
     att_filter.value_min = 20 * sec
     att_filter.value_max = 70 * sec
-    att_filter.policy = "discard"
+    att_filter.policy = "reject"
     ka.filters.append(att_filter)
 
     # kill according to energy
@@ -90,7 +90,7 @@ if __name__ == "__main__":
     att_filter.attribute = "KineticEnergy"
     att_filter.value_min = 300 * keV
     att_filter.value_max = 1200 * keV
-    att_filter.policy = "keep"
+    att_filter.policy = "accept"
     ka.filters.append(att_filter)
 
     # stats

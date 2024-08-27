@@ -55,14 +55,14 @@ if __name__ == "__main__":
     filter1.attribute = "GlobalTime"
     filter1.value_min = 20 * sec
     filter1.value_max = 70 * sec
-    filter1.policy = "keep"
+    filter1.policy = "accept"
 
     # filter according to energy
     filter2 = sim.add_filter("ThresholdAttributeFilter", "ene_filter")
     filter2.attribute = "KineticEnergy"
     filter2.value_min = 300 * keV
     filter2.value_max = 1200 * keV
-    filter2.policy = "keep"
+    filter2.policy = "accept"
 
     # filter according to particle
     filter3 = sim.add_filter("ParticleFilter", "p_filter")

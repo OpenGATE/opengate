@@ -45,16 +45,16 @@ class ParticleFilter(g4.GateParticleFilter, FilterBase):
         FilterBase.set_default_user_info(user_info)
         # required user info, default values
         user_info.particle = ""
-        user_info.policy = "keep"  # or "discard"
+        user_info.policy = "accept"  # or "reject"
 
     def __init__(self, user_info):
         g4.GateParticleFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter
-        if user_info.policy != "keep" and user_info.policy != "discard":
+        if user_info.policy != "accept" and user_info.policy != "reject":
             fatal(
-                f'ParticleFilter "{user_info.name}" policy must be either "keep" '
-                f'or "discard", while it is "{user_info.policy}"'
+                f'ParticleFilter "{user_info.name}" policy must be either "accept" '
+                f'or "reject", while it is "{user_info.policy}"'
             )
 
 
@@ -80,16 +80,16 @@ class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
         FilterBase.set_default_user_info(user_info)
         # required user info, default values
         user_info.process_name = "none"
-        user_info.policy = "keep"  # or "discard"
+        user_info.policy = "accept"  # or "reject"
 
     def __init__(self, user_info):
         g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter
-        if user_info.policy != "keep" and user_info.policy != "discard":
+        if user_info.policy != "accept" and user_info.policy != "reject":
             fatal(
-                f'TrackCreatorProcessFilter "{user_info.name}" policy must be either "keep" '
-                f'or "discard", while it is "{user_info.policy}"'
+                f'TrackCreatorProcessFilter "{user_info.name}" policy must be either "accept" '
+                f'or "reject", while it is "{user_info.policy}"'
             )
 
 
@@ -102,7 +102,7 @@ class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
         user_info.value_min = 0
         user_info.value_max = sys.float_info.max
         user_info.attribute = None
-        user_info.policy = "keep"  # or "discard"
+        user_info.policy = "accept"  # or "reject"
 
     def __init__(self, user_info):
         if user_info.attribute is None:
@@ -110,31 +110,31 @@ class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
                 f"You must set the 'attribute' in the "
                 f"ThresholdAttributeFilter named {user_info._name}"
             )
-        if user_info.policy != "keep" and user_info.policy != "discard":
+        if user_info.policy != "accept" and user_info.policy != "reject":
             fatal(
-                f'ThresholdAttributeFilter "{user_info.name}" policy must be either "keep" '
-                f'or "discard", while it is "{user_info.policy}"'
+                f'ThresholdAttributeFilter "{user_info.name}" policy must be either "accept" '
+                f'or "reject", while it is "{user_info.policy}"'
             )
         g4.GateThresholdAttributeFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter
 
 
-class PrimaryScatterFilter(g4.GatePrimaryScatterFilter, FilterBase):
-    type_name = "PrimaryScatterFilter"
+class UnscatteredPrimaryFilter(g4.GateUnscatteredPrimaryFilter, FilterBase):
+    type_name = "UnscatteredPrimaryFilter"
 
     def set_default_user_info(user_info):
         FilterBase.set_default_user_info(user_info)
         # required user info, default values
         user_info.particle = ""
-        user_info.policy = "keep_scatter"  # or "keep_no_scatter"
+        user_info.policy = "accept"  # or "reject"
 
     def __init__(self, user_info):
-        g4.GatePrimaryScatterFilter.__init__(self)  # no argument in cpp side
+        g4.GateUnscatteredPrimaryFilter.__init__(self)  # no argument in cpp side
         FilterBase.__init__(self, user_info)
         # type_name MUST be defined in class that inherit from a Filter
-        if user_info.policy != "keep_scatter" and user_info.policy != "keep_no_scatter":
+        if user_info.policy != "accept" and user_info.policy != "reject":
             fatal(
-                f'PrimaryScatterFilter "{user_info.name}" policy must be either "keep_scatter" '
-                f'or "keep_no_scatter", while it is "{user_info.policy}"'
+                f'UnscatteredPrimaryFilter "{user_info.name}" policy must be either "accept" '
+                f'or "reject", while it is "{user_info.policy}"'
             )

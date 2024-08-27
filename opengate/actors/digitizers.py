@@ -709,9 +709,7 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         user_info.output = f"{user_info.name}.root"
         user_info.debug = False
         user_info.store_absorbed_event = False
-        user_info.store_entering_steps = True
-        user_info.store_exiting_steps = False
-        user_info.store_first_step = False
+        user_info.steps_to_store = "entering"  # entering exiting first
 
     def __getstate__(self):
         # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part
@@ -720,6 +718,15 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
 
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
+        user_info.store_entering_steps = False
+        user_info.store_exiting_steps = False
+        user_info.store_first_step = False
+        if "entering" in user_info.steps_to_store:
+            user_info.store_entering_steps = True
+        if "exiting" in user_info.steps_to_store:
+            user_info.store_exiting_steps = True
+        if "first" in user_info.steps_to_store:
+            user_info.store_first_step = True
         g4.GatePhaseSpaceActor.__init__(self, user_info.__dict__)
         self.fNumberOfAbsorbedEvents = 0
         self.fTotalNumberOfEntries = 0
@@ -738,6 +745,3 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         if self.fTotalNumberOfEntries == 0:
             warning(f"Empty output, no particles stored in {self.user_info.output}")
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
-
-
-0

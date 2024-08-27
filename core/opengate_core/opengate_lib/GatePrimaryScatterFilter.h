@@ -13,10 +13,10 @@
 
 namespace py = pybind11;
 
-class GatePrimaryScatterFilter : public GateVFilter {
+class GateUnscatteredPrimaryFilter : public GateVFilter {
 
 public:
-  GatePrimaryScatterFilter() : GateVFilter() {}
+  GateUnscatteredPrimaryFilter() : GateVFilter() {}
 
   void Initialize(py::dict &user_info) override;
 
@@ -29,6 +29,6 @@ public:
   std::string fPolicy;
 };
 
-int IsPrimaryScatter(const G4Step *step);
+int IsUnscatteredPrimary(const G4Step *step);
 
 #endif // GatePrimaryScatterFilter_h

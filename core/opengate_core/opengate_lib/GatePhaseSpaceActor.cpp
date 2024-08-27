@@ -126,10 +126,10 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   l.fFirstStepInVolume = false;
 
   // Keep or ignore ?
-  bool ok = entering and fStoreEnteringStep;
-  ok = ok or (exiting and fStoreExitingStep);
-  ok = ok or (first_step_in_volume and fStoreFirstStepInVolume);
-  if (not ok)
+  bool ok = entering && fStoreEnteringStep;
+  ok = ok || (exiting && fStoreExitingStep);
+  ok = ok || (first_step_in_volume && fStoreFirstStepInVolume);
+  if (!ok)
     return;
 
   // Fill the hits

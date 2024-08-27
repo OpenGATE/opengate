@@ -75,16 +75,18 @@ In this example, the PhaseSpace will store all particles reaching the given plan
 ```
 TotalEnergyDeposit
 PostKineticEnergy PreKineticEnergy KineticEnergy TrackVertexKineticEnergy EventKineticEnergy
-LocalTime GlobalTime TimeFromBeginOfEvent TrackProperTime
+LocalTime GlobalTime PreGlobalTime TimeFromBeginOfEvent TrackProperTime
 Weight
 TrackID ParentID EventID RunID ThreadID
-TrackCreatorProcess ProcessDefinedStep
-ParticleName
+TrackCreatorProcess TrackCreatorModelName TrackCreatorModelIndex ProcessDefinedStep
+ParticleName ParentParticleName ParticleType PDGCode
 TrackVolumeName TrackVolumeCopyNo
 PreStepVolumeCopyNo PostStepVolumeCopyNo TrackVolumeInstanceID
 PreStepUniqueVolumeID PostStepUniqueVolumeID HitUniqueVolumeID
-Position PostPosition PrePosition EventPosition TrackVertexPosition
+Position PostPosition PrePosition PrePositionLocal PostPositionLocal EventPosition TrackVertexPosition
 Direction PostDirection PreDirection PreDirectionLocal TrackVertexMomentumDirection EventDirection
+StepLength TrackLength
+UnscatteredPrimaryFlag
 ```
 
 The output is a root file that contains a tree. It can be analysed for example with [uproot](https://uproot.readthedocs.io/).
@@ -92,16 +94,13 @@ The output is a root file that contains a tree. It can be analysed for example w
 By default, the phsp store only the information of the particles that ENTERS the volume the PhaseSpaceActor is attached to. It means that the information are stored when the pre-step is at the boundary of the volume. This behavior may be modified by the following options:
 
 ```python
-phsp.store_entering_steps = True # this is the default
-phsp.store_exiting_steps = True # (False by default)
-phsp.store_first_step = True # (False by default)
+phsp.store_first_step = "entering" # this is the default
+phsp.store_first_step = "entering exiting first" # others options (combined)
 ```
 
-The option "store_exiting_steps" store the information if the particle EXITS the volume (or the world if the PhaseSpace is attached to the world).
+The keyword "entering" is the default. The keyword "exiting" stores the information if the particle EXITS the volume (post-step is at the volume boundary or at the world boundary if the PhaseSpace is attached to the world). The keyword "first" stores the information if this is the first time we see this particle in the volume, whether it enters, exists or just mode inside the volume. This may be useful for example when the PhaseSpace is attached to the world.
 
-The option "store_first_step" store the information if this is the first time we see this particle in the volume, whether it enters, exists or just mode inside the volume. This may be useful for example when the PhaseSpace is attached to the world.
-
-Note: this is a boolean 'OR' between all three conditions, if one is True, the particle is stored (once).
+Note: all three conditions may be combined (if one condition is True, the particle is stored). The same particle may hence be stored several times: when it enters, when it exits, etc.
 
 
 ### Hits-related actors (digitizer)
@@ -314,7 +313,7 @@ When more than two singles are found in coincidence, several type of behavior co
 The naming convention:
 * "Good" means that a pair of singles are in coincidence and passes all filters **minDistanceXY** and **maxDistanceZ**
 * "take" means that 1 or more pairs of coincidences will be stored
-* "keep" means that a unique coincidence, composed of at least three singles will be kept in the data flow and is called "multicoincidence". *TO DO: In the latter case, the multicoincidence will not be written to the disk, but may participate to a possible deadtime or bandwidth occupancy. The user may clear the multicoincidence at any desired step of the acquisition, by using the multipleKiller pulse processor (described in #Multiple coincidence removal).*
+* "accept" means that a unique coincidence, composed of at least three singles will be kept in the data flow and is called "multicoincidence". *TO DO: In the latter case, the multicoincidence will not be written to the disk, but may participate to a possible deadtime or bandwidth occupancy. The user may clear the multicoincidence at any desired step of the acquisition, by using the multipleKiller pulse processor (described in #Multiple coincidence removal).*
 * "remove" prefix means that all events will be discarded and will not produce any coincidence
 
 | Policy name             | Description                                                                                            |

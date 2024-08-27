@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # add dose actor, without e- (to check)
     fe = sim.add_filter("ParticleFilter", "f")
     fe.particle = "e-"
-    fe.policy = "discard"
+    fe.policy = "reject"
     print(dir(fe))
 
     dose2 = sim.add_actor("DoseActor", "dose2")
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
     """fe = sim.add_filter("ParticleFilter", "f")
     fe.particle = "gamma"
-    fe.policy = "discard"
+    fe.policy = "reject"
     dose2.filters.append(fe)"""
 
     # add stat actor (only gamma)

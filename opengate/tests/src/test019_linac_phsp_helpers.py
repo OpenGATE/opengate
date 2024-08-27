@@ -90,7 +90,7 @@ def init_test019(nt):
     ]
     ta2.output = paths.output / "test019_hits.root"
     ta2.debug = False
-    ta2.store_exiting_steps = True
+    ta2.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     ta2.filters.append(f)
@@ -261,7 +261,7 @@ def create_simu_test019_phsp_source(sim):
     ]
     ta1.output = paths.output / "test019_hits_phsp_source_local.root"
     ta1.debug = False
-    ta1.store_exiting_steps = True
+    ta1.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     ta1.filters.append(f)

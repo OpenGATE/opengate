@@ -118,10 +118,10 @@ if __name__ == "__main__":
     ta1.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
-    f.policy = "keep"
+    f.policy = "accept"
     ta1.filters.append(f)
     ta1.output = paths.output / "test022_half_life_ion1.root"
-    ta1.store_exiting_steps = True
+    ta1.steps_to_store = "exiting"
 
     # hit actor w2
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     ta2.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
     ta2.filters.append(f)
     ta2.output = paths.output / "test022_half_life_ion2.root"
-    ta2.store_exiting_steps = True
+    ta2.steps_to_store = "exiting"
 
     # start simulation
     sim.run()

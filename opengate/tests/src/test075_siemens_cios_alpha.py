@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # main options
     sim.g4_verbose = False
-    sim.visu = True
+    # sim.visu = True
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 12345678

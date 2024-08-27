@@ -76,8 +76,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
         "ParticleName",
     ]
     phsp.output = paths.output / f"test053_{ion_name}.root"
-    phsp.store_exiting_steps = True
-    phsp.store_first_step = True
+    phsp.steps_to_store = "exiting first"
     # phsp.store_absorbed_event = True
     # phsp.debug = True
 
@@ -91,7 +90,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     def rm_type(name, phsp):
         fg = sim.add_filter("ParticleFilter", f"fp_{name}")
         fg.particle = name
-        fg.policy = "discard"
+        fg.policy = "reject"
         phsp.filters.append(fg)
 
     phsp.attributes = ["ParticleName", "ParticleType", "GlobalTime"]

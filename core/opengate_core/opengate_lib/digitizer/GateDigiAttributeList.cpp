@@ -236,7 +236,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         const auto *theTouchable = step->GetPreStepPoint()->GetTouchable();
         auto pos = step->GetPreStepPoint()->GetPosition();
         theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
-        att->Fill3Value(pos);
+        @ @ @att->Fill3Value(pos);
       });
   DefineDigiAttribute(
       "PostPositionLocal", '3', FILLF {
@@ -302,6 +302,6 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   // -----------------------------------------------------
   // Scatter information
   DefineDigiAttribute(
-      "PrimaryScatterFlag", 'I',
-      FILLF { att->FillIValue(IsPrimaryScatter(step)); });
+      "UnscatteredPrimaryFlag", 'I',
+      FILLF { att->FillIValue(IsUnscatteredPrimary(step)); });
 }

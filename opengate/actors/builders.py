@@ -3,7 +3,7 @@ from .filters import (
     ParticleFilter,
     TrackCreatorProcessFilter,
     ThresholdAttributeFilter,
-    PrimaryScatterFilter,
+    UnscatteredPrimaryFilter,
 )
 from ..utility import make_builders
 
@@ -12,6 +12,6 @@ filter_type_names = {
     KineticEnergyFilter,
     TrackCreatorProcessFilter,
     ThresholdAttributeFilter,
-    PrimaryScatterFilter,
+    UnscatteredPrimaryFilter,
 }
 filter_builders = make_builders(filter_type_names)
