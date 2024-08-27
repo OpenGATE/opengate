@@ -52,6 +52,7 @@ def create_simulation(sim, paths, name):
     ]
     # phsp.debug = True
     phsp.output = paths.output / f"test061_{name}.root"
+    phsp.store_first_step = True
 
 
 def analyse(output):

@@ -95,6 +95,8 @@ if __name__ == "__main__":
         "KineticEnergy",
         "PrePosition",
     ]
+    phsp.store_exiting_steps = True
+    phsp.store_first_step = True
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")

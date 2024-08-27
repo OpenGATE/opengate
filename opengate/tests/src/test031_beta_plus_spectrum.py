@@ -100,6 +100,7 @@ if __name__ == "__main__":
         phsp.mother = f"b{si}"
         phsp.attributes = ["TrackVertexKineticEnergy"]
         phsp.output = paths.output / f"test031_{rad}.root"
+        phsp.store_exiting_steps = True
         f = sim.add_filter("ParticleFilter", "f")
         f.particle = "e+"
         phsp.filters.append(f)

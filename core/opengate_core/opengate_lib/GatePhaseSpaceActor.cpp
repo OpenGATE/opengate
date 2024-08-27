@@ -28,6 +28,9 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fDigiCollectionName = DictGetStr(user_info, "_name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
+  fStoreEnteringStep = DictGetBool(user_info, "store_entering_steps");
+  fStoreExitingStep = DictGetBool(user_info, "store_exiting_steps");
+  fStoreFirstStepInVolume = DictGetBool(user_info, "store_first_step");
   fDebug = DictGetBool(user_info, "debug");
   fHits = nullptr;
   fTotalNumberOfEntries = 0;
@@ -69,6 +72,7 @@ void GatePhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
 
 void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
   auto &l = fThreadLocalData.Get();
+  l.fFirstStepInVolume = true;
   if (fStoreAbsorbedEvent) {
     // The current event still have to be stored
     l.fCurrentEventHasBeenStored = false;
@@ -81,6 +85,7 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
 
 void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
+  l.fFirstStepInVolume = true;
   if (fDebug) {
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << "New track "
@@ -92,17 +97,40 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 // Called every time a batch of step must be processed
 void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   /*
-   Only store if the particle enters the volume.
-   We CANNOT use step->IsFirstStepInVolume() because it fails with parallel
-   world geometry. We use step->GetPreStepPoint()->GetStepStatus() ==
-   fGeomBoundary Warning: some particles can enter several times in the volume
+   Only store if the particle enters and/or exits the volume.
+   (We CANNOT use step->IsFirstStepInVolume() because it fails with parallel
+   world geometry) Warning: some particles can enter several times in the volume
    (backscatter), there will be two times in the phsp.
+
+   When this function is triggered: we know the step is somewhere IN the volume.
+   - Entering: pre step is at the boundary of the volume, so entering.
+   - Exiting: post step is at the boundary of the volume (or the world if
+   attached to the world)
+   - FirstStepInVolume: this is the first time we see this particle in the
+   volume (whatever is it at the boundary or not)
    */
 
-  if (step->GetPreStepPoint()->GetStepStatus() != fGeomBoundary)
-    return;
-
   auto &l = fThreadLocalData.Get();
+
+  // Particle enters the volume if the pre step is at the volume boundary
+  bool entering = step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
+
+  // Particle exits the volume if the post step is at the volume boundary or at
+  // the world boundary if the phsp is attached to the world
+  bool exiting = step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary or
+                 step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary;
+
+  // When this is the first time we see this particle fFirstStepInVolume is true
+  // We then set it to false
+  bool first_step_in_volume = l.fFirstStepInVolume;
+  l.fFirstStepInVolume = false;
+
+  // Keep or ignore ?
+  bool ok = entering and fStoreEnteringStep;
+  ok = ok or (exiting and fStoreExitingStep);
+  ok = ok or (first_step_in_volume and fStoreFirstStepInVolume);
+  if (not ok)
+    return;
 
   // Fill the hits
   fHits->FillHits(step);

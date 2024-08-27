@@ -89,6 +89,21 @@ Direction PostDirection PreDirection PreDirectionLocal TrackVertexMomentumDirect
 
 The output is a root file that contains a tree. It can be analysed for example with [uproot](https://uproot.readthedocs.io/).
 
+By default, the phsp store only the information of the particles that ENTERS the volume the PhaseSpaceActor is attached to. It means that the information are stored when the pre-step is at the boundary of the volume. This behavior may be modified by the following options:
+
+```python
+phsp.store_entering_steps = True # this is the default
+phsp.store_exiting_steps = True # (False by default)
+phsp.store_first_step = True # (False by default)
+```
+
+The option "store_exiting_steps" store the information if the particle EXITS the volume (or the world if the PhaseSpace is attached to the world).
+
+The option "store_first_step" store the information if this is the first time we see this particle in the volume, whether it enters, exists or just mode inside the volume. This may be useful for example when the PhaseSpace is attached to the world.
+
+Note: this is a boolean 'OR' between all three conditions, if one is True, the particle is stored (once).
+
+
 ### Hits-related actors (digitizer)
 
 In legacy Gate, the digitizer module is a set of tools used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider a list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up with a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next sections.

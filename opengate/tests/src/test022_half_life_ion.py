@@ -70,7 +70,7 @@ if __name__ == "__main__":
     )  # all means: proton, electron, positron, gamma
 
     # activity
-    activity_Bq = 4000 * Bq
+    activity_Bq = 8000 * Bq
     half_life = 5 * sec
     lifetime = half_life / math.log(2.0)
 
@@ -121,6 +121,7 @@ if __name__ == "__main__":
     f.policy = "keep"
     ta1.filters.append(f)
     ta1.output = paths.output / "test022_half_life_ion1.root"
+    ta1.store_exiting_steps = True
 
     # hit actor w2
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
@@ -128,6 +129,7 @@ if __name__ == "__main__":
     ta2.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
     ta2.filters.append(f)
     ta2.output = paths.output / "test022_half_life_ion2.root"
+    ta2.store_exiting_steps = True
 
     # start simulation
     sim.run()

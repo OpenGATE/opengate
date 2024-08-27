@@ -144,6 +144,7 @@ if __name__ == "__main__":
         "PostPosition",
         "PreDirection",
     ]
+    phsp_actor.store_first_step = True
     phsp_actor.output = paths.output / "b2b.root"
 
     # verbose

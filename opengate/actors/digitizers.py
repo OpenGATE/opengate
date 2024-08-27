@@ -707,8 +707,11 @@ class PhaseSpaceActor(g4.GatePhaseSpaceActor, ActorBase):
         # options
         user_info.attributes = []
         user_info.output = f"{user_info.name}.root"
-        user_info.store_absorbed_event = False
         user_info.debug = False
+        user_info.store_absorbed_event = False
+        user_info.store_entering_steps = True
+        user_info.store_exiting_steps = False
+        user_info.store_first_step = False
 
     def __getstate__(self):
         # needed to not pickle. Need to copy fNumberOfAbsorbedEvents from c++ part

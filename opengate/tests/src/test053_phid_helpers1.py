@@ -76,6 +76,8 @@ def create_ion_gamma_simulation(sim, paths, z, a):
         "ParticleName",
     ]
     phsp.output = paths.output / f"test053_{ion_name}.root"
+    phsp.store_exiting_steps = True
+    phsp.store_first_step = True
     # phsp.store_absorbed_event = True
     # phsp.debug = True
 

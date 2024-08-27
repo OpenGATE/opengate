@@ -175,6 +175,8 @@ if __name__ == "__main__":
     ]
     Phsp_act.output = output_path / "test058_MT.root"
     Phsp_act.debug = False
+    Phsp_act.store_exiting_steps = True
+    Phsp_act.store_first_step = True
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")

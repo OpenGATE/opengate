@@ -238,6 +238,13 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
         att->Fill3Value(pos);
       });
+  DefineDigiAttribute(
+      "PostPositionLocal", '3', FILLF {
+        const auto *theTouchable = step->GetPostStepPoint()->GetTouchable();
+        auto pos = step->GetPostStepPoint()->GetPosition();
+        theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
+        att->Fill3Value(pos);
+      });
 
   DefineDigiAttribute(
       "EventPosition", '3', FILLFS {

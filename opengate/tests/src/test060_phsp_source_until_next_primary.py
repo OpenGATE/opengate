@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import test060_phsp_source_helpers as t
 import opengate as gate
 import uproot
@@ -20,7 +23,7 @@ MeV = gate.g4_units.MeV
 deg: float = gate.g4_units.deg
 
 
-def createRootFile(file_name):
+def create_root_file(file_name):
     # create numpy arrays
     kinetic_energy = np.array([100, 2.0, 3.0, 80, 2.0, 3.0, 2.0, 110.0, 3.0, 111.0, 2])
     pdg_code = np.array([2212, 11, 11, 2212, 11, 11, 11, 2212, 11, 2212, 11])
@@ -62,10 +65,10 @@ def createRootFile(file_name):
 
 def main():
     print("create reference PhS file")
-    createRootFile(paths.output / "test_phs.root")
+    create_root_file(paths.output / "test_phs.root")
 
     print("testing until primary")
-    t.test_source_untilPrimary(
+    t.test_source_until_primary(
         source_file_name=paths.output / "test_phs.root",
         phs_file_name_out=paths.output / "test_source_untilPrimary.root",
     )

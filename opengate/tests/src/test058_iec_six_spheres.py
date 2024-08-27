@@ -7,7 +7,6 @@ import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test058")
 
@@ -61,6 +60,8 @@ if __name__ == "__main__":
     phsp_bg = sim.add_actor("PhaseSpaceActor", "phsp_bg")
     phsp_bg.attributes = ["EventPosition"]
     phsp_bg.output = paths.output / "iec_bg.root"
+    phsp_bg.store_first_step = True
+    phsp_bg.store_entering_steps = False
     f = sim.add_filter("ParticleFilter", "g")
     f.particle = "gamma"
     phsp_bg.filters.append(f)
@@ -68,6 +69,8 @@ if __name__ == "__main__":
     phsp_sph = sim.add_actor("PhaseSpaceActor", "phsp_sph")
     phsp_sph.attributes = ["EventPosition"]
     phsp_sph.output = paths.output / "iec_spheres.root"
+    phsp_sph.store_first_step = True
+    phsp_sph.store_exiting_steps = True
     f = sim.add_filter("ParticleFilter", "electron")
     f.particle = "e-"
     phsp_sph.filters.append(f)
