@@ -138,11 +138,11 @@ def create_simulation():
     source.direction.momentum = [0, 0, 1]
     source.position.translation = [0 * cm, 0 * cm, -30 * cm]
     source.energy.type = "gauss"
-    source.energy.mono = energy
-    source.n = 10000
     source.energy.mono = 60 * MeV
+    source.n = 100
 
     print(f"The energy is {source.energy.mono / eV} eV")
+
 
     # Physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"

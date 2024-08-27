@@ -55,6 +55,10 @@ public:
 
   inline void SetSquareFlag(const bool b) { fSquareFlag = b; }
 
+  inline std::string GetPhysicalVolumeName() { return fPhysicalVolumeName; }
+
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+
   // virtual void EndSimulationAction();
 
   // Image type needs to be 3D double by default
