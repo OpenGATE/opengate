@@ -617,17 +617,17 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             # else:
             n = self.NbOfEvent
 
-            edep = itk.array_view_from_image(self.user_output.edep.get_data(run_index))
-            square = itk.array_view_from_image(
+            edep_arr = itk.array_view_from_image(self.user_output.edep.get_data(run_index))
+            square_arr = itk.array_view_from_image(
                 self.user_output.square.get_data(run_index)
             )
 
             edep_uncertainty_image = itk_image_from_array(
                 compute_std_from_sample(
                     n,
-                    edep,
-                    square,
-                    correct_bias=False,  # used to be: self.ste_of_mean_unbiased
+                    edep_arr,
+                    square_arr,
+                    correct_bias=False,  # used to be: correct_bias=self.ste_of_mean_unbiased (now inactive)
                 )
             )
             edep_uncertainty_image.CopyInformation(
