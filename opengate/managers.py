@@ -631,21 +631,21 @@ class PhysicsManager(GateObject):
                 "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
             },
         ),
-        "processes_to_bias": (
-            Box(
-                [
-                    ("all", None),
-                    ("all_charged", None),
-                    ("gamma", None),
-                    ("electron", None),
-                    ("positron", None),
-                    ("proton", None),
-                ]
-            ),
-            {
-                "doc": "Define the process to bias (if wanted) on the different particle types."
-            },
-        ),
+        # "processes_to_bias": (
+        #     Box(
+        #         [
+        #             ("all", None),
+        #             ("all_charged", None),
+        #             ("gamma", None),
+        #             ("electron", None),
+        #             ("positron", None),
+        #             ("proton", None),
+        #         ]
+        #     ),
+        #     {
+        #         "doc": "Define the process to bias (if wanted) on the different particle types."
+        #     },
+        # ),
     }
 
     def __init__(self, simulation, *args, **kwargs):
