@@ -1595,7 +1595,6 @@ class Simulation(GateObject):
             se.new_process = start_new_process
             se.init_only = self.init_only
             output = se.run_engine()
-        gc.collect()
         return output
 
     def run(self, start_new_process=False):
