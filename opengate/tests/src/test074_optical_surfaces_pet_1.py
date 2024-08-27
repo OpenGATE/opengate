@@ -5,11 +5,12 @@ import opengate as gate
 import opengate.tests.utility as tu
 
 if __name__ == "__main__":
-    paths = tu.get_default_test_paths(__file__, "")
+    paths = tu.get_default_test_paths(__file__, "", "test074")
 
     # create simulation
     sim = gate.Simulation()
     sim.g4_verbose = True
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -98,7 +99,7 @@ if __name__ == "__main__":
         "KineticEnergy",
         "PDGCode",
     ]
-    phase.output = paths.output / "test070_pet_surfaces_1.root"
+    phase.output_filename = "test070_pet_surfaces_1.root"
 
     sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
     sim.run()
