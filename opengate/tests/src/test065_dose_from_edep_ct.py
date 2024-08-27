@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import time
+
 import opengate as gate
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
@@ -105,6 +107,11 @@ if __name__ == "__main__":
     ) = gate.geometry.materials.HounsfieldUnit_to_material(
         sim, tol, hu_material, hu_density
     )
+
+    t1 = time.time()
+    patient.create_label_image()
+    t2 = time.time()
+    print(f"It took {t2-t1} sec to create the label image of volume '{patient.name}'.")
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
