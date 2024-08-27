@@ -111,7 +111,7 @@ public:
 
   std::string fPhysicalVolumeName;
 
-  G4ThreeVector fInitialTranslation;
+  G4ThreeVector fTranslation;
   std::string fHitType;
 
 protected:

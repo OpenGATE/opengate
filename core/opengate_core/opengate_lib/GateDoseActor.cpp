@@ -70,7 +70,7 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
   threshEdepPerc = DictGetDouble(user_info, "thresh_voxel_edep_for_unc_calc");
 
   // translation
-  fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
+  fTranslation = DictGetG4ThreeVector(user_info, "translation");
   // Hit type (random, pre, post etc)
   fHitType = DictGetStr(user_info, "hit_type");
   //  // Option: make a copy of the image for each thread, instead of writing on
