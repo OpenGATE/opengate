@@ -106,9 +106,6 @@ def create_simulation():
     MeV = gate.g4_units.MeV
     um = gate.g4_units.um
 
-    energy = 60 * MeV
-    print(f"The energy is {energy/eV} eV")
-
     # simulation object
     sim = gate.Simulation()
 
@@ -143,6 +140,9 @@ def create_simulation():
     source.energy.type = "gauss"
     source.energy.mono = energy
     source.n = 10000
+    source.energy.mono = 60 * MeV
+
+    print(f"The energy is {source.energy.mono / eV} eV")
 
     # Physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
