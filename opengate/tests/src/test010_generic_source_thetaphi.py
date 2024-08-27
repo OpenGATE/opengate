@@ -22,9 +22,10 @@ def root_load_xyz(root_file: str, keys: [str]):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "gate_test010_generic_source_thetaphi"
+        __file__, "gate_test010_generic_source_thetaphi", output_folder="test010"
     )
 
+    print(paths.output)
     print(paths.output_ref)
 
     # units
