@@ -45,7 +45,6 @@ GateDoseActor::GateDoseActor(py::dict &user_info)
 //  fActions.insert("BeginOfEventAction");
   // fActions.insert("EndOfSimulationWorkerAction");
   // fActions.insert("EndSimulationAction");
-  fActions.insert("EndOfRunAction");
   // fActions.insert("EndOfEventAction");
 }
 
