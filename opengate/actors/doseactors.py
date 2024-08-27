@@ -844,7 +844,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def initialize(self):
         VoxelDepositActor.initialize(self)
 
-        VoxelDepositActor.check_user_input(self)
+        self.check_user_input()
 
         # no options yet
         if self.uncertainty or self.scatter:
