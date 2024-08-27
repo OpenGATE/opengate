@@ -1,7 +1,6 @@
 import itk
 import numpy as np
 from scipy.spatial.transform import Rotation
-from box import Box
 
 import opengate_core as g4
 from .base import ActorBase

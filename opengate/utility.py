@@ -110,7 +110,10 @@ def g4_best_unit(value, unit_type):
 
 def g4_best_unit_tuple(value, unit_type):
     bu = g4.G4BestUnit(value, unit_type)
-    return bu.GetValue(), str(bu).split()[-1]
+    parts = str(bu).split(" ", 1)
+    float_part = float(parts[0])
+    unit_part = parts[1].strip()
+    return float_part, unit_part
 
 
 def assert_key(key: str, d: Box):

@@ -9,10 +9,8 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include <chrono>
-#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <vector>
 
 G4Mutex GateSimulationStatisticsActorMutex = G4MUTEX_INITIALIZER;
 
