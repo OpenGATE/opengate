@@ -10,16 +10,14 @@
 
 #include "G4AffineTransform.hh"
 #include "G4ParticleDefinition.hh"
-#include "G4SPSAngDistribution.hh"
 #include "G4VPrimaryGenerator.hh"
 #include "GateAcceptanceAngleTester.h"
 #include "GateAcceptanceAngleTesterManager.h"
 #include "GateHelpers.h"
+#include "GateRandomMultiGauss.h"
+#include "GateSPSAngDistribution.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
-#include <pybind11/embed.h>
-
-#include "GateRandomMultiGauss.h"
 
 /*
     Single Particle Source generator.
@@ -28,8 +26,6 @@
 */
 
 class GateGenericSource;
-
-namespace py = pybind11;
 
 class GateSingleParticleSource : public G4VPrimaryGenerator {
 
@@ -40,7 +36,7 @@ public:
 
   GateSPSPosDistribution *GetPosDist() { return fPositionGenerator; }
 
-  G4SPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
+  GateSPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
 
   GateSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
 
@@ -55,14 +51,21 @@ public:
   G4ThreeVector GenerateDirectionWithAA(const G4ThreeVector &position,
                                         bool &accept);
 
+  void GeneratePrimaryVertexBackToBack(G4Event *event, G4ThreeVector &position,
+                                       G4ThreeVector &direction, double energy);
+
+  void SetBackToBackMode(bool flag, bool accolinearityFlag);
+
 protected:
   G4ParticleDefinition *fParticleDefinition;
   double fCharge;
   double fMass;
   GateSPSPosDistribution *fPositionGenerator;
-  G4SPSAngDistribution *fDirectionGenerator;
+  GateSPSAngDistribution *fDirectionGenerator;
   GateSPSEneDistribution *fEnergyGenerator;
   G4SPSRandomGenerator *fBiasRndm;
+  bool fAccolinearityFlag;
+  bool fBackToBackMode;
 
   // for acceptance angle
   GateAcceptanceAngleTesterManager *fAAManager;

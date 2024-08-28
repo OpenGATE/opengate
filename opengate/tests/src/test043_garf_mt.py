@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     test43.sim_set_world(sim)
 
     # fake spect head
-    head = gate_spect.add_ge_nm67_fake_spect_head(sim, "spect")
+    head = gate_spect.add_fake_spect_head(sim, "spect")
     head.translation = [0, 0, -15 * cm]
 
     # detector input plane (+ 1nm to avoid overlap)
@@ -65,10 +65,12 @@ if __name__ == "__main__":
     arf.verbose_batch = True
     arf.distance_to_crystal = crystal_dist  # 74.625 * mm
     arf.distance_to_crystal = 74.625 * mm
-    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    # arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v3.pth"
+    arf.pth_filename = test43.paths.gate_data / "pth" / "arf_Tc99m_v034.pth"
     arf.enable_hit_slice = True
+    arf.flip_plane = True  # because the training was backside
     arf.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor

@@ -245,7 +245,7 @@ def add_iec_one_sphere(
 
     # capillary outer shell
     caps = sim.add_volume("Tubs", f"{name}_capillary_shell_{d}")
-    caps.clone_user_info(cap)
+    caps.copy_user_info(cap)
     caps.material = iec_plastic
     caps.rmax = cap_thick
     caps.rmin = cap.rmax
@@ -380,8 +380,6 @@ def add_one_sphere_source(
     source.position.type = "sphere"
     source.position.radius = diameter / 2 * mm
     source.position.translation = [0, 0, 0]
-    # print(f"Sphere volume {s.cubic_volume} cc")
-
     return source
 
 

@@ -1,8 +1,6 @@
 
 # Contrib folder
 
-This folder contains additional functions that are useful but do not belong to the core of gate.
-The functions are used in several tests.
+This is the "contribution folder". It contains additional useful functions that do not belong to the core of gate.
 
-See the file `user_guide_contrib.md` in the folder `docs/` or the online doc:
-https://opengate-python.readthedocs.io/en/latest/user_guide.html
+See the online doc for more details: https://opengate-python.readthedocs.io/en/latest/user_guide.html in the section "Contributions".

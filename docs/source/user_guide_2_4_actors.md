@@ -150,7 +150,7 @@ print(am.GetAvailableDigiAttributeNames())
         TrackVolumeName S
         Weight D
 
-Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate.
+Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a "default" version corresponding to the legacy Gate (9.X).
 
 | Pre version | Post version | default version         |
 |-------------|--------------|-------------------------|
@@ -158,10 +158,17 @@ Warning: KineticEnergy, Position and Direction are available for PreStep and for
 | PrePosition | PostPosition | Position (**Post**)     |
 | PreDirection | PostDirection | Direction (**Post**)    |
 
+Attributes correspondence with Gate 9.X for Hits and Singles:
+| Gate 9.X         | Gate 10         |
+|------------------|-----------------|
+| edep or energy | TotalEnergyDeposit
+| posX/Y/Z of globalPosX/Y/Z| PostPosition_X/Y/Z   |
+| time | GlobalTime |
 
-At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is `None` nothing will be written. Note that, like in Gate, every hit such with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using `DigitizerHitsCollectionActor` are proposed: test025, test028, test035, etc.
 
-The two basics actors used to convert some `hits` to one `digi` are "DigitizerHitsAdderActor" and "DigitizerReadoutActor" described in the next sections and illustrated in the figure:
+At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is `None` nothing will be written. Note that, like in Gate, every hit with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using `DigitizerHitsCollectionActor` are proposed: test025, test028, test035, etc.
+
+The two actors used to convert some `hits` to one `digi` are "DigitizerHitsAdderActor" and "DigitizerReadoutActor" described in the next sections and illustrated in the figure:
 
 ![](figures/digitizer_adder_readout.png)
 
@@ -256,6 +263,72 @@ ea.efficiency = 0.3
 ```
 A more detailed example can be found in [test 57](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test057_digit_efficiency.py).
 
+### Coincidences Sorter
+
+*Please, be aware that the current version of the Coincidence sorter is still work in progress. Coincidence sorter is only offline yet.*
+
+The Coincidence Sorter searches, into the singles list, for pairs of coincident singles. Whenever two or more singles are found within a coincidence time window, these singles are grouped to form a Coincidence event.
+
+As an example, a Coincidence Sorter is shown here:
+```python
+singles_tree = root_file["Singles_crystal"]
+...
+ns = gate.g4_units.nanosecond
+time_window = 3 * ns
+policy="keepAll"
+
+minSecDiff=1 #NOT YET IMPLEMENTED
+# apply coincidences sorter
+coincidences = coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=1000000)
+```
+As parameters, Coincidence Sorter expects as input:
+
+* **Singles Tree**
+* Defined coincidence **time window**
+* **minDistanceXY** (equivalent to Minimum sector difference in Gate 9.X) minimal distance in transaxial plane between the detectors triggered the coincidence needed for removing geometrically impossible coincidences,
+* **maxDistanceZ** maximal distance in axial plane between the detectors triggered the coincidence needed for data reduction for systems with a long axial size (ex.,total body systems)
+* **Policy** to process the multiple coincidences. When more than two singles are found in coincidence, several types of behavior could be implemented.
+* **Chunk size** important for very large root files to avoid loading everything in memory.
+
+#### Policies
+
+When more than two singles are found in coincidence, several type of behavior could be implemented. GATE allows to model 5 different policies to treat multiple coincidences that can be used. Mutliple coincidences or "multicoincidence" are composed of at least three singles detected in the same **time window** that could form coincidence. The list of policies along with their explanation are given in Table below. The 5 policies, same as in [Gate9.X](https://opengate.readthedocs.io/en/latest/digitizer_and_detector_modeling.html#id43), were selected for the implementation as the most used. If an option that you need is missing, please, don't hesitate to report it in [Issues](https://github.com/OpenGATE/opengate/issues).
+
+
+**Available multiple policies and associated meaning**. When a multiple coincidence involving n *singles* is processed, it is first decomposed into a list of n·(n−1) pairs which are analyzed individually.
+The naming convention:
+* "Good" means that a pair of singles are in coincidence and passes all filters **minDistanceXY** and **maxDistanceZ**
+* "take" means that 1 or more pairs of coincidences will be stored
+* "keep" means that a unique coincidence, composed of at least three singles will be kept in the data flow and is called "multicoincidence". *TO DO: In the latter case, the multicoincidence will not be written to the disk, but may participate to a possible deadtime or bandwidth occupancy. The user may clear the multicoincidence at any desired step of the acquisition, by using the multipleKiller pulse processor (described in #Multiple coincidence removal).*
+* "remove" prefix means that all events will be discarded and will not produce any coincidence
+
+| Policy name             | Description                                                                                            |
+|-------------------------|--------------------------------------------------------------------------------------------------------|
+| takeAllGoods            | Each good pairs are considered                                                                         |
+| takeWinnerOfGoods       | Only the good pair with the highest energy is considered                                               |
+| takeWinnerIfIsGood      | If the pair with the highest energy is good, take it, otherwise, kill the event                        |
+| keepIfOnlyOneGood       | If exactly one pair is good, keep the multicoincidence                                                 |
+| removeMultiples         | No multiple coincidences are accepted, no matter how many good pairs are present (*killAll in Gate9.X) |
+
+The following figure illustrates an example of different policies application. The stars represent the detected singles. The size of the star, as well as the number next to it, indicate the energy level of the single (ie. single no 1 has more energy than single no 2, which has itself more energy than the single no 3). The lines represent the possible **good** coincidences.
+
+![](figures/MultipleCases.jpg)
+
+In the table:
+* a **minus(-)** sign indicates that the event is killed (ie. no coincidence is formed)
+* **⋆** sign indicates that all the singles are kept into a unique multicoincidence *TODO:, which will not be written to disk, but which might participate to data loss via dead time or bandwidth occupancy*.
+* In the other cases, the list of pairs which are written to the disk is indicated
+
+| Policy name             | Case 1 | Case 2              | Case 3       | Case 4       |
+|-------------------------|--------|---------------------|--------------|--------------|
+| takeAllGoods            | (1,2)  | (1,2); (1,3); (2,3) | (1,2); (2,3) | (1,3); (2,3) |
+| takeWinnerOfGoods       | (1,2)  | (1,2)               | (1,2)        | (1,3)        |
+| takeWinnerIfIsGood      | (1,2)  | (1,2)               | (1,2)        | \-           |
+| keepIfOnlyOneGood       | \*     | \-                  | \-           | \-           |
+| removeMultiples         | \-     | \-                  | \-           | \-           |
+
+A more detailed example can be found in [test 072](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/).
+
 ### MotionVolumeActor
 
 (documentation TODO)
@@ -272,3 +345,24 @@ The detector MUST be oriented such that the depth is Z dimension
 
 (documentation TODO)
 test050
+
+
+### ComptonSplittingActor
+
+The Compton splitting actor generates N particles, each with a weight equal to the initial track weight divided by N, whenever a Compton process occurs. To tailor the splitting process to your specific application, you can use various options, as presented in [test 71](https://github.com/OpenGATE/opengate/tree/compton_splitting/opengate/tests/src/test071_operator_russian_roulette.py) :
+
+
+```python
+compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplitting")
+compt_splitting_actor.mother = W_tubs.name
+compt_splitting_actor.splitting_factor = nb_split
+compt_splitting_actor.russian_roulette = True
+compt_splitting_actor.rotation_vector_director = True
+compt_splitting_actor.vector_director = [0, 0, -1]
+```
+
+The options include:
+
+- the splitting Number: Specifies the number of splits to create.
+- A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
+- A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.

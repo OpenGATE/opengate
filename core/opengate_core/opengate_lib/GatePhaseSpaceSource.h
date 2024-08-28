@@ -45,55 +45,67 @@ public:
 
   void SetGeneratorFunction(ParticleGeneratorType &f) const;
 
+  bool ParticleIsPrimary();
+
+  // virtual void SetGeneratorInfo(py::dict &user_info);
+
   void GenerateBatchOfParticles();
 
   G4ParticleDefinition *fParticleDefinition;
   G4ParticleTable *fParticleTable;
-  double fCharge;
-  double fMass;
+
+  std::float_t fCharge;
+  std::float_t fMass;
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
+  bool fVerbose;
 
-  unsigned long fMaxN;
+  // unsigned long fMaxN;
+  long fNumberOfGeneratedEvents;
+  size_t fCurrentBatchSize;
 
   void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 
-  void SetEnergyBatch(const py::array_t<double> &fEnergy) const;
+  void SetEnergyBatch(const py::array_t<std::float_t> &fEnergy) const;
 
-  void SetWeightBatch(const py::array_t<double> &fWeight) const;
+  void SetWeightBatch(const py::array_t<std::float_t> &fWeight) const;
 
-  void SetPositionXBatch(const py::array_t<double> &fPositionX) const;
+  void SetPositionXBatch(const py::array_t<std::float_t> &fPositionX) const;
 
-  void SetPositionYBatch(const py::array_t<double> &fPositionY) const;
+  void SetPositionYBatch(const py::array_t<std::float_t> &fPositionY) const;
 
-  void SetPositionZBatch(const py::array_t<double> &fPositionZ) const;
+  void SetPositionZBatch(const py::array_t<std::float_t> &fPositionZ) const;
 
-  void SetDirectionXBatch(const py::array_t<double> &fDirectionX) const;
+  void SetDirectionXBatch(const py::array_t<std::float_t> &fDirectionX) const;
 
-  void SetDirectionYBatch(const py::array_t<double> &fDirectionY) const;
+  void SetDirectionYBatch(const py::array_t<std::float_t> &fDirectionY) const;
 
-  void SetDirectionZBatch(const py::array_t<double> &fDirectionZ) const;
+  void SetDirectionZBatch(const py::array_t<std::float_t> &fDirectionZ) const;
 
   // For MT, all threads local variables are gathered here
   struct threadLocalTPhsp {
+
+    bool fgenerate_until_next_primary;
+    std::int32_t fprimary_PDGCode;
+    std::float_t fprimary_lower_energy_threshold;
 
     ParticleGeneratorType fGenerator;
     unsigned long fNumberOfGeneratedEvents;
     size_t fCurrentIndex;
     size_t fCurrentBatchSize;
 
-    int *fPDGCode;
+    std::int32_t *fPDGCode;
 
-    double *fPositionX;
-    double *fPositionY;
-    double *fPositionZ;
+    std::float_t *fPositionX;
+    std::float_t *fPositionY;
+    std::float_t *fPositionZ;
 
-    double *fDirectionX;
-    double *fDirectionY;
-    double *fDirectionZ;
+    std::float_t *fDirectionX;
+    std::float_t *fDirectionY;
+    std::float_t *fDirectionZ;
 
-    double *fEnergy;
-    double *fWeight;
+    std::float_t *fEnergy;
+    std::float_t *fWeight;
     // double * fTime;
   };
   G4Cache<threadLocalTPhsp> fThreadLocalDataPhsp;

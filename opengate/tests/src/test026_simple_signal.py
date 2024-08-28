@@ -16,7 +16,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_engine = "MersenneTwister"
-    sim.random_seed = "auto"
+    sim.random_seed = 987654321
 
     print(sim)
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # start simulation
-    # sim.apply_g4_command("/run/verbose 1")
+    # sim.add_g4_command_after_init("/run/verbose 1")
     sim.run()
 
     # get result
@@ -57,8 +57,7 @@ if __name__ == "__main__":
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
     stats_ref = utility.read_stat_file(
-        pathFile
-        / ".."
+        pathFile.parent
         / "data"
         / "gate"
         / "gate_test004_simulation_stats_actor"

@@ -13,9 +13,6 @@
 #include <G4UnitsTable.hh>
 
 GateGenericSource::GateGenericSource() : GateVSource() {
-  fNumberOfGeneratedEvents = 0;
-  fMaxN = 0;
-  fActivity = 0;
   fInitGenericIon = false;
   fA = 0;
   fZ = 0;
@@ -23,8 +20,6 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fInitConfine = false;
   fWeight = -1;
   fWeightSigma = -1;
-  fHalfLife = -1;
-  fDecayConstant = -1;
   fTotalSkippedEvents = 0;
   fCurrentSkippedEvents = 0;
   fTotalZeroEvents = 0;
@@ -34,6 +29,9 @@ GateGenericSource::GateGenericSource() : GateVSource() {
   fParticleDefinition = nullptr;
   fEffectiveEventTime = -1;
   fEffectiveEventTime = -1;
+  fDirectionRelativeToAttachedVolume = false;
+  fUserParticleLifeTime = -1;
+  fBackToBackMode = false;
 }
 
 GateGenericSource::~GateGenericSource() {
@@ -74,19 +72,10 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
 
-  // get user info about activity or nb of events
-  fMaxN = DictGetInt(user_info, "n");
-  fActivity = DictGetDouble(user_info, "activity");
-  fInitialActivity = fActivity;
-
-  // half life ?
-  fHalfLife = DictGetDouble(user_info, "half_life");
-  fDecayConstant = log(2) / fHalfLife;
-  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
-
   // weight
   fWeight = DictGetDouble(user_info, "weight");
   fWeightSigma = DictGetDouble(user_info, "weight_sigma");
+  fUserParticleLifeTime = DictGetDouble(user_info, "user_particle_life_time");
 
   // get the user info for the particle
   InitializeParticle(user_info);
@@ -103,14 +92,14 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   fCurrentSkippedEvents = 0;
   fTotalSkippedEvents = 0;
   fEffectiveEventTime = -1;
+  fDirectionRelativeToAttachedVolume =
+      DictGetBool(user_info, "direction_relative_to_attached_volume");
 }
 
 void GateGenericSource::UpdateActivity(double time) {
   if (!fTAC_Times.empty())
     return UpdateActivityWithTAC(time);
-  if (fHalfLife <= 0)
-    return;
-  fActivity = fInitialActivity * exp(-fDecayConstant * (time - fStartTime));
+  GateVSource::UpdateActivity(time);
 }
 
 void GateGenericSource::UpdateActivityWithTAC(double time) {
@@ -125,7 +114,7 @@ void GateGenericSource::UpdateActivityWithTAC(double time) {
   auto i = std::distance(fTAC_Times.begin(), lower);
 
   // Last element ?
-  if (i == fTAC_Times.size() - 1) {
+  if (i >= fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
     return;
   }
@@ -144,7 +133,6 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
     fEffectiveEventTime = current_simulation_time;
   }
   UpdateActivity(fEffectiveEventTime);
-
   fTotalSkippedEvents += fCurrentSkippedEvents;
   fTotalZeroEvents += fCurrentZeroEvents;
   fCurrentZeroEvents = 0;
@@ -159,14 +147,15 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
       return -1;
 
     // get next time according to current fActivity
-    double next_time =
-        fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
+    double next_time = CalcNextTime(fEffectiveEventTime);
     if (next_time >= fEndTime)
       return -1;
     return next_time;
   }
 
   // check according to t MaxN
+  // std::cout<<fNumberOfGeneratedEvents<<std::endl;
+
   if (fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }
@@ -174,9 +163,10 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
 }
 
 void GateGenericSource::PrepareNextRun() {
-  // The following compute the global transformation from
+  // The following function computes the global transformation from
   // the local volume (mother) to the world
   GateVSource::PrepareNextRun();
+
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
   auto &l = fThreadLocalData.Get();
@@ -185,10 +175,29 @@ void GateGenericSource::PrepareNextRun() {
 
   // orientation according to mother volume
   auto rotation = l.fGlobalRotation;
-  G4ThreeVector r1(rotation(0, 0), rotation(0, 1), rotation(0, 2));
-  G4ThreeVector r2(rotation(1, 0), rotation(1, 1), rotation(1, 2));
+  G4ThreeVector r1(rotation(0, 0), rotation(1, 0), rotation(2, 0));
+  G4ThreeVector r2(rotation(0, 1), rotation(1, 1), rotation(2, 1));
   pos->SetPosRot1(r1);
   pos->SetPosRot2(r2);
+
+  // For the direction, the orientation may or may not be
+  // relative to the volume according to user option
+  auto *ang = fSPS->GetAngDist();
+  ang->fDirectionRelativeToAttachedVolume = fDirectionRelativeToAttachedVolume;
+  ang->fGlobalRotation = l.fGlobalRotation;
+  ang->fGlobalTranslation = l.fGlobalTranslation;
+  if (fangType == "momentum" && fDirectionRelativeToAttachedVolume) {
+    auto new_d = rotation * fInitializeMomentum;
+    ang->SetParticleMomentumDirection(new_d);
+    ang->fDirectionRelativeToAttachedVolume = false;
+  }
+  if (fangType == "focused" && fDirectionRelativeToAttachedVolume) {
+    auto vec_f = fInitiliazeFocusPoint - fInitTranslation;
+    auto rot_f = rotation * vec_f;
+    auto new_f = rot_f + l.fGlobalTranslation;
+    ang->SetFocusPoint(new_f);
+    ang->fDirectionRelativeToAttachedVolume = false;
+  }
 }
 
 void GateGenericSource::UpdateEffectiveEventTime(
@@ -262,13 +271,19 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
 
 void GateGenericSource::InitializeParticle(py::dict &user_info) {
   std::string pname = DictGetStr(user_info, "particle");
-  // If the particle is an ion (name start with ion)
+  // Is the particle an ion (name start with ion) ?
   if (pname.rfind("ion", 0) == 0) {
     InitializeIon(user_info);
     return;
   }
-  // If the particle is not an ion
   fInitGenericIon = false;
+  // Is the particle a back to back ?
+  if (pname.rfind("back_to_back") == 0) {
+    InitializeBackToBackMode(user_info);
+    return;
+  }
+  fBackToBackMode = false;
+  // other conventional particle type
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle(pname);
   if (fParticleDefinition == nullptr) {
@@ -286,6 +301,17 @@ void GateGenericSource::InitializeIon(py::dict &user_info) {
   fInitGenericIon = true;
 }
 
+void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
+  auto u = py::dict(user_info["direction"]);
+  bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
+  fSPS->SetBackToBackMode(true, accolinearityFlag);
+  // this is photon
+  auto *particle_table = G4ParticleTable::GetParticleTable();
+  fParticleDefinition = particle_table->FindParticle("gamma");
+  fSPS->SetParticleDefinition(fParticleDefinition);
+  // The energy is fixed to 511 keV in the python side
+}
+
 void GateGenericSource::InitializePosition(py::dict puser_info) {
   /* G4:
    * pos_types = ['Point', 'Beam', 'Plane', 'Surface', 'Volume']
@@ -300,6 +326,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   std::vector<std::string> l = {"sphere", "point", "box", "disc", "cylinder"};
   CheckIsIn(pos_type, l);
   auto translation = DictGetG4ThreeVector(user_info, "translation");
+  fInitTranslation = translation;
   if (pos_type == "point") {
     pos->SetPosDisType("Point");
   }
@@ -365,9 +392,11 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto user_info = py::dict(puser_info["direction"]);
   auto *ang = fSPS->GetAngDist();
   auto ang_type = DictGetStr(user_info, "type");
-  std::vector<std::string> ll = {"iso", "momentum", "focused",
-                                 "beam2d"}; // FIXME check on py side ?
+  fangType = ang_type;
+  std::vector<std::string> ll = {"iso", "histogram", "momentum", "focused",
+                                 "beam2d"};
   CheckIsIn(ang_type, ll);
+
   if (ang_type == "iso") {
     ang->SetAngDistType("iso");
 
@@ -379,16 +408,21 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
     ang->SetMinPhi(phi[0]);
     ang->SetMaxPhi(phi[1]);
   }
+
   if (ang_type == "momentum") {
     ang->SetAngDistType("planar"); // FIXME really ??
     auto d = DictGetG4ThreeVector(user_info, "momentum");
+    fInitializeMomentum = d;
     ang->SetParticleMomentumDirection(d);
   }
+
   if (ang_type == "focused") {
     ang->SetAngDistType("focused");
     auto f = DictGetG4ThreeVector(user_info, "focus_point");
+    fInitiliazeFocusPoint = f;
     ang->SetFocusPoint(f);
   }
+
   if (ang_type == "beam2d") {
     ang->SetAngDistType("beam2d");
     auto sigma = DictGetVecDouble(user_info, "sigma");
@@ -396,13 +430,30 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
     ang->SetBeamSigmaInAngY(sigma[1]);
   }
 
+  if (ang_type == "histogram") {
+    ang->SetAngDistType("user");
+    auto theta_w = DictGetVecDouble(user_info, "histogram_theta_weight");
+    auto theta_e = DictGetVecDouble(user_info, "histogram_theta_angle");
+    for (unsigned long i = 0; i < theta_w.size(); i++) {
+      G4ThreeVector x(theta_e[i], theta_w[i], 0);
+      ang->UserDefAngTheta(x);
+    }
+    auto phi_w = DictGetVecDouble(user_info, "histogram_phi_weight");
+    auto phi_e = DictGetVecDouble(user_info, "histogram_phi_angle");
+    for (unsigned long i = 0; i < phi_w.size(); i++) {
+      G4ThreeVector x(phi_e[i], phi_w[i], 0);
+      ang->UserDefAngPhi(x);
+    }
+  }
+
   // set the angle acceptance volume if needed
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
-  auto is_iso = ang->GetDistType() == "iso";
+  auto is_valid_type =
+      ang->GetDistType() == "iso" || ang->GetDistType() == "user";
   auto &l = fThreadLocalDataAA.Get();
   l.fAAManager = new GateAcceptanceAngleTesterManager;
-  l.fAAManager->Initialize(dd, is_iso);
+  l.fAAManager->Initialize(dd, is_valid_type);
   fSPS->SetAAManager(l.fAAManager);
 }
 
@@ -464,17 +515,34 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     auto w = DictGetVecDouble(user_info, "spectrum_weight");
     auto e = DictGetVecDouble(user_info, "spectrum_energy");
     auto total = 0.0;
-    for (double i : w)
-      total += i;
+    for (double ww : w)
+      total += ww;
+    // normalize to total
     for (unsigned long i = 0; i < w.size(); i++) {
       w[i] = w[i] / total;
     }
+    // cumulated weights
     for (unsigned long i = 1; i < w.size(); i++) {
       w[i] += w[i - 1];
     }
     ene->fEnergyCDF = e;
     ene->fProbabilityCDF = w;
-    // Modify the activity according to the total sum of weights
+    if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
+      std::ostringstream oss;
+      oss << "The spectrum lines for source " << fName
+          << " is zero length. Abort";
+      Fatal(oss.str());
+    }
+    if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
+      std::ostringstream oss;
+      oss << "The spectrum vector energy and proba for source " << fName
+          << " must have the same length, while there are  "
+          << ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
+      Fatal(oss.str());
+    }
+    // ! important !
+    // Modify the activity according to the total sum of weights because we
+    // normalize the weights
     fActivity = fActivity * total;
     fInitialActivity = fActivity;
   }

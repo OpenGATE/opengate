@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     test43.sim_set_world(sim)
 
     # spect head
-    spect, cystal = gate_spect.add_ge_nm67_spect_head(
+    spect, cystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type="lehr", debug=sim.visu
     )
     crystal_name = f"{spect.name}_crystal"
@@ -96,3 +96,6 @@ if __name__ == "__main__":
     print(stat)
     skip = gate.sources.generic.get_source_skipped_events(sim.output, "s1")
     print(f"Nb of skip particles {skip}  {(skip / stat.counts.event_count) * 100:.2f}%")
+
+    # garf
+    #  garf_train train_arf_v034.json /home/dsarrut/src/gate2/opengate/opengate/tests/src/../output/test043_arf_training_dataset_large.root  a.pth

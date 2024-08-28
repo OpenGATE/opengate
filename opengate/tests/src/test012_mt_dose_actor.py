@@ -6,6 +6,7 @@ from opengate.tests import utility
 
 from scipy.spatial.transform import Rotation
 
+
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
 
@@ -80,10 +81,10 @@ if __name__ == "__main__":
     print(sim.volume_manager.dump_volumes())
 
     # verbose
-    # sim.apply_g4_command('/tracking/verbose 0')
+    # sim.add_g4_command_after_init('/tracking/verbose 0')
     sim.add_g4_command_after_init("/run/verbose 2")
-    # sim.apply_g4_command("/event/verbose 2")
-    # sim.apply_g4_command("/tracking/verbose 1")
+    # sim.add_g4_command_after_init("/event/verbose 2")
+    # sim.add_g4_command_after_init("/tracking/verbose 1")
 
     # start simulation
     sim.run()
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output-Edep.mhd",
-            paths.output / "test012-edep.mhd",
+            paths.output / dose.user_info.output,
             stat,
             tolerance=45,
         )

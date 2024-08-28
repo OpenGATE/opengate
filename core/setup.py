@@ -3,7 +3,6 @@ import re
 import sys
 import platform
 import subprocess
-import glob
 import json
 import setuptools
 import sysconfig
@@ -14,7 +13,7 @@ def warning(s):
     print(s)
 
 
-def get_cmake_dir():
+def get_cmake_dir() -> Path:
     plat_name = sysconfig.get_platform()
     python_version = sysconfig.get_python_version()
     dir_name = f"cmake.{plat_name}-{sys.implementation.name}-{python_version}"
@@ -23,14 +22,14 @@ def get_cmake_dir():
     return cmake_dir
 
 
-def get_base_dir():
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+def get_base_dir() -> Path:
+    return Path(__file__).parent.parent.resolve()
 
 
 with open("../VERSION", "r") as fh:
     version = fh.read()[:-1]
 
-from setuptools import setup, Extension, find_packages
+from setuptools import Extension, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
@@ -82,6 +81,7 @@ class CMakeBuild(build_ext):
         cmake_args += ["-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE"]
         cmake_args += ["-DCMAKE_INSTALL_RPATH={}".format("$ORIGIN")]
         # cmake_args += ['-DCMAKE_CXX_FLAGS="-Wno-self-assign -Wno-extra-semi"']
+        cmake_args += ["-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"]
 
         if platform.system() == "Windows":
             cmake_args += [
@@ -177,7 +177,7 @@ setuptools.setup(
     packages=find_packages(),
     package_data=package_data,
     zip_safe=False,
-    python_requires=">=3.5",
+    python_requires=">=3.8",
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",

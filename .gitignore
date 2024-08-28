@@ -39,13 +39,11 @@ __pycache__
 /opengate/contrib/run.*
 
 /opengate/data/ensdf_230901
-
-/opengate_temporaire
+/opengate/data/isomeric_transition/save/
+/opengate/data/isomeric_transition/save2/
 
 /.pycrunch-config.yaml
-
 /opengate.egg-info/
-
 opengate_temporaire
 
 /opengate/tests/src/preload.sh
@@ -85,8 +83,15 @@ opengate_temporaire
 /opengate/tests/src/*.wrl
 /opengate/tests/src/*.gdml
 /opengate/tests/src/pb212
-/opengate/tests/src/*.gdml
 /opengate/tests/src/stl_tests
+/opengate/tests/src/label_to*
+/opengate/tests/src/test*speed*txt
+/opengate/tests/test*speed*txt
+/opengate/tests/label_to*
+/opengate/tests/src/demo_code_*.py
+
+/opengate/data/isomeric_transition/save
+/opengate/data/isomeric_transition/save2
 
 /cmake-build-debug
 /cmake-build-release

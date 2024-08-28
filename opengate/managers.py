@@ -27,6 +27,7 @@ from .image import (
     voxelize_volume,
     update_image_py_to_cpp,
     get_cpp_image,
+    write_itk_image,
 )
 from .utility import (
     assert_unique_element_name,
@@ -35,9 +36,10 @@ from .utility import (
     read_mac_file_to_commands,
     ensure_directory_exists,
     ensure_filename_is_str,
+    insert_suffix_before_extension,
 )
 from .logger import INFO, log
-from .physics import Region, cut_particle_names
+from .physics import Region, OpticalSurface, cut_particle_names
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
@@ -51,6 +53,7 @@ from .geometry.volumes import (
     TubsVolume,
     PolyhedraVolume,
     HexagonVolume,
+    TesselatedVolume,
     ConsVolume,
     TrdVolume,
     BooleanVolume,
@@ -58,6 +61,15 @@ from .geometry.volumes import (
     ParallelWorldVolume,
     VolumeTreeRoot,
 )
+
+
+particle_names_Gate_to_G4 = {
+    "gamma": "gamma",
+    "electron": "e-",
+    "positron": "e+",
+    "proton": "proton",
+    "neutron": "neutron",
+}
 
 
 def retrieve_g4_physics_constructor_class(g4_physics_constructor_class_name):
@@ -250,6 +262,11 @@ class SourceManager:
         # return the info
         return s
 
+    def initialize_before_g4_engine(self):
+        for source in self.user_info_sources.values():
+            if source.initialize_source_before_g4_engine:
+                source.initialize_source_before_g4_engine(source)
+
 
 class ActorManager:
     """
@@ -327,15 +344,19 @@ class PhysicsListManager(GateObject):
         "G4EmPenelopePhysics",
         "G4EmDNAPhysics",
         "G4OpticalPhysics",
+        "G4GenericBiasingPhysics",
     ]
 
     special_physics_constructor_classes = {}
     special_physics_constructor_classes["G4DecayPhysics"] = g4.G4DecayPhysics
-    special_physics_constructor_classes[
-        "G4RadioactiveDecayPhysics"
-    ] = g4.G4RadioactiveDecayPhysics
+    special_physics_constructor_classes["G4RadioactiveDecayPhysics"] = (
+        g4.G4RadioactiveDecayPhysics
+    )
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
+    special_physics_constructor_classes["G4GenericBiasingPhysics"] = (
+        g4.G4GenericBiasingPhysics
+    )
 
     def __init__(self, physics_manager, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -344,10 +365,11 @@ class PhysicsListManager(GateObject):
         # set to dict in create_physics_list_classes()
         self.created_physics_list_classes = None
         self.create_physics_list_classes()
+        self.particle_with_biased_process_dictionary = {}
 
     def __getstate__(self):
         # This is needed because cannot be pickled.
-        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        dict_to_return = super().__getstate__()
         dict_to_return["created_physics_list_classes"] = None
         return dict_to_return
 
@@ -358,9 +380,9 @@ class PhysicsListManager(GateObject):
     def create_physics_list_classes(self):
         self.created_physics_list_classes = {}
         for g4pc_name in self.available_g4_physics_constructors:
-            self.created_physics_list_classes[
-                g4pc_name
-            ] = create_modular_physics_list_class(g4pc_name)
+            self.created_physics_list_classes[g4pc_name] = (
+                create_modular_physics_list_class(g4pc_name)
+            )
 
     def get_physics_list(self, physics_list_name):
         if physics_list_name in self.created_physics_list_classes:
@@ -386,11 +408,17 @@ class PhysicsListManager(GateObject):
         ) in self.physics_manager.special_physics_constructors.items():
             if switch is True:
                 try:
-                    physics_list.ReplacePhysics(
-                        self.special_physics_constructor_classes[spc](
-                            self.physics_manager.simulation.g4_verbose_level
+                    if spc == "G4GenericBiasingPhysics":
+                        Bias = self.physics_manager.add_physics_bias()
+                        physics_list.RegisterPhysics(Bias)
+
+                    else:
+                        physics_list.ReplacePhysics(
+                            self.special_physics_constructor_classes[spc](
+                                self.physics_manager.simulation.g4_verbose_level
+                            )
                         )
-                    )
+
                 except KeyError:
                     fatal(
                         f"Special physics constructor named '{spc}' not found. Available constructors are: {self.special_physics_constructor_classes.keys()}."
@@ -448,7 +476,17 @@ class PhysicsManager(GateObject):
             Path(os.path.dirname(__file__)) / "data" / "OpticalProperties.xml",
             {
                 "doc": "Path to the xml file containing the optical material properties to be used by G4OpticalPhysics. "
-                "Default: file shipped with Gate.",
+                "Default: file shipped with GATE.",
+                "is_input_file": True,
+            },
+        ),
+        "surface_properties_file": (
+            Path(os.path.dirname(__file__)) / "data" / "SurfaceProperties.xml",
+            {
+                "doc": "Path to the xml file containing the surface material properties to be used by "
+                "optical surface, i.e. G4LogicalBorderSurface."
+                f"The default file shipped with GATE located is in "
+                f"{Path(os.path.dirname(__file__)) / 'data' / 'SurfaceProperties.xml'}",
                 "is_input_file": True,
             },
         ),
@@ -497,6 +535,21 @@ class PhysicsManager(GateObject):
                 "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
             },
         ),
+        "processes_to_bias": (
+            Box(
+                [
+                    ("all", None),
+                    ("all_charged", None),
+                    ("gamma", None),
+                    ("electron", None),
+                    ("positron", None),
+                    ("proton", None),
+                ]
+            ),
+            {
+                "doc": "Define the process to bias (if wanted) on the different particle types."
+            },
+        ),
     }
 
     def __init__(self, simulation, *args, **kwargs):
@@ -516,12 +569,18 @@ class PhysicsManager(GateObject):
         # NB: It is well-defined because each volume has only one region.
         self.volumes_regions_lut = {}
 
+        # dictionary containing all the optical surface objects
+        self.optical_surfaces = {}
+
     def reset(self):
         self.__init__(self.simulation)
 
     def to_dictionary(self):
         d = super().to_dictionary()
         d["regions"] = dict([(k, v.to_dictionary()) for k, v in self.regions.items()])
+        d["optical_surfaces"] = dict(
+            [(k, v.to_dictionary()) for k, v in self.optical_surfaces.items()]
+        )
         return d
 
     def from_dictionary(self, d):
@@ -530,6 +589,13 @@ class PhysicsManager(GateObject):
         for r in d["regions"].values():
             region = self.add_region(r["user_info"]["name"])
             region.from_dictionary(r)
+        for s in d["optical_surfaces"].values():
+            optical_surface = self.add_optical_surface(
+                s["user_info"]["volume_from"],
+                s["user_info"]["volume_to"],
+                s["user_info"]["g4_surface_name"],
+            )
+            optical_surface.from_dictionary(s)
 
     def __str__(self):
         s = ""
@@ -577,6 +643,17 @@ class PhysicsManager(GateObject):
             s += "*** No cuts per region defined. ***\n"
         return s
 
+    def dump_optical_surfaces(self):
+        """
+        Prints each volume's name and its associated surfaces' details (surface name and connected volumes)
+        from the `volume_surfaces` dictionary in a readable format.
+        """
+        s = "The PhysicsManager is storing the following optical surfaces:\n\n"
+        for surf in self.optical_surfaces.values():
+            s += str(surf)
+            s += "\n"
+        return s
+
     @property
     def enable_decay(self):
         """Properties to quickly enable decay.
@@ -602,6 +679,33 @@ class PhysicsManager(GateObject):
         self.special_physics_constructors["G4DecayPhysics"] = value
         self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value
 
+    def add_optical_surface(self, volume_from, volume_to, g4_surface_name):
+        """
+        Creates an object of class OpticalSurface with surface info.
+
+        :param volume_from: Name of the first volume (str)
+
+        :param volume_to: Name of the second volume (str)
+
+        :param g4_surface_name: Name of the surface between volumes (str)
+        """
+
+        name = "optical_surface_" + volume_from + "_" + volume_to
+
+        # Throw an error if the optical surface already exists
+        if name in self.optical_surfaces.keys():
+            fatal("An optical surface between these volumes already exists")
+
+        self.optical_surfaces[name] = OpticalSurface(
+            name=name,
+            physics_manager=self,
+            volume_from=volume_from,
+            volume_to=volume_to,
+            g4_surface_name=g4_surface_name,
+        )
+
+        return self.optical_surfaces[name]
+
     def add_region(self, name):
         if name in self.regions.keys():
             fatal("A region with this name already exists.")
@@ -623,6 +727,49 @@ class PhysicsManager(GateObject):
         else:
             region = self.find_or_create_region(volume_name)
             region.production_cuts[particle_name] = value
+
+    def add_physics_bias(self):
+        self.processes_to_bias = self.user_info["processes_to_bias"]
+        BiasToApply = self.physics_list_manager.special_physics_constructor_classes[
+            "G4GenericBiasingPhysics"
+        ]()
+        list_of_particles = self.processes_to_bias.keys()
+        try:
+            if self.processes_to_bias["all"] != None:
+                for particle in list_of_particles:
+                    if particle != "all" and particle != "all_charged":
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle],
+                            self.processes_to_bias["all"],
+                        )
+            elif self.processes_to_bias["all_charged"] != None:
+                for particle in list_of_particles:
+                    if (
+                        particle != "all"
+                        and particle != "all_charged"
+                        and particle != "gamma"
+                        and particle != "neutron"
+                    ):
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle],
+                            self.processes_to_bias["all_charged"],
+                        )
+            else:
+                for particle in list_of_particles:
+                    list_of_process = self.processes_to_bias[particle]
+                    if list_of_process != None:
+                        BiasToApply.PhysicsBias(
+                            particle_names_Gate_to_G4[particle], list_of_process
+                        )
+        except KeyError:
+            fatal(
+                f"Found unknown particle name '{particle}' in processes_to_bias()."
+                f" Eligible names are "
+                + ", ".join(self.user_info_defaults["processes_to_bias"][0].keys())
+                + "."
+            )
+
+        return BiasToApply
 
     # set methods for the user_info parameters
     # logic: every volume with user_infos must be associated
@@ -678,11 +825,13 @@ class VolumeManager(GateObject):
         "ImageVolume": ImageVolume,
         "TubsVolume": TubsVolume,
         "PolyhedraVolume": PolyhedraVolume,
+        "TextTesselatedVolume": TesselatedVolume,
         "HexagonVolume": HexagonVolume,
         "ConsVolume": ConsVolume,
         "TrdVolume": TrdVolume,
         "BooleanVolume": BooleanVolume,
         "RepeatParametrisedVolume": RepeatParametrisedVolume,
+        "TesselatedVolume": TesselatedVolume,
     }
 
     def __init__(self, simulation, *args, **kwargs):
@@ -772,6 +921,10 @@ class VolumeManager(GateObject):
     @property
     def all_volume_names(self):
         return self.volume_names + self.parallel_world_names
+
+    @property
+    def dynamic_volumes(self):
+        return [vol for vol in self.volumes.values() if vol.is_dynamic]
 
     def get_volume(self, volume_name):
         try:
@@ -918,7 +1071,7 @@ class Simulation(GateObject):
         ),
         "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
         "g4_verbose_level_tracking": (
-            0,
+            -1,
             {
                 "doc": "Activate verbose tracking in Geant4 via G4 command '/tracking/verbose g4_verbose_level_tracking'."
             },
@@ -930,7 +1083,7 @@ class Simulation(GateObject):
             },
         ),
         "visu_type": (
-            "qt",
+            "vrml",
             {
                 "doc": "The type of visualization to be used.",
                 "available_values": (
@@ -1017,10 +1170,17 @@ class Simulation(GateObject):
             },
         ),
         "output_dir": (
-            "./output",
+            ".",
             {
                 "doc": "Directory to which any output is written, "
                 "unless an absolute path is provided for a specific output."
+            },
+        ),
+        "output_path_insert_suffix": (
+            True,
+            {
+                "doc": "Manipulates and inserts the name of the scored quantity into the filename. If False, the user defined output name is not changed."
+                "Default: True"
             },
         ),
         "store_json_archive": (
@@ -1054,6 +1214,12 @@ class Simulation(GateObject):
             {
                 "doc": "Geant4 commands which will be called after the G4 runmanager has initialized the simulation.",
                 "required_type": str,
+            },
+        ),
+        "init_only": (
+            False,
+            {
+                "doc": "Start G4 engine initialisation but do not start the simulation.",
             },
         ),
     }
@@ -1177,7 +1343,7 @@ class Simulation(GateObject):
         for f in input_files:
             shutil.copy2(f, directory)
 
-    def get_output_path(self, path=None, is_file_or_directory="file"):
+    def get_output_path(self, path=None, is_file_or_directory="file", suffix=""):
         if path is None:
             # no input -> return global output directory
             p_out = Path(self.output_dir)
@@ -1191,12 +1357,15 @@ class Simulation(GateObject):
                 # or just keep it
                 p_out = p
 
+        if self.output_path_insert_suffix:
+            p_out = insert_suffix_before_extension(p_out, suffix)
+
         # Make sure the directory exists
         if is_file_or_directory in ["file", "File", "f"]:
             n = len(p_out.parts) - 1  # last item is the filename
         elif is_file_or_directory in ["dir", "Dir", "directory", "d"]:
             n = len(p_out.parts)  # all items are part of the directory
-        if len(p_out.parts) > 0:
+        if len(p_out.parts) > 0 and n > 0:
             directory = Path(p_out.parts[0])
             for i in range(n - 1):
                 directory /= p_out.parts[i + 1]
@@ -1226,6 +1395,10 @@ class Simulation(GateObject):
 
     def add_volume(self, volume, name=None):
         return self.volume_manager.add_volume(volume, name)
+
+    # call this add optical surface, from_volume, to_volume,
+    def add_surface(self, volume_1, volume_2, surface_name):
+        return self.physics_manager.add_surface(volume_1, volume_2, surface_name)
 
     def add_parallel_world(self, name):
         self.volume_manager.add_parallel_world(name)
@@ -1262,6 +1435,7 @@ class Simulation(GateObject):
         """
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
+            se.init_only = self.init_only
             output = se.run_engine()
         return output
 
@@ -1281,6 +1455,7 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
+            log.info("Dispatching simulation to subprocess ...")
             self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
         else:
             self.output = self._run_simulation_engine(False)
@@ -1346,7 +1521,7 @@ class Simulation(GateObject):
                 dump_json(labels, outfile, indent=4)
 
             # write image
-            itk.imwrite(image, ensure_filename_is_str(outpath_mhd))
+            write_itk_image(image, ensure_filename_is_str(outpath_mhd))
         else:
             outpath_mhd = "not_applicable"
 
@@ -1354,6 +1529,13 @@ class Simulation(GateObject):
             return labels, image, outpath_mhd
         else:
             return labels, image
+
+    def initialize_source_before_g4_engine(self):
+        """
+        Some sources need to perform computation once everything is defined in user_info but *before* the
+        initialization of the G4 engine starts. This can be done via this function.
+        """
+        self.source_manager.initialize_before_g4_engine()
 
     def _get_voxelized_geometry(self, extent, spacing, margin):
         """Private method which returns a voxelized image of the simulation geometry

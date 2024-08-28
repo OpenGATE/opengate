@@ -2,28 +2,24 @@ import time
 import random
 import sys
 import os
-
-# from multiprocessing import Process, set_start_method, Manager
-# import queue
 import weakref
 from box import Box
-import xml.etree.ElementTree as ET
 from anytree import PreOrderIter
 
 import opengate_core as g4
-
 from .exception import fatal, warning
 from .decorators import requires_fatal, requires_warning
 from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
-from .utility import g4_units, get_material_name_variants
 from .element import new_element
 from .physics import (
     UserLimitsPhysics,
-    translate_particle_name_gate2G4,
+    translate_particle_name_gate_to_geant4,
     cut_particle_names,
+    create_g4_optical_properties_table,
+    load_optical_properties_from_xml,
 )
 
 
@@ -35,8 +31,11 @@ class EngineBase:
     def __init__(self, simulation_engine):
         self.simulation_engine = simulation_engine
         # debug verbose
-        self.verbose_getstate = simulation_engine.simulation.verbose_getstate
-        self.verbose_close = simulation_engine.simulation.verbose_close
+        self.verbose_getstate = simulation_engine.verbose_getstate
+        self.verbose_close = simulation_engine.verbose_close
+
+    def close(self):
+        pass  # nothing do to, but kept as dummy for the future
 
 
 class SourceEngine(EngineBase):
@@ -81,6 +80,7 @@ class SourceEngine(EngineBase):
         if self.verbose_close:
             warning(f"Closing SourceEngine")
         self.release_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_master_source_manager = None
@@ -127,7 +127,7 @@ class SourceEngine(EngineBase):
         source_manager = self.simulation_engine.simulation.source_manager
         for vu in source_manager.user_info_sources.values():
             source = new_element(vu, self.simulation_engine.simulation)
-            ms.AddSource(source.g4_source)
+            source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)
             self.sources.append(source)
 
@@ -163,134 +163,6 @@ class SourceEngine(EngineBase):
             source.prepare_output()
 
 
-def load_optical_properties_from_xml(optical_properties_file, material_name):
-    """This function parses an xml file containing optical material properties.
-    Fetches property elements and property vector elements.
-
-    Returns a dictionary with the properties or None if the material is not found in the file.
-    """
-    try:
-        xml_tree = ET.parse(optical_properties_file)
-    except FileNotFoundError:
-        fatal(f"Could not find the optical_properties_file {optical_properties_file}.")
-    xml_root = xml_tree.getroot()
-
-    xml_entry_material = None
-    for m in xml_root.findall("material"):
-        # FIXME: some names might follow different conventions, e.g. 'Water' vs. 'G4_WATER'
-        # using variants of the name is a possible solution, but this should be reviewed
-        if str(m.get("name")) in get_material_name_variants(material_name):
-            xml_entry_material = m
-            break
-    if xml_entry_material is None:
-        warning(
-            f"Could not find any optical material properties for material {material_name} "
-            f"in file {optical_properties_file}."
-        )
-        return
-
-    material_properties = {"constant_properties": {}, "vector_properties": {}}
-
-    for ptable in xml_entry_material.findall("propertiestable"):
-        # Handle property elements in XML document
-        for prop in ptable.findall("property"):
-            property_name = prop.get("name")
-            property_value = float(prop.get("value"))
-            property_unit = prop.get("unit")
-
-            # apply unit if applicable
-            if property_unit is not None:
-                if len(property_unit.split("/")) == 2:
-                    unit = property_unit.split("/")[1]
-                else:
-                    unit = property_unit
-                property_value *= g4_units[unit]
-
-            material_properties["constant_properties"][property_name] = {
-                "property_value": property_value,
-                "property_unit": property_unit,
-            }
-
-        # Handle propertyvector elements
-        for prop_vector in ptable.findall("propertyvector"):
-            prop_vector_name = prop_vector.get("name")
-            prop_vector_value_unit = prop_vector.get("unit")
-            prop_vector_energy_unit = prop_vector.get("energyunit")
-
-            if prop_vector_value_unit is not None:
-                value_unit = g4_units[prop_vector_value_unit]
-            else:
-                value_unit = 1.0
-
-            if prop_vector_energy_unit is not None:
-                energy_unit = g4_units[prop_vector.get("energyunit")]
-            else:
-                energy_unit = 1.0
-
-            # Handle ve elements inside propertyvector
-            ve_energy_list = []
-            ve_value_list = []
-            for ve in prop_vector.findall("ve"):
-                ve_energy_list.append(float(ve.get("energy")) * energy_unit)
-                ve_value_list.append(float(ve.get("value")) * value_unit)
-
-            material_properties["vector_properties"][prop_vector_name] = {
-                "prop_vector_value_unit": prop_vector_value_unit,
-                "prop_vector_energy_unit": prop_vector_energy_unit,
-                "ve_energy_list": ve_energy_list,
-                "ve_value_list": ve_value_list,
-            }
-
-    return material_properties
-
-
-def create_g4_optical_properties_table(material_properties_dictionary):
-    """Creates and fills a G4MaterialPropertiesTable with values from a dictionary created by a parsing function,
-    e.g. from an xml file.
-    Returns G4MaterialPropertiesTable.
-    """
-
-    g4_material_table = g4.G4MaterialPropertiesTable()
-
-    for property_name, data in material_properties_dictionary[
-        "constant_properties"
-    ].items():
-        # check whether the property is already present
-        create_new_key = (
-            property_name not in g4_material_table.GetMaterialConstPropertyNames()
-        )
-        if create_new_key is True:
-            warning(
-                f"Found property {property_name} in optical properties file which is not known to Geant4. "
-                f"I will create the property for you, but you should verify whether physics are correctly modeled."
-            )
-        g4_material_table.AddConstProperty(
-            g4.G4String(property_name), data["property_value"], create_new_key
-        )
-
-    for property_name, data in material_properties_dictionary[
-        "vector_properties"
-    ].items():
-        # check whether the property is already present
-        create_new_key = (
-            property_name not in g4_material_table.GetMaterialPropertyNames()
-        )
-        if create_new_key is True:
-            warning(
-                f"Found property {property_name} in optical properties file which is not known to Geant4. "
-                f"I will create the property for you, but you should verify whether physics are correctly modeled."
-            )
-        g4_material_table.AddProperty(
-            g4.G4String(property_name),
-            data["ve_energy_list"],
-            data["ve_value_list"],
-            create_new_key,
-            False,
-        )
-
-    return g4_material_table
-
-
 class PhysicsEngine(EngineBase):
     """
     Class that contains all the information and mechanism regarding physics
@@ -298,14 +170,17 @@ class PhysicsEngine(EngineBase):
 
     """
 
-    def __init__(self, simulation_engine):
-        super().__init__(simulation_engine)
-        # Keep a short cut reference to the current physics_manager
-        self.physics_manager = simulation_engine.simulation.physics_manager
+    def __init__(self, *args):
+        super().__init__(*args)
+        # Keep a shortcut reference to the current physics_manager
+        self.physics_manager = self.simulation_engine.simulation.physics_manager
 
         # Register this engine with the regions
         for region in self.physics_manager.regions.values():
             region.physics_engine = self
+
+        for optical_surface in self.physics_manager.optical_surfaces.values():
+            optical_surface.physics_engine = self
 
         # main g4 physic list
         self.g4_physics_list = None
@@ -315,15 +190,21 @@ class PhysicsEngine(EngineBase):
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
         self.g4_optical_material_tables = {}
+        self.g4_physical_volumes = []
+        self.g4_surface_properties = None
 
         # physics constructors implement on the Gate/python side
         self.gate_physics_constructors = []
+
+        self.optical_surfaces_properties_dict = {}
 
     def close(self):
         if self.verbose_close:
             warning(f"Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
+        self.release_optical_surface_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_physics_list = None
@@ -333,6 +214,12 @@ class PhysicsEngine(EngineBase):
         self.g4_em_parameters = None
         self.g4_parallel_world_physics = []
         self.g4_optical_material_tables = {}
+        self.g4_physical_volumes = []
+        self.g4_surface_properties = None
+
+    def release_optical_surface_g4_references(self):
+        for optical_surface in self.physics_manager.optical_surfaces.values():
+            optical_surface.release_g4_references()
 
     @requires_fatal("simulation_engine")
     @requires_warning("g4_physics_list")
@@ -376,6 +263,7 @@ class PhysicsEngine(EngineBase):
         self.initialize_global_cuts()
         self.initialize_regions()
         self.initialize_optical_material_properties()
+        self.initialize_optical_surfaces()
 
     def initialize_parallel_world_physics(self):
         for (
@@ -424,7 +312,7 @@ class PhysicsEngine(EngineBase):
                     continue
                 if value is not None and value not in ("default", "Default"):
                     self.g4_physics_list.SetCutValue(
-                        value, translate_particle_name_gate2G4(pname)
+                        value, translate_particle_name_gate_to_geant4(pname)
                     )
 
     def initialize_g4_em_parameters(self):
@@ -487,9 +375,9 @@ class PhysicsEngine(EngineBase):
                     self.physics_manager.optical_properties_file, material_name
                 )
                 if material_properties is not None:
-                    self.g4_optical_material_tables[
-                        str(material_name)
-                    ] = create_g4_optical_properties_table(material_properties)
+                    self.g4_optical_material_tables[str(material_name)] = (
+                        create_g4_optical_properties_table(material_properties)
+                    )
                     vol.g4_material.SetMaterialPropertiesTable(
                         self.g4_optical_material_tables[str(material_name)]
                     )
@@ -498,6 +386,15 @@ class PhysicsEngine(EngineBase):
                         f"Could not load the optical material properties for material {material_name} "
                         f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
+
+    @requires_fatal("physics_manager")
+    def initialize_optical_surfaces(self):
+        """Calls initialize() method of each OpticalSurface instance."""
+
+        # Call the initialize() method in OpticalSurface class to
+        # create the related G4 instances.
+        for optical_surface in self.physics_manager.optical_surfaces.values():
+            optical_surface.initialize()
 
     @requires_fatal("physics_manager")
     def initialize_user_limits_physics(self):
@@ -525,10 +422,6 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         g4.G4VUserActionInitialization.__init__(self)
         EngineBase.__init__(self, simulation_engine)
 
-        # The py source engine
-        # self.simulation_engine.source_engine = source
-        self.simulation_engine = simulation_engine
-
         # *** G4 references ***
         # List of G4 source managers (one per thread)
         self.g4_PrimaryGenerator = []
@@ -545,6 +438,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         if self.verbose_close:
             warning(f"Closing ActionEngine")
         self.release_g4_references()
+        super().close()
 
     def release_g4_references(self):
         self.g4_PrimaryGenerator = None
@@ -605,6 +499,7 @@ class ActorEngine(EngineBase):
         # self.actor_manager = simulation.actor_manager
         # we use a weakref because it is a circular dependence
         # with custom __del__
+        # FIXME: we should not need this weak ref
         self.simulation_engine_wr = weakref.ref(simulation_engine)
         self.actors = {}
 
@@ -613,7 +508,9 @@ class ActorEngine(EngineBase):
             warning(f"Closing ActorEngine")
         for actor in self.actors.values():
             actor.close()
-        self.actors = None
+        self.actors = {}
+        self.simulation_engine_wr = None
+        super().close()
 
     def get_actor(self, name):
         if name not in self.actors:
@@ -624,11 +521,10 @@ class ActorEngine(EngineBase):
         return self.actors[name]
 
     def create_actors(self):
-        for (
-            ui
-        ) in (
-            self.simulation_engine_wr().simulation.actor_manager.user_info_actors.values()
-        ):
+        # consider the priority value of the actors
+        uia = self.simulation_engine_wr().simulation.actor_manager.user_info_actors
+        sorted_uia = sorted(uia.values(), key=lambda d: d.priority)
+        for ui in sorted_uia:
             actor = new_element(ui, self.simulation_engine_wr().simulation)
             log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
             actor.initialize(self.simulation_engine_wr)
@@ -792,7 +688,25 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             vol.close()
         for pwv in self.volume_manager.parallel_world_volumes.values():
             pwv.close()
+        super().close()
         # self.volume_manager.world_volume.close()
+
+    def initialize(self):
+        # build the materials
+        self.simulation_engine.simulation.volume_manager.material_database.initialize()
+        # initialize actors which handle dynamic volume parametrization, e.g. MotionActors
+        self.initialize_dynamic_parametrisations()
+
+    def initialize_dynamic_parametrisations(self):
+        dynamic_volumes = self.volume_manager.dynamic_volumes
+        if len(dynamic_volumes) > 0:
+            dynamic_geometry_actor = self.simulation_engine.simulation.add_actor(
+                "DynamicGeometryActor", "dynamic_geometry_actor"
+            )
+        else:  # nothing to do
+            return
+        for vol in self.volume_manager.dynamic_volumes:
+            dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
 
     def Construct(self):
         """
@@ -800,8 +714,9 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         Override the Construct method from G4VUserDetectorConstruction
         """
 
-        # build the materials
-        self.simulation_engine.simulation.volume_manager.material_database.initialize()
+        # # build the materials
+        # # FIXME: should go into initialize method
+        # self.simulation_engine.simulation.volume_manager.material_database.initialize()
 
         # Construct all volumes within the mass world along the tree hierarchy
         # The world volume is the first item
@@ -1021,14 +936,15 @@ class SimulationOutput:
         return self.sources_by_thread[thread][name]
 
 
-class SimulationEngine(EngineBase):
+class SimulationEngine:
     """
     Main class to execute a Simulation (optionally in a separate subProcess)
     """
 
     def __init__(self, simulation, new_process=False):
         self.simulation = simulation
-        EngineBase.__init__(self, self)
+        self.verbose_getstate = simulation.verbose_getstate
+        self.verbose_close = simulation.verbose_close
 
         # create engines passing the simulation engine (self) as argument
         self.volume_engine = VolumeEngine(self)
@@ -1045,6 +961,9 @@ class SimulationEngine(EngineBase):
 
         # do we create a subprocess or not ?
         self.new_process = new_process
+
+        # init only ?
+        self.init_only = False
 
         # LATER : option to wait the end of completion or not
 
@@ -1116,8 +1035,8 @@ class SimulationEngine(EngineBase):
             self.notify_managers()
             if self.g4_RunManager:
                 self.g4_RunManager.SetVerboseLevel(0)
-            self.g4_RunManager = None
             self._is_closed = True
+        self.g4_RunManager = None
 
     def __enter__(self):
         return self
@@ -1154,6 +1073,9 @@ class SimulationEngine(EngineBase):
         -> removed the lines and implemented __setstate__ methods for the classes in question
         """
 
+        # prepare the output
+        output = SimulationOutput()
+
         # initialization
         self.initialize()
 
@@ -1162,6 +1084,14 @@ class SimulationEngine(EngineBase):
         if self.user_hook_after_init:
             log.info("Simulation: initialize user fct")
             self.user_hook_after_init(self)
+
+        # if init only, we stop
+        if self.init_only:
+            output.store_actors(self)
+            output.store_sources(self)
+            output.store_hook_log(self)
+            output.current_random_seed = self.current_random_seed
+            return output
 
         # go
         self.start_and_stop()
@@ -1173,7 +1103,6 @@ class SimulationEngine(EngineBase):
             self.user_hook_after_run(self)
 
         # prepare the output
-        output = SimulationOutput()
         output.store_actors(self)
         output.store_sources(self)
         output.store_hook_log(self)
@@ -1245,9 +1174,10 @@ class SimulationEngine(EngineBase):
         else:
             # no Geant4 output
             ui = UIsessionSilent()
-        self.simulation.add_g4_command_after_init(
-            f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
-        )
+        if self.simulation.g4_verbose_level_tracking >= 0:
+            self.simulation.add_g4_command_after_init(
+                f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
+            )
         # it is also possible to set ui=None for 'default' output
         # we must keep a ref to ui_session
         self.ui_session = ui
@@ -1265,8 +1195,15 @@ class SimulationEngine(EngineBase):
         # g4 verbose
         self.initialize_g4_verbose()
 
+        # visualisation ?
+        # self.pre_init_visu()
+
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
+
+        # Some sources (e.. PHID) need to perform computation once everything is defined in user_info but *before* the
+        # initialization of the G4 engine starts. This can be done via this function.
+        self.simulation.initialize_source_before_g4_engine()
 
         # create the run manager (assigned to self.g4_RunManager)
         self.create_run_manager()
@@ -1276,6 +1213,7 @@ class SimulationEngine(EngineBase):
 
         # check run timing
         self.run_timing_intervals = self.simulation.run_timing_intervals.copy()
+        # FIXME: put this assertion in a setter hook
         assert_run_timing(self.run_timing_intervals)
 
         # Geometry initialization
@@ -1283,6 +1221,7 @@ class SimulationEngine(EngineBase):
 
         # Set the userDetector pointer of the Geant4 run manager
         # to VolumeEngine object defined here in open-gate
+        self.volume_engine.initialize()
         self.g4_RunManager.SetUserInitialization(self.volume_engine)
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
@@ -1391,13 +1330,13 @@ class SimulationEngine(EngineBase):
 
     def apply_all_g4_commands_after_init(self):
         for command in self.simulation.g4_commands_after_init:
-            self.apply_g4_command(command)
+            self.add_g4_command_after_init(command)
 
     def apply_all_g4_commands_before_init(self):
         for command in self.simulation.g4_commands_before_init:
-            self.apply_g4_command(command)
+            self.add_g4_command_after_init(command)
 
-    def apply_g4_command(self, command):
+    def add_g4_command_after_init(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
         log.info(f"Simulation: apply G4 command '{command}'")

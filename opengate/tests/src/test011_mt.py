@@ -66,8 +66,7 @@ if __name__ == "__main__":
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
     stats_ref = utility.read_stat_file(
-        pathFile
-        / ".."
+        pathFile.parent
         / "data"
         / "gate"
         / "gate_test004_simulation_stats_actor"

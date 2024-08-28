@@ -6,6 +6,7 @@ from box import Box
 import opengate as gate
 import test045_gan_phsp_pet_gan_helpers as t45
 from opengate.tests import utility
+from pathlib import Path
 
 paths = utility.get_default_test_paths(__file__, "", "test045")
 
@@ -22,7 +23,10 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.option("--threads", "-t", default=1, help="Nb of threads")
 @click.option("--visu", "-v", default=False, is_flag=True, help="visu for debug")
 @click.option(
-    "--output_folder", "-o", default=".", help="output folder (AUTO for the tests)"
+    "--output_folder",
+    "-o",
+    default="AUTO",
+    help="output folder (AUTO for the tests)",
 )
 @click.option("--seed", default="auto", help="random engine seed")
 def go(
@@ -68,8 +72,11 @@ def run_test_045_speedrun(
     # output
     if output_folder == "AUTO":
         output_folder = paths.output
-    out = f"test045_speedup_p_{p.phantom_type}_s_{p.source_type}_pet_{p.use_pet}_gaga_{gaga}"
-    p.pet_output = f"{output_folder}/{out}.root"
+    out = (
+        output_folder
+        / f"test045_speedup_p_{p.phantom_type}_s_{p.source_type}_pet_{p.use_pet}_gaga_{gaga}"
+    )
+    p.pet_output = output_folder / f"{out}.root"
 
     # init the simulation
     sim = gate.Simulation()
@@ -97,7 +104,7 @@ def run_test_045_speedrun(
     print(stats)
 
     # save
-    stats.write(f"{output_folder}/{out}.txt")
+    stats.write(output_folder / f"{out}.txt")
 
     if p.use_pet:
         import uproot

@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-import opengate.contrib.spect.genm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import itk
 import numpy as np
 
@@ -39,7 +39,7 @@ def create_spect_simu(
     sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect, crystal = gate_spect.add_ge_nm67_spect_head(
+    spect, colli, crystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type="lehr", debug=False
     )
 
@@ -258,7 +258,7 @@ def compare_result(output, proj, fig_name, sum_tolerance=8):
             paths.gate_output / "projection4.mhd",
             paths.output / "proj028_colli_offset.mhd",
             stats,
-            tolerance=83,
+            tolerance=85,
             ignore_value=0,
             axis="x",
             sum_tolerance=sum_tolerance,

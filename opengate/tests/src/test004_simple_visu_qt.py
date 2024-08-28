@@ -53,7 +53,7 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # start simulation
-    # sim.apply_g4_command("/run/verbose 1")
+    # sim.add_g4_command_after_init("/run/verbose 1")
     sim.run()
 
     stats = sim.output.get_actor("Stats")

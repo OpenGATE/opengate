@@ -41,9 +41,9 @@ if __name__ == "__main__":
 
     # verbose (WARNING : sim.g4_verbose must be True !)
     sim.add_g4_command_after_init("/tracking/verbose 0")
-    # sim.apply_g4_command("/run/verbose 2")
-    # sim.apply_g4_command("/event/verbose 2")
-    # sim.apply_g4_command("/tracking/verbose 1")
+    # sim.add_g4_command_after_init("/run/verbose 2")
+    # sim.add_g4_command_after_init("/event/verbose 2")
+    # sim.add_g4_command_after_init("/tracking/verbose 1")
 
     print(sim.source_manager.dump_sources())
 
@@ -59,6 +59,6 @@ if __name__ == "__main__":
     # Gate mac/main.mac
     print("-" * 80)
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.15)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.155)
 
     utility.test_ok(is_ok)

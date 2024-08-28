@@ -12,6 +12,7 @@ from opengate.contrib.tps.ionbeamtherapy import TreatmentPlanSource, spots_info_
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -75,9 +76,7 @@ if __name__ == "__main__":
     peak_finder.color = [1, 0, 1, 1]
 
     # physics
-    sim.physics_manager.physics_list_name = (
-        "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
-    )
+    sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
@@ -87,7 +86,7 @@ if __name__ == "__main__":
     dose.size = [1, 1, 8000]
     dose.spacing = [80.6, 80.6, 0.05]
     dose.hit_type = "random"
-    dose.gray = True
+    dose.dose = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -111,24 +110,20 @@ if __name__ == "__main__":
 
     # --------START PENCIL BEAM SCANNING----------
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
-    nSim = 20000  # 328935  # particles to simulate per beam
-    spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "PlanCentralSpot_1440MeV.txt", "ion 6 12"
-    )
-    tps = TreatmentPlanSource("RT_plan", sim)
-    tps.set_beamline_model(IR2HBL)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("z", G, degrees=True)
-    tps.initialize_tpsource()
+
+    tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
+    tps.n = 20000
+    tps.beam_model = IR2HBL
+    tps.plan_path = ref_path / "PlanCentralSpot_1440MeV.txt"
+    tps.beam_nr = 1
+    tps.particle = "ion 6 12"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
 
     # create output dir, if it doesn't exist
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
@@ -139,8 +134,8 @@ if __name__ == "__main__":
     stat = output.get_actor("Stats")
     print(stat)
 
-    # ------ TESTS -------
-    dose_path = str(dose.output).replace(".mhd", "_dose.mhd")
+    ## ------ TESTS -------##
+    dose_path = output_path / output.get_actor("doseInXYZ").user_info.output
 
     # RANGE
 

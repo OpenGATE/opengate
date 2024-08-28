@@ -9,16 +9,23 @@ import scipy
 import pathlib
 import uproot
 import sys
-import matplotlib.pyplot as plt
+from pathlib import Path
+from matplotlib.ticker import StrMethodFormatter
+from matplotlib.patches import Circle
+import gatetools.phsp
 
-import gatetools.phsp as phsp
-
-# from .helpers_log import colorlog
-from ..utility import g4_units, ensure_filename_is_str
+from ..utility import (
+    g4_units,
+    ensure_filename_is_str,
+    insert_suffix_before_extension,
+    LazyModuleLoader,
+)
 from ..exception import fatal, color_error, color_ok
-from ..image import get_info_from_image, itk_image_view_from_array
+from ..image import get_info_from_image, itk_image_view_from_array, write_itk_image
 from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
+
+plt = LazyModuleLoader("matplotlib.pyplot")
 
 
 def test_ok(is_ok=False):
@@ -65,10 +72,17 @@ def read_stat_file(filename):
             stat.counts.track_types = {}
         if "Date" in line:
             stat.date = line[len("# Date                       =") :]
+        if "Threads" in line:
+            a = line[len(f"# Threads                    =") :]
+            try:
+                stat.nb_thread = int(a)
+            except:
+                stat.nb_thread = "?"
     return stat
 
 
 def print_test(b, s):
+    s += f" --> OK? {b}"
     if b:
         print(s)
     else:
@@ -107,7 +121,7 @@ def assert_stats(stat1, stat2, tolerance=0, is_ok=True):
 
     b = stat1.counts.run_count == stat2.counts.run_count
     is_ok = b and is_ok
-    print_test(b, f"Runs:         {stat1.counts.run_count} {stat2.counts.run_count} ")
+    print_test(b, f"Runs:         {stat1.counts.run_count} {stat2.counts.run_count}")
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
@@ -252,7 +266,7 @@ def assert_images(
     sum_tolerance=5,
     scaleImageValuesFactor=None,
 ):
-    # read image and info (size, spacing etc)
+    # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
     img1 = itk.imread(ref_filename1)
@@ -301,7 +315,7 @@ def assert_images(
     is_ok = is_ok and sad < tolerance
     print_test(
         is_ok,
-        f"Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n"
+        f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
         f"SAD (per event/total): {sad:.2f} % "
         f" (tolerance is {tolerance :.2f} %)",
     )
@@ -335,7 +349,7 @@ def plot_hist(ax, data, label, bins=100):
 
 def plot_profile(ax, y, y_spacing=1, label=""):
     x = np.arange(len(y)) * y_spacing
-    ax.plot(x, y, label=label)
+    ax.plot(x, y, label=label, drawstyle="steps")
     ax.legend()
 
 
@@ -377,50 +391,52 @@ def assert_filtered_imagesprofile1D(
     d1 = data1[L_filter]
     d2 = data2[L_filter]
 
-    s1 = np.sum(d1)
-    s2 = np.sum(d2)
-    print(
-        f"Evaluate only data from entry up to peak position of reference filter image"
-    )
-    print(f"Going to evaluate {d1.size} elements out of {data1.size}")
-    t = np.fabs((s1 - s2) / s1) * 100
-    b = t < sum_tolerance
-    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
-
-    # do not consider pixels with a value of zero (data2 is the reference)
-    # d1 = data1[data2 != ignore_value]
-    # d2 = data2[data2 != ignore_value]
-
     # normalise by event
     if stats is not None:
         d1 = d1 / stats.counts.event_count
         d2 = d2 / stats.counts.event_count
 
-    # normalize by sum of d1
-    s = np.sum(d2)
-    d1 = d1 / s
-    d2 = d2 / s
+    mean_deviation = np.mean(d2 / d1 - 1) * 100
+    max_deviation = np.amax(np.abs(d1 / d2 - 1)) * 100
+    is_ok = is_ok and mean_deviation < tolerance and max_deviation < 2 * tolerance
 
-    # sum of absolute difference (in %)
-    sad = np.fabs(d1 - d2).sum() * 100
-    is_ok = is_ok and sad < tolerance
     print_test(
         is_ok,
-        f"Image diff computed on {len(data2 != 0)}/{len(data2.ravel())} \n"
-        f"SAD (per event/total): {sad:.2f} % "
-        f" (tolerance is {tolerance :.2f} %)",
+        f"Evaluate only data from entry up to peak position of reference filter image\n"
+        f"Evaluated {d1.size} elements out of {data1.size} \n"
+        f"Mean deviation: {mean_deviation:.2f} % | (tolerance is {tolerance :.2f} %) \n"
+        f"Max unsigned deviation: {max_deviation:.2f} % | (tolerance is {2 * tolerance :.2f} % \n\n"
+        f" ",
     )
-    filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(data1) * 0.7
+
+    filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(d2) * 0.7
     # plot
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-
-    plot_profile(ax, filter_data_norm_au, info1.spacing[0], "filter")
-    plot_profile(ax, data1, info1.spacing[0], "reference")
-    plot_profile(ax, data2, info2.spacing[0], "test")
-    ax.plot(max_ind * info1.spacing[0], filter_data_norm_au[max_ind], "o", label="p")
-
+    fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
+    xV = np.arange(len(data1)) * info1.spacing[0]
+    x_max = np.ceil(xV[max_ind] * 1.05 + 2)
+    plot_profile(ax[0], filter_data_norm_au, info1.spacing[0], "filter")
+    plot_profile(ax[0], data1, info1.spacing[0], "reference")
+    plot_profile(ax[0], data2, info2.spacing[0], "test")
+    ax[0].plot(xV[max_ind], filter_data_norm_au[max_ind], "o", label="p")
+    ax[1].plot(xV[:max_ind], (d2 / d1 - 1) * 100, "o", label="test/ref")
+    ax[0].set_xlabel("x [mm]")
+    ax[1].set_xlabel("x [mm]")
+    ax[0].set_ylabel("LET")
+    ax[0].set_ylim(
+        [np.amin([np.amin(d2), 0]), np.ceil(np.amax([np.amax(d1), np.amax(d2)]) * 1.1)]
+    )
+    ax[0].set_xlim([np.amin([np.amin(xV), 0]), x_max])
+    ax[1].set_ylabel("Local deviation")
+    ax[1].axhline(0, color="grey")
+    ax[1].axhline(mean_deviation, linestyle="-", color="g", label="mean deviation")
+    ax[1].axhline(tolerance, linestyle="--", color="g", label="tolerance mean")
+    ax[1].axhline(-tolerance, linestyle="--", color="g")
+    ax[1].axhline(2 * tolerance, color="r", label="tolerance max")
+    ax[1].axhline(-2 * tolerance, color="r")
+    ax[1].set_xlim(ax[0].get_xlim())
+    ax[1].legend()
     if plt_ylim:
-        ax.set_ylim(plt_ylim)
+        ax[0].set_ylim(plt_ylim)
     # plt.show()
 
     if fig_name is None:
@@ -435,10 +451,6 @@ def assert_filtered_imagesprofile1D(
 
 def exponential_func(x, a, b):
     return a * np.exp(-b * x)
-
-
-def Gauss(x, A, x0, sigma):
-    return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
 def fit_exponential_decay(data, start, end):
@@ -634,14 +646,14 @@ def compare_trees(
 ):
     if fig:
         nb_fig = len(keys1)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(keys1)):
         if fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -660,7 +672,7 @@ def compare_trees(
         )
         is_ok = ia and is_ok
     if fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 
@@ -668,24 +680,22 @@ def get_default_test_paths(f, gate_folder=None, output_folder=None):
     p = Box()
     p.current = pathlib.Path(f).parent.resolve()
     # data
-    p.data = p.current / ".." / "data"
+    p.data = p.current.parent / "data"
     # gate
     if gate_folder:
-        p.gate = p.current / ".." / "data" / "gate" / gate_folder
+        p.gate = p.current.parent / "data" / "gate" / gate_folder
         p.gate_output = p.gate / "output"
         p.gate_data = p.gate / "data"
     # output
-    p.output = p.current / ".." / "output"
+    p.output = p.current.parent / "output"
     if output_folder is not None:
         p.output = p.output / output_folder
-        if not pathlib.Path.is_dir(p.output):
-            pathlib.Path.mkdir(p.output)
+        p.output.mkdir(parents=True, exist_ok=True)
     # output ref
-    p.output_ref = p.current / ".." / "data" / "output_ref"
+    p.output_ref = p.current.parent / "data" / "output_ref"
     if output_folder is not None:
         p.output_ref = p.output_ref / output_folder
-        if not pathlib.Path.is_dir(p.output_ref):
-            pathlib.Path.mkdir(p.output_ref)
+        p.output_ref.mkdir(parents=True, exist_ok=True)
     return p
 
 
@@ -825,6 +835,11 @@ def compare_root3(
     if scalings2 is None:
         scalings2 = [1] * len(keys2)
 
+    if keys1 is None:
+        keys1 = hits1.keys()
+    if keys2 is None:
+        keys2 = hits2.keys()
+
     # keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (
         compare_trees(
@@ -874,31 +889,21 @@ def dict_compare(d1, d2):
 
 
 # Edit by Andreas and Martina
-def write_gauss_param_to_file(
-    outputdir, planePositionsV, saveFig=False, fNamePrefix="plane", fNameSuffix="a.mhd"
-):
-    # create output dir, if it doesn't exist
-    if not os.path.isdir(outputdir):
-        os.mkdir(outputdir)
-
-    print("fNameSuffix", fNameSuffix)
-    print("write mu and sigma file to dir: ")
-    print(outputdir)
-
+def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False):
     # Extract gauss param along the two dim of each plane
     sigma_values = []
     mu_values = []
-    for i in planePositionsV:
-        filename = fNamePrefix + str(i) + fNameSuffix
-        filepath = outputdir / filename
+    for fp, i in zip(output_file_pathV, planePositionsV):
+        filepath = Path(fp)
+        outputdir = filepath.parent
 
         # Get data from file
-        data, spacing, shape = read_mhd(filepath)
+        data, spacing, shape = read_mhd(fp)
 
         # Figure output is saved only if fig names are provided
         fig_name = None
         if saveFig:
-            fig_name = str(outputdir) + "/Plane_" + str(i) + fNameSuffix + "_profile"
+            fig_name = str(filepath) + "_profile"
 
         # Get relevant gauss param
         sigma_x, mu_x, sigma_y, mu_y = get_gauss_param_xy(
@@ -980,7 +985,7 @@ def create_position_vector(length, spacing, centered=True):
     return positionVec
 
 
-def Gauss(x, A, x0, sigma):
+def gauss_func(x, A, x0, sigma):
     return A * np.exp(-((x - x0) ** 2) / (2 * sigma**2))
 
 
@@ -988,10 +993,11 @@ def gaussian_fit(positionVec, dose):
     # Fit data with Gaussian func
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
+
     parameters, covariance = scipy.optimize.curve_fit(
-        Gauss, positionVec, dose, p0=[max(dose), mean, sigma]
+        gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
     )
-    fit = Gauss(positionVec, parameters[0], parameters[1], parameters[2])
+    fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
     return parameters, fit
 
@@ -1235,33 +1241,37 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
         or (abs(mean_diff) > abs_tol)
     ):
         print(
-            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is 0.3mm \033[0m"
+            f"\033[91m Position error above threshold. DiffX={diffmY:.2f}, diffY={diffmZ:.2f}, threshold is {abs_tol} mm \033[0m"
         )
         ok = False
 
     # check sizes
-    print("Check size of the spot")
-    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
-    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
 
     diffsY = (param_y_out[2] - param_y_ref[2]) / param_y_ref[2]
     diffsZ = (param_z_out[2] - param_z_ref[2]) / param_z_ref[2]
 
+    print("Check size of the spot")
+    print(f"   opengate: ({param_y_out[2]:.2f},{param_z_out[2]:.2f})")
+    print(f"   gate:     ({param_y_ref[2]:.2f},{param_z_ref[2]:.2f})")
+    print(f"Relative differences: Y: {diffsY}, Z: {diffsZ}")
+
     if (diffsY > thresh) or (diffsZ > thresh):
-        print("\033[91m Size error above threshold \033[0m")
+        print(f"\033[91m Size error above threshold ({thresh}) \033[0m")
         ok = False
 
     return ok
 
 
-def scale_dose(path, scaling, outpath):
+def scale_dose(path, scaling, outpath=""):
+    if not outpath:
+        outpath = insert_suffix_before_extension(path, "Scaled")
     img_mhd_in = itk.imread(path)
     data = itk.GetArrayViewFromImage(img_mhd_in)
     dose = data * scaling
     spacing = img_mhd_in.GetSpacing()
     img = itk_image_view_from_array(dose)
     img.SetSpacing(spacing)
-    itk.imwrite(img, outpath)
+    write_itk_image(img, outpath)
     return outpath
 
 
@@ -1391,9 +1401,6 @@ def compare_dose_at_points(
     s2 = 0
     x1, doseV1 = get_1D_profile(dose1, shape1, spacing1, axis=axis1)
     x2, doseV2 = get_1D_profile(dose2, shape2, spacing2, axis=axis2)
-    # plt.plot(x1, doseV1)
-    # plt.plot(x2, doseV2)
-    # plt.show()
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))
@@ -1405,7 +1412,7 @@ def compare_dose_at_points(
         s1 += d1_p
         s2 += d2_p
 
-    print(abs(s1 - s2) / s2)
+    print(f"Relative dose difference is: {abs(s1 - s2) / s2}, tolerance: {rel_tol}.")
 
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:
@@ -1427,6 +1434,80 @@ def assert_img_sum(img1, img2, sum_tolerance=5):
     b = t < sum_tolerance
     print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
     return b
+
+
+def assert_images_ratio(
+    expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, fn_to_apply=None
+):
+    img1 = itk.imread(str(mhd_1))
+    img2 = itk.imread(str(mhd_2))
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    if fn_to_apply is None:
+        fn_to_apply = lambda x: np.sum(x)
+    sum2 = fn_to_apply(data2)
+    sum1 = fn_to_apply(data1)
+    # if mode.lower() in [ "sum", "cumulative"]:
+    # sum1 = np.sum(data1)
+    # sum2 = np.sum(data2)
+    ratio = sum2 / sum1
+
+    print("\nSum energy dep for phantom 1: ", sum1)
+    print("MSum energy dep for phantom 2: ", sum2)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+
+    is_ok = False
+    if abs(ratio - expected_ratio) < abs_tolerance:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+
+    return is_ok
+
+
+def assert_images_ratio_per_voxel(
+    expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, mhd_is_path=True
+):
+    if mhd_is_path:
+        img1 = itk.imread(str(mhd_1))
+        img2 = itk.imread(str(mhd_2))
+    else:
+        img1 = mhd_1
+        img2 = mhd_2
+    data1 = itk.GetArrayViewFromImage(img1).ravel()
+    data2 = itk.GetArrayViewFromImage(img2).ravel()
+
+    ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
+    within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
+    N_within_tolerance = np.sum(within_tolerance_M)
+    fraction_within_tolerance = N_within_tolerance / np.array(data1).size
+    fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
+
+    mean = np.mean(ratio)
+    std = np.std(ratio)
+    print("Ratio is: ", ratio)
+    print("Expected ratio is: ", expected_ratio)
+    print(f"{fraction_within_tolerance =}")
+    print(f"Mean {mean} \nStd {std}")
+
+    data1_mean = np.mean(data1[:])
+    data2_mean = np.mean(data2[:])
+    print(f"{data1_mean =}")
+    print(f"{data2_mean =}")
+    is_ok = False
+    if fraction_within_tolerance > 0.999:
+        is_ok = True
+        print("Test passed.")
+    else:
+        print("\033[91m Ratio not as expected \033[0m")
+        print(f"{data1[0:4] = }")
+        print(f"{data2[0:4] = }")
+        print(f"{data1[-5:] = }")
+        print(f"{data2[-5:] = }")
+    return is_ok
 
 
 def check_diff(value1, value2, tolerance, txt):
@@ -1517,14 +1598,14 @@ def compare_trees4(p1, p2, param):
     ax = None
     if param.fig:
         nb_fig = len(p1.the_keys)
-        nrow, ncol = phsp.fig_get_nb_row_col(nb_fig)
+        nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
         f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
     for i in range(len(p2.the_keys)):
         if param.fig:
-            a = phsp.fig_get_sub_fig(ax, i)
+            a = gatetools.phsp.fig_get_sub_fig(ax, i)
             n += 1
         else:
             a = False
@@ -1546,16 +1627,258 @@ def compare_trees4(p1, p2, param):
         )
 
     if param.fig:
-        phsp.fig_rm_empty_plot(nb_fig, n, ax)
+        gatetools.phsp.fig_rm_empty_plot(nb_fig, n, ax)
     return is_ok
 
 
-def get_gpu_mode():
+def get_gpu_mode_for_tests():
     """
     return "auto" except if the test runs with macos and github actions
-    On macos and github actions, mps is detected but not usable and lead to errors. So choose "cpu" in such a case
+    On macos and github actions, mps is detected but not usable and lead to errors.
+    So we choose "cpu" in such a case
     """
     if "GITHUB_WORKSPACE" in os.environ and sys.platform == "darwin":
         print("Detection of Github actions and MacOS -> Use CPU")
         return "cpu"
     return "auto"
+
+
+def np_img_window_level(img, window_width, window_level):
+    """
+    Clip and rescale the grey level values of the image according to window width/level.
+    Output image is within the range [0, 1]
+
+    Parameters
+    ----------
+    img             an image as a numpy array
+    window_width
+    window_level
+
+    Returns         the clipped and normalized image (range [0, 1])
+    -------
+    """
+    # Apply window/level adjustment to the images
+    window_min = window_level - window_width / 2
+    window_max = window_level + window_width / 2
+    clipped_image = np.clip(img, window_min, window_max)
+
+    # Normalize the intensities to the range [0, 1]
+    normalized_image = (clipped_image - window_min) / (window_max - window_min)
+
+    return normalized_image
+
+
+def np_img_crop(img, crop_center, crop_width):
+    c = crop_center
+    w = crop_width
+    x1 = c[0] - w[0] // 2
+    x2 = c[0] + w[0] // 2
+    y1 = c[1] - w[1] // 2
+    y2 = c[1] + w[1] // 2
+    img = img[:, y1:y2, x1:x2]
+    return img, (x1, x2, y1, y2)
+
+
+def np_plot_slice(
+    ax,
+    img,
+    num_slice,
+    window_width,
+    window_level,
+    crop_center,
+    crop_width,
+    spacing=(1, 1),
+):
+    # crop and grey level
+    img = np_img_window_level(img, window_width, window_level)
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+
+    # slice
+    slice = img[num_slice, :, :]
+    im = ax.imshow(slice, cmap="gray")
+
+    # prepare ticks
+    nticks = 6
+    x_step = int(np.around((crop_coord[1] - crop_coord[0]) / nticks))
+    x_ticks = np.char.mod(
+        "%.0f",
+        np.around(
+            np.arange(crop_coord[0], crop_coord[1], x_step) * spacing[0], decimals=1
+        ),
+    )
+    y_step = int(np.around((crop_coord[3] - crop_coord[2]) / nticks))
+    y_ticks = np.char.mod(
+        "%.0f",
+        np.around(
+            np.arange(crop_coord[2], crop_coord[3], y_step) * spacing[1], decimals=1
+        ),
+    )
+
+    # ticks
+    ax.set_xticks(np.arange(0, crop_width[0], x_step), x_ticks)
+    ax.set_yticks(np.arange(0, crop_width[1], y_step), y_ticks)
+    ax.set_xlabel("X (mm)")
+    ax.set_ylabel("Y (mm)")
+    return im
+
+
+def np_plot_slice_h_line(ax, hline, crop_center, crop_width):
+    x = np.arange(0, crop_width[0])
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+    y = [c] * len(x)
+    ax.plot(x, y, color="r")
+
+
+def np_plot_slice_v_line(ax, vline, crop_center, crop_width):
+    x = np.arange(0, crop_width[1])
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+    y = [c] * len(x)
+    ax.plot(y, x, color="r")
+
+
+def add_colorbar(imshow, window_level, window_width):
+    cbar = plt.colorbar(
+        imshow, orientation="vertical", format=StrMethodFormatter("{x:.1f}")
+    )
+    # window_min = window_level - window_width / 2
+    window_max = window_level + window_width / 2
+    # Number of ticks you want on the color bar
+    num_ticks = 10
+    tick_values = np.linspace(0, window_max, num_ticks)
+    cbar.set_ticks(tick_values)
+
+
+def np_plot_integrated_profile(
+    ax, img, axis, num_slice, crop_center, crop_width, label, spacing
+):
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+    img = img[num_slice, :, :]
+    profile = np.mean(img, axis=axis)
+    values = np.arange(0, len(profile)) * spacing + crop_coord[axis * 2] * spacing
+    ax.plot(values, profile, label=label)
+
+
+def np_plot_profile_X(ax, img, hline, num_slice, crop_center, crop_width, label, width):
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+    img, _ = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, c : c + 1, :]
+    else:
+        img = img[num_slice, c - width : c + width, :]
+    y = np.mean(img, axis=0)
+    x = np.arange(0, len(y))
+    ax.plot(x, y, label=label)
+
+
+def np_plot_profile_Y(ax, img, vline, num_slice, crop_center, crop_width, label, width):
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+    img, _ = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, :, c : c + 1]
+    else:
+        img = img[num_slice, :, c - width : c + width]
+    x = np.mean(img, axis=1)
+    y = np.arange(0, len(x))
+    ax.plot(y, x, label=label)
+
+
+def np_get_circle_mean_value(img, center, radius):
+    y, x = np.ogrid[: img.shape[0], : img.shape[1]]
+    distance_squared = (x - center[0]) ** 2 + (y - center[1]) ** 2
+    mask = distance_squared <= radius**2
+    pixels_within_circle = img[mask]
+    mean_value = np.mean(pixels_within_circle)
+    return mean_value
+
+
+def add_circle(ax, img, crop_center, crop_width, center, radius):
+    _, crop = np_img_crop(img, crop_center, crop_width)
+    circle = Circle(
+        (center[0] - crop[0], center[1] - crop[2]),
+        radius,
+        linewidth=2,
+        edgecolor="r",
+        facecolor="none",
+    )
+    ax.add_patch(circle)
+
+
+def add_border(ax, border_color, border_width):
+    # Set the spines color and width
+    for spine in ax.spines.values():
+        spine.set_edgecolor(border_color)
+        spine.set_linewidth(border_width)
+
+
+def plot_compare_profile(ref_names, test_names, options):
+    # options
+    scaling = options.scaling
+    n_slice = options.n_slice
+    ww = options.window_width
+    wl = options.window_level
+    c = options.crop_center
+    w = options.crop_width
+    hline = options.hline
+    vline = options.vline
+    wi = options.width
+    lab_ref = options.lab_ref
+    lab_test = options.lab_test
+    title = options.title
+
+    # read as np array
+    img_ref = []
+    img_test = []
+    for ref_name, test_name in zip(ref_names, test_names):
+        iref = itk.imread(ref_name)
+        spacing = (iref.GetSpacing()[1], iref.GetSpacing()[2])
+        iref = itk.array_view_from_image(iref)
+        itest = itk.imread(test_name)
+        itest = itk.array_view_from_image(itest) * scaling
+        img_ref.append(iref)
+        img_test.append(itest)
+
+    # plot
+    n = len(img_ref)
+    nrow = 2
+    ncol = 2 * n
+    _, ax = plt.subplots(nrow, ncol, figsize=(ncol * 6, 10))
+    for i in range(n):
+        np_plot_slice(ax[0][i * n], img_ref[i], n_slice, ww, wl, c, w, spacing)
+        last = np_plot_slice(
+            ax[0][i * n + 1], img_test[i], n_slice, ww, wl, c, w, spacing
+        )
+        np_plot_slice_h_line(ax[0][i * n], hline, c, w)
+        np_plot_slice_h_line(ax[0][i * n + 1], hline, c, w)
+        np_plot_slice_v_line(ax[0][i * n], vline, c, w)
+        np_plot_slice_v_line(ax[0][i * n + 1], vline, c, w)
+
+    # Add colorbar to the figure
+    add_colorbar(last, wl, ww)
+
+    # profiles
+    lref = f"{lab_ref} (horizontal)"
+    ltest = f"{lab_test} (horizontal)"
+    for i in range(len(img_ref)):
+        np_plot_profile_X(
+            ax[1][i * n], img_ref[i], hline, n_slice, c, w, lref, width=wi
+        )
+        np_plot_profile_X(
+            ax[1][i * n], img_test[i], hline, n_slice, c, w, ltest, width=wi
+        )
+        ax[1][i * n].legend()
+
+    lref = f"{lab_ref} (vertical)"
+    ltest = f"{lab_test} (vertical)"
+    for i in range(len(img_ref)):
+        np_plot_profile_Y(
+            ax[1][i * n + 1], img_ref[i], vline, n_slice, c, w, lref, width=wi
+        )
+        np_plot_profile_Y(
+            ax[1][i * n + 1], img_test[i], vline, n_slice, c, w, ltest, width=wi
+        )
+        ax[1][i * n + 1].legend()
+
+    plt.suptitle(title, fontweight="bold", fontsize=12, color="red")
+    # Adjust spacing between subplots if necessary
+    plt.tight_layout()
+    return plt

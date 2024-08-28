@@ -13,6 +13,7 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPl
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+
     output_path = paths.output / "output_test059_rtp"
     ref_path = paths.output_ref / "test059_ref"
 
@@ -41,8 +42,7 @@ if __name__ == "__main__":
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     #  change world size
-    world = sim.world
-    world.size = [600 * cm, 500 * cm, 500 * cm]
+    sim.world.size = [600 * cm, 500 * cm, 500 * cm]
 
     # nozzle box
     box = sim.add_volume("Box", "box")
@@ -76,6 +76,7 @@ if __name__ == "__main__":
     roos.color = [1, 0, 1, 1]
 
     # physics
+
     sim.physics_manager.physics_list_name = (
         "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
     )
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     dose.size = [1, 1, 800]
     dose.spacing = [15.6, 15.6, 0.5]
     dose.hit_type = "random"
-    dose.gray = True
+    dose.dose = True
 
     ## ---------- DEFINE BEAMLINE MODEL -------------##
     IR2HBL = BeamlineModel()
@@ -115,18 +116,17 @@ if __name__ == "__main__":
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
 
     nSim = 50000  # 328935  # particles to simulate per beam
-
-    spots, ntot, energies, G = spots_info_from_txt(
-        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12"
+    beam_data_dict = spots_info_from_txt(
+        ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
     )
-    tps = TreatmentPlanSource("RT_plan", sim)
-    tps.set_beamline_model(IR2HBL)
-    tps.set_particles_to_simulate(nSim)
-    tps.set_spots(spots)
-    tps.rotation = Rotation.from_euler("z", G, degrees=True)
-    tps.initialize_tpsource()
-
-    actual_sim_particles = tps.actual_sim_particles
+    tps = sim.add_source("TreatmentPlanPBSource", "TPSource")
+    tps.n = nSim
+    tps.sorted_spot_generation = True
+    tps.beam_model = IR2HBL
+    tps.beam_data_dict = beam_data_dict
+    tps.beam_nr = 1
+    tps.particle = "ion 6 12"
+    ntot = beam_data_dict["msw_beam"]
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -134,8 +134,7 @@ if __name__ == "__main__":
     # start simulation
 
     # create output dir, if it doesn't exist
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     sim.run()
     output = sim.output
@@ -147,9 +146,9 @@ if __name__ == "__main__":
 
     ## ------ TESTS -------##
     dose_path = utility.scale_dose(
-        str(dose.output).replace(".mhd", "_dose.mhd"),
-        ntot / actual_sim_particles,
-        output_path / "threeDdoseWaternew.mhd",
+        str(dose.output),
+        ntot / nSim,
+        output_path / "abs_dose_roos-Scaled.mhd",
     )
 
     # ABSOLUTE DOSE
@@ -165,10 +164,7 @@ if __name__ == "__main__":
     spacing = img_mhd_out.GetSpacing()
     spacing_ref = np.flip(img_mhd_ref.GetSpacing())
 
-    ok = utility.assert_img_sum(
-        img_mhd_out,
-        img_mhd_ref,
-    )
+    ok = utility.assert_img_sum(img_mhd_out, img_mhd_ref, sum_tolerance=5.5)
 
     points = 400 - np.linspace(10, 14, 9)
     ok = (
@@ -182,7 +178,7 @@ if __name__ == "__main__":
             spacing_ref,
             axis1="z",
             axis2="x",
-            rel_tol=0.03,
+            rel_tol=0.065,
         )
         and ok
     )

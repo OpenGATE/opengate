@@ -20,7 +20,8 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
-    sim.visu = False
+    # sim.visu = True
+    sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123456789
     activity_bq = 1e6
@@ -80,6 +81,8 @@ if __name__ == "__main__":
     source.position.translation = gate.image.get_translation_between_images_center(
         str(ct.image), str(source.cond_image)
     )
+    source.position.translation = source.position.translation / 2.0
+    print(f"translation {source.position.translation}")
     source.particle = "alpha"
     source.activity = activity_bq * Bq / sim.number_of_threads
     source.compute_directions = True
@@ -97,7 +100,7 @@ if __name__ == "__main__":
     source.batch_size = 1e5
     source.verbose_generator = True
     source.gpu_mode = (
-        utility.get_gpu_mode()
+        utility.get_gpu_mode_for_tests()
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # cuts (not need precision here)
@@ -105,7 +108,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test047-edep.mhd"
+    dose.output = paths.output / "test047.mhd"
     dose.mother = "ct"
     dose.size = [70, 70, 240]
     dose.spacing = [3.5 * mm, 3.5 * mm, 3.5 * mm]
@@ -132,12 +135,13 @@ if __name__ == "__main__":
     stats_ref = utility.read_stat_file(ref_stat_file)
     is_ok = utility.assert_stats(stat, stats_ref, 0.005)
 
+    dose = sim.output.get_actor("dose")
     print()
     gate.exception.warning("Compare image to analog")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test047-edep.mhd",
-            dose.output,
+            paths.output / dose.user_info.output,
             stat,
             tolerance=19,
             ignore_value=0,
@@ -147,6 +151,6 @@ if __name__ == "__main__":
     )
 
     print("Test with vv: ")
-    print(f"vv {source.cond_image} --fusion {dose.output}")
+    print(f"vv {source.cond_image} --fusion {dose.user_info.output}")
 
     utility.test_ok(is_ok)

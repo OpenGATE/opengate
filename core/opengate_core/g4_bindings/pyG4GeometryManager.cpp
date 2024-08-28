@@ -22,5 +22,6 @@ void init_G4GeometryManager(py::module &m) {
       .def_static("GetInstance", &G4GeometryManager::GetInstance,
                   py::return_value_policy::reference)
 
-      .def("OpenGeometry", &G4GeometryManager::OpenGeometry);
+      .def("OpenGeometry", &G4GeometryManager::OpenGeometry)
+      .def("CloseGeometry", &G4GeometryManager::CloseGeometry);
 }

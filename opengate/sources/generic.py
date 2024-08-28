@@ -3,13 +3,11 @@ from scipy.spatial.transform import Rotation
 import pathlib
 import numpy as np
 
-
 import opengate_core
 from ..utility import g4_units
 from ..exception import fatal, warning
 from ..definitions import __world_name__
 from ..userelement import UserElement
-
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
@@ -108,12 +106,14 @@ def get_rad_gamma_energy_spectrum(rad):
     weights = {}
     energies = {}
     MeV = g4_units.MeV
+    # convert to lowcase
+    rad = rad.lower()
     # Tc99m
-    weights["Tc99m"] = [0.885]
-    energies["Tc99m"] = [0.140511 * MeV]
+    weights["tc99m"] = [0.885]
+    energies["tc99m"] = [0.140511 * MeV]
     # Lu177
-    weights["Lu177"] = [0.001726, 0.0620, 0.000470, 0.1038, 0.002012, 0.00216]
-    energies["Lu177"] = [
+    weights["lu177"] = [0.001726, 0.0620, 0.000470, 0.1038, 0.002012, 0.00216]
+    energies["lu177"] = [
         0.0716418 * MeV,
         0.1129498 * MeV,
         0.1367245 * MeV,
@@ -123,10 +123,10 @@ def get_rad_gamma_energy_spectrum(rad):
     ]
 
     # In111
-    weights["In111"] = [0.000015, 0.9061, 0.9412]
-    energies["In111"] = [0.15081 * MeV, 0.17128 * MeV, 0.24535 * MeV]
+    weights["in111"] = [0.000015, 0.9061, 0.9412]
+    energies["in111"] = [0.15081 * MeV, 0.17128 * MeV, 0.24535 * MeV]
     # I131
-    weights["I131"] = [
+    weights["i131"] = [
         0.02607,
         0.000051,
         0.000211,
@@ -147,7 +147,7 @@ def get_rad_gamma_energy_spectrum(rad):
         0.002183,
         0.01786,
     ]
-    energies["I131"] = [
+    energies["i131"] = [
         0.080185 * MeV,
         0.0859 * MeV,
         0.163930 * MeV,
@@ -174,6 +174,7 @@ def get_rad_gamma_energy_spectrum(rad):
 
 def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_gamma_energy_spectrum(rad)
+    source.particle = "gamma"
     source.energy.type = "spectrum_lines"
     source.energy.spectrum_weight = w
     source.energy.spectrum_energy = en
@@ -219,6 +220,9 @@ class SourceBase(UserElement):
         user_info.mother = __world_name__
         user_info.start_time = None
         user_info.end_time = None
+        user_info.n = 0
+        user_info.activity = 0
+        user_info.half_life = -1  # negative value is no half_life
 
     def __init__(self, user_info):
         # type_name MUST be defined in class that inherit from SourceBase
@@ -262,7 +266,10 @@ class SourceBase(UserElement):
     def create_g4_source(self):
         fatal('The function "create_g4_source" *must* be overridden')
 
-    def initialize(self, run_timing_intervals):
+    def initialize_source_before_g4_engine(self, source):
+        pass
+
+    def initialize_start_end_time(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
         # by default consider the source time start and end like the whole simulation
         # Start: start time of the first run
@@ -271,8 +278,14 @@ class SourceBase(UserElement):
             self.user_info.start_time = run_timing_intervals[0][0]
         if not self.user_info.end_time:
             self.user_info.end_time = run_timing_intervals[-1][1]
+
+    def initialize(self, run_timing_intervals):
+        self.initialize_start_end_time(run_timing_intervals)
         # this will initialize and set user_info to the cpp side
         self.g4_source.InitializeUserInfo(self.user_info.__dict__)
+
+    def add_to_source_manager(self, source_manager):
+        source_manager.AddSource(self.g4_source)
 
     def prepare_output(self):
         pass
@@ -302,22 +315,23 @@ class GenericSource(SourceBase):
     @staticmethod
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
+
         # initial user info
         user_info.particle = "gamma"
         user_info.ion = Box()
-        user_info.n = 0
-        user_info.activity = 0
         user_info.weight = -1
         user_info.weight_sigma = -1
-        user_info.half_life = -1  # negative value is no half_life
         user_info.user_particle_life_time = -1  # negative means : by default
         user_info.tac_times = None
         user_info.tac_activities = None
+        user_info.direction_relative_to_attached_volume = False
+
         # ion
         user_info.ion = Box()
         user_info.ion.Z = 0  # Z: Atomic Number
         user_info.ion.A = 0  # A: Atomic Mass (nn + np +nlambda)
         user_info.ion.E = 0  # E: Excitation energy (i.e. for metastable)
+
         # position
         user_info.position = Box()
         user_info.position.type = "point"
@@ -328,9 +342,9 @@ class GenericSource(SourceBase):
         user_info.position.translation = [0, 0, 0]
         user_info.position.rotation = Rotation.identity().as_matrix()
         user_info.position.confine = None
+
         # angle (direction)
         deg = g4_units.deg
-
         user_info.direction = Box()
         user_info.direction.type = "iso"
         user_info.direction.theta = [0, 180 * deg]
@@ -345,6 +359,12 @@ class GenericSource(SourceBase):
         user_info.direction.acceptance_angle.normal_flag = False
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
+        user_info.direction.accolinearity_flag = False  # only for back_to_back source
+        user_info.direction.histogram_theta_weight = []
+        user_info.direction.histogram_theta_angle = []
+        user_info.direction.histogram_phi_weight = []
+        user_info.direction.histogram_phi_angle = []
+
         # energy
         user_info.energy = Box()
         user_info.energy.type = "mono"
@@ -353,6 +373,8 @@ class GenericSource(SourceBase):
         user_info.energy.is_cdf = False
         user_info.energy.min_energy = None
         user_info.energy.max_energy = None
+        user_info.energy.histogram_weight = None
+        user_info.energy.histogram_energy = None
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -400,6 +422,11 @@ class GenericSource(SourceBase):
                 f"Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}"
             )
 
+        if self.user_info.particle == "back_to_back":
+            # force the energy to 511 keV
+            self.user_info.energy.type = "mono"
+            self.user_info.energy.mono = 511 * g4_units.keV
+
         # check energy type
         l = [
             "mono",
@@ -434,6 +461,23 @@ class GenericSource(SourceBase):
 
         self.update_tac_activity()
 
+        # histogram parameters: histogram_weight, histogram_energy"
+        ene = self.user_info.energy
+        if ene.type == "histogram":
+            if len(ene.histogram_weight) != len(ene.histogram_energy):
+                fatal(
+                    f"For the source {self.user_info.name} energy, "
+                    f'"histogram_energy" and "histogram_weight" must have the same length'
+                )
+
+        # check direction type
+        l = ["iso", "histogram", "momentum", "focused", "beam2d"]
+        if not self.user_info.direction.type in l:
+            fatal(
+                f"Cannot find the direction type {self.user_info.direction.type} for the source {self.user_info.name}.\n"
+                f"Available types are {l}"
+            )
+
         # logic for half life and user_particle_life_time
         ui = self.user_info
         if ui.half_life > 0:
@@ -459,6 +503,24 @@ class GenericSource(SourceBase):
             if self.user_info.position.type == "point":
                 warning(
                     f"In source {self.user_info.name}, "
+                    f"confine is used, while position.type is point ... really ?"
+                )
+
+    def check_ui_activity(self, ui):
+        if ui.n > 0 and ui.activity > 0:
+            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
+        if ui.n == 0 and ui.activity == 0:
+            fatal(f"Choose either n or activity : {self.user_info}")
+        if ui.activity > 0:
+            ui.n = 0
+        if ui.n > 0:
+            ui.activity = 0
+
+    def check_confine(self, ui):
+        if ui.position.confine:
+            if ui.position.type == "point":
+                warning(
+                    f"In source {ui.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
 
@@ -497,7 +559,6 @@ class TemplateSource(SourceBase):
     def set_default_user_info(user_info):
         SourceBase.set_default_user_info(user_info)
         # initial user info
-        user_info.n = 0
         user_info.float_value = None
         user_info.vector_value = None
 
