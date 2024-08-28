@@ -120,20 +120,18 @@ if __name__ == "__main__":
     rad_color['C11_analytic'] = rad_color['C11']
     """
 
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("stats")
     print(stats)
 
     # plot
     for i in range(len(rads)):
         rad = rads[i]
-        output = paths.output / f"test031_{rad}.root"
-        data = uproot.open(output)[f"phsp_{rad}"]
+        data = uproot.open(sim.get_output_path(f"test031_{rad}.root"))[f"phsp_{rad}"]
         data = (
             data.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV
@@ -158,8 +156,10 @@ if __name__ == "__main__":
     tol = 4.1
     for rad in rads:
         # input
-        output = paths.output_ref / f"test031_{rad}.root"
-        data_ref = uproot.open(output)[f"phsp_{rad}"]
+        # output = paths.output_ref / f"test031_{rad}.root"
+        data_ref = uproot.open(sim.get_output_path(
+            f"test031_{rad}.root"
+        ))[f"phsp_{rad}"]
         data_ref = (
             data_ref.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV
@@ -170,8 +170,8 @@ if __name__ == "__main__":
                  range=(data_ref.min(), data_ref.max()), histtype='stepfilled',
                  alpha=0.5, label=f'{rads[i]}', color='r')"""
         # output
-        output = paths.output / f"test031_{rad}.root"
-        data = uproot.open(output)[f"phsp_{rad}"]
+        # output = paths.output / f"test031_{rad}.root"
+        data = uproot.open(sim.get_output_path(f"test031_{rad}.root"))[f"phsp_{rad}"]
         data = (
             data.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV
