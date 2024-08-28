@@ -1,4 +1,3 @@
-import itk
 import numpy as np
 import os
 import random
@@ -21,7 +20,7 @@ from ..utility import (
     LazyModuleLoader,
 )
 from ..exception import fatal, color_error, color_ok
-from ..image import get_info_from_image, itk_image_view_from_array, write_itk_image
+from ..image import *
 from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
@@ -204,7 +203,7 @@ def plot_img_axis(ax, img, label, axis="z"):
 
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = itk_array_view_from_image(img)
     y = np.sum(data, 2)
     y = np.sum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
@@ -214,7 +213,7 @@ def plot_img_z(ax, img, label):
 
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = itk_array_view_from_image(img)
     y = np.sum(data, 2)
     y = np.sum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
@@ -224,7 +223,7 @@ def plot_img_y(ax, img, label):
 
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
-    data = itk.GetArrayViewFromImage(img)
+    data = itk_array_view_from_image(img)
     y = np.sum(data, 1)
     y = np.sum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
@@ -269,16 +268,16 @@ def assert_images(
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
-    img1 = itk.imread(ref_filename1)
-    img2 = itk.imread(filename2)
+    img1 = itk_imread(ref_filename1)
+    img2 = itk_imread(filename2)
     info1 = get_info_from_image(img1)
     info2 = get_info_from_image(img2)
 
     is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
-    data1 = itk.GetArrayViewFromImage(img1).ravel()
-    data2 = itk.GetArrayViewFromImage(img2).ravel()
+    data1 = itk_array_view_from_image(img1).ravel()
+    data2 = itk_array_view_from_image(img2).ravel()
 
     if scaleImageValuesFactor:
         data2 *= scaleImageValuesFactor
@@ -368,9 +367,9 @@ def assert_filtered_imagesprofile1D(
     ref_filter_filename1 = ensure_filename_is_str(ref_filter_filename1)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
-    filter_img1 = itk.imread(ref_filter_filename1)
-    img1 = itk.imread(ref_filename1)
-    img2 = itk.imread(filename2)
+    filter_img1 = itk_imread(ref_filter_filename1)
+    img1 = itk_imread(ref_filename1)
+    img2 = itk_imread(filename2)
     info1 = get_info_from_image(img1)
     info2 = get_info_from_image(img2)
 
@@ -378,9 +377,9 @@ def assert_filtered_imagesprofile1D(
 
     # check pixels contents, global stats
 
-    filter_data = np.squeeze(itk.GetArrayViewFromImage(filter_img1).ravel())
-    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
-    data2 = np.squeeze(itk.GetArrayViewFromImage(img2).ravel())
+    filter_data = np.squeeze(itk_array_view_from_image(filter_img1).ravel())
+    data1 = np.squeeze(itk_array_view_from_image(img1).ravel())
+    data2 = np.squeeze(itk_array_view_from_image(img2).ravel())
     flipflag = True
     if flipflag:
         filter_data = np.flip(filter_data)
@@ -1003,8 +1002,8 @@ def gaussian_fit(positionVec, dose):
 
 
 def read_mhd(filename):
-    img = itk.imread(str(filename))
-    data = itk.GetArrayViewFromImage(img)
+    img = itk_imread(str(filename))
+    data = itk_array_view_from_image(img)
     spacing = img.GetSpacing()
     shape = data.shape
     return data, spacing, shape
@@ -1023,8 +1022,8 @@ def plot2D(twodarray, label, show=False):
 
 
 def create_2D_Edep_colorMap(filepath, show=False, axis="z"):
-    img = itk.imread(str(filepath))
-    data = itk.GetArrayViewFromImage(img)
+    img = itk_imread(str(filepath))
+    data = itk_array_view_from_image(img)
 
     fig = plt.figure(figsize=(20, 20))
     ax = fig.add_subplot(111)
@@ -1189,10 +1188,10 @@ def compareGaussParamArrays(paramTestV, paramRefV, rel_tol=0, abs_tol=0, verb=Fa
 
 
 def test_weights(expected_ratio, mhd_1, mhd_2, thresh=0.1):
-    img1 = itk.imread(str(mhd_1))
-    img2 = itk.imread(str(mhd_2))
-    data1 = itk.GetArrayViewFromImage(img1).ravel()
-    data2 = itk.GetArrayViewFromImage(img2).ravel()
+    img1 = itk_imread(str(mhd_1))
+    img2 = itk_imread(str(mhd_2))
+    data1 = itk_array_view_from_image(img1).ravel()
+    data2 = itk_array_view_from_image(img2).ravel()
 
     sum1 = np.sum(data1)
     sum2 = np.sum(data2)
@@ -1265,8 +1264,8 @@ def test_tps_spot_size_positions(data, ref, spacing, thresh=0.1, abs_tol=0.3):
 def scale_dose(path, scaling, outpath=""):
     if not outpath:
         outpath = insert_suffix_before_extension(path, "Scaled")
-    img_mhd_in = itk.imread(path)
-    data = itk.GetArrayViewFromImage(img_mhd_in)
+    img_mhd_in = itk_imread(path)
+    data = itk_array_view_from_image(img_mhd_in)
     dose = data * scaling
     spacing = img_mhd_in.GetSpacing()
     img = itk_image_view_from_array(dose)
@@ -1276,8 +1275,8 @@ def scale_dose(path, scaling, outpath=""):
 
 
 def check_dose_grid_geometry(dose_mhd_path, dose_actor):
-    img = itk.imread(dose_mhd_path)
-    data = itk.GetArrayViewFromImage(img)
+    img = itk_imread(dose_mhd_path)
+    data = itk_array_view_from_image(img)
     shape = data.shape
     spacing = img.GetSpacing()
     shape_ref = tuple(np.flip(dose_actor.size))
@@ -1422,8 +1421,8 @@ def compare_dose_at_points(
 
 
 def assert_img_sum(img1, img2, sum_tolerance=5):
-    data1 = itk.GetArrayViewFromImage(img1).ravel()
-    data2 = itk.GetArrayViewFromImage(img2).ravel()
+    data1 = itk_array_view_from_image(img1).ravel()
+    data2 = itk_array_view_from_image(img2).ravel()
 
     s1 = np.sum(data1)
     s2 = np.sum(data2)
@@ -1439,10 +1438,10 @@ def assert_img_sum(img1, img2, sum_tolerance=5):
 def assert_images_ratio(
     expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, fn_to_apply=None
 ):
-    img1 = itk.imread(str(mhd_1))
-    img2 = itk.imread(str(mhd_2))
-    data1 = itk.GetArrayViewFromImage(img1).ravel()
-    data2 = itk.GetArrayViewFromImage(img2).ravel()
+    img1 = itk_imread(str(mhd_1))
+    img2 = itk_imread(str(mhd_2))
+    data1 = itk_array_view_from_image(img1).ravel()
+    data2 = itk_array_view_from_image(img2).ravel()
 
     if fn_to_apply is None:
         fn_to_apply = lambda x: np.sum(x)
@@ -1472,13 +1471,13 @@ def assert_images_ratio_per_voxel(
     expected_ratio, mhd_1, mhd_2, abs_tolerance=0.1, mhd_is_path=True
 ):
     if mhd_is_path:
-        img1 = itk.imread(str(mhd_1))
-        img2 = itk.imread(str(mhd_2))
+        img1 = itk_imread(str(mhd_1))
+        img2 = itk_imread(str(mhd_2))
     else:
         img1 = mhd_1
         img2 = mhd_2
-    data1 = itk.GetArrayViewFromImage(img1).ravel()
-    data2 = itk.GetArrayViewFromImage(img2).ravel()
+    data1 = itk_array_view_from_image(img1).ravel()
+    data2 = itk_array_view_from_image(img2).ravel()
 
     ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
     within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
@@ -1829,11 +1828,11 @@ def plot_compare_profile(ref_names, test_names, options):
     img_ref = []
     img_test = []
     for ref_name, test_name in zip(ref_names, test_names):
-        iref = itk.imread(ref_name)
+        iref = itk_imread(ref_name)
         spacing = (iref.GetSpacing()[1], iref.GetSpacing()[2])
-        iref = itk.array_view_from_image(iref)
-        itest = itk.imread(test_name)
-        itest = itk.array_view_from_image(itest) * scaling
+        iref = itk_array_view_from_image(iref)
+        itest = itk_imread(test_name)
+        itest = itk_array_view_from_image(itest) * scaling
         img_ref.append(iref)
         img_test.append(itest)
 

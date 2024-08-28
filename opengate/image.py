@@ -1,201 +1,60 @@
-import itk
-import SimpleITK as sitk
-import numpy as np
-from box import Box
 from scipy.spatial.transform import Rotation
-
 import opengate_core as g4
-from .exception import fatal
-from .geometry.utility import (
-    get_transform_world_to_local,
-    vec_g4_as_np,
-)
 from .definitions import __gate_list_objects__
-from .utility import ensure_filename_is_str
+from .geometry.utility import get_transform_world_to_local
 
-ITKLIBRARY = "SimpleITK"
+ITK_LIBRARY = "SimpleITK"
+# ITK_LIBRARY = "ITK"
 
-
-# ITK wrappers
-
-
-# SimpleITK
-def itk_get_image_size(image):
-    return np.array(image.GetSize()).astype(int)
-
-
-# ITK
-# def itk_get_image_size(image):
-#     return np.array(image.GetLargestPossibleRegion().GetSize()).astype(int)
-
-# def itk_set_image_size(image, size):
-#     image.SetSize(np.asarray(size))
-
-
-def itk_get_image_origin(image):
-    return np.array(image.GetOrigin())
-
-
-def itk_set_image_origin(image, origin):
-    image.SetOrigin([float(o) for o in origin])
-
-
-def itk_get_image_spacing(image):
-    return np.array(image.GetSpacing())
-
-
-def itk_set_image_spacing(image, spacing):
-    image.SetSpacing([float(s) for s in spacing])
-
-
-# SimpleITK
-def itk_get_image_direction(image):
-    np.array(image.GetDirection()).reshape((3, 3))
-
-
-# ITK
-# def itk_get_image_direction(image):
-#     return itk.GetArrayFromVnlMatrix(image.GetDirection().GetVnlMatrix().as_matrix())
-
-
-# SimpleITK
-def itk_set_image_direction(image, direction: np.ndarray):
-    image.SetDirection([float(d) for d in direction.ravel()])
-
-
-# ITK
-# def itk_set_image_direction(image, direction : np.ndarray):
-#     image.SetDirection(direction)
-
-
-# SimpleITK
-def itk_image_view_from_array(arr):
-    """
-    When the input numpy array is of shape [1,1,x], the conversion to itk image fails:
-    the output image size is with the wrong dimensions.
-    We thus 'patch' itk.image_view_from_array to correct the size.
-
-    Not fully sure if this is the way to go.
-    """
-    return sitk.GetImageFromArray(arr)
-
-
-# SimpleITK
-def itk_image_from_array(arr):
-    return sitk.GetImageFromArray(arr)
-
-
-# ITK
-# def itk_image_from_array(arr):
-#     image = itk.image_view_from_array(arr)
-#     if len(arr.shape) == 3 and arr.shape[1] == arr.shape[2] == 1:
-#         new_region = itk.ImageRegion[3]()
-#         new_region.SetSize([1, 1, arr.shape[0]])
-#         image.SetRegions(new_region)
-#         image.Update()
-#     return image
-
-
-def itk_array_view_from_image(image):
-    return np.asarray(image)
-
-
-# ITK
-# def itk_image_view_from_array(arr):
-#     """
-#     When the input numpy array is of shape [1,1,x], the conversion to itk image fails:
-#     the output image size is with the wrong dimensions.
-#     We thus 'patch' itk.image_view_from_array to correct the size.
-#
-#     Not fully sure if this is the way to go.
-#     """
-#     image = itk.image_view_from_array(arr)
-#     if len(arr.shape) == 3 and arr.shape[1] == arr.shape[2] == 1:
-#         new_region = itk.ImageRegion[3]()
-#         new_region.SetSize([1, 1, arr.shape[0]])
-#         image.SetRegions(new_region)
-#         image.Update()
-#     return image
+if ITK_LIBRARY == "SimpleITK":
+    from .image_sitk import *
+else:
+    from .image_itk import *
 
 
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
-    # cpp_img.set_size(py_img.GetLargestPossibleRegion().GetSize())
+    # update metadata to cpp side
     cpp_img.set_size(itk_get_image_size(py_img))
     cpp_img.set_spacing(itk_get_image_spacing(py_img))
     cpp_img.set_origin(itk_get_image_origin(py_img))
-    # this is needed !
-    cpp_img.set_region(
-        py_img.GetLargestPossibleRegion().GetIndex(),
-        py_img.GetLargestPossibleRegion().GetSize(),
-    )
-    # It is really a pain to convert GetDirection into
-    # something that can be read by SetDirection !
     cpp_img.set_direction(itk_get_image_direction(py_img))
+    # this is needed
+    cpp_img.set_region(
+        itk_get_image_index(py_img),
+        itk_get_image_size(py_img),
+    )
     if copy_data:
-        cpp_img.from_pyarray(np.asarray(py_img).reshape(itk_get_image_size(py_img)))
+        arr = itk_array_view_from_image(py_img)
+        cpp_img.from_pyarray(arr, "C")
 
 
-def create_3d_image(
-    size, spacing, origin=(0, 0, 0), pixel_type="float", allocate=True, fill_value=0
-):
-    if not len(size) == 3:
-        fatal(f"size should be a 3-vector, received {size}.")
-    if pixel_type in ("float", "Float"):
-        image_type = sitk.sitkFloat32
-    elif pixel_type in ("int", "Int"):
-        image_type = sitk.sitkInt32
-    else:
-        fatal("Unknown pixel_type. Known types are 'float', 'int'.")
-    img = sitk.Image([s for s in size], image_type, 1)
-    itk_set_image_spacing(img, spacing)
-    itk_set_image_origin(origin)
-    # (default origin and direction)
-    # FIXME
-    if allocate:
-        img.Allocate()
-        img.FillBuffer(fill_value)
-    return img
+def update_image_cpp_to_py(cpp_image):
+    arr = cpp_image.to_pyarray("C")
+    image = itk_image_view_from_array(arr)
+    itk_set_image_origin(image, cpp_image.origin())
+    itk_set_image_spacing(image, cpp_image.spacing())
+    return image
 
 
-# def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value=0):
-#     if not len(size) == 3:
-#         fatal(f"size should be a 3-vector, received {size}.")
-#     if ITKLIBRARY == 'SimpleITK':
-#         if pixel_type in ('float', 'Float'):
-#             image_type = sitk.sitkFloat32
-#         elif pixel_type in ('int', 'Int'):
-#             image_type = sitk.sitkInt32
-#         else:
-#             fatal("Unknown pixel_type. Known types are 'float', 'int'.")
-#         img = sitk.Image([s for s in size], image_type, 1)
-#     else:
-#         img = itk.Image[itk.ctype(pixel_type), len(size)].New()
-#         region = itk.ImageRegion[len(size)]()
-#         region.SetSize([s for s in size])
-#         region.SetIndex([0, 0, 0])
-#         img.SetRegions(region)
-#     itk_set_image_spacing(img, spacing)
-#     # (default origin and direction)
-#     # FIXME
-#     if allocate:
-#         img.Allocate()
-#         img.FillBuffer(fill_value)
-#     return img
-
-
-def create_image_like(like_image, allocate=True, pixel_type=None):
+def create_image_like(like_image, allocate=True, pixel_type=None, fill_value=0):
     # TODO fix pixel_type -> copy from image rather than argument
     info = get_info_from_image(like_image)
     img = create_3d_image(
-        info.size, info.spacing, pixel_type=pixel_type, allocate=allocate
+        info.size,
+        info.spacing,
+        pixel_type=pixel_type,
+        allocate=allocate,
+        fill_value=fill_value,
     )
     itk_set_image_origin(img, info.origin)
     itk_set_image_direction(img, info.dir)
     return img
 
 
-def create_image_like_info(info, allocate=True):
-    img = create_3d_image(info.size, info.spacing, allocate=allocate)
+def create_image_like_info(info, allocate=True, fill_value=0):
+    img = create_3d_image(
+        info.size, info.spacing, allocate=allocate, fill_value=fill_value
+    )
     img.SetOrigin(info.origin)
     img.SetDirection(info.dir)
     return img
@@ -208,53 +67,6 @@ def get_info_from_image(image):
     info.origin = itk_get_image_origin(image)
     info.dir = itk_get_image_direction(image)
     return info
-
-
-def read_image_info(path_to_image):
-    path_to_image = ensure_filename_is_str(path_to_image)
-    info = Box()
-    info.filename = path_to_image
-    reader = sitk.ImageFileReader()
-    reader.SetImageIO("MetaImageIO")
-    reader.SetFileName(path_to_image)
-    info.size = itk_get_image_size(reader)
-    info.origin = itk_get_image_origin(reader)
-    info.spacing = itk_get_image_spacing(reader)
-    info.dir = itk_get_image_direction(reader)
-    return info
-
-
-# def read_image_info(path_to_image):
-#     path_to_image = ensure_filename_is_str(path_to_image)
-#     info = Box()
-#     info.filename = path_to_image
-#     if ITKLIBRARY = 'SimpleITK':
-#         reader = sitk.ImageFileReader()
-#         reader.SetImageIO('MetaImageIO')
-#         reader.SetFileName(path_to_image)
-#         info.size = itk_get_image_size(reader)
-#         info.origin = itk_get_image_origin(reader)
-#         info.spacing = itk_get_image_spacing(reader)
-#         info.dir = itk_get_image_direction(reader)
-#     else:
-#         image_IO = itk.ImageIOFactory.CreateImageIO(
-#             path_to_image, itk.CommonEnums.IOFileMode_ReadMode
-#         )
-#         if not image_IO:
-#             fatal(f"Cannot read the image file (itk): {path_to_image}")
-#         image_IO.SetFileName(path_to_image)
-#         image_IO.ReadImageInformation()
-#         n = info.size = image_IO.GetNumberOfDimensions()
-#         info.size = np.ones(n).astype(int)
-#         info.spacing = np.ones(n)
-#         info.origin = np.ones(n)
-#         info.dir = np.ones((n, n))
-#         for i in range(n):
-#             info.size[i] = image_IO.GetDimensions(i)
-#             info.spacing[i] = image_IO.GetSpacing(i)
-#             info.origin[i] = image_IO.GetOrigin(i)
-#             info.dir[i] = image_IO.GetDirection(i)
-#     return info
 
 
 def get_translation_between_images_center(img_name1, img_name2):
@@ -293,14 +105,6 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
         + img_info2.spacing / 2
     )
     return origin
-
-
-def get_cpp_image(cpp_image):
-    arr = cpp_image.to_pyarray()
-    image = itk_image_view_from_array(arr)
-    itk_set_image_origin(image, cpp_image.origin())
-    itk_set_image_spacing(image, cpp_image.spacing())
-    return image
 
 
 def get_image_center(image):
@@ -396,7 +200,7 @@ def voxelize_volume(se, image):
     vox = g4.GateVolumeVoxelizer()
     update_image_py_to_cpp(image, vox.fImage, False)
     vox.Voxelize()
-    image = get_cpp_image(vox.fImage)
+    image = update_image_cpp_to_py(vox.fImage)
     labels = vox.fLabels
     return labels, image
 
@@ -415,7 +219,7 @@ def compute_image_3D_CDF(image):
     :param image: itk image
     """
     # consider image as np array
-    array = itk.array_view_from_image(image)
+    array = itk_array_view_from_image(image)
 
     # normalize
     array = array / np.sum(array)
@@ -462,8 +266,8 @@ def scale_itk_image(img, scale):
 def divide_itk_images(
     img1_numerator, img2_denominator, filterVal=0, replaceFilteredVal=0
 ):
-    imgarr1 = itk.array_view_from_image(img1_numerator)
-    imgarr2 = itk.array_view_from_image(img2_denominator)
+    imgarr1 = itk_array_view_from_image(img1_numerator)
+    imgarr2 = itk_array_view_from_image(img2_denominator)
     if imgarr1.shape != imgarr2.shape:
         fatal(
             f"Cannot divide images of different shape. Found {imgarr1.shape} vs. {imgarr2.shape}."
@@ -473,7 +277,7 @@ def divide_itk_images(
     imgarrOut[L_filterInv] = np.divide(imgarr1[L_filterInv], imgarr2[L_filterInv])
 
     imgarrOut[np.invert(L_filterInv)] = replaceFilteredVal
-    imgarrOut = itk.image_from_array(imgarrOut)
+    imgarrOut = itk_image_from_array(imgarrOut)
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
 
@@ -491,7 +295,7 @@ def split_spect_projections(input_filenames, nb_ene):
     nb_heads = len(input_filenames)
 
     # read the first image to get information
-    img = itk.imread(str(input_filenames[0]))
+    img = itk_imread(str(input_filenames[0]))
     info = get_info_from_image(img)
     imga = itk_array_view_from_image(img)
 
@@ -511,13 +315,13 @@ def split_spect_projections(input_filenames, nb_ene):
         image = create_3d_image(size, spacing)
         image.SetOrigin(img.GetOrigin())
         outputs_img.append(image)
-        outputs_arr.append(itk.array_view_from_image(image))
+        outputs_arr.append(itk_array_view_from_image(image))
 
     # loop on heads and create images
     s2 = 0
     for head in range(nb_heads):
-        img = itk.imread(str(input_filenames[head]))
-        imga = itk.array_view_from_image(img)
+        img = itk_imread(str(input_filenames[head]))
+        imga = itk_array_view_from_image(img)
         e = 0
         for s in range(imga.shape[0]):
             outputs_arr[e][s2] = imga[s]
@@ -538,19 +342,18 @@ def compare_itk_image_info(image1, image2):
 
 
 def compare_itk_image_content(image1, image2):
-    arr1 = itk.array_from_image(image1)
-    arr2 = itk.array_from_image(image2)
+    arr1 = itk_array_from_image(image1)
+    arr2 = itk_array_from_image(image2)
     return np.array_equal(arr1, arr2)
 
 
 def compare_itk_image(filename1, filename2):
-    im1 = itk.imread(filename1)
-    im2 = itk.imread(filename2)
+    im1 = itk_imread(filename1)
+    im2 = itk_imread(filename2)
     return compare_itk_image_info(im1, im2) and compare_itk_image_content(im1, im2)
 
 
 def write_itk_image(img, file_path):
     # TODO: check if filepath exists
     # TODO: add metadata to file header
-    file_path = str(file_path)
-    itk.imwrite(img, file_path)
+    itk_imwrite(img, str(file_path))
