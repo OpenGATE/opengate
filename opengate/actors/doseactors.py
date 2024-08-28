@@ -556,10 +556,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         if self.user_output.dose_uncertainty.active is True:
             self.user_output.edep_uncertainty.active = True
 
-        if (
-            self.user_output.edep_uncertainty.active is True
-            or self.user_output.dose_uncertainty.active is True
-        ):
+        if self.user_output.edep_uncertainty.active is True:
             self.user_output.square.active = True
 
         self.InitializeUserInput(self.user_info)  # C++ side
