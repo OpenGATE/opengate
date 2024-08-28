@@ -29,11 +29,6 @@ class FilterBase(GateObject):
     def initialize(self):
         self.InitializeUserInput(self.user_info)
 
-    def __getstate__(self):
-        state_dict = super().__getstate__()
-        state_dict["filter_engine"] = None
-        return state_dict
-
     def __setstate__(self, state):
         self.__dict__ = state
         self.__initcpp__()
