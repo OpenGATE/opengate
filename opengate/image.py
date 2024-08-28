@@ -150,9 +150,9 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
     return origin
 
 
-def get_py_image_from_cpp_image(cpp_image):
+def get_py_image_from_cpp_image(cpp_image, view=True):
     arr = cpp_image.to_pyarray()
-    image = itk_image_from_array(arr, view=False)
+    image = itk_image_from_array(arr, view=view)
     image.SetOrigin(cpp_image.origin())
     image.SetSpacing(cpp_image.spacing())
     return image
