@@ -1339,6 +1339,7 @@ def getRange(xV, dV, percentLevel=0.8):
 
 def get_range_from_image(volume, shape, spacing, axis="y"):
     x1, d1 = get_1D_profile(volume, shape, spacing, axis=axis)
+    print(x1.shape, d1.shape)
     r, _ = getRange(x1, d1)
 
     return r
@@ -1404,8 +1405,10 @@ def compare_dose_at_points(
     ok = True
     s1 = 0
     s2 = 0
+
     x1, doseV1 = get_1D_profile(dose1, shape1, spacing1, axis=axis1)
     x2, doseV2 = get_1D_profile(dose2, shape2, spacing2, axis=axis2)
+
     for p in pointsV:
         # get dose at the position p [mm]
         cp1 = min(x1, key=lambda x: abs(x - p))

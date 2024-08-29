@@ -2,15 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import os
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
-from opengate.contrib.tps.ionbeamtherapy import TreatmentPlanSource, spots_info_from_txt
+import numpy as np
 
 if __name__ == "__main__":
-    # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
 
     output_path = paths.output / "output_test059_rtp"
@@ -121,7 +119,7 @@ if __name__ == "__main__":
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    # s.track_types_flag = True
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
@@ -135,20 +133,21 @@ if __name__ == "__main__":
     stat = output.get_actor("Stats")
     print(stat)
 
-    ## ------ TESTS -------##
+    # ------ TESTS -------##
     dose_path = output_path / output.get_actor("doseInXYZ").get_output_path("dose")
 
     # RANGE
 
     # read output and ref
+    print("Compare ", dose_path)
     img_mhd_out = itk.imread(dose_path)
     data = itk.GetArrayViewFromImage(img_mhd_out)
-    shape = data.shape
-    spacing = img_mhd_out.GetSpacing()
+    spacing = np.array(img_mhd_out.GetSpacing())
+    print(data.shape, spacing)
 
     # Range 80
     range80_gate9_E120MeV = 367.06
-    range_opengate = utility.get_range_from_image(data, data.shape, spacing, axis="z")
+    range_opengate = utility.get_range_from_image(data, data.shape, spacing, axis="x")
 
     thresh = 2.0 * mm
     ok = True
