@@ -16,6 +16,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
+    sim.output_dir = paths.output
 
     # add a material database
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
@@ -97,11 +98,11 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test009_hu.mhd"
-    dose.mother = "patient"
+    dose.output_filename = "test009_hu.mhd"
+    dose.attached_to = "patient"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.img_coord_system = True
+    dose.output_coordinate_system='attached_to_image'
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.hit_type = "random"
 
@@ -120,19 +121,17 @@ if __name__ == "__main__":
 
     # print results at the end
     gate.exception.warning(f"Check stats")
-    stat = sim.output.get_actor("Stats")
-    print(stat)
-    dose = sim.output.get_actor("dose")
+    print(stats)
     print(dose)
 
     # tests
     gate.exception.warning(f"Check dose")
     stats_ref = utility.read_stat_file(paths.gate_output / "stat_hu.txt")
-    is_ok = utility.assert_stats(stat, stats_ref, 0.15)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.15)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output_hu-Edep.mhd",
-        paths.output / dose.user_info.output,
-        stat,
+        dose.get_output_path(output_name='edep'),
+        stats,
         tolerance=35,
     )
 
