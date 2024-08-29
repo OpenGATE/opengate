@@ -1,4 +1,3 @@
-import itk
 import numpy as np
 import json
 from box import Box

@@ -326,7 +326,9 @@ def compute_image_3D_CDF(image):
 def scale_itk_image(img, scale):
     imgarr = itk.array_view_from_image(img)
     imgarr = imgarr * scale
-    img2 = itk.image_from_array(imgarr)
+    # this is important to use the corrected function to deal with 1D images
+    # img2 = itk.image_from_array(imgarr)
+    img2 = itk_image_from_array(imgarr)
     img2.CopyInformation(img)
     return img2
 
@@ -436,5 +438,4 @@ def compare_itk_image(filename1, filename2):
 def write_itk_image(img, file_path):
     # TODO: check if filepath exists
     # TODO: add metadata to file header
-    file_path = str(file_path)
-    itk.imwrite(img, file_path)
+    itk.imwrite(img, str(file_path))

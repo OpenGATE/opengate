@@ -160,7 +160,7 @@ if __name__ == "__main__":
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
     shape = data.shape
-    spacing = np.flip(img_mhd_out.GetSpacing())
+    spacing = img_mhd_out.GetSpacing()
     spacing_ref = np.flip(img_mhd_ref.GetSpacing())
 
     ok = utility.assert_img_sum(img_mhd_out, img_mhd_ref, sum_tolerance=5.5)
@@ -176,7 +176,7 @@ if __name__ == "__main__":
             data_ref.shape,
             spacing,
             spacing_ref,
-            axis1="x",
+            axis1="z",
             axis2="x",
             rel_tol=0.065,
         )

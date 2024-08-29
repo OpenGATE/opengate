@@ -147,7 +147,7 @@ if __name__ == "__main__":
 
     # Range 80
     range80_gate9_E120MeV = 367.06
-    range_opengate = utility.get_range_from_image(data, data.shape, spacing, axis="x")
+    range_opengate = utility.get_range_from_image(data, data.shape, spacing, axis="z")
 
     thresh = 2.0 * mm
     ok = True
