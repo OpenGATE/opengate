@@ -70,10 +70,10 @@ hc.attributes = [
     "PDGCode",
     "ParentID",
     "EventID",
-    "TrackID"
+    "TrackID",
 ]
 
-# add a kill actor to the crystal 
+# add a kill actor to the crystal
 ka = sim.add_actor("KillActor", "kill_actor2")
 ka.mother = crystal.name
 ka.filters.append(fe)

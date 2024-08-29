@@ -465,7 +465,7 @@ class PhysicsManager(GateObject):
             False,
             {
                 "doc": "Flag to turn on OptiGAN. This replaces the optical photon generation and detection with a trained GAN model."
-            }
+            },
         ),
         "energy_range_min": (
             None,

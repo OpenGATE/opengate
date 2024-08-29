@@ -79,12 +79,12 @@ if __name__ == "__main__":
         "PDGCode",
     ]
 
-    # add a kill actor to the crystal 
+    # add a kill actor to the crystal
     ka = sim.add_actor("KillActor", "kill_actor2")
     ka.mother = crystal.name
     ka.filters.append(fe)
 
-    # assign more priority to phase 
+    # assign more priority to phase
     phase.priority = ka.priority + 10
 
     sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties

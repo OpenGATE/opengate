@@ -389,11 +389,11 @@ class PhysicsEngine(EngineBase):
                 #     continue
 
                 # material_properties = None
-                
+
                 # if not python_material_name.startswith("G4_"):
-                    # material_properties = load_optical_properties_from_xml(
-                    #     self.physics_manager.optical_properties_file, material_name
-                    # )
+                # material_properties = load_optical_properties_from_xml(
+                #     self.physics_manager.optical_properties_file, material_name
+                # )
                 if material_properties is not None:
                     self.g4_optical_material_tables[str(material_name)] = (
                         create_g4_optical_properties_table(material_properties)
@@ -408,34 +408,40 @@ class PhysicsEngine(EngineBase):
                     )
 
     @requires_fatal("physics_manager")
-    # this method will initialize optigan and get the outputs from it 
+    # this method will initialize optigan and get the outputs from it
     def initialize_optigan(self):
         # checking is use_optigan is set to "True" by the user
         if self.simulation_engine.simulation.physics_manager.use_optigan == True:
             print("Optigan is set to True")
-            print("Trying to access more info about the actors") # just for debugging
+            print("Trying to access more info about the actors")  # just for debugging
             # getting the actors defined in the test case
-            actor_list = self.simulation_engine.simulation.actor_manager.user_info_actors
+            actor_list = (
+                self.simulation_engine.simulation.actor_manager.user_info_actors
+            )
             # this needs some thought, I am not sure how many actors
-            # can be defined. For now I am just considering there is 
-            # one phase space actor that has information of all particle. 
+            # can be defined. For now I am just considering there is
+            # one phase space actor that has information of all particle.
             for key in actor_list.keys():
                 print(f"The key value is {key}")
-                # I have defined a kill actor, reasoning behind is we don't want 
-                # optical photon tracking because we are using optigan. 
-                # In my test case I used kill actor to kill optical photons. 
+                # I have defined a kill actor, reasoning behind is we don't want
+                # optical photon tracking because we are using optigan.
+                # In my test case I used kill actor to kill optical photons.
                 if actor_list[key].type_name != "KillActor":
-                    print(f"More info about the actor list - {actor_list[key]}") # debugging
-                    print(f"the output path is {actor_list[key].output}") # debugging
+                    print(
+                        f"More info about the actor list - {actor_list[key]}"
+                    )  # debugging
+                    print(f"the output path is {actor_list[key].output}")  # debugging
 
-                    root_output_path = actor_list[key].output # get the root output path
+                    root_output_path = actor_list[
+                        key
+                    ].output  # get the root output path
                     print(f"The value of root_ouput_path is {root_output_path}")
-                    optigan_helpers_obj = OptiganHelpers(root_output_path) # initialize with root output
+                    optigan_helpers_obj = OptiganHelpers(
+                        root_output_path
+                    )  # initialize with root output
                     optigan_helpers_obj.run_optigan()
 
-
-
-        # get the actor and see where it is storing the output. 
+        # get the actor and see where it is storing the output.
 
     @requires_fatal("physics_manager")
     def initialize_optical_surfaces(self):
