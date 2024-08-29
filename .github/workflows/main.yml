@@ -458,7 +458,8 @@ jobs:
           git clone https://github.com/OpenGATE/opengate_tests_results.git
           cd opengate_tests_results
           echo $pwd
-          cp ../results_*.json .
+          ls ..
+          cp ../dashboard_output_*.json .
           conda install -c conda-forge altair-all
           pip install pandas numpy
           python compile_opengate_tests_results.py
