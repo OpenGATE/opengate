@@ -120,7 +120,7 @@ protected:
     std::vector<double> edep_worker_flatimg;
     std::vector<double> edepSquared_worker_flatimg;
     std::vector<int> lastid_worker_flatimg;
-    int NbOfEvent_worker = 0;
+//    int NbOfEvent_worker = 0;
     // Image3DType::IndexType index3D;
     // int index_flat;
   };
