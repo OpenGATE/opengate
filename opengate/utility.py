@@ -39,7 +39,9 @@ class LazyModuleLoader:
         if self.module is None:
             # Check module existence and import it
             try:
+                print(f"LazyModuleLoader is importing module {self.module_name} ...")
                 self.module = importlib.import_module(self.module_name)
+                print("... done")
             except ModuleNotFoundError:
                 fatal(
                     f"The module '{self.module_name}' is not installed. "
