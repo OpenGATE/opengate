@@ -1,3 +1,8 @@
+# Version Information
+# Python:   3.9.18
+# Pandas:   2.2.2
+# NumPy:    1.24.1
+
 import opengate as gate
 import opengate.tests.utility as tu
 
