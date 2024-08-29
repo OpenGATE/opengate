@@ -323,7 +323,7 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
 
 void GateDoseActor::EndOfRunAction(const G4Run *run) {
 
-  if (GetSquareFlag()) {
+  if (fSquareFlag) {
     // We need to flush the energy deposit from the last event ID of this run
     // to cpp_square_image because it has only been accumulated in the
     // SteppingAction It would be flushed to cpp_square_image in the
