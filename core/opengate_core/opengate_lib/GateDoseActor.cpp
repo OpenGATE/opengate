@@ -201,10 +201,11 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 
     ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
 
-    auto &locald = fThreadLocalData.Get();
-    G4AutoLock mutex(&SetPixelMutex);
 
     if (fSquareFlag) {
+      auto &locald = fThreadLocalData.Get();
+      G4AutoLock mutex(&SetPixelMutex);
+
       int index_flat = sub2ind(index);
       auto event_id =
           G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
@@ -327,8 +328,9 @@ void GateDoseActor::EndOfRunAction(const G4Run *run) {
     // to cpp_square_image because it has only been accumulated in the
     // SteppingAction It would be flushed to cpp_square_image in the
     // SteppingAction of the next event ID, but we are at the end of the run.
-    G4AutoLock mutex(&SetWorkerEndRunMutex);
     threadLocalT &data = fThreadLocalData.Get();
+
+    G4AutoLock mutex(&SetWorkerEndRunMutex);
 
     itk::ImageRegionIterator<Image3DType> iterator3D(
         cpp_square_image, cpp_square_image->GetLargestPossibleRegion());
