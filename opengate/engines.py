@@ -2,15 +2,11 @@ import time
 import random
 import sys
 import os
-
-# from multiprocessing import Process, set_start_method, Manager
-# import queue
 import weakref
 from box import Box
 from anytree import PreOrderIter
 
 import opengate_core as g4
-
 from .exception import fatal, warning
 from .decorators import requires_fatal, requires_warning
 from .logger import log
@@ -575,11 +571,10 @@ class ActorEngine(EngineBase):
         return self.actors[name]
 
     def create_actors(self):
-        for (
-            ui
-        ) in (
-            self.simulation_engine_wr().simulation.actor_manager.user_info_actors.values()
-        ):
+        # consider the priority value of the actors
+        uia = self.simulation_engine_wr().simulation.actor_manager.user_info_actors
+        sorted_uia = sorted(uia.values(), key=lambda d: d.priority)
+        for ui in sorted_uia:
             actor = new_element(ui, self.simulation_engine_wr().simulation)
             log.debug(f"Actor: initialize [{ui.type_name}] {ui.name}")
             actor.initialize(self.simulation_engine_wr)

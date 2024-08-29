@@ -28,6 +28,7 @@ setup(
         "radioactivedecay",
         "jsonpickle",
         "pandas",
+        "requests",
     ]
     + install_requires_windows,
 )

@@ -19,7 +19,7 @@ GateAcceptanceAngleTesterManager::GateAcceptanceAngleTesterManager() {
 }
 
 void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
-                                                  bool is_iso) {
+                                                  bool is_valid_type) {
   fAcceptanceAngleVolumeNames = DictGetVecStr(puser_info, "volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
   if (!fEnabledFlag)
@@ -39,10 +39,11 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
     Fatal(oss.str());
   }
 
-  // Cannot use SkipEvent with non iso source
-  if (!is_iso && fPolicy == AASkipEvent) {
+  // Cannot use SkipEvent with not a valid type of source
+  if (!is_valid_type && fPolicy == AASkipEvent) {
     std::ostringstream oss;
-    oss << "Cannot use 'SkipEvent' mode without 'iso' direction type";
+    oss << "Cannot use 'SkipEvent' mode without 'iso' or 'histogram' direction "
+           "type";
     Fatal(oss.str());
   }
 }

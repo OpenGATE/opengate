@@ -95,7 +95,7 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source.position.type = "box"
     source.position.size = np.copy(plan_size)
     source.direction.type = "momentum"
-    source.force_rotation = True
+    source.direction_relative_to_attached_volume = True
     source.direction.momentum = [0, 0, -1]
     source.activity = nb_part * Bq / sim.number_of_threads
 
@@ -186,12 +186,14 @@ if __name__ == "__main__":
     nb_part = 750000
     z_linac = linac.size[2]
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
-    l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
+    MU = 0
+    while MU == 0:
+        l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
+        MU = rt_plan_parameters["weight"][l_cp[0]]
+    nb_part = nb_part / MU
     versa.set_linac_head_motion(
         sim, linac.name, jaws, mlc, rt_plan_parameters, sad=sad, cp_id=l_cp
     )
-    MU = rt_plan_parameters["weight"][l_cp[0]]
-    nb_part = nb_part / MU
 
     if sim.visu:
         add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, 10)

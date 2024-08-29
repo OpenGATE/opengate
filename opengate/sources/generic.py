@@ -106,6 +106,7 @@ def get_rad_gamma_energy_spectrum(rad):
     weights = {}
     energies = {}
     MeV = g4_units.MeV
+    # convert to lowcase
     rad = rad.lower()
     # Tc99m
     weights["tc99m"] = [0.885]
@@ -173,6 +174,7 @@ def get_rad_gamma_energy_spectrum(rad):
 
 def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_gamma_energy_spectrum(rad)
+    source.particle = "gamma"
     source.energy.type = "spectrum_lines"
     source.energy.spectrum_weight = w
     source.energy.spectrum_energy = en
@@ -322,7 +324,7 @@ class GenericSource(SourceBase):
         user_info.user_particle_life_time = -1  # negative means : by default
         user_info.tac_times = None
         user_info.tac_activities = None
-        user_info.force_rotation = False
+        user_info.direction_relative_to_attached_volume = False
 
         # ion
         user_info.ion = Box()

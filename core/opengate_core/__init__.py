@@ -81,7 +81,7 @@ from .g4DataSetup import *
 from .qt5Setup import *
 
 
-check_G4_data()
-set_G4_data_path()
+check_g4_data()
+set_g4_data_path()
 
 set_qt5_path()

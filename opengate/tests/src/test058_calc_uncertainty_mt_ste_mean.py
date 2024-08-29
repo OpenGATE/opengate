@@ -98,7 +98,7 @@ def assert_uncertainty(
 
 if __name__ == "__main__":
     current_path = pathlib.Path(__file__).parent.resolve()
-    output_path = current_path / ".." / "output"
+    output_path = current_path.parent / "output"
 
     # create the simulation
     sim = gate.Simulation()

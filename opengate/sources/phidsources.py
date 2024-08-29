@@ -1,8 +1,6 @@
-import fontTools.cffLib
-
 from ..logger import NONE
 from ..exception import fatal, warning
-from ..utility import g4_units, g4_best_unit
+from ..utility import g4_units, LazyModuleLoader
 from .generic import GenericSource
 import opengate_core as g4
 import opengate as gate
@@ -10,15 +8,17 @@ import opengate as gate
 import math
 import re
 from box import Box
-import radioactivedecay as rd
 import jsonpickle
 import numpy as np
-import pandas
 import pathlib
 import urllib
 import copy
 import os
 import inspect
+
+# the following packages seems to take a bit of time to load
+rd = LazyModuleLoader("radioactivedecay")
+pandas = LazyModuleLoader("pandas")
 
 
 class PhotonFromIonDecaySource(GenericSource):
@@ -484,7 +484,8 @@ def get_nuclide_progeny(nuclide, intensity=1.0, parent=None):
     return p
 
 
-def atomic_relaxation_load(nuclide: rd.Nuclide, load_type="local"):
+# def atomic_relaxation_load(nuclide: rd.Nuclide, load_type="local"):
+def atomic_relaxation_load(nuclide, load_type="local"):
     ene_ar, w_ar = None, None
     if load_type == "local":
         ene_ar, w_ar = atomic_relaxation_load_from_file(nuclide.nuclide)
@@ -765,7 +766,8 @@ def atomic_relaxation_get_ene_weights_from_df(df):
     return df.energy.to_numpy() * keV, df.intensity.to_numpy() / 100
 
 
-def atomic_relaxation_load_all_gammas(nuclide: rd.Nuclide):
+# def atomic_relaxation_load_all_gammas(nuclide: rd.Nuclide):
+def atomic_relaxation_load_all_gammas(nuclide):
     daughters = get_nuclide_progeny(nuclide)
     results = []
     for d in daughters:
@@ -791,7 +793,7 @@ def isomeric_transition_get_filename(nuclide_name):
     return filename
 
 
-def isomeric_transition_load(nuclide: rd.Nuclide, filename=None, half_life=None):
+def isomeric_transition_load(nuclide, filename=None, half_life=None):
     if filename is None:
         filename = isomeric_transition_get_filename(nuclide.nuclide)
     if half_life is None:
@@ -810,7 +812,7 @@ def isomeric_transition_load(nuclide: rd.Nuclide, filename=None, half_life=None)
         return np.array(ene), np.array(w)
 
 
-def isomeric_transition_load_OLD(nuclide: rd.Nuclide, filename=None):
+def isomeric_transition_load_OLD(nuclide, filename=None):
     if filename is None:
         filename = isomeric_transition_get_filename(nuclide.nuclide)
     try:
@@ -896,7 +898,7 @@ def isomeric_transition_load_from_iaea_website(a, rad_name):
         df2 = lc_read_csv(url)
         if not df2.empty:
             # Identify overlapping columns
-            overlapping_columns = df.columns.intersection(df2.columns)
+            overlapping_columns = df.columns.plane_intersection(df2.columns)
 
             # Convert columns in df2 to the same type as df1
             for col in overlapping_columns:
@@ -925,7 +927,7 @@ def isomeric_transition_load_from_file(filename):
     return data
 
 
-def isomeric_transition_extract_from_ion_decay(nuclide: rd.Nuclide, verbose=False):
+def isomeric_transition_extract_from_ion_decay(nuclide, verbose=False):
     # get all channels and gammas for this ion
     g = PhotonIonDecayIsomericTransitionExtractor(nuclide.Z, nuclide.A, verbose=verbose)
     g.extract()
@@ -938,7 +940,7 @@ def isomeric_transition_extract_from_ion_decay(nuclide: rd.Nuclide, verbose=Fals
     return energies, weights
 
 
-def isomeric_transition_load_all_gammas(nuclide: rd.Nuclide, half_life=None):
+def isomeric_transition_load_all_gammas(nuclide, half_life=None):
     daughters = get_nuclide_progeny(nuclide)
     results = []
     if half_life is None:
@@ -963,7 +965,7 @@ def isomeric_transition_load_all_gammas(nuclide: rd.Nuclide, half_life=None):
 
 def isomeric_transition_read_g4_data(z, a, ignore_zero_deex=True):
     # get folder
-    data_paths = g4.get_G4_data_paths()
+    data_paths = g4.get_g4_data_paths()
     folder = pathlib.Path(data_paths["G4LEVELGAMMADATA"])
     ion_filename = folder / f"z{z}.a{a}"
     with open(ion_filename) as file:

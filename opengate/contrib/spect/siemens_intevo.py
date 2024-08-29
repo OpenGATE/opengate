@@ -761,7 +761,6 @@ def add_digitizer_lu177(sim, crystal_name, name):
     p1 = 112.9498 * keV
     p2 = 208.3662 * keV
     channels = [
-        {"name": "spectrum", "min": 35 * keV, "max": 588 * keV},
         *energy_windows_peak_scatter("peak113", "scatter1", "scatter2", p1, 0.2, 0.1),
         *energy_windows_peak_scatter("peak208", "scatter3", "scatter4", p2, 0.2, 0.1),
     ]
@@ -820,7 +819,6 @@ def add_digitizer_tc99m(sim, crystal_name, name):
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
     channels = [
-        {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
         {"name": f"scatter", "min": 108.57749938965 * keV, "max": 129.5924987793 * keV},
         {"name": f"peak140", "min": 129.5924987793 * keV, "max": 150.60751342773 * keV},
     ]

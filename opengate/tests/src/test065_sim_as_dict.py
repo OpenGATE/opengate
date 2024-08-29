@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     # add a material database
     sim.volume_manager.add_material_database(
-        pathFile / ".." / "data" / "GateMaterials.db"
+        pathFile.parent / "data" / "GateMaterials.db"
     )
 
     m = gate.g4_units.m

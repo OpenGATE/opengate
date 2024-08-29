@@ -53,7 +53,7 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source.position.type = "box"
     source.position.size = np.copy(plan_size)
     source.direction.type = "momentum"
-    source.force_rotation = True
+    source.direction_relative_to_attached_volume = True
     source.direction.momentum = [0, 0, -1]
     source.n = nb_part
 
