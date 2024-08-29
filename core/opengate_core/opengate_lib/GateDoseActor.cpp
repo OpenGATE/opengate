@@ -170,7 +170,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     auto w = step->GetTrack()->GetWeight();
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
 
-    if (GetToWaterFlag()) {
+    if (fToWaterFlag) {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
       double dedx_cut = DBL_MAX;
       // dedx
