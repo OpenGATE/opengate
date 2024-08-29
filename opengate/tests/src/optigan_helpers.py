@@ -4,8 +4,13 @@ import os
 import shutil
 import pandas as pd
 import re
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 import torch
+import math
+import numpy as np
+
 import torch.nn as nn
 
 paths = tu.get_default_test_paths(__file__, "")
@@ -16,9 +21,7 @@ def extract_number(filename):
         return int(match.group())
     return 0 
 
-# still in works - can ignore this class for now
-# this will be useful to load the model weights into the architecture
-# and run the model to get outputs
+# Generator class architecture for 3x3x3 crystal
 class WGAN_Generator(nn.Module):
 
     def __init__(self, input_dim, output_dim, hidden_dim, labels_len):
@@ -52,17 +55,19 @@ class OptiganHelpers:
         # this is one model (model_3341.pt) for 3*3*3 crystal dimension
         # which we have trained and will be used as default model for now
         # in the future there might me multiple models (just like physics lists)
-        # users can use their own model depending on crystal architecture
+        # users can use their own model depending on crystal size
         self.optigan_model_file_path = os.path.join(self.optigan_model_folder, "model_3341.pt")
         self.optigan_input_folder = os.path.join(paths.data, "optigan_inputs")
         self.optigan_output_folder = os.path.join(paths.data, "optigan_outputs")
+        self.optigan_csv_output_folder = os.path.join(self.optigan_output_folder, "csv_files")
+        self.optigan_output_graphs_folder = os.path.join(self.optigan_output_folder, "graphs")
+
 
     # opens root file and return the phase info 
     def open_root_file(self):
-        with uproot.open(self.root_file_path) as file:
-            print("Available keys in the file:", file.keys())
-            tree = file["Phase"]
-        return tree
+        file = uproot.open(self.root_file_path)
+        tree = file["Phase"]
+        return file, tree
     
     # this will print the input info in the terminal
     def pretty_print_events(self):
@@ -86,8 +91,6 @@ class OptiganHelpers:
     
     # this method will save the extracted information into csv files
     def save_optigan_inputs(self):
-        print("We are inside save_optigan_inputs function")
-
         # check if the folder exists
         if os.path.exists(self.optigan_input_folder):
             # delete all files in the folder
@@ -119,38 +122,35 @@ class OptiganHelpers:
             print(f"Event ID: {event_id}, Gamma Position: {gamma_pos_x}, {gamma_pos_y}, {gamma_pos_z}, Number of Optical Photons: {num_optical_photons}")
             print()
 
-    # STILL IN WORKS, this method will load the model and geenrate output of optigan
+    # Loads the model with pre-trained weights and generates output of optigan
     def get_optigan_outputs(self):
-        print(f"We are inside get_optigan_outputs function")
 
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # Check if CUDA is available and set device accordingly
+        device = torch.device("cpu")
 
+        # Define your model dimensions
         noise_dimension = 10
         output_dimension = 6
         hidden_dimension = 128
         labels_length = 3
 
-
-        # check if the folder exists 
+        # Clean and recreate the output folder
         if os.path.exists(self.optigan_output_folder):
-            # delete all the files in the folder
             shutil.rmtree(self.optigan_output_folder)
-        
         os.makedirs(self.optigan_output_folder)
-
         print(f"The optigan output files will be saved at {self.optigan_output_folder}")
 
+        # Sort and list CSV files
         csv_files = sorted([file for file in os.listdir(self.optigan_input_folder) if file.endswith('.csv')], key = extract_number)
-
         print(f"The csv files in the folder are {csv_files}")
 
-        # load the saved model checkpoints
+        # Load the saved model checkpoint
         checkpoint = torch.load(self.optigan_model_file_path, map_location = device)
-        # print(f"The checkpoint information is {checkpoints}")
 
-        # load the model 
+        # Initialize the model 
         generator = WGAN_Generator(noise_dimension, output_dimension, hidden_dimension, labels_length)
 
+        # Print model and checkpoint state_dict sizes
         print("Model's state_dict:")
         for param_tensor in generator.state_dict():
             print(param_tensor, "\t", generator.state_dict()[param_tensor].size())
@@ -158,6 +158,107 @@ class OptiganHelpers:
         print("\nCheckpoint's state_dict:")
         for param_tensor in checkpoint['generator_state_dict']:
             print(param_tensor, "\t", checkpoint['generator_state_dict'][param_tensor].size())
+
+        # Load the state_dict into the model
+        generator.load_state_dict(checkpoint['generator_state_dict'])
+
+        # Move the model to the appropriate device
+        generator.to(device)
+
+        # Set the model to evaluation mode
+        generator.eval()
+
+        for file_index, file_name in enumerate(csv_files):
+
+            # Prepare input file path and read csv
+            csv_file_path = os.path.join(self.optigan_input_folder, file_name)
+            df = pd.read_csv(csv_file_path)
+
+            # Extract and ensure total number of photons is a valid integer
+            total_number_of_photons = df["num_optical_photons"].values[0]
+            print(f"Processing {file_name} with {total_number_of_photons} photons.")
+
+            # Move the initial conditional values to the device
+            classX_single = torch.tensor(df["gamma_pos_x"].values, dtype=torch.float32).to(device)
+            classY_single = torch.tensor(df["gamma_pos_y"].values, dtype=torch.float32).to(device)
+            classZ_single = torch.tensor(df["gamma_pos_z"].values, dtype=torch.float32).to(device)
+
+            # Expand the conditional input vectors to match the total number of rows
+            classX = classX_single.expand(total_number_of_photons)
+            classY = classY_single.expand(total_number_of_photons)
+            classZ = classZ_single.expand(total_number_of_photons)
+
+            # Create the random noise vector and combine conditions
+            noise = torch.randn(total_number_of_photons, noise_dimension).to(device)
+            conditions = torch.stack([classX, classY, classZ], dim=1)
+
+            # Concatenate noise and conditional input into one tensor
+            generator_input = torch.cat((noise, conditions), dim=1)
+
+            # Generate data using the model
+            with torch.no_grad():
+                generated_data = generator(generator_input)
+            
+            # Convert generated data to a DataFrame and save as a CSV file
+            generated_data_np = generated_data.cpu().numpy()
+            # generated_data_np = generated_data.to('cpu').detach().numpy()
+            column_names = ['X', 'Y', 'dX', 'dY', 'dZ', 'Ekine']
+            generated_df = pd.DataFrame(generated_data_np, columns=column_names)
+
+            # Save the output CSV file
+            optigan_output_csv_file_save_path = os.path.join(self.optigan_csv_output_folder, f"optigan_output_{file_index + 1}.csv")
+            os.makedirs(os.path.dirname(optigan_output_csv_file_save_path), exist_ok=True)
+            generated_df.to_csv(optigan_output_csv_file_save_path, index=False)
+            print(f"Saved generated data to {optigan_output_csv_file_save_path}.")
+
+        # Plot histograms using Seaborn for each column
+            for column in column_names:
+                # Define the sub-directory path where each event graph will be stored
+                optigan_output_graph_file_save_path = os.path.join(self.optigan_output_graphs_folder, f"event{file_index + 1}")
+
+                # Create the directory if it doesn't exist
+                os.makedirs(optigan_output_graph_file_save_path, exist_ok=True)
+
+                # Plot the graph using seaborn
+                plt.figure(figsize=(10, 6))
+                sns.histplot(data=generated_df, x=column, bins=30, kde=True, color="blue", edgecolor="black")
+                plt.xlabel(column)
+                plt.ylabel("Frequency")
+                plt.title(f"{column} Distribution for Event {file_index + 1}")
+                plt.tight_layout()
+
+                # Construct the file path and save the plot
+                graph_path = os.path.join(optigan_output_graph_file_save_path, f"{column}_event_{file_index + 1}.png")
+                plt.savefig(graph_path)
+                plt.close()
+
+            # Create a single figure containing all columns
+            # Create a grid layout (e.g., 2 rows, 3 columns)
+            num_columns = len(column_names)
+            num_cols_per_row = 3
+            num_rows = math.ceil(num_columns / num_cols_per_row)
+
+            fig, axs = plt.subplots(nrows=num_rows, ncols=num_cols_per_row, figsize=(18, 10))
+            fig.suptitle(f"All Graphs for Event {file_index + 1}")
+
+            for i, column in enumerate(column_names):
+                row = i // num_cols_per_row
+                col = i % num_cols_per_row
+                sns.histplot(data=generated_df, x=column, bins=30, kde=True, color="blue", edgecolor="black", ax=axs[row][col])
+                axs[row][col].set_xlabel(column)
+                axs[row][col].set_ylabel("Frequency")
+                axs[row][col].set_title(f"{column} Distribution")
+
+            # If there are empty subplots, hide them
+            for i in range(num_columns, num_rows * num_cols_per_row):
+                row = i // num_cols_per_row
+                col = i % num_cols_per_row
+                fig.delaxes(axs[row][col])
+
+            plt.tight_layout(rect=[0, 0, 1, 0.96])
+            all_graphs_path = os.path.join(optigan_output_graph_file_save_path, f"all_graphs_{file_index + 1}.png")
+            plt.savefig(all_graphs_path)
+            plt.close()
 
     # this method is called from engines.py and takes care of 
     # running all other methods. 
@@ -175,13 +276,15 @@ class OptiganHelpers:
     # and optical photon information from the file. 
     def process_root_output_into_events(self):
         print(f"This is inside OptiganHelpers class, the root file is {self.root_file_path}")
-        root_tree = self.open_root_file()
+        file, root_tree = self.open_root_file()
 
         # save the particle co-ordinates and other information
         position_x = root_tree["Position_X"].array(library="np")
         position_y = root_tree["Position_Y"].array(library="np")
         position_z = root_tree["Position_Z"].array(library="np")
         particle_types = root_tree["ParticleName"].array(library="np")
+
+        file.close()
 
         # variables
         events = {} # will store all the events 
