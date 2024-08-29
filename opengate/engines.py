@@ -411,6 +411,7 @@ class PhysicsEngine(EngineBase):
                         f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
 
+    @requires_fatal("physics_manager")
     # this method will initialize optigan and get the outputs from it 
     def initialize_optigan(self):
         # checking is use_optigan is set to "True" by the user
