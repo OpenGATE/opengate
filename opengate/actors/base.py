@@ -317,6 +317,14 @@ class ActorBase(GateObject):
             self.SetWriteToDisk(k, v.write_to_disk)
             self.SetOutputPath(k, v.get_output_path_as_string())
 
+        # initialize filters
+        try:
+            self.fFilters = self.filters
+        except AttributeError:
+            fatal(f"Implementation error: Unable to set the attribute 'fFilters' in actor '{self.name}' "
+                  f"(actor type: {self.type_name}). "
+                  f"Does the actor class somehow inherit from GateVActor (as it should)?")
+
     def _add_user_output(
         self, actor_output_class, name, can_be_deactivated=False, **kwargs
     ):

@@ -570,7 +570,6 @@ class ActorEngine(EngineBase):
             actor.initialize()
             # warning : the step actions will be registered by register_sensitive_detectors
             # called by ConstructSDandField
-            actor.fFilters = actor.filters
 
     def register_to_actors(self):
         for actor in self.actor_manager.actors.values():
