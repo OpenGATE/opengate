@@ -750,19 +750,22 @@ class MaterialDatabase:
     def FindOrBuildMaterial(self, material_name):
         self.init_NIST()
         self.init_user_mat()
-        # return if already exist
-        if material_name in self.g4_materials:
-            return self.g4_materials[material_name]
-        # we build and store the G4 material if not
-        if material_name in self.nist_material_names:
-            bm = self.g4_NistManager.FindOrBuildMaterial(material_name)
-            self.g4_materials[material_name] = bm
-            return bm
-        if material_name not in self.material_builders:
-            fatal(f'Cannot find nor build material named "{material_name}"')
-        bm = self.material_builders[material_name].build()
-        self.g4_materials[material_name] = bm
-        return bm
+        # try to build the material if it does not yet exist
+        if material_name not in self.g4_materials:
+            print(f"DEBUG: Need to build material {material_name}")
+            if material_name in self.nist_material_names:
+                print(f"DEBUG:     ... from NistManager")
+                self.g4_materials[material_name] = (
+                    self.g4_NistManager.FindOrBuildMaterial(material_name)
+                )
+            elif material_name in self.material_builders:
+                print(f"DEBUG:     ... from material_builder")
+                self.g4_materials[material_name] = (
+                    self.material_builders[material_name].build()
+                )
+            else:
+                fatal(f'Cannot find nor build material named "{material_name}"')
+        return self.g4_materials[material_name]
 
     def FindOrBuildElement(self, element_name):
         self.init_NIST()
