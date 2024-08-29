@@ -157,9 +157,9 @@ if __name__ == "__main__":
     for rad in rads:
         # input
         # output = paths.output_ref / f"test031_{rad}.root"
-        data_ref = uproot.open(sim.get_output_path(
-            f"test031_{rad}.root"
-        ))[f"phsp_{rad}"]
+        data_ref = uproot.open(sim.get_output_path(f"test031_{rad}.root"))[
+            f"phsp_{rad}"
+        ]
         data_ref = (
             data_ref.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV

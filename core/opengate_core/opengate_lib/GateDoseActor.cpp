@@ -201,7 +201,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 
     ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
 
-
     if (fSquareFlag) {
       auto &locald = fThreadLocalData.Get();
       G4AutoLock mutex(&SetPixelMutex);

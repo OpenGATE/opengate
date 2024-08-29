@@ -156,7 +156,7 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
     created_materials = []
     gcm3 = g4_units.g_cm3
 
-    elems = elements[1:len(elements) - 1]
+    elems = elements[1 : len(elements) - 1]
     elems_symbol = [elements_name_symbol[x] for x in elems]
 
     i = 0
@@ -760,9 +760,9 @@ class MaterialDatabase:
                 )
             elif material_name in self.material_builders:
                 print(f"DEBUG:     ... from material_builder")
-                self.g4_materials[material_name] = (
-                    self.material_builders[material_name].build()
-                )
+                self.g4_materials[material_name] = self.material_builders[
+                    material_name
+                ].build()
             else:
                 fatal(f'Cannot find nor build material named "{material_name}"')
         return self.g4_materials[material_name]

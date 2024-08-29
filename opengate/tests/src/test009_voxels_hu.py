@@ -102,7 +102,7 @@ if __name__ == "__main__":
     dose.attached_to = "patient"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.output_coordinate_system='attached_to_image'
+    dose.output_coordinate_system = "attached_to_image"
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.hit_type = "random"
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.15)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output_hu-Edep.mhd",
-        dose.get_output_path(output_name='edep'),
+        dose.get_output_path(output_name="edep"),
         stats,
         tolerance=35,
     )
