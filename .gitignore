@@ -159,3 +159,4 @@ opengate/tests/singles.root
 singles.root
 opengate/tests/src/geant4_out.txt
 failing_tests.txt
+opengate/tests/output_dashboard
