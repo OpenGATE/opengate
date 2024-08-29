@@ -237,7 +237,7 @@ def create_phs_without_source(
         "PreDirectionLocal",
         "PDGCode",
     ]
-    ta1.output = phs_name
+    ta1.output_filename = phs_name
     ta1.debug = True
 
     # ~ phys.physics_list_name = "FTFP_BERT"
@@ -406,7 +406,6 @@ def test_source_untilPrimary(
     print(source)
 
     sim.run()
-    output = sim.output
 
 
 def get_first_entry_of_key(
