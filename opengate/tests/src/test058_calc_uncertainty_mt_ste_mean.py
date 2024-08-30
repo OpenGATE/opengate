@@ -97,21 +97,22 @@ def assert_uncertainty(
 
 
 if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "", "test058")
     current_path = pathlib.Path(__file__).parent.resolve()
-    output_path = current_path.parent / "output"
+    output_path = paths.output
 
     # create the simulation
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.visu = False
-    # ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 250
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.visu = False
+    # sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.EVENT
+    sim.number_of_threads = 250
+    sim.random_seed = 123456
+    sim.output_dir = output_path
 
     # units
     m = gate.g4_units.m
@@ -176,23 +177,22 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     Phsp_act = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    Phsp_act.mother = phsp.name
+    Phsp_act.attached_to = phsp.name
     Phsp_act.attributes = [
         "KineticEnergy",
         "EventID",
         "ThreadID",
     ]
-    Phsp_act.output = output_path / "test058_MT.root"
+    Phsp_act.output_filename = "test058_MT.root"
     Phsp_act.debug = False
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = output_path / "test058_MT.mhd"
-    dose.mother = t_block.name
+    dose.output_filename = "test058_MT.mhd"
+    dose.attached_to = t_block.name
     dose.size = [1, 1, 1]
     dose.spacing = block_size
-    dose.img_coord_system = False
-    dose.uncertainty = False
+    dose.user_output.edep_uncertainty.active = False
     dose.ste_of_mean_unbiased = True
     dose.translation = [0 * mm, 0 * mm, -0.5 * m]
     dose.hit_type = "random"
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     is_ok = assert_uncertainty(
         array_E,
         err_array_E,
-        nb_part * ui.number_of_threads,
+        nb_part * sim.number_of_threads,
         mean_E,
         std_dev_E,
         Ephoton,

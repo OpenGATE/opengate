@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 654923
+    sim.output_dir = paths.output
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
@@ -42,7 +43,7 @@ if __name__ == "__main__":
 
     # image
     patient = sim.add_volume("Image", "patient")
-    patient.mother = fake.name
+    patient.attached_to = fake.name
     patient.image = paths.data / "patient-40mm.mhd"
     patient.material = "G4_AIR"  # material used by default
     patient.voxel_materials = [
@@ -60,7 +61,7 @@ if __name__ == "__main__":
 
     # detector in w2 (on top of world)
     det = sim.add_volume("Box", "detector")
-    det.mother = "world2"
+    det.attached_to = "world2"
     det.material = "G4_GLASS_LEAD"
     det.size = [400 * mm, 400 * mm, 2 * mm]
     det.translation = [0, 0, 200 * mm]
@@ -69,7 +70,7 @@ if __name__ == "__main__":
 
     # detector in w3 (on top of w2)
     det2 = sim.add_volume("Box", "detector2")
-    det2.mother = "world3"
+    det2.attached_to = "world3"
     det2.material = "G4_GLASS_LEAD"  # set 'None' if this volume should be transparent
     det2.size = [400 * mm, 400 * mm, 2 * mm]
     det2.translation = [0, 0, 200 * mm]
@@ -89,8 +90,8 @@ if __name__ == "__main__":
 
     # add phsp actor detector 1 (overlap!)
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp.output = paths.output / "test054.root"
-    phsp.mother = det.name
+    phsp.output_filename = "test054.root"
+    phsp.attached_to = det.name
     phsp.attributes = [
         "KineticEnergy",
         "PrePosition",
@@ -108,10 +109,7 @@ if __name__ == "__main__":
     sim.run(True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-    print(stat)
-    d = sim.output.get_actor("phsp")
-    print(d)
+    print(stats)
 
     keys = ["KineticEnergy", "PrePosition_X", "PrePosition_Y", "PrePosition_Z"]
     tols = [0.01, 2.6, 1.8, 1.7]

@@ -29,59 +29,39 @@ def assert_uncertainty(
     phsp_unc = phsp_sum_squared_E / nb_part - (phsp_sum_E / nb_part) ** 2
     phsp_unc = (1 / (nb_part - 1)) * phsp_unc
     phsp_unc = np.sqrt(phsp_unc) * nb_part
+
+    nb_part = int(nb_part)
+    print(f"Energy deposited in the voxel for {nb_part} particles : {val_E_img} MeV")
     print(
-        "Energy deposited in the voxel for "
-        + str(round(nb_part))
-        + " particles : "
-        + str(val_E_img)
-        + " MeV"
+        f"Energy recorded in the phase space for {nb_part} particles : {round(phsp_sum_E, 2)} MeV"
+    )
+    print(f"Theoretical deposited energy : {mean_E * nb_part} MeV")
+    print(
+        f"Standard error on the deposited energy in the voxel for {nb_part} particles : {val_err_E_img} MeV"
+    )
+    print(
+        f"Standard error on the phase space energy deposition {nb_part} particles : {round(phsp_unc, 3)} MeV"
     )
 
-    print(
-        "Energy recorded in the phase space for "
-        + str(round(nb_part))
-        + " particles : "
-        + str(round(phsp_sum_E, 2))
-        + " MeV"
-    )
-    print("Theoretical deposited energy : " + str(mean_E * nb_part) + " MeV")
-    print(
-        "Standard error on the deposited energy in the voxel for "
-        + str(round(nb_part))
-        + " particles : "
-        + str(val_err_E_img)
-        + " MeV"
-    )
+    tstd_e = std_E * np.sqrt(nb_part)
+    print(f"Theoretical standard error on deposited energy : {round(tstd_e, 3)} MeV")
+
+    print()
+    print(f"Tolerance on the theory comparison: {100 * tol_th}  %")
+    print(f"Tolerance on the phase space comparison: {100 * tol_phsp} %")
+
+    var_err_E_th = abs((val_err_E_img - tstd_e)) / tstd_e
+    var_err_E_phsp = abs((phsp_unc - val_err_E_img)) / val_err_E_img
 
     print(
-        "Standard error on the phase space energy deposition "
-        + str(round(nb_part))
-        + " particles : "
-        + str(round(phsp_unc, 3))
-        + " MeV"
+        f"Standard error variation with respect to theory:  {100 * round(var_err_E_th, 3)} %"
     )
     print(
-        "Theoretical standard error on deposited energy : "
-        + str(round(std_E * np.sqrt(nb_part), 3))
-        + " MeV"
-    )
-    print("Tolerance on the theory comparison: " + str(100 * tol_th) + " %")
-    print("Tolerance on the phase space comparison: " + str(100 * tol_phsp) + " %")
-
-    var_err_E_th = abs((val_err_E_img - (std_E * np.sqrt(nb_part)))) / (
-        std_E * np.sqrt(nb_part)
+        f"Standard error variation with respect to phase space recording: {100 * round(var_err_E_phsp, 3)} %"
     )
 
-    var_err_E_phsp = abs((phsp_unc - val_err_E_img)) / (val_err_E_img)
+    print(var_err_E_th, var_err_E_phsp)
 
-    print(
-        "Standard error variation with respect to theory [%] : "
-        + str(100 * round(var_err_E_th, 3))
-    )
-    print(
-        "Standard error variation with respect to phase space recording [%] : "
-        + str(100 * round(var_err_E_phsp, 3))
-    )
     if var_err_E_th > tol_th or var_err_E_phsp > tol_phsp:
         is_ok = False
 
@@ -89,8 +69,9 @@ def assert_uncertainty(
 
 
 if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "", "test058")
     current_path = pathlib.Path(__file__).parent.resolve()
-    output_path = current_path.parent / "output"
+    output_path = paths.output
 
     # create the simulation
     sim = gate.Simulation()
@@ -103,6 +84,7 @@ if __name__ == "__main__":
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 5
     sim.random_seed = 12365445
+    sim.output_dir = output_path
 
     # units
     m = gate.g4_units.m
@@ -137,7 +119,6 @@ if __name__ == "__main__":
     t_block.mother = world.name
 
     # source
-
     nb_part = 1000 / sim.number_of_threads
     std_dev_E = 10 * keV
     mean_E = 100 * keV
@@ -153,7 +134,7 @@ if __name__ == "__main__":
     source.energy.mono = mean_E
     source.energy.sigma_gauss = std_dev_E
 
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     # s.track_types_flag = True
 
     # add phase space plan
@@ -167,23 +148,22 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     Phsp_act = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    Phsp_act.mother = phsp.name
+    Phsp_act.attached_to = phsp.name
     Phsp_act.attributes = [
         "KineticEnergy",
         "EventID",
         "ThreadID",
     ]
-    Phsp_act.output = output_path / "test058_MT.root"
+    Phsp_act.output_filename = "test058_MT.root"
     Phsp_act.debug = False
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = output_path / "test058_MT.mhd"
-    dose.mother = t_block.name
+    dose.output_filename = "test058_MT.mhd"
+    dose.attached_to = t_block.name
     dose.size = [1, 1, 1]
     dose.spacing = block_size
-    dose.img_coord_system = False
-    dose.uncertainty = True
+    dose.user_output.edep_uncertainty.active = True
     dose.translation = [0 * mm, 0 * mm, -0.5 * m]
     dose.hit_type = "random"
 
@@ -197,16 +177,13 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
-    h = sim.output.get_actor("PhaseSpace")
-    dose = sim.output.get_actor("dose")
     print(stats)
 
     # Open images for comparison
 
-    img_E = itk.imread(output_path / dose.user_info.output)
+    img_E = itk.imread(dose.get_output_path("edep"))
     array_E = itk.GetArrayFromImage(img_E)
-    err_img_E = itk.imread(output_path / dose.user_info.output_uncertainty)
+    err_img_E = itk.imread(dose.get_output_path("edep_uncertainty"))
     err_array_E = itk.GetArrayFromImage(err_img_E)
 
     f_phsp = uproot.open(output_path / "test058_MT.root")
