@@ -96,7 +96,7 @@ if __name__ == "__main__":
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
-    doseIDD.dose = False
+    doseIDD.user_output.dose.active = False
 
     LETActorName_IDD_d = "LETActorOG_d"
     LETActor_IDD_d = sim.add_actor("LETActor", LETActorName_IDD_d)
@@ -147,9 +147,9 @@ if __name__ == "__main__":
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
     print(paths)
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "stats")
-    stat.track_types_flag = True
-    # s.filters.append(f)
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
+    # stats.filters.append(f)
 
     print("Filters: ", sim.filter_manager)
     # print(sim.filter_manager.dump())
@@ -157,10 +157,8 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
-    # paths.gate_output
-
     # print results at the end
-    print(stat)
+    print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
@@ -179,7 +177,7 @@ if __name__ == "__main__":
         is_ok = utility.assert_images(
             ref_path / fNameIDD,
             doseIDD.output,
-            stat,
+            stats,
             tolerance=100,
             ignore_value=0,
             axis="x",

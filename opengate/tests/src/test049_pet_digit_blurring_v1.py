@@ -45,14 +45,19 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # check root hits
-    hc = sim.get_actor("Hits").user_info
+    hc = sim.get_actor("Hits")
     f = p / "pet.root"
-    is_ok = t49.check_root_hits(paths, 1, f, hc.output, "test049_hits.png") and is_ok
+    is_ok = (
+        t49.check_root_hits(paths, 1, f, hc.get_output_path(), "test049_hits.png")
+        and is_ok
+    )
 
     # check root singles
-    sc = sim.get_actor("Singles").user_info
+    sc = sim.get_actor("Singles")
     is_ok = (
-        t49.check_root_singles(paths, 1, f, sc.output, png_output="test049_singles.png")
+        t49.check_root_singles(
+            paths, 1, f, sc.get_output_path(), png_output="test049_singles.png"
+        )
         and is_ok
     )
 
