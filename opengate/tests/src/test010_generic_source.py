@@ -16,6 +16,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.number_of_threads = 1
+    sim.output_dir = paths.output
 
     # useful units
     MeV = gate.g4_units.MeV
@@ -94,8 +95,8 @@ if __name__ == "__main__":
     # src_info.filename = 'output/sources.root'
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test010.mhd"
-    dose.mother = "waterbox"
+    dose.output_filename = "test010.mhd"
+    dose.attached_to = waterbox
     dose.size = [50, 50, 50]
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 
@@ -112,10 +113,7 @@ if __name__ == "__main__":
     print("Simulation seed:", sim.output.current_random_seed)
 
     # get results
-    stats = sim.output.get_actor("Stats")
-    print(stats)
-
-    dose = sim.output.get_actor("dose")
+    print(stats_actor)
     print(dose)
 
     # gate_test10
@@ -123,11 +121,11 @@ if __name__ == "__main__":
     # Current version is two times slower :(
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     print("-" * 80)
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
+    is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.05)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / dose.user_info.output,
-        stats,
+        sim.get_output_path(dose.get_output_path(output_name='edep')),
+        stats_actor,
         tolerance=30,
     )
 
