@@ -174,7 +174,9 @@ def create_simulation():
 
 def eval_results(sim):
     # access to the results
-    eval_Volume = sim.get_volume("MyTesselatedVolume").solid_info.cubic_volume
+    eval_Volume = sim.volume_manager.get_volume(
+        "MyTesselatedVolume"
+    ).solid_info.cubic_volume
     print("volume: ", eval_Volume)
     volume_is_ok = utility.check_diff_abs(
         float(eval_Volume), float(27000000.0), tolerance=1e-1, txt="volume"
