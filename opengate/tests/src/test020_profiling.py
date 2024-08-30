@@ -93,9 +93,9 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     print(stat)
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     print(dose)
 
     # tests

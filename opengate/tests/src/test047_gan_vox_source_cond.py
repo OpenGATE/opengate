@@ -128,14 +128,14 @@ if __name__ == "__main__":
     # print results at the end
     print()
     gate.exception.warning("Tests stats file")
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     print(stat)
     ref_stat_file = paths.output_ref / "t047_stats.txt"
     # stat.write(ref_stat_file) # (for reference)
     stats_ref = utility.read_stat_file(ref_stat_file)
     is_ok = utility.assert_stats(stat, stats_ref, 0.005)
 
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     print()
     gate.exception.warning("Compare image to analog")
     is_ok = (

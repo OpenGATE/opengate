@@ -57,7 +57,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print stats
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # check singles
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     version = "3_blur"
     gate.exception.warning("Compare singles")
     gate_file = paths.gate_output / f"hits{version}.root"
-    hc_file = sim.output.get_actor("Singles_blur").get_output_path()
+    hc_file = sim.get_actor("Singles_blur").get_output_path()
     print(hc_file)
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.8, "scaling": 1},
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     )
 
     # check projection
-    proj_out = sim.output.get_actor("Projection")
+    proj_out = sim.get_actor("Projection")
     is_ok = (
         test028.test_spect_proj(sim.output, paths, proj_out, version="3_blur") and is_ok
     )

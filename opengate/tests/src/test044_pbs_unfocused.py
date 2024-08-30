@@ -130,7 +130,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     print(stat)
 
     print("Start to analyze data")
@@ -145,8 +145,7 @@ if __name__ == "__main__":
     #     )
     override = True
     output_pathV = [
-        sim.output.get_actor("doseInYZ" + str(i)).user_info.output
-        for i in planePositionsV
+        sim.get_actor("doseInYZ" + str(i)).user_info.output for i in planePositionsV
     ]
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
         sigmasGam, musGam = utility.write_gauss_param_to_file(
@@ -167,7 +166,7 @@ if __name__ == "__main__":
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
         # mhd_gate = "plane" + str(i) + "a.mhd"
-        mhd_gate = sim.output.get_actor("doseInYZ" + str(i)).user_info.output
+        mhd_gate = sim.get_actor("doseInYZ" + str(i)).user_info.output
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             utility.assert_images(

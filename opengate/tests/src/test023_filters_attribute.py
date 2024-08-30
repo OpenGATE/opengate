@@ -117,7 +117,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
+    stat = sim.get_actor("stats")
     print(stat)
     # reference :
     # stat.write(paths.output_ref / "test023_att_stats.txt")

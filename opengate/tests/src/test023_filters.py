@@ -96,10 +96,10 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     print(stat)
-    dose1 = sim.output.get_actor("dose1")
-    dose2 = sim.output.get_actor("dose2")
+    dose1 = sim.get_actor("dose1")
+    dose2 = sim.get_actor("dose2")
     # stat.write(paths.output_ref / 'test023_stats.txt')
 
     # tests

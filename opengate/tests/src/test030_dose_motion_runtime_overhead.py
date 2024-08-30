@@ -100,7 +100,7 @@ def simulate(number_of_dynamic_parametrisations=0):
 
     sim.run(start_new_process=True)
 
-    return sim.output.get_actor("Stats").counts["duration"] / gate.g4_units["s"]
+    return sim.get_actor("Stats").counts["duration"] / gate.g4_units["s"]
 
 
 if __name__ == "__main__":

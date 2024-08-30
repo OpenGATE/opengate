@@ -81,12 +81,12 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
+    stat = sim.get_actor("stats")
     print(stat)
 
     # print info
     print("")
-    arf = sim.output.get_actor("arf")
+    arf = sim.get_actor("arf")
     img = itk.imread(str(arf.user_info.output))
     # set the first channel to the same channel (spectrum) than the analog
     img[0, :] = img[1, :] + img[2, :]

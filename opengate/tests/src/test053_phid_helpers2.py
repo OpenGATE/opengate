@@ -47,7 +47,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
         "TrackCreatorProcess",
         "ProcessDefinedStep",
     ]
-    phsp.output = output / f"test053_{sim_name}.root"
+    phsp.output_filename = output / f"test053_{sim_name}.root"
     phsp.debug = False
 
     f = sim.add_filter("ParticleFilter", "f1")

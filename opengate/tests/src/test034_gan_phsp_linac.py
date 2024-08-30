@@ -109,13 +109,13 @@ if __name__ == "__main__":
 
     # print results
     gate.exception.warning(f"Check stats")
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.gate / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     gate.exception.warning(f"Check dose")
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     print(dose)
 
     is_ok = (

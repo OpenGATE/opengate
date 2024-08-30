@@ -36,7 +36,7 @@ if __name__ == "__main__":
     is_ok = test028.test_spect_hits(sim.output, paths, version="3")
 
     # check
-    proj = sim.output.get_actor("Projection")
+    proj = sim.get_actor("Projection")
     is_ok = test028.test_spect_proj(sim.output, paths, proj, version="3") and is_ok
 
     utility.test_ok(is_ok)

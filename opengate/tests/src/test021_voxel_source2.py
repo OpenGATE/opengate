@@ -117,11 +117,11 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     # stat.write(paths.output_ref / "stat021_ref_2.txt")
 
     # test pixels in dose #1
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     final_dose = itk.imread(paths.output / dose.user_info.output)
     s = itk.array_view_from_image(final_dose).sum()
 

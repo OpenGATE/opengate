@@ -73,7 +73,7 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # check root

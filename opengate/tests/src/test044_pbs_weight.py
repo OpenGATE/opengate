@@ -163,7 +163,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
 
     print(stat)
 
@@ -174,8 +174,8 @@ if __name__ == "__main__":
     # to be double the one of source one
 
     print("\nDifference for EDEP")
-    mhd_1 = sim.output.get_actor("doseInYZ_1").user_info.output
-    mhd_2 = sim.output.get_actor("doseInYZ_2").user_info.output
+    mhd_1 = sim.get_actor("doseInYZ_1").user_info.output
+    mhd_2 = sim.get_actor("doseInYZ_2").user_info.output
     test = True
     # test = utility.assert_images(
     #     output_path / mhd_1,

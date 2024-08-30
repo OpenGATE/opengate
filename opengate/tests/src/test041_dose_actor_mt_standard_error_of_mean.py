@@ -112,30 +112,28 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
+    stat = sim.get_actor("stats")
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
 
     doseFpath_IDD_singleImage = str(
-        sim.output.get_actor(doseActorName_IDD_singleImage).user_info.output
+        sim.get_actor(doseActorName_IDD_singleImage).user_info.output
     )
     doseFpath_IDD_NthreadImages = str(
-        sim.output.get_actor(doseActorName_IDD_NthreadImages).user_info.output
+        sim.get_actor(doseActorName_IDD_NthreadImages).user_info.output
     )
     doseFpath_IDD_NthreadImages_uncert = str(
-        sim.output.get_actor(
-            doseActorName_IDD_NthreadImages
-        ).user_info.output_uncertainty
+        sim.get_actor(doseActorName_IDD_NthreadImages).user_info.output_uncertainty
     )
     doseFpath_IDD_NthreadImages_uncert_unbiased = str(
-        sim.output.get_actor(
+        sim.get_actor(
             doseActorName_IDD_NthreadImages_unbiased
         ).user_info.output_uncertainty
     )
     doseFpath_IDD_singleImage_uncert = str(
-        sim.output.get_actor(doseActorName_IDD_singleImage).user_info.output_uncertainty
+        sim.get_actor(doseActorName_IDD_singleImage).user_info.output_uncertainty
     )
 
     unused = utility.assert_images(

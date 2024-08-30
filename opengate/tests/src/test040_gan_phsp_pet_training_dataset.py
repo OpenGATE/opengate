@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # check phsp
     print()
     gate.exception.warning(f"Check root")
-    p = sim.output.get_actor("phase_space")
+    p = sim.get_actor("phase_space")
     print(f"Number of absorbed : {p.fNumberOfAbsorbedEvents}")
     ref_file = paths.output_ref / "test040_train.root"
     hc_file = phsp.get_output_path()

@@ -28,11 +28,11 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # ----------------------------------------------------------------------------------------------------------
-    readout = sim.output.get_actor("Singles")
+    readout = sim.get_actor("Singles")
     ig = readout.GetIgnoredHitsCount()
     print()
     print(f"Nb of ignored hits : {ig}")
@@ -45,12 +45,12 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # check root hits
-    hc = sim.output.get_actor("Hits").user_info
+    hc = sim.get_actor("Hits").user_info
     f = p / "pet.root"
     is_ok = t49.check_root_hits(paths, 1, f, hc.output, "test049_hits.png") and is_ok
 
     # check root singles
-    sc = sim.output.get_actor("Singles").user_info
+    sc = sim.get_actor("Singles").user_info
     is_ok = (
         t49.check_root_singles(paths, 1, f, sc.output, png_output="test049_singles.png")
         and is_ok

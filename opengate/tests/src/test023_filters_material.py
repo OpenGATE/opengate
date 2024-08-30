@@ -83,14 +83,14 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     # print(stat)
 
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     f = paths.output_ref / "test023_stats_iec_mat.txt"
     # stat.write(f)
 
-    stat2 = sim.output.get_actor("Stats2")
+    stat2 = sim.get_actor("Stats2")
     # print(stat2)
     f2 = paths.output_ref / "test023_stats_iec_mat_e.txt"
     # stat2.write(f2)

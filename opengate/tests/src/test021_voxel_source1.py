@@ -101,9 +101,9 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     # stat.write(paths.output_ref / "stat021_ref_1.txt")
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     # test pixels in dose #1
     # test pixels in dose #1
     d_even = itk.imread(paths.output / dose.user_info.output)

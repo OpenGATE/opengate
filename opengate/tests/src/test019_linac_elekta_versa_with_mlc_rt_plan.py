@@ -225,7 +225,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor(s.name)
+    stats = sim.get_actor(s.name)
     print(stats)
 
     # test
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     jaws = [jaws_1, jaws_2]
     theoretical_area = calc_mlc_aperture(leaves, jaws, sad=sad)
 
-    dose2 = sim.output.get_actor("dose_water_slice")
+    dose2 = sim.get_actor("dose_water_slice")
     img_MC = itk.imread(dose2.get_output_path("edep"))
     array_MC = itk.GetArrayFromImage(img_MC)
     bool_MC = array_MC[array_MC != 0]

@@ -98,11 +98,11 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     print(stat)
 
-    dose = sim.output.get_actor("dose")
-    edep = sim.output.get_actor("edep")
+    dose = sim.get_actor("dose")
+    edep = sim.get_actor("edep")
     print(dose)
 
     # tests

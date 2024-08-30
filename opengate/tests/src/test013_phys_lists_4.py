@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # sim.add_g4_command_after_init("/tracking/verbose 1")
     sim.run()
 
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
 
     # gate_test4_simulation_stats_actor
     # Gate mac/main_4.mac

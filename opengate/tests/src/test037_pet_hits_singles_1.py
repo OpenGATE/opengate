@@ -42,7 +42,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # ----------------------------------------------------------------------------------------------------------
@@ -55,12 +55,12 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.028)
 
     # check root hits
-    hc = sim.output.get_actor("Hits")
+    hc = sim.get_actor("Hits")
     f = p / "output1.root"
     is_ok = t37.check_root_hits(paths, 1, f, hc.get_output_path()) and is_ok
 
     # check root singles
-    sc = sim.output.get_actor("Singles")
+    sc = sim.get_actor("Singles")
     is_ok = t37.check_root_singles(paths, 1, f, sc.get_output_path()) and is_ok
 
     utility.test_ok(is_ok)

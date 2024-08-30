@@ -56,7 +56,7 @@ sim.g4_verbose = False
 sim.user_hook_after_init = check_production_cuts
 sim.run()
 
-stats = sim.output.get_actor("Stats")
+stats = sim.get_actor("Stats")
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main_4.mac

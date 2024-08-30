@@ -51,7 +51,7 @@ if __name__ == "__main__":
     sim.run()
 
     # get results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print("Simulation seed:", sim.output.current_random_seed)
     print(stats)
 

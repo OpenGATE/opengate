@@ -65,12 +65,12 @@ if __name__ == "__main__":
     sim.run()
 
     # compare stats
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_3_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
 
     # compare images
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     f = paths.output / "test015_iec_3.mhd"
     im_ok = utility.assert_images(
         paths.output_ref / "test015_iec_3.mhd",

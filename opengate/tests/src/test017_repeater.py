@@ -96,9 +96,9 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     # stats.write(ref_path / 'test017-stats-ref.txt')
-    dose = sim.output.get_actor("dose")
+    dose = sim.get_actor("dose")
     # tests
     stats_ref = utility.read_stat_file(paths.output_ref / "test017-stats-ref.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.04)

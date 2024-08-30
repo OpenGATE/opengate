@@ -46,13 +46,13 @@ if __name__ == "__main__":
 
     # --------------------------------------------------------------------------
     # go
-    # sim.user_info.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     sim.run()
     end = end / sec
     # --------------------------------------------------------------------------
 
     # print
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     print(stats)
 
     # analyse

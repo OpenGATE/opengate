@@ -169,10 +169,10 @@ if __name__ == "__main__":
     # stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
     # is_ok = utility.assert_stats(stat, stats_ref, 0.14)
 
-    # LETActor_doseAveraged = sim.output.get_actor(LETActorName_IDD_d)
-    # LETActor_trackAveraged = sim.output.get_actor(LETActorName_IDD_t)
+    # LETActor_doseAveraged = sim.get_actor(LETActorName_IDD_d)
+    # LETActor_trackAveraged = sim.get_actor(LETActorName_IDD_t)
     #
-    # LETActor_primaries = sim.output.get_actor(LET_primaries)
+    # LETActor_primaries = sim.get_actor(LET_primaries)
 
     fNameIDD = sim.actor_manager.get_actor(doseActorName_IDD_d).output_filename.quotient
     if do_debug:

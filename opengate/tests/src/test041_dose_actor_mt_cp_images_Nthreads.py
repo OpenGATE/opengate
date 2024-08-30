@@ -107,15 +107,15 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
+    stat = sim.get_actor("stats")
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
-    doseFpath_IDD_singleImage = sim.output.get_actor(
+    doseFpath_IDD_singleImage = sim.get_actor(
         doseActorName_IDD_singleImage
     ).user_info.output
-    doseFpath_IDD_NthreadImages = sim.output.get_actor(
+    doseFpath_IDD_NthreadImages = sim.get_actor(
         doseActorName_IDD_NthreadImages
     ).user_info.output
     return doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat

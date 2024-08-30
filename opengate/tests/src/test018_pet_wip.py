@@ -57,11 +57,11 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     # stats.write('output_ref/test018_stats_ref.txt')
 
     # check
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     stats_ref = utility.read_stat_file(
         pathFile.parent / "data" / "output_ref" / "test018_stats_ref.txt"
     )

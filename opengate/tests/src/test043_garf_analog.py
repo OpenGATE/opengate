@@ -63,12 +63,12 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
+    stat = sim.get_actor("stats")
     print(stat)
 
     # dump the output image with offset like in old gate (for comparison)
     print("We change the spacing/origin to be compared to the old gate")
-    proj = sim.output.get_actor(f"Projection_{crystal_name}")
+    proj = sim.get_actor(f"Projection_{crystal_name}")
     spacing = np.array([4.41806 * mm, 4.41806 * mm, 1])
     img = itk.imread(str(proj.user_info.output))
     img.SetSpacing(spacing)

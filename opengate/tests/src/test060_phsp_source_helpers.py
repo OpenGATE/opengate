@@ -108,7 +108,7 @@ def create_test_phs(
     new_joined_path = os.path.join(
         directory_path, base_filename + "_noParticleInfo" + new_extension
     )
-    ta2.output = new_joined_path
+    ta2.output_filename = new_joined_path
     ta2.debug = False
     ta2.filters.append(f)
 
@@ -127,7 +127,7 @@ def create_test_phs(
     new_joined_path = os.path.join(
         directory_path, base_filename + "_PDGCode" + new_extension
     )
-    ta3.output = new_joined_path
+    ta3.output_filename = new_joined_path
     ta3.debug = False
     ta3.filters.append(f)
 
@@ -146,7 +146,7 @@ def create_test_phs(
     new_joined_path = os.path.join(
         directory_path, base_filename + "_ParticleName" + new_extension
     )
-    ta4.output = new_joined_path
+    ta4.output_filename = new_joined_path
     ta4.debug = False
     ta4.filters.append(f)
 

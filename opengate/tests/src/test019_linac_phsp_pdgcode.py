@@ -11,10 +11,10 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
-    h = sim.output.get_actor("PhaseSpace")
+    h = sim.get_actor("PhaseSpace")
     print(h)
 
     # check the phsp tree if PDGCode is in there

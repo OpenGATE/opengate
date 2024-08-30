@@ -51,7 +51,7 @@ if __name__ == "__main__":
         f"Source, nb of zeros particles (absorbed) : {s.fTotalZeroEvents} (should be around 5)"
     )
 
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_gan_aa_stats.txt")
     # do not compare steps
     stats_ref.counts.step_count = stats.counts.step_count

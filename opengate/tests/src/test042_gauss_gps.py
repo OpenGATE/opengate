@@ -106,10 +106,10 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
+    stat = sim.get_actor("stats")
     print(stat)
 
-    dose = sim.output.get_actor("doseInXZ")
+    dose = sim.get_actor("doseInXZ")
     print(dose)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.output.get_actor("doseInXZ").user_info.output,
+            paths.output / sim.get_actor("doseInXZ").user_info.output,
             stat,
             tolerance=10,
             ignore_value=0,
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.output.get_actor("doseInXY").user_info.output,
+            paths.output / sim.get_actor("doseInXY").user_info.output,
             stat,
             tolerance=10,
             ignore_value=0,
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.output.get_actor("doseInYZ").user_info.output,
+            paths.output / sim.get_actor("doseInYZ").user_info.output,
             stat,
             tolerance=30,
             ignore_value=0,

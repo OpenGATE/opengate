@@ -119,10 +119,10 @@ def run_test019(sim):
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
-    h = sim.output.get_actor("PhaseSpace")
+    h = sim.get_actor("PhaseSpace")
     print(h)
 
     # FIXME: missing features:

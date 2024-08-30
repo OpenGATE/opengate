@@ -43,12 +43,12 @@ if __name__ == "__main__":
     sim.run()
 
     # print stats
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     print(stats)
 
     # compare with reference root file
     warning(f"check root files")
-    root_model = sim.get_actor_user_info("phsp").output
+    root_model = sim.get_actor("phsp").get_output_path()
     root_ref = paths.output_ref / os.path.basename(root_model)
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
     tols = [0.001, 0.02]

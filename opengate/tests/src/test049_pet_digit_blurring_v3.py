@@ -31,7 +31,7 @@ if __name__ == "__main__":
     fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
     # add (fake) blur
-    ro = sim.get_actor_user_info("Singles_readout")
+    ro = sim.get_actor("Singles_readout")
     bc1 = sim.add_actor("DigitizerBlurringActor", "Singles_1")
     bc1.output = ro.output
     bc1.input_digi_collection = "Singles_readout"
@@ -51,11 +51,11 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # ----------------------------------------------------------------------------------------------------------
-    readout = sim.output.get_actor("Singles_readout")
+    readout = sim.get_actor("Singles_readout")
     ig = readout.GetIgnoredHitsCount()
     print()
     print(f"Nb of ignored hits : {ig}")
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
     # check root singles
     f = p / "pet_blur.root"
-    bc = sim.output.get_actor("Singles").user_info
+    bc = sim.get_actor("Singles").user_info
     is_ok = (
         t49.check_root_singles(
             paths, 1, f, bc.output, png_output="test049_singles_wb.png"

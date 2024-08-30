@@ -134,10 +134,10 @@ if __name__ == "__main__":
     sim.run()
 
     # stats
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     print(stats)
-    dose1 = sim.output.get_actor("dose1")
-    dose2 = sim.output.get_actor("dose2")
+    dose1 = sim.get_actor("dose1")
+    dose2 = sim.get_actor("dose2")
     # compare edep map
 
     is_ok = utility.assert_images(

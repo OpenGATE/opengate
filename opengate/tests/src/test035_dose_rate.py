@@ -45,7 +45,7 @@ if __name__ == "__main__":
     # print results
     print()
     gate.exception.warning(f"Check stats")
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     stats.write(param.output_folder / "stats035.txt")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "stats.txt")
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     # dose comparison
     print()
     gate.exception.warning(f"Check dose")
-    h = sim.output.get_actor("dose")
+    h = sim.get_actor("dose")
     print(h)
     is_ok = (
         utility.assert_images(

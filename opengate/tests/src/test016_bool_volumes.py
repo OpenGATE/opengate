@@ -116,7 +116,7 @@ if __name__ == "__main__":
     sim.run(True)
 
     # print results at the end
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     tu.test_ok(True)

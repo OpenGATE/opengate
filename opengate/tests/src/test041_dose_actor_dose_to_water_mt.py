@@ -165,7 +165,7 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
+    stat = sim.get_actor("stats")
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -173,37 +173,35 @@ if __name__ == "__main__":
     print()
     """
     doseFpath_IDD_d = str(
-        sim.output.get_actor(doseActorName_IDD_d).user_info.output
+        sim.get_actor(doseActorName_IDD_d).user_info.output
     ).replace(".mhd", "-Dose.mhd")
     doseFpath_IDD_d2w = str(
-        sim.output.get_actor(doseActorName_IDD_d2w).user_info.output
+        sim.get_actor(doseActorName_IDD_d2w).user_info.output
     ).replace(".mhd", "-Dosetowater.mhd")
     doseFpath_geoWater_d = str(
-        sim.output.get_actor(doseActorName_water_slab_insert_d).user_info.output
+        sim.get_actor(doseActorName_water_slab_insert_d).user_info.output
     ).replace(".mhd", "-Dose.mhd")
     doseFpath_geoWater_d2w = str(
-        sim.output.get_actor(doseActorName_water_slab_insert_d2w).user_info.output
+        sim.get_actor(doseActorName_water_slab_insert_d2w).user_info.output
     ).replace(".mhd", "-Dosetowater.mhd")
 
     doseFpath_geoSi_d = str(
-        sim.output.get_actor(doseActorName_entranceRegiont_d).user_info.output
+        sim.get_actor(doseActorName_entranceRegiont_d).user_info.output
     ).replace(".mhd", "-Dose.mhd")
     doseFpath_geoSi_d2w = str(
-        sim.output.get_actor(doseActorName_entranceRegiont_d2w).user_info.output
+        sim.get_actor(doseActorName_entranceRegiont_d2w).user_info.output
     ).replace(".mhd", "-Dosetowater.mhd")
     """
-    doseFpath_IDD_d = sim.output.get_actor(doseActorName_IDD_d).user_info.output
-    doseFpath_IDD_d2w = sim.output.get_actor(doseActorName_IDD_d2w).user_info.output
-    doseFpath_geoWater_d = sim.output.get_actor(
+    doseFpath_IDD_d = sim.get_actor(doseActorName_IDD_d).user_info.output
+    doseFpath_IDD_d2w = sim.get_actor(doseActorName_IDD_d2w).user_info.output
+    doseFpath_geoWater_d = sim.get_actor(
         doseActorName_water_slab_insert_d
     ).user_info.output
-    doseFpath_geoWater_d2w = sim.output.get_actor(
+    doseFpath_geoWater_d2w = sim.get_actor(
         doseActorName_water_slab_insert_d2w
     ).user_info.output
-    doseFpath_geoSi_d = sim.output.get_actor(
-        doseActorName_entranceRegiont_d
-    ).user_info.output
-    doseFpath_geoSi_d2w = sim.output.get_actor(
+    doseFpath_geoSi_d = sim.get_actor(doseActorName_entranceRegiont_d).user_info.output
+    doseFpath_geoSi_d2w = sim.get_actor(
         doseActorName_entranceRegiont_d2w
     ).user_info.output
 

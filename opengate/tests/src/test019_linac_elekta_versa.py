@@ -65,7 +65,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor(s.name)
+    stats = sim.get_actor(s.name)
     print(stats)
 
     # compare root

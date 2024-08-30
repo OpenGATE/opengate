@@ -89,7 +89,7 @@ if __name__ == "__main__":
     # check stats
     print()
     gate.exception.warning("Check stats")
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test051_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
 

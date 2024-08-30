@@ -53,13 +53,13 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print stats
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     print(stats)
 
     # compare
     warning(f"check root files")
     root_ref = paths.output_ref / f"test053_{nuclide.nuclide}_10_ref.root"
-    root_model = sim.get_actor_user_info("phsp").output
+    root_model = sim.get_actor("phsp").get_output_path()
     is_ok = compare_root_energy(
         root_ref,
         root_model,

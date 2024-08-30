@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # check stats
     print()
     gate.exception.warning(f"Check stats")
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_train_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.02)
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # check phsp
     print()
     gate.exception.warning(f"Check root")
-    p = sim.output.get_actor("phase_space")
+    p = sim.get_actor("phase_space")
     print(f"Number of absorbed : {p.fNumberOfAbsorbedEvents}")
     ref_file = paths.output_ref / "test038_train.root"
     hc_file = phsp.output
