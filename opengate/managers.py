@@ -18,7 +18,7 @@ from .base import (
 )
 from .definitions import __world_name__, __gate_list_objects__
 from .engines import SimulationEngine
-from .exception import fatal, warning
+from .exception import fatal, warning, GateDeprecationError
 from .geometry.materials import MaterialDatabase
 from .image import (
     create_image_with_volume_extent,
@@ -1401,9 +1401,6 @@ class Simulation(GateObject):
         self.physics_manager = PhysicsManager(self)
         self.filter_manager = FilterManager(self)
 
-        # output of the simulation (once run)
-        self.output = None
-
         # hook functions
         self.user_hook_after_init = None
         self.user_hook_after_run = None
@@ -1417,6 +1414,12 @@ class Simulation(GateObject):
             f"Actors         : {self.actor_manager}"
         )
         return s
+
+    @property
+    def output(self):
+        raise GateDeprecationError("You can no longer (and do not need any longer) "
+                                   "access the simulation output via sim.output.\n"
+                                   "Use the original actor object directly.")
 
     @property
     def use_multithread(self):
@@ -1614,23 +1617,16 @@ class Simulation(GateObject):
             """
 
             log.info("Dispatching simulation to subprocess ...")
-            self.output = dispatch_to_subprocess(self._run_simulation_engine, True)
-
-            # FIXME: should this not be done in a __setstate__ method?
-            # put back the simulation object to all actors
-            for actor in self.output.actors.values():
-                actor.simulation = self
+            output = dispatch_to_subprocess(self._run_simulation_engine, True)
 
             # Recover output from unpickled actors coming from sub-process queue
             for actor in self.actor_manager.actors.values():
-                returned_actor = self.output.get_actor(actor.name)
-                actor.user_output = returned_actor.user_output
+                actor.user_output = output.get_actor(actor.name).user_output
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
-            self.output = self._run_simulation_engine(False)
+            _ = self._run_simulation_engine(False)
 
-        self.output.simulation = self
 
         if self.store_json_archive is True:
             self.to_json_file()
