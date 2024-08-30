@@ -59,7 +59,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "edep.mhd",
-            h.user_info.output,
+            hget_output_path(),
             stats,
             tolerance=15,
             ignore_value=0,

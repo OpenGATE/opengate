@@ -75,8 +75,8 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test20-edep.mhd"
-    dose.mother = "patient"
+    dose.output_filename = paths.output / "test20-edep.mhd"
+    dose.attached_to = "patient"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.img_coord_system = True  # default is True

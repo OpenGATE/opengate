@@ -56,8 +56,8 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test015_iec_3.mhd"
-    dose.mother = iec_phantom.name
+    dose.output_filename = paths.output / "test015_iec_3.mhd"
+    dose.attached_to = iec_phantom.name
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 

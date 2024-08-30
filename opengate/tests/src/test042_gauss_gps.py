@@ -78,22 +78,22 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXZ")
-    dose.output = paths.output / "test042-lateral_xz.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = paths.output / "test042-lateral_xz.mhd"
+    dose.attached_to = phantom.name
     dose.size = [250, 1, 250]
     dose.spacing = [0.4, 100, 0.4]
     dose.hit_type = "random"
 
     dose = sim.add_actor("DoseActor", "doseInXY")
-    dose.output = paths.output / "test042-lateral_xy.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = paths.output / "test042-lateral_xy.mhd"
+    dose.attached_to = phantom.name
     dose.size = [250, 250, 1]
     dose.spacing = [0.4, 0.4, 100]
     dose.hit_type = "random"
 
     dose = sim.add_actor("DoseActor", "doseInYZ")
-    dose.output = paths.output / "test042-lateral_yz.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = paths.output / "test042-lateral_yz.mhd"
+    dose.attached_to = phantom.name
     dose.size = [1, 250, 250]
     dose.spacing = [100, 0.4, 0.4]
     dose.hit_type = "random"

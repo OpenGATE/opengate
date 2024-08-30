@@ -110,8 +110,8 @@ if __name__ == "__main__":
     for i in planePositionsV:
         dose = sim.add_actor("DoseActor", "doseInYZ" + str(i))
         filename = "plane" + str(i) + "a.mhd"
-        dose.output = output_path / filename
-        dose.mother = "planeNr" + str(i) + "a"
+        dose.output_filename = output_path / filename
+        dose.attached_to = "planeNr" + str(i) + "a"
         dose.size = [250, 250, 1]
         dose.spacing = [0.4, 0.4, 2]
         dose.hit_type = "random"
@@ -145,7 +145,8 @@ if __name__ == "__main__":
     #     )
     override = True
     output_pathV = [
-        sim.get_actor("doseInYZ" + str(i)).user_info.output for i in planePositionsV
+        sim.get_actor("doseInYZ" + str(i)).get_output_path("edep")
+        for i in planePositionsV
     ]
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
         sigmasGam, musGam = utility.write_gauss_param_to_file(
@@ -166,7 +167,7 @@ if __name__ == "__main__":
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
         # mhd_gate = "plane" + str(i) + "a.mhd"
-        mhd_gate = sim.get_actor("doseInYZ" + str(i)).user_info.output
+        mhd_gate = sim.get_actor("doseInYZ" + str(i)).get_output_path("edep")
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             utility.assert_images(

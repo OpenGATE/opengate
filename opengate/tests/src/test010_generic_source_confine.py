@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "test010-2.mhd"
-    # dose.output = paths.output_ref / 'test010-2-edep.mhd'
+    # dose.output_filename = paths.output_ref / 'test010-2-edep.mhd'
     dose.attached_to = waterbox
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 1 * mm, 1 * mm]

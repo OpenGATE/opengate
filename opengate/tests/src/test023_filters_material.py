@@ -52,9 +52,9 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test023.mhd"
-    # dose.output = paths.output_ref / "test023-edep.mhd"
-    dose.mother = "waterbox"
+    dose.output_filename = paths.output / "test023.mhd"
+    # dose.output_filename = paths.output_ref / "test023-edep.mhd"
+    dose.attached_to = "waterbox"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.filters.append(fp)

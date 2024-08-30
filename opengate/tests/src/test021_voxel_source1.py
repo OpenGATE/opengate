@@ -77,8 +77,8 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test021-1.mhd"
-    dose.mother = ct.name
+    dose.output_filename = paths.output / "test021-1.mhd"
+    dose.attached_to = ct.name
     img_info = gate.image.read_image_info(ct.image)
     dose.size = img_info.size
     dose.spacing = img_info.spacing

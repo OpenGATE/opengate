@@ -82,10 +82,10 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.mother = waterbox.name
+    dose.attached_to = waterbox.name
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose.size = [75, 75, 75]
-    dose.output = paths.output / "test034.mhd"
+    dose.output_filename = paths.output / "test034.mhd"
     dose.uncertainty = True
 
     """

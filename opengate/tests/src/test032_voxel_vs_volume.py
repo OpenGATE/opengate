@@ -119,8 +119,8 @@ if __name__ == "__main__":
     # add dose actor
     for i in range(1, 3):
         dose = sim.add_actor("DoseActor", f"dose{i}")
-        dose.output = paths.output / f"test032_iec{i}.mhd"
-        dose.mother = f"iec{i}"
+        dose.output_filename = paths.output / f"test032_iec{i}.mhd"
+        dose.attached_to = f"iec{i}"
         dose.size = [100, 100, 100]
         dose.spacing = [2 * mm, 2 * mm, 2 * mm]
         # translate the iec1 to have the exact same dose origin
