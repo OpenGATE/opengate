@@ -72,23 +72,21 @@ if __name__ == "__main__":
     source.energy.mono = 70 * keV
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = "test010-generic_source_angular_distribution.mhd"
+    dose.output_filename = "test010-generic_source_angular_distribution.mhd"
+    dose.user_output.edep_uncertainty.active = True
     dose.attached_to = "image_volume"
     dose.size = [100, 1, 100]
     dose.spacing = [10 * mm, 1 * cm, 10 * mm]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
 
     # start simulation
     sim.run()
 
     # get results
-    stat = sim.output.get_actor("Stats")
     print(stat)
-
-    dose = sim.output.get_actor("dose")
     print(dose)
 
     # tests
@@ -101,7 +99,9 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "test010-generic_source_angular_distribution_edep_ref.mhd",
-            sim.output_dir / "test010-generic_source_angular_distribution-edep.mhd",
+            dose.get_output_path(
+                output_name='edep'
+            ),
             stat,
             tolerance=13,
             ignore_value=0,
@@ -115,8 +115,7 @@ if __name__ == "__main__":
         utility.assert_images(
             ref_path
             / "test010-generic_source_angular_distribution_edep_uncertainty_ref.mhd",
-            sim.output_dir
-            / "test010-generic_source_angular_distribution-edep-uncertainty.mhd",
+            dose.get_output_path(output_name='edep_uncertainty'),
             stat,
             tolerance=30,
             ignore_value=1,
