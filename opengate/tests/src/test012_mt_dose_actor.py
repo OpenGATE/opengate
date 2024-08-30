@@ -20,6 +20,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 2
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
+    sim.output_dir = paths.output
 
     # shortcuts to units
     mm = gate.g4_units.mm
@@ -67,15 +68,15 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test012-edep.mhd"
-    dose.mother = "waterbox"
+    dose.output_filename.edep = "test012-edep.mhd"
+    dose.attached_to = "waterbox"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
 
     # print info
     print(sim.volume_manager.dump_volumes())
@@ -90,10 +91,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
     print(stat)
-
-    dose = sim.output.get_actor("dose")
     print(dose)
 
     # tests
@@ -105,7 +103,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output-Edep.mhd",
-            paths.output / dose.user_info.output,
+            dose.get_output_path(output_name='edep'),
             stat,
             tolerance=45,
         )
