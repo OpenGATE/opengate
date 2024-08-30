@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.number_of_threads = 1
+    sim.output_dir = paths.output
 
     # some units
     mm = gate.g4_units.mm
@@ -100,12 +101,12 @@ if __name__ == "__main__":
     source.energy.mono = 1 * MeV
 
     # actors
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test010-2.mhd"
+    dose.output_filename = "test010-2.mhd"
     # dose.output = paths.output_ref / 'test010-2-edep.mhd'
-    dose.mother = "waterbox"
+    dose.attached_to = waterbox
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 1 * mm, 1 * mm]
 
@@ -116,17 +117,14 @@ if __name__ == "__main__":
     print("Simulation seed:", sim.output.current_random_seed)
 
     # get results
-    stats = sim.output.get_actor("Stats")
-    dose = sim.output.get_actor("dose")
     print(stats)
-    # stats.write(paths.output_ref / 'test010_confine_stats.txt')
 
     # tests
     stats_ref = utility.read_stat_file(paths.output_ref / "test010_confine_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test010-2-edep.mhd",
-        paths.output / dose.user_info.output,
+        dose.get_output_path(output_name='edep'),
         stats,
         tolerance=59,
     )
