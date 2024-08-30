@@ -108,11 +108,11 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test047.mhd"
-    dose.mother = "ct"
+    dose.output_filename = paths.output / "test047.mhd"
+    dose.attached_to = "ct"
     dose.size = [70, 70, 240]
     dose.spacing = [3.5 * mm, 3.5 * mm, 3.5 * mm]
-    dose.img_coord_system = True
+    dose.output_coordinate_system = "attached_to_image"
     dose.hit_type = "random"
 
     # add stat actor
@@ -120,20 +120,17 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # start simulation
-    # output = sim.start(True)
-    # FIXME
     sim.run()
 
     # ---------------------------------------------------------------
     # print results at the end
     print()
     gate.exception.warning("Tests stats file")
-    stat = sim.get_actor("Stats")
-    print(stat)
+    print(stats)
     ref_stat_file = paths.output_ref / "t047_stats.txt"
     # stat.write(ref_stat_file) # (for reference)
     stats_ref = utility.read_stat_file(ref_stat_file)
-    is_ok = utility.assert_stats(stat, stats_ref, 0.005)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.005)
 
     dose = sim.get_actor("dose")
     print()
@@ -141,8 +138,8 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test047-edep.mhd",
-            paths.output / dose.user_info.output,
-            stat,
+            dose.get_output_path("edep"),
+            stats,
             tolerance=19,
             ignore_value=0,
             axis="x",
@@ -151,6 +148,6 @@ if __name__ == "__main__":
     )
 
     print("Test with vv: ")
-    print(f"vv {source.cond_image} --fusion {dose.user_info.output}")
+    print(f"vv {source.cond_image} --fusion {dose.get_output_path('edep')}")
 
     utility.test_ok(is_ok)
