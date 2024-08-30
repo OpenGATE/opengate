@@ -77,10 +77,10 @@ if __name__ == "__main__":
     # actors
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
 
-    phspActor = sim.add_actor("PhaseSpaceActor", "phspActor")
-    phspActor.output_filename = "test010-thetaphi-phsp.root"
-    phspActor.attached_to = "phsp"
-    phspActor.attributes = [
+    phsp_actor = sim.add_actor("PhaseSpaceActor", "phspActor")
+    phsp_actor.output_filename = "test010-thetaphi-phsp.root"
+    phsp_actor.attached_to = "phsp"
+    phsp_actor.attributes = [
         "Position",
     ]
 
@@ -94,8 +94,7 @@ if __name__ == "__main__":
     print("Simulation seed:", sim.output.current_random_seed)
 
     # get results
-    stats = sim.output.get_actor("Stats")
-    print(stats)
+    print(stats_actor)
 
     # gate_test10_thetaphi
     # Gate mac/main.mac
@@ -110,7 +109,7 @@ if __name__ == "__main__":
     g9_zmin, g9_zmax = min(g9_zs), max(g9_zs)
 
     g10_xs, g10_ys, g10_zs = root_load_xyz(
-        phspActor.get_output_path(), ["Position_X", "Position_Y", "Position_Z"]
+        phsp_actor.get_output_path(), ["Position_X", "Position_Y", "Position_Z"]
     )
     g10_xmin, g10_xmax = min(g10_xs), max(g10_xs)
     g10_ymin, g10_ymax = min(g10_ys), max(g10_ys)
