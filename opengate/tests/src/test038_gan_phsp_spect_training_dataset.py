@@ -101,7 +101,7 @@ if __name__ == "__main__":
         "EventPosition",
         "EventDirection",
     ]
-    phsp.output = paths.output / "test038_train.root"
+    phsp.output_filename = paths.output / "test038_train.root"
     phsp.store_absorbed_event = (
         True  # this option allow to store all events even if absorbed
     )

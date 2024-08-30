@@ -117,7 +117,7 @@ if __name__ == "__main__":
     f = paths.output / "test054.png"
     is_ok = utility.compare_root3(
         ref,
-        phsp.output,
+        phsp.get_output_path(),
         "phsp",
         "phsp",
         keys,

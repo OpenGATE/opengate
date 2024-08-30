@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # phsp actor for timing
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attributes = ["GlobalTime"]
-    phsp.output = paths.output / "test052_tac.root"
+    phsp.output_filename = paths.output / "test052_tac.root"
 
     # go
     # sim.running_verbose_level = gate.EVENT
@@ -73,13 +73,12 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print
-    stats = sim.get_actor("Stats")
     print(stats)
 
     # check root
     print()
     gate.exception.warning("Check root time")
-    root1, n1 = utility.open_root_as_np(phsp.output, "phsp")
+    root1, n1 = utility.open_root_as_np(phsp.get_output_path(), "phsp")
     etimes = root1["GlobalTime"] / sec
     print(f"Number of events : {len(etimes)}")
 
