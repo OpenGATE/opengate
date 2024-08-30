@@ -99,9 +99,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "test010-generic_source_angular_distribution_edep_ref.mhd",
-            dose.get_output_path(
-                output_name='edep'
-            ),
+            dose.get_output_path(output_name="edep"),
             stat,
             tolerance=13,
             ignore_value=0,
@@ -115,7 +113,7 @@ if __name__ == "__main__":
         utility.assert_images(
             ref_path
             / "test010-generic_source_angular_distribution_edep_uncertainty_ref.mhd",
-            dose.get_output_path(output_name='edep_uncertainty'),
+            dose.get_output_path(output_name="edep_uncertainty"),
             stat,
             tolerance=30,
             ignore_value=1,

@@ -124,7 +124,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test010-2-edep.mhd",
-        dose.get_output_path(output_name='edep'),
+        dose.get_output_path(output_name="edep"),
         stats,
         tolerance=59,
     )

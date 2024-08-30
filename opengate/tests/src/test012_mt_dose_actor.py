@@ -103,7 +103,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output-Edep.mhd",
-            dose.get_output_path(output_name='edep'),
+            dose.get_output_path(output_name="edep"),
             stat,
             tolerance=45,
         )

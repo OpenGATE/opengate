@@ -1417,9 +1417,11 @@ class Simulation(GateObject):
 
     @property
     def output(self):
-        raise GateDeprecationError("You can no longer (and do not need any longer) "
-                                   "access the simulation output via sim.output.\n"
-                                   "Use the original actor object directly.")
+        raise GateDeprecationError(
+            "You can no longer (and do not need any longer) "
+            "access the simulation output via sim.output.\n"
+            "Use the original actor object directly."
+        )
 
     @property
     def use_multithread(self):
@@ -1626,7 +1628,6 @@ class Simulation(GateObject):
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             _ = self._run_simulation_engine(False)
-
 
         if self.store_json_archive is True:
             self.to_json_file()

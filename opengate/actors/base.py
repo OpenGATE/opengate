@@ -321,9 +321,11 @@ class ActorBase(GateObject):
         try:
             self.fFilters = self.filters
         except AttributeError:
-            fatal(f"Implementation error: Unable to set the attribute 'fFilters' in actor '{self.name}' "
-                  f"(actor type: {self.type_name}). "
-                  f"Does the actor class somehow inherit from GateVActor (as it should)?")
+            fatal(
+                f"Implementation error: Unable to set the attribute 'fFilters' in actor '{self.name}' "
+                f"(actor type: {self.type_name}). "
+                f"Does the actor class somehow inherit from GateVActor (as it should)?"
+            )
 
     def _add_user_output(
         self, actor_output_class, name, can_be_deactivated=False, **kwargs

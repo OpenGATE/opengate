@@ -126,8 +126,8 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
 void GateDoseActor::BeginOfEventAction(const G4Event *event) {
   G4AutoLock mutex(&SetNbEventMutex);
   NbOfEvent++;
-//  threadLocalT &data = fThreadLocalData.Get();
-//  data.NbOfEvent_worker++;
+  //  threadLocalT &data = fThreadLocalData.Get();
+  //  data.NbOfEvent_worker++;
 }
 
 void GateDoseActor::SteppingAction(G4Step *step) {
