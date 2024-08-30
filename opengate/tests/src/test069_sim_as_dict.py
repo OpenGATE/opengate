@@ -101,6 +101,7 @@ if __name__ == "__main__":
 
     # test the file content -> NO, there are some abs filenames ...
     fn1 = paths.output / "test069" / sim.json_archive_filename
+    print(fn1)
     """fn2 = paths.output_ref / "test069" / sim.json_archive_filename
     f1 = open(fn1)
     j1 = json.load(f1)

@@ -210,8 +210,8 @@ if __name__ == "__main__":
     tps_non_flat.position.translation = [40 * cm, 0 * cm, 0 * cm]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -223,17 +223,15 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
     # with and without flat generation, the result in terms of dose should be identical
     d_names = ["edep_11", "edep_12", "edep_21", "edep_22"]
-    dose_actors = [output.get_actor(d) for d in d_names]
+    dose_actors = [sim.get_actor(d) for d in d_names]
     test = True
 
     # check that the dose output is the same
@@ -242,7 +240,7 @@ if __name__ == "__main__":
         utility.assert_images(
             output_path / dose_actors[0].get_output_path("edep"),
             output_path / dose_actors[2].get_output_path("edep"),
-            stat,
+            stats,
             tolerance=70,
             ignore_value=0,
         )
@@ -254,7 +252,7 @@ if __name__ == "__main__":
         utility.assert_images(
             output_path / dose_actors[1].get_output_path("edep"),
             output_path / dose_actors[3].get_output_path("edep"),
-            stat,
+            stats,
             tolerance=70,
             ignore_value=0,
             sum_tolerance=5.2,

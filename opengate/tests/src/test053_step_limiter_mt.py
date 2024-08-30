@@ -141,7 +141,7 @@ def simulate(number_of_threads=1, start_new_process=False):
     print("**** STATS END ****")
 
     print("Checking step limits:")
-    for item in output.hook_log:
+    for item in output.user_hook_log:
         print(f"Volume {item[0]}:")
         value_dict = item[1]
         print(f"Requested max_step_size: {requested_stepsizes[item[0]]}")
@@ -184,7 +184,7 @@ def check_user_limit(simulation_engine):
                 min_ekine = volume.g4_region.GetUserLimits().GetUserMinEkine(
                     g4.G4Track()
                 )
-                simulation_engine.hook_log.append(
+                simulation_engine.user_hook_log.append(
                     (
                         volume_name,
                         {"max_step_size": max_step_size, "min_ekine": min_ekine},

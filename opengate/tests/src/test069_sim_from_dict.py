@@ -24,6 +24,7 @@ if __name__ == "__main__":
     sim = gate.create_sim_from_json(paths.output / "test069" / "simu_test069.json")
 
     # Assert that objects have been read back correctly
+    print(sim.volume_manager.volumes)
     assert "rod" in sim.volume_manager.volumes
     m = gate.g4_units.m
     assert sim.volume_manager.world_volume.size == [1.5 * m, 1.5 * m, 1.5 * m]

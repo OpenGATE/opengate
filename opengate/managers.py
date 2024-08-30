@@ -1137,7 +1137,6 @@ class VolumeManager(GateObject):
         when it is closing to make sure that G4 references are set to None.
         """
         self.material_database = None
-        # self.volumes_user_info = None
 
     def add_material_database(self, filename):
         if filename in self.material_database.filenames:
@@ -1404,6 +1403,7 @@ class Simulation(GateObject):
         # hook functions
         self.user_hook_after_init = None
         self.user_hook_after_run = None
+        self.user_hook_log = None
 
     def __str__(self):
         s = (
@@ -1624,10 +1624,14 @@ class Simulation(GateObject):
             # Recover output from unpickled actors coming from sub-process queue
             for actor in self.actor_manager.actors.values():
                 actor.user_output = output.get_actor(actor.name).user_output
+
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
-            _ = self._run_simulation_engine(False)
+            output = self._run_simulation_engine(False)
+
+        # store the hook log
+        self.user_hook_log = output.user_hook_log
 
         if self.store_json_archive is True:
             self.to_json_file()

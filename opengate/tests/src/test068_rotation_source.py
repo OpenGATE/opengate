@@ -173,7 +173,6 @@ if __name__ == "__main__":
 
     # go !
     sim.run()
-    output = sim.output
 
     # Validation test
     f_phsp = uproot.open(phsp.get_output_path())

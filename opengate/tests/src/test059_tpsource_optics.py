@@ -116,21 +116,19 @@ if __name__ == "__main__":
     tps.particle = "ion 6 12"
     tps.beam_data_dict = beam_data_dict
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # -------------END SCANNING------------- #
     # print results at the end
-    stat = output.get_actor("Stats")
-    d_fPath = output_path / output.get_actor("doseInXYZ").get_output_path("dose")
-    print(stat)
+    d_fPath = output_path / sim.get_actor("doseInXYZ").get_output_path("dose")
+    print(stats)
 
     # ------ TESTS -------#
     # dose_path = utility.scale_dose(

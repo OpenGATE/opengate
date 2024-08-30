@@ -5,13 +5,14 @@ from box import Box
 import opengate as gate
 import opengate_core as g4
 from opengate.tests import utility
+from opengate.exception import warning
 
 
 def print_em_parameters(simulation_engine):
     em = g4.G4EmParameters.Instance()
     sec_model = str(em.PIXECrossSectionModel())
     esec_model = str(em.PIXEElectronCrossSectionModel())
-    simulation_engine.hook_log = Box(
+    simulation_engine.user_hook_log = Box(
         {
             "bearden": em.FluoDirectory(),
             "pixe_sec_model": sec_model,
@@ -44,26 +45,28 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run(start_new_process=True)
-    h = sim.output.hook_log
+    h = sim.user_hook_log
     print("output", h)
     is_ok = h.bearden == 0 and h.pixe_sec_model == "Empirical"
 
     # redo with different fluo dir
+    print()
     sim.add_g4_command_after_init("/process/em/pixeXSmodel ECPSSR_ANSTO")
     sim.add_g4_command_before_init("/process/em/fluoBearden true")
     sim.run(start_new_process=True)
-    h = sim.output.hook_log
+    h = sim.user_hook_log
     print("output", h)
     is_ok = h.bearden == 1 and h.pixe_sec_model == "ECPSSR_ANSTO" and is_ok
 
     # redo with different fluo dir
     try:
+        print()
         sim.add_g4_command_after_init("/process/em/fluoBearden true")
         sim.run(start_new_process=True)
         # The above should have caused an exception
         # not OK if it has not.
         is_ok = False
     except:
-        print("This is CORRECT if it throws an exception")
+        warning("This is CORRECT if it throws an exception")
 
     utility.test_ok(is_ok)

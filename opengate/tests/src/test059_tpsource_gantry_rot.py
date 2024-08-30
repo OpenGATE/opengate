@@ -166,19 +166,17 @@ if __name__ == "__main__":
     tps.sorted_spot_generation = True
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     ## ------ TESTS -------##
 
@@ -194,10 +192,10 @@ if __name__ == "__main__":
 
     # read output and ref
     img_mhd_out = itk.imread(
-        output_path / output.get_actor("doseInXYZ_rot").get_output_path("edep")
+        output_path / sim.get_actor("doseInXYZ_rot").get_output_path("edep")
     )
     img_mhd_ref = itk.imread(
-        output_path / output.get_actor("doseInXYZ").get_output_path("edep")
+        output_path / sim.get_actor("doseInXYZ").get_output_path("edep")
     )
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)

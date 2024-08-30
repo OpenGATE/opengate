@@ -118,7 +118,7 @@ if __name__ == "__main__":
     tps.particle = "ion 6 12"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     # s.track_types_flag = True
 
     # create output dir, if it doesn't exist
@@ -126,15 +126,13 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # -------------END SCANNING-------------
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     # ------ TESTS -------##
-    dose_path = output_path / output.get_actor("doseInXYZ").get_output_path("dose")
+    dose_path = output_path / sim.get_actor("doseInXYZ").get_output_path("dose")
 
     # RANGE
 

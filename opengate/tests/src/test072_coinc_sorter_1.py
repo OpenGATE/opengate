@@ -109,8 +109,8 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
 
     # actors
-    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats_actor.output_filename = "stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output_filename = "stats.txt"
 
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal.name}")
@@ -138,7 +138,6 @@ if __name__ == "__main__":
     sim.run()
 
     # end
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # This test produces the data for the other 072_coinc_sorter tests

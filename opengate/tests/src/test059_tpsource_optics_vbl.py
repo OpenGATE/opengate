@@ -113,20 +113,18 @@ if __name__ == "__main__":
     tps.plan_path = ref_path / "TreatmentPlan4Gate-gate_test59tps_v.txt"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # -------------END SCANNING-------------
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     # ------ TESTS -------
     # dose_path = utility.scale_dose(

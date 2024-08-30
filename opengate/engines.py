@@ -884,7 +884,7 @@ class SimulationOutput:
         self.pid = os.getpid()
         self.ppid = os.getppid()
         self.current_random_seed = None
-        self.hook_log = []
+        self.user_hook_log = []
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.simulation.actor_manager.actors
@@ -892,7 +892,7 @@ class SimulationOutput:
             actor.close()
 
     def store_hook_log(self, simulation_engine):
-        self.hook_log = simulation_engine.hook_log
+        self.user_hook_log = simulation_engine.user_hook_log
 
     def store_sources(self, simulation_engine):
         self.sources = {}
@@ -1009,7 +1009,7 @@ class SimulationEngine(GateSingletonFatal):
         self.user_hook_after_run = simulation.user_hook_after_run
         # a list to store short log messages
         # produced by hook function such as user_hook_after_init
-        self.hook_log = []  # FIXME: turn this into dictionary
+        self.user_hook_log = []  # FIXME: turn this into dictionary
 
     def close_engines(self):
         if self.volume_engine:
@@ -1225,7 +1225,7 @@ class SimulationEngine(GateSingletonFatal):
         # init random engine (before the MTRunManager creation)
         self.initialize_random_engine()
 
-        # Some sources (e.. PHID) need to perform computation once everything is defined in user_info but *before* the
+        # Some sources (e.g. PHID) need to perform computation once everything is defined in user_info but *before* the
         # initialization of the G4 engine starts. This can be done via this function.
         self.simulation.initialize_source_before_g4_engine()
 

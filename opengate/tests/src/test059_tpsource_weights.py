@@ -130,8 +130,8 @@ if __name__ == "__main__":
     tps.particle = "proton"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -143,11 +143,9 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
@@ -157,8 +155,8 @@ if __name__ == "__main__":
 
     print("Compare tps Edep to single pb sources")
     print(" --------------------------------------- ")
-    mhd_1 = output.get_actor("doseInYZ_1").get_output_path("edep")
-    mhd_2 = output.get_actor("doseInYZ_2").get_output_path("edep")
+    mhd_1 = sim.get_actor("doseInYZ_1").get_output_path("edep")
+    mhd_2 = sim.get_actor("doseInYZ_2").get_output_path("edep")
     test = True
 
     # check first spot
@@ -166,7 +164,7 @@ if __name__ == "__main__":
         utility.assert_images(
             ref_path / mhd_1,
             output_path / mhd_1,
-            stat,
+            stats,
             tolerance=70,
             ignore_value=0,
         )
@@ -178,7 +176,7 @@ if __name__ == "__main__":
         utility.assert_images(
             ref_path / mhd_1,
             output_path / mhd_1,
-            stat,
+            stats,
             tolerance=70,
             ignore_value=0,
         )

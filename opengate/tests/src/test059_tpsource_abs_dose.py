@@ -128,20 +128,17 @@ if __name__ == "__main__":
     ntot = beam_data_dict["msw_beam"]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    # s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # -------------END SCANNING------------- #
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     # ------ TESTS -------#
     dose_path = utility.scale_dose(

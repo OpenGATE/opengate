@@ -104,5 +104,5 @@ if __name__ == "__main__":
     sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
     sim.run()
 
-    is_ok = all(t is True for t in sim.output.hook_log)
+    is_ok = all(t is True for t in sim.user_hook_log)
     tu.test_ok(is_ok)
