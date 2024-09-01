@@ -42,7 +42,7 @@ void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
 }
 
 void GateDigitizerEnergyWindowsActor::InitializeCpp() {
-  // init
+  GateVActor::InitializeCpp();
   fInputDigiCollection = nullptr;
 }
 

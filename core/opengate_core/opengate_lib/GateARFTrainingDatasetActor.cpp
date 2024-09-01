@@ -17,6 +17,8 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
     : GateDigitizerHitsCollectionActor(user_info) {
   // action
   fActions.insert("EndOfEventAction");
+  fActions.insert("BeginOfEventAction");
+  fActions.insert("SteppingAction");
   // options
 }
 

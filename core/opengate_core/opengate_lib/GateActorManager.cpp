@@ -17,7 +17,7 @@ GateActorManager *GateActorManager::GetInstance() {
   return GateActorManager::fInstance;
 }
 
-GateActorManager::~GateActorManager() {}
+GateActorManager::~GateActorManager() = default;
 
 void GateActorManager::AddActor(GateVActor *actor) {
   for (auto *a : fActors) {

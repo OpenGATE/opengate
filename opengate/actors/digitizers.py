@@ -305,7 +305,7 @@ class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
                 f"Error, the policy for the Adder '{self.name}' must be EnergyWinnerPosition or "
                 f"EnergyWeightedCentroidPosition, while is is '{self.policy}'"
             )
-        ActorBase.initialize(self)
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
@@ -669,7 +669,7 @@ class DigitizerEnergyWindowsActor(DigitizerBase, g4.GateDigitizerEnergyWindowsAc
     }
 
     def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
+        DigitizerBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
 
@@ -678,14 +678,16 @@ class DigitizerEnergyWindowsActor(DigitizerBase, g4.GateDigitizerEnergyWindowsAc
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def initialize(self):
-        ActorBase.initialize(self)
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         g4.GateDigitizerEnergyWindowsActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        DigitizerBase.EndSimulationAction(self)
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
 
 
@@ -724,7 +726,7 @@ class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollection
     }
 
     def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
+        DigitizerBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
 
@@ -733,14 +735,16 @@ class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollection
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def initialize(self):
-        ActorBase.initialize(self)
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         g4.GateDigitizerHitsCollectionActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
+        DigitizerBase.EndSimulationAction(self)
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
 
 

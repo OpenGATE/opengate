@@ -3,43 +3,19 @@ import numpy as np
 import itk
 import threading
 import opengate_core as g4
-from ..utility import g4_units
-from ..exception import fatal
+from ..utility import g4_units, LazyModuleLoader
+from ..exception import fatal, warning
 from .base import ActorBase
 
-from .digitizers import DigitizerEnergyWindowsActor, DigitizerBase
-from .actoroutput import ActorOutputRoot, ActorOutputSingleImage
+from .digitizers import (
+    DigitizerEnergyWindowsActor,
+    DigitizerBase,
+    DigitizerHitsCollectionActor,
+)
+from .actoroutput import ActorOutputSingleImage, ActorOutputRoot
+from ..base import process_cls
 
-
-def import_garf():
-    # Try to import torch
-    try:
-        import torch
-    except:
-        fatal(
-            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
-        )
-
-    # Try to import garf_phsp
-    try:
-        import garf
-    except:
-        fatal("The module \"garf\" is needed. Use ' pip install garf'")
-
-    # Check minimal version of garf
-    import pkg_resources
-    from packaging import version
-
-    garf_version = pkg_resources.get_distribution("garf").version
-    garf_minimal_version = "2.5"
-    if version.parse(garf_version) < version.parse(garf_minimal_version):
-        fatal(
-            "The minimal version of garf is not correct. You should install at least the version "
-            + garf_minimal_version
-            + ". Your version is "
-            + garf_version
-        )
-    return garf
+garf = LazyModuleLoader("garf")
 
 
 def check_channel_overlap(ch1, ch2):
@@ -56,7 +32,7 @@ def check_channel_overlap(ch1, ch2):
     return False
 
 
-class ARFTrainingDatasetActor(DigitizerBase, g4.GateARFTrainingDatasetActor):
+class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
     """
     The ARFTrainingDatasetActor build a root file with energy, angles, positions and energy windows
     of a spect detector. To be used by garf_train to train a ARF neural network.
@@ -79,24 +55,49 @@ class ARFTrainingDatasetActor(DigitizerBase, g4.GateARFTrainingDatasetActor):
                 "doc": "",
             },
         ),
+        # duplicated because cpp part inherit from HitsCollectionActor
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        # duplicated because cpp part inherit from HitsCollectionActor
+        "keep_zero_edep": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
         "russian_roulette": (1, {"doc": "Russian roulette factor. "}),
     }
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputRoot, "root_output")
+        self.__initcpp__()
+
+    def __initcpp__(self):
         g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
-        self._add_user_output_root(
-            output_filename="arf_training.root",
+        self.AddActions(
+            {
+                "SteppingAction",
+                # "BeginOfRunActionMasterThread",
+                # "EndOfRunActionMasterThread",
+                "BeginOfEventAction",
+                "EndOfEventAction",
+            }
         )
 
     def initialize(self):
         ActorBase.initialize(self)
-
         self.check_energy_window_actor()
-
         # initialize C++ side
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        g4.GateARFTrainingDatasetActor.StartSimulationAction(self)
 
     def check_energy_window_actor(self):
         # check the energy_windows_actor
@@ -105,7 +106,7 @@ class ARFTrainingDatasetActor(DigitizerBase, g4.GateARFTrainingDatasetActor):
                 f"The actor '{self.name}' has the user input energy_windows_actor={self.energy_windows_actor}, "
                 f"but no actor with this name was found in the simulation."
             )
-        ewa = self.simulation.actor_manager.get_actor(self.energy_windows_actor)
+        ewa = self.simulation.get_actor(self.energy_windows_actor)
         if not isinstance(ewa, DigitizerEnergyWindowsActor):
             fatal(
                 f"The actor '{self.name}' has the user input energy_windows_actor={self.energy_windows_actor}, "
@@ -123,6 +124,10 @@ class ARFTrainingDatasetActor(DigitizerBase, g4.GateARFTrainingDatasetActor):
                         f"{i} and {i + 1 + j} overlap. This is not possible for ARF. \n"
                         f"{ch1} {ch2}"
                     )
+
+    def EndSimulationAction(self):
+        g4.GateARFTrainingDatasetActor.EndSimulationAction(self)
+        ActorBase.EndSimulationAction(self)
 
 
 def _setter_hook_image_spacing(self, image_spacing):
@@ -194,13 +199,9 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        g4.GateARFActor.__init__(self, self.user_info)  # call the C++ constructor
         # import module
         self.debug_nb_hits_before = None
         self.debug_nb_hits = 0
-        self.garf = import_garf()
-        if self.garf is None:
-            fatal("Cannot run GANSource")
         # prepare output
         self.nn = None
         self.model = None
@@ -215,19 +216,27 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.image_plane_size_mm = None
         self.output_image = None
         self.output_array = None
+        self.output_size = None
         self.nb_ene = None
 
-        self._add_user_output(
-            ActorOutputSingleImage,
-            "arf_projection",
-            output_filename="arf_projection.mhd",
-            keep_in_memory=True,
+        self._add_user_output(ActorOutputSingleImage, "arf_projection")
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateARFActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "SteppingAction",
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+            }
         )
 
     def __getstate__(self):
         # needed to not pickle objects that cannot be pickled (g4, cuda, lock, etc).
         return_dict = super().__getstate__()
-        return_dict["garf"] = None
         return_dict["nn"] = None
         return_dict["lock"] = None
         return_dict["model"] = None
@@ -244,7 +253,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.initialize_params()
         self.initialize_device()
 
-        self.output_array = np.zeros(self.param.output_size, dtype=np.float64)
+        self.output_array = np.zeros(self.output_size, dtype=np.float64)
 
         # initialize C++ side
         self.InitializeUserInput(self.user_info)
@@ -253,7 +262,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
     def initialize_model(self):
         # load the pth file
-        self.nn, self.model = self.garf.load_nn(
+        self.nn, self.model = garf.load_nn(
             self.pth_filename, verbose=False, gpu_mode=self.gpu_mode
         )
 
@@ -274,7 +283,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
     def initialize_device(self):
         # which device for GARF : cpu cuda mps ?
         # we recommend CPU only
-        current_gpu_mode, current_gpu_device = self.garf.helpers.get_gpu_device(
+        current_gpu_mode, current_gpu_device = garf.helpers.get_gpu_device(
             self.gpu_mode
         )
         self.model_data["current_gpu_device"] = current_gpu_device
@@ -293,16 +302,19 @@ class ARFActor(ActorBase, g4.GateARFActor):
                 self.image_plane_size_pixel[1],
             ]
         )
-        output_size = [
+        self.output_size = [
             self.nb_ene * nb_runs,
             self.output_image[1],
             self.output_image[2],
         ]
-        self.output_image = np.zeros(output_size, dtype=np.float64)
+        self.output_image = np.zeros(self.output_size, dtype=np.float64)
 
     def apply(self, actor):
         # we need a lock when the ARF is applied
-        with self.lock:
+        if self.simulation.use_multithread:
+            with self.lock:
+                self.arf_build_image_from_projected_points(actor)
+        else:
             self.arf_build_image_from_projected_points(actor)
 
     def arf_build_image_from_projected_points(self, actor):
@@ -338,7 +350,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
             )
 
         # from projected points to image counts
-        u, v, w_pred = self.garf.arf_from_points_to_image_counts(
+        u, v, w_pred = garf.arf_from_points_to_image_counts(
             px,
             self.model,
             self.model_data,
@@ -353,7 +365,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
             run_id = actor.GetCurrentRunId()
             s = self.nb_ene * run_id
             img = self.output_array[s : s + self.nb_ene]
-            self.garf.image_from_coordinates_add_numpy(img, u, v, w_pred)
+            garf.image_from_coordinates_add_numpy(img, u, v, w_pred)
             self.debug_nb_hits += u.shape[0]
 
     def EndOfRunActionMasterThread(self, run_index):
@@ -387,13 +399,18 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.SetInput(output_image)
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
-
-        self.store_output_data("projection", run_index, output_image)
-
+        self.user_output["arf_projection"].store_data("merged", output_image)
+        # ensure why return 0 ?
         return 0
 
     def EndSimulationAction(self):
         g4.GateARFActor.EndSimulationAction(self)
+        ActorBase.EndSimulationAction(self)
         # process the remaining elements in the batch
-        self.apply(self)
-        self.user_output["projection"].write_data_if_requested()
+        # self.apply()
+        # warning('SHOULD call apply here ???')
+        self.user_output["arf_projection"].write_data_if_requested(which="merged")
+
+
+process_cls(ARFActor)
+process_cls(ARFTrainingDatasetActor)
