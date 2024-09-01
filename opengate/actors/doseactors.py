@@ -299,7 +299,7 @@ def compute_std_from_sample(
         if correct_bias:
             # Standard error is biased (to underestimate the error);
             # this option allows to correct for the bias - assuming normal distribution.
-            # For few N this influence is huge, but for N>8 the difference is minimal
+            # For few N this in is huge, but for N>8 the difference is minimal
             unc /= standard_error_c4_correction(number_of_samples)
         unc = np.divide(
             unc,
