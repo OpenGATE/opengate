@@ -43,21 +43,27 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     @property
     def pps(self):
         if self.merged_data.duration != 0:
-            return self.merged_data.event_count / self.merged_data.duration
+            return int(
+                self.merged_data.event_count / (self.merged_data.duration / g4_units.s)
+            )
         else:
             return 0
 
     @property
     def tps(self):
         if self.merged_data.duration != 0:
-            return self.merged_data.track_count / self.merged_data.duration
+            return int(
+                self.merged_data.track_count / (self.merged_data.duration / g4_units.s)
+            )
         else:
             return 0
 
     @property
     def sps(self):
         if self.merged_data.duration != 0:
-            return self.merged_data.step_count / self.merged_data.duration
+            return int(
+                self.merged_data.step_count / (self.merged_data.duration / g4_units.s)
+            )
         else:
             return 0
 
@@ -85,12 +91,9 @@ class ActorOutputStatisticsActor(ActorOutputBase):
             "value": val,
             "unit": unit,
         }
-        val, unit = g4_best_unit_tuple(self.pps, "Time")
-        d["pps"] = {"value": val, "unit": unit}
-        val, unit = g4_best_unit_tuple(self.tps, "Time")
-        d["tps"] = {"value": val, "unit": unit}
-        val, unit = g4_best_unit_tuple(self.sps, "Time")
-        d["sps"] = {"value": val, "unit": unit}
+        d["pps"] = {"value": self.pps, "unit": None}
+        d["tps"] = {"value": self.tps, "unit": None}
+        d["sps"] = {"value": self.sps, "unit": None}
         d["start_time"] = {
             "value": self.merged_data.start_time,
             "unit": None,
@@ -201,7 +204,13 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
             sim_stop = 0
 
         self.user_output.stats.store_data(
-            {"sim_start": sim_start * g4_units.s, "sim_stop": sim_stop * g4_units.s}
+            {"sim_start": sim_start, "sim_stop": sim_stop}
+        )
+        self.user_output.stats.merged_data.sim_start_time = (
+            self.simulation.run_timing_intervals[0][0]
+        )
+        self.user_output.stats.merged_data.sim_stop_time = (
+            self.simulation.run_timing_intervals[-1][1]
         )
         self.user_output.stats.write_data_if_requested()
 
