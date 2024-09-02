@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     # get results
     stats = sim.get_actor("Stats")
-    print("Simulation seed:", sim.output.current_random_seed)
+    print("Simulation seed:", sim.current_random_seed)
     print(stats)
 
     # gate_test5_proton

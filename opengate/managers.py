@@ -1404,6 +1404,9 @@ class Simulation(GateObject):
         self.user_hook_after_run = None
         self.user_hook_log = None
 
+        # read-only info
+        self._current_random_seed = None
+
     def __str__(self):
         s = (
             f"Simulation name: {self.name} \n"
@@ -1429,6 +1432,10 @@ class Simulation(GateObject):
     @property
     def world(self):
         return self.volume_manager.world_volume
+
+    @property
+    def current_random_seed(self):
+        return self._current_random_seed
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -1631,6 +1638,7 @@ class Simulation(GateObject):
 
         # store the hook log
         self.user_hook_log = output.user_hook_log
+        self._current_random_seed = output.current_random_seed
 
         if self.store_json_archive is True:
             self.to_json_file()
