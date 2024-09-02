@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "test010-generic_source_angular_distribution.mhd"
-    dose.user_output.edep_uncertainty.active = True
+    dose.edep_uncertainty.active = True
     dose.attached_to = "image_volume"
     dose.size = [100, 1, 100]
     dose.spacing = [10 * mm, 1 * cm, 10 * mm]
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "test010-generic_source_angular_distribution_edep_ref.mhd",
-            dose.get_output_path(output_name="edep"),
+            dose.edep.get_output_path(),
             stat,
             tolerance=13,
             ignore_value=0,
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         utility.assert_images(
             ref_path
             / "test010-generic_source_angular_distribution_edep_uncertainty_ref.mhd",
-            dose.get_output_path(output_name="edep_uncertainty"),
+            dose.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
             ignore_value=1,
