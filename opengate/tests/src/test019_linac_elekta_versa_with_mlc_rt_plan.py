@@ -55,12 +55,10 @@ def add_volume_to_irradiate(sim, name, l_cp):
         1,
     ]
     dose = sim.add_actor("DoseActor", "dose_water_slice")
-    dose.attached_to = plane.name
-    # dose.output_filename = "dose_actor_versa_rt_plan.mhd" # FIXME
+    dose.attached_to = plane
+    dose.edep.output_filename = "dose_actor_versa_rt_plan.mhd"  # FIXME
     dose.size = [int(dim_box[0]), int(dim_box[1]), int(dim_box[2])]
     dose.spacing = [voxel_size_x, voxel_size_y, voxel_size_z]
-    dose.uncertainty = False
-    dose.square = False
     dose.hit_type = "random"
 
     # move the plane
@@ -212,8 +210,8 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * m)
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # add water slice with a dose actor and a motion actor
     add_volume_to_irradiate(sim, world.name, l_cp)
@@ -225,7 +223,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.get_actor(s.name)
     print(stats)
 
     # test
@@ -236,7 +233,8 @@ if __name__ == "__main__":
     theoretical_area = calc_mlc_aperture(leaves, jaws, sad=sad)
 
     dose2 = sim.get_actor("dose_water_slice")
-    img_MC = itk.imread(dose2.get_output_path("edep"))
+    img_MC = dose2.edep.get_data()
+    # img_MC = itk.imread(dose2.get_output_path("edep"))
     array_MC = itk.GetArrayFromImage(img_MC)
     bool_MC = array_MC[array_MC != 0]
     simulated_area = len(bool_MC) / 4
