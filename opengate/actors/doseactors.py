@@ -1,27 +1,12 @@
-import itk
-import numpy as np
 import opengate_core as g4
 from .base import ActorBase
-from ..exception import fatal, warning
+from ..exception import warning
 from ..utility import (
     g4_units,
-    ensure_filename_is_str,
     standard_error_c4_correction,
 )
-from ..image import (
-    create_3d_image,
-    align_image_with_physical_volume,
-    update_image_py_to_cpp,
-    create_image_like,
-    get_info_from_image,
-    get_origin_wrt_images_g4_position,
-    get_cpp_image,
-    itk_image_view_from_array,
-    divide_itk_images,
-    scale_itk_image,
-    write_itk_image,
-)
-from ..geometry.materials import create_mass_img, create_density_img
+from ..image import *
+from ..geometry.materials import create_density_img
 
 
 class DoseActor(g4.GateDoseActor, ActorBase):
@@ -160,7 +145,9 @@ class DoseActor(g4.GateDoseActor, ActorBase):
         # create itk image (py side)
         size = np.array(self.user_info.size)
         spacing = np.array(self.user_info.spacing)
-        self.py_edep_image = create_3d_image(size, spacing, pixel_type="double")
+        self.py_edep_image = create_3d_image(
+            size, spacing, pixel_type="double", fill_value=0
+        )
         # compute the center, using translation and half pixel spacing
         self.img_origin_during_run = (
             -size * spacing / 2.0 + spacing / 2.0 + self.user_info.translation
@@ -208,7 +195,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             or self.user_info.ste_of_mean
         ):
             self.py_square_image = create_image_like(
-                self.py_edep_image, pixel_type="double"
+                self.py_edep_image, pixel_type="double", fill_value=0
             )
             update_image_py_to_cpp(
                 self.py_square_image, self.cpp_square_image, self.first_run
@@ -259,7 +246,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe later as_pyarray ?
-        self.py_edep_image = get_cpp_image(self.cpp_edep_image)
+        self.py_edep_image = update_image_cpp_to_py(self.cpp_edep_image)
 
         # set the property of the output image:
         # in the coordinate system of the attached volume
@@ -355,8 +342,8 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             )
 
     def fetch_square_image_from_cpp(self):
-        if self.py_square_image == None:
-            self.py_square_image = get_cpp_image(self.cpp_square_image)
+        if self.py_square_image is None:
+            self.py_square_image = update_image_cpp_to_py(self.cpp_square_image)
             self.py_square_image.SetOrigin(self.output_origin)
             self.py_square_image.CopyInformation(self.py_edep_image)
 
@@ -391,17 +378,17 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         self.fetch_square_image_from_cpp()
 
-        edep = itk.array_view_from_image(self.py_edep_image)
-        square = itk.array_view_from_image(self.py_square_image)
+        edep = itk_array_view_from_image(self.py_edep_image)
+        square = itk_array_view_from_image(self.py_square_image)
 
-        self.py_edep_image_tmp = itk_image_view_from_array(edep)
-        self.py_edep_image_tmp.CopyInformation(self.py_edep_image)
-        self.py_edep_image = self.py_edep_image_tmp
-        del self.py_edep_image_tmp
+        # self.py_edep_image_tmp = itk_image_view_from_array(edep)
+        # self.py_edep_image_tmp.CopyInformation(self.py_edep_image)
+        # self.py_edep_image = self.py_edep_image_tmp
+        # del self.py_edep_image_tmp
 
         # uncertainty image
         self.uncertainty_image = create_image_like(
-            self.py_edep_image, pixel_type="double"
+            self.py_edep_image, pixel_type="double", fill_value=0
         )
         # unc = itk.array_view_from_image(self.uncertainty_image)
 
@@ -616,8 +603,8 @@ class LETActor(g4.GateLETActor, ActorBase):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe later as_pyarray ?
-        self.py_numerator_image = get_cpp_image(self.cpp_numerator_image)
-        self.py_denominator_image = get_cpp_image(self.cpp_denominator_image)
+        self.py_numerator_image = update_image_cpp_to_py(self.cpp_numerator_image)
+        self.py_denominator_image = update_image_cpp_to_py(self.cpp_denominator_image)
 
         # set the property of the output image:
         # in the coordinate system of the attached volume
@@ -757,7 +744,7 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
 
         # Get the itk image from the cpp side
         # Currently a copy. Maybe later as_pyarray ?
-        self.py_fluence_image = get_cpp_image(self.cpp_fluence_image)
+        self.py_fluence_image = update_image_cpp_to_py(self.cpp_fluence_image)
 
         # set the property of the output image:
         origin = self.img_origin_during_run

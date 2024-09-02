@@ -13,8 +13,59 @@
 #include <pybind11/stl_bind.h>
 
 #include "itkImage.h"
+#include "itkImageRegionConstIterator.h"
 #include "itkImportImageFilter.h"
 #include "itkSmartPointer.h"
+
+void print_sum_of_array(py::array array) {
+  // (function for debug only)
+  // Get the size of the array (number of elements)
+  ssize_t num_elements = array.size();
+
+  // Determine the data type of the array
+  py::buffer_info buf_info = array.request();
+  const void *data_ptr = buf_info.ptr;
+
+  // Initialize the sum variable
+  double sum = 0.0;
+  std::cout << "num_elements = " << num_elements << std::endl;
+  // Calculate the sum based on the data type
+  if (buf_info.format == py::format_descriptor<unsigned char>::format()) {
+    const auto *data = static_cast<const unsigned char *>(data_ptr);
+    for (ssize_t i = 0; i < num_elements; ++i) {
+      if (i == 0)
+        std::cout << "uc data = " << data[i] << std::endl;
+      sum += data[i];
+    }
+  } else if (buf_info.format ==
+             py::format_descriptor<unsigned short>::format()) {
+    const auto *data = static_cast<const unsigned short *>(data_ptr);
+    for (ssize_t i = 0; i < num_elements; ++i) {
+      if (i == 0)
+        std::cout << "us data = " << data[i] << std::endl;
+      sum += data[i];
+    }
+  } else if (buf_info.format == py::format_descriptor<float>::format()) {
+    const auto *data = static_cast<const float *>(data_ptr);
+    for (ssize_t i = 0; i < num_elements; ++i) {
+      if (i == 0)
+        std::cout << "f data = " << data[i] << std::endl;
+      sum += data[i];
+    }
+  } else if (buf_info.format == py::format_descriptor<double>::format()) {
+    const auto *data = static_cast<const double *>(data_ptr);
+    for (ssize_t i = 0; i < num_elements; ++i) {
+      if (i == 0)
+        std::cout << "d data = " << data[i] << std::endl;
+      sum += data[i];
+    }
+  } else {
+    throw std::runtime_error("Unsupported data type");
+  }
+
+  // Print the sum of the array elements
+  std::cout << "Sum of array elements: " << sum << std::endl;
+}
 
 /** For now make copies of data to numpy arrays.
  * Some examples (pybind11 source code docs are non-existant)
@@ -177,9 +228,37 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
                 (contiguous == "F")
                     ? std::vector<size_t>{size[2], size[1], size[0]}
                     : std::vector<size_t>{size[0], size[1], size[2]};
-            return py::array(
+
+            // Calculate strides
+            using PixelType = typename TImagePointer::ObjectType::PixelType;
+            std::vector<unsigned long> strides;
+            if (contiguous == "F") {
+              strides = {
+                  sizeof(PixelType), // Stride for the first dimension (z-axis)
+                  sizeof(PixelType) *
+                      size[2], // Stride for the second dimension (y-axis)
+                  sizeof(PixelType) * size[2] *
+                      size[1] // Stride for the third dimension (x-axis)
+              };
+            } else {
+              strides = {
+                  sizeof(PixelType) * size[1] *
+                      size[2], // Stride for the first dimension (x-axis)
+                  sizeof(PixelType) *
+                      size[2],      // Stride for the second dimension (y-axis)
+                  sizeof(PixelType) // Stride for the third dimension (z-axis)
+              };
+            }
+
+            auto a = py::array(
                 py::dtype::of<typename TImagePointer::ObjectType::PixelType>(),
-                shape, img->GetBufferPointer());
+                shape, strides, img->GetBufferPointer());
+
+            // print_sum_of_array(a);
+            // a = a.attr("copy")();
+            // print_sum_of_array(a);
+
+            return a;
           },
           py::arg("contig") = "F")
       // TODO: Create a view (non-copy) of the data
