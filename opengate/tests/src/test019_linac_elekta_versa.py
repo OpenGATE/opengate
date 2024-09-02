@@ -53,8 +53,8 @@ if __name__ == "__main__":
     versa.enable_brem_splitting(sim, linac.name, splitting_factor=10)
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # add phase space
     plane = versa.add_phase_space_plane(sim, linac.name, linac.size[2] - 1 * nm)
@@ -65,7 +65,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.get_actor(s.name)
     print(stats)
 
     # compare root
