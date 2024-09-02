@@ -8,19 +8,20 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "gate_test041_dose_actor_dose_to_water"
+        __file__, "gate_test041_dose_actor_dose_to_water", "test041"
     )
 
     # create the simulation
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 123456
-    ui.number_of_threads = 5
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 123456
+    sim.number_of_threads = 5
+    sim.output_dir = paths.output
+
     # units
     m = gate.g4_units.m
     cm = gate.g4_units.cm
@@ -60,6 +61,7 @@ if __name__ == "__main__":
     water_slab_insert.translation = [43 * mm, 0, 0]
     water_slab_insert.material = "G4_WATER"
     water_slab_insert.color = [0, 0, 1, 1]
+
     # si entrance
     entranceRegion = sim.add_volume("Box", "entranceRegion")
     entranceRegion.mother = phantom_off.name
@@ -92,81 +94,72 @@ if __name__ == "__main__":
     dose_spacing = [0.1, 20.0, 20.0]
     doseActorName_IDD_d = "IDD_d"
     doseActor = sim.add_actor("DoseActor", doseActorName_IDD_d)
-    doseActor.output = paths.output / ("test041-" + doseActorName_IDD_d + ".mhd")
-    doseActor.mother = phantom_off.name
+    doseActor.output_filename = f"test041-{doseActorName_IDD_d}.mhd"
+    doseActor.attached_to = phantom_off.name
     doseActor.size = dose_size
     doseActor.spacing = dose_spacing
     doseActor.hit_type = "random"
-    doseActor.dose = True
+    doseActor.user_output.dose.active = True
 
     doseActorName_IDD_d2w = "IDD_d2w"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_IDD_d2w)
-    doseActorDerived.output = paths.output / (
-        "test041-" + doseActorName_IDD_d2w + ".mhd"
-    )
-    doseActorDerived.mother = phantom_off.name
+    doseActorDerived.output_filename = f"test041-{doseActorName_IDD_d2w}.mhd"
+    doseActorDerived.attached_to = phantom_off.name
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose = True
-    doseActorDerived.to_water = True
+    doseActorDerived.user_output.dose.active = True
+    doseActorDerived.score_in = "water"
 
     doseActorName_water_slab_insert_d = "IDD_waterSlab_d"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_water_slab_insert_d)
-    doseActorDerived.output = paths.output / (
-        "test041-" + doseActorName_water_slab_insert_d + ".mhd"
-    )
-    doseActorDerived.mother = water_slab_insert.name
+    doseActorDerived.output_filename = "test041-{doseActorName_water_slab_insert_d}.mhd"
+    doseActorDerived.attached_to = water_slab_insert.name
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose = True
+    doseActorDerived.user_output.dose.active = True
 
     doseActorName_water_slab_insert_d2w = "IDD_waterSlab_d2w"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_water_slab_insert_d2w)
-    doseActorDerived.output = paths.output / (
-        "test041-" + doseActorName_water_slab_insert_d2w + ".mhd"
+    doseActorDerived.output_filename = (
+        f"test041-{doseActorName_water_slab_insert_d2w}.mhd"
     )
-    doseActorDerived.mother = water_slab_insert.name
+    doseActorDerived.attached_to = water_slab_insert.name
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose = True
-    doseActorDerived.to_water = True
+    doseActorDerived.user_output.dose.active = True
+    doseActorDerived.score_in = "water"
 
     doseActorName_entranceRegiont_d = "IDD_entranceRegion_d"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_entranceRegiont_d)
-    doseActorDerived.output = paths.output / (
-        "test041-" + doseActorName_entranceRegiont_d + ".mhd"
-    )
-    doseActorDerived.mother = entranceRegion.name
+    doseActorDerived.output_filename = f"test041-{doseActorName_entranceRegiont_d}.mhd"
+    doseActorDerived.attached_to = entranceRegion.name
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose = True
+    doseActorDerived.user_output.dose.active = True
 
     doseActorName_entranceRegiont_d2w = "IDD_entranceRegion_d2w"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_entranceRegiont_d2w)
-    doseActorDerived.output = paths.output / (
-        "test041-" + doseActorName_entranceRegiont_d2w + ".mhd"
-    )
-    doseActorDerived.mother = entranceRegion.name
+    doseActorDerived.output_filename = "test041-{doseActorName_entranceRegiont_d2w}.mhd"
+    doseActorDerived.attached_to = entranceRegion.name
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
     doseActorDerived.hit_type = "random"
-    doseActorDerived.dose = True
-    doseActorDerived.to_water = True
+    doseActorDerived.user_output.dose.active = True
+    doseActorDerived.score_in = "water"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.get_actor("stats")
-    print(stat)
+    print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
@@ -192,23 +185,25 @@ if __name__ == "__main__":
         sim.get_actor(doseActorName_entranceRegiont_d2w).user_info.output
     ).replace(".mhd", "-Dosetowater.mhd")
     """
-    doseFpath_IDD_d = sim.get_actor(doseActorName_IDD_d).user_info.output
-    doseFpath_IDD_d2w = sim.get_actor(doseActorName_IDD_d2w).user_info.output
+    doseFpath_IDD_d = sim.get_actor(doseActorName_IDD_d).get_output_path("dose")
+    doseFpath_IDD_d2w = sim.get_actor(doseActorName_IDD_d2w).get_output_path("dose")
     doseFpath_geoWater_d = sim.get_actor(
         doseActorName_water_slab_insert_d
-    ).user_info.output
+    ).get_output_path("dose")
     doseFpath_geoWater_d2w = sim.get_actor(
         doseActorName_water_slab_insert_d2w
-    ).user_info.output
-    doseFpath_geoSi_d = sim.get_actor(doseActorName_entranceRegiont_d).user_info.output
+    ).get_output_path("dose")
+    doseFpath_geoSi_d = sim.get_actor(doseActorName_entranceRegiont_d).get_output_path(
+        "dose"
+    )
     doseFpath_geoSi_d2w = sim.get_actor(
         doseActorName_entranceRegiont_d2w
-    ).user_info.output
+    ).get_output_path("dose")
 
     unused = utility.assert_images(
         doseFpath_IDD_d,
         doseFpath_IDD_d2w,
-        stat,
+        stats,
         tolerance=100,
         ignore_value=0,
         axis="x",

@@ -12,14 +12,15 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    # ui.random_seed = 123456789
-    ui.number_of_threads = n_thr
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 123456789
+    sim.number_of_threads = n_thr
+    sim.output_dir = paths.output
     Ntotal = 10000 * (30 / n_thr) ** 2
-    N_per_trhead = Ntotal / ui.number_of_threads
+    N_per_trhead = Ntotal / sim.number_of_threads
+
     # units
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
@@ -61,85 +62,72 @@ def run_sim(n_thr, c4_ref=None, paths=None):
     dose_spacing = [0.5 * mm, 100.0 * mm, 100.0 * mm]
     doseActorName_IDD_singleImage = "IDD_singleImage"
     doseActor = sim.add_actor("DoseActor", doseActorName_IDD_singleImage)
-    doseActor.output = paths.output / (
-        "test041-" + doseActorName_IDD_singleImage + ".mhd"
-    )
-    doseActor.mother = phantom.name
+    doseActor.output_filename = f"test041-{doseActorName_IDD_singleImage}.mhd"
+    doseActor.attached_to = phantom.name
     doseActor.size = dose_size
     doseActor.spacing = dose_spacing
     doseActor.hit_type = "random"
-    doseActor.dose = False
-    doseActor.use_more_ram = False
-    doseActor.ste_of_mean = False
-    doseActor.uncertainty = True
-    doseActor.square = False
+    doseActor.user_output.edep_uncertainty.active = True
 
     doseActorName_IDD_NthreadImages = "IDD_NthreadImages"
     doseActor = sim.add_actor("DoseActor", doseActorName_IDD_NthreadImages)
-    doseActor.output = paths.output / (
-        "test041-" + doseActorName_IDD_NthreadImages + ".mhd"
-    )
-    doseActor.mother = phantom.name
+    doseActor.output_filename = f"test041-{doseActorName_IDD_NthreadImages}.mhd"
+    doseActor.attache_to = phantom.name
     doseActor.size = dose_size
     doseActor.spacing = dose_spacing
     doseActor.hit_type = "random"
-    doseActor.dose = False
-    doseActor.use_more_ram = True
-    doseActor.ste_of_mean = True
-    doseActor.uncertainty = False
-    doseActor.square = False
+    # doseActor.use_more_ram = True
+    # doseActor.ste_of_mean = True
 
     doseActorName_IDD_NthreadImages_unbiased = "IDD_NthreadImages_unbiased"
     doseActor = sim.add_actor("DoseActor", doseActorName_IDD_NthreadImages_unbiased)
-    doseActor.output = paths.output / (
-        "test041-" + doseActorName_IDD_NthreadImages_unbiased + ".mhd"
+    doseActor.output_filename = (
+        f"test041-{doseActorName_IDD_NthreadImages_unbiased}.mhd"
     )
-    doseActor.mother = phantom.name
+    doseActor.attache_to = phantom.name
     doseActor.size = dose_size
     doseActor.spacing = dose_spacing
     doseActor.hit_type = "random"
-    doseActor.dose = False
-    doseActor.use_more_ram = True
-    doseActor.ste_of_mean_unbiased = True
-    doseActor.uncertainty = False
-    doseActor.square = False
+    # doseActor.use_more_ram = True
+    # doseActor.ste_of_mean_unbiased = True
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.get_actor("stats")
-    print(stat)
+    print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
 
     doseFpath_IDD_singleImage = str(
-        sim.get_actor(doseActorName_IDD_singleImage).user_info.output
+        sim.get_actor(doseActorName_IDD_singleImage).get_output_path("edep")
     )
     doseFpath_IDD_NthreadImages = str(
-        sim.get_actor(doseActorName_IDD_NthreadImages).user_info.output
+        sim.get_actor(doseActorName_IDD_NthreadImages).get_output_path("edep")
     )
     doseFpath_IDD_NthreadImages_uncert = str(
-        sim.get_actor(doseActorName_IDD_NthreadImages).user_info.output_uncertainty
+        sim.get_actor(doseActorName_IDD_NthreadImages).get_output_path(
+            "edep_uncertainty"
+        )
     )
     doseFpath_IDD_NthreadImages_uncert_unbiased = str(
-        sim.get_actor(
-            doseActorName_IDD_NthreadImages_unbiased
-        ).user_info.output_uncertainty
+        sim.get_actor(doseActorName_IDD_NthreadImages_unbiased).get_output_path(
+            "edep_uncertainty"
+        )
     )
     doseFpath_IDD_singleImage_uncert = str(
-        sim.get_actor(doseActorName_IDD_singleImage).user_info.output_uncertainty
+        sim.get_actor(doseActorName_IDD_singleImage).get_output_path("edep_uncertainty")
     )
 
     unused = utility.assert_images(
         doseFpath_IDD_singleImage,
         doseFpath_IDD_NthreadImages,
-        stat,
+        stats,
         tolerance=100,
         ignore_value=0,
         axis="x",

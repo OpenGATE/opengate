@@ -483,7 +483,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self._add_user_output(
             ActorOutputSingleImage, "square", can_be_deactivated=True, active=False
         )
-
+        self._add_user_output(ActorOutputSingleImage, "density")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -499,7 +499,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             }
         )
 
-    def compute_dose_from_edep_img(self, input_image):
+    def compute_dose_from_edep_img(self, input_image, density_image=None):
         """
         * create mass image:
             - from ct HU units, if dose actor attached to ImageVolume.
@@ -532,12 +532,18 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         else:
             if self.score_in == "water":
                 # for dose to water, divide by density of water and not density of material
-                density = 1.0 * gcm3
+                scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
             else:
-                density = vol.g4_material.GetDensity()
-            scaled_image = scale_itk_image(
-                input_image, 1 / (voxel_volume * density * Gy)
-            )
+                # the dose actor is attached to a volume, we need the density image
+                # to be computed from the cpp side
+                scaled_image = divide_itk_images(
+                    img1_numerator=input_image,
+                    img2_denominator=density_image,
+                    filterVal=0,
+                    replaceFilteredVal=0,
+                )
+            # divide by voxel volume and convert unit
+            scaled_image = scale_itk_image(scaled_image, 1 / (Gy * voxel_volume))
 
         return scaled_image
 
@@ -552,6 +558,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
+        # activate density if we need the dose and the DoseActor is not attached to a volume
+        vol = self.attached_to_volume
+        if self.user_output.dose.active is True and vol.volume_type != "ImageVolume":
+            self.user_output.density.active = True
+
         # activate output if requested
         if self.user_output.dose_uncertainty.active is True:
             self.user_output.edep_uncertainty.active = True
@@ -561,8 +572,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         self.InitializeUserInput(self.user_info)  # C++ side
         self.SetSquareFlag(self.user_output.square.active)
-        if self.score_in == "water":
-            self.SetToWaterFlag(True)
+        self.SetDensityFlag(self.user_output.density.active)
+        self.SetToWaterFlag(self.score_in == "water")
+
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
@@ -571,15 +583,17 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.prepare_output_for_run("edep", run_index)
         self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
 
-        if self.user_output.square.active:  # uncertainty=True implies square=True
+        if self.user_output.density.active:
+            self.prepare_output_for_run("density", run_index)
+            self.push_to_cpp_image("density", run_index, self.cpp_density_image)
+
+        if self.user_output.square.active:
             self.prepare_output_for_run("square", run_index)
             self.push_to_cpp_image("square", run_index, self.cpp_square_image)
 
-        # there is only one image on the cpp-side, namely cpp_edep_image;
-        # there is no image for dose
-
         if self.user_output.edep_uncertainty.active:
             self.prepare_output_for_run("edep_uncertainty", run_index)
+
         if self.user_output.dose_uncertainty.active:
             self.prepare_output_for_run("dose_uncertainty", run_index)
 
@@ -590,16 +604,25 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self._update_output_coordinate_system("edep", run_index)
 
+        # squared edep
         if self.user_output.square.active:
             self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
             self._update_output_coordinate_system("square", run_index)
 
-        if self.user_output.dose.active:  # and not self.dose_calc_on_the_fly:
+        # density image
+        if self.user_output.density.active:
+            self.fetch_from_cpp_image("density", run_index, self.cpp_density_image)
+            self._update_output_coordinate_system("density", run_index)
+
+        # dose
+        if self.user_output.dose.active:
+            density_image = None
+            if self.user_output.density.active:
+                density_image = self.user_output.density.get_data(run_index)
             dose_image = self.compute_dose_from_edep_img(
-                self.user_output.edep.get_data(run_index)
+                self.user_output.edep.get_data(run_index), density_image
             )
             dose_image.CopyInformation(self.user_output.edep.get_data(run_index))
-
             self.store_output_data(
                 "dose",
                 run_index,

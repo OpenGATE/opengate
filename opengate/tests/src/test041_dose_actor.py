@@ -5,7 +5,9 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test008_dose_actor", "test041"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -15,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -66,56 +69,55 @@ if __name__ == "__main__":
 
     # add dose actor
     edep = sim.add_actor("DoseActor", "edep")
-    edep.output = paths.output / "test041.mhd"
-    edep.mother = "waterbox"
+    edep.output_filename = "test041.mhd"
+    edep.attached_to = "waterbox"
     edep.size = [10, 10, 50]
     mm = gate.g4_units.mm
     ts = [200 * mm, 200 * mm, 200 * mm]
     edep.spacing = [x / y for x, y in zip(ts, edep.size)]
     print(edep.spacing)
-    edep.uncertainty = True
-    edep.dose = False
+    edep.user_output.edep_uncertainty.active = True
+    edep.user_output.dose.active = False
     edep.hit_type = "random"
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = paths.output / "test041.mhd"
+    dose.output_filename = "test041.mhd"
     dose.attached_to = "waterbox"
     dose.size = [10, 10, 50]
     mm = gate.g4_units.mm
     ts = [200 * mm, 200 * mm, 200 * mm]
     dose.spacing = [x / y for x, y in zip(ts, dose.size)]
     print(dose.spacing)
-    dose.uncertainty = True
-    dose.dose = True
+    dose.user_output.dose.active = True
+    dose.user_output.dose_uncertainty.active = False
+    dose.user_output.density.active = (
+        False  # it will be turned True automatically (needed)
+    )
     dose.hit_type = "random"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.get_actor("Stats")
-    print(stat)
-
-    dose = sim.get_actor("dose")
-    edep = sim.get_actor("edep")
+    print(stats)
     print(dose)
 
     # tests
     gate.exception.warning("Tests stats file")
     stats_ref = utility.read_stat_file(paths.gate_output / "stat2.txt")
-    is_ok = utility.assert_stats(stat, stats_ref, 0.10)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     gate.exception.warning("\nDifference for EDEP")
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Edep.mhd",
-            paths.output / edep.user_info.output,
-            stat,
+            edep.get_output_path("edep"),
+            stats,
             tolerance=10,
             ignore_value=0,
         )
@@ -126,8 +128,8 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Edep-Uncertainty.mhd",
-            paths.output / edep.user_info.output_uncertainty,
-            stat,
+            edep.get_output_path("edep_uncertainty"),
+            stats,
             tolerance=30,
             ignore_value=1,
         )
@@ -138,8 +140,8 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Dose.mhd",
-            paths.output / dose.user_info.output,
-            stat,
+            dose.get_output_path("dose"),
+            stats,
             tolerance=10,
             ignore_value=0,
         )

@@ -86,6 +86,9 @@ void GateDoseActor::InitializeCpp() {
   if (fSquareFlag) {
     cpp_square_image = Image3DType::New();
   }
+  if (fDensityFlag) {
+    cpp_density_image = Image3DType::New();
+  }
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
@@ -103,6 +106,10 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
     AttachImageToVolume<Image3DType>(cpp_square_image, fPhysicalVolumeName,
                                      fTranslation);
   }
+  if (fDensityFlag) {
+    AttachImageToVolume<Image3DType>(cpp_density_image, fPhysicalVolumeName,
+                                     fTranslation);
+  }
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
@@ -115,6 +122,10 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
     l.lastid_worker_flatimg.resize(N_voxels);
     std::fill(l.lastid_worker_flatimg.begin(), l.lastid_worker_flatimg.end(),
               0);
+  }
+
+  if (fDensityFlag) {
+    cpp_density_image->FillBuffer(0);
   }
   //  if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
   //    l.edep_worker_flatimg.resize(N_voxels);
@@ -196,6 +207,13 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     }
 
     ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+
+    if (fDensityFlag) {
+      // FIXME : not very efficient: should be computed once for all
+      auto *current_material = step->GetPreStepPoint()->GetMaterial();
+      auto density = current_material->GetDensity();
+      cpp_density_image->SetPixel(index, density);
+    }
 
     if (fSquareFlag) {
       auto &locald = fThreadLocalData.Get();

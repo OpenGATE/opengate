@@ -130,7 +130,7 @@ if __name__ == "__main__":
     print(is_ok)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        d.user_info.output,
+        d.get_output_path("edep"),
         stat,
         tolerance=35,
     )

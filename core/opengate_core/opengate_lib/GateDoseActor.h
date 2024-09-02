@@ -53,6 +53,10 @@ public:
 
   inline void SetSquareFlag(const bool b) { fSquareFlag = b; }
 
+  inline void SetDensityFlag(const bool b) { fDensityFlag = b; }
+
+  inline bool GetDensityFlag() const { return fDensityFlag; }
+
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
   }
@@ -74,6 +78,7 @@ public:
   //  Image3DType::Pointer cpp_dose_image;
   Image3DType::Pointer cpp_square_image;
   Image3DType::SizeType size_edep{};
+  Image3DType::Pointer cpp_density_image;
 
   //  // Option: indicate if we must compute uncertainty
   //  bool fUncertaintyFlag;
@@ -88,6 +93,9 @@ public:
 
   // Option: indicate we must convert to dose to water
   bool fToWaterFlag{};
+
+  // Option: indicate the density is needed
+  bool fDensityFlag{};
 
   //  // Option: calculate dose in stepping action. If False, calc only edep and
   //  // divide by mass at the end of the simulation, on py side
