@@ -18,6 +18,10 @@ if __name__ == "__main__":
     gate.logger.log.debug(sim)
 
     cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.second
 
     # add a simple volume
     waterbox = sim.add_volume("Box", "Waterbox")
@@ -26,10 +30,6 @@ if __name__ == "__main__":
     waterbox.material = "G4_WATER"
 
     # default source for tests
-    MeV = gate.g4_units.MeV
-    mm = gate.g4_units.mm
-    Bq = gate.g4_units.Bq
-    sec = gate.g4_units.second
     source1 = sim.add_source("GenericSource", "source1")
     source1.particle = "proton"
     source1.energy.mono = 150 * MeV
