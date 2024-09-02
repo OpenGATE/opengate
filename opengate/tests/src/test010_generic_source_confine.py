@@ -103,18 +103,18 @@ if __name__ == "__main__":
     # actors
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = "test010-2.mhd"
-    # dose.output_filename = paths.output_ref / 'test010-2-edep.mhd'
-    dose.attached_to = waterbox
-    dose.size = [100, 100, 100]
-    dose.spacing = [2 * mm, 1 * mm, 1 * mm]
+    dose_actor = sim.add_actor("DoseActor", "dose_actor")
+    dose_actor.output_filename = "test010-2.mhd"
+    # dose_actor.output_filename = paths.output_ref / 'test010-2-edep.mhd'
+    dose_actor.attached_to = waterbox
+    dose_actor.size = [100, 100, 100]
+    dose_actor.spacing = [2 * mm, 1 * mm, 1 * mm]
 
     # start simulation
     sim.run()
 
     # print
-    print("Simulation seed:", sim.output.current_random_seed)
+    print("Simulation seed:", sim.current_random_seed)
 
     # get results
     print(stats)
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test010-2-edep.mhd",
-        dose.get_output_path(output_name="edep"),
+        dose_actor.edep.get_output_path(),
         stats,
         tolerance=59,
     )
