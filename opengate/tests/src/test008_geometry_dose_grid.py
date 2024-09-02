@@ -12,7 +12,6 @@ def main():
     paths = utility.get_default_test_paths(
         __file__, "gate_test042_gauss_gps", "test008"
     )
-    out_path = paths.output
 
     # create the simulation
     sim = gate.Simulation()
@@ -134,7 +133,7 @@ def main():
     for test_name, dose in dose_actors.items():
         print(test_name)
         ok = (
-            check_dose_grid_geometry(dose.user_output.edep.get_output_path(), dose)
+            check_dose_grid_geometry(dose.get_output_path(output_name='edep'), dose)
             and ok
         )
 
