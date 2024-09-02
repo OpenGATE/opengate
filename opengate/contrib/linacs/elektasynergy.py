@@ -342,6 +342,7 @@ def add_mirror(sim, linac_name):
 
 
 def enable_brem_splitting(sim, linac_name, splitting_factor):
+    # FIXME: consider using new biasing mechanism instead of G4 commands
     # create a region
     linac = sim.volume_manager.get_volume(linac_name)
     region_linac = sim.physics_manager.add_region(name=f"{linac.name}_region")
