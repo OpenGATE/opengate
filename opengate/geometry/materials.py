@@ -752,14 +752,11 @@ class MaterialDatabase:
         self.init_user_mat()
         # try to build the material if it does not yet exist
         if material_name not in self.g4_materials:
-            print(f"DEBUG: Need to build material {material_name}")
             if material_name in self.nist_material_names:
-                print(f"DEBUG:     ... from NistManager")
                 self.g4_materials[material_name] = (
                     self.g4_NistManager.FindOrBuildMaterial(material_name)
                 )
             elif material_name in self.material_builders:
-                print(f"DEBUG:     ... from material_builder")
                 self.g4_materials[material_name] = self.material_builders[
                     material_name
                 ].build()
