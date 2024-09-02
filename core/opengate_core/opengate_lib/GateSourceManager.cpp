@@ -79,6 +79,7 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   // Fake init of the EventModulo (will be changed in StartMasterThread or by
   // the user) thanks to /run/eventModulo 50000 1
   if (G4Threading::IsMultithreadedApplication()) {
+    // (static cast is REQUIRED)
     auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
     mt->SetEventModulo(-1);
   }

@@ -5,6 +5,7 @@ import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
+from opengate.tests.utility import print_test, test_ok
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test043_garf", "test043")
@@ -96,15 +97,23 @@ if __name__ == "__main__":
     print(stats)
 
     # FIXME: will work once the source_manager will be refactored.
-    # skip = gate.sources.generic.get_source_skipped_events(sim, "s1")
-    # print(f"Nb of skip particles {skip}  {(skip / stats.counts.event_count) * 100:.2f}%")
+    skip = gate.sources.generic.get_source_skipped_events(sim, "s1")
+    ref_skip = 615782
+    is_ok = True
+    if abs(skip - ref_skip) / ref_skip > 0.01:
+        is_ok = False
+    print_test(
+        is_ok,
+        f"Nb of skip particles {skip} (vs {ref_skip}) "
+        f"{(skip / stats.counts.event_count) * 100:.2f}%",
+    )
 
     # ----------------------------------------------------------------------------------------------------------------
     gate.exception.warning("Compare stats")
     stats_ref = utility.read_stat_file(
         paths.output_ref / "test043_arf_training_dataset_stats.txt"
     )
-    is_ok = utility.assert_stats(stats, stats_ref, 0.01)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.01) and is_ok
 
     gate.exception.warning("Compare root")
     checked_keys = [
@@ -125,3 +134,5 @@ if __name__ == "__main__":
         )
         and is_ok
     )
+
+    test_ok(is_ok)

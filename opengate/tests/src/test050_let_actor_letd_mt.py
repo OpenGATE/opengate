@@ -140,7 +140,7 @@ if __name__ == "__main__":
     # # add dose actor, without e- (to check)
     fe = sim.add_filter("ParticleFilter", "f")
     fe.particle = "proton"
-    fe.policy = "keep"
+    fe.policy = "accept"
     LETActor_primaries.filters.append(fe)
     print(dir(fe))
 

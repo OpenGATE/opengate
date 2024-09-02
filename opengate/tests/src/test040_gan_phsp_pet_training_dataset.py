@@ -29,6 +29,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
     ac = 15 * BqmL
     sim.visu = False
     if sim.visu:
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     )
     phsp.filters.append(f)
     print(phsp)
-    print(phsp.output)
+    print(phsp.get_output_path())
 
     # go
     sim.run()
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     print()
     gate.exception.warning(f"Check root")
     p = sim.get_actor("phase_space")
-    print(f"Number of absorbed : {p.fNumberOfAbsorbedEvents}")
+    print(f"Number of absorbed : {p.number_of_absorbed_events}")
     ref_file = paths.output_ref / "test040_train.root"
     hc_file = phsp.get_output_path()
     checked_keys = [

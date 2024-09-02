@@ -347,7 +347,7 @@ def divide_itk_images(
     imgarrOut[L_filterInv] = np.divide(imgarr1[L_filterInv], imgarr2[L_filterInv])
 
     imgarrOut[np.invert(L_filterInv)] = replaceFilteredVal
-    imgarrOut = itk.image_from_array(imgarrOut)
+    imgarrOut = itk_image_from_array(imgarrOut)
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
 

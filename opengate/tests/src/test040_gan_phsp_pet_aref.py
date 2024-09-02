@@ -29,6 +29,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 1386
+    sim.output_dir = paths.output
     ac = 5e3 * BqmL / sim.number_of_threads
     sim.visu = False
     sim.visu_type = "vrml"
@@ -91,7 +92,7 @@ if __name__ == "__main__":
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output = paths.output / "test040_ref_stats.txt"
+    stats.output_filename = "test040_ref_stats.txt"
 
     # store phsp of exiting particles (gamma only)
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
@@ -109,6 +110,7 @@ if __name__ == "__main__":
     ]
     phsp.output_filename = "test040_ref_phsp.root"
     phsp.store_absorbed_event = True
+    # phsp.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     phsp.filters.append(f)
@@ -130,7 +132,8 @@ if __name__ == "__main__":
 
     # 426760*2*0.8883814158496728 = 758251.3
     ref = 9523
-    ae = phsp.fNumberOfAbsorbedEvents  # !!! FIXME
+    ae = phsp.number_of_absorbed_events
+    print(ae)
     err = abs(ae - ref) / ref
     tol = 0.055
     is_ok = err < tol and is_ok

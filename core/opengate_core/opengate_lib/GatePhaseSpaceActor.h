@@ -23,7 +23,7 @@ public:
   // explicit GatePhaseSpaceActor(std::string type_name);
   explicit GatePhaseSpaceActor(py::dict &user_info);
 
-  virtual ~GatePhaseSpaceActor();
+  ~GatePhaseSpaceActor() override;
 
   virtual void InitializeUserInput(py::dict &user_info) override;
 
@@ -55,9 +55,13 @@ public:
   // Called when the simulation end (master thread only)
   void EndSimulationAction() override;
 
-  int GetNumberOfAbsorbedEvents();
+  int GetNumberOfAbsorbedEvents() const;
 
-  int GetTotalNumberOfEntries();
+  int GetTotalNumberOfEntries() const;
+
+  void SetStoreEnteringStepFlag(bool b) { fStoreEnteringStep = true; }
+  void SetStoreExitingStepFlag(bool b) { fStoreExitingStep = true; }
+  void SetStoreFirstStepInVolumeFlag(bool b) { fStoreFirstStepInVolume = true; }
 
 protected:
   // Local data for the threads (each one has a copy)
@@ -72,6 +76,9 @@ protected:
   GateDigiCollection *fHits;
   bool fDebug;
   bool fStoreAbsorbedEvent;
+  bool fStoreEnteringStep;
+  bool fStoreExitingStep;
+  bool fStoreFirstStepInVolume;
 
   int fNumberOfAbsorbedEvents;
   int fTotalNumberOfEntries;

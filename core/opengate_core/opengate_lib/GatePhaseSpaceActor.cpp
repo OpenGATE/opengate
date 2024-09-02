@@ -22,6 +22,7 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fActions.insert("PreUserTrackingAction");
   fActions.insert("SteppingAction");
   fActions.insert("EndOfRunAction");
+  fActions.insert("EndOfEventAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
   fTotalNumberOfEntries = 0;
@@ -108,19 +109,51 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 
 // Called every time a batch of step must be processed
 void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
-  // Only store if this is the first time
-  // Note we CANNOT use step->IsFirstStepInVolume() because it
-  // fails with parallel world geometry
+  /*
+   Only store if the particle enters and/or exits the volume.
+   (We CANNOT use step->IsFirstStepInVolume() because it fails with parallel
+   world geometry) Warning: some particles can enter several times in the volume
+   (backscatter), there will be two times in the phsp.
+
+   When this function is triggered: we know the step is somewhere IN the volume.
+   - Entering: pre step is at the boundary of the volume, so entering.
+   - Exiting: post step is at the boundary of the volume (or the world if
+   attached to the world)
+   - FirstStepInVolume: this is the first time we see this particle in the
+   volume (whatever is it at the boundary or not)
+   */
+
   auto &l = fThreadLocalData.Get();
-  if (!l.fFirstStepInVolume)
-    return;
+
+  // Particle enters the volume if the pre step is at the volume boundary
+  bool entering = step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
+
+  // Particle exits the volume if the post step is at the volume boundary or at
+  // the world boundary if the phsp is attached to the world
+  bool exiting = step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary ||
+                 step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary;
+
+  // When this is the first time we see this particle fFirstStepInVolume is true
+  // We then set it to false
+  bool first_step_in_volume = l.fFirstStepInVolume;
   l.fFirstStepInVolume = false;
+
+  // Keep or ignore ?
+  bool ok = entering && fStoreEnteringStep;
+  ok = ok || (exiting && fStoreExitingStep);
+  ok = ok || (first_step_in_volume && fStoreFirstStepInVolume);
+  if (!ok)
+    return;
+
   // Fill the hits
   fHits->FillHits(step);
+
   // Set that at least one step for this event have been stored
   if (fStoreAbsorbedEvent) {
     l.fCurrentEventHasBeenStored = true;
   }
+
+  // debug
   if (fDebug) {
     auto s = fHits->DumpLastDigi();
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
@@ -130,7 +163,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
     std::string pname = "none";
     if (p != nullptr)
       pname = p->GetProcessName();
-    std::cout << GetName() << " "
+    std::cout << GetName()
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name
@@ -138,6 +171,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
               << " pre="
               << G4BestUnit(step->GetPreStepPoint()->GetKineticEnergy(),
                             "Energy")
+              << " step_n=" << step->GetTrack()->GetCurrentStepNumber()
               << " edep=" << G4BestUnit(step->GetTotalEnergyDeposit(), "Energy")
               << " proc=" << pname << " lastdigit=(" << s << ")" << std::endl;
   }
@@ -201,10 +235,10 @@ void GatePhaseSpaceActor::EndSimulationAction() {
   fHits->Close();
 }
 
-int GatePhaseSpaceActor::GetNumberOfAbsorbedEvents() {
+int GatePhaseSpaceActor::GetNumberOfAbsorbedEvents() const {
   return fNumberOfAbsorbedEvents;
 }
 
-int GatePhaseSpaceActor::GetTotalNumberOfEntries() {
+int GatePhaseSpaceActor::GetTotalNumberOfEntries() const {
   return fTotalNumberOfEntries;
 }

@@ -46,6 +46,7 @@ if __name__ == "__main__":
     sim.random_seed = 123456
     # sim.running_verbose_level = gate.EVENT
     # sim.g4_verbose = True
+    sim.output_dir = paths.output
     ac = 5e3 * BqmL / sim.number_of_threads
     sim.visu = False
     colli_flag = not sim.visu
@@ -168,7 +169,7 @@ if __name__ == "__main__":
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output = paths.output / "test040_gan_stats.txt"
+    stats.output_filename = "test040_gan_stats.txt"
 
     # phsp actor
     phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp")
@@ -201,15 +202,15 @@ if __name__ == "__main__":
     print()
     gate.exception.warning(f"Check stats")
     if sim.number_of_threads == 1:
-        s = sim.output.get_source("gaga")
+        s = sim.source_manager.get_source_info("gaga")
     else:
-        s = sim.output.get_source_mt("gaga", 0)
+        s = sim.source_manager.get_source_info_mt("gaga", 0)
     print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
-    b = gate.sources.generic.get_source_skipped_events(sim.output, gsource.name)
+    b = gate.sources.generic.get_source_skipped_events(sim, gsource.name)
     print(f"Source, nb of skipped particles (check) : {b}")
 
     print(f"Source, nb of zerosE particles : {s.fTotalZeroEvents}")
-    b = gate.sources.generic.get_source_zero_events(sim.output, gsource.name)
+    b = gate.sources.generic.get_source_zero_events(sim, gsource.name)
     print(f"Source, nb of zerosE particles (check) : {b}")
 
     print(stats)

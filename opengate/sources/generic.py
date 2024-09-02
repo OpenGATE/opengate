@@ -180,31 +180,17 @@ def set_source_rad_energy_spectrum(source, rad):
     source.energy.spectrum_energy = en
 
 
-def get_source_skipped_events(output, source_name):
-    n = 0
-    if (
-        output.simulation.number_of_threads > 1
-        or output.simulation.force_multithread_mode
-    ):
-        for i in range(1, output.simulation.number_of_threads + 1):
-            s = output.get_source_mt(source_name, i)
-            n += s.fTotalSkippedEvents
-    else:
-        n = output.get_source(source_name).fTotalSkippedEvents
+def get_source_skipped_events(sim, source_name):
+    n = sim.source_manager.get_source_info(source_name).fTotalSkippedEvents
+    # FIXME this is *not* the correct way to do. Workaround until source is refactored
+    n = n * sim.number_of_threads
     return n
 
 
-def get_source_zero_events(output, source_name):
-    n = 0
-    if (
-        output.simulation.number_of_threads > 1
-        or output.simulation.force_multithread_mode
-    ):
-        for i in range(1, output.simulation.number_of_threads + 1):
-            s = output.get_source_mt(source_name, i)
-            n += s.fTotalZeroEvents
-    else:
-        n = output.get_source(source_name).fTotalZeroEvents
+def get_source_zero_events(sim, source_name):
+    n = sim.source_manager.get_source_info(source_name).fTotalZeroEvents
+    # FIXME this is *not* the correct way to do. Workaround until source is refactored
+    n = n * sim.number_of_threads
     return n
 
 
@@ -527,8 +513,9 @@ class GenericSource(SourceBase):
     def prepare_output(self):
         SourceBase.prepare_output(self)
         # store the output from G4 object
-        self.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
-        self.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
+        # FIXME will be refactored like the actors
+        self.user_info.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
+        self.user_info.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
 
     def update_tac_activity(self):
         ui = self.user_info

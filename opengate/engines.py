@@ -895,6 +895,7 @@ class SimulationOutput:
         self.user_hook_log = simulation_engine.user_hook_log
 
     def store_sources(self, simulation_engine):
+        print("store sources")
         self.sources = {}
         if simulation_engine.simulation.multithreaded is True:
             th = {}

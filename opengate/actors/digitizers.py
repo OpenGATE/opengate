@@ -174,7 +174,8 @@ class Digitizer:
             module_name = f"{self.name}_{index}"
         mod = self.simulation.add_actor(module_type, module_name)
         mod.attached_to = self.actors[index - 1].attached_to
-        mod.input_digi_collection = self.actors[index - 1].name
+        if "input_digi_collection" in mod.user_info:
+            mod.input_digi_collection = self.actors[index - 1].name
         mod.write_to_disk = False
         self.actors.append(mod)
         return mod
@@ -333,16 +334,16 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
     """
 
     user_info_defaults = {
-        "attributes": (
-            [],
-            {
-                "doc": "Attributes to be considered. ",
-            },
-        ),
         "input_digi_collection": (
             "Hits",
             {
-                "doc": "Name of the digit collection to be used as input. ",
+                "doc": "Digi collection to be used as input. ",
+            },
+        ),
+        "blur_attribute": (
+            None,
+            {
+                "doc": "FIXME",
             },
         ),
         "skip_attributes": (
@@ -357,20 +358,15 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
                 "doc": "FIXME",
             },
         ),
-        "blur_attribute": (
-            None,
-            {
-                "doc": "FIXME",
-            },
-        ),
         "blur_method": (
             "Gaussian",
-            {"doc": "FIXME", "allowed_values": ("Gaussian", "InverseSquare", "Linear")},
-        ),
-        "blur_fwhm": (
-            None,
             {
                 "doc": "FIXME",
+                "allowed_values": (
+                    "Gaussian",
+                    "InverseSquare",
+                    "Linear",
+                ),
             },
         ),
         "blur_sigma": (
@@ -379,25 +375,33 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
                 "doc": "FIXME",
             },
         ),
-        "blur_reference_value": (
+        "blur_fwhm": (
             None,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "blur_reference_value": (
+            0,
             {
                 "doc": "FIXME",
             },
         ),
         "blur_resolution": (
-            None,
+            0,
             {
                 "doc": "FIXME",
             },
         ),
         "blur_slope": (
-            None,
+            0,
             {
                 "doc": "FIXME",
             },
         ),
     }
+
+    type_name = "DigitizerBlurringActor"
 
     def __init__(self, *args, **kwargs):
         DigitizerBase.__init__(self, *args, **kwargs)
@@ -410,7 +414,7 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
 
     def initialize(self):
         self.initialize_blurring_parameters()
-        ActorBase.initialize(self)
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
@@ -461,6 +465,7 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
             )
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         g4.GateDigitizerBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -1000,6 +1005,7 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
                 "doc": "FIXME",
             },
         ),
+        "steps_to_store": ("entering", {"doc": "FIXME"}),  # FIXME set authorized values
     }
 
     def __init__(self, *args, **kwargs):
@@ -1014,11 +1020,16 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
 
     def initialize(self):
         DigitizerBase.initialize(self)
+        if "entering" in self.steps_to_store:
+            self.SetStoreEnteringStepFlag(True)
+        if "exiting" in self.steps_to_store:
+            self.SetStoreExitingStepFlag(True)
+        if "first" in self.steps_to_store:
+            self.SetStoreFirstStepInVolumeFlag(True)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        DigitizerBase.StartSimulationAction(self)
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):

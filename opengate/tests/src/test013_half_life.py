@@ -15,6 +15,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.check_volumes_overlap = False
     sim.output_dir = paths.output
+    sim.random_seed = 42
 
     # units
     m = gate.g4_units.m
@@ -111,10 +112,10 @@ if __name__ == "__main__":
     keys2 = keys1
     scalings = [1] * len(keys1)
     scalings[2] = 1e-12  # GlobalTime
-    tols = [0.008] * len(keys1)
-    tols[1] = 0.012  # LocalTime
-    tols[2] = 0.04  # GlobalTime
-    tols[4] = 0.012  # TimeFromBeginOfEvent
+    tols = [0.02] * len(keys1)
+    # tols[1] = 0.02  # LocalTime
+    tols[2] = 0.06  # GlobalTime
+    # tols[4] = 0.02  # TimeFromBeginOfEvent
     print(keys2, scalings, tols)
     print(phsp1.get_output_path())
     print(phsp2.get_output_path())

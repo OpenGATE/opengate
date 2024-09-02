@@ -75,7 +75,7 @@ if __name__ == "__main__":
     att_filter.attribute = "GlobalTime"
     att_filter.value_min = 20 * sec
     att_filter.value_max = 70 * sec
-    att_filter.policy = "discard"
+    att_filter.policy = "reject"
     print(att_filter)
     ka.filters.append(att_filter)
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     att_filter.attribute = "KineticEnergy"
     att_filter.value_min = 300 * keV
     att_filter.value_max = 1200 * keV
-    att_filter.policy = "keep"
+    att_filter.policy = "accept"
     ka.filters.append(att_filter)
 
     # stats
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             paths.output_ref / f"test023_filters_attribute.root",
-            phsp1.get_output_path(),
+            phsp1.output,
             "phsp2",
             "phsp2",
             keys1=phsp1.attributes,

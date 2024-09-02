@@ -54,6 +54,7 @@ def create_simulation(sim, paths, name):
     ]
     phsp.debug = False
     phsp.output_filename = f"test061_{name}.root"
+    phsp.steps_to_store = "first"
 
 
 def analyse(simulation):

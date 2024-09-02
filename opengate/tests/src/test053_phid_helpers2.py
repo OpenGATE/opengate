@@ -49,6 +49,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     ]
     phsp.output_filename = output / f"test053_{sim_name}.root"
     phsp.debug = False
+    phsp.steps_to_store = "exiting first"
 
     f = sim.add_filter("ParticleFilter", "f1")
     f.particle = "gamma"

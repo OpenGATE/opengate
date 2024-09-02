@@ -64,6 +64,7 @@ if __name__ == "__main__":
     # phsp actor for timing
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attributes = ["GlobalTime"]
+    phsp.steps_to_store = "exiting"
     phsp.output_filename = paths.output / "test052_tac.root"
 
     # go

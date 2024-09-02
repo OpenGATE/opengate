@@ -62,17 +62,19 @@ if __name__ == "__main__":
     phsp_bg = sim.add_actor("PhaseSpaceActor", "phsp_bg")
     phsp_bg.attributes = ["EventPosition"]
     phsp_bg.output_filename = "iec_bg.root"
+    phsp_bg.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "g")
     f.particle = "gamma"
-    f.policy = "keep"
+    f.policy = "accept"
     phsp_bg.filters.append(f)
 
     phsp_sph = sim.add_actor("PhaseSpaceActor", "phsp_sph")
     phsp_sph.attributes = ["EventPosition"]
     phsp_sph.output_filename = "iec_spheres.root"
+    phsp_sph.steps_to_store = "exiting first"
     f = sim.add_filter("ParticleFilter", "electron")
     f.particle = "e-"
-    f.policy = "keep"
+    f.policy = "accept"
     phsp_sph.filters.append(f)
     print(phsp_sph)
 

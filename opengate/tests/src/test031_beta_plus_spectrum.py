@@ -101,7 +101,8 @@ if __name__ == "__main__":
         phsp.attached_to = f"b{si}"
         phsp.attributes = ["TrackVertexKineticEnergy"]
         phsp.output_filename = f"test031_{rad}.root"
-        f = sim.add_filter("ParticleFilter", f"f_{rad}")
+        phsp.steps_to_store = "exiting"
+        f = sim.add_filter("ParticleFilter", "f")
         f.particle = "e+"
         phsp.filters.append(f)
         rads.append(rad)
@@ -156,10 +157,8 @@ if __name__ == "__main__":
     tol = 4.1
     for rad in rads:
         # input
-        # output = paths.output_ref / f"test031_{rad}.root"
-        data_ref = uproot.open(sim.get_output_path(f"test031_{rad}.root"))[
-            f"phsp_{rad}"
-        ]
+        output = paths.output_ref / f"test031_{rad}.root"
+        data_ref = uproot.open(output)[f"phsp_{rad}"]
         data_ref = (
             data_ref.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV
@@ -170,8 +169,8 @@ if __name__ == "__main__":
                  range=(data_ref.min(), data_ref.max()), histtype='stepfilled',
                  alpha=0.5, label=f'{rads[i]}', color='r')"""
         # output
-        # output = paths.output / f"test031_{rad}.root"
-        data = uproot.open(sim.get_output_path(f"test031_{rad}.root"))[f"phsp_{rad}"]
+        output = paths.output / f"test031_{rad}.root"
+        data = uproot.open(output)[f"phsp_{rad}"]
         data = (
             data.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV

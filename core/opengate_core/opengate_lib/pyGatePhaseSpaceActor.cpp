@@ -15,5 +15,11 @@ void init_GatePhaseSpaceActor(py::module &m) {
       .def("GetNumberOfAbsorbedEvents",
            &GatePhaseSpaceActor::GetNumberOfAbsorbedEvents)
       .def("GetTotalNumberOfEntries",
-           &GatePhaseSpaceActor::GetTotalNumberOfEntries);
+           &GatePhaseSpaceActor::GetTotalNumberOfEntries)
+      .def("SetStoreEnteringStepFlag",
+           &GatePhaseSpaceActor::SetStoreEnteringStepFlag)
+      .def("SetStoreExitingStepFlag",
+           &GatePhaseSpaceActor::SetStoreExitingStepFlag)
+      .def("SetStoreFirstStepInVolumeFlag",
+           &GatePhaseSpaceActor::SetStoreFirstStepInVolumeFlag);
 }

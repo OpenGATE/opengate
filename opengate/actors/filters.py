@@ -12,10 +12,10 @@ class FilterBase(GateObject):
 
     user_info_defaults = {
         "policy": (
-            "keep",
+            "accept",
             {
                 "doc": "How should the item be handled?",
-                "allowed_values": ["keep", "discard"],
+                "allowed_values": ["accept", "reject"],
             },
         ),
     }
@@ -131,11 +131,25 @@ class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
         super().initialize()
 
 
+class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):
+
+    def __init__(self, *args, **kwargs):
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateUnscatteredPrimaryFilter.__init__(self)
+
+    def initialize(self):
+        super().initialize()
+
+
 filter_classes = {
     "ParticleFilter": ParticleFilter,
     "KineticEnergyFilter": KineticEnergyFilter,
     "TrackCreatorProcessFilter": TrackCreatorProcessFilter,
     "ThresholdAttributeFilter": ThresholdAttributeFilter,
+    "UnscatteredPrimaryFilter": UnscatteredPrimaryFilter,
 }
 
 

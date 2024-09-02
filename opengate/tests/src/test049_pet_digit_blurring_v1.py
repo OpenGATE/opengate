@@ -7,7 +7,7 @@ from opengate.tests import utility
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
+    paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur", "test049")
 
     """
     see https://github.com/teaghan/PET_MonteCarlo

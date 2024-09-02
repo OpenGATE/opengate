@@ -91,6 +91,7 @@ def init_test019(nt):
     ]
     ta2.output_filename = "test019_hits.root"
     ta2.debug = False
+    ta2.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     ta2.filters.append(f)
@@ -250,6 +251,7 @@ def create_simu_test019_phsp_source(sim):
         "PostPosition",
         "PrePosition",
         "PrePositionLocal",
+        "PostPositionLocal",
         "ParticleName",
         "PreDirection",
         "PreDirectionLocal",
@@ -261,6 +263,7 @@ def create_simu_test019_phsp_source(sim):
     ]
     ta1.output_filename = "test019_hits_phsp_source_local.root"
     ta1.debug = False
+    ta1.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     ta1.filters.append(f)
@@ -312,7 +315,7 @@ def analyse_test019_phsp_source(sim):
     # --------------------------------------------------------------
     # Test LOCAL position
     print()
-    print("Test GLOBAL position")
+    print("Test LOCAL position")
     fn1 = paths.output_ref / "test019_hits.root"
     ta1 = output.get_actor("PhaseSpace1")
     fn2 = ta1.get_output_path()

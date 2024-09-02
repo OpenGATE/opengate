@@ -6,7 +6,6 @@ import shutil
 import os
 from pathlib import Path
 import weakref
-import gc
 
 import opengate_core as g4
 
