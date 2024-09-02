@@ -79,7 +79,7 @@ if __name__ == "__main__":
     stat.track_types_flag = True
 
     # print info
-    print(sim.volume_manager.dump_volumes())
+    sim.volume_manager.print_volumes()
 
     # verbose
     # sim.add_g4_command_after_init('/tracking/verbose 0')
