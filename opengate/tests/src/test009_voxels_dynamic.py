@@ -92,11 +92,11 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = paths.output / "test009-edep.mhd"
+    dose.output_filename = "test009-edep.mhd"
     dose.attached_to = "patient"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.img_coord_system = True
+    dose.output_coordinate_system='attached_to_image'
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.hit_type = "random"
 
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # print info
-    print(sim.volume_manager.dump_volumes())
+    sim.volume_manager.print_volumes()
 
     # verbose
     sim.add_g4_command_after_init("/tracking/verbose 0")
@@ -114,24 +114,22 @@ if __name__ == "__main__":
     sim.run(start_new_process=False)
 
     # print results at the end
-    stat = sim.get_actor("Stats")
-    print(stat)
-    d = sim.get_actor("dose")
-    print(d)
+    print(stats)
+    print(dose)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    stat.counts.run_count = 1
+    stats.counts.run_count = 1
     print(
         "Setting run count to 1, although more than 1 run was used in the simulation. "
         "This is to avoid a wrongly failing test."
     )
-    is_ok = utility.assert_stats(stat, stats_ref, 0.15)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.15)
     print(is_ok)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        d.get_output_path("edep"),
-        stat,
+        dose.get_output_path("edep"),
+        stats,
         tolerance=35,
     )
     print(is_ok)
