@@ -67,12 +67,12 @@ if __name__ == "__main__":
     """
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename.edep = "test012-edep.mhd"
-    dose.attached_to = "waterbox"
-    dose.size = [99, 99, 99]
-    dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.translation = [2 * mm, 3 * mm, -2 * mm]
+    dose_actor = sim.add_actor("DoseActor", "dose_actor")
+    dose_actor.edep.output_filename = "test012-edep.mhd"
+    dose_actor.attached_to = "waterbox"
+    dose_actor.size = [99, 99, 99]
+    dose_actor.spacing = [2 * mm, 2 * mm, 2 * mm]
+    dose_actor.translation = [2 * mm, 3 * mm, -2 * mm]
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # print results at the end
     print(stat)
-    print(dose)
+    print(dose_actor)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output-Edep.mhd",
-            dose.get_output_path(output_name="edep"),
+            dose_actor.edep.get_output_path(),
             stat,
             tolerance=45,
         )
