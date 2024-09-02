@@ -76,6 +76,10 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
 
+    # filter for the phase space actor below
+    f = sim.add_filter("ParticleFilter", "f")
+    f.particle = "e+"
+
     # phsp
     phsp1 = sim.add_actor("PhaseSpaceActor", "phsp_ion")
     phsp1.attached_to = wb1.name
@@ -88,8 +92,6 @@ if __name__ == "__main__":
         # 'TrackVertexKineticEnergy', 'EventKineticEnergy'
     ]
     phsp1.output_filename = "test013_decay_ion.root"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "e+"
     phsp1.filters.append(f)
 
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_beta")
