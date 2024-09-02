@@ -110,7 +110,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print
-    print("Simulation seed:", sim.output.current_random_seed)
+    print("Simulation seed:", sim.current_random_seed)
 
     # get results
     print(stats_actor)
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.05)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        sim.get_output_path(dose.get_output_path(output_name="edep")),
+        dose.get_output_path(output_name="edep"),
         stats_actor,
         tolerance=30,
     )
