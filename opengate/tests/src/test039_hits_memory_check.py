@@ -14,6 +14,6 @@ if __name__ == "__main__":
     # go
     sim.run()
 
-    is_ok = test39.test_results(sim.output, paths)
+    is_ok = test39.test_results(sim, paths)
 
     utility.test_ok(is_ok)

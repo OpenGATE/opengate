@@ -180,9 +180,9 @@ def create_simu(nb_threads, paths):
 """
 
 
-def test_results(output, paths):
+def test_results(sim, paths):
     # Compare stats file
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     # stats.write(paths.output_ref / 'test039_stats.txt')
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test039_stats.txt")
@@ -191,7 +191,7 @@ def test_results(output, paths):
 
     # Compare singles
     print()
-    sc = output.get_actor("Singles")
+    sc = sim.get_actor("Singles")
     gate.exception.warning(f"Check singles")
     ref_file = paths.output_ref / "test039_singles.root"
     hc_file = sc.get_output_path()
