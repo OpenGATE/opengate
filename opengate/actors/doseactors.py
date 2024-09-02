@@ -499,6 +499,30 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             }
         )
 
+    @property
+    def edep(self):
+        return self.user_output.edep
+
+    @property
+    def dose(self):
+        return self.user_output.dose
+
+    @property
+    def edep_uncertainty(self):
+        return self.user_output.edep_uncertainty
+
+    @property
+    def dose_uncertainty(self):
+        return self.user_output.dose_uncertainty
+
+    @property
+    def square(self):
+        return self.user_output.square
+
+    @property
+    def density(self):
+        return self.user_output.density
+
     def compute_dose_from_edep_img(self, input_image, density_image=None):
         """
         * create mass image:
