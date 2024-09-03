@@ -1191,7 +1191,7 @@ class SimulationEngine(GateSingletonFatal):
             # no Geant4 output
             ui = UIsessionSilent()
         if self.simulation.g4_verbose_level_tracking >= 0:
-            self.simulation.add_g4_command_after_init(
+            self.simulation.g4_commands_after_init.append(
                 f"/tracking/verbose {self.simulation.g4_verbose_level_tracking}"
             )
         # it is also possible to set ui=None for 'default' output
