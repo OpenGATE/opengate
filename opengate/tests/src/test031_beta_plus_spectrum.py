@@ -102,7 +102,7 @@ if __name__ == "__main__":
         phsp.attributes = ["TrackVertexKineticEnergy"]
         phsp.output_filename = f"test031_{rad}.root"
         phsp.steps_to_store = "exiting"
-        f = sim.add_filter("ParticleFilter", "f")
+        f = sim.add_filter("ParticleFilter", f"f_{rad}")
         f.particle = "e+"
         phsp.filters.append(f)
         rads.append(rad)
@@ -132,7 +132,9 @@ if __name__ == "__main__":
     # plot
     for i in range(len(rads)):
         rad = rads[i]
-        data = uproot.open(sim.get_output_path(f"test031_{rad}.root"))[f"phsp_{rad}"]
+        data = uproot.open(sim.get_actor(f"phsp_{rad}").get_output_path())[
+            f"phsp_{rad}"
+        ]
         data = (
             data.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV
