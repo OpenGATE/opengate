@@ -1545,16 +1545,10 @@ class Simulation(GateObject):
         return p_out.absolute().resolve()
 
     def add_g4_command_after_init(self, command):
-        """
-        For the moment, only use it *after* runManager.Initialize
-        """
-        self.g4_commands_after_init.append(command)
+        raise GateDeprecationError("Use sim.g4_commands_after_init.append(COMMAND)")
 
     def add_g4_command_before_init(self, command):
-        """
-        For the moment, only use it *after* runManager.Initialize
-        """
-        self.g4_commands_before_init.append(command)
+        raise GateDeprecationError("Use sim.g4_commands_before_init.append(COMMAND)")
 
     # FIXME: will we become obsolete when refactoring the sources
     def get_source_user_info(self, name):
