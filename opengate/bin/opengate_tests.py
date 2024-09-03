@@ -3,7 +3,6 @@
 
 import os
 import time
-import pathlib
 import click
 import random
 import sys
@@ -19,13 +18,19 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--test_id", "-i", default="all", help="Start test from this number")
 @click.option(
+    "--no_log_on_fail",
+    default=False,
+    is_flag=True,
+    help="If set, do not print log on fail",
+)
+@click.option(
     "--random_tests",
     "-r",
     is_flag=True,
     default=False,
     help="Start the last 10 tests and 1/4 of the others randomly",
 )
-def go(test_id, random_tests):
+def go(test_id, random_tests, no_log_on_fail):
     mypath = return_tests_path()
     print("Looking for tests in: " + str(mypath))
 
@@ -132,7 +137,8 @@ def go(test_id, random_tests):
             else:
                 print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True
-                os.system("cat " + log)
+                if not no_log_on_fail:
+                    os.system("cat " + log)
                 dashboard_dict[f] = [False]
         end = time.time()
         print(f"   {end - start:5.1f} s     {log:<65}")
