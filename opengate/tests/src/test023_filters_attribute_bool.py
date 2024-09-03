@@ -74,9 +74,7 @@ if __name__ == "__main__":
     phsp_and.attached_to = plane1a.name
     phsp_and.attributes = ["GlobalTime", "KineticEnergy", "ParticleName"]
     phsp_and.output_filename = f"{sim_name}_and.root"
-    phsp_and.filters.append(filter1)
-    phsp_and.filters.append(filter2)
-    phsp_and.filters.append(filter3)
+    phsp_and.filters = [filter1, filter2, filter3]
     phsp_and.filters_boolean_operator = "and"  # default is and
 
     # phsp
@@ -89,8 +87,8 @@ if __name__ == "__main__":
     phsp_or.filters_boolean_operator = "or"  # default is and
 
     # stats
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "stats")
+    stat.track_types_flag = True
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -101,7 +99,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.get_actor("stats")
     print(stat)
     # reference :
     # stat.write(paths.output_ref / f"{sim_name}.txt")
