@@ -6,7 +6,7 @@ from opengate.tests import utility
 import uproot
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__, output_folder="test064")
     output_path = paths.output
 
     # create the simulation

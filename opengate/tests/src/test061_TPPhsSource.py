@@ -5,22 +5,19 @@ import test061_TPPhsSource_helpers as t
 import opengate as gate
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "test061_TPPhsSource")
-paths.output_ref = paths.output_ref / "test061_ref"
-
-ref_path = paths.output_ref
-
-# units
-m = gate.g4_units.m
-mm = gate.g4_units.mm
-cm = gate.g4_units.cm
-nm = gate.g4_units.nm
-Bq = gate.g4_units.Bq
-MeV = gate.g4_units.MeV
-deg: float = gate.g4_units.deg
-
-
 if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, output_folder="test061")
+    ref_path = paths.output_ref
+
+    # units
+    m = gate.g4_units.m
+    mm = gate.g4_units.mm
+    cm = gate.g4_units.cm
+    nm = gate.g4_units.nm
+    Bq = gate.g4_units.Bq
+    MeV = gate.g4_units.MeV
+    deg: float = gate.g4_units.deg
+
     # print("create reference PhS file")
     # t.create_test_Phs(
     #     particle="proton",
