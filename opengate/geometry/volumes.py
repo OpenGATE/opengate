@@ -230,7 +230,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # They created when running a simulation
         return_dict["g4_logical_volume"] = None
         return_dict["g4_vis_attributes"] = None
-        return_dict["g4_physical_volumes"] = []  # need to be [] to be reconstructed
+        return_dict["g4_physical_volumes"] = []
         return_dict["g4_material"] = None
         return_dict["volume_engine"] = None
         return_dict["_is_constructed"] = False
