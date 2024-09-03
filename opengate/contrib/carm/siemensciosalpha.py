@@ -1,7 +1,9 @@
 import opengate as gate
 from scipy.spatial.transform import Rotation
 import numpy as np
-import spekpy as sp
+from opengate.utility import LazyModuleLoader
+
+sp = LazyModuleLoader("spekpy")
 import pathlib
 
 # useful units
