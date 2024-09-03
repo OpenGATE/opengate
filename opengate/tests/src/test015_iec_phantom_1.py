@@ -32,12 +32,13 @@ if __name__ == "__main__":
     iec_phantom = gate_iec.add_iec_phantom(sim)
     iec_phantom.translation = [0 * cm, 0 * cm, 0 * cm]
 
-
     # output filename
     f = paths.output / "test015_iec_1.mhd"
 
     # # voxelize the iec
-    labels, image = sim.voxelize_geometry(extent=iec_phantom, spacing=[3, 3, 3], margin=1)
+    labels, image = sim.voxelize_geometry(
+        extent=iec_phantom, spacing=[3, 3, 3], margin=1
+    )
     print(f"Labels : ")
     for k, v in labels.items():
         print(f"{k} = {v}")

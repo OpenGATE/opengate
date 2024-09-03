@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     print(f"dose image:", dose.size)
     print(f"dose image:", dose.spacing)
-    dose.output_coordinate_system='attached_to_image'
+    dose.output_coordinate_system = "attached_to_image"
 
     # cuts
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
@@ -116,7 +116,6 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run()
-
 
     # test pixels in dose #1
     final_dose = dose.edep.get_data()

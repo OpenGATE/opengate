@@ -79,7 +79,7 @@ if __name__ == "__main__":
     dose.attached_to = "patient"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.output_coordinate_system='attached_to_image'
+    dose.output_coordinate_system = "attached_to_image"
     dose.translation = [0 * mm, 0 * mm, 1 * mm]
 
     # add stat actor

@@ -83,7 +83,7 @@ if __name__ == "__main__":
     img_info = gate.image.read_image_info(ct.image)
     dose.size = img_info.size
     dose.spacing = img_info.spacing
-    dose.output_coordinate_system='attached_to_image'
+    dose.output_coordinate_system = "attached_to_image"
 
     # cuts
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
