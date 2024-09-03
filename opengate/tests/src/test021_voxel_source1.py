@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
     print(sim)
 
     # add a material database
@@ -77,12 +78,12 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = paths.output / "test021-1.mhd"
+    dose.edep.output_filename = "test021-1.mhd"
     dose.attached_to = ct.name
     img_info = gate.image.read_image_info(ct.image)
     dose.size = img_info.size
     dose.spacing = img_info.spacing
-    dose.img_coord_system = True
+    dose.output_coordinate_system='attached_to_image'
 
     # cuts
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
@@ -101,12 +102,11 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.get_actor("Stats")
-    # stat.write(paths.output_ref / "stat021_ref_1.txt")
-    dose = sim.get_actor("dose")
+    print(stats)
+
     # test pixels in dose #1
     # test pixels in dose #1
-    d_even = itk.imread(paths.output / dose.user_info.output)
+    d_even = dose.edep.get_data()
     s = itk.array_view_from_image(d_even).sum()
     v0 = d_even.GetPixel([5, 5, 5])
     v1 = d_even.GetPixel([1, 5, 5])
@@ -132,6 +132,6 @@ if __name__ == "__main__":
 
     stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref_1.txt")
     stats_ref.counts.run_count = sim.number_of_threads
-    is_ok = utility.assert_stats(stat, stats_ref, 0.1) and is_ok
+    is_ok = utility.assert_stats(stats, stats_ref, 0.1) and is_ok
 
     utility.test_ok(is_ok)
