@@ -715,10 +715,9 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             dynamic_geometry_actor = self.simulation_engine.simulation.add_actor(
                 "DynamicGeometryActor", "dynamic_geometry_actor"
             )
-        else:  # nothing to do
-            return
-        for vol in self.volume_manager.dynamic_volumes:
-            dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
+            dynamic_geometry_actor.priority = 0
+            for vol in self.volume_manager.dynamic_volumes:
+                dynamic_geometry_actor.geometry_changers.extend(vol.create_changers())
 
     def Construct(self):
         """
