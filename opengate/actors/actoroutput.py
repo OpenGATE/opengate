@@ -147,10 +147,6 @@ class ActorOutputBase(GateObject):
             v["suffix"] = str(value)
 
     @property
-    def data(self):
-        return self.merged_data
-
-    @property
     def belongs_to_actor(self):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
