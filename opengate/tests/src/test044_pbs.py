@@ -7,14 +7,13 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test044")
 
     particle = "Carbon_"
     energy = "1440MeV_"
     beam_shape = "sourceShapePBS"
     folder = particle + energy + beam_shape
 
-    output_path = paths.output / "output_test044"
     ref_path = paths.gate_output
     print(f"{ref_path =}")
 
@@ -33,6 +32,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = paths.output
 
     # units
     km = gate.g4_units.km
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     for i in planePositionsV:
         dose = sim.add_actor("DoseActor", "doseInYZ" + str(i))
         filename = "plane" + str(i) + "a.mhd"
-        dose.output_filename = output_path / filename
+        dose.output_filename = filename
         dose.attached_to = "planeNr" + str(i) + "a"
         dose.size = [250, 250, 1]
         dose.spacing = [0.4, 0.4, 2]
@@ -114,9 +114,6 @@ if __name__ == "__main__":
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
-
-    # create output dir, if it doesn't exist
-    output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
@@ -139,7 +136,7 @@ if __name__ == "__main__":
         sim.get_actor("doseInYZ" + str(i)).get_output_path("edep")
         for i in planePositionsV
     ]
-    if (not os.path.exists(output_path / "sigma_values.txt")) or override:
+    if (not os.path.exists(paths.output / "sigma_values.txt")) or override:
         sigmasGam, musGam = utility.write_gauss_param_to_file(
             output_pathV, planePositionsV, saveFig=False
         )
@@ -163,7 +160,7 @@ if __name__ == "__main__":
         is_ok = (
             utility.assert_images(
                 ref_path / mhd_ref,
-                output_path / mhd_gate,
+                mhd_gate,
                 stats,
                 tolerance=50,
                 ignore_value=0,
@@ -179,7 +176,7 @@ if __name__ == "__main__":
     sigma_file = "sigma_values.txt"
     is_ok = (
         utility.compareGaussParamFromFile(
-            output_path / sigma_file,
+            paths.output / sigma_file,
             ref_path / sigma_file,
             rel_tol=2,
             abs_tol=0.5,

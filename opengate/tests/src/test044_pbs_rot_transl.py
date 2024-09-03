@@ -9,7 +9,7 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "gate_test044_pbs_rot_transl", "test044"
+        __file__, "gate_test044_pbs_rot_transl", "test044_rot_transl"
     )
 
     particle = "Carbon_"
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     beam_shape = "sourceShapePBS"
     folder = particle + energy + beam_shape
 
-    output_path = paths.output / "output_test044_rot_transl"
+    output_path = paths.output
     ref_path = paths.gate_output
 
     # for loop

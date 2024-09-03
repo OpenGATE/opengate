@@ -7,8 +7,10 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-    output_path = paths.output / "output_test044_weight"
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", "test044_pbs_weight"
+    )
+    output_path = paths.output
 
     # create the simulation
     sim = gate.Simulation()
@@ -19,6 +21,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -140,15 +143,15 @@ if __name__ == "__main__":
     # add dose actor
     dose2 = sim.add_actor("DoseActor", "doseInYZ_2")
     filename = "phantom_a_2.mhd"
-    dose2.output_filename = output_path / filename
+    dose2.output_filename = filename
     dose2.attached_to = "phantom_a_2"
     dose2.size = [250, 250, 1]
     dose2.spacing = [0.4, 0.4, 2]
     dose2.hit_type = "random"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -163,8 +166,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.get_actor("Stats")
-
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------

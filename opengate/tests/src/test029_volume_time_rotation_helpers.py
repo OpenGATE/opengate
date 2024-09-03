@@ -109,7 +109,7 @@ def create_simulation(sim, aa_flag, paths):
     hc.attached_to = "spect_crystal"
     hc.output_filename = "test029.root"
     if sim.number_of_threads == 1:
-        hc.user_output.hits.write_to_disk = False
+        hc.write_to_disk = False
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",

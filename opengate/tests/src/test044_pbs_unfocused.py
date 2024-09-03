@@ -12,7 +12,9 @@ if __name__ == "__main__":
 
     # from sim_output_analysis import compareGaussParam, plot_edep
 
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs_unFocused")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs_unFocused", "test044_unfocused"
+    )
 
     particle = "Carbon_"
     energy = "1440MeV_"
@@ -37,6 +39,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = paths.output
 
     # units
     km = gate.g4_units.km
@@ -110,7 +113,7 @@ if __name__ == "__main__":
     for i in planePositionsV:
         dose = sim.add_actor("DoseActor", "doseInYZ" + str(i))
         filename = "plane" + str(i) + "a.mhd"
-        dose.output_filename = output_path / filename
+        dose.output_filename = filename
         dose.attached_to = "planeNr" + str(i) + "a"
         dose.size = [250, 250, 1]
         dose.spacing = [0.4, 0.4, 2]
@@ -118,8 +121,8 @@ if __name__ == "__main__":
         count += 1
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     print(sim.source_manager.dump_sources())
 
@@ -130,8 +133,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     print("Start to analyze data")
     override = False
@@ -161,7 +163,7 @@ if __name__ == "__main__":
     # statistics
     stat_file = "SimulationStatistic_" + folder + ".txt"
     stats_ref = utility.read_stat_file(ref_path / stat_file)
-    is_ok = utility.assert_stats(stat, stats_ref, 0.15)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.15)
 
     # energy deposition
     for i in planePositionsV:
@@ -173,7 +175,7 @@ if __name__ == "__main__":
             utility.assert_images(
                 ref_path / mhd_ref,
                 output_path / mhd_gate,
-                stat,
+                stats,
                 tolerance=50,
                 ignore_value=0,
             )
