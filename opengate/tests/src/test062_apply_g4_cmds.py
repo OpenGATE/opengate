@@ -44,15 +44,17 @@ if __name__ == "__main__":
     sim.user_hook_after_init = print_em_parameters
 
     # start simulation
-    sim.run(start_new_process=True)
+    sim.run(start_new_process=False)
     h = sim.user_hook_log
     print("output", h)
     is_ok = h.bearden == 0 and h.pixe_sec_model == "Empirical"
 
     # redo with different fluo dir
     print()
-    sim.add_g4_command_after_init("/process/em/pixeXSmodel ECPSSR_ANSTO")
-    sim.add_g4_command_before_init("/process/em/fluoBearden true")
+    # sim.add_g4_command_after_init("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    sim.g4_commands_after_init.append("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    # sim.add_g4_command_before_init("/process/em/fluoBearden true")
+    sim.g4_commands_before_init.append("/process/em/fluoBearden true")
     sim.run(start_new_process=True)
     h = sim.user_hook_log
     print("output", h)
@@ -61,7 +63,7 @@ if __name__ == "__main__":
     # redo with different fluo dir
     try:
         print()
-        sim.add_g4_command_after_init("/process/em/fluoBearden true")
+        sim.g4_commands_after_init = ["/process/em/fluoBearden true"]
         sim.run(start_new_process=True)
         # The above should have caused an exception
         # not OK if it has not.
