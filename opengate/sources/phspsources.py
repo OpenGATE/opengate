@@ -306,6 +306,8 @@ class PhaseSpaceSource(SourceBase):
     def __init__(self, user_info):
         super().__init__(user_info)
         self.particle_generator = PhaseSpaceSourceGenerator()
+        # FIXME workaround for ./test019_linac_phsp_source.py
+        self.user_info.particle_generator = self.particle_generator
 
     def initialize(self, run_timing_intervals):
         # initialize the mother class generic source

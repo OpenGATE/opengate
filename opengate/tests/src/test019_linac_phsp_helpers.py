@@ -302,14 +302,13 @@ def create_simu_test019_phsp_source(sim):
 
 def analyse_test019_phsp_source(sim):
     # print results
-    output = sim.output
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # print source phsp info
-    s1 = output.get_source("phsp_source_local").particle_generator
+    s1 = sim.source_manager.get_source_info("phsp_source_local").particle_generator
     print(f"Source local :  {s1.num_entries} elements, {s1.cycle_count} cycle")
-    s2 = output.get_source("phsp_source_global").particle_generator
+    s2 = sim.source_manager.get_source_info("phsp_source_global").particle_generator
     print(f"Source global : {s2.num_entries} elements, {s2.cycle_count} cycle")
 
     # --------------------------------------------------------------
@@ -317,7 +316,7 @@ def analyse_test019_phsp_source(sim):
     print()
     print("Test LOCAL position")
     fn1 = paths.output_ref / "test019_hits.root"
-    ta1 = output.get_actor("PhaseSpace1")
+    ta1 = sim.get_actor("PhaseSpace1")
     fn2 = ta1.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
@@ -350,7 +349,7 @@ def analyse_test019_phsp_source(sim):
     print()
     print("Test GLOBAL position")
     fn1 = paths.output_ref / "test019_hits.root"
-    ta2 = output.get_actor("PhaseSpace2")
+    ta2 = sim.get_actor("PhaseSpace2")
     fn2 = ta2.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
