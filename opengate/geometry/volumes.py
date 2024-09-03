@@ -215,6 +215,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
     def close(self):
         self.release_g4_references()
         self.volume_engine = None
+        self._is_constructed = False
         super().close()
 
     def release_g4_references(self):
@@ -232,6 +233,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         return_dict["g4_physical_volumes"] = []  # need to be [] to be reconstructed
         return_dict["g4_material"] = None
         return_dict["volume_engine"] = None
+        return_dict["_is_constructed"] = False
         return return_dict
 
     def _update_node(self):
