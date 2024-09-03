@@ -1648,6 +1648,10 @@ class Simulation(GateObject):
         if self.store_json_archive is True:
             self.to_json_file()
 
+        # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
+        if self.volume_manager.material_database is None:
+            self.volume_manager.material_database = MaterialDatabase()
+
     def voxelize_geometry(
         self,
         extent="auto",
