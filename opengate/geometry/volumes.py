@@ -689,7 +689,7 @@ class RepeatParametrisedVolume(VolumeBase):
         super().__init__(*args, **kwargs)
         if repeated_volume.build_physical_volume is True:
             repeated_volume.build_physical_volume = False
-        self.repeat_parametrisation = None
+        self.g4_repeat_parametrisation = None
 
     def close(self):
         self.repeated_volume.close()
@@ -699,7 +699,7 @@ class RepeatParametrisedVolume(VolumeBase):
         super().release_g4_references()
         # FIXME: unsure. If not set to None, we get the following error:
         # "cannot pickle 'opengate_core.opengate_core.GateRepeatParameterisation' object"
-        self.repeat_parametrisation = None
+        self.g4_repeat_parametrisation = None
 
     def construct(self):
         if self._is_constructed is False:
@@ -734,7 +734,7 @@ class RepeatParametrisedVolume(VolumeBase):
                 self.mother_g4_logical_volume,
                 g4.EAxis.kUndefined,
                 n,
-                self.repeat_parametrisation,
+                self.g4_repeat_parametrisation,
                 False,  # very slow if True
             )
         )
@@ -761,8 +761,8 @@ class RepeatParametrisedVolume(VolumeBase):
         p = {}
         for k in keys:
             p[k] = getattr(self, k)
-        self.repeat_parametrisation = g4.GateRepeatParameterisation()
-        self.repeat_parametrisation.SetUserInfo(p)
+        self.g4_repeat_parametrisation = g4.GateRepeatParameterisation()
+        self.g4_repeat_parametrisation.SetUserInfo(p)
 
 
 class ImageVolume(VolumeBase, solids.ImageSolid):
