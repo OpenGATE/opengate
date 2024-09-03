@@ -110,7 +110,9 @@ class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
         ),
         "attribute": (
             None,
-            {"doc": "Attribute name to be considered. ", },
+            {
+                "doc": "Attribute name to be considered. ",
+            },
         ),
     }
 
