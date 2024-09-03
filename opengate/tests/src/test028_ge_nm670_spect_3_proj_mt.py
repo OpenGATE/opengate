@@ -31,4 +31,4 @@ if __name__ == "__main__":
 
     # check
     proj_out = sim.get_actor("Projection")
-    test028.test_spect_proj(sim.output, paths, proj_out)
+    test028.test_spect_proj(sim, paths, proj_out)

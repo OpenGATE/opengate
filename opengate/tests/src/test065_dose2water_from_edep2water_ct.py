@@ -8,10 +8,9 @@ from opengate.contrib.beamlines.ionbeamline import BeamlineModel
 from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-
-    output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test059_ref")
+    output_path = paths.output
+    ref_path = paths.output_ref
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)

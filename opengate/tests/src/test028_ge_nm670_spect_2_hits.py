@@ -23,6 +23,6 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = test028.test_spect_hits(sim.output, paths)
+    is_ok = test028.test_spect_hits(sim, paths)
 
     utility.test_ok(is_ok)

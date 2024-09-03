@@ -23,5 +23,5 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = test028.compare_result(sim.output, proj, "test028_aa_noaa.png")
+    is_ok = test028.compare_result(sim, proj, "test028_aa_noaa.png")
     utility.test_ok(is_ok)

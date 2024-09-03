@@ -18,6 +18,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.number_of_threads = 1
     sim.check_volumes_overlap = False
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m

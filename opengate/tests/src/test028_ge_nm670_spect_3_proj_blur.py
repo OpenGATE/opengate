@@ -84,8 +84,6 @@ if __name__ == "__main__":
 
     # check projection
     proj_out = sim.get_actor("Projection")
-    is_ok = (
-        test028.test_spect_proj(sim.output, paths, proj_out, version="3_blur") and is_ok
-    )
+    is_ok = test028.test_spect_proj(sim, paths, proj_out, version="3_blur") and is_ok
 
     utility.test_ok(is_ok)
