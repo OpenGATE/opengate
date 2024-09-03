@@ -6,7 +6,9 @@ from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test034_gan_phsp_linac")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test034_gan_phsp_linac", "test034"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -16,6 +18,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
+    sim.output_dir = paths.output
     # sim.running_verbose_level = gate.EVENT
 
     # units
@@ -85,8 +88,8 @@ if __name__ == "__main__":
     dose.attached_to = waterbox.name
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose.size = [75, 75, 75]
-    dose.output_filename = paths.output / "test034.mhd"
-    dose.uncertainty = True
+    dose.output_filename = "test034.mhd"
+    dose.edep_uncertainty.active = True
 
     """
     Dont know why similar to hit_type == post while in Gate
@@ -104,7 +107,7 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
-    s = sim.output.get_source("gaga")
+    s = sim.source_manager.get_source_info("gaga")
     print(f"Source, nb of E<=0: {s.fTotalSkippedEvents}")
 
     # print results
@@ -115,13 +118,10 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     gate.exception.warning(f"Check dose")
-    dose = sim.get_actor("dose")
-    print(dose)
-
     is_ok = (
         utility.assert_images(
             paths.gate / "dose-Edep.mhd",
-            paths.output / dose.user_info.output,
+            dose.edep.get_output_path(),
             stats,
             tolerance=58,
             ignore_value=0,
