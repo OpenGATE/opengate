@@ -703,7 +703,7 @@ class RepeatParametrisedVolume(VolumeBase):
 
     def __getstate__(self):
         return_dict = super().__getstate__()
-        return_dict['g4_repeat_parametrisation'] = None
+        return_dict["g4_repeat_parametrisation"] = None
         return return_dict
 
     def construct(self):

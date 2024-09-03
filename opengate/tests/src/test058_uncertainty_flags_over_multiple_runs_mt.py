@@ -12,6 +12,7 @@ import numpy as np
 # because the tested functionality od the dose actor is currently not available
 # Test should be successful, but that is meaningless
 
+
 def define_run_timing_intervals(n):
     sec = gate.g4_units.second
     start = 0
