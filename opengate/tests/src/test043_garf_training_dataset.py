@@ -91,7 +91,7 @@ if __name__ == "__main__":
     stats.write_to_disk = True
 
     # start simulation
-    sim.run()
+    sim.run(start_new_process=True)
 
     # print results at the end
     print(stats)

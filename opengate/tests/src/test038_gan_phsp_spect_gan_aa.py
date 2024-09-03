@@ -30,14 +30,15 @@ if __name__ == "__main__":
     proj = sim.actor_manager.get_actor("Projection_spect1_crystal")
     proj.output = paths.output / "test038_gan_aa_proj.mhd"
     singles = sim.actor_manager.get_actor("Singles_spect1_crystal")
-    singles.output = paths.output / "test038_gan_aa_singles.root"
+    singles.output_filename = "test038_gan_aa_singles.root"
 
     # go (cannot be spawn in another process)
     sim.run(start_new_process=True)
 
     #
     print()
-    s = sim.output.get_source("gaga")
+    s = sim.source_manager.get_source_info("gaga")
+    print(s)
     ref_se = 220534
     t_se = (ref_se - s.fTotalSkippedEvents) / ref_se * 100
     tol = 10

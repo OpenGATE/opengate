@@ -193,7 +193,7 @@ if __name__ == "__main__":
     phsp_actor.filters.append(f)
 
     # ----------------------------------------------------------------------------------------------
-    # go (cannot be spawn in another process)
+    # FIXME: cannot be spawn in another process !
     # sim.running_verbose_level = gate.EVENT
     sim.run(start_new_process=False)
 

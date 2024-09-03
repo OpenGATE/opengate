@@ -181,14 +181,14 @@ def set_source_rad_energy_spectrum(source, rad):
 
 
 def get_source_skipped_events(sim, source_name):
-    n = sim.source_manager.get_source_info(source_name).fTotalSkippedEvents
+    n = sim.get_source_user_info(source_name).fTotalSkippedEvents
     # FIXME this is *not* the correct way to do. Workaround until source is refactored
     n = n * sim.number_of_threads
     return n
 
 
 def get_source_zero_events(sim, source_name):
-    n = sim.source_manager.get_source_info(source_name).fTotalZeroEvents
+    n = sim.get_source_user_info(source_name).fTotalZeroEvents
     # FIXME this is *not* the correct way to do. Workaround until source is refactored
     n = n * sim.number_of_threads
     return n

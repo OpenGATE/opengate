@@ -229,7 +229,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # They created when running a simulation
         return_dict["g4_logical_volume"] = None
         return_dict["g4_vis_attributes"] = None
-        return_dict["g4_physical_volumes"] = None
+        return_dict["g4_physical_volumes"] = []  # need to be [] to be reconstructed
         return_dict["g4_material"] = None
         return_dict["volume_engine"] = None
         return return_dict
@@ -692,6 +692,12 @@ class RepeatParametrisedVolume(VolumeBase):
     def close(self):
         self.repeated_volume.close()
         super().close()
+
+    def release_g4_references(self):
+        super().release_g4_references()
+        # FIXME: unsure. If not set to None, we get the following error:
+        # "cannot pickle 'opengate_core.opengate_core.GateRepeatParameterisation' object"
+        self.repeat_parametrisation = None
 
     def construct(self):
         if self._is_constructed is False:

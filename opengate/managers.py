@@ -1618,9 +1618,9 @@ class Simulation(GateObject):
 
         # prepare sub process
         if start_new_process is True:
-            """Important: put the
-            if __name__ == '__main__':
-            at the beginning of the script
+            """Important: put:
+                if __name__ == '__main__':
+                at the beginning of the script
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
@@ -1630,6 +1630,17 @@ class Simulation(GateObject):
             # Recover output from unpickled actors coming from sub-process queue
             for actor in self.actor_manager.actors.values():
                 actor.user_output = output.get_actor(actor.name).user_output
+
+            # FIXME: temporary workaround to copy from output the additional
+            # information of the source (such as fTotalSkippedEvents)
+            for source in self.source_manager.user_info_sources.values():
+                try:
+                    s = output.get_source(source.name)
+                except:
+                    continue
+                if "fTotalSkippedEvents" in s.user_info.__dict__:
+                    source.fTotalSkippedEvents = s.user_info.fTotalSkippedEvents
+                    source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process
