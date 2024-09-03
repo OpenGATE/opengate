@@ -83,6 +83,7 @@ class GeometryChanger(GateObject):
     }
 
     def __init__(self, *args, **kwargs):
+        # FIXME: update this considering that GateObject now holds a ref to simulation
         simulation = kwargs.pop(
             "simulation", None
         )  # intercept simulation from kwargs if present
