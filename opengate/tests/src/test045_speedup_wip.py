@@ -8,6 +8,8 @@ import test045_gan_phsp_pet_gan_helpers as t45
 from opengate.tests import utility
 from pathlib import Path
 
+# WARNING: This test is outdated. Do not use it as an example!
+
 paths = utility.get_default_test_paths(__file__, "", "test045")
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
