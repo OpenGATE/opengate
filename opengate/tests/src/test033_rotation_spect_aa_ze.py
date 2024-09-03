@@ -6,7 +6,7 @@ import test033_rotation_spect_aa_helpers as test033
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "", "test033")
 
     # create the simulation
     sim = gate.Simulation()
@@ -20,6 +20,6 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = test033.evaluate_test(sim.output, sources, 10, 5905908)
+    is_ok = test033.evaluate_test(sim, sources, 10, 5905908)
 
     utility.test_ok(is_ok)

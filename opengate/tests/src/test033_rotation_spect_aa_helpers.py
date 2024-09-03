@@ -4,7 +4,6 @@
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
-from opengate.element import copy_user_info
 
 paths = utility.get_default_test_paths(__file__, "", "test033")
 
@@ -76,9 +75,8 @@ def create_test(sim, nb_thread=1):
     source.position.translation = [0, 0, 20 * mm]
     source.direction.type = "iso"
     source.direction.acceptance_angle.volumes = ["spect1", "spect2"]
-    source.direction.acceptance_angle.intersection_flag = (
-        True  # will be set to false in noaa tests
-    )
+    # will be set to false in noaa tests
+    source.direction.acceptance_angle.intersection_flag = True
     source.direction.acceptance_angle.normal_flag = True
     source.direction.acceptance_angle.normal_vector = [0, 0, -1]
     source.direction.acceptance_angle.normal_tolerance = 10 * deg
@@ -88,7 +86,19 @@ def create_test(sim, nb_thread=1):
 
     # source #2
     source2 = sim.add_source("GenericSource", "source2")
-    copy_user_info(source, source2)
+    # FIXME when source will be refactored, will possible to use copy_user_info
+    source2.particle = "gamma"
+    source2.energy.type = "mono"
+    source2.energy.mono = 140.5 * keV
+    source2.position.type = "sphere"
+    source2.direction.type = "iso"
+    source2.direction.acceptance_angle.volumes = ["spect1", "spect2"]
+    source2.direction.acceptance_angle.intersection_flag = True
+    source2.direction.acceptance_angle.normal_flag = True
+    source2.direction.acceptance_angle.normal_vector = [0, 0, -1]
+    source2.direction.acceptance_angle.normal_tolerance = 10 * deg
+    source2.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+    source2.activity = ac / sim.number_of_threads
     source2.position.radius = 1 * mm
     source2.position.translation = [20 * mm, 0, -20 * mm]
     sources.append(source2)
@@ -122,8 +132,8 @@ def create_test(sim, nb_thread=1):
     return sources
 
 
-def evaluate_test(output, sources, itol, ref_skipped):
-    stats = output.get_actor("Stats")
+def evaluate_test(sim, sources, itol, ref_skipped):
+    stats = sim.get_actor("Stats")
     print(stats)
     # ref with _noaa
     # stats.write(paths.output_ref / "test033_stats.txt")
@@ -131,8 +141,8 @@ def evaluate_test(output, sources, itol, ref_skipped):
     se = 0
     ze = 0
     for source in sources:
-        se += gate.sources.generic.get_source_skipped_events(output, source.name)
-        ze += gate.sources.generic.get_source_zero_events(output, source.name)
+        se += gate.sources.generic.get_source_skipped_events(sim, source.name)
+        ze += gate.sources.generic.get_source_zero_events(sim, source.name)
     print(f"Skipped particles {se}")
     print(f"Zeros E particles {ze}")
     s = max(se, ze)
@@ -154,7 +164,7 @@ def evaluate_test(output, sources, itol, ref_skipped):
     gate.exception.warning(f"Check stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.step_count})")
-    nbt = output.simulation.number_of_threads
+    nbt = sim.number_of_threads
     stats.counts.step_count = stats_ref.counts.step_count
     stats_ref.counts.run_count *= nbt
     if se > 0:

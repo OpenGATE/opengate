@@ -74,21 +74,3 @@ def new_element(user_info, simulation=None):
     # set the simulation pointer
     e.set_simulation(simulation)
     return e
-
-
-def copy_user_info(v1, v2):
-    """
-    Copy all attributes from v1 to v2, except the name.
-    v1 is assumed to be a UserInfo object with several attribute members.
-    v2 must have the (at least) the same set of attributes.
-    Values are (deep) copied.
-    """
-    for k in v1.user_info:
-        if k == "name":
-            continue
-        if k == "_name":
-            continue
-        try:
-            setattr(v2, k, copy.deepcopy(v1.user_info[k]))
-        except:
-            pass  # ignore deprecated items

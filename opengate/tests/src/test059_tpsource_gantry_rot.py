@@ -130,7 +130,7 @@ if __name__ == "__main__":
     dose.user_output.dose.active = True
 
     dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
-    gate.element.copy_user_info(dose, dose_rot)
+    dose_rot.copy_user_info(dose)
     dose_rot.attached_to = phantom_rot.name
     dose_rot.output_filename = "testTPSganry_rot.mhd"
 
