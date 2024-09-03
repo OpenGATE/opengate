@@ -79,6 +79,9 @@ if __name__ == "__main__":
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
     dose.edep.output_filename = "test021-1.mhd"
+    # we do not need to write the image to disk
+    # because we can get it directly from the actor after the simulation
+    dose.edep.write_to_disk = False
     dose.attached_to = ct.name
     img_info = gate.image.read_image_info(ct.image)
     dose.size = img_info.size
@@ -96,7 +99,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
     sim.run()
