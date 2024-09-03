@@ -8,7 +8,9 @@ from opengate.tests import utility
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs_rot_transl")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs_rot_transl", "test044"
+    )
 
     particle = "Carbon_"
     energy = "1440MeV_"
@@ -18,7 +20,7 @@ if __name__ == "__main__":
     output_path = paths.output / "output_test044_rot_transl"
     ref_path = paths.gate_output
 
-    # for for loop
+    # for loop
     start = -500
     spacing = 100
     end = -start + spacing
@@ -33,6 +35,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = paths.output
 
     # units
     km = gate.g4_units.km
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     for i in planePositionsV:
         dose = sim.add_actor("DoseActor", "doseInYZ" + str(i))
         filename = "plane" + str(i) + "a.mhd"
-        dose.output_filename = output_path / filename
+        dose.output_filename = filename
         dose.attached_to = "planeNr" + str(i) + "a"
         dose.size = [250, 250, 1]
         dose.spacing = [0.4, 0.4, 2]

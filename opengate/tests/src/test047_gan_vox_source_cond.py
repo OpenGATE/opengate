@@ -6,7 +6,9 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(
+        __file__, output_folder="test047_gan_vox_source"
+    )
 
     """
     Data :
@@ -24,6 +26,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123456789
+    sim.output_dir = paths.output
     activity_bq = 1e6
 
     # visu
@@ -108,7 +111,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = paths.output / "test047.mhd"
+    dose.output_filename = "test047.mhd"
     dose.attached_to = "ct"
     dose.size = [70, 70, 240]
     dose.spacing = [3.5 * mm, 3.5 * mm, 3.5 * mm]

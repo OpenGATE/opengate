@@ -6,7 +6,9 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(
+        __file__, output_folder="t048_split_spect_projections"
+    )
     paths.data = paths.data / "t048_split_spect_projections"
 
     # input of 4 heads projection images, with 3 energy windows

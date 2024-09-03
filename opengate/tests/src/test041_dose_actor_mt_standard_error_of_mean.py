@@ -166,7 +166,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "gate_test041_dose_actor_dose_to_water"
+        __file__, "gate_test041_dose_actor_dose_to_water", "test041"
     )
 
     is_ok_c4 = []

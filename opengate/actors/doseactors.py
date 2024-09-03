@@ -585,7 +585,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # activate density if we need the dose and the DoseActor is not attached to a volume
         vol = self.attached_to_volume
         if self.user_output.dose.active is True and vol.volume_type != "ImageVolume":
-            self.user_output.density.active = True
+            if not self.user_output.density.active:
+                self.user_output.density.active = True
+                self.user_output.density.write_to_disk = False
 
         # activate output if requested
         if self.user_output.dose_uncertainty.active is True:

@@ -113,7 +113,9 @@ if __name__ == "__main__":
 
     doseActorName_water_slab_insert_d = "IDD_waterSlab_d"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_water_slab_insert_d)
-    doseActorDerived.output_filename = "test041-{doseActorName_water_slab_insert_d}.mhd"
+    doseActorDerived.output_filename = (
+        f"test041-{doseActorName_water_slab_insert_d}.mhd"
+    )
     doseActorDerived.attached_to = water_slab_insert.name
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
@@ -143,7 +145,9 @@ if __name__ == "__main__":
 
     doseActorName_entranceRegiont_d2w = "IDD_entranceRegion_d2w"
     doseActorDerived = sim.add_actor("DoseActor", doseActorName_entranceRegiont_d2w)
-    doseActorDerived.output_filename = "test041-{doseActorName_entranceRegiont_d2w}.mhd"
+    doseActorDerived.output_filename = (
+        f"test041-{doseActorName_entranceRegiont_d2w}.mhd"
+    )
     doseActorDerived.attached_to = entranceRegion.name
     doseActorDerived.size = doseActor.size
     doseActorDerived.spacing = doseActor.spacing
