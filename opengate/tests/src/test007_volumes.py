@@ -197,7 +197,7 @@ if __name__ == "__main__":
     print(sim)
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
     # sim.g4_com("/run/verbose 2")
     # sim.g4_com("/event/verbose 2")
     # sim.g4_com("/tracking/verbose 1")

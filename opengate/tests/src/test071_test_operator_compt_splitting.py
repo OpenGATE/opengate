@@ -228,7 +228,7 @@ if __name__ == "__main__":
     #### Therefore if we provide the name of the real process (here compt) without deactivating GammaGeneralProcess, it will not find the
     #### process to bias and the biasing will fail
     s = f"/process/em/UseGeneralProcess false"
-    sim.add_g4_command_before_init(s)
+    sim.g4_commands_before_init.append(s)
 
     sim.physics_manager.global_production_cuts.gamma = 1 * m
     sim.physics_manager.global_production_cuts.electron = 1 * um

@@ -316,7 +316,7 @@ def enable_brem_splitting(sim, linac_name, splitting_factor):
     region_linac.associate_volume(linac)
     # set the brem splitting
     s = f"/process/em/setSecBiasing eBrem {region_linac.name} {splitting_factor} 50 MeV"
-    sim.add_g4_command_after_init(s)
+    sim.g4_commands_after_init.append(s)
 
 
 def add_electron_source(sim, linac_name):

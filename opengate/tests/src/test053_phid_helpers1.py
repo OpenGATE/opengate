@@ -129,7 +129,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
 
     # ui = sim.user_info
     # ui.g4_verbose = True
-    # sim.add_g4_command_after_init("/tracking/verbose 2")
+    # sim.g4_commands_after_init.append("/tracking/verbose 2")
     km = g4_units.km
     sim.physics_manager.global_production_cuts.all = 10 * km
     sim.run_timing_intervals = [[0, end]]
