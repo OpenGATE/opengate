@@ -195,7 +195,7 @@ def test_simulation_results(sim):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = sim.get_actor("Hits2").user_output.root_output.get_output_path()
+    hc_file = sim.get_actor("Hits2").get_output_path()
     checked_keys = ["time", "edep"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep
