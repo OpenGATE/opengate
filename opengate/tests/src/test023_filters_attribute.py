@@ -90,8 +90,8 @@ if __name__ == "__main__":
     ka.filters.append(att_filter)
 
     # stats
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "stats")
+    stat.track_types_flag = True
 
     # phsp
     phsp1 = sim.add_actor("PhaseSpaceActor", "phsp1")
@@ -117,7 +117,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.get_actor("stats")
     print(stat)
     # reference :
     # stat.write(paths.output_ref / "test023_att_stats.txt")
@@ -164,7 +163,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             paths.output_ref / f"test023_filters_attribute.root",
-            phsp1.output,
+            phsp1.get_output_path(),
             "phsp2",
             "phsp2",
             keys1=phsp1.attributes,
