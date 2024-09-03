@@ -27,6 +27,8 @@ def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
     rotation = itk.GetArrayFromVnlMatrix(d)
     cpp_img.set_direction(rotation)
     if copy_data:
+        # FIXME: do we need to return arr to keep reference ?
+        # (on cpp side, a copy is made while it should not be needed)
         arr = itk.array_view_from_image(py_img)
         cpp_img.from_pyarray(arr)
 

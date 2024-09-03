@@ -100,6 +100,7 @@ if __name__ == "__main__":
     # unique (reproducible) random generator
     rs = gate.utility.get_rnd_seed(123456)
 
+    # FIXME -> should not be in the main ; warning used global variable (spheres_activity_ratio)
     def gen_cond(n):
         n_samples = gate_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
         # (it is required to shuffle when using several activity spheres to avoid time artifact)

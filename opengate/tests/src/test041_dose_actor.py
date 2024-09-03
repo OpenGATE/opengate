@@ -91,9 +91,8 @@ if __name__ == "__main__":
     print(dose.spacing)
     dose.user_output.dose.active = True
     dose.user_output.dose_uncertainty.active = False
-    dose.user_output.density.active = (
-        False  # it will be turned True automatically (needed)
-    )
+    # it will be turned True automatically (needed)
+    dose.user_output.density.active = False
     dose.hit_type = "random"
 
     # add stat actor
