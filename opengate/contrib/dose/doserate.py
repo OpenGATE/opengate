@@ -105,7 +105,7 @@ def create_simulation(param):
     source_info = read_image_info(param.activity_image)
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "edep.mhd"
-    dose.attach_to = ct.name
+    dose.attached_to = ct.name
     dose.size = source_info.size
     dose.spacing = source_info.spacing
     # translate the dose the same way as the source
