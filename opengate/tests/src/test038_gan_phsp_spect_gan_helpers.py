@@ -207,21 +207,18 @@ def create_simulation(sim, paths, colli="lehr"):
     return condition_generator
 
 
-def analyze_results(output, paths, all_cond):
-    phsp_actor = output.get_actor("phsp")
+def analyze_results(sim, paths, all_cond):
+    phsp_actor = sim.get_actor("phsp")
     print(phsp_actor)
 
     # print stats
     print()
     gate.exception.warning(f"Check stats")
-    if output.simulation.number_of_threads == 1:
-        s = output.get_source("gaga")
-    else:
-        s = output.get_source_mt("gaga", 0)
+    s = sim.get_source_user_info("gaga")
     print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
     print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
 
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
     stats.counts.event_count += s.fTotalSkippedEvents
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_ref_stats.txt")

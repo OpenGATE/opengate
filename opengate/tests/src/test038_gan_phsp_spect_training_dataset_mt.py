@@ -7,8 +7,7 @@ from opengate.tests import utility
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
-    paths.output_ref = paths.output_ref / "test038"
+    paths = utility.get_default_test_paths(__file__, "", "test038")
 
     # create the simulation
     sim = gate.Simulation()
@@ -28,9 +27,10 @@ if __name__ == "__main__":
 
     # main parameters
     sim.check_volumes_overlap = True
-    sim.number_of_threads = 1
+    sim.number_of_threads = 2
     sim.random_seed = 8123456
-    ac = 100 * BqmL
+    sim.output_dir = paths.output
+    ac = 100 * BqmL / sim.number_of_threads
     sim.visu = False
     if sim.visu:
         ac = 10 * BqmL  # per mL
@@ -78,8 +78,8 @@ if __name__ == "__main__":
     bg.energy.mono = 140.5 * keV
 
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test038_train_stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output_filename = "test038_train_stats.txt"
 
     # filter gamma only
     f = sim.add_filter("ParticleFilter", "f")
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     # phsp
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
-    phsp.mother = "phase_space_sphere"
+    phsp.attached_to = "phase_space_sphere"
     # we use PrePosition because this is the first step in the volume
     phsp.attributes = [
         "KineticEnergy",
@@ -101,13 +101,12 @@ if __name__ == "__main__":
         "EventPosition",
         "EventDirection",
     ]
-    phsp.output_filename = paths.output / "test038_train.root"
-    phsp.store_absorbed_event = (
-        True  # this option allow to store all events even if absorbed
-    )
+    phsp.output_filename = "test038_train.root"
+    # this option allow to store all events even if absorbed
+    phsp.store_absorbed_event = True
     phsp.filters.append(f)
     print(phsp)
-    print(phsp.output)
+    print(phsp.get_output_path())
 
     # go
     sim.run(start_new_process=False)
@@ -120,15 +119,16 @@ if __name__ == "__main__":
     stats = sim.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_train_stats.txt")
+    stats.counts.run_count = 1
     is_ok = utility.assert_stats(stats, stats_ref, 0.02)
 
     # check phsp
     print()
     gate.exception.warning(f"Check root")
     p = sim.get_actor("phase_space")
-    print(f"Number of absorbed : {p.fNumberOfAbsorbedEvents}")
+    print(f"Number of absorbed : {p.number_of_absorbed_events}")
     ref_file = paths.output_ref / "test038_train.root"
-    hc_file = phsp.output
+    hc_file = phsp.get_output_path()
     checked_keys = [
         "TimeFromBeginOfEvent",
         "KineticEnergy",

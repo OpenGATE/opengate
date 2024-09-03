@@ -9,7 +9,6 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, "gate_test038_gan_phsp_spect", "test038"
     )
-    paths.output_ref = paths.output_ref / "test038"
 
     # create the simulation
     sim = gate.Simulation()
@@ -26,9 +25,9 @@ if __name__ == "__main__":
 
     # change output names
     stat = sim.actor_manager.get_actor("Stats")
-    stat.output = paths.output / "test038_gan_aa_stats.txt"
+    stat.output_filename = "test038_gan_aa_stats.txt"
     proj = sim.actor_manager.get_actor("Projection_spect1_crystal")
-    proj.output = paths.output / "test038_gan_aa_proj.mhd"
+    proj.output_filename = "test038_gan_aa_proj.mhd"
     singles = sim.actor_manager.get_actor("Singles_spect1_crystal")
     singles.output_filename = "test038_gan_aa_singles.root"
 

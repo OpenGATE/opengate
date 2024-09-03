@@ -19,4 +19,4 @@ if __name__ == "__main__":
 
     # test
     all_cond = condition_generator.all_cond
-    t38.analyze_results(sim.output, paths, all_cond)
+    t38.analyze_results(sim, paths, all_cond)
