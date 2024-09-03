@@ -6,6 +6,9 @@ from scipy.spatial.transform import Rotation
 import numpy as np
 from opengate.tests import utility
 
+# Warning: This test is outdated.
+# It relies on functionality of the dose actor that is currently not available.
+
 
 def run_sim(n_thr, c4_ref=None, paths=None):
     # create the simulation
