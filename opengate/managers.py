@@ -345,7 +345,12 @@ class ActorManager(GateObject):
     @property
     def sorted_actors(self):
         # consider the priority value of the actors
-        return sorted(self.actors.values(), key=lambda a: a.priority)
+        # dynamic geometry actors need to come first so
+        # other actors already 'see' the new geometry in their BeginOfRunAction
+        dynamic_geometry_actors = [a for a in self.actors.values() if isinstance(a, DynamicGeometryActor)]
+        sorted_actors = [a for a in sorted(self.actors.values(), key=lambda a: a.priority)
+                         if a not in dynamic_geometry_actors]
+        return dynamic_geometry_actors + sorted_actors
 
     def reset(self):
         self.__init__(simulation=self.simulation)
