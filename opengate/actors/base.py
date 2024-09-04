@@ -300,7 +300,7 @@ class ActorBase(GateObject):
                     k_h = f"{k}_{h}"
                     self.AddActorOutputInfo(k_h)
                     self.SetWriteToDisk(k_h, w.write_to_disk)
-                    self.SetOutputPath(k_h, v.get_output_path_as_string(data_item=h))
+                    self.SetOutputPath(k_h, v.get_output_path_as_string(item=h))
             else:
                 self.AddActorOutputInfo(k)
                 self.SetWriteToDisk(k, v.write_to_disk)

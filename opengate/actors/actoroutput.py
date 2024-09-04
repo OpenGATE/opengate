@@ -125,6 +125,12 @@ class ActorOutputBase(GateObject):
         for v in self.data_write_config.values():
             v["write_to_disk"] = bool_value
 
+    def _get_output_filename(self, *args, **kwargs):
+        """This base class implements this trivial private getter (for internal use).
+        Inheriting classes can override and refine it.
+        """
+        return self.output_filename
+
     @property
     def belongs_to_actor(self):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
@@ -155,8 +161,9 @@ class ActorOutputBase(GateObject):
     def get_output_path(self, which="merged", data_item="all", **kwargs):
         self.initialize_output_filename()
 
+        output_filename = self._get_output_filename(**kwargs)
         full_data_path = Box(
-            {0: self.simulation.get_output_path(self.output_filename)}
+            {0: self.simulation.get_output_path(output_filename)}
         )
 
         if which == "merged":
@@ -253,6 +260,36 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             # set the parameters provided by the user in kwargs
             self.data_write_config = data_write_config
+
+    def _get_output_filename(self, *args, item=0):
+        return self.get_output_path_to_item(self.output_filename, item=item)
+
+    def get_output_path_to_item(self, output_path, item=0):
+        """This method is intended to be called from an ActorOutput object which provides the path.
+        It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
+        Do not override this method.
+        """
+        if len(self.data_container_class._data_item_classes) > 1 and item is None:
+            fatal(
+                f"The data container holds {len(self.data_container_class._data_item_classes)} data items. "
+                f"You must provide an item=... argument. "
+                f"Valid writable items of the container are: {list(self.data_write_config.keys())}."
+            )
+        return insert_suffix_before_extension(
+            output_path, self._get_suffix_for_item(item)
+        )
+        # else:
+        #     return actor_output_path
+
+    def _get_suffix_for_item(self, identifier):
+        if identifier in self.data_write_config:
+            return self.data_write_config[identifier]["suffix"]
+        else:
+            fatal(
+                f"No data item found with identifier {identifier} "
+                f"in container class {self.data_container_class.__name__}. "
+                f"Valid identifiers are: {list(self.data_write_config.keys())}."
+            )
 
     def merge_data(self, list_of_data):
         if self.merge_method == "sum":
