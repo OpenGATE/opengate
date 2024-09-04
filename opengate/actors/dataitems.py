@@ -2,7 +2,7 @@ import numpy as np
 import json
 from box import Box
 
-from ..exception import fatal, warning
+from ..exception import fatal, warning, GateImplementationError
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str, g4_units
 from ..image import (
     sum_itk_images,
@@ -258,10 +258,9 @@ class DataItemContainer(DataContainer):
     @property
     def data_write_config(self):
         try:
-            belongs_to = self.belongs_to
+            return self.belongs_to.data_write_config
         except AttributeError:
-            raise AttributeError("belongs_to unknown")
-        return self.belongs_to.data_write_config
+            raise GateImplementationError("belongs_to unknown")
 
     @property
     def _tuple_length(self):
