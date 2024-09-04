@@ -702,6 +702,12 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+def _setter_hook_score_in_let_actor(self, value):
+    if value in ('water', 'Water'):
+        return "G4_WATER"
+    else:
+        return value
+
 class LETActor(VoxelDepositActor, g4.GateLETActor):
     """
     LETActor: compute a 3D edep/dose map for deposited
@@ -753,6 +759,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
                 "doc": "In which material should the LET be scored? "
                 "You can provide a valid G4 material name, the term 'water', "
                 "or the term 'material' which means 'the local material where LET is scored. ",
+                "setter_hook": _setter_hook_score_in_let_actor
             },
         ),
         "let_to_other_material": (
