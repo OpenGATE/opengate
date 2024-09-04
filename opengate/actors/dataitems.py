@@ -456,7 +456,7 @@ class SingleItkImage(DataItemContainer):
 
 class QuotientItkImage(DataItemContainer):
 
-    _data_item_classes = ((ItkImageDataItem, ItkImageDataItem),)
+    _data_item_classes = (ItkImageDataItem, ItkImageDataItem,)
 
     # Specify which items should be written to disk and how
     # Important: define this at the class level, NOT in the __init__ method
