@@ -36,6 +36,12 @@ public:
 
   virtual void EndSimulationAction() override;
 
+  inline std::string GetPhysicalVolumeName() const {
+    return fPhysicalVolumeName;
+  }
+
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+
   // Image type is 3D float by default
   // TODO double precision required
   typedef itk::Image<double, 3> ImageType;

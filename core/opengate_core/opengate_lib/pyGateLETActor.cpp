@@ -38,5 +38,7 @@ void init_GateLETActor(py::module &m) {
       .def_readwrite("cpp_numerator_image", &GateLETActor::cpp_numerator_image)
       .def_readwrite("cpp_denominator_image",
                      &GateLETActor::cpp_denominator_image)
-      .def_readwrite("fPhysicalVolumeName", &GateLETActor::fPhysicalVolumeName);
+      .def("GetPhysicalVolumeName", &GateLETActor::GetPhysicalVolumeName)
+      .def("SetPhysicalVolumeName", &GateLETActor::SetPhysicalVolumeName);
+//      .def_readwrite("fPhysicalVolumeName", &GateLETActor::fPhysicalVolumeName);
 }
