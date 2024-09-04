@@ -212,6 +212,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.user_output.stats.merged_data.sim_stop_time = (
             self.simulation.run_timing_intervals[-1][1]
         )
+        self.user_output.stats.merged_data.nb_threads = (
+            self.simulation.number_of_threads
+        )
         self.user_output.stats.write_data_if_requested()
 
 
