@@ -21,7 +21,9 @@ if __name__ == "__main__":
     # If the output of test072_coinc_sorter_step1_config1.py does not exist, create it
     if not os.path.isfile(paths.output / "output_config1.root"):
         print("---------- Begin of test072_coinc_sorter_step1_config1.py ----------")
-        subprocess.call(["python", paths.current / "test072_coinc_sorter_step1_config1.py"])
+        subprocess.call(
+            ["python", paths.current / "test072_coinc_sorter_step1_config1.py"]
+        )
         print("----------- End of test072_coinc_sorter_step1_config1.py -----------")
 
     # open root file
