@@ -10,11 +10,19 @@ from opengate.actors.coincidences import (
 import uproot
 import os
 import numpy as np
+import subprocess
 from scipy.stats import wasserstein_distance
 
 if __name__ == "__main__":
     # test paths
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
+
+    # The test needs the output of test072_coinc_sorter_step1_config2.py
+    # If the output of test072_coinc_sorter_step1_config2.py does not exist, create it
+    if not os.path.isfile(paths.output / "output_config2.root"):
+        print("---------- Begin of test072_coinc_sorter_step1_config2.py ----------")
+        subprocess.call(["python", paths.current / "test072_coinc_sorter_step1_config2.py"])
+        print("----------- End of test072_coinc_sorter_step1_config2.py -----------")
 
     # open root file
     root_filename = paths.output / "output_config2.root"
