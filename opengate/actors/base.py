@@ -230,15 +230,6 @@ class ActorBase(GateObject):
         else:
             list(self.user_output.values())[0].write_to_disk = write_to_disk
 
-    @property
-    @shortcut_for_single_output_actor
-    def data_write_config(self):
-        return list(self.user_output.values())[0].data_write_config
-
-    @data_write_config.setter
-    def data_write_config(self, value):
-        list(self.user_output.values())[0].data_write_config = value
-
     def get_output_path(self, output_name=None, which="merged", **kwargs):
         if output_name is None:
             # if no output_name, we check if there is only one single output
