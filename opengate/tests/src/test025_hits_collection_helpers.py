@@ -93,10 +93,11 @@ def create_simulation(nb_threads):
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = [crystal1, crystal2]
-    hc.output_filename = "test025.root"
 
     if sim.number_of_threads > 1:
-        hc.extra_suffix = "MT"
+        hc.output_filename = "test025_MT.root"
+    else:
+        hc.output_filename = "test025.root"
 
     hc.attributes = [
         "TotalEnergyDeposit",
@@ -131,10 +132,11 @@ def create_simulation(nb_threads):
     # hits collection #2
     hc2 = sim.add_actor("DigitizerHitsCollectionActor", "Hits2")
     hc2.attached_to = [crystal1, crystal2]
-    hc2.output_filename = "test025_hits2.root"
 
     if sim.number_of_threads > 1:
-        hc2.extra_suffix = "MT"
+        hc2.output_filename = "test025_hits2_MT.root"
+    else:
+        hc2.output_filename = "test025_hits2.root"
 
     hc2.attributes = ["TotalEnergyDeposit", "GlobalTime"]
 
