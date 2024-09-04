@@ -92,6 +92,7 @@ if __name__ == "__main__":
         # 'TrackVertexKineticEnergy', 'EventKineticEnergy'
     ]
     phsp1.output_filename = "test013_decay_ion.root"
+    phsp1.steps_to_store = "first"
     phsp1.filters.append(f)
 
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_beta")
@@ -99,6 +100,7 @@ if __name__ == "__main__":
     phsp2.attributes = phsp1.attributes
     phsp2.output_filename = "test013_decay_beta_plus.root"
     phsp2.filters.append(f)
+    phsp2.steps_to_store = "first"
 
     # long run
     sim.run_timing_intervals = [[0, 109 * 60 * sec]]

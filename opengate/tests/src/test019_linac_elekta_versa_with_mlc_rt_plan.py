@@ -130,8 +130,9 @@ def validation_test_19_rt_plan(
     ):
         return True
     else:
-        print()
-        print(f"mm2 -> {percentage_diff=}")
+        print("")
+        print("FAIL")
+        print(f"mm2 -> {percentage_diff=} (tol={tol}")
         print(f"{np.sum(bool_percentage_diff)=}")
         print(f"{nb_part_sent/nb_part_theo=}")
         print(f"{err_nb_part=}")
@@ -151,7 +152,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.output_dir = paths.output  # FIXME (not yet)
+    sim.output_dir = paths.output
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
 

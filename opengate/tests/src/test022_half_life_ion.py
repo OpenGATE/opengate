@@ -121,16 +121,16 @@ if __name__ == "__main__":
     f.particle = "gamma"
     f.policy = "accept"
     ta1.filters.append(f)
-    ta1.output = output_filename = "test022_half_life_ion1.root"
-    ta1.steps_to_store = "exiting"
+    ta1.output_filename = "test022_half_life_ion1.root"
+    ta1.steps_to_store = "first"
 
     # hit actor w2
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
     ta2.attached_to = "waterbox2"
     ta2.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
     ta2.filters.append(f)
-    ta2.output = output_filename = "test022_half_life_ion2.root"
-    ta2.steps_to_store = "exiting"
+    ta2.output_filename = "test022_half_life_ion2.root"
+    ta2.steps_to_store = "first"
 
     # start simulation
     sim.run()
