@@ -162,9 +162,7 @@ class ActorOutputBase(GateObject):
         self.initialize_output_filename()
 
         output_filename = self._get_output_filename(**kwargs)
-        full_data_path = Box(
-            {0: self.simulation.get_output_path(output_filename)}
-        )
+        full_data_path = Box({0: self.simulation.get_output_path(output_filename)})
 
         if which == "merged":
             full_data_path_which = full_data_path

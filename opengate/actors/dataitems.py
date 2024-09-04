@@ -392,11 +392,11 @@ class DataItemContainer(DataContainer):
     #             f"No data item found with identifier {identifier} "
     #             f"in container class {type(self).__name__}."
     #         )
-            # try:
-            #     suffix = f"dataitem_{int(identifier)}"
-            # except ValueError:
-            #     suffix = str(identifier)
-        # return suffix
+    # try:
+    #     suffix = f"dataitem_{int(identifier)}"
+    # except ValueError:
+    #     suffix = str(identifier)
+    # return suffix
 
     def __getattr__(self, item):
         # check if any of the data items has this attribute
@@ -456,7 +456,10 @@ class SingleItkImage(DataItemContainer):
 
 class QuotientItkImage(DataItemContainer):
 
-    _data_item_classes = (ItkImageDataItem, ItkImageDataItem,)
+    _data_item_classes = (
+        ItkImageDataItem,
+        ItkImageDataItem,
+    )
 
     # Specify which items should be written to disk and how
     # Important: define this at the class level, NOT in the __init__ method
