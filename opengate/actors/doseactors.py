@@ -812,19 +812,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         self.check_user_input()
 
-        extra_suffix = ""
-        if self.averaging_method == "dose_average":
-            extra_suffix = "letd"
-        elif self.averaging_method == "track_average":
-            extra_suffix = "lett"
-
-        extra_suffix += f"_scoredin_{self.score_in}"
-        extra_suffix.lstrip(
-            "_"
-        )  # make sure to remove left-sided underscore in case there is one
-
-        self.user_output["let"].extra_suffix = extra_suffix
-
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
         self.fPhysicalVolumeName = self.get_physical_volume_name()
