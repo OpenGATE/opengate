@@ -71,7 +71,7 @@ if __name__ == "__main__":
     phsp_sph = sim.add_actor("PhaseSpaceActor", "phsp_sph")
     phsp_sph.attributes = ["EventPosition"]
     phsp_sph.output_filename = "iec_spheres.root"
-    phsp_sph.steps_to_store = "exiting first"
+    phsp_sph.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "electron")
     f.particle = "e-"
     f.policy = "accept"
