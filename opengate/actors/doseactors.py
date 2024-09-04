@@ -72,10 +72,10 @@ class VoxelDepositActor(ActorBase):
         "output": (
             None,
             {
-                "deprecated": "The output filename is now generated automatically. \n"
-                "An extra suffix can be defined via my_dose_actor.extra_suffix (for actors with a single output), \n"
-                "or via my_dose_actor.user_output.OUTPUTNAME.extra_suffix=..., for actors with multiple outputs\n"
-                "where OUTPUTNAME can be e.g. 'edep', 'dose', 'square', depending on the specific actor.",
+                "deprecated": "The output filename is now set via output_filename relative to the output "
+                              "directory of the simulation, which can be set via sim.output_dir. "
+                              "If no output_filename is provided, it will be generated automatically. \n"
+                              "To specify whether the actor output should be written to disk, use write_to_disk=True/False."
             },
         ),
         "img_coord_system": (
