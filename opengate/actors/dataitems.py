@@ -229,7 +229,7 @@ class DataItemContainer(DataContainer):
     @classmethod
     def get_default_data_write_config(cls):
         default_data_write_config = None
-        # try to pick up writable dataitems defined in the specific class
+        # try to pick up data write config defined in the specific class or base classes
         for c in cls.mro():
             try:
                 default_data_write_config = c.__dict__["default_data_write_config"]
