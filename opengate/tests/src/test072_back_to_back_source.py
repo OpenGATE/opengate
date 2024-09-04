@@ -107,6 +107,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # set the world size like in the Gate macro
     world = sim.world
@@ -145,7 +146,7 @@ if __name__ == "__main__":
         "PreDirection",
     ]
     phsp_actor.steps_to_store = "first"
-    phsp_actor.output_filename = paths.output / "b2b.root"
+    phsp_actor.output_filename = "b2b.root"
 
     # verbose
     # sim.g4_verbose = True
