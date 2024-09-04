@@ -126,27 +126,6 @@ class ActorOutputBase(GateObject):
             v["write_to_disk"] = bool_value
 
     @property
-    def extra_suffix(self):
-        d = Box([(k, v["suffix"]) for k, v in self.data_write_config.items()])
-        if len(d) > 1:
-            return d
-        elif len(d) == 1:
-            return list(d.values())[0]
-        else:
-            fatal("Nothing defined in data_write_config. ")
-
-    @extra_suffix.setter
-    def extra_suffix(self, value):
-        if len(self.data_write_config) > 1:
-            fatal(
-                f"The actor output '{self.name}' handles multiple data items. "
-                f"You need to specify the suffix individually for each item "
-                f"via the user parameter 'data_write_config'."
-            )
-        for v in self.data_write_config.values():
-            v["suffix"] = str(value)
-
-    @property
     def belongs_to_actor(self):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
@@ -175,46 +154,10 @@ class ActorOutputBase(GateObject):
 
     def get_output_path(self, which="merged", data_item="all", **kwargs):
         self.initialize_output_filename()
-        if self.extra_suffix is not None:
-            try:
-                extra_suffix_dict = dict(self.extra_suffix)
-                if data_item == "all":
-                    output_filename_with_suffix = dict(
-                        [
-                            (k, insert_suffix_before_extension(self.output_filename, v))
-                            for k, v in extra_suffix_dict.items()
-                        ]
-                    )
-                else:
-                    try:
-                        output_filename_with_suffix = {
-                            0: insert_suffix_before_extension(
-                                self.output_filename, extra_suffix_dict[data_item]
-                            )
-                        }
-                    except KeyError:
-                        fatal(
-                            f"No data item {data_item} found in actor output {self.name} "
-                            f"of actor {self.belongs_to_actor.name}. "
-                            f"Available data items are {list(self.extra_suffix.keys())}"
-                        )
-            except ValueError:
-                output_filename_with_suffix = {
-                    0: insert_suffix_before_extension(
-                        self.output_filename, self.extra_suffix
-                    )
-                }
 
-            full_data_path = Box(
-                [
-                    (k, self.simulation.get_output_path(v))
-                    for k, v in output_filename_with_suffix.items()
-                ]
-            )
-        else:
-            full_data_path = Box(
-                {0: self.simulation.get_output_path(self.output_filename)}
-            )
+        full_data_path = Box(
+            {0: self.simulation.get_output_path(self.output_filename)}
+        )
 
         if which == "merged":
             full_data_path_which = full_data_path
@@ -308,7 +251,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 self.data_container_class.get_default_data_write_config()
             )
         else:
-            # set the parameters provided by the user via the constructor
+            # set the parameters provided by the user in kwargs
             self.data_write_config = data_write_config
 
     def merge_data(self, list_of_data):
