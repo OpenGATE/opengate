@@ -814,7 +814,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
-        self.fPhysicalVolumeName = self.get_physical_volume_name()
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
