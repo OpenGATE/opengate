@@ -1462,17 +1462,17 @@ class Simulation(GateObject):
 
     def to_json_string(self):
         warning(
-            f"******************************************************************************\n"
-            f"*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            f"******************************************************************************\n"
+            "******************************************************************************\n"
+            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
+            "******************************************************************************\n"
         )
         return dumps_json(self.to_dictionary())
 
     def to_json_file(self, directory=None, filename=None):
         warning(
-            f"******************************************************************************\n"
-            f"*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            f"******************************************************************************\n"
+            "******************************************************************************\n"
+            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
+            "******************************************************************************\n"
         )
         d = self.to_dictionary()
         if filename is None:
@@ -1517,10 +1517,12 @@ class Simulation(GateObject):
                 ]
             )
         # post process the list
+        raw_files = []
         for f in input_files:
             # check for image header files (mhd) and add the corresponding raw files to the list
             if f.suffix == ".mhd":
-                input_files.append(f.parent.absolute() / Path(f.stem + ".raw"))
+                raw_files.append(f.parent.absolute() / Path(f.stem + ".raw"))
+        input_files.extend(raw_files)
         for f in input_files:
             shutil.copy2(f, directory)
 

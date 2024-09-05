@@ -258,7 +258,7 @@ class Region(GateObject):
         except AttributeError:
             volume_name = volume
 
-        if volume_name in self.root_logical_volumes.keys():
+        if volume_name in self.root_logical_volumes:
             fatal(f"This volume {volume_name} is already associated with this region.")
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self

@@ -565,8 +565,8 @@ class DynamicGateObject(GateObject):
                 params_with_incorrect_length.append((k, len(v)))
         if len(params_with_incorrect_length) > 0:
             s = (
-                f"The length of the following dynamic parameters "
-                f"does not match the number of timing intervals of the simulation:\n"
+                "The length of the following dynamic parameters "
+                "does not match the number of timing intervals of the simulation:\n"
             )
             for p in params_with_incorrect_length:
                 s += f"{p[0]}: {p[1]}\n"
@@ -756,9 +756,9 @@ def create_gate_object_from_dict(dct):
 
     Used as part of the deserialization chain, when reading simulations stored as JSON file.
     """
-    if not "class_module" in dct:
+    if "class_module" not in dct:
         fatal(
-            f"Error while trying to create GateObject from dictionary: Incompatible dictionary"
+            "Error while trying to create GateObject from dictionary: Incompatible dictionary"
         )
     obj = getattr(sys.modules[dct["class_module"]], dct["object_type"])(
         name=dct["user_info"]["name"]
