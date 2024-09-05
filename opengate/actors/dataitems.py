@@ -631,7 +631,8 @@ class QuotientMeanItkImage(QuotientItkImage):
 
 available_data_container_classes = {
     "SingleItkImage": SingleItkImage,
-    "QuotientItkImage": QuotientItkImage,
+    "SingleMeanItkImage": SingleMeanItkImage,
+    "QuotientMeanItkImage": QuotientMeanItkImage,
     "SingleArray": SingleArray,
     "DoubleArray": DoubleArray,
 }
