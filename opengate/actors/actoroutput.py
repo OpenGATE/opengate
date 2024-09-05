@@ -116,17 +116,19 @@ class ActorOutputBase(GateObject):
 
     @write_to_disk.setter
     def write_to_disk(self, value):
-        self.set_write_to_disk('all', value)
+        self.set_write_to_disk("all", value)
 
     def set_write_to_disk(self, item, value):
-        if item == 'all':
+        if item == "all":
             for k in self.data_write_config.keys():
                 self.set_write_to_disk(k, value)
         else:
             try:
-                self.data_write_config[item]['write_to_disk'] = bool(value)
+                self.data_write_config[item]["write_to_disk"] = bool(value)
             except KeyError:
-                fatal(f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}.")
+                fatal(
+                    f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
+                )
 
     @property
     def belongs_to_actor(self):
@@ -163,7 +165,12 @@ class ActorOutputBase(GateObject):
         if isinstance(output_filename, (str, Path)):
             full_data_path = Box({0: self.simulation.get_output_path(output_filename)})
         else:
-            full_data_path = Box([(k, self.simulation.get_output_path(v)) for k, v in output_filename.items()])
+            full_data_path = Box(
+                [
+                    (k, self.simulation.get_output_path(v))
+                    for k, v in output_filename.items()
+                ]
+            )
 
         if which == "merged":
             full_data_path_which = full_data_path
@@ -261,15 +268,22 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             self.data_write_config = data_write_config
 
     def get_output_path(self, **kwargs):
-        item = kwargs.pop('item', 'all')
+        item = kwargs.pop("item", "all")
         if item is None:
             return super().get_output_path(**kwargs)
         else:
-            return super().get_output_path(output_filename=self.get_output_filename(item=item), **kwargs)
+            return super().get_output_path(
+                output_filename=self.get_output_filename(item=item), **kwargs
+            )
 
-    def get_output_filename(self, *args, item='all'):
-        if item == 'all':
-            return Box([(k, self.compose_output_path_to_item(self.output_filename, k)) for k in self.data_write_config])
+    def get_output_filename(self, *args, item="all"):
+        if item == "all":
+            return Box(
+                [
+                    (k, self.compose_output_path_to_item(self.output_filename, k))
+                    for k in self.data_write_config
+                ]
+            )
         else:
             return self.compose_output_path_to_item(self.output_filename, item)
 
@@ -443,7 +457,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 # the first item=None is needed so that get_output_path returns the path without item-specific suffix
                 # the write() method of the data item then handles the suffix
                 # depending on the item requested in the second item= kwarg
-                self.merged_data.write(self.get_output_path(which=which, item=None, **kwargs), item=item)
+                self.merged_data.write(
+                    self.get_output_path(which=which, item=None, **kwargs), item=item
+                )
         elif which == "all":
             self.write_data("all_runs", **kwargs)
             self.write_data("merged", **kwargs)

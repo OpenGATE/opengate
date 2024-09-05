@@ -598,7 +598,10 @@ class SingleMeanItkImage(DataItemContainer):
 
 class SingleItkImageWithVariance(DataItemContainer):
 
-    _data_item_classes = (ItkImageDataItem, ItkImageDataItem, )
+    _data_item_classes = (
+        ItkImageDataItem,
+        ItkImageDataItem,
+    )
 
     default_data_write_config = Box(
         {
@@ -606,7 +609,8 @@ class SingleItkImageWithVariance(DataItemContainer):
             1: Box({"suffix": "squared", "write_to_disk": False}),
             "variance": Box({"suffix": "variance", "write_to_disk": False}),
             "std": Box({"suffix": "std", "write_to_disk": True}),
-        })
+        }
+    )
 
     def get_variance_or_uncertainty(self, which_quantity):
         try:
@@ -629,22 +633,29 @@ class SingleItkImageWithVariance(DataItemContainer):
                 var_arr = np.ones_like(value_array)
             else:
                 squared_value_array = np.asarray(self.data[1].data)
-                if which_quantity == 'variance':
-                    var_arr = calculate_variance(value_array, squared_value_array, number_of_samples)
-                elif which_quantity == 'std':
-                    var_arr = np.sqrt(calculate_variance(value_array, squared_value_array, number_of_samples))
+                if which_quantity == "variance":
+                    var_arr = calculate_variance(
+                        value_array, squared_value_array, number_of_samples
+                    )
+                elif which_quantity == "std":
+                    var_arr = np.sqrt(
+                        calculate_variance(
+                            value_array, squared_value_array, number_of_samples
+                        )
+                    )
             var_image = itk.image_view_from_array(var_arr)
             var_image.CopyInformation(self.data[0].data)
         except AttributeError as e:
             fatal(str(e))
         return self._data_item_classes[0](data=var_image)
+
     @property
     def variance(self):
-        return self.get_variance_or_uncertainty('variance')
+        return self.get_variance_or_uncertainty("variance")
 
     @property
     def std(self):
-        return self.get_variance_or_uncertainty('std')
+        return self.get_variance_or_uncertainty("std")
 
 
 class QuotientItkImage(DataItemContainer):
@@ -703,5 +714,5 @@ available_data_container_classes = {
     "QuotientMeanItkImage": QuotientMeanItkImage,
     "SingleArray": SingleArray,
     "DoubleArray": DoubleArray,
-    "SingleItkImageWithVariance": SingleItkImageWithVariance
+    "SingleItkImageWithVariance": SingleItkImageWithVariance,
 }

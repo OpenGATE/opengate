@@ -22,7 +22,7 @@ from .actoroutput import (
     ActorOutputSingleImage,
     ActorOutputSingleMeanImage,
     ActorOutputQuotientMeanImage,
-    ActorOutputSingleImageWithVariance
+    ActorOutputSingleImageWithVariance,
 )
 
 
@@ -671,16 +671,21 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 run_index, number_of_samples=self.NbOfEvent
             )
 
-
         if self.user_output.square.active:
-            self.fetch_from_cpp_image("edep_with_variance", run_index, self.cpp_edep_image, self.cpp_square_image)
+            self.fetch_from_cpp_image(
+                "edep_with_variance",
+                run_index,
+                self.cpp_edep_image,
+                self.cpp_square_image,
+            )
         else:
-            self.fetch_from_cpp_image("edep_with_variance", run_index, self.cpp_edep_image)
+            self.fetch_from_cpp_image(
+                "edep_with_variance", run_index, self.cpp_edep_image
+            )
         self._update_output_coordinate_system("edep_with_variance", run_index)
         self.user_output.edep_with_variance.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
-
 
         # density image
         if self.user_output.density.active:
@@ -953,7 +958,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             {
                 "BeginOfRunActionMasterThread",
                 "EndOfRunActionMasterThread",
-                "BeginOfEventAction"
+                "BeginOfEventAction",
             }
         )
 

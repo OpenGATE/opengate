@@ -333,13 +333,14 @@ def print_opengate_info():
 def calculate_variance(value_array, squared_value_array, number_of_samples):
     return np.clip(
         (
-                squared_value_array / number_of_samples
-                - np.power(value_array / number_of_samples, 2)
+            squared_value_array / number_of_samples
+            - np.power(value_array / number_of_samples, 2)
         )
         / (number_of_samples - 1),
         0,
         None,
     )
+
 
 def standard_error_c4_correction(n):
     """
