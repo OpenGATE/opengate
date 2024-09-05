@@ -56,7 +56,7 @@ void GateLETActor::InitializeCpp() {
   cpp_denominator_image = ImageType::New();
 }
 
-void GateLETActor::BeginOfRunAction(const G4Run *) {
+void GateLETActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<ImageType>(cpp_numerator_image, fPhysicalVolumeName,
                                  fInitialTranslation);
@@ -65,7 +65,9 @@ void GateLETActor::BeginOfRunAction(const G4Run *) {
   // compute volume of a dose voxel
   auto sp = cpp_numerator_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
+}
 
+void GateLETActor::BeginOfRunAction(const G4Run *) {
   if (fScoreInOtherMaterial) {
     auto &l = fThreadLocalData.Get();
     l.materialToScoreIn =

@@ -833,6 +833,8 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.push_to_cpp_image(
             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
         )
+        g4.GateLETActor.BeginOfRunActionMasterThread(self, run_index)
+
 
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image(

@@ -34,6 +34,8 @@ public:
   // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run *run) override;
 
+  virtual void BeginOfRunActionMasterThread(int run_id) override;
+
   virtual void EndSimulationAction() override;
 
   inline std::string GetPhysicalVolumeName() const {
