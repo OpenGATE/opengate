@@ -158,8 +158,10 @@ void GateLETActor::SteppingAction(G4Step *step) {
       //      current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
 
       auto SPR_otherMaterial = dedx_other_material / dedx_currstep;
-      edep *= SPR_otherMaterial;
-      dedx_currstep *= SPR_otherMaterial;
+      if (!std::isnan(SPR_otherMaterial)) {
+        edep *= SPR_otherMaterial;
+        dedx_currstep *= SPR_otherMaterial;
+      }
     }
 
     double scor_val_num = 0.;
