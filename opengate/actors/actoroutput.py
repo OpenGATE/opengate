@@ -503,6 +503,12 @@ class ActorOutputQuotientImage(ActorOutputImage):
         super().__init__("QuotientItkImage", *args, **kwargs)
 
 
+class ActorOutputQuotientMeanImage(ActorOutputImage):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__("QuotientMeanItkImage", *args, **kwargs)
+
+
 class ActorOutputRoot(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
