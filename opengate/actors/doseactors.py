@@ -464,26 +464,26 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
-        self._add_user_output(ActorOutputSingleImage, "edep")
+        self._add_user_output(ActorOutputSingleMeanImage, "edep")
         self._add_user_output(
-            ActorOutputSingleImage,
+            ActorOutputSingleMeanImage,
             "edep_uncertainty",
             can_be_deactivated=True,
             active=False,
         )
         self._add_user_output(
-            ActorOutputSingleImage, "dose", can_be_deactivated=True, active=False
+            ActorOutputSingleMeanImage, "dose", can_be_deactivated=True, active=False
         )
         self._add_user_output(
-            ActorOutputSingleImage,
+            ActorOutputSingleMeanImage,
             "dose_uncertainty",
             can_be_deactivated=True,
             active=False,
         )
         self._add_user_output(
-            ActorOutputSingleImage, "square", can_be_deactivated=True, active=False
+            ActorOutputSingleMeanImage, "square", can_be_deactivated=True, active=False
         )
-        self._add_user_output(ActorOutputSingleImage, "density")
+        self._add_user_output(ActorOutputSingleMeanImage, "density")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -629,16 +629,19 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # edep
         self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
         self._update_output_coordinate_system("edep", run_index)
+        self.user_output.edep.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         # squared edep
         if self.user_output.square.active:
             self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
             self._update_output_coordinate_system("square", run_index)
+            self.user_output.square.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         # density image
         if self.user_output.density.active:
             self.fetch_from_cpp_image("density", run_index, self.cpp_density_image)
             self._update_output_coordinate_system("density", run_index)
+            self.user_output.density.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         # dose
         if self.user_output.dose.active:
@@ -654,6 +657,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 run_index,
                 dose_image,
             )
+            self.user_output.dose.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         # uncertainty active implies square active
         if self.user_output.edep_uncertainty.active:
@@ -680,6 +684,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.edep_uncertainty.store_data(
                 run_index, edep_uncertainty_image
             )
+            self.user_output.edep_uncertainty.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         if self.user_output.dose_uncertainty.active:
             # scale by density
@@ -690,6 +695,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.dose_uncertainty.store_data(
                 run_index, dose_uncertainty_image
             )
+            self.user_output.dose_uncertainty.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
