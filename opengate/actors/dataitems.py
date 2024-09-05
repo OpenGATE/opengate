@@ -471,7 +471,7 @@ class DataItemContainer(DataContainer):
         return type(self)(
             self._data_item_classes,
             data=[
-                self.data[i].__truediv__(other.data[i])
+                self.data[i].merge_with(other.data[i])
                 for i in range(self._tuple_length)
             ],
         )
