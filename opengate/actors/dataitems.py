@@ -1,9 +1,10 @@
+import itk
 import numpy as np
 import json
 from box import Box
 
 from ..exception import fatal, warning, GateImplementationError
-from ..utility import insert_suffix_before_extension, ensure_filename_is_str, g4_units
+from ..utility import ensure_filename_is_str, calculate_variance
 from ..image import (
     sum_itk_images,
     divide_itk_images,
