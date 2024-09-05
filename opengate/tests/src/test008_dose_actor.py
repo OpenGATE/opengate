@@ -80,6 +80,7 @@ if __name__ == "__main__":
     dose.edep_uncertainty.active = True
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
+    dose.output_filename = "test.nii.gz"
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")

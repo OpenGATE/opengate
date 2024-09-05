@@ -330,11 +330,12 @@ def assert_images(
     plot_img_axis(ax, img1, "reference", axis)
     plot_img_axis(ax, img2, "test", axis)
     if fig_name is None:
-        n = filename2.replace(".mhd", "_test.png")
+        filename2 = Path(filename2)
+        fn = filename2.with_stem(filename2.stem + "_test").with_suffix(".png")
     else:
-        n = fig_name
-    print("Save image test figure :", n)
-    plt.savefig(n)
+        fn = fig_name
+    print("Save image test figure :", fn)
+    plt.savefig(fn)
 
     return is_ok
 

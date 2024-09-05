@@ -191,13 +191,18 @@ def ensure_filename_is_str(filename):
 
 def insert_suffix_before_extension(file_path, suffix, suffix_separator="-"):
     path = Path(file_path)
-    if suffix:
-        suffix = suffix.strip("_- *")
-        suffix = suffix.lower()
-        new_path = path.with_name(path.stem + suffix_separator + suffix + path.suffix)
-        return new_path
-    else:
+    if not suffix:
         return path
+
+    suffix = suffix.strip("_- *").lower()
+    # Handle filenames with nested extensions e.g. '.nii.gz'
+    if path.name.endswith(".nii.gz"):
+        stem = path.name[: -len(".nii.gz")]
+        new_path = path.with_name(f"{stem}{suffix_separator}{suffix}.nii.gz")
+    else:
+        new_path = path.with_name(f"{path.stem}{suffix_separator}{suffix}{path.suffix}")
+
+    return new_path
 
 
 def get_random_folder_name(size=8, create=True):
