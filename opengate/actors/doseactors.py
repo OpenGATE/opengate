@@ -586,6 +586,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             else:
                 # the dose actor is attached to a volume, we need the density image
                 # to be computed from the cpp side
+                if density_image is None:
+                    fatal(f"A density image computed via the G4 simulation is needed.")
                 scaled_image = divide_itk_images(
                     img1_numerator=input_image,
                     img2_denominator=density_image,
