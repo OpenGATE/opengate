@@ -28,8 +28,10 @@ class DataItem:
                 for k, v in meta_data.items():
                     self.meta_data[k] = v
             except AttributeError:
-                fatal(f"Illegal keyword argument meta_data: {meta_data}. "
-                      f"Should be a dictionary-like object, but found {type(meta_data)}.")
+                fatal(
+                    f"Illegal keyword argument meta_data: {meta_data}. "
+                    f"Should be a dictionary-like object, but found {type(meta_data)}."
+                )
 
     def set_data(self, data, **kwargs):
         self.data = data
@@ -104,18 +106,21 @@ class MeanValueDataItemMixin:
     @property
     def number_of_samples(self):
         try:
-            return self.meta_data['number_of_samples']
+            return self.meta_data["number_of_samples"]
         except KeyError:
-            fatal(f"This data item holds a mean value, "
-                  f"but the meta_data dictionary does not contain any value for 'number_of_samples'.")
+            fatal(
+                f"This data item holds a mean value, "
+                f"but the meta_data dictionary does not contain any value for 'number_of_samples'."
+            )
 
     @number_of_samples.setter
     def number_of_samples(self, value):
-        self.meta_data['number_of_samples'] = int(value)
+        self.meta_data["number_of_samples"] = int(value)
 
     def merge_with(self, other):
-        result = ((self * self.number_of_samples + other * other.number_of_samples) /
-                    (self.number_of_samples + other.number_of_samples))
+        result = (self * self.number_of_samples + other * other.number_of_samples) / (
+            self.number_of_samples + other.number_of_samples
+        )
         result.number_of_samples = self.number_of_samples + other.number_of_samples
         return result
 
@@ -123,7 +128,7 @@ class MeanValueDataItemMixin:
         self *= self.number_of_samples
         other *= other.number_of_samples
         self += other
-        self /= (self.number_of_samples + other.number_of_samples)
+        self /= self.number_of_samples + other.number_of_samples
         self.number_of_samples = self.number_of_samples + other.number_of_samples
         return self
 
@@ -238,14 +243,14 @@ class ItkImageDataItem(DataItem):
     def __truediv__(self, other):
         self._assert_data_is_not_none()
         if isinstance(other, (float, int)):
-            return type(self)(data=scale_itk_image(self.data, 1. / other))
+            return type(self)(data=scale_itk_image(self.data, 1.0 / other))
         else:
             return type(self)(data=divide_itk_images(self.data, other.data))
 
     def __itruediv__(self, other):
         self._assert_data_is_not_none()
         if isinstance(other, (float, int)):
-            self.set_data(scale_itk_image(self.data, 1. / other))
+            self.set_data(scale_itk_image(self.data, 1.0 / other))
         else:
             self.set_data(divide_itk_images(self.data, other.data))
         return self
@@ -443,22 +448,22 @@ class DataItemContainer(DataContainer):
         return self
 
     def __iadd__(self, other):
-        return self.propagate_operator_inplace(other, '__iadd__')
+        return self.propagate_operator_inplace(other, "__iadd__")
 
     def __add__(self, other):
-        return self.propagate_operator(other, '__add__')
+        return self.propagate_operator(other, "__add__")
 
     def __imul__(self, other):
-        return self.propagate_operator_inplace(other, '__imul__')
+        return self.propagate_operator_inplace(other, "__imul__")
 
     def __mul__(self, other):
-        return self.propagate_operator(other, '__mul__')
+        return self.propagate_operator(other, "__mul__")
 
     def __itruediv__(self, other):
-        return self.propagate_operator_inplace(other, '__itruediv__')
+        return self.propagate_operator_inplace(other, "__itruediv__")
 
     def __truediv__(self, other):
-        return self.propagate_operator(other, '__truediv__')
+        return self.propagate_operator(other, "__truediv__")
 
     def inplace_merge_with(self, other):
         self._assert_data_is_not_none()
@@ -521,25 +526,33 @@ class DataItemContainer(DataContainer):
                     else:
                         attributes_in_data.append(getattr(d, item))
             if len(attributes_in_data) > 0 and len(methods_in_data) > 0:
-                fatal(f"Cannot hand down request for attribute to data items "
-                      f"because some contain it as a method and other as a property. ")
+                fatal(
+                    f"Cannot hand down request for attribute to data items "
+                    f"because some contain it as a method and other as a property. "
+                )
             elif len(attributes_in_data) > 0:
                 if len(attributes_in_data) != len(self.data):
-                    fatal(f"Cannot hand down request for property to data items "
-                          f"because not all of them contain it. ")
+                    fatal(
+                        f"Cannot hand down request for property to data items "
+                        f"because not all of them contain it. "
+                    )
                 if len(attributes_in_data) == 1:
                     return attributes_in_data[0]
                 else:
                     return attributes_in_data
             elif len(methods_in_data) > 0:
                 if len(methods_in_data) != len(self.data):
-                    fatal(f"Cannot hand down request for method to data items "
-                          f"because not all of them contain it. ")
+                    fatal(
+                        f"Cannot hand down request for method to data items "
+                        f"because not all of them contain it. "
+                    )
+
                 def hand_down(*args, **kwargs):
                     return_values = []
                     for m in methods_in_data:
                         return_values.append(m(*args, **kwargs))
                     return tuple(return_values)
+
                 return hand_down
             else:
                 raise AttributeError(f"No such attribute '{item}'")

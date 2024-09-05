@@ -29,7 +29,6 @@ G4Mutex SetLETPixelMutex = G4MUTEX_INITIALIZER;
 
 G4Mutex SetLETNbEventMutex = G4MUTEX_INITIALIZER;
 
-
 GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");

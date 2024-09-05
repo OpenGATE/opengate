@@ -388,7 +388,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 )
             data = self.data_per_run[run_index]
         if data is None:
-            fatal(f"Cannot store meta data because no data exists yet for which='{which}'.")
+            fatal(
+                f"Cannot store meta data because no data exists yet for which='{which}'."
+            )
         data.update_meta_data(meta_data)
 
     def load_data(self, which):

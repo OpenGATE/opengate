@@ -65,7 +65,6 @@ public:
 
   int NbOfEvent = 0;
 
-
 private:
   double fVoxelVolume;
 

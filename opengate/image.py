@@ -368,7 +368,9 @@ def sum_itk_images(images):
 
 def multiply_itk_images(images):
     image_type = type(images[0])
-    multiply_image_filter = itk.MultiplyImageFilter[image_type, image_type, image_type].New()
+    multiply_image_filter = itk.MultiplyImageFilter[
+        image_type, image_type, image_type
+    ].New()
     output = images[0]
     for img in images[1:]:
         multiply_image_filter.SetInput1(output)
