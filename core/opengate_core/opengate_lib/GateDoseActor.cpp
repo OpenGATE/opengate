@@ -124,9 +124,6 @@ void GateDoseActor::BeginOfRunAction(const G4Run *run) {
               0);
   }
 
-  if (fDensityFlag) {
-    cpp_density_image->FillBuffer(0);
-  }
   //  if (fcpImageForThreadsFlag && (run->GetRunID() < 1)) {
   //    l.edep_worker_flatimg.resize(N_voxels);
   //    std::fill(l.edep_worker_flatimg.begin(), l.edep_worker_flatimg.end(),
