@@ -366,6 +366,18 @@ def sum_itk_images(images):
     return output
 
 
+def multiply_itk_images(images):
+    image_type = type(images[0])
+    multiply_image_filter = itk.MultiplyImageFilter[image_type, image_type, image_type].New()
+    output = images[0]
+    for img in images[1:]:
+        multiply_image_filter.SetInput1(output)
+        multiply_image_filter.SetInput2(img)
+        multiply_image_filter.Update()
+        output = multiply_image_filter.GetOutput()
+    return output
+
+
 def split_spect_projections(input_filenames, nb_ene):
     """
     The inputs are filenames of several images containing projections for a given spect head
