@@ -636,6 +636,10 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
         # the parallel world volume needs the engine to construct itself
         self.parallel_world_volume.parallel_world_engine = self
 
+    def close(self):
+        self.parallel_world_volume.parallel_world_engine = None
+        super().close()
+
     @property
     def parallel_world_volume(self):
         return (
@@ -700,6 +704,9 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             vol.close()
         for pwv in self.volume_manager.parallel_world_volumes.values():
             pwv.close()
+        for pwe in self.parallel_world_engines.values():
+            pwe.close()
+        self.parallel_world_engines = {}
         super().close()
         # self.volume_manager.world_volume.close()
 
