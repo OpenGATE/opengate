@@ -835,12 +835,13 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         )
         g4.GateLETActor.BeginOfRunActionMasterThread(self, run_index)
 
-
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image(
             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
         )
-        self._update_output__update_output_coordinate_systemcoordinate_system("let", run_index)
+        self._update_output__update_output_coordinate_systemcoordinate_system(
+            "let", run_index
+        )
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0

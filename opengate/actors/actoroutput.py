@@ -409,7 +409,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             if self.merged_data is not None:
                 # pop out the keyword item which needs to be passed to the write method
                 # and which should not be passed to the get_output_path method
-                item = kwargs.pop('item', None)
+                item = kwargs.pop("item", None)
                 self.merged_data.write(self.get_output_path(which, **kwargs), item=item)
         elif which == "all":
             self.write_data("all_runs", **kwargs)
@@ -423,7 +423,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                     f"Allowed values are 'all', 'all_runs', 'merged', or a valid run_index"
                 )
             if data is not None:
-                item = kwargs.pop('item', None)
+                item = kwargs.pop("item", None)
                 data.write(self.get_output_path(which, **kwargs), item=item)
 
 
