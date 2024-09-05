@@ -19,7 +19,11 @@ from ..image import (
 from ..geometry.materials import create_density_img
 from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
-from .actoroutput import ActorOutputSingleImage, ActorOutputQuotientImage
+from .actoroutput import (
+    ActorOutputSingleImage,
+    ActorOutputSingleMeanImage,
+    ActorOutputQuotientMeanImage,
+)
 
 
 class VoxelDepositActor(ActorBase):
