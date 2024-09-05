@@ -533,6 +533,26 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def density(self):
         return self.user_output.density
 
+    @property
+    def edep_image(self):
+        if self.edep_with_variance.merged_data is not None:
+            return self.edep_with_variance.merged_data.data[0].image
+
+    @property
+    def edep_squared_image(self):
+        if self.edep_with_variance.merged_data is not None:
+            return self.edep_with_variance.merged_data.data[1].image
+
+    @property
+    def edep_variance_image(self):
+        if self.edep_with_variance.merged_data is not None:
+            return self.edep_with_variance.merged_data.variance.image
+
+    @property
+    def edep_std_image(self):
+        if self.edep_with_variance.merged_data is not None:
+            return self.edep_with_variance.merged_data.std.image
+
     def compute_dose_from_edep_img(self, input_image, density_image=None):
         """
         * create mass image:
