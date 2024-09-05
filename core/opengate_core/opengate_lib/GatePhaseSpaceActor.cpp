@@ -27,6 +27,11 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fActions.insert("EndSimulationAction");
   fTotalNumberOfEntries = 0;
   fNumberOfAbsorbedEvents = 0;
+  fStoreExitingStep = false;
+  fStoreEnteringStep = false;
+  fStoreFirstStepInVolume = false;
+  fDebug = false;
+  fStoreAbsorbedEvent = false;
 }
 
 GatePhaseSpaceActor::~GatePhaseSpaceActor() {
@@ -160,11 +165,13 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
     const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
     auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
     auto vol_name = vol->GetName();
-    std::string pname = "none";
+    std::string pname = "noproc";
     if (p != nullptr)
       pname = p->GetProcessName();
-    std::cout << GetName()
+    std::cout << GetName() << " "
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
+              << " hits=" << fHits->GetSize() << " [" << entering << " "
+              << exiting << " " << first_step_in_volume << "]"
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name
               << " mat=" << vol->GetLogicalVolume()->GetMaterial()->GetName()

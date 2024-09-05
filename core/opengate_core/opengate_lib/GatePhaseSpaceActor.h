@@ -60,7 +60,9 @@ public:
   int GetTotalNumberOfEntries() const;
 
   void SetStoreEnteringStepFlag(bool b) { fStoreEnteringStep = true; }
+
   void SetStoreExitingStepFlag(bool b) { fStoreExitingStep = true; }
+
   void SetStoreFirstStepInVolumeFlag(bool b) { fStoreFirstStepInVolume = true; }
 
 protected:
@@ -73,7 +75,7 @@ protected:
 
   std::string fDigiCollectionName;
   std::vector<std::string> fUserDigiAttributeNames;
-  GateDigiCollection *fHits;
+  GateDigiCollection *fHits{};
   bool fDebug;
   bool fStoreAbsorbedEvent;
   bool fStoreEnteringStep;

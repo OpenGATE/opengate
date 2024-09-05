@@ -1005,7 +1005,12 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
                 "doc": "FIXME",
             },
         ),
-        "steps_to_store": ("entering", {"doc": "FIXME"}),  # FIXME set authorized values
+        "steps_to_store": (
+            "entering",
+            {
+                "doc": "FIXME entering exiting first (can be combined)",
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):

@@ -2,14 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.exception import warning
 from test077_scatter_helpers import *
 
 if __name__ == "__main__":
     # paths
-    paths = utility.get_default_test_paths(
-        __file__, output_folder="test077_scatter_order"
-    )
+    paths = utility.get_default_test_paths(__file__, output_folder="test077_scatter")
 
     # create the simulation
     sim = gate.Simulation()
@@ -120,5 +117,8 @@ if __name__ == "__main__":
     print(stats)
 
     # test
+    print(phsp.get_output_path())
+    print(phsp2.get_output_path())
+    print(phsp3.get_output_path())
     is_ok = check_scatter(phsp.get_output_path())
     utility.test_ok(is_ok)
