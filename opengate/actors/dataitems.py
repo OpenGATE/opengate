@@ -569,10 +569,6 @@ class SingleItkImage(DataItemContainer):
 
     _data_item_classes = (ItkImageDataItem,)
 
-    def __init__(self, *args, **kwargs):
-        # specify the data item classes
-        super().__init__(*args, **kwargs)
-
     @property
     def image(self):
         return self.data[0].image
