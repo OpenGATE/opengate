@@ -463,11 +463,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         super().close()
 
     def release_g4_references(self):
-        self.g4_PrimaryGenerator = None
+        self.g4_PrimaryGenerator = []
         self.g4_main_PrimaryGenerator = None
-        self.g4_RunAction = None
-        self.g4_EventAction = None
-        self.g4_TrackingAction = None
+        self.g4_RunAction = []
+        self.g4_EventAction = []
+        self.g4_TrackingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
