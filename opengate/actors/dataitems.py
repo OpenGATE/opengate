@@ -596,10 +596,6 @@ class QuotientItkImage(DataItemContainer):
         }
     )
 
-    def __init__(self, *args, **kwargs):
-        # specify the data item classes
-        super().__init__(*args, **kwargs)
-
     @property
     def numerator(self):
         return self.data[0]
