@@ -284,26 +284,6 @@ def make_docstring(cls, user_info_defaults):
         default_value = v[0]
         options = v[1]
         docstring += make_docstring_for_user_info(k, default_value, options)
-        # docstring += f"{k}"
-        # if "deprecated" in options:
-        #     docstring += " -> DEPRECATED\n"
-        #     docstring += indent
-        #     docstring += "Info: "
-        #     docstring += options["deprecated"]
-        #     docstring += "\n"
-        # else:
-        #     if "required" in options and options["required"] is True:
-        #         docstring += " (must be provided)"
-        #     docstring += ":\n"
-        #     # docstring += (20 - len(k)) * " "
-        #     docstring += f"{indent}Default value: {default_value}\n"
-        #     if "allowed_values" in options:
-        #         docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
-        #     if "doc" in options:
-        #         docstring += indent
-        #         docstring += options["doc"]
-        #         docstring += "\n"
-        # docstring += "\n"
     docstring += 20 * "*"
     docstring += "\n"
     cls.__doc__ = docstring
