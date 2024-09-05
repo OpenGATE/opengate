@@ -346,7 +346,7 @@ class DataItemContainer(DataContainer):
         else:
             items_to_write = [item]
         for k in items_to_write:
-            full_path = self.belongs_to.get_output_path_to_item(path, k)
+            full_path = self.belongs_to.compose_output_path_to_item(path, k)
             try:
                 identifier = int(k)
                 try:
@@ -366,37 +366,6 @@ class DataItemContainer(DataContainer):
                 except NotImplementedError:
                     warning(f"Cannot write output in data item {identifier}. ")
                     continue
-
-    # def get_output_path_to_item(self, actor_output_path, item=None):
-    #     """This method is intended to be called from an ActorOutput object which provides the path.
-    #     It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
-    #     Do not override this method.
-    #     """
-    #     if self._tuple_length > 1 and item is None:
-    #         fatal(
-    #             f"This data container holds {self._tuple_length} data items. "
-    #             f"You must provide an item=... argument. "
-    #             f"Valid writable items of this container are: {list(self.data_write_config.keys())}."
-    #         )
-    #     return insert_suffix_before_extension(
-    #         actor_output_path, self._get_suffix_for_item(item)
-    #     )
-    #     # else:
-    #     #     return actor_output_path
-
-    # def _get_suffix_for_item(self, identifier):
-    #     if identifier in self.data_write_config:
-    #         return self.data_write_config[identifier]["suffix"]
-    #     else:
-    #         fatal(
-    #             f"No data item found with identifier {identifier} "
-    #             f"in container class {type(self).__name__}."
-    #         )
-    # try:
-    #     suffix = f"dataitem_{int(identifier)}"
-    # except ValueError:
-    #     suffix = str(identifier)
-    # return suffix
 
     def __getattr__(self, item):
         # check if any of the data items has this attribute

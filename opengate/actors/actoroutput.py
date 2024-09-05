@@ -155,10 +155,10 @@ class ActorOutputBase(GateObject):
             self.output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
-        if self.write_to_disk is True:
+        if any([v["write_to_disk"] for v in self.data_write_config.values()]):
             self.write_data(*args, **kwargs)
 
-    def get_output_path(self, which="merged", data_item="all", **kwargs):
+    def get_output_path(self, which="merged", **kwargs):
         self.initialize_output_filename()
 
         output_filename = self._get_output_filename(**kwargs)
@@ -259,20 +259,17 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             # set the parameters provided by the user in kwargs
             self.data_write_config = data_write_config
 
-    def _get_output_filename(self, *args, item=0):
-        return self.get_output_path_to_item(self.output_filename, item=item)
+    def _get_output_filename(self, *args, item=None):
+        if item is None:
+            return super()._get_output_filename(*args)
+        else:
+            return self.compose_output_path_to_item(self.output_filename, item)
 
-    def get_output_path_to_item(self, output_path, item=0):
+    def compose_output_path_to_item(self, output_path, item):
         """This method is intended to be called from an ActorOutput object which provides the path.
         It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
         Do not override this method.
         """
-        if len(self.data_container_class._data_item_classes) > 1 and item is None:
-            fatal(
-                f"The data container holds {len(self.data_container_class._data_item_classes)} data items. "
-                f"You must provide an item=... argument. "
-                f"Valid writable items of the container are: {list(self.data_write_config.keys())}."
-            )
         return insert_suffix_before_extension(
             output_path, self._get_suffix_for_item(item)
         )
@@ -404,16 +401,19 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             return data
 
-    def write_data(self, which):
+    def write_data(self, which, **kwargs):
         if which == "all_runs":
             for k in self.data_per_run.keys():
-                self.write_data(k)
+                self.write_data(k, **kwargs)
         elif which == "merged":
             if self.merged_data is not None:
-                self.merged_data.write(self.get_output_path(which))
+                # pop out the keyword item which needs to be passed to the write method
+                # and which should not be passed to the get_output_path method
+                item = kwargs.pop('item', None)
+                self.merged_data.write(self.get_output_path(which, **kwargs), item=item)
         elif which == "all":
-            self.write_data("all_runs")
-            self.write_data("merged")
+            self.write_data("all_runs", **kwargs)
+            self.write_data("merged", **kwargs)
         else:
             try:
                 data = self.data_per_run[which]
@@ -423,7 +423,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                     f"Allowed values are 'all', 'all_runs', 'merged', or a valid run_index"
                 )
             if data is not None:
-                data.write(self.get_output_path(which))
+                item = kwargs.pop('item', None)
+                data.write(self.get_output_path(which, **kwargs), item=item)
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
