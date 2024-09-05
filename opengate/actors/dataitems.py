@@ -268,6 +268,9 @@ class ItkImageDataItem(DataItem):
     def get_image_properties(self):
         return get_info_from_image(self.data)
 
+    def copy_image_properties(self, other_image):
+        self.data.CopyInformation(other_image)
+
     def create_empty_image(
         self,
         size,
