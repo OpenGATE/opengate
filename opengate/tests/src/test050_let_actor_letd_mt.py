@@ -91,25 +91,26 @@ if __name__ == "__main__":
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
-    # doseIDD.output = paths.output / ("test050-" + doseActorName_IDD_d + ".mhd")
+    doseIDD.output_filename = "test050-" + doseActorName_IDD_d + ".mhd"
     doseIDD.attached_to = phantom_off
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
-    doseIDD.user_output.dose.active = False
+    doseIDD.dose.active = False
 
     LETActorName_IDD_d = "LETActorOG_d"
     LETActor_IDD_d = sim.add_actor("LETActor", LETActorName_IDD_d)
-    # LETActor_IDD_d.output = paths.output / ("test050-" + LETActorName_IDD_d + ".mhd")
+    LETActor_IDD_d.output_filename = "test050-" + LETActorName_IDD_d + ".mhd"
     LETActor_IDD_d.attached_to = phantom_off
     LETActor_IDD_d.size = size
     LETActor_IDD_d.spacing = spacing
     LETActor_IDD_d.hit_type = "random"
     LETActor_IDD_d.averaging_method = "dose_average"
+    LETActor_IDD_d.user_output.let.keep_data_per_run = True
 
     LETActorName_IDD_t = "LETActorOG_t"
     LETActor_IDD_t = sim.add_actor("LETActor", LETActorName_IDD_t)
-    # LETActor_IDD_t.output = paths.output / ("test050-" + LETActorName_IDD_t + ".mhd")
+    LETActor_IDD_t.output_filename = "test050-" + LETActorName_IDD_t + ".mhd"
     LETActor_IDD_t.attached_to = phantom_off
     LETActor_IDD_t.size = size
     LETActor_IDD_t.spacing = spacing
@@ -118,19 +119,17 @@ if __name__ == "__main__":
 
     LETActorName_IDD_d2w = "LETActorOG_d2w"
     LETActor_IDD_d2w = sim.add_actor("LETActor", LETActorName_IDD_d2w)
-    # LETActor_IDD_d2w.output = paths.output / (
-    #     "test050-" + LETActorName_IDD_d2w + ".mhd"
-    # )
+    LETActor_IDD_d2w.output_filename = "test050-" + LETActorName_IDD_d2w + ".mhd"
     LETActor_IDD_d2w.attached_to = phantom_off
     LETActor_IDD_d2w.size = size
     LETActor_IDD_d2w.spacing = spacing
     LETActor_IDD_d2w.hit_type = "random"
-    LETActor_IDD_d2w.score_in = "G4_WATER"
+    LETActor_IDD_d2w.score_in = "water"
     LETActor_IDD_d2w.averaging_method = "dose_average"
 
     LET_primaries = "LETprimaries"
     LETActor_primaries = sim.add_actor("LETActor", LET_primaries)
-    # LETActor_primaries.output = paths.output / ("test050-" + LET_primaries + ".mhd")
+    LETActor_primaries.output_filename = "test050-" + LET_primaries + ".mhd"
     LETActor_primaries.attached_to = phantom_off
     LETActor_primaries.size = size
     LETActor_primaries.spacing = spacing
@@ -142,7 +141,7 @@ if __name__ == "__main__":
     fe.particle = "proton"
     fe.policy = "accept"
     LETActor_primaries.filters.append(fe)
-    print(dir(fe))
+    print(fe)
 
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
     print(paths)
@@ -167,16 +166,11 @@ if __name__ == "__main__":
     # stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
     # is_ok = utility.assert_stats(stat, stats_ref, 0.14)
 
-    # LETActor_doseAveraged = sim.get_actor(LETActorName_IDD_d)
-    # LETActor_trackAveraged = sim.get_actor(LETActorName_IDD_t)
-    #
-    # LETActor_primaries = sim.get_actor(LET_primaries)
-
-    fNameIDD = sim.actor_manager.get_actor(doseActorName_IDD_d).output_filename.quotient
+    fNameIDD = doseIDD.edep.output_filename
     if do_debug:
         is_ok = utility.assert_images(
             ref_path / fNameIDD,
-            doseIDD.output,
+            doseIDD.edep.get_output_path(),
             stats,
             tolerance=100,
             ignore_value=0,
@@ -198,7 +192,7 @@ if __name__ == "__main__":
 
     is_ok = (
         utility.assert_filtered_imagesprofile1D(
-            ref_filter_filename1=ref_path / fNameIDD,
+            ref_filter_filename1=str(doseIDD.get_output_path(output_name="edep")),
             ref_filename1=ref_path
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
             filename2=LETActor_IDD_t.get_output_path(item="quotient"),
@@ -209,9 +203,9 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.assert_filtered_imagesprofile1D(
-            ref_filter_filename1=ref_path / fNameIDD,
+            ref_filter_filename1=str(doseIDD.get_output_path(output_name="edep")),
             ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
-            filename2=LET_primaries.get_output_path(item="quotient"),
+            filename2=LETActor_primaries.get_output_path(item="quotient"),
             tolerance=5,
             # plt_ylim=[0, 25],
         )
