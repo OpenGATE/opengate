@@ -92,6 +92,9 @@ void GateDoseActor::InitializeCpp() {
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
+  // Reset the number of events (per run)
+  NbOfEvent = 0;
+
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
                                    fTranslation);
