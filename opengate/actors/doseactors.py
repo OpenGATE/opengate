@@ -906,7 +906,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
         # self.py_fluence_image = None
-        self._add_user_output(ActorOutputSingleImage, "fluence")
+        self._add_user_output(ActorOutputSingleMeanImage, "fluence")
 
         self.__initcpp__()
 
@@ -916,6 +916,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
             {
                 "BeginOfRunActionMasterThread",
                 "EndOfRunActionMasterThread",
+                "BeginOfEventAction"
             }
         )
 
@@ -941,6 +942,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image("fluence", run_index, self.cpp_fluence_image)
         self._update_output_coordinate_system("fluence", run_index)
+        self.user_output.fluence.store_meta_data(
+            run_index, number_of_samples=self.NbOfEvent
+        )
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 

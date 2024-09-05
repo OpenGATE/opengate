@@ -19,6 +19,7 @@
 
 // Mutex that will be used by thread to write the output image
 G4Mutex SetPixelFluenceMutex = G4MUTEX_INITIALIZER;
+G4Mutex SetNbEventMutexFluence = G4MUTEX_INITIALIZER;
 
 GateFluenceActor::GateFluenceActor(py::dict &user_info)
     : GateVActor(user_info, true) {
@@ -42,10 +43,16 @@ void GateFluenceActor::InitializeCpp() {
   cpp_fluence_image = Image3DType::New();
 }
 
+void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
+  G4AutoLock mutex(&SetNbEventMutexFluence);
+  NbOfEvent++;
+}
+
 void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we (re-)attach each run
   AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
                                    fTranslation);
+  NbOfEvent = 0;
 }
 
 void GateFluenceActor::SteppingAction(G4Step *step) {

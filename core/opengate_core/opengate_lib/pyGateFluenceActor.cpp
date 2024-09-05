@@ -39,5 +39,6 @@ void init_GateFluenceActor(py::module &m) {
            &GateFluenceActor::EndOfRunActionMasterThread)
       .def("GetPhysicalVolumeName", &GateFluenceActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateFluenceActor::SetPhysicalVolumeName)
+      .def_readwrite("NbOfEvent", &GateFluenceActor::NbOfEvent)
       .def_readwrite("cpp_fluence_image", &GateFluenceActor::cpp_fluence_image);
 }
