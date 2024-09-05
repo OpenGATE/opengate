@@ -566,17 +566,13 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         gcm3 = g4_units.g_cm3
 
         if vol.volume_type == "ImageVolume":
-            material_database = (
-                self.simulation.volume_manager.material_database.g4_materials
-            )
             if self.score_in == "water":
                 # for dose to water, divide by density of water and not density of material
                 scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
             else:
-                density_img = create_density_img(vol, material_database)
                 scaled_image = divide_itk_images(
                     img1_numerator=input_image,
-                    img2_denominator=density_img,
+                    img2_denominator=vol.create_density_image(),
                     filterVal=0,
                     replaceFilteredVal=0,
                 )
