@@ -307,7 +307,7 @@ def create_density_img(img_volume, material_database):
         Density is returned in G4 1/kg.
 
     """
-    voxel_materials = img_volume.user_info.voxel_materials
+    voxel_materials = img_volume.voxel_materials
     ct_itk = img_volume.itk_image
     act = itk.GetArrayFromImage(ct_itk)
     arho = np.zeros(act.shape, dtype=np.float32)
