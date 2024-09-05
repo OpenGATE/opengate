@@ -574,6 +574,11 @@ class SingleItkImage(DataItemContainer):
         return self.data[0].image
 
 
+class SingleMeanItkImage(DataItemContainer):
+
+    _data_item_classes = (MeanItkImageDataItem,)
+
+
 class QuotientItkImage(DataItemContainer):
 
     _data_item_classes = (
