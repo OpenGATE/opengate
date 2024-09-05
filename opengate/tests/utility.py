@@ -331,7 +331,8 @@ def assert_images(
     plot_img_axis(ax, img2, "test", axis)
     if fig_name is None:
         filename2 = Path(filename2)
-        fn = filename2.with_stem(filename2.stem + "_test").with_suffix(".png")
+        fn = filename2.stem + "_test" + ".png"
+        fn = filename2.with_name(fn)
     else:
         fn = fig_name
     print("Save image test figure :", fn)
