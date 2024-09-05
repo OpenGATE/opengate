@@ -49,6 +49,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
     type_name = "DoseActor"
 
+    @staticmethod
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         # required user info, default values
@@ -197,7 +198,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
 
         # FIXME for multiple run and motion
         if not self.first_run:
-            warning(f"Not implemented yet: DoseActor with several runs")
+            warning("Not implemented yet: DoseActor with several runs")
         # send itk image to cpp side, copy data only the first run.
         update_image_py_to_cpp(self.py_edep_image, self.cpp_edep_image, self.first_run)
 
@@ -355,7 +356,7 @@ class DoseActor(g4.GateDoseActor, ActorBase):
             )
 
     def fetch_square_image_from_cpp(self):
-        if self.py_square_image == None:
+        if self.py_square_image is None:
             self.py_square_image = get_cpp_image(self.cpp_square_image)
             self.py_square_image.SetOrigin(self.output_origin)
             self.py_square_image.CopyInformation(self.py_edep_image)
@@ -443,6 +444,7 @@ class LETActor(g4.GateLETActor, ActorBase):
 
     type_name = "LETActor"
 
+    @staticmethod
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         # required user info, default values
@@ -555,13 +557,13 @@ class LETActor(g4.GateLETActor, ActorBase):
 
         # FIXME for multiple run and motion
         if not self.first_run:
-            warning(f"Not implemented yet: LETActor with several runs")
+            warning("Not implemented yet: LETActor with several runs")
         # send itk image to cpp side, copy data only the first run.
         update_image_py_to_cpp(
             self.py_numerator_image, self.cpp_numerator_image, self.first_run
         )
 
-        # TODO
+        # TODO ??
         self.py_denominator_image = create_image_like(
             self.py_numerator_image, pixel_type="double"
         )
@@ -668,6 +670,7 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
 
     type_name = "FluenceActor"
 
+    @staticmethod
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         # required user info, default values
@@ -712,7 +715,7 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
         self.first_run = True
         # no options yet
         if self.user_info.uncertainty or self.user_info.scatter:
-            fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
+            fatal("FluenceActor : uncertainty and scatter not implemented yet")
 
     def StartSimulationAction(self):
         # init the origin and direction according to the physical volume
@@ -743,7 +746,7 @@ class FluenceActor(g4.GateFluenceActor, ActorBase):
 
         # FIXME for multiple run and motion
         if not self.first_run:
-            warning(f"Not implemented yet: FluenceActor with several runs")
+            warning("Not implemented yet: FluenceActor with several runs")
         # send itk image to cpp side, copy data only the first run.
         update_image_py_to_cpp(
             self.py_fluence_image, self.cpp_fluence_image, self.first_run

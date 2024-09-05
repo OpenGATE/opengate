@@ -78,7 +78,7 @@ class SourceEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing SourceEngine")
+            warning("Closing SourceEngine")
         self.release_g4_references()
         super().close()
 
@@ -93,7 +93,7 @@ class SourceEngine(EngineBase):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
-            warning(f"No source: no particle will be generated")
+            warning("No source: no particle will be generated")
 
     def initialize_actors(self, actors):
         """
@@ -200,7 +200,7 @@ class PhysicsEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing PhysicsEngine")
+            warning("Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
         self.release_optical_surface_g4_references()
@@ -293,7 +293,7 @@ class PhysicsEngine(EngineBase):
 
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
-            warning(f"WARNING ! SetEnergyRange only works in MT mode")
+            warning("WARNING ! SetEnergyRange only works in MT mode")
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
 
@@ -436,7 +436,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing ActionEngine")
+            warning("Closing ActionEngine")
         self.release_g4_references()
         super().close()
 
@@ -505,7 +505,7 @@ class ActorEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing ActorEngine")
+            warning("Closing ActorEngine")
         for actor in self.actors.values():
             actor.close()
         self.actors = {}
@@ -540,6 +540,7 @@ class ActorEngine(EngineBase):
             actor.fFilters = actor.filters_list
 
     def initialize(self, volume_engine=None):
+        #FIXME: volume_engine is not used
         # consider the priority value of the actors
         sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
         # for actor in self.actors.values():
@@ -922,7 +923,7 @@ class SimulationOutput:
             self.simulation.number_of_threads <= 1
             and not self.simulation.force_multithread_mode
         ):
-            fatal(f"Cannot use get_source_mt in monothread mode")
+            fatal("Cannot use get_source_mt in monothread mode")
         if thread >= len(self.sources_by_thread):
             fatal(
                 f"Cannot get source {name} with thread {thread}, while "
@@ -1135,7 +1136,7 @@ class SimulationEngine:
             f"Simulation: STOP. Run: {len(self.run_timing_intervals)}. "
             # f'Events: {self.source_manager.total_events_count}. '
             f"Time: {end - start:0.1f} seconds.\n"
-            + f"-" * 80
+            + "-" * 80
         )
 
     def initialize_random_engine(self):
@@ -1147,7 +1148,7 @@ class SimulationEngine:
             self.g4_HepRandomEngine = g4.MTwistEngine()
         if not self.g4_HepRandomEngine:
             s = f"Cannot find the random engine {engine_name}\n"
-            s += f"Use: MersenneTwister or MixMaxRng"
+            s += "Use: MersenneTwister or MixMaxRng"
             fatal(s)
 
         # set the random engine

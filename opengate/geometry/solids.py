@@ -480,7 +480,7 @@ class TesselatedSolid(SolidBase):
                 " Aborting.",
             )
             print("The error encountered was: ", e)
-            exit()
+            sys.exit()
         return box_mesh
 
     def translate_mesh_to_center(self, mesh_to_translate):

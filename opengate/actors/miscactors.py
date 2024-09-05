@@ -73,7 +73,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
 
     @property
     def simu_start_time(self):
-        if not self.simulation is None:
+        if self.simulation is not None:
             sim_start = self.simulation.run_timing_intervals[0][0]
         else:
             sim_start = 0
@@ -81,7 +81,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
 
     @property
     def simu_end_time(self):
-        if not self.simulation is None:
+        if self.simulation is not None:
             sim_end = self.simulation.run_timing_intervals[-1][1]
         else:
             sim_end = 0
@@ -110,7 +110,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
             f"Python    {platform.python_version()}"
         )
         if self.user_info.track_types_flag:
-            s += f"\n" f"Track types: {self.counts.track_types}"
+            s += f"\nTrack types: {self.counts.track_types}"
         return s
 
     def StartSimulationAction(self):
@@ -147,8 +147,8 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         s += f"# NumberOfEvents = {self.counts.event_count}\n"
         s += f"# NumberOfTracks = {self.counts.track_count}\n"
         s += f"# NumberOfSteps  = {self.counts.step_count}\n"
-        s += f"# NumberOfGeometricalSteps  = ?\n"
-        s += f"# NumberOfPhysicalSteps     = ?\n"
+        s += "# NumberOfGeometricalSteps  = ?\n"
+        s += "# NumberOfPhysicalSteps     = ?\n"
         s += f"# ElapsedTime           = {self.counts.duration / sec + self.counts.init / sec}\n"
         s += f"# ElapsedTimeWoInit     = {self.counts.duration / sec}\n"
         s += (
@@ -163,7 +163,7 @@ class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
         s += f"# Arch                       = {platform.system()}\n"
         s += f"# Python                     = {platform.python_version()}\n"
         if self.user_info.track_types_flag:
-            s += f"# Track types:\n"
+            s += "# Track types:\n"
             for t in self.counts.track_types:
                 s += f"# {t} = {self.counts.track_types[t]}\n"
         f.write(s)
@@ -365,13 +365,14 @@ class TestActor(g4.GateVActor, ActorBase):
             f"SPS      {self.sps:.0f}"
         )
         if self.user_info.track_types_flag:
-            s += f"\n" f"Track types: {self.track_types}"
+            s += f"\nTrack types: {self.track_types}"
         return s
 
     def StartSimulationAction(self):
         self.start_time = time.time()
 
     def BeginOfEventAction(self, event):
+        #TODO: Is this abstract or just not used?
         pass
 
     def PreUserTrackingAction(self, track):
@@ -397,30 +398,31 @@ class TestActor(g4.GateVActor, ActorBase):
 
     def write(self, filename):
         sec = g4_units.s
-        f = open(filename, "w+")
-        s = f"# NumberOfRun    = {self.run_count}\n"
-        s += f"# NumberOfEvents = {self.event_count}\n"
-        s += f"# NumberOfTracks = {self.track_count}\n"
-        s += f"# NumberOfSteps  = {self.step_count}\n"
-        s += f"# NumberOfGeometricalSteps  = ?\n"
-        s += f"# NumberOfPhysicalSteps     = ?\n"
-        s += f"# ElapsedTime           = {self.duration / sec}\n"
-        s += f"# ElapsedTimeWoInit     = {self.duration / sec}\n"
-        s += f"# StartDate             = ?\n"
-        s += f"# EndDate               = ?\n"
-        s += f"# PPS (Primary per sec)      = {self.pps:.0f}\n"
-        s += f"# TPS (Track per sec)        = {self.tps:.0f}\n"
-        s += f"# SPS (Step per sec)         = {self.sps:.0f}\n"
-        if self.user_info.track_types_flag:
-            s += f"# Track types:\n"
-            for t in self.track_types:
-                s += f"# {t} = {self.track_types[t]}\n"
-        f.write(s)
+        with open(filename, "w+") as f:
+            s = f"# NumberOfRun    = {self.run_count}\n"
+            s += f"# NumberOfEvents = {self.event_count}\n"
+            s += f"# NumberOfTracks = {self.track_count}\n"
+            s += f"# NumberOfSteps  = {self.step_count}\n"
+            s += "# NumberOfGeometricalSteps  = ?\n"
+            s += "# NumberOfPhysicalSteps     = ?\n"
+            s += f"# ElapsedTime           = {self.duration / sec}\n"
+            s += f"# ElapsedTimeWoInit     = {self.duration / sec}\n"
+            s += "# StartDate             = ?\n"
+            s += "# EndDate               = ?\n"
+            s += f"# PPS (Primary per sec)      = {self.pps:.0f}\n"
+            s += f"# TPS (Track per sec)        = {self.tps:.0f}\n"
+            s += f"# SPS (Step per sec)         = {self.sps:.0f}\n"
+            if self.user_info.track_types_flag:
+                s += "# Track types:\n"
+                for t in self.track_types:
+                    s += f"# {t} = {self.track_types[t]}\n"
+            f.write(s)
 
 
 class KillActor(g4.GateKillActor, ActorBase):
     type_name = "KillActor"
 
+    @staticmethod
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
 
@@ -445,6 +447,7 @@ class ComptonSplittingActor(g4.GateComptonSplittingActor,ActorBase):
 class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
     type_name = "ComptSplittingActor"
 
+    @staticmethod
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         deg = g4_units.deg
@@ -467,6 +470,7 @@ class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
 class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
     type_name = "BremSplittingActor"
 
+    @staticmethod
     def set_default_user_info(user_info):
         ActorBase.set_default_user_info(user_info)
         user_info.splitting_factor = 1
