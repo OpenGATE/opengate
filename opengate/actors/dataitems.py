@@ -212,20 +212,12 @@ class ItkImageDataItem(DataItem):
         return self.data
 
     def __iadd__(self, other):
-        if self.data_is_none:
-            raise ValueError(
-                "This data item does not contain any data yet. "
-                "Use set_data() before applying any operations. "
-            )
+        self._assert_data_is_not_none()
         self.set_data(sum_itk_images([self.data, other.data]))
         return self
 
     def __add__(self, other):
-        if self.data_is_none:
-            raise ValueError(
-                "This data item does not contain any data yet. "
-                "Use set_data() before applying any operations. "
-            )
+        self._assert_data_is_not_none()
         return type(self)(data=sum_itk_images([self.data, other.data]))
 
     def __mul__(self, other):
@@ -244,20 +236,18 @@ class ItkImageDataItem(DataItem):
         return self
 
     def __truediv__(self, other):
-        if self.data_is_none:
-            raise ValueError(
-                "This data item does not contain any data yet. "
-                "Use set_data() before applying any operations. "
-            )
-        return type(self)(data=divide_itk_images(self.data, other.data))
+        self._assert_data_is_not_none()
+        if isinstance(other, (float, int)):
+            return type(self)(data=scale_itk_image(self.data, 1. / other))
+        else:
+            return type(self)(data=divide_itk_images(self.data, other.data))
 
     def __itruediv__(self, other):
-        if self.data_is_none:
-            raise ValueError(
-                "This data item does not contain any data yet. "
-                "Use set_data() before applying any operations. "
-            )
-        self.set_data(divide_itk_images(self.data, other.data))
+        self._assert_data_is_not_none()
+        if isinstance(other, (float, int)):
+            self.set_data(scale_itk_image(self.data, 1. / other))
+        else:
+            self.set_data(divide_itk_images(self.data, other.data))
         return self
 
     def set_image_properties(self, **properties):
