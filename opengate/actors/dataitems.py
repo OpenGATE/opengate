@@ -77,6 +77,19 @@ class DataItem:
         else:
             raise AttributeError(f"No such attribute '{item}'")
 
+    def merge_with(self, other):
+        """The base class implements merging as summation.
+        Specific classes can override this, e.g. to merge mean values.
+        """
+        return self + other
+
+    def inplace_merge_with(self, other):
+        """The base class implements merging as summation.
+        Specific classes can override this, e.g. to merge mean values.
+        """
+        self += other
+        return self
+
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
 
