@@ -116,12 +116,6 @@ class ActorOutputBase(GateObject):
 
     @write_to_disk.setter
     def write_to_disk(self, value):
-
-    def _get_output_filename(self, *args, **kwargs):
-        """This base class implements this trivial private getter (for internal use).
-        Inheriting classes can override and refine it.
-        """
-        return self.output_filename
         self.set_write_to_disk('all', value)
 
     def set_write_to_disk(self, item, value):
