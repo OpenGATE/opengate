@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     # waterbox
     waterbox = sim.add_volume("Box", "waterbox")
-    waterbox.mother = "fake"
+    waterbox.mother = fake
     waterbox.size = [20 * cm, 20 * cm, 20 * cm]
     waterbox.translation = [-3 * cm, -2 * cm, -1 * cm]
     waterbox.rotation = Rotation.from_euler("y", -20, degrees=True).as_matrix()
@@ -65,12 +65,14 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = "test030-edep.mhd"
-    dose.attached_to = "waterbox"
+    dose.output_filename = "test030.mhd"
+    dose.attached_to = waterbox
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
+    dose.edep.keep_data_per_run = True
+    dose.edep.auto_merge = True
     dose.edep_uncertainty.active = True
 
     # add stat actor
