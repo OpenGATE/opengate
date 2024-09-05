@@ -491,6 +491,12 @@ class ActorOutputSingleImage(ActorOutputImage):
         super().__init__("SingleItkImage", *args, **kwargs)
 
 
+class ActorOutputSingleMeanImage(ActorOutputImage):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__("SingleMeanItkImage", *args, **kwargs)
+
+
 class ActorOutputQuotientImage(ActorOutputImage):
 
     def __init__(self, *args, **kwargs):
