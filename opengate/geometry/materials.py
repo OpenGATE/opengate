@@ -656,10 +656,11 @@ class MaterialDatabase:
         self.element_builders_by_filename[self.current_filename] = {}
         self.material_builders_by_filename[self.current_filename] = {}
         with open(filename, "r") as f:
-            lines = f.readlines()
-            for line in lines:
+            line = f.readline()
+            while line:
                 line = line.strip().replace("\t", " ")
                 self.read_one_item(f, line)
+                line = f.readline()
 
     def read_one_item(self, f, line):
         # skip empty lines
