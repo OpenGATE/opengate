@@ -38,6 +38,13 @@ class DataItem:
     def data_is_none(self):
         return self.data is None
 
+    def _assert_data_is_not_none(self):
+        if self.data_is_none:
+            raise ValueError(
+                "This data item does not contain any data yet. "
+                "Use set_data() before applying any operations. "
+            )
+
     def __add__(self, other):
         return NotImplemented
 
