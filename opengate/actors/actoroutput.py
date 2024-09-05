@@ -116,20 +116,23 @@ class ActorOutputBase(GateObject):
 
     @write_to_disk.setter
     def write_to_disk(self, value):
-        try:
-            bool_value = bool(value)
-        except ValueError:
-            fatal(
-                f"write_to_disk must be a boolean value (True/False), but you provided: {value}"
-            )
-        for v in self.data_write_config.values():
-            v["write_to_disk"] = bool_value
 
     def _get_output_filename(self, *args, **kwargs):
         """This base class implements this trivial private getter (for internal use).
         Inheriting classes can override and refine it.
         """
         return self.output_filename
+        self.set_write_to_disk('all', value)
+
+    def set_write_to_disk(self, item, value):
+        if item == 'all':
+            for k in self.data_write_config.keys():
+                self.set_write_to_disk(k, value)
+        else:
+            try:
+                self.data_write_config[item]['write_to_disk'] = bool(value)
+            except KeyError:
+                fatal(f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}.")
 
     @property
     def belongs_to_actor(self):
