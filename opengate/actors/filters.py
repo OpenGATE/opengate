@@ -41,6 +41,7 @@ class FilterBase(UserElement):
 class ParticleFilter(g4.GateParticleFilter, FilterBase):
     type_name = "ParticleFilter"
 
+    @staticmethod
     def set_default_user_info(user_info):
         FilterBase.set_default_user_info(user_info)
         # required user info, default values
@@ -61,6 +62,7 @@ class ParticleFilter(g4.GateParticleFilter, FilterBase):
 class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
     type_name = "KineticEnergyFilter"
 
+    @staticmethod
     def set_default_user_info(user_info):
         FilterBase.set_default_user_info(user_info)
         # required user info, default values
@@ -76,6 +78,7 @@ class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
 class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
     type_name = "TrackCreatorProcessFilter"
 
+    @staticmethod
     def set_default_user_info(user_info):
         FilterBase.set_default_user_info(user_info)
         # required user info, default values
@@ -96,6 +99,7 @@ class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
 class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
     type_name = "ThresholdAttributeFilter"
 
+    @staticmethod
     def set_default_user_info(user_info):
         FilterBase.set_default_user_info(user_info)
         # required user info, default values

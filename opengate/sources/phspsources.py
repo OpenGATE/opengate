@@ -1,3 +1,4 @@
+import sys
 import uproot
 import numpy as np
 import numbers
@@ -57,7 +58,7 @@ class PhaseSpaceSourceGenerator:
             gate.fatal(
                 f"PhaseSpaceSourceGenerator: No usable branches in the root file {self.user_info.phsp_file}. Aborting."
             )
-            exit()
+            sys.exit()
 
         self.num_entries = int(self.root_file.num_entries)
 
@@ -71,7 +72,7 @@ class PhaseSpaceSourceGenerator:
         ui = self.user_info
         if not opengate_core.IsMultithreadedApplication():
             if not isinstance(ui.entry_start, numbers.Number):
-                fatal(f"entry_start must be a simple number is mono-thread mode")
+                fatal("entry_start must be a simple number is mono-thread mode")
             n = int(self.user_info.entry_start % self.num_entries)
             if self.user_info.entry_start > self.num_entries:
                 warning(
@@ -87,7 +88,7 @@ class PhaseSpaceSourceGenerator:
             return 0
         n_threads = opengate_core.GetNumberOfRunningWorkerThreads()
         if isinstance(ui.entry_start, numbers.Number):
-            fatal(f"entry_start must be a list in multi-thread mode")
+            fatal("entry_start must be a list in multi-thread mode")
         if len(ui.entry_start) != n_threads:
             fatal(
                 f"Error: entry_start must be a vector of length the nb of threads, "
@@ -332,11 +333,11 @@ class PhaseSpaceSource(SourceBase):
         if ui.generate_until_next_primary == True:
             if ui.primary_PDGCode == 0:
                 gate.fatal(
-                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
+                    "PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
                 )
             if ui.primary_lower_energy_threshold <= 0:
                 gate.fatal(
-                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
+                    "PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
         # print("threads: ", self.simulation.user_info.number_of_threads)
         # print("number of particles:", ui.n)
