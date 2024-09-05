@@ -468,6 +468,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
+        self._add_user_output(ActorOutputSingleImageWithVariance, "edep_with_variance")
+
         self._add_user_output(ActorOutputSingleMeanImage, "edep")
         self._add_user_output(
             ActorOutputSingleMeanImage,
@@ -610,6 +612,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("edep_with_variance", run_index)
+
         self.prepare_output_for_run("edep", run_index)
         self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
 
@@ -644,6 +648,17 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.square.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
+
+
+        if self.user_output.square.active:
+            self.fetch_from_cpp_image("edep_with_variance", run_index, self.cpp_edep_image, self.cpp_square_image)
+        else:
+            self.fetch_from_cpp_image("edep_with_variance", run_index, self.cpp_edep_image)
+        self._update_output_coordinate_system("edep_with_variance", run_index)
+        self.user_output.edep_with_variance.store_meta_data(
+            run_index, number_of_samples=self.NbOfEvent
+        )
+
 
         # density image
         if self.user_output.density.active:
