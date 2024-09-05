@@ -16,10 +16,18 @@ from ..image import (
 # base classes
 class DataItem:
 
-    def __init__(self, *args, data=None, **kwargs):
+    def __init__(self, *args, data=None, meta_data=None, **kwargs):
         self.data = None
         if data is not None:
             self.set_data(data)
+        self.meta_data = Box()
+        if meta_data:
+            try:
+                for k, v in meta_data.items():
+                    self.meta_data[k] = v
+            except AttributeError:
+                fatal(f"Illegal keyword argument meta_data: {meta_data}. "
+                      f"Should be a dictionary-like object, but found {type(meta_data)}.")
 
     def set_data(self, data, **kwargs):
         self.data = data
@@ -265,6 +273,22 @@ class DataItemContainer(DataContainer):
     @property
     def _tuple_length(self):
         return len(self._data_item_classes)
+
+    @property
+    def meta_data(self):
+        if self._tuple_length > 1:
+            return [d.meta_data for d in self.data]
+        else:
+            return self.data[0].meta_data
+
+    @meta_data.setter
+    def meta_data(self, meta_data):
+        for d in self.data:
+            d.meta_data = meta_data
+
+    def update_meta_data(self, meta_data):
+        for d in self.data:
+            d.meta_data.update(meta_data)
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
