@@ -31,6 +31,8 @@ public:
   // Main function called every step in attached volume
   virtual void SteppingAction(G4Step *) override;
 
+  virtual void BeginOfEventAction(const G4Event *event) override;
+
   // Called every time a Run starts (all threads)
   virtual void BeginOfRunAction(const G4Run *run) override;
 
@@ -60,6 +62,9 @@ public:
   bool ftrackAverage;
   bool fLETtoOtherMaterial;
   std::string fotherMaterial;
+
+  int NbOfEvent = 0;
+
 
 private:
   double fVoxelVolume;

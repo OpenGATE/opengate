@@ -27,6 +27,9 @@
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetLETPixelMutex = G4MUTEX_INITIALIZER;
 
+G4Mutex SetLETNbEventMutex = G4MUTEX_INITIALIZER;
+
+
 GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
@@ -57,6 +60,9 @@ void GateLETActor::InitializeCpp() {
 }
 
 void GateLETActor::BeginOfRunActionMasterThread(int run_id) {
+  // Reset the number of events (per run)
+  NbOfEvent = 0;
+
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<ImageType>(cpp_numerator_image, fPhysicalVolumeName,
                                  fInitialTranslation);
@@ -73,6 +79,11 @@ void GateLETActor::BeginOfRunAction(const G4Run *) {
     l.materialToScoreIn =
         G4NistManager::Instance()->FindOrBuildMaterial(fScoreIn);
   }
+}
+
+void GateLETActor::BeginOfEventAction(const G4Event *event) {
+  G4AutoLock mutex(&SetLETNbEventMutex);
+  NbOfEvent++;
 }
 
 void GateLETActor::SteppingAction(G4Step *step) {

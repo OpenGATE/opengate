@@ -806,7 +806,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
-        self._add_user_output(ActorOutputQuotientImage, "let")
+        self._add_user_output(ActorOutputQuotientMeanImage, "let")
         # configure the default write config for the output of the LET actor,
         # which is different from the generic quotient image container class:
         self.user_output.let.data_write_config.quotient.suffix = None
@@ -817,7 +817,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
     def __initcpp__(self):
         g4.GateLETActor.__init__(self, self.user_info)
-        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread"})
+        self.AddActions({"BeginOfRunActionMasterThread", "EndOfRunActionMasterThread", "BeginOfEventAction"})
 
     def initialize(self):
         """
@@ -850,6 +850,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
         )
         self._update_output_coordinate_system("let", run_index)
+        self.user_output.let.store_meta_data(run_index, number_of_samples=self.NbOfEvent)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
