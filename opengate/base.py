@@ -455,8 +455,8 @@ class DynamicGateObject(GateObject):
                 params_with_incorrect_length.append((k, len(v)))
         if len(params_with_incorrect_length) > 0:
             s = (
-                "The length of the following dynamic parameters " +
-                "does not match the number of timing intervals of the simulation:\n"
+                "The length of the following dynamic parameters "
+                + "does not match the number of timing intervals of the simulation:\n"
             )
             for p in params_with_incorrect_length:
                 s += f"{p[0]}: {p[1]}\n"

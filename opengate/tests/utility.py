@@ -60,7 +60,9 @@ def read_stat_file(filename):
                 stat.counts.step_count = int(line[len("# NumberOfSteps  =") :])
             sec = g4_units.s
             if "ElapsedTimeWoInit" in line:
-                stat.counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
+                stat.counts.duration = (
+                    float(line[len("# ElapsedTimeWoInit     =") :]) * sec
+                )
             if read_track:
                 w = line.split()
                 name = w[1]
@@ -1483,8 +1485,8 @@ def assert_images_ratio_per_voxel(
     ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
     within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
     N_within_tolerance = np.sum(within_tolerance_M)
-    #FIXME: Why double assign?
-    #fraction_within_tolerance = N_within_tolerance / np.array(data1).size
+    # FIXME: Why double assign?
+    # fraction_within_tolerance = N_within_tolerance / np.array(data1).size
     fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
 
     mean = np.mean(ratio)

@@ -540,7 +540,7 @@ class ActorEngine(EngineBase):
             actor.fFilters = actor.filters_list
 
     def initialize(self, volume_engine=None):
-        #FIXME: volume_engine is not used
+        # FIXME: volume_engine is not used
         # consider the priority value of the actors
         sorted_actors = sorted(self.actors.values(), key=lambda d: d.user_info.priority)
         # for actor in self.actors.values():

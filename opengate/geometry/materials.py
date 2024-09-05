@@ -44,10 +44,7 @@ def read_voxel_materials(filename, def_mat="G4_AIR"):
                 f"Intervals are not disjoint: {previous} {m}"
             )
         if m[0] > m[1]:
-            fatal(
-                f"Error while reading {filename}\n" 
-                f"Wrong interval {m}"
-            )
+            fatal(f"Error while reading {filename}\n" f"Wrong interval {m}")
         if not previous or previous == m[0]:
             pix_mat.append([previous, m[1], m[2]])
             previous = m[1]

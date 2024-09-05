@@ -372,7 +372,7 @@ class TestActor(g4.GateVActor, ActorBase):
         self.start_time = time.time()
 
     def BeginOfEventAction(self, event):
-        #TODO: Is this abstract or just not used?
+        # TODO: Is this abstract or just not used?
         pass
 
     def PreUserTrackingAction(self, track):

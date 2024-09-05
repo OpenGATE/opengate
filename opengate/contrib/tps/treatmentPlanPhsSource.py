@@ -4,6 +4,7 @@ from opengate.contrib.tps.ionbeamtherapy import *
 import os
 import sys
 
+
 class TreatmentPlanPhsSource(TreatmentPlanSource):
 
     def __init__(self, name, sim):
@@ -39,7 +40,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         self.entry_start = None
 
     def __del__(self):
-        #TODO: Is this abstract or not used?
+        # TODO: Is this abstract or not used?
         pass
 
     def set_distance_source_to_isocenter(self, distance):

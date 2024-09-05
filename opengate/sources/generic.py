@@ -268,7 +268,7 @@ class SourceBase(UserElement):
         fatal('The function "create_g4_source" *must* be overridden')
 
     def initialize_source_before_g4_engine(self, source):
-        #FIXME: abstract or not used?
+        # FIXME: abstract or not used?
         pass
 
     def initialize_start_end_time(self, run_timing_intervals):
@@ -293,7 +293,7 @@ class SourceBase(UserElement):
         pass
 
     def get_estimated_number_of_events(self, run_timing_interval):
-        #FIXME: Implement
+        # FIXME: Implement
         """# by default, all event have the same time, so we check that
         # this time is included into the given time interval
         if (
