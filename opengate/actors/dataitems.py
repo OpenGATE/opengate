@@ -513,18 +513,33 @@ class DataItemContainer(DataContainer):
         # exclude '__setstate__' and '__getstate__' to avoid interference with pickling
         if item not in ("data", "__setstate__", "__getstate__"):
             methods_in_data = []
+            attributes_in_data = []
             for d in self.data:
                 if hasattr(d, item):
                     if callable(getattr(d, item)):
                         methods_in_data.append(getattr(d, item))
-            if len(methods_in_data) > 0:
-
+                    else:
+                        attributes_in_data.append(getattr(d, item))
+            if len(attributes_in_data) > 0 and len(methods_in_data) > 0:
+                fatal(f"Cannot hand down request for attribute to data items "
+                      f"because some contain it as a method and other as a property. ")
+            elif len(attributes_in_data) > 0:
+                if len(attributes_in_data) != len(self.data):
+                    fatal(f"Cannot hand down request for property to data items "
+                          f"because not all of them contain it. ")
+                if len(attributes_in_data) == 1:
+                    return attributes_in_data[0]
+                else:
+                    return attributes_in_data
+            elif len(methods_in_data) > 0:
+                if len(methods_in_data) != len(self.data):
+                    fatal(f"Cannot hand down request for method to data items "
+                          f"because not all of them contain it. ")
                 def hand_down(*args, **kwargs):
                     return_values = []
                     for m in methods_in_data:
                         return_values.append(m(*args, **kwargs))
                     return tuple(return_values)
-
                 return hand_down
             else:
                 raise AttributeError(f"No such attribute '{item}'")
