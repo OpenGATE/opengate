@@ -96,14 +96,6 @@ class DataItem:
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
 
-
-class MeanValueDataItemMixin:
-    """This class cannot be instantiated on its own.
-    It is solely meant to be mixed into a class that inherits from DataItem (or daughters).
-    Important: It must appear before the main base class in the inheritance order so that the
-    overloaded methods take priority.
-    """
-
     @property
     def number_of_samples(self):
         try:
@@ -117,6 +109,14 @@ class MeanValueDataItemMixin:
     @number_of_samples.setter
     def number_of_samples(self, value):
         self.meta_data["number_of_samples"] = int(value)
+
+
+class MeanValueDataItemMixin:
+    """This class cannot be instantiated on its own.
+    It is solely meant to be mixed into a class that inherits from DataItem (or daughters).
+    Important: It must appear before the main base class in the inheritance order so that the
+    overloaded methods take priority.
+    """
 
     def merge_with(self, other):
         result = (self * self.number_of_samples + other * other.number_of_samples) / (
