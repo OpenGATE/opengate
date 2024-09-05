@@ -279,6 +279,12 @@ class ItkImageDataItem(DataItem):
         write_itk_image(self.data, ensure_filename_is_str(path))
 
 
+class MeanItkImageDataItem(MeanValueDataItemMixin, ItkImageDataItem):
+    """This class represents an ITK image which is meant to hold mean values per voxel.
+    The class MeanValueDataItemMixin therefore overloads the merge_with and inplace_merge_with methods.
+    """
+
+
 class DataContainer:
     """Common base class for all containers. Nothing implemented here for now."""
 
