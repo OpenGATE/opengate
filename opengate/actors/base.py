@@ -224,11 +224,8 @@ class ActorBase(GateObject):
 
     @write_to_disk.setter
     def write_to_disk(self, write_to_disk):
-        if len(self.user_output) > 1:
-            for k, v in self.user_output.items():
-                v.write_to_disk = write_to_disk
-        else:
-            list(self.user_output.values())[0].write_to_disk = write_to_disk
+        for k, v in self.user_output.items():
+            v.set_write_to_disk('all', write_to_disk)
 
     def get_output_path(self, output_name=None, which="merged", **kwargs):
         if output_name is None:
