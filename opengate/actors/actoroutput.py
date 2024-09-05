@@ -290,7 +290,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if self.merge_method == "sum":
             merged_data = list_of_data[0]
             for d in list_of_data[1:]:
-                merged_data += d
+                merged_data.inplace_merge_with(d)
             return merged_data
 
     def merge_data_from_runs(self):
