@@ -1123,6 +1123,7 @@ class ParallelWorldVolume(NodeMixin):
 
     def close(self):
         self.release_g4_references()
+        self.parallel_world_engine = None
 
     def __getstate__(self):
         return_dict = self.__dict__
