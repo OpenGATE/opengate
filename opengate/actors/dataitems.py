@@ -7,6 +7,8 @@ from ..utility import insert_suffix_before_extension, ensure_filename_is_str, g4
 from ..image import (
     sum_itk_images,
     divide_itk_images,
+    multiply_itk_images,
+    scale_itk_image,
     create_3d_image,
     write_itk_image,
     get_info_from_image,
@@ -40,6 +42,12 @@ class DataItem:
         return NotImplemented
 
     def __iadd__(self, other):
+        return NotImplemented
+
+    def __mul__(self, other):
+        return NotImplemented
+
+    def __imul__(self, other):
         return NotImplemented
 
     def __truediv__(self, other):
@@ -87,6 +95,23 @@ class ArithmeticDataItem(DataItem):
                 "Use set_data() before applying any operations. "
             )
         return type(self)(data=self.data + other.data)
+
+    def __mul__(self, other):
+        if self.data_is_none:
+            raise ValueError(
+                "This data item does not contain any data yet. "
+                "Use set_data() before applying any operations. "
+            )
+        return type(self)(data=self.data * other.data)
+
+    def __imul__(self, other):
+        if self.data_is_none:
+            raise ValueError(
+                "This data item does not contain any data yet. "
+                "Use set_data() before applying any operations. "
+            )
+        self.set_data(self.data * other.data)
+        return self
 
     def __truediv__(self, other):
         if self.data_is_none:
@@ -148,6 +173,21 @@ class ItkImageDataItem(DataItem):
                 "Use set_data() before applying any operations. "
             )
         return type(self)(data=sum_itk_images([self.data, other.data]))
+
+    def __mul__(self, other):
+        self._assert_data_is_not_none()
+        if isinstance(other, (float, int)):
+            return type(self)(data=scale_itk_image(self.data, other))
+        else:
+            return type(self)(data=multiply_itk_images([self.data, other.data]))
+
+    def __imul__(self, other):
+        self._assert_data_is_not_none()
+        if isinstance(other, (float, int)):
+            self.set_data(scale_itk_image(self.data, other))
+        else:
+            self.set_data(multiply_itk_images([self.data, other.data]))
+        return self
 
     def __truediv__(self, other):
         if self.data_is_none:
@@ -370,6 +410,13 @@ class DataItemContainer(DataContainer):
     def __truediv__(self, other):
         return self.propagate_operator(other, '__truediv__')
 
+    def inplace_merge_with(self, other):
+        self._assert_data_is_not_none()
+        for i in range(self._tuple_length):
+            self.data[i].inplace_merge_with(other.data[i])
+        return self
+
+    def merge_with(self, other):
         self._assert_data_is_not_none()
         return type(self)(
             self._data_item_classes,
