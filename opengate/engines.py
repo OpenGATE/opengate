@@ -440,9 +440,9 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     Main object to manage all actions during a simulation.
     """
 
-    def __init__(self, simulation_engine):
+    def __init__(self, *args):
         g4.G4VUserActionInitialization.__init__(self)
-        EngineBase.__init__(self, simulation_engine)
+        EngineBase.__init__(self, *args)
 
         # *** G4 references ***
         # List of G4 source managers (one per thread)
