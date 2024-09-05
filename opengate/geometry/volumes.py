@@ -26,6 +26,7 @@ from ..actors.dynamicactors import (
     VolumeTranslationChanger,
     VolumeRotationChanger,
 )
+from .materials import create_density_img
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -1061,6 +1062,9 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.label_image.SetOrigin(
             -(self.size_pix * self.spacing) / 2.0 + self.spacing / 2.0
         )
+
+    def create_density_image(self):
+        return create_density_img(self, self.volume_manager.material_database.g4_materials)
 
     def create_changers(self):
         # get the changers from the mother classes and append those specific to the ImageVolume class
