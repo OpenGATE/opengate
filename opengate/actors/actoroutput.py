@@ -371,6 +371,26 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 )
             self.data_per_run[run_index] = data_item
 
+    def store_meta_data(self, which, **meta_data):
+        """data can be either the user data to be wrapped into a DataContainer class or
+        an already wrapped DataContainer class.
+        """
+
+        if which == "merged":
+            data = self.merged_data
+        else:
+            try:
+                run_index = int(which)  # might be a run_index
+            except ValueError:
+                fatal(
+                    f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
+                    f"Allowed values are: 'merged' or a valid run_index. "
+                )
+            data = self.data_per_run[run_index]
+        if data is None:
+            fatal(f"Cannot store meta data because no data exists yet for which='{which}'.")
+        data.update_meta_data(meta_data)
+
     def load_data(self, which):
         raise NotImplementedError(
             f"Your are calling this method from the base class {type(self).__name__}, "
