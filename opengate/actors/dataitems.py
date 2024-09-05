@@ -621,6 +621,14 @@ class QuotientItkImage(DataItemContainer):
         return self.denominator.image
 
 
+class QuotientMeanItkImage(QuotientItkImage):
+
+    _data_item_classes = (
+        MeanItkImageDataItem,
+        MeanItkImageDataItem,
+    )
+
+
 available_data_container_classes = {
     "SingleItkImage": SingleItkImage,
     "QuotientItkImage": QuotientItkImage,
