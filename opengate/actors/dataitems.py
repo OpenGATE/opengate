@@ -328,29 +328,48 @@ class DataItemContainer(DataContainer):
                 "Use set_data() before applying any operations. "
             )
 
-    def __iadd__(self, other):
+    def propagate_operator(self, other, operator):
         self._assert_data_is_not_none()
-        for i in range(self._tuple_length):
-            self.data[i].__iadd__(other.data[i])
+        if isinstance(other, (float, int)):
+            new_data = [
+                getattr(self.data[i], operator)(other)
+                for i in range(self._tuple_length)
+            ]
+        else:
+            new_data = [
+                getattr(self.data[i], operator)(other.data[i])
+                for i in range(self._tuple_length)
+            ]
+        return type(self)(self._data_item_classes, data=new_data)
+
+    def propagate_operator_inplace(self, other, operator):
+        self._assert_data_is_not_none()
+        if isinstance(other, (float, int)):
+            for i in range(self._tuple_length):
+                getattr(self.data[i], operator)(other)
+        else:
+            for i in range(self._tuple_length):
+                getattr(self.data[i], operator)(other.data[i])
         return self
+
+    def __iadd__(self, other):
+        return self.propagate_operator_inplace(other, '__iadd__')
 
     def __add__(self, other):
-        self._assert_data_is_not_none()
-        return type(self)(
-            self._data_item_classes,
-            data=[
-                self.data[i].__trueadd__(other.data[i])
-                for i in range(self._tuple_length)
-            ],
-        )
+        return self.propagate_operator(other, '__add__')
+
+    def __imul__(self, other):
+        return self.propagate_operator_inplace(other, '__imul__')
+
+    def __mul__(self, other):
+        return self.propagate_operator(other, '__mul__')
 
     def __itruediv__(self, other):
-        self._assert_data_is_not_none()
-        for i in range(self._tuple_length):
-            self.data[i].__itruediv__(other.data[i])
-        return self
+        return self.propagate_operator_inplace(other, '__itruediv__')
 
     def __truediv__(self, other):
+        return self.propagate_operator(other, '__truediv__')
+
         self._assert_data_is_not_none()
         return type(self)(
             self._data_item_classes,
