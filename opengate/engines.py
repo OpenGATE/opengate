@@ -108,7 +108,7 @@ class SourceEngine(EngineBase):
             "actor_name" : "Actor object"
         """
         self.g4_master_source_manager.SetActors(
-            list(self.simulation_engine.simulation.actor_manager.actors.values())
+            self.simulation_engine.simulation.actor_manager.sorted_actors
         )
 
     def create_master_source_manager(self):
