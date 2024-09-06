@@ -528,7 +528,7 @@ class DataItemContainer(DataContainer):
             methods_in_data = []
             attributes_in_data = []
             for d in self.data:
-                if hasattr(d, item):
+                if d is not None and hasattr(d, item):
                     if callable(getattr(d, item)):
                         methods_in_data.append(getattr(d, item))
                     else:
