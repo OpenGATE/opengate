@@ -155,8 +155,8 @@ if __name__ == "__main__":
 
     print("Compare tps Edep to single pb sources")
     print(" --------------------------------------- ")
-    mhd_1 = sim.get_actor("doseInYZ_1").get_output_path("edep")
-    mhd_2 = sim.get_actor("doseInYZ_2").get_output_path("edep")
+    mhd_1 = dose.get_output_path("edep")
+    mhd_2 = dose2.get_output_path("edep")
     test = True
 
     # check first spot
