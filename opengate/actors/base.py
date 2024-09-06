@@ -244,7 +244,7 @@ class ActorBase(GateObject):
                 f"This actor does not have any output named '{output_name}'."
                 f"Available outputs are: {list(self.user_output.keys())}"
             )
-        return self.user_output[output_name].get_output_path(which, **kwargs)
+        return self.user_output[output_name].get_output_path(which=which, **kwargs)
 
     @property
     def actor_manager(self):
