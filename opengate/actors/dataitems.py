@@ -539,21 +539,21 @@ class DataItemContainer(DataContainer):
                     f"because some contain it as a method and other as a property. "
                 )
             elif len(attributes_in_data) > 0:
-                if len(attributes_in_data) != len(self.data):
-                    fatal(
-                        f"Cannot hand down request for property to data items "
-                        f"because not all of them contain it. "
-                    )
+                # if len(attributes_in_data) != len(self.data):
+                #     fatal(
+                #         f"Cannot hand down request for property to data items "
+                #         f"because not all of them contain it. "
+                #     )
                 if len(attributes_in_data) == 1:
                     return attributes_in_data[0]
                 else:
                     return attributes_in_data
             elif len(methods_in_data) > 0:
-                if len(methods_in_data) != len(self.data):
-                    fatal(
-                        f"Cannot hand down request for method to data items "
-                        f"because not all of them contain it. "
-                    )
+                # if len(methods_in_data) != len(self.data):
+                #     fatal(
+                #         f"Cannot hand down request for method to data items "
+                #         f"because not all of them contain it. "
+                #     )
 
                 def hand_down(*args, **kwargs):
                     return_values = []
