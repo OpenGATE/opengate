@@ -387,13 +387,15 @@ class DataItemContainer(DataContainer):
 
     def update_meta_data(self, meta_data):
         for d in self.data:
-            d.meta_data.update(meta_data)
+            if d is not None:
+                d.meta_data.update(meta_data)
 
     def set_data(self, *data):
         # data might be already contained in the correct container class,
         # or intended to be the input to the container class
         processed_data = []
-        for d, c in zip(data, self._data_item_classes):
+        for i, d in enumerate(data):
+            c = self._data_item_classes[i]
             if isinstance(d, c):
                 processed_data.append(d)
             else:
