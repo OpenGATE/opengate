@@ -400,6 +400,8 @@ class DataItemContainer(DataContainer):
                 processed_data.append(d)
             else:
                 processed_data.append(c(data=d))
+        # Fill up the data list with None in case not all data were passed
+        processed_data.extend([None] * (len(self._data_item_classes) - len(data)))
         self.data = processed_data
 
     def get_data(self, item=None):
