@@ -629,9 +629,9 @@ class SingleItkImageWithVariance(DataItemContainer):
                     "The uncertainty value for all voxels has been fixed at 1"
                 )
                 var_arr = np.ones_like(value_array)
-            elif self.data[1].data is None:
+            elif self.data[1] is None or self.data[1].data is None:
                 warning(
-                    "This data item does not contain the mean squared values so no variance can be calculated. "
+                    "This data item does not contain squared values so no variance can be calculated. "
                     "The variance will be set to 1 everywhere. "
                 )
                 var_arr = np.ones_like(value_array)
