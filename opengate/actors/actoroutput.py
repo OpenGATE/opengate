@@ -181,20 +181,14 @@ class ActorOutputBase(GateObject):
         self.initialize_output_filename()
 
     def initialize_output_filename(self):
-        write_to_disk_any = any(
-            [v["write_to_disk"] for v in self.data_write_config.values()]
-        )
-        if (
-            self.output_filename == "" or self.output_filename is None
-        ) and write_to_disk_any is True:
-            fatal(
-                f"The actor output {self.name} of actor {self.belongs_to_actor.type_name} has write_to_disk=True, "
-                f"but output_filename={self.output_filename}. "
-                f"Set output_filename='auto' to let GATE generate it automatically, "
-                f"or manually provide an output_filename. "
-            )
-        elif self.output_filename == "auto":
-            self.output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
+        for k, v in self.data_write_config.items():
+            if 'write_to_disk' in v and v['write_to_disk'] is True:
+                if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
+                    if len(self.data_write_config) > 0:
+                        item_suffix = k
+                    else:
+                        item_suffix = ''
+                    v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
         if any([v["write_to_disk"] for v in self.data_write_config.values()]):
