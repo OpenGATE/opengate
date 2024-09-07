@@ -410,6 +410,16 @@ class DataItemContainer(DataContainer):
         # processed_data.extend([None] * (len(self._data_item_classes) - len(data)))
         self.data = processed_data
 
+    def get_data_item_object(self, item):
+        try:
+            identifier = int(item)
+            try:
+                return self.data[identifier]
+            except IndexError:
+                return None
+        except ValueError:
+            return getattr(self, str(item), None)
+
     def get_data(self, item=None):
         if item is None:
             if self._tuple_length > 1:
