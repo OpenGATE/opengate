@@ -257,6 +257,62 @@ class ActorOutputBase(GateObject):
         )
 
 
+class InterfaceToActorOutput:
+
+    def __init__(self, belongs_to_actor, user_output_name, item):
+        print(f"In ActorOutputShortCut: {repr(user_output_name)}")
+        self.user_output_name = user_output_name
+        self.belongs_to_actor = belongs_to_actor
+        self.item = item
+        self._active = True
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["belongs_to_actor"] = None
+        return return_dict
+
+    @property
+    def _user_output(self):
+        return self.belongs_to_actor.user_output[self.user_output_name]
+
+    @property
+    def active(self):
+        return self._active
+
+    @active.setter
+    def active(self, value):
+        self._active = bool(value)
+
+    def get_output_path(self, **kwargs):
+        kwargs.pop("item", None)
+        return self._user_output.get_output_path(item=self.item, **kwargs)
+
+    @property
+    def write_to_disk(self, **kwargs):
+        kwargs.pop("item", None)
+        return self._user_output.get_write_to_disk(item=self.item, **kwargs)
+
+    @write_to_disk.setter
+    def write_to_disk(self, value, **kwargs):
+        self._user_output.set_write_to_disk(self.item, value)
+
+    @property
+    def output_filename(self, **kwargs):
+        kwargs.pop("item", None)
+        return self._user_output.get_output_filename(item=self.item, **kwargs)
+
+    @output_filename.setter
+    def output_filename(self, value, **kwargs):
+        self._user_output.set_output_filename(value, self.item)
+
+
+class InterfaceToActorOutputImage(InterfaceToActorOutput):
+
+    @property
+    def image(self):
+        return self._user_output.get_data(item=self.item)
+
+
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
     user_info_defaults = {
         "merge_method": (
