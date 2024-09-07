@@ -379,15 +379,15 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         # else:
         #     return actor_output_path
 
-    def _get_suffix_for_item(self, identifier):
-        if identifier in self.data_write_config:
-            return self.data_write_config[identifier]["suffix"]
-        else:
-            fatal(
-                f"No data item found with identifier {identifier} "
-                f"in container class {self.data_container_class.__name__}. "
-                f"Valid identifiers are: {list(self.data_write_config.keys())}."
-            )
+    # def _get_suffix_for_item(self, identifier):
+    #     if identifier in self.data_write_config:
+    #         return self.data_write_config[identifier]["suffix"]
+    #     else:
+    #         fatal(
+    #             f"No data item found with identifier {identifier} "
+    #             f"in container class {self.data_container_class.__name__}. "
+    #             f"Valid identifiers are: {list(self.data_write_config.keys())}."
+    #         )
 
     def merge_data(self, list_of_data):
         if self.merge_method == "sum":
