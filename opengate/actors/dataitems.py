@@ -333,32 +333,32 @@ class DataItemContainer(DataContainer):
         if data is not None:
             self.set_data(*data)
 
-    @classmethod
-    def get_default_data_write_config(cls):
-        default_data_write_config = None
-        # try to pick up data write config defined in the specific class or base classes
-        for c in cls.mro():
-            try:
-                default_data_write_config = c.__dict__["default_data_write_config"]
-                break
-            except KeyError:
-                continue
-        # If none of the classes in the inheritance chain specifies data item,
-        # we fill up a dictionary with the default configuration
-        if default_data_write_config is None:
-            if len(cls._data_item_classes) > 1:
-                default_data_write_config = Box(
-                    [
-                        (i, Box({"suffix": f"dataitem_{i}", "write_to_disk": True}))
-                        for i in range(len(cls._data_item_classes))
-                    ]
-                )
-            else:
-                # no special suffix for single-item containers
-                default_data_write_config = Box(
-                    {0: Box({"suffix": None, "write_to_disk": True})}
-                )
-        return default_data_write_config
+    # @classmethod
+    # def get_default_data_write_config(cls):
+    #     default_data_write_config = None
+    #     # try to pick up data write config defined in the specific class or base classes
+    #     for c in cls.mro():
+    #         try:
+    #             default_data_write_config = c.__dict__["default_data_write_config"]
+    #             break
+    #         except KeyError:
+    #             continue
+    #     # If none of the classes in the inheritance chain specifies data item,
+    #     # we fill up a dictionary with the default configuration
+    #     if default_data_write_config is None:
+    #         if len(cls._data_item_classes) > 1:
+    #             default_data_write_config = Box(
+    #                 [
+    #                     (i, Box({"suffix": f"dataitem_{i}", "write_to_disk": True}))
+    #                     for i in range(len(cls._data_item_classes))
+    #                 ]
+    #             )
+    #         else:
+    #             # no special suffix for single-item containers
+    #             default_data_write_config = Box(
+    #                 {0: Box({"suffix": None, "write_to_disk": True})}
+    #             )
+    #     return default_data_write_config
 
     # the actual write config needs to be fetched from the actor output instance
     # which handles this data item container
