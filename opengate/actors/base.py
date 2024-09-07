@@ -264,12 +264,6 @@ class ActorBase(GateObject):
         self.actor_engine = None
         super().close()
 
-    def __getstate__(self):
-        return_dict = super().__getstate__()
-        return_dict["filter_objects"] = {}
-        return_dict["actor_engine"] = None
-        return return_dict
-
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
         # Prepare the output entries for those items
@@ -356,6 +350,11 @@ class ActorBase(GateObject):
 
         if not hasattr(type(self), property_name):
             setattr(type(self), property_name, property(p))
+
+    def recover_user_output(self, actor):
+        self.user_output = actor.user_output
+        for v in self.interfaces_to_user_output.values():
+            v.belongs_to_actor = self
 
     def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)
