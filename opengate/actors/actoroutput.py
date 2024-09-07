@@ -141,6 +141,28 @@ class ActorOutputBase(GateObject):
                     f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
                 )
 
+    def set_output_filename(self, value, item):
+        if item == "all":
+            for k in self.data_write_config.keys():
+                self.set_output_filename(insert_suffix_before_extension(value, k), k)
+        else:
+            try:
+                self.data_write_config[item]["output_filename"] = str(value)
+            except KeyError:
+                fatal(
+                    f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
+                )
+
+    def get_output_filename(self, item):
+        if item == "all":
+            return Box([(k, v["output_filename"]) for k, v in self.data_write_config.items()])
+        else:
+            try:
+                return self.data_write_config[item]["output_filename"]
+            except KeyError:
+                fatal(
+                    f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
+                )
 
     @property
     def belongs_to_actor(self):
