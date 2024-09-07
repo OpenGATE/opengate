@@ -1635,7 +1635,7 @@ class Simulation(GateObject):
 
             # Recover output from unpickled actors coming from sub-process queue
             for actor in self.actor_manager.actors.values():
-                actor.user_output = output.get_actor(actor.name).user_output
+                actor.recover_user_output(output.get_actor(actor.name))
 
             # FIXME: temporary workaround to copy from output the additional
             # information of the source (such as fTotalSkippedEvents)
