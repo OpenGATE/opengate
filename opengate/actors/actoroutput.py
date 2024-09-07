@@ -348,25 +348,25 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                     insert_suffix_before_extension(self.output_filename, v["suffix"])
                 )
 
-    def get_output_path(self, **kwargs):
-        item = kwargs.pop("item", "all")
-        if item is None:
-            return super().get_output_path(**kwargs)
-        else:
-            return super().get_output_path(
-                output_filename=self.get_output_filename(item=item), **kwargs
-            )
-
-    def get_output_filename(self, *args, item="all"):
-        if item == "all":
-            return Box(
-                [
-                    (k, str(self.compose_output_path_to_item(self.output_filename, k)))
-                    for k in self.data_write_config
-                ]
-            )
-        else:
-            return str(self.compose_output_path_to_item(self.output_filename, item))
+    # def get_output_path(self, **kwargs):
+    #     item = kwargs.pop("item", "all")
+    #     if item is None:
+    #         return super().get_output_path(**kwargs)
+    #     else:
+    #         return super().get_output_path(
+    #             output_filename=self.get_output_filename(item=item), **kwargs
+    #         )
+    #
+    # def get_output_filename(self, *args, item="all"):
+    #     if item == "all":
+    #         return Box(
+    #             [
+    #                 (k, str(self.compose_output_path_to_item(self.output_filename, k)))
+    #                 for k in self.data_write_config
+    #             ]
+    #         )
+    #     else:
+    #         return str(self.compose_output_path_to_item(self.output_filename, item))
 
     def compose_output_path_to_item(self, output_path, item):
         """This method is intended to be called from an ActorOutput object which provides the path.
