@@ -55,7 +55,7 @@ class ActorOutputBase(GateObject):
             },
         ),
         "data_write_config": (
-            Box({0: Box({"suffix": None, "write_to_disk": True})}),
+            Box({0: Box({"output_filename": 'auto', "write_to_disk": True})}),
             {
                 "doc": "Dictionary (Box) to specify which"
                        "should be written to disk and how. "
