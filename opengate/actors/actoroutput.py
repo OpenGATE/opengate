@@ -110,19 +110,19 @@ class ActorOutputBase(GateObject):
     # def active(self):
     #     return self._active
 
-    @property
-    def write_to_disk(self):
-        d = Box([(k, v["write_to_disk"]) for k, v in self.data_write_config.items()])
-        if len(d) > 1:
-            return d
-        elif len(d) == 1:
-            return list(d.values())[0]
-        else:
-            fatal("Nothing defined in data_write_config. ")
-
-    @write_to_disk.setter
-    def write_to_disk(self, value):
-        self.set_write_to_disk("all", value)
+    # @property
+    # def write_to_disk(self):
+    #     d = Box([(k, v["write_to_disk"]) for k, v in self.data_write_config.items()])
+    #     if len(d) > 1:
+    #         return d
+    #     elif len(d) == 1:
+    #         return list(d.values())[0]
+    #     else:
+    #         fatal("Nothing defined in data_write_config. ")
+    #
+    # @write_to_disk.setter
+    # def write_to_disk(self, value):
+    #     self.set_write_to_disk("all", value)
 
     def set_write_to_disk(self, item, value):
         if item == "all":
