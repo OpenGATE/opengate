@@ -390,18 +390,24 @@ class DataItemContainer(DataContainer):
             if d is not None:
                 d.meta_data.update(meta_data)
 
-    def set_data(self, *data):
+    def set_data(self, *data, item=None):
         # data might be already contained in the correct container class,
         # or intended to be the input to the container class
+        if item is not None:
+            if len(data) != len(item):
+                fatal(f"Inconsistent input to set_data method: "
+                      f"{len(data)} data items provided, "
+                      f"but {len(item)} items specified in the 'item' keyword argument. ")
+            item = [i for i in range(len(data))]
         processed_data = []
-        for i, d in enumerate(data):
+        for i, d in zip(item, data):
             c = self._data_item_classes[i]
             if isinstance(d, c):
                 processed_data.append(d)
             else:
                 processed_data.append(c(data=d))
         # Fill up the data list with None in case not all data were passed
-        processed_data.extend([None] * (len(self._data_item_classes) - len(data)))
+        # processed_data.extend([None] * (len(self._data_item_classes) - len(data)))
         self.data = processed_data
 
     def get_data(self, item=None):
