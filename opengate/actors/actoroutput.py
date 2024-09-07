@@ -49,26 +49,26 @@ class ActorOutputBase(GateObject):
             "auto",
             {
                 "doc": "Filename for the data represented by this actor output. "
-                "Relative paths and filenames are taken "
-                "relative to the global simulation output folder "
-                "set via the Simulation.output_dir option. ",
+                       "Relative paths and filenames are taken "
+                       "relative to the global simulation output folder "
+                       "set via the Simulation.output_dir option. ",
             },
         ),
         "data_write_config": (
             Box({0: Box({"suffix": None, "write_to_disk": True})}),
             {
                 "doc": "Dictionary (Box) to specify which"
-                "should be written to disk and how. "
-                "The default is picked up from the data container class during instantiation, "
-                "and can be changed by the user afterwards. "
+                       "should be written to disk and how. "
+                       "The default is picked up from the data container class during instantiation, "
+                       "and can be changed by the user afterwards. "
             },
         ),
         "keep_data_in_memory": (
             True,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                "Careful: Large data structures like a phase space need a lot of memory.",
+                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                       "Careful: Large data structures like a phase space need a lot of memory.",
             },
         ),
         "keep_data_per_run": (
@@ -81,7 +81,7 @@ class ActorOutputBase(GateObject):
             True,
             {
                 "doc": "Should this output be calculated by the actor? "
-                "Note: Output can be deactivated on in certain actors. ",
+                       "Note: Output can be deactivated on in certain actors. ",
                 "setter_hook": _setter_hook_active,
             },
         ),
