@@ -23,6 +23,8 @@ from .actoroutput import (
     ActorOutputSingleMeanImage,
     ActorOutputQuotientMeanImage,
     ActorOutputSingleImageWithVariance,
+    InterfaceToActorOutput,
+    InterfaceToActorOutputImage
 )
 
 
