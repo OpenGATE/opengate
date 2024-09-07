@@ -472,6 +472,18 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         self._add_user_output(ActorOutputSingleImageWithVariance, "edep_with_variance")
 
+        # create an interface to item 0 of user output "edep_with_variance"
+        # and make it available via a property 'edep' in this actor
+        self._add_interface_to_user_output(InterfaceToActorOutputImage,
+                                           "edep_with_variance",
+                                           "edep",
+                                           0)
+        self._add_interface_to_user_output(InterfaceToActorOutputImage,
+                                           "edep_with_variance",
+                                           "edep_uncertainty",
+                                           1)
+
+
         self._add_user_output(ActorOutputSingleMeanImage, "edep")
         self._add_user_output(
             ActorOutputSingleMeanImage,
@@ -511,17 +523,21 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def edep_with_variance(self):
         return self.user_output.edep_with_variance
 
-    @property
-    def edep(self):
-        return self.user_output.edep
+    # @property
+    # def edep(self):
+    #     return self.interfaces_to_user_output["edep_with_variance_0"]
+    #
+    # @property
+    # def edep_uncertainty(self):
+    #     return self.interfaces_to_user_output["edep_with_variance_1"]
 
     @property
     def dose(self):
         return self.user_output.dose
 
-    @property
-    def edep_uncertainty(self):
-        return self.user_output.edep_uncertainty
+    # @property
+    # def edep_uncertainty(self):
+    #     return self.user_output.edep_uncertainty
 
     @property
     def dose_uncertainty(self):
