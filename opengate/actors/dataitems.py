@@ -398,6 +398,7 @@ class DataItemContainer(DataContainer):
                 fatal(f"Inconsistent input to set_data method: "
                       f"{len(data)} data items provided, "
                       f"but {len(item)} items specified in the 'item' keyword argument. ")
+        else:
             item = [i for i in range(len(data))]
         processed_data = []
         for i, d in zip(item, data):
