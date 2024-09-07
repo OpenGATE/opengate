@@ -356,6 +356,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             # set the parameters provided by the user in kwargs
             self.data_write_config = data_write_config
+        # temporary fix to guarantee there is an 'output_filename' in data_write_config
+        for k, v in self.data_write_config.items():
+            if 'output_filename' not in v:
+                v['output_filename'] = str(insert_suffix_before_extension(self.output_filename, v['suffix']))
 
     def get_output_path(self, **kwargs):
         item = kwargs.pop("item", "all")
