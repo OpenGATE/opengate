@@ -200,24 +200,14 @@ class ActorOutputBase(GateObject):
         if any([v["write_to_disk"] for v in self.data_write_config.values()]):
             self.write_data(*args, **kwargs)
 
-    def get_output_path(self, which="merged", output_filename=None, **kwargs):
+    def get_output_path(self, which="merged", item=0, **kwargs):
         self.initialize_output_filename()
 
-        if output_filename is None:
-            output_filename = self.output_filename
-        if isinstance(output_filename, (str, Path)):
-            full_data_path = Box({0: self.simulation.get_output_path(output_filename)})
-        else:
-            full_data_path = Box(
-                [
-                    (k, self.simulation.get_output_path(v))
-                    for k, v in output_filename.items()
-                ]
-            )
+        output_filename = self.get_output_filename(item=item)
+        full_data_path = self.simulation.get_output_path(output_filename)
 
         if which == "merged":
-            full_data_path_which = full_data_path
-            # return insert_suffix_before_extension(full_data_path, "merged")
+            return full_data_path
         else:
             try:
                 run_index = int(which)
@@ -227,19 +217,7 @@ class ActorOutputBase(GateObject):
                     f"of {type(self).__name__} called {self.name}"
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
-            full_data_path_which = Box(
-                [
-                    (k, insert_suffix_before_extension(v, f"run{run_index:04f}"))
-                    for k, v in full_data_path.items()
-                ]
-            )
-
-        if len(full_data_path_which) > 1:
-            return full_data_path_which
-        elif len(full_data_path_which) == 1:
-            return list(full_data_path_which.values())[0]
-        else:
-            return None
+            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path_as_string(self, which="merged", **kwargs):
         return ensure_filename_is_str(self.get_output_path(which=which, **kwargs))
