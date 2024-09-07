@@ -124,7 +124,7 @@ class ActorOutputBase(GateObject):
     # def write_to_disk(self, value):
     #     self.set_write_to_disk("all", value)
 
-    def set_write_to_disk(self, value, item):
+    def set_write_to_disk(self, value, item=0):
         if item == "all":
             for k in self.data_write_config.keys():
                 self.set_write_to_disk(value, k)
