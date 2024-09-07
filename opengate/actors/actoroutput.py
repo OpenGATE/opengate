@@ -149,7 +149,7 @@ class ActorOutputBase(GateObject):
                     f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
                 )
 
-    def set_output_filename(self, value, item):
+    def set_output_filename(self, value, item=0):
         if item == "all":
             for k in self.data_write_config.keys():
                 self.set_output_filename(insert_suffix_before_extension(value, k), k)
@@ -161,11 +161,10 @@ class ActorOutputBase(GateObject):
                     f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
                 )
 
-    def get_output_filename(self, item):
+    def get_output_filename(self, item=0):
         if item == "all":
-            return Box(
-                [(k, v["output_filename"]) for k, v in self.data_write_config.items()]
-            )
+            fatal(f"get_output_filename() does not accept item='all', only existing items. "
+                  f"This actor output has the following items: {list(self.data_write_config.keys())}. ")
         else:
             try:
                 return self.data_write_config[item]["output_filename"]
