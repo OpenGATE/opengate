@@ -136,7 +136,7 @@ class ActorOutputBase(GateObject):
                     f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
                 )
 
-    def get_write_to_disk(self, item):
+    def get_write_to_disk(self, item=0):
         if item == "all":
             return Box(
                 [(k, v["write_to_disk"]) for k, v in self.data_write_config.items()]
