@@ -505,36 +505,43 @@ class DataItemContainer(DataContainer):
             ],
         )
 
-    def write(self, path, item=None):
-        if item is None:
-            items_to_write = [
-                k
-                for k, v in self.data_write_config.items()
-                if v["write_to_disk"] is True
-            ]
-        else:
-            items_to_write = [item]
-        for k in items_to_write:
-            full_path = self.belongs_to.compose_output_path_to_item(path, k)
-            try:
-                identifier = int(k)
-                try:
-                    data_to_write = self.data[identifier]
-                    # self.data[i].write(full_path)
-                except IndexError:
-                    data_to_write = None
-                    warning(
-                        f"No data for item number {identifier}. Cannot write this output"
-                    )
-            except ValueError:
-                identifier = str(k)
-                data_to_write = getattr(self, identifier)  # .write(full_path)
-            if data_to_write is not None:
-                try:
-                    data_to_write.write(full_path)
-                except NotImplementedError:
-                    warning(f"Cannot write output in data item {identifier}. ")
-                    continue
+    def write(self, item_path_dict):
+        for item, path in item_path_dict.items():
+            data_item = self.get_data_item_object(item)
+            if data_item is not None:
+                data_item.write(path)
+            else:
+                warning(f"Cannot write item {item} because it does not exist (=None).")
+
+        # if item is None:
+        #     items_to_write = [
+        #         k
+        #         for k, v in self.data_write_config.items()
+        #         if v["write_to_disk"] is True
+        #     ]
+        # else:
+        #     items_to_write = [item]
+        # for k in items_to_write:
+        #     full_path = self.belongs_to.compose_output_path_to_item(path, k)
+        #     try:
+        #         identifier = int(k)
+        #         try:
+        #             data_to_write = self.data[identifier]
+        #             # self.data[i].write(full_path)
+        #         except IndexError:
+        #             data_to_write = None
+        #             warning(
+        #                 f"No data for item number {identifier}. Cannot write this output"
+        #             )
+        #     except ValueError:
+        #         identifier = str(k)
+        #         data_to_write = getattr(self, identifier)  # .write(full_path)
+        #     if data_to_write is not None:
+        #         try:
+        #             data_to_write.write(full_path)
+        #         except NotImplementedError:
+        #             warning(f"Cannot write output in data item {identifier}. ")
+        #             continue
 
     def __getattr__(self, item):
         # check if any of the data items has this attribute
