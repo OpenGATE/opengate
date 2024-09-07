@@ -519,10 +519,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             }
         )
 
-    @property
-    def edep_with_variance(self):
-        return self.user_output.edep_with_variance
-
     # @property
     # def edep(self):
     #     return self.interfaces_to_user_output["edep_with_variance_0"]
