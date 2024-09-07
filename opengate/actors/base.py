@@ -2,7 +2,7 @@ from box import Box
 from functools import wraps
 
 from ..definitions import __world_name__
-from ..exception import fatal, warning
+from ..exception import fatal, warning, GateImplementationError
 from ..base import GateObject
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
