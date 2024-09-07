@@ -140,6 +140,7 @@ class ActorBase(GateObject):
             None  # this is set by the actor engine during initialization
         )
         self.user_output = Box()
+        self.interfaces_to_user_output = Box()
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -346,6 +347,15 @@ class ActorBase(GateObject):
             self.user_output[name].active = active
 
         return self.user_output[name]
+
+    def _add_interface_to_user_output(self, interface_class, user_output_name, property_name, item=0):
+        k = f"{user_output_name}_{item}"
+        self.interfaces_to_user_output[k] = interface_class(self, user_output_name, item)
+        def p(self):
+            return self.interfaces_to_user_output[k]
+
+        if not hasattr(type(self), property_name):
+            setattr(type(self), property_name, property(p))
 
     def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)
