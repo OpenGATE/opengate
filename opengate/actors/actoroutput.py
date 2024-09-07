@@ -124,10 +124,10 @@ class ActorOutputBase(GateObject):
     # def write_to_disk(self, value):
     #     self.set_write_to_disk("all", value)
 
-    def set_write_to_disk(self, item, value):
+    def set_write_to_disk(self, value, item):
         if item == "all":
             for k in self.data_write_config.keys():
-                self.set_write_to_disk(k, value)
+                self.set_write_to_disk(value, k)
         else:
             try:
                 self.data_write_config[item]["write_to_disk"] = bool(value)
@@ -304,7 +304,7 @@ class InterfaceToActorOutput:
 
     @write_to_disk.setter
     def write_to_disk(self, value, **kwargs):
-        self._user_output.set_write_to_disk(self.item, value)
+        self._user_output.set_write_to_disk(value, self.item)
 
     @property
     def output_filename(self, **kwargs):
