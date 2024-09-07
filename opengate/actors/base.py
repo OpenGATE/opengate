@@ -319,7 +319,9 @@ class ActorBase(GateObject):
                 for v in self.user_output.values()
             ]
         ):
-            raise GateImplementationError("Implementation error: Only one ROOT output per actor supported. ")
+            raise GateImplementationError(
+                "Implementation error: Only one ROOT output per actor supported. "
+            )
 
         # extract the user info "active" if passed via kwargs
         try:
@@ -342,9 +344,14 @@ class ActorBase(GateObject):
 
         return self.user_output[name]
 
-    def _add_interface_to_user_output(self, interface_class, user_output_name, property_name, item=0):
+    def _add_interface_to_user_output(
+        self, interface_class, user_output_name, property_name, item=0
+    ):
         k = f"{user_output_name}_{item}"
-        self.interfaces_to_user_output[k] = interface_class(self, user_output_name, item)
+        self.interfaces_to_user_output[k] = interface_class(
+            self, user_output_name, item
+        )
+
         def p(self):
             return self.interfaces_to_user_output[k]
 

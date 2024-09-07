@@ -132,7 +132,9 @@ class ActorOutputBase(GateObject):
 
     def get_write_to_disk(self, item):
         if item == "all":
-            return Box([(k, v["write_to_disk"]) for k, v in self.data_write_config.items()])
+            return Box(
+                [(k, v["write_to_disk"]) for k, v in self.data_write_config.items()]
+            )
         else:
             try:
                 return self.data_write_config[item]["write_to_disk"]
@@ -155,7 +157,9 @@ class ActorOutputBase(GateObject):
 
     def get_output_filename(self, item):
         if item == "all":
-            return Box([(k, v["output_filename"]) for k, v in self.data_write_config.items()])
+            return Box(
+                [(k, v["output_filename"]) for k, v in self.data_write_config.items()]
+            )
         else:
             try:
                 return self.data_write_config[item]["output_filename"]
@@ -358,8 +362,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             self.data_write_config = data_write_config
         # temporary fix to guarantee there is an 'output_filename' in data_write_config
         for k, v in self.data_write_config.items():
-            if 'output_filename' not in v:
-                v['output_filename'] = str(insert_suffix_before_extension(self.output_filename, v['suffix']))
+            if "output_filename" not in v:
+                v["output_filename"] = str(
+                    insert_suffix_before_extension(self.output_filename, v["suffix"])
+                )
 
     def get_output_path(self, **kwargs):
         item = kwargs.pop("item", "all")
@@ -567,7 +573,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 )
             if data is not None:
                 item = kwargs.pop("item", None)
-                data.write(self.get_output_path(which=which, item=None, **kwargs), item=item)
+                data.write(
+                    self.get_output_path(which=which, item=None, **kwargs), item=item
+                )
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
