@@ -567,7 +567,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 )
             if data is not None:
                 item = kwargs.pop("item", None)
-                data.write(self.get_output_path(which, item=None, **kwargs), item=item)
+                data.write(self.get_output_path(which=which, item=None, **kwargs), item=item)
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
