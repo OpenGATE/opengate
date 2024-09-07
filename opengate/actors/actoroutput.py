@@ -374,12 +374,12 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if item == "all":
             return Box(
                 [
-                    (k, self.compose_output_path_to_item(self.output_filename, k))
+                    (k, str(self.compose_output_path_to_item(self.output_filename, k)))
                     for k in self.data_write_config
                 ]
             )
         else:
-            return self.compose_output_path_to_item(self.output_filename, item)
+            return str(self.compose_output_path_to_item(self.output_filename, item))
 
     def compose_output_path_to_item(self, output_path, item):
         """This method is intended to be called from an ActorOutput object which provides the path.
