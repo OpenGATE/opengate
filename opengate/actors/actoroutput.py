@@ -219,8 +219,8 @@ class ActorOutputBase(GateObject):
                 )
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
-    def get_output_path_as_string(self, which="merged", **kwargs):
-        return ensure_filename_is_str(self.get_output_path(which=which, **kwargs))
+    def get_output_path_as_string(self, **kwargs):
+        return ensure_filename_is_str(self.get_output_path(**kwargs))
 
     def close(self):
         if self.keep_data_in_memory is False:
