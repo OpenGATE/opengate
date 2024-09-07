@@ -4,8 +4,14 @@ from box import Box
 
 from ..base import GateObject
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
-from ..exception import warning, fatal
-from .dataitems import available_data_container_classes, DataItemContainer
+from ..exception import warning, fatal, GateImplementationError
+from .dataitems import (
+    SingleItkImage,
+    SingleMeanItkImage,
+    SingleItkImageWithVariance,
+    QuotientItkImage,
+    QuotientMeanItkImage
+)
 
 
 def _setter_hook_belongs_to(self, belongs_to):
@@ -334,22 +340,26 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         ),
     }
 
-    def __init__(self, data_container_class, *args, **kwargs):
+    data_container_class = None
 
-        if type(data_container_class) is type:
-            if DataItemContainer not in data_container_class.mro():
-                fatal(f"Illegal data container class {data_container_class}. ")
-            self.data_container_class = data_container_class
-        else:
-            try:
-                self.data_container_class = available_data_container_classes[
-                    data_container_class
-                ]
-            except KeyError:
-                fatal(
-                    f"Unknown data item class {data_container_class}. "
-                    f"Available classes are: {list(available_data_container_classes.keys())}"
-                )
+    def __init__(self, *args, **kwargs):
+        if self.data_container_class is None:
+            raise GateImplementationError(f"No 'data_container_class' class attribute "
+                                          f"specified for class {type(self)}.")
+        # if type(data_container_class) is type:
+        #     if DataItemContainer not in data_container_class.mro():
+        #         fatal(f"Illegal data container class {data_container_class}. ")
+        #     self.data_container_class = data_container_class
+        # else:
+        #     try:
+        #         self.data_container_class = available_data_container_classes[
+        #             data_container_class
+        #         ]
+        #     except KeyError:
+        #         fatal(
+        #             f"Unknown data item class {data_container_class}. "
+        #             f"Available classes are: {list(available_data_container_classes.keys())}"
+        #         )
         data_write_config = kwargs.pop("data_write_config", None)
         super().__init__(*args, **kwargs)
         if data_write_config is None:
@@ -617,33 +627,37 @@ class ActorOutputImage(ActorOutputUsingDataItemContainer):
 
 # concrete classes usable in Actors:
 class ActorOutputSingleImage(ActorOutputImage):
+    data_container_class = SingleItkImage
 
-    def __init__(self, *args, **kwargs):
-        super().__init__("SingleItkImage", *args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__("SingleItkImage", *args, **kwargs)
+    #
 
 
 class ActorOutputSingleMeanImage(ActorOutputImage):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__("SingleMeanItkImage", *args, **kwargs)
+    data_container_class = SingleMeanItkImage
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__("SingleMeanItkImage", *args, **kwargs)
 
 
 class ActorOutputSingleImageWithVariance(ActorOutputImage):
+    data_container_class = SingleItkImageWithVariance
 
-    def __init__(self, *args, **kwargs):
-        super().__init__("SingleItkImageWithVariance", *args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__("SingleItkImageWithVariance", *args, **kwargs)
 
 
 class ActorOutputQuotientImage(ActorOutputImage):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__("QuotientItkImage", *args, **kwargs)
+    data_container_class = QuotientItkImage
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__("QuotientItkImage", *args, **kwargs)
 
 
 class ActorOutputQuotientMeanImage(ActorOutputImage):
+    data_container_class = QuotientMeanItkImage
 
-    def __init__(self, *args, **kwargs):
-        super().__init__("QuotientMeanItkImage", *args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__("QuotientMeanItkImage", *args, **kwargs)
 
 
 class ActorOutputRoot(ActorOutputBase):
