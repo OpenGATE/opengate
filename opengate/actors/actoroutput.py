@@ -368,16 +368,16 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     #     else:
     #         return str(self.compose_output_path_to_item(self.output_filename, item))
 
-    def compose_output_path_to_item(self, output_path, item):
-        """This method is intended to be called from an ActorOutput object which provides the path.
-        It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
-        Do not override this method.
-        """
-        return insert_suffix_before_extension(
-            output_path, self._get_suffix_for_item(item)
-        )
-        # else:
-        #     return actor_output_path
+    # def compose_output_path_to_item(self, output_path, item):
+    #     """This method is intended to be called from an ActorOutput object which provides the path.
+    #     It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
+    #     Do not override this method.
+    #     """
+    #     return insert_suffix_before_extension(
+    #         output_path, self._get_suffix_for_item(item)
+    #     )
+    #     # else:
+    #     #     return actor_output_path
 
     # def _get_suffix_for_item(self, identifier):
     #     if identifier in self.data_write_config:
