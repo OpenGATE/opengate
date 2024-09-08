@@ -627,10 +627,10 @@ class SingleItkImageWithVariance(DataItemContainer):
 
     default_data_write_config = Box(
         {
-            0: Box({"suffix": "", "write_to_disk": True}),
-            1: Box({"suffix": "squared", "write_to_disk": False}),
-            "variance": Box({"suffix": "variance", "write_to_disk": False}),
-            "std": Box({"suffix": "std", "write_to_disk": True}),
+            0: Box({"output_filename": "auto", "write_to_disk": True}),
+            "squared": Box({"output_filename": "auto", "write_to_disk": False}),
+            "variance": Box({"output_filename": "auto", "write_to_disk": False}),
+            "std": Box({"output_filename": "auto", "write_to_disk": True}),
         }
     )
 
