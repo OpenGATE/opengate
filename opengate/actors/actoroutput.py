@@ -194,10 +194,7 @@ class ActorOutputBase(GateObject):
         if any([v["write_to_disk"] for v in self.data_write_config.values()]):
             self.write_data(*args, **kwargs)
 
-    def get_output_path(self, which="merged", item=0, **kwargs):
-        self.initialize_output_filename()
-
-        output_filename = self.get_output_filename(item=item)
+    def _compose_output_path(self, which, output_filename):
         full_data_path = self.simulation.get_output_path(output_filename)
 
         if which == "merged":
@@ -212,6 +209,25 @@ class ActorOutputBase(GateObject):
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
+
+    def get_output_path(self, which="merged", item=0, always_return_dict=False, **kwargs):
+        self.initialize_output_filename()
+
+        if item == 'all':
+            items = [k for k, v in self.data_write_config.items() if v['write_to_disk'] is True]
+        elif isinstance(item, (tuple, list)):
+            items = item
+        else:
+            items = [item]
+
+        return_dict = {}
+        for i in items:
+            output_filename = self.get_output_filename(item=i)
+            return_dict[i] = self._compose_output_path(which, output_filename)
+        if len(return_dict) > 1 or always_return_dict is True:
+            return return_dict
+        else:
+            return list(return_dict.values())[0]
 
     def get_output_path_as_string(self, **kwargs):
         return ensure_filename_is_str(self.get_output_path(**kwargs))
@@ -435,7 +451,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                     fatal(f"No data stored for run index {run_index}")
             except ValueError:
                 fatal(
-                    f"Invalid argument 'which' in get_data() method of ActorOutput {self.name}. "
+                    f"Invalid argument 'which' in get_data_container() method of ActorOutput {self.name}. "
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
 
@@ -531,32 +547,14 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if which == "all_runs":
             for k in self.data_per_run.keys():
                 self.write_data(k, **kwargs)
-        elif which == "merged":
-            if self.merged_data is not None:
-                # pop out the keyword item which needs to be passed to the write method
-                # and which should not be passed to the get_output_path method
-                item = kwargs.pop("item", None)
-                # the first item=None is needed so that get_output_path returns the path without item-specific suffix
-                # the write() method of the data item then handles the suffix
-                # depending on the item requested in the second item= kwarg
-                self.merged_data.write(
-                    self.get_output_path(which=which, item=None, **kwargs), item=item
-                )
         elif which == "all":
             self.write_data("all_runs", **kwargs)
             self.write_data("merged", **kwargs)
         else:
-            try:
-                data = self.data_per_run[which]
-            except KeyError:
-                fatal(
-                    f"Invalid argument 'which' in method write_data(): {which}. "
-                    f"Allowed values are 'all', 'all_runs', 'merged', or a valid run_index"
-                )
+            data = self.get_data_container(which)
             if data is not None:
-                item = kwargs.pop("item", None)
                 data.write(
-                    self.get_output_path(which=which, item=None, **kwargs), item=item
+                    self.get_output_path(which=which, always_return_dict=True, **kwargs)
                 )
 
 
