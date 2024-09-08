@@ -167,11 +167,21 @@ class ActorOutputBase(GateObject):
                   f"This actor output has the following items: {list(self.data_write_config.keys())}. ")
         else:
             try:
-                return self.data_write_config[item]["output_filename"]
+                f = self.data_write_config[item]["output_filename"]
             except KeyError:
                 fatal(
                     f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
                 )
+            if f == 'auto':
+                if len(self.data_write_config) > 0:
+                    item_suffix = item
+                else:
+                    item_suffix = ''
+                output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
+            else:
+                output_filename = f
+        return output_filename
+
 
     @property
     def belongs_to_actor(self):
