@@ -10,7 +10,7 @@ from .dataitems import (
     SingleMeanItkImage,
     SingleItkImageWithVariance,
     QuotientItkImage,
-    QuotientMeanItkImage
+    QuotientMeanItkImage,
 )
 
 
@@ -49,26 +49,26 @@ class ActorOutputBase(GateObject):
             "auto",
             {
                 "doc": "Filename for the data represented by this actor output. "
-                       "Relative paths and filenames are taken "
-                       "relative to the global simulation output folder "
-                       "set via the Simulation.output_dir option. ",
+                "Relative paths and filenames are taken "
+                "relative to the global simulation output folder "
+                "set via the Simulation.output_dir option. ",
             },
         ),
         "data_write_config": (
-            Box({0: Box({"output_filename": 'auto', "write_to_disk": True})}),
+            Box({0: Box({"output_filename": "auto", "write_to_disk": True})}),
             {
                 "doc": "Dictionary (Box) to specify which"
-                       "should be written to disk and how. "
-                       "The default is picked up from the data container class during instantiation, "
-                       "and can be changed by the user afterwards. "
+                "should be written to disk and how. "
+                "The default is picked up from the data container class during instantiation, "
+                "and can be changed by the user afterwards. "
             },
         ),
         "keep_data_in_memory": (
             True,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                       "Careful: Large data structures like a phase space need a lot of memory.",
+                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                "Careful: Large data structures like a phase space need a lot of memory.",
             },
         ),
         "keep_data_per_run": (
@@ -81,7 +81,7 @@ class ActorOutputBase(GateObject):
             True,
             {
                 "doc": "Should this output be calculated by the actor? "
-                       "Note: Output can be deactivated on in certain actors. ",
+                "Note: Output can be deactivated on in certain actors. ",
                 "setter_hook": _setter_hook_active,
             },
         ),
@@ -163,8 +163,10 @@ class ActorOutputBase(GateObject):
 
     def get_output_filename(self, item=0):
         if item == "all":
-            fatal(f"get_output_filename() does not accept item='all', only existing items. "
-                  f"This actor output has the following items: {list(self.data_write_config.keys())}. ")
+            fatal(
+                f"get_output_filename() does not accept item='all', only existing items. "
+                f"This actor output has the following items: {list(self.data_write_config.keys())}. "
+            )
         else:
             try:
                 f = self.data_write_config[item]["output_filename"]
@@ -172,16 +174,15 @@ class ActorOutputBase(GateObject):
                 fatal(
                     f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
                 )
-            if f == 'auto':
+            if f == "auto":
                 if len(self.data_write_config) > 0:
                     item_suffix = item
                 else:
-                    item_suffix = ''
+                    item_suffix = ""
                 output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
             else:
                 output_filename = f
         return output_filename
-
 
     @property
     def belongs_to_actor(self):
@@ -221,10 +222,16 @@ class ActorOutputBase(GateObject):
                 )
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
-    def get_output_path(self, which="merged", item=0, always_return_dict=False, **kwargs):
+    def get_output_path(
+        self, which="merged", item=0, always_return_dict=False, **kwargs
+    ):
 
-        if item == 'all':
-            items = [k for k, v in self.data_write_config.items() if v['write_to_disk'] is True]
+        if item == "all":
+            items = [
+                k
+                for k, v in self.data_write_config.items()
+                if v["write_to_disk"] is True
+            ]
         elif isinstance(item, (tuple, list)):
             items = item
         else:
@@ -341,8 +348,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
         if self.data_container_class is None:
-            raise GateImplementationError(f"No 'data_container_class' class attribute "
-                                          f"specified for class {type(self)}.")
+            raise GateImplementationError(
+                f"No 'data_container_class' class attribute "
+                f"specified for class {type(self)}."
+            )
         # if type(data_container_class) is type:
         #     if DataItemContainer not in data_container_class.mro():
         #         fatal(f"Illegal data container class {data_container_class}. ")
