@@ -691,9 +691,9 @@ class QuotientItkImage(DataItemContainer):
     # Important: define this at the class level, NOT in the __init__ method
     default_data_write_config = Box(
         {
-            "numerator": Box({"suffix": "numerator", "write_to_disk": True}),
-            "denominator": Box({"suffix": "denominator", "write_to_disk": True}),
-            "quotient": Box({"suffix": "quotient", "write_to_disk": True}),
+            "numerator": Box({"output_filename": "auto", "write_to_disk": True}),
+            "denominator": Box({"output_filename": "auto", "write_to_disk": True}),
+            "quotient": Box({"output_filename": "auto", "write_to_disk": True}),
         }
     )
 
