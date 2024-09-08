@@ -352,8 +352,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if data_write_config is None:
             # get the default write config from the container class
             self.data_write_config = (
-                self.data_container_class.default_data_write_config
-                # self.data_container_class.get_default_data_write_config()
+                self.data_container_class.get_default_data_write_config()
             )
         else:
             # set the parameters provided by the user in kwargs
