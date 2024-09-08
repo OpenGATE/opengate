@@ -188,17 +188,18 @@ class ActorOutputBase(GateObject):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def initialize(self):
-        self.initialize_output_filename()
+        pass
+        # self.initialize_output_filename()
 
-    def initialize_output_filename(self):
-        for k, v in self.data_write_config.items():
-            if 'write_to_disk' in v and v['write_to_disk'] is True:
-                if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-                    if len(self.data_write_config) > 0:
-                        item_suffix = k
-                    else:
-                        item_suffix = ''
-                    v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
+    # def initialize_output_filename(self):
+    #     for k, v in self.data_write_config.items():
+    #         if 'write_to_disk' in v and v['write_to_disk'] is True:
+    #             if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
+    #                 if len(self.data_write_config) > 0:
+    #                     item_suffix = k
+    #                 else:
+    #                     item_suffix = ''
+    #                 v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
         if any([v["write_to_disk"] for v in self.data_write_config.values()]):
@@ -221,7 +222,6 @@ class ActorOutputBase(GateObject):
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path(self, which="merged", item=0, always_return_dict=False, **kwargs):
-        self.initialize_output_filename()
 
         if item == 'all':
             items = [k for k, v in self.data_write_config.items() if v['write_to_disk'] is True]
