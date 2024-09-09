@@ -628,6 +628,13 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
                         self.get_output_path(which=which, item=i, **kwargs), item=i
                     )
 
+    def write_data_if_requested(self, which, item='all', **kwargs):
+        items = [i for i in self._collect_item_identifiers(item) if self.get_write_to_disk(item=i) is True]
+        self.write_data(which, item=items)
+
+    def end_of_simulation(self, item='all', **kwargs):
+        super().end_of_simulation(item=item, **kwargs)
+
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
 
