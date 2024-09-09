@@ -319,7 +319,6 @@ class ActorOutputAutoMerge(ActorOutputBase):
         #         self.data_per_run[k] = None
 
 
-
 class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
 
     user_info_defaults = {
