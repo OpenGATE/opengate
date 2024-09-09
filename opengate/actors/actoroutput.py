@@ -370,7 +370,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     def get_output_path(
         self, which="merged", item=0, always_return_dict=False, **kwargs
     ):
-
         if item == "all":
             items = [
                 k
