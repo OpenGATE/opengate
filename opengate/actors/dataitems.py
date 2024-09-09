@@ -198,7 +198,7 @@ class ArithmeticDataItem(DataItem):
         self.set_data(self.data / other.data)
         return self
 
-    def write(self, path):
+    def write(self, path, **kwargs):
         np.savetxt(path, self.data)
 
 
