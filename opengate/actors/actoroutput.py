@@ -310,8 +310,8 @@ class ActorOutputAutoMerge(ActorOutputBase):
         if self.keep_data_per_run is False:
             self.data_per_run.pop(run_index)
 
-    def end_of_simulation(self):
-        self.write_data_if_requested("all")
+    def end_of_simulation(self, **kwargs):
+        self.write_data_if_requested("all", **kwargs)
         # if self.auto_merge is True:
         #     self.merge_data_from_runs()
         # if self.keep_data_per_run is False:
