@@ -278,7 +278,43 @@ class ActorOutputBase(GateObject):
         )
 
 
-class ActorOutputUsingDataItemContainer(ActorOutputBase):
+class ActorOutputAutoMerge(ActorOutputBase):
+
+    user_info_defaults = {
+        "auto_merge": (
+            True,
+            {
+                "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
+            },
+        ),
+    }
+
+    def merge_data_from_runs(self):
+        self.merged_data = merge_data(list(self.data_per_run.values()))
+
+    def merge_into_merged_data(self, data):
+        if self.merged_data is None:
+            self.merged_data = data
+        else:
+            self.merged_data = merge_data([self.merged_data, data])
+
+    def end_of_run(self, run_index):
+        if self.auto_merge is True:
+            self.merge_into_merged_data(self.data_per_run[run_index])
+        if self.keep_data_per_run is False:
+            self.data_per_run.pop(run_index)
+
+    def end_of_simulation(self):
+        self.write_data_if_requested("all")
+        # if self.auto_merge is True:
+        #     self.merge_data_from_runs()
+        # if self.keep_data_per_run is False:
+        #     for k in self.data_per_run:
+        #         self.data_per_run[k] = None
+
+
+
+class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
 
     user_info_defaults = {
         "data_item_config": (
@@ -288,12 +324,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                        "should be written to disk and how. "
                        "The default is picked up from the data container class during instantiation, "
                        "and can be changed by the user afterwards. "
-            },
-        ),
-        "auto_merge": (
-            True,
-            {
-                "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
             },
         ),
     }
@@ -478,29 +508,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             return return_dict
         else:
             return list(return_dict.values())[0]
-
-    def merge_data_from_runs(self):
-        self.merged_data = self.merge_data(list(self.data_per_run.values()))
-
-    def merge_into_merged_data(self, data):
-        if self.merged_data is None:
-            self.merged_data = data
-        else:
-            self.merged_data = self.merge_data([self.merged_data, data])
-
-    def end_of_run(self, run_index):
-        if self.auto_merge is True:
-            self.merge_into_merged_data(self.data_per_run[run_index])
-        if self.keep_data_per_run is False:
-            self.data_per_run.pop(run_index)
-
-    def end_of_simulation(self):
-        self.write_data_if_requested("all")
-        # if self.auto_merge is True:
-        #     self.merge_data_from_runs()
-        # if self.keep_data_per_run is False:
-        #     for k in self.data_per_run:
-        #         self.data_per_run[k] = None
 
     def get_data_container(self, which):
         if which == "merged":
