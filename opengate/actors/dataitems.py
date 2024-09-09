@@ -507,13 +507,12 @@ class DataItemContainer(DataContainer):
             ],
         )
 
-    def write(self, item_path_dict):
-        for item, path in item_path_dict.items():
-            data_item = self.get_data_item_object(item)
-            if data_item is not None:
-                data_item.write(path)
-            else:
-                warning(f"Cannot write item {item} because it does not exist (=None).")
+    def write(self, path, item, **kwargs):
+        data_item = self.get_data_item_object(item)
+        if data_item is not None:
+            data_item.write(path)
+        else:
+            warning(f"Cannot write item {item} because it does not exist (=None).")
 
         # if item is None:
         #     items_to_write = [
