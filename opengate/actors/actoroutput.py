@@ -278,6 +278,7 @@ class ActorOutputBase(GateObject):
 
 
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
+
     user_info_defaults = {
         "data_item_config": (
             Box({0: Box({"output_filename": "auto", "write_to_disk": True, "active": True})}),
@@ -436,24 +437,21 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     def get_output_filename(self, item=0):
         if item == "all":
-            fatal(
-                f"get_output_filename() does not accept item='all'. Instead, 'item' must be an existing item. "
-                f"This actor output has the following items: {list(self.data_item_config.keys())}. "
-            )
+            return dict([(k, self.get_output_filename(item=k)) for k in self.data_item_config])
         else:
             try:
-                f = self.data_item_config[item]["output_filename"]
+                return self.data_item_config[item]["output_filename"]
             except KeyError:
                 self._fatal_unknown_item(item)
-            if f == "auto":
-                if len(self.data_item_config) > 0:
-                    item_suffix = str(item)
-                else:
-                    item_suffix = ""
-                output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
-            else:
-                output_filename = f
-        return output_filename
+        #     if f == "auto":
+        #         if len(self.data_item_config) > 0:
+        #             item_suffix = str(item)
+        #         else:
+        #             item_suffix = ""
+        #         output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
+        #     else:
+        #         output_filename = f
+        # return output_filename
 
     def _generate_auto_output_filename(self, item=0):
         return insert_suffix_before_extension(super()._generate_auto_output_filename(), str(item))
