@@ -613,19 +613,21 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         else:
             return data
 
-    def write_data(self, which, **kwargs):
+    def write_data(self, which, item='all', **kwargs):
         if which == "all_runs":
             for k in self.data_per_run.keys():
-                self.write_data(k, **kwargs)
+                self.write_data(k, item=item, **kwargs)
         elif which == "all":
-            self.write_data("all_runs", **kwargs)
-            self.write_data("merged", **kwargs)
+            self.write_data("all_runs", item=item, **kwargs)
+            self.write_data("merged", item=item, **kwargs)
         else:
             data = self.get_data_container(which)
             if data is not None:
-                data.write(
-                    self.get_output_path(which=which, always_return_dict=True, **kwargs)
-                )
+                items = self._collect_item_identifiers(item)
+                for i in items:
+                    data.write(
+                        self.get_output_path(which=which, item=i, **kwargs), item=i
+                    )
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
