@@ -349,6 +349,7 @@ class ActorBase(GateObject):
             self, user_output_name, item
         )
 
+        # create a property in the actor so the user can quickly access the interface
         def p(self):
             return self.interfaces_to_user_output[k]
 
