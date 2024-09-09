@@ -134,6 +134,12 @@ class ActorOutputBase(GateObject):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
+        "default_suffix": (
+            None,
+            {
+                "doc": "The default file suffix to be used when auto-generating the filename. "
+            },
+        ),
         # "active": (
         #     True,
         #     {
