@@ -445,7 +445,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
     def get_write_to_disk(self, item=0):
         if item == "all":
             return Box(
-                [(k, v["write_to_disk"]) for k, v in self.data_item_config.items()]
+                [(k, self.get_write_to_disk(item=k)) for k in self.data_item_config]
             )
         else:
             try:
@@ -493,8 +493,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         if item == "all":
             items = [
                 k
-                for k, v in self.data_item_config.items()
-                if v["write_to_disk"] is True
+                for k in self.data_item_config
+                if self.get_write_to_disk(item=k) is True
             ]
         elif isinstance(item, (tuple, list)):
             items = item
@@ -569,21 +569,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         an already wrapped DataContainer class.
         """
 
-        if which == "merged":
-            data = self.merged_data
-        else:
-            try:
-                run_index = int(which)  # might be a run_index
-            except ValueError:
-                fatal(
-                    f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
-                    f"Allowed values are: 'merged' or a valid run_index. "
-                )
-            data = self.data_per_run[run_index]
-        if data is None:
-            fatal(
-                f"Cannot store meta data because no data exists yet for which='{which}'."
-            )
+        data = self.get_data_container(which)
         data.update_meta_data(meta_data)
 
     def load_data(self, which):
