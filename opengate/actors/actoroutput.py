@@ -133,14 +133,14 @@ class ActorOutputBase(GateObject):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
-        "active": (
-            True,
-            {
-                "doc": "Should this output be calculated by the actor? "
-                "Note: Output can be deactivated on in certain actors. ",
-                "setter_hook": _setter_hook_active,
-            },
-        ),
+        # "active": (
+        #     True,
+        #     {
+        #         "doc": "Should this output be calculated by the actor? "
+        #         "Note: Output can be deactivated on in certain actors. ",
+        #         "setter_hook": _setter_hook_active,
+        #     },
+        # ),
     }
 
     def __init__(self, *args, **kwargs):
