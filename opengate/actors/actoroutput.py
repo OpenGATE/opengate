@@ -472,8 +472,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
         return_dict = {}
         for i in items:
-            output_filename = self.get_output_filename(item=i)
-            return_dict[i] = self._compose_output_path(which, output_filename)
+            return_dict[i] = super().get_output_path(which=which, item=i)
         if len(return_dict) > 1 or always_return_dict is True:
             return return_dict
         else:
