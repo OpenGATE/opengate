@@ -115,65 +115,26 @@ class ActorOutputBase(GateObject):
     # def write_to_disk(self, value):
     #     self.set_write_to_disk("all", value)
 
-    def set_write_to_disk(self, value, item=0):
-        if item == "all":
-            for k in self.data_write_config.keys():
-                self.set_write_to_disk(value, k)
-        else:
-            try:
-                self.data_write_config[item]["write_to_disk"] = bool(value)
-            except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
-                )
+    def set_write_to_disk(self, value, **kwargs):
+        raise NotImplementedError
 
-    def get_write_to_disk(self, item=0):
-        if item == "all":
-            return Box(
-                [(k, v["write_to_disk"]) for k, v in self.data_write_config.items()]
-            )
-        else:
-            try:
-                return self.data_write_config[item]["write_to_disk"]
-            except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
-                )
+    def get_write_to_disk(self, **kwargs):
+        raise NotImplementedError
 
-    def set_output_filename(self, value, item=0):
-        if item == "all":
-            for k in self.data_write_config.keys():
-                self.set_output_filename(insert_suffix_before_extension(value, k), k)
-        else:
-            try:
-                self.data_write_config[item]["output_filename"] = str(value)
-            except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
-                )
+    def need_to_write_data(self, **kwargs):
+        raise NotImplementedError
 
-    def get_output_filename(self, item=0):
-        if item == "all":
-            fatal(
-                f"get_output_filename() does not accept item='all', only existing items. "
-                f"This actor output has the following items: {list(self.data_write_config.keys())}. "
-            )
-        else:
-            try:
-                f = self.data_write_config[item]["output_filename"]
-            except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_write_config.keys())}."
-                )
-            if f == "auto":
-                if len(self.data_write_config) > 0:
-                    item_suffix = item
-                else:
-                    item_suffix = ""
-                output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
-            else:
-                output_filename = f
-        return output_filename
+    def set_output_filename(self, value, **kwargs):
+        raise NotImplementedError
+
+    def get_output_filename(self, **kwargs):
+        raise NotImplementedError
+
+    def get_active(self, **kwargs):
+        raise NotImplementedError
+
+    def set_active(self, value, **kwargs):
+        raise NotImplementedError
 
     @property
     def belongs_to_actor(self):
@@ -194,7 +155,7 @@ class ActorOutputBase(GateObject):
     #                 v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
-        if any([v["write_to_disk"] for v in self.data_write_config.values()]):
+        if self.need_to_write_data():
             self.write_data(*args, **kwargs)
 
     def _compose_output_path(self, which, output_filename):
@@ -214,28 +175,9 @@ class ActorOutputBase(GateObject):
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path(
-        self, which="merged", item=0, always_return_dict=False, **kwargs
+        self, **kwargs
     ):
-
-        if item == "all":
-            items = [
-                k
-                for k, v in self.data_write_config.items()
-                if v["write_to_disk"] is True
-            ]
-        elif isinstance(item, (tuple, list)):
-            items = item
-        else:
-            items = [item]
-
-        return_dict = {}
-        for i in items:
-            output_filename = self.get_output_filename(item=i)
-            return_dict[i] = self._compose_output_path(which, output_filename)
-        if len(return_dict) > 1 or always_return_dict is True:
-            return return_dict
-        else:
-            return list(return_dict.values())[0]
+        raise NotImplementedError
 
     def get_output_path_as_string(self, **kwargs):
         return ensure_filename_is_str(self.get_output_path(**kwargs))
