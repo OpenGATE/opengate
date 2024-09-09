@@ -224,32 +224,30 @@ class InterfaceToActorOutput:
 
     @property
     def active(self):
-        return self._active
+        return self._user_output.get_active(item=self.item)
 
     @active.setter
     def active(self, value):
-        self._active = bool(value)
+        self._user_output.set_active(value, self.item)
 
     def get_output_path(self, **kwargs):
-        kwargs.pop("item", None)
-        return self._user_output.get_output_path(item=self.item, **kwargs)
+        kwargs['item'] = self.item
+        return self._user_output.get_output_path(**kwargs)
 
     @property
-    def write_to_disk(self, **kwargs):
-        kwargs.pop("item", None)
-        return self._user_output.get_write_to_disk(item=self.item, **kwargs)
+    def write_to_disk(self):
+        return self._user_output.get_write_to_disk(item=self.item)
 
     @write_to_disk.setter
-    def write_to_disk(self, value, **kwargs):
+    def write_to_disk(self, value):
         self._user_output.set_write_to_disk(value, self.item)
 
     @property
-    def output_filename(self, **kwargs):
-        kwargs.pop("item", None)
-        return self._user_output.get_output_filename(item=self.item, **kwargs)
+    def output_filename(self):
+        return self._user_output.get_output_filename(item=self.item)
 
     @output_filename.setter
-    def output_filename(self, value, **kwargs):
+    def output_filename(self, value):
         self._user_output.set_output_filename(value, self.item)
 
 
