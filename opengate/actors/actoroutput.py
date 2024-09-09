@@ -359,7 +359,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 self._fatal_unknown_item(item)
             if f == "auto":
                 if len(self.data_item_config) > 0:
-                    item_suffix = item
+                    item_suffix = str(item)
                 else:
                     item_suffix = ""
                 output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
