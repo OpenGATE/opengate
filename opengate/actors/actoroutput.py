@@ -305,6 +305,11 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     #             f"Valid identifiers are: {list(self.data_item_config.keys())}."
     #         )
 
+    def _fatal_unknown_item(self, item):
+        fatal(
+            f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
+        )
+
     # override methods:
     def set_write_to_disk(self, value, item=0):
         if item == "all":
@@ -314,9 +319,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             try:
                 self.data_item_config[item]["write_to_disk"] = bool(value)
             except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
-                )
+                self._fatal_unknown_item(item)
 
     def get_write_to_disk(self, item=0):
         if item == "all":
@@ -327,9 +330,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             try:
                 return self.data_item_config[item]["write_to_disk"]
             except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
-                )
+                self._fatal_unknown_item(item)
 
     def need_to_write_data(self, **kwargs):
         return any([v["write_to_disk"] is True for v in self.data_write_config.values()])
@@ -342,9 +343,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             try:
                 self.data_item_config[item]["output_filename"] = str(value)
             except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
-                )
+                self._fatal_unknown_item(item)
 
     def get_output_filename(self, item=0):
         if item == "all":
@@ -356,9 +355,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             try:
                 f = self.data_item_config[item]["output_filename"]
             except KeyError:
-                fatal(
-                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
-                )
+                self._fatal_unknown_item(item)
             if f == "auto":
                 if len(self.data_item_config) > 0:
                     item_suffix = item
