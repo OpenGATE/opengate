@@ -349,7 +349,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     def get_output_filename(self, item=0):
         if item == "all":
             fatal(
-                f"get_output_filename() does not accept item='all', only existing items. "
+                f"get_output_filename() does not accept item='all'. Instead, 'item' must be an existing item. "
                 f"This actor output has the following items: {list(self.data_item_config.keys())}. "
             )
         else:
