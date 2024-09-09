@@ -493,9 +493,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
     def _generate_auto_output_filename(self, item=0):
         return insert_suffix_before_extension(super()._generate_auto_output_filename(), str(item))
 
-    def get_output_path(
-        self, which="merged", item=0, always_return_dict=False, **kwargs
-    ):
+    def _collect_item_identifiers(self, item):
         if item == "all":
             items = [
                 k
@@ -506,9 +504,16 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
             items = item
         else:
             items = [item]
+        if not all([i in self.data_item_config for i in items]):
+            fatal(f"Unknown items. Requested items are: {items}. "
+                  f"Known items are {list(self.data_item_config.keys())}.")
+        return items
 
+    def get_output_path(
+        self, which="merged", item=0, always_return_dict=False, **kwargs
+    ):
         return_dict = {}
-        for i in items:
+        for i in self._collect_item_identifiers(item):
             return_dict[i] = super().get_output_path(which=which, item=i)
         if len(return_dict) > 1 or always_return_dict is True:
             return return_dict
