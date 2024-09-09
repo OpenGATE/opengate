@@ -214,13 +214,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                        "and can be changed by the user afterwards. "
             },
         ),
-        "merge_method": (
-            "sum",
-            {
-                "doc": "How should images from runs be merged?",
-                "allowed_values": ("sum",),
-            },
-        ),
         "auto_merge": (
             True,
             {
@@ -401,11 +394,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             return list(return_dict.values())[0]
 
     def merge_data(self, list_of_data):
-        if self.merge_method == "sum":
-            merged_data = list_of_data[0]
-            for d in list_of_data[1:]:
-                merged_data.inplace_merge_with(d)
-            return merged_data
+        merged_data = list_of_data[0]
+        for d in list_of_data[1:]:
+            merged_data.inplace_merge_with(d)
+        return merged_data
 
     def merge_data_from_runs(self):
         self.merged_data = self.merge_data(list(self.data_per_run.values()))
