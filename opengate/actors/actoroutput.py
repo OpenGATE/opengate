@@ -366,6 +366,94 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     #             f"Valid identifiers are: {list(self.data_item_config.keys())}."
     #         )
 
+    # override methods:
+    def set_write_to_disk(self, value, item=0):
+        if item == "all":
+            for k in self.data_item_config.keys():
+                self.set_write_to_disk(value, k)
+        else:
+            try:
+                self.data_item_config[item]["write_to_disk"] = bool(value)
+            except KeyError:
+                fatal(
+                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
+                )
+
+    def get_write_to_disk(self, item=0):
+        if item == "all":
+            return Box(
+                [(k, v["write_to_disk"]) for k, v in self.data_item_config.items()]
+            )
+        else:
+            try:
+                return self.data_item_config[item]["write_to_disk"]
+            except KeyError:
+                fatal(
+                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
+                )
+
+    def need_to_write_data(self, **kwargs):
+        return any([v["write_to_disk"] is True for v in self.data_write_config.values()])
+
+    def set_output_filename(self, value, item=0):
+        if item == "all":
+            for k in self.data_item_config.keys():
+                self.set_output_filename(insert_suffix_before_extension(value, k), k)
+        else:
+            try:
+                self.data_item_config[item]["output_filename"] = str(value)
+            except KeyError:
+                fatal(
+                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
+                )
+
+    def get_output_filename(self, item=0):
+        if item == "all":
+            fatal(
+                f"get_output_filename() does not accept item='all', only existing items. "
+                f"This actor output has the following items: {list(self.data_item_config.keys())}. "
+            )
+        else:
+            try:
+                f = self.data_item_config[item]["output_filename"]
+            except KeyError:
+                fatal(
+                    f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
+                )
+            if f == "auto":
+                if len(self.data_item_config) > 0:
+                    item_suffix = item
+                else:
+                    item_suffix = ""
+                output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
+            else:
+                output_filename = f
+        return output_filename
+
+    def get_output_path(
+        self, which="merged", item=0, always_return_dict=False, **kwargs
+    ):
+
+        if item == "all":
+            items = [
+                k
+                for k, v in self.data_item_config.items()
+                if v["write_to_disk"] is True
+            ]
+        elif isinstance(item, (tuple, list)):
+            items = item
+        else:
+            items = [item]
+
+        return_dict = {}
+        for i in items:
+            output_filename = self.get_output_filename(item=i)
+            return_dict[i] = self._compose_output_path(which, output_filename)
+        if len(return_dict) > 1 or always_return_dict is True:
+            return return_dict
+        else:
+            return list(return_dict.values())[0]
+
     def merge_data(self, list_of_data):
         if self.merge_method == "sum":
             merged_data = list_of_data[0]
