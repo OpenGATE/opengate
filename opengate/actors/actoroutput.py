@@ -232,7 +232,7 @@ class ActorOutputBase(GateObject):
         #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
-        if self.need_to_write_data():
+        if self.need_to_write_data(**kwargs):
             self.write_data(*args, **kwargs)
 
     def _compose_output_path(self, which, output_filename):
