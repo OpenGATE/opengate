@@ -624,9 +624,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
             if data is not None:
                 items = self._collect_item_identifiers(item)
                 for i in items:
-                    data.write(
-                        self.get_output_path(which=which, item=i, **kwargs), item=i
-                    )
+                    data.write(self.get_output_path(which=which, item=i, **kwargs), item=i)
 
     def write_data_if_requested(self, which, item='all', **kwargs):
         items = [i for i in self._collect_item_identifiers(item) if self.get_write_to_disk(item=i) is True]
