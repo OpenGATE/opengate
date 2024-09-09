@@ -45,15 +45,6 @@ class ActorOutputBase(GateObject):
                 "required": True,
             },
         ),
-        "output_filename": (
-            "auto",
-            {
-                "doc": "Filename for the data represented by this actor output. "
-                "Relative paths and filenames are taken "
-                "relative to the global simulation output folder "
-                "set via the Simulation.output_dir option. ",
-            },
-        ),
         "data_write_config": (
             Box({0: Box({"output_filename": "auto", "write_to_disk": True})}),
             {
@@ -63,6 +54,15 @@ class ActorOutputBase(GateObject):
                 "and can be changed by the user afterwards. "
             },
         ),
+        # "output_filename": (
+        #     "auto",
+        #     {
+        #         "doc": "Filename for the data represented by this actor output. "
+        #         "Relative paths and filenames are taken "
+        #         "relative to the global simulation output folder "
+        #         "set via the Simulation.output_dir option. ",
+        #     },
+        # ),
         "keep_data_in_memory": (
             True,
             {
