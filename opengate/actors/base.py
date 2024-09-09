@@ -344,7 +344,7 @@ class ActorBase(GateObject):
     def _add_interface_to_user_output(
         self, interface_class, user_output_name, property_name, item=0
     ):
-        k = f"{user_output_name}_{item}"
+        k = interface_class._generate_key(user_output_name, item=item)
         self.interfaces_to_user_output[k] = interface_class(
             self, user_output_name, item
         )

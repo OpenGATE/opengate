@@ -31,6 +31,10 @@ class UserInterfaceToActorOutput:
         return_dict["belongs_to_actor"] = None
         return return_dict
 
+    @classmethod
+    def _generate_key(cls, user_output_name, **kwargs):
+        raise NotImplementedError("This is the base class. ")
+
     @property
     def _user_output(self):
         return self.belongs_to_actor.user_output[self.user_output_name]
@@ -68,6 +72,15 @@ class UserInterfaceToActorOutputUsingDataItemContainer(UserInterfaceToActorOutpu
 
     def __init__(self, *args, item=0, **kwargs):
         super().__init__(*args, kwargs_for_interface_calls={'item': item}, **kwargs)
+
+    @classmethod
+    def _generate_key(cls, user_output_name, **kwargs):
+        try:
+            item = kwargs.pop('item')
+        except KeyError:
+            raise GateImplementationError(f"Cannot generate interface for {user_output_name} "
+                                          f"because not kwarg 'item' was passed. ")
+        return f"{user_output_name}_{item}"
 
 
 class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemContainer):
