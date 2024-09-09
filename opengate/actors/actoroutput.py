@@ -229,9 +229,12 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         ),
     }
 
+    # this intermediate base class defines a class attribute data_container_class,
+    # but leaves it as None. Specific classes need to set it to the correct class or tuple of classes
     data_container_class = None
 
     def __init__(self, *args, **kwargs):
+        # consistence check if the base class calling this __init__ implements the mandatory class attribute
         if self.data_container_class is None:
             raise GateImplementationError(
                 f"No 'data_container_class' class attribute "
