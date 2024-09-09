@@ -98,6 +98,9 @@ def _setter_hook_active(self, active):
 
 
 class ActorOutputBase(GateObject):
+
+    _default_interface_class = None
+
     user_info_defaults = {
         "belongs_to": (
             None,
@@ -287,6 +290,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     # this intermediate base class defines a class attribute data_container_class,
     # but leaves it as None. Specific classes need to set it to the correct class or tuple of classes
     data_container_class = None
+    _default_interface_class = UserInterfaceToActorOutputUsingDataItemContainer
 
     def __init__(self, *args, **kwargs):
         # consistence check if the base class calling this __init__ implements the mandatory class attribute
@@ -604,6 +608,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
+
+    _default_interface_class = UserInterfaceToActorOutputImage
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
