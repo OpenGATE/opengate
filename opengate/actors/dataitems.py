@@ -84,13 +84,21 @@ class DataItem:
         """The base class implements merging as summation.
         Specific classes can override this, e.g. to merge mean values.
         """
-        return self + other
+        try:
+            return self + other
+        except ValueError as e:
+            raise NotImplementedError(f"method 'merge_with' probably not implemented for data item class {type(self)} "
+                                      f"because the following ValueError was encountered: \n{e}")
 
     def inplace_merge_with(self, other):
         """The base class implements merging as summation.
         Specific classes can override this, e.g. to merge mean values.
         """
-        self += other
+        try:
+            self += other
+        except ValueError as e:
+            raise NotImplementedError(f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
+                                      f"because the following ValueError was encountered: \n{e}")
         return self
 
     def write(self, *args, **kwargs):
