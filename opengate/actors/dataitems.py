@@ -348,7 +348,7 @@ class DataItemContainer(DataContainer):
         if default_data_item_config is None:
             default_data_item_config = Box(
                 [
-                    (i, Box({"output_filename": "auto", "write_to_disk": True}))
+                    (i, Box({"output_filename": "auto", "write_to_disk": True, "active": True}))
                     for i in range(len(cls._data_item_classes))
                 ]
             )
