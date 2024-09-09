@@ -208,18 +208,21 @@ class ActorOutputBase(GateObject):
         pass
         # self.initialize_output_filename()
 
-    # def initialize_output_filename(self):
-    #     for k, v in self.data_item_config.items():
-    #         if 'write_to_disk' in v and v['write_to_disk'] is True:
-    #             if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-    #                 if len(self.data_item_config) > 0:
-    #                     item_suffix = k
-    #                 else:
-    #                     item_suffix = ''
-    #                 v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
     def _generate_auto_output_filename(self, **kwargs):
         return f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
 
+    # def initialize_output_filename(self, **kwargs):
+    #     if self.get_output_filename(**kwargs) == 'auto':
+    #         self.set_output_filename(self._generate_auto_output_filename(), **kwargs)
+    #
+        # for k, v in self.data_item_config.items():
+        #     if 'write_to_disk' in v and v['write_to_disk'] is True:
+        #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
+        #             if len(self.data_item_config) > 0:
+        #                 item_suffix = k
+        #             else:
+        #                 item_suffix = ''
+        #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     def write_data_if_requested(self, *args, **kwargs):
         if self.need_to_write_data():
@@ -332,6 +335,19 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 v["output_filename"] = str(
                     insert_suffix_before_extension(self.output_filename, v["suffix"])
                 )
+
+    # def initialize_output_filename(self, **kwargs):
+    #     if self.get_output_filename(**kwargs) == 'auto':
+    #         self.set_output_filename(self._generate_auto_output_filename(), **kwargs)
+    #
+        # for k, v in self.data_item_config.items():
+        #     if 'write_to_disk' in v and v['write_to_disk'] is True:
+        #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
+        #             if len(self.data_item_config) > 0:
+        #                 item_suffix = k
+        #             else:
+        #                 item_suffix = ''
+        #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     # def get_output_path(self, **kwargs):
     #     item = kwargs.pop("item", "all")
