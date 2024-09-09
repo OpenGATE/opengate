@@ -217,6 +217,9 @@ class ActorOutputBase(GateObject):
     #                 else:
     #                     item_suffix = ''
     #                 v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
+    def _generate_auto_output_filename(self, **kwargs):
+        return f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
+
 
     def write_data_if_requested(self, *args, **kwargs):
         if self.need_to_write_data():
@@ -432,6 +435,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             else:
                 output_filename = f
         return output_filename
+
+    def _generate_auto_output_filename(self, item=0):
+        return insert_suffix_before_extension(super()._generate_auto_output_filename(), str(item))
 
     def get_output_path(
         self, which="merged", item=0, always_return_dict=False, **kwargs
