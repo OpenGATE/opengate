@@ -11,6 +11,7 @@ from .dataitems import (
     SingleItkImageWithVariance,
     QuotientItkImage,
     QuotientMeanItkImage,
+    merge_data
 )
 
 
@@ -477,12 +478,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             return return_dict
         else:
             return list(return_dict.values())[0]
-
-    def merge_data(self, list_of_data):
-        merged_data = list_of_data[0]
-        for d in list_of_data[1:]:
-            merged_data.inplace_merge_with(d)
-        return merged_data
 
     def merge_data_from_runs(self):
         self.merged_data = self.merge_data(list(self.data_per_run.values()))
