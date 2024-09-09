@@ -208,9 +208,6 @@ class ArrayDataItem(ArithmeticDataItem):
     def set_data(self, data):
         super().set_data(np.asarray(data))
 
-    def write(self, path):
-        np.savetxt(path, self.data)
-
 
 class ScalarDataItem(ArithmeticDataItem):
 
