@@ -45,15 +45,6 @@ class ActorOutputBase(GateObject):
                 "required": True,
             },
         ),
-        "data_write_config": (
-            Box({0: Box({"output_filename": "auto", "write_to_disk": True})}),
-            {
-                "doc": "Dictionary (Box) to specify which"
-                "should be written to disk and how. "
-                "The default is picked up from the data container class during instantiation, "
-                "and can be changed by the user afterwards. "
-            },
-        ),
         # "output_filename": (
         #     "auto",
         #     {
@@ -112,13 +103,13 @@ class ActorOutputBase(GateObject):
 
     # @property
     # def write_to_disk(self):
-    #     d = Box([(k, v["write_to_disk"]) for k, v in self.data_write_config.items()])
+    #     d = Box([(k, v["write_to_disk"]) for k, v in self.data_item_config.items()])
     #     if len(d) > 1:
     #         return d
     #     elif len(d) == 1:
     #         return list(d.values())[0]
     #     else:
-    #         fatal("Nothing defined in data_write_config. ")
+    #         fatal("Nothing defined in data_item_config. ")
     #
     # @write_to_disk.setter
     # def write_to_disk(self, value):
@@ -193,10 +184,10 @@ class ActorOutputBase(GateObject):
         # self.initialize_output_filename()
 
     # def initialize_output_filename(self):
-    #     for k, v in self.data_write_config.items():
+    #     for k, v in self.data_item_config.items():
     #         if 'write_to_disk' in v and v['write_to_disk'] is True:
     #             if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-    #                 if len(self.data_write_config) > 0:
+    #                 if len(self.data_item_config) > 0:
     #                     item_suffix = k
     #                 else:
     #                     item_suffix = ''
@@ -329,6 +320,15 @@ class InterfaceToActorOutputImage(InterfaceToActorOutput):
 
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
     user_info_defaults = {
+        "data_item_config": (
+            Box({0: Box({"output_filename": "auto", "write_to_disk": True, "active": True})}),
+            {
+                "doc": "Dictionary (Box) to specify which"
+                       "should be written to disk and how. "
+                       "The default is picked up from the data container class during instantiation, "
+                       "and can be changed by the user afterwards. "
+            },
+        ),
         "merge_method": (
             "sum",
             {
@@ -366,18 +366,18 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         #             f"Unknown data item class {data_container_class}. "
         #             f"Available classes are: {list(available_data_container_classes.keys())}"
         #         )
-        data_write_config = kwargs.pop("data_write_config", None)
+        data_item_config = kwargs.pop("data_item_config", None)
         super().__init__(*args, **kwargs)
-        if data_write_config is None:
+        if data_item_config is None:
             # get the default write config from the container class
-            self.data_write_config = (
-                self.data_container_class.get_default_data_write_config()
+            self.data_item_config = (
+                self.data_container_class.get_default_data_item_config()
             )
         else:
             # set the parameters provided by the user in kwargs
-            self.data_write_config = data_write_config
-        # temporary fix to guarantee there is an 'output_filename' in data_write_config
-        for k, v in self.data_write_config.items():
+            self.data_item_config = data_item_config
+        # temporary fix to guarantee there is an 'output_filename' in data_item_config
+        for k, v in self.data_item_config.items():
             if "output_filename" not in v:
                 v["output_filename"] = str(
                     insert_suffix_before_extension(self.output_filename, v["suffix"])
@@ -397,7 +397,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     #         return Box(
     #             [
     #                 (k, str(self.compose_output_path_to_item(self.output_filename, k)))
-    #                 for k in self.data_write_config
+    #                 for k in self.data_item_config
     #             ]
     #         )
     #     else:
@@ -415,13 +415,13 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     #     #     return actor_output_path
 
     # def _get_suffix_for_item(self, identifier):
-    #     if identifier in self.data_write_config:
-    #         return self.data_write_config[identifier]["suffix"]
+    #     if identifier in self.data_item_config:
+    #         return self.data_item_config[identifier]["suffix"]
     #     else:
     #         fatal(
     #             f"No data item found with identifier {identifier} "
     #             f"in container class {self.data_container_class.__name__}. "
-    #             f"Valid identifiers are: {list(self.data_write_config.keys())}."
+    #             f"Valid identifiers are: {list(self.data_item_config.keys())}."
     #         )
 
     def merge_data(self, list_of_data):

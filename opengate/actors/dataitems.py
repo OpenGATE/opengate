@@ -334,32 +334,32 @@ class DataItemContainer(DataContainer):
             self.set_data(*data)
 
     @classmethod
-    def get_default_data_write_config(cls):
-        default_data_write_config = None
+    def get_default_data_item_config(cls):
+        default_data_item_config = None
         # try to pick up data write config defined in the specific class or base classes
         for c in cls.mro():
             try:
-                default_data_write_config = c.__dict__["default_data_write_config"]
+                default_data_item_config = c.__dict__["default_data_item_config"]
                 break
             except KeyError:
                 continue
         # If none of the classes in the inheritance chain specifies data item,
         # we fill up a dictionary with the default configuration
-        if default_data_write_config is None:
-            default_data_write_config = Box(
+        if default_data_item_config is None:
+            default_data_item_config = Box(
                 [
                     (i, Box({"output_filename": "auto", "write_to_disk": True}))
                     for i in range(len(cls._data_item_classes))
                 ]
             )
-        return default_data_write_config
+        return default_data_item_config
 
     # the actual write config needs to be fetched from the actor output instance
     # which handles this data item container
     @property
-    def data_write_config(self):
+    def data_item_config(self):
         try:
-            return self.belongs_to.data_write_config
+            return self.belongs_to.data_item_config
         except AttributeError:
             raise GateImplementationError("belongs_to unknown")
 
@@ -513,7 +513,7 @@ class DataItemContainer(DataContainer):
         # if item is None:
         #     items_to_write = [
         #         k
-        #         for k, v in self.data_write_config.items()
+        #         for k, v in self.data_item_config.items()
         #         if v["write_to_disk"] is True
         #     ]
         # else:
@@ -627,7 +627,7 @@ class SingleItkImageWithVariance(DataItemContainer):
         ItkImageDataItem,
     )
 
-    default_data_write_config = Box(
+    default_data_item_config = Box(
         {
             0: Box({"output_filename": "auto", "write_to_disk": True}),
             "squared": Box({"output_filename": "auto", "write_to_disk": False}),
@@ -695,7 +695,7 @@ class QuotientItkImage(DataItemContainer):
 
     # Specify which items should be written to disk and how
     # Important: define this at the class level, NOT in the __init__ method
-    default_data_write_config = Box(
+    default_data_item_config = Box(
         {
             "numerator": Box({"output_filename": "auto", "write_to_disk": True}),
             "denominator": Box({"output_filename": "auto", "write_to_disk": True}),
