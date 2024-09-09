@@ -23,8 +23,8 @@ from .actoroutput import (
     ActorOutputSingleMeanImage,
     ActorOutputQuotientMeanImage,
     ActorOutputSingleImageWithVariance,
-    InterfaceToActorOutput,
-    InterfaceToActorOutputImage,
+    UserInterfaceToActorOutput,
+    UserInterfaceToActorOutputImage,
 )
 
 
@@ -475,10 +475,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # create an interface to item 0 of user output "edep_with_variance"
         # and make it available via a property 'edep' in this actor
         self._add_interface_to_user_output(
-            InterfaceToActorOutputImage, "edep_with_variance", "edep", 0
+            UserInterfaceToActorOutputImage, "edep_with_variance", "edep", 0
         )
         self._add_interface_to_user_output(
-            InterfaceToActorOutputImage, "edep_with_variance", "edep_uncertainty", 1
+            UserInterfaceToActorOutputImage, "edep_with_variance", "edep_uncertainty", 1
         )
 
         self._add_user_output(ActorOutputSingleMeanImage, "edep")
