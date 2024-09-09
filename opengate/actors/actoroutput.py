@@ -78,7 +78,7 @@ class ActorOutputBase(GateObject):
         ),
     }
 
-    def __init__(self, *args, active=True, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.data_per_run = {}  # holds the data per run in memory
@@ -89,7 +89,6 @@ class ActorOutputBase(GateObject):
         # This is the expected behavior in most digitizers
         # In the DoseActor, on the other hand, users might not want to calculate uncertainty
         self.__can_be_deactivated__ = False
-        # self._active = active
 
     def __len__(self):
         return len(self.data_per_run)
