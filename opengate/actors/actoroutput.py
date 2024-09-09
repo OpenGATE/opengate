@@ -313,6 +313,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     # override methods:
     def set_write_to_disk(self, value, item=0):
         if item == "all":
+            # do a recursion of all items are concerned
             for k in self.data_item_config.keys():
                 self.set_write_to_disk(value, k)
         else:
