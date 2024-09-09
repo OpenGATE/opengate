@@ -323,11 +323,8 @@ class ActorBase(GateObject):
                 "Implementation error: Only one ROOT output per actor supported. "
             )
 
-        # extract the user info "active" if passed via kwargs
-        try:
-            active = kwargs.pop("active")
-        except KeyError:
-            active = None
+        # # extract the user info "active" if passed via kwargs
+        # active = kwargs.pop("active", None)
 
         self.user_output[name] = actor_output_class(
             name=name,
@@ -335,12 +332,12 @@ class ActorBase(GateObject):
             belongs_to=self,
             **kwargs,
         )
-        # specify whether this instance of actor output can be deactivated
-        # (relevant for the setter hook of the "active" parameter)
-        self.user_output[name].__can_be_deactivated__ = bool(can_be_deactivated)
-        # Now the setter of active can be used
-        if active is not None:
-            self.user_output[name].active = active
+        # # specify whether this instance of actor output can be deactivated
+        # # (relevant for the setter hook of the "active" parameter)
+        # self.user_output[name].__can_be_deactivated__ = bool(can_be_deactivated)
+        # # Now the setter of active can be used
+        # if active is not None:
+        #     self.user_output[name].active = active
 
         return self.user_output[name]
 
