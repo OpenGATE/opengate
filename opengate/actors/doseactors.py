@@ -263,11 +263,12 @@ class VoxelDepositActor(ActorBase):
     def push_to_cpp_image(self, output_name, run_index, *cpp_image, copy_data=True):
         self._assert_output_exists(output_name)
         for i, cppi in enumerate(cpp_image):
-            update_image_py_to_cpp(
-                self.user_output[output_name].get_data(run_index, item=i),
-                cppi,
-                copy_data,
-            )
+            if self.user_output[output_name].get_active(item=i):
+                update_image_py_to_cpp(
+                    self.user_output[output_name].get_data(run_index, item=i),
+                    cppi,
+                    copy_data,
+                )
 
     def EndOfRunActionMasterThread(self, run_index):
         # inform actor output that this run is over
