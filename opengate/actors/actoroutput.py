@@ -18,7 +18,6 @@ from .dataitems import (
 class UserInterfaceToActorOutput:
 
     def __init__(self, belongs_to_actor, user_output_name, kwargs_for_interface_calls=None):
-        print(f"In ActorOutputShortCut: {repr(user_output_name)}")
         self.user_output_name = user_output_name
         self.belongs_to_actor = belongs_to_actor
         if kwargs_for_interface_calls is None:
