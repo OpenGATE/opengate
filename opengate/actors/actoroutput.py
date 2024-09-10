@@ -73,13 +73,11 @@ class UserInterfaceToActorOutputUsingDataItemContainer(UserInterfaceToActorOutpu
         super().__init__(*args, kwargs_for_interface_calls={'item': item}, **kwargs)
 
     @classmethod
-    def _generate_key(cls, user_output_name, **kwargs):
-        try:
-            item = kwargs.pop('item')
-        except KeyError:
-            raise GateImplementationError(f"Cannot generate interface for {user_output_name} "
-                                          f"because not kwarg 'item' was passed. ")
-        return f"{user_output_name}_{item}"
+    def _generate_key(cls, user_output_name, item=None, **kwargs):
+        if item is None:
+            return user_output_name
+        else:
+            return f"{user_output_name}_{item}"
 
 
 class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemContainer):
