@@ -273,10 +273,11 @@ class ActorBase(GateObject):
         #     "get_output_path_for_item_string", self.get_output_path_for_item_string
         # )
 
-        if len(self.user_output) > 0 and all(
-            [v.active is False for v in self.user_output.values()]
-        ):
-            warning(f"The actor {self.name} has no active output. ")
+        # FIXME: needs to be updated to new actor output API
+        # if len(self.user_output) > 0 and all(
+        #     [v.active is False for v in self.user_output.values()]
+        # ):
+        #     warning(f"The actor {self.name} has no active output. ")
 
         for k, v in self.user_output.items():
             v.initialize()
