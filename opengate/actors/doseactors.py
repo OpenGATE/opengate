@@ -248,13 +248,16 @@ class VoxelDepositActor(ActorBase):
         self._assert_output_exists(output_name)
         data = []
         for i, cppi in enumerate(cpp_image):
-            py_image = get_py_image_from_cpp_image(cppi)
-            # There is an empty image already which has served as storage for meta info like size and spacing.
-            # So we get this info back
-            py_image.CopyInformation(
-                self.user_output[output_name].get_data(run_index, i)
-            )
-            data.append(py_image)
+            if self.user_output[output_name].get_active(item=i):
+                py_image = get_py_image_from_cpp_image(cppi, view=False)
+                # There is an empty image already which has served as storage for meta info like size and spacing.
+                # So we get this info back
+                # py_image.CopyInformation(
+                #     self.user_output[output_name].get_data(run_index, item=i)
+                # )
+                data.append(py_image)
+            else:
+                data.append(None)
         self.user_output[output_name].store_data(run_index, *data)
 
     def push_to_cpp_image(self, output_name, run_index, *cpp_image, copy_data=True):
