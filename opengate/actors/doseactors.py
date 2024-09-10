@@ -193,48 +193,6 @@ class VoxelDepositActor(ActorBase):
                 f"Illegal parameter 'output_coordinate_system': {self.output_coordinate_system}"
             )
 
-    # def update_output_origin(self, output_name, run_index):
-    #     # If attached to a voxelized volume, we may want to use its coord system.
-    #     # So, we compute in advance what will be the final origin of the dose map
-    #     self._assert_output_exists(output_name)
-    #
-    #     output_origin = self.img_origin_during_run
-    #
-    #     vol_type = self.simulation.volume_manager.get_volume(
-    #         self.attached_to
-    #     ).volume_type
-    #
-    #     if self.output_origin in ["image", "img_coord_system", "image_coord_system"]:
-    #         if vol_type == "ImageVolume":
-    #             # Translate the output dose map so that its center correspond to the image center.
-    #             # The origin is thus the center of the first voxel.
-    #             volume_image_info = get_info_from_image(
-    #                 self.attached_to_volume.itk_image
-    #             )
-    #             self._assert_output_exists(output_name)
-    #             output_image_info = self.user_output[output_name].data_per_run[
-    #                 run_index
-    #             ]
-    #             output_origin = get_origin_wrt_images_g4_position(
-    #                 volume_image_info, output_image_info, self.translation
-    #             )
-    #         else:
-    #             fatal(
-    #                 f"{self.actor_type} '{self.name}' has "
-    #                 f"the user input parameter 'output_origin' set to {self.output_origin}, "
-    #                 f"but it is not attached to an ImageVolume. Instead, it is attached to "
-    #                 f"volume '{self.attached_to_volume.name}' of type '{vol_type}'). "
-    #             )
-    #     # take the user-defined output origin
-    #     elif self.output_origin is not None:
-    #         output_origin = self.output_origin
-    #
-    #     self.user_output[output_name].set_image_properties(
-    #         run_index, origin=output_origin
-    #     )
-    #
-    #     return output_origin
-
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         self._assert_output_exists(output_name)
         # self.user_output[output_name].size = self.size
@@ -242,7 +200,6 @@ class VoxelDepositActor(ActorBase):
         self.user_output[output_name].create_empty_image(
             run_index, self.size, self.spacing, origin=self.translation, **kwargs
         )
-        # self.align_output_with_physical_volume(output_name, run_index)
 
     def fetch_from_cpp_image(self, output_name, run_index, *cpp_image):
         self._assert_output_exists(output_name)
@@ -250,6 +207,7 @@ class VoxelDepositActor(ActorBase):
         for i, cppi in enumerate(cpp_image):
             if self.user_output[output_name].get_active(item=i):
                 py_image = get_py_image_from_cpp_image(cppi, view=False)
+                # FIXME: not needed, I think, because get_py_image_from_cpp_image copies spacing and origin
                 # There is an empty image already which has served as storage for meta info like size and spacing.
                 # So we get this info back
                 # py_image.CopyInformation(
@@ -302,10 +260,6 @@ def compute_std_from_sample(
                 None,
             )
         )
-        # unc = np.ma.masked_array(
-        #     unc, unc < 0
-        # )  # this function leaves unc<0 values untouched! what do we do with < 0 values?
-        # unc = np.ma.sqrt(unc)
         if correct_bias:
             # Standard error is biased (to underestimate the error);
             # this option allows to correct for the bias - assuming normal distribution.
@@ -495,17 +449,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             "edep_uncertainty", item='uncertainty'
         )
 
-        # self._add_user_output(ActorOutputSingleMeanImage, "edep", automatically_generate_interface=False)
-        # self._add_user_output(
-        #     ActorOutputSingleMeanImage,
-        #     "edep_uncertainty",
-        #     can_be_deactivated=True, automatically_generate_interface=False
-        # )
-
         self._add_user_output(
             ActorOutputSingleMeanImage, "dose", can_be_deactivated=True, automatically_generate_interface=True
         )
         self.user_output.dose.set_active(False)
+
         self._add_user_output(
             ActorOutputSingleMeanImage,
             "dose_uncertainty",
@@ -513,10 +461,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             automatically_generate_interface=True
         )
         self.user_output.dose_uncertainty.set_active(False)
-        # self._add_user_output(
-        #     ActorOutputSingleMeanImage, "square", can_be_deactivated=True, automatically_generate_interface=True
-        # )
+
         self._add_user_output(ActorOutputSingleMeanImage, "density", automatically_generate_interface=True)
+
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -531,54 +478,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "SteppingAction",
             }
         )
-
-    # @property
-    # def edep(self):
-    #     return self.interfaces_to_user_output["edep_with_variance_0"]
-    #
-    # @property
-    # def edep_uncertainty(self):
-    #     return self.interfaces_to_user_output["edep_with_variance_1"]
-
-    # @property
-    # def dose(self):
-    #     return self.user_output.dose
-
-    # @property
-    # def edep_uncertainty(self):
-    #     return self.user_output.edep_uncertainty
-
-    # @property
-    # def dose_uncertainty(self):
-    #     return self.user_output.dose_uncertainty
-
-    # @property
-    # def square(self):
-    #     return self.user_output.square
-
-    # @property
-    # def density(self):
-    #     return self.user_output.density
-
-    # @property
-    # def edep_image(self):
-    #     if self.edep_with_uncertainty.merged_data is not None:
-    #         return self.edep_with_uncertainty.merged_data.data[0].image
-
-    # @property
-    # def edep_squared_image(self):
-    #     if self.edep_with_uncertainty.merged_data is not None:
-    #         return self.edep_with_uncertainty.merged_data.data[1].image
-
-    # @property
-    # def edep_variance_image(self):
-    #     if self.edep_with_uncertainty.merged_data is not None:
-    #         return self.edep_with_uncertainty.merged_data.variance.image
-
-    # @property
-    # def edep_std_image(self):
-    #     if self.edep_with_uncertainty.merged_data is not None:
-    #         return self.edep_with_uncertainty.merged_data.std.image
 
     def compute_dose_from_edep_img(self, input_image, density_image=None):
         """
@@ -665,21 +564,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.push_to_cpp_image("edep_with_uncertainty", run_index,
                                self.cpp_edep_image, self.cpp_square_image)
 
-        edep_image = self.user_output.edep_with_uncertainty.get_data(run_index, item=0)
-
-        # self.prepare_output_for_run("edep", run_index)
-        # self.push_to_cpp_image("edep", run_index, self.cpp_edep_image)
-
         if self.user_output.density.get_active():
             self.prepare_output_for_run("density", run_index)
             self.push_to_cpp_image("density", run_index, self.cpp_density_image)
-
-        # if self.square.active:
-        #     self.prepare_output_for_run("square", run_index)
-        #     self.push_to_cpp_image("square", run_index, self.cpp_square_image)
-
-        # if self.edep_uncertainty.active:
-        #     self.prepare_output_for_run("edep_uncertainty", run_index)
 
         if self.user_output.dose_uncertainty.get_active():
             self.prepare_output_for_run("dose_uncertainty", run_index)
@@ -687,33 +574,12 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         g4.GateDoseActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-        # edep
-        # self.fetch_from_cpp_image("edep", run_index, self.cpp_edep_image)
-        # self._update_output_coordinate_system("edep", run_index)
-        # self.user_output.edep.store_meta_data(
-        #     run_index, number_of_samples=self.NbOfEvent
-        # )
-
-        # # squared edep
-        # if self.user_output.square.get_active():
-        #     self.fetch_from_cpp_image("square", run_index, self.cpp_square_image)
-        #     self._update_output_coordinate_system("square", run_index)
-        #     self.user_output.square.store_meta_data(
-        #         run_index, number_of_samples=self.NbOfEvent
-        #     )
-
-
-        # if self.user_output.edep_with_uncertainty.get_active(item=1):
         self.fetch_from_cpp_image(
             "edep_with_uncertainty",
             run_index,
             self.cpp_edep_image,
             self.cpp_square_image,
         )
-        # else:
-        #     self.fetch_from_cpp_image(
-        #         "edep_with_uncertainty", run_index, self.cpp_edep_image
-        #     )
         self._update_output_coordinate_system("edep_with_uncertainty", run_index)
         self.user_output.edep_with_uncertainty.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
@@ -745,35 +611,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             self.user_output.dose.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-
-        # # uncertainty active implies square active
-        # if self.user_output.edep_uncertainty.active:
-        #     n = self.NbOfEvent
-        #
-        #     edep_arr = itk.array_view_from_image(
-        #         self.user_output.edep.get_data(run_index)
-        #     )
-        #     square_arr = itk.array_view_from_image(
-        #         self.user_output.square.get_data(run_index)
-        #     )
-        #
-        #     edep_uncertainty_image = itk_image_from_array(
-        #         compute_std_from_sample(
-        #             n,
-        #             edep_arr,
-        #             square_arr,
-        #             correct_bias=False,  # used to be: correct_bias=self.ste_of_mean_unbiased (now inactive)
-        #         )
-        #     )
-        #     edep_uncertainty_image.CopyInformation(
-        #         self.user_output.edep.get_data(run_index)
-        #     )
-        #     self.user_output.edep_uncertainty.store_data(
-        #         run_index, edep_uncertainty_image
-        #     )
-        #     self.user_output.edep_uncertainty.store_meta_data(
-        #         run_index, number_of_samples=self.NbOfEvent
-        #     )
 
         if self.user_output.dose_uncertainty.get_active() is True:
             # scale by density
