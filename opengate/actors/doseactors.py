@@ -273,7 +273,7 @@ class VoxelDepositActor(ActorBase):
     def EndOfRunActionMasterThread(self, run_index):
         # inform actor output that this run is over
         for u in self.user_output.values():
-            if u.active:
+            if u.get_active(item='all'):
                 u.end_of_run(run_index)
         return 0
 
