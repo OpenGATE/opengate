@@ -464,15 +464,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
 
     # override methods:
     def set_write_to_disk(self, value, item=0):
-        if item == "all":
-            # do a recursion of all items are concerned
-            for k in self.data_item_config.keys():
-                self.set_write_to_disk(value, k)
-        else:
-            try:
-                self.data_item_config[item]["write_to_disk"] = bool(value)
-            except KeyError:
-                self._fatal_unknown_item(item)
+        items = self._collect_item_identifiers(item)
+        for i in items:
+            self.data_item_config[i]["write_to_disk"] = bool(value)
 
     def get_write_to_disk(self, item=0):
         if item == "all":
