@@ -422,21 +422,20 @@ class DataItemContainer(DataContainer):
         except ValueError:
             return getattr(self, str(item), None)
 
-    def get_data(self, item=None):
-        if item is None:
-            if self._tuple_length > 1:
-                return tuple([d.data for d in self.data])
-            else:
-                return self.data[0].data
-        else:
+    def get_data(self, item=0):
+        try:
+            item_index = int(item)
             try:
-                item_index = int(item)
-                try:
-                    return self.data[item_index].data
-                except IndexError:
-                    fatal(f"No data for {item} found. ")
-            except ValueError:
-                fatal(f"Illegal keyword argument 'item' {item}.")
+                return self.data[item_index].data
+            except IndexError:
+                pass
+                # fatal(f"No data found for index {item_index}. ")
+        except ValueError:
+            try:
+                return getattr(self, item).data
+            except AttributeError:
+                pass
+        fatal(f"No data found for item {item}. ")
 
     @property
     def data_is_none(self):
