@@ -635,10 +635,11 @@ class SingleItkImageWithVariance(DataItemContainer):
     # the results will be written to disk (probably the expected default behavior in most cases)
     default_data_item_config = Box(
         {
-            0: Box({"output_filename": "auto", "write_to_disk": True}),
-            "squared": Box({"output_filename": "auto", "write_to_disk": False}),
-            "variance": Box({"output_filename": "auto", "write_to_disk": False}),
-            "std": Box({"output_filename": "auto", "write_to_disk": True}),
+            0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            1: Box({"output_filename": "auto", "write_to_disk": False, "active": False}),
+            "variance": Box({"output_filename": "auto", "write_to_disk": False, "active": False}),
+            "std": Box({"output_filename": "auto", "write_to_disk": False, "active": False}),
+            "uncertainty": Box({"output_filename": "auto", "write_to_disk": True, "active": False}),
         }
     )
 
