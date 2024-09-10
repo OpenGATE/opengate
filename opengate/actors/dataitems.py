@@ -681,10 +681,6 @@ class SingleItkImageWithVariance(DataItemContainer):
         return self._data_item_classes[0](data=var_image)
 
     @property
-    def squared(self):
-        return self.data[1]
-
-    @property
     def variance(self):
         return self.get_variance_or_uncertainty("variance")
 
