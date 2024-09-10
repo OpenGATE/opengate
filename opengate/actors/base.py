@@ -333,6 +333,16 @@ class ActorBase(GateObject):
             belongs_to=self,
             **kwargs,
         )
+
+        if automatically_generate_interface is True:
+            # try:
+            self._add_interface_to_user_output(actor_output_class.get_default_interface_class(), name, name)
+            # except GateImplementationError as e:
+            #     raise GateImplementationError(f"A user interface cannot automatically be added for user output {name}. "
+            #                                   f"A possibly reason is that the actor output "
+            #                                   f"handles data with multiple items. "
+            #                                   f"The developer needs to set automatically_generated_interface=False "
+            #                                   f"and create the interface manually via _add_interface_to_user_output.")
         # # specify whether this instance of actor output can be deactivated
         # # (relevant for the setter hook of the "active" parameter)
         # self.user_output[name].__can_be_deactivated__ = bool(can_be_deactivated)
