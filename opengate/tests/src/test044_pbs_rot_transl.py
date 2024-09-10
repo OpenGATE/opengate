@@ -121,8 +121,7 @@ if __name__ == "__main__":
     print(sim.source_manager.dump_sources())
 
     # create output dir, if it doesn't exist
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()

@@ -218,8 +218,7 @@ if __name__ == "__main__":
     # sim.set_user_limits("phantom_a_2","max_step_size",1,['proton'])
 
     # create output dir, if it doesn't exist
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()

@@ -134,8 +134,7 @@ if __name__ == "__main__":
     # start simulation
 
     # create output dir, if it doesn't exist
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     sim.run()
     output = sim.output

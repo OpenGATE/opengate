@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import os
 import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
-from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
@@ -120,8 +119,7 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     # create output dir, if it doesn't exist
-    if not os.path.isdir(output_path):
-        os.mkdir(output_path)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()

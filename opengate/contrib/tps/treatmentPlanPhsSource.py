@@ -1,16 +1,13 @@
-import numpy as np
 from scipy.spatial.transform import Rotation
-import opengate as gate
-
+import opengate_core
 from opengate.contrib.tps.ionbeamtherapy import *
-
 import os
-
-# TreatmentPlanSource
 
 
 class TreatmentPlanPhsSource(TreatmentPlanSource):
+
     def __init__(self, name, sim):
+        super().__init__(name, sim)
         self.name = name
         self.rotation = Rotation.identity()
         self.translation = [0, 0, 0]
@@ -24,6 +21,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         self.direction_key_x = "PreDirectionLocal_X"
         self.direction_key_y = "PreDirectionLocal_Y"
         self.direction_key_z = "PreDirectionLocal_Z"
+        self.rotate_PhS_Source = Rotation.identity()
         self.energy_key = "KineticEnergy"
         self.weight_key = "Weight"
         self.PDGCode_key = "PDGCode"
@@ -38,6 +36,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
         # SMY to Isocenter distance
         self.distance_stearmag_to_isocenter_y = None
         self.batch_size = None
+        self.entry_start = None
 
     def __del__(self):
         pass
@@ -120,14 +119,36 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
             else:
                 source.batch_size = 30000
 
+            # if not set, initialize the entry_start to 0 or to a list for multithreading
+            if self.entry_start is None:
+                if not opengate_core.IsMultithreadedApplication():
+                    self.entry_start = 0
+                else:
+                    # create a entry_start array with the correct number of start entries
+                    # all entries are spaced by the number of particles/thread
+                    n_threads = self.simulation.user_info.number_of_threads
+                    # ui.entry_start = [0] * n_threads
+                    step = np.ceil(nspot / n_threads) + 1  # Specify the increment value
+                    self.entry_start = [i * step for i in range(n_threads)]
+                print(
+                    "INFO: entry_start not set. Using default values: ",
+                    self.entry_start,
+                )
+
+            source.entry_start = self.entry_start
+
             # POSITION:
             source.translate_position = True
             source.position.translation = self._get_pbs_position(spot)
-            print("source.position.translation: ", source.position.translation)
+            # print("source.position.translation: ", source.position.translation)
 
             # ROTATION:
             source.rotate_direction = True
-            source.position.rotation = self._get_pbs_rotation(spot)
+            # # use pbs rotation plus a potential rotation of the original phs
+            # # may be necessary in case the original phs is not going into +z direction
+            source.position.rotation = (
+                self._get_pbs_rotation(spot) @ self.rotate_PhS_Source.as_matrix()
+            )
 
             # add weight
             source.n = nspot

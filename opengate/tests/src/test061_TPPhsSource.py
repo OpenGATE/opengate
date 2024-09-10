@@ -1,11 +1,9 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import test061_TPPhsSource_helpers as t
 import opengate as gate
-from scipy.spatial.transform import Rotation
 from opengate.tests import utility
-
-from opengate.contrib.tps.treatmentPlanPhsSource import TreatmentPlanPhsSource
-from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
-
 
 paths = utility.get_default_test_paths(__file__, "test061_TPPhsSource")
 paths.output_ref = paths.output_ref / "test061_ref"
@@ -32,7 +30,7 @@ def main():
     # )
     print("Testing TPPhS source rotations")
 
-    t.test_source_rotation_A(
+    t.test_source_rotation_a(
         plan_file_name=ref_path / "PlanSpot.txt",
         phs_list_file_name="PhsList.txt",
         phs_folder_name=ref_path,

@@ -3,7 +3,6 @@ from box import Box
 import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate_core
-from ..utility import g4_units
 from .generic import GenericSource, SourceBase
 from ..contrib.tps.ionbeamtherapy import (
     get_spots_from_beamset_beam,
