@@ -688,6 +688,10 @@ class SingleItkImageWithVariance(DataItemContainer):
     def std(self):
         return self.get_variance_or_uncertainty("std")
 
+    @property
+    def uncertainty(self):
+        return self.get_variance_or_uncertainty("std") / self.data[0]
+
 
 class QuotientItkImage(DataItemContainer):
 
