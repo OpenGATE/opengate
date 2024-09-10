@@ -630,6 +630,9 @@ class SingleItkImageWithVariance(DataItemContainer):
         ItkImageDataItem,
     )
 
+    # Only the linear quantity is active by default
+    # the uncertainty quantity has write_to_disk=True by default so whenever it is activated,
+    # the results will be written to disk (probably the expected default behavior in most cases)
     default_data_item_config = Box(
         {
             0: Box({"output_filename": "auto", "write_to_disk": True}),
