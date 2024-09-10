@@ -310,7 +310,7 @@ class ActorBase(GateObject):
             )
 
     def _add_user_output(
-        self, actor_output_class, name, can_be_deactivated=False, automatically_generated_interface=True, **kwargs
+        self, actor_output_class, name, can_be_deactivated=False, automatically_generate_interface=False, **kwargs
     ):
         """Method to be called internally (not by user) in the specific actor class implementations."""
 
