@@ -87,8 +87,10 @@ class DataItem:
         try:
             return self + other
         except ValueError as e:
-            raise NotImplementedError(f"method 'merge_with' probably not implemented for data item class {type(self)} "
-                                      f"because the following ValueError was encountered: \n{e}")
+            raise NotImplementedError(
+                f"method 'merge_with' probably not implemented for data item class {type(self)} "
+                f"because the following ValueError was encountered: \n{e}"
+            )
 
     def inplace_merge_with(self, other):
         """The base class implements merging as summation.
@@ -97,8 +99,10 @@ class DataItem:
         try:
             self += other
         except ValueError as e:
-            raise NotImplementedError(f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
-                                      f"because the following ValueError was encountered: \n{e}")
+            raise NotImplementedError(
+                f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
+                f"because the following ValueError was encountered: \n{e}"
+            )
         return self
 
     def write(self, *args, **kwargs):
@@ -353,7 +357,16 @@ class DataItemContainer(DataContainer):
         if default_data_item_config is None:
             default_data_item_config = Box(
                 [
-                    (i, Box({"output_filename": "auto", "write_to_disk": True, "active": True}))
+                    (
+                        i,
+                        Box(
+                            {
+                                "output_filename": "auto",
+                                "write_to_disk": True,
+                                "active": True,
+                            }
+                        ),
+                    )
                     for i in range(len(cls._data_item_classes))
                 ]
             )
@@ -636,10 +649,18 @@ class SingleItkImageWithVariance(DataItemContainer):
     default_data_item_config = Box(
         {
             0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            1: Box({"output_filename": "auto", "write_to_disk": False, "active": False}),
-            "variance": Box({"output_filename": "auto", "write_to_disk": False, "active": False}),
-            "std": Box({"output_filename": "auto", "write_to_disk": False, "active": False}),
-            "uncertainty": Box({"output_filename": "auto", "write_to_disk": True, "active": False}),
+            1: Box(
+                {"output_filename": "auto", "write_to_disk": False, "active": False}
+            ),
+            "variance": Box(
+                {"output_filename": "auto", "write_to_disk": False, "active": False}
+            ),
+            "std": Box(
+                {"output_filename": "auto", "write_to_disk": False, "active": False}
+            ),
+            "uncertainty": Box(
+                {"output_filename": "auto", "write_to_disk": True, "active": False}
+            ),
         }
     )
 

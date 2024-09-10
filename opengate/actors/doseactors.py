@@ -231,14 +231,14 @@ class VoxelDepositActor(ActorBase):
     def EndOfRunActionMasterThread(self, run_index):
         # inform actor output that this run is over
         for u in self.user_output.values():
-            if u.get_active(item='all'):
+            if u.get_active(item="all"):
                 u.end_of_run(run_index)
         return 0
 
     def EndSimulationAction(self):
         # inform actor output that this simulation is over and write data
         for u in self.user_output.values():
-            if u.get_active(item='all'):
+            if u.get_active(item="all"):
                 u.end_of_simulation()
                 # u.write_data_if_requested("all")
 
@@ -430,8 +430,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         # This creates a user output with two components: 0=edep, 1=edep_squared
         # additionally, it also provides variance, std, and uncertainty via dynamic properties
-        self._add_user_output(ActorOutputSingleImageWithVariance, "edep_with_uncertainty",
-                              automatically_generate_interface=False)
+        self._add_user_output(
+            ActorOutputSingleImageWithVariance,
+            "edep_with_uncertainty",
+            automatically_generate_interface=False,
+        )
         # create an interface to item 0 of user output "edep_with_uncertainty"
         # and make it available via a property 'edep' in this actor
         self._add_interface_to_user_output(
@@ -445,12 +448,17 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # create an interface to item 'uncertainty' of user output "edep_with_uncertainty"
         # and make it available via a property 'edep_uncertainty' in this actor
         self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "edep_with_uncertainty",
-            "edep_uncertainty", item='uncertainty'
+            UserInterfaceToActorOutputImage,
+            "edep_with_uncertainty",
+            "edep_uncertainty",
+            item="uncertainty",
         )
 
         self._add_user_output(
-            ActorOutputSingleMeanImage, "dose", can_be_deactivated=True, automatically_generate_interface=True
+            ActorOutputSingleMeanImage,
+            "dose",
+            can_be_deactivated=True,
+            automatically_generate_interface=True,
         )
         self.user_output.dose.set_active(False)
 
@@ -458,11 +466,13 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             ActorOutputSingleMeanImage,
             "dose_uncertainty",
             can_be_deactivated=True,
-            automatically_generate_interface=True
+            automatically_generate_interface=True,
         )
         self.user_output.dose_uncertainty.set_active(False)
 
-        self._add_user_output(ActorOutputSingleMeanImage, "density", automatically_generate_interface=True)
+        self._add_user_output(
+            ActorOutputSingleMeanImage, "density", automatically_generate_interface=True
+        )
 
         self.__initcpp__()
 
@@ -539,20 +549,30 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # dose uncertainty relies on edep_uncertainty. Set active flag accordingly
         if self.user_output.dose_uncertainty.get_active() is True:
             self.user_output.dose.set_active(True)
-            self.user_output.edep_with_uncertainty.set_active(True, item='uncertainty')
+            self.user_output.edep_with_uncertainty.set_active(True, item="uncertainty")
         # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
-        if self.user_output.edep_with_uncertainty.get_active(item=('uncertainty', 'std', 'variance')) is True:
+        if (
+            self.user_output.edep_with_uncertainty.get_active(
+                item=("uncertainty", "std", "variance")
+            )
+            is True
+        ):
             self.user_output.edep_with_uncertainty.set_active(True, item=1)
 
         # activate density if we need the dose and the DoseActor is not attached to a volume
-        if self.user_output.dose.get_active() is True and self.attached_to_volume.volume_type != "ImageVolume":
+        if (
+            self.user_output.dose.get_active() is True
+            and self.attached_to_volume.volume_type != "ImageVolume"
+        ):
             if not self.user_output.density.get_active():
                 self.user_output.density.set_active(True)
                 self.user_output.density.set_write_to_disk(False)
 
         self.InitializeUserInput(self.user_info)  # C++ side
         self.SetSquareFlag(self.user_output.edep_with_uncertainty.get_active(item=1))
-        self.SetDensityFlag(self.user_output.density.get_active())  # item=0 is the default
+        self.SetDensityFlag(
+            self.user_output.density.get_active()
+        )  # item=0 is the default
         self.SetToWaterFlag(self.score_in == "water")
 
         # Set the physical volume name on the C++ side
@@ -561,8 +581,12 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
     def BeginOfRunActionMasterThread(self, run_index):
         self.prepare_output_for_run("edep_with_uncertainty", run_index)
-        self.push_to_cpp_image("edep_with_uncertainty", run_index,
-                               self.cpp_edep_image, self.cpp_square_image)
+        self.push_to_cpp_image(
+            "edep_with_uncertainty",
+            run_index,
+            self.cpp_edep_image,
+            self.cpp_square_image,
+        )
 
         if self.user_output.density.get_active():
             self.prepare_output_for_run("density", run_index)
@@ -595,13 +619,13 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         # dose
         if self.user_output.dose.get_active():
-            edep_image = self.user_output.edep_with_uncertainty.get_data(run_index, item=0)
+            edep_image = self.user_output.edep_with_uncertainty.get_data(
+                run_index, item=0
+            )
             density_image = None
             if self.user_output.density.get_active():
                 density_image = self.user_output.density.get_data(run_index)
-            dose_image = self.compute_dose_from_edep_img(
-                edep_image, density_image
-            )
+            dose_image = self.compute_dose_from_edep_img(edep_image, density_image)
             dose_image.CopyInformation(edep_image)
             self.store_output_data(
                 "dose",
@@ -614,7 +638,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         if self.user_output.dose_uncertainty.get_active() is True:
             # scale by density
-            edep_uncertainty_image = self.user_output.edep_with_uncertainty.get_data(run_index, item='uncertainty')
+            edep_uncertainty_image = self.user_output.edep_with_uncertainty.get_data(
+                run_index, item="uncertainty"
+            )
             density_image = None
             if self.user_output.density.get_active():
                 density_image = self.user_output.density.get_data(run_index)

@@ -11,13 +11,15 @@ from .dataitems import (
     SingleItkImageWithVariance,
     QuotientItkImage,
     QuotientMeanItkImage,
-    merge_data
+    merge_data,
 )
 
 
 class UserInterfaceToActorOutput:
 
-    def __init__(self, belongs_to_actor, user_output_name, kwargs_for_interface_calls=None):
+    def __init__(
+        self, belongs_to_actor, user_output_name, kwargs_for_interface_calls=None
+    ):
         self.user_output_name = user_output_name
         self.belongs_to_actor = belongs_to_actor
         if kwargs_for_interface_calls is None:
@@ -70,7 +72,7 @@ class UserInterfaceToActorOutput:
 class UserInterfaceToActorOutputUsingDataItemContainer(UserInterfaceToActorOutput):
 
     def __init__(self, *args, item=0, **kwargs):
-        super().__init__(*args, kwargs_for_interface_calls={'item': item}, **kwargs)
+        super().__init__(*args, kwargs_for_interface_calls={"item": item}, **kwargs)
 
     @classmethod
     def _generate_key(cls, user_output_name, item=None, **kwargs):
@@ -163,7 +165,9 @@ class ActorOutputBase(GateObject):
     @classmethod
     def get_default_interface_class(cls):
         if cls._default_interface_class is None:
-            raise GateImplementationError(f"This class has no _default_interface_class class attribute defined. ")
+            raise GateImplementationError(
+                f"This class has no _default_interface_class class attribute defined. "
+            )
         return cls._default_interface_class
 
     def __init__(self, *args, **kwargs):
@@ -242,14 +246,14 @@ class ActorOutputBase(GateObject):
     #     if self.get_output_filename(**kwargs) == 'auto':
     #         self.set_output_filename(self._generate_auto_output_filename(), **kwargs)
     #
-        # for k, v in self.data_item_config.items():
-        #     if 'write_to_disk' in v and v['write_to_disk'] is True:
-        #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-        #             if len(self.data_item_config) > 0:
-        #                 item_suffix = k
-        #             else:
-        #                 item_suffix = ''
-        #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
+    # for k, v in self.data_item_config.items():
+    #     if 'write_to_disk' in v and v['write_to_disk'] is True:
+    #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
+    #             if len(self.data_item_config) > 0:
+    #                 item_suffix = k
+    #             else:
+    #                 item_suffix = ''
+    #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     def _compose_output_path(self, which, output_filename):
         full_data_path = self.simulation.get_output_path(output_filename)
@@ -267,11 +271,9 @@ class ActorOutputBase(GateObject):
                 )
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
-    def get_output_path(
-        self, which='merged', **kwargs
-    ):
+    def get_output_path(self, which="merged", **kwargs):
         output_filename = self.get_output_filename(**kwargs)
-        if output_filename == 'auto':
+        if output_filename == "auto":
             output_filename = self._generate_auto_output_filename(**kwargs)
         return self._compose_output_path(which, output_filename)
 
@@ -342,12 +344,22 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
 
     user_info_defaults = {
         "data_item_config": (
-            Box({0: Box({"output_filename": "auto", "write_to_disk": True, "active": True})}),
+            Box(
+                {
+                    0: Box(
+                        {
+                            "output_filename": "auto",
+                            "write_to_disk": True,
+                            "active": True,
+                        }
+                    )
+                }
+            ),
             {
                 "doc": "Dictionary (Box) to specify which"
-                       "should be written to disk and how. "
-                       "The default is picked up from the data container class during instantiation, "
-                       "and can be changed by the user afterwards. "
+                "should be written to disk and how. "
+                "The default is picked up from the data container class during instantiation, "
+                "and can be changed by the user afterwards. "
             },
         ),
     }
@@ -399,14 +411,14 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
     #     if self.get_output_filename(**kwargs) == 'auto':
     #         self.set_output_filename(self._generate_auto_output_filename(), **kwargs)
     #
-        # for k, v in self.data_item_config.items():
-        #     if 'write_to_disk' in v and v['write_to_disk'] is True:
-        #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-        #             if len(self.data_item_config) > 0:
-        #                 item_suffix = k
-        #             else:
-        #                 item_suffix = ''
-        #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
+    # for k, v in self.data_item_config.items():
+    #     if 'write_to_disk' in v and v['write_to_disk'] is True:
+    #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
+    #             if len(self.data_item_config) > 0:
+    #                 item_suffix = k
+    #             else:
+    #                 item_suffix = ''
+    #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     # def get_output_path(self, **kwargs):
     #     item = kwargs.pop("item", "all")
@@ -450,12 +462,16 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
     #         )
 
     def initialize_cpp_parameters(self):
-        items = self._collect_item_identifiers('all')
+        items = self._collect_item_identifiers("all")
         for h in items:
             identifier = f"{self.name}_{h}"
             self.belongs_to_actor.AddActorOutputInfo(identifier)
-            self.belongs_to_actor.SetWriteToDisk(identifier, self.get_write_to_disk(item=h))
-            self.belongs_to_actor.SetOutputPath(identifier, self.get_output_path_as_string(item=h))
+            self.belongs_to_actor.SetWriteToDisk(
+                identifier, self.get_write_to_disk(item=h)
+            )
+            self.belongs_to_actor.SetOutputPath(
+                identifier, self.get_output_path_as_string(item=h)
+            )
 
     def _fatal_unknown_item(self, item):
         fatal(
@@ -469,7 +485,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
             self.data_item_config[i]["write_to_disk"] = bool(value)
 
     def get_write_to_disk(self, item=0):
-        items = self._collect_item_identifiers('all')
+        items = self._collect_item_identifiers("all")
         return any([self.data_item_config[k]["write_to_disk"] is True for k in items])
 
     def set_active(self, value, item=0):
@@ -478,7 +494,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
             self.data_item_config[i]["active"] = bool(value)
 
     def get_active(self, item=0):
-        items = self._collect_item_identifiers('all')
+        items = self._collect_item_identifiers("all")
         return any([self.data_item_config[k]["active"] is True for k in items])
         # items = self._collect_item_identifiers(item)
         # d = Box(
@@ -490,7 +506,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         #     return list(d.values())[0]
 
     def need_to_write_data(self, **kwargs):
-        return any([v["write_to_disk"] is True for v in self.data_write_config.values()])
+        return any(
+            [v["write_to_disk"] is True for v in self.data_write_config.values()]
+        )
 
     def set_output_filename(self, value, item=0):
         if item == "all":
@@ -504,7 +522,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
 
     def get_output_filename(self, item=0):
         if item == "all":
-            return dict([(k, self.get_output_filename(item=k)) for k in self.data_item_config])
+            return dict(
+                [(k, self.get_output_filename(item=k)) for k in self.data_item_config]
+            )
         else:
             try:
                 return self.data_item_config[item]["output_filename"]
@@ -521,7 +541,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         # return output_filename
 
     def _generate_auto_output_filename(self, item=0):
-        return insert_suffix_before_extension(super()._generate_auto_output_filename(), str(item))
+        return insert_suffix_before_extension(
+            super()._generate_auto_output_filename(), str(item)
+        )
 
     def _collect_item_identifiers(self, item):
         if item == "all":
@@ -531,8 +553,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         else:
             items = [item]
         if not all([i in self.data_item_config for i in items]):
-            fatal(f"Unknown items. Requested items are: {items}. "
-                  f"Known items are {list(self.data_item_config.keys())}.")
+            fatal(
+                f"Unknown items. Requested items are: {items}. "
+                f"Known items are {list(self.data_item_config.keys())}."
+            )
         return items
 
     def get_output_path(
@@ -639,7 +663,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         else:
             return data
 
-    def write_data(self, which, item='all', **kwargs):
+    def write_data(self, which, item="all", **kwargs):
         if which == "all_runs":
             for k in self.data_per_run.keys():
                 self.write_data(k, item=item, **kwargs)
@@ -651,15 +675,21 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
             if data is not None:
                 items = self._collect_item_identifiers(item)
                 for i in items:
-                    data.write(self.get_output_path(which=which, item=i, **kwargs), item=i)
+                    data.write(
+                        self.get_output_path(which=which, item=i, **kwargs), item=i
+                    )
 
-    def write_data_if_requested(self, which, item='all', **kwargs):
-        items = [i for i in self._collect_item_identifiers(item)
-                 if self.get_write_to_disk(item=i) is True and self.get_active(item=i) is True]
+    def write_data_if_requested(self, which, item="all", **kwargs):
+        items = [
+            i
+            for i in self._collect_item_identifiers(item)
+            if self.get_write_to_disk(item=i) is True
+            and self.get_active(item=i) is True
+        ]
         self.write_data(which, item=items)
 
-    def end_of_simulation(self, item='all', **kwargs):
-        self.write_data_if_requested('all', item=item)
+    def end_of_simulation(self, item="all", **kwargs):
+        self.write_data_if_requested("all", item=item)
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):

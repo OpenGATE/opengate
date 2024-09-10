@@ -310,7 +310,12 @@ class ActorBase(GateObject):
             )
 
     def _add_user_output(
-        self, actor_output_class, name, can_be_deactivated=False, automatically_generate_interface=False, **kwargs
+        self,
+        actor_output_class,
+        name,
+        can_be_deactivated=False,
+        automatically_generate_interface=False,
+        **kwargs,
     ):
         """Method to be called internally (not by user) in the specific actor class implementations."""
 
@@ -336,7 +341,9 @@ class ActorBase(GateObject):
 
         if automatically_generate_interface is True:
             # try:
-            self._add_interface_to_user_output(actor_output_class.get_default_interface_class(), name, name)
+            self._add_interface_to_user_output(
+                actor_output_class.get_default_interface_class(), name, name
+            )
             # except GateImplementationError as e:
             #     raise GateImplementationError(f"A user interface cannot automatically be added for user output {name}. "
             #                                   f"A possibly reason is that the actor output "
@@ -361,7 +368,9 @@ class ActorBase(GateObject):
                 self, user_output_name, **kwargs
             )
         else:
-            raise GateImplementationError(f"An actor output user interface called '{k}' already exists. ")
+            raise GateImplementationError(
+                f"An actor output user interface called '{k}' already exists. "
+            )
 
         # create a property in the actor so the user can quickly access the interface
         def p(self):
@@ -370,10 +379,12 @@ class ActorBase(GateObject):
         if not hasattr(type(self), property_name):
             setattr(type(self), property_name, property(p))
         else:
-            raise GateImplementationError(f"Cannot create a property '{property_name}' "
-                                          f"for interface class {interface_class} "
-                                          f"in actor user output {user_output_name} "
-                                          f"because a property with that name already exists.")
+            raise GateImplementationError(
+                f"Cannot create a property '{property_name}' "
+                f"for interface class {interface_class} "
+                f"in actor user output {user_output_name} "
+                f"because a property with that name already exists."
+            )
 
     def recover_user_output(self, actor):
         self.user_output = actor.user_output
