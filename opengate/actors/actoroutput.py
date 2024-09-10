@@ -228,8 +228,12 @@ class ActorOutputBase(GateObject):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def initialize(self):
-        pass
-        # self.initialize_output_filename()
+        self.initialize_cpp_parameters()
+
+    def initialize_cpp_parameters(self):
+        self.belongs_to_actor.AddActorOutputInfo(self.name)
+        self.belongs_to_actor.SetWriteToDisk(self.name, self.get_write_to_disk())
+        self.belongs_to_actor.SetOutputPath(self.name, self.get_output_path_as_string())
 
     def _generate_auto_output_filename(self, **kwargs):
         return f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
@@ -445,6 +449,14 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
     #             f"in container class {self.data_container_class.__name__}. "
     #             f"Valid identifiers are: {list(self.data_item_config.keys())}."
     #         )
+
+    def initialize_cpp_parameters(self):
+        items = self._collect_item_identifiers('all')
+        for h in items:
+            identifier = f"{self.name}_{h}"
+            self.belongs_to_actor.AddActorOutputInfo(identifier)
+            self.belongs_to_actor.SetWriteToDisk(identifier, self.get_write_to_disk(item=h))
+            self.belongs_to_actor.SetOutputPath(identifier, self.get_output_path_as_string(item=h))
 
     def _fatal_unknown_item(self, item):
         fatal(
