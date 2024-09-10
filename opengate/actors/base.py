@@ -353,12 +353,15 @@ class ActorBase(GateObject):
         return self.user_output[name]
 
     def _add_interface_to_user_output(
-        self, interface_class, user_output_name, property_name, item=0
+        self, interface_class, user_output_name, property_name, **kwargs
     ):
-        k = interface_class._generate_key(user_output_name, item=item)
-        self.interfaces_to_user_output[k] = interface_class(
-            self, user_output_name, item
-        )
+        k = interface_class._generate_key(user_output_name, **kwargs)
+        if k not in self.interfaces_to_user_output:
+            self.interfaces_to_user_output[k] = interface_class(
+                self, user_output_name, **kwargs
+            )
+        else:
+            raise GateImplementationError(f"An actor output user interface called '{k}' already exists. ")
 
         # create a property in the actor so the user can quickly access the interface
         def p(self):
@@ -366,6 +369,11 @@ class ActorBase(GateObject):
 
         if not hasattr(type(self), property_name):
             setattr(type(self), property_name, property(p))
+        else:
+            raise GateImplementationError(f"Cannot create a property '{property_name}' "
+                                          f"for interface class {interface_class} "
+                                          f"in actor user output {user_output_name} "
+                                          f"because a property with that name already exists.")
 
     def recover_user_output(self, actor):
         self.user_output = actor.user_output
