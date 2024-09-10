@@ -525,11 +525,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
 
     def _collect_item_identifiers(self, item):
         if item == "all":
-            items = [
-                k
-                for k in self.data_item_config
-                if self.get_write_to_disk(item=k) is True
-            ]
+            items = list(self.data_item_config.keys())
         elif isinstance(item, (tuple, list)):
             items = item
         else:
