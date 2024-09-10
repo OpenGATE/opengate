@@ -472,6 +472,23 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
         items = self._collect_item_identifiers('all')
         return any([self.data_item_config[k]["write_to_disk"] is True for k in items])
 
+    def set_active(self, value, item=0):
+        items = self._collect_item_identifiers(item)
+        for i in items:
+            self.data_item_config[i]["active"] = bool(value)
+
+    def get_active(self, item=0):
+        items = self._collect_item_identifiers('all')
+        return any([self.data_item_config[k]["active"] is True for k in items])
+        # items = self._collect_item_identifiers(item)
+        # d = Box(
+        #         [(k, self.data_item_config[k]["active"]) for k in items]
+        #     )
+        # if len(d) > 1:
+        #     return d
+        # else:
+        #     return list(d.values())[0]
+
     def need_to_write_data(self, **kwargs):
         return any([v["write_to_disk"] is True for v in self.data_write_config.values()])
 
