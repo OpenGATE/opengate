@@ -160,6 +160,12 @@ class ActorOutputBase(GateObject):
         # ),
     }
 
+    @classmethod
+    def get_default_interface_class(cls):
+        if cls._default_interface_class is None:
+            raise GateImplementationError(f"This class has no _default_interface_class class attribute defined. ")
+        return cls._default_interface_class
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
