@@ -469,15 +469,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
             self.data_item_config[i]["write_to_disk"] = bool(value)
 
     def get_write_to_disk(self, item=0):
-        if item == "all":
-            return Box(
-                [(k, self.get_write_to_disk(item=k)) for k in self.data_item_config]
-            )
-        else:
-            try:
-                return self.data_item_config[item]["write_to_disk"]
-            except KeyError:
-                self._fatal_unknown_item(item)
+        items = self._collect_item_identifiers('all')
+        return any([self.data_item_config[k]["write_to_disk"] is True for k in items])
 
     def need_to_write_data(self, **kwargs):
         return any([v["write_to_disk"] is True for v in self.data_write_config.values()])
