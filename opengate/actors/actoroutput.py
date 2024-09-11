@@ -807,19 +807,3 @@ class ActorOutputRoot(ActorOutputBase):
             self.write_to_disk = False
         super().initialize()
 
-
-class ActorOutputCppImage(ActorOutputBase):
-    """Simple actor output class to provide the get_output_path() interface
-    to actors where the image is entirely handled on the C++-side.
-
-    This actor output does not provide any further functionality and cannot merge data from runs.
-
-    If possible, the actor should be implemented in a way to make use of the ActorOutputImage class.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.default_suffix = "root"
-
-    def get_output_path(self, *args, **kwargs):
-        return super().get_output_path("merged")
