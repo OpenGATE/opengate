@@ -472,6 +472,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             ActorOutputSingleMeanImage, "density", automatically_generate_interface=True
         )
 
+        self.user_output.edep_with_uncertainty.set_item_suffix('edep', item=0)
+        self.user_output.edep_with_uncertainty.set_item_suffix('squared', item=1)
+        self.user_output.edep_with_uncertainty.set_item_suffix('edep_uncertainty', item='uncertainty')
+
+
         self.__initcpp__()
 
     def __initcpp__(self):
