@@ -79,13 +79,13 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output_filename = "dose_peak_finder.mhd"
-    dose.attached_to = peak_finder.name
-    dose.size = [1, 1, 8000]
-    dose.spacing = [80.6, 80.6, 0.05]
-    dose.hit_type = "random"
-    dose.user_output.dose.active = True
+    dose_actor = sim.add_actor("DoseActor", "doseInXYZ")
+    dose_actor.output_filename = "dose_peak_finder.mhd"
+    dose_actor.attached_to = peak_finder.name
+    dose_actor.size = [1, 1, 8000]
+    dose_actor.spacing = [80.6, 80.6, 0.05]
+    dose_actor.hit_type = "random"
+    dose_actor.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -121,9 +121,6 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     # s.track_types_flag = True
 
-    # create output dir, if it doesn't exist
-    output_path.mkdir(parents=True, exist_ok=True)
-
     # start simulation
     sim.run()
 
@@ -132,14 +129,14 @@ if __name__ == "__main__":
     print(stats)
 
     # ------ TESTS -------##
-    dose_path = output_path / sim.get_actor("doseInXYZ").get_output_path("dose")
+    dose_path = output_path / sim.get_actor("doseInXYZ").dose.get_output_path()
 
     # RANGE
 
     # read output and ref
     print("Compare ", dose_path)
     img_mhd_out = itk.imread(dose_path)
-    data = itk.GetArrayViewFromImage(img_mhd_out)
+    data = np.flip(itk.GetArrayViewFromImage(img_mhd_out), axis=0)
     spacing = np.array(img_mhd_out.GetSpacing())
     print(data.shape, spacing)
 
@@ -149,6 +146,8 @@ if __name__ == "__main__":
 
     thresh = 2.0 * mm
     ok = True
+    print(f"range_opengate = {range_opengate}")
+    print(f"range80_gate9_E120MeV = {range80_gate9_E120MeV}")
     if abs(range_opengate - range80_gate9_E120MeV) > thresh:
         ok = False
 
