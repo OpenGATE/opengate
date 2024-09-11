@@ -730,35 +730,15 @@ class QuotientItkImage(DataItemContainer):
     # Important: define this at the class level, NOT in the __init__ method
     default_data_item_config = Box(
         {
-            "numerator": Box({"output_filename": "auto", "write_to_disk": True}),
-            "denominator": Box({"output_filename": "auto", "write_to_disk": True}),
-            "quotient": Box({"output_filename": "auto", "write_to_disk": True}),
+            0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            "quotient": Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
         }
     )
 
     @property
-    def numerator(self):
-        return self.data[0]
-
-    @property
-    def denominator(self):
-        return self.data[1]
-
-    @property
     def quotient(self):
-        return self.numerator / self.denominator
-
-    @property
-    def images(self):
-        return self.data[0].image, self.data[0].image
-
-    @property
-    def numerator_image(self):
-        return self.numerator.image
-
-    @property
-    def denominator_image(self):
-        return self.denominator.image
+        return self.data[0] / self.data[1]
 
 
 class QuotientMeanItkImage(QuotientItkImage):
