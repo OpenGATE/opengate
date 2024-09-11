@@ -415,15 +415,18 @@ class GateObject:
         )
 
     def __setattr__(self, key, value):
-        # raise an error if the user tries to set an attributed
+        # raise an error if the user tries to set an attribute
         # associated with a deprecated user input parameter
-        if not hasattr(self, key):
-            try:
-                raise GateDeprecationError(
-                    self.inherited_user_info_defaults[key][1]["deprecated"]
-                )
-            except KeyError:
-                super().__setattr__(key, value)
+        if (key in self.inherited_user_info_defaults and
+                "deprecated" in self.inherited_user_info_defaults[key][1] and
+                self.inherited_user_info_defaults[key][1]["deprecated"] is True):
+            raise GateDeprecationError(
+                self.inherited_user_info_defaults[key][1]["deprecated"]
+            )
+        # if not hasattr(self, key):
+        #     try:
+        #     except KeyError:
+        #         super().__setattr__(key, value)
         else:
             super().__setattr__(key, value)
 
