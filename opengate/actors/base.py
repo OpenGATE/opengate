@@ -113,26 +113,26 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
-        "keep_output_data": (
-            False,
-            {
-                "doc": "Should the output data be kept as part of this actor? "
-                "If `True`, you can access the data directly after the simulation. "
-                "If `False`, you need to re-read the data from disk. "
-            },
-        ),
-        "keep_data_per_run": (
-            False,
-            {
-                "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
-            },
-        ),
-        "merge_data_from_runs": (
-            True,
-            {
-                "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
-            },
-        ),
+        # "keep_output_data": (
+        #     False,
+        #     {
+        #         "doc": "Should the output data be kept as part of this actor? "
+        #         "If `True`, you can access the data directly after the simulation. "
+        #         "If `False`, you need to re-read the data from disk. "
+        #     },
+        # ),
+        # "keep_data_per_run": (
+        #     False,
+        #     {
+        #         "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
+        #     },
+        # ),
+        # "merge_data_from_runs": (
+        #     True,
+        #     {
+        #         "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
+        #     },
+        # ),
     }
 
     def __init__(self, *args, **kwargs):
