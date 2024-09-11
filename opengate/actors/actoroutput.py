@@ -44,7 +44,7 @@ class BaseUserInterfaceToActorOutput:
 
     def __getstate__(self):
         return_dict = super().__getstate__()
-        return_dict["belongs_to_actor"] = None
+        return_dict.pop("belongs_to_actor")
         return return_dict
 
     @property
