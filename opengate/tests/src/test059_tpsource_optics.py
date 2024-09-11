@@ -74,13 +74,13 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output_filename = "testTPSoptics.mhd"
-    dose.attached_to = phantom.name
-    dose.size = [30, 620, 620]
-    dose.spacing = [10.0, 0.5, 0.5]
-    dose.hit_type = "random"
-    dose.user_output.dose.active = True
+    dose_actor = sim.add_actor("DoseActor", "doseInXYZ")
+    dose_actor.output_filename = "testTPSoptics.mhd"
+    dose_actor.attached_to = phantom.name
+    dose_actor.size = [30, 620, 620]
+    dose_actor.spacing = [10.0, 0.5, 0.5]
+    dose_actor.hit_type = "random"
+    dose_actor.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -119,15 +119,12 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
 
-    # create output dir, if it doesn't exist
-    output_path.mkdir(parents=True, exist_ok=True)
-
     # start simulation
     sim.run()
 
     # -------------END SCANNING------------- #
     # print results at the end
-    d_fPath = output_path / sim.get_actor("doseInXYZ").get_output_path("dose")
+    d_fPath = output_path / sim.get_actor("doseInXYZ").dose.get_output_path()
     print(stats)
 
     # ------ TESTS -------#
@@ -138,7 +135,7 @@ if __name__ == "__main__":
 
     # SPOT POSITIONS COMPARISON
     # read output and ref
-    img_mhd_out = itk.imread(dose.get_output_path("dose"))
+    img_mhd_out = itk.imread(dose_actor.dose.get_output_path())
     img_mhd_ref = itk.imread(
         ref_path / "idc-PHANTOM-air_box-gate_test59_TP_1-PLAN-Physical.mhd"
     )
@@ -180,8 +177,8 @@ if __name__ == "__main__":
 
     yzM = np.array(yz).reshape(int(len(yz) / 2), 2)
     # convert from mm (wrt image center) to voxel
-    spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
-    spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
+    spot_y = [int(y / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for y in yzM[:, 0]]
+    spot_z = [int(z / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for z in yzM[:, 1]]
 
     thresh = 0.105
 
