@@ -99,12 +99,22 @@ def digest_user_info_defaults(cls):
         if "user_info_defaults" in c.__dict__:
             # Make sure there are no duplicate user info items.
             # First check for user info defaults that override the one from super classes and exclude them
-            inherited_user_info_defaults_keys_override_true = dict([k for k, v in inherited_user_info_defaults.items()
-                                                                    if 'override' in v[1] and v[1]['override'] is True])
-            user_info_defaults_to_be_added = dict([(k, v) for k, v in c.user_info_defaults.items()
-                                                   if k not in inherited_user_info_defaults_keys_override_true])
+            inherited_user_info_defaults_keys_override_true = dict(
+                [
+                    k
+                    for k, v in inherited_user_info_defaults.items()
+                    if "override" in v[1] and v[1]["override"] is True
+                ]
+            )
+            user_info_defaults_to_be_added = dict(
+                [
+                    (k, v)
+                    for k, v in c.user_info_defaults.items()
+                    if k not in inherited_user_info_defaults_keys_override_true
+                ]
+            )
             if set(user_info_defaults_to_be_added.keys()).isdisjoint(
-                    set(inherited_user_info_defaults.keys())
+                set(inherited_user_info_defaults.keys())
             ):
                 inherited_user_info_defaults.update(user_info_defaults_to_be_added)
             else:
@@ -417,9 +427,11 @@ class GateObject:
     def __setattr__(self, key, value):
         # raise an error if the user tries to set an attribute
         # associated with a deprecated user input parameter
-        if (key in self.inherited_user_info_defaults and
-                "deprecated" in self.inherited_user_info_defaults[key][1] and
-                self.inherited_user_info_defaults[key][1]["deprecated"] is True):
+        if (
+            key in self.inherited_user_info_defaults
+            and "deprecated" in self.inherited_user_info_defaults[key][1]
+            and self.inherited_user_info_defaults[key][1]["deprecated"] is True
+        ):
             raise GateDeprecationError(
                 self.inherited_user_info_defaults[key][1]["deprecated"]
             )
@@ -517,10 +529,10 @@ class DynamicGateObject(GateObject):
             None,
             {
                 "doc": "List of dictionaries, where each dictionary specifies how the parameters "
-                       "of this object should evolve over time during the simulation. "
-                       "You cannot set this parameter directly. "
-                       "Instead, use the 'add_dynamic_parametrisation()' method of your object."
-                       "If None, the object is static (default).",
+                "of this object should evolve over time during the simulation. "
+                "You cannot set this parameter directly. "
+                "Instead, use the 'add_dynamic_parametrisation()' method of your object."
+                "If None, the object is static (default).",
                 "read_only": True,
             },
         )
@@ -541,7 +553,7 @@ class DynamicGateObject(GateObject):
             k
             for k in self.user_info
             if "dynamic" in self.inherited_user_info_defaults[k][1]
-               and self.inherited_user_info_defaults[k][1]["dynamic"] is True
+            and self.inherited_user_info_defaults[k][1]["dynamic"] is True
         ]
 
     @requires_fatal("simulation")

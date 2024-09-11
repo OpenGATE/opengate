@@ -173,18 +173,24 @@ class ActorBase(GateObject):
             try:
                 return self.interfaces_to_user_output[name].get_data(**kwargs)
             except KeyError:
-                fatal(f"No output '{name}' found in {self.type_name} actor '{self.name}'.")
+                fatal(
+                    f"No output '{name}' found in {self.type_name} actor '{self.name}'."
+                )
         elif len(self.interfaces_to_user_output) == 1:
             list(self.interfaces_to_user_output.values())[0].get_data(**kwargs)
         elif len(self.interfaces_to_user_output) == 0:
-            fatal(f"The {self.type_name} actor '{self.name}' does not handle any output.")
+            fatal(
+                f"The {self.type_name} actor '{self.name}' does not handle any output."
+            )
         else:
-            fatal(f"The {self.type_name} actor '{self.name}' handles multiple outputs. "
-                  "There are 2 ways to fix this: \n"
-                  "1) Provide a keyword argument name=OUTPUT_NAME. \n"
-                  f"   Example: my_actor.get_data(name='{list(self.interfaces_to_user_output.keys())[0]}')\n"
-                  "2) Call get_data() via the output.\n"
-                  f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_data(). ")
+            fatal(
+                f"The {self.type_name} actor '{self.name}' handles multiple outputs. "
+                "There are 2 ways to fix this: \n"
+                "1) Provide a keyword argument name=OUTPUT_NAME. \n"
+                f"   Example: my_actor.get_data(name='{list(self.interfaces_to_user_output.keys())[0]}')\n"
+                "2) Call get_data() via the output.\n"
+                f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_data(). "
+            )
 
     # def _get_error_msg_output_filename(self):
     #     s = (
@@ -228,18 +234,24 @@ class ActorBase(GateObject):
             try:
                 return self.interfaces_to_user_output[name].get_output_path(**kwargs)
             except KeyError:
-                fatal(f"No output called '{name}' found in {self.type_name} actor '{self.name}'.")
+                fatal(
+                    f"No output called '{name}' found in {self.type_name} actor '{self.name}'."
+                )
         elif len(self.interfaces_to_user_output) == 1:
             list(self.interfaces_to_user_output.values())[0].get_output_path(**kwargs)
         elif len(self.interfaces_to_user_output) == 0:
-            fatal(f"The {self.type_name} actor '{self.name}' does not handle any output.")
+            fatal(
+                f"The {self.type_name} actor '{self.name}' does not handle any output."
+            )
         else:
-            fatal(f"The {self.type_name} actor '{self.name}' handles multiple outputs. "
-                  "There are 2 ways to fix this: \n"
-                  "1) Provide a keyword argument name=OUTPUT_NAME. \n"
-                  f"   Example: my_actor.get_output_path(name='{list(self.interfaces_to_user_output.keys())[0]}')\n"
-                  "2) Call get_output_path() via the output.\n"
-                  f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_output_path(). ")
+            fatal(
+                f"The {self.type_name} actor '{self.name}' handles multiple outputs. "
+                "There are 2 ways to fix this: \n"
+                "1) Provide a keyword argument name=OUTPUT_NAME. \n"
+                f"   Example: my_actor.get_output_path(name='{list(self.interfaces_to_user_output.keys())[0]}')\n"
+                "2) Call get_output_path() via the output.\n"
+                f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_output_path(). "
+            )
 
     @property
     def actor_manager(self):

@@ -23,9 +23,9 @@ class ActorOutputStatisticsActor(ActorOutputBase):
             "auto",
             {
                 "doc": "Filename for the data represented by this actor output. "
-                       "Relative paths and filenames are taken "
-                       "relative to the global simulation output folder "
-                       "set via the Simulation.output_dir option. ",
+                "Relative paths and filenames are taken "
+                "relative to the global simulation output folder "
+                "set via the Simulation.output_dir option. ",
             },
         ),
         "write_to_disk": (
@@ -87,9 +87,11 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         self.merged_data.update(data)
 
     def get_data(self, **kwargs):
-        if 'which' in kwargs and kwargs['which'] != 'merged':
-            warning(f"The statistics actor output only stores merged data currently. "
-                    f"The which={kwargs['which']} you provided will be ignored. ")
+        if "which" in kwargs and kwargs["which"] != "merged":
+            warning(
+                f"The statistics actor output only stores merged data currently. "
+                f"The which={kwargs['which']} you provided will be ignored. "
+            )
         # the statistics actor currently only handles merged data, so we return it
         # no input variable 'which' as in other output classes
         return self.merged_data
@@ -165,6 +167,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def write_data_if_requested(self, **kwargs):
         if self.write_to_disk is True:
             self.write_data(**kwargs)
+
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     """

@@ -555,7 +555,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
             is True
         ):
-            self.user_output.edep_with_uncertainty.set_active(True, item=1)  # activate squared component
+            self.user_output.edep_with_uncertainty.set_active(
+                True, item=1
+            )  # activate squared component
 
         # activate density if we need the dose and the DoseActor is not attached to a volume
         if (

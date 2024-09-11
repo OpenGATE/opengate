@@ -23,12 +23,12 @@ class BaseUserInterfaceToActorOutput:
         # Important: we need to write the attributes directly into the __dict__ here because
         # they are set for the first time and assigning them via self.user_output_name = ...
         # would interfere with the __setattr__ method
-        self.__dict__['user_output_name'] = user_output_name
-        self.__dict__['belongs_to_actor'] = belongs_to_actor
+        self.__dict__["user_output_name"] = user_output_name
+        self.__dict__["belongs_to_actor"] = belongs_to_actor
         if kwargs_for_interface_calls is None:
-            self.__dict__['_kwargs_for_interface_calls'] = {}
+            self.__dict__["_kwargs_for_interface_calls"] = {}
         else:
-            self.__dict__['_kwargs_for_interface_calls'] = kwargs_for_interface_calls
+            self.__dict__["_kwargs_for_interface_calls"] = kwargs_for_interface_calls
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -60,28 +60,36 @@ class BaseUserInterfaceToActorOutput:
     @property
     def write_to_disk(self):
         try:
-            return self._user_output.get_write_to_disk(**self._kwargs_for_interface_calls)
+            return self._user_output.get_write_to_disk(
+                **self._kwargs_for_interface_calls
+            )
         except NotImplementedError:
             raise AttributeError
 
     @write_to_disk.setter
     def write_to_disk(self, value):
         try:
-            self._user_output.set_write_to_disk(value, **self._kwargs_for_interface_calls)
+            self._user_output.set_write_to_disk(
+                value, **self._kwargs_for_interface_calls
+            )
         except NotImplementedError:
             raise AttributeError
 
     @property
     def output_filename(self):
         try:
-            return self._user_output.get_output_filename(**self._kwargs_for_interface_calls)
+            return self._user_output.get_output_filename(
+                **self._kwargs_for_interface_calls
+            )
         except NotImplementedError:
             raise AttributeError
 
     @output_filename.setter
     def output_filename(self, value):
         try:
-            self._user_output.set_output_filename(value, **self._kwargs_for_interface_calls)
+            self._user_output.set_output_filename(
+                value, **self._kwargs_for_interface_calls
+            )
         except NotImplementedError:
             raise AttributeError
 
@@ -97,8 +105,10 @@ class BaseUserInterfaceToActorOutput:
         # else:
         except AttributeError:
             # super().__getattr__(item)
-            raise AttributeError(f'Tried to find {item} in user output {self._user_output.name} '
-                                 'and via the interface to it, but it is not there. ')
+            raise AttributeError(
+                f"Tried to find {item} in user output {self._user_output.name} "
+                "and via the interface to it, but it is not there. "
+            )
 
     def __setattr__(self, item, value):
         if not hasattr(self, item) and item in self._user_output.user_info:
@@ -159,8 +169,8 @@ class ActorOutputBase(GateObject):
             True,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                       "Careful: Large data structures like a phase space need a lot of memory.",
+                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                "Careful: Large data structures like a phase space need a lot of memory.",
             },
         ),
         # "active": (
@@ -286,11 +296,13 @@ class ActorOutputBase(GateObject):
             output_filename = self.get_output_filename(**kwargs)
         except NotImplementedError:
             try:
-                output_filename = getattr(self, 'output_filename')
+                output_filename = getattr(self, "output_filename")
             except AttributeError:
-                raise GateImplementationError(f"Unable to get the output_filename "
-                                              f"in user_output {self.name} "
-                                              f"of actor {self.belongs_to_actor.name}.")
+                raise GateImplementationError(
+                    f"Unable to get the output_filename "
+                    f"in user_output {self.name} "
+                    f"of actor {self.belongs_to_actor.name}."
+                )
         # 'auto' means that the output_filename is automatically generated.
         if output_filename == "auto":
             output_filename = self._generate_auto_output_filename(**kwargs)
@@ -314,7 +326,7 @@ class ActorOutputBase(GateObject):
     def write_data(self, *args, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
-    def write_data_if_requested(self,**kwargs):
+    def write_data_if_requested(self, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
     def load_data(self, which):
@@ -688,7 +700,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         else:
             return data
 
-    def write_data(self, which="all", item='all', **kwargs):
+    def write_data(self, which="all", item="all", **kwargs):
         if which == "all_runs":
             for k in self.data_per_run.keys():
                 self.write_data(which=k, item=item, **kwargs)
@@ -704,7 +716,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                         self.get_output_path(which=which, item=i, **kwargs), item=i
                     )
 
-    def write_data_if_requested(self, which='all', item="all", **kwargs):
+    def write_data_if_requested(self, which="all", item="all", **kwargs):
         items = [
             i
             for i in self._collect_item_identifiers(item)
@@ -813,11 +825,11 @@ class ActorOutputRoot(ActorOutputBase):
             False,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                       "Careful: Large data structures like a phase space need a lot of memory. \n"
-                       "Warning: Feature not supported for ROOT output yet. The options is forced to False. ",
+                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                "Careful: Large data structures like a phase space need a lot of memory. \n"
+                "Warning: Feature not supported for ROOT output yet. The options is forced to False. ",
                 "override": True,
-                "read_only": True
+                "read_only": True,
             },
         ),
     }
@@ -825,9 +837,11 @@ class ActorOutputRoot(ActorOutputBase):
     default_suffix = "root"
 
     def get_output_path(self, *args, **kwargs):
-        if 'which' in kwargs and kwargs['which'] != 'merged':
-            warning("Currently, GATE 10 only stores cumulative ROOT output per simulation ('merged'), "
-                    "not data per run. Showing you the path to the ROOT file with cumulative data.")
+        if "which" in kwargs and kwargs["which"] != "merged":
+            warning(
+                "Currently, GATE 10 only stores cumulative ROOT output per simulation ('merged'), "
+                "not data per run. Showing you the path to the ROOT file with cumulative data."
+            )
         return super().get_output_path(which="merged")
 
     def initialize(self):
