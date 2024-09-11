@@ -101,7 +101,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep.mhd",
-            dose.user_output.edep.get_output_path(),
+            dose.edep.get_output_path(),
             stat,
             tolerance=13,
             ignore_value=0,
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep-Uncertainty.mhd",
-            dose.user_output.edep_uncertainty.get_output_path(),
+            dose.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
             ignore_value=1,
