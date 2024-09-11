@@ -157,7 +157,9 @@ class ActorBase(GateObject):
         return state_dict
 
     def __setstate__(self, state):
-        self.__dict__ = state
+        super().__setstate__(state)
+        for v in self.interfaces_to_user_output.values():
+            v.belongs_to_actor = self
         self.__initcpp__()
         self.__update_interface_properties__()
 
