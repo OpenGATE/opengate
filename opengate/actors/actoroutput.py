@@ -110,13 +110,17 @@ class BaseUserInterfaceToActorOutput:
             )
 
     def __setattr__(self, item, value):
-        if item in self._known_attributes:
+        if item in type(self).__dict__["_known_attributes"]:
             self.__dict__[item] = value
-        if not hasattr(self, item) and item in self._user_output.user_info:
-            setattr(self._user_output, item, value)
         else:
-            super().__setattr__(item, value)
-
+            try:
+                super().__setattr__(item, value)
+            except NotImplementedError:
+                if item in self._user_output.user_info:
+                    setattr(self._user_output, item, value)
+                else:
+                    fatal(f"Unable to set value {value} for item {item}. "
+                          "Make sure the actor and/or actor output support this parameter. ")
 
 class UserInterfaceToActorOutputUsingDataItemContainer(BaseUserInterfaceToActorOutput):
 
