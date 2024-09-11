@@ -15,7 +15,7 @@ from .dataitems import (
 )
 
 
-class UserInterfaceToActorOutput:
+class BaseUserInterfaceToActorOutput:
 
     def __init__(
         self, belongs_to_actor, user_output_name, kwargs_for_interface_calls=None
@@ -106,7 +106,8 @@ class UserInterfaceToActorOutput:
         else:
             super().__setattr__(item, value)
 
-class UserInterfaceToActorOutputUsingDataItemContainer(UserInterfaceToActorOutput):
+
+class UserInterfaceToActorOutputUsingDataItemContainer(BaseUserInterfaceToActorOutput):
 
     def __init__(self, *args, item=0, **kwargs):
         super().__init__(*args, kwargs_for_interface_calls={"item": item}, **kwargs)
