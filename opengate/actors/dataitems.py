@@ -676,25 +676,32 @@ class SingleItkImageWithVariance(DataItemContainer):
                     "You try to compute statistical errors with only one or zero event! "
                     "The uncertainty value for all voxels has been fixed at 1"
                 )
-                var_arr = np.ones_like(value_array)
+                output_arr = np.ones_like(value_array)
             elif self.data[1] is None or self.data[1].data is None:
                 warning(
                     "This data item does not contain squared values so no variance can be calculated. "
                     "The variance will be set to 1 everywhere. "
                 )
-                var_arr = np.ones_like(value_array)
+                output_arr = np.ones_like(value_array)
             else:
                 squared_value_array = np.asarray(self.data[1].data)
-                var_arr = calculate_variance(
+                output_arr = calculate_variance(
                     value_array, squared_value_array, number_of_samples
                 )
-                if which_quantity == "std":
-                    var_arr = np.sqrt(var_arr)
-            var_image = itk.image_view_from_array(var_arr)
-            var_image.CopyInformation(self.data[0].data)
+                if which_quantity in ("std", "uncertainty",):
+                    output_arr = np.sqrt(output_arr)
+                if which_quantity in ("uncertainty",):
+                    output_arr = np.divide(
+                        output_arr,
+                        value_array / number_of_samples,
+                        out=np.ones_like(output_arr),
+                        where=value_array != 0,
+                    )
+            output_image = itk.image_view_from_array(output_arr)
+            output_image.CopyInformation(self.data[0].data)
         except AttributeError as e:
             fatal(str(e))
-        return self._data_item_classes[0](data=var_image)
+        return self._data_item_classes[0](data=output_image)
 
     @property
     def variance(self):
@@ -706,7 +713,7 @@ class SingleItkImageWithVariance(DataItemContainer):
 
     @property
     def uncertainty(self):
-        return self.get_variance_or_uncertainty("std") / self.data[0]
+        return self.get_variance_or_uncertainty("uncertainty")
 
 
 class QuotientItkImage(DataItemContainer):
