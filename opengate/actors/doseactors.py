@@ -441,7 +441,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # create an interface to item 1 of user output "edep_with_uncertainty"
         # and make it available via a property 'square' in this actor
         self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "edep_with_uncertainty", "square", item=1
+            UserInterfaceToActorOutputImage, "edep_with_uncertainty", "edep_squared", item=1
         )
         # create an interface to item 'uncertainty' of user output "edep_with_uncertainty"
         # and make it available via a property 'edep_uncertainty' in this actor
@@ -473,10 +473,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         )
 
         self.user_output.edep_with_uncertainty.set_item_suffix("edep", item=0)
-        self.user_output.edep_with_uncertainty.set_item_suffix("squared", item=1)
+        self.user_output.edep_with_uncertainty.set_item_suffix("edep_squared", item=1)
         self.user_output.edep_with_uncertainty.set_item_suffix(
             "edep_uncertainty", item="uncertainty"
         )
+
 
         self.__initcpp__()
 
