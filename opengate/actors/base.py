@@ -138,7 +138,7 @@ class ActorBase(GateObject):
     # private list of property names for interfaces already defined
     # in any actor (assuming all actors inherit from the base class)
     # Do not redefine this in inheriting classes!
-    _existing_properties_to_interfaces = []
+    _existing_properties_to_interfaces = {}
 
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
@@ -159,6 +159,7 @@ class ActorBase(GateObject):
     def __setstate__(self, state):
         self.__dict__ = state
         self.__initcpp__()
+        self.__update_interface_properties__()
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -382,6 +383,9 @@ class ActorBase(GateObject):
                 f"An actor output user interface called '{interface_name}' already exists. "
             )
 
+        self._create_interface_property(type(interface_class).__name__, interface_name)
+
+    def _create_interface_property(self, interface_class_name, interface_name):
         # create a property in the actor so the user can quickly access the interface
         def p(self):
             return self.interfaces_to_user_output[interface_name]
@@ -393,7 +397,7 @@ class ActorBase(GateObject):
         if hasattr(type(self), interface_name) and unique_interface_name not in self._existing_properties_to_interfaces:
             raise GateImplementationError(
                 f"Cannot create a property '{interface_name}' "
-                f"for interface class {interface_class} "
+                f"for interface class {interface_class_name} "
                 f"in actor {self.name} "
                 f"because a property with that name already exists, "
                 f"but it is not associated with the interface. "
@@ -402,10 +406,21 @@ class ActorBase(GateObject):
             )
         elif not hasattr(type(self), interface_name):
             setattr(type(self), interface_name, property(p))
-            self._existing_properties_to_interfaces.append(unique_interface_name)
+            self._existing_properties_to_interfaces[unique_interface_name] = interface_class_name
         else:
             print(f"DEBUG: actor {self.name} already has an attribute {interface_name}.")
             pass
+
+    def __update_interface_properties__(self):
+        """Special method to be called when unpickling an object
+        to make sure the dynamic properties linking to the interfaces are recreated.
+        """
+
+        # create properties for all interfaces of this instance
+        for k, v in self.interfaces_to_user_output.items():
+            # v is an instance of an interface class,
+            # so type(v) is the class, and type(v).__name__ the class name
+            self._create_interface_property(type(v).__name__, k)
 
     def recover_user_output(self, actor):
         self.user_output = actor.user_output
