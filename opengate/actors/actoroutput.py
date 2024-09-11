@@ -793,17 +793,51 @@ class ActorOutputQuotientMeanImage(ActorOutputImage):
 
 class ActorOutputRoot(ActorOutputBase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.default_suffix = "root"
+    user_info_defaults = {
+        "output_filename": (
+            "auto",
+            {
+                "doc": "Filename for the data represented by this actor output. "
+                "Relative paths and filenames are taken "
+                "relative to the global simulation output folder "
+                "set via the Simulation.output_dir option. ",
+            },
+        ),
+        "write_to_disk": (
+            True,
+            {
+                "doc": "Should the output be written to disk, or only kept in memory? ",
+            },
+        ),
+        "keep_data_in_memory": (
+            False,
+            {
+                "doc": "Should the data be kept in memory after the end of the simulation? "
+                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                       "Careful: Large data structures like a phase space need a lot of memory. \n"
+                       "Warning: Feature not supported for ROOT output yet. The options is forced to False. ",
+                "override": True,
+                "read_only": True
+            },
+        ),
+    }
+
+    default_suffix = "root"
 
     def get_output_path(self, *args, **kwargs):
-        return super().get_output_path("merged")
+        if 'which' in kwargs and kwargs['which'] != 'merged':
+            warning("Currently, GATE 10 only stores cumulative ROOT output per simulation ('merged'), "
+                    "not data per run. Showing you the path to the ROOT file with cumulative data.")
+        return super().get_output_path(which="merged")
 
     def initialize(self):
-        # for ROOT output, do not set a default output_filename
-        # we just DON'T want to dump the file
+        # for ROOT output, not output_filename means no output to disk (legacy Gate 9 behavior)
         if self.output_filename == "" or self.output_filename is None:
             self.write_to_disk = False
+        self.initialize_cpp_parameters()
         super().initialize()
 
+    def initialize_cpp_parameters(self):
+        self.belongs_to_actor.AddActorOutputInfo(self.name)
+        self.belongs_to_actor.SetWriteToDisk(self.name, self.write_to_disk)
+        self.belongs_to_actor.SetOutputPath(self.name, self.get_output_path_as_string())
