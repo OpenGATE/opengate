@@ -24,6 +24,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123456789
+    sim.progress_bar = True
     activity_bq = 1e6
 
     # visu

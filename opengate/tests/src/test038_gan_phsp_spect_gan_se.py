@@ -11,6 +11,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
+    sim.progress_bar = True
     condition_generator = t38.create_simulation(sim, paths)
 
     gsource = sim.get_source_user_info("gaga")

@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.progress_bar = True
     print(sim)
 
     # add a material database

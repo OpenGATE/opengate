@@ -21,6 +21,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output  # FIXME (not yet)
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
+    sim.progress_bar = True
 
     # units
     nm = gate.g4_units.nm

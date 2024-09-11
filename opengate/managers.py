@@ -1222,6 +1222,12 @@ class Simulation(GateObject):
                 "doc": "Start G4 engine initialisation but do not start the simulation.",
             },
         ),
+        "progress_bar": (
+            False,
+            {
+                "doc": "Display a progress bar during the simulation",
+            },
+        ),
     }
 
     def __init__(self, name="simulation"):
