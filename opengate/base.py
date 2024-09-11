@@ -517,10 +517,10 @@ class DynamicGateObject(GateObject):
             None,
             {
                 "doc": "List of dictionaries, where each dictionary specifies how the parameters "
-                "of this object should evolve over time during the simulation. "
-                "You cannot set this parameter directly. "
-                "Instead, use the 'add_dynamic_parametrisation()' method of your object."
-                "If None, the object is static (default).",
+                       "of this object should evolve over time during the simulation. "
+                       "You cannot set this parameter directly. "
+                       "Instead, use the 'add_dynamic_parametrisation()' method of your object."
+                       "If None, the object is static (default).",
                 "read_only": True,
             },
         )
@@ -541,7 +541,7 @@ class DynamicGateObject(GateObject):
             k
             for k in self.user_info
             if "dynamic" in self.inherited_user_info_defaults[k][1]
-            and self.inherited_user_info_defaults[k][1]["dynamic"] is True
+               and self.inherited_user_info_defaults[k][1]["dynamic"] is True
         ]
 
     @requires_fatal("simulation")
