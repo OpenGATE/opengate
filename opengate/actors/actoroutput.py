@@ -273,9 +273,6 @@ class ActorOutputBase(GateObject):
     def get_write_to_disk(self, **kwargs):
         raise NotImplementedError
 
-    def need_to_write_data(self, **kwargs):
-        raise NotImplementedError
-
     def set_output_filename(self, value, **kwargs):
         raise NotImplementedError
 
@@ -587,11 +584,6 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         #     return d
         # else:
         #     return list(d.values())[0]
-
-    def need_to_write_data(self, **kwargs):
-        return any(
-            [v["write_to_disk"] is True for v in self.data_write_config.values()]
-        )
 
     def set_output_filename(self, value, item=0):
         if item == "all":
