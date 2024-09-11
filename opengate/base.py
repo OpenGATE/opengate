@@ -208,10 +208,7 @@ def _make_property(property_name, default_value, options=None, container_dict=No
         else:
             return self.user_info[container_dict][property_name]
 
-    try:
-        read_only = options["read_only"]
-    except KeyError:
-        read_only = False
+    read_only = options.get("read_only", False)
     if read_only is False:
 
         # @prop.setter
