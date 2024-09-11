@@ -143,7 +143,8 @@ def _setter_hook_active(self, active):
 
 class ActorOutputBase(GateObject):
 
-    _default_interface_class = None
+    _default_interface_class = BaseUserInterfaceToActorOutput
+    default_suffix = None
 
     user_info_defaults = {
         "belongs_to": (
