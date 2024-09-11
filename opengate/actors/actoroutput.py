@@ -53,17 +53,11 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def active(self):
-        try:
-            return self._user_output.get_active(**self._kwargs_for_interface_calls)
-        except NotImplementedError:
-            raise AttributeError
+        return self._user_output.get_active(**self._kwargs_for_interface_calls)
 
     @active.setter
     def active(self, value):
-        try:
-            self._user_output.set_active(value, **self._kwargs_for_interface_calls)
-        except NotImplementedError:
-            raise AttributeError
+        self._user_output.set_active(value, **self._kwargs_for_interface_calls)
 
     def get_output_path(self, **kwargs):
         kwargs.update(self._kwargs_for_interface_calls)
@@ -71,39 +65,27 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def write_to_disk(self):
-        try:
-            return self._user_output.get_write_to_disk(
-                **self._kwargs_for_interface_calls
-            )
-        except NotImplementedError:
-            raise AttributeError
+        return self._user_output.get_write_to_disk(
+            **self._kwargs_for_interface_calls
+        )
 
     @write_to_disk.setter
     def write_to_disk(self, value):
-        try:
-            self._user_output.set_write_to_disk(
-                value, **self._kwargs_for_interface_calls
-            )
-        except NotImplementedError:
-            raise AttributeError
+        self._user_output.set_write_to_disk(
+            value, **self._kwargs_for_interface_calls
+        )
 
     @property
     def output_filename(self):
-        try:
-            return self._user_output.get_output_filename(
-                **self._kwargs_for_interface_calls
-            )
-        except NotImplementedError:
-            raise AttributeError
+        return self._user_output.get_output_filename(
+            **self._kwargs_for_interface_calls
+        )
 
     @output_filename.setter
     def output_filename(self, value):
-        try:
-            self._user_output.set_output_filename(
-                value, **self._kwargs_for_interface_calls
-            )
-        except NotImplementedError:
-            raise AttributeError
+        self._user_output.set_output_filename(
+            value, **self._kwargs_for_interface_calls
+        )
 
     def __getattr__(self, item):
         # Recall: this method is called when python cannot otherwise
