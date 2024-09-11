@@ -370,6 +370,8 @@ class DataItemContainer(DataContainer):
                     for i in range(len(cls._data_item_classes))
                 ]
             )
+            if len(default_data_item_config) == 1:
+                list(default_data_item_config.values())[0]["suffix"] = None
         return default_data_item_config
 
     # the actual write config needs to be fetched from the actor output instance
