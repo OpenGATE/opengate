@@ -106,7 +106,6 @@ if __name__ == "__main__":
     LETActor_IDD_d.spacing = spacing
     LETActor_IDD_d.hit_type = "random"
     LETActor_IDD_d.averaging_method = "dose_average"
-    LETActor_IDD_d.user_output.let.keep_data_per_run = True
 
     LETActorName_IDD_t = "LETActorOG_t"
     LETActor_IDD_t = sim.add_actor("LETActor", LETActorName_IDD_t)
@@ -180,10 +179,10 @@ if __name__ == "__main__":
 
     tests_pass = []
     is_ok = utility.assert_filtered_imagesprofile1D(
-        ref_filter_filename1=str(doseIDD.get_output_path(output_name="edep")),
+        ref_filter_filename1=str(doseIDD.edep.get_output_path()),
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
-        filename2=str(LETActor_IDD_d.get_output_path(item="quotient")),
+        filename2=str(LETActor_IDD_d.let.get_output_path()),
         tolerance=40,
         # plt_ylim=[0, 25],
     )
@@ -192,10 +191,10 @@ if __name__ == "__main__":
 
     is_ok = (
         utility.assert_filtered_imagesprofile1D(
-            ref_filter_filename1=str(doseIDD.get_output_path(output_name="edep")),
+            ref_filter_filename1=str(doseIDD.edep.get_output_path()),
             ref_filename1=ref_path
             / "test050_LET1D_noFilter__PrimaryProton-trackAveraged.mhd",
-            filename2=LETActor_IDD_t.get_output_path(item="quotient"),
+            filename2=LETActor_IDD_t.let.get_output_path(),
             tolerance=8,
             # plt_ylim=[0, 18],
         )
@@ -203,9 +202,9 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.assert_filtered_imagesprofile1D(
-            ref_filter_filename1=str(doseIDD.get_output_path(output_name="edep")),
+            ref_filter_filename1=str(doseIDD.edep.get_output_path()),
             ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
-            filename2=LETActor_primaries.get_output_path(item="quotient"),
+            filename2=LETActor_primaries.let.get_output_path(),
             tolerance=5,
             # plt_ylim=[0, 25],
         )
