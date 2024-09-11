@@ -114,7 +114,14 @@ class BaseUserInterfaceToActorOutput:
 
         # try to get known attributes directly from __dict__
         # to avoid infinite recursion
-        if item in type(self).__dict__["_known_attributes"]:
+        # if item in type(self).__dict__["_known_attributes"]:
+        if item in (
+            "__setstate__",
+            "__getstate__",
+            "user_output_name",
+            "belongs_to_actor",
+            "_kwargs_for_interface_calls",
+        ):
             try:
                 return self.__dict__[item]
             except KeyError:
@@ -130,7 +137,12 @@ class BaseUserInterfaceToActorOutput:
             )
 
     def __setattr__(self, item, value):
-        if item in type(self).__dict__["_known_attributes"]:
+        # if item in type(self).__dict__["_known_attributes"]:
+        if item in (
+                "user_output_name",
+                "belongs_to_actor",
+                "_kwargs_for_interface_calls",
+        ):
             self.__dict__[item] = value
         else:
             try:
