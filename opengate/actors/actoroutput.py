@@ -112,13 +112,6 @@ class UserInterfaceToActorOutputUsingDataItemContainer(BaseUserInterfaceToActorO
     def __init__(self, *args, item=0, **kwargs):
         super().__init__(*args, kwargs_for_interface_calls={"item": item}, **kwargs)
 
-    @classmethod
-    def _generate_key(cls, user_output_name, item=None, **kwargs):
-        if item is None:
-            return user_output_name
-        else:
-            return f"{user_output_name}_{item}"
-
 
 class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemContainer):
 
