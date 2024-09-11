@@ -333,6 +333,12 @@ class MergeableActorOutput(ActorOutputBase):
                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
             },
         ),
+        "keep_data_per_run": (
+            False,
+            {
+                "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
+            },
+        ),
     }
 
     def merge_data_from_runs(self):
@@ -351,7 +357,7 @@ class MergeableActorOutput(ActorOutputBase):
             self.data_per_run.pop(run_index)
 
     def end_of_simulation(self, **kwargs):
-        self.write_data_if_requested("all", **kwargs)
+        self.write_data_if_requested(which="all", **kwargs)
         # if self.merge_data_after_simulation is True:
         #     self.merge_data_from_runs()
         # if self.keep_data_per_run is False:
