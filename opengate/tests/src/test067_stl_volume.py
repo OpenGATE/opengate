@@ -158,16 +158,16 @@ def create_simulation():
     stats.track_types_flag = True
 
     # Dose Actor
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.attached_to = tes
+    dose_actor = sim.add_actor("DoseActor", "dose")
+    dose_actor.attached_to = tes
     # number of voxels per dimension
-    dose.size = [1, 1, 300]
+    dose_actor.size = [1, 1, 300]
     # size of the voxels
-    dose.spacing = [30 * cm, 30 * cm, 1 * mm]
-    dose.user_output.dose.active = True
-    dose.user_output.square.active = True
-    dose.hit_type = "random"
-    dose.output_filename = "test067_dose.mhd"
+    dose_actor.spacing = [30 * cm, 30 * cm, 1 * mm]
+    dose_actor.dose.active = True
+    dose_actor.edep_squared.active = True
+    dose_actor.hit_type = "random"
+    dose_actor.output_filename = "test067_dose.mhd"
 
     return sim
 
@@ -183,7 +183,7 @@ def eval_results(sim):
     )
 
     dose = sim.get_actor("dose")
-    image = dose.get_output_data(output_name="edep")
+    image = dose.edep.get_data()
     np_image = itk.GetArrayFromImage(image)
     # For 1D images, the array is squeezed
     np_image = np.squeeze(np_image)
