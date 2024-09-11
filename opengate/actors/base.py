@@ -199,52 +199,47 @@ class ActorBase(GateObject):
 
     # *** shortcut properties ***
     @property
+    @shortcut_for_single_output_actor
     def output_filename(self):
-        if len(self.user_output) > 1:
-            return Box([(k, v.output_filename) for k, v in self.user_output.items()])
-        else:
-            return list(self.user_output.values())[0].output_filename
+        return list(self.interfaces_to_user_output.values())[0].output_filename
 
     @output_filename.setter
     def output_filename(self, filename):
-        if len(self.user_output) > 1:
-            for k, v in self.user_output.items():
+        if len(self.interfaces_to_user_output) > 1:
+            for k, v in self.interfaces_to_user_output.items():
                 v.output_filename = insert_suffix_before_extension(
                     filename, k, suffix_separator="_"
                 )
         else:
-            list(self.user_output.values())[0].output_filename = filename
+            list(self.interfaces_to_user_output.values())[0].output_filename = filename
 
     @property
+    @shortcut_for_single_output_actor
     def write_to_disk(self):
-        if len(self.user_output) > 1:
-            return Box([(k, v.write_to_disk) for k, v in self.user_output.items()])
-        else:
-            return list(self.user_output.values())[0].write_to_disk
+        return list(self.interfaces_to_user_output.values())[0].write_to_disk
 
     @write_to_disk.setter
     def write_to_disk(self, write_to_disk):
-        for k, v in self.user_output.items():
+        for k, v in self.interfaces_to_user_output.items():
             v.set_write_to_disk(write_to_disk, "all")
 
-    def get_output_path(self, output_name=None, which="merged", **kwargs):
-        if output_name is None:
-            # if no output_name, we check if there is only one single output
-            if len(self.user_output) != 1:
-                fatal(
-                    f"This actor handles multiple outputs. "
-                    f"Therefore, you need to specify which.\n"
-                    f"Example: '.get_output_path(output_name='{list(self.user_output.keys())[0]}').\n"
-                    f"The available output names are: {list(self.user_output.keys())}"
-                )
-            # get the first (and only) item from user_output
-            output_name = list(self.user_output.keys())[0]
-        if output_name not in self.user_output:
-            fatal(
-                f"This actor does not have any output named '{output_name}'."
-                f"Available outputs are: {list(self.user_output.keys())}"
-            )
-        return self.user_output[output_name].get_output_path(which=which, **kwargs)
+    def get_output_path(self, name=None, **kwargs):
+        if name is not None:
+            try:
+                return self.interfaces_to_user_output[name].get_output_path(**kwargs)
+            except KeyError:
+                fatal(f"No output called '{name}' found in {self.type_name} actor '{self.name}'.")
+        elif len(self.interfaces_to_user_output) == 1:
+            list(self.interfaces_to_user_output.values())[0].get_output_path(**kwargs)
+        elif len(self.interfaces_to_user_output) == 0:
+            fatal(f"The {self.type_name} actor '{self.name}' does not handle any output.")
+        else:
+            fatal(f"The {self.type_name} actor '{self.name}' handles multiple outputs. "
+                  "There are 2 ways to fix this: \n"
+                  "1) Provide a keyword argument name=OUTPUT_NAME. \n"
+                  f"   Example: my_actor.get_output_path(name='{list(self.interfaces_to_user_output.keys())[0]}')\n"
+                  "2) Call get_output_path() via the output.\n"
+                  f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_output_path(). ")
 
     @property
     def actor_manager(self):
