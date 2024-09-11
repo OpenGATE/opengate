@@ -433,6 +433,12 @@ class ActorBase(GateObject):
 
     def recover_user_output(self, actor):
         self.user_output = actor.user_output
+        # if actor comes from a subprocess, its reference actor.simulation
+        # points to the simulation instance created in the subprocess
+        # Therefore, we have to reset it to the right simulation instance,
+        # namely the one from the main process
+        for u in self.user_output.values():
+            u.simulation = self.simulation
         for v in self.interfaces_to_user_output.values():
             v.belongs_to_actor = self
 
