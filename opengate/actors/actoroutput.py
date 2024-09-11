@@ -314,7 +314,7 @@ class ActorOutputBase(GateObject):
     def write_data(self, *args, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
-    def write_data_if_requested(self, *args, **kwargs):
+    def write_data_if_requested(self,**kwargs):
         raise NotImplementedError("This is the base class. ")
 
     def load_data(self, which):
