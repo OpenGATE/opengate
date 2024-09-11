@@ -308,7 +308,7 @@ class ActorBase(GateObject):
         actor_output_class,
         name,
         can_be_deactivated=False,
-        automatically_generate_interface=False,
+        automatically_generate_interface=True,
         **kwargs,
     ):
         """Method to be called internally (not by user) in the specific actor class implementations."""
