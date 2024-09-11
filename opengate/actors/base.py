@@ -222,7 +222,7 @@ class ActorBase(GateObject):
         if len(self.interfaces_to_user_output) > 1:
             for k, v in self.interfaces_to_user_output.items():
                 v.output_filename = insert_suffix_before_extension(
-                    filename, k, suffix_separator="_"
+                    filename, v.item_suffix, suffix_separator="_"
                 )
         else:
             list(self.interfaces_to_user_output.values())[0].output_filename = filename
