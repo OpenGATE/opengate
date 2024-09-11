@@ -472,10 +472,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             ActorOutputSingleMeanImage, "density", automatically_generate_interface=True
         )
 
-        self.user_output.edep_with_uncertainty.set_item_suffix('edep', item=0)
-        self.user_output.edep_with_uncertainty.set_item_suffix('squared', item=1)
-        self.user_output.edep_with_uncertainty.set_item_suffix('edep_uncertainty', item='uncertainty')
-
+        self.user_output.edep_with_uncertainty.set_item_suffix("edep", item=0)
+        self.user_output.edep_with_uncertainty.set_item_suffix("squared", item=1)
+        self.user_output.edep_with_uncertainty.set_item_suffix(
+            "edep_uncertainty", item="uncertainty"
+        )
 
         self.__initcpp__()
 
@@ -765,7 +766,9 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
-        self._add_user_output(ActorOutputQuotientMeanImage, "let", automatically_generate_interface=False)
+        self._add_user_output(
+            ActorOutputQuotientMeanImage, "let", automatically_generate_interface=False
+        )
         self._add_interface_to_user_output(
             UserInterfaceToActorOutputImage, "let", "numerator", item=0
         )
@@ -773,16 +776,16 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             UserInterfaceToActorOutputImage, "let", "denominator", item=1
         )
         self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "let", "let", item='quotient'
+            UserInterfaceToActorOutputImage, "let", "let", item="quotient"
         )
 
         # configure the default item config for the output of the LET actor,
         # which is different from the generic quotient image container class:
 
         # Suffix to be appended in case a common output_filename per actor is assigned
-        self.user_output.let.set_item_suffix(None, item='quotient')
-        self.user_output.let.set_item_suffix('numerator', item=0)
-        self.user_output.let.set_item_suffix('denominator', item=1)
+        self.user_output.let.set_item_suffix(None, item="quotient")
+        self.user_output.let.set_item_suffix("numerator", item=0)
+        self.user_output.let.set_item_suffix("denominator", item=1)
 
         # the LET always needs both components to calculate LET
         self.user_output.let.set_active(True, item=0)
@@ -792,7 +795,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         # not the numerator and denominator
         self.user_output.let.set_write_to_disk(False, item=0)
         self.user_output.let.set_write_to_disk(False, item=1)
-        self.user_output.let.set_write_to_disk(True, item='quotient')
+        self.user_output.let.set_write_to_disk(True, item="quotient")
 
         self.__initcpp__()
 

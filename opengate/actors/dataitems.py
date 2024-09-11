@@ -732,7 +732,9 @@ class QuotientItkImage(DataItemContainer):
         {
             0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
             1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            "quotient": Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            "quotient": Box(
+                {"output_filename": "auto", "write_to_disk": True, "active": True}
+            ),
         }
     )
 

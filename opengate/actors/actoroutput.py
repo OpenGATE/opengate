@@ -95,17 +95,13 @@ class BaseUserInterfaceToActorOutput:
     @property
     def item_suffix(self):
         try:
-            return self._user_output.get_item_suffix(
-                **self._kwargs_for_interface_calls
-            )
+            return self._user_output.get_item_suffix(**self._kwargs_for_interface_calls)
         except NotImplementedError:
             raise AttributeError
 
     @item_suffix.setter
     def item_suffix(self, value):
-        self._user_output.set_item_suffix(
-            value, **self._kwargs_for_interface_calls
-        )
+        self._user_output.set_item_suffix(value, **self._kwargs_for_interface_calls)
 
     def __getattr__(self, item):
         # Recall: this method is called when python cannot otherwise
@@ -139,9 +135,9 @@ class BaseUserInterfaceToActorOutput:
     def __setattr__(self, item, value):
         # if item in type(self).__dict__["_known_attributes"]:
         if item in (
-                "user_output_name",
-                "belongs_to_actor",
-                "_kwargs_for_interface_calls",
+            "user_output_name",
+            "belongs_to_actor",
+            "_kwargs_for_interface_calls",
         ):
             self.__dict__[item] = value
         else:
@@ -622,7 +618,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             )
         else:
             try:
-                return self.data_item_config[item].get('suffix', str(item))
+                return self.data_item_config[item].get("suffix", str(item))
             except KeyError:
                 self._fatal_unknown_item(item)
 
@@ -639,11 +635,9 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         return self._insert_item_suffix(output_filename, item)
 
     def _insert_item_suffix(self, output_filename, item):
-        suffix = self.data_item_config[item].get('suffix', str(item))
+        suffix = self.data_item_config[item].get("suffix", str(item))
         if suffix is not None:
-            output_filename = insert_suffix_before_extension(
-                output_filename, suffix
-            )
+            output_filename = insert_suffix_before_extension(output_filename, suffix)
         return output_filename
 
     def _collect_item_identifiers(self, item):
