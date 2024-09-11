@@ -98,15 +98,20 @@ def digest_user_info_defaults(cls):
         # base class if the inherited class does not define user_info_defaults
         if "user_info_defaults" in c.__dict__:
             # Make sure there are no duplicate user info items.
-            if set(c.user_info_defaults).isdisjoint(
-                set(inherited_user_info_defaults.keys())
+            # First check for user info defaults that override the one from super classes and exclude them
+            inherited_user_info_defaults_keys_override_true = dict([k for k, v in inherited_user_info_defaults.items()
+                                                                    if 'override' in v[1] and v[1]['override'] is True])
+            user_info_defaults_to_be_added = dict([(k, v) for k, v in c.user_info_defaults.items()
+                                                   if k not in inherited_user_info_defaults_keys_override_true])
+            if set(user_info_defaults_to_be_added.keys()).isdisjoint(
+                    set(inherited_user_info_defaults.keys())
             ):
-                inherited_user_info_defaults.update(c.user_info_defaults)
+                inherited_user_info_defaults.update(user_info_defaults_to_be_added)
             else:
                 fatal(
                     f"Implementation error. "
                     f"Duplicate user info defined for class {cls}."
-                    f"Found {c.user_info_defaults}."
+                    f"Found {user_info_defaults_to_be_added}."
                     f"Base classes already contain {inherited_user_info_defaults.keys()}. "
                 )
         else:
