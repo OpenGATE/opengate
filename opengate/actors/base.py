@@ -235,7 +235,7 @@ class ActorBase(GateObject):
     @write_to_disk.setter
     def write_to_disk(self, write_to_disk):
         for k, v in self.interfaces_to_user_output.items():
-            v.set_write_to_disk(write_to_disk, "all")
+            v.write_to_disk = write_to_disk
 
     def get_output_path(self, name=None, **kwargs):
         if name is not None:
