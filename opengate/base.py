@@ -92,20 +92,18 @@ def digest_user_info_defaults(cls):
     inherited_user_info_defaults = {}
     # loop through MRO backwards so that inherited classes
     # are processed first
-    for c in cls.mro()[::-1]:
+    for c in cls.mro():
         # check if the class actual define user_info_defaults
         # note: hasattr() would not work because it would yield the attribute from the
         # base class if the inherited class does not define user_info_defaults
         if "user_info_defaults" in c.__dict__:
             # Make sure there are no duplicate user info items.
             # First check for user info defaults that override the one from super classes and exclude them
-            inherited_user_info_defaults_keys_override_true = dict(
-                [
+            inherited_user_info_defaults_keys_override_true = [
                     k
                     for k, v in inherited_user_info_defaults.items()
                     if "override" in v[1] and v[1]["override"] is True
                 ]
-            )
             user_info_defaults_to_be_added = dict(
                 [
                     (k, v)
@@ -121,8 +119,8 @@ def digest_user_info_defaults(cls):
                 fatal(
                     f"Implementation error. "
                     f"Duplicate user info defined for class {cls}."
-                    f"Found {user_info_defaults_to_be_added}."
-                    f"Base classes already contain {inherited_user_info_defaults.keys()}. "
+                    f"Found {list(user_info_defaults_to_be_added.keys())}."
+                    f"Base classes already contain {list(inherited_user_info_defaults.keys())}. "
                 )
         else:
             # Ensure that the class defines an empty dictionary
