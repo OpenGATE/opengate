@@ -588,7 +588,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
     def set_output_filename(self, value, item=0):
         if item == "all":
             for k in self.data_item_config.keys():
-                self.set_output_filename(insert_suffix_before_extension(value, k), k)
+                self.set_output_filename(self._insert_item_suffix(value, k), k)
         else:
             try:
                 self.data_item_config[item]["output_filename"] = str(value)
@@ -633,9 +633,18 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         self.data_item_config[item]["suffix"] = value
 
     def _generate_auto_output_filename(self, item=0):
-        return insert_suffix_before_extension(
-            super()._generate_auto_output_filename(), str(item)
-        )
+        # try to get a suffix from the data item config dictionary
+        # and fall back to the item name (or index) in case no suffix is found
+        output_filename = super()._generate_auto_output_filename()
+        return self._insert_item_suffix(output_filename, item)
+
+    def _insert_item_suffix(self, output_filename, item):
+        suffix = self.data_item_config[item].get('suffix', str(item))
+        if suffix is not None:
+            output_filename = insert_suffix_before_extension(
+                output_filename, suffix
+            )
+        return output_filename
 
     def _collect_item_identifiers(self, item):
         if item == "all":
