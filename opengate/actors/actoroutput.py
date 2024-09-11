@@ -94,17 +94,18 @@ class BaseUserInterfaceToActorOutput:
 
         # try to get known attributes directly from __dict__
         # to avoid infinite recursion
-        if item in self._known_attributes:
+        if item in type(self).__dict__["_known_attributes"]:
             try:
                 return self.__dict__[item]
             except KeyError:
                 raise AttributeError(f"Could not find known attribute {item}")
         # for the others, use the getattr() builtin
+        _user_output = self.belongs_to_actor.user_output[self.user_output_name]
         try:
-            return getattr(self._user_output, item)
+            return getattr(_user_output, item)
         except AttributeError:
             raise AttributeError(
-                f"Tried to find {item} in user output {self._user_output.name} "
+                f"Tried to find {item} in user output {_user_output.name} "
                 "and via the interface to it, but it is not there. "
             )
 
