@@ -53,7 +53,10 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def active(self):
-        return self._user_output.get_active(**self._kwargs_for_interface_calls)
+        try:
+            return self._user_output.get_active(**self._kwargs_for_interface_calls)
+        except NotImplementedError:
+            raise AttributeError
 
     @active.setter
     def active(self, value):
@@ -65,7 +68,12 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def write_to_disk(self):
-        return self._user_output.get_write_to_disk(**self._kwargs_for_interface_calls)
+        try:
+            return self._user_output.get_write_to_disk(
+                **self._kwargs_for_interface_calls
+            )
+        except NotImplementedError:
+            raise AttributeError
 
     @write_to_disk.setter
     def write_to_disk(self, value):
@@ -73,7 +81,12 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def output_filename(self):
-        return self._user_output.get_output_filename(**self._kwargs_for_interface_calls)
+        try:
+            return self._user_output.get_output_filename(
+                **self._kwargs_for_interface_calls
+            )
+        except NotImplementedError:
+            raise AttributeError
 
     @output_filename.setter
     def output_filename(self, value):
