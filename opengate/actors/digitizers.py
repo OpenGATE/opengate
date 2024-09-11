@@ -631,8 +631,8 @@ class DigitizerProjectionActor(g4.GateDigitizerProjectionActor, ActorBase):
         # update the cpp image and start
         update_image_py_to_cpp(self.output_image, self.fImage, True)
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
-        # keep initial origin
-        self.start_output_origin = self.output_image.GetOrigin()
+        # keep initial origin (it is needed to make a copy)
+        self.start_output_origin = np.array(self.output_image.GetOrigin())
 
     def EndSimulationAction(self):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
