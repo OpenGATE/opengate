@@ -327,7 +327,7 @@ class ActorOutputBase(GateObject):
 class MergeableActorOutput(ActorOutputBase):
 
     user_info_defaults = {
-        "auto_merge": (
+        "merge_data_after_simulation": (
             True,
             {
                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
@@ -345,14 +345,14 @@ class MergeableActorOutput(ActorOutputBase):
             self.merged_data = merge_data([self.merged_data, data])
 
     def end_of_run(self, run_index):
-        if self.auto_merge is True:
+        if self.merge_data_after_simulation is True:
             self.merge_into_merged_data(self.data_per_run[run_index])
         if self.keep_data_per_run is False:
             self.data_per_run.pop(run_index)
 
     def end_of_simulation(self, **kwargs):
         self.write_data_if_requested("all", **kwargs)
-        # if self.auto_merge is True:
+        # if self.merge_data_after_simulation is True:
         #     self.merge_data_from_runs()
         # if self.keep_data_per_run is False:
         #     for k in self.data_per_run:
