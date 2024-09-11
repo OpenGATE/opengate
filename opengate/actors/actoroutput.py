@@ -305,7 +305,7 @@ class ActorOutputBase(GateObject):
             self.merged_data = None
         super().close()
 
-    def get_data(self, *args, **kwargs):
+    def get_data(self, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
     def store_data(self, *args, **kwargs):
