@@ -765,12 +765,34 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
-        self._add_user_output(ActorOutputQuotientMeanImage, "let")
-        # configure the default write config for the output of the LET actor,
+        self._add_user_output(ActorOutputQuotientMeanImage, "let", automatically_generate_interface=False)
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage, "let", "numerator", item=0
+        )
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage, "let", "denominator", item=1
+        )
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage, "let", "let", item='quotient'
+        )
+
+        # configure the default item config for the output of the LET actor,
         # which is different from the generic quotient image container class:
-        self.user_output.let.data_write_config.quotient.suffix = None
-        self.user_output.let.data_write_config.numerator.write_to_disk = False
-        self.user_output.let.data_write_config.denominator.write_to_disk = False
+
+        # Suffix to be appended in case a common output_filename per actor is assigned
+        self.user_output.let.set_item_suffix(None, item='quotient')
+        self.user_output.let.set_item_suffix('numerator', item=0)
+        self.user_output.let.set_item_suffix('denominator', item=1)
+
+        # the LET always needs both components to calculate LET
+        self.user_output.let.set_active(True, item=0)
+        self.user_output.let.set_active(True, item=1)
+
+        # Most users will probably only want the LET image written to disk,
+        # not the numerator and denominator
+        self.user_output.let.set_write_to_disk(False, item=0)
+        self.user_output.let.set_write_to_disk(False, item=1)
+        self.user_output.let.set_write_to_disk(True, item='quotient')
 
         self.__initcpp__()
 
