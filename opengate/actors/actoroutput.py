@@ -688,13 +688,13 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         else:
             return data
 
-    def write_data(self, which, item="all", **kwargs):
+    def write_data(self, which="all", item='all', **kwargs):
         if which == "all_runs":
             for k in self.data_per_run.keys():
-                self.write_data(k, item=item, **kwargs)
+                self.write_data(which=k, item=item, **kwargs)
         elif which == "all":
-            self.write_data("all_runs", item=item, **kwargs)
-            self.write_data("merged", item=item, **kwargs)
+            self.write_data(which="all_runs", item=item, **kwargs)
+            self.write_data(which="merged", item=item, **kwargs)
         else:
             data = self.get_data_container(which)
             if data is not None:
