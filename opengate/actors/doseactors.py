@@ -239,7 +239,6 @@ class VoxelDepositActor(ActorBase):
         for u in self.user_output.values():
             if u.get_active(item="all"):
                 u.end_of_simulation()
-                # u.write_data_if_requested("all")
 
 
 def compute_std_from_sample(
@@ -556,7 +555,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
             is True
         ):
-            self.user_output.edep_with_uncertainty.set_active(True, item=1)
+            self.user_output.edep_with_uncertainty.set_active(True, item=1)  # activate squared component
 
         # activate density if we need the dose and the DoseActor is not attached to a volume
         if (
