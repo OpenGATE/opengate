@@ -121,12 +121,12 @@ if __name__ == "__main__":
 
     # add dose actor
     dose_postprocess = sim.add_actor("DoseActor", "dose_postprocess")
-    dose_postprocess.output_filename.dose = "dose_ct_post.mhd"
+    dose_postprocess.dose.output_filename = "dose_ct_post.mhd"
     dose_postprocess.attached_to = patient.name
     dose_postprocess.size = [55, 63, 63]
     dose_postprocess.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_postprocess.hit_type = "random"
-    dose_postprocess.user_output.dose.active = (
+    dose_postprocess.dose.active = (
         True  # just calculate edep during simulation
     )
     # OPTION CURRENTLY UNAVAILABLE
@@ -135,15 +135,15 @@ if __name__ == "__main__":
     # )
 
     dose_in_step = sim.add_actor("DoseActor", "dose_in_step")
-    dose_in_step.output_filename.dose = "dose_ct_step.mhd"
+    dose_in_step.dose.output_filename = "dose_ct_step.mhd"
     dose_in_step.attached_to = patient.name
     dose_in_step.size = [55, 63, 63]
     dose_in_step.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_in_step.hit_type = "random"
-    dose_in_step.user_output.dose.active = (
+    dose_in_step.dose.active = (
         True  # calculate dose directly in stepping action
     )
-    dose_in_step.user_output.square.active = True
+    dose_in_step.edep_squared.active = True
     # OPTION CURRENTLY UNAVAILABLE
     # dose_in_step.dose_calc_on_the_fly = True
 
@@ -169,8 +169,8 @@ if __name__ == "__main__":
         print(stat)
 
     # read output
-    d_post_path = dose_postprocess.get_output_path(output_name="dose")
-    d_step_path = dose_in_step.get_output_path(output_name="dose")
+    d_post_path = dose_postprocess.dose.get_output_path()
+    d_step_path = dose_in_step.dose.get_output_path()
     # img_mhd_out = itk.imread(d_post_path)
     # img_mhd_ref = itk.imread(d_step_path)
 
