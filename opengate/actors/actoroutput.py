@@ -288,6 +288,12 @@ class ActorOutputBase(GateObject):
     def set_active(self, value, **kwargs):
         raise NotImplementedError
 
+    def get_item_suffix(self, **kwargs):
+        return None
+
+    def set_item_suffix(self, value, **kwargs):
+        raise NotImplementedError
+
     @property
     def belongs_to_actor(self):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
@@ -616,6 +622,23 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         #     else:
         #         output_filename = f
         # return output_filename
+
+    def get_item_suffix(self, item=0, **kwargs):
+        if item == "all":
+            return dict(
+                [(k, self.get_item_suffix(item=k)) for k in self.data_item_config]
+            )
+        else:
+            try:
+                return self.data_item_config[item].get('suffix', str(item))
+            except KeyError:
+                self._fatal_unknown_item(item)
+
+    def set_item_suffix(self, value, item=0, **kwargs):
+        items = self._collect_item_identifiers(item)
+        if len(items) > 1:
+            fatal("You can set the item suffix only for one item at a time. ")
+        self.data_item_config[item]["suffix"] = value
 
     def _generate_auto_output_filename(self, item=0):
         return insert_suffix_before_extension(
