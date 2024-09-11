@@ -98,7 +98,7 @@ if __name__ == "__main__":
     print(stats_actor)
 
     # check if exists and NOT empty
-    hits = uproot.open(ta2.get_output_path())["PhaseSpace"]
+    hits = uproot.open(ta2.get_output_path_string())["PhaseSpace"]
     is_ok2 = source.n - 10 < hits.num_entries < source.n + 10
     utility.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
     print()
