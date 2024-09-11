@@ -324,7 +324,7 @@ class ActorOutputBase(GateObject):
         )
 
 
-class ActorOutputAutoMerge(ActorOutputBase):
+class MergeableActorOutput(ActorOutputBase):
 
     user_info_defaults = {
         "auto_merge": (
@@ -359,7 +359,7 @@ class ActorOutputAutoMerge(ActorOutputBase):
         #         self.data_per_run[k] = None
 
 
-class ActorOutputUsingDataItemContainer(ActorOutputAutoMerge):
+class ActorOutputUsingDataItemContainer(MergeableActorOutput):
 
     user_info_defaults = {
         "data_item_config": (
