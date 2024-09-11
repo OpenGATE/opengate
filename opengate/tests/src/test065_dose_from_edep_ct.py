@@ -126,9 +126,7 @@ if __name__ == "__main__":
     dose_postprocess.size = [55, 63, 63]
     dose_postprocess.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_postprocess.hit_type = "random"
-    dose_postprocess.dose.active = (
-        True  # just calculate edep during simulation
-    )
+    dose_postprocess.dose.active = True  # just calculate edep during simulation
     # OPTION CURRENTLY UNAVAILABLE
     # dose_postprocess.dose_calc_on_the_fly = (
     #     False  # calc dose as edep/mass after end of simulation
@@ -140,9 +138,7 @@ if __name__ == "__main__":
     dose_in_step.size = [55, 63, 63]
     dose_in_step.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose_in_step.hit_type = "random"
-    dose_in_step.dose.active = (
-        True  # calculate dose directly in stepping action
-    )
+    dose_in_step.dose.active = True  # calculate dose directly in stepping action
     dose_in_step.edep_squared.active = True
     # OPTION CURRENTLY UNAVAILABLE
     # dose_in_step.dose_calc_on_the_fly = True

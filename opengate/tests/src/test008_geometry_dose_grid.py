@@ -132,10 +132,7 @@ def main():
     ok = True
     for test_name, dose in dose_actors.items():
         print(test_name)
-        ok = (
-            check_dose_grid_geometry(dose.edep.get_output_path(), dose)
-            and ok
-        )
+        ok = check_dose_grid_geometry(dose.edep.get_output_path(), dose) and ok
 
     utility.test_ok(ok)
 

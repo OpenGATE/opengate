@@ -177,8 +177,12 @@ if __name__ == "__main__":
 
     yzM = np.array(yz).reshape(int(len(yz) / 2), 2)
     # convert from mm (wrt image center) to voxel
-    spot_y = [int(y / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for y in yzM[:, 0]]
-    spot_z = [int(z / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for z in yzM[:, 1]]
+    spot_y = [
+        int(y / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for y in yzM[:, 0]
+    ]
+    spot_z = [
+        int(z / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for z in yzM[:, 1]
+    ]
 
     thresh = 0.105
 
