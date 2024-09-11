@@ -5,6 +5,7 @@ from .base import ActorBase
 from ..utility import g4_units, g4_best_unit_tuple
 from .actoroutput import ActorOutputBase
 from ..serialization import dump_json
+from ..exception import warning
 
 
 class ActorOutputStatisticsActor(ActorOutputBase):
@@ -18,12 +19,27 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 "allowed_values": ("json", "legacy"),
             },
         ),
+        "output_filename": (
+            "auto",
+            {
+                "doc": "Filename for the data represented by this actor output. "
+                       "Relative paths and filenames are taken "
+                       "relative to the global simulation output folder "
+                       "set via the Simulation.output_dir option. ",
+            },
+        ),
+        "write_to_disk": (
+            True,
+            {
+                "doc": "Should the output be written to disk, or only kept in memory? ",
+            },
+        ),
     }
+
+    default_suffix = "json"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.default_suffix = "json"
 
         # predefine the merged_data
         self.merged_data = Box()
@@ -67,10 +83,13 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         else:
             return 0
 
-    def store_data(self, data):
+    def store_data(self, data, **kwargs):
         self.merged_data.update(data)
 
-    def get_data(self):
+    def get_data(self, **kwargs):
+        if 'which' in kwargs and kwargs['which'] != 'merged':
+            warning(f"The statistics actor output only stores merged data currently. "
+                    f"The which={kwargs['which']} you provided will be ignored. ")
         # the statistics actor currently only handles merged data, so we return it
         # no input variable 'which' as in other output classes
         return self.merged_data
@@ -135,14 +154,17 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         # remove last line break
         return s.rstrip("\n")
 
-    def write_data(self):
+    def write_data(self, **kwargs):
         """Override virtual method from base class."""
-        with open(self.get_output_path("merged"), "w+") as f:
+        with open(self.get_output_path(which="merged"), "w+") as f:
             if self.encoder == "json":
                 dump_json(self.get_processed_output(), f, indent=4)
             else:
                 f.write(self.__str__())
 
+    def write_data_if_requested(self, **kwargs):
+        if self.write_to_disk is True:
+            self.write_data(**kwargs)
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     """
