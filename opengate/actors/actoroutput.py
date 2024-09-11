@@ -243,12 +243,7 @@ class ActorOutputBase(GateObject):
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def initialize(self):
-        self.initialize_cpp_parameters()
-
-    def initialize_cpp_parameters(self):
-        self.belongs_to_actor.AddActorOutputInfo(self.name)
-        self.belongs_to_actor.SetWriteToDisk(self.name, self.get_write_to_disk())
-        self.belongs_to_actor.SetOutputPath(self.name, self.get_output_path_as_string())
+        pass
 
     def _generate_auto_output_filename(self, **kwargs):
         return f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
