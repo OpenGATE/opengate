@@ -168,25 +168,23 @@ class ActorBase(GateObject):
         for k, v in d["user_output"].items():
             self.user_output[k].from_dictionary(v)
 
-    def get_output_data(self, output_name=None, **kwargs):
-        if len(self.user_output) > 1:
-            if output_name is None:
-                fatal(
-                    f"This actor handles multiple outputs. "
-                    f"Therefore, you need to specify which. "
-                    f"Example: '.get_output_data(output_name='{list(self.user_output.keys())[0]}'). "
-                    f"The available output names are: {list(self.user_output.keys())}"
-                )
+    def get_data(self, name=None, **kwargs):
+        if name is not None:
             try:
-                user_output = self.user_output[output_name]
+                return self.interfaces_to_user_output[name].get_data(**kwargs)
             except KeyError:
-                fatal(
-                    f"No user output '{output_name}' is handled by the {self.type_name} actor '{self.name}'. "
-                    f"The available output names are: {list(self.user_output.keys())}"
-                )
+                fatal(f"No output '{name}' found in {self.type_name} actor '{self.name}'.")
+        elif len(self.interfaces_to_user_output) == 1:
+            list(self.interfaces_to_user_output.values())[0].get_data(**kwargs)
+        elif len(self.interfaces_to_user_output) == 0:
+            fatal(f"The {self.type_name} actor '{self.name}' does not handle any output.")
         else:
-            user_output = list(self.user_output.values())[0]
-        return user_output.get_data(**kwargs)
+            fatal(f"The {self.type_name} actor '{self.name}' handles multiple outputs. "
+                  "There are 2 ways to fix this: \n"
+                  "1) Provide a keyword argument name=OUTPUT_NAME. \n"
+                  f"   Example: my_actor.get_data(name='{list(self.interfaces_to_user_output.keys())[0]}')\n"
+                  "2) Call get_data() via the output.\n"
+                  f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_data(). ")
 
     # def _get_error_msg_output_filename(self):
     #     s = (
