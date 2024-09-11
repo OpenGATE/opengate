@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # )
     override = True
     output_pathV = [
-        sim.get_actor("doseInYZ" + str(i)).get_output_path("edep")
+        sim.get_actor("doseInYZ" + str(i)).edep.get_output_path()
         for i in planePositionsV
     ]
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
         # mhd_gate = "plane" + str(i) + "a.mhd"
-        mhd_gate = sim.get_actor("doseInYZ" + str(i)).get_output_path("edep")
+        mhd_gate = sim.get_actor("doseInYZ" + str(i)).edep.get_output_path()
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             utility.assert_images(
