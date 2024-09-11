@@ -48,7 +48,7 @@ def shortcut_for_single_output_actor(func):
 
     @wraps(func)
     def _with_check(self, *args):
-        if len(self.user_output) > 1:
+        if len(self.interfaces_to_user_output) > 1:
             try:
                 # func could be a method,
                 name = func.__name__
@@ -60,8 +60,9 @@ def shortcut_for_single_output_actor(func):
                     name = ""
             s = (
                 f"The shortcut {name} is not available for actor {self.type_name} "
-                f"because the actor handles more than one output, namely {list(self.user_output.keys())}. "
-                f"You need to set the parameter for each output individually.\n"
+                f"because the actor handles more than one interface to output, "
+                f"namely {list(self.interfaces_to_user_output.keys())}. "
+                f"You need to access the parameter for each output individually.\n"
             )
             if len(name) > 0:
                 for k in self.user_output:
