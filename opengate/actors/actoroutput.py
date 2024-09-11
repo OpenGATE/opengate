@@ -17,18 +17,24 @@ from .dataitems import (
 
 class BaseUserInterfaceToActorOutput:
 
+    # these attributes are known to the class
+    # and should be treated differently by __getattr__() and __setattr__(),
+    # namely they should be retrieved directly from __dict__
+    # or written directly into __dict__ to avoid infinite recursion
+    _known_attributes = ("__setstate__", "__getstate__", "user_output_name", "belongs_to_actor", "_kwargs_for_interface_calls")
+
     def __init__(
         self, belongs_to_actor, user_output_name, kwargs_for_interface_calls=None
     ):
         # Important: we need to write the attributes directly into the __dict__ here because
         # they are set for the first time and assigning them via self.user_output_name = ...
         # would interfere with the __setattr__ method
-        self.__dict__["user_output_name"] = user_output_name
-        self.__dict__["belongs_to_actor"] = belongs_to_actor
+        self.user_output_name = user_output_name
+        self.belongs_to_actor = belongs_to_actor
         if kwargs_for_interface_calls is None:
-            self.__dict__["_kwargs_for_interface_calls"] = {}
+            self._kwargs_for_interface_calls = {}
         else:
-            self.__dict__["_kwargs_for_interface_calls"] = kwargs_for_interface_calls
+            self._kwargs_for_interface_calls = kwargs_for_interface_calls
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -94,23 +100,29 @@ class BaseUserInterfaceToActorOutput:
             raise AttributeError
 
     def __getattr__(self, item):
-        print(f"in __getattr__: item= {item}")
-        # try:
-        #     return getattr(self, item)
-        # except AttributeError:
-        # if item not in ('_user_output', 'belongs_to_actor', ):
-        # if item in self._user_output.user_info:
+        # Recall: this method is called when python cannot otherwise
+        # find the attribute in the instance. In this case, we try to find it
+        # in the associated user_output to make the interface transparent
+
+        # try to get known attributes directly from __dict__
+        # to avoid infinite recursion
+        if item in self._known_attributes:
+            try:
+                return self.__dict__[item]
+            except KeyError:
+                raise AttributeError(f'Could not find known attribute {item}')
+        # for the others, use the getattr() builtin
         try:
             return getattr(self._user_output, item)
-        # else:
         except AttributeError:
-            # super().__getattr__(item)
             raise AttributeError(
                 f"Tried to find {item} in user output {self._user_output.name} "
                 "and via the interface to it, but it is not there. "
             )
 
     def __setattr__(self, item, value):
+        if item in self._known_attributes:
+            self.__dict__[item] = value
         if not hasattr(self, item) and item in self._user_output.user_info:
             setattr(self._user_output, item, value)
         else:
