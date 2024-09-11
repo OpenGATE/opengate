@@ -92,6 +92,21 @@ class BaseUserInterfaceToActorOutput:
     def output_filename(self, value):
         self._user_output.set_output_filename(value, **self._kwargs_for_interface_calls)
 
+    @property
+    def item_suffix(self):
+        try:
+            return self._user_output.get_item_suffix(
+                **self._kwargs_for_interface_calls
+            )
+        except NotImplementedError:
+            raise AttributeError
+
+    @item_suffix.setter
+    def item_suffix(self, value):
+        self._user_output.set_item_suffix(
+            value, **self._kwargs_for_interface_calls
+        )
+
     def __getattr__(self, item):
         # Recall: this method is called when python cannot otherwise
         # find the attribute in the instance. In this case, we try to find it
