@@ -155,8 +155,8 @@ if __name__ == "__main__":
 
     print("Compare tps Edep to single pb sources")
     print(" --------------------------------------- ")
-    mhd_1 = dose.get_output_path("edep")
-    mhd_2 = dose2.get_output_path("edep")
+    mhd_1 = dose.edep.get_output_path()
+    mhd_2 = dose2.edep.get_output_path()
     test = True
 
     # check first spot
