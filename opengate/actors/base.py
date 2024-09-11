@@ -135,6 +135,11 @@ class ActorBase(GateObject):
         # ),
     }
 
+    # private list of property names for interfaces already defined
+    # in any actor (assuming all actors inherit from the base class)
+    # Do not redefine this in inheriting classes!
+    _existing_properties_to_interfaces = []
+
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
         self.actor_engine = (
@@ -381,15 +386,26 @@ class ActorBase(GateObject):
         def p(self):
             return self.interfaces_to_user_output[interface_name]
 
-        if not hasattr(type(self), interface_name):
-            setattr(type(self), interface_name, property(p))
-        else:
+        # define a unique name by combining the actor class name and the interface name
+        unique_interface_name = f"{self.type_name}_{interface_name}"
+        # Check if this class already has this property and whether it is associated with an interface.
+        # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
+        if hasattr(type(self), interface_name) and unique_interface_name not in self._existing_properties_to_interfaces:
             raise GateImplementationError(
                 f"Cannot create a property '{interface_name}' "
                 f"for interface class {interface_class} "
-                f"in actor user output {user_output_name} "
-                f"because a property with that name already exists."
+                f"in actor {self.name} "
+                f"because a property with that name already exists, "
+                f"but it is not associated with the interface. "
+                f"The developer needs to change the name of the interface "
+                f"(or user_output in case the interface is automatically generated). "
             )
+        elif not hasattr(type(self), interface_name):
+            setattr(type(self), interface_name, property(p))
+            self._existing_properties_to_interfaces.append(unique_interface_name)
+        else:
+            print(f"DEBUG: actor {self.name} already has an attribute {interface_name}.")
+            pass
 
     def recover_user_output(self, actor):
         self.user_output = actor.user_output
