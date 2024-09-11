@@ -278,7 +278,20 @@ class ActorOutputBase(GateObject):
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path(self, which="merged", **kwargs):
-        output_filename = self.get_output_filename(**kwargs)
+        # try to get the output_filename 1) via a getter method if implemented (takes priority)
+        # then 2) directly via an attribute (fall-back)
+        # If non of the two ways work, something is incorrectly implemented,
+        # i.e. a developer's problem, not a user problem
+        try:
+            output_filename = self.get_output_filename(**kwargs)
+        except NotImplementedError:
+            try:
+                output_filename = getattr(self, 'output_filename')
+            except AttributeError:
+                raise GateImplementationError(f"Unable to get the output_filename "
+                                              f"in user_output {self.name} "
+                                              f"of actor {self.belongs_to_actor.name}.")
+        # 'auto' means that the output_filename is automatically generated.
         if output_filename == "auto":
             output_filename = self._generate_auto_output_filename(**kwargs)
         return self._compose_output_path(which, output_filename)
