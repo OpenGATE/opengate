@@ -246,7 +246,9 @@ class ActorBase(GateObject):
                     f"No output called '{name}' found in {self.type_name} actor '{self.name}'."
                 )
         elif len(self.interfaces_to_user_output) == 1:
-            return list(self.interfaces_to_user_output.values())[0].get_output_path(**kwargs)
+            return list(self.interfaces_to_user_output.values())[0].get_output_path(
+                **kwargs
+            )
         elif len(self.interfaces_to_user_output) == 0:
             fatal(
                 f"The {self.type_name} actor '{self.name}' does not handle any output."

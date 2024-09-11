@@ -100,10 +100,10 @@ def digest_user_info_defaults(cls):
             # Make sure there are no duplicate user info items.
             # First check for user info defaults that override the one from super classes and exclude them
             inherited_user_info_defaults_keys_override_true = [
-                    k
-                    for k, v in inherited_user_info_defaults.items()
-                    if "override" in v[1] and v[1]["override"] is True
-                ]
+                k
+                for k, v in inherited_user_info_defaults.items()
+                if "override" in v[1] and v[1]["override"] is True
+            ]
             user_info_defaults_to_be_added = dict(
                 [
                     (k, v)

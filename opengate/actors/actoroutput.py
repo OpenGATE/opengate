@@ -65,27 +65,19 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def write_to_disk(self):
-        return self._user_output.get_write_to_disk(
-            **self._kwargs_for_interface_calls
-        )
+        return self._user_output.get_write_to_disk(**self._kwargs_for_interface_calls)
 
     @write_to_disk.setter
     def write_to_disk(self, value):
-        self._user_output.set_write_to_disk(
-            value, **self._kwargs_for_interface_calls
-        )
+        self._user_output.set_write_to_disk(value, **self._kwargs_for_interface_calls)
 
     @property
     def output_filename(self):
-        return self._user_output.get_output_filename(
-            **self._kwargs_for_interface_calls
-        )
+        return self._user_output.get_output_filename(**self._kwargs_for_interface_calls)
 
     @output_filename.setter
     def output_filename(self, value):
-        self._user_output.set_output_filename(
-            value, **self._kwargs_for_interface_calls
-        )
+        self._user_output.set_output_filename(value, **self._kwargs_for_interface_calls)
 
     def __getattr__(self, item):
         # Recall: this method is called when python cannot otherwise
@@ -119,8 +111,11 @@ class BaseUserInterfaceToActorOutput:
                 if item in self._user_output.user_info:
                     setattr(self._user_output, item, value)
                 else:
-                    fatal(f"Unable to set value {value} for item {item}. "
-                          "Make sure the actor and/or actor output support this parameter. ")
+                    fatal(
+                        f"Unable to set value {value} for item {item}. "
+                        "Make sure the actor and/or actor output support this parameter. "
+                    )
+
 
 class UserInterfaceToActorOutputUsingDataItemContainer(BaseUserInterfaceToActorOutput):
 
