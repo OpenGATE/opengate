@@ -453,7 +453,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         )
 
         self._add_user_output(
-            ActorOutputSingleMeanImage,
+            ActorOutputSingleImage,
             "dose",
             can_be_deactivated=True,
             automatically_generate_interface=True,
@@ -461,7 +461,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.user_output.dose.set_active(False)
 
         self._add_user_output(
-            ActorOutputSingleMeanImage,
+            ActorOutputSingleImage,
             "dose_uncertainty",
             can_be_deactivated=True,
             automatically_generate_interface=True,
