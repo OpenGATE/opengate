@@ -417,9 +417,6 @@ class ActorBase(GateObject):
                 interface_class_name
             )
         else:
-            print(
-                f"DEBUG: actor {self.name} already has an attribute {interface_name}."
-            )
             pass
 
     def __update_interface_properties__(self):
