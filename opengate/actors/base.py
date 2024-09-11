@@ -457,8 +457,8 @@ class ActorBase(GateObject):
     def get_output_path_for_item(self, output_name, which, item):
         return self.user_output[output_name].get_output_path(which, item)
 
-    def get_output_path_string(self, output_name, which):
-        return str(self.get_output_path(output_name, which))
+    def get_output_path_string(self, **kwargs):
+        return str(self.get_output_path(**kwargs))
 
     def get_output_path_for_item_string(self, output_name, which, item):
         return str(self.user_output[output_name].get_output_path(which, item))
