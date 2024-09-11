@@ -154,33 +154,12 @@ class ActorOutputBase(GateObject):
                 "required": True,
             },
         ),
-        # "output_filename": (
-        #     "auto",
-        #     {
-        #         "doc": "Filename for the data represented by this actor output. "
-        #         "Relative paths and filenames are taken "
-        #         "relative to the global simulation output folder "
-        #         "set via the Simulation.output_dir option. ",
-        #     },
-        # ),
         "keep_data_in_memory": (
             True,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
                 "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
                 "Careful: Large data structures like a phase space need a lot of memory.",
-            },
-        ),
-        "keep_data_per_run": (
-            False,
-            {
-                "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
-            },
-        ),
-        "default_suffix": (
-            None,
-            {
-                "doc": "The default file suffix to be used when auto-generating the filename. "
             },
         ),
         # "active": (
