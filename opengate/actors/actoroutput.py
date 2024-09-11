@@ -159,8 +159,8 @@ class ActorOutputBase(GateObject):
             True,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                "Careful: Large data structures like a phase space need a lot of memory.",
+                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                       "Careful: Large data structures like a phase space need a lot of memory.",
             },
         ),
         # "active": (
