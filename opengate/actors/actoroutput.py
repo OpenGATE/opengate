@@ -21,7 +21,13 @@ class BaseUserInterfaceToActorOutput:
     # and should be treated differently by __getattr__() and __setattr__(),
     # namely they should be retrieved directly from __dict__
     # or written directly into __dict__ to avoid infinite recursion
-    _known_attributes = ("__setstate__", "__getstate__", "user_output_name", "belongs_to_actor", "_kwargs_for_interface_calls")
+    _known_attributes = (
+        "__setstate__",
+        "__getstate__",
+        "user_output_name",
+        "belongs_to_actor",
+        "_kwargs_for_interface_calls",
+    )
 
     def __init__(
         self, belongs_to_actor, user_output_name, kwargs_for_interface_calls=None
@@ -110,7 +116,7 @@ class BaseUserInterfaceToActorOutput:
             try:
                 return self.__dict__[item]
             except KeyError:
-                raise AttributeError(f'Could not find known attribute {item}')
+                raise AttributeError(f"Could not find known attribute {item}")
         # for the others, use the getattr() builtin
         try:
             return getattr(self._user_output, item)

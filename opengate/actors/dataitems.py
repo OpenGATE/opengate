@@ -688,7 +688,10 @@ class SingleItkImageWithVariance(DataItemContainer):
                 output_arr = calculate_variance(
                     value_array, squared_value_array, number_of_samples
                 )
-                if which_quantity in ("std", "uncertainty",):
+                if which_quantity in (
+                    "std",
+                    "uncertainty",
+                ):
                     output_arr = np.sqrt(output_arr)
                 if which_quantity in ("uncertainty",):
                     output_arr = np.divide(

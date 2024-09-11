@@ -394,7 +394,10 @@ class ActorBase(GateObject):
         unique_interface_name = f"{self.type_name}_{interface_name}"
         # Check if this class already has this property and whether it is associated with an interface.
         # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
-        if hasattr(type(self), interface_name) and unique_interface_name not in self._existing_properties_to_interfaces:
+        if (
+            hasattr(type(self), interface_name)
+            and unique_interface_name not in self._existing_properties_to_interfaces
+        ):
             raise GateImplementationError(
                 f"Cannot create a property '{interface_name}' "
                 f"for interface class {interface_class_name} "
@@ -406,9 +409,13 @@ class ActorBase(GateObject):
             )
         elif not hasattr(type(self), interface_name):
             setattr(type(self), interface_name, property(p))
-            self._existing_properties_to_interfaces[unique_interface_name] = interface_class_name
+            self._existing_properties_to_interfaces[unique_interface_name] = (
+                interface_class_name
+            )
         else:
-            print(f"DEBUG: actor {self.name} already has an attribute {interface_name}.")
+            print(
+                f"DEBUG: actor {self.name} already has an attribute {interface_name}."
+            )
             pass
 
     def __update_interface_properties__(self):
