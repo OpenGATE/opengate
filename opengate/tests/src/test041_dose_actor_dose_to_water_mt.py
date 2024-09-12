@@ -116,7 +116,9 @@ if __name__ == "__main__":
     dose_actor_entranceRegiont_d.attached_to = entranceRegion
     dose_actors.append(dose_actor_entranceRegiont_d)
 
-    dose_actor_entranceRegiont_d2w = sim.add_actor("DoseActor", "IDD_entranceRegion_d2w")
+    dose_actor_entranceRegiont_d2w = sim.add_actor(
+        "DoseActor", "IDD_entranceRegion_d2w"
+    )
     dose_actor_entranceRegiont_d2w.attached_to = entranceRegion
     dose_actor_entranceRegiont_d2w.score_in = "water"
     dose_actors.append(dose_actor_entranceRegiont_d2w)
@@ -163,8 +165,10 @@ if __name__ == "__main__":
         "Test ratio: dose / dose_to_water in geometry with material: G4_WATER"
     )
     is_ok = utility.assert_images_ratio(
-        1.00, dose_actor_water_slab_insert_d.dose.get_output_path(),
-        dose_actor_water_slab_insert_d2w.dose.get_output_path(), abs_tolerance=0.05
+        1.00,
+        dose_actor_water_slab_insert_d.dose.get_output_path(),
+        dose_actor_water_slab_insert_d2w.dose.get_output_path(),
+        abs_tolerance=0.05,
     )
 
     gate.exception.warning(
@@ -172,8 +176,10 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.assert_images_ratio(
-            mSPR_40MeV, dose_actor_entranceRegiont_d.dose.get_output_path(),
-            dose_actor_entranceRegiont_d2w.dose.get_output_path(), abs_tolerance=0.05
+            mSPR_40MeV,
+            dose_actor_entranceRegiont_d.dose.get_output_path(),
+            dose_actor_entranceRegiont_d2w.dose.get_output_path(),
+            abs_tolerance=0.05,
         )
         and is_ok
     )
