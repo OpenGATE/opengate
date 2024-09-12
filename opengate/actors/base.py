@@ -342,7 +342,7 @@ class ActorBase(GateObject):
             ]
         ):
             raise GateImplementationError(
-                "Implementation error: Only one ROOT output per actor supported. "
+                "Only one ROOT output per actor supported. "
             )
 
         # # extract the user info "active" if passed via kwargs
