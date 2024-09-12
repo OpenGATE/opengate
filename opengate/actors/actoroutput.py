@@ -327,10 +327,11 @@ class ActorOutputBase(GateObject):
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path(self, which="merged", **kwargs):
-        # try to get the output_filename 1) via a getter method if implemented (takes priority)
-        # then 2) directly via an attribute (fall-back)
-        # If non of the two ways work, something is incorrectly implemented,
-        # i.e. a developer's problem, not a user problem
+        # try to get the output_filename via 2 successive attempts
+        # 1) a getter method if implemented (takes priority)
+        # 2) directly via an attribute (fall-back)
+        # If none of the two ways work, something is incorrectly implemented,
+        # i.e. a developer's problem, not a user problem, and we raise a GateImplementationError
         try:
             output_filename = self.get_output_filename(**kwargs)
         except NotImplementedError:
