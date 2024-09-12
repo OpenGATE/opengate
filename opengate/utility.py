@@ -183,10 +183,13 @@ def read_mac_file_to_commands(filename):
 
 
 def ensure_filename_is_str(filename):
-    # Algorithms (itk) do not support Path -> convert to str
+    # Some software packages, e.g. itk, do not support Path -> convert to str
     if isinstance(filename, Path):
         return str(filename)
-    return filename
+    elif filename is None:
+        return ""
+    else:
+        return filename
 
 
 def insert_suffix_before_extension(file_path, suffix, suffix_separator="-"):
