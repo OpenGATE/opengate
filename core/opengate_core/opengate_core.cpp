@@ -4,6 +4,7 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
+#define PYBIND11_NO_ASSERT_GIL_HELD_INCREF_DECREF
 
 #include "g4_bindings/GateConfiguration.h"
 #include <pybind11/pybind11.h>
