@@ -68,32 +68,21 @@ if __name__ == "__main__":
     source.activity = 5000 * Bq
 
     # add dose actor
-    edep = sim.add_actor("DoseActor", "edep")
-    edep.output_filename = "test041.mhd"
-    edep.attached_to = "waterbox"
-    edep.size = [10, 10, 50]
+    dose_actor = sim.add_actor("DoseActor", "dose_actor")
+    # let the actor score other quantities additional to edep (default)
+    dose_actor.edep_uncertainty.active = True
+    dose_actor.dose.active = True
+    # set the filename once for the actor
+    # a suffix will be added automatically for each output,
+    # i.e. _edep, _edep_uncertainty, _dose
+    dose_actor.output_filename = "test041.mhd"
+    dose_actor.attached_to = waterbox
+    dose_actor.size = [10, 10, 50]
     mm = gate.g4_units.mm
     ts = [200 * mm, 200 * mm, 200 * mm]
-    edep.spacing = [x / y for x, y in zip(ts, edep.size)]
-    print(edep.spacing)
-    edep.user_output.edep_uncertainty.active = True
-    edep.user_output.dose.active = False
-    edep.hit_type = "random"
-
-    # add dose actor
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = "test041.mhd"
-    dose.attached_to = "waterbox"
-    dose.size = [10, 10, 50]
-    mm = gate.g4_units.mm
-    ts = [200 * mm, 200 * mm, 200 * mm]
-    dose.spacing = [x / y for x, y in zip(ts, dose.size)]
-    print(dose.spacing)
-    dose.user_output.dose.active = True
-    dose.user_output.dose_uncertainty.active = False
-    # it will be turned True automatically (needed)
-    dose.user_output.density.active = False
-    dose.hit_type = "random"
+    dose_actor.spacing = [x / y for x, y in zip(ts, dose_actor.size)]
+    print(dose_actor.spacing)
+    dose_actor.hit_type = "random"
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -104,7 +93,7 @@ if __name__ == "__main__":
 
     # print results at the end
     print(stats)
-    print(dose)
+    print(dose_actor)
 
     # tests
     gate.exception.warning("Tests stats file")
@@ -115,7 +104,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Edep.mhd",
-            edep.get_output_path("edep"),
+            dose_actor.edep.get_output_path(),
             stats,
             tolerance=10,
             ignore_value=0,
@@ -127,7 +116,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Edep-Uncertainty.mhd",
-            edep.get_output_path("edep_uncertainty"),
+            dose_actor.edep_uncertainty.get_output_path(),
             stats,
             tolerance=30,
             ignore_value=1,
@@ -139,7 +128,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Dose.mhd",
-            dose.get_output_path("dose"),
+            dose_actor.dose.get_output_path(),
             stats,
             tolerance=10,
             ignore_value=0,
