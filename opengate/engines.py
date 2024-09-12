@@ -927,9 +927,8 @@ class SimulationOutput:
 
     def get_source(self, name):
         if name not in self.sources:
-            s = self.sources.keys
             fatal(
-                f'The source "{name}" does not exist. Here is the list of sources: {s}'
+                f'The source "{name}" does not exist. Here is the list of sources: {list(self.sources.keys())}'
             )
         return self.sources[name]
 
