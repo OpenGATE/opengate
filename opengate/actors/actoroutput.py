@@ -792,6 +792,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             for i in self._collect_item_identifiers(item)
             if self.get_write_to_disk(item=i) is True
             and self.get_active(item=i) is True
+            # FIXME: the active is True check should not be here. self.write_data() should handle that
         ]
         self.write_data(which=which, item=items)
 
