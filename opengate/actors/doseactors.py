@@ -458,28 +458,28 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self._add_user_output(
             ActorOutputSingleImage,
             "dose",
-            can_be_deactivated=True,
-            automatically_generate_interface=True,
         )
-        self.user_output.dose.set_active(False)
 
         self._add_user_output(
             ActorOutputSingleImage,
             "dose_uncertainty",
-            can_be_deactivated=True,
-            automatically_generate_interface=True,
         )
-        self.user_output.dose_uncertainty.set_active(False)
 
         self._add_user_output(
-            ActorOutputSingleMeanImage, "density", automatically_generate_interface=True
+            ActorOutputSingleMeanImage, "density"
         )
+
+        self.user_output.dose.set_active(False)
+        self.user_output.dose_uncertainty.set_active(False)
 
         self.user_output.edep_with_uncertainty.set_item_suffix("edep", item=0)
         self.user_output.edep_with_uncertainty.set_item_suffix("edep_squared", item=1)
         self.user_output.edep_with_uncertainty.set_item_suffix(
             "edep_uncertainty", item="uncertainty"
         )
+        self.user_output.dose.set_item_suffix("dose")
+        self.user_output.dose_uncertainty.set_item_suffix("dose_uncertainty")
+        self.user_output.density.set_item_suffix("density")
 
         self.__initcpp__()
 
