@@ -465,9 +465,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             "dose_uncertainty",
         )
 
-        self._add_user_output(
-            ActorOutputSingleMeanImage, "density"
-        )
+        self._add_user_output(ActorOutputSingleMeanImage, "density")
 
         self.user_output.dose.set_active(False)
         self.user_output.dose_uncertainty.set_active(False)

@@ -346,10 +346,12 @@ class ActorOutputBase(GateObject):
         # 'auto' means that the output_filename is automatically generated.
         if output_filename == "auto":
             output_filename = self._generate_auto_output_filename(**kwargs)
-        if output_filename is None or output_filename == '':
-            warning(f"No output_filename defined for user output '{self.name}' "
-                    f"of {self.belongs_to_actor.type_name} '{self.belongs_to_actor.name}'. "
-                    f"Therefore, get_output_path() returns None. ")
+        if output_filename is None or output_filename == "":
+            warning(
+                f"No output_filename defined for user output '{self.name}' "
+                f"of {self.belongs_to_actor.type_name} '{self.belongs_to_actor.name}'. "
+                f"Therefore, get_output_path() returns None. "
+            )
             return None
         else:
             return self._compose_output_path(which, output_filename)
@@ -418,11 +420,13 @@ class MergeableActorOutput(ActorOutputBase):
         try:
             self.write_data_if_requested(which="all", **kwargs)
         except NotImplementedError:
-            raise GateImplementationError("Unable to run end_of_simulation "
-                                          f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
-                                          f"because the class does not implement a write_data_if_requested() "
-                                          f"and/or write_data() method. "
-                                          f"A developer needs to fix this. ")
+            raise GateImplementationError(
+                "Unable to run end_of_simulation "
+                f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
+                f"because the class does not implement a write_data_if_requested() "
+                f"and/or write_data() method. "
+                f"A developer needs to fix this. "
+            )
         # if self.merge_data_after_simulation is True:
         #     self.merge_data_from_runs()
         # if self.keep_data_per_run is False:
@@ -493,7 +497,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         # temporary fix to guarantee there is an 'output_filename' in data_item_config
         for k, v in self.data_item_config.items():
             if "output_filename" not in v:
-                v["output_filename"] = 'auto'
+                v["output_filename"] = "auto"
 
     # def initialize_output_filename(self, **kwargs):
     #     if self.get_output_filename(**kwargs) == 'auto':

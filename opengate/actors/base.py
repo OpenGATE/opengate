@@ -341,9 +341,7 @@ class ActorBase(GateObject):
                 for v in self.user_output.values()
             ]
         ):
-            raise GateImplementationError(
-                "Only one ROOT output per actor supported. "
-            )
+            raise GateImplementationError("Only one ROOT output per actor supported. ")
 
         # # extract the user info "active" if passed via kwargs
         # active = kwargs.pop("active", None)

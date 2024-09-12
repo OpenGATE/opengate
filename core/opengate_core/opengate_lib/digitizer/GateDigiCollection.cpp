@@ -34,9 +34,7 @@ void GateDigiCollection::SetBeginOfEventIndex() {
   SetBeginOfEventIndex(GetSize());
 }
 
-void GateDigiCollection::SetWriteToRootFlag(bool f) {
-  fWriteToRootFlag = f;
-}
+void GateDigiCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
 
 void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
   fFilename = filename;
@@ -44,7 +42,7 @@ void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
     SetWriteToRootFlag(false);
   else
     SetWriteToRootFlag(true);
-    RootStartInitialization();
+  RootStartInitialization();
 }
 
 void GateDigiCollection::InitDigiAttributesFromNames(
