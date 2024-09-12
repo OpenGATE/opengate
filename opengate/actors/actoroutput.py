@@ -493,9 +493,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         # temporary fix to guarantee there is an 'output_filename' in data_item_config
         for k, v in self.data_item_config.items():
             if "output_filename" not in v:
-                v["output_filename"] = str(
-                    insert_suffix_before_extension(self.output_filename, v["suffix"])
-                )
+                v["output_filename"] = 'auto'
 
     # def initialize_output_filename(self, **kwargs):
     #     if self.get_output_filename(**kwargs) == 'auto':
