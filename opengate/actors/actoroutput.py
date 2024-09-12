@@ -573,7 +573,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             self.data_item_config[i]["write_to_disk"] = bool(value)
 
     def get_write_to_disk(self, item=0):
-        items = self._collect_item_identifiers("all")
+        items = self._collect_item_identifiers(item)
         return any([self.data_item_config[k]["write_to_disk"] is True for k in items])
 
     def set_active(self, value, item=0):
@@ -582,7 +582,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             self.data_item_config[i]["active"] = bool(value)
 
     def get_active(self, item=0):
-        items = self._collect_item_identifiers("all")
+        items = self._collect_item_identifiers(item)
         return any([self.data_item_config[k]["active"] is True for k in items])
         # items = self._collect_item_identifiers(item)
         # d = Box(
