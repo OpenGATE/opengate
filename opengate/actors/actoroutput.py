@@ -346,7 +346,13 @@ class ActorOutputBase(GateObject):
         # 'auto' means that the output_filename is automatically generated.
         if output_filename == "auto":
             output_filename = self._generate_auto_output_filename(**kwargs)
-        return self._compose_output_path(which, output_filename)
+        if output_filename is None or output_filename == '':
+            warning(f"No output_filename defined for user output '{self.name}' "
+                    f"of {self.belongs_to_actor.type_name} '{self.belongs_to_actor.name}'. "
+                    f"Therefore, get_output_path() returns None. ")
+            return None
+        else:
+            return self._compose_output_path(which, output_filename)
 
     def get_output_path_as_string(self, **kwargs):
         return ensure_filename_is_str(self.get_output_path(**kwargs))
