@@ -415,7 +415,14 @@ class MergeableActorOutput(ActorOutputBase):
             self.data_per_run.pop(run_index)
 
     def end_of_simulation(self, **kwargs):
-        self.write_data_if_requested(which="all", **kwargs)
+        try:
+            self.write_data_if_requested(which="all", **kwargs)
+        except NotImplementedError:
+            raise GateImplementationError("Unable to run end_of_simulation "
+                                          f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
+                                          f"because the class does not implement a write_data_if_requested() "
+                                          f"and/or write_data() method. "
+                                          f"A developer needs to fix this. ")
         # if self.merge_data_after_simulation is True:
         #     self.merge_data_from_runs()
         # if self.keep_data_per_run is False:
