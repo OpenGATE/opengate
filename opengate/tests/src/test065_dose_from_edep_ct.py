@@ -14,7 +14,7 @@ if __name__ == "__main__":
         __file__, "gate_test044_pbs", output_folder="test065_dose_from_edep_ct"
     )
     output_path = paths.output
-    ref_path = paths.output_ref / ".." / "test059_ref"
+    ref_path = paths.output_ref / ".." / "test059"
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
