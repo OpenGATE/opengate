@@ -56,7 +56,6 @@ class BaseUserInterfaceToActorOutput:
         return_dict.pop("belongs_to_actor", None)
         return return_dict
 
-
     def __getstate__(self):
         return_dict = super().__getstate__()
         return_dict.pop("belongs_to_actor")
