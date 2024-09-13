@@ -90,7 +90,7 @@ if __name__ == "__main__":
     dose.size = [1, 1, 800]
     dose.spacing = [15.6, 15.6, 0.5]
     dose.hit_type = "random"
-    dose.user_output.dose.active = True
+    dose.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------#
     IR2HBL = BeamlineModel()
