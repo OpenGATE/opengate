@@ -2,18 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from scipy.spatial.transform import Rotation
-from pathlib import Path
-
 import opengate as gate
 from opengate.tests import utility
 
 
 if __name__ == "__main__":
     do_debug = False
-    paths = utility.get_default_test_paths(__file__, "test050_let_actor_letd")
-
+    paths = utility.get_default_test_paths(__file__, "test050_let_actor_letd", "test050")
     ref_path = paths.output_ref
-    print(ref_path)
 
     # create the simulation
     sim = gate.Simulation()
@@ -24,7 +20,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 1234567891
     sim.number_of_threads = 2
-    sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem
+    sim.output_dir = paths.output
 
     numPartSimTest = 40000 / sim.number_of_threads
     numPartSimRef = 1e5
