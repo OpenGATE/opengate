@@ -8,7 +8,9 @@ from scipy.spatial.transform import Rotation
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor", output_folder="test012")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test008_dose_actor", output_folder="test012"
+    )
 
     # create the simulation
     sim = gate.Simulation()

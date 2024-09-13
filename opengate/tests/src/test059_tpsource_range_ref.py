@@ -11,7 +11,9 @@ import numpy as np
 from opengate.tests.utility import print_test
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", output_folder="test059")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", output_folder="test059"
+    )
     output_path = paths.output
     ref_path = paths.output_ref
 
@@ -137,7 +139,7 @@ if __name__ == "__main__":
     # read output and ref
     print("Compare ", dose_path)
     img_mhd_out = itk.imread(dose_path)
-    #data = np.flip(itk.GetArrayViewFromImage(img_mhd_out), axis=0)
+    # data = np.flip(itk.GetArrayViewFromImage(img_mhd_out), axis=0)
     data = itk.GetArrayViewFromImage(img_mhd_out)
     spacing = np.array(img_mhd_out.GetSpacing())
     print(data.shape, spacing)
@@ -152,6 +154,8 @@ if __name__ == "__main__":
     print(f"range80_gate9_E120MeV = {range80_gate9_E120MeV}")
     if abs(range_opengate - range80_gate9_E120MeV) > thresh:
         ok = False
-    print_test(ok, f"Compare ranges {range_opengate} and {range80_gate9_E120MeV} >? {thresh}")
+    print_test(
+        ok, f"Compare ranges {range_opengate} and {range80_gate9_E120MeV} >? {thresh}"
+    )
 
     utility.test_ok(ok)

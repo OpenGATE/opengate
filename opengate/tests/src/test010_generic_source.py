@@ -6,7 +6,9 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test010_generic_source", output_folder="test010")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test010_generic_source", output_folder="test010"
+    )
 
     # create the simulation
     sim = gate.Simulation()

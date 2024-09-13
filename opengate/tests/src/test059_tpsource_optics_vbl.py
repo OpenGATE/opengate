@@ -13,7 +13,9 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPl
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", output_folder="test059")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", output_folder="test059"
+    )
     output_path = paths.output
     ref_path = paths.output_ref
 

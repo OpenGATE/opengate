@@ -8,7 +8,9 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     do_debug = False
-    paths = utility.get_default_test_paths(__file__, "test050_let_actor_letd", "test050")
+    paths = utility.get_default_test_paths(
+        __file__, "test050_let_actor_letd", "test050"
+    )
     ref_path = paths.output_ref
 
     # create the simulation
