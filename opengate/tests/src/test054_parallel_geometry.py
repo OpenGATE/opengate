@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # detector in w2 (on top of world)
     det = sim.add_volume("Box", "detector")
-    det.attached_to = "world2"
+    det.mother = "world2"
     det.material = "G4_GLASS_LEAD"
     det.size = [400 * mm, 400 * mm, 2 * mm]
     det.translation = [0, 0, 200 * mm]
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
     # detector in w3 (on top of w2)
     det2 = sim.add_volume("Box", "detector2")
-    det2.attached_to = "world3"
+    det2.mother = "world3"
     det2.material = "G4_GLASS_LEAD"  # set 'None' if this volume should be transparent
     det2.size = [400 * mm, 400 * mm, 2 * mm]
     det2.translation = [0, 0, 200 * mm]
