@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # image
     patient = sim.add_volume("Image", "patient")
-    patient.attached_to = fake.name
+    patient.mother = fake.name
     patient.image = paths.data / "patient-40mm.mhd"
     patient.material = "G4_AIR"  # material used by default
     patient.voxel_materials = [
