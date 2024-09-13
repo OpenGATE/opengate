@@ -938,4 +938,8 @@ class ActorOutputRoot(ActorOutputBase):
     def initialize_cpp_parameters(self):
         self.belongs_to_actor.AddActorOutputInfo(self.name)
         self.belongs_to_actor.SetWriteToDisk(self.name, self.write_to_disk)
-        self.belongs_to_actor.SetOutputPath(self.name, self.get_output_path_as_string())
+        if self.output_filename == "" or self.output_filename is None:
+            # this test avoid a warning in get_output_path when it is None
+            self.belongs_to_actor.SetOutputPath(self.name, "None")
+        else:
+            self.belongs_to_actor.SetOutputPath(self.name, self.get_output_path_as_string())
