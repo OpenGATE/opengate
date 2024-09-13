@@ -29,7 +29,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
             },
         ),
         "write_to_disk": (
-            True,
+            False,
             {
                 "doc": "Should the output be written to disk, or only kept in memory? ",
             },
@@ -186,8 +186,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         output = self._add_user_output(ActorOutputStatisticsActor, "stats")
-        # no default output for this actor
-        output.write_to_disk = False
         self.__initcpp__()
 
     def __initcpp__(self):
