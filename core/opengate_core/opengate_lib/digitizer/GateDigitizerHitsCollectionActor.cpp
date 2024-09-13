@@ -21,9 +21,12 @@ GateDigitizerHitsCollectionActor::GateDigitizerHitsCollectionActor(
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+  fDebug = false;
+  fKeepZeroEdep = false;
+  fClearEveryNEvents = 100000;
 }
 
-GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() {}
+GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() = default;
 
 void GateDigitizerHitsCollectionActor::InitializeUserInput(
     py::dict &user_info) {

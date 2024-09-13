@@ -19,7 +19,7 @@ class GateDigitizerHitsCollectionActor : public GateVActor {
 public:
   explicit GateDigitizerHitsCollectionActor(py::dict &user_info);
 
-  virtual ~GateDigitizerHitsCollectionActor();
+  ~GateDigitizerHitsCollectionActor() override;
 
   void InitializeUserInput(py::dict &user_info) override;
 
@@ -49,10 +49,10 @@ public:
 protected:
   std::string fHitsCollectionName;
   std::vector<std::string> fUserDigiAttributeNames;
-  GateDigiCollection *fHits;
-  bool fDebug;
-  bool fKeepZeroEdep;
-  int fClearEveryNEvents;
+  GateDigiCollection *fHits{};
+  bool fDebug{};
+  bool fKeepZeroEdep{};
+  int fClearEveryNEvents{};
 };
 
 #endif // GateHitsCollectionActor_h
