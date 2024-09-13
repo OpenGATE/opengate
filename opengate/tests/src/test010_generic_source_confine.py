@@ -7,7 +7,7 @@ import pathlib
 import os
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, output_folder="test010_confine")
 
     # create the simulation
     sim = gate.Simulation()

@@ -7,11 +7,8 @@ import pathlib
 
 
 if __name__ == "__main__":
-    current_path = pathlib.Path(__file__).parent.resolve()
-    ref_path = current_path.parent / "data" / "output_ref" / "test010"
-    paths = utility.get_default_test_paths(
-        __file__, gate_folder=None, output_folder="test010"
-    )
+    paths = utility.get_default_test_paths(__file__, output_folder="test010")
+    ref_path = paths.output_ref
 
     # units
     m = gate.g4_units.m
@@ -34,7 +31,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123654
-    sim.output_dir = current_path.parent / "output"
+    sim.output_dir = paths.output
 
     # set the world size like in the Gate macro
     world = sim.world
