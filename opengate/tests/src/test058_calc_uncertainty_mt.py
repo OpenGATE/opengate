@@ -164,7 +164,7 @@ if __name__ == "__main__":
     dose.attached_to = t_block.name
     dose.size = [1, 1, 1]
     dose.spacing = block_size
-    dose.user_output.edep_uncertainty.active = True
+    dose.edep_uncertainty.active = True
     dose.translation = [0 * mm, 0 * mm, -0.5 * m]
     dose.hit_type = "random"
 

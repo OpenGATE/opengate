@@ -95,7 +95,7 @@ if __name__ == "__main__":
     dose1_s1.size = [25, 25, 1]
     dose1_s1.spacing = [4.0, 4.0, 50.0]
     dose1_s1.hit_type = "random"
-    dose1_s1.user_output.edep_uncertainty.active = True
+    dose1_s1.edep_uncertainty.active = True
     # dose1_s1.ste_of_mean = True
 
     # add dose actor
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     dose1_s2.size = [25, 25, 1]
     dose1_s2.spacing = [4.0, 4.0, 50.0]
     dose1_s2.hit_type = "random"
-    dose1_s2.user_output.edep_uncertainty.active = True
+    dose1_s2.edep_uncertainty.active = True
     # # PhaseSpace Actor
     # Phsp_act = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     # Phsp_act.attached_to = phantom1_s2.name
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     dose2_s1.size = [25, 25, 1]
     dose2_s1.spacing = [4.0, 4.0, 50.0]
     dose2_s1.hit_type = "random"
-    dose2_s1.user_output.edep_uncertainty.active = True
+    dose2_s1.edep_uncertainty.active = True
 
     dose2_s2 = sim.add_actor("DoseActor", "edep_22")
     filename = "phantom2_s2.mhd"
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     dose2_s2.size = [25, 25, 1]
     dose2_s2.spacing = [4.0, 4.0, 50.0]
     dose2_s2.hit_type = "random"
-    dose2_s2.user_output.edep_uncertainty.active = True
+    dose2_s2.edep_uncertainty.active = True
 
     ## TPS SOURCE ##
     # beamline model
