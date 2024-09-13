@@ -707,7 +707,6 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             pwe.close()
         self.parallel_world_engines = {}
         super().close()
-        # self.volume_manager.world_volume.close()
 
     def initialize(self):
         # build the materials
