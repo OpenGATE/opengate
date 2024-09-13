@@ -43,6 +43,21 @@ class BaseUserInterfaceToActorOutput:
             self._kwargs_for_interface_calls = kwargs_for_interface_calls
 
     def __getstate__(self):
+        """
+        For earlier python version (<3.11), __getstate__ may not defined.
+        We provide a simple workaround here to return a copy of the internal dict.
+        """
+        try:
+            return_dict = super().__getstate__()
+        except AttributeError:
+            # If there is no superclass with __getstate__, use self.__dict__
+            return_dict = self.__dict__.copy()
+        # Safely remove 'belongs_to_actor' if it exists
+        return_dict.pop("belongs_to_actor", None)
+        return return_dict
+
+
+    def __getstate__(self):
         return_dict = super().__getstate__()
         return_dict.pop("belongs_to_actor")
         return return_dict
