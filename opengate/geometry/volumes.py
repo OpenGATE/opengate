@@ -1151,7 +1151,6 @@ class VolumeTreeRoot(NodeMixin):
     def __init__(self, volume_manager) -> None:
         super().__init__()
         self.volume_manager = volume_manager
-        self.volume_engine = None
         self.name = "volume_tree_root"
         self.parent = None  # None means this is a tree root
 
@@ -1159,9 +1158,6 @@ class VolumeTreeRoot(NodeMixin):
         return_dict = self.__dict__
         return_dict["volume_engine"] = None
         return return_dict
-
-    def close(self):
-        self.volume_engine = None
 
 
 # The following lines make sure that all classes which
