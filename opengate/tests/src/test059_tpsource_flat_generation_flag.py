@@ -22,9 +22,9 @@ def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-    output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", output_folder="test059")
+    output_path = paths.output
+    ref_path = paths.output_ref
 
     # create the simulation
     sim = gate.Simulation()
