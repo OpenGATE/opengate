@@ -695,9 +695,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             self.RegisterParallelWorld(self.parallel_world_engines[parallel_world_name])
 
     def register_to_volumes(self):
-        self.volume_manager.update_volume_tree()
-        for volume in PreOrderIter(self.volume_manager.volume_tree_root):
-            volume.volume_engine = self
+        for v in self.volume_manager.volumes.values():
+            v.volume_engine = self
 
     def close(self):
         for vol in self.volume_manager.volumes.values():
