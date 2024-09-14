@@ -3,7 +3,8 @@
 
 from opengate.tests.utility import (
     get_default_test_paths,
-    test_ok, print_test,
+    test_ok,
+    print_test,
 )
 from opengate.utility import g4_units
 from opengate.managers import Simulation
@@ -86,9 +87,9 @@ if __name__ == "__main__":
     # Comparison with gate simulation
     n1 = sim.expected_number_of_events
     n2 = stats.counts.event_count
-    f = abs(n1-n2)/n2
+    f = abs(n1 - n2) / n2
     is_ok = f < 0.01
     print()
-    print_test(is_ok, f'Predicted nb of events = {n1}, real = {n2}: {f*100:.2f}%')
+    print_test(is_ok, f"Predicted nb of events = {n1}, real = {n2}: {f*100:.2f}%")
 
     test_ok(is_ok)

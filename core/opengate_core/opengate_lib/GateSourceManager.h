@@ -125,7 +125,7 @@ public:
     GateUserEventInformation *fUserEventInformation;
 
     // progress bar
-      indicators::ProgressBar * fProgressBar{};
+    indicators::ProgressBar *fProgressBar{};
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

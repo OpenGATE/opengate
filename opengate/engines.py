@@ -153,10 +153,15 @@ class SourceEngine(EngineBase):
                 self.source_manager_options[k] = v
 
         # progress bar
-        self.source_manager_options['progress_bar'] = self.simulation_engine.simulation.progress_bar
+        self.source_manager_options["progress_bar"] = (
+            self.simulation_engine.simulation.progress_bar
+        )
 
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
-        self.expected_number_of_events = ms.GetExpectedNumberOfEvents() * self.simulation_engine.simulation.number_of_threads
+        self.expected_number_of_events = (
+            ms.GetExpectedNumberOfEvents()
+            * self.simulation_engine.simulation.number_of_threads
+        )
         # set the flag for user event info
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
@@ -1121,7 +1126,9 @@ class SimulationEngine(GateSingletonFatal):
             output.store_sources(self)
             output.store_hook_log(self)
             output.current_random_seed = self.current_random_seed
-            output.expected_number_of_events = self.source_engine.expected_number_of_events
+            output.expected_number_of_events = (
+                self.source_engine.expected_number_of_events
+            )
             return output
 
         # go
@@ -1274,7 +1281,9 @@ class SimulationEngine(GateSingletonFatal):
 
         # sources
         log.info("Simulation: initialize Source")
-        self.source_engine.initialize(self.simulation.run_timing_intervals, self.simulation.progress_bar)
+        self.source_engine.initialize(
+            self.simulation.run_timing_intervals, self.simulation.progress_bar
+        )
 
         # action
 
