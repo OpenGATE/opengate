@@ -722,13 +722,13 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         """
 
         if isinstance(data, self.data_container_class):
-            data_item = data
-            data_item.belongs_to = self
+            data_container = data
+            data_container.belongs_to = self
         else:
-            data_item = self.data_container_class(belongs_to=self, data=data)
+            data_container = self.data_container_class(belongs_to=self, data=data)
         # FIXME: use store_data if target data exists, otherwise create new container
         if which == "merged":
-            self.merged_data = data_item
+            self.merged_data = data_container
         else:
             try:
                 run_index = int(which)  # might be a run_index
@@ -743,7 +743,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                     f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
-            self.data_per_run[run_index] = data_item
+            self.data_per_run[run_index] = data_container
 
     def store_meta_data(self, which, **meta_data):
         """data can be either the user data to be wrapped into a DataContainer class or
