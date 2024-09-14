@@ -942,4 +942,6 @@ class ActorOutputRoot(ActorOutputBase):
             # this test avoid a warning in get_output_path when it is None
             self.belongs_to_actor.SetOutputPath(self.name, "None")
         else:
-            self.belongs_to_actor.SetOutputPath(self.name, self.get_output_path_as_string())
+            self.belongs_to_actor.SetOutputPath(
+                self.name, self.get_output_path_as_string()
+            )
