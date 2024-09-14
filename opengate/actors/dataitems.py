@@ -528,13 +528,23 @@ class DataItemContainer(DataContainer):
         return self
 
     def merge_with(self, other):
-        self._assert_data_is_not_none()
+        # self._assert_data_is_not_none()
+        data = []
+        for i in range(self._tuple_length):
+            if (
+                self.data[i] is not None
+                    and other.data[i] is not None
+                    and self.data[i].data is not None
+                    and other.data[i].data is not None
+            ):
+                data.append(self.data[i].merge_with(other.data[i]))
+            else:
+                # FIXME: we need a consistency check here
+                data.append(None)
+
         return type(self)(
             self._data_item_classes,
-            data=[
-                self.data[i].merge_with(other.data[i])
-                for i in range(self._tuple_length)
-            ],
+            data=data,
         )
 
     def write(self, path, item, **kwargs):
