@@ -77,8 +77,8 @@ if __name__ == "__main__":
     # with set "cpu" to avoid mps errors
     arf.gpu_mode = utility.get_gpu_mode_for_tests()
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "stats")
+    stat.track_types_flag = True
 
     # start simulation to check if ok with start_new_process
     s1a = s1.activity
@@ -96,12 +96,10 @@ if __name__ == "__main__":
     sim.run(False)
 
     # print results at the end
-    stat = sim.get_actor("stats")
     print(stat)
 
     # print info
     print("")
-    arf = sim.get_actor("arf")
     img = itk.imread(str(arf.get_output_path()))
     # set the first channel to the same channel (spectrum) than the analog
     img[0, :] = img[1, :] + img[2, :]
