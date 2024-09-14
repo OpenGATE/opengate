@@ -84,7 +84,7 @@ if __name__ == "__main__":
     print(stats)
 
     # Comparison with gate simulation
-    n1 = sim.output.expected_number_of_events
+    n1 = sim.expected_number_of_events
     n2 = stats.counts.event_count
     f = abs(n1-n2)/n2
     is_ok = f < 0.01

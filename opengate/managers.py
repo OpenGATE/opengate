@@ -1659,6 +1659,9 @@ class Simulation(GateObject):
             # because everything is already in place.
             output = self._run_simulation_engine(False)
 
+        # FIXME workaround
+        self.expected_number_of_events = output.expected_number_of_events
+
         # store the hook log
         self.user_hook_log = output.user_hook_log
         self._current_random_seed = output.current_random_seed
