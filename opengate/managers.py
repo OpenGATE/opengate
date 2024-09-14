@@ -1282,7 +1282,7 @@ class Simulation(GateObject):
             },
         ),
         "visu_commands": (
-            read_mac_file_to_commands("default_visu_commands.mac"),
+            read_mac_file_to_commands("default_visu_commands_qt.mac"),
             {
                 "doc": "Geant4 commands needed to handle the visualization. ",
             },

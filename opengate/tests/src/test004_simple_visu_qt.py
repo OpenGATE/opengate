@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = True
+    sim.visu_type = "qt"
     sim.visu_verbose = False
     sim.number_of_threads = 1
     sim.random_engine = "MersenneTwister"
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.activity = 200000 * Bq
+    source.activity = 200 * Bq
 
     # runs
     sec = g4_units.second
