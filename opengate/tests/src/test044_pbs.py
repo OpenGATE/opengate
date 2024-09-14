@@ -32,6 +32,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    sim.progress_bar = True
     sim.output_dir = paths.output
 
     # units

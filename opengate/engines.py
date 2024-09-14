@@ -66,6 +66,10 @@ class SourceEngine(EngineBase):
         self.run_timing_intervals = None
         self.current_run_interval = None
 
+        # use a progress bar ?
+        self.progress_bar = False
+        self.expected_number_of_events = "unknown"
+
         # List of sources (GateSource), for all threads
         self.sources = []
 
@@ -93,11 +97,12 @@ class SourceEngine(EngineBase):
         # a source object contains a reference to a G4 source
         self.sources = None
 
-    def initialize(self, run_timing_intervals):
+    def initialize(self, run_timing_intervals, progress_bar=False):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
             warning(f"No source: no particle will be generated")
+        self.progress_bar = progress_bar
 
     def initialize_actors(self):
         """
@@ -147,7 +152,11 @@ class SourceEngine(EngineBase):
             if "verbose_" in k:
                 self.source_manager_options[k] = v
 
+        # progress bar
+        self.source_manager_options['progress_bar'] = self.simulation_engine.simulation.progress_bar
+
         ms.Initialize(self.run_timing_intervals, self.source_manager_options)
+        self.expected_number_of_events = ms.GetExpectedNumberOfEvents() * self.simulation_engine.simulation.number_of_threads
         # set the flag for user event info
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
@@ -1112,6 +1121,7 @@ class SimulationEngine(GateSingletonFatal):
             output.store_sources(self)
             output.store_hook_log(self)
             output.current_random_seed = self.current_random_seed
+            output.expected_number_of_events = self.source_engine.expected_number_of_events
             return output
 
         # go
@@ -1128,6 +1138,7 @@ class SimulationEngine(GateSingletonFatal):
         output.store_sources(self)
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
+        output.expected_number_of_events = self.source_engine.expected_number_of_events
 
         return output
 
@@ -1137,8 +1148,11 @@ class SimulationEngine(GateSingletonFatal):
         """
         s = ""
         if self.new_process:
-            s = "(in a new process)"
-        log.info("-" * 80 + f"\nSimulation: START {s}")
+            s = "(in a new process) "
+        s2 = ""
+        if self.simulation.progress_bar:
+            s2 = f"(around {self.source_engine.expected_number_of_events} events expected)"
+        log.info("-" * 80 + f"\nSimulation: START {s}{s2}")
 
         # actor: start simulation (only the master thread)
         self.actor_engine.start_simulation()
@@ -1260,7 +1274,7 @@ class SimulationEngine(GateSingletonFatal):
 
         # sources
         log.info("Simulation: initialize Source")
-        self.source_engine.initialize(self.simulation.run_timing_intervals)
+        self.source_engine.initialize(self.simulation.run_timing_intervals, self.simulation.progress_bar)
 
         # action
 

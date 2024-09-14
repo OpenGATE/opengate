@@ -25,6 +25,7 @@ if __name__ == "__main__":
 
     # create simulation
     sim = gate.Simulation()
+    sim.progress_bar = True
     ion_name, _ = create_ion_gamma_simulation(sim, paths, z, a)
 
     # get list of nuclide organized per ion

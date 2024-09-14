@@ -19,6 +19,9 @@
 #include "GateUserEventInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
+#include "indicators.hpp"
+
+using namespace indicators;
 
 // Temporary: later option will be used to control the verbosity
 class UIsessionSilent : public G4UIsession {
@@ -76,9 +79,15 @@ public:
 
   void InitializeVisualization();
 
+  void InitializeProgressBar();
+
   bool IsEndOfSimulationForWorker() const;
 
   void StartVisualization() const;
+
+  long int GetExpectedNumberOfEvents() const;
+
+  void ComputeExpectedNumberOfEvents();
 
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
@@ -88,6 +97,11 @@ public:
   G4VisExecutive *fVisEx;
   std::vector<std::string> fVisCommands;
   UIsessionSilent fSilent;
+
+  bool fProgressBarFlag;
+  long int fExpectedNumberOfEvents;
+  long int fProgressBarStep;
+  long int fCurrentEvent;
 
   // The following variables must be local to each threads
   struct threadLocalT {
@@ -109,6 +123,9 @@ public:
 
     // User information data
     GateUserEventInformation *fUserEventInformation;
+
+    // progress bar
+      indicators::ProgressBar * fProgressBar{};
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

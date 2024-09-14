@@ -22,6 +22,7 @@ if __name__ == "__main__":
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
     sim.output_dir = paths.output
+    sim.progress_bar = True
 
     # units
     nm = gate.g4_units.nm
