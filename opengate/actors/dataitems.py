@@ -506,9 +506,25 @@ class DataItemContainer(DataContainer):
         return self.propagate_operator(other, "__truediv__")
 
     def inplace_merge_with(self, other):
-        self._assert_data_is_not_none()
         for i in range(self._tuple_length):
-            self.data[i].inplace_merge_with(other.data[i])
+            # can only apply merge of both items exist (and contain data)
+            if (
+                    (self.data[i] is not None) and (other.data[i] is not None)
+                and (self.data[i].data is not None) and (other.data[i].data is not None)
+            ):
+                self.data[i].inplace_merge_with(other.data[i])
+            else:
+                # the case of both item None is acceptable
+                # because the component not be activated in the actor, e.g. edep uncertainty,
+                # but it should not occur that one item is None and the other is not.
+                if ((self.data[i] is None or self.data[i].data is None) is not
+                        (other.data[i] is None or other.data[i].data is None)):
+                    s_not = {True: "", False: "not_"}
+                    fatal("Cannot apply inplace merge data to container "
+                          "with unset (None) data items. "
+                          f"In this case, the inplace item {i} is {s_not[self.data[i] is None]} None, "
+                          f"and the other item {i} is {s_not[other.data[i] is None]} None. "
+                          f"This is likely an implementation error in GATE. ")
         return self
 
     def merge_with(self, other):
