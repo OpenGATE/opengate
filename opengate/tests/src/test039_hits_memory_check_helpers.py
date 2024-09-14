@@ -118,7 +118,7 @@ def create_simu(nb_threads, paths):
 
 
 # go
-# output = sim.start()
+# sim.run()
 
 # On linux
 # valgrind --tool=massif --massif-out-file=./massif_t039_no_cleared.out  python test039_hits_memory_check_MP.py
