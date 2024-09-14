@@ -966,6 +966,9 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         self.__initcpp__()
 
     def __initcpp__(self):
+        # python 3.8 complains about init not called, we add explicit call to
+        # GateDigitizerAdderActor here (not needed for py > 3.8)
+        g4.GateDigitizerAdderActor.__init__(self, self.user_info)
         g4.GateDigitizerReadoutActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
