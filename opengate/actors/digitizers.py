@@ -196,6 +196,9 @@ class Digitizer:
 class DigitizerBase(ActorBase):
     _output_name_root = "root_output"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+
     def _add_user_output_root(self, **kwargs):
         """Specialized method to add a root user output in digitizers.
         The output name is hard-coded at the class-level and the same for all digitizers,
