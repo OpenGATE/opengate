@@ -1,6 +1,5 @@
-from pathlib import Path
-from copy import deepcopy
 from box import Box
+from typing import Optional
 
 from ..base import GateObject
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
@@ -198,6 +197,10 @@ def _setter_hook_active(self, active):
 
 class ActorOutputBase(GateObject):
 
+    # hints for IDE
+    belongs_to: str
+    keep_data_in_memory: bool
+
     _default_interface_class = BaseUserInterfaceToActorOutput
     default_suffix = None
 
@@ -217,15 +220,7 @@ class ActorOutputBase(GateObject):
                 "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
                 "Careful: Large data structures like a phase space need a lot of memory.",
             },
-        ),
-        # "active": (
-        #     True,
-        #     {
-        #         "doc": "Should this output be calculated by the actor? "
-        #         "Note: Output can be deactivated on in certain actors. ",
-        #         "setter_hook": _setter_hook_active,
-        #     },
-        # ),
+        )
     }
 
     @classmethod
@@ -250,27 +245,6 @@ class ActorOutputBase(GateObject):
 
     def __len__(self):
         return len(self.data_per_run)
-
-    # def __getitem__(self, which):
-    #     return self.get_data(which, None)
-    #
-    # @property
-    # def active(self):
-    #     return self._active
-
-    # @property
-    # def write_to_disk(self):
-    #     d = Box([(k, v["write_to_disk"]) for k, v in self.data_item_config.items()])
-    #     if len(d) > 1:
-    #         return d
-    #     elif len(d) == 1:
-    #         return list(d.values())[0]
-    #     else:
-    #         fatal("Nothing defined in data_item_config. ")
-    #
-    # @write_to_disk.setter
-    # def write_to_disk(self, value):
-    #     self.set_write_to_disk("all", value)
 
     def set_write_to_disk(self, value, **kwargs):
         raise NotImplementedError
@@ -333,6 +307,7 @@ class ActorOutputBase(GateObject):
                     f"of {type(self).__name__} called {self.name}"
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
+                run_index = None # remove warning from IDE
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path(self, which="merged", **kwargs):
@@ -395,6 +370,10 @@ class ActorOutputBase(GateObject):
 
 class MergeableActorOutput(ActorOutputBase):
 
+    # hints for IDE
+    merge_data_after_simulation: bool
+    keep_data_per_run: bool
+
     user_info_defaults = {
         "merge_data_after_simulation": (
             True,
@@ -445,6 +424,9 @@ class MergeableActorOutput(ActorOutputBase):
 
 class ActorOutputUsingDataItemContainer(MergeableActorOutput):
 
+    # hints for IDE
+    data_item_config: Optional[Box]
+
     user_info_defaults = {
         "data_item_config": (
             Box(
@@ -479,20 +461,6 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                 f"No 'data_container_class' class attribute "
                 f"specified for class {type(self)}."
             )
-        # if type(data_container_class) is type:
-        #     if DataItemContainer not in data_container_class.mro():
-        #         fatal(f"Illegal data container class {data_container_class}. ")
-        #     self.data_container_class = data_container_class
-        # else:
-        #     try:
-        #         self.data_container_class = available_data_container_classes[
-        #             data_container_class
-        #         ]
-        #     except KeyError:
-        #         fatal(
-        #             f"Unknown data item class {data_container_class}. "
-        #             f"Available classes are: {list(available_data_container_classes.keys())}"
-        #         )
         data_item_config = kwargs.pop("data_item_config", None)
         super().__init__(*args, **kwargs)
         if data_item_config is None:
@@ -507,60 +475,6 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         for k, v in self.data_item_config.items():
             if "output_filename" not in v:
                 v["output_filename"] = "auto"
-
-    # def initialize_output_filename(self, **kwargs):
-    #     if self.get_output_filename(**kwargs) == 'auto':
-    #         self.set_output_filename(self._generate_auto_output_filename(), **kwargs)
-    #
-    # for k, v in self.data_item_config.items():
-    #     if 'write_to_disk' in v and v['write_to_disk'] is True:
-    #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-    #             if len(self.data_item_config) > 0:
-    #                 item_suffix = k
-    #             else:
-    #                 item_suffix = ''
-    #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
-
-    # def get_output_path(self, **kwargs):
-    #     item = kwargs.pop("item", "all")
-    #     if item is None:
-    #         return super().get_output_path(**kwargs)
-    #     else:
-    #         return super().get_output_path(
-    #             output_filename=self.get_output_filename(item=item), **kwargs
-    #         )
-    #
-    # def get_output_filename(self, *args, item="all"):
-    #     if item == "all":
-    #         return Box(
-    #             [
-    #                 (k, str(self.compose_output_path_to_item(self.output_filename, k)))
-    #                 for k in self.data_item_config
-    #             ]
-    #         )
-    #     else:
-    #         return str(self.compose_output_path_to_item(self.output_filename, item))
-
-    # def compose_output_path_to_item(self, output_path, item):
-    #     """This method is intended to be called from an ActorOutput object which provides the path.
-    #     It returns the amended path to the specific item, e.g. the numerator or denominator in a QuotientDataItem.
-    #     Do not override this method.
-    #     """
-    #     return insert_suffix_before_extension(
-    #         output_path, self._get_suffix_for_item(item)
-    #     )
-    #     # else:
-    #     #     return actor_output_path
-
-    # def _get_suffix_for_item(self, identifier):
-    #     if identifier in self.data_item_config:
-    #         return self.data_item_config[identifier]["suffix"]
-    #     else:
-    #         fatal(
-    #             f"No data item found with identifier {identifier} "
-    #             f"in container class {self.data_container_class.__name__}. "
-    #             f"Valid identifiers are: {list(self.data_item_config.keys())}."
-    #         )
 
     def initialize_cpp_parameters(self):
         items = self._collect_item_identifiers("all")
@@ -597,14 +511,6 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
     def get_active(self, item=0):
         items = self._collect_item_identifiers(item)
         return any([self.data_item_config[k]["active"] is True for k in items])
-        # items = self._collect_item_identifiers(item)
-        # d = Box(
-        #         [(k, self.data_item_config[k]["active"]) for k in items]
-        #     )
-        # if len(d) > 1:
-        #     return d
-        # else:
-        #     return list(d.values())[0]
 
     def set_output_filename(self, value, item=0):
         if item == "all":
@@ -626,15 +532,6 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                 return self.data_item_config[item]["output_filename"]
             except KeyError:
                 self._fatal_unknown_item(item)
-        #     if f == "auto":
-        #         if len(self.data_item_config) > 0:
-        #             item_suffix = str(item)
-        #         else:
-        #             item_suffix = ""
-        #         output_filename = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
-        #     else:
-        #         output_filename = f
-        # return output_filename
 
     def get_item_suffix(self, item=0, **kwargs):
         if item == "all":
@@ -743,6 +640,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                     f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
+                run_index = None # avoid IDE warning
             self.data_per_run[run_index] = data_container
 
     def store_meta_data(self, which, **meta_data):
@@ -776,6 +674,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                 ri = int(which)
             except ValueError:
                 fatal(f"Invalid argument which in method collect_images(): {which}")
+                ri = None # avoid IDE warning
             data = [self.data_per_run[ri]]
             identifiers = [ri]
         if return_identifier is True:
@@ -837,6 +736,7 @@ class ActorOutputImage(ActorOutputUsingDataItemContainer):
                     image_data_container = self.data_per_run[run_index]
                 except KeyError:
                     fatal(f"No data found for run index {run_index}.")
+                    image_data_container = None # avoid IDE warning
                 if image_data_container is not None:
                     return image_data_container.get_image_properties()[item]
             except ValueError:
@@ -856,38 +756,29 @@ class ActorOutputImage(ActorOutputUsingDataItemContainer):
 class ActorOutputSingleImage(ActorOutputImage):
     data_container_class = SingleItkImage
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__("SingleItkImage", *args, **kwargs)
-    #
-
 
 class ActorOutputSingleMeanImage(ActorOutputImage):
     data_container_class = SingleMeanItkImage
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__("SingleMeanItkImage", *args, **kwargs)
 
 
 class ActorOutputSingleImageWithVariance(ActorOutputImage):
     data_container_class = SingleItkImageWithVariance
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__("SingleItkImageWithVariance", *args, **kwargs)
-
 
 class ActorOutputQuotientImage(ActorOutputImage):
     data_container_class = QuotientItkImage
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__("QuotientItkImage", *args, **kwargs)
 
 
 class ActorOutputQuotientMeanImage(ActorOutputImage):
     data_container_class = QuotientMeanItkImage
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__("QuotientMeanItkImage", *args, **kwargs)
-
 
 class ActorOutputRoot(ActorOutputBase):
+
+    # hints for IDE
+    output_filename: str
+    write_to_disk: bool
+    keep_data_in_memory: bool
 
     user_info_defaults = {
         "output_filename": (

@@ -1,5 +1,6 @@
 import copy
 from pathlib import Path
+from typing import Optional, List
 
 from box import Box
 import sys
@@ -159,6 +160,8 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
+            options= None # remove warning from IDE
+            default_value= None # remove warning from IDE
         if "deprecated" not in options:
             if not hasattr(cls, p_name):
                 check_property_name(p_name)
@@ -320,6 +323,10 @@ class GateObject:
     or via the metaclass MetaUserInfo, before any instances of the class are created.
     Some class attributes, e.g. inherited_user_info_defaults, are created as part of this processing.
     """
+
+    # hints for IDE
+    name: str
+    inherited_user_info_defaults: dict
 
     user_info_defaults = {"name": (None, {"required": True})}
 
@@ -522,6 +529,10 @@ class GateObject:
 
 
 class DynamicGateObject(GateObject):
+
+    # hints for IDE
+    dynamic_params: Optional[List]
+
     user_info_defaults = {
         "dynamic_params": (
             None,
@@ -763,6 +774,7 @@ def _get_user_info_options(user_info_name, object_type, class_module):
         ).inherited_user_info_defaults[user_info_name][1]
     except KeyError:
         fatal(f"Could not find user info {user_info_name} in {object_type}. ")
+        options = None # remove warning from IDE
     return options
 
 
