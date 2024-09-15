@@ -3,7 +3,6 @@ import math
 
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
-from opengate.element import copy_user_info
 from opengate.geometry.volumes import unite_volumes
 from opengate.sources.generic import generate_isotropic_directions
 
@@ -98,7 +97,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     bottom_right_shell = opengate.geometry.volumes.TubsVolume(
         name=f"{name}_bottom_right_shell"
     )
-    copy_user_info(bottom_left_shell, bottom_right_shell)
+    bottom_right_shell.copy_user_info(bottom_left_shell)
     bottom_right_shell.sphi = 180 * deg
     bottom_right_shell.dphi = 90 * deg
 

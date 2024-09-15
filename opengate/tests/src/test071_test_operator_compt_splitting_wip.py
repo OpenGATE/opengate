@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import opengate_core as g4
 import opengate as gate
 import uproot
 import numpy as np
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
+
+
+def check_process_user_hook(simulaton_engine):
+    # Check whether the particle 'gamma' actually has
+    # the requested processes attached to it
+    p_name = "gamma"
+    g4_particle_table = g4.G4ParticleTable.GetParticleTable()
+    particle = g4_particle_table.FindParticle(particle_name=p_name)
+    # FindParticle returns nullptr if particle name was not found
+    if particle is None:
+        raise Exception(f"Something went wrong. Could not find particle {p_name}.")
+    pm = particle.GetProcessManager()
+    p = pm.GetProcess("compt")
+    # GetProcess returns nullptr if the requested process was not found
+    if p is None:
+        raise Exception(f"Could not find the compt process for particle {p_name}.")
+    else:
+        print(f"Hooray, I found the process compt for the particle {p_name}!")
 
 
 def bool_validation_test(dico_parameters, tol):
@@ -104,14 +123,14 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    # ui.visu = True
-    # ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
-    # ui.running_verbose_level = gate.logger.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.g4_verbose = False
+    # sim.visu = True
+    # sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
+    # sim.running_verbose_level = gate.logger.EVENT
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -140,7 +159,6 @@ if __name__ == "__main__":
 
     W_tubs = sim.add_volume("Tubs", "W_box")
     W_tubs.material = "Tungsten"
-    W_tubs.mother = world.name
 
     W_tubs.rmin = 0
     W_tubs.rmax = 0.001 * um
@@ -158,9 +176,9 @@ if __name__ == "__main__":
     ####### Compton Splitting ACTOR #########
     nb_split = 100
     compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplittingW")
-    compt_splitting_actor.mother = W_tubs.name
+    compt_splitting_actor.attached_to = W_tubs.name
     compt_splitting_actor.splitting_factor = nb_split
-    list_processes_to_bias = compt_splitting_actor.processes
+    # compt_splitting_actor.particles = 'gamma'
 
     ##### PHASE SPACE plan ######"
     plan_tubs = sim.add_volume("Tubs", "phsp_tubs")
@@ -187,7 +205,7 @@ if __name__ == "__main__":
     ####### PHASE SPACE ACTOR ##############
 
     phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp_actor.mother = plan_tubs.name
+    phsp_actor.attached_to = plan_tubs.name
     phsp_actor.attributes = [
         "EventID",
         "TrackID",
@@ -198,35 +216,33 @@ if __name__ == "__main__":
         "TrackCreatorProcess",
     ]
 
-    phsp_actor.output = paths.output / "test071_output_data.root"
+    phsp_actor.output_filename = "test071_output_data.root"
 
     ##### MODIFIED PHYSICS LIST ###############
 
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
+
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option2"
-    ## Perhaps avoid the user to call the below boolean function ? ###
-    sim.physics_manager.special_physics_constructors.G4GenericBiasingPhysics = True
-    sim.physics_manager.processes_to_bias.gamma = list_processes_to_bias
     #### Extremely important, it seems that GEANT4, for almost all physics lists, encompass all the photon processes in GammaGeneralProc
     #### Therefore if we provide the name of the real process (here compt) without deactivating GammaGeneralProcess, it will not find the
     #### process to bias and the biasing will fail
     s = f"/process/em/UseGeneralProcess false"
-    sim.add_g4_command_before_init(s)
+    sim.g4_commands_before_init.append(s)
 
     sim.physics_manager.global_production_cuts.gamma = 1 * m
     sim.physics_manager.global_production_cuts.electron = 1 * um
     sim.physics_manager.global_production_cuts.positron = 1 * km
 
-    output = sim.run()
+    sim.user_hook_after_run = check_process_user_hook
+
+    sim.run()
 
     #
     # print results
-    stats = sim.output.get_actor("Stats")
-    h = sim.output.get_actor("PhaseSpace")
     print(stats)
     #
-    f_data = uproot.open(paths.output / "test071_output_data.root")
+    f_data = uproot.open(phsp_actor.get_output_path())
     f_ref_data = uproot.open(paths.data / "test071_ref_data.root")
     arr_data = f_data["PhaseSpace"].arrays()
     arr_ref_data = f_ref_data["PhaseSpace"].arrays()

@@ -54,5 +54,15 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # start simulation
-    # sim.add_g4_command_after_init("/run/verbose 1")
+    # sim.g4_commands_after_init.append("/run/verbose 1")
     sim.run()
+
+    stats = sim.get_actor("Stats")
+    stats.counts.run_count = 1
+
+    # gate_test4_simulation_stats_actor
+    # Gate mac/main.mac
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.03)
+
+    utility.test_ok(is_ok)

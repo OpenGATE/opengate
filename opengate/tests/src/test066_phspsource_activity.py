@@ -32,6 +32,7 @@ if __name__ == "__main__":
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 1
     sim.random_seed = 987654321
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -80,15 +81,15 @@ if __name__ == "__main__":
     phsp_plane_1.color = [1, 0, 0, 1]  # red
 
     phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp_actor.mother = phsp_plane_1.name
+    phsp_actor.attached_to = phsp_plane_1
     phsp_actor.attributes = [
         "KineticEnergy",
     ]
 
-    phsp_actor.output = paths.output / "test066_output_data.root"
+    phsp_actor.output_filename = "test066_output_data.root"
 
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
@@ -97,15 +98,12 @@ if __name__ == "__main__":
     #
     # # go !
     sim.run()
-    output = sim.output
 
     #
     # # print results
-    stats = sim.output.get_actor("Stats")
-    h = output.get_actor("PhaseSpace")
     print(stats)
     #
-    f_phsp = uproot.open(paths.output / "test066_output_data.root")
+    f_phsp = uproot.open(phsp_actor.get_output_path())
     arr = f_phsp["PhaseSpace"].arrays()
     print("Number of detected events :", len(arr))
     print(

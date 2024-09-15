@@ -38,7 +38,7 @@ class PhaseSpaceSourceGenerator:
         # convert str like 1e5 to int
         self.user_info.batch_size = int(self.user_info.batch_size)
         if self.user_info.batch_size < 1:
-            gate.fatal("PhaseSpaceSourceGenerator: Batch size should be > 0")
+            fatal("PhaseSpaceSourceGenerator: Batch size should be > 0")
 
         if (
             opengate_core.IsMultithreadedApplication()
@@ -54,7 +54,7 @@ class PhaseSpaceSourceGenerator:
         if len(branches) > 0:
             self.root_file = self.root_file[branches[0]]
         else:
-            gate.fatal(
+            fatal(
                 f"PhaseSpaceSourceGenerator: No usable branches in the root file {self.user_info.phsp_file}. Aborting."
             )
             exit()
@@ -306,6 +306,8 @@ class PhaseSpaceSource(SourceBase):
     def __init__(self, user_info):
         super().__init__(user_info)
         self.particle_generator = PhaseSpaceSourceGenerator()
+        # FIXME workaround for ./test019_linac_phsp_source.py
+        self.user_info.particle_generator = self.particle_generator
 
     def initialize(self, run_timing_intervals):
         # initialize the mother class generic source
@@ -327,33 +329,29 @@ class PhaseSpaceSource(SourceBase):
         if ui.direction_key_z is None:
             ui.direction_key_z = f"{ui.direction_key}_Z"
 
-            # check if the source should generate particles until the second one
+        # check if the source should generate particles until the second one
         # which is identified as primary by name, PDGCode and above a threshold
-        if ui.generate_until_next_primary == True:
+        if ui.generate_until_next_primary:
             if ui.primary_PDGCode == 0:
-                gate.fatal(
+                fatal(
                     f"PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
                 )
             if ui.primary_lower_energy_threshold <= 0:
-                gate.fatal(
+                fatal(
                     f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
-        # print("threads: ", self.simulation.user_info.number_of_threads)
-        # print("number of particles:", ui.n)
+
         # if not set, initialize the entry_start to 0 or to a list for multithreading
         if ui.entry_start is None:
             if not opengate_core.IsMultithreadedApplication():
                 ui.entry_start = 0
             else:
-                # create a entry_start array with the correct number of start entries
+                # create an entry_start array with the correct number of start entries
                 # all entries are spaced by the number of particles/thread
                 n_threads = self.simulation.user_info.number_of_threads
-                # ui.entry_start = [0] * n_threads
                 step = np.ceil(ui.n / n_threads) + 1  # Specify the increment value
                 ui.entry_start = [i * step for i in range(n_threads)]
-            print("INFO: entry_start not set. Using default values: ", ui.entry_start)
 
-        # print("intialize entry_start: ", ui.entry_start)
         # initialize the generator (read the phsp file)
         self.particle_generator.initialize(self.user_info)
 

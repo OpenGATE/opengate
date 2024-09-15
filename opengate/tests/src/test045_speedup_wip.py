@@ -8,6 +8,8 @@ import test045_gan_phsp_pet_gan_helpers as t45
 from opengate.tests import utility
 from pathlib import Path
 
+# WARNING: This test is outdated. Do not use it as an example!
+
 paths = utility.get_default_test_paths(__file__, "", "test045")
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
@@ -100,7 +102,7 @@ def run_test_045_speedrun(
     sim.run()
 
     # print
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # save
@@ -109,7 +111,7 @@ def run_test_045_speedrun(
     if p.use_pet:
         import uproot
 
-        phsp = sim.output.get_actor("Singles").user_info
+        phsp = sim.get_actor("Singles").user_info
         f = phsp.output
         s = uproot.open(f)["Singles"]
         print(f"Number of singles: ", s.num_entries)

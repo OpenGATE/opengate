@@ -22,9 +22,11 @@ def create_test_phs(
     particle="proton",
     phs_name=Path("output") / "test_proton.root",
     number_of_particles=1,
-    translation=[0 * mm, 0 * mm, 0 * mm],
+    translation=None,
 ):
     # create the simulation
+    if translation is None:
+        translation = [0 * mm, 0 * mm, 0 * mm]
     sim = gate.Simulation()
 
     # main options
@@ -74,7 +76,7 @@ def create_test_phs(
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
-    ta1.mother = plane.name
+    ta1.attached_to = plane.name
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
@@ -86,7 +88,7 @@ def create_test_phs(
         "PDGCode",
     ]
     new_joined_path = os.path.join(directory_path, base_filename + new_extension)
-    ta1.output = new_joined_path
+    ta1.output_filename = new_joined_path
     ta1.debug = False
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = particle
@@ -94,7 +96,7 @@ def create_test_phs(
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
-    ta2.mother = plane.name
+    ta2.attached_to = plane.name
     ta2.attributes = [
         "KineticEnergy",
         "Weight",
@@ -106,13 +108,13 @@ def create_test_phs(
     new_joined_path = os.path.join(
         directory_path, base_filename + "_noParticleInfo" + new_extension
     )
-    ta2.output = new_joined_path
+    ta2.output_filename = new_joined_path
     ta2.debug = False
     ta2.filters.append(f)
 
     # PhaseSpace Actor
     ta3 = sim.add_actor("PhaseSpaceActor", "PhaseSpace3")
-    ta3.mother = plane.name
+    ta3.attached_to = plane.name
     ta3.attributes = [
         "KineticEnergy",
         "Weight",
@@ -125,13 +127,13 @@ def create_test_phs(
     new_joined_path = os.path.join(
         directory_path, base_filename + "_PDGCode" + new_extension
     )
-    ta3.output = new_joined_path
+    ta3.output_filename = new_joined_path
     ta3.debug = False
     ta3.filters.append(f)
 
     # PhaseSpace Actor
     ta4 = sim.add_actor("PhaseSpaceActor", "PhaseSpace4")
-    ta4.mother = plane.name
+    ta4.attached_to = plane.name
     ta4.attributes = [
         "KineticEnergy",
         "Weight",
@@ -144,7 +146,7 @@ def create_test_phs(
     new_joined_path = os.path.join(
         directory_path, base_filename + "_ParticleName" + new_extension
     )
-    ta4.output = new_joined_path
+    ta4.output_filename = new_joined_path
     ta4.debug = False
     ta4.filters.append(f)
 
@@ -192,9 +194,6 @@ def create_phs_without_source(
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     nm = gate.g4_units.nm
-    Bq = gate.g4_units.Bq
-    MeV = gate.g4_units.MeV
-    deg = gate.g4_units.deg
 
     ##########################################################################################
     # geometry
@@ -224,7 +223,7 @@ def create_phs_without_source(
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta1.mother = plane.name
+    ta1.attached_to = plane.name
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
@@ -235,7 +234,8 @@ def create_phs_without_source(
         "PreDirectionLocal",
         "PDGCode",
     ]
-    ta1.output = phs_name
+    ta1.output_filename = phs_name
+    ta1.steps_to_store = "exiting"
     ta1.debug = True
 
     # ~ phys.physics_list_name = "FTFP_BERT"
@@ -377,7 +377,7 @@ def test_source_rotation(
     sim.run()
 
 
-def test_source_untilPrimary(
+def test_source_until_primary(
     source_file_name=Path("output") / "test_proton_offset.root",
     phs_file_name_out=Path("output") / "output/test_source_electron.root",
 ) -> None:
@@ -385,9 +385,6 @@ def test_source_untilPrimary(
         phs_name=phs_file_name_out,
     )
     number_of_particles = 2
-    ##########################################################################################
-    #  Source
-    ##########################################################################################
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
     source.mother = "world"
@@ -404,7 +401,6 @@ def test_source_untilPrimary(
     print(source)
 
     sim.run()
-    output = sim.output
 
 
 def get_first_entry_of_key(

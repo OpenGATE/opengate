@@ -6,11 +6,13 @@ import test038_gan_phsp_spect_gan_helpers as t38
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test038_gan_phsp_spect")
-    paths.output_ref = paths.output_ref / "test038"
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test038_gan_phsp_spect", "test038"
+    )
 
     # create the simulation
     sim = gate.Simulation()
+    sim.progress_bar = True
     condition_generator = t38.create_simulation(sim, paths)
 
     gsource = sim.get_source_user_info("gaga")
@@ -21,4 +23,4 @@ if __name__ == "__main__":
 
     # test
     all_cond = condition_generator.all_cond
-    t38.analyze_results(sim.output, paths, all_cond)
+    t38.analyze_results(sim, paths, all_cond)

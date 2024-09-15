@@ -24,8 +24,8 @@ if __name__ == "__main__":
     # store a json archive
     sim.store_json_archive = True
     sim.store_input_files = True
-    sim.json_archive_filename = "simu_test065.json"
-    sim.output_dir = paths.output / "test065"
+    sim.json_archive_filename = "simu_test069.json"
+    sim.output_dir = paths.output / "test069"
 
     # add a material database
     sim.volume_manager.add_material_database(
@@ -83,6 +83,8 @@ if __name__ == "__main__":
         [800, 6000, "G4_BONE_COMPACT_ICRU"],
     ]
 
+    stat_actor = sim.add_actor("SimulationStatisticsActor", name="stat_actor")
+
     # add a source so that this simulation can run
     source = sim.add_source("GenericSource", "mysource")
     source.energy.mono = 230 * MeV
@@ -96,3 +98,19 @@ if __name__ == "__main__":
 
     # run
     sim.run()
+
+    # test the file content -> NO, there are some abs filenames ...
+    fn1 = paths.output / "test069" / sim.json_archive_filename
+    print(fn1)
+    """fn2 = paths.output_ref / "test069" / sim.json_archive_filename
+    f1 = open(fn1)
+    j1 = json.load(f1)
+    f2 = open(fn2)
+    j2 = json.load(f2)
+    is_ok = j1 == j2
+    print(fn1)
+    print(fn2)
+    utility.print_test(is_ok, f"Compare json gate output with reference")"""
+    is_ok = fn1.exists()
+
+    utility.test_ok(is_ok)

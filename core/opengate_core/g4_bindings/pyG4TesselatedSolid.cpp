@@ -12,12 +12,11 @@ namespace py = pybind11;
 #include "G4TessellatedSolid.hh"
 
 void init_G4TessellatedSolid(py::module &m) {
-  py::class_<G4TessellatedSolid, G4VSolid>(m, "G4TessellatedSolid")
-
+  py::class_<G4TessellatedSolid, G4VSolid,
+             std::unique_ptr<G4TessellatedSolid, py::nodelete>>(
+      m, "G4TessellatedSolid")
       .def(py::init<const G4String &>())
-
       .def("AddFacet", &G4TessellatedSolid::AddFacet)
       .def("GetNumberOfFacets", &G4TessellatedSolid::GetNumberOfFacets)
-      .def("GetCubicVolume", &G4TessellatedSolid::GetCubicVolume)
       .def("SetSolidClosed", &G4TessellatedSolid::SetSolidClosed);
 }

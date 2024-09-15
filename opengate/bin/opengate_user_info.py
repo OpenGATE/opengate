@@ -3,7 +3,6 @@
 import click
 from opengate.userinfo import UserInfo
 from opengate.geometry.builders import volume_type_names
-from opengate.actors.actorbuilders import actor_type_names
 from opengate.sources.builders import source_type_names
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])

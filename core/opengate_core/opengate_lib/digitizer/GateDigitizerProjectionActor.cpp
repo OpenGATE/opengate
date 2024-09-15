@@ -19,15 +19,21 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
-  fOutputFilename = DictGetStr(user_info, "output");
+}
+
+GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
+
+void GateDigitizerProjectionActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   auto r = DictGetMatrix(user_info, "detector_orientation_matrix");
   fDetectorOrientationMatrix = ConvertToG4RotationMatrix(r);
   fInputDigiCollectionNames =
       DictGetVecStr(user_info, "input_digi_collections");
-  fImage = ImageType::New();
 }
 
-GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
+void GateDigitizerProjectionActor::InitializeCpp() {
+  fImage = ImageType::New();
+}
 
 // Called when the simulation start
 void GateDigitizerProjectionActor::StartSimulationAction() {

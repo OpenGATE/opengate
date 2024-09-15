@@ -80,8 +80,8 @@ def add_digitizer(
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", hits_name)
-    hc.mother = crystal.name
-    hc.output = output_filename
+    hc.attached_to = crystal.name
+    hc.output_filename = output_filename
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -91,12 +91,13 @@ def add_digitizer(
 
     # singles collection
     sc = sim.add_actor("DigitizerReadoutActor", singles_name)
+    sc.attached_to = crystal.name
     sc.input_digi_collection = hc.name
     sc.group_volume = block.name
     # sc.group_volume = ring.name # (I checked that is it different from block)
     # sc.group_volume = crystal.name # (I checked that is it different from block)
     sc.discretize_volume = crystal.name
     sc.policy = "EnergyWeightedCentroidPosition"
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     return sc

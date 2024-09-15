@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 12332567
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -52,20 +53,18 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test023_iec_phantom.mhd"
-    # dose.output = paths.output_ref / "test023_iec_phantom.mhd"
-    dose.mother = "iec"
+    dose.output_filename = "test023_iec_phantom.mhd"
+    dose.attached_to = "iec"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.filters.append(fp)
-    dose.filters.append(fk)
+    dose.filters = [fp, fk]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-    s.filters.append(f)
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
+    stat.filters.append(f)
 
-    print(s)
+    print(stat)
     print(dose)
     print("Filters: ", sim.filter_manager)
     print(sim.filter_manager.dump())
@@ -78,18 +77,13 @@ if __name__ == "__main__":
     # start simulation
     sim.run(start_new_process=True)
 
-    # print results at the end
-    stat = sim.output.get_actor("Stats")
-    dose = sim.output.get_actor("dose")
-    # stat.write(paths.output_ref / 'test023_stats_iec_phantom.txt')
-
     # tests
     f = paths.output_ref / "test023_stats_iec_phantom.txt"
     stats_ref = utility.read_stat_file(f)
     is_ok = utility.assert_stats(stat, stats_ref, 0.12)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023_iec_phantom.mhd",
-        paths.output / dose.user_info.output,
+        dose.edep.get_output_path(),
         stat,
         sum_tolerance=28,
         tolerance=102,

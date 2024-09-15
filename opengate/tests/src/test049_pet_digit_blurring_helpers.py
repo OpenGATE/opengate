@@ -13,7 +13,7 @@ from test037_pet_hits_singles_helpers import (
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
+paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur", "test049")
 
 
 def create_simulation(sim, threads=1, singles_name="Singles"):

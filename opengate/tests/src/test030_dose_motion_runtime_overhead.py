@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import time
-
-import numpy as np
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
@@ -22,13 +19,13 @@ def simulate(number_of_dynamic_parametrisations=0):
     sim.g4_verbose = False
     sim.visu = False
     sim.random_seed = 983456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     um = gate.g4_units.um
-    nm = gate.g4_units.nm
     MeV = gate.g4_units.MeV
     Bq = gate.g4_units.Bq
     sec = gate.g4_units.second
@@ -69,19 +66,18 @@ def simulate(number_of_dynamic_parametrisations=0):
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test030-edep.mhd"
-    dose.mother = "waterbox"
+    dose.output_filename = "test030-edep.mhd"
+    dose.attached_to = "waterbox"
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
-    dose.uncertainty = True
+    dose.edep_uncertainty.active = True
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-    s.output = paths.output / "stats030.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
+    # go
     sim.run(start_new_process=True)
 
     if number_of_dynamic_parametrisations > 1:
@@ -98,9 +94,10 @@ def simulate(number_of_dynamic_parametrisations=0):
             rotation=number_of_dynamic_parametrisations * [fake.rotation],
         )
 
+    # go
     sim.run(start_new_process=True)
 
-    return sim.output.get_actor("Stats").counts["duration"] / gate.g4_units["s"]
+    return stats.counts["duration"] / gate.g4_units["s"]
 
 
 if __name__ == "__main__":
@@ -129,3 +126,5 @@ if __name__ == "__main__":
     # plt.show()
 
     plt.savefig(paths.output / "run_time_dynamic_parametrisation.pdf")
+
+    # FIXME: this is not really a test, always ok

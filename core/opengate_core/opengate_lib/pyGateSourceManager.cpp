@@ -19,6 +19,8 @@ void init_GateSourceManager(py::module &m) {
       .def("AddSource", &GateSourceManager::AddSource)
       .def("Initialize", &GateSourceManager::Initialize)
       .def("SetActors", &GateSourceManager::SetActors)
+      .def("GetExpectedNumberOfEvents",
+           &GateSourceManager::GetExpectedNumberOfEvents)
       .def_readwrite("fUserEventInformationFlag",
                      &GateSourceManager::fUserEventInformationFlag)
       .def("StartMasterThread", &GateSourceManager::StartMasterThread,

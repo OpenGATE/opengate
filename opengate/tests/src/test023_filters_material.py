@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 121645
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -52,24 +53,23 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test023.mhd"
-    # dose.output = paths.output_ref / "test023-edep.mhd"
-    dose.mother = "waterbox"
+    dose.output_filename = "test023.mhd"
+    dose.attached_to = "waterbox"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.filters.append(fp)
+    dose.filters = [fp]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-    s.filters.append(f)
-    print(s)
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
+    stat.filters.append(f)
+    print(stat)
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats2")
-    s.track_types_flag = True
-    s.filters.append(fp)
-    print(s)
+    stat2 = sim.add_actor("SimulationStatisticsActor", "Stats2")
+    stat2.track_types_flag = True
+    stat2.filters.append(fp)
+    print(stat2)
 
     print(dose)
     print("Filters: ", sim.filter_manager)
@@ -83,17 +83,11 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-    # print(stat)
+    print(stat)
+    print(stat2)
 
-    dose = sim.output.get_actor("dose")
     f = paths.output_ref / "test023_stats_iec_mat.txt"
-    # stat.write(f)
-
-    stat2 = sim.output.get_actor("Stats2")
-    # print(stat2)
     f2 = paths.output_ref / "test023_stats_iec_mat_e.txt"
-    # stat2.write(f2)
 
     # tests
     gate.exception.warning(f"Stats filter 1")
@@ -107,7 +101,7 @@ if __name__ == "__main__":
 
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-edep.mhd",
-        paths.output / dose.user_info.output,
+        dose.edep.get_output_path(),
         stat,
         sum_tolerance=3,
         tolerance=50,

@@ -18,6 +18,7 @@
 #include "GateHelpersDict.h"
 #include "GateSignalHandler.h"
 #include "GateSourceManager.h"
+#include "indicators.hpp"
 #include <G4MTRunManager.hh>
 #include <G4RunManager.hh>
 #include <G4TransportationManager.hh>
@@ -40,6 +41,7 @@ GateSourceManager::GateSourceManager() {
   fVisualizationFile = "g4writertest.gdml";
   fVerboseLevel = 0;
   fUserEventInformationFlag = false;
+  fProgressBarFlag = false;
   auto &l = fThreadLocalData.Get();
   l.fStartNewRun = true;
   l.fNextRunId = 0;
@@ -52,6 +54,13 @@ GateSourceManager::GateSourceManager() {
 GateSourceManager::~GateSourceManager() {
   delete fVisEx;
   // fUIEx is already deleted
+  if (fProgressBarFlag) {
+    if (!G4Threading::IsMultithreadedApplication() ||
+        G4Threading::G4GetThreadId() == 0) {
+      auto &l = fThreadLocalData.Get();
+      delete l.fProgressBar;
+    }
+  }
 }
 
 void GateSourceManager::Initialize(TimeIntervals simulation_times,
@@ -74,11 +83,14 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   else
     fVisCommands = DictGetVecStr(options, "visu_commands");
   fVerboseLevel = DictGetInt(options, "running_verbose_level");
+  fProgressBarFlag = DictGetBool(options, "progress_bar");
   InstallSignalHandler();
+  InitializeProgressBar();
 
   // Fake init of the EventModulo (will be changed in StartMasterThread or by
   // the user) thanks to /run/eventModulo 50000 1
   if (G4Threading::IsMultithreadedApplication()) {
+    // (static cast is REQUIRED)
     auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
     mt->SetEventModulo(-1);
   }
@@ -97,7 +109,7 @@ void GateSourceManager::StartMasterThread() {
   // (only performed in the master thread)
   if (G4Threading::IsMultithreadedApplication()) {
     // (static is needed, dynamic_cast lead to seg fault)
-    auto mt = dynamic_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
+    auto mt = static_cast<G4MTRunManager *>(G4RunManager::GetRunManager());
     if (mt->GetEventModulo() == -1) {
       mt->SetEventModulo(10000); // default value (not a big influence)
       // Much faster with mode 1 than with mode 0 (which is default)
@@ -138,6 +150,52 @@ void GateSourceManager::StartMasterThread() {
       }
     }
   }
+
+  // progress bar
+  if (fProgressBarFlag) {
+    if (G4Threading::IsMultithreadedApplication() &&
+        G4Threading::G4GetThreadId() != 0)
+      return;
+    l.fProgressBar->mark_as_completed();
+    show_console_cursor(true);
+  }
+}
+
+void GateSourceManager::InitializeProgressBar() {
+  if (!fProgressBarFlag)
+    return;
+  // (the expected number is computed by all thread)
+  ComputeExpectedNumberOfEvents();
+
+  // the progress bar is only for one thread (id ==0)
+  if (G4Threading::IsMultithreadedApplication() &&
+      G4Threading::G4GetThreadId() != 0)
+    return;
+  auto &l = fThreadLocalData.Get();
+  l.fProgressBar =
+      new ProgressBar{option::BarWidth{50},
+                      option::Start{""},
+                      option::Fill{"■"},
+                      option::Lead{"■"},
+                      option::End{""},
+                      option::ShowElapsedTime{true},
+                      option::ShowRemainingTime{true},
+                      option::MaxProgress{fExpectedNumberOfEvents}};
+  // show_console_cursor(true);
+  fCurrentEvent = 0;
+}
+
+void GateSourceManager::ComputeExpectedNumberOfEvents() {
+  fExpectedNumberOfEvents = 0;
+  for (auto *source : fSources) {
+    fExpectedNumberOfEvents +=
+        source->GetExpectedNumberOfEvents(fSimulationTimes);
+  }
+  fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
+}
+
+long int GateSourceManager::GetExpectedNumberOfEvents() const {
+  return fExpectedNumberOfEvents;
 }
 
 void GateSourceManager::PrepareRunToStart(int run_id) {
@@ -254,6 +312,20 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
 
   // check if this is not the end of the run
   CheckForNextRun();
+
+  // progress bar
+  if (fProgressBarFlag) {
+    // do nothing if not the first thread
+    if (G4Threading::IsMultithreadedApplication() &&
+        G4Threading::G4GetThreadId() != 0)
+      return;
+    // count the number of event already generated
+    fCurrentEvent = fCurrentEvent + 1;
+    // update the bar sometimes
+    if (fCurrentEvent % fProgressBarStep == 0) {
+      l.fProgressBar->set_progress(fCurrentEvent);
+    }
+  }
 }
 
 void GateSourceManager::InitializeVisualization() {

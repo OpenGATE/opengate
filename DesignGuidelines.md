@@ -1,3 +1,5 @@
+## OBSOLETE! Will be updated soon.
+
 * Classes should use dictionaries of the form {name:object} to register series of objects, e.g. volumes in the VolumeManager. They should **not** use lists.
 * Initialize methods should **not** take any arguments. All parameters should be set explicitly before calling initialize.
 * Initialize methods should be called either privately by the class itself or from the associated engine. They should not be called by the user.

@@ -36,6 +36,10 @@ public:
     PYBIND11_OVERLOAD(void, GateVActor, BeginOfRunActionMasterThread, run_id);
   }
 
+  int EndOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(int, GateVActor, EndOfRunActionMasterThread, run_id);
+  }
+
   //    void SteppingAction(G4Step *step) override {
   //        PYBIND11_OVERLOAD(void, GateVActor, SteppingAction, step);
   //    }
@@ -72,19 +76,31 @@ void init_GateVActor(py::module &m) {
              std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
       .def(py::init<py::dict &>())
       .def("RegisterSD", &GateVActor::RegisterSD)
-      .def_readonly("fActions", &GateVActor::fActions)
+      //      .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
+      //      this -> problems with pickle
       .def_readwrite("fFilters", &GateVActor::fFilters)
-      .def("ActorInitialize", &GateVActor::ActorInitialize)
+      .def("InitializeCpp", &GateVActor::InitializeCpp)
+      .def("InitializeUserInput", &GateVActor::InitializeUserInput)
       .def("AddActions", &GateVActor::AddActions)
+      .def("IsSensitiveDetector", &GateVActor::IsSensitiveDetector)
+      .def("HasAction", &GateVActor::HasAction)
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)
       .def("BeginOfRunAction", &GateVActor::BeginOfRunAction)
       .def("BeginOfRunActionMasterThread",
            &GateVActor::BeginOfRunActionMasterThread)
       .def("EndOfRunAction", &GateVActor::EndOfRunAction)
+      .def("EndOfRunActionMasterThread",
+           &GateVActor::EndOfRunActionMasterThread)
       .def("BeginOfEventAction", &GateVActor::BeginOfEventAction)
       .def("EndOfEventAction", &GateVActor::EndOfEventAction)
       .def("PreUserTrackingAction", &GateVActor::PreUserTrackingAction)
       .def("PostUserTrackingAction", &GateVActor::PostUserTrackingAction)
+      .def("GetOutputPath", &GateVActor::GetOutputPath)
+      .def("SetOutputPath", &GateVActor::SetOutputPath)
+      .def("GetWriteToDisk", &GateVActor::GetWriteToDisk)
+      .def("SetWriteToDisk", &GateVActor::SetWriteToDisk)
+      .def("AddActorOutputInfo", &GateVActor::AddActorOutputInfo)
       .def("SteppingAction", &GateVActor::SteppingAction);
+  //      .def("RegisterCallBack", &GateVActor::RegisterCallBack);
 }

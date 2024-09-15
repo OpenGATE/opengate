@@ -7,7 +7,7 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, output_folder="test052")
 
     """
     Test the option in GenericSource to use a TAC Time Activity Curve
@@ -33,6 +33,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
     sim.random_seed = 987654321
+    sim.output_dir = paths.output
 
     # world size
     world = sim.world
@@ -64,7 +65,8 @@ if __name__ == "__main__":
     # phsp actor for timing
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
     phsp.attributes = ["GlobalTime"]
-    phsp.output = paths.output / "test052_tac.root"
+    phsp.steps_to_store = "exiting"
+    phsp.output_filename = "test052_tac.root"
 
     # go
     # sim.running_verbose_level = gate.EVENT
@@ -73,13 +75,12 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # check root
     print()
     gate.exception.warning("Check root time")
-    root1, n1 = utility.open_root_as_np(phsp.output, "phsp")
+    root1, n1 = utility.open_root_as_np(phsp.get_output_path(), "phsp")
     etimes = root1["GlobalTime"] / sec
     print(f"Number of events : {len(etimes)}")
 

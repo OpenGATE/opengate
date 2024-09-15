@@ -9,7 +9,7 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "", "test031")
 
     l = gate.sources.generic.all_beta_plus_radionuclides
     # l = ['F18', 'Ga68', 'O15']
@@ -66,6 +66,7 @@ if __name__ == "__main__":
     sim.random_seed = 123456
     sim.world.size = [1 * m, 1 * m, 1 * m]
     sim.world.material = "G4_Galactic"
+    sim.output_dir = paths.output
 
     def add_box(i):
         b = sim.add_volume("Box", f"b{i}")
@@ -97,10 +98,11 @@ if __name__ == "__main__":
         )
 
         phsp = sim.add_actor("PhaseSpaceActor", f"phsp_{rad}")
-        phsp.mother = f"b{si}"
+        phsp.attached_to = f"b{si}"
         phsp.attributes = ["TrackVertexKineticEnergy"]
-        phsp.output = paths.output / f"test031_{rad}.root"
-        f = sim.add_filter("ParticleFilter", "f")
+        phsp.output_filename = f"test031_{rad}.root"
+        phsp.steps_to_store = "exiting"
+        f = sim.add_filter("ParticleFilter", f"f_{rad}")
         f.particle = "e+"
         phsp.filters.append(f)
         rads.append(rad)
@@ -119,20 +121,20 @@ if __name__ == "__main__":
     rad_color['C11_analytic'] = rad_color['C11']
     """
 
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("stats")
     print(stats)
 
     # plot
     for i in range(len(rads)):
         rad = rads[i]
-        output = paths.output / f"test031_{rad}.root"
-        data = uproot.open(output)[f"phsp_{rad}"]
+        data = uproot.open(sim.get_actor(f"phsp_{rad}").get_output_path())[
+            f"phsp_{rad}"
+        ]
         data = (
             data.arrays(library="numpy")["TrackVertexKineticEnergy"] * 1000
         )  # MeV to KeV

@@ -12,6 +12,7 @@
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
+#include <functional>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -26,11 +27,18 @@ public:
   virtual void AddActions(std::set<std::string> &actions);
 
   // Called at initialisation
-  virtual void ActorInitialize() {}
+  virtual void InitializeCpp();
+
+  // get user input parameters from python side
+  virtual void InitializeUserInput(py::dict &user_info);
 
   // Used to add a callback to a given volume.
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
+
+  const bool HasAction(std::string);
+
+  const bool IsSensitiveDetector();
 
   // Called when the simulation start (master thread only)
   virtual void StartSimulationAction() {}
@@ -96,6 +104,34 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
+  void SetOutputPath(std::string outputName, std::string outputPath);
+
+  std::string GetOutputPath(std::string outputName);
+
+  void SetWriteToDisk(std::string outputName, bool writeToDisk);
+
+  bool GetWriteToDisk(std::string outputName);
+
+  void AddActorOutputInfo(std::string outputName);
+
+  //  void RegisterCallBack(std::string, std::function);
+
+  // convenience function to get the output path of this actor via the callback
+  // function
+  //  std::string GetOutputPathString(std::string output_type, int run_index);
+
+  inline static std::string fOutputNameRoot = "root_output";
+
+  struct ActorOutputInfo {
+    std::string outputName;
+    std::string outputPath;
+    bool writeToDisk;
+  };
+
+  typedef ActorOutputInfo ActorOutputInfo_t;
+
+  std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
+
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
   std::set<std::string> fActions;
@@ -106,9 +142,14 @@ public:
   // List of active filters
   std::vector<GateVFilter *> fFilters;
 
+  // callback functions
+  //  typedef CallbackMap std::map<std::string, std::function>;
+  //  CallbackMap fcallBacks;
+
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
   bool fOperatorIsAnd;
+  bool fWriteToDisk;
 };
 
 #endif // GateVActor_h

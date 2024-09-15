@@ -16,10 +16,10 @@ GateDigiCollectionManager *GateDigiCollectionManager::GetInstance() {
   return fInstance;
 }
 
-GateDigiCollectionManager::GateDigiCollectionManager() {}
+GateDigiCollectionManager::GateDigiCollectionManager() = default;
 
 GateDigiCollection *
-GateDigiCollectionManager::NewDigiCollection(std::string name) {
+GateDigiCollectionManager::NewDigiCollection(const std::string &name) {
   auto hc = new GateDigiCollection(name);
   hc->SetTupleId(fMapOfDigiCollections.size());
   fMapOfDigiCollections[name] = hc;
@@ -27,7 +27,7 @@ GateDigiCollectionManager::NewDigiCollection(std::string name) {
 }
 
 GateDigiCollection *
-GateDigiCollectionManager::GetDigiCollection(std::string name) {
+GateDigiCollectionManager::GetDigiCollection(const std::string &name) {
   if (fMapOfDigiCollections.count(name) != 1) {
     std::ostringstream oss;
     oss << "Cannot find the DigiCollection named '" << name << "'. Abort."
@@ -40,7 +40,7 @@ GateDigiCollectionManager::GetDigiCollection(std::string name) {
 
 std::string GateDigiCollectionManager::DumpAllDigiCollections() {
   std::ostringstream oss;
-  for (auto hc : fMapOfDigiCollections) {
+  for (const auto &hc : fMapOfDigiCollections) {
     oss << hc.first << " ";
   }
   return oss.str();

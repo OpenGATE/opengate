@@ -1,120 +1,164 @@
 import sys
 
 import opengate_core as g4
-from ..exception import fatal, warning
-from ..userelement import UserElement
+from ..base import GateObject
+from ..exception import fatal
 
 
-class FilterBase(UserElement):
+class FilterBase(GateObject):
     """
-    Store user information about a filter
+    A filter to be attached to an actor.
     """
 
-    element_type = "Filter"
+    user_info_defaults = {
+        "policy": (
+            "accept",
+            {
+                "doc": "How should the item be handled?",
+                "allowed_values": ["accept", "reject"],
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        UserElement.set_default_user_info(user_info)
-        # no user properties for all filters (maybe later)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def __init__(self, user_info):
-        # type_name MUST be defined in class that inherit from FilterBase
-        super().__init__(user_info)
+    def __initcpp__(self):
+        """Nothing to do in the base class."""
 
-    def __str__(self):
-        s = f"str FilterBase {self.user_info.name} of type {self.user_info.type_name}"
-        return s
+    def initialize(self):
+        self.InitializeUserInput(self.user_info)
 
-    def close(self):
-        if self.verbose_close:
-            warning(
-                f"Closing FilterBase {self.user_info.type_name} {self.user_info.name}"
-            )
-
-    def __getstate__(self):
-        if self.verbose_getstate:
-            warning(
-                f"getstate FilterBase {self.user_info.type_name} {self.user_info.name}"
-            )
+    def __setstate__(self, state):
+        self.__dict__ = state
+        self.__initcpp__()
 
 
-class ParticleFilter(g4.GateParticleFilter, FilterBase):
-    type_name = "ParticleFilter"
+class ParticleFilter(FilterBase, g4.GateParticleFilter):
+    user_info_defaults = {
+        "particle": (
+            "",
+            {
+                "doc": "Name of the particle to which this filter is applied.",
+            },
+        ),
+    }
 
-    def set_default_user_info(user_info):
-        FilterBase.set_default_user_info(user_info)
-        # required user info, default values
-        user_info.particle = ""
-        user_info.policy = "keep"  # or "discard"
+    def __init__(self, *args, **kwargs):
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
 
-    def __init__(self, user_info):
-        g4.GateParticleFilter.__init__(self)  # no argument in cpp side
-        FilterBase.__init__(self, user_info)
-        # type_name MUST be defined in class that inherit from a Filter
-        if user_info.policy != "keep" and user_info.policy != "discard":
-            fatal(
-                f'ParticleFilter "{user_info.name}" policy must be either "keep" '
-                f'or "discard", while it is "{user_info.policy}"'
-            )
+    def __initcpp__(self):
+        g4.GateParticleFilter.__init__(self)
 
 
-class KineticEnergyFilter(g4.GateKineticEnergyFilter, FilterBase):
-    type_name = "KineticEnergyFilter"
+class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
+    user_info_defaults = {
+        "energy_min": (
+            0,
+            {
+                "doc": "Lower kinetic energy bound.",
+            },
+        ),
+        "energy_max": (
+            sys.float_info.max,
+            {
+                "doc": "Upper kinetic energy bound.",
+            },
+        ),
+    }
 
-    def set_default_user_info(user_info):
-        FilterBase.set_default_user_info(user_info)
-        # required user info, default values
-        user_info.energy_min = 0
-        user_info.energy_max = sys.float_info.max
+    def __init__(self, *args, **kwargs):
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
 
-    def __init__(self, user_info):
+    def __initcpp__(self):
         g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
-        FilterBase.__init__(self, user_info)
-        # type_name MUST be defined in class that inherit from a Filter
 
 
-class TrackCreatorProcessFilter(g4.GateTrackCreatorProcessFilter, FilterBase):
-    type_name = "TrackCreatorProcessFilter"
+class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
+    user_info_defaults = {
+        "process_name": (
+            "none",
+            {
+                "doc": "Name of the track creator process to be identified.",
+            },
+        ),
+    }
 
-    def set_default_user_info(user_info):
-        FilterBase.set_default_user_info(user_info)
-        # required user info, default values
-        user_info.process_name = "none"
-        user_info.policy = "keep"  # or "discard"
+    def __init__(self, *args, **kwargs):
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
 
-    def __init__(self, user_info):
+    def __initcpp__(self):
         g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
-        FilterBase.__init__(self, user_info)
-        # type_name MUST be defined in class that inherit from a Filter
-        if user_info.policy != "keep" and user_info.policy != "discard":
+
+
+class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
+    user_info_defaults = {
+        "value_min": (
+            0,
+            {
+                "doc": "Lower bound. ",
+            },
+        ),
+        "value_max": (
+            sys.float_info.max,
+            {
+                "doc": "Upper bound. ",
+            },
+        ),
+        "attribute": (
+            None,
+            {
+                "doc": "Attribute name to be considered. ",
+            },
+        ),
+    }
+
+    # FIXME required test dans initialize
+
+    def __init__(self, *args, **kwargs):
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateThresholdAttributeFilter.__init__(self)
+
+    def initialize(self):
+        if self.attribute is None:
             fatal(
-                f'TrackCreatorProcessFilter "{user_info.name}" policy must be either "keep" '
-                f'or "discard", while it is "{user_info.policy}"'
+                f"The user input parameter 'attribute' is not set but required in filter '{self.name}'."
             )
+        super().initialize()
 
 
-class ThresholdAttributeFilter(g4.GateThresholdAttributeFilter, FilterBase):
-    type_name = "ThresholdAttributeFilter"
+class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):
 
-    def set_default_user_info(user_info):
-        FilterBase.set_default_user_info(user_info)
-        # required user info, default values
-        user_info.value_min = 0
-        user_info.value_max = sys.float_info.max
-        user_info.attribute = None
-        user_info.policy = "keep"  # or "discard"
+    def __init__(self, *args, **kwargs):
+        FilterBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
 
-    def __init__(self, user_info):
-        if user_info.attribute is None:
-            fatal(
-                f"You must set the 'attribute' in the "
-                f"ThresholdAttributeFilter named {user_info._name}"
-            )
-        if user_info.policy != "keep" and user_info.policy != "discard":
-            fatal(
-                f'ThresholdAttributeFilter "{user_info.name}" policy must be either "keep" '
-                f'or "discard", while it is "{user_info.policy}"'
-            )
-        g4.GateThresholdAttributeFilter.__init__(self)  # no argument in cpp side
-        FilterBase.__init__(self, user_info)
-        # type_name MUST be defined in class that inherit from a Filter
+    def __initcpp__(self):
+        g4.GateUnscatteredPrimaryFilter.__init__(self)
+
+    def initialize(self):
+        super().initialize()
+
+
+filter_classes = {
+    "ParticleFilter": ParticleFilter,
+    "KineticEnergyFilter": KineticEnergyFilter,
+    "TrackCreatorProcessFilter": TrackCreatorProcessFilter,
+    "ThresholdAttributeFilter": ThresholdAttributeFilter,
+    "UnscatteredPrimaryFilter": UnscatteredPrimaryFilter,
+}
+
+
+def get_filter_class(f):
+    try:
+        return filter_classes[f]
+    except KeyError:
+        fatal(
+            f"Unknown filter '{f}'. Known filters are: {list(filter_classes.keys())}."
+        )

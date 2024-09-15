@@ -2,19 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import os
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
-from opengate.contrib.tps.ionbeamtherapy import TreatmentPlanSource, spots_info_from_txt
+import numpy as np
+
+from opengate.tests.utility import print_test
 
 if __name__ == "__main__":
-    # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-
-    output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", output_folder="test059"
+    )
+    output_path = paths.output
+    ref_path = paths.output_ref
 
     # create the simulation
     sim = gate.Simulation()
@@ -25,6 +26,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -80,13 +82,13 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "dose_peak_finder.mhd"
-    dose.mother = peak_finder.name
-    dose.size = [1, 1, 8000]
-    dose.spacing = [80.6, 80.6, 0.05]
-    dose.hit_type = "random"
-    dose.dose = True
+    dose_actor = sim.add_actor("DoseActor", "doseInXYZ")
+    dose_actor.output_filename = "dose_peak_finder.mhd"
+    dose_actor.attached_to = peak_finder.name
+    dose_actor.size = [1, 1, 8000]
+    dose_actor.spacing = [80.6, 80.6, 0.05]
+    dose_actor.hit_type = "random"
+    dose_actor.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -119,31 +121,28 @@ if __name__ == "__main__":
     tps.particle = "ion 6 12"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-
-    # create output dir, if it doesn't exist
-    output_path.mkdir(parents=True, exist_ok=True)
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    # s.track_types_flag = True
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # -------------END SCANNING-------------
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
-    ## ------ TESTS -------##
-    dose_path = output_path / output.get_actor("doseInXYZ").user_info.output
+    # ------ TESTS -------##
+    dose_path = output_path / sim.get_actor("doseInXYZ").dose.get_output_path()
 
     # RANGE
 
     # read output and ref
+    print("Compare ", dose_path)
     img_mhd_out = itk.imread(dose_path)
+    # data = np.flip(itk.GetArrayViewFromImage(img_mhd_out), axis=0)
     data = itk.GetArrayViewFromImage(img_mhd_out)
-    shape = data.shape
-    spacing = img_mhd_out.GetSpacing()
+    spacing = np.array(img_mhd_out.GetSpacing())
+    print(data.shape, spacing)
 
     # Range 80
     range80_gate9_E120MeV = 367.06
@@ -151,7 +150,12 @@ if __name__ == "__main__":
 
     thresh = 2.0 * mm
     ok = True
+    print(f"range_opengate = {range_opengate}")
+    print(f"range80_gate9_E120MeV = {range80_gate9_E120MeV}")
     if abs(range_opengate - range80_gate9_E120MeV) > thresh:
         ok = False
+    print_test(
+        ok, f"Compare ranges {range_opengate} and {range80_gate9_E120MeV} >? {thresh}"
+    )
 
     utility.test_ok(ok)

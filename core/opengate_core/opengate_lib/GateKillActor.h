@@ -20,13 +20,14 @@ public:
   // Constructor
   GateKillActor(py::dict &user_info);
 
-  void ActorInitialize() override;
-
   void StartSimulationAction() override;
 
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
+  inline long GetNumberOfKilledParticles() { return fNbOfKilledParticles; }
+
+private:
   long fNbOfKilledParticles{};
 };
 

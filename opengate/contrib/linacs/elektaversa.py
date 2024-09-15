@@ -134,7 +134,7 @@ def kill_around_target(sim, linac_name):
 
     # psycho killer
     killer = sim.add_actor("KillActor", f"target_kill")
-    killer.mother = [target_above.name, target_around.name]
+    killer.attached_to = [target_above.name, target_around.name]
 
 
 def add_primary_collimator(sim, linac_name):
@@ -316,7 +316,7 @@ def enable_brem_splitting(sim, linac_name, splitting_factor):
     region_linac.associate_volume(linac)
     # set the brem splitting
     s = f"/process/em/setSecBiasing eBrem {region_linac.name} {splitting_factor} 50 MeV"
-    sim.add_g4_command_after_init(s)
+    sim.g4_commands_after_init.append(s)
 
 
 def add_electron_source(sim, linac_name):
@@ -359,7 +359,7 @@ def add_phase_space_plane(sim, linac_name, src_phsp_distance):
 
 def add_phase_space(sim, plane_name):
     phsp = sim.add_actor("PhaseSpaceActor", f"{plane_name}_phsp")
-    phsp.mother = plane_name
+    phsp.attached_to = plane_name
     phsp.attributes = [
         "KineticEnergy",
         "Weight",
@@ -722,7 +722,7 @@ def add_jaws_visu(sim, linac_name):
     ]
 
 
-def base_jaws(sim, linac_name, side):
+def add_base_jaws(sim, linac_name, side):
     mm = g4_units.mm
     jaws_height = 77 * mm
     jaws_length_x = 201.84 * mm
@@ -881,7 +881,7 @@ def add_jaw_visu(sim, linac_name, side):
     jaws_length_y = 205.2 * mm
     z_linac = linac.size[2]
 
-    bool_box_jaw = base_jaws(sim, linac_name, side)
+    bool_box_jaw = add_base_jaws(sim, linac_name, side)
     sim.volume_manager.add_volume(bool_box_jaw, "jaws" + "_" + side)
     bool_box_jaw.mother = linac_name
     bool_box_jaw.material = "mat_leaf"
@@ -909,7 +909,7 @@ def add_jaw(sim, linac_name, side):
     jaws_length_y = 205.2 * mm
     z_linac = linac.size[2]
 
-    bool_box_jaws = base_jaws(sim, linac_name, side)
+    bool_box_jaws = add_base_jaws(sim, linac_name, side)
     # Correction of the front jaw shape
     minibox_to_add = volumes.BoxVolume(name=f"{linac_name}_minibox_to_add" + "_" + side)
     minibox_to_add.size = np.array(
@@ -1058,10 +1058,8 @@ def set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad=1000):
 
 def linac_rotation(sim, linac_name, angle, cp_id="all_cp"):
     linac = sim.volume_manager.get_volume(linac_name)
-    motion_LINAC = sim.add_actor("MotionVolumeActor", "Move_LINAC")
-    motion_LINAC.rotations = []
-    motion_LINAC.translations = []
-    motion_LINAC.mother = linac_name
+    rotations = []
+    translations = []
     if cp_id == "all_cp":
         nb_cp_id = len(angle)
         cp_id = np.arange(0, nb_cp_id, 1)
@@ -1072,8 +1070,10 @@ def linac_rotation(sim, linac_name, angle, cp_id="all_cp"):
             rot, [0, 0, -translation_linac[2]]
         )
         rot = rot.as_matrix()
-        motion_LINAC.rotations.append(rot)
-        motion_LINAC.translations.append(np.array(t) + translation_linac)
+        rotations.append(rot)
+        translations.append(np.array(t) + translation_linac)
+    v = sim.volume_manager.get_volume(linac_name)
+    v.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
 
 def translation_from_sad(sim, linac_name, translation, sad=1000):
@@ -1102,11 +1102,9 @@ def jaw_translation(
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
     mm = g4_units.mm
-    motion_jaw = sim.add_actor("MotionVolumeActor", "Move_" + side + "_jaw")
-    motion_jaw.translations = []
-    motion_jaw.rotations = []
-    motion_jaw.mother = jaw.name
-    jaw_lenght_y = 205.2 * mm
+    translations = []
+    rotations = []
+    jaw_length_y = 205.2 * mm
     jaw_height = 77 * mm
     center_jaw = 470.5 * mm
     center_curve_jaw = center_jaw - (jaw_height / 2 - 35 * mm)
@@ -1116,25 +1114,27 @@ def jaw_translation(
         nb_cp_id = len(jaw_positions)
         cp_id = np.arange(0, nb_cp_id, 1)
     for n in cp_id:
+        jaw_tr = None
         if side == "left":
-            jaw_translation = np.array(
+            jaw_tr = np.array(
                 [
                     0,
-                    -jaw_lenght_y / 2 + jaw_positions[n] * fact_iso,
+                    -jaw_length_y / 2 + jaw_positions[n] * fact_iso,
                     0.5 * z_linac - center_jaw,
                 ]
             )
-            motion_jaw.rotations.append(np.identity(3))
+            rotations.append(np.identity(3))
         if side == "right":
-            jaw_translation = np.array(
+            jaw_tr = np.array(
                 [
                     0,
-                    jaw_lenght_y / 2 + jaw_positions[n] * fact_iso,
+                    jaw_length_y / 2 + jaw_positions[n] * fact_iso,
                     0.5 * z_linac - center_jaw,
                 ]
             )
-            motion_jaw.rotations.append(rot_jaw)
-        motion_jaw.translations.append(jaw_translation)
+            rotations.append(rot_jaw)
+        translations.append(jaw_tr)
+    jaw.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
 
 def mlc_leaves_translation(
@@ -1147,28 +1147,34 @@ def mlc_leaves_translation(
     center_curve_mlc = center_mlc - 7.5 * mm
     fact_iso = center_curve_mlc / sad
     nb_leaves = 160
-    motion_leaves = []
     motion_leaves_t = []
     motion_leaves_r = []
     for i in range(nb_leaves):
-        motion_leaves.append(sim.add_actor("MotionVolumeActor", "Move_leaf_" + str(i)))
-        motion_leaves[i].mother = mlc[i]["name"]
-        motion_leaves[i].translations = []
-        motion_leaves[i].rotations = []
-        motion_leaves_t.append(motion_leaves[i].translations)
-        motion_leaves_r.append(motion_leaves[i].rotations)
+        motion_leaves_t.append([])
+        motion_leaves_r.append([])
 
     translation_mlc = []
     if cp_id == "all_cp":
         nb_cp_id = len(leaves_position)
         cp_id = np.arange(0, nb_cp_id, 1)
     for n in cp_id:
-        for i in range(len(mlc)):
+        for i in range(nb_leaves):
             translation_mlc.append(np.copy(mlc[i]["translation"]))
             motion_leaves_t[i].append(
                 translation_mlc[i] + np.array([leaves_position[n, i] * fact_iso, 0, 0])
             )
             motion_leaves_r[i].append(np.identity(3))
+
+    for i in range(nb_leaves):
+        n = mlc[i]["name"]
+        number = int(n.rsplit("_rep_", 1)[-1])
+        vol_name = n.rsplit("_rep_", 1)[0]
+        v = sim.volume_manager.get_volume(vol_name)
+        v.add_dynamic_parametrisation(
+            repetition_index=number,
+            translation=motion_leaves_t[i],
+            rotation=motion_leaves_r[i],
+        )
 
 
 def set_linac_head_motion(

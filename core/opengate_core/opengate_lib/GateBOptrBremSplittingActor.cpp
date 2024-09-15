@@ -42,15 +42,22 @@ GateBOptrBremSplittingActor::GateBOptrBremSplittingActor(py::dict &user_info)
       GateVActor(user_info, false) {
   fActions.insert("BeginOfRunAction");
   fActions.insert("PreUserTrackingAction");
-  fMotherVolumeName = DictGetStr(user_info, "mother");
-  fSplittingFactor = DictGetInt(user_info, "splitting_factor");
-  fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
-  fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
-  fBremSplittingOperation =
-      new GateBOptnBremSplitting("BremSplittingOperation");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+void GateBOptrBremSplittingActor::InitializeUserInput(py::dict &user_info) {
+  // IMPORTANT: call the base class method
+  GateVActor::InitializeUserInput(user_info);
+  fSplittingFactor = DictGetInt(user_info, "splitting_factor");
+  fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
+  fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
+}
+
+void GateBOptrBremSplittingActor::InitializeCpp() {
+  fBremSplittingOperation =
+      new GateBOptnBremSplitting("BremSplittingOperation");
+}
 
 /*
 void GateBOptrBremSplittingActor::BeginOfRunAction(const G4Run *run)

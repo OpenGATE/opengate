@@ -3,11 +3,8 @@
 
 import opengate as gate
 from opengate.contrib.carm.siemensciosalpha import Ciosalpha
-from opengate.tests import utility
 from scipy.spatial.transform import Rotation
-import numpy as np
-import uproot
-import matplotlib.pyplot as plt
+
 
 if __name__ == "__main__":
     # paths
@@ -18,7 +15,7 @@ if __name__ == "__main__":
 
     # main options
     sim.g4_verbose = False
-    sim.visu = True
+    # sim.visu = True
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 12345678

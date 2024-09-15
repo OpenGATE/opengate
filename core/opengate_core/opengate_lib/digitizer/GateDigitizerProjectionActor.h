@@ -29,6 +29,10 @@ public:
 
   ~GateDigitizerProjectionActor() override;
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
+  virtual void InitializeCpp() override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
@@ -44,7 +48,6 @@ public:
   std::string fPhysicalVolumeName;
 
 protected:
-  std::string fOutputFilename;
   std::vector<std::string> fInputDigiCollectionNames;
   std::vector<GateDigiCollection *> fInputDigiCollections;
   G4RotationMatrix fDetectorOrientationMatrix;

@@ -71,7 +71,7 @@ def create_test_phsp(
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
-    ta1.mother = plane.name
+    ta1.attached_to = plane
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
@@ -111,20 +111,21 @@ def create_test_phsp(
 
 
 def create_phsp_without_source(
-    phs_name=Path("output") / "test_proton.root",
+    output_dir=Path("output"),
+    phs_name="test_proton.root",
 ):
     # create the simulation
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
+    sim.g4_verbose = False
     # ui.visu = True
-    ui.visu_type = "vrml"
-    ui.check_volumes_overlap = False
+    sim.visu_type = "vrml"
+    sim.check_volumes_overlap = False
     # ui.running_verbose_level = gate.EVENT
-    ui.number_of_threads = 1
-    ui.random_seed = "auto"
+    sim.number_of_threads = 1
+    sim.random_seed = "auto"
+    sim.output_dir = output_dir
 
     ##########################################################################################
     # geometry
@@ -154,7 +155,7 @@ def create_phsp_without_source(
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta1.mother = plane.name
+    ta1.attached_to = plane
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
@@ -165,7 +166,7 @@ def create_phsp_without_source(
         "PreDirectionLocal",
         "PDGCode",
     ]
-    ta1.output = phs_name
+    ta1.output_filename = phs_name
     ta1.debug = False
 
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
@@ -195,10 +196,11 @@ def test_source_rotation_a(
     plan_file_name=Path("output") / "test_proton_offset.root",
     phs_list_file_name="PhsList.txt",
     phs_folder_name="",
-    phs_file_name_out=Path("output") / "output/test_source_electron.root",
-) -> None:
+    output_dir=Path("output"),
+    phs_file_name_out="test_source_electron.root",
+) -> gate.Simulation:
     sim, plane = create_phsp_without_source(
-        phs_name=phs_file_name_out,
+        phs_name=phs_file_name_out, output_dir=output_dir
     )
     number_of_particles = 1
     ##########################################################################################
@@ -222,6 +224,8 @@ def test_source_rotation_a(
     plane.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
     sim.run()
+
+    return sim
 
 
 def get_first_entry_of_key(

@@ -14,10 +14,14 @@
 
 GateDigitizerBlurringActor::GateDigitizerBlurringActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
-
   // actions
   fActions.insert("EndOfEventAction");
+}
 
+GateDigitizerBlurringActor::~GateDigitizerBlurringActor() = default;
+
+void GateDigitizerBlurringActor::InitializeUserInput(py::dict &user_info) {
+  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
   // blurring method
   fBlurAttributeName = DictGetStr(user_info, "blur_attribute");
   fBlurMethod = DictGetStr(user_info, "blur_method");
@@ -32,8 +36,6 @@ GateDigitizerBlurringActor::GateDigitizerBlurringActor(py::dict &user_info)
   if (fBlurMethod == "Linear")
     fBlurValue = [&](double v) { return this->Linear(v); };
 }
-
-GateDigitizerBlurringActor::~GateDigitizerBlurringActor() = default;
 
 void GateDigitizerBlurringActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
