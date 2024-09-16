@@ -38,7 +38,7 @@ def coincidences_sorter(
         "removeMultiples": remove_multiples,
         "takeAllGoods": take_all_goods,
         "takeWinnerOfGoods": take_winner_of_goods,
-        "keepIfOnlyOneGood": keep_if_only_one_good,
+        "takeIfOnlyOneGood": take_if_only_one_good,
         "takeWinnerIfIsGood": take_winner_if_is_good,
         "takeWinnerIfAllAreGoods": take_winner_if_all_are_goods
     }
@@ -204,7 +204,7 @@ def take_winner_of_goods(coincidences, time_window, minDistanceXY, maxDistanceZ)
     return filter_coincidences(coincidences, ids_to_keep)
 
 
-def keep_if_only_one_good(coincidences, time_window, minDistanceXY, maxDistanceZ):
+def take_if_only_one_good(coincidences, time_window, minDistanceXY, maxDistanceZ):
     event_times = coincidences["GlobalTime1"]
     ids_to_keep = []
     time_buckets = {}
