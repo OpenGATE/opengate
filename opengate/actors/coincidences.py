@@ -24,7 +24,8 @@ def coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDis
     # prepare the "coincidences" tree (dict)
     # with the same branches as the singles  
     # Prepare the "coincidences" tree (dict) with the same branches as the singles
-    
+    print("I am here!")
+
     coincidences = {}
     for k in singles_tree.keys():
         coincidences[f"{k}1"] = []
@@ -36,7 +37,8 @@ def coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDis
         "takeAllGoods": take_all_goods,
         "takeWinnerOfGoods": take_winner_of_goods,
         "keepIfOnlyOneGood": keep_if_only_one_good,
-        "takeWinnerIfIsGood": take_winner_if_is_good
+        "takeWinnerIfIsGood": take_winner_if_is_good,
+        "takeWinnerIfAllAreGoods": take_winner_if_all_are_goods
     }
 
          
@@ -231,6 +233,43 @@ def take_winner_if_is_good(coincidences, time_window, minDistanceXY, maxDistance
 
     return filter_coincidences(coincidences, ids_to_keep)
 
+def take_winner_if_all_are_goods(coincidences, time_window, minDistanceXY, maxDistanceZ):
+
+    event_times = coincidences["GlobalTime1"]
+    ids_to_keep = []
+    time_buckets = {}
+
+    # Organize coincidences by time bucket
+    for i, time in enumerate(event_times):
+        bucket = int(time // time_window)
+        if bucket not in time_buckets:
+            time_buckets[bucket] = []
+        time_buckets[bucket].append(i)
+
+    # For each time bucket, check if all pairs are "good"
+    for bucket, indices in time_buckets.items():
+        all_good = True
+        max_energy = -1
+        best_index = -1
+
+        # Check each pair within the time bucket
+        for idx in indices:
+            # If a pair is not good, skip this bucket
+            if not is_good_pair(coincidences, idx, minDistanceXY, maxDistanceZ):
+                all_good = False
+                break
+
+            # Calculate total energy for this pair
+            energy = coincidences["TotalEnergyDeposit1"][idx] + coincidences["TotalEnergyDeposit2"][idx]
+            if energy > max_energy:
+                max_energy = energy
+                best_index = idx
+
+        # If all pairs in the time bucket are good, keep the one with the highest energy
+        if all_good and best_index != -1:
+            ids_to_keep.append(best_index)
+
+    return filter_coincidences(coincidences, ids_to_keep)
 
 
 
