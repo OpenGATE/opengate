@@ -90,11 +90,10 @@ if __name__ == "__main__":
     # block
     block = sim.add_volume("Box", "block")
     block.mother = pet.name
-    
+
     block.size = [60 * mm, 10 * mm, 10 * mm]
     # block.size = [1 * mm, 10 * mm, 10  * mm]
     # block.translation = [0 * mm, 324.3 * mm , 0 * mm]
-
     translations_ring, rotations_ring = gate.geometry.utility.get_circular_repetition(
         80, [160 * mm, 0.0 * mm, 0], start_angle_deg=180, axis=[0, 0, 1]
     )
@@ -141,7 +140,6 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
 
-
     # add the PET digitizer
 
     # Hits
@@ -150,7 +148,6 @@ if __name__ == "__main__":
 
     hc.output = output_path / "output_config1.root"
     # hc.output = "output_config1.root"
-
     hc.attributes = [
         "EventID",
         "PostPosition",
