@@ -64,3 +64,10 @@ The test history can be visualized here: https://opengate.github.io/opengate_tes
 ### How to install (long version, for developers)
 
 See the documentation: https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers
+
+
+## Included third party C++ libraries
+- https://github.com/pybind/pybind11
+- https://github.com/fmtlib/fmt
+- https://github.com/p-ranav/indicators
+
