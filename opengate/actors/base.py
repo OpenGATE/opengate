@@ -77,7 +77,7 @@ def shortcut_for_single_output_actor(func):
 class ActorBase(GateObject):
 
     # hints for IDE
-    attached_to:str
+    attached_to: str
     filters: list
     filters_boolean_operator: str
     priority: int
@@ -119,7 +119,7 @@ class ActorBase(GateObject):
                 "in the list of all actions in the simulation. "
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
-        )
+        ),
     }
 
     # private list of property names for interfaces already defined

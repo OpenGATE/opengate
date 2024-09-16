@@ -220,7 +220,7 @@ class ActorOutputBase(GateObject):
                 "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
                 "Careful: Large data structures like a phase space need a lot of memory.",
             },
-        )
+        ),
     }
 
     @classmethod
@@ -307,7 +307,7 @@ class ActorOutputBase(GateObject):
                     f"of {type(self).__name__} called {self.name}"
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
-                run_index = None # remove warning from IDE
+                run_index = None  # remove warning from IDE
             return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
 
     def get_output_path(self, which="merged", **kwargs):
@@ -640,7 +640,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                     f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
-                run_index = None # avoid IDE warning
+                run_index = None  # avoid IDE warning
             self.data_per_run[run_index] = data_container
 
     def store_meta_data(self, which, **meta_data):
@@ -674,7 +674,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                 ri = int(which)
             except ValueError:
                 fatal(f"Invalid argument which in method collect_images(): {which}")
-                ri = None # avoid IDE warning
+                ri = None  # avoid IDE warning
             data = [self.data_per_run[ri]]
             identifiers = [ri]
         if return_identifier is True:
@@ -736,7 +736,7 @@ class ActorOutputImage(ActorOutputUsingDataItemContainer):
                     image_data_container = self.data_per_run[run_index]
                 except KeyError:
                     fatal(f"No data found for run index {run_index}.")
-                    image_data_container = None # avoid IDE warning
+                    image_data_container = None  # avoid IDE warning
                 if image_data_container is not None:
                     return image_data_container.get_image_properties()[item]
             except ValueError:

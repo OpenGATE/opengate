@@ -160,8 +160,8 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
-            options= None # remove warning from IDE
-            default_value= None # remove warning from IDE
+            options = None  # remove warning from IDE
+            default_value = None  # remove warning from IDE
         if "deprecated" not in options:
             if not hasattr(cls, p_name):
                 check_property_name(p_name)
@@ -774,7 +774,7 @@ def _get_user_info_options(user_info_name, object_type, class_module):
         ).inherited_user_info_defaults[user_info_name][1]
     except KeyError:
         fatal(f"Could not find user info {user_info_name} in {object_type}. ")
-        options = None # remove warning from IDE
+        options = None  # remove warning from IDE
     return options
 
 
