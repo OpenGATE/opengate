@@ -464,13 +464,13 @@ def images_have_same_domain(image1, image2, tolerance=1e-5):
     img1_info = get_info_from_image(image1)
     img2_info = get_info_from_image(image2)
     is_same = (
-            len(img1_info.size) == len(img2_info.size)
-            and all(i == j for i, j in zip(img1_info.size, img2_info.size))
-            and images_have_same_spacing(image1, image2, tolerance)
-            and all(
-        math.isclose(i, j, rel_tol=tolerance)
-        for i, j in zip(image1.GetOrigin(), image2.GetOrigin())
-    )
+        len(img1_info.size) == len(img2_info.size)
+        and all(i == j for i, j in zip(img1_info.size, img2_info.size))
+        and images_have_same_spacing(image1, image2, tolerance)
+        and all(
+            math.isclose(i, j, rel_tol=tolerance)
+            for i, j in zip(image1.GetOrigin(), image2.GetOrigin())
+        )
     )
     return is_same
 

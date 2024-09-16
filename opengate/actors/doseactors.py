@@ -15,7 +15,7 @@ from ..image import (
     scale_itk_image,
     get_info_from_image,
     images_have_same_domain,
-    resample_itk_image_like
+    resample_itk_image_like,
 )
 from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
@@ -514,7 +514,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             else:
                 density_image = vol.create_density_image()
                 if images_have_same_domain(input_image, density_image) is False:
-                    density_image = resample_itk_image_like(density_image, input_image, 0, linear=True)
+                    density_image = resample_itk_image_like(
+                        density_image, input_image, 0, linear=True
+                    )
                 scaled_image = divide_itk_images(
                     img1_numerator=input_image,
                     img2_denominator=density_image,

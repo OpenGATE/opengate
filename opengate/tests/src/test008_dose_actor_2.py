@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # pat
     patient = sim.add_volume("Image", "patient")
     patient.image = paths.data / "patient-4mm.mhd"
-    print(f'Reading image {patient.image}')
+    print(f"Reading image {patient.image}")
     patient.material = "G4_AIR"  # material used by default
     patient.translation = [0, 0, 272 * mm]
     f1 = paths.data / "Schneider2000MaterialsTable.txt"
@@ -127,6 +127,4 @@ if __name__ == "__main__":
         and is_ok
     )"""
 
-
     utility.test_ok(is_ok)
-
