@@ -20,6 +20,13 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, "test072")
     sim = gate.Simulation()
 
+    # options
+    # warning the visualisation is slow !
+    sim.visu = False
+    sim.visu_type = "vrml"
+    sim.random_seed = "auto"
+    sim.number_of_threads = 1
+
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
@@ -36,19 +43,10 @@ if __name__ == "__main__":
     output_path = paths.output #Path("output")
     #print(output_path)
 
-    # options
-    # warning the visualisation is slow !
-    # sim.visu = True
-    sim.visu_type = "vrml"
-    sim.random_seed = 123456
-    sim.number_of_threads = 1
-    sim.output_dir = paths.output
-    sim.store_json_archive = True
-    sim.json_archive_filename = "simulation.json"
-
     # world
-    sim.world.size = [450 * mm, 450 * mm, 70 * mm]
-    sim.world.material = "G4_AIR"
+    world = sim.world
+    world.size = [450 * mm, 450 * mm, 70 * mm]
+    world.material = "G4_AIR"
 
     # add the Philips Vereos PET
     # pet = pet_vereos.add_pet(sim, "pet")
@@ -89,12 +87,10 @@ if __name__ == "__main__":
 
     # block
     block = sim.add_volume("Box", "block")
-
     block.mother = pet.name
     block.size = [60 * mm, 10 * mm, 10  * mm]
     #block.size = [1 * mm, 10 * mm, 10  * mm]
     #block.translation = [0 * mm, 324.3 * mm , 0 * mm]
-
     translations_ring, rotations_ring = gate.geometry.utility.get_circular_repetition(
         80, [160 * mm, 0.0 * mm, 0 ], start_angle_deg=180, axis=[0, 0, 1]
     )
@@ -107,11 +103,9 @@ if __name__ == "__main__":
     
     # Crystal
     crystal = sim.add_volume("Box", "crystal")
-
     crystal.mother = block.name
     #crystal.size = [1 * mm, 10 * mm, 10 * mm]
     #crystal.material = "Uranium"
-
     crystal.size = [60 * mm, 10 * mm, 10 * mm]
     crystal.material = "LYSO"
     #crystal.translation = gate.geometry.utility.get_grid_repetition([1, 1, 1], [3.9833 * mm ,0 * mm, 5.3 * mm])
@@ -150,7 +144,6 @@ if __name__ == "__main__":
    # sim.physics_manager.set_production_cut("world", "all", 1 * m)
     #sim.physics_manager.set_production_cut("waterbox", "all", 1 * mm)
 
-
     # add the PET digitizer
     
     # Hits
@@ -158,7 +151,6 @@ if __name__ == "__main__":
     hc.mother = crystal.name
     hc.output = output_path /"output_config1.root"
     #hc.output = "output_config1.root"
-
     hc.attributes = [
         "EventID",
         "PostPosition",
@@ -170,13 +162,12 @@ if __name__ == "__main__":
     
     # Singles
     sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal.name}")
-    sc.attached_to = hc.attached_to
+    sc.mother = hc.mother
     sc.input_digi_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
-
     sc.output = hc.output
     
-
+    
     # timing
     sim.run_timing_intervals = [[0, 2000.0 * sec]]
 
@@ -184,7 +175,6 @@ if __name__ == "__main__":
     sim.run()
 
     # end
-
     """print(f"Output statistics are in {stats.output}")
     print(f"Output edep map is in {dose.output}")
     print(f"vv {ct.image} --fusion {dose.output}")
