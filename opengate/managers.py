@@ -1629,11 +1629,11 @@ class Simulation(GateObject):
 
     def run(self, start_new_process=False):
         # if windows and MT -> fail
-        if os.name == "nt" and self.multithreaded:
-            fatal(
-                "Error, the multi-thread option is not available for Windows now. "
-                "Run the simulation with one thread."
-            )
+        """if os.name == "nt" and self.multithreaded:
+        fatal(
+            "Error, the multi-thread option is not available for Windows now. "
+            "Run the simulation with one thread."
+        )"""
 
         # prepare sub process
         if start_new_process is True:

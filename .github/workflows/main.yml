@@ -17,8 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
-        python-version: [3.9, '3.10', '3.11', '3.12']
+        os: [ubuntu-latest, windows-latest]
+        python-version: ['3.11']
 
     env:
       GEANT4_VERSION: 'v11.2.1'
@@ -71,7 +71,7 @@ jobs:
     - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
-          if [ ${{ matrix.python-version }} == "3.9" ]; then
+          if [ ${{ matrix.python-version }} == "3.11" ]; then
               rm -rf $GITHUB_WORKSPACE/opengate/tests/data
               cp $GITHUB_WORKSPACE/.git/modules/gam-tests/data/HEAD $GITHUB_WORKSPACE/opengate/tests/
               pip install build
@@ -96,7 +96,7 @@ jobs:
           rm -rf dist
           mv wheelhouse dist
           sudo chown -R runner:docker dist
-          if [ ${{ matrix.python-version }} == "3.9" ]; then
+          if [ ${{ matrix.python-version }} == "3.11" ]; then
               ls -lrt .
               ls -lrt dist/
               ls -lrt dist_opengate/
@@ -348,8 +348,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
-        python-version: [3.9, '3.10', '3.11', '3.12']
+        os: [windows-latest]
+        python-version: ['3.11']
     steps:
     - uses: actions/download-artifact@v4
       with:

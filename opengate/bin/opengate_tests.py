@@ -86,7 +86,9 @@ def go(test_id, random_tests, no_log_on_fail):
             continue
         if "_helpers" in f:
             continue
-        if os.name == "nt" and "_mt" in f:
+        # if os.name == "nt" and "_mt" in f:
+        #    continue
+        if "_mt" not in f:
             continue
         if f in ignored_tests:
             continue
