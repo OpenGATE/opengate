@@ -75,6 +75,13 @@ def shortcut_for_single_output_actor(func):
 
 
 class ActorBase(GateObject):
+
+    # hints for IDE
+    attached_to:str
+    filters: list
+    filters_boolean_operator: str
+    priority: int
+
     user_info_defaults = {
         "attached_to": (
             __world_name__,
@@ -112,27 +119,7 @@ class ActorBase(GateObject):
                 "in the list of all actions in the simulation. "
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
-        ),
-        # "keep_output_data": (
-        #     False,
-        #     {
-        #         "doc": "Should the output data be kept as part of this actor? "
-        #         "If `True`, you can access the data directly after the simulation. "
-        #         "If `False`, you need to re-read the data from disk. "
-        #     },
-        # ),
-        # "keep_data_per_run": (
-        #     False,
-        #     {
-        #         "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
-        #     },
-        # ),
-        # "merge_data_from_runs": (
-        #     True,
-        #     {
-        #         "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
-        #     },
-        # ),
+        )
     }
 
     # private list of property names for interfaces already defined
@@ -199,17 +186,6 @@ class ActorBase(GateObject):
                 "2) Call get_data() via the output.\n"
                 f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_data(). "
             )
-
-    # def _get_error_msg_output_filename(self):
-    #     s = (
-    #         f"The shortcut attribute output_filename is not available for this actor "
-    #         f"because it handles more than one output. You need to set the output_filename "
-    #         f"parameter for each output individually: \n"
-    #     )
-    #     for k in self.user_output:
-    #         s += f"ACTOR.user_output.{k}.output_filename = ...\n"
-    #     s += "... where ACTOR is your actor object."
-    #     return s
 
     # *** shortcut properties ***
     @property

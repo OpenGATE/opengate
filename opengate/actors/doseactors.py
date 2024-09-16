@@ -1,4 +1,3 @@
-import itk
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -12,7 +11,6 @@ from ..utility import (
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    itk_image_from_array,
     divide_itk_images,
     scale_itk_image,
 )
@@ -31,6 +29,17 @@ class VoxelDepositActor(ActorBase):
     """Base class which holds user input parameters common to all actors
     that deposit quantities in a voxel grid, e.g. the DoseActor.
     """
+
+    # hints for IDE
+    size: list
+    spacing: list
+    translation: list
+    rotation: list
+    repeated_volume_index: int
+    hit_type: str
+    output: str
+    img_coord_system: str
+    output_coordinate_system: str
 
     user_info_defaults = {
         "size": (
@@ -326,6 +335,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         - later: add dose, uncertainty, squared etc
 
     """
+
+    # hints for IDE
+    use_more_ram: bool
+    score_in: str
 
     user_info_defaults = {
         "use_more_ram": (
@@ -700,8 +713,11 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     Options
         - LETd only for the moment
         - later: LETt, Q, fluence ...
-
     """
+
+    # hints for IDE
+    averaging_method: str
+    score_in: str
 
     user_info_defaults = {
         "averaging_method": (
@@ -856,9 +872,12 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
     FluenceActor: compute a 3D map of fluence
-
     FIXME: add scatter order and uncertainty
     """
+
+    # hints for IDE
+    uncertainty: bool
+    scatter: bool
 
     user_info_defaults = {
         "uncertainty": (
