@@ -40,7 +40,7 @@ def coincidences_sorter(
         "takeWinnerOfGoods": take_winner_of_goods,
         "keepIfOnlyOneGood": keep_if_only_one_good,
         "takeWinnerIfIsGood": take_winner_if_is_good,
-        "takeWinnerIfAllAreGoods": take_winner_if_all_are_goods
+        "takeWinnerIfAllAreGoods": take_winner_if_all_are_goods,
     }
 
     # Iterate over chunks of the ROOT file
@@ -262,7 +262,10 @@ def take_winner_if_is_good(coincidences, time_window, minDistanceXY, maxDistance
 
     return filter_coincidences(coincidences, ids_to_keep)
 
-def take_winner_if_all_are_goods(coincidences, time_window, minDistanceXY, maxDistanceZ):
+
+def take_winner_if_all_are_goods(
+    coincidences, time_window, minDistanceXY, maxDistanceZ
+):
 
     event_times = coincidences["GlobalTime1"]
     ids_to_keep = []
@@ -289,7 +292,10 @@ def take_winner_if_all_are_goods(coincidences, time_window, minDistanceXY, maxDi
                 break
 
             # Calculate total energy for this pair
-            energy = coincidences["TotalEnergyDeposit1"][idx] + coincidences["TotalEnergyDeposit2"][idx]
+            energy = (
+                coincidences["TotalEnergyDeposit1"][idx]
+                + coincidences["TotalEnergyDeposit2"][idx]
+            )
             if energy > max_energy:
                 max_energy = energy
                 best_index = idx
@@ -299,6 +305,7 @@ def take_winner_if_all_are_goods(coincidences, time_window, minDistanceXY, maxDi
             ids_to_keep.append(best_index)
 
     return filter_coincidences(coincidences, ids_to_keep)
+
 
 def is_good_pair(coincidences, i, minDistanceXY, maxDistanceZ):
     XY_diff, Z_diff = calculate_sector_difference(coincidences, i)
