@@ -2,6 +2,7 @@ import itk
 import numpy as np
 from box import Box
 from scipy.spatial.transform import Rotation
+import math
 
 import opengate_core as g4
 from .exception import fatal
@@ -455,3 +456,59 @@ def write_itk_image(img, file_path):
     # TODO: check if filepath exists
     # TODO: add metadata to file header
     itk.imwrite(img, str(file_path))
+
+
+def images_have_same_domain(image1, image2, tolerance=1e-5):
+    # Check if the sizes and origins of the images are the same,
+    # and if the spacing values are close within the given tolerance
+    img1_info = get_info_from_image(image1)
+    img2_info = get_info_from_image(image2)
+    is_same = (
+            len(img1_info.size) == len(img2_info.size)
+            and all(i == j for i, j in zip(img1_info.size, img2_info.size))
+            and images_have_same_spacing(image1, image2, tolerance)
+            and all(
+        math.isclose(i, j, rel_tol=tolerance)
+        for i, j in zip(image1.GetOrigin(), image2.GetOrigin())
+    )
+    )
+    return is_same
+
+
+def images_have_same_spacing(image1, image2, tolerance=1e-5):
+    # Check if the spacing values are close within the given tolerance
+    is_same = all(
+        math.isclose(i, j, rel_tol=tolerance)
+        for i, j in zip(image1.GetSpacing(), image2.GetSpacing())
+    )
+    return is_same
+
+
+def resample_itk_image_like(img, like_img, default_pixel_value, linear=True):
+    # Create a resampler object
+    ResampleFilterType = itk.ResampleImageFilter.New
+
+    resampler = ResampleFilterType(Input=img)
+
+    # Set the resampler parameters from like_img
+    resampler.SetSize(itk.size(like_img))
+    resampler.SetOutputSpacing(like_img.GetSpacing())
+    resampler.SetOutputOrigin(like_img.GetOrigin())
+    resampler.SetOutputDirection(like_img.GetDirection())
+
+    # Set the default pixel value
+    resampler.SetDefaultPixelValue(default_pixel_value)
+
+    # Use the identity transform - we only resample in place
+    # identity_transform = itk.IdentityTransform.New()
+    # resampler.SetTransform(identity_transform)
+
+    # Set the interpolation method to Linear if required
+    if linear:
+        resampler.SetInterpolator(itk.LinearInterpolateImageFunction.New(img))
+
+    # Execute the resampling
+    resampler.Update()
+    resampled_img = resampler.GetOutput()
+
+    return resampled_img
