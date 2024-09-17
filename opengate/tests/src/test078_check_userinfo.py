@@ -3,13 +3,16 @@
 
 from opengate.tests.utility import (
     get_default_test_paths,
-    test_ok, print_test,
+    test_ok,
+    print_test,
 )
 from opengate.utility import g4_units
 from opengate.managers import Simulation
 
 if __name__ == "__main__":
-    paths = get_default_test_paths(__file__,)
+    paths = get_default_test_paths(
+        __file__,
+    )
 
     sim = Simulation()
 
@@ -45,14 +48,17 @@ if __name__ == "__main__":
         is_ok = False and is_ok
     except:
         pass
-    print_test(is_ok, f"Try to set deprecated attribute 'mother', it should raise an exception")
+    print_test(
+        is_ok, f"Try to set deprecated attribute 'mother', it should raise an exception"
+    )
 
     """try:
         stats.TOTO = "nothing"
         is_ok = False and is_ok
     except:
         pass
-    print_test(is_ok, f"Try to set wring attribute 'TOTO', it should raise an exception")"""
+    print_test(is_ok, f"Try to set wring attribute 'TOTO', it should raise an exception")
+    """
 
     sim.run()
 

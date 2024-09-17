@@ -180,7 +180,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     """
 
     # hints for IDE
-    track_types_flag:bool
+    track_types_flag: bool
 
     user_info_defaults = {
         "track_types_flag": (
@@ -256,7 +256,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     it requires "trampoline functions" on the cpp side.
 
-    # feasible but very slow !
+    # it is feasible but very slow !
     def SteppingAction(self, step, touchable):
         g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
         do_something()
@@ -295,10 +295,10 @@ def _setter_hook_particles(self, value):
 class SplittingActorBase(ActorBase):
 
     # hints for IDE
-    splitting_factor:int
-    bias_primary_only:bool
-    bias_only_once:bool
-    particles:list
+    splitting_factor: int
+    bias_primary_only: bool
+    bias_only_once: bool
+    particles: list
 
     user_info_defaults = {
         "splitting_factor": (
@@ -334,12 +334,12 @@ class SplittingActorBase(ActorBase):
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
     # hints for IDE
-    weight_threshold:float
-    min_weight_of_particle:float
-    russian_roulette:bool
-    rotation_vector_director:bool
-    vector_director:list
-    max_theta:float
+    weight_threshold: float
+    min_weight_of_particle: float
+    russian_roulette: bool
+    rotation_vector_director: bool
+    vector_director: list
+    max_theta: float
 
     user_info_defaults = {
         "weight_threshold": (
@@ -398,7 +398,7 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 
     # hints for IDE
-    processes:list
+    processes: list
 
     user_info_defaults = {
         "processes": (

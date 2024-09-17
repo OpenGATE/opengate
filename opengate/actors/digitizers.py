@@ -901,7 +901,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
                 f"No physical volume found for index {self.physical_volume_index} "
                 f"in volume {self.attached_to_volume.name}"
             )
-            pv = None # avoid warning from IDE
+            pv = None  # avoid warning from IDE
         align_image_with_physical_volume(
             self.attached_to_volume, self.user_output.projection.data_per_run[0].image
         )
@@ -1009,7 +1009,7 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
         "debug": (
             False,
             {
-                "doc": "FIXME",
+                "doc": "print debug info",
             },
         ),
         "steps_to_store": (
