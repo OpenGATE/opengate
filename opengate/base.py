@@ -1,6 +1,5 @@
 import copy
 from pathlib import Path
-
 from box import Box
 import sys
 
@@ -140,6 +139,7 @@ def digest_user_info_defaults(cls):
 
 def add_properties_to_class(cls, user_info_defaults):
     """Add user_info defaults as properties to class if not yet present."""
+
     for p_name, default_value_and_options in user_info_defaults.items():
         _ok = False
         if (
@@ -148,8 +148,6 @@ def add_properties_to_class(cls, user_info_defaults):
         ):
             default_value = default_value_and_options[0]
             options = default_value_and_options[1]
-            # _ok = True
-        # if not _ok:
         else:
             s = (
                 f"*** DEVELOPER WARNING ***"
@@ -428,7 +426,7 @@ class GateObject:
         if (
             key in self.inherited_user_info_defaults
             and "deprecated" in self.inherited_user_info_defaults[key][1]
-            and self.inherited_user_info_defaults[key][1]["deprecated"] is True
+            #and self.inherited_user_info_defaults[key][1]["deprecated"] is True
         ):
             raise GateDeprecationError(
                 self.inherited_user_info_defaults[key][1]["deprecated"]
