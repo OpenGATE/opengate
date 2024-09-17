@@ -66,8 +66,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
     - name: Create opengate Wheel
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -139,8 +139,8 @@ jobs:
           python --version
           export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
           pip install wget colored
-          pip install cibuildwheel==2.17.0
-          conda install -c conda-forge qt==5.15.6
+          pip install wheel delocate
+          conda install conda-forge::qt6-main conda-forge::qt6-3d
           mkdir -p $HOME/software
           if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
               cd $HOME/software
@@ -153,7 +153,8 @@ jobs:
                     -DGEANT4_INSTALL_DATA=OFF \
                     -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
                     -DGEANT4_USE_QT=ON \
-                    -DGEANT4_USE_OPENGL_X11=ON \
+                    -DGEANT4_USE_OPENGL_X11=OFF \
+                    -DGEANT4_USE_QT_QT6=ON \
                     -DGEANT4_USE_SYSTEM_EXPAT=OFF \
                     -DGEANT4_BUILD_MULTITHREADED=ON \
                     -DGEANT4_USE_GDML=ON \
@@ -174,26 +175,23 @@ jobs:
               make -j4
           fi
           cd $GITHUB_WORKSPACE
-          ls /Users/runner/miniconda3/envs/opengate_core/plugins/platforms
           source $HOME/software/geant4/bin/geant4make.sh
           export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
           cd core
           mkdir opengate_core/plugins
-          mkdir opengate_core/plugins/miniconda
+          cp -r /Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms/* opengate_core/plugins/
+          cp -r /Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/imageformats opengate_core/plugins/
+          python3 setup.py sdist bdist_wheel
+          ls dist
+          export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/Users/runner/miniconda3/envs/opengate_core/lib
+          delocate-listdeps --all dist/*.whl
+          delocate-wheel -w fixed_wheels -v dist/*.whl
           rm -rf dist
-          if [ ${{ matrix.python-version }} == "3.8" ]; then
-            export CIBW_BUILD="cp38-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.9" ]; then
-            export CIBW_BUILD="cp39-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.10" ]; then
-            export CIBW_BUILD="cp310-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.11" ]; then
-            export CIBW_BUILD="cp311-macosx_x86_64"
-          fi
-          export CIBW_ENVIRONMENT='MACOSX_DEPLOYMENT_TARGET=10.14'
-          export CIBW_BEFORE_BUILD="python -m pip install colored"
-          python -m cibuildwheel --output-dir dist
+          ls fixed_wheels
+          delocate-listdeps --all fixed_wheels/*.whl
+          mv fixed_wheels dist
           cd dist
+          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_12_0/macosx_10_9}' {} \;
           cd ../..
           mv core/dist .
     - name: Create opengate_core Wheel Windows
@@ -327,8 +325,8 @@ jobs:
 #      uses: actions/cache@v4
 #      with:
 #        path: ~/software
-#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
 #    - uses: conda-incubator/setup-miniconda@v3
 #      with:
 #          miniconda-version: "latest"
@@ -458,7 +456,8 @@ jobs:
           git clone https://github.com/OpenGATE/opengate_tests_results.git
           cd opengate_tests_results
           echo $pwd
-          cp ../results_*.json .
+          ls ..
+          cp ../dashboard_output_*.json .
           conda install -c conda-forge altair-all
           pip install pandas numpy
           python compile_opengate_tests_results.py

@@ -60,9 +60,11 @@ public:
   G4int fNInteractions;
   // Unused but mandatory
 
-  virtual void StartRun();
-  virtual void StartTracking(const G4Track *);
-  virtual void EndTracking() {}
+  void StartRun() override;
+  void StartTracking(const G4Track *) override;
+  void EndTracking() override {}
+  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeCpp() override;
 
 protected:
   // -----------------------------
@@ -70,23 +72,24 @@ protected:
   // -----------------------------
   // -- Unused:
 
-  virtual G4VBiasingOperation *ProposeNonPhysicsBiasingOperation(
+  G4VBiasingOperation *ProposeNonPhysicsBiasingOperation(
       const G4Track * /* track */,
-      const G4BiasingProcessInterface * /* callingProcess */) {
+      const G4BiasingProcessInterface * /* callingProcess */) override {
     return 0;
   }
-  virtual G4VBiasingOperation *ProposeOccurenceBiasingOperation(
+  G4VBiasingOperation *ProposeOccurenceBiasingOperation(
       const G4Track * /* track */,
-      const G4BiasingProcessInterface * /* callingProcess */) {
+      const G4BiasingProcessInterface * /* callingProcess */) override {
     return 0;
   }
 
   // -- Used:
-  virtual G4VBiasingOperation *ProposeFinalStateBiasingOperation(
-      const G4Track *track, const G4BiasingProcessInterface *callingProcess);
+  G4VBiasingOperation *ProposeFinalStateBiasingOperation(
+      const G4Track *track,
+      const G4BiasingProcessInterface *callingProcess) override;
 
 private:
-  // -- Avoid compiler complaining for (wrong) method shadowing,
+  // -- Avoid compiler complaining about (wrong) method shadowing,
   // -- this is because other virtual method with same name exists.
   using G4VBiasingOperator::OperationApplied;
 

@@ -58,8 +58,8 @@ def go(output, spacing, output_source, activities, no_shell):
 
     # voxelized a volume
     print("Starting voxelization ...")
-    se = SimulationEngine(sim)
-    labels, image = voxelize_volume(se, image)
+    with SimulationEngine(sim) as se:
+        labels, image = voxelize_volume(se, image)
     print(f"Output labels: ")
     print_dic(labels)
 

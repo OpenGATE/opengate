@@ -7,7 +7,7 @@ import test049_pet_digit_blurring_helpers as t49
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
+    paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur", "test049")
 
     """
     see https://github.com/teaghan/PET_MonteCarlo
@@ -31,16 +31,16 @@ if __name__ == "__main__":
     fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
     # add (fake) blur
-    ro = sim.get_actor_user_info("Singles_readout")
+    ro = sim.get_actor("Singles_readout")
     bc1 = sim.add_actor("DigitizerBlurringActor", "Singles_1")
-    bc1.output = ro.output
+    bc1.output_filename = ro.output_filename
     bc1.input_digi_collection = "Singles_readout"
     bc1.blur_attribute = "GlobalTime"
     bc1.blur_method = "Gaussian"
     bc1.blur_fwhm = 100 * ns
 
     bc2 = sim.add_actor("DigitizerBlurringActor", "Singles")
-    bc2.output = ro.output
+    bc2.output_filename = ro.output_filename
     bc2.input_digi_collection = bc1.name
     bc2.blur_attribute = "TotalEnergyDeposit"
     bc2.blur_method = "InverseSquare"
@@ -51,11 +51,11 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # ----------------------------------------------------------------------------------------------------------
-    readout = sim.output.get_actor("Singles_readout")
+    readout = sim.get_actor("Singles_readout")
     ig = readout.GetIgnoredHitsCount()
     print()
     print(f"Nb of ignored hits : {ig}")
@@ -69,16 +69,16 @@ if __name__ == "__main__":
 
     # check root singles
     f = p / "pet_blur.root"
-    bc = sim.output.get_actor("Singles").user_info
+    bc = sim.get_actor("Singles")
     is_ok = (
         t49.check_root_singles(
-            paths, 1, f, bc.output, png_output="test049_singles_wb.png"
+            paths, 1, f, bc.get_output_path(), png_output="test049_singles_wb.png"
         )
         and is_ok
     )
 
     # timing
-    b = t49.check_timing(f, bc.output)
+    b = t49.check_timing(f, bc.get_output_path())
     is_ok = is_ok and b
 
     utility.test_ok(is_ok)

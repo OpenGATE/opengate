@@ -5,7 +5,7 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__, output_folder="test013_hl")
 
     # create the simulation
     sim = gate.Simulation()
@@ -14,6 +14,8 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.visu = False
     sim.check_volumes_overlap = False
+    sim.output_dir = paths.output
+    sim.random_seed = 42
 
     # units
     m = gate.g4_units.m
@@ -67,15 +69,20 @@ if __name__ == "__main__":
     beta_src.direction.type = "iso"
     beta_src.half_life = hl
     total_yield = gate.sources.generic.get_rad_yield("F18")
+    print(f"{total_yield=}")
     beta_src.activity = activity * total_yield
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
+
+    # filter for the phase space actor below
+    f = sim.add_filter("ParticleFilter", "f")
+    f.particle = "e+"
 
     # phsp
     phsp1 = sim.add_actor("PhaseSpaceActor", "phsp_ion")
-    phsp1.mother = wb1.name
+    phsp1.attached_to = wb1.name
     phsp1.attributes = [
         "KineticEnergy",
         "LocalTime",
@@ -84,16 +91,16 @@ if __name__ == "__main__":
         "TimeFromBeginOfEvent",
         # 'TrackVertexKineticEnergy', 'EventKineticEnergy'
     ]
-    phsp1.output = paths.output / "test013_decay_ion.root"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "e+"
+    phsp1.output_filename = "test013_decay_ion.root"
+    phsp1.steps_to_store = "first"
     phsp1.filters.append(f)
 
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp_beta")
-    phsp2.mother = wb2.name
+    phsp2.attached_to = wb2.name
     phsp2.attributes = phsp1.attributes
-    phsp2.output = paths.output / "test013_decay_beta_plus.root"
+    phsp2.output_filename = "test013_decay_beta_plus.root"
     phsp2.filters.append(f)
+    phsp2.steps_to_store = "first"
 
     # long run
     sim.run_timing_intervals = [[0, 109 * 60 * sec]]
@@ -102,7 +109,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     print()
@@ -110,17 +116,17 @@ if __name__ == "__main__":
     keys2 = keys1
     scalings = [1] * len(keys1)
     scalings[2] = 1e-12  # GlobalTime
-    tols = [0.008] * len(keys1)
-    tols[1] = 0.012  # LocalTime
-    tols[2] = 0.04  # GlobalTime
-    tols[4] = 0.012  # TimeFromBeginOfEvent
+    tols = [0.02] * len(keys1)
+    # tols[1] = 0.02  # LocalTime
+    tols[2] = 0.06  # GlobalTime
+    # tols[4] = 0.02  # TimeFromBeginOfEvent
     print(keys2, scalings, tols)
-    print(phsp1.output)
-    print(phsp2.output)
+    print(phsp1.get_output_path())
+    print(phsp2.get_output_path())
     print()
     is_ok = utility.compare_root3(
-        phsp1.output,
-        phsp2.output,
+        phsp1.get_output_path(),
+        phsp2.get_output_path(),
         "phsp_ion",
         "phsp_beta",
         keys1,

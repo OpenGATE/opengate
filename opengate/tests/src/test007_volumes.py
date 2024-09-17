@@ -185,7 +185,7 @@ if __name__ == "__main__":
     source.activity = 2500 * Bq
 
     # add stat actor
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # run timing
     sec = gate.g4_units.second
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     print(sim)
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
     # sim.g4_com("/run/verbose 2")
     # sim.g4_com("/event/verbose 2")
     # sim.g4_com("/tracking/verbose 1")
@@ -205,14 +205,15 @@ if __name__ == "__main__":
     # start simulation
     sim.user_hook_after_init = check_mat
     sim.user_hook_after_run = user_hook_volume
-    sim.run(start_new_process=True)
+    # should be sim.run(start_new_process=True)
+    # but for testing, we currently set it to False
+    sim.run(start_new_process=False)
 
     # print results at the end
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # check
-    stats_ref = gate.actors.miscactors.SimulationStatisticsActor()
+    stats_ref = gate.actors.miscactors.SimulationStatisticsActor(name="ref")
     c = stats_ref.counts
     c.run_count = 1
     c.event_count = 1280

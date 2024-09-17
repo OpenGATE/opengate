@@ -21,18 +21,28 @@ GateDigitizerHitsCollectionActor::GateDigitizerHitsCollectionActor(
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+  fDebug = false;
+  fKeepZeroEdep = false;
+  fClearEveryNEvents = 100000;
+}
+
+GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() = default;
+
+void GateDigitizerHitsCollectionActor::InitializeUserInput(
+    py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   // options
-  fOutputFilename = DictGetStr(user_info, "output");
-  fHitsCollectionName = DictGetStr(user_info, "_name");
+  fHitsCollectionName = DictGetStr(user_info, "name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");
   fDebug = DictGetBool(user_info, "debug");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
   fKeepZeroEdep = DictGetBool(user_info, "keep_zero_edep");
+}
+
+void GateDigitizerHitsCollectionActor::InitializeCpp() {
   // init
   fHits = nullptr;
 }
-
-GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() {}
 
 // Called when the simulation start
 void GateDigitizerHitsCollectionActor::StartSimulationAction() {
@@ -40,7 +50,13 @@ void GateDigitizerHitsCollectionActor::StartSimulationAction() {
   fHits = dcm->NewDigiCollection(fHitsCollectionName);
   // This order is important: filename and attributes must be set before Root
   // initialization
-  fHits->SetFilenameAndInitRoot(fOutputFilename);
+  std::string outputPath;
+  if (!GetWriteToDisk(fOutputNameRoot)) {
+    outputPath = "";
+  } else {
+    outputPath = GetOutputPath(fOutputNameRoot);
+  }
+  fHits->SetFilenameAndInitRoot(outputPath);
   fHits->InitDigiAttributesFromNames(fUserDigiAttributeNames);
   fHits->RootInitializeTupleForMaster();
 }

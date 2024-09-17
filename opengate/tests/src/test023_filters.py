@@ -15,6 +15,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 6549
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -48,43 +49,38 @@ if __name__ == "__main__":
 
     # add dose actor
     dose1 = sim.add_actor("DoseActor", "dose1")
-    dose1.output = paths.output / "test023.mhd"
-    # dose1.output = paths.output_ref / 'test023-edep.mhd'
-    dose1.mother = "waterbox"
+    dose1.output_filename = "test023.mhd"
+    dose1.attached_to = waterbox
     dose1.size = [100, 100, 100]
     dose1.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose1.filters.append(fp)
 
     # add dose actor, without e- (to check)
-    fe = sim.add_filter("ParticleFilter", "f")
+    fe = sim.add_filter("ParticleFilter", "fe")
     fe.particle = "e-"
-    fe.policy = "discard"
+    fe.policy = "reject"
     print(dir(fe))
 
     dose2 = sim.add_actor("DoseActor", "dose2")
-    dose2.output = paths.output / "test023-noe.mhd"
-    # dose2.output = paths.output_ref / "test023-noe-edep.mhd"
-    dose2.mother = "waterbox"
+    dose2.output_filename = "test023-noe.mhd"
+    dose2.attached_to = waterbox
     dose2.size = [100, 100, 100]
     dose2.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose2.filters.append(fe)
 
     """fe = sim.add_filter("ParticleFilter", "f")
     fe.particle = "gamma"
-    fe.policy = "discard"
+    fe.policy = "reject"
     dose2.filters.append(fe)"""
 
     # add stat actor (only gamma)
-    fg = sim.add_filter("ParticleFilter", "fp")
+    fg = sim.add_filter("ParticleFilter", "fg")
     fg.particle = "gamma"
 
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-    s.filters.append(fg)
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
+    stat.filters.append(fg)
 
-    print(s)
-    print(dose1)
-    print(dose2)
     print("Filters: ", sim.filter_manager)
     print(sim.filter_manager.dump())
 
@@ -96,11 +92,9 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
     print(stat)
-    dose1 = sim.output.get_actor("dose1")
-    dose2 = sim.output.get_actor("dose2")
-    # stat.write(paths.output_ref / 'test023_stats.txt')
+    print(dose1)
+    print(dose2)
 
     # tests
     stats_ref = utility.read_stat_file(paths.output_ref / "test023_stats.txt")
@@ -109,7 +103,7 @@ if __name__ == "__main__":
     print()
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-edep.mhd",
-        paths.output / dose1.user_info.output,
+        dose1.edep.get_output_path(),
         stat,
         tolerance=50,
         sum_tolerance=4,
@@ -118,7 +112,7 @@ if __name__ == "__main__":
     print()
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023-noe-edep.mhd",
-        paths.output / dose2.user_info.output,
+        dose2.edep.get_output_path(),
         stat,
         tolerance=40,
         sum_tolerance=2,

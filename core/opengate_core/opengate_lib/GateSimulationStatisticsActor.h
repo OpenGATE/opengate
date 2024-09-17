@@ -22,26 +22,28 @@ public:
 
   virtual ~GateSimulationStatisticsActor();
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
   // Called when the simulation start (master thread only)
-  virtual void StartSimulationAction();
+  virtual void StartSimulationAction() override;
 
   // Called when the simulation end (master thread only)
-  virtual void EndSimulationAction();
+  virtual void EndSimulationAction() override;
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run);
+  virtual void BeginOfRunAction(const G4Run *run) override;
 
   // Called every time a Run ends (all threads)
-  virtual void EndOfRunAction(const G4Run *run);
+  virtual void EndOfRunAction(const G4Run *run) override;
 
   // Called every time the simulation is about to end (all threads)
-  virtual void EndOfSimulationWorkerAction(const G4Run *lastRun);
+  virtual void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
 
   // Called every time a Track starts (all threads)
-  virtual void PreUserTrackingAction(const G4Track *track);
+  virtual void PreUserTrackingAction(const G4Track *track) override;
 
   // Called every time a batch of step must be processed
-  virtual void SteppingAction(G4Step *);
+  virtual void SteppingAction(G4Step *) override;
 
   py::dict GetCounts();
 

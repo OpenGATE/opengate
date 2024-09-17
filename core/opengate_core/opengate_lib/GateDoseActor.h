@@ -25,30 +25,43 @@ class GateDoseActor : public GateVActor {
 public:
   // Constructor
   GateDoseActor(py::dict &user_info);
-  // explicit GateDoseActor(py::dict &user_info);
-  // virtual ~GateDoseActor();
 
-  virtual void ActorInitialize() override;
+  void InitializeUserInput(py::dict &user_info) override;
+
+  void InitializeCpp() override;
 
   // Main function called every step in attached volume
-  virtual void SteppingAction(G4Step *) override;
+  void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run) override;
+  void BeginOfRunAction(const G4Run *run) override;
 
-  virtual void BeginOfRunActionMasterThread(int run_id) override;
+  void BeginOfRunActionMasterThread(int run_id) override;
 
-  virtual int EndOfRunActionMasterThread(int run_id) override;
+  int EndOfRunActionMasterThread(int run_id) override;
 
-  virtual void BeginOfEventAction(const G4Event *event) override;
-
-  // virtual void EndOfEventAction(const G4Event *event) override;
-
-  // Called every time the simulation is about to end (all threads)
-  // virtual void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
+  void BeginOfEventAction(const G4Event *event) override;
 
   // Called every time a Run ends (all threads)
-  virtual void EndOfRunAction(const G4Run *run) override;
+  void EndOfRunAction(const G4Run *run) override;
+
+  inline bool GetToWaterFlag() const { return fToWaterFlag; }
+
+  inline void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
+
+  inline bool GetSquareFlag() const { return fSquareFlag; }
+
+  inline void SetSquareFlag(const bool b) { fSquareFlag = b; }
+
+  inline void SetDensityFlag(const bool b) { fDensityFlag = b; }
+
+  inline bool GetDensityFlag() const { return fDensityFlag; }
+
+  inline std::string GetPhysicalVolumeName() const {
+    return fPhysicalVolumeName;
+  }
+
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
   // virtual void EndSimulationAction();
 
@@ -57,50 +70,56 @@ public:
 
   int sub2ind(Image3DType::IndexType index3D);
   void ind2sub(int index, Image3DType::IndexType &index3D);
-  void ComputeSquareImage();
   double ComputeMeanUncertainty();
   double GetMaxValueOfImage(Image3DType::Pointer imageP);
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
+  //  Image3DType::Pointer cpp_dose_image;
+  Image3DType::Pointer cpp_square_image;
+  Image3DType::SizeType size_edep{};
+  Image3DType::Pointer cpp_density_image;
 
-  // Option: indicate if we must compute uncertainty
-  bool fUncertaintyFlag;
+  //  // Option: indicate if we must compute uncertainty
+  //  bool fUncertaintyFlag;
 
   // Option: indicate if we must compute square
-  bool fSquareFlag;
+  bool fSquareFlag{};
 
-  // Option: indicate if we must compute dose in Gray also
-  bool fDoseFlag;
+  //  // Option: indicate if we must compute dose in Gray also
+  //  bool fDoseFlag;
+
+  std::string fScoreIn;
 
   // Option: indicate we must convert to dose to water
-  bool fToWaterFlag;
+  bool fToWaterFlag{};
 
-  // Option: calculate dose in stepping action. If False, calc only edep and
-  // divide by masss at the end of the simulation, on py side
-  bool fOnFlyCalcFlag;
+  // Option: indicate the density is needed
+  bool fDensityFlag{};
 
-  // Option: cp image for each thread
-  bool fcpImageForThreadsFlag;
+  //  // Option: calculate dose in stepping action. If False, calc only edep and
+  //  // divide by mass at the end of the simulation, on py side
+  //  bool fOnFlyCalcFlag;
 
-  // Option: calculate the standard error of the mean
-  bool fSTEofMeanFlag;
+  //  // Option: cp image for each thread
+  //  bool fcpImageForThreadsFlag;
+  //
+  //  // Option: calculate the standard error of the mean
+  //  bool fSTEofMeanFlag;
 
   // For uncertainty computation, we need temporary images
 
-  Image3DType::Pointer cpp_square_image;
-  Image3DType::SizeType size_edep;
-
-  double fVoxelVolume;
+  double fVoxelVolume{};
   int NbOfEvent = 0;
   int NbOfThreads = 0;
-  double goalUncertainty;
-  double threshEdepPerc;
+
+  //  double goalUncertainty;
+  double threshEdepPerc{};
   // struct timeval mTimeOfLastSaveEvent;
 
   std::string fPhysicalVolumeName;
 
-  G4ThreeVector fInitialTranslation;
+  G4ThreeVector fTranslation;
   std::string fHitType;
 
 protected:
@@ -109,7 +128,7 @@ protected:
     std::vector<double> edep_worker_flatimg;
     std::vector<double> edepSquared_worker_flatimg;
     std::vector<int> lastid_worker_flatimg;
-    int NbOfEvent_worker = 0;
+    //    int NbOfEvent_worker = 0;
     // Image3DType::IndexType index3D;
     // int index_flat;
   };

@@ -25,9 +25,9 @@ if __name__ == "__main__":
         print("----------- End of test072_coinc_sorter_1.py -----------")
 
     # open root file
-    root_filename = paths.output / "test72_output_1.root"
-    print(f"Opening {root_filename} ...")
-    root_file = uproot.open(root_filename)
+    path_to_rootfile = paths.output / "test72_output_1.root"
+    print(f"Opening {path_to_rootfile} ...")
+    root_file = uproot.open(path_to_rootfile)
 
     # consider the tree of "singles"
     singles_tree = root_file["Singles_crystal"]

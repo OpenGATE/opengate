@@ -9,11 +9,12 @@ if __name__ == "__main__":
 
     sim = gate.Simulation()
 
-    # sim.visu = True
+    sim.visu = False
     sim.visu_type = "vrml"
     sim.random_engine = "MersenneTwister"
     sim.random_seed = 321654
-    sim.number_of_threads = 2
+    sim.number_of_threads = 1
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -57,10 +58,11 @@ if __name__ == "__main__":
 
     # actor
     detector_actor = sim.add_actor("FluenceActor", "detector_actor")
-    detector_actor.mother = detector_plane.name
-    detector_actor.output = paths.output / "fluence.mhd"
+    detector_actor.attached_to = detector_plane
+    detector_actor.output_filename = "fluence.mhd"
     detector_actor.spacing = [10 * mm, 5 * mm, 5 * mm]
     detector_actor.size = [1, 100, 100]
+    detector_actor.output_coordinate_system = "local"
 
     # source
     source = sim.add_source("GenericSource", "mysource")
@@ -72,24 +74,22 @@ if __name__ == "__main__":
     source.direction.type = "focused"
     # FIXME warning in world coord ! Should be in mother coord system
     source.direction.focus_point = [gantry.translation[0] - 60 * mm, 0, 0]
-    source.n = 50000 / sim.number_of_threads
-
     if sim.visu:
         source.n = 100
+    else:
+        source.n = 50000 / sim.number_of_threads
 
     # statistics
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    stats.output = paths.output / "stats.txt"
+    stats.output_filename = "stats.txt"
 
     # run
     sim.run()
-    output = sim.output
 
     # print output statistics
-    stats = output.get_actor("stats")
     print(stats)
-    out_path = sim.output.get_actor("detector_actor").user_info.output
+    out_path = detector_actor.get_output_path()
 
     # check images
     is_ok = utility.assert_images(

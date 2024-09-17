@@ -16,5 +16,6 @@ void init_GateTrackCreatorProcessFilter(py::module &m) {
   py::class_<GateTrackCreatorProcessFilter, GateVFilter>(
       m, "GateTrackCreatorProcessFilter")
       .def(py::init())
-      .def("Initialize", &GateTrackCreatorProcessFilter::Initialize);
+      .def("InitializeUserInput",
+           &GateTrackCreatorProcessFilter::InitializeUserInput);
 }

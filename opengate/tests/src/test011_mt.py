@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
     print("-" * 80)
 

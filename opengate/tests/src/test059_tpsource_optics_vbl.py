@@ -13,10 +13,11 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPl
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-
-    output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", output_folder="test059"
+    )
+    output_path = paths.output
+    ref_path = paths.output_ref
 
     # create the simulation
     sim = gate.Simulation()
@@ -27,6 +28,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -75,12 +77,12 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "TPS_optics_vbl.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = "TPS_optics_vbl.mhd"
+    dose.attached_to = phantom.name
     dose.size = [30, 620, 620]
     dose.spacing = [10.0, 0.5, 0.5]
     dose.hit_type = "random"
-    dose.dose = True
+    dose.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2VBL = BeamlineModel()
@@ -112,20 +114,18 @@ if __name__ == "__main__":
     tps.plan_path = ref_path / "TreatmentPlan4Gate-gate_test59tps_v.txt"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # -------------END SCANNING-------------
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     # ------ TESTS -------
     # dose_path = utility.scale_dose(
@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
     # SPOT POSITIONS COMPARISON
     # read output and ref
-    img_mhd_out = itk.imread(dose.output)
+    img_mhd_out = itk.imread(dose.get_output_path("dose"))
     img_mhd_ref = itk.imread(
         ref_path / "idc-PHANTOM-air_box_vbl-gate_test59tps_v-PLAN-Physical.mhd"
     )

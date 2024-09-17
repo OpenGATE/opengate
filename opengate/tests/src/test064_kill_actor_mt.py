@@ -6,7 +6,7 @@ from opengate.tests import utility
 import uproot
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__)
+    paths = utility.get_default_test_paths(__file__, output_folder="test064")
     output_path = paths.output
 
     # create the simulation
@@ -20,6 +20,7 @@ if __name__ == "__main__":
     # sim.running_verbose_level = gate.EVENT
     sim.number_of_threads = 2
     sim.random_seed = 987654321
+    sim.output_dir = output_path
 
     # units
     m = gate.g4_units.m
@@ -65,12 +66,12 @@ if __name__ == "__main__":
     source2.n = n / sim.number_of_threads
 
     # stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # add phase space plan
     phsp_plane = sim.add_volume("Box", "phase_space_plane")
-    phsp_plane.mother = world.name
+    phsp_plane.mother = world
     phsp_plane.material = "G4_Galactic"
     phsp_plane.size = [1 * m, 1 * m, 1 * nm]
     phsp_plane.translation = [0, 0, 0]
@@ -78,13 +79,13 @@ if __name__ == "__main__":
 
     # PhaseSpace Actor
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp.mother = phsp_plane.name
+    phsp.attached_to = phsp_plane
     phsp.attributes = ["EventID"]
-    phsp.output = output_path / "test064.root"
+    phsp.output_filename = "test064.root"
 
     # kill actor volume
     kill_plane = sim.add_volume("Box", "Kill_plane")
-    kill_plane.mother = world.name
+    kill_plane.mother = world
     kill_plane.material = "G4_Galactic"
     kill_plane.size = [10 * cm, 10 * cm, 1 * nm]
     kill_plane.translation = [-10 * cm, 0, -2 * cm]
@@ -92,7 +93,7 @@ if __name__ == "__main__":
 
     # kill actor
     kill_actor = sim.add_actor("KillActor", "KillAct")
-    kill_actor.mother = kill_plane.name
+    kill_actor.attached_to = kill_plane
 
     # Physic list and cuts
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -105,20 +106,17 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
-    h = sim.output.get_actor("PhaseSpace")
     print(stats)
 
-    f_phsp = uproot.open(phsp.output)
+    f_phsp = uproot.open(phsp.get_output_path())
     arr = f_phsp["PhaseSpace"].arrays()
     print("Number of detected events :", len(arr))
     print("Number of expected events :", n)
     # EventID = arr[0]
 
     # Nb of kill
-    kill_actor = sim.output.get_actor("KillAct")
-    nk = kill_actor.fNbOfKilledParticles
-    print(f"Number of kill = {nk}")
+    nk = kill_actor.number_of_killed_particles
+    print(f"Number of kills = {nk}")
 
     is_ok = len(arr) == n
     is_ok = (nk == n) and is_ok

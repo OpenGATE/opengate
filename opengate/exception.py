@@ -5,6 +5,26 @@ import opengate_core as g4
 from .logger import log
 
 
+class GateDeprecationError(Exception):
+    """Raise this if a deprecated feature is used.
+    Provide the user with information on how to update their code.
+    """
+
+
+class GateFeatureUnavailableError(Exception):
+    """Raise this if a feature is used that is (currently) unavailable.
+    Ideally, provide the user with information about alternatives.
+    Can be used as temporary workaround during refactorings.
+    """
+
+
+class GateImplementationError(Exception):
+    """Raise this if a feature is used that is (currently) unavailable.
+    Ideally, provide the user with information about alternatives.
+    Can be used as temporary workaround during refactorings.
+    """
+
+
 try:
     color_error = colored.fg("red") + colored.attr("bold")
     color_warning = colored.fg("orange_1")

@@ -15,7 +15,16 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
   // actions (in addition of the ones in GateVDigitizerWithOutputActor)
   fActions.insert("EndOfEventAction");
+  fGroupVolumeDepth = -1;
+  fPolicy = AdderPolicy::EnergyWinnerPosition;
+  fTimeDifferenceFlag = false;
+  fNumberOfHitsFlag = false;
+}
 
+GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;
+
+void GateDigitizerAdderActor::InitializeUserInput(py::dict &user_info) {
+  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
   // policy
   fPolicy = AdderPolicy::Error;
   auto policy = DictGetStr(user_info, "policy");
@@ -38,8 +47,6 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
   // init
   fGroupVolumeDepth = -1;
 }
-
-GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;
 
 void GateDigitizerAdderActor::SetGroupVolumeDepth(int depth) {
   fGroupVolumeDepth = depth;

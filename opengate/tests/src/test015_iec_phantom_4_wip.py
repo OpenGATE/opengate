@@ -64,8 +64,8 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test015_iec_2.mhd"
-    dose.mother = iec_phantom.name
+    dose.output_filename = paths.output / "test015_iec_2.mhd"
+    dose.attached_to = iec_phantom.name
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     sim.run()
 
     # compare stats
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_2_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.03)
 

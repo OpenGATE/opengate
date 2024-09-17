@@ -1,10 +1,9 @@
 from anytree import RenderTree
 import numpy as np
 from scipy.spatial.transform import Rotation
-from box import Box
 
 import opengate_core as g4
-from ..definitions import __world_name__, __gate_list_objects__
+from ..definitions import __world_name__
 from ..exception import fatal
 
 """
@@ -176,15 +175,19 @@ def get_transform_orbiting(initial_position, axis, angle_deg):
         return translations[0], rotations[0]
 
 
-def get_transform_world_to_local(volume):
+def get_transform_world_to_local(volume, repetition_index=None):
     """Calculate the rotation and translation needed
     to transform from the world reference frame
     into the local reference frame of this volume.
 
+    If repetition_index is None:
     Returns two lists, the first with translation vectors,
     the second with rotation matrices. Each list entry corresponds
     to one physical volume of the Gate volume, i.e. one repetition.
     For non-repeated volumes, the lists will contain one item only.
+
+    If repetition_index is a valid integer,
+    return the translation and rotation for that repeated physical volume only.
     """
 
     volume._request_volume_tree_update()
@@ -201,7 +204,13 @@ def get_transform_world_to_local(volume):
         cumulative_translation.append(ctr)
         cumulative_rotation.append(crot)
 
-    return cumulative_translation, cumulative_rotation
+    if repetition_index is None:
+        return cumulative_translation, cumulative_rotation
+    else:
+        return (
+            cumulative_translation[repetition_index],
+            cumulative_rotation[repetition_index],
+        )
 
 
 def get_transform_world_to_local_old(vol_name):

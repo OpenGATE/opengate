@@ -3,7 +3,6 @@
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
-import matplotlib.pyplot as plt
 import numpy as np
 from opengate.tests import utility
 
@@ -16,18 +15,18 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
-    # sim.random_seed = 123456789
+    sim.random_seed = 123456789
     sim.number_of_threads = N_threads
+    sim.output_dir = paths.output
+
     Ntotal = N_events
     N_per_trhead = int(np.round(Ntotal / sim.number_of_threads))
+
     # units
-    m = gate.g4_units.m
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
     km = gate.g4_units.km
     MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
-    kBq = 1000 * Bq
 
     # add a material database
     # sim.add_material_database(paths.gate_data / "HFMaterials2014.db")
@@ -70,55 +69,41 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
     # create default/reference image
     doseActorName_IDD_singleImage = "IDD_singleImage"
     doseActor = sim.add_actor("DoseActor", doseActorName_IDD_singleImage)
-    doseActor.output = paths.output / (
-        "test041-" + doseActorName_IDD_singleImage + ".mhd"
-    )
-    doseActor.mother = phantom.name
+    doseActor.output_filename = f"test041-{doseActorName_IDD_singleImage}.mhd"
+    doseActor.attached_to = phantom.name
     doseActor.size = dose_size
     doseActor.spacing = dose_spacing
     doseActor.hit_type = "random"
-    doseActor.dose = False
-    doseActor.use_more_ram = False
-    doseActor.ste_of_mean = False
-    doseActor.uncertainty = False
-    doseActor.square = False
 
     # create test image: img for each thread
     doseActorName_IDD_NthreadImages = "IDD_NthreadImages"
     doseActor = sim.add_actor("DoseActor", doseActorName_IDD_NthreadImages)
-    doseActor.output = paths.output / (
-        "test041-" + doseActorName_IDD_NthreadImages + ".mhd"
-    )
-    doseActor.mother = phantom.name
+    doseActor.output_filename = f"test041-{doseActorName_IDD_NthreadImages}.mhd"
+    doseActor.attached_to = phantom.name
     doseActor.size = dose_size
     doseActor.spacing = dose_spacing
     doseActor.hit_type = "random"
-    doseActor.dose = False
-    doseActor.use_more_ram = True
-    doseActor.ste_of_mean = False
-    doseActor.uncertainty = False
-    doseActor.square = False
+    # doseActor.use_more_ram = True
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
-    print(stat)
+    print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
-    doseFpath_IDD_singleImage = sim.output.get_actor(
+    doseFpath_IDD_singleImage = sim.get_actor(
         doseActorName_IDD_singleImage
-    ).user_info.output
-    doseFpath_IDD_NthreadImages = sim.output.get_actor(
+    ).get_output_path("edep")
+    doseFpath_IDD_NthreadImages = sim.get_actor(
         doseActorName_IDD_NthreadImages
-    ).user_info.output
-    return doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat
+    ).get_output_path("edep")
+    return doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stats
 
 
 def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
@@ -143,7 +128,7 @@ def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "gate_test041_dose_actor_dose_to_water"
+        __file__, "gate_test041_dose_actor_dose_to_water", "test041"
     )
     N_threadsV = [8, 2]
     N_voxelsV = [50, 2]

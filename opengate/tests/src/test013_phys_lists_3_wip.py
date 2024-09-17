@@ -44,12 +44,12 @@ if __name__ == "__main__":
 
     # start simulation
     sim.g4_verbose = False
-    # sim.add_g4_command_after_init("/tracking/verbose 1")
+    # sim.g4_commands_after_init.append("/tracking/verbose 1")
     sim.user_hook_after_init = check_production_cuts
     sim.run()
 
     # Gate mac/main_3.mac
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     stats_ref = utility.read_stat_file(paths.gate_output / "stat_3.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.1)
 

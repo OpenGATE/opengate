@@ -13,20 +13,14 @@ GateRunAction::GateRunAction(GateSourceManager *sm) : G4UserRunAction() {
 }
 
 void GateRunAction::RegisterActor(GateVActor *actor) {
-  auto actions = actor->fActions;
-  auto beg = std::find(actions.begin(), actions.end(), "BeginOfRunAction");
-  if (beg != actions.end()) {
+  if (actor->HasAction("BeginOfRunAction")) {
     fBeginOfRunAction_actors.push_back(actor);
   }
-  auto end = std::find(actions.begin(), actions.end(), "EndOfRunAction");
-  if (end != actions.end()) {
+  if (actor->HasAction("EndOfRunAction")) {
     fEndOfRunAction_actors.push_back(actor);
   }
-
   // FIXME rename EndOfLastRun ?
-  auto send =
-      std::find(actions.begin(), actions.end(), "EndOfSimulationWorkerAction");
-  if (send != actions.end()) {
+  if (actor->HasAction("EndOfSimulationWorkerAction")) {
     fEndOfSimulationWorkerAction_actors.push_back(actor);
   }
 }

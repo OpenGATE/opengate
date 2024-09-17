@@ -11,10 +11,9 @@ from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-
-    output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs", "test059")
+    output_path = paths.output
+    ref_path = paths.output_ref
 
     # create the simulation
     sim = gate.Simulation()
@@ -25,6 +24,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -73,13 +73,13 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "testTPSoptics.mhd"
-    dose.mother = phantom.name
-    dose.size = [30, 620, 620]
-    dose.spacing = [10.0, 0.5, 0.5]
-    dose.hit_type = "random"
-    dose.dose = True
+    dose_actor = sim.add_actor("DoseActor", "doseInXYZ")
+    dose_actor.output_filename = "testTPSoptics.mhd"
+    dose_actor.attached_to = phantom.name
+    dose_actor.size = [30, 620, 620]
+    dose_actor.spacing = [10.0, 0.5, 0.5]
+    dose_actor.hit_type = "random"
+    dose_actor.dose.active = True
 
     # ---------- DEFINE BEAMLINE MODEL -------------
     IR2HBL = BeamlineModel()
@@ -115,21 +115,16 @@ if __name__ == "__main__":
     tps.particle = "ion 6 12"
     tps.beam_data_dict = beam_data_dict
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-
-    # create output dir, if it doesn't exist
-    output_path.mkdir(parents=True, exist_ok=True)
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # -------------END SCANNING------------- #
     # print results at the end
-    stat = output.get_actor("Stats")
-    d_fPath = output_path / output.get_actor("doseInXYZ").user_info.output
-    print(stat)
+    d_fPath = output_path / sim.get_actor("doseInXYZ").dose.get_output_path()
+    print(stats)
 
     # ------ TESTS -------#
     # dose_path = utility.scale_dose(
@@ -139,7 +134,7 @@ if __name__ == "__main__":
 
     # SPOT POSITIONS COMPARISON
     # read output and ref
-    img_mhd_out = itk.imread(dose.output)
+    img_mhd_out = itk.imread(dose_actor.dose.get_output_path())
     img_mhd_ref = itk.imread(
         ref_path / "idc-PHANTOM-air_box-gate_test59_TP_1-PLAN-Physical.mhd"
     )
@@ -181,8 +176,12 @@ if __name__ == "__main__":
 
     yzM = np.array(yz).reshape(int(len(yz) / 2), 2)
     # convert from mm (wrt image center) to voxel
-    spot_y = [int(y / dose.spacing[1]) + int(dose.size[1] / 2) for y in yzM[:, 0]]
-    spot_z = [int(z / dose.spacing[1]) + int(dose.size[1] / 2) for z in yzM[:, 1]]
+    spot_y = [
+        int(y / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for y in yzM[:, 0]
+    ]
+    spot_z = [
+        int(z / dose_actor.spacing[1]) + int(dose_actor.size[1] / 2) for z in yzM[:, 1]
+    ]
 
     thresh = 0.105
 

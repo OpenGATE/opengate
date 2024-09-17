@@ -32,8 +32,8 @@ def create_simulation(param):
     sim.visu_type = "vrml"
     sim.number_of_threads = param.number_of_threads
     sim.verbose_level = INFO
-
     param.output_folder = pathlib.Path(param.output_folder)
+    sim.output_dir = param.output_folder
 
     # units
     m = g4_units.m
@@ -104,17 +104,16 @@ def create_simulation(param):
     # add dose actor (get the same size as the source)
     source_info = read_image_info(param.activity_image)
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = param.output_folder / "edep.mhd"
-    dose.mother = ct.name
+    dose.output_filename = "edep.mhd"
+    dose.attached_to = ct.name
     dose.size = source_info.size
     dose.spacing = source_info.spacing
     # translate the dose the same way as the source
     dose.translation = source.position.translation
     # set the origin of the dose like the source
     if not sim.visu:
-        dose.img_coord_system = True
+        dose.output_coordinate_system = "attached_to_image"
     dose.hit_type = "random"
-    dose.uncertainty = False
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
