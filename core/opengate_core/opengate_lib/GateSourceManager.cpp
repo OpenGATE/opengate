@@ -76,8 +76,7 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   fVisualizationVerboseFlag = DictGetBool(options, "visu_verbose");
   fVisualizationType = DictGetStr(options, "visu_type");
   fVisualizationFile = DictGetStr(options, "visu_filename");
-  if (fVisualizationType == "vrml" ||
-      fVisualizationType == "vrml_file_only")
+  if (fVisualizationType == "vrml" || fVisualizationType == "vrml_file_only")
     fVisCommands = DictGetVecStr(options, "visu_commands_vrml");
   else if (fVisualizationType == "gdml" ||
            fVisualizationType == "gdml_file_only")
@@ -336,8 +335,8 @@ void GateSourceManager::InitializeVisualization() {
       (fVisualizationType == "gdml_file_only"))
     return;
 
-  char** argv = new char*[1];  // Allocate 1 element
-  argv[0] = nullptr;  // Properly indicate no arguments
+  char **argv = new char *[1]; // Allocate 1 element
+  argv[0] = nullptr;           // Properly indicate no arguments
 
   if (fVisualizationType == "qt") {
     fUIEx = new G4UIExecutive(1, argv, fVisualizationType);
