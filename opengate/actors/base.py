@@ -77,7 +77,7 @@ def shortcut_for_single_output_actor(func):
 class ActorBase(GateObject):
 
     # hints for IDE
-    attached_to:str
+    attached_to: str
     filters: list
     filters_boolean_operator: str
     priority: int
@@ -119,7 +119,7 @@ class ActorBase(GateObject):
                 "in the list of all actions in the simulation. "
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
-        )
+        ),
     }
 
     # private list of property names for interfaces already defined
@@ -279,6 +279,7 @@ class ActorBase(GateObject):
         # But it does not hurt to populate the info in C++ regardless of the actor
         # The output path can also be (re-)set by the specific actor in
         # StartSimulation or BeginOfRunActionMasterThread, if needed
+
         # for k, v in self.user_output.items():
         #     if len(v.data_write_config) > 1:
         #         for h, w in v.data_write_config.items():
