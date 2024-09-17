@@ -2,15 +2,13 @@ from box import Box
 import numpy as np
 import itk
 import threading
+
 import opengate_core as g4
 from ..utility import g4_units, LazyModuleLoader
-from ..exception import fatal, warning
+from ..exception import fatal
 from .base import ActorBase
-
 from .digitizers import (
     DigitizerEnergyWindowsActor,
-    DigitizerBase,
-    DigitizerHitsCollectionActor,
 )
 from .actoroutput import ActorOutputSingleImage, ActorOutputRoot
 from ..base import process_cls

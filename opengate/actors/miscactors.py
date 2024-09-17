@@ -11,6 +11,11 @@ from ..exception import warning
 class ActorOutputStatisticsActor(ActorOutputBase):
     """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
 
+    # hints for IDE
+    encoder: str
+    output_filename: str
+    write_to_disk: bool
+
     user_info_defaults = {
         "encoder": (
             "json",
@@ -174,6 +179,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     Store statistics about a simulation run.
     """
 
+    # hints for IDE
+    track_types_flag:bool
+
     user_info_defaults = {
         "track_types_flag": (
             False,
@@ -286,6 +294,12 @@ def _setter_hook_particles(self, value):
 
 class SplittingActorBase(ActorBase):
 
+    # hints for IDE
+    splitting_factor:int
+    bias_primary_only:bool
+    bias_only_once:bool
+    particles:list
+
     user_info_defaults = {
         "splitting_factor": (
             1,
@@ -318,6 +332,14 @@ class SplittingActorBase(ActorBase):
 
 
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
+
+    # hints for IDE
+    weight_threshold:float
+    min_weight_of_particle:float
+    russian_roulette:bool
+    rotation_vector_director:bool
+    vector_director:list
+    max_theta:float
 
     user_info_defaults = {
         "weight_threshold": (
@@ -374,6 +396,9 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+
+    # hints for IDE
+    processes:list
 
     user_info_defaults = {
         "processes": (
