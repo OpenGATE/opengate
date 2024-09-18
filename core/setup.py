@@ -184,5 +184,5 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ),
-    install_requires=["wget", "colored", "requests"],
+    install_requires=["wget", "colored>1.5", "requests"],
 )
