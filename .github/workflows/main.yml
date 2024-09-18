@@ -206,7 +206,7 @@ jobs:
           python --version
           export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
           pip install wheel wget colored
-          pip install cibuildwheel==2.12.0
+          pip install cibuildwheel==2.21.1
           which pip
           mkdir -p $HOME/software
           if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
