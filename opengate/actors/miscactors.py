@@ -208,6 +208,16 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     def counts(self):
         return self.user_output.stats.merged_data
 
+    @ActorBase.output_filename.setter
+    def output_filename(self, val):
+        # special behavior:
+        # By default write_to_disk is False.
+        # However, if user set the output_filename while it is the default (auto)
+        # we set write_to_disk to True.
+        if self.output_filename == "auto":
+            self.write_to_disk = True
+        ActorBase.output_filename.fset(self, val)
+
     def store_output_data(self, output_name, run_index, *data):
         raise NotImplementedError
 
