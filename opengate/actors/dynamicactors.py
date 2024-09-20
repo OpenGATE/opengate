@@ -1,5 +1,6 @@
-import opengate_core as g4
+from typing import Optional
 
+import opengate_core as g4
 from ..definitions import __world_name__
 from ..base import GateObject
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4
@@ -72,6 +73,10 @@ def _setter_hook_attached_to(self, value):
 
 
 class GeometryChanger(GateObject):
+
+    # hints for IDE
+    attached_to: Optional[str]
+
     user_info_defaults = {
         "attached_to": (
             None,
@@ -128,6 +133,11 @@ class GeometryChanger(GateObject):
 
 
 class VolumeImageChanger(GeometryChanger):
+
+    # hints for IDE
+    images: Optional[list]
+    label_image: Optional[dict]
+
     user_info_defaults = {
         "images": (
             None,
@@ -151,6 +161,11 @@ class VolumeImageChanger(GeometryChanger):
 
 
 class VolumeTranslationChanger(GeometryChanger):
+
+    # hints for IDE
+    translations: Optional[list]
+    repetition_index: int
+
     user_info_defaults = {
         "translations": (
             None,
@@ -196,6 +211,11 @@ class VolumeTranslationChanger(GeometryChanger):
 
 
 class VolumeRotationChanger(GeometryChanger):
+
+    # hints for IDE
+    rotations: Optional[list]
+    repetition_index: int
+
     user_info_defaults = {
         "rotations": (
             None,

@@ -130,6 +130,9 @@ class MeanValueDataItemMixin:
     overloaded methods take priority.
     """
 
+    # hints for IDE
+    number_of_samples: int
+
     def merge_with(self, other):
         result = (self * self.number_of_samples + other * other.number_of_samples) / (
             self.number_of_samples + other.number_of_samples
@@ -533,7 +536,6 @@ class DataItemContainer(DataContainer):
         return self
 
     def merge_with(self, other):
-        # self._assert_data_is_not_none()
         data = []
         for i in range(self._tuple_length):
             if (
@@ -559,36 +561,6 @@ class DataItemContainer(DataContainer):
         else:
             warning(f"Cannot write item {item} because it does not exist (=None).")
 
-        # if item is None:
-        #     items_to_write = [
-        #         k
-        #         for k, v in self.data_item_config.items()
-        #         if v["write_to_disk"] is True
-        #     ]
-        # else:
-        #     items_to_write = [item]
-        # for k in items_to_write:
-        #     full_path = self.belongs_to.compose_output_path_to_item(path, k)
-        #     try:
-        #         identifier = int(k)
-        #         try:
-        #             data_to_write = self.data[identifier]
-        #             # self.data[i].write(full_path)
-        #         except IndexError:
-        #             data_to_write = None
-        #             warning(
-        #                 f"No data for item number {identifier}. Cannot write this output"
-        #             )
-        #     except ValueError:
-        #         identifier = str(k)
-        #         data_to_write = getattr(self, identifier)  # .write(full_path)
-        #     if data_to_write is not None:
-        #         try:
-        #             data_to_write.write(full_path)
-        #         except NotImplementedError:
-        #             warning(f"Cannot write output in data item {identifier}. ")
-        #             continue
-
     def __getattr__(self, item):
         # check if any of the data items has this attribute
         # exclude 'data' to avoid infinite recursion
@@ -608,21 +580,11 @@ class DataItemContainer(DataContainer):
                     f"because some contain it as a method and other as a property. "
                 )
             elif len(attributes_in_data) > 0:
-                # if len(attributes_in_data) != len(self.data):
-                #     fatal(
-                #         f"Cannot hand down request for property to data items "
-                #         f"because not all of them contain it. "
-                #     )
                 if len(attributes_in_data) == 1:
                     return attributes_in_data[0]
                 else:
                     return attributes_in_data
             elif len(methods_in_data) > 0:
-                # if len(methods_in_data) != len(self.data):
-                #     fatal(
-                #         f"Cannot hand down request for method to data items "
-                #         f"because not all of them contain it. "
-                #     )
 
                 def hand_down(*args, **kwargs):
                     return_values = []
