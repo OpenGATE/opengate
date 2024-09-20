@@ -68,7 +68,6 @@ def process_cls(cls):
         cls.known_attributes = set()
 
 
-
 # Utility function for object creation
 def check_property_name(name):
     if len(name.split()) > 1:
@@ -412,7 +411,9 @@ class GateObject:
     def __setstate__(self, d):
         """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
-        print(f"DEBUG: in __setstate__ of {type(self).__name__}: {type(self).known_attributes}")
+        print(
+            f"DEBUG: in __setstate__ of {type(self).__name__}: {type(self).known_attributes}"
+        )
         print(f"DEBUG:    type(self).known_attributes: {type(self).known_attributes}")
         print(f"DEBUG:    list(self.__dict__.keys()): {list(self.__dict__.keys())}")
 
@@ -451,7 +452,7 @@ class GateObject:
                 s = ", ".join(str(a) for a in self.known_attributes)
                 warning(
                     f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
-                    f'Known attributes of this object are: {s}'
+                    f"Known attributes of this object are: {s}"
                 )
                 self.number_of_warnings += 1
         super().__setattr__(key, value)
@@ -472,7 +473,9 @@ class GateObject:
         """
 
         # we define this at the class-level
-        type(self).known_attributes = set(list(self.user_info.keys()) + list(self.__dict__.keys()))
+        type(self).known_attributes = set(
+            list(self.user_info.keys()) + list(self.__dict__.keys())
+        )
 
     def __add_to_simulation__(self):
         """Hook method which can be called by managers.
