@@ -213,23 +213,22 @@ if __name__ == "__main__":
 
     phspActor = sim.add_actor("PhaseSpaceActor", "phspActor")
     phspActor.output = paths.output / "testX-energy-spectrum.root"
-    phspActor.mother = "phsp"
+    phspActor.attach_to = "phsp"
     phspActor.attributes = [
         "KineticEnergy",
     ]
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
     sim.run()
 
     # print
-    print("Simulation seed:", sim.output.current_random_seed)
+    print("Simulation seed:", sim.current_random_seed)
 
     # get results
-    stats = sim.output.get_actor("Stats")
-    print(stats)
+    # stats.user_output.stats.store_data(?)
 
     print("-" * 80)
 
