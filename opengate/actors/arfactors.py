@@ -74,6 +74,7 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputRoot, "root_output")
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateARFTrainingDatasetActor.__init__(self, self.user_info)
@@ -219,6 +220,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
         self._add_user_output(ActorOutputSingleImage, "arf_projection")
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateARFActor.__init__(self, self.user_info)

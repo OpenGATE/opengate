@@ -327,6 +327,7 @@ class GateObject:
     inherited_user_info_defaults: dict
 
     user_info_defaults = {"name": (None, {"required": True})}
+    known_attributes = []
 
     def __new__(cls, *args, **kwargs):
         process_cls(cls)
@@ -337,6 +338,8 @@ class GateObject:
         self.simulation = None
         if simulation is not None:
             self.simulation = simulation
+        # keep internal number of raised warnings (for debug)
+        self.number_of_warnings = 0
         # prefill user info with defaults
         self.user_info = Box(
             [
@@ -438,12 +441,16 @@ class GateObject:
             raise GateDeprecationError(
                 self.inherited_user_info_defaults[key][1]["deprecated"]
             )
-        # if not hasattr(self, key):
-        #     try:
-        #     except KeyError:
-        #         super().__setattr__(key, value)
-        else:
-            super().__setattr__(key, value)
+
+        # check if the attribute is known, otherwise warn the user
+        if len(self.known_attributes) != 0:
+            if key not in self.known_attributes:
+                s = ", ".join(str(a) for a in self.known_attributes)
+                warning(
+                    f'For object "{self.name}", attribute "{key}" is not known ({s})'
+                )
+                self.number_of_warnings += 1
+        super().__setattr__(key, value)
 
     def __enter__(self):
         return self
@@ -451,6 +458,16 @@ class GateObject:
     def __exit__(self, exception_type, exception_value, traceback):
         self.close()
         return False
+
+    def __finalize_init__(self):
+        """
+        This method should be called once all attributes has been defined, usually
+        at the end of the __init__ method. It defines the list of known_attribues that will
+        be used to detect errors when the user try to use a new attribute
+        """
+        l = list(self.user_info.keys())
+        l.append("number_of_warnings")
+        self.known_attributes = l
 
     def __add_to_simulation__(self):
         """Hook method which can be called by managers.
