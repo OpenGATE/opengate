@@ -429,7 +429,7 @@ class GenericSource(SourceBase):
         valid_spectrum_types = [
             "discrete",
             "histogram",
-            "continuous",
+            "interpolated",
         ]
         if self.user_info.energy.spectrum_type is not None:
             if self.user_info.energy.spectrum_type not in valid_spectrum_types:
