@@ -1422,6 +1422,8 @@ class Simulation(GateObject):
 
         # read-only info
         self._current_random_seed = None
+        self._warnings = []  # list to store warning messages issued somewhere in the simulation
+
 
     def __str__(self):
         s = (
@@ -1452,6 +1454,10 @@ class Simulation(GateObject):
     @property
     def current_random_seed(self):
         return self._current_random_seed
+
+    @property
+    def warnings(self):
+        return self._warnings
 
     def to_dictionary(self):
         d = super().to_dictionary()
