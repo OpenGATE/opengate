@@ -1422,8 +1422,9 @@ class Simulation(GateObject):
 
         # read-only info
         self._current_random_seed = None
-        self._warnings = []  # list to store warning messages issued somewhere in the simulation
-
+        self._warnings = (
+            []
+        )  # list to store warning messages issued somewhere in the simulation
 
     def __str__(self):
         s = (

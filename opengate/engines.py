@@ -101,7 +101,9 @@ class SourceEngine(EngineBase):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
-            self.simulation_engine.simulation.warning(f"No source: no particle will be generated")
+            self.simulation_engine.simulation.warning(
+                f"No source: no particle will be generated"
+            )
         self.progress_bar = progress_bar
 
     def initialize_actors(self):
@@ -323,7 +325,9 @@ class PhysicsEngine(EngineBase):
 
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
-            self.simulation_engine.simulation.warning(f"WARNING ! SetEnergyRange only works in MT mode")
+            self.simulation_engine.simulation.warning(
+                f"WARNING ! SetEnergyRange only works in MT mode"
+            )
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
 
@@ -1155,7 +1159,9 @@ class SimulationEngine(GateSingletonFatal):
 
         if len(self.simulation.warnings) > 0:
             print("*" * 20)
-            print(f"{len(self.simulation.warnings)} warnings occurred in this simulation: ")
+            print(
+                f"{len(self.simulation.warnings)} warnings occurred in this simulation: "
+            )
             for w in self.simulation.warnings:
                 print(w)
                 print("-" * 10)
