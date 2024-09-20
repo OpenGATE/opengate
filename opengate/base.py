@@ -65,6 +65,8 @@ def process_cls(cls):
                 "Developer error: Looks like you are calling process_cls on a class "
                 "that does not inherit from GateObject."
             )
+        cls.known_attributes = set()
+
 
 
 # Utility function for object creation
@@ -327,7 +329,6 @@ class GateObject:
     inherited_user_info_defaults: dict
 
     user_info_defaults = {"name": (None, {"required": True})}
-    known_attributes = []
 
     def __new__(cls, *args, **kwargs):
         process_cls(cls)
@@ -411,12 +412,15 @@ class GateObject:
     def __setstate__(self, d):
         """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
+        print(f"DEBUG: in __setstate__ of {type(self).__name__}: {type(self).known_attributes}")
+        print(f"DEBUG:    type(self).known_attributes: {type(self).known_attributes}")
+        print(f"DEBUG:    list(self.__dict__.keys()): {list(self.__dict__.keys())}")
 
     def __reduce__(self):
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
         but objects handling user_infos need a custom __reduce__ to make sure
-        the properties linked to the user_infos are properly created as per the meta class
+        the properties linked to the user_infos are properly created
 
         The return arguments are:
         1) A callable used to create the instance when unpickling
@@ -436,18 +440,18 @@ class GateObject:
         if (
             key in self.inherited_user_info_defaults
             and "deprecated" in self.inherited_user_info_defaults[key][1]
-            # and self.inherited_user_info_defaults[key][1]["deprecated"] is True
         ):
             raise GateDeprecationError(
                 self.inherited_user_info_defaults[key][1]["deprecated"]
             )
 
         # check if the attribute is known, otherwise warn the user
-        if len(self.known_attributes) != 0:
+        if len(self.known_attributes) > 0:
             if key not in self.known_attributes:
                 s = ", ".join(str(a) for a in self.known_attributes)
                 warning(
-                    f'For object "{self.name}", attribute "{key}" is not known ({s})'
+                    f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                    f'Known attributes of this object are: {s}'
                 )
                 self.number_of_warnings += 1
         super().__setattr__(key, value)
@@ -461,13 +465,14 @@ class GateObject:
 
     def __finalize_init__(self):
         """
-        This method should be called once all attributes has been defined, usually
-        at the end of the __init__ method. It defines the list of known_attribues that will
-        be used to detect errors when the user try to use a new attribute
+        This method should be called once all attributes have been defined, usually
+        at the end of the __init__ method. It defines the set of known_attribues that will
+        be used to detect errors when the user tries to use a new attribute
+        or misspells an attribute, e.g. box.mohter instead of box.mother.
         """
-        l = list(self.user_info.keys())
-        l.append("number_of_warnings")
-        self.known_attributes = l
+
+        # we define this at the class-level
+        type(self).known_attributes = set(list(self.user_info.keys()) + list(self.__dict__.keys()))
 
     def __add_to_simulation__(self):
         """Hook method which can be called by managers.
