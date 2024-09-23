@@ -66,7 +66,7 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
-from .actors.doseactors import DoseActor, LETActor, FluenceActor
+from .actors.doseactors import DoseActor, LETActor, FluenceActor, RBEActor
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -99,6 +99,7 @@ particle_names_Gate_to_G4 = {
 actor_types = {
     "DoseActor": DoseActor,
     "LETActor": LETActor,
+    "RBEActor": RBEActor,
     "FluenceActor": FluenceActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,

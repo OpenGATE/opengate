@@ -28,7 +28,7 @@ public:
 
 void init_GateLETActor(py::module &m) {
   py::class_<GateLETActor, PyGateLETActor,
-             std::unique_ptr<GateLETActor, py::nodelete>, GateVActor>(
+             std::unique_ptr<GateLETActor, py::nodelete>, GateWeightedEdepActor>(
       m, "GateLETActor")
       .def(py::init<py::dict &>())
       .def("BeginOfRunActionMasterThread",
