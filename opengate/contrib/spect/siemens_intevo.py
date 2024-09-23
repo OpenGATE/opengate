@@ -946,7 +946,7 @@ def create_simu_for_arf_training_dataset(
     sim.add_parallel_world("arf_world")
     plane_size = [533 * mm, 387 * mm]
     arf_plane = add_detection_plane_for_arf(sim, plane_size, colli_type, radius)
-    arf_plane.attached_to = "arf_world"
+    arf_plane.mother = "arf_world"
 
     # sources
     s1 = sim.add_source("GenericSource", "source")

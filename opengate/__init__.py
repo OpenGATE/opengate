@@ -6,7 +6,7 @@ import threading
 print(
     colored.stylize(
         f"Importing opengate (thread " f"{threading.get_native_id()}) ... ",
-        colored.fg("dark_gray"),
+        colored.fore("dark_gray"),
     ),
     end="",
     flush=True,
@@ -54,4 +54,4 @@ from opengate.managers import create_sim_from_json
 from opengate.utility import g4_units
 
 
-print(colored.stylize("done", colored.fg("dark_gray")))
+print(colored.stylize("done", colored.fore("dark_gray")))

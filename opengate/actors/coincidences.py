@@ -1,7 +1,4 @@
 import awkward as ak
-import itertools
-import collections
-import opengate as gate
 from tqdm import tqdm
 from ..exception import fatal
 

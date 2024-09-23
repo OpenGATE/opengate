@@ -11,7 +11,7 @@ See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide
 
 ### How to install (short version)
 
-*Compatible with Python 3.8, 3.9, 3.10, 3.11. Not available for Python 3.12 yet. On Windows multithreading, Qt visualization and the "spawn new subprocess" are not (yet) available.*
+*Compatible with Python 3.9, 3.10, 3.11, 3.12. On Windows multithreading, Qt visualization and the "spawn new subprocess" are not (yet) available.*
 
 First, create an environment (not mandatory but highly advised)
 
@@ -44,7 +44,7 @@ Once installed, you can run all tests:
 opengate_tests
 ````
 
-**WARNING** The first time you run this command, the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests:
+**WARNING** The first time you run this command, the geant4 data and the test data will be downloaded. If the download fails (on some systems), try to add the following command before running opengate_tests:
 ````
 export GIT_SSL_NO_VERIFY=1
 ````
@@ -70,4 +70,3 @@ See the documentation: https://opengate-python.readthedocs.io/en/latest/develope
 - https://github.com/pybind/pybind11
 - https://github.com/fmtlib/fmt
 - https://github.com/p-ranav/indicators
-

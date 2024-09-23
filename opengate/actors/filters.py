@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 
 import opengate_core as g4
 from ..base import GateObject
@@ -9,6 +10,9 @@ class FilterBase(GateObject):
     """
     A filter to be attached to an actor.
     """
+
+    # hints for IDE
+    policy: str
 
     user_info_defaults = {
         "policy": (
@@ -35,6 +39,10 @@ class FilterBase(GateObject):
 
 
 class ParticleFilter(FilterBase, g4.GateParticleFilter):
+
+    # hints for IDE
+    particle: str
+
     user_info_defaults = {
         "particle": (
             "",
@@ -53,6 +61,11 @@ class ParticleFilter(FilterBase, g4.GateParticleFilter):
 
 
 class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
+
+    # hints for IDE
+    energy_min: float
+    energy_max: float
+
     user_info_defaults = {
         "energy_min": (
             0,
@@ -77,6 +90,10 @@ class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
 
 
 class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
+
+    # hints for IDE
+    process_name: str
+
     user_info_defaults = {
         "process_name": (
             "none",
@@ -95,6 +112,12 @@ class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
 
 
 class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
+
+    # hints for IDE
+    value_min: float
+    value_max: float
+    attribute: Optional[str]
+
     user_info_defaults = {
         "value_min": (
             0,
