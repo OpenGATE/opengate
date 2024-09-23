@@ -1,7 +1,9 @@
 from box import Box
 from scipy.spatial.transform import Rotation
+import os
 import pathlib
 import numpy as np
+import json
 
 import opengate_core
 from ..utility import g4_units
@@ -170,6 +172,14 @@ def get_rad_gamma_energy_spectrum(rad):
     ]
 
     return weights[rad], energies[rad]
+
+
+def get_ion_energy_spectrum(ion: str):
+    path = pathlib.Path(os.path.dirname(__file__)) / ".." / "data" / "source_ion_histogram_energy_weight.json"
+    with open(path, "r") as f:
+        data = json.load(f)
+
+    return data[ion]["energy"], data[ion]["weight"]
 
 
 def set_source_rad_energy_spectrum(source, rad):
