@@ -295,6 +295,7 @@ class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
         DigitizerBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDigitizerAdderActor.__init__(self, self.user_info)
@@ -410,6 +411,7 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
         DigitizerBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDigitizerBlurringActor.__init__(self, self.user_info)
@@ -538,6 +540,7 @@ class DigitizerSpatialBlurringActor(
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDigitizerSpatialBlurringActor.__init__(self, self.user_info)
@@ -614,6 +617,7 @@ class DigitizerEfficiencyActor(DigitizerBase, g4.GateDigitizerEfficiencyActor):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDigitizerEfficiencyActor.__init__(self, self.user_info)
@@ -680,6 +684,7 @@ class DigitizerEnergyWindowsActor(DigitizerBase, g4.GateDigitizerEnergyWindowsAc
         DigitizerBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDigitizerEnergyWindowsActor.__init__(self, self.user_info)
@@ -737,6 +742,7 @@ class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollection
         DigitizerBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDigitizerHitsCollectionActor.__init__(self, self.user_info)
@@ -833,6 +839,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         self._add_user_output(ActorOutputSingleImage, "projection")
         self.start_output_origin = None
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
@@ -965,6 +972,7 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output_root()
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         # python 3.8 complains about init not called, we add explicit call to
@@ -1026,6 +1034,7 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
         self.total_number_of_entries = 0
         self.number_of_absorbed_events = 0
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GatePhaseSpaceActor.__init__(self, self.user_info)

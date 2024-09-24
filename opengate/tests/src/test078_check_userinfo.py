@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+from opengate.exception import GateDeprecationError
 from opengate.tests.utility import (
     get_default_test_paths,
     test_ok,
@@ -46,20 +46,34 @@ if __name__ == "__main__":
     try:
         stats.mother = "nothing"
         is_ok = False and is_ok
-    except:
+    except GateDeprecationError as e:
+        print("Exception caught: ", e)
         pass
     print_test(
         is_ok, f"Try to set deprecated attribute 'mother', it should raise an exception"
     )
+    print()
 
-    """try:
-        stats.TOTO = "nothing"
-        is_ok = False and is_ok
-    except:
-        pass
-    print_test(is_ok, f"Try to set wring attribute 'TOTO', it should raise an exception")
-    """
+    # set a WRONG attribute
+    stats.TOTO = "nothing"
 
-    sim.run()
+    # check the number of warnings (before the run)
+    print(
+        f"(before run) Number of warnings for stats object: {stats.number_of_warnings}"
+    )
+    b = stats.number_of_warnings == 1
+    print_test(
+        b, f"Try to set a wrong attribute 'TOTO', it should print a single warning"
+    )
+    is_ok = is_ok and b
+
+    sim.run(start_new_process=True)
+
+    print(
+        f"(after run) Number of warnings for stats object: {stats.number_of_warnings}"
+    )
+    b = stats.number_of_warnings == 1
+    print_test(b, f"No additional warning should be raised")
+    is_ok = is_ok and b
 
     test_ok(is_ok)

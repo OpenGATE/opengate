@@ -195,10 +195,17 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         ActorBase.__init__(self, *args, **kwargs)
         output = self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    # def __finalize_init__(self):
+    #     super().__finalize_init__()
+    #     # this attribute is considered sometimes in the read_stat_file
+    #     # we declare it here to avoid warning
+    #     self.known_attributes.append("date")
 
     def __str__(self):
         s = self.user_output["stats"].__str__()
@@ -279,6 +286,7 @@ class KillActor(ActorBase, g4.GateKillActor):
         ActorBase.__init__(self, *args, **kwargs)
         self.number_of_killed_particles = 0
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateKillActor.__init__(self, self.user_info)
@@ -395,6 +403,7 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
@@ -424,6 +433,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})

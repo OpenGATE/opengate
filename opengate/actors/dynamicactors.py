@@ -16,6 +16,7 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
         ActorBase.__init__(self, *args, **kwargs)
         self.geometry_changers = []
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateVActor.__init__(self, {"name": self.name})
