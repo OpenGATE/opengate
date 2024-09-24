@@ -762,28 +762,6 @@ class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollection
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
 
 
-def _setter_hook_size_projection_actor(self, size):
-    size = list(size)
-    if len(size) != 2:
-        fatal(
-            f"Error, the size must be a 2-vector (2D) while it is {size}. "
-            f"Note: The size along the third dimension is automatically set to 1."
-        )
-    size.append(1)
-    return size
-
-
-def _setter_hook_spacing_projection_actor(self, spacing):
-    spacing = list(spacing)
-    if len(spacing) != 2:
-        fatal(
-            f"Error, the spacing must be a 2-vector (2D) while it is {spacing}. "
-            f"Note: The spacing along the third dimension is automatically determined."
-        )
-    spacing.append(1)
-    return spacing
-
-
 class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
     """
     This actor takes as input HitsCollections and performed binning in 2D images.
@@ -802,17 +780,11 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         ),
         "spacing": (
             [4 * g4_units.mm, 4 * g4_units.mm],
-            {
-                "doc": "FIXME",
-                "setter_hook": _setter_hook_spacing_projection_actor,
-            },
+            {"doc": "FIXME"},
         ),
         "size": (
             [128, 128],
-            {
-                "doc": "FIXME",
-                "setter_hook": _setter_hook_size_projection_actor,
-            },
+            {"doc": "FIXME"},
         ),
         "physical_volume_index": (
             0,
@@ -853,11 +825,33 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
                 f"Sorry, cannot (yet) use several attached_to volumes for "
                 f"DigitizerProjectionActor {self.user_info.name}"
             )
-
         ActorBase.initialize(self)
-
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
+
+    @property
+    def output_size(self):
+        # consider 3D images, third dimension can be the energy windows
+        output_size = list(self.size)
+        if len(output_size) != 2:
+            fatal(
+                f"Error, the size must be a 2-vector (2D) while it is {output_size}. "
+                f"Note: The size along the third dimension is automatically set to 1."
+            )
+        output_size.append(1)
+        return output_size
+
+    @property
+    def output_spacing(self):
+        # consider 3D images, third dimension can be the energy windows
+        output_spacing = list(self.spacing)
+        if len(output_spacing) != 2:
+            fatal(
+                f"Error, the spacing must be a 2-vector (2D) while it is {output_spacing}. "
+                f"Note: The spacing along the third dimension is automatically set to 1."
+            )
+        output_spacing.append(1)
+        return output_spacing
 
     def compute_thickness(self, volume, channels):
         """
@@ -887,8 +881,8 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
 
         # define the new size and spacing according to the nb of channels
         # and according to the volume shape
-        size = self.size
-        spacing = self.spacing
+        size = self.output_size
+        spacing = self.output_spacing
         size[2] = len(self.input_digi_collections) * len(
             self.simulation.run_timing_intervals
         )
