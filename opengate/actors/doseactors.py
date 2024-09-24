@@ -26,6 +26,68 @@ from .actoroutput import (
     UserInterfaceToActorOutputImage,
 )
 
+class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
+    user_info_defaults = {
+        "is_ion": (
+            True,
+            {
+                "doc": "",
+            },
+        ),
+        "particle_name": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+        "ion_params": (
+            '',
+            {
+                "doc": "",
+            },
+        ),
+        "material": (
+            '',
+            {
+                "doc": "",
+            },
+        ),
+        "nominal_energies": (
+            [],
+            {
+                "doc": "",
+            },
+        ),
+        "savefile_path": (
+            '',
+            {
+                "doc": "",
+            },
+        ),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        
+    def __initcpp__(self):
+        g4.GateEmCalculatorActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+            }
+        )
+        
+    def initialize(self, *args):
+
+        self.InitializeUserInput(self.user_info)  # C++ side
+        self.InitializeCpp()
+
 
 class VoxelDepositActor(ActorBase):
     """Base class which holds user input parameters common to all actors

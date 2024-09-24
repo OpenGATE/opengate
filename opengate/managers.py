@@ -66,7 +66,7 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
-from .actors.doseactors import DoseActor, LETActor, FluenceActor, RBEActor
+from .actors.doseactors import DoseActor, LETActor, FluenceActor, RBEActor, EmCalculatorActor
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -100,6 +100,7 @@ actor_types = {
     "DoseActor": DoseActor,
     "LETActor": LETActor,
     "RBEActor": RBEActor,
+    "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
