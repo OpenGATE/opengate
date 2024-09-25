@@ -196,6 +196,18 @@ class Digitizer:
 class DigitizerBase(ActorBase):
     _output_name_root = "root_output"
 
+    # hints for IDE
+    authorize_repeated_volumes: bool
+
+    user_info_defaults = {
+        "authorize_repeated_volumes": (
+            False,
+            {
+                "doc": "User must say explicitly that the digitizer can work with repeated volumes",
+            },
+        ),
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
 
@@ -214,6 +226,22 @@ class DigitizerBase(ActorBase):
                 f"while it can be used only to add a single root output as in most digitizers. "
             )
         return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        if self.authorize_repeated_volumes is True:
+            return
+        vm = self.simulation.volume_manager
+        current = vm.volumes[self.attached_to]
+        while current.name != "world":
+            if len(current.g4_transform) > 1:
+                fatal(
+                    f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}. "
+                    f"However, this volume is a daughter of the repeated volume '{current.name}'. It means it will "
+                    f"gather data from all repeated instances. If you are "
+                    f"sure, enable the option 'authorize_repeated_volumes'."
+                )
+            current = current.parent
 
 
 class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
@@ -563,11 +591,12 @@ class DigitizerSpatialBlurringActor(
 
     def initialize(self):
         self.initialize_blurring_parameters()
-        ActorBase.initialize(self)
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         g4.GateDigitizerSpatialBlurringActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -629,11 +658,12 @@ class DigitizerEfficiencyActor(DigitizerBase, g4.GateDigitizerEfficiencyActor):
 
     def initialize(self):
         self.initialize_blurring_parameters()
-        ActorBase.initialize(self)
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         g4.GateDigitizerEfficiencyActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
@@ -762,7 +792,7 @@ class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollection
         g4.GateDigitizerHitsCollectionActor.EndSimulationAction(self)
 
 
-class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
+class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     """
     This actor takes as input HitsCollections and performed binning in 2D images.
     If there are several HitsCollection as input, the slices will correspond to each HC.
@@ -825,7 +855,12 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
                 f"Sorry, cannot (yet) use several attached_to volumes for "
                 f"DigitizerProjectionActor {self.user_info.name}"
             )
-        ActorBase.initialize(self)
+        if self.authorize_repeated_volumes is True:
+            fatal(
+                f"Sorry, cannot (yet) use ProjectionActor with repeated volumes, "
+                f"set 'authorize_repeated_volumes' to False"
+            )
+        DigitizerBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
 
@@ -870,6 +905,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
         return thickness
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         # for the moment, we cannot use this actor with several volumes
         if hasattr(self.attached_to, "__len__") and not isinstance(
             self.attached_to, str
@@ -907,6 +943,7 @@ class DigitizerProjectionActor(ActorBase, g4.GateDigitizerProjectionActor):
             self.attached_to_volume, self.user_output.projection.data_per_run[0].image
         )
         self.fPhysicalVolumeName = str(pv.GetName())
+        print(self.fPhysicalVolumeName)
 
         # update the cpp image and start
         update_image_py_to_cpp(
@@ -976,6 +1013,7 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         DigitizerAdderActor.set_group_by_depth(self)
         if self.user_info.discretize_volume is None:
             fatal(f'Please, set the option "discretize_volume"')
@@ -1045,6 +1083,7 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
         g4.GatePhaseSpaceActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
