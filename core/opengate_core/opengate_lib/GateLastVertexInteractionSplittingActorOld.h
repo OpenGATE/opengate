@@ -24,30 +24,22 @@
 // ********************************************************************
 //
 ///
-/// \file GateLastVertexInteractionSplittingActor.h
-/// \brief Definition of the GateLastVertexInteractionSplittingActor class
-#ifndef GateLastVertexInteractionSplittingActor_h
-#define GateLastVertexInteractionSplittingActor_h 1
+/// \file GateLastVertexInteractionSplittingActorOld.h
+/// \brief Definition of the GateLastVertexInteractionSplittingActorOld class
+#ifndef GateLastVertexInteractionSplittingActorOld_h
+#define GateLastVertexInteractionSplittingActorOld_h 1
 
 #include "G4ParticleChangeForGamma.hh"
 #include "G4VEnergyLossProcess.hh"
 #include "GateVActor.h"
 #include <iostream>
 #include <pybind11/stl.h>
-#include "GateLastVertexSplittingDataContainer.h"
-#include "tree.hh"
-#include "tree_util.hh"
-#include <iostream>
-#include "GateLastVertexSource.h"
-#include "CLHEP/Vector/ThreeVector.h"
-using CLHEP::Hep3Vector;
-
 namespace py = pybind11;
 
-class GateLastVertexInteractionSplittingActor : public GateVActor {
+class GateLastVertexInteractionSplittingActorOld : public GateVActor {
 public:
-  GateLastVertexInteractionSplittingActor(py::dict &user_info);
-  virtual ~GateLastVertexInteractionSplittingActor() {}
+  GateLastVertexInteractionSplittingActorOld(py::dict &user_info);
+  virtual ~GateLastVertexInteractionSplittingActorOld() {}
 
   G4double fSplittingFactor;
   G4bool fRussianRouletteForAngle = false;
@@ -67,17 +59,9 @@ public:
   G4double fWeightOfEnteringParticle = 0;
   G4double fSplitCounter = 0;
   G4bool fNotSplitted = true;
-  G4String fActiveSource = "None";
-  G4bool fIsAnnihilAlreadySplit =false;
-  G4int fCounter;
-  GateLastVertexSource* fVertexSource = nullptr;
-  tree<LastVertexDataContainer> fTree;
-  tree<LastVertexDataContainer>::post_order_iterator fIterator;
-  std::vector<LastVertexDataContainer> fListOfContainer;
-
 
   G4Track *fTrackToSplit = nullptr;
-  G4Step* fCopyInitStep = nullptr;
+  G4Step *fStepToSplit = nullptr;
   G4String fProcessToSplit = "None";
 
   std::vector<G4Track> fTracksToPostpone;
@@ -85,40 +69,42 @@ public:
   std::map<G4int, G4TrackVector> fRememberedTracks;
   std::map<G4int, std::vector<G4Step *>> fRememberedSteps;
   std::map<G4int, std::vector<G4String>> fRememberedProcesses;
-  std::map<G4String,std::vector<G4String>> fListOfProcessesAccordingParticles;
-
-
 
   std::vector<std::string> fListOfVolumeAncestor;
-  std::vector<std::string> fListOfBiasedVolume;
 
   std::vector<G4String> fListOfProcesses = {"compt", "annihil", "eBrem", "conv",
                                             "phot"};
 
-  virtual void StartSimulationAction() override;
   virtual void SteppingAction(G4Step *) override;
   virtual void BeginOfEventAction(const G4Event *) override;
-  virtual void EndOfEventAction(const G4Event *) override;
   virtual void BeginOfRunAction(const G4Run *run) override;
   virtual void PreUserTrackingAction(const G4Track *track) override;
   virtual void PostUserTrackingAction(const G4Track *track) override;
 
   // Pure splitting functions
+  G4double RussianRouletteForAngleSurvival(G4ThreeVector, G4ThreeVector,
+                                           G4double, G4double);
   G4Track *CreateComptonTrack(G4ParticleChangeForGamma *, G4Track, G4double);
-  void ComptonSplitting(G4Step* initStep,G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
-  void SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
+  void ComptonSplitting(G4Step *CurrentStep, G4Track *track, const G4Step *step,
+                        G4VProcess *process);
+  void SecondariesSplitting(G4Step *CurrentStep, G4Track *track,
+                            const G4Step *step, G4VProcess *process);
 
-  void CreateNewParticleAtTheLastVertex(G4Step*init,G4Step *current, LastVertexDataContainer);
-  G4Track* CreateATrackFromContainer(LastVertexDataContainer container, G4Step *step );
-  G4bool IsTheParticleUndergoesAProcess(G4Step* step);
-  G4VProcess* GetProcessFromProcessName(G4String particleName, G4String pName);
-  G4VParticleChange* eBremProcessFinalState(G4Track* track, G4Step* step,G4VProcess *process);
+  // Handling the remembered processes to replay
+  void RememberLastProcessInformation(G4Step *);
+  void CreateNewParticleAtTheLastVertex(G4Step *, G4Track *, const G4Step *,
+                                        G4String);
+  void ResetProcessesForEnteringParticles(G4Step *step);
+  void ClearRememberedTracksAndSteps(std::map<G4int, G4TrackVector>,
+                                     std::map<G4int, std::vector<G4Step *>>);
 
-
-  void FillOfDataTree(G4Step *step);
+  // Edge case to handle the bias in annihilation
+  // FIXME : The triple annihilation is not handled for the moment
+  void PostponeFirstAnnihilationTrackIfInteraction(G4Step *step,
+                                                   G4String processName);
+  void RegenerationOfPostponedAnnihilationTrack(G4Step *step);
+  void HandleTrackIDIfPostponedAnnihilation(G4Step *step);
   G4bool IsParticleExitTheBiasedVolume(G4Step*step);
-  void CreateListOfbiasedVolume(G4LogicalVolume *volume);
-  void print_tree(const tree<LastVertexDataContainer>& tr, tree<LastVertexDataContainer>::pre_order_iterator it, tree<LastVertexDataContainer>::pre_order_iterator end);
 };
 
 #endif

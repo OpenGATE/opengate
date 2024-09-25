@@ -24,8 +24,8 @@
 // ********************************************************************
 //
 ///
-#ifndef GateLastVertexSplittingPostStepDoIt_h
-#define GateLastVertexSplittingPostStepDoIt_h
+#ifndef GateLastVertexSplittingPostStepDoItOld_h
+#define GateLastVertexSplittingPostStepDoItOld_h
 
 
 #include "G4VEnergyLossProcess.hh"
@@ -62,6 +62,7 @@ virtual G4VParticleChange * PostStepDoIt (const G4Track & track, const G4Step & 
   G4VParticleChange* particleChange = G4VEnergyLossProcess::PostStepDoIt(track,step);
   return particleChange;
 }
+
 
 };
 

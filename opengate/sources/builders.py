@@ -1,4 +1,4 @@
-from .generic import GenericSource, TemplateSource
+from .generic import GenericSource, TemplateSource, LastVertexSource
 from .voxelsources import VoxelsSource
 from .gansources import GANSource, GANPairsSource
 from .beamsources import IonPencilBeamSource, TreatmentPlanPBSource
@@ -20,6 +20,7 @@ source_type_names = {
     GANPairsSource,
     IonPencilBeamSource,
     TemplateSource,
+    LastVertexSource,
     PhaseSpaceSource,
     TreatmentPlanPBSource,
     PhotonFromIonDecaySource,

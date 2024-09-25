@@ -20,6 +20,7 @@ from .miscactors import (
     BremSplittingActor,
     ComptSplittingActor,
     LastVertexInteractionSplittingActor,
+    LastVertexInteractionSplittingActorOld,
     ComptPseudoTransportationActor,
     KillNonInteractingParticleActor,
     SurfaceSplittingActor,
