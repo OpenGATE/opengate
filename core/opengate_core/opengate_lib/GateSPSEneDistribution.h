@@ -40,7 +40,7 @@ public:
   std::vector<double> fEnergyCDF;
 
 private:
-	std::size_t IndexForProbability(double p) const;
+  std::size_t IndexForProbability(double p) const;
 };
 
 #endif // GateSPSEneDistribution_h
