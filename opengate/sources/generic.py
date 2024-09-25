@@ -176,7 +176,12 @@ def get_rad_gamma_energy_spectrum(rad):
 
 
 def get_ion_energy_spectrum(ion: str):
-    path = pathlib.Path(os.path.dirname(__file__)) / ".." / "data" / "source_ion_histogram_energy_weight.json"
+    path = (
+        pathlib.Path(os.path.dirname(__file__))
+        / ".."
+        / "data"
+        / "source_ion_histogram_energy_weight.json"
+    )
     with open(path, "r") as f:
         data = json.load(f)
 

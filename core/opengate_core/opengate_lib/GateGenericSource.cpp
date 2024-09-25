@@ -514,66 +514,68 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
   }
 
   if (ene_type == "spectrum") {
-		auto const spectrum_type = DictGetStr(user_info, "spectrum_type");
-		auto weights = DictGetVecDouble(user_info, "spectrum_weight");
-		auto energies = DictGetVecDouble(user_info, "spectrum_energy");
+    auto const spectrum_type = DictGetStr(user_info, "spectrum_type");
+    auto weights = DictGetVecDouble(user_info, "spectrum_weight");
+    auto energies = DictGetVecDouble(user_info, "spectrum_energy");
 
-		if (weights.empty() || energies.empty()) {
-			std::ostringstream oss;
-			oss << "The spectrum lines for source " << fName
-					<< " is zero length. Abort";
-			Fatal(oss.str());
-		}
-		if (weights.size() != energies.size()) {
-			std::ostringstream oss;
-			oss << "The spectrum vector energy and proba for source " << fName
-					<< " must have the same length, while there are  "
-					<< energies.size() << " and " << weights.size();
-			Fatal(oss.str());
-		}
+    if (weights.empty() || energies.empty()) {
+      std::ostringstream oss;
+      oss << "The spectrum lines for source " << fName
+          << " is zero length. Abort";
+      Fatal(oss.str());
+    }
+    if (weights.size() != energies.size()) {
+      std::ostringstream oss;
+      oss << "The spectrum vector energy and proba for source " << fName
+          << " must have the same length, while there are  " << energies.size()
+          << " and " << weights.size();
+      Fatal(oss.str());
+    }
 
-		ene->SetEmin(energies.front());
-		ene->SetEmax(energies.back());
+    ene->SetEmin(energies.front());
+    ene->SetEmax(energies.back());
 
-		if (spectrum_type == "discrete") {
-			// cumulated weights
-			for (std::size_t i = 1; i < weights.size(); i++) {
-				weights[i] += weights[i - 1];
-			}
-		} else if (spectrum_type == "histogram") {
-			weights[0] = weights[0] * (energies[0] - ene->GetEmin());
-			for (std::size_t i = 1; i < weights.size(); i++)
-				weights[i] = weights[i-1] + weights[i] * (energies[i] - energies[i-1]);
-		} else if (spectrum_type == "interpolated") {
-			double sum = 0;
-			for (std::size_t i = 1; i < weights.size(); i++) {
-				auto const diffEnergy = energies[i] - energies[i-1];
-				auto const value = diffEnergy * weights[i-1] - 0.5 * diffEnergy * (weights[i] - weights[i+1]);
-				sum += value;
-				weights[i-1] = sum;
-			}
-			weights.pop_back();
-		} else {
-			std::ostringstream oss;
-			oss << "The spectrum type is invalid: " << spectrum_type;
-			Fatal(oss.str());
-		}
+    if (spectrum_type == "discrete") {
+      // cumulated weights
+      for (std::size_t i = 1; i < weights.size(); i++) {
+        weights[i] += weights[i - 1];
+      }
+    } else if (spectrum_type == "histogram") {
+      weights[0] = weights[0] * (energies[0] - ene->GetEmin());
+      for (std::size_t i = 1; i < weights.size(); i++)
+        weights[i] =
+            weights[i - 1] + weights[i] * (energies[i] - energies[i - 1]);
+    } else if (spectrum_type == "interpolated") {
+      double sum = 0;
+      for (std::size_t i = 1; i < weights.size(); i++) {
+        auto const diffEnergy = energies[i] - energies[i - 1];
+        auto const value = diffEnergy * weights[i - 1] -
+                           0.5 * diffEnergy * (weights[i] - weights[i + 1]);
+        sum += value;
+        weights[i - 1] = sum;
+      }
+      weights.pop_back();
+    } else {
+      std::ostringstream oss;
+      oss << "The spectrum type is invalid: " << spectrum_type;
+      Fatal(oss.str());
+    }
 
-		auto weightsSum = weights.back();
+    auto weightsSum = weights.back();
 
-		// normalize weights to total
-		for (auto& weight: weights)
-			weight /= weightsSum;
+    // normalize weights to total
+    for (auto &weight : weights)
+      weight /= weightsSum;
 
-		// ! important !
-		// Modify the activity according to the total sum of weights because we
-		// normalize the weights
-		fActivity *= weightsSum;
-		fInitialActivity = fActivity;
+    // ! important !
+    // Modify the activity according to the total sum of weights because we
+    // normalize the weights
+    fActivity *= weightsSum;
+    fInitialActivity = fActivity;
 
-		ene->SetEnergyDisType("spectrum_" + spectrum_type);
-		ene->fEnergyCDF = energies;
-		ene->fProbabilityCDF = weights;
+    ene->SetEnergyDisType("spectrum_" + spectrum_type);
+    ene->fEnergyCDF = energies;
+    ene->fProbabilityCDF = weights;
   }
 
   if (ene_type == "F18_analytic") {

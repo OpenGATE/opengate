@@ -120,42 +120,42 @@ void GateSPSEneDistribution::GenerateSpectrumLines() {
 }
 
 void GateSPSEneDistribution::GenerateSpectrumHistogram() {
-	auto const i = IndexForProbability(G4UniformRand());
-	if (i == 0)
-		fParticleEnergy = G4RandFlat::shoot(GetEmin(), fEnergyCDF[0]);
-	else
-	  fParticleEnergy = G4RandFlat::shoot(fEnergyCDF[i-1], fEnergyCDF[i]);
+  auto const i = IndexForProbability(G4UniformRand());
+  if (i == 0)
+    fParticleEnergy = G4RandFlat::shoot(GetEmin(), fEnergyCDF[0]);
+  else
+    fParticleEnergy = G4RandFlat::shoot(fEnergyCDF[i - 1], fEnergyCDF[i]);
 }
 
 void GateSPSEneDistribution::GenerateSpectrumInterpolated() {
-	auto const i = IndexForProbability(G4UniformRand());
+  auto const i = IndexForProbability(G4UniformRand());
 
-	auto const& a = fEnergyCDF[i];
-	auto const& b = fEnergyCDF[i+1];
-	auto const d = fProbabilityCDF[i+1] - fProbabilityCDF[i];
+  auto const &a = fEnergyCDF[i];
+  auto const &b = fEnergyCDF[i + 1];
+  auto const d = fProbabilityCDF[i + 1] - fProbabilityCDF[i];
 
-	if (std::abs(d) < std::numeric_limits<double>::epsilon()) {
-		fParticleEnergy = G4RandFlat::shoot(a, b);
-	} else {
-		auto const alpha = d / (b - a);
-		auto const beta = fProbabilityCDF[i] - alpha * a;
-		auto const norm = .5 * alpha * (b * b - a * a) + beta * (b - a);
-		auto const p = G4UniformRand(); // p in ]0, 1[
-		// [comment from GATE 9] inversion transform sampling
-		auto const sqrtDelta = std::sqrt((alpha * a + beta) * (alpha * a + beta) + 2 * alpha * norm * p);
-		auto const x = (-beta + sqrtDelta) / alpha;
-		if ((x - a) * (x - b) <= 0)
-			fParticleEnergy = x;
-		else
-			fParticleEnergy = (-beta - sqrtDelta) / alpha;
-	}
+  if (std::abs(d) < std::numeric_limits<double>::epsilon()) {
+    fParticleEnergy = G4RandFlat::shoot(a, b);
+  } else {
+    auto const alpha = d / (b - a);
+    auto const beta = fProbabilityCDF[i] - alpha * a;
+    auto const norm = .5 * alpha * (b * b - a * a) + beta * (b - a);
+    auto const p = G4UniformRand(); // p in ]0, 1[
+    // [comment from GATE 9] inversion transform sampling
+    auto const sqrtDelta = std::sqrt((alpha * a + beta) * (alpha * a + beta) +
+                                     2 * alpha * norm * p);
+    auto const x = (-beta + sqrtDelta) / alpha;
+    if ((x - a) * (x - b) <= 0)
+      fParticleEnergy = x;
+    else
+      fParticleEnergy = (-beta - sqrtDelta) / alpha;
+  }
 }
 
 std::size_t GateSPSEneDistribution::IndexForProbability(double p) const {
-	// TODO p == 1 would cause an error, can it happen?
+  // TODO p == 1 would cause an error, can it happen?
   auto i = 0;
   while (p >= (fProbabilityCDF[i]))
     i++;
-	return i;
+  return i;
 }
-
