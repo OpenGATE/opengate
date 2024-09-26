@@ -1,11 +1,13 @@
+from typing import List
+
 import numpy as np
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
+from anytree import NodeMixin
 from .base import ActorBase
 from ..exception import fatal, warning
 from ..definitions import fwhm_to_sigma
-
 from ..utility import g4_units
 from ..image import (
     align_image_with_physical_volume,
@@ -232,16 +234,20 @@ class DigitizerBase(ActorBase):
         if self.authorize_repeated_volumes is True:
             return
         vm = self.simulation.volume_manager
-        current = vm.volumes[self.attached_to]
-        while current.name != "world":
-            if len(current.g4_transform) > 1:
-                fatal(
-                    f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}. "
-                    f"However, this volume is a daughter of the repeated volume '{current.name}'. It means it will "
-                    f"gather data from all repeated instances. If you are "
-                    f"sure, enable the option 'authorize_repeated_volumes'."
-                )
-            current = current.parent
+        att = self.attached_to
+        if not isinstance(self.attached_to, (list, tuple)):
+            att = [self.attached_to]
+        for a in att:
+            current = self.simulation.volume_manager.get_volume(a).parent
+            while current.name != "world" and not isinstance(current, NodeMixin):
+                if len(current.g4_transform) > 1:
+                    fatal(
+                        f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}. "
+                        f"However, this volume is a daughter of the repeated volume '{current.name}'. It means it will "
+                        f"gather data from all repeated instances. If you are "
+                        f"sure, enable the option 'authorize_repeated_volumes'."
+                    )
+                    current = current.parent
 
 
 class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
@@ -799,6 +805,14 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     If there are several runs, images will also be slice-stacked.
     """
 
+    # hints for IDE
+    input_digi_collections: List[str]
+    spacing: List[float]
+    size: List[int]
+    physical_volume_index: int
+    origin_as_image_center: bool
+    detector_orientation_matrix: np.ndarray
+
     user_info_defaults = {
         # FIXME: implement a setter hook so the user can provided digitizer instances instead of their name,
         # like in attached_to
@@ -817,9 +831,9 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             {"doc": "FIXME"},
         ),
         "physical_volume_index": (
-            0,
+            -1,
             {
-                "doc": "FIXME",
+                "doc": "When attached to a repeated volume, this option indicate which copy is used",
             },
         ),
         "origin_as_image_center": (
@@ -894,6 +908,13 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         By default, it is Z. We use the 'projection_orientation' to get the correct one.
         """
         vol = self.actor_engine.simulation_engine.volume_engine.get_volume(volume)
+        if len(vol.g4_physical_volumes) < 1:
+            fatal(
+                f"The actor {self.name} is attached to '{self.attached_to}' which has "
+                f"no associated g4_physical_volumes (probably a parameterized volume?) and cannot "
+                f"be used. Try to attach it to the mother volume of the parameterized volume."
+            )
+
         solid = vol.g4_physical_volumes[0].GetLogicalVolume().GetSolid()
         pMin = g4.G4ThreeVector()
         pMax = g4.G4ThreeVector()
@@ -928,6 +949,19 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         # in the future, this actor should implement a BeginOfRunActionMasterThread
         # to be able to work on a per-run basis
         self.user_output.projection.create_empty_image(0, size, spacing)
+
+        # check physical_volume_index and number of repeating
+        n = len(self.attached_to_volume.g4_physical_volumes)
+        if n > 1:
+            if self.physical_volume_index >= n or self.physical_volume_index < 0:
+                fatal(
+                    f"The actor '{self.name}' is attached to '{self.attached_to}' which is repeated {n} times. "
+                    f"You must set a valid 'physical_volume_index' between O to {n-1} while "
+                    f"it is {self.physical_volume_index}."
+                )
+        else:
+            # force the index to be zero
+            self.physical_volume_index = 0
 
         # initial position (will be anyway updated in BeginOfRunSimulation)
         try:

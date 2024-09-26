@@ -187,17 +187,20 @@ def test_output(sim, paths):
     scalings = [1.0] * len(scalings2)
     tols[2] = 2  # Z
     # tols[4] = 0.01  # energy
-    is_ok = utility.compare_root3(
-        gate_file,
-        hc.get_output_path(),
-        "Hits",
-        "Hits",
-        keys1,
-        keys2,
-        tols,
-        scalings,
-        scalings2,
-        paths.output / "test036_hits.png",
+    is_ok = (
+        utility.compare_root3(
+            gate_file,
+            hc.get_output_path(),
+            "Hits",
+            "Hits",
+            keys1,
+            keys2,
+            tols,
+            scalings,
+            scalings2,
+            paths.output / "test036_hits.png",
+        )
+        and is_ok
     )
 
     # Root compare SINGLES
