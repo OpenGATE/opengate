@@ -245,7 +245,7 @@ class DigitizerBase(ActorBase):
                         f"gather data from all repeated instances. If you are "
                         f"sure, enable the option 'authorize_repeated_volumes'."
                     )
-                    current = current.parent
+                current = current.parent
 
 
 class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
