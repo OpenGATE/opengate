@@ -55,7 +55,6 @@ if __name__ == "__main__":
     source3.start_time = 0.50 * sec
     source3.direction.type = "momentum"
     source3.direction.momentum = [0, 0, 1]
-    source3.toto = 120  # raise a warning
 
     # Expected total of events
     # 100 + 175 + 120 = 395
