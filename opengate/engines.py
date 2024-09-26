@@ -101,7 +101,7 @@ class SourceEngine(EngineBase):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
-            self.simulation_engine.simulation.warning(
+            self.simulation_engine.simulation.warn_user(
                 f"No source: no particle will be generated"
             )
         self.progress_bar = progress_bar
@@ -325,7 +325,7 @@ class PhysicsEngine(EngineBase):
 
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
-            self.simulation_engine.simulation.warning(
+            self.physics_manager.warn_user(
                 f"WARNING ! SetEnergyRange only works in MT mode"
             )
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
@@ -428,7 +428,7 @@ class PhysicsEngine(EngineBase):
                         self.g4_optical_material_tables[str(material_name)]
                     )
                 else:
-                    self.simulation_engine.simulation.warning(
+                    self.simulation_engine.simulation.warn_user(
                         f"Could not load the optical material properties for material {material_name} "
                         f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
@@ -865,7 +865,7 @@ class VisualisationEngine(EngineBase):
     def initialize_visualisation_gdml(self):
         # Check when GDML is activated, if G4 was compiled with GDML
         if not g4.GateInfo.get_G4GDML():
-            warning(
+            self.simulation.warn_user(
                 "Visualization with GDML not available in Geant4. Check G4 compilation."
             )
         if self.current_visu_filename is None:

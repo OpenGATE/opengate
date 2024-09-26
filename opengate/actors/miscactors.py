@@ -202,7 +202,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        output = self._add_user_output(ActorOutputStatisticsActor, "stats")
+        self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
         self.__finalize_init__()
 
@@ -210,11 +210,11 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    # def __finalize_init__(self):
-    #     super().__finalize_init__()
-    #     # this attribute is considered sometimes in the read_stat_file
-    #     # we declare it here to avoid warning
-    #     self.known_attributes.append("date")
+    def __finalize_init__(self):
+        super().__finalize_init__()
+        # this attribute is considered sometimes in the read_stat_file
+        # we declare it here to avoid warning
+        self.known_attributes.add("date")
 
     def __str__(self):
         s = self.user_output["stats"].__str__()

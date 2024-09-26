@@ -394,7 +394,7 @@ class ActorManager(GateObject):
         return "\n".join(list(actor_types.keys()))
 
     def get_actor_user_info(self, name):
-        warning(
+        self.warn_user(
             f"Deprecation warning: The function 'get_actor_user_info' will soon be removed."
             f"Use my_actor.user_info instead, where 'my_actor' "
             f"should be replace by your actor object. "
@@ -1422,9 +1422,9 @@ class Simulation(GateObject):
 
         # read-only info
         self._current_random_seed = None
-        self._warnings = (
-            []
-        )  # list to store warning messages issued somewhere in the simulation
+
+        # list to store warning messages issued somewhere in the simulation
+        self._user_warnings = []
 
     def __str__(self):
         s = (
@@ -1458,7 +1458,7 @@ class Simulation(GateObject):
 
     @property
     def warnings(self):
-        return self._warnings
+        return self._user_warnings
 
     def to_dictionary(self):
         d = super().to_dictionary()

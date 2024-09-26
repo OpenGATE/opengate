@@ -4,9 +4,8 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
-from anytree import NodeMixin
 from .base import ActorBase
-from ..exception import fatal, warning
+from ..exception import fatal
 from ..definitions import fwhm_to_sigma
 from ..utility import g4_units
 from ..image import (
@@ -233,13 +232,12 @@ class DigitizerBase(ActorBase):
         ActorBase.initialize(self)
         if self.authorize_repeated_volumes is True:
             return
-        vm = self.simulation.volume_manager
         att = self.attached_to
         if not isinstance(self.attached_to, (list, tuple)):
             att = [self.attached_to]
         for a in att:
             current = self.simulation.volume_manager.get_volume(a).parent
-            while current.name != "world" and not isinstance(current, NodeMixin):
+            while current.name != "world" and hasattr(current, "g4_transform"):
                 if len(current.g4_transform) > 1:
                     fatal(
                         f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}. "
@@ -660,7 +658,9 @@ class DigitizerEfficiencyActor(DigitizerBase, g4.GateDigitizerEfficiencyActor):
 
     def initialize_blurring_parameters(self):
         if not (0.0 <= self.efficiency <= 1.0):
-            warning(f"Efficency set to {self.efficiency}, which is not in [0;1].")
+            self.warn_user(
+                f"Efficency set to {self.efficiency}, which is not in [0;1]."
+            )
 
     def initialize(self):
         self.initialize_blurring_parameters()
@@ -851,7 +851,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     }
 
     def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
+        DigitizerBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputSingleImage, "projection")
         self.start_output_origin = None
         self.__initcpp__()
@@ -860,6 +860,10 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     def __initcpp__(self):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    """def __finalize_init__(self):
+        super().__finalize_init__()
+        self.known_attributes.add("fPhysicalVolumeName")"""
 
     def initialize(self):
         # for the moment, we cannot use this actor with several volumes
@@ -1124,5 +1128,7 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
         self.number_of_absorbed_events = self.GetNumberOfAbsorbedEvents()
         self.total_number_of_entries = self.GetTotalNumberOfEntries()
         if self.total_number_of_entries == 0:
-            warning(f"Empty output, no particles stored in {self.get_output_path()}")
+            self.warn_user(
+                f"Empty output, no particles stored in {self.get_output_path()}"
+            )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)

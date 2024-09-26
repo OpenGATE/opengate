@@ -149,15 +149,13 @@ class ActorBase(GateObject):
         self.__initcpp__()
         self.__update_interface_properties__()
 
-    # def __finalize_init__(self):
-    #     super().__finalize_init__()
-    #     # The following attributes exist. They are declared here to avoid warning
-    #     self.known_attributes.append("fFilters")
-    #     self.known_attributes.append("actor_engine")
-    #     self.known_attributes.append("user_output")
-    #     self.known_attributes.append("simulation")
-    #     self.known_attributes.append("__dict__")
-    #     self.known_attributes.append("output_filename")
+    def __finalize_init__(self):
+        super().__finalize_init__()
+        # The following attributes exist. They are declared here to avoid warning
+        # fFilters is not known here because ActorBase does not inherit from a cpp counterpart.
+        self.known_attributes.add("fFilters")
+        # output_filename is a property
+        self.known_attributes.add("output_filename")
 
     def to_dictionary(self):
         d = super().to_dictionary()
