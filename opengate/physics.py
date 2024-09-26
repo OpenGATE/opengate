@@ -87,7 +87,7 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
             ]
 
         if len(particle_keys_to_consider) == 0:
-            warning(
+            self.physics_engine.simulation_engine.simulation.warning(
                 "user_limits_particles is False for all particles. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
             )
 

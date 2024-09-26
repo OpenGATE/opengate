@@ -101,7 +101,9 @@ class SourceEngine(EngineBase):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
-            warning(f"No source: no particle will be generated")
+            self.simulation_engine.simulation.warning(
+                f"No source: no particle will be generated"
+            )
         self.progress_bar = progress_bar
 
     def initialize_actors(self):
@@ -323,7 +325,9 @@ class PhysicsEngine(EngineBase):
 
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
-            warning(f"WARNING ! SetEnergyRange only works in MT mode")
+            self.simulation_engine.simulation.warning(
+                f"WARNING ! SetEnergyRange only works in MT mode"
+            )
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
 
@@ -424,7 +428,7 @@ class PhysicsEngine(EngineBase):
                         self.g4_optical_material_tables[str(material_name)]
                     )
                 else:
-                    warning(
+                    self.simulation_engine.simulation.warning(
                         f"Could not load the optical material properties for material {material_name} "
                         f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
@@ -1152,6 +1156,16 @@ class SimulationEngine(GateSingletonFatal):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         output.expected_number_of_events = self.source_engine.expected_number_of_events
+
+        if len(self.simulation.warnings) > 0:
+            print("*" * 20)
+            print(
+                f"{len(self.simulation.warnings)} warnings occurred in this simulation: "
+            )
+            for w in self.simulation.warnings:
+                print(w)
+                print("-" * 10)
+            print("*" * 20)
 
         return output
 

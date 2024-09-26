@@ -550,6 +550,10 @@ class GateObject:
                             f"In that case, simply ignore the warning. "
                         )
 
+    def warning(self, message):
+        self.simulation._warnings.append(message)
+        warning(message)
+
 
 class DynamicGateObject(GateObject):
 
