@@ -1,4 +1,3 @@
-import itk
 import numpy as np
 from scipy.spatial.transform import Rotation
 
@@ -12,9 +11,11 @@ from ..utility import (
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    itk_image_from_array,
     divide_itk_images,
     scale_itk_image,
+    get_info_from_image,
+    images_have_same_domain,
+    resample_itk_image_like,
 )
 from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
@@ -93,6 +94,17 @@ class VoxelDepositActor(ActorBase):
     """Base class which holds user input parameters common to all actors
     that deposit quantities in a voxel grid, e.g. the DoseActor.
     """
+
+    # hints for IDE
+    size: list
+    spacing: list
+    translation: list
+    rotation: list
+    repeated_volume_index: int
+    hit_type: str
+    output: str
+    img_coord_system: str
+    output_coordinate_system: str
 
     user_info_defaults = {
         "size": (
@@ -389,6 +401,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
     """
 
+    # hints for IDE
+    use_more_ram: bool
+    score_in: str
+
     user_info_defaults = {
         "use_more_ram": (
             False,
@@ -542,6 +558,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.user_output.density.set_item_suffix("density")
 
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDoseActor.__init__(self, self.user_info)
@@ -573,9 +590,14 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 # for dose to water, divide by density of water and not density of material
                 scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
             else:
+                density_image = vol.create_density_image()
+                if images_have_same_domain(input_image, density_image) is False:
+                    density_image = resample_itk_image_like(
+                        density_image, input_image, 0, linear=True
+                    )
                 scaled_image = divide_itk_images(
                     img1_numerator=input_image,
-                    img2_denominator=vol.create_density_image(),
+                    img2_denominator=density_image,
                     filterVal=0,
                     replaceFilteredVal=0,
                 )
@@ -762,8 +784,11 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
     Options
         - LETd only for the moment
         - later: LETt, Q, fluence ...
-
     """
+
+    # hints for IDE
+    averaging_method: str
+    score_in: str
 
     user_info_defaults = {
         "averaging_method": (
@@ -861,6 +886,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.user_output.let.set_write_to_disk(True, item="quotient")
 
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateLETActor.__init__(self, self.user_info)
@@ -1237,9 +1263,12 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
     FluenceActor: compute a 3D map of fluence
-
     FIXME: add scatter order and uncertainty
     """
+
+    # hints for IDE
+    uncertainty: bool
+    scatter: bool
 
     user_info_defaults = {
         "uncertainty": (
@@ -1263,6 +1292,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self._add_user_output(ActorOutputSingleImage, "fluence")
 
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateFluenceActor.__init__(self, self.user_info)

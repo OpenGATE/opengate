@@ -34,10 +34,9 @@ bool fUserStoppingCritReached = false;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
-  fVisEx = nullptr;
   fVisualizationVerboseFlag = false;
   fVisualizationFlag = false;
-  fVisualizationTypeFlag = "qt";
+  fVisualizationType = "qt";
   fVisualizationFile = "g4writertest.gdml";
   fVerboseLevel = 0;
   fUserEventInformationFlag = false;
@@ -49,10 +48,13 @@ GateSourceManager::GateSourceManager() {
   l.fCurrentSimulationTime = 0;
   l.fNextActiveSource = nullptr;
   l.fNextSimulationTime = 0;
+  fExpectedNumberOfEvents = 0;
+  fUserStoppingCritReached = false;
+  fProgressBarStep = 1000;
+  fCurrentEvent = 0;
 }
 
 GateSourceManager::~GateSourceManager() {
-  delete fVisEx;
   // fUIEx is already deleted
   if (fProgressBarFlag) {
     if (!G4Threading::IsMultithreadedApplication() ||
@@ -72,13 +74,12 @@ void GateSourceManager::Initialize(TimeIntervals simulation_times,
   fOptions = options;
   fVisualizationFlag = DictGetBool(options, "visu");
   fVisualizationVerboseFlag = DictGetBool(options, "visu_verbose");
-  fVisualizationTypeFlag = DictGetStr(options, "visu_type");
+  fVisualizationType = DictGetStr(options, "visu_type");
   fVisualizationFile = DictGetStr(options, "visu_filename");
-  if (fVisualizationTypeFlag == "vrml" ||
-      fVisualizationTypeFlag == "vrml_file_only")
+  if (fVisualizationType == "vrml" || fVisualizationType == "vrml_file_only")
     fVisCommands = DictGetVecStr(options, "visu_commands_vrml");
-  else if (fVisualizationTypeFlag == "gdml" ||
-           fVisualizationTypeFlag == "gdml_file_only")
+  else if (fVisualizationType == "gdml" ||
+           fVisualizationType == "gdml_file_only")
     fVisCommands = DictGetVecStr(options, "visu_commands_gdml");
   else
     fVisCommands = DictGetVecStr(options, "visu_commands");
@@ -134,7 +135,7 @@ void GateSourceManager::StartMasterThread() {
     InitializeVisualization();
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
-    // std::cout << "Apply Beam On" << std::endl;
+
     bool exit_sim_on_next_run = false;
     for (auto &actor : fActors) {
       int ret = actor->EndOfRunActionMasterThread(run_id);
@@ -151,7 +152,7 @@ void GateSourceManager::StartMasterThread() {
     }
   }
 
-  // progress bar
+  // progress bar (only thread 0)
   if (fProgressBarFlag) {
     if (G4Threading::IsMultithreadedApplication() &&
         G4Threading::G4GetThreadId() != 0)
@@ -192,6 +193,8 @@ void GateSourceManager::ComputeExpectedNumberOfEvents() {
         source->GetExpectedNumberOfEvents(fSimulationTimes);
   }
   fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
+  if (fExpectedNumberOfEvents > 1e7)
+    fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
 }
 
 long int GateSourceManager::GetExpectedNumberOfEvents() const {
@@ -280,6 +283,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     auto *vertex = new G4PrimaryVertex(p, l.fCurrentSimulationTime);
     vertex->SetPrimary(particle);
     event->AddPrimaryVertex(vertex);
+    // (allocated memory is leaked)
   } else {
     // shoot particle
     l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
@@ -329,15 +333,15 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
 }
 
 void GateSourceManager::InitializeVisualization() {
-  if (!fVisualizationFlag || (fVisualizationTypeFlag == "gdml") ||
-      (fVisualizationTypeFlag == "gdml_file_only"))
+  if (!fVisualizationFlag || (fVisualizationType == "gdml") ||
+      (fVisualizationType == "gdml_file_only"))
     return;
 
-  char *argv[1]; // ok on osx
-  // char **argv = new char*[1]; // not ok on osx
-  if (fVisualizationTypeFlag == "qt") {
-    fUIEx = new G4UIExecutive(1, argv, fVisualizationTypeFlag);
-    // fUIEx = new G4UIExecutive(1, argv, "qt"); // FIXME
+  char **argv = new char *[1]; // Allocate 1 element
+  argv[0] = nullptr;           // Properly indicate no arguments
+
+  if (fVisualizationType == "qt") {
+    fUIEx = new G4UIExecutive(1, argv, fVisualizationType);
     // FIXME does not always work on Linux ? only OSX for the moment
     fUIEx->SetVerbose(fVisualizationVerboseFlag);
   }
@@ -368,7 +372,7 @@ void GateSourceManager::InitializeVisualization() {
 
 void GateSourceManager::StartVisualization() const {
 #ifdef USE_GDML
-  if (fVisualizationTypeFlag == "gdml") {
+  if (fVisualizationType == "gdml") {
     G4GDMLParser parser;
     parser.SetRegionExport(true);
     parser.Write(fVisualizationFile,
@@ -378,18 +382,13 @@ void GateSourceManager::StartVisualization() const {
                      ->GetLogicalVolume());
   }
 #else
-  if (fVisualizationTypeFlag == "gdml") {
+  if (fVisualizationType == "gdml") {
     std::cout << "Error: GDML is not activated with Geant4" << std::endl;
     return;
   }
 #endif
 
-  // if (!fVisualizationFlag || (fVisualizationTypeFlag == "vrml") ||
-  //    (fVisualizationTypeFlag == "vrml_file_only") ||
-  //    (fVisualizationTypeFlag == "gdml") ||
-  //    (fVisualizationTypeFlag == "gdml_file_only"))
-  //  return;
-  if (fVisualizationFlag && fVisualizationTypeFlag == "qt") {
+  if (fVisualizationFlag && fVisualizationType == "qt") {
     fUIEx->SessionStart();
     delete fUIEx;
   }

@@ -182,6 +182,12 @@ class SourceEngine(EngineBase):
         for source in self.sources:
             source.prepare_output()
 
+    def can_predict_expected_number_of_event(self):
+        can_predict = True
+        for source in self.sources:
+            can_predict = can_predict and source.can_predict_number_of_events()
+        return can_predict
+
 
 class PhysicsEngine(EngineBase):
     """
@@ -1158,7 +1164,11 @@ class SimulationEngine(GateSingletonFatal):
             s = "(in a new process) "
         s2 = ""
         if self.simulation.progress_bar:
-            s2 = f"(around {self.source_engine.expected_number_of_events} events expected)"
+            n = self.source_engine.expected_number_of_events
+            if self.source_engine.can_predict_expected_number_of_event():
+                s2 = f"(around {n} events expected)"
+            else:
+                s2 = f"(cannot predict the number of events, max is {n}, e.g. acceptance_angle is enabled)"
         log.info("-" * 80 + f"\nSimulation: START {s}{s2}")
 
         # actor: start simulation (only the master thread)

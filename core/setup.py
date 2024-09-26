@@ -177,12 +177,12 @@ setuptools.setup(
     packages=find_packages(),
     package_data=package_data,
     zip_safe=False,
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     include_package_data=True,
     classifiers=(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ),
-    install_requires=["wget", "colored", "requests"],
+    install_requires=["wget", "colored>1.5", "requests"],
 )

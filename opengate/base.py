@@ -1,5 +1,6 @@
 import copy
 from pathlib import Path
+from typing import Optional, List
 
 from box import Box
 import sys
@@ -64,6 +65,7 @@ def process_cls(cls):
                 "Developer error: Looks like you are calling process_cls on a class "
                 "that does not inherit from GateObject."
             )
+        cls.known_attributes = set()
 
 
 # Utility function for object creation
@@ -148,8 +150,6 @@ def add_properties_to_class(cls, user_info_defaults):
         ):
             default_value = default_value_and_options[0]
             options = default_value_and_options[1]
-            # _ok = True
-        # if not _ok:
         else:
             s = (
                 f"*** DEVELOPER WARNING ***"
@@ -159,6 +159,8 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
+            options = None  # remove warning from IDE
+            default_value = None  # remove warning from IDE
         if "deprecated" not in options:
             if not hasattr(cls, p_name):
                 check_property_name(p_name)
@@ -321,6 +323,10 @@ class GateObject:
     Some class attributes, e.g. inherited_user_info_defaults, are created as part of this processing.
     """
 
+    # hints for IDE
+    name: str
+    inherited_user_info_defaults: dict
+
     user_info_defaults = {"name": (None, {"required": True})}
 
     def __new__(cls, *args, **kwargs):
@@ -332,6 +338,8 @@ class GateObject:
         self.simulation = None
         if simulation is not None:
             self.simulation = simulation
+        # keep internal number of raised warnings (for debug)
+        self.number_of_warnings = 0
         # prefill user info with defaults
         self.user_info = Box(
             [
@@ -403,12 +411,17 @@ class GateObject:
     def __setstate__(self, d):
         """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
+        print(
+            f"DEBUG: in __setstate__ of {type(self).__name__}: {type(self).known_attributes}"
+        )
+        print(f"DEBUG:    type(self).known_attributes: {type(self).known_attributes}")
+        print(f"DEBUG:    list(self.__dict__.keys()): {list(self.__dict__.keys())}")
 
     def __reduce__(self):
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
         but objects handling user_infos need a custom __reduce__ to make sure
-        the properties linked to the user_infos are properly created as per the meta class
+        the properties linked to the user_infos are properly created
 
         The return arguments are:
         1) A callable used to create the instance when unpickling
@@ -428,17 +441,21 @@ class GateObject:
         if (
             key in self.inherited_user_info_defaults
             and "deprecated" in self.inherited_user_info_defaults[key][1]
-            and self.inherited_user_info_defaults[key][1]["deprecated"] is True
         ):
             raise GateDeprecationError(
                 self.inherited_user_info_defaults[key][1]["deprecated"]
             )
-        # if not hasattr(self, key):
-        #     try:
-        #     except KeyError:
-        #         super().__setattr__(key, value)
-        else:
-            super().__setattr__(key, value)
+
+        # check if the attribute is known, otherwise warn the user
+        if len(self.known_attributes) > 0:
+            if key not in self.known_attributes:
+                s = ", ".join(str(a) for a in self.known_attributes)
+                warning(
+                    f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                    f"Known attributes of this object are: {s}"
+                )
+                self.number_of_warnings += 1
+        super().__setattr__(key, value)
 
     def __enter__(self):
         return self
@@ -447,11 +464,24 @@ class GateObject:
         self.close()
         return False
 
+    def __finalize_init__(self):
+        """
+        This method should be called once all attributes have been defined, usually
+        at the end of the __init__ method. It defines the set of known_attribues that will
+        be used to detect errors when the user tries to use a new attribute
+        or misspells an attribute, e.g. box.mohter instead of box.mother.
+        """
+
+        # we define this at the class-level
+        type(self).known_attributes = set(
+            list(self.user_info.keys()) + list(self.__dict__.keys())
+        )
+
     def __add_to_simulation__(self):
         """Hook method which can be called by managers.
         Specific classes can use this to implement actions to be taken
         when an object is being added to the simulation,
-        e.g. adding a certain actor implies switching on certein physics options.
+        e.g. adding a certain actor implies switching on certain physics options.
         """
         pass
 
@@ -522,6 +552,10 @@ class GateObject:
 
 
 class DynamicGateObject(GateObject):
+
+    # hints for IDE
+    dynamic_params: Optional[List]
+
     user_info_defaults = {
         "dynamic_params": (
             None,
@@ -763,6 +797,7 @@ def _get_user_info_options(user_info_name, object_type, class_module):
         ).inherited_user_info_defaults[user_info_name][1]
     except KeyError:
         fatal(f"Could not find user info {user_info_name} in {object_type}. ")
+        options = None  # remove warning from IDE
     return options
 
 

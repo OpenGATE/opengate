@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 
 import opengate_core as g4
 from ..base import GateObject
@@ -9,6 +10,9 @@ class FilterBase(GateObject):
     """
     A filter to be attached to an actor.
     """
+
+    # hints for IDE
+    policy: str
 
     user_info_defaults = {
         "policy": (
@@ -32,9 +36,14 @@ class FilterBase(GateObject):
     def __setstate__(self, state):
         self.__dict__ = state
         self.__initcpp__()
+        self.__finalize_init__()
 
 
 class ParticleFilter(FilterBase, g4.GateParticleFilter):
+
+    # hints for IDE
+    particle: str
+
     user_info_defaults = {
         "particle": (
             "",
@@ -47,12 +56,18 @@ class ParticleFilter(FilterBase, g4.GateParticleFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateParticleFilter.__init__(self)
 
 
 class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
+
+    # hints for IDE
+    energy_min: float
+    energy_max: float
+
     user_info_defaults = {
         "energy_min": (
             0,
@@ -71,12 +86,17 @@ class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
 
 
 class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
+
+    # hints for IDE
+    process_name: str
+
     user_info_defaults = {
         "process_name": (
             "none",
@@ -89,12 +109,19 @@ class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
 
 
 class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
+
+    # hints for IDE
+    value_min: float
+    value_max: float
+    attribute: Optional[str]
+
     user_info_defaults = {
         "value_min": (
             0,
@@ -121,6 +148,7 @@ class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateThresholdAttributeFilter.__init__(self)
@@ -138,6 +166,7 @@ class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateUnscatteredPrimaryFilter.__init__(self)

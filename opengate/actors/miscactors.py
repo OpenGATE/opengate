@@ -11,6 +11,11 @@ from ..exception import warning
 class ActorOutputStatisticsActor(ActorOutputBase):
     """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
 
+    # hints for IDE
+    encoder: str
+    output_filename: str
+    write_to_disk: bool
+
     user_info_defaults = {
         "encoder": (
             "json",
@@ -174,6 +179,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     Store statistics about a simulation run.
     """
 
+    # hints for IDE
+    track_types_flag: bool
+
     user_info_defaults = {
         "track_types_flag": (
             False,
@@ -187,10 +195,17 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         ActorBase.__init__(self, *args, **kwargs)
         output = self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    # def __finalize_init__(self):
+    #     super().__finalize_init__()
+    #     # this attribute is considered sometimes in the read_stat_file
+    #     # we declare it here to avoid warning
+    #     self.known_attributes.append("date")
 
     def __str__(self):
         s = self.user_output["stats"].__str__()
@@ -199,6 +214,16 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     @property
     def counts(self):
         return self.user_output.stats.merged_data
+
+    @ActorBase.output_filename.setter
+    def output_filename(self, val):
+        # special behavior:
+        # By default write_to_disk is False.
+        # However, if user set the output_filename while it is the default (auto)
+        # we set write_to_disk to True.
+        if self.output_filename == "auto":
+            self.write_to_disk = True
+        ActorBase.output_filename.fset(self, val)
 
     def store_output_data(self, output_name, run_index, *data):
         raise NotImplementedError
@@ -248,7 +273,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     it requires "trampoline functions" on the cpp side.
 
-    # feasible but very slow !
+    # it is feasible but very slow !
     def SteppingAction(self, step, touchable):
         g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
         do_something()
@@ -261,6 +286,7 @@ class KillActor(ActorBase, g4.GateKillActor):
         ActorBase.__init__(self, *args, **kwargs)
         self.number_of_killed_particles = 0
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateKillActor.__init__(self, self.user_info)
@@ -285,6 +311,12 @@ def _setter_hook_particles(self, value):
 
 
 class SplittingActorBase(ActorBase):
+
+    # hints for IDE
+    splitting_factor: int
+    bias_primary_only: bool
+    bias_only_once: bool
+    particles: list
 
     user_info_defaults = {
         "splitting_factor": (
@@ -318,6 +350,14 @@ class SplittingActorBase(ActorBase):
 
 
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
+
+    # hints for IDE
+    weight_threshold: float
+    min_weight_of_particle: float
+    russian_roulette: bool
+    rotation_vector_director: bool
+    vector_director: list
+    max_theta: float
 
     user_info_defaults = {
         "weight_threshold": (
@@ -363,6 +403,7 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
@@ -374,6 +415,9 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+
+    # hints for IDE
+    processes: list
 
     user_info_defaults = {
         "processes": (
@@ -389,6 +433,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})

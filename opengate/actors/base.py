@@ -2,7 +2,7 @@ from box import Box
 from functools import wraps
 
 from ..definitions import __world_name__
-from ..exception import fatal, warning, GateImplementationError
+from ..exception import fatal, GateImplementationError
 from ..base import GateObject
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
@@ -75,6 +75,13 @@ def shortcut_for_single_output_actor(func):
 
 
 class ActorBase(GateObject):
+
+    # hints for IDE
+    attached_to: str
+    filters: list
+    filters_boolean_operator: str
+    priority: int
+
     user_info_defaults = {
         "attached_to": (
             __world_name__,
@@ -113,26 +120,6 @@ class ActorBase(GateObject):
                 "Low values mean 'early in the list', large values mean 'late in the list'. "
             },
         ),
-        # "keep_output_data": (
-        #     False,
-        #     {
-        #         "doc": "Should the output data be kept as part of this actor? "
-        #         "If `True`, you can access the data directly after the simulation. "
-        #         "If `False`, you need to re-read the data from disk. "
-        #     },
-        # ),
-        # "keep_data_per_run": (
-        #     False,
-        #     {
-        #         "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
-        #     },
-        # ),
-        # "merge_data_from_runs": (
-        #     True,
-        #     {
-        #         "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
-        #     },
-        # ),
     }
 
     # private list of property names for interfaces already defined
@@ -142,9 +129,8 @@ class ActorBase(GateObject):
 
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
-        self.actor_engine = (
-            None  # this is set by the actor engine during initialization
-        )
+        # this is set by the actor engine during initialization
+        self.actor_engine = None
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
 
@@ -162,6 +148,16 @@ class ActorBase(GateObject):
             v.belongs_to_actor = self
         self.__initcpp__()
         self.__update_interface_properties__()
+
+    # def __finalize_init__(self):
+    #     super().__finalize_init__()
+    #     # The following attributes exist. They are declared here to avoid warning
+    #     self.known_attributes.append("fFilters")
+    #     self.known_attributes.append("actor_engine")
+    #     self.known_attributes.append("user_output")
+    #     self.known_attributes.append("simulation")
+    #     self.known_attributes.append("__dict__")
+    #     self.known_attributes.append("output_filename")
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -199,17 +195,6 @@ class ActorBase(GateObject):
                 "2) Call get_data() via the output.\n"
                 f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_data(). "
             )
-
-    # def _get_error_msg_output_filename(self):
-    #     s = (
-    #         f"The shortcut attribute output_filename is not available for this actor "
-    #         f"because it handles more than one output. You need to set the output_filename "
-    #         f"parameter for each output individually: \n"
-    #     )
-    #     for k in self.user_output:
-    #         s += f"ACTOR.user_output.{k}.output_filename = ...\n"
-    #     s += "... where ACTOR is your actor object."
-    #     return s
 
     # *** shortcut properties ***
     @property
@@ -303,6 +288,7 @@ class ActorBase(GateObject):
         # But it does not hurt to populate the info in C++ regardless of the actor
         # The output path can also be (re-)set by the specific actor in
         # StartSimulation or BeginOfRunActionMasterThread, if needed
+
         # for k, v in self.user_output.items():
         #     if len(v.data_write_config) > 1:
         #         for h, w in v.data_write_config.items():

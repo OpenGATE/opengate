@@ -276,18 +276,8 @@ class SourceBase(UserElement):
     def prepare_output(self):
         pass
 
-    def get_estimated_number_of_events(self, run_timing_interval):
-        """# by default, all event have the same time, so we check that
-        # this time is included into the given time interval
-        if (
-            run_timing_interval[0]
-            <= self.user_info.start_time
-            <= run_timing_interval[1]
-        ):
-            return self.user_info.n
-        return 0"""
-        fatal(f"Not implemented yet: get_estimated_number_of_events")
-        exit()
+    def can_predict_number_of_events(self):
+        return True
 
 
 class GenericSource(SourceBase):
@@ -531,6 +521,14 @@ class GenericSource(SourceBase):
         ui.start_time = ui.tac_times[0]
         ui.activity = ui.tac_activities[0]
         self.g4_source.SetTAC(ui.tac_times, ui.tac_activities)
+
+    def can_predict_number_of_events(self):
+        aa = self.user_info.direction.acceptance_angle
+        if aa.intersection_flag or aa.normal_flag:
+            if aa.skip_policy == "ZeroEnergy":
+                return True
+            return False
+        return True
 
 
 class TemplateSource(SourceBase):

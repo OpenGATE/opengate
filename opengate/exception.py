@@ -25,15 +25,9 @@ class GateImplementationError(Exception):
     """
 
 
-try:
-    color_error = colored.fg("red") + colored.attr("bold")
-    color_warning = colored.fg("orange_1")
-    color_ok = colored.fg("green")
-except AttributeError:
-    # new syntax in colored>=1.5
-    color_error = colored.fore("red") + colored.style("bold")
-    color_warning = colored.fore("orange_1")
-    color_ok = colored.fore("green")
+color_error = colored.fore("red") + colored.style("bold")
+color_warning = colored.fore("orange_1")
+color_ok = colored.fore("green")
 
 
 def fatal(s):
@@ -43,8 +37,6 @@ def fatal(s):
     log.critical(ss)
     s = colored.stylize(s, color_error)
     log.critical(s)
-    # sys.exit(-1)
-    # FIXME: maybe better:
     raise Exception(s)
 
 
