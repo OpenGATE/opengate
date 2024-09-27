@@ -9,6 +9,27 @@ from opengate.tests.utility import (
 from opengate.utility import g4_units
 from opengate.managers import Simulation
 
+
+def set_wrong_attribute(obj, attr):
+    # set a WRONG attribute
+    number_of_warnings_before = getattr(obj, "number_of_warnings")
+    setattr(obj, attr, "nothing")
+    number_of_warnings_after = getattr(obj, "number_of_warnings")
+
+    # check the number of warnings before and after
+    print(
+        f"Number of warnings for {obj.type_name} object {obj.name}: {number_of_warnings_before}"
+    )
+    print(
+        f"Number of warnings for {obj.type_name} object {obj.name}: {number_of_warnings_after}"
+    )
+    b = (number_of_warnings_after - number_of_warnings_before == 1)
+    print_test(
+        b, f"Tried to set a wrong attribute '{attr}'. It should print a single warning"
+    )
+    return b
+
+
 if __name__ == "__main__":
     paths = get_default_test_paths(
         __file__,
@@ -54,18 +75,9 @@ if __name__ == "__main__":
     )
     print()
 
-    # set a WRONG attribute
-    stats.TOTO = "nothing"
-
-    # check the number of warnings (before the run)
-    print(
-        f"(before run) Number of warnings for stats object: {stats.number_of_warnings}"
-    )
-    b = stats.number_of_warnings == 1
-    print_test(
-        b, f"Try to set a wrong attribute 'TOTO', it should print a single warning"
-    )
-    is_ok = is_ok and b
+    is_ok = is_ok and set_wrong_attribute(stats, 'TOTO')
+    is_ok = is_ok and set_wrong_attribute(waterbox, 'mohter')
+    is_ok = is_ok and set_wrong_attribute(sim, 'nthreads')
 
     sim.run(start_new_process=True)
 
