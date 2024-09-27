@@ -1466,6 +1466,12 @@ class Simulation(GateObject):
     def reset_warnings(self):
         self._user_warnings = []
 
+    def warn_user(self, message):
+        # We need this specific implementation because the Simulation does not hold a reference 'simulation',
+        # as required by the base class implementation of warn_user()
+        self._user_warnings.append(message)
+        super().warn_user(message)
+
     def to_dictionary(self):
         d = super().to_dictionary()
         d["volume_manager"] = self.volume_manager.to_dictionary()
