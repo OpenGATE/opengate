@@ -1406,6 +1406,9 @@ class Simulation(GateObject):
         kwargs.pop('simulation', None)
         super().__init__(name=name, **kwargs)
 
+        # list to store warning messages issued somewhere in the simulation
+        self._user_warnings = []
+
         # for debug only
         self.verbose_getstate = False
         self.verbose_close = False
@@ -1425,8 +1428,6 @@ class Simulation(GateObject):
         # read-only info
         self._current_random_seed = None
 
-        # list to store warning messages issued somewhere in the simulation
-        self._user_warnings = []
         self.expected_number_of_events = None
 
     def __str__(self):
