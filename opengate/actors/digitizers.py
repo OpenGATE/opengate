@@ -177,7 +177,8 @@ class Digitizer:
         mod.attached_to = self.actors[index - 1].attached_to
         if "input_digi_collection" in mod.user_info:
             mod.input_digi_collection = self.actors[index - 1].name
-        mod.write_to_disk = False
+        first_key = next(iter(mod.user_output))
+        mod.user_output[first_key].write_to_disk = False
         self.actors.append(mod)
         return mod
 
@@ -240,7 +241,7 @@ class DigitizerBase(ActorBase):
             while current.name != "world" and hasattr(current, "g4_transform"):
                 if len(current.g4_transform) > 1:
                     fatal(
-                        f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}. "
+                        f"This digitizer actor name '{self.name}' is attached to the volume '{self.attached_to}'. "
                         f"However, this volume is a daughter of the repeated volume '{current.name}'. It means it will "
                         f"gather data from all repeated instances. If you are "
                         f"sure, enable the option 'authorize_repeated_volumes'."
@@ -861,10 +862,6 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         g4.GateDigitizerProjectionActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    """def __finalize_init__(self):
-        super().__finalize_init__()
-        self.known_attributes.add("fPhysicalVolumeName")"""
-
     def initialize(self):
         # for the moment, we cannot use this actor with several volumes
         m = self.attached_to
@@ -980,8 +977,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         align_image_with_physical_volume(
             self.attached_to_volume, self.user_output.projection.data_per_run[0].image
         )
-        self.fPhysicalVolumeName = str(pv.GetName())
-        print(self.fPhysicalVolumeName)
+        self.SetPhysicalVolumeName(str(pv.GetName()))
 
         # update the cpp image and start
         update_image_py_to_cpp(

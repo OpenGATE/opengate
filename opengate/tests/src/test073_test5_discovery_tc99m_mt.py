@@ -21,7 +21,7 @@ if __name__ == "__main__":
     digit = discovery.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
     ew = digit.find_first_module("energy_window")
     ew.output_filename = "output_discovery_tc99m.root"
-    ew.write_to_disk = True
+    ew.root_output.write_to_disk = True
 
     # output
     stats.output_filename = "stats_discovery_tc99m.txt"

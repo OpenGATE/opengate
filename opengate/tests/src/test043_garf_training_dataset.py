@@ -88,7 +88,7 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
     stats.output_filename = "test043_arf_training_dataset_stats.txt"
-    stats.write_to_disk = True
+    stats.stats.write_to_disk = True
 
     # start simulation
     sim.run(start_new_process=True)
