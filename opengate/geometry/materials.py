@@ -36,7 +36,7 @@ def read_voxel_materials(filename, def_mat="G4_AIR"):
 
     # consider all values
     pix_mat = []
-    previous = None
+    previous = materials[0][0]
     for m in materials:
         if previous and previous > m[0]:
             fatal(
