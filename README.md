@@ -4,7 +4,7 @@
 [![cirrus CI](https://api.cirrus-ci.com/github/OpenGATE/opengate.svg)](https://cirrus-ci.com/github/OpenGATE/opengate)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OpenGATE/opengate/master.svg)](https://results.pre-commit.ci/latest/github/OpenGATE/opengate/master)
 
-## This is GATE10 **beta** version. The first non-beta release will be officially announced in the summer 2024.
+## This is GATE10 **beta** version. The first non-beta release will be officially announced ~in the summer~ autumn 2024.
 
 See the [User Guide](https://opengate-python.readthedocs.io/en/latest/user_guide.html). The current version uses [Geant4 11.2.1](https://geant4.web.cern.ch).
 
