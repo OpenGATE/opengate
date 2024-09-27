@@ -204,7 +204,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         ActorBase.__init__(self, *args, **kwargs)
         self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
@@ -285,7 +284,6 @@ class KillActor(ActorBase, g4.GateKillActor):
         ActorBase.__init__(self, *args, **kwargs)
         self.number_of_killed_particles = 0
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateKillActor.__init__(self, self.user_info)
@@ -400,7 +398,6 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
@@ -429,7 +426,6 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})
