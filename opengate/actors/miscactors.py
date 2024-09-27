@@ -8,6 +8,15 @@ from ..serialization import dump_json
 from ..exception import warning
 
 
+def _setter_hook_output_filename(self, output_filename):
+    # By default, write_to_disk is False.
+    # However, if user actively sets the output_filename
+    # s/he most likely wants to write to disk also
+    if output_filename != "" and output_filename is not None:
+        self.write_to_disk = True
+    return output_filename
+
+
 class ActorOutputStatisticsActor(ActorOutputBase):
     """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
 
@@ -193,7 +202,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        output = self._add_user_output(ActorOutputStatisticsActor, "stats")
+        self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
         self.__finalize_init__()
 
@@ -201,11 +210,11 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    # def __finalize_init__(self):
-    #     super().__finalize_init__()
-    #     # this attribute is considered sometimes in the read_stat_file
-    #     # we declare it here to avoid warning
-    #     self.known_attributes.append("date")
+    def __finalize_init__(self):
+        super().__finalize_init__()
+        # this attribute is considered sometimes in the read_stat_file
+        # we declare it here to avoid warning
+        self.known_attributes.add("date")
 
     def __str__(self):
         s = self.user_output["stats"].__str__()
@@ -214,16 +223,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     @property
     def counts(self):
         return self.user_output.stats.merged_data
-
-    @ActorBase.output_filename.setter
-    def output_filename(self, val):
-        # special behavior:
-        # By default write_to_disk is False.
-        # However, if user set the output_filename while it is the default (auto)
-        # we set write_to_disk to True.
-        if self.output_filename == "auto":
-            self.write_to_disk = True
-        ActorBase.output_filename.fset(self, val)
 
     def store_output_data(self, output_name, run_index, *data):
         raise NotImplementedError
@@ -311,7 +310,6 @@ def _setter_hook_particles(self, value):
 
 
 class SplittingActorBase(ActorBase):
-
     # hints for IDE
     splitting_factor: int
     bias_primary_only: bool
@@ -350,7 +348,6 @@ class SplittingActorBase(ActorBase):
 
 
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
-
     # hints for IDE
     weight_threshold: float
     min_weight_of_particle: float
@@ -415,7 +412,6 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
-
     # hints for IDE
     processes: list
 

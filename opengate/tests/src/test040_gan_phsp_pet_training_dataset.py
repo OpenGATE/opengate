@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output = paths.output / "test040_train_stats.txt"
+    stats.output_filename = "test040_train_stats.txt"
 
     # filter gamma only
     f = sim.add_filter("ParticleFilter", "f")

@@ -4,7 +4,6 @@
 import opengate as gate
 from opengate.tests import utility
 import opengate_core as g4
-from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test017")
@@ -84,7 +83,6 @@ if __name__ == "__main__":
     dose.size = [150, 150, 150]
     dose.spacing = [1 * mm, 1 * mm, 1 * mm]
     dose.translation = [5 * mm, 0 * mm, 0 * mm]
-    dose.physical_volume_index = 0
     print(
         "The Dose actor is triggered every time a hit occurs in the (logical volume) "
         '"crystal" (and any of its associated repeated physical volumes).'

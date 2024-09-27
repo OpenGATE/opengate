@@ -81,6 +81,7 @@ def add_digitizer(
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", hits_name)
     hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
     hc.output_filename = output_filename
     hc.attributes = [
         "PostPosition",
@@ -91,6 +92,7 @@ def add_digitizer(
 
     # singles collection
     sc = sim.add_actor("DigitizerReadoutActor", singles_name)
+    sc.authorize_repeated_volumes = True
     sc.attached_to = crystal.name
     sc.input_digi_collection = hc.name
     sc.group_volume = block.name

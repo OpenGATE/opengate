@@ -19,6 +19,7 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
+  fPhysicalVolumeName = "None";
 }
 
 GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
@@ -33,6 +34,10 @@ void GateDigitizerProjectionActor::InitializeUserInput(py::dict &user_info) {
 
 void GateDigitizerProjectionActor::InitializeCpp() {
   fImage = ImageType::New();
+}
+
+void GateDigitizerProjectionActor::SetPhysicalVolumeName(std::string name) {
+  fPhysicalVolumeName = name;
 }
 
 // Called when the simulation start

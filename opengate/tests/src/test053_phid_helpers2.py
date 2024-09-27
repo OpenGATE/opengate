@@ -34,7 +34,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
-    s.output = output / f"test053_{sim_name}.txt"
+    s.output_filename = output / f"test053_{sim_name}.txt"
 
     # phsp actor
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")

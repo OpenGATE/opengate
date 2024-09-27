@@ -21,6 +21,7 @@ if __name__ == "__main__":
     # digitizer hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
     hc.output_filename = f"test037_test{v}.root"
     hc.attributes = [
         "PostPosition",
@@ -31,6 +32,7 @@ if __name__ == "__main__":
 
     # Readout (not need for adder)
     sc = sim.add_actor("DigitizerReadoutActor", "Singles2_1")
+    sc.authorize_repeated_volumes = True
     sc.output_filename = f"test037_test{v}.root"
     sc.input_digi_collection = "Hits"
     sc.group_volume = stack.name  # should be depth=1 in Gate

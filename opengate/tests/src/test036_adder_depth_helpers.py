@@ -118,6 +118,7 @@ def create_simulation(geom, paths):
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
     hc.output_filename = "test036.root"
     hc.attributes = [
         "KineticEnergy",
@@ -134,6 +135,7 @@ def create_simulation(geom, paths):
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.attached_to = crystal.name
+    sc.authorize_repeated_volumes = True
     sc.input_digi_collection = "Hits"
     # sc.policy = 'EnergyWinnerPosition'
     sc.policy = "EnergyWeightedCentroidPosition"
@@ -148,7 +150,7 @@ def create_simulation(geom, paths):
     # print cuts
     print(sim.physics_manager.dump_production_cuts())
 
-    # add a user hook function to dump production cuts frmo Geant4
+    # add a user hook function to dump production cuts from Geant4
     sim.user_hook_after_init = check_production_cuts
 
     return sim
@@ -185,17 +187,20 @@ def test_output(sim, paths):
     scalings = [1.0] * len(scalings2)
     tols[2] = 2  # Z
     # tols[4] = 0.01  # energy
-    is_ok = utility.compare_root3(
-        gate_file,
-        hc.get_output_path(),
-        "Hits",
-        "Hits",
-        keys1,
-        keys2,
-        tols,
-        scalings,
-        scalings2,
-        paths.output / "test036_hits.png",
+    is_ok = (
+        utility.compare_root3(
+            gate_file,
+            hc.get_output_path(),
+            "Hits",
+            "Hits",
+            keys1,
+            keys2,
+            tols,
+            scalings,
+            scalings2,
+            paths.output / "test036_hits.png",
+        )
+        and is_ok
     )
 
     # Root compare SINGLES

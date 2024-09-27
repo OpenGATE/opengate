@@ -411,11 +411,11 @@ class GateObject:
     def __setstate__(self, d):
         """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
-        print(
+        """print(
             f"DEBUG: in __setstate__ of {type(self).__name__}: {type(self).known_attributes}"
         )
         print(f"DEBUG:    type(self).known_attributes: {type(self).known_attributes}")
-        print(f"DEBUG:    list(self.__dict__.keys()): {list(self.__dict__.keys())}")
+        print(f"DEBUG:    list(self.__dict__.keys()): {list(self.__dict__.keys())}")"""
 
     def __reduce__(self):
         """This method is called when the object is pickled.
@@ -450,7 +450,7 @@ class GateObject:
         if len(self.known_attributes) > 0:
             if key not in self.known_attributes:
                 s = ", ".join(str(a) for a in self.known_attributes)
-                warning(
+                self.warn_user(
                     f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
                     f"Known attributes of this object are: {s}"
                 )
@@ -474,7 +474,9 @@ class GateObject:
 
         # we define this at the class-level
         type(self).known_attributes = set(
-            list(self.user_info.keys()) + list(self.__dict__.keys())
+            list(self.user_info.keys())
+            + list(self.__dict__.keys())
+            + list(["__dict__"])
         )
 
     def __add_to_simulation__(self):
@@ -549,6 +551,14 @@ class GateObject:
                             f"The reason could be that the user parameter is marked as deprecated. "
                             f"In that case, simply ignore the warning. "
                         )
+
+    def warn_user(self, message):
+        # this may be called without simulation object, so we guard with try/except
+        try:
+            self.simulation._user_warnings.append(message)
+        except:
+            pass
+        warning(message)
 
 
 class DynamicGateObject(GateObject):

@@ -394,8 +394,8 @@ class ActorManager(GateObject):
         return "\n".join(list(actor_types.keys()))
 
     def get_actor_user_info(self, name):
-        warning(
-            f"Deprecation warning: This function will soon be removed."
+        self.warn_user(
+            f"Deprecation warning: The function 'get_actor_user_info' will soon be removed."
             f"Use my_actor.user_info instead, where 'my_actor' "
             f"should be replace by your actor object. "
             f"You can also access user input parameters directly, e.g. my_actor.attached_to=..."
@@ -1423,6 +1423,9 @@ class Simulation(GateObject):
         # read-only info
         self._current_random_seed = None
 
+        # list to store warning messages issued somewhere in the simulation
+        self._user_warnings = []
+
     def __str__(self):
         s = (
             f"Simulation name: {self.name} \n"
@@ -1452,6 +1455,10 @@ class Simulation(GateObject):
     @property
     def current_random_seed(self):
         return self._current_random_seed
+
+    @property
+    def warnings(self):
+        return self._user_warnings
 
     def to_dictionary(self):
         d = super().to_dictionary()
