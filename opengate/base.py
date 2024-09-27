@@ -389,6 +389,7 @@ class GateObject:
         self._simulation = simulation
         # keep internal number of raised warnings (for debug)
         self.number_of_warnings = 0
+        self._temporary_warning_cache = []
         # prefill user info with defaults
         self.user_info = Box(
             [
@@ -619,11 +620,14 @@ class GateObject:
                         )
 
     def warn_user(self, message):
-        # this may be called without simulation object, so we guard with try/except
-        try:
+        # If this GateObject does not (yet) have a reference to the simulation,
+        # we store the warning in a temporary cache
+        # (will be registered later to the simulation's warning cache)
+        if self.simulation is None:
+            self._temporary_warning_cache.append(message)
+        # if possible, register the warning directly
+        else:
             self.simulation._user_warnings.append(message)
-        except:
-            pass
         warning(message)
 
 
