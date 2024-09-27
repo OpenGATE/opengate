@@ -1,6 +1,7 @@
 import copy
 from pathlib import Path
 from typing import Optional, List
+from difflib import get_close_matches
 
 from box import Box
 import sys
@@ -454,6 +455,10 @@ class GateObject:
         if len(known_attributes) > 0:
             if key not in known_attributes:
                 msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                close_matches = get_close_matches(key, known_attributes)
+                if len(close_matches)> 0:
+                    msg_close_matches = f"Did you mean: " + " or ".join(close_matches) + "\n"
+                    msg += msg_close_matches
                 known_attr = ", ".join(str(a) for a in known_attributes)
                 msg += f"Known attributes of this object are: {known_attr}"
                 self.warn_user(msg)
