@@ -454,6 +454,10 @@ class GateObject:
                     f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
                     f"Known attributes of this object are: {s}"
                 )
+        known_attributes = type(self).__dict__.get("known_attributes")
+        if known_attributes is None:
+            raise GateImplementationError(f"Did not find 'known_attributes' in the {self.type_name}. "
+                                          f"Has the class correctly been processed by process_cls()?")
                 self.number_of_warnings += 1
         super().__setattr__(key, value)
 
