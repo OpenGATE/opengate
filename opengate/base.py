@@ -447,17 +447,16 @@ class GateObject:
             )
 
         # check if the attribute is known, otherwise warn the user
-        if len(self.known_attributes) > 0:
-            if key not in self.known_attributes:
-                s = ", ".join(str(a) for a in self.known_attributes)
-                self.warn_user(
-                    f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
-                    f"Known attributes of this object are: {s}"
-                )
         known_attributes = type(self).__dict__.get("known_attributes")
         if known_attributes is None:
             raise GateImplementationError(f"Did not find 'known_attributes' in the {self.type_name}. "
                                           f"Has the class correctly been processed by process_cls()?")
+        if len(known_attributes) > 0:
+            if key not in known_attributes:
+                msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                known_attr = ", ".join(str(a) for a in known_attributes)
+                msg += f"Known attributes of this object are: {known_attr}"
+                self.warn_user(msg)
                 self.number_of_warnings += 1
         super().__setattr__(key, value)
 
