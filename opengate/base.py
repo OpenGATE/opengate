@@ -63,13 +63,13 @@ def process_cls(cls):
     # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
     if "inherited_user_info_defaults" not in cls.__dict__:
         try:
-            # type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
             digest_user_info_defaults(cls)
         except AttributeError:
             raise GateImplementationError(
                 "Looks like you are calling process_cls on a class "
                 "that does not inherit from GateObject."
             )
+        # this class attribute is needed by the __setattr__ method of GateObject
         cls.known_attributes = set()
 
 
