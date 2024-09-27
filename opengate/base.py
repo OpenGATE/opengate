@@ -71,6 +71,52 @@ def process_cls(cls):
             )
         # this class attribute is needed by the __setattr__ method of GateObject
         cls.known_attributes = set()
+        # enhance the __init__ method
+        wrap_init_method(cls)
+
+
+def wrap_init_method(cls):
+    """This is a factory function to process classes which inherit from GateObject.
+    It is called from the main factory function process_cls().
+    This function wraps and reattaches the __init__ method of this class, if it implements one.
+    The wrapped __init__ first calls the "original" __init__ and subsequently the method
+    __finalize_init__, which has a base implementation in GateObject,
+    in case the __init__ is the furthest down in the inheritance chain.
+    The method __finalize_init__ is needed to allow GateObject.__setattr__ to check for invalid attribute setting.
+    """
+    # Get the __init__ method as the class implements it
+    original_init = cls.__dict__.get('__init__')
+    # if it is implemented, i.e. present in __dict__, wrap it
+    if original_init is not None:
+        # define a closure
+        def wrapped_init(self, *args, **kwargs):
+            # original_init is the __init__ captured in the closure
+            original_init(self, *args, **kwargs)
+            # figure out in which class the __init__ method is implemented.
+            # It could be in some super class with respect to the instance self.
+            class_to_which_original_init_belongs = vars(sys.modules[original_init.__module__])[
+                original_init.__qualname__.split('.')[0]]
+            # Now figure out which is the "last" class in the inheritance chain
+            # (with respect to the instance self)
+            # which implements an __init__ method. Plus the children which do not implement an __init__
+            classes_up_to_first_init_in_mro = []
+            for c in type(self).mro():
+                classes_up_to_first_init_in_mro.append(c)
+                if '__init__' in c.__dict__:
+                    # found an __init__, so __init__ methods in further super classes
+                    # should not call the __finalize_init__ method
+                    break
+            # Now check if the class in which the __init__ we are wrapping is implemented
+            # is among the previously extracted classes.
+            # If that is the case, the call to this __init__ will be the last one to terminate
+            # in the chain if super().__init__() calls.
+            # In other words, we are at the very end of __init__, including calls to super classes,
+            # and it is time to call __finalize_init__
+            if class_to_which_original_init_belongs in classes_up_to_first_init_in_mro:
+                self.__finalize_init__()
+
+        # reattach the wrapped __init__ to the class, so it is used instead of the original one.
+        setattr(cls, '__init__', wrapped_init)
 
 
 # Utility function for object creation
