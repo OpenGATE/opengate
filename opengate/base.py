@@ -50,9 +50,10 @@ class MetaUserInfo(type):
 
 
 def process_cls(cls):
-    """Digest the class's user_infos and store the augmented class
-    in a dictionary inside the metaclass which handles the class creation.
-    Example: type(cls) yields the metaclass MetaUserInfo for the class GateObject.
+    """The factory function is meant to process classes inheriting from GateObject.
+    It digests the user info parametrisation from all classes in the inheritance tree
+    and enhances the __init__ method, so it calls the __finalize_init__ method at the
+    very end of the __init__ call, which is required to check for invalid attribute setting.
     """
     # check if the class already has an attribute inherited_user_info_defaults
     # cannot use hasattr because it would find the attribute from already processed super classes
