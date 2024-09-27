@@ -1396,13 +1396,15 @@ class Simulation(GateObject):
         ),
     }
 
-    def __init__(self, name="simulation"):
+    def __init__(self, name="simulation", **kwargs):
         """
         Main members are:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
-        super().__init__(name=name)
+        # The Simulation instance should not hold a reference to itself (cycle)
+        kwargs.pop('simulation', None)
+        super().__init__(name=name, **kwargs)
 
         # for debug only
         self.verbose_getstate = False
