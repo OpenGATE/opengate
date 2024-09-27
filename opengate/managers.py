@@ -1403,7 +1403,7 @@ class Simulation(GateObject):
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
         # The Simulation instance should not hold a reference to itself (cycle)
-        kwargs.pop('simulation', None)
+        kwargs.pop("simulation", None)
         super().__init__(name=name, **kwargs)
 
         # list to store warning messages issued somewhere in the simulation
@@ -1697,9 +1697,7 @@ class Simulation(GateObject):
 
         if len(self.warnings) > 0:
             print("*" * 20)
-            print(
-                f"{len(self.warnings)} warnings occurred in this simulation: \n"
-            )
+            print(f"{len(self.warnings)} warnings occurred in this simulation: \n")
             for i, w in enumerate(self.warnings):
                 print(f"{i+1}) " + "-" * 10)
                 print(w)
