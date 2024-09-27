@@ -50,7 +50,7 @@ public:
   virtual ~GateLastVertexInteractionSplittingActor() {}
 
   G4double fSplittingFactor;
-  G4bool fRussianRouletteForAngle = false;
+  G4bool fAngularKill;
   G4bool fRotationVectorDirector;
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
@@ -104,6 +104,7 @@ public:
   virtual void PostUserTrackingAction(const G4Track *track) override;
 
   // Pure splitting functions
+  G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir, G4ThreeVector vectorDirector, G4double maxTheta);
   G4Track *CreateComptonTrack(G4ParticleChangeForGamma *, G4Track, G4double);
   void ComptonSplitting(G4Step* initStep,G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
   void SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);

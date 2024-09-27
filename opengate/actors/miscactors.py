@@ -459,7 +459,7 @@ class LastVertexInteractionSplittingActor(g4.GateLastVertexInteractionSplittingA
         ActorBase.set_default_user_info(user_info)
         deg = g4_units.deg
         user_info.splitting_factor = 1
-        user_info.russian_roulette_for_angle = False
+        user_info.angular_kill = False
         user_info.rotation_vector_director = False
         user_info.vector_director = [0, 0, -1]
         user_info.max_theta = 90 * deg
