@@ -386,9 +386,7 @@ class GateObject:
         return new_instance
 
     def __init__(self, *args, simulation=None, **kwargs):
-        self.simulation = None
-        if simulation is not None:
-            self.simulation = simulation
+        self._simulation = simulation
         # keep internal number of raised warnings (for debug)
         self.number_of_warnings = 0
         # prefill user info with defaults
@@ -426,6 +424,16 @@ class GateObject:
                     f"Hint: The user input parameters of {type(self).__name__} are: "
                     f"{list(self.inherited_user_info_defaults.keys())}.\n"
                 )
+
+    @property
+    def simulation(self):
+        return self._simulation
+
+    @simulation.setter
+    def simulation(self, sim):
+        sim.warnings.extend(self._temporary_warning_cache)
+        self._temporary_warning_cache = []
+        self._simulation = sim
 
     def __str__(self):
         ret_string = (
