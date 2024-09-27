@@ -66,8 +66,8 @@ def process_cls(cls):
             # type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
             digest_user_info_defaults(cls)
         except AttributeError:
-            fatal(
-                "Developer error: Looks like you are calling process_cls on a class "
+            raise GateImplementationError(
+                "Looks like you are calling process_cls on a class "
                 "that does not inherit from GateObject."
             )
         cls.known_attributes = set()
