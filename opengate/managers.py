@@ -1427,6 +1427,7 @@ class Simulation(GateObject):
 
         # list to store warning messages issued somewhere in the simulation
         self._user_warnings = []
+        self.expected_number_of_events = None
 
     def __str__(self):
         s = (
