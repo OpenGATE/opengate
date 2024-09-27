@@ -103,7 +103,7 @@ def wrap_init_method(cls):
             for c in type(self).mro():
                 classes_up_to_first_init_in_mro.append(c)
                 if '__init__' in c.__dict__:
-                    # found an __init__, so __init__ methods in further super classes
+                    # found an __init__, so __init__ methods in classes further up the inheritance tree
                     # should not call the __finalize_init__ method
                     break
             # Now check if the class in which the __init__ we are wrapping is implemented
