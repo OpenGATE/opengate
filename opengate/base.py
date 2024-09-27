@@ -540,11 +540,7 @@ class GateObject:
         """
 
         # we define this at the class-level
-        type(self).known_attributes = set(
-            list(self.user_info.keys())
-            + list(self.__dict__.keys())
-            + list(["__dict__"])
-        )
+        type(self).known_attributes = set(dir(self))
 
     def __add_to_simulation__(self):
         """Hook method which can be called by managers.
