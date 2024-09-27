@@ -1678,6 +1678,8 @@ class Simulation(GateObject):
             # because everything is already in place.
             output = self._run_simulation_engine(False)
 
+        self._user_warnings.extend(output.warnings)
+
         # FIXME workaround
         self.expected_number_of_events = output.expected_number_of_events
 
@@ -1691,6 +1693,17 @@ class Simulation(GateObject):
         # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
         if self.volume_manager.material_database is None:
             self.volume_manager.material_database = MaterialDatabase()
+
+        if len(self.warnings) > 0:
+            print("*" * 20)
+            print(
+                f"{len(self.warnings)} warnings occurred in this simulation: \n"
+            )
+            for i, w in enumerate(self.warnings):
+                print(f"{i+1}) " + "-" * 10)
+                print(w)
+                print()
+            print("*" * 20)
 
     def voxelize_geometry(
         self,

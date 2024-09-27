@@ -912,6 +912,7 @@ class SimulationOutput:
         self.ppid = os.getppid()
         self.current_random_seed = None
         self.user_hook_log = []
+        self.warnings = None
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.simulation.actor_manager.actors
@@ -1121,6 +1122,13 @@ class SimulationEngine(GateSingletonFatal):
         # prepare the output
         output = SimulationOutput()
 
+        # if the simulation is run in a subprocess,
+        # we want to capture only the warnings from this point on
+        # because everything else has already been executed in the main process
+        # and potential warnings have already been registered.
+        if self.new_process is True:
+            self.simulation.reset_warnings()
+
         # initialization
         self.initialize()
 
@@ -1156,16 +1164,7 @@ class SimulationEngine(GateSingletonFatal):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         output.expected_number_of_events = self.source_engine.expected_number_of_events
-
-        if len(self.simulation.warnings) > 0:
-            print("*" * 20)
-            print(
-                f"{len(self.simulation.warnings)} warnings occurred in this simulation: "
-            )
-            for w in self.simulation.warnings:
-                print(w)
-                print("-" * 10)
-            print("*" * 20)
+        output.warnings = self.simulation.warnings
 
         return output
 
