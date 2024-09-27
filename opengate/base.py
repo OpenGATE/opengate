@@ -6,7 +6,7 @@ from difflib import get_close_matches
 from box import Box
 import sys
 
-from .exception import fatal, warning, GateDeprecationError, GateFeatureUnavailableError
+from .exception import fatal, warning, GateDeprecationError, GateFeatureUnavailableError, GateImplementationError
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
