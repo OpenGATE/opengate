@@ -55,9 +55,12 @@ def process_cls(cls):
     and enhances the __init__ method, so it calls the __finalize_init__ method at the
     very end of the __init__ call, which is required to check for invalid attribute setting.
     """
-    # check if the class already has an attribute inherited_user_info_defaults
-    # cannot use hasattr because it would find the attribute from already processed super classes
-    # -> must use __dict__ which contains only attribute of the specific cls object
+    # The class attribute inherited_user_info_defaults is exclusively set by this factory function
+    # Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
+    # it means that it has not been processed yet.
+    # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
+    # because it would potentially find the attribute from already processed super classes
+    # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
     if "inherited_user_info_defaults" not in cls.__dict__:
         try:
             # type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
