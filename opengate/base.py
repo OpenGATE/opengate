@@ -6,7 +6,13 @@ from difflib import get_close_matches
 from box import Box
 import sys
 
-from .exception import fatal, warning, GateDeprecationError, GateFeatureUnavailableError, GateImplementationError
+from .exception import (
+    fatal,
+    warning,
+    GateDeprecationError,
+    GateFeatureUnavailableError,
+    GateImplementationError,
+)
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
@@ -85,7 +91,7 @@ def wrap_init_method(cls):
     The method __finalize_init__ is needed to allow GateObject.__setattr__ to check for invalid attribute setting.
     """
     # Get the __init__ method as the class implements it
-    original_init = cls.__dict__.get('__init__')
+    original_init = cls.__dict__.get("__init__")
     # if it is implemented, i.e. present in __dict__, wrap it
     if original_init is not None:
         # define a closure
@@ -94,15 +100,16 @@ def wrap_init_method(cls):
             original_init(self, *args, **kwargs)
             # figure out in which class the __init__ method is implemented.
             # It could be in some super class with respect to the instance self.
-            class_to_which_original_init_belongs = vars(sys.modules[original_init.__module__])[
-                original_init.__qualname__.split('.')[0]]
+            class_to_which_original_init_belongs = vars(
+                sys.modules[original_init.__module__]
+            )[original_init.__qualname__.split(".")[0]]
             # Now figure out which is the "last" class in the inheritance chain
             # (with respect to the instance self)
             # which implements an __init__ method. Plus the children which do not implement an __init__
             classes_up_to_first_init_in_mro = []
             for c in type(self).mro():
                 classes_up_to_first_init_in_mro.append(c)
-                if '__init__' in c.__dict__:
+                if "__init__" in c.__dict__:
                     # found an __init__, so __init__ methods in classes further up the inheritance tree
                     # should not call the __finalize_init__ method
                     break
@@ -116,7 +123,7 @@ def wrap_init_method(cls):
                 self.__finalize_init__()
 
         # reattach the wrapped __init__ to the class, so it is used instead of the original one.
-        setattr(cls, '__init__', wrapped_init)
+        setattr(cls, "__init__", wrapped_init)
 
 
 # Utility function for object creation
@@ -509,16 +516,22 @@ class GateObject:
         # check if the attribute is known, otherwise warn the user
         known_attributes = type(self).__dict__.get("known_attributes")
         if known_attributes is None:
-            raise GateImplementationError(f"Did not find 'known_attributes' in the {self.type_name}. "
-                                          f"Has the class correctly been processed by process_cls()?")
+            raise GateImplementationError(
+                f"Did not find 'known_attributes' in the {self.type_name}. "
+                f"Has the class correctly been processed by process_cls()?"
+            )
         if len(known_attributes) > 0:
             if key not in known_attributes:
                 msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
                 close_matches = get_close_matches(key, known_attributes)
-                if len(close_matches)> 0:
-                    msg_close_matches = f"Did you mean: " + " or ".join(close_matches) + "\n"
+                if len(close_matches) > 0:
+                    msg_close_matches = (
+                        f"Did you mean: " + " or ".join(close_matches) + "\n"
+                    )
                     msg += msg_close_matches
-                known_attr = ", ".join(str(a) for a in known_attributes if not a.startswith('_'))
+                known_attr = ", ".join(
+                    str(a) for a in known_attributes if not a.startswith("_")
+                )
                 msg += f"Known attributes of this object are: {known_attr}"
                 self.warn_user(msg)
                 self.number_of_warnings += 1

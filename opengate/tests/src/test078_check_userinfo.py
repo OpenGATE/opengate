@@ -23,7 +23,7 @@ def set_wrong_attribute(obj, attr):
     print(
         f"Number of warnings for {obj.type_name} object {obj.name}: {number_of_warnings_after}"
     )
-    b = (number_of_warnings_after - number_of_warnings_before == 1)
+    b = number_of_warnings_after - number_of_warnings_before == 1
     print_test(
         b, f"Tried to set a wrong attribute '{attr}'. It should print a single warning"
     )
@@ -75,9 +75,9 @@ if __name__ == "__main__":
     )
     print()
 
-    is_ok = is_ok and set_wrong_attribute(stats, 'TOTO')
-    is_ok = is_ok and set_wrong_attribute(waterbox, 'mohter')
-    is_ok = is_ok and set_wrong_attribute(sim, 'nthreads')
+    is_ok = is_ok and set_wrong_attribute(stats, "TOTO")
+    is_ok = is_ok and set_wrong_attribute(waterbox, "mohter")
+    is_ok = is_ok and set_wrong_attribute(sim, "nthreads")
 
     sim.run(start_new_process=True)
 
