@@ -153,9 +153,11 @@ void GateSPSEneDistribution::GenerateSpectrumInterpolated() {
 }
 
 std::size_t GateSPSEneDistribution::IndexForProbability(double p) const {
-  // TODO p == 1 would cause an error, can it happen?
+  // p in ]0, 1[
+  // see
+  // https://geant4-forum.web.cern.ch/t/what-is-the-range-of-numbers-generated-by-g4uniformrand/5187
   auto i = 0;
-  while (p >= (fProbabilityCDF[i]))
+  while (p >= (fProbabilityCDF[i])) // TODO -> std::
     i++;
   return i;
 }
