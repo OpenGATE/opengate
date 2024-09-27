@@ -1463,6 +1463,9 @@ class Simulation(GateObject):
     def warnings(self):
         return self._user_warnings
 
+    def reset_warnings(self):
+        self._user_warnings = []
+
     def to_dictionary(self):
         d = super().to_dictionary()
         d["volume_manager"] = self.volume_manager.to_dictionary()
