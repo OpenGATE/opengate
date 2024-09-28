@@ -68,7 +68,7 @@ def process_cls(cls):
     # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
     # because it would potentially find the attribute from already processed super classes
     # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
-    if "inherited_user_info_defaults" not in cls.__dict__:
+    if not cls.has_been_processed():
         try:
             digest_user_info_defaults(cls)
         except AttributeError:
@@ -388,6 +388,10 @@ class GateObject:
     inherited_user_info_defaults: dict
 
     user_info_defaults = {"name": (None, {"required": True})}
+
+    @classmethod
+    def has_been_processed(cls):
+        return "inherited_user_info_defaults" in cls.__dict__
 
     def __new__(cls, *args, **kwargs):
         process_cls(cls)
