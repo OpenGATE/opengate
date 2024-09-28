@@ -250,6 +250,52 @@ class PhaseSpaceSource(SourceBase):
 
     """
 
+    user_info_defaults = {
+        # Initial user info
+        'phsp_file': (None, {"doc": "FIXME"}),
+        'n': (0, {"doc": "FIXME"}),
+        'activity': (0, {"doc": "FIXME"}),
+        'half_life': (-1, {"doc": "Negative value means no half-life"}),
+        'particle': ("", {"doc": "FIXME later as key"}),
+        'entry_start': (None, {"doc": "FIXME"}),
+
+        # Global flag determines if position/direction are relative to the mother volume
+        'global_flag': (False, {"doc": "Global position/direction if True, otherwise relative to mother volume"}),
+        'batch_size': (10000, {"doc": "Batch size for processing"}),
+
+        # Phase space file keys
+        'position_key': ("PrePositionLocal", {"doc": "Branch name for position in the phsp file"}),
+        'position_key_x': (None, {"doc": "FIXME"}),
+        'position_key_y': (None, {"doc": "FIXME"}),
+        'position_key_z': (None, {"doc": "FIXME"}),
+        'direction_key': ("PreDirectionLocal", {"doc": "Branch name for direction in the phsp file"}),
+        'direction_key_x': (None, {"doc": "FIXME"}),
+        'direction_key_y': (None, {"doc": "FIXME"}),
+        'direction_key_z': (None, {"doc": "FIXME"}),
+        'energy_key': ("KineticEnergy", {"doc": "Key for energy in the phsp file"}),
+        'weight_key': ("Weight", {"doc": "Key for weight in the phsp file"}),
+        'PDGCode_key': ("PDGCode", {"doc": "Key for PDG code in the phsp file"}),
+
+        # Source transformation options
+        'translate_position': (False, {"doc": "If True, translates position relative to stored coordinates"}),
+        'rotate_direction': (False, {"doc": "If True, rotates direction relative to stored direction"}),
+
+        # Position and rotation in a Box object
+        'position': (Box({
+            'translation': ([0, 0, 0], {"doc": "Translation vector for the source position"}),
+            'rotation': (Rotation.identity().as_matrix(), {"doc": "Rotation matrix for the source position"})
+        }), {"doc": "Position information"}),
+
+        # Primary generation options
+        'generate_until_next_primary': (False, {"doc": "Generate until next primary"}),
+        'primary_lower_energy_threshold': (0, {"doc": "Lower energy threshold for primary"}),
+        'primary_PDGCode': (0, {"doc": "PDG code for primary particle"}),
+
+        # Verbosity options
+        'verbose': (False, {"doc": "Control verbosity of the process"}),
+        'verbose_batch': (False, {"doc": "Control verbosity for batch processing"})
+    }
+
     type_name = "PhaseSpaceSource"
 
     @staticmethod

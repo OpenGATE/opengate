@@ -199,6 +199,15 @@ class SourceBase(UserElement):
     Base class for all source types.
     """
 
+    user_info_defaults = {
+        'mother': (__world_name__, {"doc": "FIXME"}),
+        'start_time': (None, {"doc": "FIXME"}),
+        'end_time': (None, {"doc": "FIXME"}),
+        'n': (0, {"doc": "FIXME"}),
+        'activity': (0, {"doc": "FIXME"}),
+        'half_life': (-1, {"doc": "FIXME"})  # Example: negative value is no half-life
+    }
+
     @staticmethod
     def set_default_user_info(user_info):
         UserElement.set_default_user_info(user_info)
@@ -285,6 +294,66 @@ class GenericSource(SourceBase):
     GenericSource close to the G4 SPS, but a bit simpler.
     The G4 source created by this class is GateGenericSource.
     """
+
+    user_info_defaults = {
+        # Initial user info
+        'particle': ("gamma", {"doc": "FIXME"}),
+        'ion': (Box(), {"doc": "FIXME"}),
+        'weight': (-1, {"doc": "FIXME"}),
+        'weight_sigma': (-1, {"doc": "FIXME"}),
+        'user_particle_life_time': (-1, {"doc": "Negative means by default"}),
+        'tac_times': (None, {"doc": "FIXME"}),
+        'tac_activities': (None, {"doc": "FIXME"}),
+        'direction_relative_to_attached_volume': (False, {"doc": "FIXME"}),
+
+        # Ion info
+        'ion.Z': (0, {"doc": "Z: Atomic Number"}),
+        'ion.A': (0, {"doc": "A: Atomic Mass (nn + np + nlambda)"}),
+        'ion.E': (0, {"doc": "E: Excitation energy (for metastable states)"}),
+
+        # Position info
+        'position': (Box(), {"doc": "FIXME"}),
+        'position.type': ("point", {"doc": "FIXME"}),
+        'position.radius': (0, {"doc": "FIXME"}),
+        'position.sigma_x': (0, {"doc": "FIXME"}),
+        'position.sigma_y': (0, {"doc": "FIXME"}),
+        'position.size': ([0, 0, 0], {"doc": "FIXME"}),
+        'position.translation': ([0, 0, 0], {"doc": "FIXME"}),
+        'position.rotation': (Rotation.identity().as_matrix(), {"doc": "FIXME"}),
+        'position.confine': (None, {"doc": "FIXME"}),
+
+        # Angle (direction)
+        'direction': (Box(), {"doc": "FIXME"}),
+        'direction.type': ("iso", {"doc": "FIXME"}),
+        'direction.theta': ([0, 180 * g4_units.deg], {"doc": "FIXME"}),
+        'direction.phi': ([0, 360 * g4_units.deg], {"doc": "FIXME"}),
+        'direction.momentum': ([0, 0, 1], {"doc": "FIXME"}),
+        'direction.focus_point': ([0, 0, 0], {"doc": "FIXME"}),
+        'direction.sigma': ([0, 0], {"doc": "FIXME"}),
+        'direction.acceptance_angle': (Box(), {"doc": "FIXME"}),
+        'direction.acceptance_angle.skip_policy': ("SkipEvents", {"doc": "Can also be ZeroEnergy"}),
+        'direction.acceptance_angle.volumes': ([], {"doc": "FIXME"}),
+        'direction.acceptance_angle.intersection_flag': (False, {"doc": "FIXME"}),
+        'direction.acceptance_angle.normal_flag': (False, {"doc": "FIXME"}),
+        'direction.acceptance_angle.normal_vector': ([0, 0, 1], {"doc": "FIXME"}),
+        'direction.acceptance_angle.normal_tolerance': (3 * g4_units.deg, {"doc": "FIXME"}),
+        'direction.accolinearity_flag': (False, {"doc": "Only for back_to_back source"}),
+        'direction.histogram_theta_weight': ([], {"doc": "FIXME"}),
+        'direction.histogram_theta_angle': ([], {"doc": "FIXME"}),
+        'direction.histogram_phi_weight': ([], {"doc": "FIXME"}),
+        'direction.histogram_phi_angle': ([], {"doc": "FIXME"}),
+
+        # Energy info
+        'energy': (Box(), {"doc": "FIXME"}),
+        'energy.type': ("mono", {"doc": "FIXME"}),
+        'energy.mono': (0, {"doc": "FIXME"}),
+        'energy.sigma_gauss': (0, {"doc": "FIXME"}),
+        'energy.is_cdf': (False, {"doc": "FIXME"}),
+        'energy.min_energy': (None, {"doc": "FIXME"}),
+        'energy.max_energy': (None, {"doc": "FIXME"}),
+        'energy.histogram_weight': (None, {"doc": "FIXME"}),
+        'energy.histogram_energy': (None, {"doc": "FIXME"})
+    }
 
     type_name = "GenericSource"
 
