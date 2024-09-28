@@ -19,15 +19,26 @@ class IonPencilBeamSource(GenericSource):
 
     user_info_defaults = {
         # Position settings
-        'position': (Box({
-            'type': ("disc", {"doc": "Type of position shape"})
-        }), {"doc": "Position settings"}),
-
+        "position": (
+            Box({"type": ("disc", {"doc": "Type of position shape"})}),
+            {"doc": "Position settings"},
+        ),
         # Direction settings in a Box object
-        'direction': (Box({
-            'partPhSp_x': ([0, 0, 0, 0], {"doc": "Particle phase space in x-direction"}),
-            'partPhSp_y': ([0, 0, 0, 0], {"doc": "Particle phase space in y-direction"})
-        }), {"doc": "Direction settings"})
+        "direction": (
+            Box(
+                {
+                    "partPhSp_x": (
+                        [0, 0, 0, 0],
+                        {"doc": "Particle phase space in x-direction"},
+                    ),
+                    "partPhSp_y": (
+                        [0, 0, 0, 0],
+                        {"doc": "Particle phase space in y-direction"},
+                    ),
+                }
+            ),
+            {"doc": "Direction settings"},
+        ),
     }
 
     type_name = "IonPencilBeamSource"
@@ -74,37 +85,50 @@ class TreatmentPlanPBSource(SourceBase):
 
     user_info_defaults = {
         # Initial user info
-        'sorted_spot_generation': (False, {"doc": "Whether to sort spot generation"}),
-        'beam_model': (None, {"doc": "Model of the beam"}),
-        'plan_path': (None, {"doc": "Path for planning"}),
-        'beam_data_dict': (None, {"doc": "Dictionary for beam data"}),
-        'beam_nr': (1, {"doc": "Number of beams"}),
-        'gantry_rot_axis': ("z", {"doc": "Axis of rotation for the gantry"}),
-        'particle': (None, {"doc": "Type of particle"}),
-        'flat_generation': (False, {"doc": "Whether flat generation is enabled"}),
-
+        "sorted_spot_generation": (False, {"doc": "Whether to sort spot generation"}),
+        "beam_model": (None, {"doc": "Model of the beam"}),
+        "plan_path": (None, {"doc": "Path for planning"}),
+        "beam_data_dict": (None, {"doc": "Dictionary for beam data"}),
+        "beam_nr": (1, {"doc": "Number of beams"}),
+        "gantry_rot_axis": ("z", {"doc": "Axis of rotation for the gantry"}),
+        "particle": (None, {"doc": "Type of particle"}),
+        "flat_generation": (False, {"doc": "Whether flat generation is enabled"}),
         # Ion information in a Box object
-        'ion': (Box({
-            'Z': (0, {"doc": "Atomic Number"}),
-            'A': (0, {"doc": "Atomic Mass (nn + np + nlambda)"}),
-            'E': (0, {"doc": "Excitation energy (for metastable states)"})
-        }), {"doc": "Ion settings"}),
-
+        "ion": (
+            Box(
+                {
+                    "Z": (0, {"doc": "Atomic Number"}),
+                    "A": (0, {"doc": "Atomic Mass (nn + np + nlambda)"}),
+                    "E": (0, {"doc": "Excitation energy (for metastable states)"}),
+                }
+            ),
+            {"doc": "Ion settings"},
+        ),
         # Position information in a Box object
-        'position': (Box({
-            'translation': ([0, 0, 0], {"doc": "Translation vector for position"}),
-            'rotation': (Rotation.identity().as_matrix(), {"doc": "Rotation matrix for position"})
-        }), {"doc": "Position settings"}),
-
+        "position": (
+            Box(
+                {
+                    "translation": (
+                        [0, 0, 0],
+                        {"doc": "Translation vector for position"},
+                    ),
+                    "rotation": (
+                        Rotation.identity().as_matrix(),
+                        {"doc": "Rotation matrix for position"},
+                    ),
+                }
+            ),
+            {"doc": "Position settings"},
+        ),
         # User should not set these attributes
-        'positions': ([], {"doc": "List of positions (not user-defined)"}),
-        'rotations': ([], {"doc": "List of rotations (not user-defined)"}),
-        'energies': ([], {"doc": "List of energies (not user-defined)"}),
-        'energy_sigmas': ([], {"doc": "List of energy sigmas (not user-defined)"}),
-        'weights': ([], {"doc": "List of weights (not user-defined)"}),
-        'pdf': ([], {"doc": "Probability density function (not user-defined)"}),
-        'partPhSp_xV': ([], {"doc": "Phase space for x direction (not user-defined)"}),
-        'partPhSp_yV': ([], {"doc": "Phase space for y direction (not user-defined)"})
+        "positions": ([], {"doc": "List of positions (not user-defined)"}),
+        "rotations": ([], {"doc": "List of rotations (not user-defined)"}),
+        "energies": ([], {"doc": "List of energies (not user-defined)"}),
+        "energy_sigmas": ([], {"doc": "List of energy sigmas (not user-defined)"}),
+        "weights": ([], {"doc": "List of weights (not user-defined)"}),
+        "pdf": ([], {"doc": "Probability density function (not user-defined)"}),
+        "partPhSp_xV": ([], {"doc": "Phase space for x direction (not user-defined)"}),
+        "partPhSp_yV": ([], {"doc": "Phase space for y direction (not user-defined)"}),
     }
 
     type_name = "TreatmentPlanPBSource"

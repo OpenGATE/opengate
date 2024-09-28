@@ -32,29 +32,28 @@ class PhotonFromIonDecaySource(GenericSource):
 
     user_info_defaults = {
         # Specific user info
-        'verbose': (False, {"doc": "FIXME"}),
-
+        "verbose": (False, {"doc": "FIXME"}),
         # Binning for the TAC
-        'tac_bins': (200, {"doc": "Number of bins for the TAC"}),
-
+        "tac_bins": (200, {"doc": "Number of bins for the TAC"}),
         # Write log in the given file
-        'dump_log': (None, {"doc": "Log file to dump, if any"}),
-
+        "dump_log": (None, {"doc": "Log file to dump, if any"}),
         # Not user parameters but required before init
-        'ui_sub_sources': ([], {"doc": "Used before init; not a user parameter"}),
-        'daughters': (None, {"doc": "Used before init; not a user parameter"}),
-        'log': ("", {"doc": "Used before init; not a user parameter"}),
-
+        "ui_sub_sources": ([], {"doc": "Used before init; not a user parameter"}),
+        "daughters": (None, {"doc": "Used before init; not a user parameter"}),
+        "log": ("", {"doc": "Used before init; not a user parameter"}),
         # Both are needed but can be disabled for debugging
-        'atomic_relaxation_flag': (True, {"doc": "Controls atomic relaxation"}),
-        'isomeric_transition_flag': (True, {"doc": "Controls isomeric transitions"}),
-
+        "atomic_relaxation_flag": (True, {"doc": "Controls atomic relaxation"}),
+        "isomeric_transition_flag": (True, {"doc": "Controls isomeric transitions"}),
         # Debugging option
-        'debug_first_daughter_only': (False, {"doc": "Enable to debug only the first daughter"}),
-
+        "debug_first_daughter_only": (
+            False,
+            {"doc": "Enable to debug only the first daughter"},
+        ),
         # Gamma lines need to be computed before G4 init
-        'initialize_source_before_g4_engine': (
-        gid_build_all_sub_sources, {"doc": "Ensures gamma lines are computed before G4 initialization"})
+        "initialize_source_before_g4_engine": (
+            gid_build_all_sub_sources,
+            {"doc": "Ensures gamma lines are computed before G4 initialization"},
+        ),
     }
 
     type_name = "PhotonFromIonDecaySource"

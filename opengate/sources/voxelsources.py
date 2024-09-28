@@ -20,25 +20,39 @@ class VoxelsSource(GenericSource):
 
     user_info_defaults = {
         # Additional options
-        'image': (None, {"doc": "Image data or path"}),
-
+        "image": (None, {"doc": "Image data or path"}),
         # Position information in a Box object
-        'position': (Box({
-            'translation': ([0, 0, 0], {"doc": "Translation vector for the position"}),
-            'confine': (None, {"doc": "Constraints for position confinement"}),
-            'rotation': (Rotation.identity().as_matrix(), {"doc": "Rotation matrix for the position"})
-        }), {"doc": "Position information"}),
-
+        "position": (
+            Box(
+                {
+                    "translation": (
+                        [0, 0, 0],
+                        {"doc": "Translation vector for the position"},
+                    ),
+                    "confine": (None, {"doc": "Constraints for position confinement"}),
+                    "rotation": (
+                        Rotation.identity().as_matrix(),
+                        {"doc": "Rotation matrix for the position"},
+                    ),
+                }
+            ),
+            {"doc": "Position information"},
+        ),
         # Direction settings
-        'direction': (Box({
-            'type': ("iso", {"doc": "Type of direction"})
-        }), {"doc": "Direction settings"}),
-
+        "direction": (
+            Box({"type": ("iso", {"doc": "Type of direction"})}),
+            {"doc": "Direction settings"},
+        ),
         # Energy settings
-        'energy': (Box({
-            'type': ("mono", {"doc": "Type of energy"}),
-            'mono': (0, {"doc": "Mono energy value"})
-        }), {"doc": "Energy settings"})
+        "energy": (
+            Box(
+                {
+                    "type": ("mono", {"doc": "Type of energy"}),
+                    "mono": (0, {"doc": "Mono energy value"}),
+                }
+            ),
+            {"doc": "Energy settings"},
+        ),
     }
 
     type_name = "VoxelsSource"

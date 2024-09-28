@@ -243,37 +243,43 @@ class GANSource(GenericSource):
 
     user_info_defaults = {
         # Additional parameters
-        'pth_filename': (None, {"doc": "Path to the file"}),
-        'position_keys': (None, {"doc": "Keys for positions"}),
-        'backward_distance': (None, {"doc": "Distance for backward propagation"}),
-
+        "pth_filename": (None, {"doc": "Path to the file"}),
+        "position_keys": (None, {"doc": "Keys for positions"}),
+        "backward_distance": (None, {"doc": "Distance for backward propagation"}),
         # Backward propagation settings
-        'backward_force': (False, {"doc": "Force backward propagation if time is not managed by GAN"}),
-
-        'direction_keys': (None, {"doc": "Keys for directions"}),
-        'energy_key': (None, {"doc": "Key for energy"}),
-        'energy_min_threshold': (-1, {"doc": "Minimum energy threshold, -1 means no minimum"}),
-        'energy_max_threshold': (sys.float_info.max, {"doc": "Maximum energy threshold"}),
-
-        'weight_key': (None, {"doc": "Key for weight"}),
-        'time_key': (None, {"doc": "Key for time"}),
-        'relative_timing': (True, {"doc": "Whether timing is relative"}),
-        'batch_size': (10000, {"doc": "Batch size for processing"}),
-        'generator': (None, {"doc": "Generator for samples"}),
-        'verbose_generator': (False, {"doc": "Control verbosity of the generator"}),
-        'use_time': (False, {"doc": "Whether to use time information"}),
-        'use_weight': (False, {"doc": "Whether to use weight information"}),
-
+        "backward_force": (
+            False,
+            {"doc": "Force backward propagation if time is not managed by GAN"},
+        ),
+        "direction_keys": (None, {"doc": "Keys for directions"}),
+        "energy_key": (None, {"doc": "Key for energy"}),
+        "energy_min_threshold": (
+            -1,
+            {"doc": "Minimum energy threshold, -1 means no minimum"},
+        ),
+        "energy_max_threshold": (
+            sys.float_info.max,
+            {"doc": "Maximum energy threshold"},
+        ),
+        "weight_key": (None, {"doc": "Key for weight"}),
+        "time_key": (None, {"doc": "Key for time"}),
+        "relative_timing": (True, {"doc": "Whether timing is relative"}),
+        "batch_size": (10000, {"doc": "Batch size for processing"}),
+        "generator": (None, {"doc": "Generator for samples"}),
+        "verbose_generator": (False, {"doc": "Control verbosity of the generator"}),
+        "use_time": (False, {"doc": "Whether to use time information"}),
+        "use_weight": (False, {"doc": "Whether to use weight information"}),
         # Specific to conditional GAN
-        'cond_image': (None, {"doc": "Conditional image input"}),
-        'compute_directions': (False, {"doc": "Whether to compute directions"}),
-        'cond_debug': (False, {"doc": "Debug mode for conditional GAN"}),
-
+        "cond_image": (None, {"doc": "Conditional image input"}),
+        "compute_directions": (False, {"doc": "Whether to compute directions"}),
+        "cond_debug": (False, {"doc": "Debug mode for conditional GAN"}),
         # For skipped particles
-        'skip_policy': ("SkipEvents", {"doc": "Policy for skipped particles; can also be ZeroEnergy"}),
-
+        "skip_policy": (
+            "SkipEvents",
+            {"doc": "Policy for skipped particles; can also be ZeroEnergy"},
+        ),
         # GPU mode settings
-        'gpu_mode': ("auto", {"doc": "GPU mode: auto, cpu, or gpu"})
+        "gpu_mode": ("auto", {"doc": "GPU mode: auto, cpu, or gpu"}),
     }
 
     type_name = "GANSource"
