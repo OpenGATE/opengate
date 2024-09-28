@@ -2,6 +2,7 @@ import copy
 from pathlib import Path
 from typing import Optional, List
 from difflib import get_close_matches
+from functools import wraps
 
 from box import Box
 import sys
@@ -95,6 +96,7 @@ def wrap_init_method(cls):
     # if it is implemented, i.e. present in __dict__, wrap it
     if original_init is not None:
         # define a closure
+        @wraps(original_init)
         def wrapped_init(self, *args, **kwargs):
             # original_init is the __init__ captured in the closure
             original_init(self, *args, **kwargs)
