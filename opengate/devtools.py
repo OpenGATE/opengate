@@ -11,15 +11,18 @@ def check_classes_in_current_package(attribute_name, package_name=None,
     in all classes of the current package, optionally restricted to a sub-package.
 
     :param attribute_name: Name of the attribute to check.
-    :param attribute_type: Type of the attribute to check for (attribute, property, method).
+    :param attribute_type: Type of the attribute to check for (plain, property, method).
     :param sub_package_name: Name of the sub-package to restrict the check to (optional).
+    :param inherits_from: Restrict the chck to classes that inherit from the class provided as inherits_from.
+        Needs to be a qualified name, e.g. inherits_from=opengate.actors.ActorBase
     """
     if package_name is None:
         # Get the current package's name
         package_name = __package__
 
     if not package_name:
-        raise RuntimeError("This script needs to be part of a package to work.")
+        raise RuntimeError("You need to either provide a package name or "
+                           "this script needs to be part of a package to work.")
 
     # If a sub-package is provided, use it as the base package
     if sub_package_name:
