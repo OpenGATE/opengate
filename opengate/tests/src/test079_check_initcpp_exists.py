@@ -5,9 +5,11 @@ from opengate.base import GateObject
 from opengate.exception import GateImplementationError
 
 if __name__ == "__main__":
-    warnings = check_classes_in_current_package('__initcpp__', package_name='opengate',
-                                                sub_package_name='actors', inherits_from='opengate.actors.base.ActorBase')
+    warnings = check_classes_in_current_package('__initcppp__',
+                                                package_name='opengate',
+                                                sub_package_name='actors',
+                                                inherits_from='opengate.actors.base.ActorBase')
     print(warnings)
     if len(warnings):
-        raise GateImplementationError("Some GateObjects do not implement a '__finalize_init__' method: \n"
+        raise GateImplementationError("Some GateObjects do not implement a '__initcpp__' method: \n"
                                       f"{warnings}")
