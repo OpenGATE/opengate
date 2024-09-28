@@ -76,9 +76,9 @@ def process_cls(cls):
                 "Looks like you are calling process_cls on a class "
                 "that does not inherit from GateObject."
             )
-        # this class attribute is needed by the __setattr__ method of GateObject
+        # the class attribute known_attributes is needed by the __setattr__ method of GateObject
         cls.known_attributes = set()
-        # enhance the __init__ method
+        # enhance the __init__ method to ensure __finalize_init__ is called at the end
         wrap_init_method(cls)
 
 
