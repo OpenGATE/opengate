@@ -32,7 +32,6 @@ def check_classes_in_current_package(attribute_name, package_name=None,
         instance_of_module = importlib.import_module('.'.join(inherits_from.split('.')[:-1]))
         instance_of_class_name = inherits_from.split('.')[-1]
         instance_of_class = [c for k, c in inspect.getmembers(instance_of_module) if k == instance_of_class_name][0]
-        print(instance_of_class)
 
     # Import the target package (current or sub-package)
     package = importlib.import_module(package_name)
