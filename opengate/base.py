@@ -1,11 +1,19 @@
 import copy
 from pathlib import Path
 from typing import Optional, List
+from difflib import get_close_matches
+from functools import wraps
 
 from box import Box
 import sys
 
-from .exception import fatal, warning, GateDeprecationError, GateFeatureUnavailableError
+from .exception import (
+    fatal,
+    warning,
+    GateDeprecationError,
+    GateFeatureUnavailableError,
+    GateImplementationError,
+)
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
@@ -49,23 +57,75 @@ class MetaUserInfo(type):
 
 
 def process_cls(cls):
-    """Digest the class's user_infos and store the augmented class
-    in a dictionary inside the metaclass which handles the class creation.
-    Example: type(cls) yields the metaclass MetaUserInfo for the class GateObject.
+    """The factory function is meant to process classes inheriting from GateObject.
+    It digests the user info parametrisation from all classes in the inheritance tree
+    and enhances the __init__ method, so it calls the __finalize_init__ method at the
+    very end of the __init__ call, which is required to check for invalid attribute setting.
     """
-    # check if the class already has an attribute inherited_user_info_defaults
-    # cannot use hasattr because it would find the attribute from already processed super classes
-    # -> must use __dict__ which contains only attribute of the specific cls object
-    if "inherited_user_info_defaults" not in cls.__dict__:
+    # The class attribute inherited_user_info_defaults is exclusively set by this factory function
+    # Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
+    # it means that it has not been processed yet.
+    # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
+    # because it would potentially find the attribute from already processed super classes
+    # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
+    if not cls.has_been_processed():
         try:
-            # type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
             digest_user_info_defaults(cls)
         except AttributeError:
-            fatal(
-                "Developer error: Looks like you are calling process_cls on a class "
+            raise GateImplementationError(
+                "Looks like you are calling process_cls on a class "
                 "that does not inherit from GateObject."
             )
+        # the class attribute known_attributes is needed by the __setattr__ method of GateObject
         cls.known_attributes = set()
+        # enhance the __init__ method to ensure __finalize_init__ is called at the end
+        wrap_init_method(cls)
+
+
+def wrap_init_method(cls):
+    """This is a factory function to process classes which inherit from GateObject.
+    It is called from the main factory function process_cls().
+    This function wraps and reattaches the __init__ method of this class, if it implements one.
+    The wrapped __init__ first calls the "original" __init__ and subsequently the method
+    __finalize_init__, which has a base implementation in GateObject,
+    in case the __init__ is the furthest down in the inheritance chain.
+    The method __finalize_init__ is needed to allow GateObject.__setattr__ to check for invalid attribute setting.
+    """
+    # Get the __init__ method as the class implements it
+    original_init = cls.__dict__.get("__init__")
+    # if it is implemented, i.e. present in __dict__, wrap it
+    if original_init is not None:
+        # define a closure
+        @wraps(original_init)
+        def wrapped_init(self, *args, **kwargs):
+            # original_init is the __init__ captured in the closure
+            original_init(self, *args, **kwargs)
+            # figure out in which class the __init__ method is implemented.
+            # It could be in some super class with respect to the instance self.
+            class_to_which_original_init_belongs = vars(
+                sys.modules[original_init.__module__]
+            )[original_init.__qualname__.split(".")[0]]
+            # Now figure out which is the "last" class in the inheritance chain
+            # (with respect to the instance self)
+            # which implements an __init__ method. Plus the children which do not implement an __init__
+            classes_up_to_first_init_in_mro = []
+            for c in type(self).mro():
+                classes_up_to_first_init_in_mro.append(c)
+                if "__init__" in c.__dict__:
+                    # found an __init__, so __init__ methods in classes further up the inheritance tree
+                    # should not call the __finalize_init__ method
+                    break
+            # Now check if the class in which the __init__ we are wrapping is implemented
+            # is among the previously extracted classes.
+            # If that is the case, the call to this __init__ will be the last one to terminate
+            # in the chain if super().__init__() calls.
+            # In other words, we are at the very end of __init__, including calls to super classes,
+            # and it is time to call __finalize_init__
+            if class_to_which_original_init_belongs in classes_up_to_first_init_in_mro:
+                self.__finalize_init__()
+
+        # reattach the wrapped __init__ to the class, so it is used instead of the original one.
+        setattr(cls, "__init__", wrapped_init)
 
 
 # Utility function for object creation
@@ -329,17 +389,20 @@ class GateObject:
 
     user_info_defaults = {"name": (None, {"required": True})}
 
+    @classmethod
+    def has_been_processed(cls):
+        return "inherited_user_info_defaults" in cls.__dict__
+
     def __new__(cls, *args, **kwargs):
         process_cls(cls)
         new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
     def __init__(self, *args, simulation=None, **kwargs):
-        self.simulation = None
-        if simulation is not None:
-            self.simulation = simulation
+        self._simulation = simulation
         # keep internal number of raised warnings (for debug)
         self.number_of_warnings = 0
+        self._temporary_warning_cache = []
         # prefill user info with defaults
         self.user_info = Box(
             [
@@ -375,6 +438,16 @@ class GateObject:
                     f"Hint: The user input parameters of {type(self).__name__} are: "
                     f"{list(self.inherited_user_info_defaults.keys())}.\n"
                 )
+
+    @property
+    def simulation(self):
+        return self._simulation
+
+    @simulation.setter
+    def simulation(self, sim):
+        sim.warnings.extend(self._temporary_warning_cache)
+        self._temporary_warning_cache = []
+        self._simulation = sim
 
     def __str__(self):
         ret_string = (
@@ -447,13 +520,26 @@ class GateObject:
             )
 
         # check if the attribute is known, otherwise warn the user
-        if len(self.known_attributes) > 0:
-            if key not in self.known_attributes:
-                s = ", ".join(str(a) for a in self.known_attributes)
-                self.warn_user(
-                    f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
-                    f"Known attributes of this object are: {s}"
+        known_attributes = type(self).__dict__.get("known_attributes")
+        if known_attributes is None:
+            raise GateImplementationError(
+                f"Did not find 'known_attributes' in the {self.type_name}. "
+                f"Has the class correctly been processed by process_cls()?"
+            )
+        if len(known_attributes) > 0:
+            if key not in known_attributes:
+                msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                close_matches = get_close_matches(key, known_attributes)
+                if len(close_matches) > 0:
+                    msg_close_matches = (
+                        f"Did you mean: " + " or ".join(close_matches) + "\n"
+                    )
+                    msg += msg_close_matches
+                known_attr = ", ".join(
+                    str(a) for a in known_attributes if not a.startswith("_")
                 )
+                msg += f"Known attributes of this object are: {known_attr}"
+                self.warn_user(msg)
                 self.number_of_warnings += 1
         super().__setattr__(key, value)
 
@@ -473,11 +559,7 @@ class GateObject:
         """
 
         # we define this at the class-level
-        type(self).known_attributes = set(
-            list(self.user_info.keys())
-            + list(self.__dict__.keys())
-            + list(["__dict__"])
-        )
+        type(self).known_attributes = set(dir(self))
 
     def __add_to_simulation__(self):
         """Hook method which can be called by managers.
@@ -553,11 +635,14 @@ class GateObject:
                         )
 
     def warn_user(self, message):
-        # this may be called without simulation object, so we guard with try/except
-        try:
+        # If this GateObject does not (yet) have a reference to the simulation,
+        # we store the warning in a temporary cache
+        # (will be registered later to the simulation's warning cache)
+        if self.simulation is None:
+            self._temporary_warning_cache.append(message)
+        # if possible, register the warning directly
+        else:
             self.simulation._user_warnings.append(message)
-        except:
-            pass
         warning(message)
 
 

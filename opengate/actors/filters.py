@@ -36,7 +36,6 @@ class FilterBase(GateObject):
     def __setstate__(self, state):
         self.__dict__ = state
         self.__initcpp__()
-        self.__finalize_init__()
 
 
 class ParticleFilter(FilterBase, g4.GateParticleFilter):
@@ -56,7 +55,6 @@ class ParticleFilter(FilterBase, g4.GateParticleFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateParticleFilter.__init__(self)
@@ -86,7 +84,6 @@ class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
@@ -109,7 +106,6 @@ class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
@@ -148,7 +144,6 @@ class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateThresholdAttributeFilter.__init__(self)
@@ -166,7 +161,6 @@ class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):
     def __init__(self, *args, **kwargs):
         FilterBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateUnscatteredPrimaryFilter.__init__(self)

@@ -496,7 +496,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.user_output.density.set_item_suffix("density")
 
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateDoseActor.__init__(self, self.user_info)
@@ -824,7 +823,6 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         self.user_output.let.set_write_to_disk(True, item="quotient")
 
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateLETActor.__init__(self, self.user_info)
@@ -911,7 +909,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self._add_user_output(ActorOutputSingleImage, "fluence")
 
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateFluenceActor.__init__(self, self.user_info)

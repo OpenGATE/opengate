@@ -237,6 +237,12 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         return_dict["_is_constructed"] = False
         return return_dict
 
+    def __finalize_init__(self):
+        super().__finalize_init__()
+        # need to add this explciitly because anytree does not properly declare
+        # the attribute __parent in the NodeMixin.__init__ which leads to falls warnings
+        self.known_attributes.add("_NodeMixin__parent")
+
     def _update_node(self):
         """Internal method which retrieves the volume object
         from the volume manager based on the mother's name stored as user info 'mother'
