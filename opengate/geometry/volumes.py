@@ -239,9 +239,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
 
     def __finalize_init__(self):
         super().__finalize_init__()
-        # need to add this explciitly because anytree does not properly declare
+        # need to add this explicitly because anytree does not properly declare
         # the attribute __parent in the NodeMixin.__init__ which leads to falls warnings
         self.known_attributes.add("_NodeMixin__parent")
+        self.known_attributes.add("_NodeMixin__children")
 
     def _update_node(self):
         """Internal method which retrieves the volume object
