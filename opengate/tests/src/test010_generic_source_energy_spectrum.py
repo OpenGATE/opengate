@@ -9,17 +9,22 @@ import gatetools
 import matplotlib.pyplot as plt
 
 
-def plot(output_file, ekin, data_x, data_y):
+def plot(output_file, ekin, data_x, data_y, relerrs):
     bins = len(data_x)
     hist_y, hist_x = np.histogram(ekin, bins=bins)
 
     fig, ax = plt.subplots(figsize=(8.5, 6))
     ax.set_xlabel("Energy (MeV)")
     ax.set_ylabel("Number of particles")
-    ax.plot(data_x, data_y, label="input energy spectrum")
-    ax.hist(ekin, bins=bins, label="simulated energy spectrum histogram")
-    ax.plot(data_x, hist_y, label="simulated energy spectrum")
+    ax.plot(data_x, data_y, label="input energy spectrum", marker="o")
+    ax.plot(data_x, hist_y, label="simulated energy spectrum", marker="o")
     ax.legend()
+
+    ax2 = ax.twinx()
+    ax2.set_ylabel("Relative uncertainty")
+    ax2.set_ylim([0, 0.05])
+    ax2.plot(data_x, relerrs, label="relative uncertainty", linewidth=0.4)
+
     fig.savefig(output_file, dpi=300)
     plt.close(fig)
 
@@ -63,8 +68,9 @@ def test(paths, spectrum_type: str):
     phsp.rmax = 1 * m
     phsp.material = world.material
 
-    spectrum_energy, spectrum_weight = gate.sources.generic.get_ion_energy_spectrum(
-        "Re186"
+    spectrum = gate.sources.generic.get_ion_energy_spectrum(
+        # "Re186"
+        "Lu177"
     )
 
     source = sim.add_source("GenericSource", "beam")
@@ -73,10 +79,11 @@ def test(paths, spectrum_type: str):
     source.n = 5e5 / sim.number_of_threads
     source.position.type = "point"
     source.direction.type = "iso"
-    source.energy.type = "spectrum"
-    source.energy.spectrum_type = spectrum_type
-    source.energy.spectrum_energy = spectrum_energy
-    source.energy.spectrum_weight = spectrum_weight
+    source.energy.type = "spectrum_histogram"
+    source.energy.spectrum_energy_bin_edges = spectrum["energy_bin_edges"]
+    source.energy.spectrum_weights = spectrum["weights"]
+    if spectrum_type == "interpolated":
+        source.energy.spectrum_histogram_interpolation = "linear"
 
     # actors
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -95,11 +102,12 @@ def test(paths, spectrum_type: str):
     sim.run(start_new_process=True)
 
     # get info
-    data_x = source.energy.spectrum_energy
+    bin_edges = source.energy.spectrum_energy_bin_edges
+    data_x = [(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(len(bin_edges) - 1)]
     data_y = (
-        np.array(source.energy.spectrum_weight)
+        np.array(source.energy.spectrum_weights)
         * source.n
-        / np.sum(source.energy.spectrum_weight)
+        / np.sum(source.energy.spectrum_weights)
     )
 
     bins = len(data_x)
@@ -119,6 +127,7 @@ def test(paths, spectrum_type: str):
         ekin,
         data_x,
         data_y,
+        relerrs,
     )
 
     utility.test_ok(is_ok)
@@ -129,6 +138,6 @@ if __name__ == "__main__":
         __file__, "test010_generic_source_energy_spectrum", output_folder="test010"
     )
 
-    test(paths, "discrete")
+    # test(paths, "discrete")
     test(paths, "histogram")
-    # test(paths, "interpolated")  # relative error ok until last values
+    test(paths, "interpolated")  # relative error ok until last values

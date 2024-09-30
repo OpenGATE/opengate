@@ -57,10 +57,9 @@ def sim_source_test(sim, activity):
     s1.position.translation = [0, 0, 0]
     s1.direction.type = "momentum"
     s1.direction.momentum = [0, 0, -1]
-    s1.energy.type = "spectrum"
-    s1.energy.spectrum_type = "discrete"
-    s1.energy.spectrum_energy = e
-    s1.energy.spectrum_weight = w
+    s1.energy.type = "spectrum_discrete"
+    s1.energy.spectrum_energies = e
+    s1.energy.spectrum_weights = w
 
     # second sphere
     s2 = sim.add_source("GenericSource", "s2")
@@ -70,10 +69,9 @@ def sim_source_test(sim, activity):
     s2.position.radius = 15 * mm
     s2.position.translation = [15 * cm, 0, 0]
     s2.direction.type = "iso"
-    s2.energy.type = "spectrum"
-    s2.energy.spectrum_type = "discrete"
-    s2.energy.spectrum_energy = e
-    s2.energy.spectrum_weight = w
+    s2.energy.type = "spectrum_discrete"
+    s2.energy.spectrum_energies = e
+    s2.energy.spectrum_weights = w
 
     # third sphere
     s3 = sim.add_source("GenericSource", "s3")
@@ -83,10 +81,9 @@ def sim_source_test(sim, activity):
     s3.position.radius = 28 * mm
     s3.position.translation = [-10 * cm, 5 * cm, 0]
     s3.direction.type = "iso"
-    s3.energy.type = "spectrum"
-    s3.energy.spectrum_type = "discrete"
-    s3.energy.spectrum_energy = e
-    s3.energy.spectrum_weight = w
+    s3.energy.type = "spectrum_discrete"
+    s3.energy.spectrum_energies = e
+    s3.energy.spectrum_weights = w
 
     return s1, s2, s3
 
