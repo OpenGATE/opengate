@@ -184,16 +184,19 @@ def get_ion_energy_spectrum(ion: str):
     with open(path, "r") as f:
         data = json.load(f)
 
-    return data[ion]["energy"], data[ion]["weight"]
+    bin_edges = data[ion]["energy_bin_edges"]
+    n = len(bin_edges) - 1
+    data[ion]["energies"] = [(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(n)]
+
+    return data[ion]
 
 
 def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_gamma_energy_spectrum(rad)
     source.particle = "gamma"
-    source.energy.type = "spectrum"
-    source.energy.spectrum_type = "discrete"
-    source.energy.spectrum_weight = w
-    source.energy.spectrum_energy = en
+    source.energy.type = "spectrum_discrete"
+    source.energy.spectrum_weights = w
+    source.energy.spectrum_energies = en
 
 
 def get_source_skipped_events(sim, source_name):
@@ -367,9 +370,10 @@ class GenericSource(SourceBase):
         user_info.energy.max_energy = None
         user_info.energy.histogram_weight = None
         user_info.energy.histogram_energy = None
-        user_info.energy.spectrum_type = None
-        user_info.energy.spectrum_weight = None
-        user_info.energy.spectrum_energy = None
+        user_info.energy.spectrum_weights = None
+        user_info.energy.spectrum_energies = None
+        user_info.energy.spectrum_energy_bin_edges = None
+        user_info.energy.spectrum_histogram_interpolation = None
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -430,7 +434,8 @@ class GenericSource(SourceBase):
             "O15_analytic",
             "C11_analytic",
             "histogram",
-            "spectrum",
+            "spectrum_discrete",
+            "spectrum_histogram",
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
@@ -439,19 +444,6 @@ class GenericSource(SourceBase):
                 f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
                 f"Available types are {l}"
             )
-
-        # check energy spectrum type if not None
-        valid_spectrum_types = [
-            "discrete",
-            "histogram",
-            "interpolated",
-        ]
-        if self.user_info.energy.spectrum_type is not None:
-            if self.user_info.energy.spectrum_type not in valid_spectrum_types:
-                fatal(
-                    f"Cannot find the energy spectrum type {self.user_info.energy.spectrum_type} for the source {self.user_info.name}.\n"
-                    f"Available types are {valid_spectrum_types}"
-                )
 
         # special case for beta plus energy spectra
         # FIXME put this elsewhere
