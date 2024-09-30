@@ -174,8 +174,8 @@ def create_simulation(sim, paths, colli="lehr"):
         sim, "spect1_crystal", "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
-    #singles_actor = sim.actor_manager.get_actor(f"Singles_spect1_crystal")
-    #singles_actor.output_filename = "test038_gan_singles.root"
+    # singles_actor = sim.actor_manager.get_actor(f"Singles_spect1_crystal")
+    # singles_actor.output_filename = "test038_gan_singles.root"
 
     # motion of the spect, create also the run time interval
     """heads = [spect1]  # [spect1, spect2]
