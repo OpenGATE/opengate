@@ -39,7 +39,7 @@ def add_iec_phantom(
     create_material(simulation)
 
     # check overlap only for debug
-    simulation.g4_check_overlap_flag = check_overlap
+    simulation.check_volumes_overlap = check_overlap
 
     # Outside structure
     iec, _, _ = add_iec_body(simulation, name)

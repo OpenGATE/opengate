@@ -37,7 +37,7 @@ def add_linac(sim, name="linac", sad=1000):
     # sim.volume_manager.add_material_database('../contrib/elekta_synergy_materials.db')
 
     # check overlap
-    sim.g4_check_overlap_flag = True
+    sim.check_volumes_overlap = True
 
     # global box
     linac = add_empty_linac_box(sim, name, sad)
