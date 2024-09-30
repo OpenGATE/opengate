@@ -8,6 +8,8 @@
 #include "GateSPSEneDistribution.h"
 #include "G4UnitsTable.hh"
 #include "GateHelpers.h"
+#include "fmt/color.h"
+#include "fmt/core.h"
 #include <Randomize.hh>
 #include <cstdlib>
 #include <limits>
@@ -29,8 +31,8 @@ G4double GateSPSEneDistribution::VGenerateOne(G4ParticleDefinition *d) {
     GenerateSpectrumLines();
   else if (GetEnergyDisType() == "spectrum_histogram")
     GenerateSpectrumHistogram();
-  else if (GetEnergyDisType() == "spectrum_interpolated")
-    GenerateSpectrumInterpolated();
+  else if (GetEnergyDisType() == "spectrum_histogram_linear")
+    GenerateSpectrumHistogramInterpolated();
   else
     fParticleEnergy = G4SPSEneDistribution::GenerateOne(d);
   return fParticleEnergy;
@@ -121,17 +123,14 @@ void GateSPSEneDistribution::GenerateSpectrumLines() {
 
 void GateSPSEneDistribution::GenerateSpectrumHistogram() {
   auto const i = IndexForProbability(G4UniformRand());
-  if (i == 0)
-    fParticleEnergy = G4RandFlat::shoot(GetEmin(), fEnergyCDF[0]);
-  else
-    fParticleEnergy = G4RandFlat::shoot(fEnergyCDF[i - 1], fEnergyCDF[i]);
+  fParticleEnergy = G4RandFlat::shoot(fEnergyCDF[i], fEnergyCDF[i + 1]);
 }
 
-void GateSPSEneDistribution::GenerateSpectrumInterpolated() {
+void GateSPSEneDistribution::GenerateSpectrumHistogramInterpolated() {
   auto const i = IndexForProbability(G4UniformRand());
 
-  auto const &a = fEnergyCDF[i];
-  auto const &b = fEnergyCDF[i + 1];
+  auto const a = (fEnergyCDF[i] + fEnergyCDF[i + 1]) / 2;
+  auto const b = (fEnergyCDF[i + 1] + fEnergyCDF[i + 2]) / 2;
   auto const d = fProbabilityCDF[i + 1] - fProbabilityCDF[i];
 
   if (std::abs(d) < std::numeric_limits<double>::epsilon()) {

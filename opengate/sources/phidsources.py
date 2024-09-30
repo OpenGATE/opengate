@@ -1158,12 +1158,11 @@ def gid_build_one_sub_source(stype, ui, daughter, ene, w, first_nuclide):
     s._name = f"{ui.name}_{stype}_{daughter.nuclide.nuclide}"
     # additional info, specific to ion gamma source
     s.particle = "gamma"
-    s.energy.type = "spectrum"
-    s.energy.spectrum_type = "discrete"
+    s.energy.type = "spectrum_discrete"
     s.energy.ion_gamma_mother = Box({"z": first_nuclide.Z, "a": first_nuclide.A})
     s.energy.ion_gamma_daughter = ion_gamma_daughter
-    s.energy.spectrum_weight = w
-    s.energy.spectrum_energy = ene
+    s.energy.spectrum_weights = w
+    s.energy.spectrum_energies = ene
     s.activity = ui.activity
     s.n = ui.n
     # prepare times and activities that will be set during initialisation

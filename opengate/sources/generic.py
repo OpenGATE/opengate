@@ -185,16 +185,19 @@ def get_ion_energy_spectrum(ion: str):
     with open(path, "r") as f:
         data = json.load(f)
 
-    return data[ion]["energy"], data[ion]["weight"]
+    bin_edges = data[ion]["energy_bin_edges"]
+    n = len(bin_edges) - 1
+    data[ion]["energies"] = [(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(n)]
+
+    return data[ion]
 
 
 def set_source_rad_energy_spectrum(source, rad):
     w, en = get_rad_gamma_energy_spectrum(rad)
     source.particle = "gamma"
-    source.energy.type = "spectrum"
-    source.energy.spectrum_type = "discrete"
-    source.energy.spectrum_weight = w
-    source.energy.spectrum_energy = en
+    source.energy.type = "spectrum_discrete"
+    source.energy.spectrum_weights = w
+    source.energy.spectrum_energies = en
 
 
 def get_source_skipped_events(sim, source_name):
@@ -514,7 +517,8 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             "O15_analytic",
             "C11_analytic",
             "histogram",
-            "spectrum",
+            "spectrum_discrete",
+            "spectrum_histogram",
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
