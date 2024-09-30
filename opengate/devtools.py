@@ -13,8 +13,7 @@ def get_attribute_type(attribute):
 
 
 def check_if_class_has_attribute(cls, attribute_name=None, attribute_type=None):
-    """Check if the class has the desired attribute
-    """
+    """Check if the class has the desired attribute"""
     if attribute_name is None:
         raise ValueError("kwarg 'attribute_name' is required. ")
     warning = None
@@ -33,16 +32,19 @@ def check_if_class_has_attribute(cls, attribute_name=None, attribute_type=None):
                 elif found_attribute_type == "plain":
                     warning = base_msg + "plain attribute."
     else:
-        warning = (f"Class {cls.__name__} in module {cls.__module__} "
-                   f"does NOT have the attribute '{attribute_name}'.")
+        warning = (
+            f"Class {cls.__name__} in module {cls.__module__} "
+            f"does NOT have the attribute '{attribute_name}'."
+        )
     return warning
+
 
 def apply_class_check_to_package(
     check_func,
     package_name=None,
     sub_package_name=None,
     inherits_from=None,
-    func_kwargs=None
+    func_kwargs=None,
 ):
     """
     Checks for the presence of a certain attribute type (attribute, property, or method)
