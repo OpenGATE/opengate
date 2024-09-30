@@ -97,7 +97,7 @@ def read_stat_file_legacy(filename):
             stat.track_types_flag = True
             counts.track_types = {}
         if "Date" in line:
-            stat.date = line[len("# Date                       =") :]
+            counts.start_time = line[len("# Date                       =") :]
         if "Threads" in line:
             a = line[len(f"# Threads                    =") :]
             try:
