@@ -174,7 +174,7 @@ if __name__ == "__main__":
     is_ok = t(0.8, v4) and is_ok
 
     stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref.txt")
-    stats_ref.counts.run_count = sim.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.05) and is_ok
 
     utility.test_ok(is_ok)

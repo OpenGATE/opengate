@@ -145,8 +145,8 @@ if __name__ == "__main__":
     is_ok = is_ok and b
 
     # check thread
-    b = sim.number_of_threads * len(sim.run_timing_intervals) == stats.counts.run_count
-    utility.print_test(b, f"Number of run: {stats.counts.run_count}")
+    b = sim.number_of_threads * len(sim.run_timing_intervals) == stats.counts.runs
+    utility.print_test(b, f"Number of run: {stats.counts.runs}")
 
     is_ok = is_ok and b
 
