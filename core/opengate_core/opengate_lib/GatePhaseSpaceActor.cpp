@@ -185,12 +185,14 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 }
 
 void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
+  std::cout << __func__ << std::endl;
   // For a given event, when no step never reach the phsp:
   // if the option is on, we store a "fake" step, with the event information.
   // All other attributes will be "empty" (mostly 0)
   auto &l = fThreadLocalData.Get();
   if (fStoreAbsorbedEvent && !l.fCurrentEventHasBeenStored) {
     // Put empty value for all attributes
+    std::cout << "coucou0" << std::endl;
     fHits->FillDigiWithEmptyValue();
 
     // Except EventPosition
@@ -198,26 +200,31 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     auto p = event->GetPrimaryVertex(0)->GetPosition();
     auto &values = att->Get3Values();
     values.back() = p;
+    std::cout << "coucou1" << std::endl;
 
     // Except EventID
     att = fHits->GetDigiAttribute("EventID");
     auto &values_id = att->GetIValues();
     values_id.back() = event->GetEventID();
+    std::cout << "coucou2" << std::endl;
 
     // Except EventDirection
     att = fHits->GetDigiAttribute("EventDirection");
     auto &values_dir = att->Get3Values();
     auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
     values_dir.back() = d;
+    std::cout << "coucou3" << std::endl;
 
     // Except EventKineticEnergy
     att = fHits->GetDigiAttribute("EventKineticEnergy");
     auto &values_en = att->GetDValues();
     auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
     values_en.back() = e;
+    std::cout << "coucou4" << std::endl;
 
     // increase the nb of absorbed events
     fNumberOfAbsorbedEvents++;
+    std::cout << "coucou5" << std::endl;
   }
 }
 
