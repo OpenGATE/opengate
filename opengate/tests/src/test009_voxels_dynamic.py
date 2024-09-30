@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    stats.counts.run_count = 1
+    stats.counts.runs = 1
     print(
         "Setting run count to 1, although more than 1 run was used in the simulation. "
         "This is to avoid a wrongly failing test."

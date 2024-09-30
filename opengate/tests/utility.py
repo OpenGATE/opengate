@@ -1,3 +1,4 @@
+import json
 import itk
 import numpy as np
 import os
@@ -22,7 +23,6 @@ from ..utility import (
 )
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_from_array, write_itk_image
-from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
 plt = LazyModuleLoader("matplotlib.pyplot")
@@ -49,7 +49,25 @@ def test_ok(is_ok=False, exceptions=None):
         sys.exit(-1)
 
 
-def read_stat_file(filename):
+def read_stat_file(filename, encoder="legacy"):
+    if encoder == "json":
+        return read_stat_file_json(filename)
+    return read_stat_file_legacy(filename)
+
+
+def read_stat_file_json(filename):
+    with open(filename, "r") as f:
+        data = json.load(f)
+    r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
+    counts = {}
+    for k, d in data.items():
+        counts[k] = d["value"]
+    stat = SimulationStatisticsActor(name=r)
+    stat.user_output.stats.store_data(counts)
+    return stat
+
+
+def read_stat_file_legacy(filename):
     p = os.path.abspath(filename)
     with open(p, "r") as f:
         lines = f.readlines()
@@ -59,13 +77,13 @@ def read_stat_file(filename):
     read_track = False
     for line in lines:
         if "NumberOfRun" in line:
-            counts.run_count = int(line[len("# NumberOfRun    =") :])
+            counts.runs = int(line[len("# NumberOfRun    =") :])
         if "NumberOfEvents" in line:
-            counts.event_count = int(line[len("# NumberOfEvents = ") :])
+            counts.events = int(line[len("# NumberOfEvents = ") :])
         if "NumberOfTracks" in line:
-            counts.track_count = int(line[len("# NumberOfTracks =") :])
+            counts.tracks = int(line[len("# NumberOfTracks =") :])
         if "NumberOfSteps" in line:
-            counts.step_count = int(line[len("# NumberOfSteps  =") :])
+            counts.steps = int(line[len("# NumberOfSteps  =") :])
         sec = g4_units.s
         if "ElapsedTimeWoInit" in line:
             counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
@@ -100,21 +118,33 @@ def print_test(b, s):
     return b
 
 
-def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
-    output1 = stats_actor_1.user_output.stats
-    output2 = stats_actor_2.user_output.stats
+def assert_stats(stats_actor_1, stats_actor_2, tolerance=0):
+    return assert_stats_json(
+        stats_actor_1.user_output.stats,
+        stats_actor_2.user_output.stats,
+        tolerance,
+        track_types_flag=stats_actor_1.track_types_flag,
+    )
+
+
+def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_flag=None):
+    output1 = stats_actor_1  # .user_output.stats
+    output2 = stats_actor_2  # .user_output.stats
+    if track_types_flag is None:
+        track_types_flag = len(output1.track_types) > 0
+
     counts1 = output1.merged_data
     counts2 = output2.merged_data
-    if counts2.event_count != 0:
-        event_d = counts1.event_count / counts2.event_count * 100 - 100
+    if counts2.events != 0:
+        event_d = counts1.events / counts2.events * 100 - 100
     else:
         event_d = 100
-    if counts2.track_count != 0:
-        track_d = counts1.track_count / counts2.track_count * 100 - 100
+    if counts2.tracks != 0:
+        track_d = counts1.tracks / counts2.tracks * 100 - 100
     else:
         track_d = 100
-    if counts1.step_count != 0:
-        step_d = counts1.step_count / counts2.step_count * 100 - 100
+    if counts1.steps != 0:
+        step_d = counts1.steps / counts2.steps * 100 - 100
     else:
         step_d = 100
     if output2.pps != 0:
@@ -132,30 +162,30 @@ def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
     else:
         sps_d = 100
 
-    b = counts1.run_count == counts2.run_count
-    is_ok = b and is_ok
-    print_test(b, f"Runs:         {counts1.run_count} {counts2.run_count}")
+    b = counts1.runs == counts2.runs
+    is_ok = b
+    print_test(b, f"Runs:         {counts1.runs} {counts2.runs}")
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
     st = f"(tol = {tolerance * 100:.2f} %)"
     print_test(
         b,
-        f"Events:       {counts1.event_count} {counts2.event_count} : {event_d:+.2f} %  {st}",
+        f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  {st}",
     )
 
     b = abs(track_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Tracks:       {counts1.track_count} {counts2.track_count} : {track_d:+.2f} %  {st}",
+        f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  {st}",
     )
 
     b = abs(step_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Steps:        {counts1.step_count} {counts2.step_count} : {step_d:+.2f} %  {st}",
+        f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  {st}",
     )
 
     print_test(
@@ -175,7 +205,7 @@ def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
     )
 
     # particles types (Track)
-    if stats_actor_1.track_types_flag and stats_actor_1.track_types_flag:
+    if track_types_flag:
         for item in counts1.track_types:
             v1 = counts1.track_types[item]
             if item in counts2.track_types:
@@ -193,15 +223,15 @@ def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
                 print_test(b, f"Track {item:8}0 {v2}")
 
     # consistency check
-    if stats_actor_1.track_types_flag:
+    if track_types_flag:
         n = 0
         for t in counts1.track_types.values():
             n += int(t)
-        b = n == counts1.track_count
+        b = n == counts1.tracks
         print_test(b, f"Tracks      : {counts1.track_types}")
         if "track_types" in counts2:
             print_test(b, f"Tracks (ref): {counts2.track_types}")
-        print_test(b, f"Tracks vs track_types : {counts1.track_count} {n}")
+        print_test(b, f"Tracks vs track_types : {counts1.tracks} {n}")
         is_ok = b and is_ok
 
     return is_ok
@@ -315,8 +345,8 @@ def assert_images(
 
     # normalise by event
     if stats is not None:
-        d1 = d1 / stats.counts.event_count
-        d2 = d2 / stats.counts.event_count
+        d1 = d1 / stats.counts.events
+        d2 = d2 / stats.counts.events
 
     # normalize by sum of d1
     s = np.sum(d2)
@@ -408,8 +438,8 @@ def assert_filtered_imagesprofile1D(
 
     # normalise by event
     if stats is not None:
-        d1 = d1 / stats.counts.event_count
-        d2 = d2 / stats.counts.event_count
+        d1 = d1 / stats.counts.events
+        d2 = d2 / stats.counts.events
 
     mean_deviation = np.mean(d2 / d1 - 1) * 100
     max_deviation = np.amax(np.abs(d1 / d2 - 1)) * 100

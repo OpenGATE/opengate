@@ -77,7 +77,7 @@ if __name__ == "__main__":
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    stats_ref.counts.run_count = sim.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
 
     utility.test_ok(is_ok)

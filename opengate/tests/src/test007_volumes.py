@@ -215,10 +215,10 @@ if __name__ == "__main__":
     # check
     stats_ref = gate.actors.miscactors.SimulationStatisticsActor(name="ref")
     c = stats_ref.counts
-    c.run_count = 1
-    c.event_count = 1280
-    c.track_count = 17034  # 25668
-    c.step_count = 78096  # 99465
+    c.runs = 1
+    c.events = 1280
+    c.tracks = 17034  # 25668
+    c.steps = 78096  # 99465
     # stats_ref.pps = 506.6
     sec = gate.g4_units.second
     c.duration = 2.5267 * sec

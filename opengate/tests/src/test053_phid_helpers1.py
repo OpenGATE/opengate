@@ -243,7 +243,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     print("Data from MC, normalized by nb events")
     phsp = sim.get_actor("phsp")
     g2_ene, g2_w = analyse_ion_gamma_from_root(
-        phsp.get_output_path(), daughters, stats.counts.event_count
+        phsp.get_output_path(), daughters, stats.counts.events
     )
 
     # direct computation of gammas

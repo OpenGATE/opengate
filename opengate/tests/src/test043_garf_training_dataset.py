@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print_test(
         is_ok,
         f"Nb of skip particles {skip} (vs {ref_skip}) "
-        f"{(skip / stats.counts.event_count) * 100:.2f}%",
+        f"{(skip / stats.counts.events) * 100:.2f}%",
     )
 
     # ----------------------------------------------------------------------------------------------------------------

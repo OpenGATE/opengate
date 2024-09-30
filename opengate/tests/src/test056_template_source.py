@@ -67,5 +67,5 @@ if __name__ == "__main__":
     # get results
     print(stats)
 
-    is_ok = stats.counts.event_count = 666
+    is_ok = stats.counts.events = 666
     utility.test_ok(is_ok)

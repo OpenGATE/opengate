@@ -99,7 +99,7 @@ def compare_stats(sim, filename):
     stats = sim.get_actor("stats")
     # force nb of thread to 1
     stats_ref = utility.read_stat_file(filename)
-    stats.counts.run_count = stats_ref.counts.run_count
+    stats.counts.runs = stats_ref.counts.runs
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
     return is_ok
 

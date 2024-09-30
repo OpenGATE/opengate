@@ -42,7 +42,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     p = paths.gate_output
     stats_ref = utility.read_stat_file(p / "stats.txt")
-    stats_ref.counts.run_count = nb_threads
+    stats_ref.counts.runs = nb_threads
     is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # check root hits

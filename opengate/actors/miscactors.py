@@ -8,7 +8,7 @@ from ..serialization import dump_json
 from ..exception import warning
 
 
-def _setter_hook_output_filename(self, output_filename):
+def _setter_hook_stats_actor_output_filename(self, output_filename):
     # By default, write_to_disk is False.
     # However, if user actively sets the output_filename
     # s/he most likely wants to write to disk also
@@ -40,6 +40,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 "Relative paths and filenames are taken "
                 "relative to the global simulation output folder "
                 "set via the Simulation.output_dir option. ",
+                "setter_hook": _setter_hook_stats_actor_output_filename,
             },
         ),
         "write_to_disk": (
@@ -57,10 +58,10 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
         # predefine the merged_data
         self.merged_data = Box()
-        self.merged_data.run_count = 0
-        self.merged_data.event_count = 0
-        self.merged_data.track_count = 0
-        self.merged_data.step_count = 0
+        self.merged_data.runs = 0
+        self.merged_data.events = 0
+        self.merged_data.tracks = 0
+        self.merged_data.steps = 0
         self.merged_data.duration = 0
         self.merged_data.start_time = 0
         self.merged_data.stop_time = 0
@@ -74,7 +75,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def pps(self):
         if self.merged_data.duration != 0:
             return int(
-                self.merged_data.event_count / (self.merged_data.duration / g4_units.s)
+                self.merged_data.events / (self.merged_data.duration / g4_units.s)
             )
         else:
             return 0
@@ -83,7 +84,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def tps(self):
         if self.merged_data.duration != 0:
             return int(
-                self.merged_data.track_count / (self.merged_data.duration / g4_units.s)
+                self.merged_data.tracks / (self.merged_data.duration / g4_units.s)
             )
         else:
             return 0
@@ -92,7 +93,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def sps(self):
         if self.merged_data.duration != 0:
             return int(
-                self.merged_data.step_count / (self.merged_data.duration / g4_units.s)
+                self.merged_data.steps / (self.merged_data.duration / g4_units.s)
             )
         else:
             return 0
@@ -112,10 +113,10 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
     def get_processed_output(self):
         d = {}
-        d["runs"] = {"value": self.merged_data.run_count, "unit": None}
-        d["events"] = {"value": self.merged_data.event_count, "unit": None}
-        d["tracks"] = {"value": self.merged_data.track_count, "unit": None}
-        d["steps"] = {"value": self.merged_data.step_count, "unit": None}
+        d["runs"] = {"value": self.merged_data.runs, "unit": None}
+        d["events"] = {"value": self.merged_data.events, "unit": None}
+        d["tracks"] = {"value": self.merged_data.tracks, "unit": None}
+        d["steps"] = {"value": self.merged_data.steps, "unit": None}
         val, unit = g4_best_unit_tuple(self.merged_data.init, "Time")
         d["init"] = {
             "value": val,

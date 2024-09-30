@@ -170,7 +170,7 @@ if __name__ == "__main__":
     # test that the simulation didn't stop because we reached the planned number of runs
     stats_ref = utility.read_stat_file(paths.output / "stats066.txt")
     n_runs_planned = len(run_timing_intervals) * n_threads
-    n_effective_runs = stats_ref.counts.run_count
+    n_effective_runs = stats_ref.counts.runs
     print(f"{n_runs_planned = }")
     print(f"{n_effective_runs = }")
     ok = ok and n_effective_runs < n_runs_planned

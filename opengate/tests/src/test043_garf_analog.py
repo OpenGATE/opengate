@@ -79,7 +79,7 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Tests stats file")
     stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
-    stats.counts.run_count = 1  # force to one run (ref only have 1 thread)
+    stats.counts.runs = 1  # force to one run (ref only have 1 thread)
     is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     print()

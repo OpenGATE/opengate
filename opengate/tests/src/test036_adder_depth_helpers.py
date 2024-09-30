@@ -172,8 +172,8 @@ def test_output(sim, paths):
     gate.exception.warning("Compare stats")
     stats = sim.actor_manager.get_actor("Stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1
     stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
