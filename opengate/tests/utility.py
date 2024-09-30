@@ -884,6 +884,60 @@ def compare_root3(
     return is_ok
 
 
+def compare_root4(
+    ref_root_filename,
+    root_filename,
+    attributes,
+    branch1,
+    branch2=None,
+    img="root.png",
+    hits_tol=6,
+    nb_bins=200,
+):
+
+    keys1 = []
+    keys2 = []
+    tols = []
+    scalings1 = []
+    scalings2 = []
+    for k, att in attributes.items():
+        keys1.append(k)
+        if "key" in att:
+            keys2.append(att["key"])
+        else:
+            keys2.append(k)
+        if "tol" in att:
+            tols.append(att["tol"])
+        else:
+            tols.append(0.2)
+        if "scaling1" in att:
+            scalings1.append(att["scaling1"])
+        else:
+            scalings1.append(1.0)
+        if "scaling2" in att:
+            scalings2.append(att["scaling2"])
+        else:
+            scalings2.append(1.0)
+
+    if branch2 is None:
+        branch2 = branch1
+
+    return compare_root3(
+        ref_root_filename,
+        root_filename,
+        branch1,
+        branch2,
+        keys1,
+        keys2,
+        tols,
+        scalings1,
+        scalings2,
+        img,
+        hits_tol,
+        nb_bins,
+    )
+
+
 def open_root_as_np(root_file, tree_name):
     a = uproot.open(root_file)[tree_name]
     n = a.num_entries
@@ -1900,3 +1954,10 @@ def plot_compare_profile(ref_names, test_names, options):
     # Adjust spacing between subplots if necessary
     plt.tight_layout()
     return plt
+
+
+class RootComparison:
+
+    def __init__(self, ref_filename, filename):
+        self.root_ref = uproot.open(ref_filename)
+        self.root_cmp = uproot.open(filename)
