@@ -306,6 +306,8 @@ void init_GateKillNonInteractingParticleActor(py::module &);
 
 void init_GateSurfaceSplittingActor(py::module &);
 
+void init_GateKillInteractingParticleActor(py::module &);
+
 void init_itk_image(py::module &);
 
 void init_GateImageNestedParameterisation(py::module &);
@@ -588,6 +590,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateKillActor(m);
   init_GateKillNonInteractingParticleActor(m);
   init_GateSurfaceSplittingActor(m);
+  init_GateKillInteractingParticleActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
