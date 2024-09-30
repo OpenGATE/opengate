@@ -210,12 +210,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
-    # def __finalize_init__(self):
-    #     super().__finalize_init__()
-    #     # this attribute is considered sometimes in the read_stat_file
-    #     # we declare it here to avoid warning
-    #     self.known_attributes.add("date")
-
     def __str__(self):
         s = self.user_output["stats"].__str__()
         return s
@@ -234,7 +228,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
-        self.user_output.stats.nb_threads = self.simulation.number_of_threads
+        self.user_output.stats.merged_data.nb_threads = (
+            self.simulation.number_of_threads
+        )
 
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
