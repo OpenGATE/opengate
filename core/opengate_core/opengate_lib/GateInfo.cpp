@@ -8,6 +8,7 @@
 #include "GateInfo.h"
 #include "G4Version.hh"
 #include <itkVersion.h>
+#include <streambuf>
 
 #ifdef G4MULTITHREADED
 
@@ -22,6 +23,25 @@ bool GateInfo::get_G4MULTITHREADED() {
   return true;
 #else
   return false;
+#endif
+}
+
+bool GateInfo::get_G4VIS_USE_OPENGLQT() {
+#ifdef G4VIS_USE_OPENGLQT
+  return true;
+#else
+  return false;
+#endif
+}
+
+std::string GateInfo::get_QT_VERSION() {
+#ifdef G4VIS_USE_OPENGLQT
+#include <QtGlobal>
+  std::ostringstream oss;
+  oss << QT_VERSION_MAJOR << "." << QT_VERSION_MINOR << "." << QT_VERSION_PATCH;
+  return oss.str();
+#else
+  return "no_qt";
 #endif
 }
 
