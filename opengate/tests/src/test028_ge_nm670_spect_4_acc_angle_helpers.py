@@ -199,7 +199,7 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8):
     b3 = gate.sources.generic.get_source_zero_events(sim, "beam3")
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
-    print(f"Number of simulated events: {stats.counts.event_count}")
+    print(f"Number of simulated events: {stats.counts.events}")
     beam1 = sim.source_manager.get_source_info("beam1")
     mode = beam1.direction.acceptance_angle.skip_policy
     stats_ref = utility.read_stat_file(paths.gate_output / "stat4.txt")
@@ -208,28 +208,28 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8):
         b1 = gate.sources.generic.get_source_skipped_events(sim, "beam1")
         b2 = gate.sources.generic.get_source_skipped_events(sim, "beam2")
         b3 = gate.sources.generic.get_source_skipped_events(sim, "beam3")
-        stats.counts.event_count = stats.counts.event_count + b1 + b2 + b3
+        stats.counts.events = stats.counts.events + b1 + b2 + b3
         print(f"Skip Events mode, adding the skipped ones")
-        print(f"Number of simulated events: {stats.counts.event_count}")
+        print(f"Number of simulated events: {stats.counts.events}")
         # do not compare track in this mode
-        stats.counts.track_count = stats_ref.counts.track_count
+        stats.counts.tracks = stats_ref.counts.tracks
 
     tol = 0.3
-    r1 = b1 / stats.counts.event_count
+    r1 = b1 / stats.counts.events
     is_ok = (r1 - reference_ratio) / reference_ratio < tol
     utility.print_test(
         is_ok,
         f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
 
-    r2 = b2 / stats.counts.event_count
+    r2 = b2 / stats.counts.events
     is_ok = (r2 - reference_ratio) / reference_ratio < tol
     utility.print_test(
         is_ok,
         f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
     )
 
-    r3 = b3 / stats.counts.event_count
+    r3 = b3 / stats.counts.events
     is_ok = (r3 - reference_ratio) / reference_ratio < tol
     utility.print_test(
         is_ok,
@@ -239,12 +239,12 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8):
     # stat
     gate.exception.warning("Compare stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1
     print(
-        f"Number of steps was {stats.counts.step_count}, force to the same value (because of angle acceptance). "
+        f"Number of steps was {stats.counts.steps}, force to the same value (because of angle acceptance). "
     )
-    stats.counts.step_count = stats_ref.counts.step_count  # force to id
+    stats.counts.steps = stats_ref.counts.steps  # force to id
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07) and is_ok
 
     # read image and force change the offset to be similar to old Gate

@@ -197,8 +197,8 @@ def test_spect_hits(sim, paths, version="2"):
     gate.exception.warning("Compare stats")
     stats = sim.get_actor("Stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1
     stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
@@ -332,7 +332,7 @@ def test_spect_hits(sim, paths, version="2"):
 def test_spect_proj(sim, paths, proj, version="3"):
     print()
     stats = sim.get_actor("Stats")
-    stats.counts.run_count = 1  # force to 1 to compare with gate result
+    stats.counts.runs = 1  # force to 1 to compare with gate result
     print(stats)
     stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.025)
@@ -342,7 +342,7 @@ def test_spect_proj(sim, paths, proj, version="3"):
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
     img = itk.imread(str(paths.output / "proj028.mhd"))
-    spacing = np.array(proj.user_info.spacing)
+    spacing = np.array(proj.projection.image.GetSpacing())  # user_info.spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

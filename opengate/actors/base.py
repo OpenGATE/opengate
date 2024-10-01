@@ -129,9 +129,8 @@ class ActorBase(GateObject):
 
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
-        self.actor_engine = (
-            None  # this is set by the actor engine during initialization
-        )
+        # this is set by the actor engine during initialization
+        self.actor_engine = None
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
 
@@ -149,6 +148,14 @@ class ActorBase(GateObject):
             v.belongs_to_actor = self
         self.__initcpp__()
         self.__update_interface_properties__()
+
+    # def __finalize_init__(self):
+    #     super().__finalize_init__()
+    #     # The following attributes exist. They are declared here to avoid warning
+    #     # fFilters is not known here because ActorBase does not inherit from a cpp counterpart.
+    #     self.known_attributes.add("fFilters")
+    #     # output_filename is a property
+    #     self.known_attributes.add("output_filename")
 
     def to_dictionary(self):
         d = super().to_dictionary()

@@ -98,11 +98,13 @@ void GateDigitizerHitsCollectionActor::SteppingAction(G4Step *step) {
     // nb transportation
     auto post = step->GetPostStepPoint();
     auto process = post->GetProcessDefinedStep();
-    auto pname = process->GetProcessName();
-    static int nb_tr = 0;
-    if (pname == "Transportation") {
-      nb_tr++;
-      std::cout << pname << " " << nb_tr << " " << id << x << std::endl;
+    if (process != nullptr) {
+      auto pname = process->GetProcessName();
+      static int nb_tr = 0;
+      if (pname == "Transportation") {
+        nb_tr++;
+        std::cout << pname << " " << nb_tr << " " << id << x << std::endl;
+      }
     }
   }
 }

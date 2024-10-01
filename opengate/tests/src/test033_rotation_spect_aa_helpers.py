@@ -163,18 +163,18 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     # check stats
     gate.exception.warning(f"Check stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test033_stats.txt")
-    print(f"Steps counts not compared (was {stats.counts.step_count})")
+    print(f"Steps counts not compared (was {stats.counts.steps})")
     nbt = sim.number_of_threads
-    stats.counts.step_count = stats_ref.counts.step_count
-    stats_ref.counts.run_count *= nbt
+    stats.counts.steps = stats_ref.counts.steps
+    stats_ref.counts.runs *= nbt
     if se > 0:
-        print(f"Track counts not compared (was {stats.counts.track_count})")
-        print(f"Modify Events + skipped {stats.counts.event_count + se})")
-        stats.counts.event_count += se
-        stats.counts.track_count = stats_ref.counts.track_count
+        print(f"Track counts not compared (was {stats.counts.tracks})")
+        print(f"Modify Events + skipped {stats.counts.events + se})")
+        stats.counts.events += se
+        stats.counts.tracks = stats_ref.counts.tracks
     if ze > 0:
-        print(f"Track counts not compared (was {stats.counts.track_count})")
-        stats.counts.track_count = stats_ref.counts.track_count
+        print(f"Track counts not compared (was {stats.counts.tracks})")
+        stats.counts.tracks = stats_ref.counts.tracks
     is_ok = utility.assert_stats(stats, stats_ref, 0.03) and is_ok
 
     # compare edep map

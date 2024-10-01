@@ -35,7 +35,7 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
         sim.volume_manager.add_material_database(fdb)
 
     # check overlap
-    sim.g4_check_overlap_flag = debug
+    sim.check_volumes_overlap = debug
 
     # main box
     head = add_head_box(sim, name)

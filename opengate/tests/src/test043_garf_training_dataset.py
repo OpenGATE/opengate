@@ -88,7 +88,7 @@ if __name__ == "__main__":
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
     stats.output_filename = "test043_arf_training_dataset_stats.txt"
-    stats.write_to_disk = True
+    stats.stats.write_to_disk = True
 
     # start simulation
     sim.run(start_new_process=True)
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     print_test(
         is_ok,
         f"Nb of skip particles {skip} (vs {ref_skip}) "
-        f"{(skip / stats.counts.event_count) * 100:.2f}%",
+        f"{(skip / stats.counts.events) * 100:.2f}%",
     )
 
     # ----------------------------------------------------------------------------------------------------------------

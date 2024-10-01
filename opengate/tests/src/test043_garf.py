@@ -121,7 +121,7 @@ if __name__ == "__main__":
     gate.exception.warning("Tests stats file")
     stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
     # dont compare steps of course
-    stats_ref.counts.step_count = stat.counts.step_count
+    stats_ref.counts.steps = stat.counts.steps
     is_ok = utility.assert_stats(stat, stats_ref, 0.01)
 
     print()
