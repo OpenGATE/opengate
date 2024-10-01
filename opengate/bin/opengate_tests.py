@@ -3,6 +3,7 @@
 
 import os
 import time
+from datetime import timedelta
 import click
 import random
 import sys
@@ -42,16 +43,55 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.option(
     "--processes_run",
     "-p",
-    default = "legacy",
+    default = "mp",
     help="Start simulations in single process mode: 'legacy', 'sp' or multi process mode 'mp'" )
+@click.option(
+    "--run_previously_failed_jobs",
+    "-f",
+    default = False,
+    is_flag= True,
+    help="Run only the tests that failed in the previous evaluation." )
 
-def go(test_id, random_tests, no_log_on_fail, processes_run):
-    files_to_run, files_to_ignore = get_files_to_run(test_id, random_tests)
-    files_to_run = select_files(files_to_run, test_id, random_tests)
-    files_to_run, deselected_count, all_missing_modules = filter_files_by_missing_modules(files_to_run)
-    run_test_cases(files_to_run, no_log_on_fail, processes_run)
-    print(f'In total {deselected_count} tests were not started, because the following modules are missing: {", ".join(all_missing_modules)}')
+def go(test_id, random_tests, no_log_on_fail, processes_run, run_previously_failed_jobs):
+    run_failed_mpjobs_in_sp = True
+    mypath = return_tests_path() # returns the path to the tests/src dir
+    test_dir_path = mypath.parent
+    path_output_dashboard = test_dir_path  / "output_dashboard"
+    fpath_dashboard_output = path_output_dashboard / (
+        "dashboard_output_"
+        + sys.platform
+        + "_"
+        + str(sys.version_info[0])
+        + "."
+        + str(sys.version_info[1])
+        + ".json"
+    )
+    if not run_previously_failed_jobs:
+        files_to_run, files_to_ignore = get_files_to_run(test_id, random_tests)
+        files_to_run = select_files(files_to_run, test_id, random_tests)
+    else: 
+        with open(fpath_dashboard_output, "r") as fp:
+            dashboard_dict_previously = json.load( fp)
+            files_to_run = [k for k,v in dashboard_dict_previously.items() if not v[0]]
+    avoid_tests_missing_modules = False # currently not solid enough yet 
+    if avoid_tests_missing_modules:
+        files_to_run, deselected_count, all_missing_modules = filter_files_by_missing_modules(files_to_run)
+        print(f'In total {deselected_count} tests were not started, because the following modules are missing: {", ".join(all_missing_modules)}')
     
+    runs_status_info = run_test_cases(files_to_run, no_log_on_fail, processes_run)
+    
+    dashboard_dict, fail_status = status_summary_report(runs_status_info, files_to_run, no_log_on_fail, fpath_dashboard_output)
+    if run_failed_mpjobs_in_sp:
+        
+        previously_failed_files= [k for k,v in dashboard_dict.items() if not v[0]]
+        if fail_status and processes_run == 'mp':
+            print('Some files failed in multiprocessing, going to run the failed jobs in single processing mode:')
+            runs_status_info_sp = run_test_cases(previously_failed_files, no_log_on_fail, processes_run = 'sp')
+            dashboard_dict_sp, fail_status_sp = status_summary_report(runs_status_info_sp, previously_failed_files, no_log_on_fail, '')
+            for file, status_sp in dashboard_dict_sp.items():
+                if status_sp[0] and not dashboard_dict[file][0]:
+                    fname = Path(file).name 
+                    print(f'{fname}: failed in "multiprocessing" but succeeded in "single processing".')
 def get_files_to_run(test_id, random_tests):
 
     mypath = return_tests_path()
@@ -83,8 +123,6 @@ def get_files_to_run(test_id, random_tests):
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
     ]
-
-#    onlyfiles = [f for f in os.listdir(str(mypath)) if (mypath / f).is_file()]
     mypath = Path(mypath)
     all_file_paths = [file for file in mypath.glob('test[0-9]*.py') if file.is_file()]
     # here we sort the paths
@@ -105,10 +143,9 @@ def get_files_to_run(test_id, random_tests):
                 eval_this_file = False
                 reason_to_ignore = string_to_ignore
                 continue
-#        if not torch and filename_for_pattern_search in torch_tests:
-##            print(f"Ignoring: {f:<40} (Torch is not available) ")
-#            reason_to_ignore = 'Torch not avail'
-#            eval_this_file = False
+        if not torch and filename_for_pattern_search in torch_tests:
+           reason_to_ignore = 'Torch not avail'
+           eval_this_file = False
         if os.name == "nt" and "_mt" in f:
              eval_this_file = False
              reason_to_ignore = 'mt & nt'
@@ -214,6 +251,7 @@ def run_one_test_case(f, processes_run, mypath):
             
             pass_fail_status = False
     end = time.time()
+    shell_output.run_time = start - end
     print(f"   {end - start:5.1f} s     {log:<65}")
     return shell_output
 
@@ -237,6 +275,7 @@ def run_one_test_case_mp(f):
         else:
             print(colored.stylize(" FAILED !", color_error), end="\n")
     end = time.time()
+    shell_output.run_time = start - end
     print(f"   {end - start:5.1f} s     {log:<65}")
     return shell_output
 def run_test_cases(files: list, no_log_on_fail: bool, processes_run:str):
@@ -244,39 +283,29 @@ def run_test_cases(files: list, no_log_on_fail: bool, processes_run:str):
     print("Looking for tests in: " + str(mypath))
     print(f"Running {len(files)} tests")
     print("-" * 70)
-    filenames = [str(Path(f).name) for f in files]
-
-    failure = False
+   
     start = time.time()
     if processes_run in ['legacy']:
         run_single_case = lambda k: run_one_test_case(k, processes_run, mypath)
-        result_status_V =  list(map(run_single_case, files))
+        runs_status_info =  list(map(run_single_case, files))
     elif  processes_run in ['sp']:
-        result_status_V =  list(map(run_one_test_case_mp, files))
+        runs_status_info =  list(map(run_one_test_case_mp, files))
     else:
         with Pool() as pool:
-            result_status_V =  pool.map(run_one_test_case_mp, files)
-#        print('not implemented')
-    dashboard_dict = {k: [shell_output_k.returncode == 0] for k, shell_output_k in zip(files, result_status_V)}
-#    if not no_log_on_fail:
-#        for k, shell_output_k in zip(files, result_status_V):
-#            print(colored.stylize(f"{k} FAILED !", color_error), end="\n")
-#            print(shell_output_k.stdout)
-#            print('---------')
-    path_output_dashboard = mypath / ".." / "output_dashboard"
-    os.makedirs(path_output_dashboard, exist_ok=True)
-    dashboard_output = (
-        "dashboard_output_"
-        + sys.platform
-        + "_"
-        + str(sys.version_info[0])
-        + "."
-        + str(sys.version_info[1])
-        + ".json"
-    )
-    with open(path_output_dashboard / dashboard_output, "w") as fp:
-        json.dump(dashboard_dict, fp, indent=4)
-    print(not failure)
+            runs_status_info =  pool.map(run_one_test_case_mp, files)
+
+    
+    end = time.time()
+    run_time = timedelta(seconds = end-start)
+    print(f"Evaluation took in total:   {run_time.seconds /60 :5.1f} min  ")
+    return runs_status_info
+def status_summary_report(runs_status_info, files, no_log_on_fail, fpath_dashboard_output):
+    
+    dashboard_dict = {k: [shell_output_k.returncode == 0] for k, shell_output_k in zip(files, runs_status_info)}
+    if fpath_dashboard_output:
+        os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
+        with open(fpath_dashboard_output, "w") as fp:
+            json.dump(dashboard_dict, fp, indent=4)
     tests_passed = [f for f in files if dashboard_dict[f][0]]
     tests_failed = [f for f in files if not dashboard_dict[f][0]]
    
@@ -284,7 +313,7 @@ def run_test_cases(files: list, no_log_on_fail: bool, processes_run:str):
     n_failed = sum([not k[0] for k in dashboard_dict.values()] ) #[k_i++ for v in dashboard_dict.values() if not v]
     
     # Display the logs of the failed jobs:
-    for file, shell_output_k in zip(files, result_status_V):
+    for file, shell_output_k in zip(files, runs_status_info):
         if shell_output_k.returncode != 0 and not no_log_on_fail:
             print(str(Path(file).name), colored.stylize(f": failed", color_error), end ="\n")
             os.system("cat " + shell_output_k.log_fpath)
@@ -297,14 +326,14 @@ def run_test_cases(files: list, no_log_on_fail: bool, processes_run:str):
     for k in tests_failed:
         print(str(Path(k).name), colored.stylize(f": failed", color_error), end ="\n")
     
-    end = time.time()
-    print(f"Evaluation took in total:   {end - start:5.1f} s  ")
+    fail_status = 0
     if n_passed == len(files) and n_failed == 0:
         print(colored.stylize(f'Yeahh, all tests passed!', color_ok))
-        return 0
+        fail_status = 0
     else:
         print(colored.stylize(f'Oh no, not all tests passed.',color_error))
-        return 1
+        fail_status = 1
+    return dashboard_dict, fail_status
     
 
 # --------------------------------------------------------------------------
