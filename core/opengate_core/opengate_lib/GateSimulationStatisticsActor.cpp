@@ -54,18 +54,16 @@ void GateSimulationStatisticsActor::StartSimulationAction() {
   fStartRunTimeIsSet = false;
 
   // initialise the counts
-  fCounts["run_count"] = 0;
-  fCounts["event_count"] = 0;
-  fCounts["track_count"] = 0;
-  fCounts["step_count"] = 0;
+  fCounts["runs"] = 0;
+  fCounts["events"] = 0;
+  fCounts["tracks"] = 0;
+  fCounts["steps"] = 0;
 }
 
 py::dict GateSimulationStatisticsActor::GetCounts() {
   auto dd = py::dict(
-      "run_count"_a = fCounts["run_count"],
-      "event_count"_a = fCounts["event_count"],
-      "track_count"_a = fCounts["track_count"],
-      "step_count"_a = fCounts["step_count"],
+      "runs"_a = fCounts["runs"], "events"_a = fCounts["events"],
+      "tracks"_a = fCounts["tracks"], "steps"_a = fCounts["steps"],
       "duration"_a = fCountsD["duration"], "init"_a = fCountsD["init"],
       "start_time"_a = fCountsStr["start_time"],
       "stop_time"_a = fCountsStr["stop_time"], "track_types"_a = fTrackTypes);
@@ -124,10 +122,10 @@ void GateSimulationStatisticsActor::EndOfSimulationWorkerAction(
   G4AutoLock mutex(&GateSimulationStatisticsActorMutex);
   threadLocal_t &data = threadLocalData.Get();
   // merge all threads (need mutex)
-  fCounts["run_count"] += data.fRunCount;
-  fCounts["event_count"] += data.fEventCount;
-  fCounts["track_count"] += data.fTrackCount;
-  fCounts["step_count"] += data.fStepCount;
+  fCounts["runs"] += data.fRunCount;
+  fCounts["events"] += data.fEventCount;
+  fCounts["tracks"] += data.fTrackCount;
+  fCounts["steps"] += data.fStepCount;
   if (fTrackTypesFlag) {
     for (auto v : data.fTrackTypes) {
       if (fTrackTypes.count(v.first) == 0)

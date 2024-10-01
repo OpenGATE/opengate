@@ -134,8 +134,8 @@ def run_test019(sim):
     # check stats
     print()
     stats_ref = utility.read_stat_file(paths.gate_output / "output-writePhS-stat.txt")
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1
     is_ok = utility.assert_stats(stats, stats_ref, 0.2)
 
     # compare the phsp tree

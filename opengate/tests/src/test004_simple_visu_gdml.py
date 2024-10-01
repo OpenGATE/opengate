@@ -59,7 +59,7 @@ if __name__ == "__main__":
     sim.run()
 
     stats = sim.get_actor("Stats")
-    stats.counts.run_count = 1
+    stats.counts.runs = 1
 
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
