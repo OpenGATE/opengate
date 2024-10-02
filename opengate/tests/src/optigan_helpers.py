@@ -136,7 +136,6 @@ class Optigan:
             "labels_length" : 3
         }
 
-
         # Define your model dimensions
         noise_dimension = 10
         output_dimension = 6
@@ -169,20 +168,20 @@ class Optigan:
 
         return generator
 
-
     # Loads the model with pre-trained weights and generates output of optigan
     def get_optigan_outputs(self):
+
+        # Sort and list CSV files
+        csv_files = sorted([file for file in os.listdir(self.optigan_input_folder) if file.endswith('.csv')], key = extract_number)
+        print(f"The csv files in the folder are {csv_files}")
+
+        # Clean and recreate the output folder
+        if os.path.exists(self.optigan_output_folder):
+            shutil.rmtree(self.optigan_output_folder)
+        os.makedirs(self.optigan_output_folder)
+        print(f"The optigan output files will be saved at {self.optigan_output_folder}")
+
         for file_index, file_name in enumerate(csv_files):
-
-            # Clean and recreate the output folder
-            if os.path.exists(self.optigan_output_folder):
-                shutil.rmtree(self.optigan_output_folder)
-            os.makedirs(self.optigan_output_folder)
-            print(f"The optigan output files will be saved at {self.optigan_output_folder}")
-
-            # Sort and list CSV files
-            csv_files = sorted([file for file in os.listdir(self.optigan_input_folder) if file.endswith('.csv')], key = extract_number)
-            print(f"The csv files in the folder are {csv_files}")
 
             # Prepare input file path and read csv
             csv_file_path = os.path.join(self.optigan_input_folder, file_name)
@@ -203,7 +202,7 @@ class Optigan:
             classZ = classZ_single.expand(total_number_of_photons)
 
             # Create the random noise vector and combine conditions
-            noise = torch.randn(total_number_of_photons, self.generator["noise_dimension"]).to(self.device)
+            noise = torch.randn(total_number_of_photons, self.gan_arguments["noise_dimension"]).to(self.device)
             conditions = torch.stack([classX, classY, classZ], dim=1)
 
             # Concatenate noise and conditional input into one tensor
