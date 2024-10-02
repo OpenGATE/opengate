@@ -67,6 +67,7 @@ class OptiganHelpers:
     def open_root_file(self):
         file = uproot.open(self.root_file_path)
         tree = file["Phase"]
+        print(f"The data type of the tree variable is {type(tree)}")
         return file, tree
     
     # this will print the input info in the terminal
@@ -82,6 +83,7 @@ class OptiganHelpers:
 
     # similar to above method, just a format difference
     def print_details_of_events(self):
+        print(f"The length of extracted events details {len(self.extracted_events_details)}")
         for event_id, detail in enumerate(self.extracted_events_details):
             gamma_pos = detail['gamma_position']
             num_electrons = detail['electron_count']
@@ -271,6 +273,12 @@ class OptiganHelpers:
         # self.print_details_of_events()
         self.save_optigan_inputs()
         self.get_optigan_outputs()
+    
+    def print_root_info(self):
+        self.events = self.process_root_output_into_events()
+        self.extracted_events_details = self.extract_event_details()
+        # self.pretty_print_events()
+        self.print_details_of_events()
             
     # this method will take the root file and extract gamma, electron
     # and optical photon information from the file. 
@@ -283,8 +291,135 @@ class OptiganHelpers:
         position_y = root_tree["Position_Y"].array(library="np")
         position_z = root_tree["Position_Z"].array(library="np")
         particle_types = root_tree["ParticleName"].array(library="np")
+        track_ids = root_tree["TrackID"].array(library="np")
 
         file.close()
+
+        # Create a DataFrame from the final arrays
+        df = pd.DataFrame({
+            "TrackID": track_ids,
+            "ParticleType": particle_types,
+            "Position_X": position_x,
+            "Position_Y": position_y,
+            "Position_Z": position_z
+        })
+
+        df['OriginalIndex'] = df.index
+
+        # Step 1: Filter out rows where ParticleType is "opticalphoton"
+        opticalphoton_df = df[df["ParticleType"] == "opticalphoton"]
+
+        # Step 2: Drop duplicates based on TrackID, keeping the first occurrence
+        opticalphoton_df_unique = opticalphoton_df.loc[~opticalphoton_df.duplicated(subset="TrackID", keep="first")]
+
+        # Step 3: Filter out rows where ParticleType is NOT "opticalphoton" (e.g., "gamma")
+        non_opticalphoton_df = df[df["ParticleType"] != "opticalphoton"]
+
+        # Step 4: Concatenate both DataFrames to keep the structure intact
+        df_combined = pd.concat([opticalphoton_df_unique, non_opticalphoton_df])
+
+        # Step 5: Optionally, sort the DataFrame based on index to restore the original order if needed
+        df_combined = df_combined.sort_index()
+
+        position_x = df_combined["Position_X"].to_numpy()
+        position_y = df_combined["Position_Y"].to_numpy()
+        position_z = df_combined["Position_Z"].to_numpy()
+        particle_types =  df_combined["ParticleType"].to_numpy()
+
+        # # Add the original index as a new column
+        # df['OriginalIndex'] = df.index
+
+        # # Create a mask for rows where ParticleType is 'opticalphoton'
+        # mask_opticalphoton = df['ParticleType'] == 'opticalphoton'
+
+        # # Find duplicates in 'TrackID' among 'opticalphoton' rows, keeping the first occurrence
+        # duplicates = df[mask_opticalphoton].duplicated(subset='TrackID', keep='first')
+
+        # # Create a mask for rows to drop: duplicates among 'opticalphoton' rows
+        # rows_to_drop = mask_opticalphoton & duplicates
+
+        # # Drop these rows from the DataFrame without resetting the index
+        # df_cleaned = df[~rows_to_drop]
+
+        # Optionally, reset the index if desired, keeping the 'OriginalIndex' column
+        # df_cleaned = df_cleaned.reset_index(drop=True)
+
+
+
+
+        # optical_photon_mask = (particle_types == "opticalphoton")
+
+        # optical_position_x = position_x[optical_photon_mask]
+        # optical_position_y = position_y[optical_photon_mask]
+        # optical_position_z = position_z[optical_photon_mask]
+        # optical_particle_types = particle_types[optical_photon_mask]
+        # optical_track_ids = track_ids[optical_photon_mask]
+
+        # _, unique_indices = np.unique(optical_track_ids, return_index = True)
+
+        # print(f"The length of the unique indices is {len(unique_indices)}")
+
+        # filtered_optical_position_x = optical_position_x[unique_indices]
+        # filtered_optical_position_y = optical_position_y[unique_indices]
+        # filtered_optical_position_z = optical_position_z[unique_indices]
+        # filtered_optical_particle_types = optical_particle_types[unique_indices]
+        # filtered_optical_track_ids = optical_track_ids[unique_indices]
+
+        # print(f"The length of the filtered_optical_position_x is {len(filtered_optical_position_x)}")
+
+        # # # Create copies of the original arrays to modify
+        # # final_position_x = position_x.copy()
+        # # final_position_y = position_y.copy()
+        # # final_position_z = position_z.copy()
+        # # final_particle_types = particle_types.copy()
+        # # final_track_ids = track_ids.copy()
+
+        # optical_indices = np.where(optical_photon_mask)[0]
+        # print(f"The length of the optical_indices {len(optical_indices)}")
+
+        # # Create a mask to remove duplicates from the original data
+        # optical_duplicate_mask = np.ones(len(optical_position_x), dtype=bool)
+        # optical_duplicate_mask[unique_indices] = False  # Keep only the first occurrence of each TrackID
+
+        # # Now create a mask for the final array that excludes duplicates for optical photons
+        # final_mask = np.ones(len(position_x), dtype=bool)
+        # final_mask[optical_indices] = optical_duplicate_mask  # Update only for optical photons
+
+        # # Apply the mask to the original data
+        # final_position_x = position_x[final_mask]
+        # final_position_y = position_y[final_mask]
+        # final_position_z = position_z[final_mask]
+        # final_particle_types = particle_types[final_mask]
+        # final_track_ids = track_ids[final_mask]
+
+        # # Now append the filtered unique optical photon rows to the final arrays
+        # final_position_x = np.concatenate((final_position_x, filtered_optical_position_x))
+        # final_position_y = np.concatenate((final_position_y, filtered_optical_position_y))
+        # final_position_z = np.concatenate((final_position_z, filtered_optical_position_z))
+        # final_particle_types = np.concatenate((final_particle_types, filtered_optical_particle_types))
+        # final_track_ids = np.concatenate((final_track_ids, filtered_optical_track_ids))
+
+
+        # # # Replace only the optical photon rows that correspond to the unique TrackIDs
+        # # final_position_x[optical_indices[unique_indices]] = filtered_optical_position_x
+        # # final_position_y[optical_indices[unique_indices]] = filtered_optical_position_y
+        # # final_position_z[optical_indices[unique_indices]] = filtered_optical_position_z
+        # # final_particle_types[optical_indices[unique_indices]] = filtered_optical_particle_types
+        # # final_track_ids[optical_indices[unique_indices]] = filtered_optical_track_ids
+
+        # print(f"The length of the final_position_x {len(final_position_x)}")
+
+        # # Create a DataFrame from the final arrays
+        # df = pd.DataFrame({
+        #     "TrackID": final_track_ids,
+        #     "ParticleType": final_particle_types,
+        #     "Position_X": final_position_x,
+        #     "Position_Y": final_position_y,
+        #     "Position_Z": final_position_z
+        # })
+        
+        # Save the DataFrame to a CSV file
+        df_combined.to_csv("output.csv", index=False)
 
         # variables
         events = {} # will store all the events 
@@ -304,6 +439,7 @@ class OptiganHelpers:
                 # and is followed by electrons or photons
                 if current_event and gamma_has_electrons_or_photons:
                     current_event.append({'type': "opticalphoton", 'optical_photon_count': optical_photon_count})
+                    # print(f"The optical photon count is {optical_photon_count}")
                     events[event_id] = current_event
                     event_id += 1
                     optical_photon_count = 0
@@ -319,11 +455,16 @@ class OptiganHelpers:
                 if current_event:
                     current_event.append({'index': index, 'type': ptype, 'x': x, 'y': y, 'z': z})
                     gamma_has_electrons_or_photons = True
-        
+
+        # print(f"Outside the for loop, the optical photon count is {optical_photon_count}")
+
         # Store the last event if it is not empty
         if len(current_event) > 1:
+            current_event.append({'type': "opticalphoton", 'optical_photon_count': optical_photon_count})
             events[event_id] = current_event
-    
+
+        # print(f"The length of events is {len(events)}") # debugging
+
         return events
     
     # this method will divide the extracted information 
