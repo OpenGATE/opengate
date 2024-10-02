@@ -23,6 +23,7 @@ GateDigiCollectionsRootManager::GateDigiCollectionsRootManager() {}
 
 void GateDigiCollectionsRootManager::OpenFile(int tupleId,
                                               std::string filename) {
+  DDD(__func__);
   // Warning : this pointer is not the same for all workers in MT mode
   auto *ram = G4RootAnalysisManager::Instance();
   if (!ram->IsOpenFile()) {
@@ -42,10 +43,12 @@ void GateDigiCollectionsRootManager::OpenFile(int tupleId,
         ram->SetNtupleMerging(true);
     }
     ram->OpenFile(filename);
+    DDD(ram->IsOpenFile());
   }
 }
 
 int GateDigiCollectionsRootManager::DeclareNewTuple(std::string name) {
+  DDD(__func__);
   auto &fTupleShouldBeWritten = threadLocalData.Get().fTupleShouldBeWritten;
   if (fTupleNameIdMap.count(name) != 0) {
     std::ostringstream oss;
@@ -71,11 +74,13 @@ int GateDigiCollectionsRootManager::DeclareNewTuple(std::string name) {
 }
 
 void GateDigiCollectionsRootManager::AddNtupleRow(int tupleId) {
+  DDD(__func__);
   auto *ram = G4RootAnalysisManager::Instance();
   ram->AddNtupleRow(tupleId);
 }
 
 void GateDigiCollectionsRootManager::Write(int tupleId) {
+  DDD(__func__);
   auto &tl = threadLocalData.Get();
   // Do nothing if already Write
   if (G4Threading::IsMasterThread() && tl.fFileHasBeenWrittenByMaster)
@@ -103,6 +108,7 @@ void GateDigiCollectionsRootManager::Write(int tupleId) {
 }
 
 void GateDigiCollectionsRootManager::CreateRootTuple(GateDigiCollection *hc) {
+  DDD(__func__);
   auto *ram = G4RootAnalysisManager::Instance();
 
   // check filename
@@ -147,6 +153,7 @@ void GateDigiCollectionsRootManager::CreateRootTuple(GateDigiCollection *hc) {
 
 void GateDigiCollectionsRootManager::CreateNtupleColumn(
     int tupleId, GateVDigiAttribute *att) {
+  DDD(__func__);
   auto *ram = G4RootAnalysisManager::Instance();
   int att_id = -1;
   if (att->GetDigiAttributeType() == 'D')
@@ -175,6 +182,7 @@ void GateDigiCollectionsRootManager::CreateNtupleColumn(
 }
 
 void GateDigiCollectionsRootManager::CloseFile(int tupleId) {
+  DDD(__func__);
   // find the tuple and remove it from the map
   for (auto iter = fTupleNameIdMap.begin(); iter != fTupleNameIdMap.end();) {
     if (iter->second == tupleId) {
