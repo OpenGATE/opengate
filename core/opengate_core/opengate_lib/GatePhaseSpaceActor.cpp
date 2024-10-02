@@ -191,11 +191,11 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 
 void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
   DDD(__func__);
-  std::cout << __func__ << std::endl;
   // For a given event, when no step never reach the phsp:
   // if the option is on, we store a "fake" step, with the event information.
   // All other attributes will be "empty" (mostly 0)
   auto &l = fThreadLocalData.Get();
+  DDD("coucou");
   if (fStoreAbsorbedEvent && !l.fCurrentEventHasBeenStored) {
     // Put empty value for all attributes
     std::cout << "coucou0" << std::endl;
@@ -232,6 +232,7 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     fNumberOfAbsorbedEvents++;
     std::cout << "coucou5" << std::endl;
   }
+  DDD("coucou6");
 }
 
 // Called every time a Run ends
