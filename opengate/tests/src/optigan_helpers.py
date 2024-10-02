@@ -43,7 +43,7 @@ class WGAN_Generator(nn.Module):
 
 # all the methods that will help to extract the input info from root file 
 # and save them as .csv file to give as input to optigan
-class OptiganHelpers:
+class Optigan:
     """
     Everything related to Optigan should be here
     """
@@ -52,6 +52,10 @@ class OptiganHelpers:
         self.events = {}
         self.extracted_events_details = []
         self.optigan_model_folder= os.path.join(paths.data, "optigan_models")
+        self.gan_arguments = {}
+        # setting this as "cpu" for now because 
+        # other options are causing an error
+        self.device = torch.device("cpu")
         # this is one model (model_3341.pt) for 3*3*3 crystal dimension
         # which we have trained and will be used as default model for now
         # in the future there might me multiple models (just like physics lists)
@@ -61,7 +65,6 @@ class OptiganHelpers:
         self.optigan_output_folder = os.path.join(paths.data, "optigan_outputs")
         self.optigan_csv_output_folder = os.path.join(self.optigan_output_folder, "csv_files")
         self.optigan_output_graphs_folder = os.path.join(self.optigan_output_folder, "graphs")
-
 
     # opens root file and return the phase info 
     def open_root_file(self):
@@ -124,11 +127,15 @@ class OptiganHelpers:
             print(f"Event ID: {event_id}, Gamma Position: {gamma_pos_x}, {gamma_pos_y}, {gamma_pos_z}, Number of Optical Photons: {num_optical_photons}")
             print()
 
-    # Loads the model with pre-trained weights and generates output of optigan
-    def get_optigan_outputs(self):
+    def load_gan_model(self):
 
-        # Check if CUDA is available and set device accordingly
-        device = torch.device("cpu")
+        self.gan_arguments = {
+            "noise_dimension": 10,
+            "output_dimension": 6,
+            "hidden_dimension": 128,
+            "labels_length" : 3
+        }
+
 
         # Define your model dimensions
         noise_dimension = 10
@@ -136,18 +143,8 @@ class OptiganHelpers:
         hidden_dimension = 128
         labels_length = 3
 
-        # Clean and recreate the output folder
-        if os.path.exists(self.optigan_output_folder):
-            shutil.rmtree(self.optigan_output_folder)
-        os.makedirs(self.optigan_output_folder)
-        print(f"The optigan output files will be saved at {self.optigan_output_folder}")
-
-        # Sort and list CSV files
-        csv_files = sorted([file for file in os.listdir(self.optigan_input_folder) if file.endswith('.csv')], key = extract_number)
-        print(f"The csv files in the folder are {csv_files}")
-
         # Load the saved model checkpoint
-        checkpoint = torch.load(self.optigan_model_file_path, map_location = device)
+        checkpoint = torch.load(self.optigan_model_file_path, map_location = self.device)
 
         # Initialize the model 
         generator = WGAN_Generator(noise_dimension, output_dimension, hidden_dimension, labels_length)
@@ -165,12 +162,27 @@ class OptiganHelpers:
         generator.load_state_dict(checkpoint['generator_state_dict'])
 
         # Move the model to the appropriate device
-        generator.to(device)
+        generator.to(self.device)
 
         # Set the model to evaluation mode
         generator.eval()
 
+        return generator
+
+
+    # Loads the model with pre-trained weights and generates output of optigan
+    def get_optigan_outputs(self):
         for file_index, file_name in enumerate(csv_files):
+
+            # Clean and recreate the output folder
+            if os.path.exists(self.optigan_output_folder):
+                shutil.rmtree(self.optigan_output_folder)
+            os.makedirs(self.optigan_output_folder)
+            print(f"The optigan output files will be saved at {self.optigan_output_folder}")
+
+            # Sort and list CSV files
+            csv_files = sorted([file for file in os.listdir(self.optigan_input_folder) if file.endswith('.csv')], key = extract_number)
+            print(f"The csv files in the folder are {csv_files}")
 
             # Prepare input file path and read csv
             csv_file_path = os.path.join(self.optigan_input_folder, file_name)
@@ -181,9 +193,9 @@ class OptiganHelpers:
             print(f"Processing {file_name} with {total_number_of_photons} photons.")
 
             # Move the initial conditional values to the device
-            classX_single = torch.tensor(df["gamma_pos_x"].values, dtype=torch.float32).to(device)
-            classY_single = torch.tensor(df["gamma_pos_y"].values, dtype=torch.float32).to(device)
-            classZ_single = torch.tensor(df["gamma_pos_z"].values, dtype=torch.float32).to(device)
+            classX_single = torch.tensor(df["gamma_pos_x"].values, dtype=torch.float32).to(self.device)
+            classY_single = torch.tensor(df["gamma_pos_y"].values, dtype=torch.float32).to(self.device)
+            classZ_single = torch.tensor(df["gamma_pos_z"].values, dtype=torch.float32).to(self.device)
 
             # Expand the conditional input vectors to match the total number of rows
             classX = classX_single.expand(total_number_of_photons)
@@ -191,7 +203,7 @@ class OptiganHelpers:
             classZ = classZ_single.expand(total_number_of_photons)
 
             # Create the random noise vector and combine conditions
-            noise = torch.randn(total_number_of_photons, noise_dimension).to(device)
+            noise = torch.randn(total_number_of_photons, self.generator["noise_dimension"]).to(self.device)
             conditions = torch.stack([classX, classY, classZ], dim=1)
 
             # Concatenate noise and conditional input into one tensor
@@ -199,7 +211,7 @@ class OptiganHelpers:
 
             # Generate data using the model
             with torch.no_grad():
-                generated_data = generator(generator_input)
+                generated_data = self.generator(generator_input)
             
             # Convert generated data to a DataFrame and save as a CSV file
             generated_data_np = generated_data.cpu().numpy()
@@ -272,6 +284,7 @@ class OptiganHelpers:
         # self.pretty_print_events()
         # self.print_details_of_events()
         self.save_optigan_inputs()
+        self.generator = self.load_gan_model()
         self.get_optigan_outputs()
     
     def print_root_info(self):
