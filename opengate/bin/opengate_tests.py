@@ -26,7 +26,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--test_id", "-i", default="all", help="Start test from this number")
+@click.option("--start_id", "-i", default="all", help="Start test from this number")
 @click.option(
     "--no_log_on_fail",
     default=False,
@@ -52,7 +52,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     is_flag= True,
     help="Run only the tests that failed in the previous evaluation." )
 
-def go(test_id, random_tests, no_log_on_fail, processes_run, run_previously_failed_jobs):
+def go(start_id, random_tests, no_log_on_fail, processes_run, run_previously_failed_jobs):
     run_failed_mpjobs_in_sp = True
     mypath = return_tests_path() # returns the path to the tests/src dir
     test_dir_path = mypath.parent
@@ -67,8 +67,8 @@ def go(test_id, random_tests, no_log_on_fail, processes_run, run_previously_fail
         + ".json"
     )
     if not run_previously_failed_jobs:
-        files_to_run, files_to_ignore = get_files_to_run(test_id, random_tests)
-        files_to_run = select_files(files_to_run, test_id, random_tests)
+        files_to_run, files_to_ignore = get_files_to_run()
+        files_to_run = select_files(files_to_run, start_id, random_tests)
     else: 
         with open(fpath_dashboard_output, "r") as fp:
             dashboard_dict_previously = json.load( fp)
@@ -80,19 +80,24 @@ def go(test_id, random_tests, no_log_on_fail, processes_run, run_previously_fail
     
     runs_status_info = run_test_cases(files_to_run, no_log_on_fail, processes_run)
     
-    dashboard_dict, fail_status = status_summary_report(runs_status_info, files_to_run, no_log_on_fail, fpath_dashboard_output)
+    dashboard_dict, fail_status = status_summary_report(runs_status_info, files_to_run, no_log_on_fail)
     if run_failed_mpjobs_in_sp:
-        
         previously_failed_files= [k for k,v in dashboard_dict.items() if not v[0]]
         if fail_status and processes_run == 'mp':
             print('Some files failed in multiprocessing, going to run the failed jobs in single processing mode:')
             runs_status_info_sp = run_test_cases(previously_failed_files, no_log_on_fail, processes_run = 'sp')
-            dashboard_dict_sp, fail_status_sp = status_summary_report(runs_status_info_sp, previously_failed_files, no_log_on_fail, '')
+            dashboard_dict_sp, fail_status_sp = status_summary_report(runs_status_info_sp, previously_failed_files, no_log_on_fail)
             for file, status_sp in dashboard_dict_sp.items():
                 if status_sp[0] and not dashboard_dict[file][0]:
                     fname = Path(file).name 
                     print(f'{fname}: failed in "multiprocessing" but succeeded in "single processing".')
-def get_files_to_run(test_id, random_tests):
+                ## going to overwrite the status of multiprocessing with the sp result
+                dashboard_dict[file] = status_sp
+    if fpath_dashboard_output:
+        os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
+        with open(fpath_dashboard_output, "w") as fp:
+            json.dump(dashboard_dict, fp, indent=4)
+def get_files_to_run():
 
     mypath = return_tests_path()
     print("Looking for tests in: " + str(mypath))
@@ -261,7 +266,7 @@ def run_one_test_case_mp(f):
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
     cmd = "python " + str(mypath / f)
-    log = str(mypath.parent / "log" / f) + ".log"
+    log = str(mypath.parent / "log" / Path(f).stem) + ".log"
 
     shell_output = subprocess.run(f"{cmd} > {log} 2>&1" , shell=True, check=False, capture_output=True, text = True)
     shell_output.log_fpath = log
@@ -299,13 +304,10 @@ def run_test_cases(files: list, no_log_on_fail: bool, processes_run:str):
     run_time = timedelta(seconds = end-start)
     print(f"Evaluation took in total:   {run_time.seconds /60 :5.1f} min  ")
     return runs_status_info
-def status_summary_report(runs_status_info, files, no_log_on_fail, fpath_dashboard_output):
+def status_summary_report(runs_status_info, files, no_log_on_fail):
     
     dashboard_dict = {k: [shell_output_k.returncode == 0] for k, shell_output_k in zip(files, runs_status_info)}
-    if fpath_dashboard_output:
-        os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
-        with open(fpath_dashboard_output, "w") as fp:
-            json.dump(dashboard_dict, fp, indent=4)
+
     tests_passed = [f for f in files if dashboard_dict[f][0]]
     tests_failed = [f for f in files if not dashboard_dict[f][0]]
    
