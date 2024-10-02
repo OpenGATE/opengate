@@ -70,6 +70,7 @@ void GateDigitizerHitsCollectionActor::BeginOfRunAction(const G4Run *run) {
 
 void GateDigitizerHitsCollectionActor::BeginOfEventAction(
     const G4Event *event) {
+  DDD(__func__);
   /*
      FillToRootIfNeeded is *required* at the beginning of the event because it
      calls SetBeginOfEventIndex.

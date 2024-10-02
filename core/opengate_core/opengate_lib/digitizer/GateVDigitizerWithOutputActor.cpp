@@ -101,12 +101,14 @@ void GateVDigitizerWithOutputActor::DigitInitialize(
 }
 
 void GateVDigitizerWithOutputActor::BeginOfEventAction(const G4Event *event) {
+  DDD(__func__);
   bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
   fOutputDigiCollection->FillToRootIfNeeded(must_clear);
 }
 
 // Called every time a Run ends
 void GateVDigitizerWithOutputActor::EndOfRunAction(const G4Run * /*unused*/) {
+  DDD(__func__);
   fOutputDigiCollection->FillToRootIfNeeded(true);
   auto &iter = fThreadLocalVDigitizerData.Get().fInputIter;
   iter.Reset();

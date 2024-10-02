@@ -78,6 +78,7 @@ void GateDigiCollection::RootInitializeTupleForWorker() {
 }
 
 void GateDigiCollection::FillToRootIfNeeded(bool clear) {
+   DDD(__func__);
   /*
       Policy :
       - can write to root or not according to the flag
@@ -99,6 +100,7 @@ void GateDigiCollection::FillToRoot() {
    * maybe not very efficient to loop that way (row then column)
    * but I don't manage to do elsewhere
    */
+   DDD(__func__);
   auto *am = GateDigiCollectionsRootManager::GetInstance();
   for (size_t i = 0; i < GetSize(); i++) {
     for (auto *att : fDigiAttributes) {
