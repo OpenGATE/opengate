@@ -13,6 +13,9 @@ import numpy as np
 
 import torch.nn as nn
 
+# FIXME: should find an alternative
+# Nils told that this is only for validating test cases. 
+# use direct path? 
 paths = tu.get_default_test_paths(__file__, "")
 
 def extract_number(filename):
@@ -167,6 +170,41 @@ class Optigan:
         generator.eval()
 
         return generator
+    
+    def get_optigan_graphs(self): 
+        csv_files = sorted([file for file in os.listdir(self.optigan_csv_output_folder) if file.endswith('.csv')], key = extract_number)
+        print(csv_files)
+
+        for file_index, csv_file in enumerate(csv_files):
+            csv_file_path = os.path.join(self.optigan_csv_output_folder, csv_file)
+            df = pd.read_csv(csv_file_path)
+
+            column_names  = df.columns.tolist() # redundant? 
+
+            for column in column_names:
+                # Define the sub-directory path where each event graph will be stored
+                optigan_output_graph_file_save_path = os.path.join(self.optigan_output_graphs_folder, f"event{file_index + 1}")
+
+                # Create the directory if it doesn't exist
+                os.makedirs(optigan_output_graph_file_save_path, exist_ok=True)
+
+                # Plot the graph using seaborn
+                plt.figure(figsize=(10, 6))
+                sns.histplot(data=df, x=column, bins=30, color="blue", edgecolor="black")
+                plt.xlabel(column)
+                plt.ylabel("Frequency")
+                plt.title(f"{column} Distribution for Event {file_index + 1}")
+                plt.tight_layout()
+
+                # Construct the file path and save the plot
+                graph_path = os.path.join(optigan_output_graph_file_save_path, f"{column}_event_{file_index + 1}.png")
+                plt.savefig(graph_path)
+                plt.close()
+            
+            print(f"The graphs for the output file {csv_file} are succesfully created in {optigan_output_graph_file_save_path} folder")
+
+
+
 
     # Loads the model with pre-trained weights and generates output of optigan
     def get_optigan_outputs(self):
@@ -224,54 +262,54 @@ class Optigan:
             generated_df.to_csv(optigan_output_csv_file_save_path, index=False)
             print(f"Saved generated data to {optigan_output_csv_file_save_path}.")
 
-        # Plot histograms using Seaborn for each column
-            for column in column_names:
-                # Define the sub-directory path where each event graph will be stored
-                optigan_output_graph_file_save_path = os.path.join(self.optigan_output_graphs_folder, f"event{file_index + 1}")
+        # # Plot histograms using Seaborn for each column
+        #     for column in column_names:
+        #         # Define the sub-directory path where each event graph will be stored
+        #         optigan_output_graph_file_save_path = os.path.join(self.optigan_output_graphs_folder, f"event{file_index + 1}")
 
-                # Create the directory if it doesn't exist
-                os.makedirs(optigan_output_graph_file_save_path, exist_ok=True)
+        #         # Create the directory if it doesn't exist
+        #         os.makedirs(optigan_output_graph_file_save_path, exist_ok=True)
 
-                # Plot the graph using seaborn
-                plt.figure(figsize=(10, 6))
-                sns.histplot(data=generated_df, x=column, bins=30, kde=True, color="blue", edgecolor="black")
-                plt.xlabel(column)
-                plt.ylabel("Frequency")
-                plt.title(f"{column} Distribution for Event {file_index + 1}")
-                plt.tight_layout()
+        #         # Plot the graph using seaborn
+        #         plt.figure(figsize=(10, 6))
+        #         sns.histplot(data=generated_df, x=column, bins=30, kde=True, color="blue", edgecolor="black")
+        #         plt.xlabel(column)
+        #         plt.ylabel("Frequency")
+        #         plt.title(f"{column} Distribution for Event {file_index + 1}")
+        #         plt.tight_layout()
 
-                # Construct the file path and save the plot
-                graph_path = os.path.join(optigan_output_graph_file_save_path, f"{column}_event_{file_index + 1}.png")
-                plt.savefig(graph_path)
-                plt.close()
+        #         # Construct the file path and save the plot
+        #         graph_path = os.path.join(optigan_output_graph_file_save_path, f"{column}_event_{file_index + 1}.png")
+        #         plt.savefig(graph_path)
+        #         plt.close()
 
-            # Create a single figure containing all columns
-            # Create a grid layout (e.g., 2 rows, 3 columns)
-            num_columns = len(column_names)
-            num_cols_per_row = 3
-            num_rows = math.ceil(num_columns / num_cols_per_row)
+        #     # Create a single figure containing all columns
+        #     # Create a grid layout (e.g., 2 rows, 3 columns)
+        #     num_columns = len(column_names)
+        #     num_cols_per_row = 3
+        #     num_rows = math.ceil(num_columns / num_cols_per_row)
 
-            fig, axs = plt.subplots(nrows=num_rows, ncols=num_cols_per_row, figsize=(18, 10))
-            fig.suptitle(f"All Graphs for Event {file_index + 1}")
+        #     fig, axs = plt.subplots(nrows=num_rows, ncols=num_cols_per_row, figsize=(18, 10))
+        #     fig.suptitle(f"All Graphs for Event {file_index + 1}")
 
-            for i, column in enumerate(column_names):
-                row = i // num_cols_per_row
-                col = i % num_cols_per_row
-                sns.histplot(data=generated_df, x=column, bins=30, kde=True, color="blue", edgecolor="black", ax=axs[row][col])
-                axs[row][col].set_xlabel(column)
-                axs[row][col].set_ylabel("Frequency")
-                axs[row][col].set_title(f"{column} Distribution")
+        #     for i, column in enumerate(column_names):
+        #         row = i // num_cols_per_row
+        #         col = i % num_cols_per_row
+        #         sns.histplot(data=generated_df, x=column, bins=30, kde=True, color="blue", edgecolor="black", ax=axs[row][col])
+        #         axs[row][col].set_xlabel(column)
+        #         axs[row][col].set_ylabel("Frequency")
+        #         axs[row][col].set_title(f"{column} Distribution")
 
-            # If there are empty subplots, hide them
-            for i in range(num_columns, num_rows * num_cols_per_row):
-                row = i // num_cols_per_row
-                col = i % num_cols_per_row
-                fig.delaxes(axs[row][col])
+        #     # If there are empty subplots, hide them
+        #     for i in range(num_columns, num_rows * num_cols_per_row):
+        #         row = i // num_cols_per_row
+        #         col = i % num_cols_per_row
+        #         fig.delaxes(axs[row][col])
 
-            plt.tight_layout(rect=[0, 0, 1, 0.96])
-            all_graphs_path = os.path.join(optigan_output_graph_file_save_path, f"all_graphs_{file_index + 1}.png")
-            plt.savefig(all_graphs_path)
-            plt.close()
+        #     plt.tight_layout(rect=[0, 0, 1, 0.96])
+        #     all_graphs_path = os.path.join(optigan_output_graph_file_save_path, f"all_graphs_{file_index + 1}.png")
+        #     plt.savefig(all_graphs_path)
+        #     plt.close()
 
     # this method is called from engines.py and takes care of 
     # running all other methods. 
@@ -285,6 +323,7 @@ class Optigan:
         self.save_optigan_inputs()
         self.generator = self.load_gan_model()
         self.get_optigan_outputs()
+        self.get_optigan_graphs()
     
     def print_root_info(self):
         self.events = self.process_root_output_into_events()
@@ -337,99 +376,7 @@ class Optigan:
         position_y = df_combined["Position_Y"].to_numpy()
         position_z = df_combined["Position_Z"].to_numpy()
         particle_types =  df_combined["ParticleType"].to_numpy()
-
-        # # Add the original index as a new column
-        # df['OriginalIndex'] = df.index
-
-        # # Create a mask for rows where ParticleType is 'opticalphoton'
-        # mask_opticalphoton = df['ParticleType'] == 'opticalphoton'
-
-        # # Find duplicates in 'TrackID' among 'opticalphoton' rows, keeping the first occurrence
-        # duplicates = df[mask_opticalphoton].duplicated(subset='TrackID', keep='first')
-
-        # # Create a mask for rows to drop: duplicates among 'opticalphoton' rows
-        # rows_to_drop = mask_opticalphoton & duplicates
-
-        # # Drop these rows from the DataFrame without resetting the index
-        # df_cleaned = df[~rows_to_drop]
-
-        # Optionally, reset the index if desired, keeping the 'OriginalIndex' column
-        # df_cleaned = df_cleaned.reset_index(drop=True)
-
-
-
-
-        # optical_photon_mask = (particle_types == "opticalphoton")
-
-        # optical_position_x = position_x[optical_photon_mask]
-        # optical_position_y = position_y[optical_photon_mask]
-        # optical_position_z = position_z[optical_photon_mask]
-        # optical_particle_types = particle_types[optical_photon_mask]
-        # optical_track_ids = track_ids[optical_photon_mask]
-
-        # _, unique_indices = np.unique(optical_track_ids, return_index = True)
-
-        # print(f"The length of the unique indices is {len(unique_indices)}")
-
-        # filtered_optical_position_x = optical_position_x[unique_indices]
-        # filtered_optical_position_y = optical_position_y[unique_indices]
-        # filtered_optical_position_z = optical_position_z[unique_indices]
-        # filtered_optical_particle_types = optical_particle_types[unique_indices]
-        # filtered_optical_track_ids = optical_track_ids[unique_indices]
-
-        # print(f"The length of the filtered_optical_position_x is {len(filtered_optical_position_x)}")
-
-        # # # Create copies of the original arrays to modify
-        # # final_position_x = position_x.copy()
-        # # final_position_y = position_y.copy()
-        # # final_position_z = position_z.copy()
-        # # final_particle_types = particle_types.copy()
-        # # final_track_ids = track_ids.copy()
-
-        # optical_indices = np.where(optical_photon_mask)[0]
-        # print(f"The length of the optical_indices {len(optical_indices)}")
-
-        # # Create a mask to remove duplicates from the original data
-        # optical_duplicate_mask = np.ones(len(optical_position_x), dtype=bool)
-        # optical_duplicate_mask[unique_indices] = False  # Keep only the first occurrence of each TrackID
-
-        # # Now create a mask for the final array that excludes duplicates for optical photons
-        # final_mask = np.ones(len(position_x), dtype=bool)
-        # final_mask[optical_indices] = optical_duplicate_mask  # Update only for optical photons
-
-        # # Apply the mask to the original data
-        # final_position_x = position_x[final_mask]
-        # final_position_y = position_y[final_mask]
-        # final_position_z = position_z[final_mask]
-        # final_particle_types = particle_types[final_mask]
-        # final_track_ids = track_ids[final_mask]
-
-        # # Now append the filtered unique optical photon rows to the final arrays
-        # final_position_x = np.concatenate((final_position_x, filtered_optical_position_x))
-        # final_position_y = np.concatenate((final_position_y, filtered_optical_position_y))
-        # final_position_z = np.concatenate((final_position_z, filtered_optical_position_z))
-        # final_particle_types = np.concatenate((final_particle_types, filtered_optical_particle_types))
-        # final_track_ids = np.concatenate((final_track_ids, filtered_optical_track_ids))
-
-
-        # # # Replace only the optical photon rows that correspond to the unique TrackIDs
-        # # final_position_x[optical_indices[unique_indices]] = filtered_optical_position_x
-        # # final_position_y[optical_indices[unique_indices]] = filtered_optical_position_y
-        # # final_position_z[optical_indices[unique_indices]] = filtered_optical_position_z
-        # # final_particle_types[optical_indices[unique_indices]] = filtered_optical_particle_types
-        # # final_track_ids[optical_indices[unique_indices]] = filtered_optical_track_ids
-
-        # print(f"The length of the final_position_x {len(final_position_x)}")
-
-        # # Create a DataFrame from the final arrays
-        # df = pd.DataFrame({
-        #     "TrackID": final_track_ids,
-        #     "ParticleType": final_particle_types,
-        #     "Position_X": final_position_x,
-        #     "Position_Y": final_position_y,
-        #     "Position_Z": final_position_z
-        # })
-        
+                
         # Save the DataFrame to a CSV file
         df_combined.to_csv("output.csv", index=False)
 
