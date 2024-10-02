@@ -63,38 +63,38 @@ if __name__ == "__main__":
     ta2.attached_to = plane.name
     ta2.attributes = [
         "KineticEnergy",
-        #"PostPosition",
-        #"PrePosition",
-        #"PrePositionLocal",
-        #"ParticleName",
-        #"PreDirection",
-        #"PreDirectionLocal",
-        #"PostDirection",
-        #"TimeFromBeginOfEvent",
-        #"GlobalTime",
-        #"LocalTime",
-        #"EventPosition",
-        #"PDGCode",
+        # "PostPosition",
+        # "PrePosition",
+        # "PrePositionLocal",
+        # "ParticleName",
+        # "PreDirection",
+        # "PreDirectionLocal",
+        # "PostDirection",
+        # "TimeFromBeginOfEvent",
+        # "GlobalTime",
+        # "LocalTime",
+        # "EventPosition",
+        # "PDGCode",
     ]
     ta2.debug = False
 
     # run the simulation once with no particle in the phsp
-    #source.direction.momentum = [0, 0, 1]
-    #ta2.output_filename = "test019_phsp_actor_empty.root"
+    # source.direction.momentum = [0, 0, 1]
+    # ta2.output_filename = "test019_phsp_actor_empty.root"
 
     # run
-    #sim.run(start_new_process=True)
-    #print(stats_actor)
+    # sim.run(start_new_process=True)
+    # print(stats_actor)
 
     # check if empty (the root file does not exist)
-    #is_ok = ta2.total_number_of_entries == 0
-    #utility.print_test(is_ok, f"empty phase space = {ta2.total_number_of_entries}")
+    # is_ok = ta2.total_number_of_entries == 0
+    # utility.print_test(is_ok, f"empty phase space = {ta2.total_number_of_entries}")
 
     # redo with the right direction
     source.direction.momentum = [0, 0, -1]
-    #ta2.output_filename = "test019_phsp_actor.root"
+    # ta2.output_filename = "test019_phsp_actor.root"
     ta2.output_filename = None
-    #ta2.root_output.write_to_disk=False
+    # ta2.root_output.write_to_disk=False
     sim.run(start_new_process=True)
     print(stats_actor)
 
@@ -104,5 +104,5 @@ if __name__ == "__main__":
     utility.print_test(is_ok2, f"Number of entries = {hits.num_entries} / {source.n}")
     print()
 
-    is_ok =  is_ok2
+    is_ok = is_ok2
     utility.test_ok(is_ok)
