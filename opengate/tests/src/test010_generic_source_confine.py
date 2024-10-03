@@ -81,7 +81,7 @@ if __name__ == "__main__":
     """
        the source is confined in the given volume ('stuff'), it means that
        all particles will be emitted only in this volume.
-       The 'box' type is reqsimred to defined a larger volume that 'stuff'.
+       The 'box' type is required to define a larger volume than 'stuff'.
        It is done here by computing the bounding box
        Daughter volumes of 'stuff' do not count : no particle will be generated
        from 'stuff_inside'
