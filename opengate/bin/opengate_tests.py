@@ -291,7 +291,6 @@ def run_one_test_case(f, processes_run, mypath):
     if processes_run == "legacy":
         r = os.system(f"{cmd} > {log} 2>&1")
         shell_output = Box({"returncode": r, "log_fpath": log})
-
     else:
         shell_output = subprocess.run(
             f"{cmd} > {log} 2>&1",
@@ -309,7 +308,6 @@ def run_one_test_case(f, processes_run, mypath):
             fatal("Stopped by user")
         else:
             print(colored.stylize(" FAILED !", color_error), end="")
-
     end = time.time()
     shell_output.run_time = start - end
     print(f"   {end - start:5.1f} s     {log:<65}")
