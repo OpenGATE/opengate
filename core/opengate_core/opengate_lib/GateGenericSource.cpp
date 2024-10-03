@@ -535,9 +535,8 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     }
 
     // cumulated weights
-    for (std::size_t i = 1; i < weights.size(); i++)
-      weights[i] += weights[i - 1];
-
+    std::partial_sum(std::begin(weights), std::end(weights),
+                     std::begin(weights));
     auto const weightsSum = weights.back();
 
     // normalize weights to total
