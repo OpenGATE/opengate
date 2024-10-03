@@ -7,14 +7,35 @@ from opengate.tests.utility import (
     print_test,
 )
 from opengate.utility import g4_units
-from opengate.managers import Simulation
+import opengate as gate
+
+
+def set_wrong_attribute(obj, attr):
+    # set a WRONG attribute
+    number_of_warnings_before = getattr(obj, "number_of_warnings")
+    setattr(obj, attr, "nothing")
+    number_of_warnings_after = getattr(obj, "number_of_warnings")
+
+    # check the number of warnings before and after
+    print(
+        f"Number of warnings for {obj.type_name} object {obj.name}: {number_of_warnings_before}"
+    )
+    print(
+        f"Number of warnings for {obj.type_name} object {obj.name}: {number_of_warnings_after}"
+    )
+    b = number_of_warnings_after - number_of_warnings_before == 1
+    print_test(
+        b, f"Tried to set a wrong attribute '{attr}'. It should print a single warning"
+    )
+    return b
+
 
 if __name__ == "__main__":
     paths = get_default_test_paths(
         __file__,
     )
 
-    sim = Simulation()
+    sim = gate.Simulation()
 
     m = g4_units.m
     cm = g4_units.cm
@@ -27,10 +48,21 @@ if __name__ == "__main__":
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_AIR"
 
-    waterbox = sim.add_volume("Box", "Waterbox")
+    is_ok = True
+
+    # create the volume without adding it to the simulation
+    waterbox = gate.geometry.volumes.BoxVolume(name="Waterbox")
     waterbox.size = [40 * cm, 40 * cm, 40 * cm]
     waterbox.translation = [0 * cm, 0 * cm, 25 * cm]
     waterbox.material = "G4_WATER"
+    # provoke a warning
+    is_ok = is_ok and set_wrong_attribute(waterbox, "mohter")
+    # now add the volume to the simulation
+    sim.add_volume(waterbox)
+    # a warning about the wrong attribute "mohter" should appear
+    # in the list of warnings at the end of the simulation
+    # because it should be transferred from the object's warning cache
+    # to the simulation's warning cache once the object is added to the simulation
 
     source = sim.add_source("GenericSource", "Default")
     source.particle = "gamma"
@@ -40,7 +72,6 @@ if __name__ == "__main__":
     source.n = 20
 
     # test wrong attributes
-    is_ok = True
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
     try:
@@ -54,20 +85,17 @@ if __name__ == "__main__":
     )
     print()
 
-    # set a WRONG attribute
-    stats.TOTO = "nothing"
-
-    # check the number of warnings (before the run)
-    print(
-        f"(before run) Number of warnings for stats object: {stats.number_of_warnings}"
-    )
-    b = stats.number_of_warnings == 1
-    print_test(
-        b, f"Try to set a wrong attribute 'TOTO', it should print a single warning"
-    )
-    is_ok = is_ok and b
+    is_ok = is_ok and set_wrong_attribute(stats, "TOTO")
+    is_ok = is_ok and set_wrong_attribute(sim, "nthreads")
 
     sim.run(start_new_process=True)
+
+    found_warning_about_waterbox_mohter = False
+    for w in sim.warnings:
+        if "mohter" in w:
+            found_warning_about_waterbox_mohter = True
+            break
+    is_ok = is_ok and found_warning_about_waterbox_mohter
 
     print(
         f"(after run) Number of warnings for stats object: {stats.number_of_warnings}"

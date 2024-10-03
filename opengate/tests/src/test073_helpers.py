@@ -99,7 +99,7 @@ def compare_stats(sim, filename):
     stats = sim.get_actor("stats")
     # force nb of thread to 1
     stats_ref = utility.read_stat_file(filename)
-    stats.counts.run_count = stats_ref.counts.run_count
+    stats.counts.runs = stats_ref.counts.runs
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
     return is_ok
 
@@ -162,7 +162,7 @@ def compare_proj_images(crystal, sim, stats, image_filename, path, n=1):
     f1 = path / f"projections_test{n}.mhd"
     f2 = path / f"projections_test{n}_offset.mhd"
     img = itk.imread(f1)
-    spacing = np.array(proj.user_info.spacing)
+    spacing = np.array(proj.projection.image.GetSpacing())
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

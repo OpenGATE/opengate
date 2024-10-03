@@ -28,9 +28,9 @@ if __name__ == "__main__":
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "stats029.txt")
     print(
-        f"Number of steps was {stats.counts.step_count}, forced to the same value (because of angle acceptance). "
+        f"Number of steps was {stats.counts.steps}, forced to the same value (because of angle acceptance). "
     )
-    stats.counts.step_count = stats_ref.counts.step_count  # force to id
+    stats.counts.steps = stats_ref.counts.steps  # force to id
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
     print(is_ok)
 

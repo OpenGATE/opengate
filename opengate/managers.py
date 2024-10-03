@@ -1,5 +1,6 @@
 import sys
 import logging
+from typing import Optional, List, Union
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
@@ -396,8 +397,8 @@ class ActorManager(GateObject):
         return "\n".join(list(actor_types.keys()))
 
     def get_actor_user_info(self, name):
-        warning(
-            f"Deprecation warning: This function will soon be removed."
+        self.warn_user(
+            f"Deprecation warning: The function 'get_actor_user_info' will soon be removed."
             f"Use my_actor.user_info instead, where 'my_actor' "
             f"should be replace by your actor object. "
             f"You can also access user input parameters directly, e.g. my_actor.attached_to=..."
@@ -1213,6 +1214,36 @@ class Simulation(GateObject):
     There is NO Geant4 engine here, it is only a set of parameters and options.
     """
 
+    # hints for IDE
+    verbose_level: int
+    verbose_close: bool
+    verbose_getstate: bool
+    running_verbose_level: int
+    g4_verbose_level: int
+    g4_verbose: bool
+    g4_verbose_level_tracking: int
+    visu: bool
+    visu_type: str
+    visu_filename: Optional[Path]
+    visu_verbose: bool
+    visu_commands: List[str]
+    visu_commands_vrml: List[str]
+    visu_commands_gdml: List[str]
+    check_volumes_overlap: bool
+    number_of_threads: int
+    force_multithread_mode: bool
+    random_engine: str
+    random_seed: Union[str, int]
+    run_timing_intervals: List[List[float]]
+    output_dir: Path
+    store_json_archive: bool
+    json_archive_filename: Path
+    store_input_files: bool
+    g4_commands_before_init: List[str]
+    g4_commands_after_init: List[str]
+    init_only: bool
+    progress_bar: bool
+
     user_info_defaults = {
         "verbose_level": (
             logger.INFO,
@@ -1398,13 +1429,18 @@ class Simulation(GateObject):
         ),
     }
 
-    def __init__(self, name="simulation"):
+    def __init__(self, name="simulation", **kwargs):
         """
         Main members are:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
-        super().__init__(name=name)
+        # The Simulation instance should not hold a reference to itself (cycle)
+        kwargs.pop("simulation", None)
+        super().__init__(name=name, **kwargs)
+
+        # list to store warning messages issued somewhere in the simulation
+        self._user_warnings = []
 
         # for debug only
         self.verbose_getstate = False
@@ -1424,6 +1460,8 @@ class Simulation(GateObject):
 
         # read-only info
         self._current_random_seed = None
+
+        self.expected_number_of_events = None
 
     def __str__(self):
         s = (
@@ -1454,6 +1492,19 @@ class Simulation(GateObject):
     @property
     def current_random_seed(self):
         return self._current_random_seed
+
+    @property
+    def warnings(self):
+        return self._user_warnings
+
+    def reset_warnings(self):
+        self._user_warnings = []
+
+    def warn_user(self, message):
+        # We need this specific implementation because the Simulation does not hold a reference 'simulation',
+        # as required by the base class implementation of warn_user()
+        self._user_warnings.append(message)
+        super().warn_user(message)
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -1661,6 +1712,8 @@ class Simulation(GateObject):
             # because everything is already in place.
             output = self._run_simulation_engine(False)
 
+        self._user_warnings.extend(output.warnings)
+
         # FIXME workaround
         self.expected_number_of_events = output.expected_number_of_events
 
@@ -1674,6 +1727,15 @@ class Simulation(GateObject):
         # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
         if self.volume_manager.material_database is None:
             self.volume_manager.material_database = MaterialDatabase()
+
+        if len(self.warnings) > 0:
+            print("*" * 20)
+            print(f"{len(self.warnings)} warnings occurred in this simulation: \n")
+            for i, w in enumerate(self.warnings):
+                print(f"{i+1}) " + "-" * 10)
+                print(w)
+                print()
+            print("*" * 20)
 
     def voxelize_geometry(
         self,

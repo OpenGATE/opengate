@@ -19,6 +19,6 @@ void init_GateDigitizerProjectionActor(py::module &m) {
              GateVActor>(m, "GateDigitizerProjectionActor")
       .def(py::init<py::dict &>())
       .def_readwrite("fImage", &GateDigitizerProjectionActor::fImage)
-      .def_readwrite("fPhysicalVolumeName",
-                     &GateDigitizerProjectionActor::fPhysicalVolumeName);
+      .def("SetPhysicalVolumeName",
+           &GateDigitizerProjectionActor::SetPhysicalVolumeName);
 }

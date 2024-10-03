@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate / "output" / "stat_profiling.txt")
-    stats_ref.counts.run_count = sim.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, 0.1)
     is_ok = is_ok and utility.assert_images(
         paths.gate / "output" / "output_profiling-Edep.mhd",

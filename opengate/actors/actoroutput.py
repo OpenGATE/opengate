@@ -808,7 +808,7 @@ class ActorOutputRoot(ActorOutputBase):
 
     def get_output_path(self, *args, **kwargs):
         if "which" in kwargs and kwargs["which"] != "merged":
-            warning(
+            self.warn_user(
                 "Currently, GATE 10 only stores cumulative ROOT output per simulation ('merged'), "
                 "not data per run. Showing you the path to the ROOT file with cumulative data."
             )

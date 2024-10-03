@@ -224,6 +224,8 @@ GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
 }
 
 std::string GateDigiCollection::DumpLastDigi() const {
+  if (GetSize() == 0)
+    return "";
   std::ostringstream oss;
   auto n = GetSize() - 1;
   for (auto *att : fDigiAttributes) {

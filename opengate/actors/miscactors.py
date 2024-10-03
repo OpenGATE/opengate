@@ -8,6 +8,15 @@ from ..serialization import dump_json
 from ..exception import warning
 
 
+def _setter_hook_stats_actor_output_filename(self, output_filename):
+    # By default, write_to_disk is False.
+    # However, if user actively sets the output_filename
+    # s/he most likely wants to write to disk also
+    if output_filename != "" and output_filename is not None:
+        self.write_to_disk = True
+    return output_filename
+
+
 class ActorOutputStatisticsActor(ActorOutputBase):
     """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
 
@@ -31,6 +40,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 "Relative paths and filenames are taken "
                 "relative to the global simulation output folder "
                 "set via the Simulation.output_dir option. ",
+                "setter_hook": _setter_hook_stats_actor_output_filename,
             },
         ),
         "write_to_disk": (
@@ -48,10 +58,10 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
         # predefine the merged_data
         self.merged_data = Box()
-        self.merged_data.run_count = 0
-        self.merged_data.event_count = 0
-        self.merged_data.track_count = 0
-        self.merged_data.step_count = 0
+        self.merged_data.runs = 0
+        self.merged_data.events = 0
+        self.merged_data.tracks = 0
+        self.merged_data.steps = 0
         self.merged_data.duration = 0
         self.merged_data.start_time = 0
         self.merged_data.stop_time = 0
@@ -65,7 +75,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def pps(self):
         if self.merged_data.duration != 0:
             return int(
-                self.merged_data.event_count / (self.merged_data.duration / g4_units.s)
+                self.merged_data.events / (self.merged_data.duration / g4_units.s)
             )
         else:
             return 0
@@ -74,7 +84,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def tps(self):
         if self.merged_data.duration != 0:
             return int(
-                self.merged_data.track_count / (self.merged_data.duration / g4_units.s)
+                self.merged_data.tracks / (self.merged_data.duration / g4_units.s)
             )
         else:
             return 0
@@ -83,7 +93,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
     def sps(self):
         if self.merged_data.duration != 0:
             return int(
-                self.merged_data.step_count / (self.merged_data.duration / g4_units.s)
+                self.merged_data.steps / (self.merged_data.duration / g4_units.s)
             )
         else:
             return 0
@@ -103,10 +113,10 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
     def get_processed_output(self):
         d = {}
-        d["runs"] = {"value": self.merged_data.run_count, "unit": None}
-        d["events"] = {"value": self.merged_data.event_count, "unit": None}
-        d["tracks"] = {"value": self.merged_data.track_count, "unit": None}
-        d["steps"] = {"value": self.merged_data.step_count, "unit": None}
+        d["runs"] = {"value": self.merged_data.runs, "unit": None}
+        d["events"] = {"value": self.merged_data.events, "unit": None}
+        d["tracks"] = {"value": self.merged_data.tracks, "unit": None}
+        d["steps"] = {"value": self.merged_data.steps, "unit": None}
         val, unit = g4_best_unit_tuple(self.merged_data.init, "Time")
         d["init"] = {
             "value": val,
@@ -193,19 +203,12 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        output = self._add_user_output(ActorOutputStatisticsActor, "stats")
+        self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
-
-    # def __finalize_init__(self):
-    #     super().__finalize_init__()
-    #     # this attribute is considered sometimes in the read_stat_file
-    #     # we declare it here to avoid warning
-    #     self.known_attributes.append("date")
 
     def __str__(self):
         s = self.user_output["stats"].__str__()
@@ -214,16 +217,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     @property
     def counts(self):
         return self.user_output.stats.merged_data
-
-    @ActorBase.output_filename.setter
-    def output_filename(self, val):
-        # special behavior:
-        # By default write_to_disk is False.
-        # However, if user set the output_filename while it is the default (auto)
-        # we set write_to_disk to True.
-        if self.output_filename == "auto":
-            self.write_to_disk = True
-        ActorBase.output_filename.fset(self, val)
 
     def store_output_data(self, output_name, run_index, *data):
         raise NotImplementedError
@@ -235,7 +228,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
-        self.user_output.stats.nb_threads = self.simulation.number_of_threads
+        self.user_output.stats.merged_data.nb_threads = (
+            self.simulation.number_of_threads
+        )
 
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
@@ -286,7 +281,6 @@ class KillActor(ActorBase, g4.GateKillActor):
         ActorBase.__init__(self, *args, **kwargs)
         self.number_of_killed_particles = 0
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateKillActor.__init__(self, self.user_info)
@@ -311,7 +305,6 @@ def _setter_hook_particles(self, value):
 
 
 class SplittingActorBase(ActorBase):
-
     # hints for IDE
     splitting_factor: int
     bias_primary_only: bool
@@ -350,7 +343,6 @@ class SplittingActorBase(ActorBase):
 
 
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
-
     # hints for IDE
     weight_threshold: float
     min_weight_of_particle: float
@@ -403,7 +395,6 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
@@ -415,7 +406,6 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
-
     # hints for IDE
     processes: list
 
@@ -433,7 +423,6 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     def __init__(self, *args, **kwargs):
         SplittingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.__finalize_init__()
 
     def __initcpp__(self):
         g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})

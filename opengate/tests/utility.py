@@ -1,3 +1,4 @@
+import json
 import itk
 import numpy as np
 import os
@@ -22,7 +23,6 @@ from ..utility import (
 )
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_from_array, write_itk_image
-from ..userinfo import UserInfo
 from ..actors.miscactors import SimulationStatisticsActor
 
 plt = LazyModuleLoader("matplotlib.pyplot")
@@ -69,7 +69,32 @@ def write_stats_txt_gate_style(stats, filepath):
 
 
 
-def read_stat_file(filename):
+def read_stat_file(filename, encoder=None):
+    if encoder == "json":
+        return read_stat_file_json(filename)
+    if encoder == "legacy":
+        return read_stat_file_legacy(filename)
+    # guess if it is json or not
+    try:
+        return read_stat_file_json(filename)
+    except (json.JSONDecodeError, ValueError):
+        pass
+    return read_stat_file_legacy(filename)
+
+
+def read_stat_file_json(filename):
+    with open(filename, "r") as f:
+        data = json.load(f)
+    r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
+    counts = {}
+    for k, d in data.items():
+        counts[k] = d["value"]
+    stat = SimulationStatisticsActor(name=r)
+    stat.user_output.stats.store_data(counts)
+    return stat
+
+
+def read_stat_file_legacy(filename):
     p = os.path.abspath(filename)
     with open(p, "r") as f:
         lines = f.readlines()
@@ -79,13 +104,13 @@ def read_stat_file(filename):
     read_track = False
     for line in lines:
         if "NumberOfRun" in line:
-            counts.run_count = int(line[len("# NumberOfRun    =") :])
+            counts.runs = int(line[len("# NumberOfRun    =") :])
         if "NumberOfEvents" in line:
-            counts.event_count = int(line[len("# NumberOfEvents = ") :])
+            counts.events = int(line[len("# NumberOfEvents = ") :])
         if "NumberOfTracks" in line:
-            counts.track_count = int(line[len("# NumberOfTracks =") :])
+            counts.tracks = int(line[len("# NumberOfTracks =") :])
         if "NumberOfSteps" in line:
-            counts.step_count = int(line[len("# NumberOfSteps  =") :])
+            counts.steps = int(line[len("# NumberOfSteps  =") :])
         sec = g4_units.s
         if "ElapsedTimeWoInit" in line:
             counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
@@ -99,7 +124,7 @@ def read_stat_file(filename):
             stat.track_types_flag = True
             counts.track_types = {}
         if "Date" in line:
-            stat.date = line[len("# Date                       =") :]
+            counts.start_time = line[len("# Date                       =") :]
         if "Threads" in line:
             a = line[len(f"# Threads                    =") :]
             try:
@@ -120,21 +145,33 @@ def print_test(b, s):
     return b
 
 
-def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
-    output1 = stats_actor_1.user_output.stats
-    output2 = stats_actor_2.user_output.stats
+def assert_stats(stats_actor_1, stats_actor_2, tolerance=0):
+    return assert_stats_json(
+        stats_actor_1.user_output.stats,
+        stats_actor_2.user_output.stats,
+        tolerance,
+        track_types_flag=stats_actor_1.track_types_flag,
+    )
+
+
+def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_flag=None):
+    output1 = stats_actor_1  # .user_output.stats
+    output2 = stats_actor_2  # .user_output.stats
+    if track_types_flag is None:
+        track_types_flag = len(output1.track_types) > 0
+
     counts1 = output1.merged_data
     counts2 = output2.merged_data
-    if counts2.event_count != 0:
-        event_d = counts1.event_count / counts2.event_count * 100 - 100
+    if counts2.events != 0:
+        event_d = counts1.events / counts2.events * 100 - 100
     else:
         event_d = 100
-    if counts2.track_count != 0:
-        track_d = counts1.track_count / counts2.track_count * 100 - 100
+    if counts2.tracks != 0:
+        track_d = counts1.tracks / counts2.tracks * 100 - 100
     else:
         track_d = 100
-    if counts1.step_count != 0:
-        step_d = counts1.step_count / counts2.step_count * 100 - 100
+    if counts1.steps != 0:
+        step_d = counts1.steps / counts2.steps * 100 - 100
     else:
         step_d = 100
     if output2.pps != 0:
@@ -152,30 +189,30 @@ def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
     else:
         sps_d = 100
 
-    b = counts1.run_count == counts2.run_count
-    is_ok = b and is_ok
-    print_test(b, f"Runs:         {counts1.run_count} {counts2.run_count}")
+    b = counts1.runs == counts2.runs
+    is_ok = b
+    print_test(b, f"Runs:         {counts1.runs} {counts2.runs}")
 
     b = abs(event_d) <= tolerance * 100
     is_ok = b and is_ok
     st = f"(tol = {tolerance * 100:.2f} %)"
     print_test(
         b,
-        f"Events:       {counts1.event_count} {counts2.event_count} : {event_d:+.2f} %  {st}",
+        f"Events:       {counts1.events} {counts2.events} : {event_d:+.2f} %  {st}",
     )
 
     b = abs(track_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Tracks:       {counts1.track_count} {counts2.track_count} : {track_d:+.2f} %  {st}",
+        f"Tracks:       {counts1.tracks} {counts2.tracks} : {track_d:+.2f} %  {st}",
     )
 
     b = abs(step_d) <= tolerance * 100
     is_ok = b and is_ok
     print_test(
         b,
-        f"Steps:        {counts1.step_count} {counts2.step_count} : {step_d:+.2f} %  {st}",
+        f"Steps:        {counts1.steps} {counts2.steps} : {step_d:+.2f} %  {st}",
     )
 
     print_test(
@@ -195,7 +232,7 @@ def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
     )
 
     # particles types (Track)
-    if stats_actor_1.track_types_flag and stats_actor_1.track_types_flag:
+    if track_types_flag:
         for item in counts1.track_types:
             v1 = counts1.track_types[item]
             if item in counts2.track_types:
@@ -213,15 +250,15 @@ def assert_stats(stats_actor_1, stats_actor_2, tolerance=0, is_ok=True):
                 print_test(b, f"Track {item:8}0 {v2}")
 
     # consistency check
-    if stats_actor_1.track_types_flag:
+    if track_types_flag:
         n = 0
         for t in counts1.track_types.values():
             n += int(t)
-        b = n == counts1.track_count
+        b = n == counts1.tracks
         print_test(b, f"Tracks      : {counts1.track_types}")
         if "track_types" in counts2:
             print_test(b, f"Tracks (ref): {counts2.track_types}")
-        print_test(b, f"Tracks vs track_types : {counts1.track_count} {n}")
+        print_test(b, f"Tracks vs track_types : {counts1.tracks} {n}")
         is_ok = b and is_ok
 
     return is_ok
@@ -243,6 +280,7 @@ def plot_img_z(ax, img, label):
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
+    return y
 
 
 def plot_img_y(ax, img, label):
@@ -253,6 +291,7 @@ def plot_img_y(ax, img, label):
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
+    return y
 
 
 def plot_img_x(ax, img, label):
@@ -263,6 +302,7 @@ def plot_img_x(ax, img, label):
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
+    return y
 
 
 def assert_images_properties(info1, info2):
@@ -298,6 +338,7 @@ def assert_images(
     fig_name=None,
     sum_tolerance=5,
     scaleImageValuesFactor=None,
+    sad_profile_tolerance=None,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -335,8 +376,8 @@ def assert_images(
 
     # normalise by event
     if stats is not None:
-        d1 = d1 / stats.counts.event_count
-        d2 = d2 / stats.counts.event_count
+        d1 = d1 / stats.counts.events
+        d2 = d2 / stats.counts.events
 
     # normalize by sum of d1
     s = np.sum(d2)
@@ -345,18 +386,27 @@ def assert_images(
 
     # sum of absolute difference (in %)
     sad = np.fabs(d1 - d2).sum() * 100
-    is_ok = is_ok and sad < tolerance
+    b = sad < tolerance
     print_test(
-        is_ok,
+        b,
         f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
         f"SAD (per event/total): {sad:.2f} % "
         f" (tolerance is {tolerance :.2f} %)",
     )
+    is_ok = is_ok and b
 
     # plot
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    plot_img_axis(ax, img1, "reference", axis)
-    plot_img_axis(ax, img2, "test", axis)
+    p1 = plot_img_axis(ax, img1, "reference", axis)
+    p2 = plot_img_axis(ax, img2, "test", axis)
+    if sad_profile_tolerance is not None:
+        sad = np.fabs(p1 - p2).sum() / p1.sum() * 100
+        b = sad < sad_profile_tolerance
+        print_test(
+            b,
+            f"Profile {axis} relative SAD is {sad:.2f}% (tol {sad_profile_tolerance}%)",
+        )
+        is_ok = is_ok and b
     if fig_name is None:
         filename2 = Path(filename2)
         fn = filename2.stem + "_test" + ".png"
@@ -428,8 +478,8 @@ def assert_filtered_imagesprofile1D(
 
     # normalise by event
     if stats is not None:
-        d1 = d1 / stats.counts.event_count
-        d2 = d2 / stats.counts.event_count
+        d1 = d1 / stats.counts.events
+        d2 = d2 / stats.counts.events
 
     mean_deviation = np.mean(d2 / d1 - 1) * 100
     max_deviation = np.amax(np.abs(d1 / d2 - 1)) * 100
@@ -902,6 +952,60 @@ def compare_root3(
     print(f"Figure in {img}")
 
     return is_ok
+
+
+def compare_root4(
+    ref_root_filename,
+    root_filename,
+    attributes,
+    branch1,
+    branch2=None,
+    img="root.png",
+    hits_tol=6,
+    nb_bins=200,
+):
+
+    keys1 = []
+    keys2 = []
+    tols = []
+    scalings1 = []
+    scalings2 = []
+    for k, att in attributes.items():
+        keys1.append(k)
+        if "key" in att:
+            keys2.append(att["key"])
+        else:
+            keys2.append(k)
+        if "tol" in att:
+            tols.append(att["tol"])
+        else:
+            tols.append(0.2)
+        if "scaling1" in att:
+            scalings1.append(att["scaling1"])
+        else:
+            scalings1.append(1.0)
+        if "scaling2" in att:
+            scalings2.append(att["scaling2"])
+        else:
+            scalings2.append(1.0)
+
+    if branch2 is None:
+        branch2 = branch1
+
+    return compare_root3(
+        ref_root_filename,
+        root_filename,
+        branch1,
+        branch2,
+        keys1,
+        keys2,
+        tols,
+        scalings1,
+        scalings2,
+        img,
+        hits_tol,
+        nb_bins,
+    )
 
 
 def open_root_as_np(root_file, tree_name):
@@ -1920,3 +2024,10 @@ def plot_compare_profile(ref_names, test_names, options):
     # Adjust spacing between subplots if necessary
     plt.tight_layout()
     return plt
+
+
+class RootComparison:
+
+    def __init__(self, ref_filename, filename):
+        self.root_ref = uproot.open(ref_filename)
+        self.root_cmp = uproot.open(filename)

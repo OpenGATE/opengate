@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInYZ_1")
     filename = "phantom_a_1.mhd"
-    dose.output_filename_filename = filename
+    dose.output_filename = filename
     dose.attached_to = "phantom_a_1"
     dose.size = [250, 250, 1]
     dose.spacing = [0.4, 0.4, 2]

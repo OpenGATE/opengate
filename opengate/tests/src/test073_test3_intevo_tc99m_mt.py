@@ -24,7 +24,7 @@ if __name__ == "__main__":
     c = {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV}
     ew = digit.find_first_module("energy_window")
     ew.output_filename = "output_tc99m.root"
-    ew.write_to_disk = True
+    ew.root_output.write_to_disk = True
     ew.channels.append(c)
 
     # output

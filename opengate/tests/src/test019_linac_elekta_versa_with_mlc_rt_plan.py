@@ -245,6 +245,6 @@ if __name__ == "__main__":
         l_cp[0],
         rt_plan_parameters,
         nb_part,
-        stats.counts.event_count,
+        stats.counts.events,
     )
     utility.test_ok(is_ok)

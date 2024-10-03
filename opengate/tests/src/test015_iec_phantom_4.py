@@ -22,8 +22,9 @@ if __name__ == "__main__":
 
     # main options
     sim.check_volumes_overlap = True
-    sim.random_seed = 123654987
+    sim.random_seed = "auto"  # 123456789
     sim.output_dir = paths.output
+    sim.progress_bar = True
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -44,42 +45,37 @@ if __name__ == "__main__":
     bg1.energy.type = "mono"
     bg1.energy.mono = 100 * MeV
 
-    # add background source
-    bg2 = gate_iec.add_background_source(sim, iec_phantom.name, "bg2", a, verbose=True)
-    bg2.particle = "alpha"
-    bg2.energy.type = "mono"
-    bg2.energy.mono = 100 * MeV
-
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    stats.output_filename = "test015_iec_3_stats.txt"
+    stats.output_filename = "test015_iec_4_stats.txt"
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.edep.output_filename = "test015_iec_3.mhd"
+    dose.edep.output_filename = "test015_iec_4.mhd"
     dose.attached_to = iec_phantom
-    dose.size = [100, 100, 100]
-    dose.spacing = [2 * mm, 2 * mm, 2 * mm]
+    dose.size = [150, 150, 150]
+    dose.spacing = [3 * mm, 3 * mm, 3 * mm]
 
     # start
     sim.run()
 
     # compare stats
-    stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_3_stats.txt")
+    stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_4_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
 
     # compare images
     dose = sim.get_actor("dose")
-    f = paths.output / "test015_iec_3.mhd"
+    f = paths.output / "test015_iec_4.mhd"
     im_ok = utility.assert_images(
-        paths.output_ref / "test015_iec_3.mhd",
+        paths.output_ref / "test015_iec_4.mhd",
         dose.edep.get_output_path(),
         stats,
         axis="y",
-        tolerance=86,
+        tolerance=50,
         ignore_value=0,
-        sum_tolerance=2,
+        sum_tolerance=1.0,
+        sad_profile_tolerance=3.0,
     )
 
     is_ok = is_ok and im_ok

@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # main parameters
     sim.check_volumes_overlap = True
     sim.number_of_threads = 2
-    sim.random_seed = 8123456
+    sim.random_seed = 321654987
     sim.output_dir = paths.output
     ac = 100 * BqmL / sim.number_of_threads
     sim.visu = False
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     stats = sim.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_train_stats.txt")
-    stats.counts.run_count = 1
+    stats.counts.runs = 1
     is_ok = utility.assert_stats(stats, stats_ref, 0.02)
 
     # check phsp

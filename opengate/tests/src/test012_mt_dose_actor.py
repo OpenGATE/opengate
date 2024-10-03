@@ -99,7 +99,7 @@ if __name__ == "__main__":
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     # change the number of run to the number of threads
-    stats_ref.counts.run_count = sim.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.10)
 
     is_ok = (

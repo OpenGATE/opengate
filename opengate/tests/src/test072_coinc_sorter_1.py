@@ -115,6 +115,7 @@ if __name__ == "__main__":
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal.name}")
     hc.attached_to = crystal
+    hc.authorize_repeated_volumes = True
     hc.output_filename = "test72_output_1.root"
     hc.attributes = [
         "EventID",
@@ -127,6 +128,7 @@ if __name__ == "__main__":
     # Singles
     sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal.name}")
     sc.attached_to = hc.attached_to
+    sc.authorize_repeated_volumes = True
     sc.input_digi_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
     sc.output_filename = hc.output_filename
