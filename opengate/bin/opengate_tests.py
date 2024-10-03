@@ -74,6 +74,7 @@ def go(
     if not run_previously_failed_jobs:
         files_to_run, files_to_ignore = get_files_to_run()
         files_to_run = select_files(files_to_run, start_id, random_tests)
+        download_data_at_first_run(files_to_run[0])
     else:
         with open(fpath_dashboard_output, "r") as fp:
             dashboard_dict_previously = json.load(fp)
@@ -280,6 +281,9 @@ def filter_files_by_missing_modules(filepaths):
 
 
 def run_one_test_case(f, processes_run, mypath):
+    """
+    This function is obsolete if we don't neeed os.system(run_cmd)
+    """
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
     cmd = "python " + str(mypath / f)
@@ -310,6 +314,10 @@ def run_one_test_case(f, processes_run, mypath):
     shell_output.run_time = start - end
     print(f"   {end - start:5.1f} s     {log:<65}")
     return shell_output
+
+
+def download_data_at_first_run(f):
+    run_one_test_case_mp(f)
 
 
 def run_one_test_case_mp(f):
