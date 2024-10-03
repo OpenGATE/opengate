@@ -58,9 +58,9 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 def go(
     start_id, random_tests, no_log_on_fail, processes_run, run_previously_failed_jobs
 ):
-    run_failed_mpjobs_in_sp = True
-    mypath = return_tests_path()  # returns the path to the tests/src dir
-    test_dir_path = mypath.parent
+    run_failed_mpjobs_in_sp = False
+    path_tests_src = return_tests_path()  # returns the path to the tests/src dir
+    test_dir_path = path_tests_src.parent
     path_output_dashboard = test_dir_path / "output_dashboard"
     fpath_dashboard_output = path_output_dashboard / (
         "dashboard_output_"
@@ -71,28 +71,44 @@ def go(
         + str(sys.version_info[1])
         + ".json"
     )
+    files_to_run_avail, files_to_ignore = get_files_to_run()
     if not run_previously_failed_jobs:
-        files_to_run, files_to_ignore = get_files_to_run()
-        files_to_run = select_files(files_to_run, start_id, random_tests)
-        download_data_at_first_run(files_to_run[0])
+        files_to_run = select_files(files_to_run_avail, start_id, random_tests)
+        download_data_at_first_run(files_to_run_avail[0])
     else:
         with open(fpath_dashboard_output, "r") as fp:
             dashboard_dict_previously = json.load(fp)
             files_to_run = [k for k, v in dashboard_dict_previously.items() if not v[0]]
-    avoid_tests_missing_modules = False  # currently not solid enough yet
-    if avoid_tests_missing_modules:
-        files_to_run, deselected_count, all_missing_modules = (
-            filter_files_by_missing_modules(files_to_run)
-        )
-        print(
-            f'In total {deselected_count} tests were not started, because the following modules are missing: {", ".join(all_missing_modules)}'
-        )
 
-    runs_status_info = run_test_cases(files_to_run, no_log_on_fail, processes_run)
+    files_to_run_part1, files_to_run_part2_depending_on_part1 = (
+        filter_files_with_dependencies(files_to_run, path_tests_src)
+    )
+    if len(files_to_run_part2_depending_on_part1) > 0:
+        print(
+            f"Found test cases with mutual dependencies, going to split evaluation into two sets. {len(files_to_run_part2_depending_on_part1)} tests will start right after first eval round."
+        )
+    runs_status_info = run_test_cases(files_to_run_part1, no_log_on_fail, processes_run)
 
     dashboard_dict, fail_status = status_summary_report(
-        runs_status_info, files_to_run, no_log_on_fail
+        runs_status_info, files_to_run_part1, no_log_on_fail
     )
+
+    if len(files_to_run_part2_depending_on_part1) > 0:
+        print(
+            "Now starting evaluation of tests depending on results of previous tests:"
+        )
+        runs_status_info_part2 = run_test_cases(
+            files_to_run_part2_depending_on_part1, no_log_on_fail, processes_run
+        )
+
+        dashboard_dict_part2, fail_status_part2 = status_summary_report(
+            runs_status_info_part2,
+            files_to_run_part2_depending_on_part1,
+            no_log_on_fail,
+        )
+        dashboard_dict.update(dashboard_dict_part2)
+        fail_status = fail_status and fail_status_part2
+
     if run_failed_mpjobs_in_sp:
         previously_failed_files = [k for k, v in dashboard_dict.items() if not v[0]]
         if fail_status and processes_run == "mp":
@@ -121,8 +137,8 @@ def go(
 
 def get_files_to_run():
 
-    mypath = return_tests_path()
-    print("Looking for tests in: " + str(mypath))
+    path_tests_src = return_tests_path()
+    print("Looking for tests in: " + str(path_tests_src))
 
     if not check_tests_data_folder():
         return False
@@ -150,8 +166,10 @@ def get_files_to_run():
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
     ]
-    mypath = Path(mypath)
-    all_file_paths = [file for file in mypath.glob("test[0-9]*.py") if file.is_file()]
+    path_tests_src = Path(path_tests_src)
+    all_file_paths = [
+        file for file in path_tests_src.glob("test[0-9]*.py") if file.is_file()
+    ]
     # here we sort the paths
     all_file_paths = sorted(all_file_paths)
 
@@ -227,67 +245,81 @@ def select_files(files_to_run, test_id, random_tests):
     return files_to_run
 
 
-def get_imported_modules(filepath):
-    """
-    Parse the given Python file and return a list of imported module names.
-    """
-    imported_modules = set()
-    with open(filepath, "r", encoding="utf-8") as file:
-        tree = ast.parse(file.read(), filename=filepath)
+def get_main_function_args(file_path):
+    with open(file_path, "r") as file:
+        tree = ast.parse(file.read(), filename=file_path)
 
+    # Find the 'main' function in the AST
     for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            for alias in node.names:
-                imported_modules.add(alias.name.split(".")[0])
-        elif isinstance(node, ast.ImportFrom):
-            imported_modules.add(node.module.split(".")[0])
+        if isinstance(node, ast.FunctionDef) and node.name == "main":
+            # Extract the arguments of the main function
 
-    return imported_modules
+            args_info = {}
+            # Handle cases where some arguments have no defaults
+            num_defaults = len(node.args.defaults)
+            num_args = len(node.args.args)
+            non_default_args = num_args - num_defaults
+            for i, arg in enumerate(node.args.args):
+                arg_name = arg.arg
+                if i >= non_default_args:
+                    # Match argument with its default value
+                    default_value = node.args.defaults[i - non_default_args]
+                    # default_value_str = ast.dump(default_value).value()
+                    if isinstance(default_value, ast.Constant):
+                        default_value_str = default_value.value
+                    else:
+                        default_value_str = None
+                else:
+                    default_value_str = None
+                args_info[arg_name] = default_value_str
+            return args_info
 
-
-def is_module_installed(module_name):
-    """
-    Check if a module is installed.
-    """
-    spec = importlib.util.find_spec(module_name)
-    return spec is not None
-
-
-def filter_files_by_missing_modules(filepaths):
-    """
-    Filter out files that have missing modules and return the valid files,
-    number of deselected files, and a set of all missing modules.
-    """
-    valid_files = []
-    deselected_count = 0
-    all_missing_modules = set()  # To track all missing modules
-
-    for filepath in filepaths:
-        missing_modules = []
-        imported_modules = get_imported_modules(filepath)
-
-        for module in imported_modules:
-            if not is_module_installed(module):
-                missing_modules.append(module)
-                all_missing_modules.add(module)
-
-        if not missing_modules:
-            valid_files.append(filepath)
-        else:
-            deselected_count += 1
-            print(f"Missing modules in {filepath}: {', '.join(missing_modules)}")
-
-    return valid_files, deselected_count, all_missing_modules
+    # Return None if no 'main' function is found
+    return None
 
 
-def run_one_test_case(f, processes_run, mypath):
+def analyze_scripts(files):
+    files_dependence_on = {}
+    for file_path in files:
+        args = get_main_function_args(file_path)
+        file_depending_on = None
+        if args is not None and "dependency" in args:
+            file_depending_on = str(args["dependency"])
+            print(file_depending_on)
+
+        files_dependence_on[file_path] = file_depending_on
+        # print(f'{file_path} {args = }')
+    return files_dependence_on
+
+
+def filter_files_with_dependencies(files_to_run, path_tests_src):
+    files_dependence_dict = analyze_scripts(files_to_run)
+    files_needed_for_other_tests = [
+        str(path_tests_src / needed_file)
+        for file, needed_file in files_dependence_dict.items()
+        if needed_file
+    ]
+
+    files_to_run_part1 = [f for f in files_to_run if not files_dependence_dict[f]]
+    files_to_run_part1 += files_needed_for_other_tests
+    files_to_run_part1 = list(set(files_to_run_part1))
+    files_to_run_part2_depending_on_part1 = [
+        f for f in files_to_run if files_dependence_dict[f]
+    ]
+    # print(f'{files_to_run_part1 = }')
+    # print(f'{files_to_run_part2_depending_on_part1 = }')
+    # return 0
+    return files_to_run_part1, files_to_run_part2_depending_on_part1
+
+
+def run_one_test_case(f, processes_run, path_tests_src):
     """
     This function is obsolete if we don't neeed os.system(run_cmd)
     """
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
-    cmd = "python " + str(mypath / f)
-    log = str(mypath.parent / "log" / f) + ".log"
+    cmd = "python " + str(path_tests_src / f)
+    log = str(path_tests_src.parent / "log" / f) + ".log"
     if processes_run == "legacy":
         r = os.system(f"{cmd} > {log} 2>&1")
         shell_output = Box({"returncode": r, "log_fpath": log})
@@ -319,11 +351,11 @@ def download_data_at_first_run(f):
 
 
 def run_one_test_case_mp(f):
-    mypath = return_tests_path()
+    path_tests_src = return_tests_path()
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
-    cmd = "python " + str(mypath / f)
-    log = str(mypath.parent / "log" / Path(f).stem) + ".log"
+    cmd = "python " + str(path_tests_src / f)
+    log = str(path_tests_src.parent / "log" / Path(f).stem) + ".log"
 
     shell_output = subprocess.run(
         f"{cmd} > {log} 2>&1", shell=True, check=False, capture_output=True, text=True
@@ -345,14 +377,14 @@ def run_one_test_case_mp(f):
 
 
 def run_test_cases(files: list, no_log_on_fail: bool, processes_run: str):
-    mypath = return_tests_path()
-    print("Looking for tests in: " + str(mypath))
+    path_tests_src = return_tests_path()
+    print("Looking for tests in: " + str(path_tests_src))
     print(f"Running {len(files)} tests")
     print("-" * 70)
 
     start = time.time()
     if processes_run in ["legacy"]:
-        run_single_case = lambda k: run_one_test_case(k, processes_run, mypath)
+        run_single_case = lambda k: run_one_test_case(k, processes_run, path_tests_src)
         runs_status_info = list(map(run_single_case, files))
     elif processes_run in ["sp"]:
         runs_status_info = list(map(run_one_test_case_mp, files))
@@ -393,11 +425,11 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
             )
             os.system("cat " + shell_output_k.log_fpath)
 
-    print(f"Summary pass:{n_passed} of {len(files)} passed the tests:")
+    print(f"Summary pass: {n_passed}/{len(files)} passed the tests:")
     for k in tests_passed:
         print(str(Path(k).name), colored.stylize(f": passed", color_ok), end="\n")
 
-    print(f"Summary fail: {n_failed} of {len(files)} failed the tests:")
+    print(f"Summary fail: {n_failed}/{len(files)} failed the tests:")
     for k in tests_failed:
         print(str(Path(k).name), colored.stylize(f": failed", color_error), end="\n")
 
