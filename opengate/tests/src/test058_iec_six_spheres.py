@@ -20,8 +20,9 @@ if __name__ == "__main__":
     sim.visu = False
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = True
-    sim.random_seed = 321654
+    sim.random_seed = 123456789
     sim.output_dir = paths.output
+    sim.progress_bar = True
 
     # units
     m = gate.g4_units.m
@@ -141,7 +142,7 @@ if __name__ == "__main__":
         "phsp_bg",
         k,
         k,
-        [0.2] * len(k),
+        [0.26] * len(k),
         [1] * len(k),
         [1] * len(k),
         paths.output / "test058_bg.png",
