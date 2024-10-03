@@ -16,8 +16,10 @@ def plot(output_file, ekin, data_x, data_y, relerrs):
     fig, ax = plt.subplots(figsize=(8.5, 6))
     ax.set_xlabel("Energy (MeV)")
     ax.set_ylabel("Number of particles")
-    ax.plot(data_x, data_y, label="input energy spectrum", marker="o")
-    ax.plot(data_x, hist_y, label="simulated energy spectrum", marker="o")
+    ax.scatter(data_x, data_y, label="input energy spectrum", marker="o")
+    ax.scatter(
+        data_x, hist_y, label="simulated energy spectrum", marker=".", linewidth=0.9
+    )
     ax.legend()
 
     ax2 = ax.twinx()
@@ -38,7 +40,23 @@ def root_load_ekin(root_file: str):
     return ekin
 
 
-def test(paths, spectrum_type: str):
+def add_source_energy_spectrum_discrete(sim, phsp):
+    spectrum = gate.sources.generic.get_ion_gamma_spectrum("Lu177")
+
+    source = sim.add_source("GenericSource", "beam")
+    source.mother = phsp.name
+    source.particle = "gamma"
+    source.n = 5e5 / sim.number_of_threads
+    source.position.type = "point"
+    source.direction.type = "iso"
+    source.energy.type = "spectrum_discrete"
+    source.energy.spectrum_energies = spectrum.energies
+    source.energy.spectrum_weights = spectrum.weights
+
+    return source
+
+
+def run_simulation(paths):
     # create the simulation
     sim = gate.Simulation()
 
@@ -68,28 +86,11 @@ def test(paths, spectrum_type: str):
     phsp.rmax = 1 * m
     phsp.material = world.material
 
-    spectrum = gate.sources.generic.get_ion_energy_spectrum(
-        # "Re186"
-        "Lu177"
-    )
-
-    source = sim.add_source("GenericSource", "beam")
-    source.mother = phsp.name
-    source.particle = "e-"
-    source.n = 5e5 / sim.number_of_threads
-    source.position.type = "point"
-    source.direction.type = "iso"
-    source.energy.type = "spectrum_histogram"
-    source.energy.spectrum_energy_bin_edges = spectrum["energy_bin_edges"]
-    source.energy.spectrum_weights = spectrum["weights"]
-    if spectrum_type == "interpolated":
-        source.energy.spectrum_histogram_interpolation = "linear"
+    source = add_source_energy_spectrum_discrete(sim, phsp)
 
     # actors
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-
-    phsp_actor = sim.add_actor("PhaseSpaceActor", f"phsp_actor_{spectrum_type}")
-    phsp_actor.output_filename = f"test010_energy_spectrum_{spectrum_type}.root"
+    phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp_actor")
+    phsp_actor.output_filename = "test010_energy_spectrum_discrete.root"
     phsp_actor.attach_to = phsp
     phsp_actor.attributes = [
         "KineticEnergy",
@@ -102,20 +103,27 @@ def test(paths, spectrum_type: str):
     sim.run(start_new_process=True)
 
     # get info
-    bin_edges = source.energy.spectrum_energy_bin_edges
-    data_x = [(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(len(bin_edges) - 1)]
+    ekin = root_load_ekin(str(phsp_actor.get_output_path()))
+
+    # test
+    data_x = source.energy.spectrum_energies
+
     data_y = (
         np.array(source.energy.spectrum_weights)
         * source.n
         / np.sum(source.energy.spectrum_weights)
     )
 
-    bins = len(data_x)
+    energy_counts = {}
+    for energy in ekin:
+        if energy not in energy_counts:
+            energy_counts[energy] = 0
+        energy_counts[energy] += 1
 
-    ekin = root_load_ekin(str(phsp_actor.get_output_path()))
-    hist_y, hist_x = np.histogram(ekin, bins=bins)
+    output_y = list(energy_counts.values())
+    print(output_y)
 
-    relerrs = [abs(hist_y[i] - data_y[i]) / data_y[i] for i in range(len(data_y))]
+    relerrs = [abs(output_y[i] - data_y[i]) / data_y[i] for i in range(len(data_y))]
     oks = [
         utility.check_diff_abs(0, relerr, tolerance=0.15, txt="relative error")
         for relerr in relerrs
@@ -123,7 +131,7 @@ def test(paths, spectrum_type: str):
     is_ok = all(oks)
 
     plot(
-        paths.output / f"test010_plot_energy_spectrum_{spectrum_type}.png",
+        paths.output / "test010_plot_energy_spectrum_discrete.png",
         ekin,
         data_x,
         data_y,
@@ -138,6 +146,4 @@ if __name__ == "__main__":
         __file__, "test010_generic_source_energy_spectrum", output_folder="test010"
     )
 
-    # test(paths, "discrete")
-    test(paths, "histogram")
-    test(paths, "interpolated")  # relative error ok until last values
+    run_simulation(paths)
