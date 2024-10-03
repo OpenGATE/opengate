@@ -97,7 +97,7 @@ def validation_test(arr_ref, arr_data, nb_split, tol=0.2, tol_weights=0.04):
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, "test071test_operator_compt_splitting", output_folder="test071"
+        __file__, "test076_last_vertex_splitting", output_folder="test076"
     )
 
     # create the simulation
@@ -113,7 +113,10 @@ if __name__ == "__main__":
     ui.number_of_threads = 1
     # 1236566 seg fault
     #12745 double compt
-    ui.random_seed = 73
+    # ui.random_seed = 73
+    # ui.random_seed = 2632
+    # ui.random_seed = 45
+    ui.random_seed = 444
 
     # units
     m = gate.g4_units.m
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     #  adapt world size
     world = sim.world
     world.size = [0.25 * m, 0.25 * m, 0.25 * m]
-    world.material = "G4_WATER"
+    world.material = "G4_Galactic"
 
     ####### GEOMETRY TO IRRADIATE #############
     sim.volume_manager.material_database.add_material_weights(
@@ -157,40 +160,57 @@ if __name__ == "__main__":
         "xyz", [angle_y, angle_y, angle_z], degrees=True
     ).as_matrix()
     W_tubs.rotation = rotation
+    bias = True
 
-    ####### Compton Splitting ACTOR #########
-    nb_split = 25
-    vertex_splitting_actor = sim.add_actor("LastVertexInteractionSplittingActor", "vertexSplittingW")
-    vertex_splitting_actor.mother = W_tubs.name
-    vertex_splitting_actor.splitting_factor = nb_split
-    vertex_splitting_actor.russian_roulette_for_angle = False
+    if bias :
+    ###### Last vertex Splitting ACTOR #########
+        nb_split = 25
+        vertex_splitting_actor = sim.add_actor("LastVertexInteractionSplittingActor", "vertexSplittingW")
+        vertex_splitting_actor.mother = W_tubs.name
+        vertex_splitting_actor.splitting_factor = nb_split
+        vertex_splitting_actor.angular_kill = True
+        vertex_splitting_actor.max_theta = 15*deg
 
     ##### PHASE SPACE plan ######"
-    plan_tubs = sim.add_volume("Tubs", "phsp_tubs")
-    plan_tubs.material = "G4_Galactic"
-    plan_tubs.mother = world.name
-    plan_tubs.rmin = W_tubs.rmax + 1*cm
-    plan_tubs.rmax = plan_tubs.rmin + 1 * nm
-    plan_tubs.dz = 0.05 * m
-    plan_tubs.color = [0.2, 1, 0.8, 1]
-    plan_tubs.rotation = rotation
+    # plan_tubs = sim.add_volume("Tubs", "phsp_tubs")
+    # plan_tubs.material = "G4_Galactic"
+    # plan_tubs.mother = world.name
+    # plan_tubs.rmin = W_tubs.rmax + 1*cm
+    # plan_tubs.rmax = plan_tubs.rmin + 1 * nm
+    # plan_tubs.dz = 0.05 * m
+    # plan_tubs.color = [0.2, 1, 0.8, 1]
+    # plan_tubs.rotation = rotation
 
-    ####### Electron source ###########
+    plan = sim.add_volume("Box", "plan_phsp")
+    plan.material = "G4_Galactic"
+    plan.size = [5*cm,5*cm,1*nm]
+    plan.translation = [0,0,-1*cm]
+
+
+    ####### gamma source ###########
     source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
-    source.n = 1
+    if bias :
+        source.n = 100
+    else :
+        source.n = 10000000
     source.position.type = "sphere"
     source.position.radius = 1 * nm
     source.direction.type = "momentum"
     # source.direction.momentum = [0,0,-1]
     source.direction.momentum = np.dot(rotation, np.array([0, 0, -1]))
     source.energy.type = "mono"
-    source.energy.mono = 4* MeV
+    source.energy.mono =  4 * MeV
+    #
+    ###### LastVertexSource #############
+    if bias :
+        source_0 = sim.add_source("LastVertexSource", "source_vertex")
+        source_0.n = 1
 
     ####### PHASE SPACE ACTOR ##############
 
     phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    phsp_actor.mother = plan_tubs.name
+    phsp_actor.mother = plan.name
     phsp_actor.attributes = [
         "EventID",
         "TrackID",
@@ -198,12 +218,14 @@ if __name__ == "__main__":
         "ParticleName",
         "KineticEnergy",
         "PreDirection",
+        "PrePosition",
         "TrackCreatorProcess",
     ]
+    if bias :
+        phsp_actor.output = paths.output / ("test076_output_data_last_vertex_osef.root")
+    else :
+        phsp_actor.output = paths.output / ("test076_output_data_last_vertex_ref.root")
 
-    phsp_actor.output = paths.output / "test075_output_data.root"
-
-    ##### MODIFIED PHYSICS LIST ###############
 
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
@@ -215,8 +237,8 @@ if __name__ == "__main__":
     sim.add_g4_command_before_init(s)
 
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
-    sim.physics_manager.global_production_cuts.electron = 1 * km
-    sim.physics_manager.global_production_cuts.positron = 1 * um
+    sim.physics_manager.global_production_cuts.electron = 1000 * km
+    sim.physics_manager.global_production_cuts.positron = 1000 * km
 
     output = sim.run()
 
