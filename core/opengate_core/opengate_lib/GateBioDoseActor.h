@@ -91,9 +91,12 @@ private:
   VoxelIndices fEventVoxelIndices;
   VoxelIndices fVoxelIndices;
 
+	// from Python
   Image::Pointer fEdepImage;
+  Image::Pointer fDoseImage;
 
-  // Image fEventEdepImage;
+	// only C++-side
+	Image::Pointer fEventEdepImage;
   // Image fEventDoseImage;
   // Image fEventAlphaImage;
   // Image fEventSqrtBetaImage;

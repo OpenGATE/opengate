@@ -37,6 +37,10 @@ void GateBioDoseActor::InitializeCpp() {
   GateVActor::InitializeCpp();
 
   fEdepImage = Image::New();
+  fDoseImage = Image::New();
+
+  // C++-side images
+  fEventEdepImage = Image::New();
 }
 
 void GateBioDoseActor::BeginOfRunActionMasterThread(int run_id) {
@@ -45,6 +49,11 @@ void GateBioDoseActor::BeginOfRunActionMasterThread(int run_id) {
   fNbOfEvent = 0;
 
   AttachImageToVolume<Image>(fEdepImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fDoseImage, fPhysicalVolumeName, fTranslation);
+
+  // C++-side images
+  fEventEdepImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
+  fEventEdepImage->Allocate();
 
   auto sp = fEdepImage->GetSpacing();
   // fVoxelVolume = sp[0] * sp[1] * sp[2];
@@ -63,9 +72,18 @@ void GateBioDoseActor::BeginOfRunAction(const G4Run *) {
 
 void GateBioDoseActor::BeginOfEventAction(const G4Event *event) {
   ++fNbOfEvent;
+
+  fEventEdepImage->FillBuffer(0);
 }
 
 void GateBioDoseActor::EndOfEventAction(const G4Event *) {
+  for(auto const& index: fEventVoxelIndices) {
+    auto const eventEdep = fEventEdepImage->GetPixel(index);
+
+    fVoxelIndices.insert(index);
+
+    ImageAddValue<Image>(fEdepImage, index, eventEdep);
+  }
 }
 
 void GateBioDoseActor::SteppingAction(G4Step *step) {
@@ -106,7 +124,9 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
 
   if (energyDep <= 0) return;
 
-  ImageAddValue<Image>(fEdepImage, index, energyDep);
+  ImageAddValue<Image>(fEventEdepImage, index, energyDep);
+
+  fEventVoxelIndices.insert(index);
 }
 
 void GateBioDoseActor::EndSimulationAction() {
