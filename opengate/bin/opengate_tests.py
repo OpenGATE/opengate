@@ -72,13 +72,16 @@ def go(
         + ".json"
     )
     files_to_run_avail, files_to_ignore = get_files_to_run()
+
     if not run_previously_failed_jobs:
         files_to_run = select_files(files_to_run_avail, start_id, random_tests)
         download_data_at_first_run(files_to_run_avail[0])
     else:
         with open(fpath_dashboard_output, "r") as fp:
             dashboard_dict_previously = json.load(fp)
-            files_to_run = [k for k, v in dashboard_dict_previously.items() if not v[0]]
+            files_to_run = [
+                k for k, v in dashboard_dict_previously.items() if v and not v[0]
+            ]
 
     files_to_run_part1, files_to_run_part2_depending_on_part1 = (
         filter_files_with_dependencies(files_to_run, path_tests_src)
@@ -89,10 +92,6 @@ def go(
         )
     runs_status_info = run_test_cases(files_to_run_part1, no_log_on_fail, processes_run)
 
-    dashboard_dict, fail_status = status_summary_report(
-        runs_status_info, files_to_run_part1, no_log_on_fail
-    )
-
     if len(files_to_run_part2_depending_on_part1) > 0:
         print(
             "Now starting evaluation of tests depending on results of previous tests:"
@@ -101,13 +100,16 @@ def go(
             files_to_run_part2_depending_on_part1, no_log_on_fail, processes_run
         )
 
-        dashboard_dict_part2, fail_status_part2 = status_summary_report(
-            runs_status_info_part2,
-            files_to_run_part2_depending_on_part1,
+        dashboard_dict, fail_status_part2 = status_summary_report(
+            runs_status_info + runs_status_info_part2,
+            files_to_run_part1 + files_to_run_part2_depending_on_part1,
             no_log_on_fail,
         )
-        dashboard_dict.update(dashboard_dict_part2)
-        fail_status = fail_status and fail_status_part2
+
+    else:
+        dashboard_dict, fail_status = status_summary_report(
+            runs_status_info, files_to_run_part1, no_log_on_fail
+        )
 
     if run_failed_mpjobs_in_sp:
         previously_failed_files = [k for k, v in dashboard_dict.items() if not v[0]]
@@ -129,10 +131,12 @@ def go(
                     )
                 ## going to overwrite the status of multiprocessing with the sp result
                 dashboard_dict[file] = status_sp
+    dashboard_dict_out = {k: [] for k in files_to_run_avail}
+    dashboard_dict_out.update(dashboard_dict)
     if fpath_dashboard_output:
         os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
         with open(fpath_dashboard_output, "w") as fp:
-            json.dump(dashboard_dict, fp, indent=4)
+            json.dump(dashboard_dict_out, fp, indent=4)
 
 
 def get_files_to_run():
@@ -168,7 +172,7 @@ def get_files_to_run():
     ]
     path_tests_src = Path(path_tests_src)
     all_file_paths = [
-        file for file in path_tests_src.glob("test[0-9]*.py") if file.is_file()
+        file.name for file in path_tests_src.glob("test[0-9]*.py") if file.is_file()
     ]
     # here we sort the paths
     all_file_paths = sorted(all_file_paths)
@@ -189,32 +193,31 @@ def get_files_to_run():
     files_to_run = []
     files_to_ignore = []
 
-    for f in all_file_paths:
+    for filename in all_file_paths:
         eval_this_file = True
-        filename_for_pattern_search = str(f.name)
         reason_to_ignore = ""
         for string_to_ignore in ignore_files_containing:
-            if string_to_ignore.lower() in filename_for_pattern_search.lower():
+            if string_to_ignore.lower() in filename.lower():
                 eval_this_file = False
                 reason_to_ignore = string_to_ignore
                 continue
-        if not torch and filename_for_pattern_search in torch_tests:
+        if not torch and filename in torch_tests:
             reason_to_ignore = "Torch not avail"
             eval_this_file = False
-        if os.name == "nt" and "_mt" in f:
+        if os.name == "nt" and "_mt" in filename:
             eval_this_file = False
             reason_to_ignore = "mt & nt"
         if eval_this_file:
-            files_to_run.append(str(f))
+            files_to_run.append(filename)
         else:
             print(
                 colored.stylize(
-                    f"Ignoring: {filename_for_pattern_search:<40} --> {reason_to_ignore}",
+                    f"Ignoring: {filename:<40} --> {reason_to_ignore}",
                     color_warning,
                 ),
                 end="\n",
             )
-            files_to_ignore.append(str(f))
+            files_to_ignore.append(filename)
     print(
         f"Found {len(all_file_paths)} available test cases, of those {len(files_to_run)} files to run, and {len(files_to_ignore)} ignored."
     )
@@ -228,7 +231,7 @@ def select_files(files_to_run, test_id, random_tests):
         test_id = int(test_id)
         files_new = []
         for f in files_to_run:
-            match = pattern.match(str(Path(f).name))
+            match = pattern.match(f)
             f_test_id = int(float(match.group(1)))
             if f_test_id >= test_id:
                 files_new.append(f)
@@ -245,8 +248,8 @@ def select_files(files_to_run, test_id, random_tests):
     return files_to_run
 
 
-def get_main_function_args(file_path):
-    with open(file_path, "r") as file:
+def get_main_function_args(file_dir, file_path):
+    with open(file_dir / file_path, "r") as file:
         tree = ast.parse(file.read(), filename=file_path)
 
     # Find the 'main' function in the AST
@@ -278,24 +281,21 @@ def get_main_function_args(file_path):
     return None
 
 
-def analyze_scripts(files):
+def analyze_scripts(file_dir, files):
     files_dependence_on = {}
     for file_path in files:
-        args = get_main_function_args(file_path)
+        args = get_main_function_args(file_dir, file_path)
         file_depending_on = None
         if args is not None and "dependency" in args:
-            file_depending_on = str(args["dependency"])
-            print(file_depending_on)
-
+            file_depending_on = args["dependency"]
         files_dependence_on[file_path] = file_depending_on
-        # print(f'{file_path} {args = }')
     return files_dependence_on
 
 
 def filter_files_with_dependencies(files_to_run, path_tests_src):
-    files_dependence_dict = analyze_scripts(files_to_run)
+    files_dependence_dict = analyze_scripts(path_tests_src, files_to_run)
     files_needed_for_other_tests = [
-        str(path_tests_src / needed_file)
+        needed_file
         for file, needed_file in files_dependence_dict.items()
         if needed_file
     ]
@@ -306,9 +306,6 @@ def filter_files_with_dependencies(files_to_run, path_tests_src):
     files_to_run_part2_depending_on_part1 = [
         f for f in files_to_run if files_dependence_dict[f]
     ]
-    # print(f'{files_to_run_part1 = }')
-    # print(f'{files_to_run_part2_depending_on_part1 = }')
-    # return 0
     return files_to_run_part1, files_to_run_part2_depending_on_part1
 
 
@@ -347,6 +344,7 @@ def run_one_test_case(f, processes_run, path_tests_src):
 
 
 def download_data_at_first_run(f):
+    print("Running one test case to trigger download of data if not available yet.")
     run_one_test_case_mp(f)
 
 
@@ -401,52 +399,44 @@ def run_test_cases(files: list, no_log_on_fail: bool, processes_run: str):
 def status_summary_report(runs_status_info, files, no_log_on_fail):
 
     dashboard_dict = {
-        k: [shell_output_k.returncode == 0]
+        str(Path(k).name): [shell_output_k.returncode == 0]
         for k, shell_output_k in zip(files, runs_status_info)
     }
 
     tests_passed = [f for f in files if dashboard_dict[f][0]]
     tests_failed = [f for f in files if not dashboard_dict[f][0]]
 
-    n_passed = sum(
-        [k[0] for k in dashboard_dict.values()]
-    )  # [k_i++ for v in dashboard_dict.values() if v][0]
-    n_failed = sum(
-        [not k[0] for k in dashboard_dict.values()]
-    )  # [k_i++ for v in dashboard_dict.values() if not v]
+    n_passed = sum([k[0] for k in dashboard_dict.values()])
+    n_failed = sum([not k[0] for k in dashboard_dict.values()])
 
     # Display the logs of the failed jobs:
     for file, shell_output_k in zip(files, runs_status_info):
         if shell_output_k.returncode != 0 and not no_log_on_fail:
             print(
                 str(Path(file).name),
-                colored.stylize(f": failed", color_error),
+                colored.stylize(": failed", color_error),
                 end="\n",
             )
             os.system("cat " + shell_output_k.log_fpath)
 
     print(f"Summary pass: {n_passed}/{len(files)} passed the tests:")
     for k in tests_passed:
-        print(str(Path(k).name), colored.stylize(f": passed", color_ok), end="\n")
+        print(str(Path(k).name), colored.stylize(": passed", color_ok), end="\n")
 
-    print(f"Summary fail: {n_failed}/{len(files)} failed the tests:")
-    for k in tests_failed:
-        print(str(Path(k).name), colored.stylize(f": failed", color_error), end="\n")
+    if n_failed > 0:
+        print(f"Summary fail: {n_failed}/{len(files)} failed the tests:")
+        for k in tests_failed:
+            print(str(Path(k).name), colored.stylize(": failed", color_error), end="\n")
 
     fail_status = 0
     if n_passed == len(files) and n_failed == 0:
-        print(colored.stylize(f"Yeahh, all tests passed!", color_ok))
+        print(colored.stylize("Yeahh, all tests passed!", color_ok))
         fail_status = 0
     else:
-        print(colored.stylize(f"Oh no, not all tests passed.", color_error))
+        print(colored.stylize("Oh no, not all tests passed.", color_error))
         fail_status = 1
     return dashboard_dict, fail_status
 
-
-# --------------------------------------------------------------------------
-# def main():
-#    files, dashboard_dict = get_files_to_run()
-#    go(files, dashboard_dict)
 
 if __name__ == "__main__":
     go()

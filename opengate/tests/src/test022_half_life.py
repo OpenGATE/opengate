@@ -6,22 +6,17 @@ from opengate.tests import utility
 import uproot
 import sys
 
-if __name__ == "__main__":
+
+def test022_half_life(n_threads=1):
     paths = utility.get_default_test_paths(__file__, output_folder="test022")
 
     # create the simulation
     sim = gate.Simulation()
 
-    # multithread ?
-    argv = sys.argv
-    n = 1
-    if len(argv) > 1:
-        n = int(argv[1])
-
     # main options
     sim.g4_verbose = False
     sim.visu = False
-    sim.number_of_threads = n
+    sim.number_of_threads = n_threads
     sim.random_seed = 12344321
     sim.output_dir = paths.output
     print(sim)
@@ -182,3 +177,11 @@ if __name__ == "__main__":
     plt.savefig(fn)
 
     utility.test_ok(is_ok)
+
+
+def main():
+    test022_half_life(n_threads=1)
+
+
+if __name__ == "__main__":
+    main()
