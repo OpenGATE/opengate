@@ -131,7 +131,7 @@ def go(
                     )
                 ## going to overwrite the status of multiprocessing with the sp result
                 dashboard_dict[file] = status_sp
-    dashboard_dict_out = {k: [] for k in files_to_run_avail}
+    dashboard_dict_out = {k: [""] for k in files_to_run_avail}
     dashboard_dict_out.update(dashboard_dict)
     if fpath_dashboard_output:
         os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
