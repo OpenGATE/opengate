@@ -271,7 +271,7 @@ class Optigan:
             print(f"Saved generated data to {optigan_output_csv_file_save_path}.")
 
     # Runs all the methods of OptiGAN 
-    def run_optigan(self):
+    def run_optigan(self, create_output_graphs):
         df_combined = self.prepare_root_output_file()
         self.events = self.process_root_output_into_events(df_combined)
         self.extracted_events_details = self.extract_event_details()
@@ -280,7 +280,9 @@ class Optigan:
         self.save_optigan_inputs()
         self.generator = self.load_gan_model()
         self.get_optigan_outputs()
-        self.get_optigan_graphs()
+
+        if create_output_graphs:
+         self.get_optigan_graphs()
     
     # This is just a temporary method to get the details printed
     # without creating optigan outputs. 
@@ -362,7 +364,6 @@ class Optigan:
                 # and is followed by electrons or photons
                 if current_event and gamma_has_electrons_or_photons:
                     current_event.append({'type': "opticalphoton", 'optical_photon_count': optical_photon_count})
-                    # print(f"The optical photon count is {optical_photon_count}")
                     events[event_id] = current_event
                     event_id += 1
                     optical_photon_count = 0
@@ -379,14 +380,10 @@ class Optigan:
                     current_event.append({'index': index, 'type': ptype, 'x': x, 'y': y, 'z': z})
                     gamma_has_electrons_or_photons = True
 
-        # print(f"Outside the for loop, the optical photon count is {optical_photon_count}")
-
         # Store the last event if it is not empty
         if len(current_event) > 1:
             current_event.append({'type': "opticalphoton", 'optical_photon_count': optical_photon_count})
             events[event_id] = current_event
-
-        # print(f"The length of events is {len(events)}") # debugging
 
         return events
     
@@ -409,7 +406,6 @@ class Optigan:
                     event_info['gamma_position'] = (particle['x'], particle['y'], particle['z'])
                 elif particle['type'] == 'e-':
                     # increment the count of electrons
-                    # FIX_ME: maybe implement this in process_roo_output func
                     event_info['electron_count'] += 1
                 elif particle['type'] == "opticalphoton":
                     event_info['optical_photon_count'] = particle['optical_photon_count'] 
