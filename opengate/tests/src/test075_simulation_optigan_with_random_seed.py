@@ -7,7 +7,7 @@ import opengate as gate
 import opengate.tests.utility as tu
 from opengate.contrib.optical.optigan import Optigan
 
-import os 
+import os
 
 paths = tu.get_default_test_paths(__file__, output_folder="test075_optigan")
 
@@ -72,12 +72,12 @@ hc.attributes = [
     "PDGCode",
     "ParentID",
     "EventID",
-    "TrackID"
+    "TrackID",
 ]
 
 hc.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
 
-# add a kill actor to the crystal 
+# add a kill actor to the crystal
 ka = sim.add_actor("KillActor", "kill_actor2")
 ka.attached_to = crystal.name
 ka.filters.append(fe)
@@ -93,8 +93,8 @@ optigan_input_file_name = os.path.join(sim.output_dir, hc.output_filename)
 optigan = Optigan(optigan_input_file_name)
 # create_output_graphs: Generates distribution graphs for each output feature.
 # Note: Enabling on high activity levels may cause memory issues.
-# Recommended to only use this for testing with low activity number. 
-optigan.run_optigan(create_output_graphs = False)
+# Recommended to only use this for testing with low activity number.
+optigan.run_optigan(create_output_graphs=False)
 
 is_ok = all(t is True for t in sim.user_hook_log)
 tu.test_ok(is_ok)
