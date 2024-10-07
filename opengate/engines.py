@@ -23,8 +23,6 @@ from .physics import (
 )
 from .base import GateSingletonFatal
 
-from optigan_helpers import OptiganHelpers
-
 
 class EngineBase:
     """
@@ -103,7 +101,9 @@ class SourceEngine(EngineBase):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
-            warning(f"No source: no particle will be generated")
+            self.simulation_engine.simulation.warn_user(
+                f"No source: no particle will be generated"
+            )
         self.progress_bar = progress_bar
 
     def initialize_actors(self):
@@ -296,7 +296,6 @@ class PhysicsEngine(EngineBase):
         self.initialize_regions()
         self.initialize_optical_material_properties()
         self.initialize_optical_surfaces()
-        self.initialize_optigan()
 
     def initialize_parallel_world_physics(self):
         for (
@@ -326,7 +325,9 @@ class PhysicsEngine(EngineBase):
 
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
-            warning(f"WARNING ! SetEnergyRange only works in MT mode")
+            self.physics_manager.warn_user(
+                f"WARNING ! SetEnergyRange only works in MT mode"
+            )
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
 
@@ -416,26 +417,9 @@ class PhysicsEngine(EngineBase):
                 vol
             ) in self.simulation_engine.simulation.volume_manager.volumes.values():
                 material_name = vol.g4_material.GetName()
-                python_material_name = str(material_name)
-                # print(f"The python material name is {python_material_name}")
-
                 material_properties = load_optical_properties_from_xml(
                     self.physics_manager.optical_properties_file, material_name
                 )
-                # print(f"The material properties of the material {python_material_name} is {material_properties}")
-                # python_material_name = str(material_name)
-                # print(f"The type of python material name is {type(python_material_name)}")
-
-                # if python_material_name.startswith("G4_"):
-                #     print("The python material name starts with G4")
-                #     continue
-
-                # material_properties = None
-                
-                # if not python_material_name.startswith("G4_"):
-                    # material_properties = load_optical_properties_from_xml(
-                    #     self.physics_manager.optical_properties_file, material_name
-                    # )
                 if material_properties is not None:
                     self.g4_optical_material_tables[str(material_name)] = (
                         create_g4_optical_properties_table(material_properties)
@@ -444,40 +428,10 @@ class PhysicsEngine(EngineBase):
                         self.g4_optical_material_tables[str(material_name)]
                     )
                 else:
-                    warning(
+                    self.simulation_engine.simulation.warn_user(
                         f"Could not load the optical material properties for material {material_name} "
                         f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}."
                     )
-
-    @requires_fatal("physics_manager")
-    # this method will initialize optigan and get the outputs from it 
-    def initialize_optigan(self):
-        # checking is use_optigan is set to "True" by the user
-        if self.simulation_engine.simulation.physics_manager.use_optigan == True:
-            print("Optigan is set to True")
-            print("Trying to access more info about the actors") # just for debugging
-            # getting the actors defined in the test case
-            actor_list = self.simulation_engine.simulation.actor_manager.user_info_actors
-            # this needs some thought, I am not sure how many actors
-            # can be defined. For now I am just considering there is 
-            # one phase space actor that has information of all particle. 
-            for key in actor_list.keys():
-                print(f"The key value is {key}")
-                # I have defined a kill actor, reasoning behind is we don't want 
-                # optical photon tracking because we are using optigan. 
-                # In my test case I used kill actor to kill optical photons. 
-                if actor_list[key].type_name != "KillActor":
-                    print(f"More info about the actor list - {actor_list[key]}") # debugging
-                    print(f"the output path is {actor_list[key].output}") # debugging
-
-                    root_output_path = actor_list[key].output # get the root output path
-                    print(f"The value of root_ouput_path is {root_output_path}")
-                    optigan_helpers_obj = OptiganHelpers(root_output_path) # initialize with root output
-                    optigan_helpers_obj.run_optigan()
-
-
-
-        # get the actor and see where it is storing the output. 
 
     @requires_fatal("physics_manager")
     def initialize_optical_surfaces(self):
@@ -911,7 +865,7 @@ class VisualisationEngine(EngineBase):
     def initialize_visualisation_gdml(self):
         # Check when GDML is activated, if G4 was compiled with GDML
         if not g4.GateInfo.get_G4GDML():
-            warning(
+            self.simulation.warn_user(
                 "Visualization with GDML not available in Geant4. Check G4 compilation."
             )
         if self.current_visu_filename is None:
@@ -958,6 +912,7 @@ class SimulationOutput:
         self.ppid = os.getppid()
         self.current_random_seed = None
         self.user_hook_log = []
+        self.warnings = None
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.simulation.actor_manager.actors
@@ -1167,6 +1122,13 @@ class SimulationEngine(GateSingletonFatal):
         # prepare the output
         output = SimulationOutput()
 
+        # if the simulation is run in a subprocess,
+        # we want to capture only the warnings from this point on
+        # because everything else has already been executed in the main process
+        # and potential warnings have already been registered.
+        if self.new_process is True:
+            self.simulation.reset_warnings()
+
         # initialization
         self.initialize()
 
@@ -1202,6 +1164,7 @@ class SimulationEngine(GateSingletonFatal):
         output.store_hook_log(self)
         output.current_random_seed = self.current_random_seed
         output.expected_number_of_events = self.source_engine.expected_number_of_events
+        output.warnings = self.simulation.warnings
 
         return output
 
