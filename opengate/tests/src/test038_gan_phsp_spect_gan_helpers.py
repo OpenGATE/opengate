@@ -220,18 +220,16 @@ def analyze_results(sim, paths, all_cond):
 
     stats = sim.get_actor("Stats")
     print(stats)
-    stats.counts.event_count += s.fTotalSkippedEvents
+    stats.counts.events += s.fTotalSkippedEvents
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
-    r = (
-        stats_ref.counts.step_count - stats.counts.step_count
-    ) / stats_ref.counts.step_count
-    print(f"Steps cannot be compared => was {stats.counts.step_count}, {r:.2f}%")
-    stats.counts.step_count = stats_ref.counts.step_count
+    r = (stats_ref.counts.steps - stats.counts.steps) / stats_ref.counts.steps
+    print(f"Steps cannot be compared => was {stats.counts.steps}, {r:.2f}%")
+    stats.counts.steps = stats_ref.counts.steps
     if s.fTotalSkippedEvents > 0:
-        print(f"Tracks cannot be compared => was {stats.counts.track_count}")
-        stats.counts.track_count = stats_ref.counts.track_count
+        print(f"Tracks cannot be compared => was {stats.counts.tracks}")
+        stats.counts.tracks = stats_ref.counts.tracks
 
-    stats.counts.run_count = 1  # force for MT
+    stats.counts.runs = 1  # force for MT
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     # save conditional for checking with reference cond

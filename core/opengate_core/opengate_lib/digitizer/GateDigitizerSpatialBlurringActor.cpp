@@ -108,6 +108,13 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
     l.fNavigator->LocateGlobalPointAndUpdateTouchable(vec, &fTouchableHistory);
     auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
     phys_vol = vid->GetVolumeDepthID().back().fVolume;
+    // If the volume is parameterised, we consider the parent volume to compute
+    // the extent (otherwise the keep in solid will consider one single instance
+    // of the repeated solid, instead of the whole parameterised volume).
+    if (phys_vol->IsParameterised()) {
+      auto n = vid->GetVolumeDepthID().size();
+      phys_vol = vid->GetVolumeDepthID()[n - 2].fVolume;
+    }
   }
 
   // consider local position

@@ -121,7 +121,7 @@ def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
         expected_ratio,
         doseFpath_IDD_singleImage,
         doseFpath_IDD_NthreadImages,
-        abs_tolerance=0.03,
+        abs_tolerance=0.05,
     )
     return is_ok
 

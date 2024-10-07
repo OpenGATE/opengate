@@ -90,6 +90,7 @@ def add_digitizer(sim, paths, nb, crystal):
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
     print("Crystal :", crystal.name)
     hc.output_filename = f"test037_test{nb}.root"
     hc.attributes = [

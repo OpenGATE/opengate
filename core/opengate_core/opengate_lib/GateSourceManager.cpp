@@ -195,6 +195,10 @@ void GateSourceManager::ComputeExpectedNumberOfEvents() {
   fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 100.0);
   if (fExpectedNumberOfEvents > 1e7)
     fProgressBarStep = (long)round((double)fExpectedNumberOfEvents / 1000.0);
+
+  if (fProgressBarStep < 1) {
+    fProgressBarStep = 1;
+  }
 }
 
 long int GateSourceManager::GetExpectedNumberOfEvents() const {

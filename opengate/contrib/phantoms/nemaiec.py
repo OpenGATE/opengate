@@ -39,7 +39,7 @@ def add_iec_phantom(
     create_material(simulation)
 
     # check overlap only for debug
-    simulation.g4_check_overlap_flag = check_overlap
+    simulation.check_volumes_overlap = check_overlap
 
     # Outside structure
     iec, _, _ = add_iec_body(simulation, name)
@@ -423,6 +423,11 @@ def add_background_source(
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_Bq_mL * s.cubic_volume
+    # the confine procedure from G4 seems to be confused when using a boolean solid like {iec_name}_interior
+    # (or I did understand correctly how it works)
+    # so, we need to move the source for correct sampling of the volume
+    mm = g4_units.mm
+    bg.position.translation = [0, 35 * mm, 0]
     # verbose ?
     if verbose:
         # print(f"Bg volume {s.cubic_volume} cc")

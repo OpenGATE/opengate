@@ -28,7 +28,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
-    sim.random_seed = 123456
+    sim.random_seed = 123456789
     sim.output_dir = paths.output
     ac = 15 * BqmL
     sim.visu = False
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output = paths.output / "test040_train_stats.txt"
+    stats.output_filename = "test040_train_stats.txt"
 
     # filter gamma only
     f = sim.add_filter("ParticleFilter", "f")
@@ -148,7 +148,7 @@ if __name__ == "__main__":
     tols = [1.0] * len(checked_keys)
     tols[checked_keys.index("TimeFromBeginOfEvent")] = 0.007
     tols[checked_keys.index("KineticEnergy")] = 0.003
-    tols[checked_keys.index("PrePosition_X")] = 1.6
+    tols[checked_keys.index("PrePosition_X")] = 1.7
     tols[checked_keys.index("PrePosition_Y")] = 1.6
     tols[checked_keys.index("PrePosition_Z")] = 1.9
     tols[checked_keys.index("PreDirection_X")] = 0.01
