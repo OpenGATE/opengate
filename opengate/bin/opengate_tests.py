@@ -98,14 +98,14 @@ def go(
             files_to_run_part2_depending_on_part1, no_log_on_fail, processes_run
         )
 
-        dashboard_dict, fail_status_part2 = status_summary_report(
+        dashboard_dict, failure = status_summary_report(
             runs_status_info + runs_status_info_part2,
             files_to_run_part1 + files_to_run_part2_depending_on_part1,
             no_log_on_fail,
         )
 
     else:
-        dashboard_dict, fail_status = status_summary_report(
+        dashboard_dict, failure = status_summary_report(
             runs_status_info, files_to_run_part1, no_log_on_fail
         )
 
@@ -115,6 +115,7 @@ def go(
         os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
         with open(fpath_dashboard_output, "w") as fp:
             json.dump(dashboard_dict_out, fp, indent=4)
+    print(not failure)
 
 
 def get_files_to_run():
