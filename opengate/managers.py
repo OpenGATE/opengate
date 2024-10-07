@@ -394,8 +394,8 @@ class ActorManager(GateObject):
         return "\n".join(list(actor_types.keys()))
 
     def get_actor_user_info(self, name):
-        warning(
-            f"Deprecation warning: This function will soon be removed."
+        self.warn_user(
+            f"Deprecation warning: The function 'get_actor_user_info' will soon be removed."
             f"Use my_actor.user_info instead, where 'my_actor' "
             f"should be replace by your actor object. "
             f"You can also access user input parameters directly, e.g. my_actor.attached_to=..."
@@ -564,13 +564,6 @@ class PhysicsManager(GateObject):
             {
                 "doc": "Flag to turn of cuts 'on the fly'. Still under development in Gate."
             },
-        ),
-        # added this flag to use for optigan
-        "use_optigan": (
-            False,
-            {
-                "doc": "Flag to turn on OptiGAN. This replaces the optical photon generation and detection with a trained GAN model."
-            }
         ),
         "energy_range_min": (
             None,
@@ -1403,13 +1396,18 @@ class Simulation(GateObject):
         ),
     }
 
-    def __init__(self, name="simulation"):
+    def __init__(self, name="simulation", **kwargs):
         """
         Main members are:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
-        super().__init__(name=name)
+        # The Simulation instance should not hold a reference to itself (cycle)
+        kwargs.pop("simulation", None)
+        super().__init__(name=name, **kwargs)
+
+        # list to store warning messages issued somewhere in the simulation
+        self._user_warnings = []
 
         # for debug only
         self.verbose_getstate = False
@@ -1429,6 +1427,8 @@ class Simulation(GateObject):
 
         # read-only info
         self._current_random_seed = None
+
+        self.expected_number_of_events = None
 
     def __str__(self):
         s = (
@@ -1459,6 +1459,19 @@ class Simulation(GateObject):
     @property
     def current_random_seed(self):
         return self._current_random_seed
+
+    @property
+    def warnings(self):
+        return self._user_warnings
+
+    def reset_warnings(self):
+        self._user_warnings = []
+
+    def warn_user(self, message):
+        # We need this specific implementation because the Simulation does not hold a reference 'simulation',
+        # as required by the base class implementation of warn_user()
+        self._user_warnings.append(message)
+        super().warn_user(message)
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -1666,6 +1679,8 @@ class Simulation(GateObject):
             # because everything is already in place.
             output = self._run_simulation_engine(False)
 
+        self._user_warnings.extend(output.warnings)
+
         # FIXME workaround
         self.expected_number_of_events = output.expected_number_of_events
 
@@ -1679,6 +1694,15 @@ class Simulation(GateObject):
         # FIXME: MaterialDatabase should become a Manager/Engine with close mechanism
         if self.volume_manager.material_database is None:
             self.volume_manager.material_database = MaterialDatabase()
+
+        if len(self.warnings) > 0:
+            print("*" * 20)
+            print(f"{len(self.warnings)} warnings occurred in this simulation: \n")
+            for i, w in enumerate(self.warnings):
+                print(f"{i+1}) " + "-" * 10)
+                print(w)
+                print()
+            print("*" * 20)
 
     def voxelize_geometry(
         self,
