@@ -91,8 +91,9 @@ sim.run()
 # Outputs will be saved in contrib folder in optigan_output folder
 optigan_input_file_name = os.path.join(sim.output_dir, hc.output_filename)
 optigan = Optigan(optigan_input_file_name)
-# create_output_graphs when set to True will create 
-# distribution graphs for each output feature.
+# create_output_graphs: Generates distribution graphs for each output feature.
+# Note: Enabling on high activity levels may cause memory issues.
+# Recommended to only use this for testing with low activity number. 
 optigan.run_optigan(create_output_graphs = False)
 
 is_ok = all(t is True for t in sim.user_hook_log)
