@@ -13,6 +13,7 @@
 #include "G4RunManager.hh"
 
 #include "GateBioDoseActor.h"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateVActor.h"
@@ -38,9 +39,14 @@ void GateBioDoseActor::InitializeCpp() {
 
   fEdepImage = Image::New();
   fDoseImage = Image::New();
+  fAlphaMixImage = Image::New();
+  fSqrtBetaMixImage = Image::New();
 
   // C++-side images
   fEventEdepImage = Image::New();
+  fEventDoseImage = Image::New();
+  fEventAlphaImage = Image::New();
+  fEventSqrtBetaImage = Image::New();
 }
 
 void GateBioDoseActor::BeginOfRunActionMasterThread(int run_id) {
@@ -54,13 +60,15 @@ void GateBioDoseActor::BeginOfRunActionMasterThread(int run_id) {
   // C++-side images
   fEventEdepImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
   fEventEdepImage->Allocate();
+  fEventDoseImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
+  fEventDoseImage->Allocate();
+  fEventAlphaImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
+  fEventAlphaImage->Allocate();
+  fEventSqrtBetaImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
+  fEventSqrtBetaImage->Allocate();
 
-  auto sp = fEdepImage->GetSpacing();
-  // fVoxelVolume = sp[0] * sp[1] * sp[2];
-
-  // compute volume of a dose voxel
-  Image::RegionType region = fEdepImage->GetLargestPossibleRegion();
-  // size_edep = region.GetSize();
+  auto const& sp = fEdepImage->GetSpacing();
+  fVoxelVolume = sp[0] * sp[1] * sp[2];
 }
 
 int GateBioDoseActor::EndOfRunActionMasterThread(int run_id) {
@@ -73,16 +81,27 @@ void GateBioDoseActor::BeginOfRunAction(const G4Run *) {
 void GateBioDoseActor::BeginOfEventAction(const G4Event *event) {
   ++fNbOfEvent;
 
+  fEventVoxelIndices.clear();
+
   fEventEdepImage->FillBuffer(0);
+  fEventDoseImage->FillBuffer(0);
+  fEventAlphaImage->FillBuffer(0);
+  fEventSqrtBetaImage->FillBuffer(0);
 }
 
 void GateBioDoseActor::EndOfEventAction(const G4Event *) {
   for(auto const& index: fEventVoxelIndices) {
     auto const eventEdep = fEventEdepImage->GetPixel(index);
+    auto const eventDose = fEventDoseImage->GetPixel(index);
+    auto const eventAlphaMix = fEventAlphaImage->GetPixel(index) / eventEdep;
+    auto const eventSqrtBetaMix = fEventSqrtBetaImage->GetPixel(index) / eventEdep;
 
     fVoxelIndices.insert(index);
 
     ImageAddValue<Image>(fEdepImage, index, eventEdep);
+    ImageAddValue<Image>(fDoseImage, index, eventDose);
+    ImageAddValue<Image>(fAlphaMixImage, index, eventAlphaMix);
+    ImageAddValue<Image>(fSqrtBetaMixImage, index, eventSqrtBetaMix);
   }
 }
 
@@ -106,7 +125,7 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
   }
 
   auto localPosition =
-      touchable->GetHistory()->GetTransform(0).TransformPoint(position);
+    touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
   // convert G4ThreeVector to itk PointType
   Image::PointType point;
@@ -124,9 +143,53 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
 
   if (energyDep <= 0) return;
 
-  ImageAddValue<Image>(fEventEdepImage, index, energyDep);
+  // compute event values
+  auto const* currentMaterial = step->GetPreStepPoint()->GetMaterial();
+  double const density = currentMaterial->GetDensity();
+  double const mass = fVoxelVolume * density;
+  double const dose = energyDep / mass / CLHEP::gray;
 
-  fEventVoxelIndices.insert(index);
+  ImageAddValue<Image>(fEventEdepImage, index, energyDep);
+  ImageAddValue<Image>(fEventDoseImage, index, dose);
+
+  // Get information from step
+  // Particle
+  G4int nZ = step->GetTrack()->GetDefinition()->GetAtomicNumber();
+  double kineticEnergyPerNucleon = (step->GetPreStepPoint()->GetKineticEnergy()) / (step->GetTrack()->GetDefinition()->GetAtomicMass());
+
+  ++fStepCount;
+
+  // Accumulation of alpha/beta if ion type if known
+  // -> check if the ion type is known
+  if(fEnergyMaxForZ.count(nZ) != 0) {
+    ++fStepWithKnownIonCount;
+
+    double energyMax = fEnergyMaxForZ.at(nZ);
+
+    AlphaBetaInterpolTable::const_iterator itInterpol;
+    if(kineticEnergyPerNucleon >= energyMax) {
+    	Fragment fragmentKineticEnergyMax{nZ, energyMax};
+    	itInterpol = fAlphaBetaInterpolTable.find(fragmentKineticEnergyMax);
+    } else {
+    	Fragment fragmentKineticEnergy{nZ, kineticEnergyPerNucleon};
+    	itInterpol = fAlphaBetaInterpolTable.upper_bound(fragmentKineticEnergy);
+    }
+
+    // Calculation of alphaDep and betaDep (K = (a*Z+b)*E)
+    auto const& interpol = (*itInterpol).second;
+
+    double alpha = (interpol.alpha.a * kineticEnergyPerNucleon + interpol.alpha.b) * energyDep;
+    double sqrtBeta = (interpol.sqrtBeta.a * kineticEnergyPerNucleon + interpol.sqrtBeta.b) * energyDep;
+
+    if(alpha < 0) alpha = 0;
+    if(sqrtBeta < 0) sqrtBeta = 0;
+
+    // Accumulate alpha/beta
+    ImageAddValue<Image>(fEventAlphaImage, index, alpha);
+    ImageAddValue<Image>(fEventSqrtBetaImage, index, sqrtBeta);
+
+    fEventVoxelIndices.insert(index);
+  }
 }
 
 void GateBioDoseActor::EndSimulationAction() {
@@ -137,10 +200,7 @@ void GateBioDoseActor::updateData() {
 
 void GateBioDoseActor::loadBiophysicalModel(std::string const& filepath) {
   std::ifstream f(filepath);
-    if(!f) {
-    // GateError("BioDoseActor " << GetName() << ": unable to open file '" << filepath << "'");
-    return; // TODO
-  }
+  if(!f) Fatal("[BioDoseActor] unable to open file '" + filepath + "'");
 
   int nZ = 0;
   double prevKineticEnergy = 1;

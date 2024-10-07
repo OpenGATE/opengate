@@ -41,6 +41,8 @@ void init_GateBioDoseActor(py::module &m) {
       .def("SetPhysicalVolumeName", &GateBioDoseActor::SetPhysicalVolumeName)
       .def_readwrite("cpp_edep_image", &GateBioDoseActor::fEdepImage)
       .def_readwrite("cpp_dose_image", &GateBioDoseActor::fDoseImage)
+      .def_readwrite("cpp_alphamix_image", &GateBioDoseActor::fAlphaMixImage)
+      .def_readwrite("cpp_sqrtbetamix_image", &GateBioDoseActor::fSqrtBetaMixImage)
       .def_readwrite("NbOfEvent", &GateBioDoseActor::fNbOfEvent)
 			;
 }

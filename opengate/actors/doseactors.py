@@ -1761,7 +1761,9 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
 
     """
 
-    type_name = "BioDoseActor"
+    # hints for IDE
+    cell_line: str
+    biophysical_model: str
 
     user_info_defaults = {
         "cell_line": (
@@ -1803,6 +1805,22 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
         )
         self.user_output.biodose.set_item_suffix("dose", item=1)
 
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "biodose",
+            "alphamix",
+            item=2,
+        )
+        self.user_output.biodose.set_item_suffix("alphamix", item=2)
+
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "biodose",
+            "sqrtbetamix",
+            item=3,
+        )
+        self.user_output.biodose.set_item_suffix("sqrtbetamix", item=3)
+
         self.__initcpp__()
         self.__finalize_init__()
 
@@ -1843,6 +1861,8 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
             run_index,
             self.cpp_edep_image,
             self.cpp_dose_image,
+            self.cpp_alphamix_image,
+            self.cpp_sqrtbetamix_image,
         )
 
         g4.GateBioDoseActor.BeginOfRunActionMasterThread(self, run_index)
@@ -1853,6 +1873,8 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
             run_index,
             self.cpp_edep_image,
             self.cpp_dose_image,
+            self.cpp_alphamix_image,
+            self.cpp_sqrtbetamix_image,
         )
         self._update_output_coordinate_system("biodose", run_index)
 

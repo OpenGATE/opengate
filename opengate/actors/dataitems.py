@@ -761,6 +761,8 @@ class BioDoseImage(DataItemContainer):
     _data_item_classes = (
         ItkImageDataItem,
         ItkImageDataItem,
+        ItkImageDataItem,
+        ItkImageDataItem,
     )
 
     # Specify which items should be written to disk and how
@@ -769,6 +771,8 @@ class BioDoseImage(DataItemContainer):
         {
             0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
             1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            2: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            3: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
         }
     )
 

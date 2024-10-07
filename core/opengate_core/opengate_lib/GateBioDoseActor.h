@@ -94,12 +94,17 @@ private:
 	// from Python
   Image::Pointer fEdepImage;
   Image::Pointer fDoseImage;
+  Image::Pointer fAlphaMixImage;
+  Image::Pointer fSqrtBetaMixImage;
 
 	// only C++-side
-	Image::Pointer fEventEdepImage;
-  // Image fEventDoseImage;
-  // Image fEventAlphaImage;
-  // Image fEventSqrtBetaImage;
+  Image::Pointer fEventEdepImage;
+  Image::Pointer fEventDoseImage;
+  Image::Pointer fEventAlphaImage;
+  Image::Pointer fEventSqrtBetaImage;
+
+	// metadata
+  double fVoxelVolume = 0;
 
   int fStepCount = 0;
   int fStepWithKnownIonCount = 0;
