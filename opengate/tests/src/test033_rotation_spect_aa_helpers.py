@@ -86,7 +86,7 @@ def create_test(sim, nb_thread=1):
 
     # source #2
     source2 = sim.add_source("GenericSource", "source2")
-    # FIXME when source will be refactored, will possible to use copy_user_info
+    # FIXME when source will be refactored, will be possible to use configure_like
     source2.particle = "gamma"
     source2.energy.type = "mono"
     source2.energy.mono = 140.5 * keV

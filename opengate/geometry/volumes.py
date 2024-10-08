@@ -192,7 +192,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # except for the name of course
         if template is not None:
             # FIXME: consider using from_dictionary()
-            self.copy_user_info(template)
+            self.configure_like(template)
             # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
                 if k != "name" and k in kwargs:
