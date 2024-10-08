@@ -9,19 +9,19 @@ from pathlib import Path
 
 # Data for Geant4
 # Geant4 11.2.1
-data_packages = [
-    "https://cern.ch/geant4-data/datasets/G4NDL.4.7.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4EMLOW.8.5.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.5.7.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4RadioactiveDecay.5.6.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4PARTICLEXS.4.0.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4PII.1.3.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4RealSurface.2.2.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4SAIDDATA.2.0.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4ABLA.3.3.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4INCL.1.2.tar.gz",
-    "https://cern.ch/geant4-data/datasets/G4ENSDFSTATE.2.3.tar.gz",
-]
+data_packages = {
+    "G4NEUTRONHPDATA": "https://cern.ch/geant4-data/datasets/G4NDL.4.7.tar.gz",
+    "G4LEDATA": "https://cern.ch/geant4-data/datasets/G4EMLOW.8.5.tar.gz",
+    "G4LEVELGAMMADATA": "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.5.7.tar.gz",
+    "G4RADIOACTIVEDATA": "https://cern.ch/geant4-data/datasets/G4RadioactiveDecay.5.6.tar.gz",
+    "G4PARTICLEXSDATA": "https://cern.ch/geant4-data/datasets/G4PARTICLEXS.4.0.tar.gz",
+    "G4PIIDATA": "https://cern.ch/geant4-data/datasets/G4PII.1.3.tar.gz",
+    "G4REALSURFACEDATA": "https://cern.ch/geant4-data/datasets/G4RealSurface.2.2.tar.gz",
+    "G4SAIDXSDATA": "https://cern.ch/geant4-data/datasets/G4SAIDDATA.2.0.tar.gz",
+    "G4ABLADATA": "https://cern.ch/geant4-data/datasets/G4ABLA.3.3.tar.gz",
+    "G4INCLDATA": "https://cern.ch/geant4-data/datasets/G4INCL.1.2.tar.gz",
+    "G4ENSDFSTATEDATA": "https://cern.ch/geant4-data/datasets/G4ENSDFSTATE.2.3.tar.gz",
+}
 
 
 def check_g4_data():
@@ -38,12 +38,12 @@ def check_g4_data():
         return
     else:
         # Check if the G4 data folder is up to date
-        consistent = check_consistency_g4_data_folders()
-        if consistent is False:
+        missing_g4_Data = get_missing_g4_data()
+        if len(missing_g4_Data) != 0:
             print("\nI will download a fresh G4 dataset for you.")
             print("This will take a moment.")
-            download_g4_data()
-            if check_consistency_g4_data_folders() is True:
+            download_g4_data(missing_g4_Data)
+            if len(get_missing_g4_data()) == 0:
                 print("\nGeant4 data has been set up successfully.")
             else:
                 print("There is (still) a problem with the Geant4 data.")
@@ -79,12 +79,22 @@ def download_with_resume(url, out, retries=5, delay=10):
 
 
 # Download Geant4 data:
-def download_g4_data():
+def download_g4_data(missing_g4_Data=None):
     data_location = get_g4_data_folder()
     data_location.mkdir(parents=True, exist_ok=True)
     folder_names_from_tar = set()
-    for i, package in enumerate(data_packages):
-        print(f"\nDownloading {i + 1}/{len(data_packages)} {package}")
+
+    if missing_g4_Data is None:
+        data_packages_needed = data_packages
+    else:
+        data_packages_needed = [
+            package
+            for g4_data, package in data_packages.items()
+            if g4_data in missing_g4_Data
+        ]
+
+    for i, package in enumerate(data_packages_needed):
+        print(f"\nDownloading {i + 1}/{len(data_packages_needed)} {package}")
 
         # download the archive (with resume if the connexion failed)
         package_archive = package.split("/")[-1]
@@ -128,7 +138,7 @@ def check_for_non_required_files_folders():
         print("\n" + 10 * "*")
 
 
-def check_consistency_g4_data_folders() -> bool:
+def get_missing_g4_data() -> list:
     dataLocation = get_g4_data_folder()
     required_paths = set(get_g4_data_paths().values())
     existing_paths = set([(dataLocation / f) for f in dataLocation.iterdir()])
@@ -137,9 +147,13 @@ def check_consistency_g4_data_folders() -> bool:
         print("\nSome Geant4 data folder seem to be missing, namely:")
         for p in missing_paths:
             print(str(p))
-        return False
+        return [
+            g4_data
+            for g4_data, folder in get_g4_data_paths().items()
+            if folder in missing_paths
+        ]
     else:
-        return True
+        return []
 
 
 # Return Geant4 data folder:
