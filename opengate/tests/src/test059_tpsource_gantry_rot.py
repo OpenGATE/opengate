@@ -92,16 +92,16 @@ if __name__ == "__main__":
     ## ----  HBL Nozzle  ---
     # FIXME : will change after volumes are refactored
     box_rot = sim.add_volume("Box", "box_rot")
-    box_rot.copy_user_info(box)
+    box_rot.configure_like(box)
     box_rot.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
     box_rot.translation = [1148.0, 0.0, 1000.0]
 
     nozzle_rot = sim.add_volume("Box", "nozzle_rot")
-    nozzle_rot.copy_user_info(nozzle)
+    nozzle_rot.configure_like(nozzle)
     nozzle_rot.mother = box_rot.name
 
     rashi_rot = sim.add_volume("Box", "rashi_rot")
-    rashi_rot.copy_user_info(rashi)
+    rashi_rot.configure_like(rashi)
     rashi_rot.mother = box_rot.name
 
     # -----------------------------------
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 
     # target 2 HBL
     phantom_rot = sim.add_volume("Box", "phantom_rot")
-    phantom_rot.copy_user_info(phantom)
+    phantom_rot.configure_like(phantom)
     phantom_rot.rotation = Rotation.from_euler("z", 90, degrees=True).as_matrix()
     phantom_rot.translation = [0.0, 0.0, 1000.0]
 
@@ -129,7 +129,7 @@ if __name__ == "__main__":
     dose.user_output.dose.active = True
 
     dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
-    dose_rot.copy_user_info(dose)
+    dose_rot.configure_like(dose)
     dose_rot.attached_to = phantom_rot.name
     dose_rot.output_filename = "testTPSganry_rot.mhd"
 
