@@ -157,6 +157,12 @@ class ActorBase(GateObject):
     #     # output_filename is a property
     #     self.known_attributes.add("output_filename")
 
+    def configure_like(self, other_obj):
+        super().configure_like(other_obj)
+        # also pick up the configuration of the user output
+        for k, v in self.user_output.items():
+            v.configure_like(other_obj.user_output[k])
+
     def to_dictionary(self):
         d = super().to_dictionary()
         d["user_output"] = dict(
