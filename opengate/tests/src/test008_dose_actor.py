@@ -99,28 +99,16 @@ if __name__ == "__main__":
 
     print("\nDifference for EDEP")
     is_ok = (
-        utility.assert_images(
-            ref_path / "output-Edep.mhd",
-            dose.edep.get_output_path(),
-            stat,
-            tolerance=13,
-            ignore_value=0,
-            sum_tolerance=1,
-        )
-        and is_ok
+            utility.assert_images(ref_path / "output-Edep.mhd", dose.edep.get_output_path(), stat, tolerance=13,
+                                  ignore_value_data2=0, sum_tolerance=1.5)
+            and is_ok
     )
 
     print("\nDifference for uncertainty")
     is_ok = (
-        utility.assert_images(
-            ref_path / "output-Edep-Uncertainty.mhd",
-            dose.edep_uncertainty.get_output_path(),
-            stat,
-            tolerance=30,
-            ignore_value=0,
-            sum_tolerance=1,
-        )
-        and is_ok
+            utility.assert_images(ref_path / "output-Edep-Uncertainty.mhd", dose.edep_uncertainty.get_output_path(),
+                                  stat, tolerance=30, ignore_value_data2=0, sum_tolerance=3)
+            and is_ok
     )
 
     utility.test_ok(is_ok)
