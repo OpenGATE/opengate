@@ -60,13 +60,9 @@ def apply_class_check_to_package(
     for xxx, module_name, is_pkg in pkgutil.walk_packages(
         package.__path__, package.__name__ + "."
     ):
-        skip_this = False
-        for e in exclude_modules_packages:
-            if e in module_name:
-                skip_this = True
-                break
-        if skip_this is True:
+        if any([e in module_name for e in exclude_modules_packages]):
             continue
+
         if not is_pkg:
             module = importlib.import_module(module_name)
             # Iterate through all members of the module
