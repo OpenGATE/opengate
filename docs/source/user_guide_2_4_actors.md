@@ -34,8 +34,8 @@ Several tests depict usage of DoseActor: test008, test009, test021, test035, etc
 
 ````python
 dose = sim.add_actor("DoseActor", "dose")
-dose.output = output_path / "test008-edep.mhd"
-dose.mother = "waterbox"
+dose.output_filename = output_path / "test008-edep.mhd"
+dose.attached_to = "waterbox"
 dose.size = [99, 99, 99]
 mm = gate.g4_units.mm
 dose.spacing = [2 * mm, 2 * mm, 2 * mm]
@@ -50,7 +50,7 @@ A PhaseSpaceActor stores any set of particles reaching a given volume during the
 
 ```python
 phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-phsp.mother = plane.name
+phsp.attached_to = plane.name
 phsp.attributes = [
     "KineticEnergy",
     "Weight",
@@ -64,7 +64,7 @@ phsp.attributes = [
     "LocalTime",
     "EventPosition",
 ]
-phsp.output = "test019_hits.root"
+phsp.output_filename = "test019_hits.root"
 f = sim.add_filter("ParticleFilter", "f")
 f.particle = "gamma"
 phsp.filters.append(f)
@@ -75,23 +75,44 @@ In this example, the PhaseSpace will store all particles reaching the given plan
 ```
 TotalEnergyDeposit
 PostKineticEnergy PreKineticEnergy KineticEnergy TrackVertexKineticEnergy EventKineticEnergy
-LocalTime GlobalTime TimeFromBeginOfEvent TrackProperTime
+LocalTime GlobalTime PreGlobalTime TimeFromBeginOfEvent TrackProperTime
 Weight
 TrackID ParentID EventID RunID ThreadID
-TrackCreatorProcess ProcessDefinedStep
-ParticleName
+TrackCreatorProcess TrackCreatorModelName TrackCreatorModelIndex ProcessDefinedStep
+ParticleName ParentParticleName ParticleType PDGCode
 TrackVolumeName TrackVolumeCopyNo
 PreStepVolumeCopyNo PostStepVolumeCopyNo TrackVolumeInstanceID
 PreStepUniqueVolumeID PostStepUniqueVolumeID HitUniqueVolumeID
-Position PostPosition PrePosition EventPosition TrackVertexPosition
+Position PostPosition PrePosition PrePositionLocal PostPositionLocal EventPosition TrackVertexPosition
 Direction PostDirection PreDirection PreDirectionLocal TrackVertexMomentumDirection EventDirection
+StepLength TrackLength
+UnscatteredPrimaryFlag
 ```
 
 The output is a root file that contains a tree. It can be analysed for example with [uproot](https://uproot.readthedocs.io/).
 
+By default, the phsp store only the information of the particles that ENTERS the volume the PhaseSpaceActor is attached to. It means that the information are stored when the pre-step is at the boundary of the volume. This behavior may be modified by the following options:
+
+```python
+phsp.steps_to_store = "entering" # this is the default
+phsp.steps_to_store = "entering exiting first" # others options (combined)
+```
+
+The keyword "entering" is the default. The keyword "exiting" stores the information if the particle EXITS the volume (post-step is at the volume boundary or at the world boundary if the PhaseSpace is attached to the world). The keyword "first" stores the information if this is the first time we see this particle in the volume, whether it enters, exists or just mode inside the volume. This may be useful for example when the PhaseSpace is attached to the world.
+
+Note: all three conditions may be combined (if one condition is True, the particle is stored). The same particle may hence be stored several times: when it enters, when it exits, etc.
+
+
 ### Hits-related actors (digitizer)
 
-In legacy Gate, the digitizer module is a set of tools used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider a list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". Then, this collection of hits is processed and filtered by different modules to end up with a final digital value. To start a digitizer chain, we must start defining a `HitsCollectionActor`, explained in the next sections.
+The digitizer module is a set of tools used to simulate the behaviour of the scanner detectors and signal processing chain. The tools consider a list of interactions occurring in the detector (e.g. in the crystal), named as "hits collections". This collection of hits is then processed and filtered by different modules to produce a final digital value. To initiate a digitizer chain, you begin by defining a `HitsCollectionActor`, as explained in the following sections.
+
+Common features of all digitizer actors:
+
+- Most digitizers have a root output (with the exception for `DigitizerProjectionActor`, which outputs an image). This output can be written to disk with `my_digitizer.root_output.write_to_disk = True`. Multiple digitizers can share the same root output file, with each storing data in a separate branch named after the actor.
+
+- `authorize_repeated_volumes`: Set this to True if you want the digitizer to work with repeated volumes. This is useful, for example, when the digitizer is attached to a region with repeated crystal volumes (as in a PET system). However, if you are repeating some SPECT heads, you may not want the digitizer to record hits from both heads in the same file (in which case, set the flag to False).
+
 
 #### DigitizerHitsCollectionActor
 
@@ -99,13 +120,13 @@ The `DigitizerHitsCollectionActor` is an actor that collects hits occurring in a
 
 ```python
 hc = sim.add_actor('DigitizerHitsCollectionActor', 'Hits')
-hc.mother = ['crystal1', 'crystal2']
-hc.output = 'test_hits.root'
+hc.attached_to = ['crystal1', 'crystal2']
+hc.output_filename = 'test_hits.root'
 hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                  'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 ```
 
-In this example, the actor is attached (`mother` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attribute names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of a few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateDigiAttributeList.cpp` and can be printed with:
+In this example, the actor is attached (`attached_to` option) to several volumes (`crystal1` and `crystal2` ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attribute names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of a few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see `DigitizerAdderActor` section). The list of available attributes is defined in the file `core/opengate_core/opengate_lib/GateDigiAttributeList.cpp` and can be printed with:
 
 ```python
 import opengate_core as gate_core
@@ -178,29 +199,29 @@ The two actors used to convert some `hits` to one `digi` are "DigitizerHitsAdder
 This actor groups the hits per different volumes according to the option `group_volume` (by default, this is the deeper volume that contains the hit). All hits (in the same event) occurring in the same volume are gathered into one single digi according to one of the two available policies:
 
 - EnergyWeightedCentroidPosition:
-  - the final energy ("TotalEnergyDeposit") is the sum of all deposited energy
-  - the position ("PostPosition") is the energy-weighted centroid position
-  - the time ("GlobalTime") is the time of the earliest hit
+  - the final energy (`TotalEnergyDeposit`") is the sum of all deposited energy
+  - the position (`PostPosition`) is the energy-weighted centroid position
+  - the time (`GlobalTime`) is the time of the earliest hit
 
 - EnergyWinnerPosition
-  - the final energy ("TotalEnergyDeposit") is the energy of the hit with the largest deposited energy
-  - the position ("PostPosition") is the position of the hit with the largest deposited energy
-  - the time ("GlobalTime") is the time of the earliest hit
+  - the final energy (`TotalEnergyDeposit`) is the energy of the hit with the largest deposited energy
+  - the position (`PostPosition`) is the position of the hit with the largest deposited energy
+  - the time (`GlobalTime`) is the time of the earliest hit
 
 ```python
 sc = sim.add_actor("DigitizerAdderActor", "Singles")
-sc.output = 'test_hits.root'
+sc.output_filename = 'test_hits.root'
 sc.input_digi_collection = "Hits"
 sc.policy = "EnergyWeightedCentroidPosition"
 # sc.policy = "EnergyWinnerPosition"
 sc.group_volume = crystal.name
 ```
 
-Note that this actor is only triggered at the end of an event, so the `mother` volume to which it is attached has no effect. Examples are available in test 037.
+Note that this actor is only triggered at the end of an event, so the `attached_to` volume to which it is attached has no effect. Examples are available in test 037.
 
 #### DigitizerReadoutActor
 
-This actor is the same as the previous one (DigitizerHitsAdderActor) with one additional option: the resulting positions of the digi are set in the center of the defined volumes (discretized). We keep two different actors (Adder and Readout) to be close to the previous legacy GATE versions. The additional option `discretize_volume` indicates the volume name in which the discrete position will be taken.
+This actor is the same as the previous one (`DigitizerHitsAdderActor`) with one additional option: the resulting positions of the digi are set in the center of the defined volumes (discretized). We keep two different actors (Adder and Readout) to be close to the previous legacy GATE versions. The additional option `discretize_volume` indicates the volume name in which the discrete position will be taken.
 
 ```python
 sc = sim.add_actor("HitsReadoutActor", "Singles")
@@ -225,7 +246,7 @@ For Linear: `blur_reference_value`, `blur_reference_value` and `blur_slope`  EQU
 
 ```python
 bc = sim.add_actor("DigitizerBlurringActor", "Singles_with_blur")
-bc.output = "output.root"
+bc.output_filename = "output.root"
 bc.input_digi_collection = "Singles_readout"
 bc.blur_attribute = "GlobalTime"
 bc.blur_method = "Gaussian"
@@ -292,14 +313,14 @@ As parameters, Coincidence Sorter expects as input:
 
 #### Policies
 
-When more than two singles are found in coincidence, several type of behavior could be implemented. GATE allows to model 5 different policies to treat multiple coincidences that can be used. Mutliple coincidences or "multicoincidence" are composed of at least three singles detected in the same **time window** that could form coincidence. The list of policies along with their explanation are given in Table below. The 5 policies, same as in [Gate9.X](https://opengate.readthedocs.io/en/latest/digitizer_and_detector_modeling.html#id43), were selected for the implementation as the most used. If an option that you need is missing, please, don't hesitate to report it in [Issues](https://github.com/OpenGATE/opengate/issues).
+When more than two singles are found in coincidence, several type of behavior could be implemented. GATE allows to model 5 different policies to treat multiple coincidences that can be used. Multiple coincidences or "multicoincidence" are composed of at least three singles detected in the same **time window** that could form coincidence. The list of policies along with their explanation are given in Table below. The 5 policies, same as in [Gate9.X](https://opengate.readthedocs.io/en/latest/digitizer_and_detector_modeling.html#id43), were selected for the implementation as the most used. If an option that you need is missing, please, don't hesitate to report it in [Issues](https://github.com/OpenGATE/opengate/issues).
 
 
 **Available multiple policies and associated meaning**. When a multiple coincidence involving n *singles* is processed, it is first decomposed into a list of n·(n−1) pairs which are analyzed individually.
 The naming convention:
 * "Good" means that a pair of singles are in coincidence and passes all filters **minDistanceXY** and **maxDistanceZ**
 * "take" means that 1 or more pairs of coincidences will be stored
-* "keep" means that a unique coincidence, composed of at least three singles will be kept in the data flow and is called "multicoincidence". *TO DO: In the latter case, the multicoincidence will not be written to the disk, but may participate to a possible deadtime or bandwidth occupancy. The user may clear the multicoincidence at any desired step of the acquisition, by using the multipleKiller pulse processor (described in #Multiple coincidence removal).*
+* "accept" means that a unique coincidence, composed of at least three singles will be kept in the data flow and is called "multicoincidence". *TO DO: In the latter case, the multicoincidence will not be written to the disk, but may participate to a possible deadtime or bandwidth occupancy. The user may clear the multicoincidence at any desired step of the acquisition, by using the multipleKiller pulse processor (described in #Multiple coincidence removal).*
 * "remove" prefix means that all events will be discarded and will not produce any coincidence
 
 | Policy name             | Description                                                                                            |
@@ -354,7 +375,7 @@ The Compton splitting actor generates N particles, each with a weight equal to t
 
 ```python
 compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplitting")
-compt_splitting_actor.mother = W_tubs.name
+compt_splitting_actor.attached_to = W_tubs.name
 compt_splitting_actor.splitting_factor = nb_split
 compt_splitting_actor.russian_roulette = True
 compt_splitting_actor.rotation_vector_director = True

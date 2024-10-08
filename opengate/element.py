@@ -1,13 +1,11 @@
 import copy
 from .sources.builders import source_builders, source_type_names
-from .actors.actorbuilders import actor_builders, actor_type_names
 from .actors.builders import filter_builders, filter_type_names
 from .exception import fatal
 
 
 element_builders = {
     "Source": source_builders,
-    "Actor": actor_builders,
     "Filter": filter_builders,
 }
 
@@ -19,8 +17,6 @@ def get_element_class(element_type, type_name):
     elements = None
     if element_type == "Source":
         elements = source_type_names
-    if element_type == "Actor":
-        elements = actor_type_names
     if element_type == "Filter":
         elements = filter_type_names
     if not elements:
@@ -78,18 +74,3 @@ def new_element(user_info, simulation=None):
     # set the simulation pointer
     e.set_simulation(simulation)
     return e
-
-
-def copy_user_info(v1, v2):
-    """
-    Copy all attributes from v1 to v2, except the name.
-    v1 is assumed to be a UserInfo object with several attribute members.
-    v2 must have the (at least) the same set of attributes.
-    Values are (deep) copied.
-    """
-    for k in v1.__dict__:
-        if k == "name":
-            continue
-        if k == "_name":
-            continue
-        setattr(v2, k, copy.deepcopy(v1.__dict__[k]))

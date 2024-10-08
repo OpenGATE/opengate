@@ -2,20 +2,21 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import os
 import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
-from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
+import matplotlib.pyplot as plt
+from opengate.tests.utility import plot_img_axis
 
 if __name__ == "__main__":
-    # ------ INITIALIZE SIMULATION ENVIRONMENT ----------
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-
-    output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", output_folder="test059"
+    )
+    output_path = paths.output
+    ref_path = paths.output_ref
 
     # create the simulation
     sim = gate.Simulation()
@@ -26,6 +27,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -76,7 +78,6 @@ if __name__ == "__main__":
     roos.color = [1, 0, 1, 1]
 
     # physics
-
     sim.physics_manager.physics_list_name = (
         "FTFP_INCLXX_EMZ"  # 'QGSP_BIC_HP_EMZ' #"FTFP_INCLXX_EMZ"
     )
@@ -85,14 +86,14 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output = output_path / "abs_dose_roos.mhd"
-    dose.mother = roos.name
+    dose.output_filename = "abs_dose_roos.mhd"
+    dose.attached_to = roos.name
     dose.size = [1, 1, 800]
     dose.spacing = [15.6, 15.6, 0.5]
     dose.hit_type = "random"
-    dose.dose = True
+    dose.dose.active = True
 
-    ## ---------- DEFINE BEAMLINE MODEL -------------##
+    # ---------- DEFINE BEAMLINE MODEL -------------#
     IR2HBL = BeamlineModel()
     IR2HBL.name = None
     IR2HBL.radiation_types = "ion 6 12"
@@ -112,9 +113,8 @@ if __name__ == "__main__":
     IR2HBL.theta_y_coeffs = [0.0007911780133478402]
     IR2HBL.epsilon_y_coeffs = [0.0024916149017600447]
 
-    ## --------START PENCIL BEAM SCANNING---------- ##
+    # --------START PENCIL BEAM SCANNING---------- #
     # NOTE: HBL means that the beam is coming from -x (90 degree rot around y)
-
     nSim = 50000  # 328935  # particles to simulate per beam
     beam_data_dict = spots_info_from_txt(
         ref_path / "TreatmentPlan4Gate-F5x5cm_E120MeVn.txt", "ion 6 12", beam_nr=1
@@ -129,24 +129,21 @@ if __name__ == "__main__":
     ntot = beam_data_dict["msw_beam"]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-    # start simulation
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
 
+    # start simulation
     sim.run()
-    output = sim.output
 
-    ## -------------END SCANNING------------- ##
+    # -------------END SCANNING------------- #
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
-    ## ------ TESTS -------##
+    # ------ TESTS -------#
     dose_path = utility.scale_dose(
-        str(dose.output),
+        str(dose.get_output_path("dose")),
         ntot / nSim,
         output_path / "abs_dose_roos-Scaled.mhd",
     )
@@ -154,10 +151,10 @@ if __name__ == "__main__":
     # ABSOLUTE DOSE
 
     # read output and ref
+    f = ref_path / "idc-PHANTOM-roos-F5x5cm_E120MeVn-PLAN-Physical.mhd"
+    print("Compare", dose_path, f)
     img_mhd_out = itk.imread(dose_path)
-    img_mhd_ref = itk.imread(
-        ref_path / "idc-PHANTOM-roos-F5x5cm_E120MeVn-PLAN-Physical.mhd"
-    )
+    img_mhd_ref = itk.imread(f)
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
     shape = data.shape
@@ -166,6 +163,7 @@ if __name__ == "__main__":
 
     ok = utility.assert_img_sum(img_mhd_out, img_mhd_ref, sum_tolerance=5.5)
 
+    print("compare dose at points")
     points = 400 - np.linspace(10, 14, 9)
     ok = (
         utility.compare_dose_at_points(
@@ -184,11 +182,10 @@ if __name__ == "__main__":
     )
 
     # 1D
-    # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    # gate.plot_img_axis(ax, img_mhd_out, "x profile", axis="z")
-    # gate.plot_img_axis(ax, img_mhd_ref, "x ref", axis="z")
-    # plt.show()
-
-    # fig.savefig(output_path / "dose_profiles_water.png")
+    """fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    plot_img_axis(ax, img_mhd_out, "x profile", axis="z")
+    plot_img_axis(ax, img_mhd_ref, "x ref", axis="z")
+    plt.show()
+    fig.savefig(output_path / "dose_profiles_water.png")"""
 
     utility.test_ok(ok)

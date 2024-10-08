@@ -127,18 +127,18 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     # stat.write('output_ref/stat021_ref.txt')
 
     # test pixels in dose #1
-    dose1 = sim.output.get_actor("dose1")
-    dose2 = sim.output.get_actor("dose2")
+    dose1 = sim.get_actor("dose1")
+    dose2 = sim.get_actor("dose2")
     d_odd = itk.imread(paths.output / dose1.user_info.output)
     s = itk.array_view_from_image(d_odd).sum()
     v = d_odd.GetPixel([5, 5, 5])
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     is_ok = t(0.8, v4) and is_ok
 
     stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref.txt")
-    stats_ref.counts.run_count = sim.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.05) and is_ok
 
     utility.test_ok(is_ok)

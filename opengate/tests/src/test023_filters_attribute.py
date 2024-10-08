@@ -14,6 +14,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.visu_type = "vrml"
     sim.random_seed = 321456987
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -28,12 +29,6 @@ if __name__ == "__main__":
     #  change world size
     sim.world.size = [1 * m, 1 * m, 1 * m]
     sim.world.material = "G4_AIR"
-
-    # waterbox
-    # waterbox = sim.add_volume("Box", "waterbox")
-    # waterbox.size = [10 * cm, 10 * cm, 10 * cm]
-    # waterbox.material = "G4_WATER"
-    # waterbox.color = [0, 0, 1, 1]
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
@@ -73,44 +68,45 @@ if __name__ == "__main__":
 
     # kill according to time
     ka = sim.add_actor("KillActor", "kill_actor1")
-    ka.mother = plane1a.name
+    ka.attached_to = plane1a.name
     att_filter = sim.add_filter("ThresholdAttributeFilter", "time_filter")
     # we don't kill the particle within the time range, so
     # we discard the kill filter when the time is in the correct range
     att_filter.attribute = "GlobalTime"
     att_filter.value_min = 20 * sec
     att_filter.value_max = 70 * sec
-    att_filter.policy = "discard"
+    att_filter.policy = "reject"
+    print(att_filter)
     ka.filters.append(att_filter)
 
     # kill according to energy
     ka = sim.add_actor("KillActor", "kill_actor2")
-    ka.mother = plane2a.name
+    ka.attached_to = plane2a.name
     att_filter = sim.add_filter("ThresholdAttributeFilter", "ene_filter")
     att_filter.attribute = "KineticEnergy"
     att_filter.value_min = 300 * keV
     att_filter.value_max = 1200 * keV
-    att_filter.policy = "keep"
+    att_filter.policy = "accept"
     ka.filters.append(att_filter)
 
     # stats
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "stats")
+    stat.track_types_flag = True
 
     # phsp
     phsp1 = sim.add_actor("PhaseSpaceActor", "phsp1")
     # warning, if the plane is plane1a the particle may be marked as "killed"
     # but will still be in the phsp
-    phsp1.mother = plane1b.name
+    phsp1.attached_to = plane1b.name
     phsp1.attributes = ["GlobalTime", "KineticEnergy"]
-    phsp1.output = paths.output / f"test023_filters_attribute.root"
+    phsp1.output_filename = f"test023_filters_attribute.root"
     phsp1.priority = ka.priority + 10
 
     # phsp
     phsp2 = sim.add_actor("PhaseSpaceActor", "phsp2")
-    phsp2.mother = plane2b.name
+    phsp2.attached_to = plane2b.name
     phsp2.attributes = ["GlobalTime", "KineticEnergy"]
-    phsp2.output = paths.output / f"test023_filters_attribute.root"
+    phsp2.output_filename = f"test023_filters_attribute.root"
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -121,7 +117,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
     print(stat)
     # reference :
     # stat.write(paths.output_ref / "test023_att_stats.txt")
@@ -133,8 +128,8 @@ if __name__ == "__main__":
     # image root files (no comparison here, just for plot)
     print()
     utility.compare_root3(
-        phsp1.output,
-        phsp1.output,
+        phsp1.get_output_path(),
+        phsp1.get_output_path(),
         "phsp1",
         "phsp2",
         keys1=phsp1.attributes,
@@ -151,7 +146,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             paths.output_ref / f"test023_filters_attribute.root",
-            phsp1.output,
+            phsp1.get_output_path(),
             "phsp1",
             "phsp1",
             keys1=phsp1.attributes,
@@ -168,7 +163,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root3(
             paths.output_ref / f"test023_filters_attribute.root",
-            phsp1.output,
+            phsp1.get_output_path(),
             "phsp2",
             "phsp2",
             keys1=phsp1.attributes,

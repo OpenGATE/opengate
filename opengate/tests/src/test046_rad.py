@@ -9,7 +9,7 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, "", output_folder="test046")
 
     radionuclides = ["Tc99m", "Lu177", "In111", "I131"]
     ref_collimators = ["lehr", "megp", "megp", "hegp"]
@@ -27,6 +27,7 @@ if __name__ == "__main__":
     # Test 2
     print()
     sim = gate.Simulation()
+    sim.output_dir = paths.output
     digit = Box()
     digit_ns = Box()
     for rad in radionuclides:

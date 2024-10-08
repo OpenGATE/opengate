@@ -2,6 +2,7 @@ import itk
 import numpy as np
 from box import Box
 from scipy.spatial.transform import Rotation
+import math
 
 import opengate_core as g4
 from .exception import fatal
@@ -27,6 +28,8 @@ def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
     rotation = itk.GetArrayFromVnlMatrix(d)
     cpp_img.set_direction(rotation)
     if copy_data:
+        # FIXME: do we need to return arr to keep reference ?
+        # (on cpp side, a copy is made while it should not be needed)
         arr = itk.array_view_from_image(py_img)
         cpp_img.from_pyarray(arr)
 
@@ -35,19 +38,22 @@ def itk_dir_to_rotation(dir):
     return itk.GetArrayFromVnlMatrix(dir.GetVnlMatrix().as_matrix())
 
 
-def create_3d_image(size, spacing, pixel_type="float", allocate=True, fill_value=0):
+def create_3d_image(
+    size, spacing, origin=None, pixel_type="float", allocate=True, fill_value=0
+):
     dim = 3
     pixel_type = itk.ctype(pixel_type)
     image_type = itk.Image[pixel_type, dim]
     img = image_type.New()
     region = itk.ImageRegion[dim]()
-    size = np.array(size)
-    region.SetSize(size.tolist())
+    region.SetSize([int(s) for s in size])
     region.SetIndex([0, 0, 0])
-    spacing = np.array(spacing)
+    # spacing = np.array(spacing)
     img.SetRegions(region)
     img.SetSpacing(spacing)
-    # (default origin and direction)
+    if origin is not None:
+        img.SetOrigin(origin)
+    # (default direction)
     if allocate:
         img.Allocate()
         img.FillBuffer(fill_value)
@@ -147,15 +153,15 @@ def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
     return origin
 
 
-def get_cpp_image(cpp_image):
+def get_py_image_from_cpp_image(cpp_image, view=True):
     arr = cpp_image.to_pyarray()
-    image = itk_image_view_from_array(arr)
+    image = itk_image_from_array(arr, view=view)
     image.SetOrigin(cpp_image.origin())
     image.SetSpacing(cpp_image.spacing())
     return image
 
 
-def itk_image_view_from_array(arr):
+def itk_image_from_array(arr, view=True):
     """
     When the input numpy array is of shape [1,1,x], the conversion to itk image fails:
     the output image size is with the wrong dimensions.
@@ -163,7 +169,10 @@ def itk_image_view_from_array(arr):
 
     Not fully sure if this is the way to go.
     """
-    image = itk.image_view_from_array(arr)
+    if view is True:
+        image = itk.image_view_from_array(arr)
+    else:
+        image = itk.image_from_array(arr)
     if len(arr.shape) == 3 and arr.shape[1] == arr.shape[2] == 1:
         new_region = itk.ImageRegion[3]()
         new_region.SetSize([1, 1, arr.shape[0]])
@@ -193,24 +202,21 @@ def align_image_with_physical_volume(
     volume,
     image,
     initial_translation=None,
-    initial_rotation=Rotation.identity(),
+    initial_rotation=Rotation.identity().as_matrix(),
     copy_index=0,
 ):
     if initial_translation is None:
         initial_translation = [0, 0, 0]
     # FIXME rotation not implemented yet
     # get transform from world
-    translation, rotation = get_transform_world_to_local(volume)
+    translation, rotation = get_transform_world_to_local(volume, copy_index)
     # compute origin
     info = get_info_from_image(image)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0 + initial_translation
-    origin = (
-        Rotation.from_matrix(rotation[copy_index]).apply(origin)
-        + translation[copy_index]
-    )
+    origin = Rotation.from_matrix(rotation).apply(origin) + translation
     # set origin and direction
     image.SetOrigin(origin)
-    image.SetDirection(rotation[copy_index])
+    image.SetDirection(rotation)
 
 
 def create_image_with_extent(extent, spacing=(1, 1, 1), margin=0):
@@ -265,7 +271,7 @@ def voxelize_volume(se, image):
     vox = g4.GateVolumeVoxelizer()
     update_image_py_to_cpp(image, vox.fImage, False)
     vox.Voxelize()
-    image = get_cpp_image(vox.fImage)
+    image = get_py_image_from_cpp_image(vox.fImage)
     labels = vox.fLabels
     return labels, image
 
@@ -323,7 +329,9 @@ def compute_image_3D_CDF(image):
 def scale_itk_image(img, scale):
     imgarr = itk.array_view_from_image(img)
     imgarr = imgarr * scale
-    img2 = itk.image_from_array(imgarr)
+    # this is important to use the corrected function to deal with 1D images
+    # img2 = itk.image_from_array(imgarr)
+    img2 = itk_image_from_array(imgarr)
     img2.CopyInformation(img)
     return img2
 
@@ -342,9 +350,35 @@ def divide_itk_images(
     imgarrOut[L_filterInv] = np.divide(imgarr1[L_filterInv], imgarr2[L_filterInv])
 
     imgarrOut[np.invert(L_filterInv)] = replaceFilteredVal
-    imgarrOut = itk.image_from_array(imgarrOut)
+    imgarrOut = itk_image_from_array(imgarrOut)
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
+
+
+def sum_itk_images(images):
+    image_type = type(images[0])
+    add_image_filter = itk.AddImageFilter[image_type, image_type, image_type].New()
+    output = images[0]
+    for img in images[1:]:
+        add_image_filter.SetInput1(output)
+        add_image_filter.SetInput2(img)
+        add_image_filter.Update()
+        output = add_image_filter.GetOutput()
+    return output
+
+
+def multiply_itk_images(images):
+    image_type = type(images[0])
+    multiply_image_filter = itk.MultiplyImageFilter[
+        image_type, image_type, image_type
+    ].New()
+    output = images[0]
+    for img in images[1:]:
+        multiply_image_filter.SetInput1(output)
+        multiply_image_filter.SetInput2(img)
+        multiply_image_filter.Update()
+        output = multiply_image_filter.GetOutput()
+    return output
 
 
 def split_spect_projections(input_filenames, nb_ene):
@@ -421,5 +455,60 @@ def compare_itk_image(filename1, filename2):
 def write_itk_image(img, file_path):
     # TODO: check if filepath exists
     # TODO: add metadata to file header
-    file_path = str(file_path)
-    itk.imwrite(img, file_path)
+    itk.imwrite(img, str(file_path))
+
+
+def images_have_same_domain(image1, image2, tolerance=1e-5):
+    # Check if the sizes and origins of the images are the same,
+    # and if the spacing values are close within the given tolerance
+    img1_info = get_info_from_image(image1)
+    img2_info = get_info_from_image(image2)
+    is_same = (
+        len(img1_info.size) == len(img2_info.size)
+        and all(i == j for i, j in zip(img1_info.size, img2_info.size))
+        and images_have_same_spacing(image1, image2, tolerance)
+        and all(
+            math.isclose(i, j, rel_tol=tolerance)
+            for i, j in zip(image1.GetOrigin(), image2.GetOrigin())
+        )
+    )
+    return is_same
+
+
+def images_have_same_spacing(image1, image2, tolerance=1e-5):
+    # Check if the spacing values are close within the given tolerance
+    is_same = all(
+        math.isclose(i, j, rel_tol=tolerance)
+        for i, j in zip(image1.GetSpacing(), image2.GetSpacing())
+    )
+    return is_same
+
+
+def resample_itk_image_like(img, like_img, default_pixel_value, linear=True):
+    # Create a resampler object
+    ResampleFilterType = itk.ResampleImageFilter.New
+
+    resampler = ResampleFilterType(Input=img)
+
+    # Set the resampler parameters from like_img
+    resampler.SetSize(itk.size(like_img))
+    resampler.SetOutputSpacing(like_img.GetSpacing())
+    resampler.SetOutputOrigin(like_img.GetOrigin())
+    resampler.SetOutputDirection(like_img.GetDirection())
+
+    # Set the default pixel value
+    resampler.SetDefaultPixelValue(default_pixel_value)
+
+    # Use the identity transform - we only resample in place
+    # identity_transform = itk.IdentityTransform.New()
+    # resampler.SetTransform(identity_transform)
+
+    # Set the interpolation method to Linear if required
+    if linear:
+        resampler.SetInterpolator(itk.LinearInterpolateImageFunction.New(img))
+
+    # Execute the resampling
+    resampler.Update()
+    resampled_img = resampler.GetOutput()
+
+    return resampled_img

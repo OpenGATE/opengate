@@ -5,7 +5,9 @@ import opengate as gate
 import opengate_core as g4
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "gate_test025_hits_collection")
+paths = utility.get_default_test_paths(
+    __file__, "gate_test025_hits_collection", output_folder="test025"
+)
 
 
 def create_simulation(nb_threads):
@@ -17,6 +19,7 @@ def create_simulation(nb_threads):
     sim.visu = False
     sim.number_of_threads = nb_threads
     sim.check_volumes_overlap = False
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -89,11 +92,13 @@ def create_simulation(nb_threads):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = [crystal1.name, crystal2.name]
-    mt = ""
+    hc.attached_to = [crystal1, crystal2]
+
     if sim.number_of_threads > 1:
-        mt = "_MT"
-    hc.output = paths.output / ("test025_hits" + mt + ".root")
+        hc.output_filename = "test025_MT.root"
+    else:
+        hc.output_filename = "test025.root"
+
     hc.attributes = [
         "TotalEnergyDeposit",
         "KineticEnergy",
@@ -126,8 +131,13 @@ def create_simulation(nb_threads):
 
     # hits collection #2
     hc2 = sim.add_actor("DigitizerHitsCollectionActor", "Hits2")
-    hc2.mother = [crystal1.name, crystal2.name]
-    hc2.output = paths.output / ("test025_secondhits" + mt + ".root")
+    hc2.attached_to = [crystal1, crystal2]
+
+    if sim.number_of_threads > 1:
+        hc2.output_filename = "test025_hits2_MT.root"
+    else:
+        hc2.output_filename = "test025_hits2.root"
+
     hc2.attributes = ["TotalEnergyDeposit", "GlobalTime"]
 
     # --------------------------------------------------------------------------------------------------
@@ -145,18 +155,18 @@ def create_simulation(nb_threads):
     return sim
 
 
-def test_simulation_results(output):
+def test_simulation_results(sim):
     # Compare stats file
-    stats = output.get_actor("Stats")
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1 to compare with gate result
+    stats = sim.get_actor("Stats")
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1 to compare with gate result
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
 
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor("Hits").user_info.output
+    hc_file = sim.get_actor("Hits").get_output_path()
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     # tols[0] = 0.97   # PostPosition_X
@@ -172,7 +182,7 @@ def test_simulation_results(output):
             tols,
             [1] * len(scalings),
             scalings,
-            paths.output / "test025.png",
+            sim.get_output_path("test025.png"),
         )
         and is_ok
     )
@@ -187,7 +197,7 @@ def test_simulation_results(output):
     # Compare root files
     print()
     gate_file = paths.gate_output / "hits.root"
-    hc_file = output.get_actor("Hits2").user_info.output
+    hc_file = sim.get_actor("Hits2").get_output_path()
     checked_keys = ["time", "edep"]
     keys1, keys2, scalings, tols = utility.get_keys_correspondence(checked_keys)
     tols[1] = 0.002  # edep
@@ -202,7 +212,7 @@ def test_simulation_results(output):
             tols,
             [1] * len(scalings),
             scalings,
-            paths.output / "test025_secondhits.png",
+            sim.get_output_path("test025_secondhits.png"),
         )
         and is_ok
     )

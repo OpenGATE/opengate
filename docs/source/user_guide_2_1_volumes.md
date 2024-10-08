@@ -144,7 +144,7 @@ This function creates a material named "mylar", with the given mass density and 
 
 An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a `BoxVolume` and its size is automatically adjusted to match the size of the input image. The image should be provided in a format readable by the *itk* package and the path to the image file is set via the parameter `image`. In general, we advocate the use of the mhd/raw file format, but other itk-compatible file formats can be used as well. The image must be 3D, with any pixel type (float, int, char, etc).
 
-From the simulation point of view, a voxel is like a small box through which particles need to be transported. Therefore, in order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. To this end, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range and the material name to be used. Take the following example:
+From the simulation point of view, a voxel is like a small box through which particles need to be transported. Therefore, in order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. To this end, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range (half-closed interval) and the material name to be used. Take the following example:
 
 
 ```python
@@ -155,6 +155,7 @@ patient.image = "data/myimage.mhd"
 patient.mother = "world"
 patient.material = "G4_AIR"  # material used by default
 patient.voxel_materials = [
+  # range format [)
   [-2000, -900, "G4_AIR"],
   [-900, -100, "Lung"],
   [-100, 0, "G4_ADIPOSE_TISSUE_ICRP"],
@@ -165,7 +166,7 @@ patient.voxel_materials = [
 patient.dump_label_image = "labels.mhd"
 ```
 
-In the example above, the material "Lung" will be assigned to every voxel with a value between -900 and -100. Voxels whose value does not fall into any of the intervals are considered to contain the volume's default material, i.e. `patient.material = "G4_AIR"` in the example above. If a path is provided as `dump_label_image` parameter of the image volume, an image will be written to the provided path containing material labels. Label 0 stands for voxels to which the default material was assigned, and labels greater than 1 represent all other materials, in ascending order of the lower interval bounds provided in `voxel_materials`. In the example above, voxels with label 3 correspond to "G4_ADIPOSE_TISSUE_ICRP", voxels with label 4 correspond to "G4_TISSUE_SOFT_ICRP", and so forth. See test `test009` as an example simulation using an Image volume.
+In the example above, the material "Lung" will be assigned to every voxel with a value between -900 and -100 (not including -100). Voxels whose value does not fall into any of the intervals are considered to contain the volume's default material, i.e. `patient.material = "G4_AIR"` in the example above. If a path is provided as `dump_label_image` parameter of the image volume, an image will be written to the provided path containing material labels. Label 0 stands for voxels to which the default material was assigned, and labels greater than 1 represent all other materials, in ascending order of the lower interval bounds provided in `voxel_materials`. In the example above, voxels with label 3 correspond to "G4_ADIPOSE_TISSUE_ICRP", voxels with label 4 correspond to "G4_TISSUE_SOFT_ICRP", and so forth. See test `test009` as an example simulation using an Image volume.
 
 The frame of reference of an Image is linked to the bounding box and treated like other Geant4 volumes, i.e. by default, the center of the image box is positioned at the origin of the mother volume's frame of reference. Important: Currently, the origin provided by the input image (e.g. in the DICOM or mhd file) is ignored. If you want to place the Image volume according to the origin and rotation provided by the input image, you need to extract that information and set it via the `translation` and `rotation` parameters of the image volume. A future version of Gate 10 might provide an option to do this automatically. If you are motivated, you can implement that feature and contribute it to the opengate package.
 

@@ -4,7 +4,6 @@
 import opengate as gate
 from opengate.tests import utility
 import opengate_core as g4
-from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test017")
@@ -17,6 +16,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.check_volumes_overlap = True
     sim.random_seed = 254123
+    sim.output_dir = paths.output
 
     #  change world size
     m = gate.g4_units.m
@@ -72,18 +72,17 @@ if __name__ == "__main__":
     source.activity = 10000 * Bq
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # dose actor
-    d = sim.add_actor("DoseActor", "dose")
-    d.output = paths.output / "test017.mhd"
-    # d.output = ref_path / 'test017-edep-ref.mhd'
-    d.mother = "crystal"
-    d.size = [150, 150, 150]
-    d.spacing = [1 * mm, 1 * mm, 1 * mm]
-    d.translation = [5 * mm, 0 * mm, 0 * mm]
-    d.physical_volume_index = 0
+    dose = sim.add_actor("DoseActor", "dose")
+    dose.edep.output_filename = "test017.mhd"
+    # dose.output = ref_path / 'test017-edep-ref.mhd'
+    dose.attached_to = "crystal"
+    dose.size = [150, 150, 150]
+    dose.spacing = [1 * mm, 1 * mm, 1 * mm]
+    dose.translation = [5 * mm, 0 * mm, 0 * mm]
     print(
         "The Dose actor is triggered every time a hit occurs in the (logical volume) "
         '"crystal" (and any of its associated repeated physical volumes).'
@@ -96,16 +95,15 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
-    # stats.write(ref_path / 'test017-stats-ref.txt')
-    dose = sim.output.get_actor("dose")
+    print(stats)
+
     # tests
     stats_ref = utility.read_stat_file(paths.output_ref / "test017-stats-ref.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.04)
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test017-edep-ref.mhd",
-            paths.output / dose.user_info.output,
+            dose.edep.get_output_path(),
             stats,
             sum_tolerance=6,
             tolerance=70,

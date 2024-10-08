@@ -58,11 +58,11 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
-    s.output = paths.output / f"test053_{ion_name}_stats.txt"
+    s.output_filename = paths.output / f"test053_{ion_name}_stats.txt"
 
     # phsp actor
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp.mother = "world"
+    phsp.attached_to = "world"
     phsp.attributes = [
         "KineticEnergy",
         "EventID",
@@ -75,7 +75,8 @@ def create_ion_gamma_simulation(sim, paths, z, a):
         "TrackCreatorModelIndex",
         "ParticleName",
     ]
-    phsp.output = paths.output / f"test053_{ion_name}.root"
+    phsp.output_filename = paths.output / f"test053_{ion_name}.root"
+    phsp.steps_to_store = "exiting first"
     # phsp.store_absorbed_event = True
     # phsp.debug = True
 
@@ -84,12 +85,12 @@ def create_ion_gamma_simulation(sim, paths, z, a):
 
 def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     # change simulation parameters
-    phsp = sim.get_actor_user_info("phsp")
+    phsp = sim.get_actor("phsp")
 
     def rm_type(name, phsp):
         fg = sim.add_filter("ParticleFilter", f"fp_{name}")
         fg.particle = name
-        fg.policy = "discard"
+        fg.policy = "reject"
         phsp.filters.append(fg)
 
     phsp.attributes = ["ParticleName", "ParticleType", "GlobalTime"]
@@ -128,7 +129,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
 
     # ui = sim.user_info
     # ui.g4_verbose = True
-    # sim.add_g4_command_after_init("/tracking/verbose 2")
+    # sim.g4_commands_after_init.append("/tracking/verbose 2")
     km = g4_units.km
     sim.physics_manager.global_production_cuts.all = 10 * km
     sim.run_timing_intervals = [[0, end]]
@@ -240,9 +241,9 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
 
     # Monte carlo data
     print("Data from MC, normalized by nb events")
-    phsp = sim.get_actor_user_info("phsp")
+    phsp = sim.get_actor("phsp")
     g2_ene, g2_w = analyse_ion_gamma_from_root(
-        phsp.output, daughters, stats.counts.event_count
+        phsp.get_output_path(), daughters, stats.counts.events
     )
 
     # direct computation of gammas
@@ -337,8 +338,8 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
 
 
 def analyse_time_per_ion_root(sim, end):
-    phsp = sim.get_actor_user_info("phsp")
-    filename = phsp.output
+    phsp = sim.get_actor("phsp")
+    filename = phsp.get_output_path()
     root = uproot.open(filename)
     print(f"Open root file {filename}")
     tree = root[root.keys()[0]]

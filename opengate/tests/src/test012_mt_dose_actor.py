@@ -8,7 +8,9 @@ from scipy.spatial.transform import Rotation
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test008_dose_actor", output_folder="test012"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -20,6 +22,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 2
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
+    sim.output_dir = paths.output
 
     # shortcuts to units
     mm = gate.g4_units.mm
@@ -66,46 +69,43 @@ if __name__ == "__main__":
     """
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test012-edep.mhd"
-    dose.mother = "waterbox"
-    dose.size = [99, 99, 99]
-    dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.translation = [2 * mm, 3 * mm, -2 * mm]
+    dose_actor = sim.add_actor("DoseActor", "dose_actor")
+    dose_actor.edep.output_filename = "test012-edep.mhd"
+    dose_actor.attached_to = "waterbox"
+    dose_actor.size = [99, 99, 99]
+    dose_actor.spacing = [2 * mm, 2 * mm, 2 * mm]
+    dose_actor.translation = [2 * mm, 3 * mm, -2 * mm]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
 
     # print info
-    print(sim.volume_manager.dump_volumes())
+    sim.volume_manager.print_volumes()
 
     # verbose
-    # sim.add_g4_command_after_init('/tracking/verbose 0')
-    sim.add_g4_command_after_init("/run/verbose 2")
-    # sim.add_g4_command_after_init("/event/verbose 2")
-    # sim.add_g4_command_after_init("/tracking/verbose 1")
+    # sim.g4_commands_after_init.append('/tracking/verbose 0')
+    sim.g4_commands_after_init.append("/run/verbose 2")
+    # sim.g4_commands_after_init.append("/event/verbose 2")
+    # sim.g4_commands_after_init.append("/tracking/verbose 1")
 
     # start simulation
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
     print(stat)
-
-    dose = sim.output.get_actor("dose")
-    print(dose)
+    print(dose_actor)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     # change the number of run to the number of threads
-    stats_ref.counts.run_count = sim.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.10)
 
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output-Edep.mhd",
-            paths.output / dose.user_info.output,
+            dose_actor.edep.get_output_path(),
             stat,
             tolerance=45,
         )

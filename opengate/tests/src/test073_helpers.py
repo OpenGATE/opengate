@@ -83,7 +83,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
-    s.output = "output/stats.txt"
+    s.output_filename = "stats.txt"
 
     # timing
     sec = gate.g4_units.second
@@ -93,24 +93,23 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     sim.run_timing_intervals = [[0, stop]]
 
 
-def compare_stats(output, filename):
+def compare_stats(sim, filename):
     # compare stats
     warning("Compare stats")
-    stats = output.get_actor("stats")
+    stats = sim.get_actor("stats")
     # force nb of thread to 1
     stats_ref = utility.read_stat_file(filename)
-    stats.counts.run_count = stats_ref.counts.run_count
+    stats.counts.runs = stats_ref.counts.runs
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
     return is_ok
 
 
-def compare_root_hits(crystal, output, root_filename, path, n=1):
+def compare_root_hits(crystal, sim, root_filename, path, n=1):
     # compare root
     print()
     warning("Compare hits")
     gate_file = root_filename
-    hc_file = output.get_actor(f"Hits_{crystal.name}").user_info.output
-    print(hc_file)
+    hc_file = sim.get_actor(f"Hits_{crystal.name}").get_output_path()
     checked_keys = [
         {"k1": "posX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "posY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
@@ -130,11 +129,11 @@ def compare_root_hits(crystal, output, root_filename, path, n=1):
     return is_ok
 
 
-def compare_root_singles(crystal, output, root_filename, path, sname, n=1):
+def compare_root_singles(crystal, sim, root_filename, path, sname, n=1):
     # Compare root files
     print()
     warning("Compare singles")
-    hc_file = output.get_actor(f"Singles_{crystal.name}").user_info.output
+    hc_file = sim.get_actor(f"Singles_{crystal.name}").get_output_path()
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
@@ -153,17 +152,17 @@ def compare_root_singles(crystal, output, root_filename, path, sname, n=1):
     return is_ok
 
 
-def compare_proj_images(crystal, output, stats, image_filename, path, n=1):
+def compare_proj_images(crystal, sim, stats, image_filename, path, n=1):
     # compare images with Gate
     print()
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
-    proj = output.get_actor(f"Projection_{crystal.name}")
+    proj = sim.get_actor(f"Projection_{crystal.name}")
     fr = image_filename
     f1 = path / f"projections_test{n}.mhd"
     f2 = path / f"projections_test{n}_offset.mhd"
     img = itk.imread(f1)
-    spacing = np.array(proj.user_info.spacing)
+    spacing = np.array(proj.projection.image.GetSpacing())
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

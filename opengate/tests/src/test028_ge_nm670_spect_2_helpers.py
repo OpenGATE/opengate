@@ -16,6 +16,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     sim.visu = False
     sim.number_of_threads = number_of_threads
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -116,9 +117,10 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
             crystal = v
-    hc.mother = crystal.name
+    hc.attached_to = crystal.name
     print("Crystal :", crystal.name)
-    hc.output = paths.output / "test028.root"
+    hc.output_filename = "test028.root"
+    print(hc.output_filename)
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -132,16 +134,16 @@ def create_spect_simu(sim, paths, number_of_threads=1):
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.mother = crystal.name
+    sc.attached_to = crystal.name
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     # sc.policy = 'EnergyWeightedCentroidPosition'
     sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep", "KineticEnergy"]
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     # EnergyWindows
     cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
-    cc.mother = crystal.name
+    cc.attached_to = crystal.name
     cc.input_digi_collection = "Singles"
     cc.channels = [
         {"name": "scatter", "min": 114 * keV, "max": 126 * keV},
@@ -152,7 +154,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
             "max": 5000 * keV,
         },  # should be strictly equal to 'Singles'
     ]
-    cc.output = hc.output
+    cc.output_filename = hc.output_filename
 
     """
         The order of the actors is important !
@@ -170,33 +172,33 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     return spect
 
 
-def test_add_proj(sim, paths):
+def test_add_proj(sim):
     mm = gate.g4_units.mm
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
             crystal = v
     # 2D binning projection
     proj = sim.add_actor("DigitizerProjectionActor", "Projection")
-    proj.mother = crystal.name
+    proj.attached_to = crystal.name
     # we set two times the spectrum channel to compare with Gate output
     proj.input_digi_collections = ["spectrum", "scatter", "peak140", "spectrum"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet # FIXME
-    proj.output = paths.output / "proj028.mhd"
+    proj.output_filename = "proj028.mhd"
     # by default, the origin of the images are centered
     # set to False here to keep compatible with previous version
     proj.origin_as_image_center = False
     return proj
 
 
-def test_spect_hits(output, paths, version="2"):
+def test_spect_hits(sim, paths, version="2"):
     # stat
     gate.exception.warning("Compare stats")
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1
     stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
@@ -204,7 +206,7 @@ def test_spect_hits(output, paths, version="2"):
     print()
     gate.exception.warning("Compare hits")
     gate_file = paths.gate_output / f"hits{version}.root"
-    hc_file = output.get_actor("Hits").user_info.output
+    hc_file = sim.get_actor("Hits").get_output_path()
     print(hc_file)
     checked_keys = [
         {"k1": "posX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
@@ -230,7 +232,7 @@ def test_spect_hits(output, paths, version="2"):
     print()
     gate.exception.warning("Compare singles")
     gate_file = paths.gate_output / f"hits{version}.root"
-    hc_file = output.get_actor("Singles").user_info.output
+    hc_file = sim.get_actor("Singles").get_output_path()
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.8, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
@@ -252,8 +254,8 @@ def test_spect_hits(output, paths, version="2"):
     # Compare root files
     print()
     gate.exception.warning("Compare singles and spectrum (must be strictly equal)")
-    ref_file = output.get_actor("Singles").user_info.output
-    hc_file = output.get_actor("EnergyWindows").user_info.output
+    ref_file = sim.get_actor("Singles").get_output_path()
+    hc_file = sim.get_actor("EnergyWindows").get_output_path()
     checked_keys = [
         {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 0.001, "scaling": 1},
         {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 0.001, "scaling": 1},
@@ -281,7 +283,7 @@ def test_spect_hits(output, paths, version="2"):
     # Compare root files
     print()
     gate.exception.warning("Compare scatter")
-    hc_file = output.get_actor("EnergyWindows").user_info.output
+    hc_file = sim.get_actor("EnergyWindows").get_output_path()
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 20, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 15, "scaling": 1},
@@ -304,7 +306,7 @@ def test_spect_hits(output, paths, version="2"):
     # Compare root files
     print()
     gate.exception.warning("Compare peak")
-    hc_file = output.get_actor("EnergyWindows").user_info.output
+    hc_file = sim.get_actor("EnergyWindows").get_output_path()
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1, "scaling": 1},
@@ -327,10 +329,10 @@ def test_spect_hits(output, paths, version="2"):
     return is_ok
 
 
-def test_spect_proj(output, paths, proj, version="3"):
+def test_spect_proj(sim, paths, proj, version="3"):
     print()
-    stats = output.get_actor("Stats")
-    stats.counts.run_count = 1  # force to 1 to compare with gate result
+    stats = sim.get_actor("Stats")
+    stats.counts.runs = 1  # force to 1 to compare with gate result
     print(stats)
     stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.025)
@@ -340,7 +342,7 @@ def test_spect_proj(output, paths, proj, version="3"):
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
     img = itk.imread(str(paths.output / "proj028.mhd"))
-    spacing = np.array(proj.user_info.spacing)
+    spacing = np.array(proj.projection.image.GetSpacing())  # user_info.spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

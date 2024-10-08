@@ -3,7 +3,6 @@
 
 import os
 import time
-import pathlib
 import click
 import random
 import sys
@@ -11,6 +10,7 @@ import json
 
 from opengate.exception import fatal, colored, color_ok, color_error
 from opengate_core.testsDataSetup import check_tests_data_folder
+from opengate.bin.opengate_library_path import return_tests_path
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -18,25 +18,20 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--test_id", "-i", default="all", help="Start test from this number")
 @click.option(
+    "--no_log_on_fail",
+    default=False,
+    is_flag=True,
+    help="If set, do not print log on fail",
+)
+@click.option(
     "--random_tests",
     "-r",
     is_flag=True,
     default=False,
     help="Start the last 10 tests and 1/4 of the others randomly",
 )
-def go(test_id, random_tests):
-    pathFile = pathlib.Path(__file__).parent.resolve()
-    if "src" in pathFile.iterdir():
-        mypath = pathFile.parent / "tests" / "src"
-    else:
-        import opengate.tests
-
-        mypath = (
-            pathlib.Path(opengate.tests.__file__).resolve().parent.parent
-            / "tests"
-            / "src"
-        )
-
+def go(test_id, random_tests, no_log_on_fail):
+    mypath = return_tests_path()
     print("Looking for tests in: " + str(mypath))
 
     if not check_tests_data_folder():
@@ -70,7 +65,7 @@ def go(test_id, random_tests):
 
     files = []
     for f in onlyfiles:
-        if "wip" in f:
+        if "wip" in f or "WIP" in f:
             print(f"Ignoring: {f:<40} ")
             continue
         if "visu" in f:
@@ -101,9 +96,9 @@ def go(test_id, random_tests):
         files.append(f)
 
     files = sorted(files)
-    dictFiles = {}
+    dashboard_dict = {}
     for file in files:
-        dictFiles[file] = [""]
+        dashboard_dict[file] = [""]
     if test_id != "all":
         test_id = int(test_id)
         files_new = []
@@ -134,7 +129,7 @@ def go(test_id, random_tests):
         # subprocess.run(cmd, stdout=f, shell=True, check=True)
         if r == 0:
             print(colored.stylize(" OK", color_ok), end="")
-            dictFiles[f] = [True]
+            dashboard_dict[f] = [True]
         else:
             if r == 2:
                 # this is probably a Ctrl+C, so we stop
@@ -142,13 +137,16 @@ def go(test_id, random_tests):
             else:
                 print(colored.stylize(" FAILED !", color_error), end="")
                 failure = True
-                os.system("cat " + log)
-                dictFiles[f] = [False]
+                if not no_log_on_fail:
+                    os.system("cat " + log)
+                dashboard_dict[f] = [False]
         end = time.time()
         print(f"   {end - start:5.1f} s     {log:<65}")
 
-    outputJsonFile = (
-        "results_"
+    path_output_dashboard = mypath / ".." / "output_dashboard"
+    os.makedirs(path_output_dashboard, exist_ok=True)
+    dashboard_output = (
+        "dashboard_output_"
         + sys.platform
         + "_"
         + str(sys.version_info[0])
@@ -156,8 +154,8 @@ def go(test_id, random_tests):
         + str(sys.version_info[1])
         + ".json"
     )
-    with open(outputJsonFile, "w") as fp:
-        json.dump(dictFiles, fp, indent=4)
+    with open(path_output_dashboard / dashboard_output, "w") as fp:
+        json.dump(dashboard_dict, fp, indent=4)
     print(not failure)
 
 

@@ -51,7 +51,8 @@ public:
 
   ~GateUniqueVolumeID();
 
-  GateUniqueVolumeID(const G4VTouchable *touchable, bool debug = false);
+  explicit GateUniqueVolumeID(const G4VTouchable *touchable,
+                              bool debug = false);
 
   static IDArrayType ComputeArrayID(const G4VTouchable *touchable);
 

@@ -17,6 +17,10 @@ public:
 
   static std::string get_ITKVersion();
 
+  static bool get_G4VIS_USE_OPENGLQT();
+
+  static std::string get_QT_VERSION();
+
   static bool get_G4GDML();
 
   static void test();

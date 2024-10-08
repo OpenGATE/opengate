@@ -59,6 +59,7 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
     def close(self):
         self.g4_step_limiter_storage = None
         self.g4_special_user_cuts_storage = None
+        self.physics_engine = None
 
     @requires_fatal("physics_engine")
     def ConstructParticle(self):
@@ -86,8 +87,8 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
             ]
 
         if len(particle_keys_to_consider) == 0:
-            warning(
-                "user_limits_particles is False for all particles. No tracking cuts will be applied. Use Simulation.set_user_limits_particles()."
+            self.physics_engine.simulation_engine.simulation.warn_user(
+                "user_limits_particles is False for all particles. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
             )
 
         # translate to Geant4 particle names
@@ -177,13 +178,9 @@ class Region(GateObject):
     )
 
     def __init__(self, *args, **kwargs) -> None:
+        # references to upper hierarchy level
         super().__init__(*args, **kwargs)
 
-        # references to upper hierarchy level
-        try:
-            self.physics_manager = kwargs["physics_manager"]
-        except KeyError:
-            self.physics_manager = None
         self.physics_engine = None
 
         # dictionaries to hold volumes to which this region is associated
@@ -200,8 +197,12 @@ class Region(GateObject):
         self._g4_user_limits_initialized = False
         self._g4_production_cuts_initialized = False
 
+    @property
+    def physics_manager(self):
+        return self.simulation.physics_manager
+
     def reset(self):
-        super().__init__(name=self.name, physics_manager=self.physics_manager)
+        super().__init__(name=self.name, simulation=self.simulation)
         self.root_logical_volumes = {}
 
     # this version will work when Volume inherits from GateObject
@@ -214,6 +215,7 @@ class Region(GateObject):
 
     def close(self):
         self.release_g4_references()
+        self.physics_engine = None
 
     def release_g4_references(self):
         self.g4_region = None
@@ -256,7 +258,7 @@ class Region(GateObject):
         except AttributeError:
             volume_name = volume
 
-        if volume_name in self.root_logical_volumes.keys():
+        if volume_name in self.root_logical_volumes:
             fatal(f"This volume {volume_name} is already associated with this region.")
         self.root_logical_volumes[volume_name] = None
         self.physics_manager.volumes_regions_lut[volume_name] = self
@@ -662,13 +664,6 @@ class OpticalSurface(GateObject):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        # Set the physics manager if present in kwargs,
-        # else set to None
-        try:
-            self.physics_manager = kwargs["physics_manager"]
-        except KeyError:
-            self.physics_manager = None
-
         self.physics_engine = None
 
         # dictionary holding optical surface properties
@@ -682,6 +677,14 @@ class OpticalSurface(GateObject):
         self.g4_logical_border_surface = None
         # Store Geant4 object for material properties table
         self.g4_optical_surface_table = None
+
+    # shortcut for convenience
+    @property
+    def physics_manager(self):
+        if self.simulation is not None:
+            return self.simulation.physics_manager
+        else:
+            return None
 
     def release_g4_references(self):
         self.g4_optical_surface = None

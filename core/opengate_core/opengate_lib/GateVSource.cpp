@@ -84,3 +84,28 @@ void GateVSource::SetOrientationAccordingToMotherVolume() {
   ComputeTransformationFromVolumeToWorld(fMother, l.fGlobalTranslation,
                                          l.fGlobalRotation, false);
 }
+
+long GateVSource::GetExpectedNumberOfEvents(TimeIntervals simulation_times) {
+  if (fMaxN != 0)
+    return fMaxN;
+  long n = 0;
+  for (auto time_interval : simulation_times)
+    n += GetExpectedNumberOfEvents(time_interval);
+  return n;
+}
+
+long GateVSource::GetExpectedNumberOfEvents(TimeInterval time_interval) {
+  long n = 0;
+  auto t0 = time_interval.first / CLHEP::s;
+  auto t1 = time_interval.second / CLHEP::s;
+  auto a = fInitialActivity / CLHEP::Bq;
+  auto l = fDecayConstant;
+  auto duration = t1 - t0;
+  if (fHalfLife <= 0)
+    n = (long)round((duration)*a);
+  else {
+    n = (long)round((fInitialActivity / l) * (exp(-l * time_interval.first) -
+                                              exp(-l * time_interval.second)));
+  }
+  return n;
+}

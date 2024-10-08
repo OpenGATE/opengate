@@ -31,8 +31,8 @@ public:
   // Inherit the constructors
   using GateVFilter::GateVFilter;
 
-  void Initialize(py::dict &user_info) override {
-    PYBIND11_OVERLOAD(void, GateVFilter, Initialize, user_info);
+  void InitializeUserInput(py::dict &user_info) override {
+    PYBIND11_OVERLOAD(void, GateVFilter, InitializeUserInput, user_info);
   }
 
   bool Accept(G4Step *step) const override {
@@ -56,5 +56,5 @@ void init_GateVFilter(py::module &m) {
 
   py::class_<GateVFilter, PyGateVFilter>(m, "GateVFilter")
       .def(py::init())
-      .def("Initialize", &GateVFilter::Initialize);
+      .def("InitializeUserInput", &GateVFilter::InitializeUserInput);
 }

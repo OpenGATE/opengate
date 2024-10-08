@@ -35,7 +35,7 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
         sim.volume_manager.add_material_database(fdb)
 
     # check overlap
-    sim.g4_check_overlap_flag = debug
+    sim.check_volumes_overlap = debug
 
     # main box
     head = add_head_box(sim, name)
@@ -542,8 +542,8 @@ def add_digitizer_test2(sim, head, crystal):
 def add_digitizer_hits(sim, head, crystal):
     # hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal.name}")
-    hc.mother = crystal.name
-    hc.output = ""  # No output
+    hc.attached_to = crystal.name
+    hc.output_filename = ""  # No output
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -557,11 +557,11 @@ def add_digitizer_hits(sim, head, crystal):
 def add_digitizer_adder(sim, head, crystal, hc):
     # singles
     sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal.name}")
-    sc.mother = hc.mother
+    sc.attached_to = hc.attached_to
     sc.input_digi_collection = hc.name
     # sc.policy = "EnergyWeightedCentroidPosition"
     sc.policy = "EnergyWinnerPosition"
-    sc.output = ""
+    sc.output_filename = ""
     sc.group_volume = None
     return sc
 
@@ -571,8 +571,8 @@ def add_digitizer_blur_test2(sim, head, crystal, sc):
     keV = g4_units.keV
     MeV = g4_units.MeV
     eb = sim.add_actor("DigitizerBlurringActor", f"Singles_{crystal.name}_eblur")
-    eb.output = sc.output
-    eb.mother = crystal.name
+    eb.output_filename = sc.output_filename
+    eb.attached_to = crystal.name
     eb.input_digi_collection = sc.name
     eb.blur_attribute = "TotalEnergyDeposit"
     eb.blur_method = "Linear"
@@ -582,8 +582,8 @@ def add_digitizer_blur_test2(sim, head, crystal, sc):
 
     # spatial blurring
     sb = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_sblur")
-    sb.output = f"output/{head.name}_singles.root"
-    sb.mother = crystal.name
+    sb.output_filename = f"output/{head.name}_singles.root"
+    sb.attached_to = crystal.name
     sb.input_digi_collection = eb.name
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 10 * mm
@@ -597,8 +597,8 @@ def add_digitizer_blur(sim, head, crystal, sc):
     keV = g4_units.keV
     MeV = g4_units.MeV
     eb = sim.add_actor("DigitizerBlurringActor", f"Singles_{crystal.name}_eblur")
-    eb.output = sc.output
-    eb.mother = crystal.name
+    eb.output_filename = sc.output_filename
+    eb.attached_to = crystal.name
     eb.input_digi_collection = sc.name
     eb.blur_attribute = "TotalEnergyDeposit"
     eb.blur_method = "Linear"
@@ -608,8 +608,8 @@ def add_digitizer_blur(sim, head, crystal, sc):
 
     # spatial blurring
     sb = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_sblur")
-    sb.output = f"output/{head.name}_singles.root"
-    sb.mother = crystal.name
+    sb.output_filename = f"output/{head.name}_singles.root"
+    sb.attached_to = crystal.name
     sb.input_digi_collection = eb.name
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3.9 * mm
@@ -631,10 +631,10 @@ def add_digitizer_ene_win(sim, head, crystal, sc):
         {"name": f"peak208_{head.name}", "min": 192.4 * keV, "max": 223.6 * keV},
         {"name": f"scatter4_{head.name}", "min": 224.64 * keV, "max": 243.3 * keV},
     ]
-    cc.mother = sc.mother
+    cc.attached_to = sc.attached_to
     cc.input_digi_collection = sc.name
     cc.channels = channels
-    cc.output = ""  # No output
+    cc.output_filename = ""  # No output
     return cc
 
 
@@ -643,11 +643,11 @@ def add_digitizer_proj(sim, crystal, cc):
     deg = g4_units.deg
     # projection
     proj = sim.add_actor("DigitizerProjectionActor", f"Projection_{crystal.name}")
-    proj.mother = cc.mother
+    proj.attached_to = cc.attached_to
     proj.input_digi_collections = [x["name"] for x in cc.channels]
     proj.spacing = [4.7951998710632 * mm, 4.7951998710632 * mm]
     proj.size = [128, 128]
-    proj.output = "proj.mhd"
+    proj.output_filename = "proj.mhd"
     proj.origin_as_image_center = False
     r1 = Rotation.from_euler("y", 90 * deg)
     r2 = Rotation.from_euler("x", 90 * deg)
@@ -838,6 +838,7 @@ def add_digitizer_tc99m(sim, crystal_name, name):
     proj.detector_orientation_matrix = Rotation.from_euler(
         "yx", (90, 90), degrees=True
     ).as_matrix()
+    # proj.output_filename = "proj.mhd"
 
     # end
     return digitizer
@@ -965,8 +966,8 @@ def create_simu_for_arf_training_dataset(
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
-    arf.mother = arf_plane.name
-    arf.output = f"arf.root"
+    arf.attached_to = arf_plane.name
+    arf.output_filename = f"arf.root"
     arf.russian_roulette = rr
 
     # stats

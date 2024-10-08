@@ -164,10 +164,11 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmPenelopePhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4OpticalPhysics)
-  ADD_PHYSICS_CONSTRUCTOR_BIASING(G4GenericBiasingPhysics)
 
   ADD_PHYSICS_CONSTRUCTOR(G4DecayPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4RadioactiveDecayPhysics)
+
+  ADD_PHYSICS_CONSTRUCTOR_BIASING(G4GenericBiasingPhysics)
 
   // sort PL vector
   std::sort(plList.begin(), plList.end());

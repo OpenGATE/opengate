@@ -39,7 +39,9 @@ class LazyModuleLoader:
         if self.module is None:
             # Check module existence and import it
             try:
+                # print(f"LazyModuleLoader is importing module {self.module_name} ...")
                 self.module = importlib.import_module(self.module_name)
+                # print("... done")
             except ModuleNotFoundError:
                 fatal(
                     f"The module '{self.module_name}' is not installed. "
@@ -108,6 +110,14 @@ def g4_best_unit(value, unit_type):
     return g4.G4BestUnit(value, unit_type)
 
 
+def g4_best_unit_tuple(value, unit_type):
+    bu = g4.G4BestUnit(value, unit_type)
+    parts = str(bu).split(" ", 1)
+    float_part = float(parts[0])
+    unit_part = parts[1].strip()
+    return float_part, unit_part
+
+
 def assert_key(key: str, d: Box):
     if key not in d:
         fatal(f'The key "{key}" is needed in this structure:\n' f"{d}")
@@ -173,29 +183,29 @@ def read_mac_file_to_commands(filename):
 
 
 def ensure_filename_is_str(filename):
-    # Algorithms (itk) do not support Path -> convert to str
+    # Some software packages, e.g. itk, do not support Path -> convert to str
     if isinstance(filename, Path):
         return str(filename)
-    return filename
-
-
-def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
-    print(file_path)
-    print(suffix)
-    if suffix:
-        suffix = suffix.strip("_- *")
-        suffix = suffix.lower()
+    elif filename is None:
+        return ""
     else:
-        return file_path
-    if not isinstance(file_path, Path):
-        path = Path(file_path)
+        return filename
+
+
+def insert_suffix_before_extension(file_path, suffix, suffix_separator="-"):
+    path = Path(file_path)
+    if not suffix:
+        return path
+
+    suffix = suffix.strip("_- *").lower()
+    # Handle filenames with nested extensions e.g. '.nii.gz'
+    if path.name.endswith(".nii.gz"):
+        stem = path.name[: -len(".nii.gz")]
+        new_path = path.with_name(f"{stem}{suffix_separator}{suffix}.nii.gz")
     else:
-        path = file_path
+        new_path = path.with_name(f"{path.stem}{suffix_separator}{suffix}{path.suffix}")
 
-    new_file_name = path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
-    print(new_file_name)
-
-    return new_file_name
+    return new_path
 
 
 def get_random_folder_name(size=8, create=True):
@@ -298,6 +308,7 @@ def print_opengate_info():
 
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
+    print(f"Geant4 Qt        {gi.get_G4VIS_USE_OPENGLQT()} {gi.get_QT_VERSION()}")
     print(f"Geant4 GDML      {gi.get_G4GDML()}")
     print(f"Geant4 date      {gi.get_G4Date().replace(')', '').replace('(', '')}")
     print(f"Geant4 data      {g4.get_g4_data_folder()}")
@@ -321,6 +332,18 @@ def print_opengate_info():
 
     except:
         print(f"GATE date        {get_release_date(version('opengate'))} (pypi)")
+
+
+def calculate_variance(value_array, squared_value_array, number_of_samples):
+    return np.clip(
+        (
+            squared_value_array / number_of_samples
+            - np.power(value_array / number_of_samples, 2)
+        )
+        / (number_of_samples - 1),
+        0,
+        None,
+    )
 
 
 def standard_error_c4_correction(n):

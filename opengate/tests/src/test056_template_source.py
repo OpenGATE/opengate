@@ -59,14 +59,13 @@ if __name__ == "__main__":
     source.n = 666 / sim.number_of_threads
 
     # actors
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # start simulation
     sim.run()
 
     # get results
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
-    is_ok = stats.counts.event_count = 666
+    is_ok = stats.counts.events = 666
     utility.test_ok(is_ok)

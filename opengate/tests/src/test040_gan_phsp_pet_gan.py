@@ -40,11 +40,13 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
+    sim.output_dir = paths.output
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 123456
     # sim.running_verbose_level = gate.EVENT
     # sim.g4_verbose = True
+    sim.output_dir = paths.output
     ac = 5e3 * BqmL / sim.number_of_threads
     sim.visu = False
     colli_flag = not sim.visu
@@ -98,6 +100,7 @@ if __name__ == "__main__":
     # unique (reproducible) random generator
     rs = gate.utility.get_rnd_seed(123456)
 
+    # FIXME -> should not be in the main ; warning used global variable (spheres_activity_ratio)
     def gen_cond(n):
         n_samples = gate_iec.get_n_samples_from_ratio(n, spheres_activity_ratio)
         # (it is required to shuffle when using several activity spheres to avoid time artifact)
@@ -166,12 +169,12 @@ if __name__ == "__main__":
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test040_gan_stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output_filename = "test040_gan_stats.txt"
 
     # phsp actor
     phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp_actor.mother = phsp_sphere_surface.name
+    phsp_actor.attached_to = phsp_sphere_surface.name
     phsp_actor.attributes = [
         "KineticEnergy",
         "PrePosition",
@@ -182,16 +185,16 @@ if __name__ == "__main__":
         "TimeFromBeginOfEvent",
         "EventKineticEnergy",
     ]
-    phsp_actor.output = paths.output / "test040_gan_phsp.root"
+    phsp_actor.output_filename = "test040_gan_phsp.root"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     phsp_actor.filters.append(f)
-    f = sim.add_filter("KineticEnergyFilter", "f")
+    f = sim.add_filter("KineticEnergyFilter", "f2")
     f.energy_min = 100 * keV
     phsp_actor.filters.append(f)
 
     # ----------------------------------------------------------------------------------------------
-    # go (cannot be spawn in another process)
+    # FIXME: cannot be spawn in another process !
     # sim.running_verbose_level = gate.EVENT
     sim.run(start_new_process=False)
 
@@ -200,30 +203,25 @@ if __name__ == "__main__":
     print()
     gate.exception.warning(f"Check stats")
     if sim.number_of_threads == 1:
-        s = sim.output.get_source("gaga")
+        s = sim.source_manager.get_source_info("gaga")
     else:
-        s = sim.output.get_source_mt("gaga", 0)
+        s = sim.source_manager.get_source_info_mt("gaga", 0)
     print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
-    b = gate.sources.generic.get_source_skipped_events(sim.output, gsource.name)
+    b = gate.sources.generic.get_source_skipped_events(sim, gsource.name)
     print(f"Source, nb of skipped particles (check) : {b}")
 
     print(f"Source, nb of zerosE particles : {s.fTotalZeroEvents}")
-    b = gate.sources.generic.get_source_zero_events(sim.output, gsource.name)
+    b = gate.sources.generic.get_source_zero_events(sim, gsource.name)
     print(f"Source, nb of zerosE particles (check) : {b}")
 
-    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
-    r = (
-        stats_ref.counts.step_count - stats.counts.step_count
-    ) / stats_ref.counts.step_count
-    print(f"!!! Steps cannot be compared => was {stats.counts.step_count}, {r:.2f}%")
-    stats.counts.step_count = stats_ref.counts.step_count
-    r = (
-        stats_ref.counts.track_count - stats.counts.track_count
-    ) / stats_ref.counts.track_count
-    print(f"!!! Tracks cannot be compared => was {stats.counts.track_count}, {r:.2f}%")
-    stats.counts.track_count = stats_ref.counts.track_count
+    r = (stats_ref.counts.steps - stats.counts.steps) / stats_ref.counts.steps
+    print(f"!!! Steps cannot be compared => was {stats.counts.steps}, {r:.2f}%")
+    stats.counts.steps = stats_ref.counts.steps
+    r = (stats_ref.counts.tracks - stats.counts.tracks) / stats_ref.counts.tracks
+    print(f"!!! Tracks cannot be compared => was {stats.counts.tracks}, {r:.2f}%")
+    stats.counts.tracks = stats_ref.counts.tracks
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     # save conditional for checking with reference cond
@@ -317,7 +315,7 @@ if __name__ == "__main__":
     ke = hits1["KineticEnergy"]
     print("Nb of event (non E==0)", ke.shape)
 
-    hc_file = phsp_actor.output
+    hc_file = phsp_actor.get_output_path()
     hits2, hits2_keys, hits2_n = phsp.load(hc_file)
 
     checked_keys = [

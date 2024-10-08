@@ -23,9 +23,9 @@ if __name__ == "__main__":
     sim_name = f"{nuclide.nuclide}_10_ref"
     create_sim_test053(sim, sim_name, output=paths.output)
 
-    phsp = sim.get_actor_user_info("phsp")
+    phsp = sim.get_actor("phsp")
     phsp.filters = [phsp.filters[0]]
-    print(phsp.output)
+    print(phsp.output_filename)
 
     mm = g4_units.mm
     sim.physics_manager.global_production_cuts.all = 1 * mm
@@ -51,12 +51,12 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print stats
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     print(stats)
 
     # compare with reference root file
     warning(f"check root files")
-    root_model = sim.get_actor_user_info("phsp").output
+    root_model = sim.get_actor("phsp").get_output_path()
     root_ref = paths.output_ref / os.path.basename(root_model)
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
     tols = [0.005, 3.4]

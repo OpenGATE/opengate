@@ -5,15 +5,29 @@ import opengate_core as g4
 from .logger import log
 
 
-try:
-    color_error = colored.fg("red") + colored.attr("bold")
-    color_warning = colored.fg("orange_1")
-    color_ok = colored.fg("green")
-except AttributeError:
-    # new syntax in colored>=1.5
-    color_error = colored.fore("red") + colored.style("bold")
-    color_warning = colored.fore("orange_1")
-    color_ok = colored.fore("green")
+class GateDeprecationError(Exception):
+    """Raise this if a deprecated feature is used.
+    Provide the user with information on how to update their code.
+    """
+
+
+class GateFeatureUnavailableError(Exception):
+    """Raise this if a feature is used that is (currently) unavailable.
+    Ideally, provide the user with information about alternatives.
+    Can be used as temporary workaround during refactorings.
+    """
+
+
+class GateImplementationError(Exception):
+    """Raise this if a feature is used that is (currently) unavailable.
+    Ideally, provide the user with information about alternatives.
+    Can be used as temporary workaround during refactorings.
+    """
+
+
+color_error = colored.fore("red") + colored.style("bold")
+color_warning = colored.fore("orange_1")
+color_ok = colored.fore("green")
 
 
 def fatal(s):
@@ -23,8 +37,6 @@ def fatal(s):
     log.critical(ss)
     s = colored.stylize(s, color_error)
     log.critical(s)
-    # sys.exit(-1)
-    # FIXME: maybe better:
     raise Exception(s)
 
 

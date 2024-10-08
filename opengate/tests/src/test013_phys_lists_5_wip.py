@@ -51,12 +51,12 @@ print("Phys list cuts:")
 print(sim.physics_manager.dump_production_cuts())
 
 # start simulation
-# sim.add_g4_command_after_init("/tracking/verbose 1")
+# sim.g4_commands_after_init.append("/tracking/verbose 1")
 sim.g4_verbose = False
 sim.user_hook_after_init = check_production_cuts
 sim.run()
 
-stats = sim.output.get_actor("Stats")
+stats = sim.get_actor("Stats")
 
 # gate_test4_simulation_stats_actor
 # Gate mac/main_4.mac

@@ -232,8 +232,8 @@ def simulation(
     # ###############################
     # # Dose Actor
     dose = sim.add_actor("DoseActor", "dose")
-    # dose.output = output_path / "OneDimDose.mhd"
-    dose.mother = "patient"
+    # dose.output_filename = output_path / "OneDimDose.mhd"
+    dose.attached_to = "patient"
     # dose.spacing = is_voxel_size
     dose.spacing = target_voxel_size
     # print("dose.spacing", dose.spacing)
@@ -249,7 +249,7 @@ def simulation(
 
     dose.dose = False
     new_joined_path = os.path.join(output_path, base_name + "Dose" + ".mhd")
-    dose.output = new_joined_path
+    dose.output_filename = new_joined_path
 
     if calc_LETd:
         # # LET Actor
@@ -308,9 +308,9 @@ def simulation(
     # # start simulation
     # # ~ output = sim.start()
     output = sim.run(start_new_process=True)
-    dose_fpath = sim.output.get_actor("dose").user_info.output
+    dose_fpath = sim.get_actor("dose").user_info.output
     if calc_LETd:
-        let_fpath = sim.output.get_actor("let").user_info.output
+        let_fpath = sim.get_actor("let").user_info.output
     else:
         let_fpath = ""
     return output, dose_fpath, let_fpath

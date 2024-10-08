@@ -7,7 +7,7 @@ import itk
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, output_folder="test021")
 
     # create the simulation
     sim = gate.Simulation()
@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
     print(sim)
 
     # add a material database
@@ -77,12 +78,15 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test021-1.mhd"
-    dose.mother = ct.name
+    dose.edep.output_filename = "test021-1.mhd"
+    # we do not need to write the image to disk
+    # because we can get it directly from the actor after the simulation
+    dose.edep.write_to_disk = False
+    dose.attached_to = ct.name
     img_info = gate.image.read_image_info(ct.image)
     dose.size = img_info.size
     dose.spacing = img_info.spacing
-    dose.img_coord_system = True
+    dose.output_coordinate_system = "attached_to_image"
 
     # cuts
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
@@ -95,18 +99,17 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-    # stat.write(paths.output_ref / "stat021_ref_1.txt")
-    dose = sim.output.get_actor("dose")
+    print(stats)
+
     # test pixels in dose #1
     # test pixels in dose #1
-    d_even = itk.imread(paths.output / dose.user_info.output)
+    d_even = dose.edep.get_data()
     s = itk.array_view_from_image(d_even).sum()
     v0 = d_even.GetPixel([5, 5, 5])
     v1 = d_even.GetPixel([1, 5, 5])
@@ -131,7 +134,7 @@ if __name__ == "__main__":
     is_ok = t(2000, v4) and is_ok
 
     stats_ref = utility.read_stat_file(paths.output_ref / "stat021_ref_1.txt")
-    stats_ref.counts.run_count = sim.number_of_threads
-    is_ok = utility.assert_stats(stat, stats_ref, 0.1) and is_ok
+    stats_ref.counts.runs = sim.number_of_threads
+    is_ok = utility.assert_stats(stats, stats_ref, 0.1) and is_ok
 
     utility.test_ok(is_ok)

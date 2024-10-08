@@ -28,6 +28,10 @@ public:
 
   virtual ~GateDigitizerEnergyWindowsActor();
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
+  virtual void InitializeCpp() override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
@@ -53,7 +57,6 @@ public:
   int GetLastEnergyWindowId();
 
 protected:
-  std::string fOutputFilename;
   std::string fInputDigiCollectionName;
   GateDigiCollection *fInputDigiCollection;
   std::vector<std::string> fUserSkipDigiAttributeNames;

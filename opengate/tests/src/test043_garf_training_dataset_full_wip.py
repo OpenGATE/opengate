@@ -34,7 +34,7 @@ if __name__ == "__main__":
     test43.sim_set_world(sim)
 
     # spect head
-    spect, cystal = gate_spect.add_spect_head(
+    spect, colli, cystal = gate_spect.add_spect_head(
         sim, "spect", collimator_type="lehr", debug=sim.visu
     )
     crystal_name = f"{spect.name}_crystal"
@@ -74,28 +74,27 @@ if __name__ == "__main__":
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
-    arf.mother = detPlane.name
-    arf.output = paths.output / "test043_arf_training_dataset_large.root"
+    arf.attached_to = detPlane.name
+    arf.output_filename = paths.output / "test043_arf_training_dataset_large.root"
     arf.energy_windows_actor = cc.name
     arf.russian_roulette = 50
-    print(f"Output is ", arf.output)
+    print(f"Output is ", arf.output_filename)
 
     dpz = detPlane.translation[2]
     print(f"Position of the detector plane {dpz} mm")
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
-    s.output = str(arf.output).replace(".root", "_stats.txt")
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
+    stats.output = "test043_arf_training_dataset_full_stats.txt"
 
     # start simulation
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
-    print(stat)
-    skip = gate.sources.generic.get_source_skipped_events(sim.output, "s1")
-    print(f"Nb of skip particles {skip}  {(skip / stat.counts.event_count) * 100:.2f}%")
+    print(stats)
+    # skip = gate.sources.generic.get_source_skipped_events(sim.output, "s1")
+    # print(f"Nb of skip particles {skip}  {(skip / stat.counts.event_count) * 100:.2f}%")
 
     # garf
-    #  garf_train train_arf_v034.json /home/dsarrut/src/gate2/opengate/opengate/tests/src/../output/test043_arf_training_dataset_large.root  a.pth
+    #  garf_train train_arf_v034.json ../output/test043_arf_training_dataset_large.root  a.pth

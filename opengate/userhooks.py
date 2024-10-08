@@ -69,25 +69,25 @@ def user_hook_dump_material_properties(simulation_engine):
                 print(
                     "NOT all constant_properties from file found in G4MaterialPropertiesTable"
                 )
-                simulation_engine.hook_log.append(False)
+                simulation_engine.user_hook_log.append(False)
             else:
-                simulation_engine.hook_log.append(True)
+                simulation_engine.user_hook_log.append(True)
             if not set(material_dict["vector_properties"].keys()).issubset(
                 set([str(n) for n in vector_prop_names])
             ):
                 print(
                     "NOT all vector_properties from file found in G4MaterialPropertiesTable"
                 )
-                simulation_engine.hook_log.append(False)
+                simulation_engine.user_hook_log.append(False)
             else:
-                simulation_engine.hook_log.append(True)
+                simulation_engine.user_hook_log.append(True)
         elif mpt is None and material_dict is not None:
             print(
                 f"Geant4 does not find any MaterialPropertiesTable for this material "
                 f"although it is defined in the optical_properties_file "
                 f"{simulation_engine.simulation.physics_manager.optical_properties_file}"
             )
-            simulation_engine.hook_log.extend([False, False])
+            simulation_engine.user_hook_log.extend([False, False])
     print("*** ------------------------------------- ***")
 
 
@@ -102,7 +102,7 @@ def user_hook_em_switches(simulation_engine):
     switches["deexcitation_ignore_cut"] = (
         simulation_engine.physics_engine.g4_em_parameters.DeexcitationIgnoreCut()
     )
-    simulation_engine.hook_log.append(switches)
+    simulation_engine.user_hook_log.append(switches)
     print("Found the following em parameters via the user hook:")
     for k, v in switches.items():
         print(f"{k}: {v}")
@@ -119,4 +119,4 @@ def user_hook_active_regions(simulation_engine):
         print(f"Region {r}:")
         print(f"    deexcitation activated: {s[0]}")
         print(f"    auger activated: {s[1]}")
-    simulation_engine.hook_log.append(active_regions)
+    simulation_engine.user_hook_log.append(active_regions)

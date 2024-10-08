@@ -19,13 +19,16 @@
 #include "GateUserEventInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
+#include "indicators.hpp"
+
+using namespace indicators;
 
 // Temporary: later option will be used to control the verbosity
 class UIsessionSilent : public G4UIsession {
 public:
-  virtual G4int ReceiveG4cout(const G4String & /*coutString*/) { return 0; }
+  G4int ReceiveG4cout(const G4String & /*coutString*/) override { return 0; }
 
-  virtual G4int ReceiveG4cerr(const G4String & /*cerrString*/) { return 0; }
+  G4int ReceiveG4cerr(const G4String & /*cerrString*/) override { return 0; }
 };
 
 /*
@@ -48,7 +51,7 @@ public:
 
   explicit GateSourceManager();
 
-  virtual ~GateSourceManager();
+  ~GateSourceManager() override;
 
   // [py side] store the list of run time intervals
   void Initialize(TimeIntervals simulation_times, py::dict &options);
@@ -76,18 +79,28 @@ public:
 
   void InitializeVisualization();
 
+  void InitializeProgressBar();
+
   bool IsEndOfSimulationForWorker() const;
 
   void StartVisualization() const;
 
+  long int GetExpectedNumberOfEvents() const;
+
+  void ComputeExpectedNumberOfEvents();
+
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
-  std::string fVisualizationTypeFlag;
+  std::string fVisualizationType;
   std::string fVisualizationFile;
   G4UIExecutive *fUIEx;
-  G4VisExecutive *fVisEx;
   std::vector<std::string> fVisCommands;
   UIsessionSilent fSilent;
+
+  bool fProgressBarFlag;
+  long int fExpectedNumberOfEvents;
+  long int fProgressBarStep;
+  long int fCurrentEvent;
 
   // The following variables must be local to each threads
   struct threadLocalT {
@@ -109,6 +122,9 @@ public:
 
     // User information data
     GateUserEventInformation *fUserEventInformation;
+
+    // progress bar
+    indicators::ProgressBar *fProgressBar{};
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

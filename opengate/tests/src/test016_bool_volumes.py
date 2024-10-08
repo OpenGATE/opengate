@@ -100,23 +100,18 @@ if __name__ == "__main__":
     source.activity = 5 * Bq
 
     # add stat actor
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # function to run after init
 
     # create G4 objects
     print(sim)
 
-    def toto():
-        print("here")
-
     # start simulation
     sim.user_hook_after_init = after_init
-    # sim.user_fct_after_init = toto
     sim.run(True)
 
     # print results at the end
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     tu.test_ok(True)

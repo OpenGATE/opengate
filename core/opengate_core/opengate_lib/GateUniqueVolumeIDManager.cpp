@@ -8,6 +8,8 @@
 #include "GateUniqueVolumeIDManager.h"
 #include "GateHelpers.h"
 
+G4Mutex GetVolumeIDMutex = G4MUTEX_INITIALIZER;
+
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::fInstance = nullptr;
 
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::GetInstance() {
@@ -22,6 +24,11 @@ GateUniqueVolumeID::Pointer
 GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
   // This function is potentially called a large number of time (every hit)
   // It worth it to make it faster if possible (unsure how).
+
+  // However, without the mutex, it sef fault sometimes in MT mode.
+  // Maybe due to some race condition around the shared_ptr. I don't know.
+  // With the mutex, no seg fault.
+  G4AutoLock mutex(&GetVolumeIDMutex);
 
   // https://geant4-forum.web.cern.ch/t/identification-of-unique-physical-volumes-with-ids/2568/3
   // ID

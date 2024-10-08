@@ -22,9 +22,11 @@ def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-    output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", output_folder="test059"
+    )
+    output_path = paths.output
+    ref_path = paths.output_ref
 
     # create the simulation
     sim = gate.Simulation()
@@ -36,6 +38,7 @@ if __name__ == "__main__":
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
     sim.number_of_threads = 1
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -89,26 +92,26 @@ if __name__ == "__main__":
     # add dose actor
     dose1_s1 = sim.add_actor("DoseActor", "edep_11")
     filename = "phantom1_s1.mhd"
-    dose1_s1.output = output_path / filename
-    dose1_s1.mother = "phantom1_s1"
+    dose1_s1.output_filename = filename
+    dose1_s1.attached_to = "phantom1_s1"
     dose1_s1.size = [25, 25, 1]
     dose1_s1.spacing = [4.0, 4.0, 50.0]
     dose1_s1.hit_type = "random"
-    dose1_s1.uncertainty = True
+    dose1_s1.edep_uncertainty.active = True
     # dose1_s1.ste_of_mean = True
 
     # add dose actor
     dose1_s2 = sim.add_actor("DoseActor", "edep_12")
     filename = "phantom1_s2.mhd"
-    dose1_s2.output = output_path / filename
-    dose1_s2.mother = "phantom1_s2"
+    dose1_s2.output_filename = filename
+    dose1_s2.attached_to = "phantom1_s2"
     dose1_s2.size = [25, 25, 1]
     dose1_s2.spacing = [4.0, 4.0, 50.0]
     dose1_s2.hit_type = "random"
-    dose1_s2.uncertainty = True
+    dose1_s2.edep_uncertainty.active = True
     # # PhaseSpace Actor
     # Phsp_act = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    # Phsp_act.mother = phantom1_s2.name
+    # Phsp_act.attached_to = phantom1_s2.name
     # Phsp_act.attributes = [
     #     "KineticEnergy",
     #     "EventID",
@@ -150,21 +153,21 @@ if __name__ == "__main__":
     # add dose actor
     dose2_s1 = sim.add_actor("DoseActor", "edep_21")
     filename = "phantom2_s1.mhd"
-    dose2_s1.output = output_path / filename
-    dose2_s1.mother = "phantom2_s1"
+    dose2_s1.output_filename = filename
+    dose2_s1.attached_to = "phantom2_s1"
     dose2_s1.size = [25, 25, 1]
     dose2_s1.spacing = [4.0, 4.0, 50.0]
     dose2_s1.hit_type = "random"
-    dose2_s1.uncertainty = True
+    dose2_s1.edep_uncertainty.active = True
 
     dose2_s2 = sim.add_actor("DoseActor", "edep_22")
     filename = "phantom2_s2.mhd"
-    dose2_s2.output = output_path / filename
-    dose2_s2.mother = "phantom2_s2"
+    dose2_s2.output_filename = filename
+    dose2_s2.attached_to = "phantom2_s2"
     dose2_s2.size = [25, 25, 1]
     dose2_s2.spacing = [4.0, 4.0, 50.0]
     dose2_s2.hit_type = "random"
-    dose2_s2.uncertainty = True
+    dose2_s2.edep_uncertainty.active = True
 
     ## TPS SOURCE ##
     # beamline model
@@ -209,8 +212,8 @@ if __name__ == "__main__":
     tps_non_flat.position.translation = [40 * cm, 0 * cm, 0 * cm]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -222,26 +225,24 @@ if __name__ == "__main__":
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # print results at the end
-    stat = output.get_actor("Stats")
-    print(stat)
+    print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
     # tests
     # with and without flat generation, the result in terms of dose should be identical
     d_names = ["edep_11", "edep_12", "edep_21", "edep_22"]
-    dose_actors = [output.get_actor(d) for d in d_names]
+    dose_actors = [sim.get_actor(d) for d in d_names]
     test = True
 
     # check that the dose output is the same
     print("--- Dose image spot 0 ---")
     test = (
         utility.assert_images(
-            output_path / dose_actors[0].user_info.output,
-            output_path / dose_actors[2].user_info.output,
-            stat,
+            output_path / dose_actors[0].get_output_path("edep"),
+            output_path / dose_actors[2].get_output_path("edep"),
+            stats,
             tolerance=70,
             ignore_value=0,
         )
@@ -251,9 +252,9 @@ if __name__ == "__main__":
     print("--- Dose image spot 1 ---")
     test = (
         utility.assert_images(
-            output_path / dose_actors[1].user_info.output,
-            output_path / dose_actors[3].user_info.output,
-            stat,
+            output_path / dose_actors[1].get_output_path("edep"),
+            output_path / dose_actors[3].get_output_path("edep"),
+            stats,
             tolerance=70,
             ignore_value=0,
             sum_tolerance=5.2,
@@ -264,9 +265,9 @@ if __name__ == "__main__":
     # check that output with flat distribution has better statistics for the spot with less particles
     unc_vec = []
     for d, name in zip(dose_actors, d_names):
-        edep_img = itk.imread(paths.output / d.user_info.output)
+        edep_img = itk.imread(paths.output / d.get_output_path("edep"))
         edep_arr = itk.GetArrayViewFromImage(edep_img)
-        unc_img = itk.imread(paths.output / d.user_info.output_uncertainty)
+        unc_img = itk.imread(paths.output / d.get_output_path("edep_uncertainty"))
         unc_arr = itk.GetArrayFromImage(unc_img)
         # fig = utility.plot2D(unc_arr[0,:,:], d_actor, show=True)
         mean_unc = calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.2)

@@ -29,6 +29,10 @@ public:
 
   ~GateDigitizerProjectionActor() override;
 
+  void InitializeUserInput(py::dict &user_info) override;
+
+  void InitializeCpp() override;
+
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
 
@@ -38,13 +42,14 @@ public:
   // Called every time an Event ends (all threads)
   void EndOfEventAction(const G4Event *event) override;
 
+  void SetPhysicalVolumeName(std::string name);
+
   // Image type is 3D float by default
   typedef itk::Image<float, 3> ImageType;
   ImageType::Pointer fImage;
   std::string fPhysicalVolumeName;
 
 protected:
-  std::string fOutputFilename;
   std::vector<std::string> fInputDigiCollectionNames;
   std::vector<GateDigiCollection *> fInputDigiCollections;
   G4RotationMatrix fDetectorOrientationMatrix;

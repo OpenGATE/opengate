@@ -46,7 +46,13 @@
 GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
     : G4VBiasingOperator("ComptSplittingOperator"),
       GateVActor(user_info, false) {
-  fMotherVolumeName = DictGetStr(user_info, "mother");
+  fActions.insert("StartSimulationAction");
+}
+
+void GateOptrComptSplittingActor::InitializeUserInput(py::dict &user_info) {
+  // IMPORTANT: call the base class method
+  GateVActor::InitializeUserInput(user_info);
+  //    fMotherVolumeName = DictGetStr(user_info, "mother");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fWeightThreshold = DictGetDouble(user_info, "weight_threshold");
   fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");
@@ -59,9 +65,11 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
   fRussianRoulette = DictGetBool(user_info, "russian_roulette");
   fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
   fMaxTheta = DictGetDouble(user_info, "max_theta");
+}
+
+void GateOptrComptSplittingActor::InitializeCpp() {
   fComptSplittingOperation =
       new GateOptnComptSplitting("ComptSplittingOperation");
-  fActions.insert("StartSimulationAction");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

@@ -12,6 +12,8 @@ def create_simulation(sim, paths, name):
     mm = gate.g4_units.mm
     nm = gate.g4_units.nm
 
+    sim.output_dir = paths.output
+
     # waterworld
     world = sim.world
     world.size = [100 * m, 100 * m, 100 * m]
@@ -50,20 +52,22 @@ def create_simulation(sim, paths, name):
         "TrackCreatorProcess",
         "ProcessDefinedStep",
     ]
-    # phsp.debug = True
-    phsp.output = paths.output / f"test061_{name}.root"
+    phsp.debug = False
+    phsp.output_filename = f"test061_{name}.root"
+    phsp.steps_to_store = "first"
 
 
-def analyse(output):
+def analyse(simulation):
     # end
-    stats = output.get_actor("stats")
+    stats = simulation.actor_manager.get_actor("stats")
     print(stats)
 
     # open root file
-    phsp = output.get_actor("phsp").user_info
-    root_ref = phsp.output
-    root = uproot.open(root_ref)
+    phsp = simulation.actor_manager.get_actor("phsp")
+    root = uproot.open(phsp.get_output_path())
     tree = root[root.keys()[0]]
+
+    print(f"phsp.number_of_absorbed_events: {phsp.number_of_absorbed_events}")
 
     # Get the arrays from the tree
     events = tree.arrays(

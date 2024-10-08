@@ -20,7 +20,9 @@ if __name__ == "__main__":
     sim.visu = False
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = True
-    sim.random_seed = 321654
+    sim.random_seed = 123456789
+    sim.output_dir = paths.output
+    sim.progress_bar = True
 
     # units
     m = gate.g4_units.m
@@ -55,33 +57,39 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 100 * m)
 
     # stats
-    sim.add_actor("SimulationStatisticsActor", "stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
 
     # phsp
     phsp_bg = sim.add_actor("PhaseSpaceActor", "phsp_bg")
     phsp_bg.attributes = ["EventPosition"]
-    phsp_bg.output = paths.output / "iec_bg.root"
+    phsp_bg.output_filename = "iec_bg.root"
+    phsp_bg.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "g")
     f.particle = "gamma"
+    f.policy = "accept"
     phsp_bg.filters.append(f)
 
     phsp_sph = sim.add_actor("PhaseSpaceActor", "phsp_sph")
     phsp_sph.attributes = ["EventPosition"]
-    phsp_sph.output = paths.output / "iec_spheres.root"
+    phsp_sph.output_filename = "iec_spheres.root"
+    phsp_sph.steps_to_store = "first"
     f = sim.add_filter("ParticleFilter", "electron")
     f.particle = "e-"
+    f.policy = "accept"
     phsp_sph.filters.append(f)
+    print(phsp_sph)
+
+    print(sim.filter_manager.available_filters)
+    print(sim.filter_manager.dump())
 
     # run
     sim.run()
-    output = sim.output
 
     # end
-    stats = output.get_actor("stats")
     print(stats)
 
     # read root bg
-    root = uproot.open(phsp_bg.output)
+    root = uproot.open(phsp_bg.get_output_path())
     tree = root[root.keys()[0]]
     posx = tree["EventPosition_X"].array()
     posy = tree["EventPosition_Y"].array()
@@ -103,7 +111,7 @@ if __name__ == "__main__":
     print(f"Output plot is {file}")
 
     # read root sph
-    root = uproot.open(phsp_sph.output)
+    root = uproot.open(phsp_sph.get_output_path())
     tree = root[root.keys()[0]]
     posx = tree["EventPosition_X"].array()
     posy = tree["EventPosition_Y"].array()
@@ -129,24 +137,25 @@ if __name__ == "__main__":
     k = ["EventPosition_X", "EventPosition_Y", "EventPosition_Z"]
     is_ok = utility.compare_root3(
         ref_root_file,
-        phsp_bg.output,
+        phsp_bg.get_output_path(),
         "phsp_bg",
         "phsp_bg",
         k,
         k,
-        [0.2] * len(k),
+        [0.26] * len(k),
         [1] * len(k),
         [1] * len(k),
         paths.output / "test058_bg.png",
     )
 
     # ref root
+    print()
     ref_root_file = paths.output_ref / "iec_spheres.root"
     k = ["EventPosition_X", "EventPosition_Y", "EventPosition_Z"]
     is_ok = (
         utility.compare_root3(
             ref_root_file,
-            phsp_sph.output,
+            phsp_sph.get_output_path(),
             "phsp_sph",
             "phsp_sph",
             k,

@@ -58,7 +58,7 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
         sim.volume_manager.add_material_database(fdb)
 
     # check overlap
-    sim.g4_check_overlap_flag = False  # set to True for debug
+    sim.check_volumes_overlap = False  # set to True for debug
 
     # spect head
     head, lead_cover = add_spect_box(sim, name)
@@ -362,7 +362,7 @@ def add_simplified_digitizer_tc99m(
     )
     proj = add_digitizer(sim, crystal_volume_name, channels)
     # output
-    proj.output = output_name
+    proj.output_filename = output_name
     return proj
 
 
@@ -375,7 +375,7 @@ def add_digitizer(sim, crystal_volume_name, channels):
     proj = sim.add_actor(
         "DigitizerProjectionActor", f"Projection_{crystal_volume_name}"
     )
-    proj.mother = cc.mother
+    proj.attached_to = cc.attached_to
     proj.input_digi_collections = [x["name"] for x in cc.channels]
     # proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.spacing = [5 * mm, 5 * mm]
@@ -387,8 +387,9 @@ def add_digitizer(sim, crystal_volume_name, channels):
 def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal_volume_name}")
-    hc.mother = crystal_volume_name
-    hc.output = ""  # No output
+    hc.attached_to = crystal_volume_name
+    # no output by default
+    hc.output_filename = None
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -398,19 +399,20 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
 
     # Singles
     sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal_volume_name}")
-    sc.mother = hc.mother
+    sc.attached_to = hc.attached_to
     sc.input_digi_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
-    sc.output = ""  # No output
+    sc.output_filename = None
 
     # energy windows
     cc = sim.add_actor(
         "DigitizerEnergyWindowsActor", f"EnergyWindows_{crystal_volume_name}"
     )
-    cc.mother = sc.mother
+    cc.attached_to = sc.attached_to
     cc.input_digi_collection = sc.name
     cc.channels = channels
-    cc.output = ""  # No output
+    cc.output_filename = None
+
     return cc
 
 

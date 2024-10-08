@@ -23,7 +23,7 @@ class MyCustomChanger(gate.actors.dynamicactors.GeometryChanger):
         print("**** ^^^   ^^^ ****")
         print("****  O     O  ****")
         print("****     L     ****")
-        print("****  \_____/  ****")
+        print("****  \\_____/  ****")
         print("****     V     ****")
         print("*******************")
         print(f"This is volume {self.attached_to_volume.name} in run {run_id}.")
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [(0, 1 * sec), (1 * sec, 2 * sec), (20 * sec, 21 * sec)]
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
     sim.run()

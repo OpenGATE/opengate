@@ -20,6 +20,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.check_volumes_overlap = True
     sim.random_seed = 1548765
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -119,30 +120,30 @@ if __name__ == "__main__":
     # add dose actor
     for i in range(1, 3):
         dose = sim.add_actor("DoseActor", f"dose{i}")
-        dose.output = paths.output / f"test032_iec{i}.mhd"
-        dose.mother = f"iec{i}"
+        dose.output_filename = f"test032_iec{i}.mhd"
+        dose.attached_to = f"iec{i}"
         dose.size = [100, 100, 100]
         dose.spacing = [2 * mm, 2 * mm, 2 * mm]
         # translate the iec1 to have the exact same dose origin
         # (only needed to perform the assert_image test)
         if i == 1:
             dose.translation = [0 * mm, 35 * mm, 0 * mm]
-        # only for voxelized:
-        dose.img_coord_system = True
+        if i == 2:
+            # only for voxelized:
+            dose.output_coordinate_system = "attached_to_image"
 
     # initialize & start
     sim.run()
 
     # stats
-    stats = sim.output.get_actor("stats")
     print(stats)
-    dose1 = sim.output.get_actor("dose1")
-    dose2 = sim.output.get_actor("dose2")
+    dose1 = sim.get_actor("dose1")
+    dose2 = sim.get_actor("dose2")
     # compare edep map
 
     is_ok = utility.assert_images(
-        dose1.user_info.output,
-        dose2.user_info.output,
+        dose1.edep.get_output_path(),
+        dose2.edep.get_output_path(),
         stats,
         tolerance=87,
         axis="x",

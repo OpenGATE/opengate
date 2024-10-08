@@ -34,11 +34,7 @@ void GateDigiCollection::SetBeginOfEventIndex() {
   SetBeginOfEventIndex(GetSize());
 }
 
-void GateDigiCollection::SetWriteToRootFlag(bool f) {
-  fWriteToRootFlag = f;
-  if (f)
-    RootStartInitialization();
-}
+void GateDigiCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
 
 void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
   fFilename = filename;
@@ -46,6 +42,7 @@ void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
     SetWriteToRootFlag(false);
   else
     SetWriteToRootFlag(true);
+  RootStartInitialization();
 }
 
 void GateDigiCollection::InitDigiAttributesFromNames(
@@ -135,6 +132,7 @@ void GateDigiCollection::Close() const {
 }
 
 void GateDigiCollection::InitDigiAttributeFromName(const std::string &name) {
+  // FIXME: redundant check. this is also checked in InitDigiAttribute()
   if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name
@@ -226,6 +224,8 @@ GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
 }
 
 std::string GateDigiCollection::DumpLastDigi() const {
+  if (GetSize() == 0)
+    return "";
   std::ostringstream oss;
   auto n = GetSize() - 1;
   for (auto *att : fDigiAttributes) {

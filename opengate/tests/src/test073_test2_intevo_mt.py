@@ -12,6 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     create_sim_tests(sim, threads=4, digitizer=2)
+    sim.output_dir = paths.output
 
     # timing
     sim.random_seed = 123654789
@@ -23,25 +24,25 @@ if __name__ == "__main__":
 
     # output
     crystal = sim.volume_manager.get_volume(f"spect_crystal")
-    hits = sim.get_actor_user_info(f"Hits_{crystal.name}")
-    singles = sim.get_actor_user_info(f"Singles_{crystal.name}")
-    eb = sim.get_actor_user_info(f"Singles_{crystal.name}_eblur")
-    sb = sim.get_actor_user_info(f"Singles_{crystal.name}_sblur")
-    proj = sim.get_actor_user_info(f"Projection_{crystal.name}")
-    stats = sim.get_actor_user_info("stats")
-    hits.output = paths.output / "output_test2.root"
-    singles.output = hits.output
-    eb.output = hits.output
-    sb.output = hits.output
-    proj.output = paths.output / "projections_test2.mhd"
-    stats.output = paths.output / "stats2.txt"
+    hits = sim.get_actor(f"Hits_{crystal.name}")
+    singles = sim.get_actor(f"Singles_{crystal.name}")
+    eb = sim.get_actor(f"Singles_{crystal.name}_eblur")
+    sb = sim.get_actor(f"Singles_{crystal.name}_sblur")
+    proj = sim.get_actor(f"Projection_{crystal.name}")
+    stats = sim.get_actor("stats")
+
+    hits.output_filename = "output_test2.root"
+    singles.output_filename = hits.output_filename
+    eb.output_filename = hits.output_filename
+    sb.output_filename = hits.output_filename
+    proj.output_filename = "projections_test2.mhd"
+    stats.output_filename = "stats2.txt"
+    print(hits.get_output_path())
 
     # start simulation
     sim.run()
 
     # print stats
-    output = sim.output
-    stats = output.get_actor("stats")
     print(stats)
 
     # ------------------------------------------------------------------------------------
@@ -56,15 +57,14 @@ if __name__ == "__main__":
 
     # compare stats
     print(paths)
-    is_ok = compare_stats(output, paths.gate_output / f"stats2.txt")
+    is_ok = compare_stats(sim, paths.gate_output / f"stats2.txt")
 
     # Compare root files
     fr = paths.gate_output / "output2.root"
-    stats = output.get_actor("stats")
     sn = f"Singles_{crystal.name}_sblur"
-    is_ok = compare_root_singles(crystal, output, fr, paths.output, sn, n=2) and is_ok
+    is_ok = compare_root_singles(crystal, sim, fr, paths.output, sn, n=2) and is_ok
 
     # compare images with Gate
     fr = paths.gate_output / "projection2.mhd"
-    is_ok = compare_proj_images(crystal, output, stats, fr, paths.output, n=2) and is_ok
+    is_ok = compare_proj_images(crystal, sim, stats, fr, paths.output, n=2) and is_ok
     utility.test_ok(is_ok)

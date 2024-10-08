@@ -22,22 +22,31 @@ GateVDigitizerWithOutputActor::GateVDigitizerWithOutputActor(
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
 
-  // options for input
-  fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
-
-  // options for output
-  fOutputFilename = DictGetStr(user_info, "output");
-  fOutputDigiCollectionName = DictGetStr(user_info, "_name");
-  fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
-  fClearEveryNEvents = DictGetInt(user_info, "clear_every");
-
   // init
   fOutputDigiCollection = nullptr;
   fInputDigiCollection = nullptr;
   fInitializeRootTupleForMasterFlag = true;
+  fClearEveryNEvents = 1e5;
 }
 
 GateVDigitizerWithOutputActor::~GateVDigitizerWithOutputActor() = default;
+
+// Called at initialisation
+void GateVDigitizerWithOutputActor::InitializeCpp() {
+  GateVActor::InitializeCpp();
+}
+
+// get user input parameters from python side
+void GateVDigitizerWithOutputActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
+  // options for input
+  fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
+
+  // options for output
+  fOutputDigiCollectionName = DictGetStr(user_info, "name");
+  fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
+  fClearEveryNEvents = DictGetInt(user_info, "clear_every");
+}
 
 void GateVDigitizerWithOutputActor::StartSimulationAction() {
   // Get the input hits collection
@@ -46,7 +55,13 @@ void GateVDigitizerWithOutputActor::StartSimulationAction() {
 
   // Create the list of output attributes
   fOutputDigiCollection = hcm->NewDigiCollection(fOutputDigiCollectionName);
-  fOutputDigiCollection->SetFilenameAndInitRoot(fOutputFilename);
+  std::string outputPath;
+  if (!GetWriteToDisk(fOutputNameRoot)) {
+    outputPath = "";
+  } else {
+    outputPath = GetOutputPath(fOutputNameRoot);
+  }
+  fOutputDigiCollection->SetFilenameAndInitRoot(outputPath);
   fOutputDigiCollection->InitDigiAttributesFromCopy(
       fInputDigiCollection, fUserSkipDigiAttributeNames);
 

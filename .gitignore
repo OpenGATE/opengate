@@ -89,6 +89,9 @@ opengate_temporaire
 /opengate/tests/test*speed*txt
 /opengate/tests/label_to*
 /opengate/tests/src/demo_code_*.py
+/opengate/tests/src/test030_save
+/opengate/tests/src/test_log*
+/opengate/tests/src/save_tests
 
 /opengate/data/isomeric_transition/save
 /opengate/data/isomeric_transition/save2
@@ -159,3 +162,4 @@ opengate/tests/singles.root
 singles.root
 opengate/tests/src/geant4_out.txt
 failing_tests.txt
+opengate/tests/output_dashboard

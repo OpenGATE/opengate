@@ -5,7 +5,7 @@ import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "gate_test043_garf")
+paths = utility.get_default_test_paths(__file__, "gate_test043_garf", "test043")
 
 m = gate.g4_units.m
 cm = gate.g4_units.cm
@@ -129,8 +129,8 @@ def create_sim_test_region(sim):
 
     # arf actor
     arf = sim.add_actor("ARFActor", "arf")
-    arf.mother = detPlane.name
-    arf.output = paths.output / "test043_projection_garf.mhd"
+    arf.attached_to = detPlane.name
+    arf.output_filename = paths.output / "test043_projection_garf.mhd"
     arf.batch_size = 2e5
     arf.image_size = [128, 128]
     arf.image_spacing = [4.41806 * mm, 4.41806 * mm]

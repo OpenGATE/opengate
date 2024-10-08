@@ -23,21 +23,26 @@ public:
   // Constructor
   GateFluenceActor(py::dict &user_info);
 
-  virtual void ActorInitialize();
+  virtual void InitializeCpp() override;
 
-  // Main function called every step in attached volume
-  virtual void SteppingAction(G4Step *);
+  virtual void InitializeUserInput(py::dict &user_info) override;
 
-  // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run);
+  // Function called every step in attached volume
+  // This where the scoring takes place
+  virtual void SteppingAction(G4Step *) override;
 
-  virtual void BeginOfEventAction(const G4Event *event);
+  virtual void BeginOfEventAction(const G4Event *event) override;
 
-  virtual void EndSimulationAction();
+  virtual void BeginOfRunActionMasterThread(int run_id) override;
+
+  inline std::string GetPhysicalVolumeName() { return fPhysicalVolumeName; }
+
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+
+  int NbOfEvent = 0;
 
   // Image type is 3D float by default
   typedef itk::Image<float, 3> Image3DType;
-
   typedef itk::Image<float, 4> Image4DType;
   typedef itk::Image<int, 4> ImageInt4DType;
   using Size4DType = Image4DType::SizeType;
@@ -45,13 +50,10 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_fluence_image;
-  Image3DType::SizeType size_fluence;
-  double fVoxelVolume;
-  int NbOfThreads = 0;
 
+private:
   std::string fPhysicalVolumeName;
-
-  G4ThreeVector fInitialTranslation;
+  G4ThreeVector fTranslation;
   std::string fHitType;
 };
 

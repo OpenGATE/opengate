@@ -53,27 +53,25 @@ if __name__ == "__main__":
     ]
     proj = gate_spect.add_digitizer(sim, crystal_name, channels)
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
-    proj.output = test43.paths.output / "test043_projection_analog.mhd"
+    proj.output_filename = test43.paths.output / "test043_projection_analog.mhd"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
-    print(stat)
+    print(stats)
 
     # dump the output image with offset like in old gate (for comparison)
     print("We change the spacing/origin to be compared to the old gate")
-    proj = sim.output.get_actor(f"Projection_{crystal_name}")
     spacing = np.array([4.41806 * mm, 4.41806 * mm, 1])
-    img = itk.imread(str(proj.user_info.output))
+    img = itk.imread(str(proj.get_output_path()))
     img.SetSpacing(spacing)
     img.SetOrigin(spacing / 2.0)
-    fn = str(proj.user_info.output).replace(".mhd", "_offset.mhd")
+    fn = str(proj.get_output_path()).replace(".mhd", "_offset.mhd")
     itk.imwrite(img, fn)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -81,8 +79,8 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Tests stats file")
     stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
-    stat.counts.run_count = 1  # force to one run (ref only have 1 thread)
-    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
+    stats.counts.runs = 1  # force to one run (ref only have 1 thread)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     print()
     gate.exception.warning("Tests projection (old gate)")
@@ -90,7 +88,7 @@ if __name__ == "__main__":
         utility.assert_images(
             test43.paths.gate_output / "projection_analog.mhd",
             fn,
-            stat,
+            stats,
             tolerance=75,
             ignore_value=0,
             axis="x",
@@ -103,8 +101,8 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             test43.paths.output_ref / "test043_projection_analog.mhd",
-            proj.user_info.output,
-            stat,
+            proj.get_output_path(),
+            stats,
             tolerance=80,
             ignore_value=0,
             axis="x",

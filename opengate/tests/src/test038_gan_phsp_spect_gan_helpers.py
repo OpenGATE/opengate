@@ -58,6 +58,7 @@ def create_simulation(sim, paths, colli="lehr"):
     sim.visu = False
     # sim.running_verbose_level = gate.EVENT
     # sim.g4_verbose = True
+    sim.output_dir = paths.output
 
     # world size
     world = sim.world
@@ -166,15 +167,15 @@ def create_simulation(sim, paths, colli="lehr"):
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test038_gan_stats.txt"
+    stat.output_filename = "test038_gan_stats.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
     gate_spect.add_simplified_digitizer_tc99m(
-        sim, "spect1_crystal", paths.output / "test038_gan_proj.mhd"
+        sim, "spect1_crystal", "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
-    singles_actor = sim.get_actor_user_info(f"Singles_spect1_crystal")
-    singles_actor.output = paths.output / "test038_gan_singles.root"
+    singles_actor = sim.actor_manager.get_actor(f"Singles_spect1_crystal")
+    singles_actor.output_filename = "test038_gan_singles.root"
 
     # motion of the spect, create also the run time interval
     """heads = [spect1]  # [spect1, spect2]
@@ -191,7 +192,7 @@ def create_simulation(sim, paths, colli="lehr"):
         motion.priority = 5"""
 
     phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp_actor.mother = phase_space_sphere.name
+    phsp_actor.attached_to = phase_space_sphere.name
     phsp_actor.attributes = [
         "KineticEnergy",
         "PrePosition",
@@ -201,39 +202,34 @@ def create_simulation(sim, paths, colli="lehr"):
         "EventDirection",
         "EventKineticEnergy",
     ]
-    phsp_actor.output = paths.output / "test038_gan_phsp.root"
+    phsp_actor.output_filename = "test038_gan_phsp.root"
 
     return condition_generator
 
 
-def analyze_results(output, paths, all_cond):
-    phsp_actor = output.get_actor("phsp").user_info
+def analyze_results(sim, paths, all_cond):
+    phsp_actor = sim.get_actor("phsp")
     print(phsp_actor)
 
     # print stats
     print()
     gate.exception.warning(f"Check stats")
-    if output.simulation.number_of_threads == 1:
-        s = output.get_source("gaga")
-    else:
-        s = output.get_source_mt("gaga", 0)
+    s = sim.get_source_user_info("gaga")
     print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
     print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
 
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
-    stats.counts.event_count += s.fTotalSkippedEvents
+    stats.counts.events += s.fTotalSkippedEvents
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
-    r = (
-        stats_ref.counts.step_count - stats.counts.step_count
-    ) / stats_ref.counts.step_count
-    print(f"Steps cannot be compared => was {stats.counts.step_count}, {r:.2f}%")
-    stats.counts.step_count = stats_ref.counts.step_count
+    r = (stats_ref.counts.steps - stats.counts.steps) / stats_ref.counts.steps
+    print(f"Steps cannot be compared => was {stats.counts.steps}, {r:.2f}%")
+    stats.counts.steps = stats_ref.counts.steps
     if s.fTotalSkippedEvents > 0:
-        print(f"Tracks cannot be compared => was {stats.counts.track_count}")
-        stats.counts.track_count = stats_ref.counts.track_count
+        print(f"Tracks cannot be compared => was {stats.counts.tracks}")
+        stats.counts.tracks = stats_ref.counts.tracks
 
-    stats.counts.run_count = 1  # force for MT
+    stats.counts.runs = 1  # force for MT
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     # save conditional for checking with reference cond
@@ -304,7 +300,7 @@ def analyze_results(output, paths, all_cond):
     print()
     gate.exception.warning(f"Check output phsp")
     ref_file = paths.output_ref / "test038_ref_phsp.root"
-    hc_file = phsp_actor.output
+    hc_file = phsp_actor.get_output_path()
     checked_keys = [
         "GlobalTime",
         "KineticEnergy",

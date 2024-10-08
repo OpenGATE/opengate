@@ -33,6 +33,8 @@ public:
   // destructor
   ~GateDigitizerSpatialBlurringActor() override;
 
+  virtual void InitializeUserInput(py::dict &user_info) override;
+
   // Called every time a Run starts (all threads)
   void BeginOfRunAction(const G4Run *run) override;
 

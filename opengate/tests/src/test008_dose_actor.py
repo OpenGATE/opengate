@@ -4,12 +4,10 @@
 import opengate as gate
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
-import pathlib
+from pathlib import Path
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
-    output_path = paths.output
-    data_path = paths.data
     ref_path = paths.gate_output
 
     # create the simulation
@@ -20,7 +18,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 12345678
-    sim.output_dir = output_path
+    sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem
 
     # shortcuts for units
     m = gate.g4_units.m
@@ -74,27 +72,25 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = "test008.mhd"
-    dose.mother = "waterbox"
+    dose.attached_to = "waterbox"
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
-    dose.uncertainty = True
+    dose.edep_uncertainty.active = True
     dose.hit_type = "random"
+    dose.output_coordinate_system = "local"
+    dose.output_filename = "test.nii.gz"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
 
     # start simulation
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
     print(stat)
-
-    dose = sim.output.get_actor("dose")
     print(dose)
 
     # tests
@@ -105,7 +101,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep.mhd",
-            sim.output_dir / dose.user_info.output,
+            dose.edep.get_output_path(),
             stat,
             tolerance=13,
             ignore_value=0,
@@ -118,7 +114,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "output-Edep-Uncertainty.mhd",
-            sim.output_dir / dose.user_info.output_uncertainty,
+            dose.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
             ignore_value=1,

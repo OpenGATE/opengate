@@ -22,7 +22,7 @@ public:
 
   virtual ~GateVFilter();
 
-  virtual void Initialize(py::dict &user_info);
+  virtual void InitializeUserInput(py::dict &user_info);
 
   virtual bool Accept(const G4Run *run) const;
 

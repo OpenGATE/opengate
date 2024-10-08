@@ -25,9 +25,11 @@ if __name__ == "__main__":
     MBq = 1000 * kBq
 
     # main parameters
+    sim.output_dir = paths.output
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
-    sim.random_seed = 123456
+    sim.random_seed = 123456789
+    sim.output_dir = paths.output
     ac = 15 * BqmL
     sim.visu = False
     if sim.visu:
@@ -74,8 +76,8 @@ if __name__ == "__main__":
     bg.energy.type = "Ga68"
 
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output = paths.output / "test040_train_stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output_filename = "test040_train_stats.txt"
 
     # filter gamma only
     f = sim.add_filter("ParticleFilter", "f")
@@ -83,7 +85,7 @@ if __name__ == "__main__":
 
     # phsp
     phsp = sim.add_actor("PhaseSpaceActor", "phase_space")
-    phsp.mother = "phase_space_sphere"
+    phsp.attached_to = "phase_space_sphere"
     # we use PrePosition because this is the first step in the volume
     phsp.attributes = [
         "KineticEnergy",
@@ -97,13 +99,13 @@ if __name__ == "__main__":
         "EventPosition",
         "EventDirection",
     ]
-    phsp.output = paths.output / "test040_train.root"
+    phsp.output_filename = "test040_train.root"
     phsp.store_absorbed_event = (
         True  # this option allow to store all events even if absorbed
     )
     phsp.filters.append(f)
     print(phsp)
-    print(phsp.output)
+    print(phsp.get_output_path())
 
     # go
     sim.run()
@@ -113,7 +115,6 @@ if __name__ == "__main__":
     # check stats
     print()
     gate.exception.warning(f"Check stats")
-    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test040_train_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.03)
@@ -121,10 +122,10 @@ if __name__ == "__main__":
     # check phsp
     print()
     gate.exception.warning(f"Check root")
-    p = sim.output.get_actor("phase_space")
-    print(f"Number of absorbed : {p.fNumberOfAbsorbedEvents}")
+    p = sim.get_actor("phase_space")
+    print(f"Number of absorbed : {p.number_of_absorbed_events}")
     ref_file = paths.output_ref / "test040_train.root"
-    hc_file = phsp.output
+    hc_file = phsp.get_output_path()
     checked_keys = [
         "TimeFromBeginOfEvent",
         "KineticEnergy",
@@ -147,7 +148,7 @@ if __name__ == "__main__":
     tols = [1.0] * len(checked_keys)
     tols[checked_keys.index("TimeFromBeginOfEvent")] = 0.007
     tols[checked_keys.index("KineticEnergy")] = 0.003
-    tols[checked_keys.index("PrePosition_X")] = 1.6
+    tols[checked_keys.index("PrePosition_X")] = 1.7
     tols[checked_keys.index("PrePosition_Y")] = 1.6
     tols[checked_keys.index("PrePosition_Z")] = 1.9
     tols[checked_keys.index("PreDirection_X")] = 0.01

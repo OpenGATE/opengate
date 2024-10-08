@@ -10,7 +10,7 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
-void GateTrackCreatorProcessFilter::Initialize(py::dict &user_info) {
+void GateTrackCreatorProcessFilter::InitializeUserInput(py::dict &user_info) {
   fProcessName = DictGetStr(user_info, "process_name");
   fPolicy = DictGetStr(user_info, "policy");
 }
@@ -20,9 +20,9 @@ bool GateTrackCreatorProcessFilter::Accept(G4Step *step) const {
   std::string name = "none";
   if (p != nullptr)
     name = p->GetProcessName();
-  if (fPolicy == "keep" && name == fProcessName)
+  if (fPolicy == "accept" && name == fProcessName)
     return true;
-  if (fPolicy == "discard" && name != fProcessName)
+  if (fPolicy == "reject" && name != fProcessName)
     return true;
   return false;
 }

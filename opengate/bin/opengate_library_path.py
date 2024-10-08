@@ -3,6 +3,7 @@
 import site
 import os
 import click
+import pkgutil
 from pathlib import Path
 
 
@@ -29,6 +30,23 @@ def get_libG4geometry_path():
             print(str(element))
 
 
+def return_tests_path():
+    pathFile = Path(__file__).parent.resolve()
+    if "src" in pathFile.iterdir():
+        mypath = pathFile.parent / "tests" / "src"
+    else:
+        mypath = (
+            Path(pkgutil.get_loader("opengate").get_filename()).resolve().parent
+            / "tests"
+            / "src"
+        )
+    return mypath
+
+
+def get_tests_path():
+    print(str(return_tests_path()))
+
+
 # -----------------------------------------------------------------------------
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -45,6 +63,8 @@ def go(path):
         get_libG4geometry_path()
     elif path == "site_packages":
         get_site_packages_dir()
+    elif path == "tests":
+        get_tests_path()
 
 
 # -----------------------------------------------------------------------------

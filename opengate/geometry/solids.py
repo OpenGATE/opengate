@@ -1,21 +1,15 @@
 from box import Box
 from scipy.spatial.transform import Rotation
-import sys
 import stl
 import logging
 
 from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
-from ..exception import fatal, warning
+from ..exception import fatal
 import opengate_core as g4
 from ..decorators import requires_fatal
 
-from .utility import (
-    ensure_is_g4_rotation,
-    ensure_is_g4_translation,
-    vec_np_as_g4,
-    vec_g4_as_np,
-)
+from .utility import ensure_is_g4_rotation, ensure_is_g4_translation, vec_np_as_g4
 
 
 logger = logging.getLogger(__name__)
@@ -24,7 +18,6 @@ logger = logging.getLogger(__name__)
 class SolidBase(GateObject):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.g4_solid = None
 
     def close(self):
@@ -465,23 +458,23 @@ class TesselatedSolid(SolidBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # self.g4_facets = None
 
-        self.g4_solid = None
-        self.facetArray = None
-        self.tessellated_solid = None
+    def close(self):
+        # G4Facets are deleted by the destructor of G4TesselatedSolid,
+        # so we need to release the reference to it on the python side.
+        # self.g4_facets = None
+        super().close()
 
     def read_file(self):
         try:
-            box_mesh = stl.mesh.Mesh.from_file(self.file_name)
+            return stl.mesh.Mesh.from_file(self.file_name)
         except Exception as e:
-            print(
-                "Error in TesselatedVolume. Could not read the file ",
-                self.file_name,
-                " Aborting.",
+            msg = (
+                f"Error in {self.type_name} called {self.name}. Could not read the file {self.file_name}. Aborting. "
+                f"The error encountered was: \n{e}"
             )
-            print("The error encountered was: ", e)
-            exit()
-        return box_mesh
+            fatal(msg)
 
     def translate_mesh_to_center(self, mesh_to_translate):
         # translate the mesh to the center of gravity
@@ -491,37 +484,32 @@ class TesselatedSolid(SolidBase):
 
     def build_solid(self):
         mm = g4_units.mm
-        box_mesh = self.read_file()
         # translate the mesh to the center of gravity
-        box_mesh = self.translate_mesh_to_center(box_mesh)
+        box_mesh = self.translate_mesh_to_center(self.read_file())
         # generate the tessellated solid
-        self.tessellated_solid = g4.G4TessellatedSolid(self.name)
+        tessellated_solid = g4.G4TessellatedSolid(self.name)
         # create an array of facets
-        self.facetArray = []
+        # self.g4_facets = []
         for vertex in box_mesh.vectors:
             # Create the new facet
             # ABSOLUTE =0
             # RELATIVE =1
-            g4Facet = g4.G4TriangularFacet(
+            g4_facet = g4.G4TriangularFacet(
                 vec_np_as_g4(vertex[0]),
                 vec_np_as_g4(vertex[1]),
                 vec_np_as_g4(vertex[2]),
                 g4.G4FacetVertexType.ABSOLUTE,
             )
-            self.facetArray.append(g4Facet)
+            tessellated_solid.AddFacet(g4_facet)
+            # self.g4_facets.append(g4_facet)
 
-        # loop through facetArray and add the facets to the tessellated solid
-        for facet in self.facetArray:
-            self.tessellated_solid.AddFacet(facet)
         # set the solid closed
-        self.tessellated_solid.SetSolidClosed(True)
+        tessellated_solid.SetSolidClosed(True)
         logger.debug(
-            "Created Tesselated volume: {} with a volume of: {} [mm³]".format(
-                self.name, self.tessellated_solid.GetCubicVolume() * mm
-            )
+            f"Created tesselated volume '{self.name}' with a volume of {tessellated_solid.GetCubicVolume() / mm**3} mm3"
         )
 
-        return self.tessellated_solid
+        return tessellated_solid
 
 
 class ImageSolid(SolidBase):

@@ -26,6 +26,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = True
     sim.random_seed = 123654987
+    sim.output_dir = paths.output
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -54,12 +55,12 @@ if __name__ == "__main__":
     # add stat actor
     stats_actor = sim.add_actor("SimulationStatisticsActor", "stats")
     stats_actor.track_types_flag = True
-    stats_actor.output = paths.output / "test015_iec_2_stats.txt"
+    stats_actor.output_filename = "test015_iec_2_stats.txt"
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test015_iec_2.mhd"
-    dose.mother = iec_phantom.name
+    dose.edep.output_filename = "test015_iec_2.mhd"
+    dose.attached_to = iec_phantom.name
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
 
@@ -67,16 +68,14 @@ if __name__ == "__main__":
     sim.run()
 
     # compare stats
-    stats = sim.output.get_actor("stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_2_stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.03)
+    is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.03)
 
     # compare images
-    f = paths.output / "test015_iec_2.mhd"
     im_ok = utility.assert_images(
         paths.output_ref / "test015_iec_2.mhd",
-        dose.output,
-        stats,
+        dose.edep.get_output_path(),
+        stats_actor,
         axis="x",
         tolerance=40,
         ignore_value=0,

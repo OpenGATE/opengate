@@ -17,7 +17,13 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
     : GateDigitizerHitsCollectionActor(user_info) {
   // action
   fActions.insert("EndOfEventAction");
+  fActions.insert("BeginOfEventAction");
+  fActions.insert("SteppingAction");
   // options
+}
+
+void GateARFTrainingDatasetActor::InitializeUserInput(py::dict &user_info) {
+  GateDigitizerHitsCollectionActor::InitializeUserInput(user_info);
   fInputActorName = DictGetStr(user_info, "energy_windows_actor");
   fEnergyWindowsActor = dynamic_cast<GateDigitizerEnergyWindowsActor *>(
       GateActorManager::GetActor(fInputActorName));
@@ -29,7 +35,14 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
 void GateARFTrainingDatasetActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fHitsCollectionName);
-  fHits->SetFilenameAndInitRoot(fOutputFilename);
+
+  std::string outputPath;
+  if (!GetWriteToDisk(fOutputNameRoot)) {
+    outputPath = "";
+  } else {
+    outputPath = GetOutputPath(fOutputNameRoot);
+  }
+  fHits->SetFilenameAndInitRoot(outputPath);
   // create the attributes
   auto *att_e = new GateTDigiAttribute<double>("E");
   auto *att_t = new GateTDigiAttribute<double>("Theta");

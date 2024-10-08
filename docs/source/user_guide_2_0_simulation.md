@@ -87,10 +87,10 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 
 ##### QT
 
-It will start a Qt interface with `ui.visu_type = "qt"`. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
+It will start a Qt interface with `ui.visu_type = "qt"`. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands_qt.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
 
 
-The visualisation with qt is still work in progress. First, it does not work on some linux systems (we don't know why yet). When a CT image is inserted in the simulation, every voxel should be drawn which is highly inefficient and cannot really be used.
+The visualisation with qt is still work in progress. First, it does not work on some linux systems (we don't know why yet). With MacOS Qt6 is working but sometimes you need to set the library path properly before running python with: ```export DYLD_LIBRARY_PATH=/<venv_osx_path>/lib/python3.9/site-packages/opengate_core/plugins:$DYLD_LIBRARY_PATH```. When a CT image is inserted in the simulation, every voxel should be drawn which is highly inefficient and cannot really be used.
 
 ##### VRML
 

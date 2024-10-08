@@ -15,6 +15,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
+    sim.output_dir = paths.output / __file__.rstrip(".py")
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
@@ -85,41 +86,39 @@ if __name__ == "__main__":
     )
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test009.mhd"
-    dose.mother = "patient"
-    dose.size = [99, 99, 99]
-    dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.img_coord_system = True
-    dose.translation = [2 * mm, 3 * mm, -2 * mm]
-    dose.hit_type = "random"
+    dose_actor = sim.add_actor("DoseActor", "dose_actor")
+    dose_actor.attached_to = "patient"
+    dose_actor.edep_uncertainty.active = True
+    dose_actor.size = [99, 99, 99]
+    dose_actor.spacing = [2 * mm, 2 * mm, 2 * mm]
+    dose_actor.output_coordinate_system = "attached_to_image"
+    dose_actor.translation = [2 * mm, 3 * mm, -2 * mm]
+    dose_actor.hit_type = "random"
 
     # add stat actor
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.track_types_flag = True
+    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor.track_types_flag = True
 
     # print info
     print(sim.volume_manager.dump_volumes())
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
     sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-    print(stat)
-    dose = sim.output.get_actor("dose")
-    print(dose)
+    print(stats_actor)
+    print(dose_actor)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    is_ok = utility.assert_stats(stat, stats_ref, 0.15)
+    is_ok = utility.assert_stats(stats_actor, stats_ref, 0.15)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / dose.user_info.output,
-        stat,
+        dose_actor.edep.get_output_path(),
+        stats_actor,
         tolerance=35,
     )
 

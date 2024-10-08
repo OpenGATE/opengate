@@ -47,16 +47,16 @@ def define_simulation(sim, threads=1):
     stats.track_types_flag = True
 
 
-def test_output(output):
+def test_output(sim):
     # get output
     paths = utility.get_default_test_paths(
         __file__, "gate_test004_simulation_stats_actor"
     )
 
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    stats_ref.counts.run_count = output.simulation.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
 
     return is_ok

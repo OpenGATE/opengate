@@ -1,7 +1,9 @@
 import opengate as gate
 from scipy.spatial.transform import Rotation
 import numpy as np
-import spekpy as sp
+from opengate.utility import LazyModuleLoader
+
+sp = LazyModuleLoader("spekpy")
 import pathlib
 
 # useful units
@@ -161,7 +163,7 @@ class Ciosalpha:
             collimator.size = colli["size"]
 
         killer = self.sim.add_actor("KillActor", f"target_kill")
-        killer.mother = [f"{self.machine_name}_collimator{i+1}" for i in range(4)]
+        killer.attached_to = [f"{self.machine_name}_collimator{i+1}" for i in range(4)]
 
     def set_collimation(self, collimation1, collimation2):
         if not 0 <= collimation1 <= 25 or not 0 <= collimation2 <= 25:

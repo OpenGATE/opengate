@@ -7,7 +7,7 @@ import uproot
 import sys
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "", "test022")
+    paths = utility.get_default_test_paths(__file__, output_folder="test022")
 
     # create the simulation
     sim = gate.Simulation()
@@ -23,6 +23,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.number_of_threads = n
     sim.random_seed = 12344321
+    sim.output_dir = paths.output
     print(sim)
 
     # units
@@ -82,14 +83,14 @@ if __name__ == "__main__":
     # source2.n = 50
 
     # add stat actor
-    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats_actor.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # hit actor
     ta = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta.mother = "detector"
+    ta.attached_to = "detector"
     ta.attributes = ["KineticEnergy", "GlobalTime"]
-    ta.output = paths.output / "test022_half_life.root"
+    ta.output_filename = "test022_half_life.root"
 
     # timing
     sim.run_timing_intervals = [
@@ -101,12 +102,10 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # get result
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # read phsp
-
-    root = uproot.open(ta.output)
+    root = uproot.open(ta.get_output_path())
     branch = root["PhaseSpace"]["GlobalTime"]
     time = branch.array(library="numpy") / sec
     branch = root["PhaseSpace"]["KineticEnergy"]
@@ -146,8 +145,8 @@ if __name__ == "__main__":
     is_ok = is_ok and b
 
     # check thread
-    b = sim.number_of_threads * len(sim.run_timing_intervals) == stats.counts.run_count
-    utility.print_test(b, f"Number of run: {stats.counts.run_count}")
+    b = sim.number_of_threads * len(sim.run_timing_intervals) == stats.counts.runs
+    utility.print_test(b, f"Number of run: {stats.counts.runs}")
 
     is_ok = is_ok and b
 

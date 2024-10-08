@@ -205,6 +205,12 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
                 itk::ImportImageFilter<PixelType, Image::ImageDimension>;
             auto info = np_array.request();
 
+            // Create a copy of the numpy array's data
+            size_t numberOfPixels = np_array.size();
+            PixelType *copied_data = new PixelType[numberOfPixels];
+            std::memcpy(copied_data, info.ptr,
+                        numberOfPixels * sizeof(PixelType));
+
             auto importer = ImporterType::New();
             auto region = img->GetLargestPossibleRegion();
             auto size = region.GetSize();
@@ -226,13 +232,21 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
             importer->SetSpacing(img->GetSpacing());
             importer->SetDirection(img->GetDirection());
             // img owns the buffer, not the import filter
-            const bool importImageFilterWillOwnTheBuffer = false;
+            const bool LetImageContainerManageMemory = true;
+            /* DOC:
+            Set the pointer from which the image data is imported.
+            "num" is the number of pixels in the block of memory. If
+            "LetImageContainerManageMemory" is false, then the this filter will
+            not free the memory in its destructor and the application providing
+            the buffer retains the responsibility of freeing the memory for this
+            image data. If "LetImageContainerManageMemory" is true, then the
+            ImageContainer will free the memory when it is destroyed.
+            */
             const auto data =
                 static_cast<typename TImagePointer::ObjectType::PixelType *>(
                     info.ptr);
-            const auto numberOfPixels = np_array.size();
-            importer->SetImportPointer(data, numberOfPixels,
-                                       importImageFilterWillOwnTheBuffer);
+            importer->SetImportPointer(copied_data, numberOfPixels,
+                                       LetImageContainerManageMemory);
             importer->Update();
             img = importer->GetOutput();
           },

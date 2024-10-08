@@ -20,37 +20,6 @@ torch = LazyModuleLoader("torch")
 gaga = LazyModuleLoader("gaga_phsp")
 
 
-def import_gaga_phsp():
-    # Try to import torch
-    try:
-        import torch
-    except:
-        fatal(
-            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
-        )
-
-    # Try to import gaga_phsp
-    try:
-        import gaga_phsp as gaga
-    except:
-        fatal("The module \"gaga_phsp\" is needed. Use 'pip install gaga_phsp'")
-
-    # Check minimal version of gaga_phsp
-    import pkg_resources
-    from packaging import version
-
-    gaga_version = pkg_resources.get_distribution("gaga_phsp").version
-    gaga_minimal_version = "0.7.1"
-    if version.parse(gaga_version) < version.parse(gaga_minimal_version):
-        fatal(
-            "The minimal version of gaga_phsp is not correct. You should install at least the version "
-            + gaga_minimal_version
-            + ". Your version is "
-            + gaga_version
-        )
-    return gaga
-
-
 class VoxelizedSourcePDFSampler:
     """
     This is an alternative to GateSPSVoxelsPosDistribution (c++)
