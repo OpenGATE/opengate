@@ -1,6 +1,10 @@
-import inspect
 import pkgutil
+import os
+import inspect
 import importlib
+from typing import get_type_hints
+from functools import partial
+from pathlib import Path
 
 
 def apply_class_check_to_package(
@@ -127,19 +131,93 @@ def find_unprocessed_gateobject_classes():
         else:
             return repr(cls)
 
-    print(
-        "Checking if there are any classes in opengate that inherit from GateObject "
-        "and that are not properly processed by a call to process_cls() ..."
-    )
-    return set(
-        apply_class_check_to_package(
-            check_if_class_has_been_processed,
-            package_name="opengate",
-            inherits_from="opengate.base.GateObject",
-            exclude_modules_packages=(
-                "opengate.bin",
-                "opengate.tests.src",
-                "opengate.postprocessors",
-            ),
-        )
-    )
+    print("Checking if there are any classes in opengate that inherit from GateObject "
+          "and that are not properly processed by a call to process_cls() ...")
+    return set(apply_class_check_to_package(
+        check_if_class_has_been_processed,
+        package_name="opengate",
+        inherits_from="opengate.base.GateObject",
+        exclude_modules_packages=('opengate.bin', 'opengate.tests.src', 'opengate.postprocessors')
+    ))
+
+
+def generate_pyi_for_module(module, output_dir):
+    # Get all classes defined in the module
+    classes = inspect.getmembers(module, inspect.isclass)
+
+    module_name = module.__name__.split('.')[-1]  # Just the module name, not full path
+    output_path = os.path.join(output_dir, f"{module_name}.pyi")
+    with open(output_path, "w") as stub_file:
+        for class_name, cls in classes:
+            # Skip classes not defined in the module itself (e.g., imported ones)
+            if cls.__module__ != module.__name__:
+                continue
+
+            # Write the class definition
+            stub_file.write(f"class {class_name}:\n")
+
+            # Get manual type hints using get_type_hints
+            type_hints = get_type_hints(cls)
+
+            # Write properties with manual type hints
+            for name, hint in type_hints.items():
+                stub_file.write(f"    {name}: {hint.__name__}\n")
+
+            # Get dynamically added attributes
+            for name, value in cls.__dict__.items():
+                if name not in type_hints and not name.startswith('_'):
+                    stub_file.write(f"    {name}: {type(value).__name__}\n")
+
+            # Add a newline between classes
+            stub_file.write("\n")
+
+
+def walk_package_and_generate_pyi(package_name, package_dir, output_dir, exclude_modules_packages=None):
+    """
+    Walk through the package and generate pyi files for all modules.
+    - package_name: The name of the package (e.g., 'mypackage').
+    - package_dir: The root directory of the package (e.g., './mypackage').
+    - output_dir: The directory where the .pyi files should be written.
+    """
+
+    if exclude_modules_packages is None:
+        exclude_modules_packages = tuple()
+
+    for root, _, files in os.walk(package_dir):
+        # For each .py file in the directory (ignoring __init__.py for now)
+        for file in files:
+            if file.endswith(".py") and file != "__init__.py":
+                # Get the module name relative to the package root
+                module_path = Path(root) / file
+                relative_module_path = module_path.relative_to(package_dir)
+                # relative_module_path = os.path.relpath(module_path, package_dir)
+                module_name = relative_module_path.with_suffix('').as_posix().replace('/', '.')
+                # module_name = relative_module_path.replace(os.sep, ".").rstrip(".py")
+
+                if any([e in module_name for e in exclude_modules_packages]):
+                    continue
+
+                # Import the module dynamically
+                try:
+                    module = importlib.import_module(f"{package_name}.{module_name}")
+                    # Generate the .pyi file for the module
+                    generate_pyi_for_module(module, output_dir)
+                    print(f"Generated .pyi for module: {module_name}")
+                except Exception as e:
+                    print(f"Failed to generate .pyi for module: {module_name}. Error: {e}")
+
+        # Generate __init__.pyi for directories
+        if "__init__.py" in files:
+            init_module_name = os.path.relpath(root, package_dir).replace(os.sep, ".")
+            try:
+                init_module = importlib.import_module(f"{package_name}.{init_module_name}")
+                generate_pyi_for_module(init_module, output_dir)
+                print(f"Generated .pyi for module: {init_module_name} (init)")
+            except Exception as e:
+                print(f"Failed to generate .pyi for module: {init_module_name}. Error: {e}")
+
+
+generate_pyi_files_for_opengate = partial(
+    walk_package_and_generate_pyi,
+    package_name='opengate',
+    exclude_modules_packages=('tests.src', ))
