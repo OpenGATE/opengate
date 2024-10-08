@@ -184,7 +184,7 @@ if __name__ == "__main__":
     #     stat,
     #     axis="x",
     #     tolerance=50,
-    #     ignore_value=0,
+    #     ignore_value_data2=0,
     # )
     fig1 = utility.create_2D_Edep_colorMap(output_path / mhd_1, show=False)
     fig2 = utility.create_2D_Edep_colorMap(output_path / mhd_2, show=False)
