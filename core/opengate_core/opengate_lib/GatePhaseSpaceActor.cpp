@@ -60,6 +60,7 @@ void GatePhaseSpaceActor::InitializeCpp() {
 
 // Called when the simulation start
 void GatePhaseSpaceActor::StartSimulationAction() {
+  DDD(__func__);
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fDigiCollectionName);
 
@@ -84,11 +85,13 @@ void GatePhaseSpaceActor::StartSimulationAction() {
 
 // Called every time a Run starts
 void GatePhaseSpaceActor::BeginOfRunAction(const G4Run *run) {
+  DDD(__func__);
   if (run->GetRunID() == 0)
     fHits->RootInitializeTupleForWorker();
 }
 
 void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
+  DDD(__func__);
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
   if (fStoreAbsorbedEvent) {
@@ -102,6 +105,7 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
 }
 
 void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
+  DDD(__func__);
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
   if (fDebug) {
@@ -114,6 +118,7 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
 
 // Called every time a batch of step must be processed
 void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
+  DDD(__func__);
   /*
    Only store if the particle enters and/or exits the volume.
    (We CANNOT use step->IsFirstStepInVolume() because it fails with parallel
@@ -185,12 +190,15 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 }
 
 void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
+  DDD(__func__);
   // For a given event, when no step never reach the phsp:
   // if the option is on, we store a "fake" step, with the event information.
   // All other attributes will be "empty" (mostly 0)
   auto &l = fThreadLocalData.Get();
+  DDD("coucou");
   if (fStoreAbsorbedEvent && !l.fCurrentEventHasBeenStored) {
     // Put empty value for all attributes
+    std::cout << "coucou0" << std::endl;
     fHits->FillDigiWithEmptyValue();
 
     // Except EventPosition
@@ -198,31 +206,38 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     auto p = event->GetPrimaryVertex(0)->GetPosition();
     auto &values = att->Get3Values();
     values.back() = p;
+    std::cout << "coucou1" << std::endl;
 
     // Except EventID
     att = fHits->GetDigiAttribute("EventID");
     auto &values_id = att->GetIValues();
     values_id.back() = event->GetEventID();
+    std::cout << "coucou2" << std::endl;
 
     // Except EventDirection
     att = fHits->GetDigiAttribute("EventDirection");
     auto &values_dir = att->Get3Values();
     auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
     values_dir.back() = d;
+    std::cout << "coucou3" << std::endl;
 
     // Except EventKineticEnergy
     att = fHits->GetDigiAttribute("EventKineticEnergy");
     auto &values_en = att->GetDValues();
     auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
     values_en.back() = e;
+    std::cout << "coucou4" << std::endl;
 
     // increase the nb of absorbed events
     fNumberOfAbsorbedEvents++;
+    std::cout << "coucou5" << std::endl;
   }
+  DDD("coucou6");
 }
 
 // Called every time a Run ends
 void GatePhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
+  DDD(__func__);
   {
     G4AutoLock mutex(&TotalEntriesMutex);
     fTotalNumberOfEntries += fHits->GetSize();
@@ -233,19 +248,23 @@ void GatePhaseSpaceActor::EndOfRunAction(const G4Run * /*unused*/) {
 // Called every time a Run ends
 void GatePhaseSpaceActor::EndOfSimulationWorkerAction(
     const G4Run * /*unused*/) {
+  DDD(__func__);
   fHits->Write();
 }
 
 // Called when the simulation ends
 void GatePhaseSpaceActor::EndSimulationAction() {
+  DDD(__func__);
   fHits->Write();
   fHits->Close();
 }
 
 int GatePhaseSpaceActor::GetNumberOfAbsorbedEvents() const {
+  DDD(__func__);
   return fNumberOfAbsorbedEvents;
 }
 
 int GatePhaseSpaceActor::GetTotalNumberOfEntries() const {
+  DDD(__func__);
   return fTotalNumberOfEntries;
 }
