@@ -85,7 +85,7 @@ def download_g4_data(missing_g4_Data=None):
     folder_names_from_tar = set()
 
     if missing_g4_Data is None:
-        data_packages_needed = data_packages
+        data_packages_needed = list(data_packages.values())
     else:
         data_packages_needed = [
             package
