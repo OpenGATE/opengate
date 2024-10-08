@@ -692,7 +692,7 @@ class SingleItkImageWithVariance(DataItemContainer):
                     output_arr = np.divide(
                         output_arr,
                         value_array / number_of_samples,
-                        out=np.ones_like(output_arr),
+                        out=np.zeros_like(output_arr),
                         where=value_array != 0,
                     )
             output_image = itk.image_view_from_array(output_arr)
