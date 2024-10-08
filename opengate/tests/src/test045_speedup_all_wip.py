@@ -21,7 +21,6 @@ if __name__ == "__main__":
     # so the results are not reproducible (yet)
     seed = 812365478
 
-
     def run(param):
         print("run ", param)
         cmd_line = (
@@ -39,7 +38,6 @@ if __name__ == "__main__":
 
         print("Output ", out)
         return out
-
 
     # output
     output = []

@@ -454,4 +454,3 @@ class ActorBase(GateObject):
 
 
 process_cls(ActorBase)
-

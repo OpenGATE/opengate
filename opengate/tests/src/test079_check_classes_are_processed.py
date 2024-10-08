@@ -21,4 +21,3 @@ if __name__ == "__main__":
     else:
         print("All classes inheriting from GateObject are properly processed .")
     utility.test_ok(is_ok, exceptions=exceptions)
-

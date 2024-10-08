@@ -74,7 +74,10 @@ def apply_class_check_to_package(
                 # Check if the object is a class
                 if inspect.isclass(obj):
                     try:
-                        if inherits_from is not None and instance_of_class not in obj.mro():
+                        if (
+                            inherits_from is not None
+                            and instance_of_class not in obj.mro()
+                        ):
                             continue
                         w = check_func(obj, **func_kwargs)
                         if w is not None:
@@ -128,11 +131,19 @@ def find_unprocessed_gateobject_classes():
         else:
             return repr(cls)
 
-    print("Checking if there are any classes in opengate that inherit from GateObject "
-          "and that are not properly processed by a call to process_cls() ...")
-    return set(apply_class_check_to_package(
-        check_if_class_has_been_processed,
-        package_name="opengate",
-        inherits_from="opengate.base.GateObject",
-        exclude_modules_packages=('opengate.bin', 'opengate.tests.src', 'opengate.postprocessors')
-    ))
+    print(
+        "Checking if there are any classes in opengate that inherit from GateObject "
+        "and that are not properly processed by a call to process_cls() ..."
+    )
+    return set(
+        apply_class_check_to_package(
+            check_if_class_has_been_processed,
+            package_name="opengate",
+            inherits_from="opengate.base.GateObject",
+            exclude_modules_packages=(
+                "opengate.bin",
+                "opengate.tests.src",
+                "opengate.postprocessors",
+            ),
+        )
+    )
