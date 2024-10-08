@@ -3,7 +3,7 @@ from functools import wraps
 
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
 
@@ -451,3 +451,7 @@ class ActorBase(GateObject):
     def EndSimulationAction(self):
         """Default virtual method for inheritance"""
         pass
+
+
+process_cls(ActorBase)
+
