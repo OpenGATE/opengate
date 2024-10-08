@@ -142,6 +142,9 @@ def find_unprocessed_gateobject_classes():
 
 
 def generate_pyi_for_module(module, output_dir):
+    # Ensure output_dir exists
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     # Get all classes defined in the module
     classes = inspect.getmembers(module, inspect.isclass)
 
@@ -184,11 +187,20 @@ def walk_package_and_generate_pyi(package_name, package_dir, output_dir, exclude
         exclude_modules_packages = tuple()
 
     for root, _, files in os.walk(package_dir):
+
+        root_path = Path(root)
+
+        # Calculate the relative path of the current directory to package_dir
+        relative_path = root_path.relative_to(package_dir)
+
+        # Calculate the corresponding output directory
+        current_output_dir = output_dir / relative_path
+
         # For each .py file in the directory (ignoring __init__.py for now)
         for file in files:
             if file.endswith(".py") and file != "__init__.py":
                 # Get the module name relative to the package root
-                module_path = Path(root) / file
+                module_path = root_path / file
                 relative_module_path = module_path.relative_to(package_dir)
                 # relative_module_path = os.path.relpath(module_path, package_dir)
                 module_name = relative_module_path.with_suffix('').as_posix().replace('/', '.')
@@ -201,20 +213,20 @@ def walk_package_and_generate_pyi(package_name, package_dir, output_dir, exclude
                 try:
                     module = importlib.import_module(f"{package_name}.{module_name}")
                     # Generate the .pyi file for the module
-                    generate_pyi_for_module(module, output_dir)
+                    generate_pyi_for_module(module, current_output_dir)
                     print(f"Generated .pyi for module: {module_name}")
                 except Exception as e:
                     print(f"Failed to generate .pyi for module: {module_name}. Error: {e}")
 
         # Generate __init__.pyi for directories
         if "__init__.py" in files:
-            init_module_name = os.path.relpath(root, package_dir).replace(os.sep, ".")
+            init_module_name = relative_path.as_posix().replace('/', ".") + '.__init__'
             try:
                 init_module = importlib.import_module(f"{package_name}.{init_module_name}")
-                generate_pyi_for_module(init_module, output_dir)
-                print(f"Generated .pyi for module: {init_module_name} (init)")
+                generate_pyi_for_module(init_module, current_output_dir)
+                print(f"Generated __init__.pyi for module: {init_module_name} (init)")
             except Exception as e:
-                print(f"Failed to generate .pyi for module: {init_module_name}. Error: {e}")
+                print(f"Failed to generate __init__.pyi for module: {init_module_name}. Error: {e}")
 
 
 generate_pyi_files_for_opengate = partial(
