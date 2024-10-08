@@ -4,27 +4,35 @@
 #build: docker build -t tbaudier/opengate_core -f Dockerfile_opengate_core .
 #push: docker push tbaudier/opengate_core
 #run: docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDERMANYLINUX}" -v $(Pipeline.Workspace)/software:/home tbaudier/opengate_core /home/opengate_core/azureCreateWheelLinux.sh
-#interactive: docker run -ti --rm -v $(Pipeline.Workspace)/software:/home quay.io/pypa/manylinux2014_x86_64 /bin/bash
+#interactive: docker run -ti --rm -v $PWD:/home quay.io/pypa/manylinux_2_28_x86_64 /bin/bash
 
-FROM quay.io/pypa/manylinux2014_x86_64
+FROM quay.io/pypa/manylinux_2_28_x86_64
 MAINTAINER Thomas Baudier <thomas.baudier@creatis.insa-lyon.fr>
 #Install packages
-RUN     yum install -y gcc wget git expat-devel fftw-devel qt5-qtbase-devel freeglut-devel libXmu-devel xerces-c-devel \
+RUN     yum install -y gcc wget git expat-devel fftw-devel freeglut-devel libXmu-devel libxkbcommon-x11-devel.x86_64 libxcb-devel.x86_64 xcb-util.x86_64 xcb-util-wm.x86_64 xcb-util-keysyms.x86_64 xcb-util-image.x86_64 xcb-util-renderutil.x86_64 libwayland-cursor.x86_64 libwayland-egl.x86_64 \
+
+#Install xcb_cursor needed by qt6
+    &&  wget https://dl.fedoraproject.org/pub/epel/8/Everything/x86_64/Packages/x/xcb-util-cursor-0.1.3-9.el8.x86_64.rpm \
+    &&  yum install -y xcb-util-cursor-0.1.3-9.el8.x86_64.rpm \
+    &&  rm -rf xcb-util-cursor-0.1.3-9.el8.x86_64.rpm \
+
+#Install qt6 manually
 
 #Create folder
-    &&  mkdir -p /software/cmake /software/geant4/src /software/geant4/bin /software/geant4/data /software/itk/src /software/itk/bin /software/wheelhouse \
+    &&  mkdir -p /software/cmake /software/geant4/src /software/geant4/bin /software/itk/src /software/itk/bin /software/wheelhouse \
 
 #Install cmake
     &&  cd /software/cmake \
     &&  wget https://github.com/Kitware/CMake/releases/download/v3.18.2/cmake-3.18.2-Linux-x86_64.tar.gz \
     &&  tar xzvf cmake-3.18.2-Linux-x86_64.tar.gz \
+    &&  rm -rf cmake-3.18.2-Linux-x86_64.tar.gz \
     &&  export PATH=/software/cmake/cmake-3.18.2-Linux-x86_64/bin/:${PATH} \
 
 #Compile Geant4
     &&  cd /software/geant4 \
     &&  git clone --branch v11.2.1 https://github.com/Geant4/geant4.git --depth 1 src \
     &&  cd bin \
-    &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DGEANT4_BUILD_MULTITHREADED=ON -DGEANT4_USE_GDML=ON -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR=/sofware/geant4/data -DGEANT4_USE_QT=ON -DGEANT4_USE_OPENGL_X11=ON ../src \
+    &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DGEANT4_BUILD_MULTITHREADED=ON -DGEANT4_USE_GDML=OFF -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR=/sofware/geant4/data -DGEANT4_USE_QT=ON -DGEANT4_USE_OPENGL_X11=ON -DGEANT4_USE_QT_QT6=ON -DQT_DIR=/opt/Qt/6.7.2/gcc_64/lib/cmake/Qt6 -DQt6_DIR=/opt/Qt/6.7.2/gcc_64/lib/cmake/Qt6 -DQt6OpenGLWidgets_DIR=/opt/Qt/6.7.2/gcc_64/lib/cmake/Qt6OpenGLWidgets ../src \
     &&  make -j10 \
     &&  source /software/geant4/bin/geant4make.sh \
 

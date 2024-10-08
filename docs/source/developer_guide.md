@@ -37,10 +37,10 @@ The subpackage `opengate_core` depends on the ITK and Geant4 libraries. Therefor
 
 Installing QT is optional. Currently, QT visualisation is not working on all architectures.
 
-If you wish to use QT, you must install qt5 **before** installing Geant4 so that Geant4 can find the correct qt lib. It can be done for example with conda:
+If you wish to use QT, you must install qt6 **before** installing Geant4 so that Geant4 can find the correct qt lib. It can be done for example with conda:
 
 ```bash
-  conda install qt=5
+  conda install conda-forge::qt6-main conda::forge::qt6-3d
 ```
 
 For **Geant4**, you need to compile with the following options:
@@ -54,6 +54,7 @@ cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
       -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
       -DGEANT4_USE_QT=ON \
       -DGEANT4_USE_OPENGL_X11=ON \
+      -DGEANT4_USE_QT_QT6=ON \
       -DGEANT4_BUILD_MULTITHREADED=ON \
       ../geant4
 make -j 32
@@ -61,7 +62,7 @@ make -j 32
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
-WARNING : since June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
+WARNING : since June 2023, [Geant4 11.2.1](https://geant4.web.cern.ch/download/11.2.1.html) is needed.
 
 #### STEP 2 - ITK
 
