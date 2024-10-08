@@ -40,15 +40,9 @@ if __name__ == "__main__":
     is_ok = True
     for i in range(nb_ene):
         is_ok = (
-            utility.assert_images(
-                paths.output_ref / f"t048_projection_{i}.mhd",
-                output_filenames[i],
-                None,
-                tolerance=1e-6,
-                ignore_value=0,
-                axis="x",
-            )
-            and is_ok
+                utility.assert_images(paths.output_ref / f"t048_projection_{i}.mhd", output_filenames[i], None,
+                                      tolerance=1e-6, ignore_value_data2=0, axis="x")
+                and is_ok
         )
 
     utility.test_ok(is_ok)

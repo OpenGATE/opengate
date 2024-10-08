@@ -37,16 +37,9 @@ if __name__ == "__main__":
     gate.exception.warning("Compare images")
     # read image and force change the offset to be similar to old Gate
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "proj029.mhd",
-            proj_actor.get_output_path(),  # get the path by asking the actor; better than hard-code the path
-            stats,
-            tolerance=59,
-            ignore_value=0,
-            axis="x",
-            sum_tolerance=2,
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "proj029.mhd", proj_actor.get_output_path(), stats, tolerance=59,
+                                  ignore_value_data2=0, axis="x", sum_tolerance=2)
+            and is_ok
     )
     print(is_ok)
 

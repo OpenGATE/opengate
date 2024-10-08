@@ -159,14 +159,8 @@ if __name__ == "__main__":
         mhd_gate = sim.get_actor("doseInYZ" + str(i)).get_output_path("edep")
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
-            utility.assert_images(
-                ref_path / mhd_ref,
-                mhd_gate,
-                stats,
-                tolerance=50,
-                ignore_value=0,
-            )
-            and is_ok
+                utility.assert_images(ref_path / mhd_ref, mhd_gate, stats, tolerance=50, ignore_value_data2=0)
+                and is_ok
         )
         """EdepColorMap = utility.create_2D_Edep_colorMap(output_path / mhd_gate)
         img_name = 'Plane_'+str(i)+'ColorMap.png'

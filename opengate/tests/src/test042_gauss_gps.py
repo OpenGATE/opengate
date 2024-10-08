@@ -124,42 +124,28 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Difference for EDEP XZ")
     is_ok = (
-        utility.assert_images(
-            paths.gate_output / "lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.get_actor("doseInXZ").get_output_path("edep"),
-            stats,
-            tolerance=10,
-            ignore_value=0,
-        )
-        and is_ok
+            utility.assert_images(paths.gate_output / "lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
+                                  paths.output / sim.get_actor("doseInXZ").get_output_path("edep"), stats, tolerance=10,
+                                  ignore_value_data2=0)
+            and is_ok
     )
 
     print()
     gate.exception.warning("Difference for EDEP XY")
     is_ok = (
-        utility.assert_images(
-            paths.gate_output / "lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.get_actor("doseInXY").get_output_path("edep"),
-            stats,
-            tolerance=10,
-            ignore_value=0,
-            axis="y",
-        )
-        and is_ok
+            utility.assert_images(paths.gate_output / "lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
+                                  paths.output / sim.get_actor("doseInXY").get_output_path("edep"), stats, tolerance=10,
+                                  ignore_value_data2=0, axis="y")
+            and is_ok
     )
 
     print()
     gate.exception.warning("Difference for EDEP YZ")
     is_ok = (
-        utility.assert_images(
-            paths.gate_output / "lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.get_actor("doseInYZ").get_output_path("edep"),
-            stats,
-            tolerance=30,
-            ignore_value=0,
-            axis="y",
-        )
-        and is_ok
+            utility.assert_images(paths.gate_output / "lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
+                                  paths.output / sim.get_actor("doseInYZ").get_output_path("edep"), stats, tolerance=30,
+                                  ignore_value_data2=0, axis="y")
+            and is_ok
     )
 
     utility.test_ok(is_ok)

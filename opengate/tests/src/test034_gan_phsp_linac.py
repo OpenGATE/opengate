@@ -119,14 +119,9 @@ if __name__ == "__main__":
 
     gate.exception.warning(f"Check dose")
     is_ok = (
-        utility.assert_images(
-            paths.gate / "dose-Edep.mhd",
-            dose.edep.get_output_path(),
-            stats,
-            tolerance=58,
-            ignore_value=0,
-        )
-        and is_ok
+            utility.assert_images(paths.gate / "dose-Edep.mhd", dose.edep.get_output_path(), stats, tolerance=58,
+                                  ignore_value_data2=0)
+            and is_ok
     )
 
     utility.test_ok(is_ok)

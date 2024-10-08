@@ -260,17 +260,10 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8):
     itk.imwrite(img, str(paths.output / "proj028_colli_offset.mhd"))
     # There are not enough event to make a proper comparison, so the tol is very high
     is_ok = (
-        utility.assert_images(
-            paths.gate_output / "projection4.mhd",
-            paths.output / "proj028_colli_offset.mhd",
-            stats,
-            tolerance=85,
-            ignore_value=0,
-            axis="x",
-            sum_tolerance=sum_tolerance,
-            fig_name=str(paths.output / fig_name),
-        )
-        and is_ok
+            utility.assert_images(paths.gate_output / "projection4.mhd", paths.output / "proj028_colli_offset.mhd",
+                                  stats, tolerance=85, ignore_value_data2=0, axis="x",
+                                  fig_name=str(paths.output / fig_name), sum_tolerance=sum_tolerance)
+            and is_ok
     )
 
     return is_ok

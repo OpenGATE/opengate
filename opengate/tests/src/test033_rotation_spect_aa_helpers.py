@@ -180,26 +180,14 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     # compare edep map
     gate.exception.warning(f"Check images")
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "test033_proj_1.mhd",
-            paths.output / "test033_proj_1.mhd",
-            stats,
-            tolerance=68,
-            axis="x",
-            sum_tolerance=itol,
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "test033_proj_1.mhd", paths.output / "test033_proj_1.mhd", stats,
+                                  tolerance=68, axis="x", sum_tolerance=itol)
+            and is_ok
     )
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "test033_proj_2.mhd",
-            paths.output / "test033_proj_2.mhd",
-            stats,
-            tolerance=68,
-            axis="x",
-            sum_tolerance=itol,
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "test033_proj_2.mhd", paths.output / "test033_proj_2.mhd", stats,
+                                  tolerance=68, axis="x", sum_tolerance=itol)
+            and is_ok
     )
 
     return is_ok
