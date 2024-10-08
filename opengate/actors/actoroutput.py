@@ -1,7 +1,7 @@
 from box import Box
 from typing import Optional
 
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal, GateImplementationError
 from .dataitems import (
@@ -831,3 +831,15 @@ class ActorOutputRoot(ActorOutputBase):
             self.belongs_to_actor.SetOutputPath(
                 self.name, self.get_output_path_as_string()
             )
+
+
+process_cls(ActorOutputBase)
+process_cls(MergeableActorOutput)
+process_cls(ActorOutputUsingDataItemContainer)
+process_cls(ActorOutputImage)
+process_cls(ActorOutputSingleImage)
+process_cls(ActorOutputSingleMeanImage)
+process_cls(ActorOutputSingleImageWithVariance)
+process_cls(ActorOutputQuotientImage)
+process_cls(ActorOutputQuotientMeanImage)
+process_cls(ActorOutputRoot)

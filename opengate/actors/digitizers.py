@@ -4,6 +4,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
+from ..base import process_cls
 from .base import ActorBase
 from ..exception import fatal
 from ..definitions import fwhm_to_sigma
@@ -1119,3 +1120,15 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
                 f"Empty output, no particles stored in {self.get_output_path()}"
             )
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
+
+
+process_cls(DigitizerBase)
+process_cls(DigitizerAdderActor)
+process_cls(DigitizerBlurringActor)
+process_cls(DigitizerSpatialBlurringActor)
+process_cls(DigitizerEfficiencyActor)
+process_cls(DigitizerEnergyWindowsActor)
+process_cls(DigitizerHitsCollectionActor)
+process_cls(DigitizerProjectionActor)
+process_cls(DigitizerReadoutActor)
+process_cls(PhaseSpaceActor)

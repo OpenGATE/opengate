@@ -6,6 +6,7 @@ from ..utility import g4_units, g4_best_unit_tuple
 from .actoroutput import ActorOutputBase
 from ..serialization import dump_json
 from ..exception import warning
+from ..base import process_cls
 
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
@@ -431,3 +432,11 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
         SplittingActorBase.initialize(self)
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
+
+
+process_cls(ActorOutputStatisticsActor)
+process_cls(SimulationStatisticsActor)
+process_cls(KillActor)
+process_cls(SplittingActorBase)
+process_cls(ComptSplittingActor)
+process_cls(BremSplittingActor)

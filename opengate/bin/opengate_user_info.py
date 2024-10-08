@@ -2,8 +2,9 @@
 
 import click
 from opengate.userinfo import UserInfo
-from opengate.geometry.builders import volume_type_names
+from opengate.managers import VolumeManager, actor_types
 from opengate.sources.builders import source_type_names
+
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -27,8 +28,8 @@ def go():
     print()
     print(f"Volumes")
     print()
-    for v in volume_type_names:
-        print_one(v, "Volume")
+    for v in VolumeManager.volume_types.values():
+        print(v)
 
     print()
     print(f"Sources")
@@ -39,8 +40,8 @@ def go():
     print()
     print(f"Actors")
     print()
-    for v in actor_type_names:
-        print_one(v, "Actor")
+    for v in actor_types.values():
+        print(v)
 
 
 if __name__ == "__main__":

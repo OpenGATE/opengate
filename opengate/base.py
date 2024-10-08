@@ -909,3 +909,7 @@ def create_gate_object_from_dict(dct):
         name=dct["user_info"]["name"]
     )
     return obj
+
+
+process_cls(GateObject)
+process_cls(DynamicGateObject)
