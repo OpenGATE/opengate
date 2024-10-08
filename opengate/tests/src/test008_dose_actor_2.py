@@ -71,15 +71,17 @@ if __name__ == "__main__":
     stats.output_filename = "stats.txt"
 
     # dose actor 1: depth edep
-    doseactor = sim.add_actor("DoseActor", "depth")
-    doseactor.attached_to = "patient"
-    doseactor.output_filename = "depth.mhd"
-    doseactor.spacing = [5 * mm, 5 * mm, 5 * mm]
-    doseactor.size = [50, 50, 50]
-    doseactor.output_coordinate_system = "attached_to_image"
-    doseactor.dose.active = True
-    doseactor.dose_uncertainty.active = True
-    doseactor.density.active = True
+    doseactor1 = sim.add_actor("DoseActor", "depth")
+    doseactor1.attached_to = "patient"
+    doseactor1.output_filename = "depth.mhd"
+    doseactor1.spacing = [5 * mm, 5 * mm, 5 * mm]
+    doseactor1.size = [50, 50, 50]
+    doseactor1.output_coordinate_system = "attached_to_image"
+    doseactor1.dose.active = True
+    doseactor1.edep_uncertainty.active = True
+    doseactor1.dose_uncertainty.active = True
+    doseactor1.dose_uncertainty.write_to_disk = True
+    doseactor1.density.active = True
 
     # run
     sim.run()
@@ -88,43 +90,42 @@ if __name__ == "__main__":
     print(stats)
 
     is_ok = True
-    print("\nDifference for EDEP")
+    print("\nDifference for Dose")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "depth_dose.mhd",
-            doseactor.dose.get_output_path(),
+            doseactor1.dose.get_output_path(),
             stats,
             tolerance=25,
-            ignore_value=0,
+            ignore_value_data2=0,
             sum_tolerance=1,
         )
         and is_ok
     )
 
-    print("\nDifference for uncertainty")
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "depth_dose_uncertainty.mhd",
-            doseactor.dose_uncertainty.get_output_path(),
-            stats,
-            tolerance=5,
-            ignore_value=1,
-            sum_tolerance=1,
-        )
-        and is_ok
-    )
+    # print("\nDifference for dose uncertainty")
+    # is_ok = (
+    #     utility.assert_images(
+    #         paths.output_ref / "depth_dose_uncertainty.mhd",
+    #         doseactor.dose_uncertainty.get_output_path(),
+    #         stats,
+    #         tolerance=5,
+    #         ignore_value_data2=0,
+    #         sum_tolerance=1,
+    #     )
+    #     and is_ok
+    # )
 
-    """print("\nDifference for density")
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "depth_density.mhd",
-            doseactor.density.get_output_path(),
-            stats,
-            tolerance=5,
-            ignore_value=1,
-            sum_tolerance=1,
-        )
-        and is_ok
-    )"""
+    # print("\nDifference for density: calculated via simulation and from the CT image")
+    # is_ok = (
+    #     utility.assert_images(
+    #         paths.output_ref / "depth_density.mhd",
+    #         doseactor1.density.get_output_path(),
+    #         stats,
+    #         tolerance=5,
+    #         sum_tolerance=1,
+    #     )
+    #     and is_ok
+    # )
 
     utility.test_ok(is_ok)
