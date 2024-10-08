@@ -537,6 +537,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             )
         else:
             try:
+                # FIXME: the .get() method implicitly defines a default value, but it should not. Is this a workaround?
                 return self.data_item_config[item].get("suffix", str(item))
             except KeyError:
                 self._fatal_unknown_item(item)
