@@ -49,13 +49,25 @@ public:
 
   inline void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
 
-  inline bool GetSquareFlag() const { return fSquareFlag; }
+  inline bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
 
-  inline void SetSquareFlag(const bool b) { fSquareFlag = b; }
+  inline void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
 
   inline void SetDensityFlag(const bool b) { fDensityFlag = b; }
 
   inline bool GetDensityFlag() const { return fDensityFlag; }
+
+  inline void SetDoseFlag(const bool b) { fDoseFlag = b; }
+
+  inline bool GetDoseFlag() const { return fDoseFlag; }
+
+  inline void SetDoseSquaredFlag(const bool b) { fDoseSquaredFlag = b; }
+
+  inline bool GetDoseSquaredFlag() const { return fDoseSquaredFlag; }
+
+  inline void SetCountsFlag(const bool b) { fCountsFlag = b; }
+
+  inline bool GetCountsFlag() const { return fCountsFlag; }
 
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
@@ -75,16 +87,37 @@ public:
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
-  //  Image3DType::Pointer cpp_dose_image;
-  Image3DType::Pointer cpp_square_image;
-  Image3DType::SizeType size_edep{};
+  Image3DType::Pointer cpp_edep_squared_image;
+  Image3DType::Pointer cpp_dose_image;
+  Image3DType::Pointer cpp_dose_squared_image;
   Image3DType::Pointer cpp_density_image;
+  Image3DType::Pointer cpp_counts_image;
+  Image3DType::SizeType size_edep{};
+
+  struct threadLocalT {
+    G4EmCalculator emcalc;
+    std::vector<double> linear_worker_flatimg;
+    std::vector<double> squared_worker_flatimg;
+    std::vector<int> lastid_worker_flatimg;
+    //    int NbOfEvent_worker = 0;
+    // Image3DType::IndexType index3D;
+    // int index_flat;
+  };
+//  using ThreadLocalType = struct threadLocalT;
+
+  void ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image, double value, int event_id, Image3DType::IndexType index);
+
+  void FlushSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image);
+
+  void PrepareLocalDataForRun(threadLocalT &data, int numberOfVoxels);
+
+
 
   //  // Option: indicate if we must compute uncertainty
   //  bool fUncertaintyFlag;
 
   // Option: indicate if we must compute square
-  bool fSquareFlag{};
+  bool fEdepSquaredFlag{};
 
   //  // Option: indicate if we must compute dose in Gray also
   //  bool fDoseFlag;
@@ -94,8 +127,15 @@ public:
   // Option: indicate we must convert to dose to water
   bool fToWaterFlag{};
 
-  // Option: indicate the density is needed
+  // Option: Is dose to be scored?
+  bool fDoseFlag{};
+  bool fDoseSquaredFlag{};
+
+  // Option: Is density to be scored?
   bool fDensityFlag{};
+
+  // Option: Are counts to be scored
+  bool fCountsFlag{};
 
   //  // Option: calculate dose in stepping action. If False, calc only edep and
   //  // divide by mass at the end of the simulation, on py side
@@ -123,16 +163,8 @@ public:
   std::string fHitType;
 
 protected:
-  struct threadLocalT {
-    G4EmCalculator emcalc;
-    std::vector<double> edep_worker_flatimg;
-    std::vector<double> edepSquared_worker_flatimg;
-    std::vector<int> lastid_worker_flatimg;
-    //    int NbOfEvent_worker = 0;
-    // Image3DType::IndexType index3D;
-    // int index_flat;
-  };
-  G4Cache<threadLocalT> fThreadLocalData;
+  G4Cache<threadLocalT> fThreadLocalDataEdep;
+  G4Cache<threadLocalT> fThreadLocalDataDose;
 };
 
 #endif // GateDoseActor_h
