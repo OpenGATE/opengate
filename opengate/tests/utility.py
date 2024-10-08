@@ -313,7 +313,8 @@ def assert_images(
     filename2,
     stats=None,
     tolerance=0,
-    ignore_value=0,
+    ignore_value_data1=None,
+    ignore_value_data2=None,
     axis="z",
     fig_name=None,
     sum_tolerance=5,
@@ -337,8 +338,23 @@ def assert_images(
     if scaleImageValuesFactor:
         data2 *= scaleImageValuesFactor
 
-    s1 = np.sum(data1)
-    s2 = np.sum(data2)
+    # do not consider pixels with a certain value
+    if ignore_value_data1 is None and ignore_value_data2 is None:
+        d1 = data1
+        d2 = data2
+    else:
+        if ignore_value_data1 is not None and ignore_value_data2 is not None:
+            mask = np.logical_or(data1 != ignore_value_data1, data2 != ignore_value_data2)
+        elif ignore_value_data1 is not None:
+            mask = data1 != ignore_value_data1
+        else:
+            mask = data2 != ignore_value_data2
+        d1 = data1[mask]
+        d2 = data2[mask]
+
+    s1 = np.sum(d1)
+    s2 = np.sum(d2)
+
     if s1 == 0 and s2 == 0:
         t = 0
     else:
@@ -349,10 +365,6 @@ def assert_images(
 
     print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
     print(f"Image2: {info2.size} {info2.spacing} {info2.origin} {filename2}")
-
-    # do not consider pixels with a value of zero (data2 is the reference)
-    d1 = data1[data2 != ignore_value]
-    d2 = data2[data2 != ignore_value]
 
     # normalise by event
     if stats is not None:
