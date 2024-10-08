@@ -53,10 +53,6 @@ public:
 
   inline void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
 
-  inline void SetDensityFlag(const bool b) { fDensityFlag = b; }
-
-  inline bool GetDensityFlag() const { return fDensityFlag; }
-
   inline void SetDoseFlag(const bool b) { fDoseFlag = b; }
 
   inline bool GetDoseFlag() const { return fDoseFlag; }
@@ -130,9 +126,6 @@ public:
   // Option: Is dose to be scored?
   bool fDoseFlag{};
   bool fDoseSquaredFlag{};
-
-  // Option: Is density to be scored?
-  bool fDensityFlag{};
 
   // Option: Are counts to be scored
   bool fCountsFlag{};
