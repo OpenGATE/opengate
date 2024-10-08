@@ -234,7 +234,7 @@ def walk_package_and_generate_pyi(
 
         # Generate __init__.pyi for directories
         if "__init__.py" in files:
-            init_module_name = relative_path.as_posix().replace('/', ".") + '.__init__'
+            init_module_name = relative_path.as_posix().replace("/", ".") + ".__init__"
             try:
                 init_module = importlib.import_module(
                     f"{package_name}.{init_module_name}"
