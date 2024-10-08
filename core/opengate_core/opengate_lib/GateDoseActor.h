@@ -99,15 +99,15 @@ public:
     // Image3DType::IndexType index3D;
     // int index_flat;
   };
-//  using ThreadLocalType = struct threadLocalT;
+  //  using ThreadLocalType = struct threadLocalT;
 
-  void ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image, double value, int event_id, Image3DType::IndexType index);
+  void ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image,
+                         double value, int event_id,
+                         Image3DType::IndexType index);
 
   void FlushSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image);
 
   void PrepareLocalDataForRun(threadLocalT &data, int numberOfVoxels);
-
-
 
   //  // Option: indicate if we must compute uncertainty
   //  bool fUncertaintyFlag;

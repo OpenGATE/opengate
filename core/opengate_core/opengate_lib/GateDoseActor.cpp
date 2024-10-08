@@ -103,16 +103,16 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   size_edep = region.GetSize();
 
   if (fEdepSquaredFlag) {
-    AttachImageToVolume<Image3DType>(cpp_edep_squared_image, fPhysicalVolumeName,
-                                     fTranslation);
+    AttachImageToVolume<Image3DType>(cpp_edep_squared_image,
+                                     fPhysicalVolumeName, fTranslation);
   }
   if (fDoseFlag) {
     AttachImageToVolume<Image3DType>(cpp_dose_image, fPhysicalVolumeName,
                                      fTranslation);
   }
   if (fDoseSquaredFlag) {
-    AttachImageToVolume<Image3DType>(cpp_dose_squared_image, fPhysicalVolumeName,
-                                     fTranslation);
+    AttachImageToVolume<Image3DType>(cpp_dose_squared_image,
+                                     fPhysicalVolumeName, fTranslation);
   }
   if (fCountsFlag) {
     AttachImageToVolume<Image3DType>(cpp_counts_image, fPhysicalVolumeName,
@@ -120,13 +120,14 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   }
 }
 
-void GateDoseActor::PrepareLocalDataForRun(threadLocalT &data, int numberOfVoxels) {
+void GateDoseActor::PrepareLocalDataForRun(threadLocalT &data,
+                                           int numberOfVoxels) {
   data.squared_worker_flatimg.resize(numberOfVoxels);
   std::fill(data.squared_worker_flatimg.begin(),
             data.squared_worker_flatimg.end(), 0.0);
   data.lastid_worker_flatimg.resize(numberOfVoxels);
-  std::fill(data.lastid_worker_flatimg.begin(), data.lastid_worker_flatimg.end(),
-            0);
+  std::fill(data.lastid_worker_flatimg.begin(),
+            data.lastid_worker_flatimg.end(), 0);
 }
 
 void GateDoseActor::BeginOfRunAction(const G4Run *run) {
@@ -229,17 +230,18 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       auto event_id =
           G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
       if (fEdepSquaredFlag) {
-//        G4AutoLock mutex(&SetPixelMutex);
-        ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image, edep, event_id, index);
+        //        G4AutoLock mutex(&SetPixelMutex);
+        ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
+                          edep, event_id, index);
       }
       if (fDoseSquaredFlag) {
-//        G4AutoLock mutex(&SetPixelMutex);
-        ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image, dose, event_id, index);
+        //        G4AutoLock mutex(&SetPixelMutex);
+        ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
+                          dose, event_id, index);
       }
     }
   } // else: outside of the image
 }
-
 
 double GateDoseActor::ComputeMeanUncertainty() {
   G4AutoLock mutex(&ComputeUncertaintyMutex);
@@ -311,14 +313,19 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
 void GateDoseActor::EndOfRunAction(const G4Run *run) {
 
   if (fEdepSquaredFlag) {
-    GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image);
+    GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(),
+                                     cpp_edep_squared_image);
   }
   if (fDoseSquaredFlag) {
-    GateDoseActor::FlushSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image);
+    GateDoseActor::FlushSquaredValue(fThreadLocalDataDose.Get(),
+                                     cpp_dose_squared_image);
   }
 }
 
-void GateDoseActor::ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image, double value, int event_id, Image3DType::IndexType index) {
+void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
+                                      Image3DType::Pointer cpp_image,
+                                      double value, int event_id,
+                                      Image3DType::IndexType index) {
   G4AutoLock mutex(&SetPixelMutex);
   int index_flat = sub2ind(index);
   auto previous_id = data.lastid_worker_flatimg[index_flat];
@@ -337,8 +344,9 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer c
   }
 }
 
-void GateDoseActor::FlushSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image) {
-//  G4AutoLock mutex(&SetWorkerEndRunMutex);
+void GateDoseActor::FlushSquaredValue(threadLocalT &data,
+                                      Image3DType::Pointer cpp_image) {
+  //  G4AutoLock mutex(&SetWorkerEndRunMutex);
 
   itk::ImageRegionIterator<Image3DType> iterator3D(
       cpp_image, cpp_image->GetLargestPossibleRegion());
@@ -346,14 +354,11 @@ void GateDoseActor::FlushSquaredValue(threadLocalT &data, Image3DType::Pointer c
     Image3DType::IndexType index_f = iterator3D.GetIndex();
     Image3DType::PixelType pixelValue3D =
         data.squared_worker_flatimg[sub2ind(index_f)];
-    ImageAddValue<Image3DType>(cpp_image, index_f,
-                               pixelValue3D * pixelValue3D);
+    ImageAddValue<Image3DType>(cpp_image, index_f, pixelValue3D * pixelValue3D);
   }
 }
 
-int GateDoseActor::EndOfRunActionMasterThread(int run_id) {
-  return 0;
-}
+int GateDoseActor::EndOfRunActionMasterThread(int run_id) { return 0; }
 
 double GateDoseActor::GetMaxValueOfImage(Image3DType::Pointer imageP) {
   itk::ImageRegionIterator<Image3DType> iterator3D(

@@ -344,7 +344,9 @@ def assert_images(
         d2 = data2
     else:
         if ignore_value_data1 is not None and ignore_value_data2 is not None:
-            mask = np.logical_or(data1 != ignore_value_data1, data2 != ignore_value_data2)
+            mask = np.logical_or(
+                data1 != ignore_value_data1, data2 != ignore_value_data2
+            )
         elif ignore_value_data1 is not None:
             mask = data1 != ignore_value_data1
         else:

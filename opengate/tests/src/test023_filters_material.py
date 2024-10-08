@@ -99,7 +99,12 @@ if __name__ == "__main__":
     stats_ref = utility.read_stat_file(f2)
     is_ok = utility.assert_stats(stat2, stats_ref, 0.07) and is_ok
 
-    is_ok = is_ok and utility.assert_images(paths.output_ref / "test023-edep.mhd", dose.edep.get_output_path(), stat,
-                                            tolerance=50, sum_tolerance=3)
+    is_ok = is_ok and utility.assert_images(
+        paths.output_ref / "test023-edep.mhd",
+        dose.edep.get_output_path(),
+        stat,
+        tolerance=50,
+        sum_tolerance=3,
+    )
 
     utility.test_ok(is_ok)

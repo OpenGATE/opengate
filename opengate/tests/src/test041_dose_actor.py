@@ -102,24 +102,38 @@ if __name__ == "__main__":
 
     gate.exception.warning("\nDifference for EDEP")
     is_ok = (
-            utility.assert_images(paths.gate_output / "output2-Edep.mhd", dose_actor.edep.get_output_path(), stats,
-                                  tolerance=10, ignore_value_data2=0)
-            and is_ok
+        utility.assert_images(
+            paths.gate_output / "output2-Edep.mhd",
+            dose_actor.edep.get_output_path(),
+            stats,
+            tolerance=10,
+            ignore_value_data2=0,
+        )
+        and is_ok
     )
 
     gate.exception.warning("\nDifference for uncertainty")
     is_ok = (
-            utility.assert_images(paths.gate_output / "output2-Edep-Uncertainty.mhd",
-                                  dose_actor.edep_uncertainty.get_output_path(), stats, tolerance=30,
-                                  ignore_value_data2=0)
-            and is_ok
+        utility.assert_images(
+            paths.gate_output / "output2-Edep-Uncertainty.mhd",
+            dose_actor.edep_uncertainty.get_output_path(),
+            stats,
+            tolerance=30,
+            ignore_value_data2=0,
+        )
+        and is_ok
     )
 
     gate.exception.warning("\nDifference for dose in Gray")
     is_ok = (
-            utility.assert_images(paths.gate_output / "output2-Dose.mhd", dose_actor.dose.get_output_path(), stats,
-                                  tolerance=10, ignore_value_data2=0)
-            and is_ok
+        utility.assert_images(
+            paths.gate_output / "output2-Dose.mhd",
+            dose_actor.dose.get_output_path(),
+            stats,
+            tolerance=10,
+            ignore_value_data2=0,
+        )
+        and is_ok
     )
 
     utility.test_ok(is_ok)

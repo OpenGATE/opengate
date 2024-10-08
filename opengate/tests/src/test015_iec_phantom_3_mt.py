@@ -82,7 +82,7 @@ if __name__ == "__main__":
         ignore_value_data2=0,
         axis="y",
         sum_tolerance=0.5,
-        sad_profile_tolerance=2
+        sad_profile_tolerance=2,
     )
 
     is_ok = is_ok and im_ok

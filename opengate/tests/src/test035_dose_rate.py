@@ -58,9 +58,14 @@ if __name__ == "__main__":
     h = sim.get_actor("dose")
     print(h)
     is_ok = (
-            utility.assert_images(paths.output_ref / "edep.mhd", h.edep.get_output_path(), stats, tolerance=15,
-                                  ignore_value_data2=0)
-            and is_ok
+        utility.assert_images(
+            paths.output_ref / "edep.mhd",
+            h.edep.get_output_path(),
+            stats,
+            tolerance=15,
+            ignore_value_data2=0,
+        )
+        and is_ok
     )
 
     utility.test_ok(is_ok)

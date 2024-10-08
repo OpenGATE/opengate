@@ -122,7 +122,11 @@ if __name__ == "__main__":
     # tests
     stats_ref = utility.read_stat_file(paths.output_ref / "test010_confine_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
-    is_ok = is_ok and utility.assert_images(paths.output_ref / "test010-2-edep.mhd", dose_actor.edep.get_output_path(),
-                                            stats, tolerance=59)
+    is_ok = is_ok and utility.assert_images(
+        paths.output_ref / "test010-2-edep.mhd",
+        dose_actor.edep.get_output_path(),
+        stats,
+        tolerance=59,
+    )
 
     utility.test_ok(is_ok)

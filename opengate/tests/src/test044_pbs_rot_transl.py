@@ -170,9 +170,15 @@ if __name__ == "__main__":
         mhd_gate = sim.get_actor("doseInYZ" + str(i)).edep.get_output_path()
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
-                utility.assert_images(ref_path / mhd_ref, output_path / mhd_gate, stat, tolerance=50,
-                                      ignore_value_data2=0, axis="x")
-                and is_ok
+            utility.assert_images(
+                ref_path / mhd_ref,
+                output_path / mhd_gate,
+                stat,
+                tolerance=50,
+                ignore_value_data2=0,
+                axis="x",
+            )
+            and is_ok
         )
 
         """

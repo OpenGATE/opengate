@@ -64,8 +64,13 @@ if __name__ == "__main__":
     # compare images
     gate.exception.warning("\nDifference with ref image")
     is_ok = (
-            utility.assert_images(paths.output_ref / "test032_iec.mhd", path_to_image_1mm, stats=None, tolerance=0.01)
-            and is_ok
+        utility.assert_images(
+            paths.output_ref / "test032_iec.mhd",
+            path_to_image_1mm,
+            stats=None,
+            tolerance=0.01,
+        )
+        and is_ok
     )
 
     utility.test_ok(is_ok)
