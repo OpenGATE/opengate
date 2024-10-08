@@ -504,6 +504,8 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             self.data_item_config[i]["active"] = bool(value)
 
     def get_active(self, item=0):
+        if item == 'any':
+            item = 'all'
         items = self._collect_item_identifiers(item)
         return any([self.data_item_config[k]["active"] is True for k in items])
 
