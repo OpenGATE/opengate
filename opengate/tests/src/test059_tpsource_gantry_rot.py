@@ -185,7 +185,7 @@ if __name__ == "__main__":
     #     dose_rot.output,
     #     stat,
     #     tolerance=50,
-    #     ignore_value=0,
+    #     ignore_value_data2=0,
     # )
     ok = True
 
