@@ -29,6 +29,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--start_id", "-i", default="all", help="Start test from this number")
+@click.option("--end_id", "-e", default="all", help="Start test up to this number")
 @click.option(
     "--no_log_on_fail",
     default=False,
@@ -49,6 +50,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Start simulations in single process mode: 'legacy', 'sp' or multi process mode 'mp'",
 )
 @click.option(
+    "--num_processes",
+    "-n",
+    default="all",
+    help="Start simulations in multiprocessing mode and run n processes - default is all available cores",
+)
+@click.option(
     "--run_previously_failed_jobs",
     "-f",
     default=False,
@@ -56,7 +63,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Run only the tests that failed in the previous evaluation.",
 )
 def go(
-    start_id, random_tests, no_log_on_fail, processes_run, run_previously_failed_jobs
+    start_id,
+    end_id,
+    random_tests,
+    no_log_on_fail,
+    processes_run,
+    run_previously_failed_jobs,
+    num_processes,
 ):
 
     path_tests_src = return_tests_path()  # returns the path to the tests/src dir
@@ -74,7 +87,7 @@ def go(
     files_to_run_avail, files_to_ignore = get_files_to_run()
 
     if not run_previously_failed_jobs:
-        files_to_run = select_files(files_to_run_avail, start_id, random_tests)
+        files_to_run = select_files(files_to_run_avail, start_id, end_id, random_tests)
         download_data_at_first_run(files_to_run_avail[0])
     else:
         with open(fpath_dashboard_output, "r") as fp:
@@ -88,14 +101,19 @@ def go(
         print(
             f"Found test cases with mutual dependencies, going to split evaluation into two sets. {len(files_to_run_part2_depending_on_part1)} tests will start right after first eval round."
         )
-    runs_status_info = run_test_cases(files_to_run_part1, no_log_on_fail, processes_run)
+    runs_status_info = run_test_cases(
+        files_to_run_part1, no_log_on_fail, processes_run, num_processes
+    )
 
     if len(files_to_run_part2_depending_on_part1) > 0:
         print(
             "Now starting evaluation of tests depending on results of previous tests:"
         )
         runs_status_info_part2 = run_test_cases(
-            files_to_run_part2_depending_on_part1, no_log_on_fail, processes_run
+            files_to_run_part2_depending_on_part1,
+            no_log_on_fail,
+            processes_run,
+            num_processes,
         )
 
         dashboard_dict, failure = status_summary_report(
@@ -203,16 +221,17 @@ def get_files_to_run():
     return files_to_run, files_to_ignore
 
 
-def select_files(files_to_run, test_id, random_tests):
+def select_files(files_to_run, test_id, end_id, random_tests):
     pattern = re.compile(r"^test([0-9]+)")
 
-    if test_id != "all":
-        test_id = int(test_id)
+    if test_id != "all" or end_id != "all":
+        test_id = int(test_id) if test_id != "all" else 0
+        end_id = int(end_id) if end_id != "all" else sys.maxsize
         files_new = []
         for f in files_to_run:
             match = pattern.match(f)
             f_test_id = int(float(match.group(1)))
-            if f_test_id >= test_id:
+            if f_test_id >= test_id and f_test_id <= end_id:
                 files_new.append(f)
             else:
                 print(f"Ignoring: {f:<40} (< {test_id}) ")
@@ -353,9 +372,11 @@ def run_one_test_case_mp(f):
     return shell_output
 
 
-def run_test_cases(files: list, no_log_on_fail: bool, processes_run: str):
+def run_test_cases(
+    files: list, no_log_on_fail: bool, processes_run: str, num_processes: str
+):
     path_tests_src = return_tests_path()
-    print("Looking for tests in: " + str(path_tests_src))
+    # print("Looking for tests in: " + str(path_tests_src))
     print(f"Running {len(files)} tests")
     print("-" * 70)
 
@@ -366,7 +387,8 @@ def run_test_cases(files: list, no_log_on_fail: bool, processes_run: str):
     elif processes_run in ["sp"]:
         runs_status_info = list(map(run_one_test_case_mp, files))
     else:
-        with Pool() as pool:
+        num_processes = int(float(num_processes)) if num_processes != "all" else None
+        with Pool(processes=num_processes) as pool:
             runs_status_info = pool.map(run_one_test_case_mp, files)
 
     end = time.time()
