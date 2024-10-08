@@ -107,8 +107,14 @@ def run_sim(N_events: int, N_threads: int, N_voxels: int, paths):
 
 
 def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
-    unused = utility.assert_images(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat, tolerance=100,
-                                   ignore_value_data2=0, axis="x")
+    unused = utility.assert_images(
+        doseFpath_IDD_singleImage,
+        doseFpath_IDD_NthreadImages,
+        stat,
+        tolerance=100,
+        ignore_value_data2=0,
+        axis="x",
+    )
     expected_ratio = 1.00
     gate.exception.warning("Test ratio: edep in single image vs. Nthread image")
     is_ok = utility.assert_images_ratio(

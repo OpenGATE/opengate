@@ -170,8 +170,16 @@ def compare_proj_images(crystal, sim, stats, image_filename, path, n=1):
     img.SetOrigin(origin)
     itk.imwrite(img, f2)
 
-    is_ok = utility.assert_images(fr, f2, stats, tolerance=69, ignore_value_data2=0, axis="y",
-                                  fig_name=path / f"test073_test_{n}.png", sum_tolerance=6)
+    is_ok = utility.assert_images(
+        fr,
+        f2,
+        stats,
+        tolerance=69,
+        ignore_value_data2=0,
+        axis="y",
+        fig_name=path / f"test073_test_{n}.png",
+        sum_tolerance=6,
+    )
     return is_ok
 
 

@@ -141,7 +141,12 @@ if __name__ == "__main__":
     dose2 = sim.get_actor("dose2")
     # compare edep map
 
-    is_ok = utility.assert_images(dose1.edep.get_output_path(), dose2.edep.get_output_path(), stats, tolerance=87,
-                                  axis="x")
+    is_ok = utility.assert_images(
+        dose1.edep.get_output_path(),
+        dose2.edep.get_output_path(),
+        stats,
+        tolerance=87,
+        axis="x",
+    )
 
     utility.test_ok(is_ok)

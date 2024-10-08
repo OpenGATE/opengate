@@ -161,14 +161,26 @@ if __name__ == "__main__":
 
     # check first spot
     test = (
-            utility.assert_images(ref_path / mhd_1, output_path / mhd_1, stats, tolerance=70, ignore_value_data2=0)
-            and test
+        utility.assert_images(
+            ref_path / mhd_1,
+            output_path / mhd_1,
+            stats,
+            tolerance=70,
+            ignore_value_data2=0,
+        )
+        and test
     )
 
     # check second spot
     test = (
-            utility.assert_images(ref_path / mhd_1, output_path / mhd_1, stats, tolerance=70, ignore_value_data2=0)
-            and test
+        utility.assert_images(
+            ref_path / mhd_1,
+            output_path / mhd_1,
+            stats,
+            tolerance=70,
+            ignore_value_data2=0,
+        )
+        and test
     )
     print(" --------------------------------------- ")
     # fig1 = utility.create_2D_Edep_colorMap(output_path / mhd_1, show=True)

@@ -101,9 +101,14 @@ if __name__ == "__main__":
     stats_ref = utility.read_stat_file(paths.output_ref / "test017-stats-ref.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.04)
     is_ok = (
-            utility.assert_images(paths.output_ref / "test017-edep-ref.mhd", dose.edep.get_output_path(), stats,
-                                  tolerance=70, sum_tolerance=6)
-            and is_ok
+        utility.assert_images(
+            paths.output_ref / "test017-edep-ref.mhd",
+            dose.edep.get_output_path(),
+            stats,
+            tolerance=70,
+            sum_tolerance=6,
+        )
+        and is_ok
     )
 
     utility.test_ok(is_ok)

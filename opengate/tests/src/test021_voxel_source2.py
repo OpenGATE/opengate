@@ -147,9 +147,15 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.1) and is_ok
 
     is_ok = (
-            utility.assert_images(paths.output_ref / "test021-edep_2.mhd", dose.edep.get_output_path(), stats,
-                                  tolerance=11, ignore_value_data2=0, axis="y")
-            and is_ok
+        utility.assert_images(
+            paths.output_ref / "test021-edep_2.mhd",
+            dose.edep.get_output_path(),
+            stats,
+            tolerance=11,
+            ignore_value_data2=0,
+            axis="y",
+        )
+        and is_ok
     )
 
     utility.test_ok(is_ok)

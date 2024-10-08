@@ -127,8 +127,14 @@ def run_sim(n_thr, c4_ref=None, paths=None):
         sim.get_actor(doseActorName_IDD_singleImage).get_output_path("edep_uncertainty")
     )
 
-    unused = utility.assert_images(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stats, tolerance=100,
-                                   ignore_value_data2=0, axis="x")
+    unused = utility.assert_images(
+        doseFpath_IDD_singleImage,
+        doseFpath_IDD_NthreadImages,
+        stats,
+        tolerance=100,
+        ignore_value_data2=0,
+        axis="x",
+    )
     expected_ratio = 1.00
     gate.exception.warning("Test ratio: dose / dose MT cp image for each trhead")
     is_ok = utility.assert_images_ratio(

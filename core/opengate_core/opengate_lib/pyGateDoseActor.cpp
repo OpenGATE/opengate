@@ -51,9 +51,11 @@ void init_GateDoseActor(py::module &m) {
       .def("SetPhysicalVolumeName", &GateDoseActor::SetPhysicalVolumeName)
       .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)
       .def_readwrite("cpp_edep_image", &GateDoseActor::cpp_edep_image)
-      .def_readwrite("cpp_edep_squared_image", &GateDoseActor::cpp_edep_squared_image)
+      .def_readwrite("cpp_edep_squared_image",
+                     &GateDoseActor::cpp_edep_squared_image)
       .def_readwrite("cpp_dose_image", &GateDoseActor::cpp_dose_image)
-      .def_readwrite("cpp_dose_squared_image", &GateDoseActor::cpp_dose_squared_image)
+      .def_readwrite("cpp_dose_squared_image",
+                     &GateDoseActor::cpp_dose_squared_image)
       .def_readwrite("cpp_density_image", &GateDoseActor::cpp_density_image)
       .def_readwrite("cpp_counts_image", &GateDoseActor::cpp_counts_image)
       .def_readwrite("fPhysicalVolumeName",

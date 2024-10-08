@@ -165,9 +165,15 @@ if __name__ == "__main__":
 
     fNameIDD = doseIDD.edep.output_filename
     if do_debug:
-        is_ok = utility.assert_images(ref_path / fNameIDD, doseIDD.edep.get_output_path(), stats, tolerance=100,
-                                      ignore_value_data2=0, axis="x",
-                                      scaleImageValuesFactor=numPartSimRef / numPartSimTest)
+        is_ok = utility.assert_images(
+            ref_path / fNameIDD,
+            doseIDD.edep.get_output_path(),
+            stats,
+            tolerance=100,
+            ignore_value_data2=0,
+            axis="x",
+            scaleImageValuesFactor=numPartSimRef / numPartSimTest,
+        )
 
     tests_pass = []
     is_ok = utility.assert_filtered_imagesprofile1D(

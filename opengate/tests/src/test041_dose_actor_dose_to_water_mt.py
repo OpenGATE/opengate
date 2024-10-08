@@ -150,8 +150,14 @@ if __name__ == "__main__":
     # so we do not need to manually keep track of the paths here in the script
     # syntax: dose_actor.dose.get_output_path()
 
-    unused = utility.assert_images(dose_actor_IDD_d.dose.get_output_path(), dose_actor_IDD_d2w.dose.get_output_path(),
-                                   stats, tolerance=100, ignore_value_data2=0, axis="x")
+    unused = utility.assert_images(
+        dose_actor_IDD_d.dose.get_output_path(),
+        dose_actor_IDD_d2w.dose.get_output_path(),
+        stats,
+        tolerance=100,
+        ignore_value_data2=0,
+        axis="x",
+    )
 
     mSPR_40MeV = 1.268771331  # from PSTAR NIST tables, Feb 2023
     mSPR_80MeV = 1.253197674  # from PSTAR NIST tables, Feb 2023

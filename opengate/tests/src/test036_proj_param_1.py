@@ -44,8 +44,15 @@ if __name__ == "__main__":
 
     # test the output
     stats = sim.get_actor("Stats")
-    is_ok = utility.assert_images(paths.output_ref / proj.output_filename, proj.get_output_path(), stats, tolerance=38,
-                                  ignore_value_data2=0, axis="y", fig_name=paths.output / f"proj.png",
-                                  sum_tolerance=1.5)
+    is_ok = utility.assert_images(
+        paths.output_ref / proj.output_filename,
+        proj.get_output_path(),
+        stats,
+        tolerance=38,
+        ignore_value_data2=0,
+        axis="y",
+        fig_name=paths.output / f"proj.png",
+        sum_tolerance=1.5,
+    )
     utility.print_test(is_ok, f"Compare image proj:")
     utility.test_ok(is_ok)

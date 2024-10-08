@@ -239,18 +239,27 @@ if __name__ == "__main__":
     # check that the dose output is the same
     print("--- Dose image spot 0 ---")
     test = (
-            utility.assert_images(output_path / dose_actors[0].get_output_path("edep"),
-                                  output_path / dose_actors[2].get_output_path("edep"), stats, tolerance=70,
-                                  ignore_value_data2=0)
-            and test
+        utility.assert_images(
+            output_path / dose_actors[0].get_output_path("edep"),
+            output_path / dose_actors[2].get_output_path("edep"),
+            stats,
+            tolerance=70,
+            ignore_value_data2=0,
+        )
+        and test
     )
 
     print("--- Dose image spot 1 ---")
     test = (
-            utility.assert_images(output_path / dose_actors[1].get_output_path("edep"),
-                                  output_path / dose_actors[3].get_output_path("edep"), stats, tolerance=70,
-                                  ignore_value_data2=0, sum_tolerance=5.2)
-            and test
+        utility.assert_images(
+            output_path / dose_actors[1].get_output_path("edep"),
+            output_path / dose_actors[3].get_output_path("edep"),
+            stats,
+            tolerance=70,
+            ignore_value_data2=0,
+            sum_tolerance=5.2,
+        )
+        and test
     )
 
     # check that output with flat distribution has better statistics for the spot with less particles

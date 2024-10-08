@@ -127,17 +127,30 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Compare image to analog")
     is_ok = (
-            utility.assert_images(test43.paths.output_ref / "test043_projection_analog.mhd", filename1, stat,
-                                  tolerance=100, ignore_value_data2=0, axis="x", sum_tolerance=20)
-            and is_ok
+        utility.assert_images(
+            test43.paths.output_ref / "test043_projection_analog.mhd",
+            filename1,
+            stat,
+            tolerance=100,
+            ignore_value_data2=0,
+            axis="x",
+            sum_tolerance=20,
+        )
+        and is_ok
     )
 
     print()
     gate.exception.warning("Compare image to analog high statistics")
     is_ok = (
-            utility.assert_images(test43.paths.output_ref / "test043_projection_analog_high_stat.mhd", filename2, stat,
-                                  tolerance=52, ignore_value_data2=0, axis="x")
-            and is_ok
+        utility.assert_images(
+            test43.paths.output_ref / "test043_projection_analog_high_stat.mhd",
+            filename2,
+            stat,
+            tolerance=52,
+            ignore_value_data2=0,
+            axis="x",
+        )
+        and is_ok
     )
 
     print()

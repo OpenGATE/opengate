@@ -79,8 +79,15 @@ if __name__ == "__main__":
 
     # compare images
     f = paths.output / "test015_iec_2.mhd"
-    im_ok = utility.assert_images(paths.output_ref / "test015_iec_2.mhd", dose.output, stats, tolerance=40,
-                                  ignore_value_data2=0, axis="x", sum_tolerance=2)
+    im_ok = utility.assert_images(
+        paths.output_ref / "test015_iec_2.mhd",
+        dose.output,
+        stats,
+        tolerance=40,
+        ignore_value_data2=0,
+        axis="x",
+        sum_tolerance=2,
+    )
 
     is_ok = is_ok and im_ok
     utility.test_ok(is_ok)

@@ -81,7 +81,12 @@ if __name__ == "__main__":
     f = paths.output_ref / "test023_stats_iec_phantom.txt"
     stats_ref = utility.read_stat_file(f)
     is_ok = utility.assert_stats(stat, stats_ref, 0.12)
-    is_ok = is_ok and utility.assert_images(paths.output_ref / "test023_iec_phantom.mhd", dose.edep.get_output_path(),
-                                            stat, tolerance=102, sum_tolerance=28)
+    is_ok = is_ok and utility.assert_images(
+        paths.output_ref / "test023_iec_phantom.mhd",
+        dose.edep.get_output_path(),
+        stat,
+        tolerance=102,
+        sum_tolerance=28,
+    )
 
     utility.test_ok(is_ok)
