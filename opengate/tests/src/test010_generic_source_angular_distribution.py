@@ -113,7 +113,7 @@ if __name__ == "__main__":
             dose.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
-            ignore_value=1,
+            ignore_value=0,
             sum_tolerance=1,
         )
         and is_ok
