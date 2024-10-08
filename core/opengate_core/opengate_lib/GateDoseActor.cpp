@@ -83,9 +83,6 @@ void GateDoseActor::InitializeCpp() {
   if (fDoseSquaredFlag) {
     cpp_dose_squared_image = Image3DType::New();
   }
-  if (fDensityFlag) {
-    cpp_density_image = Image3DType::New();
-  }
   if (fCountsFlag) {
     cpp_counts_image = Image3DType::New();
   }
@@ -115,10 +112,6 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   }
   if (fDoseSquaredFlag) {
     AttachImageToVolume<Image3DType>(cpp_dose_squared_image, fPhysicalVolumeName,
-                                     fTranslation);
-  }
-  if (fDensityFlag) {
-    AttachImageToVolume<Image3DType>(cpp_density_image, fPhysicalVolumeName,
                                      fTranslation);
   }
   if (fCountsFlag) {
@@ -220,17 +213,12 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 
     ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
 
-    if (fDensityFlag || fDoseFlag || fDoseSquaredFlag) {
+    if (fDoseFlag || fDoseSquaredFlag) {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
       auto density = current_material->GetDensity();
-      if (fDensityFlag) {
-        ImageAddValue<Image3DType>(cpp_density_image, index, density);
-      }
-      if (fDoseFlag || fDoseSquaredFlag) {
-        dose = edep / density;
-        if (fDoseFlag) {
-          ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
-        }
+      dose = edep / density;
+      if (fDoseFlag) {
+        ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
       }
     }
 

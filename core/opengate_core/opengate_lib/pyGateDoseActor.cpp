@@ -45,8 +45,6 @@ void init_GateDoseActor(py::module &m) {
       .def("SetDoseSquaredFlag", &GateDoseActor::SetDoseSquaredFlag)
       .def("GetToWaterFlag", &GateDoseActor::GetToWaterFlag)
       .def("SetToWaterFlag", &GateDoseActor::SetToWaterFlag)
-      .def("GetDensityFlag", &GateDoseActor::GetDensityFlag)
-      .def("SetDensityFlag", &GateDoseActor::SetDensityFlag)
       .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
       .def("GetPhysicalVolumeName", &GateDoseActor::GetPhysicalVolumeName)

@@ -400,6 +400,20 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             },
         ),
+        # "calculate_density_from": (
+        #     "auto",
+        #     {
+        #         "doc": "How should density be calculated?\n"
+        #                "'simulation': via scoring along with the rest of the quantities.\n"
+        #                "'image': from the CT image, if the actor is attached to an ImageVolume.\n"
+        #                "'auto' (default): Let GATE pick the right one for you. ",
+        #         "allowed_values": (
+        #             "auto",
+        #             "simulation",
+        #             "image"
+        #         ),
+        #     },
+        # ),
         "ste_of_mean": (
             False,
             {
@@ -548,13 +562,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
         return density_image
 
-    @property
-    def _density_via_mc(self):
-        return (self.calculate_density_from == 'simulation' or
-                (self.calculate_density_from == 'auto'
-                 and self.attached_to_volume.volume_type != "ImageVolume")
-                )
-
     def initialize(self, *args):
         """
         At the start of the run, the image is centered according to the coordinate system of
@@ -596,12 +603,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                     True, item=1
                 )  # activate squared component
 
-        if self.user_output.density.get_active() is True:
-            # scoring density via MC implies scoring counts
-            if self._density_via_mc:
-                if not self.user_output.counts.get_active():
-                    self.user_output.counts.set_active(True)
-                    self.user_output.counts.set_write_to_disk(False)
+        if self.user_output.density.get_active() is True and self.attached_to_volume.volume_type != 'ImageVolume':
+            fatal("The dose actor can only produce a density map if it is attached to an ImageVolume. "
+                  f"This actor is attached to a {self.attached_to_volume.volume_type} volume. ")
 
         self.InitializeUserInput(self.user_info)  # C++ side
         # Set the flags on C++ side so the C++ knows which quantities need to be scored
@@ -610,7 +614,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.SetDoseSquaredFlag(self.user_output.dose_with_uncertainty.get_active(item=1))
         # item=0 is the default
         self.SetCountsFlag(self.user_output.counts.get_active())
-        self.SetDensityFlag(self.user_output.density.get_active() and self._density_via_mc)
         # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
         self.SetToWaterFlag(self.score_in == "water")
 
@@ -630,12 +633,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         if self.user_output.dose_with_uncertainty.get_active(item='any'):
             self.prepare_output_for_run("dose_with_uncertainty", run_index)
             self.push_to_cpp_image("dose_with_uncertainty", run_index, self.cpp_dose_image, self.cpp_dose_squared_image)
-
-        # density might be active, but the user might want to get it from the ImageVolume
-        # therefore, we also check for _density_via_mc
-        if self.user_output.density.get_active() and self._density_via_mc:
-            self.prepare_output_for_run("density", run_index)
-            self.push_to_cpp_image("density", run_index, self.cpp_density_image)
 
         if self.user_output.counts.get_active():
             self.prepare_output_for_run("counts", run_index)
@@ -684,15 +681,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         # density image
         if self.user_output.density.get_active():
-            if self._density_via_mc:
-                self.fetch_from_cpp_image("density", run_index, self.cpp_density_image)
-                self._update_output_coordinate_system("density", run_index)
-                self.user_output.density.data_per_run[run_index] /= self.user_output.counts.data_per_run[run_index]
-            else:
-                edep_image = self.user_output.edep_with_uncertainty.get_data(
-                    run_index, item=0
-                )
-                self.user_output.density.store_data(run_index, self.create_density_image_from_image_volume(edep_image))
+            edep_image = self.user_output.edep_with_uncertainty.get_data(
+                run_index, item=0
+            )
+            self.user_output.density.store_data(run_index, self.create_density_image_from_image_volume(edep_image))
             self.user_output.density.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
