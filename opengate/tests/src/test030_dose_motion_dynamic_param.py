@@ -108,26 +108,16 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Difference for EDEP")
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "test030-edep.mhd",
-            dose.edep.get_output_path(),
-            stats,
-            tolerance=30,
-            ignore_value=0,
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "test030-edep.mhd", dose.edep.get_output_path(), stats,
+                                  tolerance=30, ignore_value_data2=0)
+            and is_ok
     )
 
     print("\nDifference for uncertainty")
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "test030-edep_uncertainty.mhd",
-            dose.edep_uncertainty.get_output_path(),
-            stats,
-            tolerance=15,
-            ignore_value=0,
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "test030-edep_uncertainty.mhd",
+                                  dose.edep_uncertainty.get_output_path(), stats, tolerance=15, ignore_value_data2=0)
+            and is_ok
     )
 
     utility.test_ok(is_ok)

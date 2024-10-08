@@ -85,27 +85,15 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Tests projection (old gate)")
     is_ok = (
-        utility.assert_images(
-            test43.paths.gate_output / "projection_analog.mhd",
-            fn,
-            stats,
-            tolerance=75,
-            ignore_value=0,
-            axis="x",
-        )
-        and is_ok
+            utility.assert_images(test43.paths.gate_output / "projection_analog.mhd", fn, stats, tolerance=75,
+                                  ignore_value_data2=0, axis="x")
+            and is_ok
     )
 
     print()
     gate.exception.warning("Tests projection (new)")
     is_ok = (
-        utility.assert_images(
-            test43.paths.output_ref / "test043_projection_analog.mhd",
-            proj.get_output_path(),
-            stats,
-            tolerance=80,
-            ignore_value=0,
-            axis="x",
-        )
-        and is_ok
+            utility.assert_images(test43.paths.output_ref / "test043_projection_analog.mhd", proj.get_output_path(),
+                                  stats, tolerance=80, ignore_value_data2=0, axis="x")
+            and is_ok
     )

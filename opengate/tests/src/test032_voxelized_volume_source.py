@@ -49,27 +49,19 @@ if __name__ == "__main__":
     # compare images
     gate.exception.warning("\nDifference with ref image")
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "iec_10mm.mhd", f1, stats=None, tolerance=0.001
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "iec_10mm.mhd", f1, stats=None, tolerance=0.001)
+            and is_ok
     )
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "iec_source_10mm.mhd", f2, stats=None, tolerance=0.001
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "iec_source_10mm.mhd", f2, stats=None, tolerance=0.001)
+            and is_ok
     )
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "iec_9mm.mhd", f3, stats=None, tolerance=0.001
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "iec_9mm.mhd", f3, stats=None, tolerance=0.001)
+            and is_ok
     )
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "iec_source_9mm.mhd", f4, stats=None, tolerance=0.001
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "iec_source_9mm.mhd", f4, stats=None, tolerance=0.001)
+            and is_ok
     )
     utility.test_ok(is_ok)

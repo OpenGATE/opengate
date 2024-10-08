@@ -64,15 +64,10 @@ if __name__ == "__main__":
 
     # image
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "test038_gan_aa_proj.mhd",
-            paths.output / "test038_gan_aa_proj.mhd",
-            stats,
-            tolerance=70,
-            axis="x",
-            sum_tolerance=2.75,
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "test038_gan_aa_proj.mhd",
+                                  paths.output / "test038_gan_aa_proj.mhd", stats, tolerance=70, axis="x",
+                                  sum_tolerance=2.75)
+            and is_ok
     )
 
     utility.test_ok(is_ok)

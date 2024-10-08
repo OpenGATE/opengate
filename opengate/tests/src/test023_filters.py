@@ -101,21 +101,11 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stat, stats_ref, 0.8)
 
     print()
-    is_ok = is_ok and utility.assert_images(
-        paths.output_ref / "test023-edep.mhd",
-        dose1.edep.get_output_path(),
-        stat,
-        tolerance=50,
-        sum_tolerance=4,
-    )
+    is_ok = is_ok and utility.assert_images(paths.output_ref / "test023-edep.mhd", dose1.edep.get_output_path(), stat,
+                                            tolerance=50, sum_tolerance=4)
 
     print()
-    is_ok = is_ok and utility.assert_images(
-        paths.output_ref / "test023-noe-edep.mhd",
-        dose2.edep.get_output_path(),
-        stat,
-        tolerance=40,
-        sum_tolerance=2,
-    )
+    is_ok = is_ok and utility.assert_images(paths.output_ref / "test023-noe-edep.mhd", dose2.edep.get_output_path(),
+                                            stat, tolerance=40, sum_tolerance=2)
 
     utility.test_ok(is_ok)

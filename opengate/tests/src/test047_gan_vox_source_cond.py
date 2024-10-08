@@ -140,15 +140,9 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Compare image to analog")
     is_ok = (
-        utility.assert_images(
-            paths.output_ref / "test047-edep.mhd",
-            dose.get_output_path("edep"),
-            stats,
-            tolerance=19,
-            ignore_value=0,
-            axis="x",
-        )
-        and is_ok
+            utility.assert_images(paths.output_ref / "test047-edep.mhd", dose.get_output_path("edep"), stats,
+                                  tolerance=19, ignore_value_data2=0, axis="x")
+            and is_ok
     )
 
     print("Test with vv: ")
