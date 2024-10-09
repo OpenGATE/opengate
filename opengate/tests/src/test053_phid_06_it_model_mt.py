@@ -47,7 +47,6 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
     print(f"Duration {duration / sec}")
     print(f"Ions {activity_in_Bq * duration / sec:.0f}")
     sim.run_timing_intervals = [[start_time, end_time]]
-    sim.number_of_threads = 8
 
     # go
     sim.run(start_new_process=True)

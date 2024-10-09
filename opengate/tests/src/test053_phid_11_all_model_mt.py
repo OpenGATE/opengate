@@ -24,7 +24,7 @@ def main(dependency="test053_phid_10_all_ref_mt.py"):
     if not os.path.exists(root_ref):
         # ignore on windows
         if os.name == "nt":
-            test_ok(True)
+            test_ok(False)
             sys.exit(0)
         cmd = "python " + str(paths.current / dependency)
         r = os.system(cmd)

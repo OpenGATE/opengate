@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from test053_phid_helpers1 import *
+import os
 
 paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -15,7 +16,10 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     ui = sim.user_info
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
+    n_threads = int(os.cpu_count() / 2)
+    if os.name == "nt":
+        n_threads = 1
+    ui.number_of_threads = n_threads
     ui.visu = False
     ui.random_seed = 123654
 

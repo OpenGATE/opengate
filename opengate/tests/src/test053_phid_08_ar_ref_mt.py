@@ -32,7 +32,6 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # sources
-    sim.number_of_threads = 4
     activity_in_Bq = 1000
     add_source_generic(sim, z, a, activity_in_Bq)
     sim.random_seed = 123456
