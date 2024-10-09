@@ -12,7 +12,7 @@ if os.name == "nt":
 setup(
     install_requires=[
         "colored>1.5",
-        "opengate_core==" + version,
+        "opengate-core==" + version,
         "gatetools",
         "click",
         "python-box<7.0.0",
