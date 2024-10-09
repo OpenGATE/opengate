@@ -72,7 +72,7 @@ def go(
     run_previously_failed_jobs,
     num_processes,
 ):
-    if not check_g4_version("geant4-11-01"):
+    if not check_g4_version("geant4-11-01-patch-02"):
         print(False)
         return 0
 
