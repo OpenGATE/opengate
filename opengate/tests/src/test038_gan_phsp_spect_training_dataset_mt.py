@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # main parameters
     sim.check_volumes_overlap = True
     sim.number_of_threads = 2
-    sim.random_seed = 8123456
+    sim.random_seed = 321654987
     sim.output_dir = paths.output
     ac = 100 * BqmL / sim.number_of_threads
     sim.visu = False
