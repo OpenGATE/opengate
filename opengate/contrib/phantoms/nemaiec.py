@@ -39,6 +39,7 @@ def add_iec_phantom(
     create_material(simulation)
 
     # check overlap only for debug
+    original_check_overlap_flag = simulation.check_volumes_overlap
     simulation.check_volumes_overlap = check_overlap
 
     # Outside structure
@@ -64,6 +65,7 @@ def add_iec_phantom(
         simulation, name, thickness_z, sphere_starting_angle, toggle_sphere_order
     )
 
+    simulation.check_volumes_overlap = original_check_overlap_flag
     return iec
 
 
@@ -544,7 +546,7 @@ def get_n_samples_from_ratio(n, ratio):
     return n_samples
 
 
-def compute_sphere_centers_and_volumes(sim, name):
+def compute_sphere_centers_and_volumes_OLD_NEVER_CALLED(sim, name):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     centers = []
     volumes = []
