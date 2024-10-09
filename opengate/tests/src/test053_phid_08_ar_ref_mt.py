@@ -28,7 +28,7 @@ if __name__ == "__main__":
     print(phsp.output_filename)
 
     mm = g4_units.mm
-    sim.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # sources

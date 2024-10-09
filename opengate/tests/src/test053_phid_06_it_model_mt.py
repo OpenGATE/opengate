@@ -47,6 +47,7 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
     print(f"Duration {duration / sec}")
     print(f"Ions {activity_in_Bq * duration / sec:.0f}")
     sim.run_timing_intervals = [[start_time, end_time]]
+    sim.number_of_threads = 8
 
     # go
     sim.run(start_new_process=True)
@@ -59,6 +60,8 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
     warning(f"check root files")
     root_ref = paths.output / f"test053_{nuclide.nuclide}_5_ref.root"
     root_model = sim.get_actor("phsp").get_output_path()
+    print(f"{root_ref = }")
+    print(f"{root_model = }")
     is_ok = compare_root_energy(
         root_ref, root_model, start_time, end_time, model_index=130, tol=0.09
     )

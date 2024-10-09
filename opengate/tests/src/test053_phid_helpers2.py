@@ -25,7 +25,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     world.material = "G4_WATER"
 
     # physics
-    sim.physics_list_name = "QGSP_BERT_EMZ"
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = True
     sim.physics_manager.global_production_cuts.all = 1e6 * mm
     sim.g4_commands_after_init.append("/process/em/pixeXSmodel ECPSSR_ANSTO")
@@ -57,8 +57,13 @@ def create_sim_test053(sim, sim_name, output=paths.output):
 
     if "ref" in sim_name:
         f = sim.add_filter("TrackCreatorProcessFilter", "f2")
-        # f.process_name = "RadioactiveDecay" # G4 11.1
-        f.process_name = "Radioactivation"  # G4 11.2
+        gi = g4.GateInfo
+        v = gi.get_G4Version().replace("$Name: ", "")
+        v = v.replace("$", "")
+        if "geant4-11-01" in v:
+            f.process_name = "RadioactiveDecay"  # G4 11.1
+        else:
+            f.process_name = "Radioactivation"  # G4 11.2
         # phsp.debug = True
         phsp.filters.append(f)
 
@@ -78,6 +83,7 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     s1.direction.type = "iso"
     s1.activity = activity
     s1.half_life = nuclide.half_life("s") * sec
+    print(f"{s1.name = }")
     print(f"Half Life is {s1.half_life / sec:.2f} sec")
 
     return s1
