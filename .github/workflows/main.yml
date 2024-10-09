@@ -102,6 +102,30 @@ jobs:
               ls -lrt dist_opengate/
               mv dist_opengate/* dist/
           fi
+    - name: Create opengate_core_novis Wheel Linux
+      if: (matrix.os == 'ubuntu-latest') && (github.event_name == 'push') && (startsWith(github.event.ref, 'refs/tags/'))
+      run: |
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
+            export PYTHONFOLDER="cp39-cp39"
+          elif [ ${{ matrix.python-version }} == "3.10" ]; then
+            export PYTHONFOLDER="cp310-cp310"
+          elif [ ${{ matrix.python-version }} == "3.11" ]; then
+            export PYTHONFOLDER="cp311-cp311"
+          elif [ ${{ matrix.python-version }} == "3.12" ]; then
+            export PYTHONFOLDER="cp312-cp312"
+          fi
+          mkdir -p $HOME/software
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}_novis /home/.github/workflows/createWheelLinux_novis.sh
+          ls wheelhouse
+          rm -rf dist
+          mv wheelhouse dist
+          sudo chown -R runner:docker dist
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
+              ls -lrt .
+              ls -lrt dist/
+              ls -lrt dist_opengate/
+              mv dist_opengate/* dist/
+          fi
     - uses: conda-incubator/setup-miniconda@v3
       if: (matrix.os == 'macos-12') || (matrix.os == 'windows-latest')
       with:
