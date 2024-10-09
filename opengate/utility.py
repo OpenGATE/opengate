@@ -39,9 +39,9 @@ class LazyModuleLoader:
         if self.module is None:
             # Check module existence and import it
             try:
-                print(f"LazyModuleLoader is importing module {self.module_name} ...")
+                # print(f"LazyModuleLoader is importing module {self.module_name} ...")
                 self.module = importlib.import_module(self.module_name)
-                print("... done")
+                # print("... done")
             except ModuleNotFoundError:
                 fatal(
                     f"The module '{self.module_name}' is not installed. "
@@ -308,6 +308,7 @@ def print_opengate_info():
 
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
+    print(f"Geant4 Qt        {gi.get_G4VIS_USE_OPENGLQT()} {gi.get_QT_VERSION()}")
     print(f"Geant4 GDML      {gi.get_G4GDML()}")
     print(f"Geant4 date      {gi.get_G4Date().replace(')', '').replace('(', '')}")
     print(f"Geant4 data      {g4.get_g4_data_folder()}")

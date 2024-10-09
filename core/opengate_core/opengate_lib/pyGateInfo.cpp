@@ -18,6 +18,8 @@ void init_GateInfo(py::module &m) {
       .def("get_G4Version", &GateInfo::get_G4Version)
       .def("get_G4Date", &GateInfo::get_G4Date)
       .def("get_ITKVersion", &GateInfo::get_ITKVersion)
+      .def("get_G4VIS_USE_OPENGLQT", &GateInfo::get_G4VIS_USE_OPENGLQT)
+      .def("get_QT_VERSION", &GateInfo::get_QT_VERSION)
       .def("test", &GateInfo::test)
       .def("get_G4GDML", &GateInfo::get_G4GDML);
 }

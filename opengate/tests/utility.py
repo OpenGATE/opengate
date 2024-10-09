@@ -41,9 +41,16 @@ def test_ok(is_ok=False):
         sys.exit(-1)
 
 
-def read_stat_file(filename, encoder="legacy"):
+def read_stat_file(filename, encoder=None):
     if encoder == "json":
         return read_stat_file_json(filename)
+    if encoder == "legacy":
+        return read_stat_file_legacy(filename)
+    # guess if it is json or not
+    try:
+        return read_stat_file_json(filename)
+    except (json.JSONDecodeError, ValueError):
+        pass
     return read_stat_file_legacy(filename)
 
 
@@ -245,6 +252,7 @@ def plot_img_z(ax, img, label):
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
+    return y
 
 
 def plot_img_y(ax, img, label):
@@ -255,6 +263,7 @@ def plot_img_y(ax, img, label):
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
+    return y
 
 
 def plot_img_x(ax, img, label):
@@ -265,6 +274,7 @@ def plot_img_x(ax, img, label):
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
+    return y
 
 
 def assert_images_properties(info1, info2):
@@ -300,6 +310,7 @@ def assert_images(
     fig_name=None,
     sum_tolerance=5,
     scaleImageValuesFactor=None,
+    sad_profile_tolerance=None,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -347,18 +358,27 @@ def assert_images(
 
     # sum of absolute difference (in %)
     sad = np.fabs(d1 - d2).sum() * 100
-    is_ok = is_ok and sad < tolerance
+    b = sad < tolerance
     print_test(
-        is_ok,
+        b,
         f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
         f"SAD (per event/total): {sad:.2f} % "
         f" (tolerance is {tolerance :.2f} %)",
     )
+    is_ok = is_ok and b
 
     # plot
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    plot_img_axis(ax, img1, "reference", axis)
-    plot_img_axis(ax, img2, "test", axis)
+    p1 = plot_img_axis(ax, img1, "reference", axis)
+    p2 = plot_img_axis(ax, img2, "test", axis)
+    if sad_profile_tolerance is not None:
+        sad = np.fabs(p1 - p2).sum() / p1.sum() * 100
+        b = sad < sad_profile_tolerance
+        print_test(
+            b,
+            f"Profile {axis} relative SAD is {sad:.2f}% (tol {sad_profile_tolerance}%)",
+        )
+        is_ok = is_ok and b
     if fig_name is None:
         filename2 = Path(filename2)
         fn = filename2.stem + "_test" + ".png"

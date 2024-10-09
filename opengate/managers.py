@@ -1,5 +1,6 @@
 import sys
 import logging
+from typing import Optional, List, Union
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
@@ -1210,6 +1211,36 @@ class Simulation(GateObject):
 
     There is NO Geant4 engine here, it is only a set of parameters and options.
     """
+
+    # hints for IDE
+    verbose_level: int
+    verbose_close: bool
+    verbose_getstate: bool
+    running_verbose_level: int
+    g4_verbose_level: int
+    g4_verbose: bool
+    g4_verbose_level_tracking: int
+    visu: bool
+    visu_type: str
+    visu_filename: Optional[Path]
+    visu_verbose: bool
+    visu_commands: List[str]
+    visu_commands_vrml: List[str]
+    visu_commands_gdml: List[str]
+    check_volumes_overlap: bool
+    number_of_threads: int
+    force_multithread_mode: bool
+    random_engine: str
+    random_seed: Union[str, int]
+    run_timing_intervals: List[List[float]]
+    output_dir: Path
+    store_json_archive: bool
+    json_archive_filename: Path
+    store_input_files: bool
+    g4_commands_before_init: List[str]
+    g4_commands_after_init: List[str]
+    init_only: bool
+    progress_bar: bool
 
     user_info_defaults = {
         "verbose_level": (

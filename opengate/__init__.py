@@ -1,8 +1,8 @@
 # This file handles the way opengate is imported.
 
+"""
 import colored
 import threading
-
 print(
     colored.stylize(
         f"Importing opengate (thread " f"{threading.get_native_id()}) ... ",
@@ -11,6 +11,8 @@ print(
     end="",
     flush=True,
 )
+print(colored.stylize("done", colored.fore("dark_gray")))
+"""
 
 # the following modules are imported respecting the package structure
 # they will be available via
@@ -52,6 +54,3 @@ import opengate.engines
 from opengate.managers import Simulation
 from opengate.managers import create_sim_from_json
 from opengate.utility import g4_units
-
-
-print(colored.stylize("done", colored.fore("dark_gray")))
