@@ -88,19 +88,26 @@ def go(
         + str(sys.version_info[1])
         + ".json"
     )
-    files_to_run_avail, files_to_ignore = get_files_to_run()
 
     if not run_previously_failed_jobs:
+        files_to_run_avail, files_to_ignore = get_files_to_run()
         files_to_run = select_files(files_to_run_avail, start_id, end_id, random_tests)
         download_data_at_first_run(files_to_run_avail[0])
+        dashboard_dict_out = {k: [""] for k in files_to_run_avail}
     else:
         with open(fpath_dashboard_output, "r") as fp:
-            dashboard_dict_previously = json.load(fp)
-            files_to_run = [k for k, v in dashboard_dict_previously.items() if not v[0]]
-
+            dashboard_dict_out = json.load(fp)
+            files_to_run = [k for k, v in dashboard_dict_out.items() if not v[0]]
+    # files_to_run = ['test049_pet_digit_blurring_v3.py',
+    #                 'test028_ge_nm670_spect_3_proj_blur.py',
+    #                 'test049_pet_digit_blurring_v2_mt.py',
+    #                 'test040_gan_phsp_pet_training_dataset.py',
+    #                 'test036_adder_depth_param.py']
+    # print(f"{' ,'.join(files_to_run)}")
     files_to_run_part1, files_to_run_part2_depending_on_part1 = (
         filter_files_with_dependencies(files_to_run, path_tests_src)
     )
+    # print(f"{' ,'.join(files_to_run_part1)}")
     if len(files_to_run_part2_depending_on_part1) > 0:
         print(
             f"Found test cases with mutual dependencies, going to split evaluation into two sets. {len(files_to_run_part2_depending_on_part1)} tests will start right after first eval round."
@@ -131,7 +138,6 @@ def go(
             runs_status_info, files_to_run_part1, no_log_on_fail
         )
 
-    dashboard_dict_out = {k: [""] for k in files_to_run_avail}
     dashboard_dict_out.update(dashboard_dict)
     if fpath_dashboard_output:
         os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
