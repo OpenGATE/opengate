@@ -23,6 +23,7 @@ import importlib.util
 from opengate.exception import fatal, colored, color_ok, color_error, color_warning
 from opengate_core.testsDataSetup import check_tests_data_folder
 from opengate.bin.opengate_library_path import return_tests_path
+from opengate_core import GateInfo
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -71,6 +72,9 @@ def go(
     run_previously_failed_jobs,
     num_processes,
 ):
+    if not check_g4_version("geant4-11-01"):
+        print(False)
+        return 0
 
     path_tests_src = return_tests_path()  # returns the path to the tests/src dir
     test_dir_path = path_tests_src.parent
@@ -219,6 +223,18 @@ def get_files_to_run():
         f"Found {len(all_file_paths)} available test cases, of those {len(files_to_run)} files to run, and {len(files_to_ignore)} ignored."
     )
     return files_to_run, files_to_ignore
+
+
+def check_g4_version(g4_version: str):
+    v = GateInfo.get_G4Version().replace("$Name: ", "")
+    v = v.replace("$", "")
+    print(f"Detected Geant4 version: {v}")
+    print(f"Required Geant4 version: {g4_version}")
+    if g4_version in v:
+        print(colored.stylize(" OK", color_ok), end="\n")
+        return True
+    else:
+        return False
 
 
 def select_files(files_to_run, test_id, end_id, random_tests):
