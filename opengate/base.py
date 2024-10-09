@@ -703,7 +703,7 @@ class DynamicGateObject(GateObject):
         extra_params = {}
         extra_params["auto_changer"] = params.pop(
             "auto_changer", True
-        )  # True of key not found (default)
+        )  # True if key not found (default)
         if extra_params["auto_changer"] not in (False, True):
             fatal(
                 f"Received wrong value type for 'auto_changer': got {type(extra_params['auto_changer'])}, "
