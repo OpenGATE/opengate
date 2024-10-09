@@ -25,3 +25,34 @@ def restart_with_glibc_tunables():
 
 if sys.platform.startswith("linux"):
     restart_with_glibc_tunables()
+
+# subpackages
+import opengate.sources
+import opengate.geometry
+import opengate.geometry.materials
+import opengate.geometry.solids
+import opengate.geometry.utility
+import opengate.geometry.volumes
+import opengate.actors
+import opengate.contrib
+
+# modules directly under /opengate/
+import opengate.managers
+import opengate.utility
+import opengate.logger
+import opengate.exception
+import opengate.runtiming
+import opengate.definitions
+import opengate.userhooks
+import opengate.image
+import opengate.physics
+import opengate.base
+import opengate.engines
+
+# import opengate.postprocessors
+
+# These objects are imported at the top level of the package
+# because users will frequently use them
+from opengate.managers import Simulation
+from opengate.managers import create_sim_from_json
+from opengate.utility import g4_units
