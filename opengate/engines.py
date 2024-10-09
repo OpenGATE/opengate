@@ -1016,6 +1016,7 @@ class SimulationEngine(GateSingletonFatal):
         # this is only for info.
         # Process handling is done in Simulation class, not in SimulationEngine!
         self.new_process = new_process
+        self.process_index = None
 
         # LATER : option to wait the end of completion or not
 
