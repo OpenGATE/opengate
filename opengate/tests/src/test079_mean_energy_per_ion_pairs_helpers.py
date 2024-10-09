@@ -4,6 +4,7 @@
 import uproot
 import numpy as np
 from collections import defaultdict
+from scipy.optimize import curve_fit
 
 
 def calculate_angle(dir1, dir2):
@@ -73,3 +74,15 @@ def compute_acollinearity_angles(gamma_pairs):
             )
 
     return acollinearity_angles
+
+
+def rayleigh(abs_value, amp, scale):
+    return amp * (abs_value / scale**2) * np.exp(-((abs_value) ** 2) / (2.0 * scale**2))
+
+
+def fit_rayleigh(hist_data):
+    hist_pos = hist_data[1][:-1] + np.diff(hist_data[1])[0]
+    init_param = [1.0, 0.5 / 2.355]
+    popt, _ = curve_fit(rayleigh, hist_pos, hist_data[0], p0=init_param)
+
+    return popt[0], popt[1]
