@@ -7,6 +7,7 @@ import shutil
 import os
 from pathlib import Path
 import weakref
+import multiprocessing
 
 import opengate_core as g4
 
@@ -1499,6 +1500,7 @@ class Simulation(GateObject):
         self._current_random_seed = None
 
         self.expected_number_of_events = None
+        self.mapping_run_timing_intervals = {}
 
     def __str__(self):
         s = (
@@ -1692,7 +1694,7 @@ class Simulation(GateObject):
     def multithreaded(self):
         return self.number_of_threads > 1 or self.force_multithread_mode
 
-    def _run_simulation_engine(self, start_new_process):
+    def _run_simulation_engine(self, start_new_process, process_index=None):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
 
         Args:
@@ -1707,16 +1709,64 @@ class Simulation(GateObject):
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
+            se.process_index = process_index
             output = se.run_engine()
         return output
 
-    def run(self, start_new_process=False):
+    def generate_run_timing_interval_map(self, number_of_processes):
+        if number_of_processes % len(self.run_timing_intervals) != 0:
+            fatal("number_of_sub_processes must be a multiple of the number of run_timing_intervals, \n"
+                  f"but I received {number_of_processes}, while there are {len(self.run_timing_intervals)}.")
+
+        number_of_processes_per_run = int(number_of_processes / len(self.run_timing_intervals))
+        run_timing_interval_map = {}
+        process_index = 0
+        for i, rti in enumerate(self.run_timing_intervals):
+            t_start, t_end = rti
+            duration_original = t_end - t_start
+            duration_in_process = duration_original / number_of_processes_per_run
+            t_intermediate = [t_start + (j+1) * duration_in_process for j in range(number_of_processes_per_run-1)]
+            t_all = [t_start] + t_intermediate + [t_end]
+            for t_s, t_e in zip(t_all[:-1], t_all[1:]):
+                run_timing_interval_map[process_index] = {
+                    'run_timing_intervals': [[t_s, t_e]],
+                    'lut_original_rti': [i]
+                }
+                process_index += 1
+        return run_timing_interval_map
+
+    def run_in_process(self, process_index, run_timing_intervals, lut_original_rti):
+        # Important: this method is intended to run in a processes spawned off the main process.
+        # Therefore, self is actually a separate instance from the original simulation
+        # and we can safely adapt it in this process.
+
+        # adapt the output_dir
+        self.output_dir = str(Path(self.output_dir) / f'process_{process_index}')
+        print("self.output_dir = ", self.output_dir)
+
+        # adapt the run timing intervals in
+        self.run_timing_intervals = run_timing_intervals
+        # adapt all dynamic volumes
+        for vol in self.volume_manager.dynamic_volumes:
+            vol.reassign_subset_of_dynamic_params(lut_original_rti)
+            print(process_index)
+            print(f'Volume {vol.name}:')
+            print(vol.user_info["dynamic_params"])
+
+        output = self._run_simulation_engine(False, process_index=process_index)
+        print(process_index, os.getpid(), id(self), run_timing_intervals, lut_original_rti)
+        return output
+
+    def run(self, start_new_process=False, number_of_sub_processes=0):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
                 "Error, the multi-thread option is not available for Windows now. "
                 "Run the simulation with one thread."
             )
+
+        if number_of_sub_processes == 1:
+            start_new_process = True
 
         # prepare sub process
         if start_new_process is True:
@@ -1744,6 +1794,40 @@ class Simulation(GateObject):
                     source.fTotalSkippedEvents = s.user_info.fTotalSkippedEvents
                     source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
 
+        elif number_of_sub_processes > 1:
+            run_timing_interval_map = self.generate_run_timing_interval_map(number_of_sub_processes)
+            try:
+                multiprocessing.set_start_method("spawn")
+            except RuntimeError:
+                print("Could not set start method 'spawn'.")
+                pass
+            # q = multiprocessing.Queue()
+            with multiprocessing.Pool(len(run_timing_interval_map)) as pool:
+                print("pool._outqueue: ", pool._outqueue)  # DEMO
+                results = [pool.apply_async(self.run_in_process,
+                                            (k, v['run_timing_intervals'], v['lut_original_rti'],))
+                           for k, v in run_timing_interval_map.items()]
+                # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
+                print(results[0])  # DEMO
+                list_of_output = [res.get() for res in results]
+                print(f'list_of_output: {list_of_output}')
+            return list_of_output
+            # processes = []
+            # for k, v in run_timing_interval_map.items():
+            #     p = multiprocessing.Process(
+            #         target=target_func,
+            #         args=(q, self.run_in_process, k, v['run_timing_intervals'], v['lut_original_rti'])
+            #     )
+            #     p.start()
+            #     processes.append(p)
+            # for p in processes:
+            #     p.join()  # (timeout=10)  # timeout might be needed
+            #
+            # try:
+            #     output = q.get(block=False)
+            # except queue.Empty:
+            #     fatal("The queue is empty. The spawned process probably died.")
+            # return output
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
