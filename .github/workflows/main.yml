@@ -103,7 +103,7 @@ jobs:
               mv dist_opengate/* dist/
           fi
     - name: Create opengate_core_novis Wheel Linux
-      if: (matrix.os == 'ubuntu-latest') && (github.event_name == 'push') && (startsWith(github.event.ref, 'refs/tags/'))
+      if: (matrix.os == 'ubuntu-latest') 
       run: |
           if [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
