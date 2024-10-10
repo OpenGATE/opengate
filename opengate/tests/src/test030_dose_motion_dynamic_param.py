@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = "test030.mhd"
+    dose.output_filename = "test030-dyn.mhd"
     dose.attached_to = waterbox
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm

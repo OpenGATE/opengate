@@ -72,6 +72,7 @@ def go(
     run_previously_failed_jobs,
     num_processes,
 ):
+    start = time.time()
     if not check_g4_version("geant4-11-01-patch-02"):
         print(False)
         return 0
@@ -98,12 +99,7 @@ def go(
         with open(fpath_dashboard_output, "r") as fp:
             dashboard_dict_out = json.load(fp)
             files_to_run = [k for k, v in dashboard_dict_out.items() if not v[0]]
-    # files_to_run = ['test049_pet_digit_blurring_v3.py',
-    #                 'test028_ge_nm670_spect_3_proj_blur.py',
-    #                 'test049_pet_digit_blurring_v2_mt.py',
-    #                 'test040_gan_phsp_pet_training_dataset.py',
-    #                 'test036_adder_depth_param.py']
-    # print(f"{' ,'.join(files_to_run)}")
+
     files_to_run_part1, files_to_run_part2_depending_on_part1 = (
         filter_files_with_dependencies(files_to_run, path_tests_src)
     )
@@ -137,7 +133,9 @@ def go(
         dashboard_dict, failure = status_summary_report(
             runs_status_info, files_to_run_part1, no_log_on_fail
         )
-
+    end = time.time()
+    run_time = timedelta(seconds=end - start)
+    print(f"Evaluation took in total:   {run_time.seconds /60 :5.1f} min  ")
     dashboard_dict_out.update(dashboard_dict)
     if fpath_dashboard_output:
         os.makedirs(str(fpath_dashboard_output.parent), exist_ok=True)
@@ -415,7 +413,7 @@ def run_test_cases(
 
     end = time.time()
     run_time = timedelta(seconds=end - start)
-    print(f"Evaluation took in total:   {run_time.seconds /60 :5.1f} min  ")
+    print(f"Running tests took:   {run_time.seconds /60 :5.1f} min  ")
     return runs_status_info
 
 
