@@ -18,6 +18,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 983456
     sim.output_dir = paths.output
+    sim.progress_bar = True
 
     # units
     m = gate.g4_units.m
