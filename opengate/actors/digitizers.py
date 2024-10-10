@@ -154,6 +154,12 @@ class Digitizer:
         # start by the hit collection
         self.hc = self.set_hit_collection()
 
+    def __str__(self):
+        s = ""
+        for a in self.actors:
+            s += a.name + " "
+        return s
+
     def set_hit_collection(self):
         hc = self.simulation.add_actor(
             "DigitizerHitsCollectionActor", f"{self.name}_hits"
