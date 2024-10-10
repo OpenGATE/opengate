@@ -85,7 +85,7 @@ def test022_half_life(n_threads=1):
     ta = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     ta.attached_to = "detector"
     ta.attributes = ["KineticEnergy", "GlobalTime"]
-    ta.output_filename = "test022_half_life.root"
+    ta.output_filename = f"test022_half_lifev_{n_threads}.root"
 
     # timing
     sim.run_timing_intervals = [
@@ -100,11 +100,11 @@ def test022_half_life(n_threads=1):
     print(stats)
 
     # read phsp
-    root = uproot.open(ta.get_output_path())
-    branch = root["PhaseSpace"]["GlobalTime"]
-    time = branch.array(library="numpy") / sec
-    branch = root["PhaseSpace"]["KineticEnergy"]
-    E = branch.array(library="numpy")
+    with uproot.open(ta.get_output_path()) as root:
+        branch = root["PhaseSpace"]["GlobalTime"]
+        time = branch.array(library="numpy") / sec
+        branch = root["PhaseSpace"]["KineticEnergy"]
+        E = branch.array(library="numpy")
 
     # consider time of arrival for both sources
     time1 = time[E < 110 * keV]
