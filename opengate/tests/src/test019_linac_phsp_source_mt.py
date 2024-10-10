@@ -8,7 +8,7 @@ import test019_linac_phsp_helpers as test019
 if __name__ == "__main__":
     # create sim
     sim = gate.Simulation()
-    test019.create_simu_test019_phsp_source(sim)
+    test019.create_simu_test019_phsp_source(sim, "_phsp_src_mt")
 
     # make it MT
     sim.number_of_threads = nt = 4

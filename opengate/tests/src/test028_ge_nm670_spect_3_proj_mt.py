@@ -16,8 +16,8 @@ if __name__ == "__main__":
     cm = gate.g4_units.cm
 
     # main description
-    spect = test028.create_spect_simu(sim, paths, 4)
-    proj = test028.test_add_proj(sim)
+    spect = test028.create_spect_simu(sim, paths, 4, version="_3_proj_mt")
+    proj = test028.test_add_proj(sim, fname_suffix="_3_proj_mt")
 
     # rotate spect
     psd = 6.11 * cm

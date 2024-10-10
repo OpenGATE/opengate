@@ -14,7 +14,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # create sim without AA
-    test029.create_simulation(sim, False, paths)
+    test029.create_simulation(sim, False, paths, "_trot1")
 
     # for later reference, get the actors that were created by the helper function above
     proj_actor = sim.actor_manager.get_actor("Projection")

@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     nb_threads = 2
-    t49.create_simulation(sim, nb_threads)
+    t49.create_simulation(sim, nb_threads, fname_suffix="_v2mt")
 
     # start simulation
     sim.run()

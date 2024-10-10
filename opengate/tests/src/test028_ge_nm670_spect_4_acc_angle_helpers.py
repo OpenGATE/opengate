@@ -19,6 +19,7 @@ def create_spect_simu(
     activity_kBq=300,
     aa_enabled=True,
     aa_mode="SkipEnergy",
+    version="",
 ):
     # main options
     sim.g4_verbose = False
@@ -131,7 +132,9 @@ def create_spect_simu(
         if "crystal" in k:
             crystal = v
     hc.attached_to = crystal.name
-    hc.output_filename = "test028_4.root"  # No output paths.output / 'test028.root'
+    hc.output_filename = (
+        f"test028_4{version}.root"  # No output paths.output / 'test028.root'
+    )
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -173,7 +176,7 @@ def create_spect_simu(
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet
-    proj.output_filename = "proj028_colli.mhd"
+    proj.output_filename = f"proj028_colli{version}.mhd"
     print("proj filename", proj.output_filename)
     print("proj output path", proj.get_output_path())
 
@@ -189,7 +192,7 @@ def create_spect_simu(
     return spect, proj
 
 
-def compare_result(sim, proj, fig_name, sum_tolerance=8):
+def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
     gate.exception.warning("Compare acceptance angle skipped particles")
     stats = sim.get_actor("Stats")
 
@@ -249,7 +252,7 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8):
 
     # read image and force change the offset to be similar to old Gate
     gate.exception.warning("Compare projection image")
-    img = itk.imread(str(paths.output / "proj028_colli.mhd"))
+    img = itk.imread(str(paths.output / f"proj028_colli{version}.mhd"))
     spacing = np.array([proj.spacing[0], proj.spacing[1], 1])
     print("spacing", spacing)
     origin = spacing / 2.0
@@ -257,12 +260,12 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8):
     spacing[2] = 1
     img.SetSpacing(spacing)
     img.SetOrigin(origin)
-    itk.imwrite(img, str(paths.output / "proj028_colli_offset.mhd"))
+    itk.imwrite(img, str(paths.output / f"proj028_colli_offset{version}.mhd"))
     # There are not enough event to make a proper comparison, so the tol is very high
     is_ok = (
         utility.assert_images(
             paths.gate_output / "projection4.mhd",
-            paths.output / "proj028_colli_offset.mhd",
+            paths.output / f"proj028_colli_offset{version}.mhd",
             stats,
             tolerance=85,
             ignore_value=0,

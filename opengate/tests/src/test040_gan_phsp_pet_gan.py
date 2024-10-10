@@ -12,14 +12,18 @@ import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
-if __name__ == "__main__":
+global all_cond
+
+
+def main(dependency="test040_gan_phsp_pet_aref.py"):
+    global all_cond
     paths = utility.get_default_test_paths(__file__, "", "test040")
 
     # The test needs the output of test040_gan_phsp_pet_aref.py
     # If the output of test040_gan_phsp_pet_aref.py does not exist (eg: random test), create it
     if not os.path.isfile(paths.output / "test040_gan_phsp.root"):
         print("---------- Begin of test040_gan_phsp_pet_aref.py ----------")
-        subprocess.call(["python", paths.current / "test040_gan_phsp_pet_aref.py"])
+        subprocess.call(["python", paths.current / dependency])
         print("----------- End of test040_gan_phsp_pet_aref.py -----------")
 
     # create the simulation
@@ -371,3 +375,7 @@ if __name__ == "__main__":
 
     # this is the end, my friend
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

@@ -20,10 +20,11 @@ if __name__ == "__main__":
 
     sim = gate.Simulation()
     sim_name = f"{nuclide.nuclide}_5_ref"
+    # sim_name = 'andreas'
     create_sim_test053(sim, sim_name)
 
     # sources
-    sim.number_of_threads = 4
+    sim.number_of_threads = 8
     activity_in_Bq = 1000
     add_source_generic(sim, z, a, activity_in_Bq)
 
@@ -49,7 +50,7 @@ if __name__ == "__main__":
     # compare with reference root file
     warning(f"check root files")
     root_model = sim.get_actor("phsp").get_output_path()
-    root_ref = paths.output_ref / os.path.basename(root_model)
+    root_ref = paths.output_ref / Path(root_model).name
     keys = ["KineticEnergy", "TrackCreatorModelIndex"]
     tols = [0.001, 0.02]
     img = paths.output / str(root_model).replace(".root", ".png")

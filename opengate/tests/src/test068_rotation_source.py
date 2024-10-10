@@ -173,7 +173,7 @@ if __name__ == "__main__":
 
     # go !
     sim.run()
-
+    print(f"{phsp.get_output_path() = }")
     # Validation test
     f_phsp = uproot.open(phsp.get_output_path())
     arr = f_phsp["PhaseSpace"].arrays()

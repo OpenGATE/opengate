@@ -8,7 +8,7 @@ from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
 
 
-def create_simulation(geom, paths):
+def create_simulation(geom, paths, version):
     # create the simulation
     sim = gate.Simulation()
 
@@ -119,7 +119,7 @@ def create_simulation(geom, paths):
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = crystal.name
     hc.authorize_repeated_volumes = True
-    hc.output_filename = "test036.root"
+    hc.output_filename = f"test036{version}.root"
     hc.attributes = [
         "KineticEnergy",
         "PostPosition",

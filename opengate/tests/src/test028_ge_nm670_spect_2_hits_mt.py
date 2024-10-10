@@ -15,7 +15,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main description
-    test028.create_spect_simu(sim, paths, number_of_threads=3)
+    test028.create_spect_simu(sim, paths, number_of_threads=3, version="_2_hits_mt")
 
     # go
     sim.run()

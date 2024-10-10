@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    t49.create_simulation(sim, singles_name="Singles_readout")
+    t49.create_simulation(sim, singles_name="Singles_readout", fname_suffix="_v4")
 
     # const
     ns = gate.g4_units.ns

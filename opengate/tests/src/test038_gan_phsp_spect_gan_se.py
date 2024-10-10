@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.progress_bar = True
-    condition_generator = t38.create_simulation(sim, paths)
+    condition_generator = t38.create_simulation(sim, paths, version="_spect_can_se")
 
     gsource = sim.get_source_user_info("gaga")
     gsource.skip_policy = "SkipEvents"  # this is SkipEvents by default

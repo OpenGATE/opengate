@@ -4,7 +4,8 @@
 from test053_phid_helpers2 import *
 import opengate as gate
 
-if __name__ == "__main__":
+
+def main(dependency="test053_phid_05_it_ref_mt.py"):
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
     # bi213 83 213
@@ -22,7 +23,7 @@ if __name__ == "__main__":
         if os.name == "nt":
             test_ok(True)
             sys.exit(0)
-        cmd = "python " + str(paths.current / "test053_phid_05_it_ref_mt.py")
+        cmd = "python " + str(paths.current / dependency)
         r = os.system(cmd)
 
     sim = gate.Simulation()
@@ -58,8 +59,14 @@ if __name__ == "__main__":
     warning(f"check root files")
     root_ref = paths.output / f"test053_{nuclide.nuclide}_5_ref.root"
     root_model = sim.get_actor("phsp").get_output_path()
+    print(f"{root_ref = }")
+    print(f"{root_model = }")
     is_ok = compare_root_energy(
         root_ref, root_model, start_time, end_time, model_index=130, tol=0.09
     )
 
     test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

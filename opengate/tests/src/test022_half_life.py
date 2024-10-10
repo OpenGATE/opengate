@@ -6,22 +6,17 @@ from opengate.tests import utility
 import uproot
 import sys
 
-if __name__ == "__main__":
+
+def test022_half_life(n_threads=1):
     paths = utility.get_default_test_paths(__file__, output_folder="test022")
 
     # create the simulation
     sim = gate.Simulation()
 
-    # multithread ?
-    argv = sys.argv
-    n = 1
-    if len(argv) > 1:
-        n = int(argv[1])
-
     # main options
     sim.g4_verbose = False
     sim.visu = False
-    sim.number_of_threads = n
+    sim.number_of_threads = n_threads
     sim.random_seed = 12344321
     sim.output_dir = paths.output
     print(sim)
@@ -90,7 +85,7 @@ if __name__ == "__main__":
     ta = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     ta.attached_to = "detector"
     ta.attributes = ["KineticEnergy", "GlobalTime"]
-    ta.output_filename = "test022_half_life.root"
+    ta.output_filename = f"test022_half_lifev_{n_threads}.root"
 
     # timing
     sim.run_timing_intervals = [
@@ -105,11 +100,11 @@ if __name__ == "__main__":
     print(stats)
 
     # read phsp
-    root = uproot.open(ta.get_output_path())
-    branch = root["PhaseSpace"]["GlobalTime"]
-    time = branch.array(library="numpy") / sec
-    branch = root["PhaseSpace"]["KineticEnergy"]
-    E = branch.array(library="numpy")
+    with uproot.open(ta.get_output_path()) as root:
+        branch = root["PhaseSpace"]["GlobalTime"]
+        time = branch.array(library="numpy") / sec
+        branch = root["PhaseSpace"]["KineticEnergy"]
+        E = branch.array(library="numpy")
 
     # consider time of arrival for both sources
     time1 = time[E < 110 * keV]
@@ -182,3 +177,11 @@ if __name__ == "__main__":
     plt.savefig(fn)
 
     utility.test_ok(is_ok)
+
+
+def main():
+    test022_half_life(n_threads=1)
+
+
+if __name__ == "__main__":
+    main()

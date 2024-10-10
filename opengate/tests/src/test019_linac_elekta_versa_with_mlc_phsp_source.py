@@ -165,7 +165,7 @@ if __name__ == "__main__":
         "PDGCode",
         "ParticleName",
     ]
-    phsp.output_filename = "phsp_versa_mlc.root"
+    phsp.output_filename = "phsp_versa_mlc_wsrc.root"
 
     # start simulation
     sim.run()
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     print(stats)
 
     # end
-    f_phsp = uproot.open(paths.output / "phsp_versa_mlc.root")
-    arr = f_phsp["phsp"].arrays()
+    with uproot.open(phsp.get_output_path()) as f_phsp:
+        arr = f_phsp["phsp"].arrays()
     is_ok = is_ok_test019(arr, x_field, y_field)
     utility.test_ok(is_ok)

@@ -24,13 +24,13 @@ def main():
     print("create reference PhS file")
     t.create_test_phs(
         particle="proton",
-        phs_name=paths.output / "test_proton_offset",
+        phs_name=paths.output / "test_proton_offset_1",
         number_of_particles=1,
         translation=[10 * cm, 5 * cm, 0 * mm],
     )
     print("Testing PhS source particle name")
     t.test_source_particle_info_from_phs(
-        source_file_name=paths.output / "test_proton_offset.root",
+        source_file_name=paths.output / "test_proton_offset_1.root",
         phs_file_name_out=paths.output / "test_source_PDG_proton.root",
     )
     is_ok = t.check_value_from_root_file(

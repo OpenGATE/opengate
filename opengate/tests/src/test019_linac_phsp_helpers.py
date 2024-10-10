@@ -13,7 +13,7 @@ paths = utility.get_default_test_paths(
 )
 
 
-def init_test019(nt):
+def init_test019(nt, version):
     # create the simulation
     sim = gate.Simulation()
 
@@ -89,7 +89,7 @@ def init_test019(nt):
         "EventPosition",
         "PDGCode",
     ]
-    ta2.output_filename = "test019_hits.root"
+    ta2.output_filename = f"test019_hits_{version}.root"
     ta2.debug = False
     ta2.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
@@ -175,7 +175,7 @@ def run_test019(sim):
     utility.test_ok(is_ok)
 
 
-def create_simu_test019_phsp_source(sim):
+def create_simu_test019_phsp_source(sim, version):
     # main options
     sim.g4_verbose = False
     # sim.visu = True
@@ -261,7 +261,7 @@ def create_simu_test019_phsp_source(sim):
         "LocalTime",
         "EventPosition",
     ]
-    ta1.output_filename = "test019_hits_phsp_source_local.root"
+    ta1.output_filename = "test019_hits_phsp_source_local{version}.root"
     ta1.debug = False
     ta1.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
@@ -286,7 +286,7 @@ def create_simu_test019_phsp_source(sim):
         "LocalTime",
         "EventPosition",
     ]
-    ta2.output_filename = "test019_hits_phsp_source_global.root"
+    ta2.output_filename = "test019_hits_phsp_source_global{version}.root"
     ta2.debug = False
     f = sim.add_filter("ParticleFilter", "f2")
     f.particle = "gamma"
