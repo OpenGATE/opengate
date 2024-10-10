@@ -484,7 +484,7 @@ class BeamsetInfo(object):
     def __init__(self, rpfp):
         self._warnings = list()  # will hopefully stay empty
         self._beam_numbers_corrupt = False  # e.g. PDM does not define beam numbers
-        self._rp = pydicom.read_file(rpfp)
+        self._rp = pydicom.dcmread(rpfp)
         self._rpfp = rpfp
         logger.debug("beamset: survived reading DICOM file {}".format(rpfp))
         self._rpdir = os.path.dirname(rpfp)

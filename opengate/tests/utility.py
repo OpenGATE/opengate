@@ -39,6 +39,34 @@ def test_ok(is_ok=False):
         s = "\n" + colored.stylize(s, color_error)
         print(s)
         sys.exit(-1)
+        
+def write_stats_txt_gate_style(stats, filepath):
+    output = stats.user_output.stats
+    counts = output.merged_data
+    with open(filepath, 'w') as f:
+        f.write(f'''
+# NumberOfRun    = {counts.run_count}
+# NumberOfEvents = {counts.event_count}
+# NumberOfTracks = {counts.track_count}
+# NumberOfSteps  = {counts.step_count}
+# NumberOfGeometricalSteps  = 
+# NumberOfPhysicalSteps     = 
+# ElapsedTime           = {counts.duration}
+# ElapsedTimeWoInit     = {counts.duration}
+# StartDate             = 
+# EndDate               = 
+# StartSimulationTime        = 0
+# StopSimulationTime         = 1
+# CurrentSimulationTime      = 8.99658e-06
+# VirtualStartSimulationTime = 0
+# VirtualStopSimulationTime  = 1
+# ElapsedSimulationTime      = 8.99658e-06
+# PPS (Primary per sec)      = {output.pps}
+# TPS (Track per sec)        = {output.tps}
+# SPS (Step per sec)         = {output.sps}
+                ''')
+                
+
 
 
 def read_stat_file(filename, encoder=None):

@@ -279,6 +279,8 @@ void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
 
+void init_GateWeightedEdepActor(py::module &);
+
 void init_GateActorManager(py::module &);
 
 void init_GateVFilter(py::module &);
@@ -298,6 +300,10 @@ void init_GateDoseActor(py::module &m);
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
+
+void init_GateRBEActor(py::module &m);
+
+void init_GateEmCalculatorActor(py::module &m);
 
 void init_GateARFActor(py::module &m);
 
@@ -534,6 +540,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateCheckDeex(m);
   init_GateInfo(m);
   init_GateVActor(m);
+  init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
   init_GateParticleFilter(m);
@@ -562,6 +569,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
+  init_GateRBEActor(m);
+  init_GateEmCalculatorActor(m);
   init_GateSimulationStatisticsActor(m);
   init_GatePhaseSpaceActor(m);
   // init_GateComptonSplittingActor(m);
