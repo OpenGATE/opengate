@@ -74,6 +74,24 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     return head, colli, crystal
 
 
+def add_spect_two_heads(sim, name="spect", collimator_type="lehr", debug=False):
+    cm = g4_units.cm
+    radius = 36 * cm
+    head1, colli1, crystal1 = add_spect_head(
+        sim, f"{name}_1", collimator_type, debug=debug
+    )
+    head1.translation = [0, radius, 0]
+    head1.rotation = Rotation.from_euler("X", 90, degrees=True).as_matrix()
+
+    head2, colli2, crystal2 = add_spect_head(
+        sim, f"{name}_2", collimator_type, debug=debug
+    )
+    head2.translation = [0, -radius, 0]
+    head2.rotation = Rotation.from_euler("X", -90, degrees=True).as_matrix()
+
+    return [head1, head2], [crystal1, crystal2]
+
+
 def distance_to_center_of_crystal(sim, name="spect"):
     lead_cover = sim.volume_manager.volumes[f"{name}_lead_cover"]
     crystal = sim.volume_manager.volumes[f"{name}_crystal"]
@@ -657,3 +675,23 @@ def add_detection_plane_for_arf(
     detector_plane.translation = ri.apply([0, 0, -radius])
 
     return detector_plane
+
+
+def rotate_gantry(
+    head, radius, initial_rotation, start_angle_deg, step_angle_deg, nb_angle
+):
+    # compute the nb translation and rotation
+    translations = []
+    rotations = []
+    current_angle_deg = start_angle_deg
+    for r in range(nb_angle):
+        t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
+        rot = Rotation.from_matrix(rot)
+        rot = rot * initial_rotation
+        rot = rot.as_matrix()
+        translations.append(t)
+        rotations.append(rot)
+        current_angle_deg += step_angle_deg
+
+    # set the motion for the SPECT head
+    head.add_dynamic_parametrisation(translation=translations, rotation=rotations)
