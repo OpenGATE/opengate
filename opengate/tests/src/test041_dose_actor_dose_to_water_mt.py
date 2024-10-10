@@ -155,7 +155,7 @@ if __name__ == "__main__":
         dose_actor_IDD_d2w.dose.get_output_path(),
         stats,
         tolerance=100,
-        ignore_value=0,
+        ignore_value_data2=0,
         axis="x",
     )
 

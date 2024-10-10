@@ -78,9 +78,9 @@ if __name__ == "__main__":
         paths.output_ref / "test015_iec_3.mhd",
         dose.edep.get_output_path(),
         stats,
-        axis="y",
         tolerance=80,
-        ignore_value=0,
+        ignore_value_data2=0,
+        axis="y",
         sum_tolerance=0.5,
         sad_profile_tolerance=2,
     )

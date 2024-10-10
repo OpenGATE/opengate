@@ -103,8 +103,8 @@ if __name__ == "__main__":
         paths.output_ref / "test023-edep.mhd",
         dose.edep.get_output_path(),
         stat,
-        sum_tolerance=3,
         tolerance=50,
+        sum_tolerance=3,
     )
 
     utility.test_ok(is_ok)

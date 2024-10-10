@@ -150,10 +150,6 @@ if __name__ == "__main__":
     # img_mhd_out = itk.imread(d_post_path)
     # img_mhd_ref = itk.imread(d_step_path)
 
-    ok = utility.assert_images(
-        d_step_path,
-        d_post_path,
-        tolerance=10,
-    )
+    ok = utility.assert_images(d_step_path, d_post_path, tolerance=10)
 
     utility.test_ok(ok)

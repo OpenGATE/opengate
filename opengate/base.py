@@ -586,7 +586,7 @@ class GateObject:
         """Dummy implementation for inherited classes which do not implement this method."""
         pass
 
-    def copy_user_info(self, other_obj):
+    def configure_like(self, other_obj):
         for k in self.user_info.keys():
             if k not in ["name", "_name"]:
                 try:
