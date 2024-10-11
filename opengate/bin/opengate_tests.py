@@ -12,6 +12,8 @@ import re
 from pathlib import Path
 import subprocess
 from multiprocessing import Pool
+import yaml
+from re import findall
 
 # from functools import partial
 from box import Box
@@ -63,6 +65,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     is_flag=True,
     help="Run only the tests that failed in the previous evaluation.",
 )
+@click.option(
+    "--g4_version",
+    "-v",
+    default="",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.2.1",
+)
 def go(
     start_id,
     end_id,
@@ -71,14 +79,20 @@ def go(
     processes_run,
     run_previously_failed_jobs,
     num_processes,
+    g4_version,
 ):
-    start = time.time()
-    if not check_g4_version("geant4-11-01-patch-02"):
-        print(False)
-        return 0
 
     path_tests_src = return_tests_path()  # returns the path to the tests/src dir
     test_dir_path = path_tests_src.parent
+    start = time.time()
+    print(f"{g4_version=}")
+    if not g4_version:
+        print("hi")
+        g4_version = get_required_g4_version(path_tests_src)
+    if not check_g4_version(g4_version):
+        print(False)
+        return 0
+
     path_output_dashboard = test_dir_path / "output_dashboard"
     fpath_dashboard_output = path_output_dashboard / (
         "dashboard_output_"
@@ -229,16 +243,42 @@ def get_files_to_run():
     return files_to_run, files_to_ignore
 
 
+def get_required_g4_version(tests_dir: Path, rel_fpath=".github/workflows/main.yml"):
+    fpath = tests_dir.parents[2] / rel_fpath
+    with open(fpath) as f:
+        githubworfklow = yaml.safe_load(f)
+    g4 = githubworfklow["jobs"]["build_wheel"]["env"]["GEANT4_VERSION"]
+    return g4
+
+
 def check_g4_version(g4_version: str):
     v = GateInfo.get_G4Version().replace("$Name: ", "")
     v = v.replace("$", "")
     print(f"Detected Geant4 version: {v}")
     print(f"Required Geant4 version: {g4_version}")
-    if g4_version in v:
+    g4_should = decompose_g4_versioning(g4_version)
+    g4_is = decompose_g4_versioning(v)
+    if g4_should == g4_is:
         print(colored.stylize(" OK", color_ok), end="\n")
         return True
     else:
+        print(f'{" ".join(map(str,g4_should))}')
+        print(f'{" ".join(map(str,g4_is))}')
         return False
+
+
+def decompose_g4_versioning(g4str):
+    g4str = g4str.lower().replace("-patch", "")
+    # Regular expression pattern to match integers separated by . - _ or p
+    pattern = r"\d+(?=[._\-p ])|\d+$"
+
+    # Find all matches
+    matches = re.findall(pattern, g4str)
+    g4_version = [int(k) for k in matches]
+    # removing 4 from "geant4"
+    if g4_version and g4_version[0] == int(4):
+        g4_version.pop(0)
+    return g4_version
 
 
 def select_files(files_to_run, test_id, end_id, random_tests):
