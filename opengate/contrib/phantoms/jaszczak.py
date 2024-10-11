@@ -67,14 +67,10 @@ def add_background_source(
     v = simulation.volume_manager.volumes[bg.mother]
     v_info = v.solid_info
     # (1 cm3 = 1 mL)
-    """
-    # no need to confine yet, nothing inside the cylinder -> should be done later
+    # the shape is a cylinder, we define a box one but confined in the cylinder
     bg.position.type = "box"
     bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
-    # this source is confined only within the mother volume, it does not include daughter volumes
-    # it is a tubs inside the box
     bg.position.confine = bg.mother
-    """
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_bqml * v_info.cubic_volume
