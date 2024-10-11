@@ -6,6 +6,22 @@ import opengate as gate
 import opengate.tests.utility as tu
 import matplotlib.pyplot as plt
 
+
+#########################################################################################
+# Constants
+#########################################################################################
+# Units
+m = gate.g4_units.m
+cm = gate.g4_units.cm
+mm = gate.g4_units.mm
+eV = gate.g4_units.eV
+MeV = gate.g4_units.MeV
+Bq = gate.g4_units.Bq
+
+
+#########################################################################################
+# Main : We use this to launch the test
+#########################################################################################
 if __name__ == "__main__":
     paths = tu.get_default_test_paths(__file__, output_folder="test079")
 
@@ -15,16 +31,7 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.visu = False
-    sim.visu_type = "vrml"
     # sim.random_seed = 1234
-
-    # units
-    m = gate.g4_units.m
-    cm = gate.g4_units.cm
-    mm = gate.g4_units.mm
-    eV = gate.g4_units.eV
-    MeV = gate.g4_units.MeV
-    Bq = gate.g4_units.Bq
 
     # add a material database
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
@@ -39,6 +46,9 @@ if __name__ == "__main__":
     ###################################
     # zxc start
 
+    #
+    # # Even when defined in add_material_nb_atoms, need to add to GateMaterial.db
+    #
     # elems = ["C", "H", "O"]
     # nbAtoms = [5, 8, 2]
     # gcm3 = gate.g4_units.g_cm3
@@ -50,6 +60,17 @@ if __name__ == "__main__":
     #         +el: name=Carbon ; n=5
     #         +el: name=Hydrogen ; n=8
     #         +el: name=Oxygen ; n=2
+
+    #
+    # # Material in GateMaterial.db but still need add_material_nb_atoms
+    #
+    # elems = ["H", "O"]
+    # faction = [14, 111]
+    # gcm3 = gate.g4_units.g_cm3
+    # sim.volume_manager.material_database.add_material_nb_atoms(
+    #     "Body", elems, faction, 1.00 * gcm3
+    # )
+    # wb.material = "Body"
 
     # zxc end
     ###################################
@@ -132,11 +153,6 @@ if __name__ == "__main__":
     # test
     gamma_pairs = read_gamma_pairs(phsp.output_filename)
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
-    median2 = np.median(acollinearity_angles)
-    print(
-        f"median angle: {median2} min={np.min(acollinearity_angles)}   max={np.max(acollinearity_angles)}"
-    )
-    print(f"mean = {np.mean(acollinearity_angles)}")
 
     curr_label = f"With mean energy per Ion par of {ionisation.GetMeanEnergyPerIonPair() / eV:.1f} eV"
     # Range of 0.0 to 1.0 is enforced since in some rare instances, acolinearity is
@@ -157,7 +173,10 @@ if __name__ == "__main__":
     # Negative value change nothing for the fit but it should be positive.
     scale = np.abs(scale)
     x_value = np.linspace(0.0, 1.0, 50)
+    # The norm of a isotropic 2D Gaussian centered at [0.0 0.0] is a Rayleigh
+    # distribution with a scale equal to the sigme of the 2D Gaussian.
     plt.plot(x_value, rayleigh(x_value, amplitude, scale), "g", linewidth=3)
+    print(f"scale = {np.mean(acollinearity_angles)}")
 
     textstr = f"FWHM = {2.355 * scale:.2f}°\n$\\sigma$ = {scale:.2f}°"
     props = dict(
@@ -167,12 +186,12 @@ if __name__ == "__main__":
 
     f = paths.output / "acollinearity_angles.png"
     plt.savefig(f)
-    print(f"Plot in {f}")
-    # plt.show()
+    print(f"Plot was saved in {f}")
 
     # final
     # No acolin
     is_ok_p1 = median1 < 0.01
     # Basic acolin
     is_ok_p2 = np.isclose(scale * 2.355, 0.5, atol=0.2)
+
     tu.test_ok(is_ok_p1 and is_ok_p2)
