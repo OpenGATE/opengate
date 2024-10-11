@@ -1472,6 +1472,7 @@ class Simulation(GateObject):
 
         # hook functions
         self.user_hook_after_init = None
+        self.user_hook_after_init_arg = None
         self.user_hook_after_run = None
         self.user_hook_log = None
 
