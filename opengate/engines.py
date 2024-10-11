@@ -1028,6 +1028,7 @@ class SimulationEngine(GateSingletonFatal):
 
         # user fct to call after initialization
         self.user_hook_after_init = simulation.user_hook_after_init
+        self.user_hook_after_init_arg = simulation.user_hook_after_init_arg
         self.user_hook_after_run = simulation.user_hook_after_run
         # a list to store short log messages
         # produced by hook function such as user_hook_after_init
@@ -1136,7 +1137,10 @@ class SimulationEngine(GateSingletonFatal):
         self.apply_all_g4_commands_after_init()
         if self.user_hook_after_init:
             log.info("Simulation: initialize user fct")
-            self.user_hook_after_init(self)
+            if self.user_hook_after_init_arg is not None:
+                self.user_hook_after_init(self, self.user_hook_after_init_arg)
+            else:
+                self.user_hook_after_init(self)
 
         # if init only, we stop
         if self.simulation.init_only:
