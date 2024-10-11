@@ -71,13 +71,7 @@ Once installed, we recommend to check the installation by printing GATE informat
     opengate_info
     opengate_tests
 
-**WARNING 1** The first time a simulation is executed, the Geant4 data must be downloaded and installed. This step is automated but can take some times according to your bandwidth. Note that this is only done once. Running `opengate_info` will print some details and the path of the data.
-
-**WARNING 2** With some linux systems (not all), you may encounter an error similar to "cannot allocate memory in static TLS block". In that case, you must add a specific path to the linker as follows:
-
-    export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
-
-The libraries (libG4processes and libG4geometry) are usually found in the Geant4 folder, something like ```~/build-geant4.11.0.2/BuildProducts/lib64```.
+**WARNING** The first time a simulation is executed, the Geant4 data must be downloaded and installed. This step is automated but can take some times according to your bandwidth. Note that this is only done once. Running `opengate_info` will print some details and the path of the data.
 
 ### Additional command lines tools
 

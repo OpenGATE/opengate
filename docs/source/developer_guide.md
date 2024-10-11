@@ -107,20 +107,6 @@ pip install -e . -v
 
 #### STEP 5 - Before running
 
-When you want to execute some simulations on some Linux architectures, you can encounter this kind of error:
-
-```bash
-<...>/libG4particles.so: cannot allocate memory in static TLS block
-```
-
-In such a case, in the same terminal and before to run a python script, export this line:
-
-```bash
-export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
-```
-
-Note that this is not the case on all Linux architectures, only some (we don't know why).
-
 Then, you can run the tests with:
 
 ```bash
