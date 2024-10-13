@@ -68,36 +68,44 @@ class MultiProcessingHandlerBase(GateObject):
     @dispatch_configuration.setter
     def dispatch_configuration(self, config):
         self._dispatch_configuration = config
-        self.update_process_to_run_index_map()
-        self.update_inverse_process_to_run_index_map()
+        self.update_process_to_run_index_maps()
 
-    @property
-    def original_run_timing_indices(self):
-        return [i for i in range(len(self.original_run_timing_intervals))]
+    def assert_dispatch_configuration(self):
+        if self.dispatch_configuration is None or len(self.dispatch_configuration) == 0:
+            fatal("No dispatch configuration is available. ")
 
     def initialize(self):
         self.generate_dispatch_configuration()
 
+    def get_original_run_timing_indices_for_process(self, process_index):
+        return self.dispatch_configuration[process_index]['lut_original_rti']
+
+    def get_run_timing_intervals_for_process(self, process_index):
+        return self.dispatch_configuration[process_index]['run_timing_intervals']
+
     def generate_dispatch_configuration(self):
         raise NotImplementedError
 
-    def update_process_to_run_index_map(self):
+    def update_process_to_run_index_maps(self):
         """Creates a mapping (process index, local run index) -> (original run index)
         """
-        if self.dispatch_configuration is None or len(self.dispatch_configuration) == 0:
-            fatal("Unable to update the mapping 'process to original run index' "
-                  "because no dispatch configuration is available. ")
+        self.assert_dispatch_configuration()
+
         p_r_map = {}
         for k, v in self.dispatch_configuration.items():
             for lri, ori in enumerate(v['lut_original_rti']):
                 p_r_map[(k, lri)] = ori
-        self.process_run_index_map = p_r_map
 
-    def update_inverse_process_to_run_index_map(self):
-        p_r_map_inv = dict([(i, []) for i in set(self.process_run_index_map.values())])
-        for k, v in self.process_run_index_map.items():
+        # and the inverse
+        p_r_map_inv = dict([(i, []) for i in set(p_r_map.values())])
+        for k, v in p_r_map.items():
             p_r_map_inv[v].append(k)
+
+        self.process_run_index_map = p_r_map
         self.inverse_process_to_run_index_map = p_r_map_inv
+
+    def dispatch_to_processes(self, dispatch_function, *args):
+        return [dispatch_function(i, *args) for i in range(len(self.dispatch_configuration))]
 
 
 class MultiProcessingHandlerEqualPerRunTimingInterval(MultiProcessingHandlerBase):
