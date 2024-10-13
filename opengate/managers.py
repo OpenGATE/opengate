@@ -1863,6 +1863,8 @@ class Simulation(GateObject):
         # self.user_hook_log = output.user_hook_log
         # self._current_random_seed = output.current_random_seed
 
+        for actor in self.actor_manager.actors.values():
+            actor.FinalizeSimulation()
 
         if self.store_json_archive is True:
             self.to_json_file()
