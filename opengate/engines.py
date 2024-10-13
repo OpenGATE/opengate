@@ -1138,7 +1138,7 @@ class SimulationEngine(GateSingletonFatal):
         # because everything else has already been executed in the main process
         # and potential warnings have already been registered.
         if self.new_process is True:
-            self.simulation.reset_warnings()
+            self.simulation.meta_data.reset_warnings()
 
         # initialization
         self.initialize()
