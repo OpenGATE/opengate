@@ -1734,42 +1734,13 @@ class Simulation(GateObject):
             output = se.run_engine()
         return output
 
-    def generate_run_timing_interval_map(self, number_of_processes):
-        if number_of_processes % len(self.run_timing_intervals) != 0:
-            fatal(
-                "number_of_sub_processes must be a multiple of the number of run_timing_intervals, \n"
-                f"but I received {number_of_processes}, while there are {len(self.run_timing_intervals)}."
-            )
-
-        number_of_processes_per_run = int(
-            number_of_processes / len(self.run_timing_intervals)
-        )
-        run_timing_interval_map = {}
-        process_index = 0
-        for i, rti in enumerate(self.run_timing_intervals):
-            t_start, t_end = rti
-            duration_original = t_end - t_start
-            duration_in_process = duration_original / number_of_processes_per_run
-            t_intermediate = [
-                t_start + (j + 1) * duration_in_process
-                for j in range(number_of_processes_per_run - 1)
-            ]
-            t_all = [t_start] + t_intermediate + [t_end]
-            for t_s, t_e in zip(t_all[:-1], t_all[1:]):
-                run_timing_interval_map[process_index] = {
-                    "run_timing_intervals": [[t_s, t_e]],
-                    "lut_original_rti": [i],
-                }
-                process_index += 1
-        return run_timing_interval_map
-
     def run_in_process(self, process_index, run_timing_intervals, lut_original_rti):
         # Important: this method is intended to run in a processes spawned off the main process.
         # Therefore, self is actually a separate instance from the original simulation
         # and we can safely adapt it in this process.
 
         # adapt the output_dir
-        self.output_dir = str(Path(self.output_dir) / f"process_{process_index}")
+        self.output_dir = str(Path(self.output_dir) / f'process_{process_index}')
         print("self.output_dir = ", self.output_dir)
 
         # adapt the run timing intervals in
@@ -1778,13 +1749,11 @@ class Simulation(GateObject):
         for vol in self.volume_manager.dynamic_volumes:
             vol.reassign_subset_of_dynamic_params(lut_original_rti)
             print(process_index)
-            print(f"Volume {vol.name}:")
+            print(f'Volume {vol.name}:')
             print(vol.user_info["dynamic_params"])
 
         output = self._run_simulation_engine(False, process_index=process_index)
-        print(
-            process_index, os.getpid(), id(self), run_timing_intervals, lut_original_rti
-        )
+        print(process_index, os.getpid(), id(self), run_timing_intervals, lut_original_rti)
         return output
 
     def run(self, start_new_process=False, number_of_sub_processes=0):
@@ -1825,9 +1794,7 @@ class Simulation(GateObject):
                     source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
 
         elif number_of_sub_processes > 1:
-            run_timing_interval_map = self.generate_run_timing_interval_map(
-                number_of_sub_processes
-            )
+            run_timing_interval_map = self.generate_run_timing_interval_map(number_of_sub_processes)
             try:
                 multiprocessing.set_start_method("spawn")
             except RuntimeError:
@@ -1836,21 +1803,13 @@ class Simulation(GateObject):
             # q = multiprocessing.Queue()
             with multiprocessing.Pool(len(run_timing_interval_map)) as pool:
                 print("pool._outqueue: ", pool._outqueue)  # DEMO
-                results = [
-                    pool.apply_async(
-                        self.run_in_process,
-                        (
-                            k,
-                            v["run_timing_intervals"],
-                            v["lut_original_rti"],
-                        ),
-                    )
-                    for k, v in run_timing_interval_map.items()
-                ]
+                results = [pool.apply_async(self.run_in_process,
+                                            (k, v['run_timing_intervals'], v['lut_original_rti'],))
+                           for k, v in run_timing_interval_map.items()]
                 # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
                 print(results[0])  # DEMO
                 list_of_output = [res.get() for res in results]
-                print(f"list_of_output: {list_of_output}")
+                print(f'list_of_output: {list_of_output}')
             return list_of_output
             # processes = []
             # for k, v in run_timing_interval_map.items():
