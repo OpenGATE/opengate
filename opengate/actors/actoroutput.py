@@ -423,13 +423,22 @@ class MergeableActorOutput(ActorOutputBase):
         run_indices_to_import = set()
         for ao in actor_output:
             run_indices_to_import.union(ao.data_per_run.keys())
-        which_output_per_run_index = dict([(r, [ao for ao in actor_output if r in ao.data_per_run]) for r in run_indices_to_import])
+        which_output_per_run_index = dict(
+            [
+                (r, [ao for ao in actor_output if r in ao.data_per_run])
+                for r in run_indices_to_import
+            ]
+        )
         for r in run_indices_to_import:
-            data_to_import = [ao.data_per_run[r] for ao in which_output_per_run_index[r]]
+            data_to_import = [
+                ao.data_per_run[r] for ao in which_output_per_run_index[r]
+            ]
             if discard_existing_data is False and r in self.data_per_run:
                 data_to_import.append(self.data_per_run[r])
             self.data_per_run[r] = merge_data(data_to_import)
-        merged_data_to_import = [ao.merged_data for ao in actor_output if ao.merged_data is not None]
+        merged_data_to_import = [
+            ao.merged_data for ao in actor_output if ao.merged_data is not None
+        ]
         if discard_existing_data is False and self.merged_data is not None:
             merged_data_to_import.append(self.merged_data)
         if len(merged_data_to_import) > 0:
