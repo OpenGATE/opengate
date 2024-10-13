@@ -1471,12 +1471,12 @@ class Simulation(GateObject):
         kwargs.pop("simulation", None)
         super().__init__(name=name, **kwargs)
 
-        # list to store warning messages issued somewhere in the simulation
-        self._user_warnings = []
-
         # for debug only
         self.verbose_getstate = False
         self.verbose_close = False
+
+        self.meta_data = SimulationMetaData()
+        self.meta_data_per_process = {}
 
         # main managers
         self.volume_manager = VolumeManager(self)
@@ -1488,13 +1488,12 @@ class Simulation(GateObject):
         # hook functions
         self.user_hook_after_init = None
         self.user_hook_after_run = None
-        self.user_hook_log = None
 
-        # read-only info
-        self._current_random_seed = None
-
-        self.expected_number_of_events = None
-        self.mapping_run_timing_intervals = {}
+    def __getattr__(self, item):
+        try:
+            return self.meta_data[item]
+        except KeyError:
+            raise AttributeError(f"Item {item} not found in {type(self)}, nor in the simulation meta data. ")
 
     def __str__(self):
         s = (
@@ -1522,21 +1521,10 @@ class Simulation(GateObject):
     def world(self):
         return self.volume_manager.world_volume
 
-    @property
-    def current_random_seed(self):
-        return self._current_random_seed
-
-    @property
-    def warnings(self):
-        return self._user_warnings
-
-    def reset_warnings(self):
-        self._user_warnings = []
-
     def warn_user(self, message):
         # We need this specific implementation because the Simulation does not hold a reference 'simulation',
         # as required by the base class implementation of warn_user()
-        self._user_warnings.append(message)
+        self.warnings.append(message)
         super().warn_user(message)
 
     def to_dictionary(self):
