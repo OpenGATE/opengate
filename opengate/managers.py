@@ -1777,6 +1777,9 @@ class Simulation(GateObject):
         if number_of_sub_processes == 1:
             start_new_process = True
 
+        self.meta_data.number_of_sub_processes = number_of_sub_processes
+        self.meta_data.start_new_process = start_new_process
+
         # prepare sub process
         if start_new_process is True:
             """Important: put:
