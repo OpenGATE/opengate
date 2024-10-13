@@ -1727,7 +1727,7 @@ class Simulation(GateObject):
               multi_process_handler.get_original_run_timing_indices_for_process(process_index))
         return output
 
-    def run(self, start_new_process=False, number_of_sub_processes=0):
+    def run(self, start_new_process=False, number_of_sub_processes=0, avoid_write_to_disk_in_subprocess=True):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
@@ -1778,8 +1778,7 @@ class Simulation(GateObject):
             with multiprocessing.Pool(len(run_timing_interval_map)) as pool:
                 print("pool._outqueue: ", pool._outqueue)  # DEMO
                 results = [pool.apply_async(self.run_in_process,
-                                            (k, v['run_timing_intervals'], v['lut_original_rti'],))
-                           for k, v in run_timing_interval_map.items()]
+                                            (multi_proc_handler, i, avoid_write_to_disk_in_subprocess)) for i in range(number_of_sub_processes)]
                 # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
                 print(results[0])  # DEMO
                 list_of_output = [res.get() for res in results]
