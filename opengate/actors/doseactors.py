@@ -405,20 +405,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             },
         ),
-        # "calculate_density_from": (
-        #     "auto",
-        #     {
-        #         "doc": "How should density be calculated?\n"
-        #                "'simulation': via scoring along with the rest of the quantities.\n"
-        #                "'image': from the CT image, if the actor is attached to an ImageVolume.\n"
-        #                "'auto' (default): Let GATE pick the right one for you. ",
-        #         "allowed_values": (
-        #             "auto",
-        #             "simulation",
-        #             "image"
-        #         ),
-        #     },
-        # ),
         "ste_of_mean": (
             False,
             {
