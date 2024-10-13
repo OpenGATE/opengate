@@ -1806,6 +1806,8 @@ class Simulation(GateObject):
                     source.fTotalSkippedEvents = s.user_info.fTotalSkippedEvents
                     source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
 
+            self.meta_data.import_from_simulation_output(output)
+
         elif number_of_sub_processes > 1:
             multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(name='multi_proc_handler',
                                                             simulation=self,
@@ -1829,6 +1831,10 @@ class Simulation(GateObject):
 
             for actor in self.actor_manager.actors.values():
                 actor.import_user_output_from_actor(*[o.get_actor(actor.name) for o in list_of_output])
+
+            self.meta_data.import_from_simulation_output(*list_of_output)
+            for i, o in enumerate(list_of_output):
+                self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
             # processes = []
             # for k, v in run_timing_interval_map.items():
             #     p = multiprocessing.Process(
@@ -1849,6 +1855,7 @@ class Simulation(GateObject):
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             output = self._run_simulation_engine(False)
+            self.meta_data.import_from_simulation_output(output)
 
         self._user_warnings.extend(output.warnings)
 
