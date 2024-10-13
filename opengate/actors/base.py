@@ -469,5 +469,5 @@ class ActorBase(GateObject):
         """Default virtual method for inheritance"""
         pass
 
-    def FinalizeSimulation(self):
+    def EndOfMultiProcessAction(self):
         pass

@@ -1821,6 +1821,9 @@ class Simulation(GateObject):
                     *[o.get_actor(actor.name) for o in list_of_output]
                 )
 
+            for actor in self.actor_manager.actors.values():
+                actor.EndOfMultiProcessAction()
+
             self.meta_data.import_from_simulation_output(*list_of_output)
             for i, o in enumerate(list_of_output):
                 self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
@@ -1844,9 +1847,6 @@ class Simulation(GateObject):
             # because everything is already in place.
             output = self._run_simulation_engine(False)
             self.meta_data.import_from_simulation_output(output)
-
-        for actor in self.actor_manager.actors.values():
-            actor.FinalizeSimulation()
 
         if self.store_json_archive is True:
             self.to_json_file()
