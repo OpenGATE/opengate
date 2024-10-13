@@ -1851,6 +1851,21 @@ class Simulation(GateObject):
             # except queue.Empty:
             #     fatal("The queue is empty. The spawned process probably died.")
             # return output
+
+            # FIXME: temporary workaround to collect extra info from output
+            # will be implemented similar to actor.import_user_output_from_actor after source refactoring
+            for source in self.source_manager.user_info_sources.values():
+                for o in list_of_output:
+                    try:
+                        s = o.get_source(source.name)
+                    except:
+                        continue
+                    if "fTotalSkippedEvents" in s.user_info.__dict__:
+                        if not hasattr(source, "fTotalSkippedEvents"):
+                            source.fTotalSkippedEvents = 0
+                            source.fTotalZeroEvents = 0
+                        source.fTotalSkippedEvents += s.user_info.fTotalSkippedEvents
+                        source.fTotalZeroEvents += s.user_info.fTotalZeroEvents
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
