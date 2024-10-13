@@ -123,6 +123,29 @@ if __name__ == "__main__":
         tolerance=13,
         sum_tolerance=1,
     )
+    # start simulation
+    sim.run(number_of_sub_processes=4 )
+
+    # # print results at the end
+    # print(stat)
+    # print(dose)
+    #
+    # # tests
+    # stats_ref = utility.read_stat_file(ref_path / "stat.txt")
+    # is_ok = utility.assert_stats(stat, stats_ref, 0.11)
+    #
+    # print("\nDifference for EDEP")
+    # is_ok = (
+    #     utility.assert_images(
+    #         ref_path / "output-Edep.mhd",
+    #         dose.edep.get_output_path(),
+    #         stat,
+    #         tolerance=13,
+    #         ignore_value=0,
+    #         sum_tolerance=1,
+    #     )
+    #     and is_ok
+    # )
     #
     # print("\nDifference for uncertainty")
     # is_ok = (
