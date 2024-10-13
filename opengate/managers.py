@@ -1896,7 +1896,6 @@ class Simulation(GateObject):
             # because everything is already in place.
             output = self._run_simulation_engine(False)
             self.meta_data.extract_from_simulation_output(output)
-
         if self.store_json_archive is True:
             self.to_json_file()
 
