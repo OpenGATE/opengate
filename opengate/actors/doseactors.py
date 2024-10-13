@@ -254,7 +254,7 @@ class VoxelDepositActor(ActorBase):
     def EndSimulationAction(self):
         self.inform_user_output_about_end()
 
-    def FinalizeSimulation(self):
+    def EndOfMultiProcessAction(self):
         self.inform_user_output_about_end()
 
 
