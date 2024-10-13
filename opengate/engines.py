@@ -910,6 +910,7 @@ class SimulationOutput:
         self.sources_by_thread = {}
         self.pid = os.getpid()
         self.ppid = os.getppid()
+        self.simulation_id = None
         self.current_random_seed = None
         self.user_hook_log = []
         self.warnings = None
