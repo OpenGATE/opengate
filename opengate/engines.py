@@ -927,6 +927,15 @@ class SimulationOutput:
         self.user_hook_log = []
         self.warnings = None
 
+    def store_output_from_simulation_engine(self, simulation_engine):
+        self.store_actors(simulation_engine)
+        self.store_sources(simulation_engine)
+        self.store_hook_log(simulation_engine)
+        self.current_random_seed = simulation_engine.current_random_seed
+        self.expected_number_of_events = simulation_engine.source_engine.expected_number_of_events
+        self.warnings = simulation_engine.simulation.warnings
+        self.simulation_id = id(simulation_engine.simulation)
+
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.simulation.actor_manager.actors
         for actor in self.actors.values():
@@ -1177,12 +1186,14 @@ class SimulationEngine(GateSingletonFatal):
             self.user_hook_after_run(self)
 
         # prepare the output
-        output.store_actors(self)
-        output.store_sources(self)
-        output.store_hook_log(self)
-        output.current_random_seed = self.current_random_seed
-        output.expected_number_of_events = self.source_engine.expected_number_of_events
-        output.warnings = self.simulation.warnings
+        output.store_output_from_simulation_engine(self)
+        # output.store_actors(self)
+        # output.store_sources(self)
+        # output.store_hook_log(self)
+        # output.current_random_seed = self.current_random_seed
+        # output.expected_number_of_events = self.source_engine.expected_number_of_events
+        # output.warnings = self.simulation.warnings
+        # output.simulation_id = id(self.simulation)
 
         return output
 
