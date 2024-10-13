@@ -1165,36 +1165,18 @@ class SimulationEngine(GateSingletonFatal):
             else:
                 self.user_hook_after_init(self)
 
-        # if init only, we stop
-        if self.simulation.init_only:
-            output.store_actors(self)
-            output.store_sources(self)
-            output.store_hook_log(self)
-            output.current_random_seed = self.current_random_seed
-            output.expected_number_of_events = (
-                self.source_engine.expected_number_of_events
-            )
-            return output
-
-        # go
-        self.start_and_stop()
-
-        # start visualization if vrml or gdml
-        self.visu_engine.start_visualisation()
-        if self.user_hook_after_run:
-            log.info("Simulation: User hook after run")
-            self.user_hook_after_run(self)
+        # if init only, we skip the actual run
+        if not self.simulation.init_only:
+            # go
+            self.start_and_stop()
+            # start visualization if vrml or gdml
+            self.visu_engine.start_visualisation()
+            if self.user_hook_after_run:
+                log.info("Simulation: User hook after run")
+                self.user_hook_after_run(self)
 
         # prepare the output
         output.store_output_from_simulation_engine(self)
-        # output.store_actors(self)
-        # output.store_sources(self)
-        # output.store_hook_log(self)
-        # output.current_random_seed = self.current_random_seed
-        # output.expected_number_of_events = self.source_engine.expected_number_of_events
-        # output.warnings = self.simulation.warnings
-        # output.simulation_id = id(self.simulation)
-
         return output
 
     def start_and_stop(self):
