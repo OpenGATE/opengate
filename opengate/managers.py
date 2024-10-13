@@ -1827,7 +1827,6 @@ class Simulation(GateObject):
                 print(results[0])  # DEMO
                 list_of_output = [res.get() for res in results]
                 print(f'list_of_output: {list_of_output}')
-            return list_of_output
 
             for actor in self.actor_manager.actors.values():
                 actor.import_user_output_from_actor(*[o.get_actor(actor.name) for o in list_of_output])
@@ -1835,22 +1834,6 @@ class Simulation(GateObject):
             self.meta_data.import_from_simulation_output(*list_of_output)
             for i, o in enumerate(list_of_output):
                 self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
-            # processes = []
-            # for k, v in run_timing_interval_map.items():
-            #     p = multiprocessing.Process(
-            #         target=target_func,
-            #         args=(q, self.run_in_process, k, v['run_timing_intervals'], v['lut_original_rti'])
-            #     )
-            #     p.start()
-            #     processes.append(p)
-            # for p in processes:
-            #     p.join()  # (timeout=10)  # timeout might be needed
-            #
-            # try:
-            #     output = q.get(block=False)
-            # except queue.Empty:
-            #     fatal("The queue is empty. The spawned process probably died.")
-            # return output
 
             # FIXME: temporary workaround to collect extra info from output
             # will be implemented similar to actor.import_user_output_from_actor after source refactoring
@@ -1872,14 +1855,14 @@ class Simulation(GateObject):
             output = self._run_simulation_engine(False)
             self.meta_data.import_from_simulation_output(output)
 
-        self._user_warnings.extend(output.warnings)
+        # self._user_warnings.extend(output.warnings)
 
-        # FIXME workaround
-        self.expected_number_of_events = output.expected_number_of_events
+        # # FIXME workaround
+        # self.expected_number_of_events = output.expected_number_of_events
 
-        # store the hook log
-        self.user_hook_log = output.user_hook_log
-        self._current_random_seed = output.current_random_seed
+        # self.user_hook_log = output.user_hook_log
+        # self._current_random_seed = output.current_random_seed
+
 
         if self.store_json_archive is True:
             self.to_json_file()
