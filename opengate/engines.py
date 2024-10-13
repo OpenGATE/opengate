@@ -920,7 +920,9 @@ class SimulationOutput:
         self.store_sources(simulation_engine)
         self.store_hook_log(simulation_engine)
         self.current_random_seed = simulation_engine.current_random_seed
-        self.expected_number_of_events = simulation_engine.source_engine.expected_number_of_events
+        self.expected_number_of_events = (
+            simulation_engine.source_engine.expected_number_of_events
+        )
         self.warnings = simulation_engine.simulation.warnings
         self.simulation_id = id(simulation_engine.simulation)
 

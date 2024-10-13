@@ -87,7 +87,7 @@ if __name__ == "__main__":
     stat.track_types_flag = True
 
     # start simulation
-    sim.run(number_of_sub_processes=4 )
+    sim.run(number_of_sub_processes=4)
 
     # # print results at the end
     # print(stat)

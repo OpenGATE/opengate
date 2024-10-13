@@ -47,7 +47,10 @@ from .physics import (
 )
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
-from .processing import dispatch_to_subprocess, MultiProcessingHandlerEqualPerRunTimingInterval
+from .processing import (
+    dispatch_to_subprocess,
+    MultiProcessingHandlerEqualPerRunTimingInterval,
+)
 
 from .geometry.volumes import (
     VolumeBase,
@@ -1493,7 +1496,9 @@ class Simulation(GateObject):
         try:
             return self.meta_data[item]
         except KeyError:
-            raise AttributeError(f"Item {item} not found in {type(self)}, nor in the simulation meta data. ")
+            raise AttributeError(
+                f"Item {item} not found in {type(self)}, nor in the simulation meta data. "
+            )
 
     def __str__(self):
         s = (
@@ -1695,24 +1700,30 @@ class Simulation(GateObject):
             output = se.run_engine()
         return output
 
-    def run_in_process(self, multi_process_handler, process_index, avoid_write_to_disk_in_subprocess):
+    def run_in_process(
+        self, multi_process_handler, process_index, avoid_write_to_disk_in_subprocess
+    ):
         # Important: this method is intended to run in a processes spawned off the main process.
         # Therefore, self is actually a separate instance from the original simulation
         # and we can safely adapt it in this process.
 
         # adapt the output_dir
-        self.output_dir = str(Path(self.output_dir) / f'process_{process_index}')
+        self.output_dir = str(Path(self.output_dir) / f"process_{process_index}")
         print("self.output_dir = ", self.output_dir)
 
         # adapt the run timing intervals in
-        self.run_timing_intervals = multi_process_handler.get_run_timing_intervals_for_process(process_index)
+        self.run_timing_intervals = (
+            multi_process_handler.get_run_timing_intervals_for_process(process_index)
+        )
         # adapt all dynamic volumes
         for vol in self.volume_manager.dynamic_volumes:
             vol.reassign_dynamic_params_for_process(
-                multi_process_handler.get_original_run_timing_indices_for_process(process_index)
+                multi_process_handler.get_original_run_timing_indices_for_process(
+                    process_index
+                )
             )
             print(process_index)
-            print(f'Volume {vol.name}:')
+            print(f"Volume {vol.name}:")
             print(vol.user_info["dynamic_params"])
 
         if avoid_write_to_disk_in_subprocess is True:
@@ -1720,14 +1731,23 @@ class Simulation(GateObject):
                 actor.write_to_disk = False
 
         output = self._run_simulation_engine(True, process_index=process_index)
-        print(process_index,
-              os.getpid(),
-              id(self),
-              multi_process_handler.get_run_timing_intervals_for_process(process_index),
-              multi_process_handler.get_original_run_timing_indices_for_process(process_index))
+        print(
+            process_index,
+            os.getpid(),
+            id(self),
+            multi_process_handler.get_run_timing_intervals_for_process(process_index),
+            multi_process_handler.get_original_run_timing_indices_for_process(
+                process_index
+            ),
+        )
         return output
 
-    def run(self, start_new_process=False, number_of_sub_processes=0, avoid_write_to_disk_in_subprocess=True):
+    def run(
+        self,
+        start_new_process=False,
+        number_of_sub_processes=0,
+        avoid_write_to_disk_in_subprocess=True,
+    ):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
@@ -1770,9 +1790,11 @@ class Simulation(GateObject):
             self.meta_data.import_from_simulation_output(output)
 
         elif number_of_sub_processes > 1:
-            multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(name='multi_proc_handler',
-                                                            simulation=self,
-                                                            number_of_processes=number_of_sub_processes)
+            multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(
+                name="multi_proc_handler",
+                simulation=self,
+                number_of_processes=number_of_sub_processes,
+            )
             multi_proc_handler.initialize()
             try:
                 multiprocessing.set_start_method("spawn")
@@ -1782,15 +1804,22 @@ class Simulation(GateObject):
             # q = multiprocessing.Queue()
             with multiprocessing.Pool(number_of_sub_processes) as pool:
                 print("pool._outqueue: ", pool._outqueue)  # DEMO
-                results = [pool.apply_async(self.run_in_process,
-                                            (multi_proc_handler, i, avoid_write_to_disk_in_subprocess)) for i in range(number_of_sub_processes)]
+                results = [
+                    pool.apply_async(
+                        self.run_in_process,
+                        (multi_proc_handler, i, avoid_write_to_disk_in_subprocess),
+                    )
+                    for i in range(number_of_sub_processes)
+                ]
                 # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
                 print(results[0])  # DEMO
                 list_of_output = [res.get() for res in results]
-                print(f'list_of_output: {list_of_output}')
+                print(f"list_of_output: {list_of_output}")
 
             for actor in self.actor_manager.actors.values():
-                actor.import_user_output_from_actor(*[o.get_actor(actor.name) for o in list_of_output])
+                actor.import_user_output_from_actor(
+                    *[o.get_actor(actor.name) for o in list_of_output]
+                )
 
             self.meta_data.import_from_simulation_output(*list_of_output)
             for i, o in enumerate(list_of_output):

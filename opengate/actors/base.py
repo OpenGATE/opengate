@@ -431,10 +431,14 @@ class ActorBase(GateObject):
         else:
             for k in self.user_output:
                 try:
-                    self.user_output[k].import_data_from_actor_output(*[a.user_output[k] for a in actor])
+                    self.user_output[k].import_data_from_actor_output(
+                        *[a.user_output[k] for a in actor]
+                    )
                 except NotImplementedError:
-                    self.warn_user(f"User output {k} in {self.type_name} cannot be imported "
-                                   f"because the function is not yet implemented for this type of output.")
+                    self.warn_user(
+                        f"User output {k} in {self.type_name} cannot be imported "
+                        f"because the function is not yet implemented for this type of output."
+                    )
 
     def store_output_data(self, output_name, run_index, *data):
         self._assert_output_exists(output_name)
