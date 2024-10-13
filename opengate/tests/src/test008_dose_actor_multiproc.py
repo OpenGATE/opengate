@@ -124,7 +124,7 @@ if __name__ == "__main__":
         sum_tolerance=1,
     )
     # start simulation
-    sim.run(number_of_sub_processes=4 )
+    sim.run(number_of_sub_processes=4)
 
     # # print results at the end
     # print(stat)

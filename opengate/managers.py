@@ -1838,7 +1838,6 @@ class Simulation(GateObject):
                 simulation=self,
                 number_of_processes=
                 number_of_sub_processes
-            ,
             )
             multi_proc_handler.initialize()
             try:

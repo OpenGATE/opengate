@@ -6,11 +6,8 @@ from opengate.tests.utility import get_default_test_paths
 from opengate.processing import MultiProcessingHandlerEqualPerRunTimingInterval
 
 
-
 if __name__ == "__main__":
-    paths = get_default_test_paths(
-        __file__, output_folder="test080"
-    )
+    paths = get_default_test_paths(__file__, output_folder="test080")
 
     s = g4_units.s
 

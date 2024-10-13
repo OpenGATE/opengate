@@ -4,6 +4,7 @@ import queue
 from .exception import fatal
 from .base import GateObject
 
+
 # define thin wrapper function to handle the queue
 def target_func(q, f, *args, **kwargs):
     q.put(f(*args, **kwargs))
