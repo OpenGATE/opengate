@@ -1807,14 +1807,17 @@ class Simulation(GateObject):
                     source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
 
         elif number_of_sub_processes > 1:
-            run_timing_interval_map = self.generate_run_timing_interval_map(number_of_sub_processes)
+            multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(name='multi_proc_handler',
+                                                            simulation=self,
+                                                            number_of_processes=number_of_sub_processes)
+            multi_proc_handler.initialize()
             try:
                 multiprocessing.set_start_method("spawn")
             except RuntimeError:
                 print("Could not set start method 'spawn'.")
                 pass
             # q = multiprocessing.Queue()
-            with multiprocessing.Pool(len(run_timing_interval_map)) as pool:
+            with multiprocessing.Pool(number_of_sub_processes) as pool:
                 print("pool._outqueue: ", pool._outqueue)  # DEMO
                 results = [pool.apply_async(self.run_in_process,
                                             (multi_proc_handler, i, avoid_write_to_disk_in_subprocess)) for i in range(number_of_sub_processes)]
