@@ -1744,16 +1744,26 @@ class Simulation(GateObject):
         print("self.output_dir = ", self.output_dir)
 
         # adapt the run timing intervals in
-        self.run_timing_intervals = run_timing_intervals
+        self.run_timing_intervals = multi_process_handler.get_run_timing_intervals_for_process(process_index)
         # adapt all dynamic volumes
         for vol in self.volume_manager.dynamic_volumes:
-            vol.reassign_subset_of_dynamic_params(lut_original_rti)
+            vol.reassign_dynamic_params_for_process(
+                multi_process_handler.get_original_run_timing_indices_for_process(process_index)
+            )
             print(process_index)
             print(f'Volume {vol.name}:')
             print(vol.user_info["dynamic_params"])
 
-        output = self._run_simulation_engine(False, process_index=process_index)
-        print(process_index, os.getpid(), id(self), run_timing_intervals, lut_original_rti)
+        if avoid_write_to_disk_in_subprocess is True:
+            for actor in self.actor_manager.actors.values():
+                actor.write_to_disk = False
+
+        output = self._run_simulation_engine(True, process_index=process_index)
+        print(process_index,
+              os.getpid(),
+              id(self),
+              multi_process_handler.get_run_timing_intervals_for_process(process_index),
+              multi_process_handler.get_original_run_timing_indices_for_process(process_index))
         return output
 
     def run(self, start_new_process=False, number_of_sub_processes=0):
