@@ -750,13 +750,13 @@ class DynamicGateObject(GateObject):
             s += f"{k}: {v}\n"
         log.debug(s)
 
-    def reassign_subset_of_dynamic_params(self, subset):
+    def reassign_dynamic_params_for_process(self, run_indices):
         # loop over all dynamic parametrisations of this object,
         for param in self.user_info["dynamic_params"].values():
             for k, v in param.items():
                 # extract the subset of entries to the list that are relevant to this process
                 if k in self.dynamic_user_info:
-                    param[k] = [v[i] for i in subset]
+                    param[k] = [v[i] for i in run_indices]
 
     def create_changers(self):
         # this base class implementation is here to keep inheritance intact.
