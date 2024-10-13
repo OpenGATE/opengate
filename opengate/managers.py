@@ -1826,6 +1826,9 @@ class Simulation(GateObject):
                 list_of_output = [res.get() for res in results]
                 print(f'list_of_output: {list_of_output}')
             return list_of_output
+
+            for actor in self.actor_manager.actors.values():
+                actor.import_user_output_from_actor(*[o.get_actor(actor.name) for o in list_of_output])
             # processes = []
             # for k, v in run_timing_interval_map.items():
             #     p = multiprocessing.Process(
