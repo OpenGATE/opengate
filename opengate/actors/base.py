@@ -464,3 +464,6 @@ class ActorBase(GateObject):
     def EndSimulationAction(self):
         """Default virtual method for inheritance"""
         pass
+
+    def FinalizeSimulation(self):
+        pass
