@@ -47,7 +47,7 @@ from .physics import (
 )
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
-from .processing import dispatch_to_subprocess
+from .processing import dispatch_to_subprocess, MultiProcessingHandlerEqualPerRunTimingInterval
 
 from .geometry.volumes import (
     VolumeBase,
@@ -1734,7 +1734,7 @@ class Simulation(GateObject):
             output = se.run_engine()
         return output
 
-    def run_in_process(self, process_index, run_timing_intervals, lut_original_rti):
+    def run_in_process(self, multi_process_handler, process_index, avoid_write_to_disk_in_subprocess):
         # Important: this method is intended to run in a processes spawned off the main process.
         # Therefore, self is actually a separate instance from the original simulation
         # and we can safely adapt it in this process.
