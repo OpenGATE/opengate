@@ -1816,14 +1816,6 @@ class Simulation(GateObject):
             output = self._run_simulation_engine(False)
             self.meta_data.import_from_simulation_output(output)
 
-        # self._user_warnings.extend(output.warnings)
-
-        # # FIXME workaround
-        # self.expected_number_of_events = output.expected_number_of_events
-
-        # self.user_hook_log = output.user_hook_log
-        # self._current_random_seed = output.current_random_seed
-
         for actor in self.actor_manager.actors.values():
             actor.FinalizeSimulation()
 
