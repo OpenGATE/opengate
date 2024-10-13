@@ -642,7 +642,7 @@ class GateObject:
             self._temporary_warning_cache.append(message)
         # if possible, register the warning directly
         else:
-            self.simulation._user_warnings.append(message)
+            self.simulation.warnings.append(message)
         warning(message)
 
 
