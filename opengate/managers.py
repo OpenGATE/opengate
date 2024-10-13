@@ -1193,6 +1193,39 @@ class VolumeManager(GateObject):
         print(self.dump_material_database_names())
 
 
+class SimulationMetaData(Box):
+
+    def __init__(self, *args, simulation_output=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.warnings = []
+        self.expected_number_of_events = 0  # FIXME workaround
+        self.user_hook_log = []
+        self.current_random_seed = None
+        self.number_of_sub_processes = None
+        self.start_new_process = None
+        if simulation_output is not None:
+            self.import_from_simulation_output(simulation_output)
+
+    def reset_warnings(self):
+        self.warnings = []
+
+    def import_from_simulation_meta_data(self, *meta_data):
+        for m in meta_data:
+            self.warnings.extend(m.warnings)
+            self.expected_number_of_events += m.expected_number_of_events
+            self.user_hook_log.extend(m.user_hook_log)
+            if self.current_random_seed is None:
+                self.current_random_seed = m.current_random_seed
+
+    def import_from_simulation_output(self, *sim_output):
+        for so in sim_output:
+            self.warnings.extend(so.warnings)
+            self.expected_number_of_events += so.expected_number_of_events
+            self.user_hook_log.extend(so.user_hook_log)
+            if self.current_random_seed is None:
+                self.current_random_seed = so.current_random_seed
+
+
 def setter_hook_verbose_level(self, verbose_level):
     try:
         level = int(verbose_level)
