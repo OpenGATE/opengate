@@ -13,6 +13,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     sim.run_timing_intervals = [[0 * s, 1 * s], [1 * s, 3 * s], [10 * s, 15 * s]]
     sim.output_dir = paths.output
+    sim.store_json_archive = True
 
     box1 = sim.add_volume("BoxVolume", "box1")
     box1.add_dynamic_parametrisation(
@@ -20,8 +21,6 @@ if __name__ == "__main__":
     )
 
     n_proc = 4 * len(sim.run_timing_intervals)
-    run_timing_interval_map = sim.generate_run_timing_interval_map(n_proc)
-    print(run_timing_interval_map)
 
     output = sim.run(number_of_sub_processes=n_proc)
 
@@ -31,5 +30,5 @@ if __name__ == "__main__":
 
     print(f"ID of the main sim: {id(sim)}")
 
-    ids = [e[2] for e in output]
+    ids = [o.simulation_id for o in output]
     assert id(sim) not in ids
