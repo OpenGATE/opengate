@@ -356,6 +356,7 @@ def divide_itk_images(
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
 
+
 # IMPLEMENTATION BASED ON ITK
 # def sum_itk_images(images):
 #     image_type = type(images[0])

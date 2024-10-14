@@ -1811,7 +1811,9 @@ class Simulation(GateObject):
             # loop over actors in original simulation
             for actor in self.actor_manager.actors.values():
                 actor.import_user_output_from_actor(
-                    *[o.get_actor(actor.name) for o in list_of_output]  # these are the actors from the process
+                    *[
+                        o.get_actor(actor.name) for o in list_of_output
+                    ]  # these are the actors from the process
                 )
 
             for actor in self.actor_manager.actors.values():
