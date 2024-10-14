@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: By default, simulation of Ion source does not result in the expected acolin. of
+Context: By default, simulation of e+ source does not result in the expected acolin. of
 PET imaging. To enable this, one need to set ionisation of the material where the
 annihilations will occur to 5.0 eV. The test is in two part:
 1) If nothing is done, more annihilations should be colinear
@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 # imaging
 mean_energy = 5.0 * eV
 # Key added to output to make sure that multi-threading the tests does not backfire
-test_key = "p0"
+test_key = "p4"
 
 
 #########################################################################################
@@ -54,9 +54,9 @@ if __name__ == "__main__":
     )
 
     # set the source
-    source = sim.add_source("GenericSource", "f18")
-    source.particle = "ion 9 18"
-    source.energy.mono = 0
+    source = sim.add_source("GenericSource", "beta+_source")
+    source.particle = "e+"
+    source.energy.type = "F18"
     source.activity = 10000 * Bq
     source.direction.type = "iso"
 
