@@ -41,14 +41,14 @@ if sys.platform == "linux" or sys.platform == "linux2":
         "site-packages" in pathCurrentFile
     ):  # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
         reloadPython = False
-        #if (
+        # if (
         #    "LD_LIBRARY_PATH" not in os.environ
         #    or os.path.join(get_site_packages_dir(), "opengate_core.libs")
         #    not in os.environ["LD_LIBRARY_PATH"]
-        #):
+        # ):
         #    reloadPython = True
 
-        #if reloadPython:
+        # if reloadPython:
         #    print(
         #        "opengate_core is not detected. Be sure to execute these lines before to run python:"
         #    )
