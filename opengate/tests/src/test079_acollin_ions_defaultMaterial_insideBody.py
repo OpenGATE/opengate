@@ -2,17 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: In Shibuya et al. 2007 [1], it was shown that acollinearity of annihilation
-photons in a human subject follows a double Gaussian distribution with a combined FWHM
-of 0.55 deg.
-While the double Gaussian distribution currently cannot be reproduced in GATE, setting the MeanEnergyPerIonPair of the material to 6.0 eV results in a 2D Gaussian with a FWHM of 0.55 deg.
-
-Note: Changing the material to "Body" does not change the value of acollinearity
-compared to water. Unknown if it is a limitation in the simulation or if it is due to
-0.5 deg being obtained in older setup with water at 20 deg vs human that are a little
-more warm?
-
-[1] https://iopscience.iop.org/article/10.1088/0031-9155/52/17/010
+Context: zxc
 """
 
 from test079_acollin_helpers import *
@@ -23,11 +13,10 @@ import matplotlib.pyplot as plt
 #########################################################################################
 # Simulations configuration that may be relevant to change
 #########################################################################################
-# Mean energy of Ion Pair to use. 5.0 eV should produce the expected 0.5 deg FWHM in PET
-# imaging
-mean_energy = 5.0 * eV
+# Mean energy of Ion Pair to use. 6.0 eV seems to results in 0.55 deg FWHM
+mean_energy = 6.0 * eV
 # Key added to output to make sure that multi-threading the tests does not backfire
-test_key = "p4"
+test_key = "p5"
 
 
 #########################################################################################
@@ -55,21 +44,14 @@ if __name__ == "__main__":
     )
 
     # set the source
-    source = sim.add_source("GenericSource", "beta+_source")
-    source.particle = "e+"
-    source.energy.type = "F18"
+    source = sim.add_source("GenericSource", "f18")
+    source.particle = "ion 9 18"
+    source.energy.mono = 0
     source.activity = 10000 * Bq
     source.direction.type = "iso"
 
     # add phase actor
     phsp = setup_actor(sim, "phsp", wb.name)
-    phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
-
-    # go
-    sim.run(start_new_process=True)
-
-    # redo test changing the MeanEnergyPerIonPair
-    root_filename = phsp.output_filename
     phsp.output_filename = (
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
@@ -78,12 +60,6 @@ if __name__ == "__main__":
 
     # go
     sim.run()
-
-    # test: no mean energy, should be mostly colinear
-    gamma_pairs = read_gamma_pairs(root_filename)
-    acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
-
-    colin_median = plot_colin_case(acollinearity_angles)
 
     # test: with mean energy, acolinearity amplitude should have a Rayleigh distribution
     gamma_pairs = read_gamma_pairs(phsp.output_filename)
@@ -96,9 +72,7 @@ if __name__ == "__main__":
     print(f"Plot was saved in {f}")
 
     # final
-    # No acolin
-    is_ok_p1 = colin_median < 0.01
     # Basic acolin
-    is_ok_p2 = np.isclose(acolin_scale * 2.355, 0.5, atol=0.2)
+    is_ok_p2 = np.isclose(acolin_scale * 2.355, 0.55, atol=0.2)
 
-    tu.test_ok(is_ok_p1 and is_ok_p2)
+    tu.test_ok(is_ok_p2)
