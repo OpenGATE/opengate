@@ -200,6 +200,10 @@ class ActorBase(GateObject):
                 f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_data(). "
             )
 
+    def reset_user_output(self):
+        for v in self.user_output.values():
+            v.reset_data()
+
     # *** shortcut properties ***
     @property
     @shortcut_for_single_output_actor

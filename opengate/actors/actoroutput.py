@@ -344,6 +344,10 @@ class ActorOutputBase(GateObject):
     def get_output_path_as_string(self, **kwargs):
         return ensure_filename_is_str(self.get_output_path(**kwargs))
 
+    def reset_data(self):
+        self.merged_data = None
+        self.data_per_run = {}
+
     def close(self):
         if self.keep_data_in_memory is False:
             self.data_per_run = {}

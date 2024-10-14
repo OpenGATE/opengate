@@ -59,6 +59,8 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
         # predefine the merged_data
         self.merged_data = Box()
+
+    def reset_data(self):
         self.merged_data.runs = 0
         self.merged_data.events = 0
         self.merged_data.tracks = 0
