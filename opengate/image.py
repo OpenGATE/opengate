@@ -12,6 +12,8 @@ from .geometry.utility import (
 )
 from .definitions import __gate_list_objects__
 
+import SimpleITK as sitk
+
 
 def update_image_py_to_cpp(py_img, cpp_img, copy_data=False):
     cpp_img.set_size(py_img.GetLargestPossibleRegion().GetSize())
@@ -354,17 +356,48 @@ def divide_itk_images(
     imgarrOut.CopyInformation(img1_numerator)
     return imgarrOut
 
+# IMPLEMENTATION BASED ON ITK
+# def sum_itk_images(images):
+#     image_type = type(images[0])
+#     add_image_filter = itk.AddImageFilter[image_type, image_type, image_type].New()
+#     output = images[0]
+#     for img in images[1:]:
+#         add_image_filter.SetInput1(output)
+#         add_image_filter.SetInput2(img)
+#         add_image_filter.Update()
+#         output = add_image_filter.GetOutput()
+#     return output
 
-def sum_itk_images(images):
-    image_type = type(images[0])
-    add_image_filter = itk.AddImageFilter[image_type, image_type, image_type].New()
-    output = images[0]
-    for img in images[1:]:
-        add_image_filter.SetInput1(output)
-        add_image_filter.SetInput2(img)
-        add_image_filter.Update()
-        output = add_image_filter.GetOutput()
-    return output
+
+def itk_to_sitk(itk_image):
+    array = itk.GetArrayFromImage(itk_image)
+    sitk_image = sitk.GetImageFromArray(array)
+    sitk_image.SetOrigin(np.array(itk_image.GetOrigin()))
+    sitk_image.SetSpacing(np.array(itk_image.GetSpacing()))
+    sitk_image.SetDirection(np.array(itk_image.GetDirection()).flatten())
+    return sitk_image
+
+
+def sitk_to_itk(sitk_image):
+    array = sitk.GetArrayFromImage(sitk_image)  # Convert SimpleITK image to NumPy array
+    itk_image = itk.GetImageFromArray(array)  # Convert NumPy array to ITK image
+
+    # Set the metadata from SimpleITK to ITK image
+    itk_image.SetOrigin(np.array(sitk_image.GetOrigin()))
+    itk_image.SetSpacing(np.array(sitk_image.GetSpacing()))
+    itk_image.SetDirection(np.array(sitk_image.GetDirection()).reshape(3, 3))
+
+    return itk_image
+
+
+def sum_itk_images(itk_image_list):
+    if not itk_image_list:
+        raise ValueError("The image list is empty.")
+    summed_image = itk_to_sitk(itk_image_list[0])
+    for itk_image in itk_image_list[1:]:
+        sitk_image = itk_to_sitk(itk_image)
+        summed_image = sitk.Add(summed_image, sitk_image)
+    return sitk_to_itk(summed_image)
 
 
 def multiply_itk_images(images):
