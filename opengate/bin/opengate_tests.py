@@ -85,10 +85,11 @@ def go(
     path_tests_src = return_tests_path()  # returns the path to the tests/src dir
     test_dir_path = path_tests_src.parent
     start = time.time()
-    print(f"{g4_version=}")
     if not g4_version:
-        print("hi")
-        g4_version = get_required_g4_version(path_tests_src)
+        try:
+            g4_version = get_required_g4_version(path_tests_src)
+        except:
+            g4_version = "v11.2.1"
     if not check_g4_version(g4_version):
         print(False)
         return 0
