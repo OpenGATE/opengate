@@ -1757,6 +1757,9 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
+            for actor in self.actor_manager.actors.values():
+                actor.reset_user_output()
+
             log.info("Dispatching simulation to subprocess ...")
             output = dispatch_to_subprocess(self._run_simulation_engine, True)
 
@@ -1790,6 +1793,9 @@ class Simulation(GateObject):
                 print("Could not set start method 'spawn'.")
                 pass
             # q = multiprocessing.Queue()
+            for actor in self.actor_manager.actors.values():
+                actor.reset_user_output()
+
             with multiprocessing.Pool(number_of_sub_processes) as pool:
                 results = [
                     pool.apply_async(
