@@ -129,8 +129,7 @@ class ActorBase(GateObject):
 
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
-        # this is set by the actor engine during initialization
-        self.actor_engine = None
+        self.actor_engine = None  # set by the actor engine during initializatio
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
 
