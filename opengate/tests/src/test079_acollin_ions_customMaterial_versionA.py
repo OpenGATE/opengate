@@ -9,7 +9,7 @@ GateMaterials.db, so one only need to add its definition to the volume_manager a
 set the mean energy per ion in the physics_manager
 """
 
-from test079_mean_energy_per_ion_pairs_helpers import *
+from test079_acollin_helpers import *
 import opengate.tests.utility as tu
 import matplotlib.pyplot as plt
 

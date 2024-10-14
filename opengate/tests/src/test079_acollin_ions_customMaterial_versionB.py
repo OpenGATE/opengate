@@ -7,7 +7,7 @@ Context: See test079_mean_energy_per_ion_pairs.py
 zxc
 """
 
-from test079_mean_energy_per_ion_pairs_helpers import *
+from test079_acollin_helpers import *
 import opengate.tests.utility as tu
 import matplotlib.pyplot as plt
 
@@ -58,12 +58,6 @@ if __name__ == "__main__":
         "IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3
     )
 
-    # IEC_PLASTIC:   d=1.18 g/cm3; n=3; stat=Solid
-    #         +el: name=Carbon ; n=5
-    #         +el: name=Hydrogen ; n=8
-    #         +el: name=Oxygen ; n=2
-
-    #
     # # Material in GateMaterial.db but still need add_material_nb_atoms
     #
     # elems = ["H", "O"]
