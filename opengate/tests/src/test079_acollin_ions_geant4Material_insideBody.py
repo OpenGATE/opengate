@@ -2,7 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: zxc
+Context: In Shibuya et al. 2007 [1], it was shown that acollinearity of annihilation
+photons in a human subject follows a double Gaussian distribution with a combined FWHM
+of 0.55 deg.
+While the double Gaussian distribution currently cannot be reproduced in GATE, setting the MeanEnergyPerIonPair of the material to 6.0 eV results in a 2D Gaussian with a FWHM of 0.55 deg.
+
+Note: Changing the material to "Body" does not change the value of acollinearity
+compared to water. Unknown if it is a limitation in the simulation or if it is due to
+0.5 deg being obtained in older setup with water at 20 deg vs human that are a little
+more warm?
+
+[1] https://iopscience.iop.org/article/10.1088/0031-9155/52/17/010
 """
 
 from test079_acollin_helpers import *
