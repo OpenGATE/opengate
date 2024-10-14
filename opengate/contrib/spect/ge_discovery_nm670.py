@@ -83,11 +83,12 @@ def add_spect_two_heads(sim, name="spect", collimator_type="lehr", debug=False):
     head1.translation = [0, radius, 0]
     head1.rotation = Rotation.from_euler("X", 90, degrees=True).as_matrix()
 
+    # the second head is the same at 180 degrees
     head2, colli2, crystal2 = add_spect_head(
         sim, f"{name}_2", collimator_type, debug=debug
     )
     head2.translation = [0, -radius, 0]
-    head2.rotation = Rotation.from_euler("X", -90, degrees=True).as_matrix()
+    head2.rotation = Rotation.from_euler("XZ", [-90, 180], degrees=True).as_matrix()
 
     return [head1, head2], [crystal1, crystal2]
 
@@ -585,63 +586,14 @@ def get_plane_position_and_distance_to_crystal(collimator_type):
     )
 
 
-def add_fake_table(sim, name="table"):
-    """
-    Add a patient table (fake)
-    """
-
-    # unit
-    mm = g4_units.mm
-    cm = g4_units.cm
-    cm3 = g4_units.cm3
-    deg = g4_units.deg
-    gcm3 = g4_units.g / cm3
-
-    # colors
-    red = [1, 0.7, 0.7, 0.8]
-    white = [1, 1, 1, 1]
-
-    sim.volume_manager.material_database.add_material_weights(
-        f"CarbonFiber", ["C"], [1], 1.78 * gcm3
-    )
-
-    # main bed
-    table = sim.add_volume("Tubs", f"{name}_table")
-    table.mother = "world"
-    table.rmax = 439 * mm
-    table.rmin = 406 * mm
-    table.dz = 200 * cm / 2.0
-    table.sphi = 0 * deg
-    table.dphi = 70 * deg
-    table.translation = [0, 25 * cm, 0]
-    table.rotation = Rotation.from_euler("z", -125, degrees=True).as_matrix()
-    table.material = "CarbonFiber"
-    table.color = white
-
-    # interior of the table
-    tablein = sim.add_volume("Tubs", f"{name}_tablein")
-    tablein.mother = table.name
-    tablein.rmax = 436.5 * mm
-    tablein.rmin = 408.5 * mm
-    tablein.dz = 200 * cm / 2.0
-    tablein.sphi = 0 * deg
-    tablein.dphi = 69 * deg
-    tablein.translation = [0, 0, 0]
-    tablein.rotation = Rotation.from_euler("z", 0.5, degrees=True).as_matrix()
-    tablein.material = "G4_AIR"
-    tablein.color = red
-
-    return table
-
-
 def set_head_orientation(head, collimator_type, radius, gantry_angle=0):
     # pos is the distance from entrance detection plane and head boundary
     pos, _, _ = compute_plane_position_and_distance_to_crystal(collimator_type)
     distance = radius + pos
     # rotation X180 is to set the detector head-foot
     # rotation Z90 is the gantry angle
-    r1 = Rotation.from_euler("x", 90, degrees=True)
-    r2 = Rotation.from_euler("z", gantry_angle, degrees=True)
+    r1 = Rotation.from_euler("X", 90, degrees=True)
+    r2 = Rotation.from_euler("Z", gantry_angle, degrees=True)
     r = r2 * r1
     head.translation = r.apply([0, 0, -distance])
     head.rotation = r.as_matrix()
@@ -678,13 +630,16 @@ def add_detection_plane_for_arf(
 
 
 def rotate_gantry(
-    head, radius, initial_rotation, start_angle_deg, step_angle_deg, nb_angle
+    head, radius, start_angle_deg, step_angle_deg, nb_angle, initial_rotation=None
 ):
     # compute the nb translation and rotation
     translations = []
     rotations = []
     current_angle_deg = start_angle_deg
+    if initial_rotation is None:
+        initial_rotation = Rotation.from_euler("X", 90, degrees=True)
     for r in range(nb_angle):
+        print(f"current angle: {current_angle_deg}")
         t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
         rot = rot * initial_rotation
