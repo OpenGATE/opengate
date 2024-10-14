@@ -10,7 +10,7 @@ if __name__ == "__main__":
     )
 
     # create and run the simulation
-    sim = t036.create_simulation("param", paths)
+    sim = t036.create_simulation("param", paths, "_par")
 
     # start simulation
     sim.run()

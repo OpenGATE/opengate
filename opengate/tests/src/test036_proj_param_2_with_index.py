@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create and run the simulation
     mm = g4_units.mm
-    sim = t036.create_simulation("param", paths)
+    sim = t036.create_simulation("param", paths, "_windx")
 
     # enlarge the source
     source = sim.source_manager.get_source_info("src2")
