@@ -296,6 +296,7 @@ class PhysicsEngine(EngineBase):
         self.initialize_regions()
         self.initialize_optical_material_properties()
         self.initialize_optical_surfaces()
+        self.initialize_ionisation_options()
 
     def initialize_parallel_world_physics(self):
         for (
@@ -457,6 +458,17 @@ class PhysicsEngine(EngineBase):
             user_limits_physics.physics_engine = self
             self.g4_physics_list.RegisterPhysics(user_limits_physics)
             self.gate_physics_constructors.append(user_limits_physics)
+
+    @requires_fatal("physics_manager")
+    def initialize_ionisation_options(self):
+        for material_name, val in self.physics_manager.mean_energy_per_ion_pair.items():
+            mat = (
+                self.simulation_engine.simulation.volume_manager.find_or_build_material(
+                    material_name
+                )
+            )
+            ionisation = mat.GetIonisation()
+            ionisation.SetMeanEnergyPerIonPair(val)
 
 
 class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
