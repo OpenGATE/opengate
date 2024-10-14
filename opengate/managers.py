@@ -1748,6 +1748,8 @@ class Simulation(GateObject):
 
         # adapt the output_dir
         self.output_dir = str(Path(self.output_dir) / f"process_{process_index}")
+        if self.random_seed != 'auto':
+            self.random_seed += process_index
 
         # adapt the run timing intervals in
         self.run_timing_intervals = (
