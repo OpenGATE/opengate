@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: See test079_mean_energy_per_ion_pairs.py
+Context: See test079_acollin_ions_geant4Material.py
 
 Test that show how to access ionisation object once G4 is init (before the run), for
 debug purpose. It should be equivalent to _versionA.

@@ -63,7 +63,7 @@ def setup_actor(sim, actor_name, volume_name):
         "KineticEnergy",
     ]
     curr_actor.steps_to_store = "first"
-    f = sim.add_filter("ParticleFilter", "f")
+    f = sim.add_filter("ParticleFilter", f"f_{actor_name}")
     f.particle = "gamma"
     curr_actor.filters.append(f)
 
@@ -86,12 +86,12 @@ def calculate_angle(dir1, dir2):
     return np.arccos(np.clip(cos_theta, -1.0, 1.0))  # Clip to avoid numerical errors
 
 
-def read_gamma_pairs(root_filename):
+def read_gamma_pairs(root_filename, actor_name="phsp"):
     # Load the ROOT file
     file = uproot.open(root_filename)
 
     # Access the tree
-    tree = file["phsp"]
+    tree = file[actor_name]
 
     # Extract relevant branches
     event_id = tree["EventID"].array(library="np")
