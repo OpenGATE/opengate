@@ -2,11 +2,77 @@
 # -*- coding: utf-8 -*-
 
 import uproot
+import opengate as gate
 import numpy as np
 from collections import defaultdict
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 
 
+#########################################################################################
+# Constants
+#########################################################################################
+# Units
+m = gate.g4_units.m
+cm = gate.g4_units.cm
+mm = gate.g4_units.mm
+eV = gate.g4_units.eV
+MeV = gate.g4_units.MeV
+Bq = gate.g4_units.Bq
+gcm3 = gate.g4_units.g_cm3
+
+
+#########################################################################################
+# Recurring elements of the tests in terms of simulation
+#########################################################################################
+def setup_simulation_engine(path):
+    # create simulation
+    sim = gate.Simulation()
+
+    # main options
+    sim.g4_verbose = False
+    sim.visu = False
+
+    # add a material database
+    sim.volume_manager.add_material_database(path.data / "GateMaterials.db")
+
+    # set the world size
+    sim.world.size = [3 * m, 3 * m, 3 * m]
+    sim.world.material = "G4_AIR"
+
+    # set the physics
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.set_production_cut("waterbox", "gamma", 10 * mm)
+    sim.physics_manager.enable_decay = True
+
+    return sim
+
+
+def setup_actor(sim, actor_name, volume_name):
+    # add phase actor
+    curr_actor = sim.add_actor("PhaseSpaceActor", actor_name)
+    curr_actor.attached_to = volume_name
+    curr_actor.attributes = [
+        "EventID",
+        "TrackID",
+        "PrePosition",
+        "PreDirection",
+        "PostDirection",
+        "ParticleName",
+        "TrackCreatorProcess",
+        "KineticEnergy",
+    ]
+    curr_actor.steps_to_store = "first"
+    f = sim.add_filter("ParticleFilter", "f")
+    f.particle = "gamma"
+    curr_actor.filters.append(f)
+
+    return curr_actor
+
+
+#########################################################################################
+# Methods used to ascertain the test behavior
+#########################################################################################
 def calculate_angle(dir1, dir2):
     # Calculate the dot product
     dot_product = np.dot(dir1, dir2)
@@ -86,3 +152,61 @@ def fit_rayleigh(hist_data):
     popt, _ = curve_fit(rayleigh, hist_pos, hist_data[0], p0=init_param)
 
     return popt[0], popt[1]
+
+
+def plot_colin_case(acollinearity_angles):
+    colin_median = np.median(acollinearity_angles)
+    print(
+        f"median angle: {colin_median}  min={np.min(acollinearity_angles)}   max={np.max(acollinearity_angles)}"
+    )
+
+    plt.hist(
+        acollinearity_angles,
+        bins=71,
+        range=(0, 1.0),
+        alpha=0.7,
+        color="blue",
+        label="Default",
+    )
+
+    return colin_median
+
+
+def plot_acolin_case(ion_pair_mean_energy, acollinearity_angles):
+    curr_label = f"With mean energy per Ion par of {ion_pair_mean_energy / eV:.1f} eV"
+    # Range of 0.0 to 1.0 is enforced since in some rare instances, acolinearity is
+    # very large, which skew the histogram.
+    data = plt.hist(
+        acollinearity_angles,
+        bins=71,
+        range=(0, 1.0),
+        alpha=0.7,
+        color="red",
+        label=curr_label,
+    )
+    plt.ylim((0.0, 2.0 * max(data[0])))
+    plt.xlim((0.0, 1.0))
+    plt.legend()
+    plt.xlabel("Acollinearity Angle (Degrees)")
+    plt.ylabel("Counts")
+    plt.title("Acollinearity Distribution of Gamma Pairs")
+    plt.grid(True)
+
+    amplitude, scale = fit_rayleigh(data)
+    # Negative value change nothing for the fit but it should be positive.
+    scale = np.abs(scale)
+    x_value = np.linspace(0.0, 1.0, 50)
+    # The norm of a isotropic 2D Gaussian centered at [0.0 0.0] is a Rayleigh
+    # distribution with a scale equal to the sigme of the 2D Gaussian.
+    plt.plot(x_value, rayleigh(x_value, amplitude, scale), "g", linewidth=3)
+
+    textstr = f"FWHM = {2.355 * scale:.2f}°\n$\\sigma$ = {scale:.2f}°"
+    props = dict(
+        boxstyle="round", facecolor="wheat", edgecolor="green", linewidth=3, alpha=0.95
+    )
+    plt.text(0.7, max(data[0]), textstr, bbox=props)
+
+    print(curr_label)
+    print(textstr)
+
+    return scale
