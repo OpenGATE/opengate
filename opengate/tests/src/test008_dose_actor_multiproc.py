@@ -5,6 +5,7 @@ import opengate as gate
 from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 from pathlib import Path
+import time
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test008_dose_actor")
@@ -18,7 +19,6 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 12345678
-    sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem
 
     # shortcuts for units
     m = gate.g4_units.m
@@ -87,28 +87,42 @@ if __name__ == "__main__":
     stat.track_types_flag = True
 
     # start simulation
+    t1 = time.time()
+    sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem / 'nproc_4'
     sim.run(number_of_sub_processes=4)
+    t2 = time.time()
+    delta_t_nproc4 = t2 - t1
 
-    # # print results at the end
-    # print(stat)
-    # print(dose)
-    #
+    path_edep_nproc4 = dose.edep.get_output_path()
+
+    t1 = time.time()
+    sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem / 'nproc_1'
+    sim.run(number_of_sub_processes=1)
+    t2 = time.time()
+    delta_t_nproc1 = t2 - t1
+
+    path_edep_nproc1 = dose.edep.get_output_path()
+
+    # t1 = time.time()
+    # sim.run(number_of_sub_processes=0)
+    # t2 = time.time()
+    # delta_t_no_subproc = t2 - t1
+
+    print("Simulation times: ")
+    print(f"One subprocess: {delta_t_nproc1}")
+    print(f"Four subprocesses: {delta_t_nproc4}, speed-up: {delta_t_nproc1 / delta_t_nproc4}")
+    # print(f"No subprocess: {delta_t_no_subproc}")
+
     # # tests
-    # stats_ref = utility.read_stat_file(ref_path / "stat.txt")
-    # is_ok = utility.assert_stats(stat, stats_ref, 0.11)
-    #
-    # print("\nDifference for EDEP")
-    # is_ok = (
-    #     utility.assert_images(
-    #         ref_path / "output-Edep.mhd",
-    #         dose.edep.get_output_path(),
-    #         stat,
-    #         tolerance=13,
-    #         ignore_value=0,
-    #         sum_tolerance=1,
-    #     )
-    #     and is_ok
-    # )
+    print("\nDifference for EDEP")
+    is_ok = utility.assert_images(
+            path_edep_nproc1,
+            path_edep_nproc4,
+            stat,
+            tolerance=13,
+            ignore_value=0,
+            sum_tolerance=1,
+    )
     #
     # print("\nDifference for uncertainty")
     # is_ok = (
@@ -123,4 +137,4 @@ if __name__ == "__main__":
     #     and is_ok
     # )
     #
-    # utility.test_ok(is_ok)
+    utility.test_ok(is_ok)
