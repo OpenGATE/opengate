@@ -1709,7 +1709,6 @@ class Simulation(GateObject):
 
         # adapt the output_dir
         self.output_dir = str(Path(self.output_dir) / f"process_{process_index}")
-        print("self.output_dir = ", self.output_dir)
 
         # adapt the run timing intervals in
         self.run_timing_intervals = (
@@ -1722,24 +1721,13 @@ class Simulation(GateObject):
                     process_index
                 )
             )
-            print(process_index)
-            print(f"Volume {vol.name}:")
-            print(vol.user_info["dynamic_params"])
 
         if avoid_write_to_disk_in_subprocess is True:
             for actor in self.actor_manager.actors.values():
                 actor.write_to_disk = False
 
         output = self._run_simulation_engine(True, process_index=process_index)
-        print(
-            process_index,
-            os.getpid(),
-            id(self),
-            multi_process_handler.get_run_timing_intervals_for_process(process_index),
-            multi_process_handler.get_original_run_timing_indices_for_process(
-                process_index
-            ),
-        )
+        print(f"run_in_process finished in process {process_index}")
         return output
 
     def run(
@@ -1803,7 +1791,6 @@ class Simulation(GateObject):
                 pass
             # q = multiprocessing.Queue()
             with multiprocessing.Pool(number_of_sub_processes) as pool:
-                print("pool._outqueue: ", pool._outqueue)  # DEMO
                 results = [
                     pool.apply_async(
                         self.run_in_process,
@@ -1812,13 +1799,13 @@ class Simulation(GateObject):
                     for i in range(number_of_sub_processes)
                 ]
                 # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
-                print(results[0])  # DEMO
                 list_of_output = [res.get() for res in results]
-                print(f"list_of_output: {list_of_output}")
+            log.info("End of multiprocessing")
 
+            # loop over actors in original simulation
             for actor in self.actor_manager.actors.values():
                 actor.import_user_output_from_actor(
-                    *[o.get_actor(actor.name) for o in list_of_output]
+                    *[o.get_actor(actor.name) for o in list_of_output]  # these are the actors from the process
                 )
 
             for actor in self.actor_manager.actors.values():
