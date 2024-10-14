@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: See test079_mean_energy_per_ion_pairs.py
+Context: See test079_acollin_ions_geant4Material.py
 
 Here, the material, Body is not known from Geant4 BUT it is defined in GateMaterials.db,
 so one only need to set the mean energy per ion in the physics_manager via its
