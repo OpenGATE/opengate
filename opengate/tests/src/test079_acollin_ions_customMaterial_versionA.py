@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 # Mean energy of Ion Pair to use. 5.0 eV should produce the expected 0.5 deg FWHM in PET
 # imaging
 mean_energy = 5.0 * eV
+# Key added to output to make sure that multi-threading the tests does not backfire
+test_key = "p1"
 
 
 #########################################################################################
@@ -34,46 +36,12 @@ if __name__ == "__main__":
     # add a waterbox
     wb = sim.add_volume("Box", "waterbox")
     wb.size = [50 * cm, 50 * cm, 50 * cm]
-    ###################################
-    # zxc start
-
-    # Even when defined in add_material_nb_atoms, need to add to GateMaterial.db
     elems = ["C", "H", "O"]
     nbAtoms = [5, 8, 2]
     sim.volume_manager.material_database.add_material_nb_atoms(
         "IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3
     )
-
-    # IEC_PLASTIC:   d=1.18 g/cm3; n=3; stat=Solid
-    #         +el: name=Carbon ; n=5
-    #         +el: name=Hydrogen ; n=8
-    #         +el: name=Oxygen ; n=2
-
-    #
-    # # Material in GateMaterial.db but still need add_material_nb_atoms
-    #
-    # elems = ["H", "O"]
-    # faction = [14, 111]
-    # gcm3 = gate.g4_units.g_cm3
-    # sim.volume_manager.material_database.add_material_nb_atoms(
-    #     "Body", elems, faction, 1.00 * gcm3
-    # )
-    # wb.material = "Body"
-
-    # zxc end
-    ###################################
-    # wb.material = "G4_WATER"
     wb.material = "IEC_PLASTIC"
-
-    # test mat properties
-    """mat = sim.volume_manager.find_or_build_material(wb.material)
-    ionisation = mat.GetIonisation()
-    print(
-        f"material {wb.material} mean excitation energy is {ionisation.GetMeanExcitationEnergy() / eV} eV"
-    )
-    print(
-        f"material {wb.material} mean energy per ion pair is {ionisation.GetMeanEnergyPerIonPair() / eV} eV"
-    )"""
 
     # set the source
     source = sim.add_source("GenericSource", "f18")
@@ -84,14 +52,16 @@ if __name__ == "__main__":
 
     # add phase actor
     phsp = setup_actor(sim, "phsp", wb.name)
-    phsp.output_filename = paths.output / "annihilation_photons.root"
+    phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
 
     # go
     sim.run(start_new_process=True)
 
     # redo test changing the MeanEnergyPerIonPair
     root_filename = phsp.output_filename
-    phsp.output_filename = paths.output / "annihilation_photons_with_mepip.root"
+    phsp.output_filename = (
+        paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
+    )
 
     sim.physics_manager.mean_energy_per_ion_pair["IEC_PLASTIC"] = mean_energy
 
@@ -110,7 +80,7 @@ if __name__ == "__main__":
 
     acolin_scale = plot_acolin_case(mean_energy, acollinearity_angles)
 
-    f = paths.output / "acollinearity_angles_p1.png"
+    f = paths.output / f"acollinearity_angles_{test_key}.png"
     plt.savefig(f)
     print(f"Plot was saved in {f}")
 
