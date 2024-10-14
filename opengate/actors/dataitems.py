@@ -755,10 +755,8 @@ class QuotientMeanItkImage(QuotientItkImage):
 def merge_data(list_of_data):
     merged_data = list_of_data[0]
     try:
-        print(f"DEBUG type(merged_data) = '{type(merged_data)}'")
         merged_data.inplace_merge_with(*list_of_data[1:])
     except:
-        print("DEBUG went into except block")
         for d in list_of_data[1:]:
             merged_data.inplace_merge_with(d)
     return merged_data
