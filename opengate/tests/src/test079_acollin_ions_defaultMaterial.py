@@ -72,7 +72,7 @@ if __name__ == "__main__":
     phsp.output_filename = (
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
-    ionisation.SetMeanEnergyPerIonPair(5.0 * eV)
+    ionisation.SetMeanEnergyPerIonPair(mean_energy)
     print(f"set MeanEnergyPerIonPair to {ionisation.GetMeanEnergyPerIonPair() / eV} eV")
 
     # go
