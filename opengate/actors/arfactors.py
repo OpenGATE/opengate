@@ -292,6 +292,10 @@ class ARFActor(ActorBase, g4.GateARFActor):
         # output image: nb of energy windows times nb of runs (for rotation)
         self.nb_ene = self.model_data["n_ene_win"]
         nb_runs = len(self.simulation.run_timing_intervals)
+
+        if not self.enable_hit_slice:
+            self.nb_ene -= 1
+
         # size and spacing in 3D
         self.output_image = np.array(
             [
@@ -363,16 +367,13 @@ class ARFActor(ActorBase, g4.GateARFActor):
             run_id = actor.GetCurrentRunId()
             s = self.nb_ene * run_id
             img = self.output_array[s : s + self.nb_ene]
-            garf.image_from_coordinates_add_numpy(img, u, v, w_pred)
+            garf.image_from_coordinates_add_numpy(
+                img, u, v, w_pred, self.enable_hit_slice
+            )
             self.debug_nb_hits += u.shape[0]
 
     def EndOfRunActionMasterThread(self, run_index):
-        # Should we keep the first slice (with all hits) ?
         nb_slice = self.nb_ene
-        if not self.enable_hit_slice:
-            self.output_array = self.output_array[1:, :, :]
-            # self.param.image_size[0] = self.param.image_size[0] - 1
-            nb_slice = nb_slice - 1
 
         # convert to itk image
         # FIXME: this should probably go into EndOfRunAction
