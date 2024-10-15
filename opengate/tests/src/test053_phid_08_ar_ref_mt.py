@@ -28,11 +28,10 @@ if __name__ == "__main__":
     print(phsp.output_filename)
 
     mm = g4_units.mm
-    sim.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # sources
-    sim.number_of_threads = 4
     activity_in_Bq = 1000
     add_source_generic(sim, z, a, activity_in_Bq)
     sim.random_seed = 123456

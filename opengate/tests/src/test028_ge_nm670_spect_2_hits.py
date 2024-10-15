@@ -15,7 +15,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main description
-    test028.create_spect_simu(sim, paths)
+    test028.create_spect_simu(sim, paths, version="_2_hits")
 
     # mono thread
     sim.number_of_threads = 1

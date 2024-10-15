@@ -17,6 +17,7 @@ if __name__ == "__main__":
         activity_kBq=1000,
         aa_enabled=True,
         aa_mode="SkipEvents",
+        version="_4_acc_angle_aa_se",
     )
 
     # go
@@ -24,6 +25,10 @@ if __name__ == "__main__":
 
     # check
     is_ok = test028.compare_result(
-        sim, proj, "test028_aa_skip_events.png", sum_tolerance=20
+        sim,
+        proj,
+        "test028_aa_skip_events.png",
+        sum_tolerance=20,
+        version="_4_acc_angle_aa_se",
     )
     utility.test_ok(is_ok)

@@ -7,18 +7,18 @@ import pathlib
 import os
 import subprocess
 
+
 # This test is to be run after test069_sim_as_dict.py
 # It checks whether the simulation is recreated correctly from the JSON file,
 # but does not actually run any simulation.
-
-if __name__ == "__main__":
+def main(a, b, c, dependency="test069_sim_as_dict.py"):
     pathFile = pathlib.Path(__file__).parent.resolve()
     paths = utility.get_default_test_paths(__file__)
 
     # the test069_sim_as_dict.py is needed first
-    if not os.path.isfile(paths.output / "simu_test069.json"):
+    if dependency and not os.path.isfile(paths.output / "simu_test069.json"):
         print(f"Running test069_sim_as_dict.py")
-        subprocess.call(["python", paths.current / "test069_sim_as_dict.py"])
+        subprocess.call(["python", paths.current / dependency])
 
     # create the simulation
     sim = gate.create_sim_from_json(paths.output / "test069" / "simu_test069.json")
@@ -36,3 +36,7 @@ if __name__ == "__main__":
 
     # If we make it until here without exception, the test is passed
     utility.test_ok(True)
+
+
+if __name__ == "__main__":
+    main(1, 2, 3)

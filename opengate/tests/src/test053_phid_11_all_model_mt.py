@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from test053_phid_helpers2 import *
-import opengate as gate
 
-if __name__ == "__main__":
+
+def main(dependency="test053_phid_10_all_ref_mt.py"):
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
     # bi213 83 213
@@ -13,36 +13,36 @@ if __name__ == "__main__":
     # pb 82 212
     # po 84 213
     # tl 81 209
-    z = 81
-    a = 209
+    z = 89
+    a = 225
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
     print(nuclide)
-    sim_name = f"{nuclide.nuclide}_9_model"
+    sim_name = f"{nuclide.nuclide}_11_model"
 
-    # this test need output/test053/test053_Tl-209_8_ref.root
-    r = paths.output / f"test053_{nuclide.nuclide}_8_ref.root"
-    if not os.path.exists(r):
+    # this test need the test053_phid_10 before
+    root_ref = paths.output_ref / f"test053_{nuclide.nuclide}_10_ref.root"
+    if not os.path.exists(root_ref):
         # ignore on windows
         if os.name == "nt":
-            test_ok(True)
+            test_ok(False)
             sys.exit(0)
-        cmd = "python " + str(paths.current / "test053_phid_08_ar_ref_mt.py")
+        cmd = "python " + str(paths.current / dependency)
         r = os.system(cmd)
 
     sim = gate.Simulation()
     create_sim_test053(sim, sim_name)
 
     # sources
-    activity_in_Bq = 1000
+    activity_in_Bq = 500
     s = add_source_model(sim, z, a, activity_in_Bq)
     s.atomic_relaxation_flag = True
-    s.isomeric_transition_flag = False
+    s.isomeric_transition_flag = True
 
     # go
     sec = g4_units.second
     min = g4_units.minute
-    start_time = 4 * min
-    end_time = start_time + 10 * sec
+    start_time = 15 * min
+    end_time = start_time + 2 * min
     duration = end_time - start_time
     print(f"start time {start_time / sec}")
     print(f"end time {end_time / sec}")
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[start_time, end_time]]
 
     # go
-    sim.run(start_new_process=True)
+    sim.run(True)
 
     # print stats
     stats = sim.get_actor("stats")
@@ -59,10 +59,21 @@ if __name__ == "__main__":
 
     # compare
     warning(f"check root files")
-    root_ref = paths.output / f"test053_{nuclide.nuclide}_8_ref.root"
+    root_ref = paths.output_ref / f"test053_{nuclide.nuclide}_10_ref.root"
+    # root_ref = paths.output / f"test053_Ac-225_10_TEST.root"
     root_model = sim.get_actor("phsp").get_output_path()
     is_ok = compare_root_energy(
-        root_ref, root_model, start_time, end_time, model_index=148, tol=0.015
+        root_ref,
+        root_model,
+        start_time,
+        end_time,
+        model_index=-1,
+        tol=0.055,
+        erange=[50, 500],
     )
 
     test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

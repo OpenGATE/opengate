@@ -46,7 +46,7 @@ If you wish to use QT, you must install qt5 **before** installing Geant4 so that
 For **Geant4**, you need to compile with the following options:
 
 ```bash
-git clone --branch v11.1.1 https://github.com/Geant4/geant4.git --depth 1
+git clone --branch v11.2.1 https://github.com/Geant4/geant4.git --depth 1
 mkdir geant4.11-build
 cd geant4.11-build
 cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
@@ -61,7 +61,7 @@ make -j 32
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
-WARNING : since June 2023, [Geant4 11.1.1](https://geant4.web.cern.ch/download/11.1.1.html) is needed.
+WARNING : since June 2024, [Geant4 11.2.1](https://geant4.web.cern.ch/download/11.2.1.html) is needed.
 
 #### STEP 2 - ITK
 
