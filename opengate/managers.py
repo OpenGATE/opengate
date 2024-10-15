@@ -1241,6 +1241,8 @@ class Simulation(GateObject):
     g4_commands_after_init: List[str]
     init_only: bool
     progress_bar: bool
+    dyn_geom_open_close: bool
+    dyn_geom_optimise: bool
 
     user_info_defaults = {
         "verbose_level": (
@@ -1443,6 +1445,16 @@ class Simulation(GateObject):
             {
                 "doc": "Display a progress bar during the simulation",
             },
+        ),
+        "dyn_geom_open_close": (
+            True,
+            {
+                "doc": "Warning, should be True. Only set it to false if you know what your are doing"
+            },
+        ),
+        "dyn_geom_optimise": (
+            True,
+            {"doc": "'Optimise' geometry when open/close during dynamic simulation. "},
         ),
     }
 
