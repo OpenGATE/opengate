@@ -505,7 +505,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     return cc
 
 
-def add_digitizer_tc99m(sim, crystal_name, name):
+def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -540,6 +540,8 @@ def add_digitizer_tc99m(sim, crystal_name, name):
         {"name": f"scatter", "min": 108.57749938965 * keV, "max": 129.5924987793 * keV},
         {"name": f"peak140", "min": 129.5924987793 * keV, "max": 150.60751342773 * keV},
     ]
+    if not spectrum_channel:
+        channels.pop(0)
     cc.channels = channels
 
     # projection
@@ -719,3 +721,83 @@ def rotate_gantry(
 
     # set the motion for the SPECT head
     head.add_dynamic_parametrisation(translation=translations, rotation=rotations)
+
+
+def add_source_for_arf_training_dataset(
+    sim, source_name, activity, detector_plane, min_energy, max_energy
+):
+    cm = g4_units.cm
+    # tc99m = 0.01 * MeV - 0.154 * MeV
+    source = sim.add_source("GenericSource", source_name)
+    source.particle = "gamma"
+    source.activity = activity
+    source.position.type = "disc"
+    source.position.radius = 5 * cm
+    source.position.translation = [0, 0, 20 * cm]
+    source.direction.type = "iso"
+    source.energy.type = "range"
+    source.energy.min_energy = min_energy
+    source.energy.max_energy = max_energy
+    source.direction.acceptance_angle.volumes = [detector_plane.name]
+    source.direction.acceptance_angle.intersection_flag = True
+
+    return source
+
+
+def add_actor_for_arf_training_dataset(
+    sim, head, arf_name, colli_type, ene_win_actor, rr
+):
+    mm = g4_units.mm
+    nm = g4_units.nm
+    cm = g4_units.cm
+    # detector input plane
+    pos, crystal_dist, psd = get_plane_position_and_distance_to_crystal(colli_type)
+    pos += 1 * nm  # to avoid overlap
+    detector_plane = sim.add_volume("Box", "arf_plane")
+    detector_plane.mother = head
+    detector_plane.size = [57.6 * cm, 44.6 * cm, 1 * nm]
+    detector_plane.translation = [0, 0, pos]
+    detector_plane.material = "G4_Galactic"
+    detector_plane.color = [0, 1, 0, 1]
+
+    # arf actor for building the training dataset
+    arf = sim.add_actor("ARFTrainingDatasetActor", arf_name)
+    arf.attached_to = detector_plane.name
+    arf.output_filename = "arf_training_dataset.root"
+    arf.energy_windows_actor = ene_win_actor.name
+    arf.russian_roulette = rr
+
+    return detector_plane, arf
+
+
+def add_arf_detector(
+    sim, radius, gantry_angle, size, spacing, colli_type, name, i, pth
+):
+    plane_size = [size[0] * spacing[0], size[1] * spacing[1]]
+    det_plane = add_detection_plane_for_arf(
+        sim,
+        plane_size,
+        colli_type=colli_type,
+        radius=radius,
+        gantry_angle=gantry_angle,
+        det_name=f"{name}_{i}",
+    )
+
+    pos, crystal_distance, psd = compute_plane_position_and_distance_to_crystal(
+        colli_type
+    )
+
+    arf = sim.add_actor("ARFActor", f"{name}_arf_{i}")
+    arf.attached_to = det_plane.name
+    arf.output_filename = f"projection_{i}.mhd"
+    arf.batch_size = 1e5
+    arf.image_size = size
+    arf.image_spacing = spacing
+    arf.verbose_batch = False
+    arf.distance_to_crystal = crystal_distance  # 74.625 * mm
+    arf.pth_filename = pth
+    arf.flip_plane = True  # because the training was backside
+    arf.enable_hit_slice = False
+    arf.gpu_mode = "auto"
+
+    return det_plane, arf
