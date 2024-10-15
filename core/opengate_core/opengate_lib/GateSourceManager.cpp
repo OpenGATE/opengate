@@ -103,6 +103,21 @@ void GateSourceManager::AddSource(GateVSource *source) {
 
 void GateSourceManager::SetActors(std::vector<GateVActor *> &actors) {
   fActors = actors;
+  for (auto actor : actors) {
+    actor->SetSourceManager(this);
+  }
+}
+
+GateVSource *GateSourceManager::FindSourceByName(std::string name) const {
+  for (auto *source : fSources) {
+    if (source->fName == name)
+      return source;
+  }
+  std::ostringstream oss;
+  oss << "Cannot find the source '" << name << "' in the source manager"
+      << std::endl;
+  Fatal(oss.str());
+  return nullptr;
 }
 
 void GateSourceManager::StartMasterThread() {

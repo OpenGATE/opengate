@@ -62,6 +62,9 @@ public:
   // [py side] set the list of actors
   void SetActors(std::vector<GateVActor *> &actors);
 
+  // Return a source
+  GateVSource *FindSourceByName(std::string name) const;
+
   // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 

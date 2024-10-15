@@ -17,6 +17,8 @@
 
 namespace py = pybind11;
 
+class GateSourceManager;
+
 class GateVActor : public G4VPrimitiveScorer {
 
 public:
@@ -104,6 +106,7 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
+
   void SetOutputPath(std::string outputName, std::string outputPath);
 
   std::string GetOutputPath(std::string outputName);
@@ -132,6 +135,9 @@ public:
 
   std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
 
+  void SetSourceManager(GateSourceManager *s);
+
+
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
   std::set<std::string> fActions;
@@ -149,7 +155,11 @@ public:
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
   bool fOperatorIsAnd;
+
   bool fWriteToDisk;
+
+  GateSourceManager *fSourceManager;
+
 };
 
 #endif // GateVActor_h
