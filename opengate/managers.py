@@ -1214,7 +1214,15 @@ class SimulationMetaData(Box):
         self.number_of_sub_processes = None
         self.start_new_process = None
         if simulation_output is not None:
-            self.import_from_simulation_output(simulation_output)
+            self.extract_from_simulation_output(simulation_output)
+
+    def reset(self):
+        self.reset_warnings()
+        self.expected_number_of_events = 0
+        self.user_hook_log = []
+        self.current_random_seed = None
+        self.number_of_sub_processes = None
+        self.start_new_process = None
 
     def reset_warnings(self):
         self.warnings = []
@@ -1227,7 +1235,7 @@ class SimulationMetaData(Box):
             if self.current_random_seed is None:
                 self.current_random_seed = m.current_random_seed
 
-    def import_from_simulation_output(self, *sim_output):
+    def extract_from_simulation_output(self, *sim_output):
         for so in sim_output:
             self.warnings.extend(so.warnings)
             self.expected_number_of_events += so.expected_number_of_events
@@ -1787,8 +1795,12 @@ class Simulation(GateObject):
         if number_of_sub_processes == 1:
             start_new_process = True
 
+        self.meta_data.reset()
         self.meta_data.number_of_sub_processes = number_of_sub_processes
         self.meta_data.start_new_process = start_new_process
+
+        for actor in self.actor_manager.actors.values():
+            actor.reset_user_output()
 
         # prepare sub process
         if start_new_process is True:
@@ -1797,9 +1809,6 @@ class Simulation(GateObject):
                 at the beginning of the script
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
-
-            for actor in self.actor_manager.actors.values():
-                actor.reset_user_output()
 
             log.info("Dispatching simulation to subprocess ...")
             output = dispatch_to_subprocess(self._run_simulation_engine, True)
@@ -1819,7 +1828,7 @@ class Simulation(GateObject):
                     source.fTotalSkippedEvents = s.user_info.fTotalSkippedEvents
                     source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
 
-            self.meta_data.import_from_simulation_output(output)
+            self.meta_data.extract_from_simulation_output(output)
 
         elif number_of_sub_processes > 1:
             multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(
@@ -1834,8 +1843,6 @@ class Simulation(GateObject):
                 print("Could not set start method 'spawn'.")
                 pass
             # q = multiprocessing.Queue()
-            for actor in self.actor_manager.actors.values():
-                actor.reset_user_output()
 
             with multiprocessing.Pool(number_of_sub_processes) as pool:
                 results = [
@@ -1849,6 +1856,9 @@ class Simulation(GateObject):
                 list_of_output = [res.get() for res in results]
             log.info("End of multiprocessing")
 
+            # FOR DEBUGGING. remove when ready
+            self.multi_proc_handler = multi_proc_handler
+
             # loop over actors in original simulation
             for actor in self.actor_manager.actors.values():
                 actor.import_user_output_from_actor(
@@ -1858,7 +1868,7 @@ class Simulation(GateObject):
             for actor in self.actor_manager.actors.values():
                 actor.EndOfMultiProcessAction()
 
-            self.meta_data.import_from_simulation_output(*list_of_output)
+            self.meta_data.extract_from_simulation_output(*list_of_output)
             for i, o in enumerate(list_of_output):
                 self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
 
@@ -1880,7 +1890,7 @@ class Simulation(GateObject):
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             output = self._run_simulation_engine(False)
-            self.meta_data.import_from_simulation_output(output)
+            self.meta_data.extract_from_simulation_output(output)
 
         if self.store_json_archive is True:
             self.to_json_file()
@@ -1893,7 +1903,7 @@ class Simulation(GateObject):
             print("*" * 20)
             print(f"{len(self.warnings)} warnings occurred in this simulation: \n")
             for i, w in enumerate(self.warnings):
-                print(f"{i+1}) " + "-" * 10)
+                print(f"{i + 1}) " + "-" * 10)
                 print(w)
                 print()
             print("*" * 20)
