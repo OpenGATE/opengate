@@ -530,12 +530,12 @@ class DataItemContainer(DataContainer):
                 if (self.data[i] is None or self.data[i].data is None) is not (
                     other.data[i] is None or other.data[i].data is None
                 ):
-                    s_not = {True: "", False: "not_"}
+                    s_not = {True: "", False: "not "}
                     fatal(
                         "Cannot apply inplace merge data to container "
                         "with unset (None) data items. "
-                        f"In this case, the inplace item {i} is {s_not[self.data[i] is None]} None, "
-                        f"and the other item {i} is {s_not[other.data[i] is None]} None. "
+                        f"In this case, the inplace item {i} is {s_not[self.data[i] is None]}None, "
+                        f"and the other item {i} is {s_not[other.data[i] is None]}None. "
                         f"This is likely an implementation error in GATE. "
                     )
         return self
