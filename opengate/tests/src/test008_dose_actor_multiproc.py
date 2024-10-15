@@ -86,22 +86,20 @@ if __name__ == "__main__":
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
 
-    # start simulation
+    # # start simulation
     t1 = time.time()
     sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem / 'nproc_4'
-    sim.run(number_of_sub_processes=4)
+    path_edep_nproc4 = dose.edep.get_output_path()
+    sim.run(number_of_sub_processes=4, avoid_write_to_disk_in_subprocess=False)
     t2 = time.time()
     delta_t_nproc4 = t2 - t1
 
-    path_edep_nproc4 = dose.edep.get_output_path()
-
-    t1 = time.time()
     sim.output_dir = paths.output / Path(__file__.rstrip(".py")).stem / 'nproc_1'
+    path_edep_nproc1 = dose.edep.get_output_path()
+    t1 = time.time()
     sim.run(number_of_sub_processes=1)
     t2 = time.time()
     delta_t_nproc1 = t2 - t1
-
-    path_edep_nproc1 = dose.edep.get_output_path()
 
     # t1 = time.time()
     # sim.run(number_of_sub_processes=0)
@@ -111,16 +109,15 @@ if __name__ == "__main__":
     print("Simulation times: ")
     print(f"One subprocess: {delta_t_nproc1}")
     print(f"Four subprocesses: {delta_t_nproc4}, speed-up: {delta_t_nproc1 / delta_t_nproc4}")
-    # print(f"No subprocess: {delta_t_no_subproc}")
+    # # print(f"No subprocess: {delta_t_no_subproc}")
 
     # # tests
     print("\nDifference for EDEP")
     is_ok = utility.assert_images(
             path_edep_nproc1,
             path_edep_nproc4,
-            stat,
             tolerance=13,
-            ignore_value=0,
+            ignore_value=None,
             sum_tolerance=1,
     )
     #
