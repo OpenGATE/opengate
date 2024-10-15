@@ -70,6 +70,7 @@ public:
   G4String fActiveSource = "None";
   G4bool fIsAnnihilAlreadySplit =false;
   G4int fCounter;
+  G4bool fOnlyTree = true;
   GateLastVertexSource* fVertexSource = nullptr;
   tree<LastVertexDataContainer> fTree;
   tree<LastVertexDataContainer>::post_order_iterator fIterator;

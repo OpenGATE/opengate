@@ -63,6 +63,14 @@ virtual G4VParticleChange * PostStepDoIt (const G4Track & track, const G4Step & 
   return particleChange;
 }
 
+virtual G4VParticleChange * AlongStepDoIt (const G4Track & track, const G4Step &  step) override 
+{
+  isIonisation = true;
+  G4VParticleChange* particleChange = G4VEnergyLossProcess::AlongStepDoIt(track,step);
+  return particleChange;
+}
+
+
 };
 
 

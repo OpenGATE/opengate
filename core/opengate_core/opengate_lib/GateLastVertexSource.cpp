@@ -74,17 +74,17 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event* event, double current_sim
   }
   else {
 
-    
-    G4double energy = fListOfContainer[idx].GetEnergy();
+    SimpleContainer containerToSplit = fListOfContainer[idx].GetContainerToSplit();
+    G4double energy = containerToSplit.GetEnergy();
     if (energy < 0){
       energy = 0;
     }
     fContainer = fListOfContainer[idx];
-    G4ThreeVector position  = fListOfContainer[idx].GetVertexPosition();
-    G4ThreeVector momentum = fListOfContainer[idx].GetMomentum();
-    G4String particleName = fListOfContainer[idx].GetParticleNameToSplit();
-    G4double weight =fListOfContainer[idx].GetWeight();
-    fProcessToSplit = fListOfContainer[idx].GetProcessNameToSplit();
+    G4ThreeVector position  = containerToSplit.GetVertexPosition();
+    G4ThreeVector momentum = containerToSplit.GetMomentum();
+    G4String particleName = containerToSplit.GetParticleNameToSplit();
+    G4double weight =containerToSplit.GetWeight();
+    fProcessToSplit = containerToSplit.GetProcessNameToSplit();
 
     auto &l = fThreadLocalData.Get();
     auto *particle_table = G4ParticleTable::GetParticleTable();
