@@ -397,10 +397,6 @@ jobs:
           if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
               path=`opengate_library_path.py -p site_packages`
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
-              path=`opengate_library_path.py -p libG4processes`
-              export LD_PRELOAD=${path}:${LD_PRELOAD}
-              path=`opengate_library_path.py -p libG4geometry`
-              export LD_PRELOAD=${path}:${LD_PRELOAD}
           fi
           if [[ ${{ matrix.os }} == "windows-latest" ]]; then
               path=`opengate_library_path.py -p site_packages`

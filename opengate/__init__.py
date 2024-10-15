@@ -1,34 +1,38 @@
 # This file handles the way opengate is imported.
+import os
+import sys
 
-import colored
-import threading
 
-print(
-    colored.stylize(
-        f"Importing opengate (thread " f"{threading.get_native_id()}) ... ",
-        colored.fore("dark_gray"),
-    ),
-    end="",
-    flush=True,
-)
+def restart_with_glibc_tunables():
+    """
+    Restart the current process with GLIBC_TUNABLES set.
+    """
+    # tunables_value = "glibc.rtld.optional_static_tls=2048000"
+    tunables_value = "glibc.rtld.optional_static_tls=1500000"
 
-# the following modules are imported respecting the package structure
-# they will be available via
-# `import opengate`
-# `opengate.xxx.yyy`
-# Modules that are mainly for internal use, such as runtiming.py or uisessions.py
-# are not automatically imported. If a user needs them, s/he must import
-# them specifically, e.g. `import opengate.uisessions`
+    # Check if the environment variable is already set correctly
+    if os.environ.get("GLIBC_TUNABLES") != tunables_value:
+        # Set the environment variable
+        new_env = os.environ.copy()
+        new_env["GLIBC_TUNABLES"] = tunables_value
+
+        # Restart the process with the new environment
+        os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
+
+        # Exit the current process
+        sys.exit()
+
+
+if sys.platform.startswith("linux"):
+    restart_with_glibc_tunables()
 
 # subpackages
 import opengate.sources
-
 import opengate.geometry
 import opengate.geometry.materials
 import opengate.geometry.solids
 import opengate.geometry.utility
 import opengate.geometry.volumes
-
 import opengate.actors
 import opengate.contrib
 
@@ -52,6 +56,3 @@ import opengate.engines
 from opengate.managers import Simulation
 from opengate.managers import create_sim_from_json
 from opengate.utility import g4_units
-
-
-print(colored.stylize("done", colored.fore("dark_gray")))
