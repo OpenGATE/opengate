@@ -35,16 +35,23 @@ if __name__ == "__main__":
     # Define core of the simulation, including physics
     sim = setup_simulation_engine(paths)
 
-    # add a waterbox
-    wb1 = sim.add_volume("Box", "bodybox")
-    wb1.size = [50 * cm, 50 * cm, 50 * cm]
-    wb1.translation = [0 * cm, -25.5 * cm, 0 * cm]
-    wb1.material = "Body"
+    # add a volume that englobe the two objets for the actor
+    wb0 = sim.add_volume("Box", "both_obj")
+    wb0.size = [50 * cm, 100 * cm, 50 * cm]
+    wb0.material = "G4_AIR"
 
     # add a bodybox
+    wb1 = sim.add_volume("Box", "bodybox")
+    wb1.mother = wb0
+    wb1.size = [50 * cm, 50 * cm, 50 * cm]
+    wb1.translation = [0 * cm, -25.0001 * cm, 0 * cm]
+    wb1.material = "Body"
+
+    # add a waterbox
     wb2 = sim.add_volume("Box", "waterbox")
+    wb2.mother = wb0
     wb2.size = [50 * cm, 50 * cm, 50 * cm]
-    wb2.translation = [0 * cm, 25.5 * cm, 0 * cm]
+    wb2.translation = [0 * cm, 25.0001 * cm, 0 * cm]
     wb2.material = "Water"
 
     # set the source
@@ -55,10 +62,8 @@ if __name__ == "__main__":
     source.direction.type = "iso"
 
     # add phase actor
-    phsp1 = setup_actor(sim, "phsp1", wb1.name)
-    phsp1.output_filename = paths.output / f"annihilation_photons_{test_key}_1.root"
-    phsp2 = setup_actor(sim, "phsp2", wb2.name)
-    phsp2.output_filename = paths.output / f"annihilation_photons_{test_key}_2.root"
+    phsp = setup_actor(sim, "phsp", wb0.name)
+    phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
 
     sim.physics_manager.mean_energy_per_ion_pair["Water"] = mean_energy
 
@@ -66,13 +71,9 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # redo test changing the MeanEnergyPerIonPair
-    root_filename1 = phsp1.output_filename
-    root_filename2 = phsp2.output_filename
-    phsp1.output_filename = (
-        paths.output / f"annihilation_photons_with_mepip_{test_key}_1.root"
-    )
-    phsp2.output_filename = (
-        paths.output / f"annihilation_photons_with_mepip_{test_key}_2.root"
+    root_filename1 = phsp.output_filename
+    phsp.output_filename = (
+        paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
 
     sim.physics_manager.mean_energy_per_ion_pair["Body"] = mean_energy
@@ -81,9 +82,7 @@ if __name__ == "__main__":
     sim.run()
 
     # test: no mean energy, should be mostly colinear
-    gamma_pairs = read_gamma_pairs(root_filename1, "phsp1") + read_gamma_pairs(
-        root_filename2, "phsp2"
-    )
+    gamma_pairs = read_gamma_pairs(root_filename1, "phsp")
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
 
     plt.hist(
@@ -100,11 +99,10 @@ if __name__ == "__main__":
     ratio_colin = np.sum(np.array(acollinearity_angles) < 0.01) / np.sum(
         np.array(acollinearity_angles) < 0.8
     )
+    print(f"Ratio of collinear annihilation pairs: {ratio_colin}")
 
     # test: with mean energy, acolinearity amplitude should have a Rayleigh distribution
-    gamma_pairs = read_gamma_pairs(phsp1.output_filename, "phsp1") + read_gamma_pairs(
-        phsp2.output_filename, "phsp2"
-    )
+    gamma_pairs = read_gamma_pairs(phsp.output_filename, "phsp")
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
 
     acolin_scale = plot_acolin_case(mean_energy, acollinearity_angles)
@@ -115,7 +113,6 @@ if __name__ == "__main__":
 
     # final
     # No acolin
-    print(ratio_colin)
     is_ok_p1 = np.isclose(ratio_colin, 0.5, atol=0.1)
     # Basic acolin
     is_ok_p2 = np.isclose(acolin_scale * 2.355, 0.5, atol=0.2)
