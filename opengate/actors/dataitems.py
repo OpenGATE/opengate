@@ -92,12 +92,13 @@ class DataItem:
                 f"because the following ValueError was encountered: \n{e}"
             )
 
-    def inplace_merge_with(self, other):
+    def inplace_merge_with(self, *other):
         """The base class implements merging as summation.
         Specific classes can override this, e.g. to merge mean values.
         """
         try:
-            self += other
+            for o in other:
+                self.__iadd__(o)
         except ValueError as e:
             raise NotImplementedError(
                 f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
