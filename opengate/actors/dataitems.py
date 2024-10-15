@@ -270,10 +270,8 @@ class ItkImageDataItem(DataItem):
         return self
 
     def inplace_merge_with(self, *other):
-        data_to_merge = [self.data] + [o.data for o in other]
-        if self.data is not None:
-            data_to_merge += [self.data]
-        self.data = sum_itk_images(data_to_merge)
+        for o in other:
+            self.__iadd__(o)
 
     def set_image_properties(self, **properties):
         if not self.data_is_none:
