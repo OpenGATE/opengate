@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
     digit = discovery.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
-    ew = digit.find_first_module("energy_window")
+    ew = digit.find_module("energy_window")
     ew.output_filename = "output_discovery_lu177.root"
     ew.root_output.write_to_disk = True
 
