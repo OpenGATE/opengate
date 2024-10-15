@@ -322,6 +322,10 @@ def assert_images(
     scaleImageValuesFactor=None,
     sad_profile_tolerance=None,
 ):
+
+    if stats is not None:
+        DeprecationWarning("kwarg 'stats' in function assert_images is deprecated.")
+
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
     filename2 = ensure_filename_is_str(filename2)
@@ -376,11 +380,6 @@ def assert_images(
 
     print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
     print(f"Image2: {info2.size} {info2.spacing} {info2.origin} {filename2}")
-
-    # normalise by event
-    if stats is not None:
-        d1 = d1 / stats.counts.events
-        d2 = d2 / stats.counts.events
 
     # normalize by sum of d1
     s = np.sum(d2)
