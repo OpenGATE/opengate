@@ -268,6 +268,12 @@ class ItkImageDataItem(DataItem):
             self.set_data(divide_itk_images(self.data, other.data))
         return self
 
+    def inplace_merge_with(self, *other):
+        data_to_merge = [self.data] + [o.data for o in other]
+        if self.data is not None:
+            data_to_merge += [self.data]
+        self.data = sum_itk_images(data_to_merge)
+
     def set_image_properties(self, **properties):
         if not self.data_is_none:
             if "spacing" in properties and properties["spacing"] is not None:
@@ -748,8 +754,11 @@ class QuotientMeanItkImage(QuotientItkImage):
 
 def merge_data(list_of_data):
     merged_data = list_of_data[0]
-    for d in list_of_data[1:]:
-        merged_data.inplace_merge_with(d)
+    try:
+        merged_data.inplace_merge_with(*list_of_data[1:])
+    except:
+        for d in list_of_data[1:]:
+            merged_data.inplace_merge_with(d)
     return merged_data
 
 

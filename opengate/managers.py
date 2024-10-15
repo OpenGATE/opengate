@@ -7,6 +7,7 @@ import shutil
 import os
 from pathlib import Path
 import weakref
+import multiprocessing
 
 import opengate_core as g4
 
@@ -46,7 +47,10 @@ from .physics import (
 )
 from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
-from .processing import dispatch_to_subprocess
+from .processing import (
+    dispatch_to_subprocess,
+    MultiProcessingHandlerEqualPerRunTimingInterval,
+)
 
 from .geometry.volumes import (
     VolumeBase,
@@ -1192,6 +1196,39 @@ class VolumeManager(GateObject):
         print(self.dump_material_database_names())
 
 
+class SimulationMetaData(Box):
+
+    def __init__(self, *args, simulation_output=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.warnings = []
+        self.expected_number_of_events = 0  # FIXME workaround
+        self.user_hook_log = []
+        self.current_random_seed = None
+        self.number_of_sub_processes = None
+        self.start_new_process = None
+        if simulation_output is not None:
+            self.import_from_simulation_output(simulation_output)
+
+    def reset_warnings(self):
+        self.warnings = []
+
+    def import_from_simulation_meta_data(self, *meta_data):
+        for m in meta_data:
+            self.warnings.extend(m.warnings)
+            self.expected_number_of_events += m.expected_number_of_events
+            self.user_hook_log.extend(m.user_hook_log)
+            if self.current_random_seed is None:
+                self.current_random_seed = m.current_random_seed
+
+    def import_from_simulation_output(self, *sim_output):
+        for so in sim_output:
+            self.warnings.extend(so.warnings)
+            self.expected_number_of_events += so.expected_number_of_events
+            self.user_hook_log.extend(so.user_hook_log)
+            if self.current_random_seed is None:
+                self.current_random_seed = so.current_random_seed
+
+
 def setter_hook_verbose_level(self, verbose_level):
     try:
         level = int(verbose_level)
@@ -1437,12 +1474,12 @@ class Simulation(GateObject):
         kwargs.pop("simulation", None)
         super().__init__(name=name, **kwargs)
 
-        # list to store warning messages issued somewhere in the simulation
-        self._user_warnings = []
-
         # for debug only
         self.verbose_getstate = False
         self.verbose_close = False
+
+        self.meta_data = SimulationMetaData()
+        self.meta_data_per_process = {}
 
         # main managers
         self.volume_manager = VolumeManager(self)
@@ -1454,12 +1491,14 @@ class Simulation(GateObject):
         # hook functions
         self.user_hook_after_init = None
         self.user_hook_after_run = None
-        self.user_hook_log = None
 
-        # read-only info
-        self._current_random_seed = None
-
-        self.expected_number_of_events = None
+    def __getattr__(self, item):
+        try:
+            return self.meta_data[item]
+        except KeyError:
+            raise AttributeError(
+                f"Item {item} not found in {type(self)}, nor in the simulation meta data. "
+            )
 
     def __str__(self):
         s = (
@@ -1487,21 +1526,10 @@ class Simulation(GateObject):
     def world(self):
         return self.volume_manager.world_volume
 
-    @property
-    def current_random_seed(self):
-        return self._current_random_seed
-
-    @property
-    def warnings(self):
-        return self._user_warnings
-
-    def reset_warnings(self):
-        self._user_warnings = []
-
     def warn_user(self, message):
         # We need this specific implementation because the Simulation does not hold a reference 'simulation',
         # as required by the base class implementation of warn_user()
-        self._user_warnings.append(message)
+        self.warnings.append(message)
         super().warn_user(message)
 
     def to_dictionary(self):
@@ -1653,7 +1681,7 @@ class Simulation(GateObject):
     def multithreaded(self):
         return self.number_of_threads > 1 or self.force_multithread_mode
 
-    def _run_simulation_engine(self, start_new_process):
+    def _run_simulation_engine(self, start_new_process, process_index=None):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
 
         Args:
@@ -1668,16 +1696,58 @@ class Simulation(GateObject):
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
+            se.process_index = process_index
             output = se.run_engine()
         return output
 
-    def run(self, start_new_process=False):
+    def run_in_process(
+        self, multi_process_handler, process_index, avoid_write_to_disk_in_subprocess
+    ):
+        # Important: this method is intended to run in a processes spawned off the main process.
+        # Therefore, self is actually a separate instance from the original simulation
+        # and we can safely adapt it in this process.
+
+        # adapt the output_dir
+        self.output_dir = str(Path(self.output_dir) / f"process_{process_index}")
+
+        # adapt the run timing intervals in
+        self.run_timing_intervals = (
+            multi_process_handler.get_run_timing_intervals_for_process(process_index)
+        )
+        # adapt all dynamic volumes
+        for vol in self.volume_manager.dynamic_volumes:
+            vol.reassign_dynamic_params_for_process(
+                multi_process_handler.get_original_run_timing_indices_for_process(
+                    process_index
+                )
+            )
+
+        if avoid_write_to_disk_in_subprocess is True:
+            for actor in self.actor_manager.actors.values():
+                actor.write_to_disk = False
+
+        output = self._run_simulation_engine(True, process_index=process_index)
+        print(f"run_in_process finished in process {process_index}")
+        return output
+
+    def run(
+        self,
+        start_new_process=False,
+        number_of_sub_processes=0,
+        avoid_write_to_disk_in_subprocess=True,
+    ):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
                 "Error, the multi-thread option is not available for Windows now. "
                 "Run the simulation with one thread."
             )
+
+        if number_of_sub_processes == 1:
+            start_new_process = True
+
+        self.meta_data.number_of_sub_processes = number_of_sub_processes
+        self.meta_data.start_new_process = start_new_process
 
         # prepare sub process
         if start_new_process is True:
@@ -1686,6 +1756,9 @@ class Simulation(GateObject):
                 at the beginning of the script
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
+
+            for actor in self.actor_manager.actors.values():
+                actor.reset_user_output()
 
             log.info("Dispatching simulation to subprocess ...")
             output = dispatch_to_subprocess(self._run_simulation_engine, True)
@@ -1705,19 +1778,70 @@ class Simulation(GateObject):
                     source.fTotalSkippedEvents = s.user_info.fTotalSkippedEvents
                     source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
 
+            self.meta_data.import_from_simulation_output(output)
+
+        elif number_of_sub_processes > 1:
+            multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(
+                name="multi_proc_handler",
+                simulation=self,
+                number_of_processes=number_of_sub_processes,
+            )
+            multi_proc_handler.initialize()
+            try:
+                multiprocessing.set_start_method("spawn")
+            except RuntimeError:
+                print("Could not set start method 'spawn'.")
+                pass
+            # q = multiprocessing.Queue()
+            for actor in self.actor_manager.actors.values():
+                actor.reset_user_output()
+
+            with multiprocessing.Pool(number_of_sub_processes) as pool:
+                results = [
+                    pool.apply_async(
+                        self.run_in_process,
+                        (multi_proc_handler, i, avoid_write_to_disk_in_subprocess),
+                    )
+                    for i in range(number_of_sub_processes)
+                ]
+                # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
+                list_of_output = [res.get() for res in results]
+            log.info("End of multiprocessing")
+
+            # loop over actors in original simulation
+            for actor in self.actor_manager.actors.values():
+                actor.import_user_output_from_actor(
+                    *[
+                        o.get_actor(actor.name) for o in list_of_output
+                    ]  # these are the actors from the process
+                )
+
+            for actor in self.actor_manager.actors.values():
+                actor.EndOfMultiProcessAction()
+
+            self.meta_data.import_from_simulation_output(*list_of_output)
+            for i, o in enumerate(list_of_output):
+                self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
+
+            # FIXME: temporary workaround to collect extra info from output
+            # will be implemented similar to actor.import_user_output_from_actor after source refactoring
+            for source in self.source_manager.user_info_sources.values():
+                for o in list_of_output:
+                    try:
+                        s = o.get_source(source.name)
+                    except:
+                        continue
+                    if "fTotalSkippedEvents" in s.user_info.__dict__:
+                        if not hasattr(source, "fTotalSkippedEvents"):
+                            source.fTotalSkippedEvents = 0
+                            source.fTotalZeroEvents = 0
+                        source.fTotalSkippedEvents += s.user_info.fTotalSkippedEvents
+                        source.fTotalZeroEvents += s.user_info.fTotalZeroEvents
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             output = self._run_simulation_engine(False)
-
-        self._user_warnings.extend(output.warnings)
-
-        # FIXME workaround
-        self.expected_number_of_events = output.expected_number_of_events
-
-        # store the hook log
-        self.user_hook_log = output.user_hook_log
-        self._current_random_seed = output.current_random_seed
+            self.meta_data.import_from_simulation_output(output)
 
         if self.store_json_archive is True:
             self.to_json_file()
