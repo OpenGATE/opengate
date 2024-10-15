@@ -1,6 +1,10 @@
 import pathlib
 from opengate.managers import Simulation
-from opengate.geometry.volumes import RepeatParametrisedVolume, HexagonVolume
+from opengate.geometry.volumes import (
+    RepeatParametrisedVolume,
+    HexagonVolume,
+    unite_volumes,
+)
 from opengate.geometry.utility import (
     translate_point_to_volume,
     get_transform_orbiting,
@@ -87,7 +91,7 @@ def add_spect_two_heads(sim, name="spect", collimator_type="lehr", debug=False):
     head2, colli2, crystal2 = add_spect_head(
         sim, f"{name}_2", collimator_type, debug=debug
     )
-    head2.translation = [0, -radius, 0]
+    head2.translation = [0, radius, 0]
     head2.rotation = Rotation.from_euler("XZ", [-90, 180], degrees=True).as_matrix()
 
     return [head1, head2], [crystal1, crystal2]
@@ -270,6 +274,8 @@ def add_collimator(sim, name, head, collimator_type, debug):
         holep = megp_collimator_repeater(sim, name, core, debug)
     if collimator_type == "lehr":
         holep = lehr_collimator_repeater(sim, name, core, debug)
+        # holep = lehr_collimator_repeater_noparam(sim, name, core, debug)
+        # holep = lehr_collimator_repeater2(sim, name, core, debug)
     if collimator_type == "hegp":
         holep = hegp_collimator_repeater(sim, name, core, debug)
     if not holep:
@@ -277,7 +283,6 @@ def add_collimator(sim, name, head, collimator_type, debug):
             f"Error, unknown collimator type {collimator_type}. "
             f'Use "megp" or "lehr" or "hegp" or "False"'
         )
-    sim.volume_manager.add_volume(holep)
 
     return colli_trd
 
@@ -302,6 +307,7 @@ def hegp_collimator_repeater(sim, name, core, debug):
     holep.offset_nb = 2
     holep.offset = [5.0229 * mm, 2.9000 * mm, 0]
 
+    sim.volume_manager.add_volume(holep)
     return holep
 
 
@@ -327,6 +333,7 @@ def megp_collimator_repeater(sim, name, core, debug):
     holep.offset_nb = 2
     holep.offset = [3.50704 * mm, 2.025 * mm, 0]
 
+    sim.volume_manager.add_volume(holep)
     return holep
 
 
@@ -354,7 +361,70 @@ def lehr_collimator_repeater(sim, name, core, debug):
     holep.offset_nb = 2
     holep.offset = [1.47224 * mm, 0.85 * mm, 0]
 
+    sim.volume_manager.add_volume(holep)
     return holep
+
+
+def lehr_collimator_repeater2(sim, name, core, debug):
+    cm = g4_units.cm
+    mm = g4_units.mm
+
+    # one hole
+    hole_a = HexagonVolume(name=f"{name}_collimator_hole_a")
+    hole_a.height = 3.5 * cm
+    hole_a.radius = 0.075 * cm
+    hole_a.material = "G4_AIR"
+    hole_a.mother = core.name
+
+    # double hole
+    hole = unite_volumes(hole_a, hole_a, translation=[1.47224 * mm, 0.85 * mm, 0])
+    sim.volume_manager.add_volume(hole)
+
+    # parameterised holes
+    holep = RepeatParametrisedVolume(repeated_volume=hole)
+    if debug:
+        holep.linear_repeat = [30, 30, 1]
+    else:
+        holep.linear_repeat = [183, 235, 1]
+
+    holep.translation = [2.94449 * mm, 1.7 * mm, 0]
+    sim.volume_manager.add_volume(holep)
+
+    return holep
+
+
+def lehr_collimator_repeater_noparam(sim, name, core, debug):
+    cm = g4_units.cm
+    mm = g4_units.mm
+    # one single hole
+    hole = sim.add_volume("Hexagon", name=f"{name}_collimator_hole")
+    hole.height = 3.5 * cm
+    hole.radius = 0.075 * cm
+    hole.material = "G4_AIR"
+    hole.mother = core.name
+    translations = []
+
+    if debug:
+        linear_repeat = [30, 30, 1]
+    else:
+        linear_repeat = [183, 235, 1]
+
+    offset_nb = 2
+    translation = [2.94449 * mm, 1.7 * mm, 0]
+    offset = [1.47224 * mm, 0.85 * mm, 0]
+    start = [-(x - 1) * y / 2.0 for x, y in zip(linear_repeat, translation)]
+    for i in range(linear_repeat[0]):
+        for j in range(linear_repeat[1]):
+            for k in range(linear_repeat[2]):
+                for o in range(offset_nb):
+                    tr_x = start[0] + i * translation[0] + o * offset[0]
+                    tr_y = start[1] + j * translation[1] + o * offset[1]
+                    tr_z = start[2] + k * translation[2] + o * offset[2]
+                    tr = [tr_x, tr_y, tr_z]
+                    translations.append(tr)
+    hole.translation = translations  # repeated
+
+    return hole
 
 
 def add_simplified_digitizer_tc99m(
@@ -639,7 +709,6 @@ def rotate_gantry(
     if initial_rotation is None:
         initial_rotation = Rotation.from_euler("X", 90, degrees=True)
     for r in range(nb_angle):
-        print(f"current angle: {current_angle_deg}")
         t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
         rot = rot * initial_rotation
