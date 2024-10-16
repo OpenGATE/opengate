@@ -43,6 +43,13 @@ def get_orientation_for_ct(colli_type, table_shift, radius):
     return get_transform_orbiting(p, "x", 90)
 
 
+def add_materials(sim):
+    f = pathlib.Path(__file__).parent.resolve()
+    fdb = f"{f}/spect_ge_nm670_materials.db"
+    if fdb not in sim.volume_manager.material_database.filenames:
+        sim.volume_manager.add_material_database(fdb)
+
+
 def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     """
     Collimators:
@@ -56,10 +63,7 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     Collimator HEGP: High Energy General Purpose   (for I131)
 
     """
-    f = pathlib.Path(__file__).parent.resolve()
-    fdb = f"{f}/spect_ge_nm670_materials.db"
-    if fdb not in sim.volume_manager.material_database.filenames:
-        sim.volume_manager.add_material_database(fdb)
+    add_materials(sim)
 
     # check overlap
     sim.check_volumes_overlap = False  # set to True for debug
@@ -274,8 +278,6 @@ def add_collimator(sim, name, head, collimator_type, debug):
         holep = megp_collimator_repeater(sim, name, core, debug)
     if collimator_type == "lehr":
         holep = lehr_collimator_repeater(sim, name, core, debug)
-        # holep = lehr_collimator_repeater_noparam(sim, name, core, debug)
-        # holep = lehr_collimator_repeater2(sim, name, core, debug)
     if collimator_type == "hegp":
         holep = hegp_collimator_repeater(sim, name, core, debug)
     if not holep:
