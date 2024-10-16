@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create and run the simulation
     mm = g4_units.mm
-    sim = t036.create_simulation("param", paths)
+    sim = t036.create_simulation("param", paths, "_notattached")
 
     # sim.visu = True
     sim.visu_type = "qt"
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # test another case that should fail
     proj2 = sim.add_actor("DigitizerProjectionActor", "proj2")
     proj2.attached_to = "crystal_pixel"
-    proj2.output_filename = "proj2.mha"
+    proj2.output_filename = "proj2-onlyexistsiffail.mha"
     proj2.size = [128, 128]
     proj2.spacing = [5 * mm, 5 * mm]
 
