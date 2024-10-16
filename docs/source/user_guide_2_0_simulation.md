@@ -81,6 +81,27 @@ The **verbosity**, i.e. the messages printed on the screen, are controlled via v
 - `ui.g4_verbose_level`: level of the Geant4 verbose system
 - `ui.visu_verbose`: enable or disable Geant4 verbose during visualisation
 
+Examples in code:
+```
+from opengate.userhooks import check_production_cuts
+
+sim = gate.Simulation()
+sim.user_hook_after_init = check_production_cuts # cuts length (millimeter) of gamma, electron, proton, positron
+
+# geant4 verbose
+sim.g4_commands_after_init.append("/tracking/verbose 1") # track particles. 0: no info, 1,2,3: detailed level
+sim.g4_verbose_level_tracking = 1                # same as above
+
+sim.g4_verbose = True                            # similar as above, default is False
+sim.g4_verbose_level = 0                         # when True, 0: general info; 1,2,3: detailed level, default is 1
+
+# opengate verbose
+sim.verbose_level = gate.logger.DEBUG            # actors info
+sim.verbose_level = gate.logger.INFO             # default output
+sim.running_verbose_level = gate.logger.EVENT    # events info
+sim.running_verbose_level = gate.logger.RUN      # cpu threads info
+```
+
 #### Visualisation
 
 **Visualisation** is enabled with `ui.visu = True`. Then, you have the choice to choose between qt, vrml or gdml interface.
