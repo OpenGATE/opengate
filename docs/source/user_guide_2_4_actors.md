@@ -262,13 +262,53 @@ warning: if blur leads to point outside volume (keep_in_solid_limits option). Us
 
 #### DigitizerEnergyWindowsActor
 
-(documentation TODO)
-for spect, test028
+The `DigitizerEnergyWindowsActor` is used in both PET and SPECT simulations to define energy windows, which limit the range of particle energies that are accepted for further processing. This actor helps to filter out noise or unwanted events by selecting only particles within a specified energy range, which is crucial for ensuring accurate imaging results.
+
+In PET simulations, the energy window is typically centered around the 511 keV annihilation photon. The energy range can be set to ensure only relevant events are processed:
+
+```python
+# EnergyWindows for PET
+ew = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
+ew.attached_to = hc.attached_to
+ew.input_digi_collection = "Singles"
+ew.channels = [{"name": ew.name, "min": 425 * keV, "max": 650 * keV}] # 511 keV window
+ew.output_filename = root_name
+```
+
+For SPECT simulations, the energy windows can be more complex, with multiple energy channels to capture different energy peaks, such as a photopeak and scatter events:
+
+```python
+# EnergyWindows for SPECT
+ew = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
+ew.attached_to = hc.attached_to
+ew.input_digi_collection = "Singles"
+ew.channels = [
+    {"name": "scatter", "min": 114 * keV, "max": 126 * keV},
+    {"name": "peak140", "min": 126 * keV, "max": 154.55 * keV},  # Typical for Tc-99m
+]
+ew.output_filename = hc.output_filename
+```
+
+In both cases, `DigitizerEnergyWindowsActor` ensures that only particles with energies falling within the defined channels are accepted, aiding in improving image quality by reducing unwanted events.
+
+For SPECT, please refer to test028; for PET, please refer to test037.
 
 #### DigitizerProjectionActor
 
-(documentation TODO)
-for spect, test028
+The `DigitizerProjectionActor` generates 2D projections from digitized particle hits in SPECT or PET simulations. It takes input collections (e.g., scatter or peak energy channels) and creates a projection image based on predefined grid spacing and size. The result is saved in a specified output file.
+
+```python
+# DigitizerProjectionActor setup
+proj = sim.add_actor("DigitizerProjectionActor", "Projection")
+proj.attached_to = hc.attached_to                     # Attach to crystal volume
+proj.input_digi_collections = ["scatter", "peak140", "Singles"]  # Use multiple energy channels
+proj.spacing = [4.41806 * mm, 4.41806 * mm]           # Set pixel spacing in mm
+proj.size = [128, 128]                                # Image size in pixels (128x128)
+proj.origin_as_image_center = False                   # Origin is not at image center
+proj.output_filename = 'projection.mhd'               # Output file path
+```
+
+For SPECT, please refer to test028.
 
 #### DigitizerEfficiencyActor
 
