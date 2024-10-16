@@ -1,12 +1,10 @@
 import copy
 from .sources.builders import source_builders, source_type_names
-from .actors.builders import filter_builders, filter_type_names
 from .exception import fatal
 
 
 element_builders = {
     "Source": source_builders,
-    "Filter": filter_builders,
 }
 
 
@@ -17,8 +15,6 @@ def get_element_class(element_type, type_name):
     elements = None
     if element_type == "Source":
         elements = source_type_names
-    if element_type == "Filter":
-        elements = filter_type_names
     if not elements:
         fatal(
             f"Error, element_type={element_type} is   unknown. Use Volume, Source or Actor."

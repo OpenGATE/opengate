@@ -1847,4 +1847,7 @@ def create_sim_from_json(path):
 
 process_cls(PhysicsManager)
 process_cls(PhysicsListManager)
+process_cls(VolumeManager)
+process_cls(ActorManager)
+process_cls(PostProcessingManager)
 process_cls(Simulation)
