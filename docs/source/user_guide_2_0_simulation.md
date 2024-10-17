@@ -26,15 +26,15 @@ Any simulation starts by defining the (unique) `Simulation` object. The generic 
 sim = gate.Simulation()
 ui = sim.user_info
 print(ui)
-ui.verbose_level = gate.LOG_DEBUG
-ui.running_verbose_level = gate.LOG_EVENT
-ui.g4_verbose = False
-ui.g4_verbose_level = 1
-ui.visu = False
-ui.visu_verbose = False
-ui.random_engine = 'MersenneTwister'
-ui.random_seed = 'auto'
-ui.number_of_threads = 1
+sim.verbose_level = gate.LOG_DEBUG
+sim.running_verbose_level = gate.LOG_EVENT
+sim.g4_verbose = False
+sim.g4_verbose_level = 1
+sim.visu = False
+sim.visu_verbose = False
+sim.random_engine = 'MersenneTwister'
+sim.random_seed = 'auto'
+sim.number_of_threads = 1
 ```
 
 A simulation must contains 4 main elements that define a complete simulation:
@@ -54,7 +54,7 @@ output = sim.start()
 
 #### Random Number Generator
 
-The RNG can be set with `ui.random_engine = "MersenneTwister"`. The default one is "MixMaxRng" and not "MersenneTwister" because it is recommended by Geant4 for MT.
+The RNG can be set with `sim.random_engine = "MersenneTwister"`. The default one is "MixMaxRng" and not "MersenneTwister" because it is recommended by Geant4 for MT.
 
 The seed of the RNG can be set with `self.random_seed = 123456789`, with any number. If you run two times a simulation with the same seed, the results will be exactly the same. There are some exception to that behavior, for example when using PyTorch-based GAN. By default, it is set to "auto", which means that the seed is randomly chosen.
 
@@ -75,19 +75,37 @@ sim.run_timing_intervals = [
 
 The **verbosity**, i.e. the messages printed on the screen, are controlled via various parameters.
 
-- `ui.verbose_level`: can be `DEBUG` or `INFO`. Will display more or less messages during initialization
-- `ui.running_verbose_level`: can be `RUN` or `EVENT`. Will display message during simulation run
-- `ui.g4_verbose`: (bool) enable or disable the Geant4 verbose system
-- `ui.g4_verbose_level`: level of the Geant4 verbose system
-- `ui.visu_verbose`: enable or disable Geant4 verbose during visualisation
+- `sim.verbose_level`: can be `DEBUG` or `INFO`. Will display more or less messages during initialization
+- `sim.running_verbose_level`: can be `RUN` or `EVENT`. Will display message during simulation run
+- `sim.g4_verbose`: (bool) enable or disable the Geant4 verbose system
+- `sim.g4_verbose_level`: level of the Geant4 verbose system
+- `sim.visu_verbose`: enable or disable Geant4 verbose during visualisation
+
+Examples in code:
+```
+sim = gate.Simulation()
+
+# geant4 verbose
+sim.g4_commands_after_init.append("/tracking/verbose 1") # track particles. 0: no info, 1,2,3: detailed level
+sim.g4_verbose_level_tracking = 1                # same as above
+
+sim.g4_verbose = True                            # Geant4 verbose, default is False
+sim.g4_verbose_level = 0                         # when True, 0: general info; 1,2,3: detailed level, default is 1
+
+# opengate verbose
+sim.verbose_level = gate.logger.DEBUG            # print some debug
+sim.verbose_level = gate.logger.INFO             # print misc info
+sim.running_verbose_level = gate.logger.EVENT    # print info for every generated events
+sim.running_verbose_level = gate.logger.RUN      # print info when each run starts
+```
 
 #### Visualisation
 
-**Visualisation** is enabled with `ui.visu = True`. Then, you have the choice to choose between qt, vrml or gdml interface.
+**Visualisation** is enabled with `sim.visu = True`. Then, you have the choice to choose between qt, vrml or gdml interface.
 
 ##### QT
 
-It will start a Qt interface with `ui.visu_type = "qt"`. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands_qt.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
+It will start a Qt interface with `sim.visu_type = "qt"`. By default, the Geant4 visualisation commands are the ones provided in the file `opengate\mac\default_visu_commands_qt.mac`. It can be changed with `self.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')`.
 
 
 The visualisation with qt is still work in progress. First, it does not work on some linux systems (we don't know why yet). With MacOS Qt6 is working but sometimes you need to set the library path properly before running python with: ```export DYLD_LIBRARY_PATH=/<venv_osx_path>/lib/python3.9/site-packages/opengate_core/plugins:$DYLD_LIBRARY_PATH```. When a CT image is inserted in the simulation, every voxel should be drawn which is highly inefficient and cannot really be used.
@@ -96,19 +114,19 @@ The visualisation with qt is still work in progress. First, it does not work on 
 
 ![](figures/visu_vrml.png)
 
-You can choose vrml visualization with `ui.visu_type = "vrml"`. Opengate uses `pyvista` for the GUI, so you need to install it before with `pip install pyvista`. Alternatively, if you want to use an external VRML viewer, you can save a VRML file with `ui.visu_type = "vrml_file_only"`. In such case, the GUI is not open, and you do not need pyvista. In both cases, you need to set `ui.visu_filename = "geant4VisuFile.wrl"` to save the VRML file.
+You can choose vrml visualization with `sim.visu_type = "vrml"`. Opengate uses `pyvista` for the GUI, so you need to install it before with `pip install pyvista`. Alternatively, if you want to use an external VRML viewer, you can save a VRML file with `sim.visu_type = "vrml_file_only"`. In such case, the GUI is not open, and you do not need pyvista. In both cases, you need to set `sim.visu_filename = "geant4VisuFile.wrl"` to save the VRML file.
 
-If you want to personalized the pyvista GUI, you can set `ui.visu_type = "vrml_file_only"` and execute you own code in your python script. You can find an example in [test004_simple_visu_vrml.py](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test004_simple_visu_vrml.py#L69-L90)
+If you want to personalized the pyvista GUI, you can set `sim.visu_type = "vrml_file_only"` and execute you own code in your python script. You can find an example in [test004_simple_visu_vrml.py](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test004_simple_visu_vrml.py#L69-L90)
 
 ##### GDML
 
 ![](figures/visu_gdml.png)
 
-With GDML visualization, you can only view the geometry, not the paths of the particles. It is enabled with `ui.visu_type = "gdml"`. GDML visualization needs to be enabled in Geant4 with `GEANT4_USE_GDML=ON` during the compilation but you need to have xerces-c available on your computer (install it with yum, brew, or apt-get, ...). Opengate uses `pyg4ometry` for the GUI, so you need to install it with `pip install pyg4ometry`. `pyg4ometry` uses opencascade librairy, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with `ui.visu_type = "gdml_file_only"`. In such case, the GUI is not open, and you do not need pyg4ometry. In both cases, you need to set `ui.visu_filename = "geant4VisuFile.gdml"` to save the GDML file.
+With GDML visualization, you can only view the geometry, not the paths of the particles. It is enabled with `sim.visu_type = "gdml"`. GDML visualization needs to be enabled in Geant4 with `GEANT4_USE_GDML=ON` during the compilation but you need to have xerces-c available on your computer (install it with yum, brew, or apt-get, ...). Opengate uses `pyg4ometry` for the GUI, so you need to install it with `pip install pyg4ometry`. `pyg4ometry` uses opencascade librairy, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with `sim.visu_type = "gdml_file_only"`. In such case, the GUI is not open, and you do not need pyg4ometry. In both cases, you need to set `sim.visu_filename = "geant4VisuFile.gdml"` to save the GDML file.
 
 #### Multithreading
 
-**Multithreading** is enabled with `ui.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel.
+**Multithreading** is enabled with `sim.number_of_threads = 4` (larger than 1). When MT is enabled, there will one run for each thread, running in parallel.
 
 Warning, the speedup is not optimal in all situations. First, it takes time to start a new thread, so it the simulation is short, MT does not bring any speedup. Second, if the simulation contains several runs (for moving volumes for example), all runs will be synchronized, i.e. the master thread will wait for all threads to terminate the run before starting another one. This synchronisation takes times and impact the speedup.
 
