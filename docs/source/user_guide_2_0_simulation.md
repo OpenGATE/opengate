@@ -94,7 +94,7 @@ sim.g4_verbose_level = 0                         # when True, 0: general info; 1
 
 # opengate verbose
 sim.verbose_level = gate.logger.DEBUG            # print some debug
-sim.verbose_level = gate.logger.INFO             # print misc info 
+sim.verbose_level = gate.logger.INFO             # print misc info
 sim.running_verbose_level = gate.logger.EVENT    # print info for every generated events
 sim.running_verbose_level = gate.logger.RUN      # print info when each run starts
 ```
