@@ -154,6 +154,12 @@ class Digitizer:
         # start by the hit collection
         self.hc = self.set_hit_collection()
 
+    def __str__(self):
+        s = ""
+        for a in self.actors:
+            s += a.name + " "
+        return s
+
     def set_hit_collection(self):
         hc = self.simulation.add_actor(
             "DigitizerHitsCollectionActor", f"{self.name}_hits"
@@ -186,10 +192,14 @@ class Digitizer:
     def get_last_module(self):
         return self.actors[-1]
 
-    def find_first_module(self, s):
+    def find_module(self, s):
         """
         Find the first module that contains the s string
         """
+        for m in self.actors:
+            if s == m.name:
+                return m
+        # if not found, find the closest
         for m in self.actors:
             if s in m.name:
                 return m

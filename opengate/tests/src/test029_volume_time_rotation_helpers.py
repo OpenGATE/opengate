@@ -167,7 +167,7 @@ def create_simulation(sim, aa_flag, paths, version):
     spect.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
     # Warning : we set the initial position for the spect
-    # is it not really used (because the motion actor) but needed to test overlap
+    # it is used for computing origin/offset of the projection image
     spect.translation = translations[0]
     spect.rotation = rotations[0]
 
