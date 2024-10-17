@@ -1,11 +1,11 @@
-## Geometry and volumes
+# Geometry and volumes
 
 Gate fundamentally relies on the geometry principles of Geant4, but provides the user with an easy-to-use interface to set up the geometry of a simulation.
 In this part of the Gate user guide, we explain how a simulation geometry is set up in Gate.
 
 Under the hood, geometry is handled and parametrized by Geant4. GATE just sets it up for you. Therefore, it might be worthwhile looking at the [Geant4 user guide](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids) as well.
 
-### Overview: Volumes
+## Overview: Volumes
 
 Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object, e.g. a `BoxVolume`, `SphereVolume`, `ImageVolume`.
 
@@ -64,7 +64,7 @@ print('Volume types :')
 print(sim.volume_manager.dump_volume_types())
 ```
 
-### Volume hierarchy
+## Volume hierarchy
 
 All volumes have a parameter `mother` which contains the name of the volume to which they are attached. You can also pass a volume object to the `mother` parameter and Gate will extract its name from it. By default, a volume's mother is the world volume (which has the name `world`). Gate creates a hierarchy of volumes based on each volume's `mother` parameter, according to Geant4's logic of hierarchically nested volumes. The volume hierarchy can be inspected with the command `dump_volume_tree` of the volume manager. Example:
 
@@ -80,7 +80,7 @@ sim.volume_manager.dump_volume_tree()
 ```
 
 
-### Common parameters
+## Common parameters
 
 Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Use `print(vol)` to display the volume's parameters and their default values.
 
@@ -95,7 +95,7 @@ Common parameters are:
 Take a look at `test007` as example for simple volumes.
 
 
-### Utility properties
+## Utility properties
 
 Volume objects come with several properties which allow you to extract information about the volume. The following description assumes that you have created a volume already, i.e.
 
@@ -114,7 +114,7 @@ You can use the following properties to obtain information about the volume `mys
 
 Note that the above properties are read-only - you cannot set their values.
 
-### Materials
+## Materials
 
 From the simulation point of view, a material is a set of parameters describing its chemical composition and physical properties such as its density.
 
@@ -140,7 +140,7 @@ gate.volume_manager.new_material("mylar", 1.38 * gcm3, ["H", "C", "O"], [0.04196
 This function creates a material named "mylar", with the given mass density and the composition (H C and O here) described as a vector of percentages. Note that the weights are normalized. The created material can then be used for any volume.
 -->
 
-### Image volumes
+## Image volumes
 
 An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a `BoxVolume` and its size is automatically adjusted to match the size of the input image. The image should be provided in a format readable by the *itk* package and the path to the image file is set via the parameter `image`. In general, we advocate the use of the mhd/raw file format, but other itk-compatible file formats can be used as well. The image must be 3D, with any pixel type (float, int, char, etc).
 
@@ -195,7 +195,7 @@ The input parameters of the function `HounsfieldUnit_to_material` are
 Examples of such files can be found in the `opengate/tests/data` folder. See test `test009` as example.
 
 
-### Tesselated (STL) volumes
+## Tesselated (STL) volumes
 
 It is possible to create a tesselated volume shape based on an Standard Triangle Language (STL) data file. Such a file contains a mesh of triangles for one object. It is a typical output format of Computer Aided Design (CAD) software.
 To create such a volume add a volume of type "Tesselated". Please keep in mind, that no material information is provided, it has to be specified by the user. A Tesselated volume inherits the the same basic options as other solids described above such as translation or rotation. A basic example how to import an STL file into a geometry "MyTesselatedVolume" and assign the material G4_WATER to it can be found below. In order to verify the correct generation of the solid, one could look at the volume.
@@ -217,7 +217,7 @@ print("same volume: ",tes.solid_info.cubic_volume)
 ```
 See test test067_stl_volume for example.
 
-### Repeated volumes
+## Repeated volumes
 
 The first method, described in this section, is controlled via the `translation` and `rotation` parameters. To instruct Geant4 to repeat a volume in multiple locations, it is sufficient to provide a list of translation vectors to the volume parameter `translation`. Gate will make sure that a G4PhysicalVolume is created for each entry. Consequently, the length of the list of translations determines the number of copies. If only a single rotation matrix is provided as volume parameter `rotation`, this will be used for all copies. If each copies requires a separate individual rotation, e.g. when repeating volume around a circle, then the volume parameter `rotation` should receive a list of rotation matrices. Obviously, the number of rotations and translation should match.
 
@@ -276,7 +276,7 @@ You are obviously free to generate your own list of translations and rotations t
 Volume repetitions controlled via the `translation` and `rotation` parameter are a convenient and generic way to construct a "not too large" number of repeated objects. In case of "many" repetitions, the Geant4 tracking engine can become slow. In that case, it is better to use parameterised volumes described in the next section. It is not easy to quantify "not too many" repetitions. Based on our experience, a few hundred is still acceptable, but you might want to check in your case. Note that, if the volume contains sub-volumes (via their `mother` parameter, everything will be repeated, albeit in an optimized and efficient way.
 
 
-### Repeat Parametrised Volumes
+## Repeat Parametrised Volumes
 
 In some situations, the repeater concept explained in the previous section is not sufficient and can be inefficient when the number of repetitions is large. A specific example is a collimator for SPECT imaging containing a large number of holes. `RepeatParametrisedVolume` is an alternative repeated volume type which suits this use case. See this example:
 
@@ -314,7 +314,7 @@ param.offset = [0, 0, 0]
 ```
 
 
-### Boolean volumes
+## Boolean volumes
 
 Geant4 provides a mechanism to combine volumetric shapes (Solids in Geant4) into new ones via boolean operations, i.e. `union`, `intersection`, and `subtraction`. In GATE, the details of this mechanism are taken care of under the hood and the user can directly combine compatible volumes. For example:
 
@@ -351,10 +351,10 @@ Note that not all volumes are compatible with boolean operations. For example, i
 Boolean operations are a great tool to build complex shapes. The phantoms in `opengate.contrib.phantoms` are good examples. Also have a look at `test016`. Be aware, however, that the Geant4 user guide warns that very extensive use of boolean operations can slow down particle tracking speed.
 
 
-### Examples of complex geometries: Linac, SPECT, PET, phantoms
+## Examples of complex geometries: Linac, SPECT, PET, phantoms
 
 Examples of complex nested geometries, partly relying on boolean and repeat operations, can be found in the subpackages `opengate.contrib.pet`,  `opengate.contrib.spect`, `opengate.contrib.linacs`, `opengate.contrib.phantoms`. Also have a look at some of the tests that use these geometries, e.g. `test015` (iec phantom), `test019` (linac Elekta), `test028` (SPECT GE NM670), `test037` (Philips Vereos PET).
 
-### Parallel worlds
+## Parallel worlds
 
 TODO
