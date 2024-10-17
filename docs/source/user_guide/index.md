@@ -10,13 +10,20 @@ user_guide_intro
 ```
 
 ```{toctree}
-:caption: Components of a simulation
+:caption: How to setup a simulation
 :maxdepth: 2
 
 user_guide_volumes
 user_guide_physics
 user_guide_sources
 user_guide_actors
+```
+
+```{toctree}
+:caption: Components of a simulation
+:maxdepth: 2
+
+user_guide_reference_volumes
 ```
 
 
