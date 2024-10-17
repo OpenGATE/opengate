@@ -94,7 +94,7 @@ The visualisation with qt is still work in progress. First, it does not work on 
 
 ##### VRML
 
-![](figures/visu_vrml.png)
+![](../figures/visu_vrml.png)
 
 You can choose vrml visualization with `ui.visu_type = "vrml"`. Opengate uses `pyvista` for the GUI, so you need to install it before with `pip install pyvista`. Alternatively, if you want to use an external VRML viewer, you can save a VRML file with `ui.visu_type = "vrml_file_only"`. In such case, the GUI is not open, and you do not need pyvista. In both cases, you need to set `ui.visu_filename = "geant4VisuFile.wrl"` to save the VRML file.
 
@@ -102,7 +102,7 @@ If you want to personalized the pyvista GUI, you can set `ui.visu_type = "vrml_f
 
 ##### GDML
 
-![](figures/visu_gdml.png)
+![](../figures/visu_gdml.png)
 
 With GDML visualization, you can only view the geometry, not the paths of the particles. It is enabled with `ui.visu_type = "gdml"`. GDML visualization needs to be enabled in Geant4 with `GEANT4_USE_GDML=ON` during the compilation but you need to have xerces-c available on your computer (install it with yum, brew, or apt-get, ...). Opengate uses `pyg4ometry` for the GUI, so you need to install it with `pip install pyg4ometry`. `pyg4ometry` uses opencascade librairy, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with `ui.visu_type = "gdml_file_only"`. In such case, the GUI is not open, and you do not need pyg4ometry. In both cases, you need to set `ui.visu_filename = "geant4VisuFile.gdml"` to save the GDML file.
 

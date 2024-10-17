@@ -85,7 +85,7 @@ Geant4 defines the direction as:
 
 So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY plane from -X to -Y.
 
-![](figures/thetaphi.png)
+![](../figures/thetaphi.png)
 
 Source of ion can be set with the following (see `test013`)
 
@@ -129,7 +129,7 @@ chosen from this distribution, the location of the particle inside the voxel is 
 
 Like all objects, by default, the source is located according to the coordinate system of its mother volume. For example, if the mother volume is a box, it will be the center of the box. If it is a voxelized volume (typically a CT image), it will the **center** of this image: the image own coordinate system (ITK's origin) is not considered here. If you want to align a voxelized activity with a CT image that have the same coordinate system you should compute the correct translation. This is done by the function  ```gate.image.get_translation_between_images_center```. See the contrib example ```dose_rate.py```.
 
-![](figures/image_coord_system.png)
+![](../figures/image_coord_system.png)
 
 ### Phase-Space sources
 
@@ -285,9 +285,9 @@ phid_atomic_relaxation ac225
 phid_isomeric_transition ac225
 ```
 
-![image](figures/ac225_info.png)
-![image](figures/ac225_tac.png)
-![image](figures/ac225_gammas.png)
+![image](../figures/ac225_info.png)
+![image](../figures/ac225_tac.png)
+![image](../figures/ac225_gammas.png)
 
 
 ### Pencil Beam sources
