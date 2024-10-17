@@ -25,7 +25,7 @@ iec_bg_source = gate_iec.add_background_source(sim, 'iec_phantom', 'iec_bg_sourc
 
 The rotation should be adapted according to your need. The order of the 6 spheres can be changed with the parameter `sphere_starting_angle` of the `add_iec_phantom` command.
 
-![](figures/iec_6spheres.png)
+![](../figures/iec_6spheres.png)
 
 Example can be found in [test015](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test015_iec_phantom_1.py) (and others).
 
@@ -68,7 +68,7 @@ linac2 = versa.add_linac(sim)
 
 Each LINAC head is simulated with a z-axis translation relative to the world center. This translation aligns the machine's isocenter with the world center, with a user-defined Source-Axis Distance (SAD). The "translation_from_sad" function (example in [test019_linac_elekta_versa.py](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test019_linac_elekta_versa.py)) can be used to move the LINAC head with a translation relative to the SAD.
 
-![](figures/explicaton_linac_reference.png)
+![](../figures/explicaton_linac_reference.png)
 
 
 The "rotation_around_user_point" function enables LINAC head rotation around either the world center (i.e the isocenter) or a user-defined point.  Axis and angle lists for each axis must be defined in a way consistent with [Rotation_from_euler](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.from_euler.html). An example illustrating how to use this function is available in [test019_elekta_versa.py](https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test019_linac_elekta_versa.py).
