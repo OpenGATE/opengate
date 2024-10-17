@@ -3,6 +3,6 @@
 ## Image volume
 
 
-```{eval-rst}  
+```{eval-rst}
 .. autoclass:: opengate.geometry.volumes.ImageVolume
 ```
