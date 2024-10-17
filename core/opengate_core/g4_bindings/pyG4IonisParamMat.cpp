@@ -13,6 +13,9 @@ namespace py = pybind11;
 
 void init_G4IonisParamMat(py::module &m) {
   py::class_<G4IonisParamMat>(m, "G4IonisParamMat")
-      .def("GetMeanExcitationEnergy",
-           &G4IonisParamMat::GetMeanExcitationEnergy);
+      .def("GetMeanExcitationEnergy", &G4IonisParamMat::GetMeanExcitationEnergy)
+      .def("GetMeanEnergyPerIonPair", &G4IonisParamMat::GetMeanEnergyPerIonPair)
+      .def("SetMeanExcitationEnergy", &G4IonisParamMat::SetMeanExcitationEnergy)
+      .def("SetMeanEnergyPerIonPair",
+           &G4IonisParamMat::SetMeanEnergyPerIonPair);
 }
