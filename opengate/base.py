@@ -317,27 +317,29 @@ def _make_property(property_name, default_value, options=None, container_dict=No
 
 
 def make_docstring_for_user_info(name, default_value, options):
-    indent = 4 * " "
+    begin_of_line = "* "
     docstring = f"{name}"
     if "deprecated" in options:
-        docstring += " -> DEPRECATED\n"
-        docstring += indent
-        docstring += "Info: "
-        docstring += options["deprecated"]
-        docstring += "\n"
+        docstring += f"\n\n{begin_of_line}Deprecated: {options['deprecated']}\n\n"
+        # docstring += indent
+        # docstring += "Info: "
+        # docstring += options["deprecated"]
+        # docstring += "\n\n"
     else:
         if "required" in options and options["required"] is True:
             docstring += " (must be provided)"
-        docstring += ":\n"
+        if "read_only" in options and options["read_only"] is True:
+            docstring += " (set internally, i.e. read-only)"
+        docstring += ":\n\n"
         # docstring += (20 - len(k)) * " "
-        docstring += f"{indent}Default value: {default_value}\n"
+        docstring += f"{begin_of_line}Default value: {default_value}\n\n"
         if "allowed_values" in options:
-            docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
+            docstring += f"{begin_of_line}Allowed values: {options['allowed_values']}\n\n"
         if "doc" in options:
-            docstring += indent
-            docstring += options["doc"]
-            docstring += "\n"
-    docstring += "\n"
+            docstring += f"{begin_of_line}Description: {options['doc']}\n\n"
+            # docstring += options["doc"]
+            # docstring += "\n\n"
+    # docstring += "\n"
     return docstring
 
 
