@@ -54,6 +54,7 @@ public:
   G4bool fRotationVectorDirector;
   G4ThreeVector fVectorDirector;
   G4double fMaxTheta;
+  G4double fCosMaxTheta;
   G4int fTrackIDOfSplittedTrack = 0;
   G4int fParentID = -1;
   G4int fEventID;
@@ -74,6 +75,7 @@ public:
   G4bool  fKilledBecauseOfProcess = false;
   G4bool fFirstSplittedPart = true;
   G4bool fOnlyTree = false;
+  G4double fWeight;
   GateLastVertexSource* fVertexSource = nullptr;
   tree<LastVertexDataContainer> fTree;
   tree<LastVertexDataContainer>::post_order_iterator fIterator;
@@ -108,7 +110,7 @@ public:
   virtual void PostUserTrackingAction(const G4Track *track) override;
 
   // Pure splitting functions
-  G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir, G4ThreeVector vectorDirector, G4double maxTheta);
+  G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir, G4ThreeVector vectorDirector);
   G4Track *CreateComptonTrack(G4ParticleChangeForGamma *, G4Track, G4double);
   void ComptonSplitting(G4Step* initStep,G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
   void SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
