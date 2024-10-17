@@ -79,6 +79,13 @@ Once installed, we recommend to check the installation by printing GATE informat
 
 The libraries (libG4processes and libG4geometry) are usually found in the Geant4 folder, something like ```~/build-geant4.11.0.2/BuildProducts/lib64```.
 
+### Cluster / no-OpenGL version
+
+For some systems (espacialy clusters or older computers), the main opengate_core cannot be run due to the lack of libGL, or other librairies. For linux system, we offer a version without visualization pro
+perties and using older librairies. You can install it with:
+
+    pip install --force-reinstall "opengate[novis]"
+
 ### Additional command lines tools
 
 There is some additional commands lines tools that can also be used, see the [addons section](user_guide_3_addons.md).
