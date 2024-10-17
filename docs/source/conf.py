@@ -49,7 +49,7 @@ extensions = [
     "myst_parser",
     "sphinx.ext.linkcode",
     "sphinx_copybutton",
-    "autoapi.extension",
+    # "autoapi.extension",
     "sphinx.ext.autodoc",
 ]
 
@@ -222,6 +222,6 @@ epub_exclude_files = ["search.html"]
 
 # -- Extension configuration -------------------------------------------------
 # sphinx-autoapi configuration
-autoapi_type = "python"
-autoapi_dirs = ["../../opengate", "../../core"]
-autoapi_ignore = ["*/opengate/tests/src*"]
+# autoapi_type = "python"
+# autoapi_dirs = ["../../opengate", "../../core"]
+# autoapi_ignore = ["*/opengate/tests/src*"]
