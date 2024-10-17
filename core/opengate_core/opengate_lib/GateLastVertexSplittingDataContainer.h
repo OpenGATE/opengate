@@ -97,8 +97,8 @@ SimpleContainer GetContainerToSplit(){
 
 
 
-void PushListOfSplittingParameters(){
-  fVectorOfContainerToSplit.emplace_back(fContainerToSplit);
+void PushListOfSplittingParameters(SimpleContainer container){
+  fVectorOfContainerToSplit.emplace_back(container);
 }
 
 
@@ -115,17 +115,20 @@ LastVertexDataContainer ContainerFromParentInformation(G4Step* step){
       for (int i =0;i<this->fVectorOfContainerToSplit.size();i++){
         if (vertexPosition == this->fVectorOfContainerToSplit[i].GetVertexPosition()){
           SimpleContainer tmpContainer = this->fVectorOfContainerToSplit[i];
-          fContainerToSplit = SimpleContainer(tmpContainer.GetProcessNameToSplit(),tmpContainer.GetEnergy(),tmpContainer.GetMomentum(),tmpContainer.GetVertexPosition(),tmpContainer.GetPolarization(),tmpContainer.GetParticleNameToSplit(),tmpContainer.GetWeight(),tmpContainer.GetTrackStatus(),tmpContainer.GetNbOfSecondaries(),tmpContainer.GetAnnihilationFlag(),tmpContainer.GetStepLength(), tmpContainer.GetPrePositionToSplit());
+          //std::cout<<"1  "<<tmpContainer.GetProcessNameToSplit()<<std::endl;
+          aContainer.fContainerToSplit = SimpleContainer(tmpContainer.GetProcessNameToSplit(),tmpContainer.GetEnergy(),tmpContainer.GetMomentum(),tmpContainer.GetVertexPosition(),tmpContainer.GetPolarization(),tmpContainer.GetParticleNameToSplit(),tmpContainer.GetWeight(),tmpContainer.GetTrackStatus(),tmpContainer.GetNbOfSecondaries(),tmpContainer.GetAnnihilationFlag(),tmpContainer.GetStepLength(), tmpContainer.GetPrePositionToSplit());
           return aContainer;
         }
       }
     }
     else{
       SimpleContainer tmpContainer = this->fContainerToSplit;
-      fContainerToSplit = SimpleContainer(tmpContainer.GetProcessNameToSplit(),tmpContainer.GetEnergy(),tmpContainer.GetMomentum(),tmpContainer.GetVertexPosition(),tmpContainer.GetPolarization(),tmpContainer.GetParticleNameToSplit(),tmpContainer.GetWeight(),tmpContainer.GetTrackStatus(),tmpContainer.GetNbOfSecondaries(),tmpContainer.GetAnnihilationFlag(),tmpContainer.GetStepLength(),tmpContainer.GetPrePositionToSplit());
+      //std::cout<<"2  "<<tmpContainer.GetProcessNameToSplit()<<std::endl;
+      aContainer.fContainerToSplit = SimpleContainer(tmpContainer.GetProcessNameToSplit(),tmpContainer.GetEnergy(),tmpContainer.GetMomentum(),tmpContainer.GetVertexPosition(),tmpContainer.GetPolarization(),tmpContainer.GetParticleNameToSplit(),tmpContainer.GetWeight(),tmpContainer.GetTrackStatus(),tmpContainer.GetNbOfSecondaries(),tmpContainer.GetAnnihilationFlag(),tmpContainer.GetStepLength(),tmpContainer.GetPrePositionToSplit());
       return aContainer;
     }
   }
+  //std::cout<<"3"<<std::endl;
   return aContainer;
 }
 
@@ -134,8 +137,8 @@ LastVertexDataContainer ContainerFromParentInformation(G4Step* step){
 
 
 
-friend std::ostream& operator<<(std::ostream& os, const LastVertexDataContainer& container) {
-    os <<container.fParticleName<<" ID: "<<container.fTrackID<< "process: "<< container.fCreationProcessName;
+friend std::ostream& operator<<(std::ostream& os, LastVertexDataContainer& container) {
+    os <<container.fParticleName<<" ID: "<<container.fTrackID<< " process to split : "<<container.fContainerToSplit.GetProcessNameToSplit()<<" name to split"<<container.fContainerToSplit.GetParticleNameToSplit() ;
     return os;
 }
 

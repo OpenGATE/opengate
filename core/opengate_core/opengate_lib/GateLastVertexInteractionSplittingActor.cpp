@@ -88,7 +88,6 @@ void GateLastVertexInteractionSplittingActor::print_tree(const tree<LastVertexDa
 	std::cout << "-----" << std::endl;
 	}
 
-
 G4bool GateLastVertexInteractionSplittingActor::DoesParticleEmittedInSolidAngle(G4ThreeVector dir, G4ThreeVector vectorDirector, G4double maxTheta) {
   G4double cosTheta = vectorDirector * dir;
   G4double theta = std::acos(cosTheta);
@@ -98,38 +97,39 @@ G4bool GateLastVertexInteractionSplittingActor::DoesParticleEmittedInSolidAngle(
 }
 
 
-G4Track* GateLastVertexInteractionSplittingActor::CreateATrackFromContainer(LastVertexDataContainer theContainer, G4Step *step ){
+G4Track* GateLastVertexInteractionSplittingActor::CreateATrackFromContainer(LastVertexDataContainer theContainer){
+
   auto *particle_table = G4ParticleTable::GetParticleTable();
   SimpleContainer container = theContainer.GetContainerToSplit();
-  G4ParticleDefinition *particleDefinition = particle_table->FindParticle(container.GetParticleNameToSplit());
-  G4ThreeVector momentum = container.GetMomentum();
-  G4double energy = container.GetEnergy();
-  if (energy <0){
-    energy = 0;
-    momentum = {0,0,0};
+  if (container.GetParticleNameToSplit() != "None"){
+    G4ParticleDefinition *particleDefinition = particle_table->FindParticle(container.GetParticleNameToSplit());
+    G4ThreeVector momentum = container.GetMomentum();
+    G4double energy = container.GetEnergy();
+    if (energy <0){
+      energy = 0;
+      momentum = {0,0,0};
+    }
+    G4int trackStatus = container.GetTrackStatus();
+    G4ThreeVector position = container.GetVertexPosition();
+    G4ThreeVector polarization = container.GetPolarization();
+    G4DynamicParticle* dynamicParticle = new G4DynamicParticle(particleDefinition,momentum,energy);
+    G4double time = 0;
+    G4Track* aTrack = new G4Track(dynamicParticle,time, position);
+    aTrack->SetPolarization(polarization);
+    if (trackStatus == 0){
+      aTrack->SetTrackStatus(fAlive);
+    }
+    if (trackStatus == 1){
+      aTrack->SetTrackStatus(fStopButAlive);
+    }
+    if ((trackStatus == 2) || (trackStatus == 3)){
+      aTrack->SetTrackStatus(fAlive);
+    }
+    aTrack->SetWeight(container.GetWeight());
+    return aTrack;
   }
-  G4int trackStatus = container.GetTrackStatus();
-  G4ThreeVector position = container.GetVertexPosition();
-  G4ThreeVector polarization = container.GetPolarization();
-
-  G4DynamicParticle* dynamicParticle = new G4DynamicParticle(particleDefinition,momentum,energy);
-  G4double time = 0;
-  if (step->GetPreStepPoint() != 0)
-    time = step->GetPreStepPoint()->GetGlobalTime();
-  G4Track* aTrack = new G4Track(dynamicParticle,time, position);
-  aTrack->SetPolarization(polarization);
-  if (trackStatus == 0){
-    aTrack->SetTrackStatus(fAlive);
-  }
-  if (trackStatus == 1){
-    aTrack->SetTrackStatus(fStopButAlive);
-  }
-  if ((trackStatus == 2) || (trackStatus == 3)){
-    aTrack->SetTrackStatus(fAlive);
-  }
-  aTrack->SetWeight(container.GetWeight());
   
-  return aTrack;
+  return nullptr;
 
 
 }
@@ -150,6 +150,7 @@ G4Track *GateLastVertexInteractionSplittingActor::CreateComptonTrack(G4ParticleC
   newTrack->SetMomentumDirection(momentum);
   newTrack->SetPosition(position);
   newTrack->SetPolarization(polarization);
+  newTrack->SetWeight(weight);
   return newTrack;
 }
 
@@ -158,39 +159,36 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(G4Step* initStep,
   G4TrackVector *trackVector = CurrentStep->GetfSecondary();
   G4double gammaWeight = 0;
 
-  G4Track* aTrack = CreateATrackFromContainer(container,initStep);
-
   GateGammaEmPostStepDoIt *emProcess = (GateGammaEmPostStepDoIt *)process;
-  G4VParticleChange *processFinalState = emProcess->PostStepDoIt(*aTrack, *initStep);
+  G4VParticleChange *processFinalState = emProcess->PostStepDoIt(*fTrackToSplit, *initStep);
   G4ParticleChangeForGamma *gammaProcessFinalState = (G4ParticleChangeForGamma *)processFinalState;
 
-  const G4ThreeVector momentum = gammaProcessFinalState->GetProposedMomentumDirection();
-  //gammaWeight = aTrack->GetWeight()/ fSplittingFactor;
+  G4ThreeVector momentum = gammaProcessFinalState->GetProposedMomentumDirection();
+  gammaWeight = fTrackToSplit->GetWeight()/ fSplittingFactor;
 
-  
-  G4Track *newTrack = CreateComptonTrack(gammaProcessFinalState, *aTrack, gammaWeight);
+  G4Track *newTrack = CreateComptonTrack(gammaProcessFinalState, *fTrackToSplit, gammaWeight);
 
-  if ((fAngularKill) && (DoesParticleEmittedInSolidAngle(newTrack->GetMomentumDirection(),fVectorDirector,fMaxTheta) == false))
-    delete newTrack; 
-  else {
+  if ((fAngularKill) && (DoesParticleEmittedInSolidAngle(newTrack->GetMomentumDirection(),fVectorDirector,fMaxTheta) == false)){
+    delete newTrack;
+    ComptonSplitting(initStep,CurrentStep,process,container);
+  }
+  else{
     trackVector->push_back(newTrack);
-    G4int NbOfSecondaries = processFinalState->GetNumberOfSecondaries();
-    for (int j = 0; j < NbOfSecondaries; j++) {
-      G4Track *newTrack = processFinalState->GetSecondary(j);
-      //newTrack->SetWeight(gammaWeight);
-      trackVector->push_back(newTrack);
-    }
   }
 
+
+  // Special case here, since we generate independently each particle, we will not attach an electron to exiting compton photon.
+  /*
+  G4int NbOfSecondaries = processFinalState->GetNumberOfSecondaries();
+  for (int j = 0; j < NbOfSecondaries; j++) {
+    G4Track *newTrack = processFinalState->GetSecondary(j);
+    newTrack->SetWeight(gammaWeight);
+    trackVector->push_back(newTrack);
+  }
+  */
   processFinalState->Clear();
-  gammaProcessFinalState->Clear();
-  delete aTrack;
-
-
-    
-   
+  gammaProcessFinalState->Clear();   
 }
-
 
 
 G4VProcess* GateLastVertexInteractionSplittingActor::GetProcessFromProcessName(G4String particleName, G4String pName){
@@ -210,7 +208,7 @@ G4VProcess* GateLastVertexInteractionSplittingActor::GetProcessFromProcessName(G
 }
 
 
-G4VParticleChange* GateLastVertexInteractionSplittingActor::eBremProcessFinalState(G4Track* track, G4Step* step,G4VProcess *process){
+G4Track GateLastVertexInteractionSplittingActor::eBremProcessFinalState(G4Track* track, G4Step* step,G4VProcess *process){
   //It seem's that the the along step method apply only to brem results to no deposited energy but a change in momentum direction according to the process
   //Whereas the along step method applied to the ionisation well change the deposited energy but not the momentum. Then I apply both to have a correct
   //momentum and deposited energy before the brem effect.
@@ -224,77 +222,85 @@ G4VParticleChange* GateLastVertexInteractionSplittingActor::eBremProcessFinalSta
   G4double LossEnergy = eIoniProcessAlongStateForLoss->GetLocalEnergyDeposit();
   G4ThreeVector momentum =  eBremProcessAlongStateForLoss->GetProposedMomentumDirection();
   G4ThreeVector polarization = eBremProcessAlongStateForLoss->GetProposedPolarization();
+  G4Track aTrack = G4Track(*track);
 
-  track->SetKineticEnergy(track->GetKineticEnergy() - LossEnergy);
-  track->SetMomentumDirection(momentum);
-  track->SetPolarization(polarization);
-  GateBremPostStepDoIt *bremProcess = (GateBremPostStepDoIt *)process;
+  aTrack.SetKineticEnergy(track->GetKineticEnergy() - LossEnergy);
+  aTrack.SetMomentumDirection(momentum);
+  aTrack.SetPolarization(polarization);
   eIoniProcessAlongState->Clear();
   eBremProcessAlongState->Clear();
-
-  return bremProcess->GateBremPostStepDoIt::PostStepDoIt(*track, *step);
+  return aTrack;
 
 }
 
 
 void GateLastVertexInteractionSplittingActor::SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer theContainer) {
-
-    
-  G4Track* track = CreateATrackFromContainer(theContainer,initStep);
   SimpleContainer container = theContainer.GetContainerToSplit();
-  G4String particleName = track->GetParticleDefinition()->GetParticleName();
+  G4String particleName = fTrackToSplit->GetParticleDefinition()->GetParticleName();
   G4TrackVector *trackVector = CurrentStep->GetfSecondary();
   G4double gammaWeight = 0;
   G4VParticleChange *processFinalState = nullptr;
-  if (process->GetProcessName() == "eBrem") {
-    processFinalState = eBremProcessFinalState(track,initStep,process);
-  } 
-  else {
-    GateGammaEmPostStepDoIt *emProcess = (GateGammaEmPostStepDoIt *)process;
-    if ((container.GetAnnihilationFlag() == "PostStep") && (track->GetKineticEnergy() > 0)){
-      processFinalState = emProcess->PostStepDoIt(*track, *initStep);
+  GateBremPostStepDoIt* bremProcess = nullptr;
+  GateGammaEmPostStepDoIt *emProcess = nullptr;
+  GateplusannihilAtRestDoIt *eplusAnnihilProcess = nullptr;
+
+  if ((container.GetAnnihilationFlag() == "PostStep") && (fTrackToSplit->GetKineticEnergy() > 0)){
+    emProcess = (GateGammaEmPostStepDoIt *)process;
+  }
+  if ((container.GetAnnihilationFlag() == "AtRest") || (fTrackToSplit->GetKineticEnergy() == 0)) {
+    eplusAnnihilProcess = (GateplusannihilAtRestDoIt *)process;
+  }
+ 
+
+
+
+  G4int NbOfSecondaries = 0;
+  while (NbOfSecondaries  == 0){
+    if (process->GetProcessName() == "eBrem") {
+      G4Track aTrack = eBremProcessFinalState(fTrackToSplit,initStep,process);
+      bremProcess = (GateBremPostStepDoIt*) process;
+      processFinalState = bremProcess->GateBremPostStepDoIt::PostStepDoIt(aTrack, *initStep);
     }
-    if ((container.GetAnnihilationFlag() == "AtRest") || (track->GetKineticEnergy() == 0)) {
-      GateplusannihilAtRestDoIt *eplusAnnihilProcess = (GateplusannihilAtRestDoIt *)process;
-      processFinalState = eplusAnnihilProcess->GateplusannihilAtRestDoIt::AtRestDoIt(*track,*initStep);
+    else {
+      if ((container.GetAnnihilationFlag() == "PostStep") && (fTrackToSplit->GetKineticEnergy() > 0)){
+        processFinalState = emProcess->PostStepDoIt(*fTrackToSplit, *initStep);
+      }
+      if ((container.GetAnnihilationFlag() == "AtRest") || (fTrackToSplit->GetKineticEnergy() == 0)) {
+        processFinalState = eplusAnnihilProcess->GateplusannihilAtRestDoIt::AtRestDoIt(*fTrackToSplit,*initStep);
+      }
+    }
+    NbOfSecondaries = processFinalState->GetNumberOfSecondaries();
+    if (NbOfSecondaries == 0){
+      processFinalState->Clear();
     }
   }
 
-
-  
-  G4int NbOfSecondaries = processFinalState->GetNumberOfSecondaries();
   G4int idx = 0;
-  if (NbOfSecondaries >0) {
-    //gammaWeight = track->GetWeight()/fSplittingFactor;
-    G4bool alreadySplitted = false;
-    for (int i; i < NbOfSecondaries; i++){
-      G4Track *newTrack = processFinalState->GetSecondary(i);
-      G4ThreeVector momentum = newTrack->GetMomentumDirection();
-      if (!(isnan(momentum[0]))){
-        if ((fAngularKill) && (DoesParticleEmittedInSolidAngle(momentum,fVectorDirector,fMaxTheta) == false)){
-          delete newTrack;
-        }
-        else if (alreadySplitted == false){
-          //newTrack->SetWeight(gammaWeight);
-          newTrack->SetCreatorProcess(process);
-          trackVector->push_back(newTrack);
-          alreadySplitted = true;
-        }
-        else{
-          delete newTrack;
-        }
-      }
-      else {
+  gammaWeight = fTrackToSplit->GetWeight()/fSplittingFactor;
+  G4bool IsPushBack =false;
+  for (int i; i < NbOfSecondaries; i++){
+    G4Track *newTrack = processFinalState->GetSecondary(i);
+    G4ThreeVector momentum = newTrack->GetMomentumDirection();
+    if (!(isnan(momentum[0]))){
+      if ((fAngularKill) && (DoesParticleEmittedInSolidAngle(momentum,fVectorDirector,fMaxTheta) == false)){
         delete newTrack;
       }
+      else {
+        newTrack->SetWeight(gammaWeight);
+        newTrack->SetCreatorProcess(process);
+        trackVector->push_back(newTrack);
+        IsPushBack=true;
+        break;
+
+      }
+    }
+    else {
+      delete newTrack;
     }
   }
 
-  delete track;
-  
-  
-
-
+  if (IsPushBack == false)
+    SecondariesSplitting(initStep,CurrentStep,process,theContainer);
   processFinalState->Clear();
 
 
@@ -305,17 +311,21 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(G
   // We retrieve the process associated to the process name to split and we
   // split according the process. Since for compton scattering, the gamma is not
   // a secondary particles, this one need to have his own splitting function.
-  SimpleContainer container = theContainer.GetContainerToSplit();
-  G4VProcess* processToSplit = GetProcessFromProcessName(container.GetParticleNameToSplit(),container.GetProcessNameToSplit());
-  G4String processName = container.GetProcessNameToSplit();
-  if (processName == "compt") {
-    ComptonSplitting(initStep,step, processToSplit, theContainer);
-  }
 
-  else if((processName != "msc") && (processName != "conv")){
-    SecondariesSplitting(initStep, step, processToSplit, theContainer);
-  }
-  
+    G4String processName = fProcessNameToSplit;
+    if ((fProcessToSplit == 0) || (fProcessToSplit == nullptr)){
+      SimpleContainer container = theContainer.GetContainerToSplit();
+      fProcessToSplit = GetProcessFromProcessName(container.GetParticleNameToSplit(),processName);
+    }
+    
+    if (processName == "compt") {
+      ComptonSplitting(initStep,step, fProcessToSplit, theContainer);
+    }
+
+    else if((processName != "msc") && (processName != "conv")){
+      SecondariesSplitting(initStep, step, fProcessToSplit, theContainer);
+    }
+
 }
 
 
@@ -352,28 +362,25 @@ void GateLastVertexInteractionSplittingActor::FillOfDataTree(G4Step*step){
   G4String annihilFlag = "None";
   if (processName == "annihil"){
     if (step->GetPostStepPoint()->GetProcessDefinedStep() != 0){
-      //std::cout<<processName<<"   "<<step->GetPreStepPoint()->GetKineticEnergy()<<"   "<<step->GetPostStepPoint()->GetKineticEnergy()<<"  "<<step->GetTotalEnergyDeposit()<<std::endl;
-      if (processName == step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName()){
+       if (processName == step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName()){
         annihilFlag = "PostStep";
       }
       else if (processName != step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName()){
         annihilFlag ="AtRest";
       }
-      //std::cout<<annihilFlag<<std::endl;
     }
   }
 
-  
-  if (processName =="eBrem"){
-    //std:cout<<step->GetPreStepPoint()->GetKineticEnergy()<<"   "<<step->GetPostStepPoint()->GetKineticEnergy()<<"  "<<step->GetTotalEnergyDeposit()<<std::endl;
-  }
-  
+
 
   if (fIsFirstStep){
     LastVertexDataContainer newContainer = LastVertexDataContainer();
     newContainer.SetTrackID(step->GetTrack()->GetTrackID());
     newContainer.SetParticleName(step->GetTrack()->GetDefinition()->GetParticleName());
     newContainer.SetCreationProcessName(creatorProcessName);
+
+
+    
     if (fTree.empty()){  
       fTree.set_head(newContainer);
     }
@@ -399,58 +406,65 @@ void GateLastVertexInteractionSplittingActor::FillOfDataTree(G4Step*step){
       }
     }
   }
+  
 
-    LastVertexDataContainer* container = &(*fIterator);
-    G4int trackID = container->GetTrackID();
-    if ((processName != "Transportation") &&(processName !="None") && (processName !="Rayl")){
-      if (step->GetTrack()->GetTrackID() == trackID){
-        G4ThreeVector position = step->GetTrack()->GetPosition();
-        G4ThreeVector prePosition = step->GetPreStepPoint()->GetPosition();
-        G4ThreeVector momentum;
-        if ((processName == "annihil")) 
-          momentum = step->GetPostStepPoint()->GetMomentumDirection();
-        else{
-          momentum = step->GetPreStepPoint()->GetMomentumDirection();
-        }
-        G4ThreeVector polarization = step->GetPreStepPoint()->GetPolarization();
-        G4String particleName = step->GetTrack()->GetDefinition()->GetParticleName();
-        G4double energy = step->GetPreStepPoint()->GetKineticEnergy();
-        G4double weight = step->GetTrack()->GetWeight();
-        G4int trackStatus = step->GetTrack()->GetTrackStatus();
-        G4int nbOfSecondaries = step->GetfSecondary()->size();
-        G4double stepLength = step->GetStepLength();
-        if (((processName == "annihil"))){
-          energy -= (step->GetTotalEnergyDeposit());
-        }
-        SimpleContainer containerToSplit = SimpleContainer(processName,energy, momentum, position,polarization,particleName,weight,trackStatus,nbOfSecondaries,annihilFlag,stepLength,prePosition);
-        container->SetContainerToSplit(containerToSplit);
-        container->PushListOfSplittingParameters();
-    
+  
+  LastVertexDataContainer* container = &(*fIterator);
+  G4int trackID = container->GetTrackID();
+  if ((processName != "Transportation") &&(processName !="None") && (processName !="Rayl")){
+    if (step->GetTrack()->GetTrackID() == trackID){
+      G4ThreeVector position = step->GetTrack()->GetPosition();
+      G4ThreeVector prePosition = step->GetPreStepPoint()->GetPosition();
+      G4ThreeVector momentum;
+      if ((processName == "annihil")) 
+        momentum = step->GetPostStepPoint()->GetMomentumDirection();
+      else{
+        momentum = step->GetPreStepPoint()->GetMomentumDirection();
       }
+      G4ThreeVector polarization = step->GetPreStepPoint()->GetPolarization();
+      G4String particleName = step->GetTrack()->GetDefinition()->GetParticleName();
+      G4double energy = step->GetPreStepPoint()->GetKineticEnergy();
+      G4double weight = step->GetTrack()->GetWeight();
+      G4int trackStatus = step->GetTrack()->GetTrackStatus();
+      G4int nbOfSecondaries = step->GetfSecondary()->size();
+      G4double stepLength = step->GetStepLength();
+      if (((processName == "annihil"))){
+        energy -= (step->GetTotalEnergyDeposit());
+      }
+      SimpleContainer containerToSplit = SimpleContainer(processName,energy, momentum, position,polarization,particleName,weight,trackStatus,nbOfSecondaries,annihilFlag,stepLength,prePosition);
+      //std::cout<<"during saving  " <<containerToSplit.GetProcessNameToSplit()<<std::endl;
+      container->SetContainerToSplit(containerToSplit);
+      container->PushListOfSplittingParameters(containerToSplit);
+
+      //std::cout<<fEventID<<"   recordProcess   "<<container->GetContainerToSplit().GetProcessNameToSplit()<<std::endl;  
+  
     }
+  }
+
+
 }
 
 
 
 G4bool GateLastVertexInteractionSplittingActor::IsParticleExitTheBiasedVolume(G4Step*step){
-  G4String logicalVolumeNamePreStep = "None";
-  G4String logicalVolumeNamePostStep = "None";
-  if (step->GetPreStepPoint()->GetPhysicalVolume() != 0)
-      logicalVolumeNamePreStep = step->GetPreStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
-  if (step->GetPostStepPoint()->GetPhysicalVolume() != 0)
-      logicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
-  
 
-  if (logicalVolumeNamePreStep != logicalVolumeNamePostStep){
+
+  if ((step->GetPostStepPoint()->GetStepStatus() == 1)) {
+    G4String logicalVolumeNamePostStep = "None";
+    if (step->GetPostStepPoint()->GetPhysicalVolume() != 0)
+        logicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
+    
     if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(), logicalVolumeNamePostStep) != fListOfVolumeAncestor.end()){
       return true;
     }
-    /*
-    else if (std::find(fListOfBiasedVolume.begin(), fListOfBiasedVolume.end(), logicalVolumeNamePostStep) != fListOfBiasedVolume.end()) {
-      return false;
+      /*
+      else if (std::find(fListOfBiasedVolume.begin(), fListOfBiasedVolume.end(), logicalVolumeNamePostStep) != fListOfBiasedVolume.end()) {
+        return false;
+      }
+      */
     }
-    */
-  }
+  if (step->GetPostStepPoint()->GetStepStatus() == 0)
+    return true;
   return false;
 }
 
@@ -465,6 +479,14 @@ G4bool GateLastVertexInteractionSplittingActor::IsTheParticleUndergoesAProcess(G
   if (std::find(fListOfProcessesAccordingParticles[particleName].begin(), fListOfProcessesAccordingParticles[particleName].end(), processName) != fListOfProcessesAccordingParticles[particleName].end()){
     return true;
   }
+  return false;
+
+
+}
+
+G4bool GateLastVertexInteractionSplittingActor::IsTheParticleUndergoesALossEnergyProcess(G4Step* step){
+  if (step->GetPostStepPoint()->GetKineticEnergy() - step->GetPreStepPoint()->GetKineticEnergy()  != 0)
+    return true;
   return false;
 
 
@@ -503,11 +525,26 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
   fEventID = event->GetEventID();
   fEventIDOfSplittedTrack = -1;
   fTrackIDOfSplittedTrack = -1;
-  fNotSplitted == true;
   fIsAnnihilAlreadySplit = false;
   if (fEventID%50000 == 0)
-    std::cout<<fEventID<<std::endl;
+    std::cout<<"event ID : "<<fEventID<<std::endl;
   fCopyInitStep = nullptr;
+
+  if (fActiveSource == "source_vertex"){
+    auto* source = fSourceManager->FindSourceByName(fActiveSource);
+    GateLastVertexSource *vertexSource = (GateLastVertexSource*) source;
+    fContainer = vertexSource->GetLastVertexContainer();
+    fProcessNameToSplit = vertexSource->GetProcessToSplit();
+    if (fProcessToSplit !=0){
+      fProcessToSplit = nullptr;
+    }
+    if (fTrackToSplit !=0){
+      delete fTrackToSplit;
+      fTrackToSplit = nullptr;
+    }
+    fTrackToSplit = CreateATrackFromContainer(fContainer);
+  }
+
 
 
 
@@ -515,7 +552,7 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
 
 void GateLastVertexInteractionSplittingActor::PreUserTrackingAction(
     const G4Track *track) {
-      
+      fToSplit =true;
       fIsFirstStep = true;
   
 }
@@ -523,99 +560,104 @@ void GateLastVertexInteractionSplittingActor::PreUserTrackingAction(
 void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
  
 
-  G4String logicalVolumeNamePreStep = "None";
-  G4String logicalVolumeNamePostStep = "None";
- 
-  if (step->GetPreStepPoint()->GetPhysicalVolume() != 0)
-      logicalVolumeNamePreStep = step->GetPreStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
-  if (step->GetPostStepPoint()->GetPhysicalVolume() != 0)
-      logicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
-
-  G4String particleName =step->GetTrack()->GetParticleDefinition()->GetParticleName();
-  G4String creatorProcessName = "None";
-  G4String processName = "None";
-
-  if (step->GetTrack()->GetCreatorProcess() != 0)
-    creatorProcessName =step->GetTrack()->GetCreatorProcess()->GetProcessName();
-  
-  if (step->GetPostStepPoint()->GetProcessDefinedStep() != 0)
-    processName = step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
-
-  
   if (fActiveSource != "source_vertex"){
     FillOfDataTree(step);
+    
     if (IsParticleExitTheBiasedVolume(step)){
       if ((fAngularKill == false) ||  ((fAngularKill == true) && (DoesParticleEmittedInSolidAngle(step->GetTrack()->GetMomentumDirection(),fVectorDirector,fMaxTheta) == true))){
         fListOfContainer.push_back((*fIterator));
       }
+      
       step->GetTrack()->SetTrackStatus(fStopAndKill);
     }
+    
+    
   }
 
+ 
 
   if (fOnlyTree == false){
     if (fActiveSource == "source_vertex"){
-    
-      auto* source = fSourceManager->FindSourceByName(fActiveSource);
-      GateLastVertexSource *vertexSource = (GateLastVertexSource*) source;
-      LastVertexDataContainer container = vertexSource->GetLastVertexContainer();
-      if ((step->GetTrack()->GetWeight() == container.GetContainerToSplit().GetWeight())){
-        G4ThreeVector momentum = step->GetPreStepPoint()->GetMomentumDirection();
-        G4String processToSplit = vertexSource->GetProcessToSplit();
+
+      if (fIsFirstStep){
+        fTrackID = step->GetTrack()->GetTrackID();
+        fEkin = step->GetPostStepPoint()->GetKineticEnergy();
+      }
+      else{
+        if ((fTrackID == step->GetTrack()->GetTrackID()) && (fEkin != step->GetPreStepPoint()->GetKineticEnergy())){
+          fToSplit =false;
+        }
+        else{
+          fEkin = step->GetPostStepPoint()->GetKineticEnergy();
+        }
+
+      }
+      if (fToSplit) {
+        G4String creatorProcessName = "None";
+        if (step->GetTrack()->GetCreatorProcess() != 0)
+          creatorProcessName =step->GetTrack()->GetCreatorProcess()->GetProcessName();
         if (((step->GetTrack()->GetParentID() == 0)&&  (step->GetTrack()->GetTrackID() == 1))|| ((creatorProcessName == "annihil") && (step->GetTrack()->GetParentID() == 1))){
 
-          if ((processToSplit != "annihil") || ((processToSplit == "annihil")&& (fIsAnnihilAlreadySplit ==false))){
+          if ((fProcessNameToSplit != "annihil") || ((fProcessNameToSplit == "annihil")&& (fIsAnnihilAlreadySplit ==false))){
 
             step->GetfSecondary()->clear();
             //FIXME : list of process which are not splitable yet
-            if ((processToSplit != "msc") && (processToSplit != "conv") && (processToSplit != "eIoni")) {
+            if ((fProcessNameToSplit != "msc") && (fProcessNameToSplit != "conv") && (fProcessNameToSplit != "eIoni")) {
               fCopyInitStep= new G4Step(*step);
-              if (processToSplit  == "eBrem"){
-                fCopyInitStep->SetStepLength(container.GetContainerToSplit().GetStepLength());
-                fCopyInitStep->GetPreStepPoint()->SetKineticEnergy(container.GetContainerToSplit().GetEnergy());
+              if (fProcessNameToSplit  == "eBrem"){
+                fCopyInitStep->SetStepLength(fContainer.GetContainerToSplit().GetStepLength());
+                fCopyInitStep->GetPreStepPoint()->SetKineticEnergy(fContainer.GetContainerToSplit().GetEnergy());
 
               }
-              while (step->GetfSecondary()->size() != 1){
-                step->GetfSecondary()->clear();
-                CreateNewParticleAtTheLastVertex(fCopyInitStep,step,container);
-
-              }
+              CreateNewParticleAtTheLastVertex(fCopyInitStep,step,fContainer);
             }
             step->GetTrack()->SetTrackStatus(fStopAndKill);
             
-            if (processToSplit == "annihil"){
+            if (fProcessNameToSplit == "annihil"){
               fIsAnnihilAlreadySplit = true;
               }
             }
 
 
-          else if ((processToSplit == "annihil")&& (fIsAnnihilAlreadySplit == true)){
+          else if ((fProcessNameToSplit == "annihil")&& (fIsAnnihilAlreadySplit == true)){
             step->GetfSecondary()->clear();
             step->GetTrack()->SetTrackStatus(fStopAndKill);
           }
           
           }
-
         
-        else if (IsTheParticleUndergoesAProcess(step)){
-          step->GetfSecondary()->clear();
-          while (step->GetfSecondary()->size() != 1){
-                step->GetfSecondary()->clear();
-                CreateNewParticleAtTheLastVertex(fCopyInitStep,step,container);
-              }
-          step->GetTrack()->SetTrackStatus(fStopAndKill);
-          
+        else {
+
+          if (fIsFirstStep){
+            if (fKilledBecauseOfProcess == false){
+              fSplitCounter += 1;
+            }
+            else {
+              fKilledBecauseOfProcess = false;
+            }
+
+            if (fSplitCounter < fSplittingFactor){
+              CreateNewParticleAtTheLastVertex(fCopyInitStep,step,fContainer);
+            }
+          }
+
+          if (IsTheParticleUndergoesALossEnergyProcess(step)){
+            //std::cout<<"kill because process"<<std::endl;
+            step->GetfSecondary()->clear();
+            CreateNewParticleAtTheLastVertex(fCopyInitStep,step,fContainer);
+            step->GetTrack()->SetTrackStatus(fStopAndKill);
+            fKilledBecauseOfProcess = true;
+          }
+
+
+
         }
-        
 
+        /*
         else if (IsParticleExitTheBiasedVolume(step)){
           fSplitCounter += 1;
           if (fSplitCounter < fSplittingFactor){
-            while (step->GetfSecondary()->size() != 1){
-                step->GetfSecondary()->clear();
-                CreateNewParticleAtTheLastVertex(fCopyInitStep,step,container);
-
-              }
+            CreateNewParticleAtTheLastVertex(fCopyInitStep,step,container);
           }
           else{
             delete fCopyInitStep;
@@ -630,8 +672,10 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
             step->GetPostStepPoint()->SetWeight(container.GetContainerToSplit().GetWeight()/fSplittingFactor);
           else
             step->GetPostStepPoint()->SetWeight(container.GetContainerToSplit().GetWeight()*0.99999999);
+          
         }   
-      }
+        */
+      }    
     }
   }
 
@@ -644,6 +688,11 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
 
 void GateLastVertexInteractionSplittingActor::PostUserTrackingAction(
     const G4Track *track) {
+      if ((fSplitCounter == fSplittingFactor) && (fKilledBecauseOfProcess == false)){
+              delete fCopyInitStep;
+              fCopyInitStep = nullptr;
+              fSplitCounter = 0;
+          }
 
     }
 
@@ -653,10 +702,13 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
 
 
       if (fActiveSource != "source_vertex"){
-        //print_tree(fTree,fTree.begin(),fTree.end());
+      
+          //print_tree(fTree,fTree.begin(),fTree.end());
         fVertexSource->SetNumberOfEventToSimulate(fListOfContainer.size());
         fVertexSource->SetNumberOfGeneratedEvent(0);
         fVertexSource->SetListOfVertexToSimulate(fListOfContainer);
+        
+        //fDataMap.clear();
         fTree.clear();
         fListOfContainer.clear();
       }

@@ -59,34 +59,37 @@ public:
   G4int fEventID;
   G4int fEventIDOfSplittedTrack;
   G4int fEventIDOfInitialSplittedTrack;
-  G4int fTrackIDOfInitialTrack;
+  G4int fTrackID;
+  G4double fEkin;
   G4int fTrackIDOfInitialSplittedTrack = 0;
   G4int ftmpTrackID;
   G4bool fIsFirstStep = true;
   G4bool fSuspendForAnnihil = false;
   G4double fWeightOfEnteringParticle = 0;
   G4double fSplitCounter = 0;
-  G4bool fNotSplitted = true;
+  G4bool fToSplit = true;
   G4String fActiveSource = "None";
   G4bool fIsAnnihilAlreadySplit =false;
   G4int fCounter;
-  G4bool fOnlyTree = true;
+  G4bool  fKilledBecauseOfProcess = false;
+  G4bool fFirstSplittedPart = true;
+  G4bool fOnlyTree = false;
   GateLastVertexSource* fVertexSource = nullptr;
   tree<LastVertexDataContainer> fTree;
   tree<LastVertexDataContainer>::post_order_iterator fIterator;
   std::vector<LastVertexDataContainer> fListOfContainer;
 
 
+
   G4Track *fTrackToSplit = nullptr;
   G4Step* fCopyInitStep = nullptr;
-  G4String fProcessToSplit = "None";
+  G4String fProcessNameToSplit;
+  G4VProcess* fProcessToSplit;
+  LastVertexDataContainer fContainer;
 
   std::vector<G4Track> fTracksToPostpone;
-
-  std::map<G4int, G4TrackVector> fRememberedTracks;
-  std::map<G4int, std::vector<G4Step *>> fRememberedSteps;
-  std::map<G4int, std::vector<G4String>> fRememberedProcesses;
   std::map<G4String,std::vector<G4String>> fListOfProcessesAccordingParticles;
+  std::map<G4int,LastVertexDataContainer> fDataMap; 
 
 
 
@@ -111,10 +114,11 @@ public:
   void SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
 
   void CreateNewParticleAtTheLastVertex(G4Step*init,G4Step *current, LastVertexDataContainer);
-  G4Track* CreateATrackFromContainer(LastVertexDataContainer container, G4Step *step );
+  G4Track* CreateATrackFromContainer(LastVertexDataContainer container);
   G4bool IsTheParticleUndergoesAProcess(G4Step* step);
+  G4bool IsTheParticleUndergoesALossEnergyProcess(G4Step* step);
   G4VProcess* GetProcessFromProcessName(G4String particleName, G4String pName);
-  G4VParticleChange* eBremProcessFinalState(G4Track* track, G4Step* step,G4VProcess *process);
+  G4Track eBremProcessFinalState(G4Track* track, G4Step* step,G4VProcess *process);
 
 
   void FillOfDataTree(G4Step *step);
