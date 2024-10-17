@@ -50,7 +50,7 @@ extensions = [
     "sphinx.ext.linkcode",
     "sphinx_copybutton",
     "autoapi.extension",
-    "sphinx.ext.autodoc"
+    "sphinx.ext.autodoc",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -95,7 +95,7 @@ pygments_style = None
 # a list of builtin themes.
 #
 # html_theme = 'sphinx_rtd_theme'
-html_theme = 'pydata_sphinx_theme'
+html_theme = "pydata_sphinx_theme"
 html_logo = "_static/gate_logo.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
@@ -130,6 +130,7 @@ html_static_path = ["_static"]
 
 # Configure viewcode extension.
 code_url = f"https://github.com/OpenGATE/opengate/blob/master/"
+
 
 def linkcode_resolve(domain, info):
     if domain != "py":
