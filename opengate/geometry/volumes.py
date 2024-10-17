@@ -563,7 +563,8 @@ class RepeatableVolume(VolumeBase):
 
 
 class BooleanVolume(RepeatableVolume, solids.BooleanSolid):
-    """Volume resulting from a boolean operation of the solids contained in two volumes."""
+    """Volume resulting from a boolean operation of the solids contained in two volumes.
+    """
 
 
 # Function to handle boolean operations on volumes
@@ -595,6 +596,9 @@ def _make_boolean_volume(
 def intersect_volumes(
     volume_1, volume_2, translation=None, rotation=None, new_name=None
 ):
+    """Creates a boolean representing the intersection of two volumes.
+    """
+
     return _make_boolean_volume(
         volume_1,
         volume_2,
@@ -606,6 +610,9 @@ def intersect_volumes(
 
 
 def unite_volumes(volume_1, volume_2, translation=None, rotation=None, new_name=None):
+    """Creates a boolean representing the union of two volumes.
+    """
+
     return _make_boolean_volume(
         volume_1,
         volume_2,
@@ -619,6 +626,9 @@ def unite_volumes(volume_1, volume_2, translation=None, rotation=None, new_name=
 def subtract_volumes(
     volume_1, volume_2, translation=None, rotation=None, new_name=None
 ):
+    """Creates a boolean representing the first volume minus the overlapping portion of the second volume.
+    """
+
     return _make_boolean_volume(
         volume_1,
         volume_2,
