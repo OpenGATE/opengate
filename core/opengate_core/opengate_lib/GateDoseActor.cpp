@@ -62,7 +62,7 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
 
   //  // Option to stop the simulation when a stat goal is reached (for now only
   //  // uncertainty goal)
-  //  goalUncertainty = DictGetDouble(user_info, "goal_uncertainty");
+  goalUncertainty = DictGetDouble(user_info, "goal_uncertainty");
   threshEdepPerc = DictGetDouble(user_info, "thresh_voxel_edep_for_unc_calc");
 
   // translation
@@ -260,7 +260,35 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 //    }
 //}
 
-// void GateDoseActor::EndOfEventAction(const G4Event *event) {}
+void GateDoseActor::EndOfEventAction(const G4Event *event) {
+    // flush thread local data into global image (postponed for now)
+
+    // if the user didn't set uncertainty goal, do nothing
+    if (goalUncertainty == 0){return;}
+
+    // check if we reached the Nb of events for next evaluation
+    if (NbOfEvent >= NbEventsNextCheck){
+        // get thread idx. Ideally, only one thread should do the criteria evaluation
+        // don't ask for thread idx if no MT
+        if (!G4Threading::IsMultithreadedApplication() ||
+            G4Threading::G4GetThreadId() == 0) {
+            // check stop criteria
+            double UncCurrent = ComputeMeanUncertainty();
+            if (UncCurrent <= goalUncertainty){
+                // request run abort if criterion is reached
+                std::cout<<"TERMINATE RUN!"<<std::endl;
+                fSourceManager->SetRunTerminationFlag(true);
+            }
+            else{
+                // estimate Nevents at which next check should occour
+                NbEventsNextCheck = (UncCurrent/goalUncertainty)*(UncCurrent/goalUncertainty)*NbOfEvent*1.05;
+            }
+          
+        }
+    
+    }
+    
+}
 
 double GateDoseActor::ComputeMeanUncertainty() {
   G4AutoLock mutex(&ComputeUncertaintyMutex);

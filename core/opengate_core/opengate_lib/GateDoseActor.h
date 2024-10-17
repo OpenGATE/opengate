@@ -9,6 +9,7 @@
 #define GateDoseActor_h
 
 #include "G4Cache.hh"
+#include <G4Threading.hh>
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
@@ -41,6 +42,8 @@ public:
   int EndOfRunActionMasterThread(int run_id) override;
 
   void BeginOfEventAction(const G4Event *event) override;
+  
+  void EndOfEventAction(const G4Event *event) override;
 
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
@@ -111,9 +114,10 @@ public:
 
   double fVoxelVolume{};
   int NbOfEvent = 0;
+  int NbEventsNextCheck = 0;
   int NbOfThreads = 0;
 
-  //  double goalUncertainty;
+  double goalUncertainty;
   double threshEdepPerc{};
   // struct timeval mTimeOfLastSaveEvent;
 

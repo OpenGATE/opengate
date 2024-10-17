@@ -265,7 +265,7 @@ void GateSourceManager::PrepareNextSource() {
 
 void GateSourceManager::CheckForNextRun() {
   auto &l = fThreadLocalData.Get();
-  if (l.fNextActiveSource == nullptr) {
+  if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
     l.fNextRunId++;
@@ -279,6 +279,7 @@ void GateSourceManager::CheckForNextRun() {
     }
   }
 }
+
 
 void GateSourceManager::GeneratePrimaries(G4Event *event) {
   auto &l = fThreadLocalData.Get();
