@@ -1,6 +1,6 @@
 # Volumes
 
-This section describes the different volumes available in GATE 10 and their parameters. 
+This section describes the different volumes available in GATE 10 and their parameters.
 
 ## Common parameters
 
@@ -71,7 +71,7 @@ The input parameters of the function `HounsfieldUnit_to_material` are
 Examples of such files can be found in the `opengate/tests/data` folder. See test `test009` as example.
 
 ### Reference
-```{eval-rst}  
+```{eval-rst}
 .. autoclass:: opengate.geometry.volumes.ImageVolume
 ```
 
@@ -100,7 +100,7 @@ print("same volume: ",tes.solid_info.cubic_volume)
 See test test067_stl_volume for example.
 
 ### Reference
-```{eval-rst}  
+```{eval-rst}
 .. autoclass:: opengate.geometry.volumes.TesselatedVolume
 ```
 
@@ -110,7 +110,7 @@ See test test067_stl_volume for example.
 
 The first method, described in this section, is controlled via the `translation` and `rotation` parameters. To instruct Geant4 to repeat a volume in multiple locations, it is sufficient to provide a list of translation vectors to the volume parameter `translation`. Gate will make sure that a G4PhysicalVolume is created for each entry. Consequently, the length of the list of translations determines the number of copies. If only a single rotation matrix is provided as volume parameter `rotation`, this will be used for all copies. If each copies requires a separate individual rotation, e.g. when repeating volume around a circle, then the volume parameter `rotation` should receive a list of rotation matrices. Obviously, the number of rotations and translation should match.
 
-Each volume copy corresponds to a G4PhysicalVolume in Geant4 with its own unique name. Gate automatically generates this name. It can be obtained from a given copy index (counting starts at 0) via the method 
+Each volume copy corresponds to a G4PhysicalVolume in Geant4 with its own unique name. Gate automatically generates this name. It can be obtained from a given copy index (counting starts at 0) via the method
 ```{eval-rst}
 :py:meth:`opengate.geometry.volumes.RepeatableVolume.get_repetition_name_from_index`
 ```
@@ -246,7 +246,7 @@ Note that not all volumes are compatible with boolean operations. For example, i
 Boolean operations are a great tool to build complex shapes. The phantoms in `opengate.contrib.phantoms` are good examples. Also have a look at `test016`. Be aware, however, that the Geant4 user guide warns that very extensive use of boolean operations can slow down particle tracking speed.
 
 ### Reference
-```{eval-rst}  
+```{eval-rst}
 .. autoclass:: opengate.geometry.volumes.BooleanVolume
 .. autofunction:: opengate.geometry.volumes.unite_volumes
 ```

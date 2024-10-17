@@ -334,7 +334,9 @@ def make_docstring_for_user_info(name, default_value, options):
         # docstring += (20 - len(k)) * " "
         docstring += f"{begin_of_line}Default value: {default_value}\n\n"
         if "allowed_values" in options:
-            docstring += f"{begin_of_line}Allowed values: {options['allowed_values']}\n\n"
+            docstring += (
+                f"{begin_of_line}Allowed values: {options['allowed_values']}\n\n"
+            )
         if "doc" in options:
             docstring += f"{begin_of_line}Description: {options['doc']}\n\n"
             # docstring += options["doc"]
