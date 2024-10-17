@@ -16,6 +16,8 @@ Common parameters are:
 
 ## Image volume
 
+### Description
+
 An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a `BoxVolume` and its size is automatically adjusted to match the size of the input image. The image should be provided in a format readable by the *itk* package and the path to the image file is set via the parameter `image`. In general, we advocate the use of the mhd/raw file format, but other itk-compatible file formats can be used as well. The image must be 3D, with any pixel type (float, int, char, etc.).
 
 From the simulation point of view, a voxel is like a small box through which particles need to be transported. Therefore, in order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. To this end, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range (half-closed interval) and the material name to be used. Take the following example:
@@ -68,7 +70,14 @@ The input parameters of the function `HounsfieldUnit_to_material` are
 
 Examples of such files can be found in the `opengate/tests/data` folder. See test `test009` as example.
 
+### Reference
+```{eval-rst}  
+.. autoclass:: opengate.geometry.volumes.ImageVolume
+```
+
 ## Tesselated (STL) volumes
+
+### Description
 
 It is possible to create a tesselated volume shape based on an Standard Triangle Language (STL) data file. Such a file contains a mesh of triangles for one object. It is a typical output format of Computer Aided Design (CAD) software.
 To create such a volume add a volume of type "Tesselated". Please keep in mind, that no material information is provided, it has to be specified by the user. A Tesselated volume inherits the the same basic options as other solids described above such as translation or rotation. A basic example how to import an STL file into a geometry "MyTesselatedVolume" and assign the material G4_WATER to it can be found below. In order to verify the correct generation of the solid, one could look at the volume.
@@ -90,11 +99,22 @@ print("same volume: ",tes.solid_info.cubic_volume)
 ```
 See test test067_stl_volume for example.
 
+### Reference
+```{eval-rst}  
+.. autoclass:: opengate.geometry.volumes.TesselatedVolume
+```
+
 ## Repeated volumes
+
+### Description
 
 The first method, described in this section, is controlled via the `translation` and `rotation` parameters. To instruct Geant4 to repeat a volume in multiple locations, it is sufficient to provide a list of translation vectors to the volume parameter `translation`. Gate will make sure that a G4PhysicalVolume is created for each entry. Consequently, the length of the list of translations determines the number of copies. If only a single rotation matrix is provided as volume parameter `rotation`, this will be used for all copies. If each copies requires a separate individual rotation, e.g. when repeating volume around a circle, then the volume parameter `rotation` should receive a list of rotation matrices. Obviously, the number of rotations and translation should match.
 
-Each volume copy corresponds to a G4PhysicalVolume in Geant4 with its own unique name. Gate automatically generates this name. It can be obtained from a given copy index (counting starts at 0) via the method `get_repetition_name_from_index()`. Or vice versa, the copy index can be obtained from the copy name via `get_repetition_index_from_name()`.
+Each volume copy corresponds to a G4PhysicalVolume in Geant4 with its own unique name. Gate automatically generates this name. It can be obtained from a given copy index (counting starts at 0) via the method 
+```{eval-rst}
+:py:meth:`opengate.geometry.volumes.RepeatableVolume.get_repetition_name_from_index`
+```
+. Or vice versa, the copy index can be obtained from the copy name via `get_repetition_index_from_name()`.
 
 Gate comes with utility functions to generate translation and rotation parameters for common types of volume repetitions - see below.
 
@@ -189,6 +209,8 @@ param.offset = [0, 0, 0]
 
 ## Boolean volumes
 
+### Description
+
 Geant4 provides a mechanism to combine volumetric shapes (Solids in Geant4) into new ones via boolean operations, i.e. `union`, `intersection`, and `subtraction`. In GATE, the details of this mechanism are taken care of under the hood and the user can directly combine compatible volumes. For example:
 
 ```python
@@ -223,13 +245,9 @@ Note that not all volumes are compatible with boolean operations. For example, i
 
 Boolean operations are a great tool to build complex shapes. The phantoms in `opengate.contrib.phantoms` are good examples. Also have a look at `test016`. Be aware, however, that the Geant4 user guide warns that very extensive use of boolean operations can slow down particle tracking speed.
 
-
-
-## Reference
-
+### Reference
 ```{eval-rst}  
-.. autoclass:: opengate.geometry.volumes.BoxVolume
-.. autoclass:: opengate.geometry.volumes.ImageVolume
 .. autoclass:: opengate.geometry.volumes.BooleanVolume
-.. autoclass:: opengate.geometry.volumes.TesselatedVolume
+.. autofunction:: opengate.geometry.volumes.unite_volumes
 ```
+
