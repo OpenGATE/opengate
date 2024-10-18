@@ -99,7 +99,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     bottom_right_shell = opengate.geometry.volumes.TubsVolume(
         name=f"{name}_bottom_right_shell"
     )
-    bottom_right_shell.copy_user_info(bottom_left_shell)
+    bottom_right_shell.configure_like(bottom_left_shell)
     bottom_right_shell.sphi = 180 * deg
     bottom_right_shell.dphi = 90 * deg
 
@@ -246,7 +246,7 @@ def add_iec_one_sphere(
 
     # capillary outer shell
     caps = sim.add_volume("Tubs", f"{name}_capillary_shell_{d}")
-    caps.copy_user_info(cap)
+    caps.configure_like(cap)
     caps.material = iec_plastic
     caps.rmax = cap_thick
     caps.rmin = cap.rmax

@@ -90,7 +90,7 @@ if __name__ == "__main__":
             fn,
             stats,
             tolerance=75,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
         )
         and is_ok
@@ -104,7 +104,7 @@ if __name__ == "__main__":
             proj.get_output_path(),
             stats,
             tolerance=80,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
         )
         and is_ok

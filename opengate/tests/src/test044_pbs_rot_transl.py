@@ -174,9 +174,9 @@ if __name__ == "__main__":
                 ref_path / mhd_ref,
                 output_path / mhd_gate,
                 stat,
-                axis="x",
                 tolerance=50,
-                ignore_value=0,
+                ignore_value_data2=0,
+                axis="x",
             )
             and is_ok
         )

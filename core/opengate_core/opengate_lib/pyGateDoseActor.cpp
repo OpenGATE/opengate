@@ -37,18 +37,27 @@ void init_GateDoseActor(py::module &m) {
            &GateDoseActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
            &GateDoseActor::EndOfRunActionMasterThread)
-      .def("GetSquareFlag", &GateDoseActor::GetSquareFlag)
-      .def("SetSquareFlag", &GateDoseActor::SetSquareFlag)
+      .def("GetEdepSquaredFlag", &GateDoseActor::GetEdepSquaredFlag)
+      .def("SetEdepSquaredFlag", &GateDoseActor::SetEdepSquaredFlag)
+      .def("GetDoseFlag", &GateDoseActor::GetDoseFlag)
+      .def("SetDoseFlag", &GateDoseActor::SetDoseFlag)
+      .def("GetDoseSquaredFlag", &GateDoseActor::GetDoseSquaredFlag)
+      .def("SetDoseSquaredFlag", &GateDoseActor::SetDoseSquaredFlag)
       .def("GetToWaterFlag", &GateDoseActor::GetToWaterFlag)
       .def("SetToWaterFlag", &GateDoseActor::SetToWaterFlag)
-      .def("GetDensityFlag", &GateDoseActor::GetDensityFlag)
-      .def("SetDensityFlag", &GateDoseActor::SetDensityFlag)
+      .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
+      .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
       .def("GetPhysicalVolumeName", &GateDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateDoseActor::SetPhysicalVolumeName)
       .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)
       .def_readwrite("cpp_edep_image", &GateDoseActor::cpp_edep_image)
+      .def_readwrite("cpp_edep_squared_image",
+                     &GateDoseActor::cpp_edep_squared_image)
+      .def_readwrite("cpp_dose_image", &GateDoseActor::cpp_dose_image)
+      .def_readwrite("cpp_dose_squared_image",
+                     &GateDoseActor::cpp_dose_squared_image)
       .def_readwrite("cpp_density_image", &GateDoseActor::cpp_density_image)
-      .def_readwrite("cpp_square_image", &GateDoseActor::cpp_square_image)
+      .def_readwrite("cpp_counts_image", &GateDoseActor::cpp_counts_image)
       .def_readwrite("fPhysicalVolumeName",
                      &GateDoseActor::fPhysicalVolumeName);
 }

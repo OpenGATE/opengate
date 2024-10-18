@@ -359,10 +359,10 @@ def test_spect_proj(sim, paths, proj, version="3"):
             paths.output / fname_offset,
             stats,
             tolerance=16,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
-            sum_tolerance=1.6,
             fig_name=paths.output / f"proj028_{version}_offset.png",
+            sum_tolerance=1.6,
         )
         and is_ok
     )
@@ -379,10 +379,10 @@ def test_spect_proj(sim, paths, proj, version="3"):
             paths.output / fname,
             stats,
             tolerance=14,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
-            sum_tolerance=1.5,
             fig_name=paths.output / f"proj028_{version}_no_offset.png",
+            sum_tolerance=1.5,
         )
         and is_ok
     )

@@ -124,7 +124,7 @@ if __name__ == "__main__":
             dose.edep.get_output_path(),
             stats,
             tolerance=58,
-            ignore_value=0,
+            ignore_value_data2=0,
         )
         and is_ok
     )

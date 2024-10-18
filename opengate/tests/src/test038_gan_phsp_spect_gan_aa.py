@@ -67,10 +67,11 @@ if __name__ == "__main__":
         utility.assert_images(
             paths.output_ref / "test038_gan_aa_proj.mhd",
             paths.output / "test038_gan_aa_proj.mhd",
-            stats,
             tolerance=70,
             axis="x",
             sum_tolerance=2.75,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior
         )
         and is_ok
     )

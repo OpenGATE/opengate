@@ -150,12 +150,12 @@ if __name__ == "__main__":
     # so we do not need to manually keep track of the paths here in the script
     # syntax: dose_actor.dose.get_output_path()
 
-    unused = utility.assert_images(
+    utility.assert_images(
         dose_actor_IDD_d.dose.get_output_path(),
         dose_actor_IDD_d2w.dose.get_output_path(),
         stats,
         tolerance=100,
-        ignore_value=0,
+        ignore_value_data2=0,
         axis="x",
     )
 
