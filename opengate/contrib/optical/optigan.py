@@ -195,6 +195,11 @@ class Optigan(GateObject):
         self.optigan_csv_output_folder = self.optigan_output_folder / "csv_files"
         self.optigan_plots_folder = self.optigan_output_folder / "plots"
 
+        os.makedirs(self.optigan_input_folder, exist_ok=True)
+        os.makedirs(self.optigan_output_folder, exist_ok=True)
+        os.makedirs(self.optigan_csv_output_folder, exist_ok=True)
+        os.makedirs(self.optigan_plots_folder, exist_ok=True)
+
         delete_folder_contents(self.optigan_input_folder)
 
     # Print the input info in the terminal.
