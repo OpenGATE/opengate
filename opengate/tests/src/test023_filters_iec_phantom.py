@@ -87,6 +87,8 @@ if __name__ == "__main__":
         stat,
         tolerance=102,
         sum_tolerance=28,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False  # force legacy behavior
     )
 
     utility.test_ok(is_ok)
