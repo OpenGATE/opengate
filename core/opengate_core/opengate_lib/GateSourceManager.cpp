@@ -31,6 +31,7 @@
 // Initialisation of static variable
 int GateSourceManager::fVerboseLevel = 0;
 bool fUserStoppingCritReached = false;
+bool fRunTerminationFlag = false;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
@@ -64,6 +65,8 @@ GateSourceManager::~GateSourceManager() {
     }
   }
 }
+
+void GateSourceManager::SetRunTerminationFlag(bool flag){fRunTerminationFlag = flag;}
 
 void GateSourceManager::Initialize(TimeIntervals simulation_times,
                                    py::dict &options) {

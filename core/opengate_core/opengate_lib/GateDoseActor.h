@@ -117,7 +117,7 @@ public:
   int NbEventsNextCheck = 0;
   int NbOfThreads = 0;
 
-  bool fStopRunFlag = false;
+  //bool fStopRunFlag = false;
   double goalUncertainty;
   double threshEdepPerc{};
   // struct timeval mTimeOfLastSaveEvent;

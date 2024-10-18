@@ -275,17 +275,18 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
             // check stop criteria
             double UncCurrent = ComputeMeanUncertainty();
             if (UncCurrent <= goalUncertainty){
-                fStopRunFlag = true;
+                //fStopRunFlag = true;
+                fSourceManager->SetRunTerminationFlag(true);
             }
             else{
                 // estimate Nevents at which next check should occour
                 NbEventsNextCheck = (UncCurrent/goalUncertainty)*(UncCurrent/goalUncertainty)*NbOfEvent*1.05;
             }
         }
-        // since there is one source manager per thread, we need all threads to send the termination signal
-        if (fStopRunFlag){
-            fSourceManager->SetRunTerminationFlag(true);
-        }
+//         // since there is one source manager per thread, we need all threads to send the termination signal
+//         if (fStopRunFlag){
+//             fSourceManager->SetRunTerminationFlag(true);
+//         }
           
     
     }

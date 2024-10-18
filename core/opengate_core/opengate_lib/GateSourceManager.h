@@ -92,9 +92,9 @@ public:
 
   void ComputeExpectedNumberOfEvents();
   
-  void SetRunTerminationFlag(bool flag){fRunTerminationFlag = flag;};
-    
-  bool fRunTerminationFlag = false;
+  void SetRunTerminationFlag(bool flag);
+  
+  //bool fRunTerminationFlag = false;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;
