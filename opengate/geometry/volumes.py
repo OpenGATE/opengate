@@ -848,9 +848,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     @property
     def itk_image(self):
         if self._itk_image is None:
-            warning(f"The itk_image in {self.type_name} '{self.name}' is None. "
-                    f"If this is unexpected, run my_image_volume.load_input_image() first, "
-                    f"where my_image_volume is the variable name of the {self.type_name} in your script. ")
+            warning(
+                f"The itk_image in {self.type_name} '{self.name}' is None. "
+                f"If this is unexpected, run my_image_volume.load_input_image() first, "
+                f"where my_image_volume is the variable name of the {self.type_name} in your script. "
+            )
         return self._itk_image
 
     @itk_image.setter

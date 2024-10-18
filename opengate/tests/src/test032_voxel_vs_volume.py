@@ -148,7 +148,7 @@ if __name__ == "__main__":
         tolerance=87,
         axis="x",
         ignore_value_data2=0,
-        apply_ignore_mask_to_sum_check=False  # reproduce legacy behavior of assert_images()
+        apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images()
     )
 
     utility.test_ok(is_ok)
