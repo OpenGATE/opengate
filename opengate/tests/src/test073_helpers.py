@@ -176,6 +176,7 @@ def compare_proj_images(crystal, sim, stats, image_filename, path, n=1):
         stats,
         tolerance=69,
         ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,
         axis="y",
         fig_name=path / f"test073_test_{n}.png",
         sum_tolerance=6,
