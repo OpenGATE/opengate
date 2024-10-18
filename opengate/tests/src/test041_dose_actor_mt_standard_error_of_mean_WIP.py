@@ -132,7 +132,7 @@ def run_sim(n_thr, c4_ref=None, paths=None):
         doseFpath_IDD_NthreadImages,
         stats,
         tolerance=100,
-        ignore_value=0,
+        ignore_value_data2=0,
         axis="x",
     )
     expected_ratio = 1.00

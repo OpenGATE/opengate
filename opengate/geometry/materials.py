@@ -303,24 +303,18 @@ def create_density_img(img_volume, material_database):
     Returns
     -------
     rho : itk.Image
-        image of the same size and resolution of the ct. The voxel value is the density of the voxel.
-        Density is returned in G4 1/kg.
+        Image of the same size and resolution of the ct. The voxel value is the density of the voxel converted to g/cm3.
 
     """
-    voxel_materials = img_volume.voxel_materials
-    ct_itk = img_volume.itk_image
-    act = itk.GetArrayFromImage(ct_itk)
+    act = itk.GetArrayFromImage(img_volume.itk_image)
     arho = np.zeros(act.shape, dtype=np.float32)
 
-    for material in voxel_materials:
-        *hu_interval, mat_name = material
-        hu0, hu1 = hu_interval
-        m = (act >= hu0) * (act < hu1)
-        density = material_database[mat_name].GetDensity()
-        arho[m] = density
+    for hu0, hu1, mat_name in img_volume.voxel_materials:
+        arho[(act >= hu0) * (act < hu1)] = material_database[mat_name].GetDensity()
 
+    arho *= g4_units.cm3 / g4_units.g
     rho = itk.GetImageFromArray(arho)
-    rho.CopyInformation(ct_itk)
+    rho.CopyInformation(img_volume.itk_image)
 
     return rho
 

@@ -177,7 +177,7 @@ if __name__ == "__main__":
                 output_path / mhd_gate,
                 stats,
                 tolerance=50,
-                ignore_value=0,
+                ignore_value_data2=0,
             )
             and is_ok
         )

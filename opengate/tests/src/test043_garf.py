@@ -132,7 +132,7 @@ if __name__ == "__main__":
             filename1,
             stat,
             tolerance=100,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
             sum_tolerance=20,
         )
@@ -147,7 +147,7 @@ if __name__ == "__main__":
             filename2,
             stat,
             tolerance=52,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
         )
         and is_ok
