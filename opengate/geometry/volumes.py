@@ -883,7 +883,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # make sure the materials are created in Geant4
         for m in self.material_to_label_lut:
             self.volume_manager.find_or_build_material(m)
-        self.itk_image = self.read_input_image()
+        self.itk_image = self.load_input_image()
         self.label_image = self.create_label_image()
         if self.dump_label_image:
             self.save_label_image()
@@ -968,7 +968,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
         return material_to_label_lut
 
-    def read_input_image(self, path=None):
+    def load_input_image(self, path=None):
         if path is None:
             itk_image = itk.imread(ensure_filename_is_str(self.image))
             self.itk_image = itk_image
@@ -980,7 +980,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # read image
         if itk_image is None:
             if self.itk_image is None:
-                self.itk_image = self.read_input_image()
+                self.itk_image = self.load_input_image()
             itk_image = self.itk_image
 
         if self.material_to_label_lut is None:
@@ -1085,7 +1085,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     # create a LUT of image parametrisations
                     label_image = {}
                     for path_to_image in set(dp["image"]):
-                        itk_image = self.read_input_image(path_to_image)
+                        itk_image = self.load_input_image(path_to_image)
                         label_image[path_to_image] = self.create_label_image(itk_image)
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",

@@ -83,6 +83,7 @@ if __name__ == "__main__":
     # the image coordinate space to iec1 or iec2
     # Coordinate system of iec1 is pMin (the extend)
     # Coordinate system of iec2 is the center of the image bounding box
+    iec2.load_input_image()
     img = itk.imread(str(iec2.image))
     fake1 = gate.image.create_image_like(img)
     pMin = gate.geometry.utility.vec_g4_as_np(pMin)
