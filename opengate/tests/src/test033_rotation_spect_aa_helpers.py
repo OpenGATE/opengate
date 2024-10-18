@@ -200,6 +200,8 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             tolerance=75,
             axis="x",
             sum_tolerance=itol,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
         )
         and is_ok
     )
