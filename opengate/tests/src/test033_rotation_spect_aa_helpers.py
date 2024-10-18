@@ -188,7 +188,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             axis="x",
             sum_tolerance=itol,
             ignore_value_data2=0,
-            apply_ignore_mask_to_sum_check=False
+            apply_ignore_mask_to_sum_check=False,
         )
         and is_ok
     )

@@ -132,7 +132,7 @@ if __name__ == "__main__":
         stats,
         tolerance=35,
         ignore_value_data2=0,
-        apply_ignore_mask_to_sum_check=False  # force legacy behavior
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
     print(is_ok)
 

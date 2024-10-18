@@ -354,10 +354,17 @@ def test_spect_proj(sim, paths, proj, version="3"):
     img.SetOrigin(origin)
     itk.imwrite(img, str(paths.output / fname_offset))
     is_ok = (
-            utility.assert_images(paths.gate_output / f"projection{version}.mhd", paths.output / fname_offset,
-                                  stats, tolerance=16, ignore_value_data2=0, axis="y",
-                                  fig_name=paths.output / f"proj028_{version}_offset.png", sum_tolerance=1.6)
-            and is_ok
+        utility.assert_images(
+            paths.gate_output / f"projection{version}.mhd",
+            paths.output / fname_offset,
+            stats,
+            tolerance=16,
+            ignore_value_data2=0,
+            axis="y",
+            fig_name=paths.output / f"proj028_{version}_offset.png",
+            sum_tolerance=1.6,
+        )
+        and is_ok
     )
 
     # compare images with Gate
@@ -367,10 +374,17 @@ def test_spect_proj(sim, paths, proj, version="3"):
     print("Compare images (new spacing/origin")
     # read image and force change the offset to be similar to old Gate
     is_ok = (
-            utility.assert_images(paths.output_ref / "proj028_ref.mhd", paths.output / fname, stats,
-                                  tolerance=14, ignore_value_data2=0, axis="y",
-                                  fig_name=paths.output / f"proj028_{version}_no_offset.png", sum_tolerance=1.5)
-            and is_ok
+        utility.assert_images(
+            paths.output_ref / "proj028_ref.mhd",
+            paths.output / fname,
+            stats,
+            tolerance=14,
+            ignore_value_data2=0,
+            axis="y",
+            fig_name=paths.output / f"proj028_{version}_no_offset.png",
+            sum_tolerance=1.5,
+        )
+        and is_ok
     )
 
     return is_ok

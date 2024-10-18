@@ -80,7 +80,7 @@ if __name__ == "__main__":
         ignore_value_data2=0,
         axis="x",
         sum_tolerance=2,
-        apply_ignore_mask_to_sum_check=False  # force legacy behavior
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
 
     is_ok = is_ok and im_ok

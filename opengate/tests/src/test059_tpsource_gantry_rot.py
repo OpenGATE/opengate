@@ -190,12 +190,8 @@ if __name__ == "__main__":
     ok = True
 
     # read output and ref
-    img_mhd_out = itk.imread(
-        output_path / dose_actor_rot.edep.get_output_path()
-    )
-    img_mhd_ref = itk.imread(
-        output_path / dose_actor.edep.get_output_path()
-    )
+    img_mhd_out = itk.imread(output_path / dose_actor_rot.edep.get_output_path())
+    img_mhd_ref = itk.imread(output_path / dose_actor.edep.get_output_path())
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
     spacing = img_mhd_out.GetSpacing()

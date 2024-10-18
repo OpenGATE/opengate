@@ -76,7 +76,7 @@ if __name__ == "__main__":
         sum_tolerance=1.1,
         sad_profile_tolerance=3.0,
         ignore_value_data2=0,
-        apply_ignore_mask_to_sum_check=False  # force legacy behavior
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
 
     is_ok = is_ok and im_ok

@@ -355,7 +355,6 @@ def assert_images(
         d1 = data1[mask]
         d2 = data2[mask]
 
-
     # this is a patch to make the function back-compatible
     # because the ignore value was previously applied only after
     # taking the sum and some tests fail after that change

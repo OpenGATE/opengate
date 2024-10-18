@@ -217,7 +217,8 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     if (fDoseFlag || fDoseSquaredFlag) {
       double density;
       if (fToWaterFlag) {
-        auto *water = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+        auto *water =
+            G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
         density = water->GetDensity();
       } else {
         auto *current_material = step->GetPreStepPoint()->GetMaterial();
