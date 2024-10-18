@@ -315,6 +315,7 @@ def assert_images(
     tolerance=0,
     ignore_value_data1=None,
     ignore_value_data2=None,
+    apply_ignore_mask_to_sum_check=True,
     axis="z",
     fig_name=None,
     sum_tolerance=5,
@@ -354,8 +355,17 @@ def assert_images(
         d1 = data1[mask]
         d2 = data2[mask]
 
-    s1 = np.sum(d1)
-    s2 = np.sum(d2)
+
+    # this is a patch to make the function back-compatible
+    # because the ignore value was previously applied only after
+    # taking the sum and some tests fail after that change
+    # apply_ignore_mask_to_sum_check = False recreates the old behavior
+    if apply_ignore_mask_to_sum_check is True:
+        s1 = np.sum(d1)
+        s2 = np.sum(d2)
+    else:
+        s1 = np.sum(data1)
+        s2 = np.sum(data2)
 
     if s1 == 0 and s2 == 0:
         t = 0
