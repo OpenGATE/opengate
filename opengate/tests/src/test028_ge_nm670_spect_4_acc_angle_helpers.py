@@ -272,6 +272,7 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
             axis="x",
             fig_name=str(paths.output / fig_name),
             sum_tolerance=sum_tolerance,
+            apply_ignore_mask_to_sum_check=False
         )
         and is_ok
     )
