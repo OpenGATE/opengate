@@ -215,8 +215,14 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
 
     if (fDoseFlag || fDoseSquaredFlag) {
-      auto *current_material = step->GetPreStepPoint()->GetMaterial();
-      auto density = current_material->GetDensity();
+      double density;
+      if (fToWaterFlag) {
+        auto *water = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+        density = water->GetDensity();
+      } else {
+        auto *current_material = step->GetPreStepPoint()->GetMaterial();
+        density = current_material->GetDensity();
+      }
       dose = edep / density;
       if (fDoseFlag) {
         ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
