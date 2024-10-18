@@ -810,7 +810,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.material_to_label_lut = None
 
         # ITK images
-        self.itk_image = None  # the input
+        self._itk_image = None  # the input
         self.label_image = None  # image storing material labels
         # G4 references (additionally to those in base class)
         self.g4_physical_x = None
@@ -844,6 +844,18 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_physical_y = None
         self.g4_physical_z = None
         self.g4_voxel_param = None
+
+    @property
+    def itk_image(self):
+        if self._itk_image is None:
+            warning(f"The itk_image in {self.type_name} '{self.name}' is None. "
+                    f"If this is unexpected, run my_image_volume.load_input_image() first, "
+                    f"where my_image_volume is the variable name of the {self.type_name} in your script. ")
+        return self._itk_image
+
+    @itk_image.setter
+    def itk_image(self, image):
+        self._itk_image = image
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
