@@ -114,7 +114,7 @@ public:
 
   double fVoxelVolume{};
   int NbOfEvent = 0;
-  int NbEventsNextCheck = 0;
+  int NbEventsNextCheck = 100; //we need at least some events to be able to estimate uncertainty
   int NbOfThreads = 0;
 
   //bool fStopRunFlag = false;

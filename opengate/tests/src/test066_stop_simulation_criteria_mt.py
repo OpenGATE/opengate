@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # check statistical uncertainty every n_check simlated particles
     n_planned = 650000
-    n_threads = 1
+    n_threads = 3
 
     # goal uncertainty
     unc_goal = 0.05

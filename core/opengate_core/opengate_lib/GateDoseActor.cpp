@@ -281,6 +281,7 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
             else{
                 // estimate Nevents at which next check should occour
                 NbEventsNextCheck = (UncCurrent/goalUncertainty)*(UncCurrent/goalUncertainty)*NbOfEvent*1.05;
+                std::cout<<"NbEventsNextCheck: "<<NbEventsNextCheck<<std::endl;
             }
         }
 //         // since there is one source manager per thread, we need all threads to send the termination signal
