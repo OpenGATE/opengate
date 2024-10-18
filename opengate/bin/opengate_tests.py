@@ -295,7 +295,10 @@ def select_files(files_to_run, test_id, end_id, random_tests):
             if f_test_id >= test_id and f_test_id <= end_id:
                 files_new.append(f)
             else:
-                print(f"Ignoring: {f:<40} (< {test_id}) ")
+                if f_test_id < test_id:
+                    print(f"Ignoring: {f:<40} (< {test_id}) ")
+                else:
+                    print(f"Ignoring: {f:<40} (> {end_id}) ")
         files_to_run = files_new
     elif random_tests:
         files_new = files_to_run[-10:]

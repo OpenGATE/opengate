@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
+        os: [ubuntu-latest, macos-13, windows-latest]
         python-version: [3.9, '3.10', '3.11', '3.12']
 
     env:
@@ -33,7 +33,7 @@ jobs:
         if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
           export GIT_SSL_NO_VERIFY=1
           git submodule update --init --recursive
-        elif [[ ${{ matrix.os }} == "macos-12" ]]; then
+        elif [[ ${{ matrix.os }} == "macos-13" ]]; then
           export GIT_SSL_NO_VERIFY=1
           git submodule update --init --recursive
         else
@@ -53,7 +53,7 @@ jobs:
             varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
             varOS=($varOS)
             echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
-        elif [[ ${{ matrix.os }} == "macos-12" ]]; then
+        elif [[ ${{ matrix.os }} == "macos-13" ]]; then
             varOS=`sw_vers | grep "ProductVersion:"`
             varOS="${varOS#*:}"
             echo "release=${varOS:1}" >> $GITHUB_OUTPUT
@@ -103,18 +103,18 @@ jobs:
               mv dist_opengate/* dist/
           fi
     - uses: conda-incubator/setup-miniconda@v3
-      if: (matrix.os == 'macos-12') || (matrix.os == 'windows-latest')
+      if: (matrix.os == 'macos-13') || (matrix.os == 'windows-latest')
       with:
           miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
           python-version: ${{ matrix.python-version }}
     - name: Set up Homebrew
-      if: matrix.os == 'macos-12'
+      if: matrix.os == 'macos-13'
       id: set-up-homebrew
       uses: Homebrew/actions/setup-homebrew@master
     - name: Create opengate_core Wheel Mac
-      if: matrix.os == 'macos-12'
+      if: matrix.os == 'macos-13'
       shell: bash -l {0}
       run: |
           brew install python@3.12 || true
@@ -191,7 +191,7 @@ jobs:
           delocate-listdeps --all fixed_wheels/*.whl
           mv fixed_wheels dist
           cd dist
-          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_12_0/macosx_10_9}' {} \;
+          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_13_0/macosx_10_9}' {} \;
           cd ../..
           mv core/dist .
     - name: Create opengate_core Wheel Windows
@@ -299,7 +299,7 @@ jobs:
 #    env:
 #      GEANT4_VERSION: 'v11.2.1'
 #      ITK_VERSION: 'v5.2.1'
-#    runs-on: macos-12
+#    runs-on: macos-13
 #    steps:
 #    - name: Checkout github repo
 #      uses: actions/checkout@v4
@@ -348,7 +348,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
+        os: [ubuntu-latest, macos-13, windows-latest]
         python-version: [3.9, '3.10', '3.11', '3.12']
     steps:
     - uses: actions/download-artifact@v4
@@ -377,7 +377,7 @@ jobs:
             export OSNAME="manylinux"
             export PLATFORM="x86_"
             pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
-          elif [[ ${{ matrix.os }} == "macos-12" ]]; then
+          elif [[ ${{ matrix.os }} == "macos-13" ]]; then
             export OSNAME="macosx"
             export PLATFORM="x86_"
             which python

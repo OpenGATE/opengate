@@ -28,7 +28,7 @@ from ..actors.miscactors import SimulationStatisticsActor
 plt = LazyModuleLoader("matplotlib.pyplot")
 
 
-def test_ok(is_ok=False):
+def test_ok(is_ok=False, exceptions=None):
     if is_ok:
         s = "Great, tests are ok."
         s = "\n" + colored.stylize(s, color_ok)
@@ -36,6 +36,14 @@ def test_ok(is_ok=False):
         # sys.exit(0)
     else:
         s = "Error during the tests !"
+        if exceptions is not None:
+            if isinstance(exceptions, str):
+                exceptions = [exceptions]
+            s += f"\nThe following exception"
+            if len(exceptions) > 1:
+                s += "s"
+            s += f" occurred:\n"
+            s += "\n".join([f"- {str(e)}" for e in exceptions])
         s = "\n" + colored.stylize(s, color_error)
         print(s)
         sys.exit(-1)

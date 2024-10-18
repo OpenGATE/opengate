@@ -2,7 +2,7 @@ from typing import Optional
 
 import opengate_core as g4
 from ..definitions import __world_name__
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4
 from ..exception import fatal
 from .base import ActorBase
@@ -261,3 +261,10 @@ class VolumeRotationChanger(GeometryChanger):
 
     def apply_change(self, run_id):
         self.g4_physical_volume.SetRotationHepRep3x3(self.g4_rotations[run_id])
+
+
+process_cls(DynamicGeometryActor)
+process_cls(GeometryChanger)
+process_cls(VolumeImageChanger)
+process_cls(VolumeTranslationChanger)
+process_cls(VolumeRotationChanger)
