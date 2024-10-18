@@ -120,18 +120,18 @@ if __name__ == "__main__":
     phantom_rot.translation = [0.0, 0.0, 1000.0]
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output_filename = "testTPSgantry.mhd"
-    dose.attached_to = phantom.name
-    dose.size = [162, 1620, 162]
-    dose.spacing = [2.0, 0.2, 2.0]
-    dose.hit_type = "random"
-    dose.user_output.dose.active = True
+    dose_actor = sim.add_actor("DoseActor", "doseInXYZ")
+    dose_actor.output_filename = "testTPSgantry.mhd"
+    dose_actor.attached_to = phantom
+    dose_actor.size = [162, 1620, 162]
+    dose_actor.spacing = [2.0, 0.2, 2.0]
+    dose_actor.hit_type = "random"
+    dose_actor.dose.active = True
 
-    dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
-    dose_rot.configure_like(dose)
-    dose_rot.attached_to = phantom_rot.name
-    dose_rot.output_filename = "testTPSganry_rot.mhd"
+    dose_actor_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
+    dose_actor_rot.configure_like(dose_actor)
+    dose_actor_rot.attached_to = phantom_rot
+    dose_actor_rot.output_filename = "testTPSganry_rot.mhd"
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -191,10 +191,10 @@ if __name__ == "__main__":
 
     # read output and ref
     img_mhd_out = itk.imread(
-        output_path / sim.get_actor("doseInXYZ_rot").get_output_path("edep")
+        output_path / dose_actor_rot.edep.get_output_path()
     )
     img_mhd_ref = itk.imread(
-        output_path / sim.get_actor("doseInXYZ").get_output_path("edep")
+        output_path / dose_actor.edep.get_output_path()
     )
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
