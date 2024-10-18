@@ -8,7 +8,7 @@ import sys
 
 # main format
 formatter = colorlog.ColoredFormatter(
-    "%(log_color)s%(log_color)s%(message)s",
+    "%(log_color)s%(levelname)-8s%(log_color)s%(message)s",
     datefmt=None,
     reset=True,
     log_colors={"NONE": "cyan", "DEBUG": "cyan", "INFO": "green"},
