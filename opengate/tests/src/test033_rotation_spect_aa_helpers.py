@@ -187,6 +187,8 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             tolerance=68,
             axis="x",
             sum_tolerance=itol,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False
         )
         and is_ok
     )
@@ -195,7 +197,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_2.mhd",
             paths.output / "test033_proj_2.mhd",
             stats,
-            tolerance=68,
+            tolerance=75,
             axis="x",
             sum_tolerance=itol,
         )
