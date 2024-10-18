@@ -268,23 +268,25 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
 
     // check if we reached the Nb of events for next evaluation
     if (NbOfEvent >= NbEventsNextCheck){
-        // get thread idx. Ideally, only one thread should do the criteria evaluation
+        // get thread idx. Ideally, only one thread should do the uncertainty calculation
         // don't ask for thread idx if no MT
         if (!G4Threading::IsMultithreadedApplication() ||
             G4Threading::G4GetThreadId() == 0) {
             // check stop criteria
             double UncCurrent = ComputeMeanUncertainty();
             if (UncCurrent <= goalUncertainty){
-                // request run abort if criterion is reached
-                std::cout<<"TERMINATE RUN!"<<std::endl;
-                fSourceManager->SetRunTerminationFlag(true);
+                fStopRunFlag = true;
             }
             else{
                 // estimate Nevents at which next check should occour
                 NbEventsNextCheck = (UncCurrent/goalUncertainty)*(UncCurrent/goalUncertainty)*NbOfEvent*1.05;
             }
-          
         }
+        // since there is one source manager per thread, we need all threads to send the termination signal
+        if (fStopRunFlag){
+            fSourceManager->SetRunTerminationFlag(true);
+        }
+          
     
     }
     
