@@ -384,6 +384,7 @@ def test_spect_proj(sim, paths, proj, version="3"):
             axis="y",
             fig_name=paths.output / f"proj028_{version}_no_offset.png",
             sum_tolerance=1.5,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
         )
         and is_ok
     )
