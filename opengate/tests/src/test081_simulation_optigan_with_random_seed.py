@@ -59,10 +59,10 @@ if __name__ == "__main__":
     fe.particle = "opticalphoton"
     fe.policy = "reject"
 
-    hc = sim.add_actor("PhaseSpaceActor", "Phase")
-    hc.attached_to = crystal.name
+    phsp_actor = sim.add_actor("PhaseSpaceActor", "Phase")
+    phsp_actor.attached_to = crystal
     # hc.output = paths.output / "test075_simulation_optigan_with_random_seed.root"
-    hc.attributes = [
+    phsp_actor.attributes = [
         "Position",
         "PostPosition",
         "PrePosition",
@@ -76,11 +76,11 @@ if __name__ == "__main__":
         "TrackID",
     ]
 
-    hc.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
+    phsp_actor.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
 
     # add a kill actor to the crystal
     ka = sim.add_actor("KillActor", "kill_actor2")
-    ka.attached_to = crystal.name
+    ka.attached_to = crystal
     ka.filters.append(fe)
 
     sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
@@ -91,7 +91,7 @@ if __name__ == "__main__":
     # Option 1:
     # Call OptiGAN class with input_phsp_actor set to the correct phase space actor
     # Output will be saved in the folder specified via sim.output_dir
-    optigan = OptiGAN(input_phsp_actor=hc)
+    optigan = OptiGAN(input_phsp_actor=phsp_actor)
 
     # -------
 
