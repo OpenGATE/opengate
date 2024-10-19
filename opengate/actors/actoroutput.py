@@ -504,6 +504,8 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             self.data_item_config[i]["active"] = bool(value)
 
     def get_active(self, item=0):
+        if item == "any":
+            item = "all"
         items = self._collect_item_identifiers(item)
         return any([self.data_item_config[k]["active"] is True for k in items])
 
@@ -535,6 +537,7 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
             )
         else:
             try:
+                # FIXME: the .get() method implicitly defines a default value, but it should not. Is this a workaround?
                 return self.data_item_config[item].get("suffix", str(item))
             except KeyError:
                 self._fatal_unknown_item(item)

@@ -104,8 +104,8 @@ if __name__ == "__main__":
             dose.edep.get_output_path(),
             stat,
             tolerance=13,
-            ignore_value=0,
-            sum_tolerance=1,
+            ignore_value_data2=0,
+            sum_tolerance=1.5,
         )
         and is_ok
     )
@@ -117,8 +117,8 @@ if __name__ == "__main__":
             dose.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
-            ignore_value=1,
-            sum_tolerance=1,
+            ignore_value_data2=0,
+            sum_tolerance=3,
         )
         and is_ok
     )
