@@ -225,7 +225,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   } // else: outside of the image
 }
 
-
 int GateDoseActor::sub2ind(Image3DType::IndexType index3D) {
 
   return index3D[0] + size_edep[0] * (index3D[1] + size_edep[1] * index3D[2]);
