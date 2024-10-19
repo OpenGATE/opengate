@@ -110,8 +110,6 @@ if __name__ == "__main__":
     # for an explanation of the input parameters
     # -------
 
-
-
     # Run run_optigan method of Optigan class to get outputs
     # Option create_output_graphs: Generates distribution graphs for each output feature.
     #   -> Use only with low source activity, i.e. few events in the phase levels may cause memory issues.

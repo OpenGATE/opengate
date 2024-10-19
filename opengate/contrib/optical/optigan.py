@@ -44,8 +44,13 @@ class WGANGenerator(nn.Module):
 
 def _setter_hook_input_phsp_actor(self, input_phsp_actor):
     if input_phsp_actor is not None:
-        if self.simulation is not None and self.simulation != input_phsp_actor.simulation:
-            fatal("The input_phsp_actor refers to a different simulation than this oOtiGAN. ")
+        if (
+            self.simulation is not None
+            and self.simulation != input_phsp_actor.simulation
+        ):
+            fatal(
+                "The input_phsp_actor refers to a different simulation than this oOtiGAN. "
+            )
         self.simulation = input_phsp_actor.simulation
         self.root_file_path = input_phsp_actor.get_output_path()
     return input_phsp_actor
@@ -71,7 +76,7 @@ def process_root_output_into_events(df_combined):
 
     # process each particle and segregate into events
     for index, (ptype, x, y, z) in enumerate(
-            zip(particle_types, position_x, position_y, position_z)
+        zip(particle_types, position_x, position_y, position_z)
     ):
         if ptype == "gamma":
             # store the previous event if it started with a gamma
@@ -87,9 +92,7 @@ def process_root_output_into_events(df_combined):
                 event_id += 1
                 optical_photon_count = 0
             # if it is a new event, add the gamma particle to it
-            current_event = [
-                {"index": index, "type": ptype, "x": x, "y": y, "z": z}
-            ]
+            current_event = [{"index": index, "type": ptype, "x": x, "y": y, "z": z}]
             gamma_has_electrons_or_photons = False
         elif ptype == "opticalphoton":
             # if the particle is optical photon, just increment the count
@@ -123,40 +126,49 @@ class OptiGAN(GateObject):
     """
 
     user_info_defaults = {
-        "output_folder":
-            ("optigan", {"doc": "Folder where the OptiGAN saves output (some of it in subdirectories)."
-                         "It is relative to the simulation.output_dir if a simulation is known to OptiGAN, "
-                         "which is the case if the option 'input_phsp_actor' is set "
-                         "or if 'my_optigan.simulation=...' is set. "
-                         "Otherwise, output_folder is understood to be relative to the current working directory. "
-                         "output_folder can also be an absolute path."
-                         }),
-        "input_phsp_actor":
-            (None, {"doc": "The phase space actor that generates the training data input for this OptiGAN. "
-                           "Its output path and the reference to the simulation are automatically picked up. ",
-                    "setter_hook": _setter_hook_input_phsp_actor}
-             ),
-        "root_file_path":
-            (None, {"doc": "Path to the root file containing training phase space data. "
-                           "This input is alternative to input_phsp_actor in case the OptiGAN is run stand-alone, "
-                           "i.e. without a GATE simulation.",
-                    }
-             ),
-        "path_to_optigan_model":
-            (Path(os.path.dirname(__file__)) / "optigan_models" / "model_3341.pt",
-             {"doc": "Path to the .pt model file used to create the GAN. "
-                     "The default model that currently ships with GATE 10 (model_3341.pt) "
-                     "is for 3*3*3 crystal dimension "
-                     "and has been trained by the team at UC Davis. ",
-              }
-             ),
+        "output_folder": (
+            "optigan",
+            {
+                "doc": "Folder where the OptiGAN saves output (some of it in subdirectories)."
+                "It is relative to the simulation.output_dir if a simulation is known to OptiGAN, "
+                "which is the case if the option 'input_phsp_actor' is set "
+                "or if 'my_optigan.simulation=...' is set. "
+                "Otherwise, output_folder is understood to be relative to the current working directory. "
+                "output_folder can also be an absolute path."
+            },
+        ),
+        "input_phsp_actor": (
+            None,
+            {
+                "doc": "The phase space actor that generates the training data input for this OptiGAN. "
+                "Its output path and the reference to the simulation are automatically picked up. ",
+                "setter_hook": _setter_hook_input_phsp_actor,
+            },
+        ),
+        "root_file_path": (
+            None,
+            {
+                "doc": "Path to the root file containing training phase space data. "
+                "This input is alternative to input_phsp_actor in case the OptiGAN is run stand-alone, "
+                "i.e. without a GATE simulation.",
+            },
+        ),
+        "path_to_optigan_model": (
+            Path(os.path.dirname(__file__)) / "optigan_models" / "model_3341.pt",
+            {
+                "doc": "Path to the .pt model file used to create the GAN. "
+                "The default model that currently ships with GATE 10 (model_3341.pt) "
+                "is for 3*3*3 crystal dimension "
+                "and has been trained by the team at UC Davis. ",
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
         # pick up the input_phsp_actor
-        input_phsp_actor = kwargs.pop('input_phsp_actor', None)
-        root_file_path = kwargs.pop('root_file_path', None)
-        kwargs['name'] = 'optigan'
+        input_phsp_actor = kwargs.pop("input_phsp_actor", None)
+        root_file_path = kwargs.pop("root_file_path", None)
+        kwargs["name"] = "optigan"
         super().__init__(*args, **kwargs)
         # and set it once the base class has processed all user inout parameters
         if root_file_path is None and input_phsp_actor is None:
@@ -187,9 +199,11 @@ class OptiGAN(GateObject):
     @property
     def _absolute_output_path(self):
         if self.simulation is not None:
-            return self.simulation.get_output_path(self.output_folder, is_file_or_directory='directory')
+            return self.simulation.get_output_path(
+                self.output_folder, is_file_or_directory="directory"
+            )
         else:
-            return Path('.') / self.output_folder
+            return Path(".") / self.output_folder
 
     def get_absolute_path_to_folder(self, folder):
         p = self._absolute_output_path / folder
@@ -209,7 +223,9 @@ class OptiGAN(GateObject):
         self.optigan_plots_folder = self.optigan_output_folder / "plots"
 
         # clear the input folder to make sure previous runs do not interfere
-        delete_folder_contents(self.get_absolute_path_to_folder(self.optigan_input_folder))
+        delete_folder_contents(
+            self.get_absolute_path_to_folder(self.optigan_input_folder)
+        )
 
     # Print the input info in the terminal.
     def pretty_print_events(self):
@@ -259,7 +275,11 @@ class OptiGAN(GateObject):
             }
 
             # DELETE: delete this file after verification.
-            pd.DataFrame(data).to_csv(self.get_absolute_path_to_folder(self.optigan_input_folder) / f"optigan_input_{event_id}.csv", index=False)
+            pd.DataFrame(data).to_csv(
+                self.get_absolute_path_to_folder(self.optigan_input_folder)
+                / f"optigan_input_{event_id}.csv",
+                index=False,
+            )
 
             print(
                 f"Event ID: {event_id}, Gamma Position: {gamma_pos_x}, {gamma_pos_y}, {gamma_pos_z}, "
@@ -316,14 +336,18 @@ class OptiGAN(GateObject):
 
         for file_index, csv_file in enumerate(csv_files):
             df = pd.read_csv(self.optigan_csv_output_folder / csv_file)
-            out_path = self.get_absolute_path_to_folder(self.optigan_plots_folder / f"event{file_index + 1}")
+            out_path = self.get_absolute_path_to_folder(
+                self.optigan_plots_folder / f"event{file_index + 1}"
+            )
 
             for column in df.columns:
                 plt.figure(figsize=(10, 6))
-                plt.hist(df[column].dropna(), bins=30, color="blue", edgecolor="black")  # Drop NaNs for cleaner plots
-                plt.title(f'{column}: Distribution for event {file_index + 1}')
+                plt.hist(
+                    df[column].dropna(), bins=30, color="blue", edgecolor="black"
+                )  # Drop NaNs for cleaner plots
+                plt.title(f"{column}: Distribution for event {file_index + 1}")
                 plt.xlabel(column)
-                plt.ylabel('Frequency')
+                plt.ylabel("Frequency")
                 # # Plot the graph using seaborn
                 # plt.figure(figsize=(10, 6))
                 # plt.hist(
@@ -350,8 +374,11 @@ class OptiGAN(GateObject):
         csv_files = sorted(
             [
                 file
-                for file in os.listdir(self.simulation.get_output_path(self.optigan_input_folder,
-                                                                       is_file_or_directory='directory'))
+                for file in os.listdir(
+                    self.simulation.get_output_path(
+                        self.optigan_input_folder, is_file_or_directory="directory"
+                    )
+                )
                 if file.endswith(".csv")
             ],
             key=extract_number,
@@ -365,7 +392,9 @@ class OptiGAN(GateObject):
 
         for file_index, file_name in enumerate(csv_files):
             # Prepare input file path and read csv.
-            df = pd.read_csv(self.get_absolute_path_to_folder(self.optigan_input_folder) / file_name)
+            df = pd.read_csv(
+                self.get_absolute_path_to_folder(self.optigan_input_folder) / file_name
+            )
 
             # Extract and ensure total number of photons is a valid integer.
             total_number_of_photons = df["num_optical_photons"].values[0]
@@ -407,7 +436,10 @@ class OptiGAN(GateObject):
             generated_df = pd.DataFrame(generated_data_np, columns=column_names)
 
             # Save the output CSV file
-            optigan_output_csv_file_save_path = self.get_absolute_path_to_folder(self.optigan_csv_output_folder) / f"optigan_output_{file_index + 1}.csv"
+            optigan_output_csv_file_save_path = (
+                self.get_absolute_path_to_folder(self.optigan_csv_output_folder)
+                / f"optigan_output_{file_index + 1}.csv"
+            )
             generated_df.to_csv(optigan_output_csv_file_save_path, index=False)
             print(f"Saved generated data to {optigan_output_csv_file_save_path}.")
 
@@ -479,7 +511,10 @@ class OptiGAN(GateObject):
         df_combined = df_combined.sort_index()
 
         # Save the DataFrame to a CSV file
-        df_combined.to_csv(self.get_absolute_path_to_folder(self.optigan_output_folder) / "output.csv", index=False)
+        df_combined.to_csv(
+            self.get_absolute_path_to_folder(self.optigan_output_folder) / "output.csv",
+            index=False,
+        )
 
         return df_combined
 
