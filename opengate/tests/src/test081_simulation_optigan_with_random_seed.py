@@ -5,7 +5,7 @@
 
 import opengate as gate
 import opengate.tests.utility as tu
-from opengate.contrib.optical.optigan import Optigan
+from opengate.contrib.optical.optigan import OptiGAN
 
 import os
 
@@ -86,15 +86,35 @@ if __name__ == "__main__":
     sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
     sim.run()
 
-    # Current way to use OptiGAN
-    # Call Optigan class with root output path to initialise
+    # *** 2 ways to use OptiGAN ***
+
+    # Option 1:
+    # Call OptiGAN class with input_phsp_actor set to the correct phase space actor
+    # Output will be saved in the folder specified via sim.output_dir
+    optigan = OptiGAN(input_phsp_actor=hc)
+
+    # -------
+
+    # Option 2:
+    # alternatively, without a simulation,
+    # you can pass the keyword argument root_file_path
+    # optigan = OptiGAN(root_file_path=hc.get_output_path())
+
+    # In that case, if you want the optigan output to be saved under sim.output_dir
+    # you need to set the simulation
+    # optigan.simulation = sim
+    # otherwise, output will be saved under the current directory where the script resides
+
+    # use
+    help(optigan)
+    # for an explanation of the input parameters
+    # -------
+
+
+
     # Run run_optigan method of Optigan class to get outputs
-    # Outputs will be saved in contrib folder in optigan_output folder
-    # optigan_input_file_name = os.path.join(sim.output_dir, hc.output_filename)
-    optigan = Optigan(input_phsp_actor=hc)
-    # create_output_graphs: Generates distribution graphs for each output feature.
-    # Note: Enabling on high activity levels may cause memory issues.
-    # Recommended to only use this for testing with low activity number.
+    # Option create_output_graphs: Generates distribution graphs for each output feature.
+    #   -> Use only with low source activity, i.e. few events in the phase levels may cause memory issues.
     optigan.run_optigan(create_output_graphs=False)
 
     is_ok = all(t is True for t in sim.user_hook_log)
