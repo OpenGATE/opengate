@@ -196,7 +196,18 @@ def digest_user_info_defaults(cls):
     # rather than accumulating user info defaults?
     cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
-    make_docstring(cls, inherited_user_info_defaults)
+
+    if cls.__doc__ is not None:
+        docstring = cls.__doc__
+        docstring += "\n" + 20 * "*" + "\n\n"
+    else:
+        docstring = ""
+    cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
+    docstring += cls.__user_info_doc__
+    docstring += 20 * "*"
+    docstring += "\n"
+    cls.__doc__ = docstring
+
     return cls
 
 
@@ -346,23 +357,14 @@ def make_docstring_for_user_info(name, default_value, options):
 
 
 def make_docstring(cls, user_info_defaults):
-    indent = 4 * " "
-    if cls.__doc__ is not None:
-        docstring = cls.__doc__
-        docstring += "\n"
-    else:
-        docstring = ""
-    docstring += 20 * "*" + "\n\n"
-    docstring += (
-        "This class has the following user input parameters and default values:\n\n"
+    docstring = (
+        f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
     )
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
         docstring += make_docstring_for_user_info(k, default_value, options)
-    docstring += 20 * "*"
-    docstring += "\n"
-    cls.__doc__ = docstring
+    return docstring
 
 
 def restore_userinfo_properties(cls, attributes):
@@ -651,7 +653,6 @@ class GateObject:
 
 
 class DynamicGateObject(GateObject):
-
     # hints for IDE
     dynamic_params: Optional[List]
 
