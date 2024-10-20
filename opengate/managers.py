@@ -1271,7 +1271,7 @@ class Simulation(GateObject):
             0,
             {
                 "doc": "Gate verbosity while the simulation is running.",
-                "allowed_values": (0, logger.RUN, logger.EVENT),
+                # "allowed_values": (0, logger.RUN, logger.EVENT),  # FIXME
             },
         ),
         "g4_verbose_level": (
