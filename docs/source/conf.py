@@ -123,7 +123,6 @@ html_context = {
 }
 
 
-
 # html_theme_options = {
 #     "toc_depth": 3,
 #     "navigation_depth": 2,  # Shows three levels of TOC in the sidebar

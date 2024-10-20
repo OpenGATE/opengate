@@ -70,7 +70,7 @@ The test history can be visualized here: https://opengate.github.io/opengate_tes
 
 ### How to install (long version, for developers)
 
-See the [developer guide](https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers) 
+See the [developer guide](https://opengate-python.readthedocs.io/en/latest/developer_guide.html#installation-for-developers)
 
 
 ## Included third party C++ libraries

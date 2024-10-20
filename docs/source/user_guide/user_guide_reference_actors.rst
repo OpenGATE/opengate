@@ -78,7 +78,7 @@ A PhaseSpaceActor stores any set of particles reaching a given volume during the
    f.particle = "gamma"
    phsp.filters.append(f)
 
-In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp`. 
+In this example, the PhaseSpaceActor will store all particles reaching the given plane. For each particle, some information will be stored, as shown in the attributes array: energy, position, name, time, etc. The list of available attribute names can be found in the file: `GateDigiAttributeList.cpp`.
 
 The output is a ROOT file that contains a tree. It can be analyzed, for example, with `uproot`.
 
