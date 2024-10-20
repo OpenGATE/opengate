@@ -25,11 +25,12 @@ user_guide_actors
 
 user_guide_reference_simulation
 user_guide_reference_volumes
+user_guide_reference_actors
 ```
 
 
 ```{toctree}
-:caption: Preconfigured systems
+:caption: Preconfigured complex components
 :maxdepth: 2
 
 user_guide_contrib
