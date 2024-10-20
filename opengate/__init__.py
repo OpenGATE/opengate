@@ -56,3 +56,4 @@ import opengate.engines
 from opengate.managers import Simulation
 from opengate.managers import create_sim_from_json
 from opengate.utility import g4_units
+from opengate.base import help_on_user_info

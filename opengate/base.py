@@ -366,6 +366,15 @@ def make_docstring(cls, user_info_defaults):
     return docstring
 
 
+def help_on_user_info(obj):
+    if hasattr(obj, '__user_info_doc__'):
+        print(obj.__user_info_doc__)
+    elif type(obj) is property and hasattr(obj, '__doc__'):
+        print(obj.__doc__)
+    else:
+        raise GateImplementationError(f"No __user_info_doc__ or __doc__ available for {obj}. ")
+
+
 def restore_userinfo_properties(cls, attributes):
     # In the context of sub-processing and pickling,
     # the following line makes sure the class is processed by the function
