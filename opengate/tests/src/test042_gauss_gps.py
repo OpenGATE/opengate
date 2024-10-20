@@ -129,7 +129,7 @@ if __name__ == "__main__":
             paths.output / sim.get_actor("doseInXZ").get_output_path("edep"),
             stats,
             tolerance=10,
-            ignore_value=0,
+            ignore_value_data2=0,
         )
         and is_ok
     )
@@ -142,7 +142,7 @@ if __name__ == "__main__":
             paths.output / sim.get_actor("doseInXY").get_output_path("edep"),
             stats,
             tolerance=10,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
         )
         and is_ok
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             paths.output / sim.get_actor("doseInYZ").get_output_path("edep"),
             stats,
             tolerance=30,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
         )
         and is_ok

@@ -120,6 +120,8 @@ if __name__ == "__main__":
         dose_actor.edep.get_output_path(),
         stats_actor,
         tolerance=35,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
     )
 
     utility.test_ok(is_ok)

@@ -675,9 +675,9 @@ class SingleItkImageWithVariance(DataItemContainer):
             elif self.data[1] is None or self.data[1].data is None:
                 warning(
                     "This data item does not contain squared values so no variance can be calculated. "
-                    "The variance will be set to 1 everywhere. "
+                    "The variance will be set to 0 everywhere. "
                 )
-                output_arr = np.ones_like(value_array)
+                output_arr = np.zeros_like(value_array)
             else:
                 squared_value_array = np.asarray(self.data[1].data)
                 output_arr = calculate_variance(
@@ -692,7 +692,7 @@ class SingleItkImageWithVariance(DataItemContainer):
                     output_arr = np.divide(
                         output_arr,
                         value_array / number_of_samples,
-                        out=np.ones_like(output_arr),
+                        out=np.zeros_like(output_arr),
                         where=value_array != 0,
                     )
             output_image = itk.image_view_from_array(output_arr)

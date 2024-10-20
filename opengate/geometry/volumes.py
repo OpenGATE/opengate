@@ -192,7 +192,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # except for the name of course
         if template is not None:
             # FIXME: consider using from_dictionary()
-            self.copy_user_info(template)
+            self.configure_like(template)
             # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
                 if k != "name" and k in kwargs:
@@ -816,7 +816,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.material_to_label_lut = None
 
         # ITK images
-        self.itk_image = None  # the input
+        self._itk_image = None  # the input
         self.label_image = None  # image storing material labels
         # G4 references (additionally to those in base class)
         self.g4_physical_x = None
@@ -850,6 +850,20 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_physical_y = None
         self.g4_physical_z = None
         self.g4_voxel_param = None
+
+    @property
+    def itk_image(self):
+        if self._itk_image is None:
+            warning(
+                f"The itk_image in {self.type_name} '{self.name}' is None. "
+                f"If this is unexpected, run my_image_volume.load_input_image() first, "
+                f"where my_image_volume is the variable name of the {self.type_name} in your script. "
+            )
+        return self._itk_image
+
+    @itk_image.setter
+    def itk_image(self, image):
+        self._itk_image = image
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
@@ -889,7 +903,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # make sure the materials are created in Geant4
         for m in self.material_to_label_lut:
             self.volume_manager.find_or_build_material(m)
-        self.itk_image = self.read_input_image()
+        self.itk_image = self.load_input_image()
         self.label_image = self.create_label_image()
         if self.dump_label_image:
             self.save_label_image()
@@ -974,7 +988,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
         return material_to_label_lut
 
-    def read_input_image(self, path=None):
+    def load_input_image(self, path=None):
         if path is None:
             itk_image = itk.imread(ensure_filename_is_str(self.image))
             self.itk_image = itk_image
@@ -986,7 +1000,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # read image
         if itk_image is None:
             if self.itk_image is None:
-                self.itk_image = self.read_input_image()
+                self.itk_image = self.load_input_image()
             itk_image = self.itk_image
 
         if self.material_to_label_lut is None:
@@ -1091,7 +1105,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     # create a LUT of image parametrisations
                     label_image = {}
                     for path_to_image in set(dp["image"]):
-                        itk_image = self.read_input_image(path_to_image)
+                        itk_image = self.load_input_image(path_to_image)
                         label_image[path_to_image] = self.create_label_image(itk_image)
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
