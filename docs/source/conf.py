@@ -118,7 +118,7 @@ html_context = {
     # "github_url": "https://github.com", # or your GitHub Enterprise site
     "github_user": "OpenGATE",
     "github_repo": "opengate",
-    "github_version": "update_doc_thema",
+    "github_version": "master",
     "doc_path": "docs/source",
 }
 
