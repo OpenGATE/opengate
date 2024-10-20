@@ -109,7 +109,19 @@ html_logo = "_static/gate_logo.png"
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {"show_toc_level": 2}
+html_theme_options = {
+    "show_toc_level": 2,
+    "use_edit_page_button": True,
+}
+
+html_context = {
+    # "github_url": "https://github.com", # or your GitHub Enterprise site
+    "github_user": "OpenGATE",
+    "github_repo": "opengate",
+    "github_version": "update_doc_thema",
+    "doc_path": "docs/source",
+}
+
 
 
 # html_theme_options = {
