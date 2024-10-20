@@ -320,8 +320,7 @@ def _make_property(property_name, default_value, options=None, container_dict=No
     else:
         prop_setter = None
 
-    prop_doc = f"This is a property linked to user_info['{property_name}']:\n\n"
-    prop_doc += make_docstring_for_user_info(property_name, default_value, options)
+    prop_doc = make_docstring_for_user_info(property_name, default_value, options)
     prop = property(fget=prop_getter, fset=prop_setter, doc=prop_doc)
 
     return prop
