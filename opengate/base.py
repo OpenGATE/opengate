@@ -356,9 +356,7 @@ def make_docstring_for_user_info(name, default_value, options):
 
 
 def make_docstring(cls, user_info_defaults):
-    docstring = (
-        f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
-    )
+    docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
@@ -367,12 +365,14 @@ def make_docstring(cls, user_info_defaults):
 
 
 def help_on_user_info(obj):
-    if hasattr(obj, '__user_info_doc__'):
+    if hasattr(obj, "__user_info_doc__"):
         print(obj.__user_info_doc__)
-    elif type(obj) is property and hasattr(obj, '__doc__'):
+    elif type(obj) is property and hasattr(obj, "__doc__"):
         print(obj.__doc__)
     else:
-        raise GateImplementationError(f"No __user_info_doc__ or __doc__ available for {obj}. ")
+        raise GateImplementationError(
+            f"No __user_info_doc__ or __doc__ available for {obj}. "
+        )
 
 
 def restore_userinfo_properties(cls, attributes):
