@@ -435,7 +435,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "setter_hook": _setter_hook_goal_uncertainty,
-                "deprecated": "Currently not implemented. ",
             },
         ),
         "thresh_voxel_edep_for_unc_calc": (
@@ -547,6 +546,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
+                "EndOfEventAction",
             }
         )
 
@@ -581,6 +581,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 item=("uncertainty", "std", "variance")
             )
             is True
+            or self.goal_uncertainty >= 0
         ):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
@@ -627,6 +628,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.SetCountsFlag(self.user_output.counts.get_active())
         # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
         self.SetToWaterFlag(self.score_in == "water")
+
+        # variables for stop on uncertainty functionality
+        self.SetUncertaintyGoal(self.goal_uncertainty)
+        self.SetThreshEdepPerc(self.thresh_voxel_edep_for_unc_calc)
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
