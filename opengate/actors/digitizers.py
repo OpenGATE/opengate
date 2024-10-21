@@ -185,7 +185,10 @@ class Digitizer:
         if "input_digi_collection" in mod.user_info:
             mod.input_digi_collection = self.actors[index - 1].name
         first_key = next(iter(mod.user_output))
-        mod.user_output[first_key].write_to_disk = False
+        if module_type == "DigitizerProjectionActor":
+            mod.user_output[first_key].set_write_to_disk(False)
+        else:
+            mod.user_output[first_key].write_to_disk = False
         self.actors.append(mod)
         return mod
 
