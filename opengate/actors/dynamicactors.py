@@ -42,11 +42,15 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
             c.initialize()
 
     def BeginOfRunActionMasterThread(self, run_id):
-        gm = g4.G4GeometryManager.GetInstance()
-        gm.OpenGeometry(None)
+        if self.simulation.dyn_geom_open_close:
+            gm = g4.G4GeometryManager.GetInstance()
+            # OpenGeometry (G4VPhysicalVolume *vol=0)
+            gm.OpenGeometry(None)
         for c in self.geometry_changers:
             c.apply_change(run_id)
-        gm.CloseGeometry(True, False, None)
+        if self.simulation.dyn_geom_open_close:
+            # CloseGeometry: pOptimise=true, verbose=false, G4VPhysicalVolume *vol=0
+            gm.CloseGeometry(self.simulation.dyn_geom_optimise, False, None)
 
 
 def _setter_hook_attached_to(self, value):

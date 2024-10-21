@@ -955,7 +955,8 @@ def create_simu_for_arf_training_dataset(
     if ui.visu:
         s1.activity = 5000 * Bq
     s1.position.type = "sphere"
-    s1.position.radius = 57.6 * cm / 2
+    s1.position.radius = 57.6 * cm / 2  # FIXME
+    s1.position.radius = 10 * cm
     s1.position.translation = [0, 0, 0]
     s1.direction.type = "iso"
     s1.energy.type = "range"

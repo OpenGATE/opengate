@@ -206,6 +206,8 @@ void init_G4NavigationHistory(py::module &);
 
 void init_G4Navigator(py::module &);
 
+void init_G4AssemblyVolume(py::module &);
+
 // specific to python
 void init_G4PhysicsLists(py::module &);
 
@@ -474,6 +476,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4TouchableHistory(m);
   init_G4NavigationHistory(m);
   init_G4Navigator(m);
+  init_G4AssemblyVolume(m);
 
   init_G4PhysicsLists(m);
   init_G4EmParameters(m);
