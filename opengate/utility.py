@@ -16,9 +16,10 @@ import json
 import importlib
 import importlib.util
 from importlib.metadata import version
+import shutil
 
 import opengate_core as g4
-from .exception import fatal
+from .exception import fatal, warning
 
 
 class LazyModuleLoader:
@@ -71,6 +72,19 @@ def assert_equal_dic(d1, d2, name=""):
 def ensure_directory_exists(directory):
     p = Path(directory)
     p.mkdir(parents=True, exist_ok=True)
+
+
+def delete_folder_contents(folder_path):
+    if os.path.exists(folder_path):
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                warning(f"Failed to delete {file_path}. Reason: {e}")
 
 
 g4_units = Box()
