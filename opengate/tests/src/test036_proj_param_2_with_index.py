@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create and run the simulation
     mm = g4_units.mm
-    sim = t036.create_simulation("param", paths)
+    sim = t036.create_simulation("param", paths, "_windx")
 
     # enlarge the source
     source = sim.source_manager.get_source_info("src2")
@@ -36,10 +36,10 @@ if __name__ == "__main__":
         proj.get_output_path(),
         stats,
         tolerance=38,
-        ignore_value=0,
+        ignore_value_data2=0,
         axis="y",
-        sum_tolerance=1.5,
         fig_name=paths.output / f"proj_index.png",
+        sum_tolerance=1.5,
     )
     utility.print_test(is_ok, f"Compare image proj:")
     utility.test_ok(is_ok)

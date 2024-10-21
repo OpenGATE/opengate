@@ -462,6 +462,20 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             },
         ),
+        # "calculate_density_from": (
+        #     "auto",
+        #     {
+        #         "doc": "How should density be calculated?\n"
+        #                "'simulation': via scoring along with the rest of the quantities.\n"
+        #                "'image': from the CT image, if the actor is attached to an ImageVolume.\n"
+        #                "'auto' (default): Let GATE pick the right one for you. ",
+        #         "allowed_values": (
+        #             "auto",
+        #             "simulation",
+        #             "image"
+        #         ),
+        #     },
+        # ),
         "ste_of_mean": (
             False,
             {
@@ -483,7 +497,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             {
                 "doc": "FIXME",
                 "setter_hook": _setter_hook_goal_uncertainty,
-                "deprecated": "Currently not implemented. ",
             },
         ),
         "thresh_voxel_edep_for_unc_calc": (
@@ -504,6 +517,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
+        # **** EDEP ****
         # This creates a user output with two components: 0=edep, 1=edep_squared
         # additionally, it also provides variance, std, and uncertainty via dynamic properties
         self._add_user_output(
@@ -533,29 +547,54 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             item="uncertainty",
         )
 
+        # **** DOSE ****
         self._add_user_output(
-            ActorOutputSingleImage,
-            "dose",
+            ActorOutputSingleImageWithVariance,
+            "dose_with_uncertainty",
+            automatically_generate_interface=False,
         )
-
-        self._add_user_output(
-            ActorOutputSingleImage,
+        # create an interface to item 0 of user output "dose_with_uncertainty"
+        # and make it available via a property 'dose' in this actor
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage, "dose_with_uncertainty", "dose", item=0
+        )
+        # create an interface to item 1 of user output "dose_with_uncertainty"
+        # and make it available via a property 'dose_squared' in this actor
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "dose_with_uncertainty",
+            "dose_squared",
+            item=1,
+        )
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "dose_with_uncertainty",
             "dose_uncertainty",
+            item="uncertainty",
         )
 
+        # set the defaults for the user output of this actor
         self._add_user_output(ActorOutputSingleMeanImage, "density")
+        self._add_user_output(ActorOutputSingleImage, "counts")
+        self.user_output.dose_with_uncertainty.set_active(False, item="all")
+        self.user_output.density.set_active(False)
+        self.user_output.counts.set_active(False)
 
-        self.user_output.dose.set_active(False)
-        self.user_output.dose_uncertainty.set_active(False)
-
+        # item suffix is used when the filename is auto-generated or
+        # when the user sets one filename per actor
         self.user_output.edep_with_uncertainty.set_item_suffix("edep", item=0)
         self.user_output.edep_with_uncertainty.set_item_suffix("edep_squared", item=1)
         self.user_output.edep_with_uncertainty.set_item_suffix(
             "edep_uncertainty", item="uncertainty"
         )
-        self.user_output.dose.set_item_suffix("dose")
-        self.user_output.dose_uncertainty.set_item_suffix("dose_uncertainty")
+        self.user_output.dose_with_uncertainty.set_item_suffix("dose", item=0)
+        self.user_output.dose_with_uncertainty.set_item_suffix("dose_squared", item=1)
+        self.user_output.dose_with_uncertainty.set_item_suffix(
+            "dose_uncertainty", item="uncertainty"
+        )
+        # The following 2 are single item output and item=0 is default
         self.user_output.density.set_item_suffix("density")
+        self.user_output.counts.set_item_suffix("counts")
 
         self.__initcpp__()
 
@@ -569,59 +608,23 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
+                "EndOfEventAction",
             }
         )
 
-    def compute_dose_from_edep_img(self, input_image, density_image=None):
-        """
-        * create mass image:
-            - from ct HU units, if dose actor attached to ImageVolume.
-            - from material density, if standard volume
-        * compute dose as edep_image /  mass_image
-        """
-        vol = self.attached_to_volume
-        voxel_volume = self.spacing[0] * self.spacing[1] * self.spacing[2]
-        Gy = g4_units.Gy
-        gcm3 = g4_units.g_cm3
+    def create_density_image_from_image_volume(self, deposit_image):
+        if self.attached_to_volume.volume_type != "ImageVolume":
+            fatal(
+                f"Cannot calculate the density map from the ImageVolume "
+                f"because this actor is attached to a {self.attached_to_volume.volume_type}. "
+            )
 
-        if vol.volume_type == "ImageVolume":
-            if self.score_in == "water":
-                # for dose to water, divide by density of water and not density of material
-                scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
-            else:
-                density_image = vol.create_density_image()
-                if images_have_same_domain(input_image, density_image) is False:
-                    density_image = resample_itk_image_like(
-                        density_image, input_image, 0, linear=True
-                    )
-                scaled_image = divide_itk_images(
-                    img1_numerator=input_image,
-                    img2_denominator=density_image,
-                    filterVal=0,
-                    replaceFilteredVal=0,
-                )
-            # divide by voxel volume and convert unit
-            scaled_image = scale_itk_image(scaled_image, 1 / (Gy * voxel_volume))
-
-        else:
-            if self.score_in == "water":
-                # for dose to water, divide by density of water and not density of material
-                scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
-            else:
-                # the dose actor is attached to a volume, we need the density image
-                # to be computed from the cpp side
-                if density_image is None:
-                    fatal(f"A density image computed via the G4 simulation is needed.")
-                scaled_image = divide_itk_images(
-                    img1_numerator=input_image,
-                    img2_denominator=density_image,
-                    filterVal=0,
-                    replaceFilteredVal=0,
-                )
-            # divide by voxel volume and convert unit
-            scaled_image = scale_itk_image(scaled_image, 1 / (Gy * voxel_volume))
-
-        return scaled_image
+        density_image = self.attached_to_volume.create_density_image()
+        if images_have_same_domain(deposit_image, density_image) is False:
+            density_image = resample_itk_image_like(
+                density_image, deposit_image, 0, linear=True
+            )
+        return density_image
 
     def initialize(self, *args):
         """
@@ -634,36 +637,63 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
-        # dose uncertainty relies on edep_uncertainty. Set active flag accordingly
-        if self.user_output.dose_uncertainty.get_active() is True:
-            self.user_output.dose.set_active(True)
-            self.user_output.edep_with_uncertainty.set_active(True, item="uncertainty")
         # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
         if (
             self.user_output.edep_with_uncertainty.get_active(
                 item=("uncertainty", "std", "variance")
             )
             is True
+            or self.goal_uncertainty >= 0
         ):
-            self.user_output.edep_with_uncertainty.set_active(
-                True, item=1
-            )  # activate squared component
+            # activate the squared component, but avoid writing it to disk
+            # because the user has not activated it and thus most likely does not want it
+            if not self.user_output.edep_with_uncertainty.get_active(item=1):
+                self.user_output.edep_with_uncertainty.set_write_to_disk(False, item=1)
+                self.user_output.edep_with_uncertainty.set_active(
+                    True, item=1
+                )  # activate squared component
 
-        # activate density if we need the dose and the DoseActor is not attached to a volume
+        # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
         if (
-            self.user_output.dose.get_active() is True
+            self.user_output.dose_with_uncertainty.get_active(
+                item=("uncertainty", "std", "variance")
+            )
+            is True
+        ):
+            # activate the squared component, but avoid writing it to disk
+            # because the user has not activated it and thus most likely does not want it
+            if not self.user_output.dose_with_uncertainty.get_active(item=1):
+                self.user_output.dose_with_uncertainty.set_write_to_disk(False, item=1)
+                self.user_output.dose_with_uncertainty.set_active(
+                    True, item=1
+                )  # activate squared component
+
+        if (
+            self.user_output.density.get_active() is True
             and self.attached_to_volume.volume_type != "ImageVolume"
         ):
-            if not self.user_output.density.get_active():
-                self.user_output.density.set_active(True)
-                self.user_output.density.set_write_to_disk(False)
+            fatal(
+                "The dose actor can only produce a density map if it is attached to an ImageVolume. "
+                f"This actor is attached to a {self.attached_to_volume.volume_type} volume. "
+            )
 
         self.InitializeUserInput(self.user_info)  # C++ side
-        self.SetSquareFlag(self.user_output.edep_with_uncertainty.get_active(item=1))
-        self.SetDensityFlag(
-            self.user_output.density.get_active()
-        )  # item=0 is the default
+        # Set the flags on C++ side so the C++ knows which quantities need to be scored
+        self.SetEdepSquaredFlag(
+            self.user_output.edep_with_uncertainty.get_active(item=1)
+        )
+        self.SetDoseFlag(self.user_output.dose_with_uncertainty.get_active(item=0))
+        self.SetDoseSquaredFlag(
+            self.user_output.dose_with_uncertainty.get_active(item=1)
+        )
+        # item=0 is the default
+        self.SetCountsFlag(self.user_output.counts.get_active())
+        # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
         self.SetToWaterFlag(self.score_in == "water")
+
+        # variables for stop on uncertainty functionality
+        self.SetUncertaintyGoal(self.goal_uncertainty)
+        self.SetThreshEdepPerc(self.thresh_voxel_edep_for_unc_calc)
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -675,15 +705,21 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             "edep_with_uncertainty",
             run_index,
             self.cpp_edep_image,
-            self.cpp_square_image,
+            self.cpp_edep_squared_image,
         )
 
-        if self.user_output.density.get_active():
-            self.prepare_output_for_run("density", run_index)
-            self.push_to_cpp_image("density", run_index, self.cpp_density_image)
+        if self.user_output.dose_with_uncertainty.get_active(item="any"):
+            self.prepare_output_for_run("dose_with_uncertainty", run_index)
+            self.push_to_cpp_image(
+                "dose_with_uncertainty",
+                run_index,
+                self.cpp_dose_image,
+                self.cpp_dose_squared_image,
+            )
 
-        if self.user_output.dose_uncertainty.get_active():
-            self.prepare_output_for_run("dose_uncertainty", run_index)
+        if self.user_output.counts.get_active():
+            self.prepare_output_for_run("counts", run_index)
+            self.push_to_cpp_image("counts", run_index, self.cpp_counts_image)
 
         g4.GateDoseActor.BeginOfRunActionMasterThread(self, run_index)
 
@@ -692,56 +728,53 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             "edep_with_uncertainty",
             run_index,
             self.cpp_edep_image,
-            self.cpp_square_image,
+            self.cpp_edep_squared_image,
         )
         self._update_output_coordinate_system("edep_with_uncertainty", run_index)
         self.user_output.edep_with_uncertainty.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
 
-        # density image
-        if self.user_output.density.get_active():
-            self.fetch_from_cpp_image("density", run_index, self.cpp_density_image)
-            self._update_output_coordinate_system("density", run_index)
-            self.user_output.density.store_meta_data(
+        if self.user_output.dose_with_uncertainty.get_active(item="any"):
+            self.fetch_from_cpp_image(
+                "dose_with_uncertainty",
+                run_index,
+                self.cpp_dose_image,
+                self.cpp_dose_squared_image,
+            )
+            self._update_output_coordinate_system("dose_with_uncertainty", run_index)
+            self.user_output.dose_with_uncertainty.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+            # divide by voxel volume and scale to unit Gy
+            if self.user_output.dose_with_uncertainty.get_active(item=0):
+                self.user_output.dose_with_uncertainty.data_per_run[run_index].data[
+                    0
+                ] /= (g4_units.Gy * self.spacing[0] * self.spacing[1] * self.spacing[2])
+            if self.user_output.dose_with_uncertainty.get_active(item=1):
+                # in the squared component 1, the denominator needs to be squared
+                self.user_output.dose_with_uncertainty.data_per_run[run_index].data[
+                    1
+                ] /= (
+                    g4_units.Gy * self.spacing[0] * self.spacing[1] * self.spacing[2]
+                ) ** 2
+
+        if self.user_output.counts.get_active():
+            self.fetch_from_cpp_image("counts", run_index, self.cpp_counts_image)
+            self._update_output_coordinate_system("counts", run_index)
+            self.user_output.counts.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
 
-        # dose
-        if self.user_output.dose.get_active():
+        # density image
+        if self.user_output.density.get_active():
             edep_image = self.user_output.edep_with_uncertainty.get_data(
                 run_index, item=0
             )
-            density_image = None
-            if self.user_output.density.get_active():
-                density_image = self.user_output.density.get_data(run_index)
-            dose_image = self.compute_dose_from_edep_img(edep_image, density_image)
-            dose_image.CopyInformation(edep_image)
-            self.store_output_data(
-                "dose",
-                run_index,
-                dose_image,
+            self.user_output.density.store_data(
+                run_index, self.create_density_image_from_image_volume(edep_image)
             )
-            self.user_output.dose.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
-
-        if self.user_output.dose_uncertainty.get_active() is True:
-            # scale by density
-            edep_uncertainty_image = self.user_output.edep_with_uncertainty.get_data(
-                run_index, item="uncertainty"
-            )
-            density_image = None
-            if self.user_output.density.get_active():
-                density_image = self.user_output.density.get_data(run_index)
-            dose_uncertainty_image = self.compute_dose_from_edep_img(
-                edep_uncertainty_image, density_image
-            )
-            dose_uncertainty_image.CopyInformation(edep_uncertainty_image)
-            self.user_output.dose_uncertainty.store_data(
-                run_index, dose_uncertainty_image
-            )
-            self.user_output.dose_uncertainty.store_meta_data(
+            self.user_output.density.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
 

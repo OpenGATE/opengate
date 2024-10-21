@@ -8,9 +8,10 @@ import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
+from pathlib import Path
 
 
-def create_spect_simu(sim, paths, number_of_threads=1):
+def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     # main options
     sim.g4_verbose = False
     sim.visu = False
@@ -119,7 +120,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
             crystal = v
     hc.attached_to = crystal.name
     print("Crystal :", crystal.name)
-    hc.output_filename = "test028.root"
+    hc.output_filename = f"test028{version}.root"
     print(hc.output_filename)
     hc.attributes = [
         "PostPosition",
@@ -172,7 +173,7 @@ def create_spect_simu(sim, paths, number_of_threads=1):
     return spect
 
 
-def test_add_proj(sim):
+def test_add_proj(sim, fname_suffix):
     mm = gate.g4_units.mm
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
@@ -185,7 +186,7 @@ def test_add_proj(sim):
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet # FIXME
-    proj.output_filename = "proj028.mhd"
+    proj.output_filename = f"proj028{fname_suffix}.mhd"
     # by default, the origin of the images are centered
     # set to False here to keep compatible with previous version
     proj.origin_as_image_center = False
@@ -341,24 +342,28 @@ def test_spect_proj(sim, paths, proj, version="3"):
     print()
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
-    img = itk.imread(str(paths.output / "proj028.mhd"))
+    fname = sim.get_actor("Projection").get_output_path()
+    fname_stem = Path(fname).stem
+    fname_offset = fname_stem + "_offset.mhd"
+    img = itk.imread(str(paths.output / fname))
     spacing = np.array(proj.projection.image.GetSpacing())  # user_info.spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1
     img.SetSpacing(spacing)
     img.SetOrigin(origin)
-    itk.imwrite(img, str(paths.output / "proj028_offset.mhd"))
+    itk.imwrite(img, str(paths.output / fname_offset))
     is_ok = (
         utility.assert_images(
             paths.gate_output / f"projection{version}.mhd",
-            paths.output / "proj028_offset.mhd",
+            paths.output / fname_offset,
             stats,
             tolerance=16,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
-            sum_tolerance=1.6,
             fig_name=paths.output / f"proj028_{version}_offset.png",
+            sum_tolerance=1.6,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
         )
         and is_ok
     )
@@ -372,13 +377,14 @@ def test_spect_proj(sim, paths, proj, version="3"):
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj028_ref.mhd",
-            paths.output / "proj028.mhd",
+            paths.output / fname,
             stats,
             tolerance=14,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
-            sum_tolerance=1.5,
             fig_name=paths.output / f"proj028_{version}_no_offset.png",
+            sum_tolerance=1.5,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
         )
         and is_ok
     )

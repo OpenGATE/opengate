@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    t49.create_simulation(sim)
+    t49.create_simulation(sim, fname_suffix="_v1")
 
     # start simulation
     sim.run()

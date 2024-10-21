@@ -131,7 +131,7 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = "test030-edep.mhd"
+    dose.output_filename = "test030-custdyn-edep.mhd"
     dose.attached_to = "waterbox"
     dose.size = [99, 99, 99]
     mm = gate.g4_units.mm
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             dose.edep.get_output_path(),
             stats,
             tolerance=30,
-            ignore_value=0,
+            ignore_value_data2=0,
         )
         and is_ok
     )
@@ -202,7 +202,7 @@ if __name__ == "__main__":
             dose.edep_uncertainty.get_output_path(),
             stats,
             tolerance=15,
-            ignore_value=1,
+            ignore_value_data2=0,
         )
         and is_ok
     )

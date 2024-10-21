@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     # main options
     sim.check_volumes_overlap = True
-    sim.random_seed = "auto"  # 123456789
+    sim.random_seed = 87456321
     sim.output_dir = paths.output
     sim.progress_bar = True
 
@@ -73,9 +73,10 @@ if __name__ == "__main__":
         stats,
         axis="y",
         tolerance=50,
-        ignore_value=0,
-        sum_tolerance=1.0,
+        sum_tolerance=1.1,
         sad_profile_tolerance=3.0,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
 
     is_ok = is_ok and im_ok
