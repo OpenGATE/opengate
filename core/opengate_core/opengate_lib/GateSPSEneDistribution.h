@@ -13,7 +13,7 @@
 class GateSPSEneDistribution : public G4SPSEneDistribution {
 
 public:
-  virtual ~GateSPSEneDistribution() {}
+  virtual ~GateSPSEneDistribution() = default;
 
   void GenerateFromCDF();
 
@@ -27,6 +27,10 @@ public:
 
   void GenerateSpectrumLines();
 
+  void GenerateSpectrumHistogram();
+
+  void GenerateSpectrumHistogramInterpolated();
+
   // Cannot inherit from GenerateOne
   virtual G4double VGenerateOne(G4ParticleDefinition *);
 
@@ -34,6 +38,9 @@ public:
 
   std::vector<double> fProbabilityCDF;
   std::vector<double> fEnergyCDF;
+
+private:
+  std::size_t IndexForProbability(double p) const;
 };
 
 #endif // GateSPSEneDistribution_h
