@@ -641,6 +641,13 @@ class PhysicsManager(GateObject):
                 "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
             },
         ),
+        "mean_energy_per_ion_pair": (
+            Box(),
+            {
+                "doc": "Dict of material_name:energy_value, such that: sim.physics_manager.mean_energy_per_ion_pair['IEC_PLASTIC'] = 5.0 * eV. "
+                "Mostly used for using acolinearity during annihilation in some materials"
+            },
+        ),
         # "processes_to_bias": (
         #     Box(
         #         [
@@ -1484,6 +1491,7 @@ class Simulation(GateObject):
 
         # hook functions
         self.user_hook_after_init = None
+        self.user_hook_after_init_arg = None
         self.user_hook_after_run = None
         self.user_hook_log = None
 

@@ -77,20 +77,82 @@ G4OpticalPhysics
 
 Note that EMV, EMX, EMY, EMZ corresponds to option1, 2, 3, 4 (don't ask us why).
 
-**WARNING** The decay process, if needed, must be added explicitly. This is done with:
+
+###  Radioactive decay
+
+The decay process, if needed, must be added explicitly. This is done with:
 
 ```python
 sim.enable_decay(True)
 # or
-sim.physics_manager = True
+sim.physics_manager = True # zxc This behavior is never used in any of the tests and seems like a bug since printing the physics_manager of a test result in a fancy dictionnary.
 ```
 
 Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and G4RadioactiveDecayPhysics. Those processes are required in particular if decaying generic ion (such as F18) is used as source. Additional information can be found in the following:
 
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process>
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html>
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>
-- <http://www.lnhb.fr/nuclear-data/nuclear-data-table/>
+- [Geant4 Particle decay process](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process)
+- [Geant4 decay physics](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html)
+- [Physics list](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html)
+- [Nuclear data table](http://www.lnhb.fr/nuclear-data/nuclear-data-table/)
+
+
+###  Acollinearity of annihilation photons
+
+Without further modifications, most of the annihilation photon pairs resulting from positron-electron annihilation will be collinear.
+For water between 20&deg;C–30&deg;C, it was shown that acollinearity of annihilation photons, or more precisely its 2D angular deviation relative to the collinear case, follows a 2D Gaussian distribution with a FWHM of 0.5&deg; ([Colombino et al. 1965](https://link.springer.com/article/10.1007/BF02748591)).
+
+#### Ion or e+ source
+To enable this behavior in a simulation, the user needs to set the `MeanEnergyPerIonPair` of all the materials where acollinearity of annihilation photons is to be simulated to 0.5 eV ([Geant4 Release note](www.geant4.org/download/release-notes/notes-v10.7.0.html)).
+This is done differently depending on whether the material is defined by Geant4, in `GateMaterials.db` or created dynamically.
+
+##### Geant4 default material
+```python
+# First, get a reference to the material where acollinearity of annihilation photons is to be simulated.
+# This is done by providing the name of the materials, e.g., "G4_WATER", to the volume manager.
+mat = sim.volume_manager.find_or_build_material(material_of_interest)
+
+# Second, get a reference to the material ionisation property.
+# You can get the value of MeanEnergyPerIonPair of the materials with the command 'ionisation.GetMeanExcitationEnergy() / eV'
+# By default, MeanEnergyPerIonPair of a material is 0.0 eV
+ionisation = mat.GetIonisation()
+
+# Set the value of MeanEnergyPerIonPair to the desired value. Here, we use the recommended 5.0 eV.
+ionisation.SetMeanEnergyPerIonPair(5.0 * eV)
+# The previous command is equivalent to mat.GetIonisation().SetMeanEnergyPerIonPair(5.0 * eV)
+```
+
+##### Material defined in `GateMaterials.db`
+```python
+# Provide the location of GateMaterials.db to the volume manager.
+sim.volume_manager.add_material_database(path_to_gate_materials_db)
+
+# Set the MeanEnergyPerIonPair of the material in the physics manager
+# material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
+sim.physics_manager.mean_energy_per_ion_pair[material_of_interest] = 5.0 * eV
+```
+
+##### Material created dynamically
+```python
+# Provide a description of the material to the volume manager
+# material_of_interest is the name of the material of interest
+sim.volume_manager.material_database.add_material_nb_atoms(material_of_interest, ex_elems, ex_nbAtoms, ex_density)
+
+# Set the MeanEnergyPerIonPair of the material in the physics manager
+# material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
+sim.physics_manager.mean_energy_per_ion_pair[material_of_interest] = 5.0 * eV
+```
+
+#### Back-to-back source
+Currently, simulating this behavior cannot be reproduced with back-to-back source
+
+#### Further considerations
+The property needed to simulate acollinearity, as expected in PET imaging, is defined at the level of materials, not at the volume level.
+In other words, if one needs a water volume with acollinearity and another water volume without acollinearity in the simulation, two materials (e.g., water_aco and water_colin) need to be defined, with only the former using the code previously shown.
+
+More recently, [Shibuya et al. 2007](https://iopscience.iop.org/article/10.1088/0031-9155/52/17/010) have shown that acollinearity of annihilation photons in a human subject follows a double Gaussian distribution with a combined FWHM of 0.55&deg;.
+While the double Gaussian distribution currently cannot be reproduced in GATE, setting the `MeanEnergyPerIonPair` of the material to 6.0 eV results in a 2D Gaussian with a FWHM of 0.55&deg;.
+
+**WARNING:** Currently, it is unknown if setting the `MeanEnergyPerIonPair` parameter to a non-zero value has an impact on other facets of Geant4 physics and thus on the GATE simulation.
 
 ## Optical Physics Processes
 
