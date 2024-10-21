@@ -268,10 +268,11 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
             paths.output / f"proj028_colli_offset{version}.mhd",
             stats,
             tolerance=85,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
-            sum_tolerance=sum_tolerance,
             fig_name=str(paths.output / fig_name),
+            sum_tolerance=sum_tolerance,
+            apply_ignore_mask_to_sum_check=False,  # force legacy behavior
         )
         and is_ok
     )

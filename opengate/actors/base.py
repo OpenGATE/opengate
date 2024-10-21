@@ -3,7 +3,7 @@ from functools import wraps
 
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
 
@@ -156,6 +156,12 @@ class ActorBase(GateObject):
     #     self.known_attributes.add("fFilters")
     #     # output_filename is a property
     #     self.known_attributes.add("output_filename")
+
+    def configure_like(self, other_obj):
+        super().configure_like(other_obj)
+        # also pick up the configuration of the user output
+        for k, v in self.user_output.items():
+            v.configure_like(other_obj.user_output[k])
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -451,3 +457,6 @@ class ActorBase(GateObject):
     def EndSimulationAction(self):
         """Default virtual method for inheritance"""
         pass
+
+
+process_cls(ActorBase)

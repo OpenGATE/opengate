@@ -196,7 +196,18 @@ def digest_user_info_defaults(cls):
     # rather than accumulating user info defaults?
     cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
-    make_docstring(cls, inherited_user_info_defaults)
+
+    if cls.__doc__ is not None:
+        docstring = cls.__doc__
+        docstring += "\n" + 20 * "*" + "\n\n"
+    else:
+        docstring = ""
+    cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
+    docstring += cls.__user_info_doc__
+    docstring += 20 * "*"
+    docstring += "\n"
+    cls.__doc__ = docstring
+
     return cls
 
 
@@ -309,56 +320,59 @@ def _make_property(property_name, default_value, options=None, container_dict=No
     else:
         prop_setter = None
 
-    prop_doc = f"This is a property linked to user_info['{property_name}']:\n\n"
-    prop_doc += make_docstring_for_user_info(property_name, default_value, options)
+    prop_doc = make_docstring_for_user_info(property_name, default_value, options)
     prop = property(fget=prop_getter, fset=prop_setter, doc=prop_doc)
 
     return prop
 
 
 def make_docstring_for_user_info(name, default_value, options):
-    indent = 4 * " "
+    begin_of_line = "* "
     docstring = f"{name}"
     if "deprecated" in options:
-        docstring += " -> DEPRECATED\n"
-        docstring += indent
-        docstring += "Info: "
-        docstring += options["deprecated"]
-        docstring += "\n"
+        docstring += f"\n\n{begin_of_line}Deprecated: {options['deprecated']}\n\n"
+        # docstring += indent
+        # docstring += "Info: "
+        # docstring += options["deprecated"]
+        # docstring += "\n\n"
     else:
         if "required" in options and options["required"] is True:
             docstring += " (must be provided)"
-        docstring += ":\n"
+        if "read_only" in options and options["read_only"] is True:
+            docstring += " (set internally, i.e. read-only)"
+        docstring += ":\n\n"
         # docstring += (20 - len(k)) * " "
-        docstring += f"{indent}Default value: {default_value}\n"
+        docstring += f"{begin_of_line}Default value: {default_value}\n\n"
         if "allowed_values" in options:
-            docstring += f"{indent}Allowed values: {options['allowed_values']}\n"
+            docstring += (
+                f"{begin_of_line}Allowed values: {options['allowed_values']}\n\n"
+            )
         if "doc" in options:
-            docstring += indent
-            docstring += options["doc"]
-            docstring += "\n"
-    docstring += "\n"
+            docstring += f"{begin_of_line}Description: {options['doc']}\n\n"
+            # docstring += options["doc"]
+            # docstring += "\n\n"
+    # docstring += "\n"
     return docstring
 
 
 def make_docstring(cls, user_info_defaults):
-    indent = 4 * " "
-    if cls.__doc__ is not None:
-        docstring = cls.__doc__
-        docstring += "\n"
-    else:
-        docstring = ""
-    docstring += 20 * "*" + "\n\n"
-    docstring += (
-        "This class has the following user input parameters and default values:\n\n"
-    )
+    docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
         docstring += make_docstring_for_user_info(k, default_value, options)
-    docstring += 20 * "*"
-    docstring += "\n"
-    cls.__doc__ = docstring
+    return docstring
+
+
+def help_on_user_info(obj):
+    if hasattr(obj, "__user_info_doc__"):
+        print(obj.__user_info_doc__)
+    elif type(obj) is property and hasattr(obj, "__doc__"):
+        print(obj.__doc__)
+    else:
+        raise GateImplementationError(
+            f"No __user_info_doc__ or __doc__ available for {obj}. "
+        )
 
 
 def restore_userinfo_properties(cls, attributes):
@@ -586,7 +600,7 @@ class GateObject:
         """Dummy implementation for inherited classes which do not implement this method."""
         pass
 
-    def copy_user_info(self, other_obj):
+    def configure_like(self, other_obj):
         for k in self.user_info.keys():
             if k not in ["name", "_name"]:
                 try:
@@ -647,7 +661,6 @@ class GateObject:
 
 
 class DynamicGateObject(GateObject):
-
     # hints for IDE
     dynamic_params: Optional[List]
 
@@ -909,3 +922,7 @@ def create_gate_object_from_dict(dct):
         name=dct["user_info"]["name"]
     )
     return obj
+
+
+process_cls(GateObject)
+process_cls(DynamicGateObject)

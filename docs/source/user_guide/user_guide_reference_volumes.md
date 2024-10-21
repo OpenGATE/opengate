@@ -1,88 +1,10 @@
-## Geometry and volumes
+# Volumes
 
-Gate fundamentally relies on the geometry principles of Geant4, but provides the user with an easy-to-use interface to set up the geometry of a simulation.
-In this part of the Gate user guide, we explain how a simulation geometry is set up in Gate.
+This section describes the different volumes available in GATE 10 and their parameters.
 
-Under the hood, geometry is handled and parametrized by Geant4. GATE just sets it up for you. Therefore, it might be worthwhile looking at the [Geant4 user guide](http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html#constructed-solid-geometry-csg-solids) as well.
+## Common parameters
 
-### Overview: Volumes
-
-Volumes are the components that make up the simulation geometry. Following Geant4 logic, a volume contains information about its shape, its placement in space, its material, and possibly settings about physics modeling within that volume. In Gate, all these properties are stored and handled in a single volume object, e.g. a `BoxVolume`, `SphereVolume`, `ImageVolume`.
-
-Volumes are managed by the VolumeManager and can be created in two ways:
-
-1) ... with the `add_volume` command, providing the type of  volume as string argument. It is mandatory to provide a unique name as well. A volume is created according to the specified volume type and the volume object is returned. Example:
-
-```python
-import opengate as gate
-sim = gate.Simulation()
-myboxvol = sim.add_volume('Box', name='mybox')
-```
-Most users will opt for this way of creating volumes.
-
-2) ... by calling the volume class. In this case, the volume is created, but not yet added to the simulation. It has to be added to the simulation explicitly.
-Example:
-
-```python
-import opengate as gate
-sim = gate.Simulation()
-myspherevol = gate.geometry.volumes.SphereVolume(name='mysphere')
-sim.add_volume(myspherevol)
-```
-This second way of creating volumes is useful in cases where the volume is needed but should not be part of the simulation. For example, if it serves as basis for a [boolean operation](#boolean-volumes), e.g. to be intersected with another volume.
-
-Note that the `add_volume` command in the second example does not require the `name` because the volume already exists and already has a name. For the same reason, the `add_volume` command does not return anything, i.e. it returns `None`.
-
-Note: Every simulation has a default volume called `world` (lowercase) which is automatically created.
-
-The parameters of a volume can be set as follows:
-
-```python
-import opengate as gate
-sim = gate.Simulation()
-vol = sim.add_volume('Box', 'mybox')
-vol.material = 'G4_AIR'
-vol.mother = 'world'  # by default
-cm = gate.g4_units.cm
-mm = gate.g4_units.mm
-vol.size = [10 * cm, 5 * cm, 15 * mm]
-```
-
-To get an overview of all the properties of a volume, simply print it:
-
-```python
-vol = sim.add_volume('Box', 'mybox')
-print(vol)
-```
-
-In an interactive python console, e.g. ipython, you can also type `help(vol)` to get an explanation of the parameters.
-
-To dump a list of all available volume types:
-
-```python
-print('Volume types :')
-print(sim.volume_manager.dump_volume_types())
-```
-
-### Volume hierarchy
-
-All volumes have a parameter `mother` which contains the name of the volume to which they are attached. You can also pass a volume object to the `mother` parameter and Gate will extract its name from it. By default, a volume's mother is the world volume (which has the name `world`). Gate creates a hierarchy of volumes based on each volume's `mother` parameter, according to Geant4's logic of hierarchically nested volumes. The volume hierarchy can be inspected with the command `dump_volume_tree` of the volume manager. Example:
-
-```python
-import opengate as gate
-sim = gate.Simulation
-b1 = sim.add_volume('Box', name='b1')
-b1_a = sim.add_volume('Box', name='b1_a')
-b1_b = sim.add_volume('Box', name='b1_b')
-b1_a.mother = b1
-b1_b.mother = b1
-sim.volume_manager.dump_volume_tree()
-```
-
-
-### Common parameters
-
-Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Use `print(vol)` to display the volume's parameters and their default values.
+Some of the parameters are common to **all** volumes, while others are specific to a certain type of volume. Given a volume `vol`, use `print(vol)` to display the volume's parameters and their default values.
 
 Common parameters are:
 
@@ -92,57 +14,11 @@ Common parameters are:
 - `rotation`: a 3x3 rotation matrix. Rotation of the volume with respect to the mother volume. We advocate the use of `scipy.spatial.transform.Rotation` to manage the rotation matrix.
 - `color`: a list of 4 values (Red, Green, Blue, Opacity) between 0 and 1, e.g. `[1, 0, 0, 0.5]`. Only used when visualization is on.
 
-Take a look at `test007` as example for simple volumes.
+## Image volume
 
+### Description
 
-### Utility properties
-
-Volume objects come with several properties which allow you to extract information about the volume. The following description assumes that you have created a volume already, i.e.
-
-```python
-import opengate as gate
-sim = gate.Simulation()
-mysphere = sim.add_volume('SphereVolume', name='mysphere')
-```
-
-You can use the following properties to obtain information about the volume `mysphere`:
-- `mysphere.volume_depth_in_tree`: this yields the depth in the hierarchy tree of volumes where *0* is the world, *1* is a volume attached to the world, *2* the first-level subvolume of another volume, and so forth.
-- `mysphere.world_volume`: returns the world volume to which this volume is linked through the volume hierarchy. Useful in a simulation with [parallel worlds](#parallel-worlds).
-- `mysphere.volume_type`: returns the volume type, e.g. "BoxVolume", "BooleanVolume", "ImageVolume". Technically speaking, it yields the name of the volume's class.
-- `mysphere.bounding_limits`: returns the corner coordinates (3 element list: (x,y,z)) of the bounding box of the volume
-- `mysphere.bounding_box_size`: returns the size of the bounding box along x, y, z
-
-Note that the above properties are read-only - you cannot set their values.
-
-### Materials
-
-From the simulation point of view, a material is a set of parameters describing its chemical composition and physical properties such as its density.
-
-Geant4 defines a set of default materials which are also available in GATE. A prominent example is "G4_WATER".
-The full list of Geant4 materials is available [here](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Appendix/materialNames.html).
-
-On top of that, Gate provides different mechanisms to define additional materials. One option is via a text file which can be loaded with
-
-```python
-sim.volume_manager.add_material_database("GateMaterials.db")
-```
-
-All material names defined in the "GateMaterials.db" can then be used for any volume. Please check the file in `tests/data/GateMaterials.db` for the required format of database file.
-
-<!--
-Alternatively, materials can be created within a simulation script with the following command:
-
-```python
-import opengate
-gate.volume_manager.new_material("mylar", 1.38 * gcm3, ["H", "C", "O"], [0.04196, 0.625016, 0.333024])
-```
-
-This function creates a material named "mylar", with the given mass density and the composition (H C and O here) described as a vector of percentages. Note that the weights are normalized. The created material can then be used for any volume.
--->
-
-### Image volumes
-
-An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a `BoxVolume` and its size is automatically adjusted to match the size of the input image. The image should be provided in a format readable by the *itk* package and the path to the image file is set via the parameter `image`. In general, we advocate the use of the mhd/raw file format, but other itk-compatible file formats can be used as well. The image must be 3D, with any pixel type (float, int, char, etc).
+An image volumes is essentially a box filled with a voxelized volumetric (3D) image. The box containing the image behaves pretty much like a `BoxVolume` and its size is automatically adjusted to match the size of the input image. The image should be provided in a format readable by the *itk* package and the path to the image file is set via the parameter `image`. In general, we advocate the use of the mhd/raw file format, but other itk-compatible file formats can be used as well. The image must be 3D, with any pixel type (float, int, char, etc.).
 
 From the simulation point of view, a voxel is like a small box through which particles need to be transported. Therefore, in order for Gate/Geant4 to make use of the image, the image values need to be mapped to materials to be associated with the corresponding voxel. To this end, you need to provide a lookup table via the parameter `voxel_materials`, which is a list of 3-item-lists, each defining a value range (half-closed interval) and the material name to be used. Take the following example:
 
@@ -194,8 +70,14 @@ The input parameters of the function `HounsfieldUnit_to_material` are
 
 Examples of such files can be found in the `opengate/tests/data` folder. See test `test009` as example.
 
+### Reference
+```{eval-rst}
+.. autoclass:: opengate.geometry.volumes.ImageVolume
+```
 
-### Tesselated (STL) volumes
+## Tesselated (STL) volumes
+
+### Description
 
 It is possible to create a tesselated volume shape based on an Standard Triangle Language (STL) data file. Such a file contains a mesh of triangles for one object. It is a typical output format of Computer Aided Design (CAD) software.
 To create such a volume add a volume of type "Tesselated". Please keep in mind, that no material information is provided, it has to be specified by the user. A Tesselated volume inherits the the same basic options as other solids described above such as translation or rotation. A basic example how to import an STL file into a geometry "MyTesselatedVolume" and assign the material G4_WATER to it can be found below. In order to verify the correct generation of the solid, one could look at the volume.
@@ -217,11 +99,22 @@ print("same volume: ",tes.solid_info.cubic_volume)
 ```
 See test test067_stl_volume for example.
 
-### Repeated volumes
+### Reference
+```{eval-rst}
+.. autoclass:: opengate.geometry.volumes.TesselatedVolume
+```
+
+## Repeated volumes
+
+### Description
 
 The first method, described in this section, is controlled via the `translation` and `rotation` parameters. To instruct Geant4 to repeat a volume in multiple locations, it is sufficient to provide a list of translation vectors to the volume parameter `translation`. Gate will make sure that a G4PhysicalVolume is created for each entry. Consequently, the length of the list of translations determines the number of copies. If only a single rotation matrix is provided as volume parameter `rotation`, this will be used for all copies. If each copies requires a separate individual rotation, e.g. when repeating volume around a circle, then the volume parameter `rotation` should receive a list of rotation matrices. Obviously, the number of rotations and translation should match.
 
-Each volume copy corresponds to a G4PhysicalVolume in Geant4 with its own unique name. Gate automatically generates this name. It can be obtained from a given copy index (counting starts at 0) via the method `get_repetition_name_from_index()`. Or vice versa, the copy index can be obtained from the copy name via `get_repetition_index_from_name()`.
+Each volume copy corresponds to a G4PhysicalVolume in Geant4 with its own unique name. Gate automatically generates this name. It can be obtained from a given copy index (counting starts at 0) via the method
+```{eval-rst}
+:py:meth:`opengate.geometry.volumes.RepeatableVolume.get_repetition_name_from_index`
+```
+. Or vice versa, the copy index can be obtained from the copy name via `get_repetition_index_from_name()`.
 
 Gate comes with utility functions to generate translation and rotation parameters for common types of volume repetitions - see below.
 
@@ -276,7 +169,7 @@ You are obviously free to generate your own list of translations and rotations t
 Volume repetitions controlled via the `translation` and `rotation` parameter are a convenient and generic way to construct a "not too large" number of repeated objects. In case of "many" repetitions, the Geant4 tracking engine can become slow. In that case, it is better to use parameterised volumes described in the next section. It is not easy to quantify "not too many" repetitions. Based on our experience, a few hundred is still acceptable, but you might want to check in your case. Note that, if the volume contains sub-volumes (via their `mother` parameter, everything will be repeated, albeit in an optimized and efficient way.
 
 
-### Repeat Parametrised Volumes
+## Repeat Parametrised Volumes
 
 In some situations, the repeater concept explained in the previous section is not sufficient and can be inefficient when the number of repetitions is large. A specific example is a collimator for SPECT imaging containing a large number of holes. `RepeatParametrisedVolume` is an alternative repeated volume type which suits this use case. See this example:
 
@@ -314,7 +207,9 @@ param.offset = [0, 0, 0]
 ```
 
 
-### Boolean volumes
+## Boolean volumes
+
+### Description
 
 Geant4 provides a mechanism to combine volumetric shapes (Solids in Geant4) into new ones via boolean operations, i.e. `union`, `intersection`, and `subtraction`. In GATE, the details of this mechanism are taken care of under the hood and the user can directly combine compatible volumes. For example:
 
@@ -350,11 +245,9 @@ Note that not all volumes are compatible with boolean operations. For example, i
 
 Boolean operations are a great tool to build complex shapes. The phantoms in `opengate.contrib.phantoms` are good examples. Also have a look at `test016`. Be aware, however, that the Geant4 user guide warns that very extensive use of boolean operations can slow down particle tracking speed.
 
+### Reference
+```{eval-rst}
+.. autoclass:: opengate.geometry.volumes.BooleanVolume
+.. autofunction:: opengate.geometry.volumes.unite_volumes
+```
 
-### Examples of complex geometries: Linac, SPECT, PET, phantoms
-
-Examples of complex nested geometries, partly relying on boolean and repeat operations, can be found in the subpackages `opengate.contrib.pet`,  `opengate.contrib.spect`, `opengate.contrib.linacs`, `opengate.contrib.phantoms`. Also have a look at some of the tests that use these geometries, e.g. `test015` (iec phantom), `test019` (linac Elekta), `test028` (SPECT GE NM670), `test037` (Philips Vereos PET).
-
-### Parallel worlds
-
-TODO

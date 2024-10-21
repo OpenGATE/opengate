@@ -170,7 +170,7 @@ if __name__ == "__main__":
             doseIDD.edep.get_output_path(),
             stats,
             tolerance=100,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
             scaleImageValuesFactor=numPartSimRef / numPartSimTest,
         )

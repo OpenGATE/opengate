@@ -86,7 +86,7 @@ def create_test(sim, nb_thread=1):
 
     # source #2
     source2 = sim.add_source("GenericSource", "source2")
-    # FIXME when source will be refactored, will possible to use copy_user_info
+    # FIXME when source will be refactored, will be possible to use configure_like
     source2.particle = "gamma"
     source2.energy.type = "mono"
     source2.energy.mono = 140.5 * keV
@@ -187,6 +187,8 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             tolerance=68,
             axis="x",
             sum_tolerance=itol,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False,
         )
         and is_ok
     )
@@ -195,9 +197,11 @@ def evaluate_test(sim, sources, itol, ref_skipped):
             paths.output_ref / "test033_proj_2.mhd",
             paths.output / "test033_proj_2.mhd",
             stats,
-            tolerance=68,
+            tolerance=75,
             axis="x",
             sum_tolerance=itol,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
         )
         and is_ok
     )

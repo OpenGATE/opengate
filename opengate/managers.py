@@ -1244,9 +1244,10 @@ class Simulation(GateObject):
 
     user_info_defaults = {
         "verbose_level": (
-            logger.INFO,
+            "INFO",
             {
-                "doc": "Gate pre-run verbosity. ",
+                "doc": "Gate pre-run verbosity. "
+                "Will display more or fewer messages during initialization. ",
                 "allowed_values": (
                     "NONE",
                     "INFO",
@@ -1266,31 +1267,45 @@ class Simulation(GateObject):
             False,
             {"doc": "Switch on/off verbose output in __getstate__() methods."},
         ),
-        "running_verbose_level": (0, {"doc": "Gate verbosity during running."}),
+        "running_verbose_level": (
+            0,
+            {
+                "doc": "Gate verbosity while the simulation is running.",
+                # "allowed_values": (0, logger.RUN, logger.EVENT),  # FIXME
+            },
+        ),
         "g4_verbose_level": (
             1,
             # For an unknown reason, when verbose_level == 0, there are some
             # additional print after the G4RunManager destructor. So we default at 1
-            {"doc": "Geant4 verbosity."},
+            {
+                "doc": "Geant4 verbosity. With level 0, Geant4 is mostly silent. "
+                "Level 1 already gives quite a bit of verbose output. "
+                "Level 2 is very detailed and might affect performance. "
+            },
         ),
         "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
         "g4_verbose_level_tracking": (
             -1,
             {
-                "doc": "Activate verbose tracking in Geant4 via G4 command '/tracking/verbose g4_verbose_level_tracking'."
+                "doc": "Activate verbose tracking in Geant4 "
+                "via G4 command '/tracking/verbose g4_verbose_level_tracking'."
             },
         ),
         "visu": (
             False,
             {
-                "doc": "Activate visualization? Note: Use low number of primaries if you activate visualization. Default: False"
+                "doc": "Activate visualization? "
+                "Note: Use low number of primaries if you activate visualization. "
             },
         ),
         "visu_type": (
             "vrml",
             {
-                "doc": "The type of visualization to be used.",
-                "available_values": (
+                "doc": "The type of visualization to be used. "
+                "'qt' will start a Geant4 Qt interface. "
+                "The Geant4 visualisation commands can be adapted via the parameter visu_commands.",
+                "allowed_values": (
                     "qt",
                     "vrml",
                     "gdml",
@@ -1315,7 +1330,11 @@ class Simulation(GateObject):
         "visu_commands": (
             read_mac_file_to_commands("default_visu_commands_qt.mac"),
             {
-                "doc": "Geant4 commands needed to handle the visualization. ",
+                "doc": "Geant4 commands needed to handle the visualization. "
+                "By default, the Geant4 visualisation commands are the ones "
+                "provided in the file ``opengate/mac/default_visu_commands_qt.mac``. "
+                "Custom commands can be loaded via a .mac file, e.g.  "
+                "``sim.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')``.",
             },
         ),
         "visu_commands_vrml": (
@@ -1847,4 +1866,7 @@ def create_sim_from_json(path):
 
 process_cls(PhysicsManager)
 process_cls(PhysicsListManager)
+process_cls(VolumeManager)
+process_cls(ActorManager)
+process_cls(PostProcessingManager)
 process_cls(Simulation)

@@ -28,7 +28,7 @@ from ..actors.miscactors import SimulationStatisticsActor
 plt = LazyModuleLoader("matplotlib.pyplot")
 
 
-def test_ok(is_ok=False):
+def test_ok(is_ok=False, exceptions=None):
     if is_ok:
         s = "Great, tests are ok."
         s = "\n" + colored.stylize(s, color_ok)
@@ -36,6 +36,14 @@ def test_ok(is_ok=False):
         # sys.exit(0)
     else:
         s = "Error during the tests !"
+        if exceptions is not None:
+            if isinstance(exceptions, str):
+                exceptions = [exceptions]
+            s += f"\nThe following exception"
+            if len(exceptions) > 1:
+                s += "s"
+            s += f" occurred:\n"
+            s += "\n".join([f"- {str(e)}" for e in exceptions])
         s = "\n" + colored.stylize(s, color_error)
         print(s)
         sys.exit(-1)
@@ -305,7 +313,9 @@ def assert_images(
     filename2,
     stats=None,
     tolerance=0,
-    ignore_value=0,
+    ignore_value_data1=None,
+    ignore_value_data2=None,
+    apply_ignore_mask_to_sum_check=True,
     axis="z",
     fig_name=None,
     sum_tolerance=5,
@@ -329,8 +339,33 @@ def assert_images(
     if scaleImageValuesFactor:
         data2 *= scaleImageValuesFactor
 
-    s1 = np.sum(data1)
-    s2 = np.sum(data2)
+    # do not consider pixels with a certain value
+    if ignore_value_data1 is None and ignore_value_data2 is None:
+        d1 = data1
+        d2 = data2
+    else:
+        if ignore_value_data1 is not None and ignore_value_data2 is not None:
+            mask = np.logical_or(
+                data1 != ignore_value_data1, data2 != ignore_value_data2
+            )
+        elif ignore_value_data1 is not None:
+            mask = data1 != ignore_value_data1
+        else:
+            mask = data2 != ignore_value_data2
+        d1 = data1[mask]
+        d2 = data2[mask]
+
+    # this is a patch to make the function back-compatible
+    # because the ignore value was previously applied only after
+    # taking the sum and some tests fail after that change
+    # apply_ignore_mask_to_sum_check = False recreates the old behavior
+    if apply_ignore_mask_to_sum_check is True:
+        s1 = np.sum(d1)
+        s2 = np.sum(d2)
+    else:
+        s1 = np.sum(data1)
+        s2 = np.sum(data2)
+
     if s1 == 0 and s2 == 0:
         t = 0
     else:
@@ -341,10 +376,6 @@ def assert_images(
 
     print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
     print(f"Image2: {info2.size} {info2.spacing} {info2.origin} {filename2}")
-
-    # do not consider pixels with a value of zero (data2 is the reference)
-    d1 = data1[data2 != ignore_value]
-    d2 = data2[data2 != ignore_value]
 
     # normalise by event
     if stats is not None:

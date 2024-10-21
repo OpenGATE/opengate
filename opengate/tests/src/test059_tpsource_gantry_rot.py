@@ -92,16 +92,16 @@ if __name__ == "__main__":
     ## ----  HBL Nozzle  ---
     # FIXME : will change after volumes are refactored
     box_rot = sim.add_volume("Box", "box_rot")
-    box_rot.copy_user_info(box)
+    box_rot.configure_like(box)
     box_rot.rotation = Rotation.from_euler("y", -90, degrees=True).as_matrix()
     box_rot.translation = [1148.0, 0.0, 1000.0]
 
     nozzle_rot = sim.add_volume("Box", "nozzle_rot")
-    nozzle_rot.copy_user_info(nozzle)
+    nozzle_rot.configure_like(nozzle)
     nozzle_rot.mother = box_rot.name
 
     rashi_rot = sim.add_volume("Box", "rashi_rot")
-    rashi_rot.copy_user_info(rashi)
+    rashi_rot.configure_like(rashi)
     rashi_rot.mother = box_rot.name
 
     # -----------------------------------
@@ -115,23 +115,23 @@ if __name__ == "__main__":
 
     # target 2 HBL
     phantom_rot = sim.add_volume("Box", "phantom_rot")
-    phantom_rot.copy_user_info(phantom)
+    phantom_rot.configure_like(phantom)
     phantom_rot.rotation = Rotation.from_euler("z", 90, degrees=True).as_matrix()
     phantom_rot.translation = [0.0, 0.0, 1000.0]
 
     # add dose actor
-    dose = sim.add_actor("DoseActor", "doseInXYZ")
-    dose.output_filename = "testTPSgantry.mhd"
-    dose.attached_to = phantom.name
-    dose.size = [162, 1620, 162]
-    dose.spacing = [2.0, 0.2, 2.0]
-    dose.hit_type = "random"
-    dose.user_output.dose.active = True
+    dose_actor = sim.add_actor("DoseActor", "doseInXYZ")
+    dose_actor.output_filename = "testTPSgantry.mhd"
+    dose_actor.attached_to = phantom
+    dose_actor.size = [162, 1620, 162]
+    dose_actor.spacing = [2.0, 0.2, 2.0]
+    dose_actor.hit_type = "random"
+    dose_actor.dose.active = True
 
-    dose_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
-    dose_rot.copy_user_info(dose)
-    dose_rot.attached_to = phantom_rot.name
-    dose_rot.output_filename = "testTPSganry_rot.mhd"
+    dose_actor_rot = sim.add_actor("DoseActor", "doseInXYZ_rot")
+    dose_actor_rot.configure_like(dose_actor)
+    dose_actor_rot.attached_to = phantom_rot
+    dose_actor_rot.output_filename = "testTPSganry_rot.mhd"
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -185,17 +185,13 @@ if __name__ == "__main__":
     #     dose_rot.output,
     #     stat,
     #     tolerance=50,
-    #     ignore_value=0,
+    #     ignore_value_data2=0,
     # )
     ok = True
 
     # read output and ref
-    img_mhd_out = itk.imread(
-        output_path / sim.get_actor("doseInXYZ_rot").get_output_path("edep")
-    )
-    img_mhd_ref = itk.imread(
-        output_path / sim.get_actor("doseInXYZ").get_output_path("edep")
-    )
+    img_mhd_out = itk.imread(output_path / dose_actor_rot.edep.get_output_path())
+    img_mhd_ref = itk.imread(output_path / dose_actor.edep.get_output_path())
     data = itk.GetArrayViewFromImage(img_mhd_out)
     data_ref = itk.GetArrayViewFromImage(img_mhd_ref)
     spacing = img_mhd_out.GetSpacing()

@@ -244,7 +244,7 @@ if __name__ == "__main__":
             output_path / dose_actors[2].get_output_path("edep"),
             stats,
             tolerance=70,
-            ignore_value=0,
+            ignore_value_data2=0,
         )
         and test
     )
@@ -256,7 +256,7 @@ if __name__ == "__main__":
             output_path / dose_actors[3].get_output_path("edep"),
             stats,
             tolerance=70,
-            ignore_value=0,
+            ignore_value_data2=0,
             sum_tolerance=5.2,
         )
         and test
