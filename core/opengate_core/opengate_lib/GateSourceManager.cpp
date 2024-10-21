@@ -224,6 +224,8 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
   l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
+  // reset abort run flag to false
+  fRunTerminationFlag = false;
   // Prepare the run for all sources
   for (auto *source : fSources) {
     source->PrepareNextRun();

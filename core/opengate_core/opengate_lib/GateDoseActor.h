@@ -129,7 +129,7 @@ public:
   double fThreshEdepPerc;
   
   int NbOfEvent = 0;
-  int NbEventsNextCheck = 100; //we need at least some events to be able to estimate uncertainty
+  int NbEventsNextCheck;
   int NbOfThreads = 0;
 
   double goalUncertainty;

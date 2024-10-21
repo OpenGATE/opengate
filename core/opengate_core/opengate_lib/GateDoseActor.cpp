@@ -68,6 +68,9 @@ void GateDoseActor::InitializeCpp() {
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   // Reset the number of events (per run)
   NbOfEvent = 0;
+  
+  // for stop on target uncertainty. As we reset the nb of events, we reset also this variable
+  NbEventsNextCheck = 100; //we need at least some events to be able to estimate uncertainty
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
@@ -238,6 +241,7 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
         if (!G4Threading::IsMultithreadedApplication() ||
             G4Threading::G4GetThreadId() == 0) {
             // check stop criteria
+            std::cout<<"NbEventsNextCheck: "<<NbEventsNextCheck<<std::endl;
             double UncCurrent = ComputeMeanUncertainty();
             if (UncCurrent <= fUncertaintyGoal){
                 //fStopRunFlag = true;
