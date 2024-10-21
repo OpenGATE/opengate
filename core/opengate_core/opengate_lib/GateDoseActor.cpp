@@ -246,14 +246,8 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
             else{
                 // estimate Nevents at which next check should occour
                 NbEventsNextCheck = (UncCurrent/fUncertaintyGoal)*(UncCurrent/fUncertaintyGoal)*NbOfEvent*1.05;
-                std::cout<<"NbEventsNextCheck: "<<NbEventsNextCheck<<std::endl;
             }
         }
-//         // since there is one source manager per thread, we need all threads to send the termination signal
-//         if (fStopRunFlag){
-//             fSourceManager->SetRunTerminationFlag(true);
-//         }
-          
     
     }
     
@@ -286,7 +280,7 @@ double GateDoseActor::ComputeMeanUncertainty() {
     if (val > max_edep * fThreshEdepPerc) {
       val /= n;
       n_voxel_unc++;
-      double val_squared_mean = cpp_square_image->GetPixel(index_f) / n;
+      double val_squared_mean = cpp_edep_squared_image->GetPixel(index_f) / n;
 
       double unc_i = (1.0 / (n - 1.0)) * (val_squared_mean - pow(val, 2));
       if (unc_i < 0) {

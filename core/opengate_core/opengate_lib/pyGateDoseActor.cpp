@@ -47,6 +47,8 @@ void init_GateDoseActor(py::module &m) {
       .def("SetToWaterFlag", &GateDoseActor::SetToWaterFlag)
       .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
+      .def("SetUncertaintyGoal", &GateDoseActor::SetUncertaintyGoal)
+      .def("SetThreshEdepPerc", &GateDoseActor::SetThreshEdepPerc)
       .def("GetPhysicalVolumeName", &GateDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateDoseActor::SetPhysicalVolumeName)
       .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)
