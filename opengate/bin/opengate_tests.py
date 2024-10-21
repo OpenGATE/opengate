@@ -423,16 +423,16 @@ def run_one_test_case_mp(f):
     shell_output.log_fpath = log
     r = shell_output.returncode
     if r == 0:
-        print(colored.stylize(" OK", color_ok), end="\n")
+        print(colored.stylize(" OK", color_ok), end="")
     else:
         if r == 2:
             # this is probably a Ctrl+C, so we stop
             fatal("Stopped by user")
         else:
-            print(colored.stylize(" FAILED !", color_error), end="\n")
+            print(colored.stylize(" FAILED !", color_error), end="")
     end = time.time()
     shell_output.run_time = start - end
-    print(f"Runtime:   {end - start:5.1f} s     {Path(log).name}")
+    print(f"\t {end - start:5.1f} s     {Path(log).name}")
     return shell_output
 
 
