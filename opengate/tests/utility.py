@@ -45,10 +45,10 @@ def write_stats_txt_gate_style(stats, filepath):
     counts = output.merged_data
     with open(filepath, 'w') as f:
         f.write(f'''
-# NumberOfRun    = {counts.run_count}
-# NumberOfEvents = {counts.event_count}
-# NumberOfTracks = {counts.track_count}
-# NumberOfSteps  = {counts.step_count}
+# NumberOfRun    = {counts.runs}
+# NumberOfEvents = {counts.events}
+# NumberOfTracks = {counts.tracks}
+# NumberOfSteps  = {counts.steps}
 # NumberOfGeometricalSteps  = 
 # NumberOfPhysicalSteps     = 
 # ElapsedTime           = {counts.duration}
