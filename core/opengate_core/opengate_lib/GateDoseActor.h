@@ -9,10 +9,10 @@
 #define GateDoseActor_h
 
 #include "G4Cache.hh"
-#include <G4Threading.hh>
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
+#include <G4Threading.hh>
 #include <iostream>
 #include <pybind11/stl.h>
 
@@ -42,7 +42,7 @@ public:
   int EndOfRunActionMasterThread(int run_id) override;
 
   void BeginOfEventAction(const G4Event *event) override;
-  
+
   void EndOfEventAction(const G4Event *event) override;
 
   // Called every time a Run ends (all threads)
@@ -67,9 +67,9 @@ public:
   inline void SetCountsFlag(const bool b) { fCountsFlag = b; }
 
   inline bool GetCountsFlag() const { return fCountsFlag; }
-  
+
   inline void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
-  
+
   inline void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
 
   inline std::string GetPhysicalVolumeName() const {
@@ -123,18 +123,17 @@ public:
   bool fCountsFlag{};
 
   double fVoxelVolume{};
-  
+
   // Option: set target statistical uncertainty for each run
   double fUncertaintyGoal;
   double fThreshEdepPerc;
-  
+
   int NbOfEvent = 0;
   int NbEventsNextCheck;
   int NbOfThreads = 0;
 
   double goalUncertainty;
   double threshEdepPerc{};
-
 
   std::string fPhysicalVolumeName;
 

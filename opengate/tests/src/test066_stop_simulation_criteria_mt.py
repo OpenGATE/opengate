@@ -100,8 +100,8 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
     dose.edep_uncertainty.active = True
-    #dose.uncertainty = False
-    #dose.ste_of_mean = True
+    # dose.uncertainty = False
+    # dose.ste_of_mean = True
     # dose.use_more_ram = True
     dose.goal_uncertainty = unc_goal
     dose.thresh_voxel_edep_for_unc_calc = thresh_voxel_edep_for_unc_calc
@@ -109,8 +109,7 @@ if __name__ == "__main__":
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
-    #s.output = paths.output / "stats066.txt"
-
+    # s.output = paths.output / "stats066.txt"
 
     # start simulation
     sim.run()

@@ -106,7 +106,6 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
-
   void SetOutputPath(std::string outputName, std::string outputPath);
 
   std::string GetOutputPath(std::string outputName);
@@ -137,7 +136,6 @@ public:
 
   void SetSourceManager(GateSourceManager *s);
 
-
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
   std::set<std::string> fActions;
@@ -159,7 +157,6 @@ public:
   bool fWriteToDisk;
 
   GateSourceManager *fSourceManager;
-
 };
 
 #endif // GateVActor_h

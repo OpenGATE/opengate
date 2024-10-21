@@ -176,7 +176,6 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
   mfd->RegisterPrimitive(this);
 }
 
-
 // void RegisterCallBack(std::string callback_name, std::function func) {
 //     std::cout << "Register callback " << callback_name << " (not yet
 //     implemented)" << std::endl;
@@ -208,4 +207,3 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
 // }
 
 void GateVActor::SetSourceManager(GateSourceManager *s) { fSourceManager = s; }
-
