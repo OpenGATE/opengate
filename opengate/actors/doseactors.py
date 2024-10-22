@@ -433,14 +433,27 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "goal_uncertainty": (
             0,
             {
-                "doc": "FIXME",
+                "doc": "If set, it defines the statistical uncertainty at which the run is aborted.",
                 "setter_hook": _setter_hook_goal_uncertainty,
+            },
+        ),
+        "first_check_after_n_events": (
+            1e4,
+            {
+                "doc": "Number of events after which uncertainty is evaluated the first time, for each run."
+                "After the first evaluation, the value is updated with an estimation of the N events needed to achieve the target uncertainty.",
             },
         ),
         "thresh_voxel_edep_for_unc_calc": (
             0.7,
             {
-                "doc": "FIXME",
+                "doc": "For the calculation of the mean uncertainty of the edep image, only voxels that are above this fraction of the max edep are considered.",
+            },
+        ),
+        "overshoot_factor": (
+            1.05,
+            {
+                "doc": "Factor multiplying the estimated N events needed to achieve the target uncertainty.",
             },
         ),
         "dose_calc_on_the_fly": (
@@ -632,6 +645,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # variables for stop on uncertainty functionality
         self.SetUncertaintyGoal(self.goal_uncertainty)
         self.SetThreshEdepPerc(self.thresh_voxel_edep_for_unc_calc)
+        self.SetOvershoot(self.overshoot_factor)
+        self.SetNbEventsFirstCheck(int(self.first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
