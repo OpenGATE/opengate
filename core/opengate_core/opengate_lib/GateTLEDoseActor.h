@@ -8,15 +8,15 @@
 #ifndef GateTLEDoseActor_h
 #define GateTLEDoseActor_h
 
-#include "G4Cache.hh"
-#include "G4VPrimitiveScorer.hh"
 #include "GateDoseActor.h"
-#include "itkImage.h"
-#include <iostream>
-#include <pybind11/stl.h>
+#include "GateMaterialMuHandler.h"
 
+#include "G4Cache.hh"
 #include "G4EmCalculator.hh"
 #include "G4NistManager.hh"
+#include "G4VPrimitiveScorer.hh"
+
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -24,7 +24,7 @@ class GateTLEDoseActor : public GateDoseActor {
 
 public:
   // Constructor
-  GateTLEDoseActor(py::dict &user_info);
+  explicit GateTLEDoseActor(py::dict &user_info);
 
   void InitializeUserInput(py::dict &user_info) override;
 
@@ -44,6 +44,13 @@ public:
 
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
+
+  // volume of a voxel
+  double fVoxelVolume;
+
+  double fEnergyMin;
+
+  GateMaterialMuHandler *fMaterialMuHandler;
 };
 
 #endif // GateTLEDoseActor_h
