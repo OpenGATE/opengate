@@ -68,7 +68,7 @@ void GateDoseActor::InitializeCpp() {
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   // Reset the number of events (per run)
   NbOfEvent = 0;
-  
+
   // for stop on target uncertainty. As we reset the nb of events, we reset also this variable
   NbEventsNextCheck = NbEventsFirstCheck; 
 
@@ -217,7 +217,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
         //        G4AutoLock mutex(&SetPixelMutex);
         ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
                           edep, event_id, index);
-
       }
       if (fDoseSquaredFlag) {
         //        G4AutoLock mutex(&SetPixelMutex);
@@ -229,6 +228,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 }
 
 void GateDoseActor::EndOfEventAction(const G4Event *event) {
+
     // flush thread local data into global image (postponed for now)
 
     // if the user didn't set uncertainty goal, do nothing
@@ -254,7 +254,7 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
         }
     
     }
-    
+  }
 }
 
 double GateDoseActor::ComputeMeanUncertainty() {

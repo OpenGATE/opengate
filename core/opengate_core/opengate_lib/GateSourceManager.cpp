@@ -64,7 +64,9 @@ GateSourceManager::~GateSourceManager() {
   }
 }
 
-void GateSourceManager::SetRunTerminationFlag(bool flag){fRunTerminationFlag = flag;}
+void GateSourceManager::SetRunTerminationFlag(bool flag) {
+  fRunTerminationFlag = flag;
+}
 
 void GateSourceManager::Initialize(TimeIntervals simulation_times,
                                    py::dict &options) {
@@ -154,11 +156,8 @@ void GateSourceManager::StartMasterThread() {
 
     for (auto &actor : fActors) {
       int ret = actor->EndOfRunActionMasterThread(run_id);
-
     }
     StartVisualization();
-
-    
   }
 
   // progress bar (only thread 0)
@@ -275,7 +274,6 @@ void GateSourceManager::CheckForNextRun() {
     }
   }
 }
-
 
 void GateSourceManager::GeneratePrimaries(G4Event *event) {
   auto &l = fThreadLocalData.Get();
