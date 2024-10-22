@@ -108,6 +108,7 @@ if __name__ == "__main__":
     # dose.ste_of_mean = True
     # dose.use_more_ram = True
     dose.goal_uncertainty = unc_goal_run
+    dose.first_check_after_n_events = 100
     dose.thresh_voxel_edep_for_unc_calc = thresh_voxel_edep_for_unc_calc
 
     # add stat actor

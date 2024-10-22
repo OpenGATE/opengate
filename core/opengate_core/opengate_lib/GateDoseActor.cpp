@@ -71,8 +71,7 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
 
   // for stop on target uncertainty. As we reset the nb of events, we reset also
   // this variable
-  NbEventsNextCheck =
-      100; // we need at least some events to be able to estimate uncertainty
+  NbEventsNextCheck = NbEventsFirstCheck;
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
@@ -230,6 +229,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 }
 
 void GateDoseActor::EndOfEventAction(const G4Event *event) {
+
   // flush thread local data into global image (postponed for now)
 
   // if the user didn't set uncertainty goal, do nothing
@@ -252,7 +252,8 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
       } else {
         // estimate Nevents at which next check should occour
         NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
-                            (UncCurrent / fUncertaintyGoal) * NbOfEvent * 1.05;
+                            (UncCurrent / fUncertaintyGoal) * NbOfEvent *
+                            Overshoot;
       }
     }
   }
@@ -265,11 +266,6 @@ double GateDoseActor::ComputeMeanUncertainty() {
   double mean_unc = 0.0;
   int n_voxel_unc = 0;
   double n = 2.0;
-  //  if (fcpImageForThreadsFlag) {
-  //    n = NbOfThreads;
-  //  } else {
-  //    n = NbOfEvent;
-  //  }
   n = NbOfEvent;
 
   if (n < 2.0) {

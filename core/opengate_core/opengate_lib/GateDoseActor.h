@@ -72,6 +72,10 @@ public:
 
   inline void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
 
+  inline void SetOvershoot(const double b) { Overshoot = b; }
+
+  inline void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
+
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
   }
@@ -127,8 +131,12 @@ public:
   // Option: set target statistical uncertainty for each run
   double fUncertaintyGoal;
   double fThreshEdepPerc;
+  double Overshoot;
 
   int NbOfEvent = 0;
+  // set from python side. It will be overwritten by an estimation of the Nb of
+  // events needed to achieve the goal uncertainty.
+  int NbEventsFirstCheck;
   int NbEventsNextCheck;
   int NbOfThreads = 0;
 
