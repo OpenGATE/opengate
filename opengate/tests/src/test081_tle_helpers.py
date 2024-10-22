@@ -14,21 +14,21 @@ def add_waterbox(sim):
     waterbox.material = "G4_WATER"
     waterbox.color = [0, 0, 1, 1]
 
-    # lung box
-    lung_box = sim.add_volume("Box", "lung_box")
-    lung_box.mother = waterbox.name
-    lung_box.size = [30 * cm, 30 * cm, 3 * cm]
-    lung_box.translation = [0 * cm, 0 * cm, -7 * cm]
-    lung_box.material = "G4_LUNG_ICRP"
-    lung_box.color = [0, 1, 1, 1]
+    # low density box
+    low_density_box = sim.add_volume("Box", "low_density_box")
+    low_density_box.mother = waterbox.name
+    low_density_box.size = [30 * cm, 30 * cm, 3 * cm]
+    low_density_box.translation = [0 * cm, 0 * cm, -6 * cm]
+    low_density_box.material = "G4_lPROPANE"  # density is around 0.43
+    low_density_box.color = [0, 1, 1, 1]
 
-    # bone box
-    bone_box = sim.add_volume("Box", "bone_box")
-    bone_box.mother = waterbox.name
-    bone_box.size = [30 * cm, 30 * cm, 1 * cm]
-    bone_box.translation = [0 * cm, 0 * cm, 0 * cm]
-    bone_box.material = "G4_BONE_CORTICAL_ICRP"
-    bone_box.color = [1, 0, 0, 1]
+    # high density box
+    high_density_box = sim.add_volume("Box", "high_density_box")
+    high_density_box.mother = waterbox.name
+    high_density_box.size = [30 * cm, 30 * cm, 1 * cm]
+    high_density_box.translation = [0 * cm, 0 * cm, 1 * cm]
+    high_density_box.material = "G4_Pyrex_Glass"  # density is around 2.23
+    high_density_box.color = [1, 0, 0, 1]
 
     return waterbox
 

@@ -2,7 +2,10 @@
 # -*- coding: utf-8 -*-
 import json
 from matplotlib import pyplot as plt
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
+from opengate import g4_units
 from opengate.tests import utility
 from opengate.tests.src.test081_tle_helpers import add_waterbox, voxelize_waterbox
 from opengate.tests.utility import get_image_1d_profile
@@ -19,7 +22,7 @@ if __name__ == "__main__":
     sim.random_seed = "auto"
     sim.output_dir = paths.output
     sim.progress_bar = True
-    sim.number_of_threads = 1
+    sim.number_of_threads = 4
 
     # units
     m = gate.g4_units.m
@@ -30,35 +33,36 @@ if __name__ == "__main__":
 
     #  change world size
     world = sim.world
-    world.size = [1.5 * m, 1.5 * m, 1.5 * m]
+    world.size = [1 * m, 1 * m, 1 * m]
 
     # create voxelized waterbox
-    # waterbox = add_waterbox(sim)
+    waterbox = add_waterbox(sim)
     # voxelize_waterbox(sim, paths.data / "test081_tle")
 
     # insert voxelized waterbox
-    spacing = 8
+    """spacing = 8
     waterbox = sim.add_volume("Image", "waterbox")
     fn = paths.data / "test081_tle" / f"waterbox_with_inserts_{spacing}mm_"
     waterbox.image = f"{fn}image.mhd"
     waterbox.set_materials_from_voxelisation(f"{fn}labels.json")
+    """
     waterbox_size = [30 * cm, 30 * cm, 20 * cm]
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.global_production_cuts.all = 1 * mm
-    # sim.physics_manager.set_max_step_size("waterbox", 1 * mm)
-    # sim.physics_manager.set_user_limits_particles("all")
+    sim.physics_manager.set_max_step_size("waterbox", 0.5 * mm)
+    sim.physics_manager.set_user_limits_particles("gamma")
 
     # default source for tests
     source = sim.add_source("GenericSource", "source")
     source.energy.mono = 150 * keV
     source.particle = "gamma"
-    source.position.type = "disc"
-    source.position.radius = 1 * cm
-    source.position.translation = [0, 0, -15 * cm]
-    source.direction.type = "momentum"
-    source.direction.momentum = [0, 0, 1]
+    source.position.type = "sphere"
+    source.position.radius = 3 * cm
+    source.position.translation = [0, 0, -55 * cm]
+    source.direction.type = "focused"
+    source.direction.focus_point = [0, 0, -20 * cm]
     source.n = 1e5 / sim.number_of_threads
     if sim.visu:
         source.n = 10

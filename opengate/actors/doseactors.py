@@ -724,6 +724,15 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     TLE = Track Length Estimator
     """
 
+    energy_min: float
+
+    user_info_defaults = {
+        "energy_min": (
+            0.0,
+            {"doc": "Kill the gamma if below this energy"},
+        )
+    }
+
     def __initcpp__(self):
         g4.GateTLEDoseActor.__init__(self, self.user_info)
         self.AddActions(
