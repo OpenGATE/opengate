@@ -24,6 +24,7 @@ from ..utility import (
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_from_array, write_itk_image
 from ..actors.miscactors import SimulationStatisticsActor
+import SimpleITK as sitk
 
 plt = LazyModuleLoader("matplotlib.pyplot")
 
@@ -2029,8 +2030,19 @@ def plot_compare_profile(ref_names, test_names, options):
     return plt
 
 
-class RootComparison:
-
-    def __init__(self, ref_filename, filename):
-        self.root_ref = uproot.open(ref_filename)
-        self.root_cmp = uproot.open(filename)
+def get_image_1d_profile(filename, axis):
+    img = sitk.ReadImage(filename)
+    spacing = img.GetSpacing()
+    img_arr = sitk.GetArrayViewFromImage(img)
+    s = img_arr.shape
+    pdd_x = pdd_y = None
+    if axis == "z":
+        pdd_y = img_arr[:, int(s[1] / 2), int(s[2] / 2)]
+        pdd_x = np.arange(0, s[0], spacing[2])
+    if axis == "y":
+        pdd_y = img_arr[int(s[0] / 2), :, int(s[2] / 2)]
+        pdd_x = np.arange(0, s[1], spacing[1])
+    if axis == "x":
+        pdd_y = img_arr[int(s[0] / 2), int(s[1] / 2), :]
+        pdd_x = np.arange(0, s[2], spacing[0])
+    return pdd_x, pdd_y
