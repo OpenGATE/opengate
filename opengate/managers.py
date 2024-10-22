@@ -1798,10 +1798,10 @@ class Simulation(GateObject):
                 indicated by `extent`.
             filename (str, optional) : The filename/path to which the voxelized image and labels are written.
                 Suffix added automatically. Path can be relative to the global output directory of the simulation.
-            return_path (bool) : Return the absolute path where the voxelixed image was written?
+            return_path (bool) : Return the absolute path where the voxelized image was written?
 
         Returns:
-            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geoemtry;
+            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geometry;
                 optionally: the absolute path where the image was written, if applicable.
         """
         # collect volumes which are directly underneath the world/parallel worlds
@@ -1817,7 +1817,6 @@ class Simulation(GateObject):
 
         if filename is not None:
             outpath = self.get_output_path(filename)
-
             outpath_json = outpath.parent / (outpath.stem + "_labels.json")
             outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
 
@@ -1874,6 +1873,9 @@ class Simulation(GateObject):
             vox.Voxelize()
             image = get_py_image_from_cpp_image(vox.fImage)
             labels = vox.fLabels
+            for key in labels.keys():
+                vol = se.simulation.volume_manager.get_volume(key)
+                labels[key] = {"label": labels[key], "material": vol.material}
 
         return labels, image
 
