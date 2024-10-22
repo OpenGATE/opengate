@@ -11,9 +11,6 @@ from ..utility import (
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    divide_itk_images,
-    scale_itk_image,
-    get_info_from_image,
     images_have_same_domain,
     resample_itk_image_like,
 )
@@ -722,6 +719,25 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
+    """
+    TLE = Track Length Estimator
+    """
+
+    def __initcpp__(self):
+        g4.GateTLEDoseActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+            }
+        )
+
+
 def _setter_hook_score_in_let_actor(self, value):
     if value in ("water", "Water"):
         return "G4_WATER"
@@ -731,6 +747,7 @@ def _setter_hook_score_in_let_actor(self, value):
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
     """
+    LET = Linear energy transfer
     LETActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
 
@@ -983,5 +1000,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
+process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(FluenceActor)
