@@ -254,8 +254,8 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
         }
     
     }
-  }
 }
+
 
 double GateDoseActor::ComputeMeanUncertainty() {
   G4AutoLock mutex(&ComputeUncertaintyMutex);
