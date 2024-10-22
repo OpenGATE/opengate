@@ -2038,11 +2038,11 @@ def get_image_1d_profile(filename, axis):
     pdd_x = pdd_y = None
     if axis == "z":
         pdd_y = img_arr[:, int(s[1] / 2), int(s[2] / 2)]
-        pdd_x = np.arange(0, s[0], spacing[2])
+        pdd_x = np.arange(0, s[0] * spacing[2], spacing[2])
     if axis == "y":
         pdd_y = img_arr[int(s[0] / 2), :, int(s[2] / 2)]
-        pdd_x = np.arange(0, s[1], spacing[1])
+        pdd_x = np.arange(0, s[1] * spacing[1], spacing[1])
     if axis == "x":
         pdd_y = img_arr[int(s[0] / 2), int(s[1] / 2), :]
-        pdd_x = np.arange(0, s[2], spacing[0])
+        pdd_x = np.arange(0, s[2] * spacing[0], spacing[0])
     return pdd_x, pdd_y
