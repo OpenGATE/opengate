@@ -40,6 +40,7 @@
 #include <iostream>
 #include "GateLastVertexSource.h"
 #include "CLHEP/Vector/ThreeVector.h"
+#include "G4StackManager.hh"
 using CLHEP::Hep3Vector;
 
 namespace py = pybind11;
@@ -76,10 +77,15 @@ public:
   G4bool fFirstSplittedPart = true;
   G4bool fOnlyTree = false;
   G4double fWeight;
+  G4double fBatchSize;
+  G4int fNumberOfTrackToSimulate = 0;
+  G4int fNbOfBatchForExitingParticle=0;
+  G4int fTracksCounts=0;
   GateLastVertexSource* fVertexSource = nullptr;
   tree<LastVertexDataContainer> fTree;
   tree<LastVertexDataContainer>::post_order_iterator fIterator;
   std::vector<LastVertexDataContainer> fListOfContainer;
+  G4StackManager* fStackManager = nullptr;
 
 
 
@@ -107,15 +113,14 @@ public:
   virtual void EndOfEventAction(const G4Event *) override;
   virtual void BeginOfRunAction(const G4Run *run) override;
   virtual void PreUserTrackingAction(const G4Track *track) override;
-  virtual void PostUserTrackingAction(const G4Track *track) override;
 
   // Pure splitting functions
   G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir, G4ThreeVector vectorDirector);
   G4Track *CreateComptonTrack(G4ParticleChangeForGamma *, G4Track, G4double);
-  void ComptonSplitting(G4Step* initStep,G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
-  void SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container);
+  void ComptonSplitting(G4Step* initStep,G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container, G4double batchSize);
+  void SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container, G4double batchSize);
 
-  void CreateNewParticleAtTheLastVertex(G4Step*init,G4Step *current, LastVertexDataContainer);
+  void CreateNewParticleAtTheLastVertex(G4Step*init,G4Step *current, LastVertexDataContainer, G4double batchSize);
   G4Track* CreateATrackFromContainer(LastVertexDataContainer container);
   G4bool IsTheParticleUndergoesAProcess(G4Step* step);
   G4bool IsTheParticleUndergoesALossEnergyProcess(G4Step* step);

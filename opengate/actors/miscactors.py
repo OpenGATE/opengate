@@ -495,7 +495,7 @@ class LastVertexInteractionSplittingActor(g4.GateLastVertexInteractionSplittingA
         user_info.vector_director = [0, 0, -1]
         user_info.max_theta = 90 * deg
         user_info.list_of_volume_name = []
-
+        user_info.batch_size = 1
     def __init__(self, user_info):
         ActorBase.__init__(self, user_info)
         g4.GateLastVertexInteractionSplittingActor.__init__(self, user_info.__dict__)
