@@ -428,6 +428,9 @@ class ActorManager(GateObject):
         if new_actor is not actor:
             return new_actor
 
+    def remove_actor(self, name):
+        self.actors.pop(name)
+
     def _create_actor(self, actor_type, name):
         try:
             cls = actor_types[actor_type]
