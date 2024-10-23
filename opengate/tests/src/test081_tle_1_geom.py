@@ -21,7 +21,7 @@ if __name__ == "__main__":
     sim.random_seed = "auto"
     sim.output_dir = paths.output
     sim.progress_bar = True
-    sim.number_of_threads = 4
+    sim.number_of_threads = 1
 
     # units
     m = gate.g4_units.m
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     sim.physics_manager.set_user_limits_particles("gamma")
 
     # default source for tests
-    source = add_source(sim)
+    source = add_source(sim, n=1e5)
 
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
@@ -84,7 +84,6 @@ if __name__ == "__main__":
 
     # print results at the end
     print(stats)
-    print()
     ax, plt = plot_pdd(dose_actor, tle_dose_actor)
     f1 = dose_actor.edep.get_output_path()
     f2 = tle_dose_actor.edep.get_output_path()

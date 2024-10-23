@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from matplotlib import pyplot as plt
+
 import opengate as gate
-from opengate import g4_units
 from opengate.tests import utility
-from opengate.tests.src.test081_tle_helpers import (
-    add_waterbox,
-    voxelize_waterbox,
-    add_source,
-    plot_pdd,
-    compare_pdd,
-)
-from opengate.tests.utility import get_image_1d_profile
+from opengate.tests.src.test081_tle_helpers import add_source
+import numpy as np
+
+from opengate.tests.utility import print_test
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test081_tle")
@@ -25,7 +20,7 @@ if __name__ == "__main__":
     sim.random_seed = "auto"
     sim.output_dir = paths.output
     sim.progress_bar = True
-    sim.number_of_threads = 4
+    sim.number_of_threads = 1
 
     # units
     m = gate.g4_units.m
@@ -49,61 +44,50 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.global_production_cuts.all = 1 * mm
-    # sim.physics_manager.set_max_step_size("waterbox", 0.5 * mm)
-    # sim.physics_manager.set_user_limits_particles("gamma")
 
     # default source for tests
-    source = add_source(sim)
+    source = add_source(sim, n=1e5)
 
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
-    dose_actor.output_filename = "test081_vox.mhd"
+    dose_actor.output_filename = "test081_vox_speed.mhd"
     dose_actor.attached_to = waterbox
     dose_actor.dose_uncertainty.active = True
     dose_actor.dose.active = True
     dose_actor.size = [100, 100, 100]
     dose_actor.spacing = [x / y for x, y in zip(waterbox_size, dose_actor.size)]
-    print(f"Dose actor pixels : {dose_actor.size}")
-    print(f"Dose actor spacing : {dose_actor.spacing} mm")
-    print(f"Dose actor size : {waterbox_size} mm")
-
-    # add tle dose actor
-    tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
-    tle_dose_actor.output_filename = "test081_vox_tle.mhd"
-    tle_dose_actor.attached_to = waterbox
-    tle_dose_actor.dose_uncertainty.active = True
-    tle_dose_actor.dose.active = True
-    tle_dose_actor.size = dose_actor.size
-    tle_dose_actor.spacing = [
-        x / y for x, y in zip(waterbox_size, tle_dose_actor.size)
-    ]  # dose_actor.spacing
-    print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
-    print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
-    print(f"TLE Dose actor size : {waterbox_size} mm")
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
 
     # start simulation
+    sim.run(start_new_process=True)
+    pps1 = stats.user_output.stats.pps
+
+    # add tle dose actor
+    tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
+    tle_dose_actor.output_filename = "test081_vox_speed_tle.mhd"
+    tle_dose_actor.attached_to = waterbox
+    tle_dose_actor.dose_uncertainty.active = True
+    tle_dose_actor.dose.active = True
+    tle_dose_actor.size = dose_actor.size
+    tle_dose_actor.spacing = dose_actor.spacing
+
+    # remove first actor
+    sim.actor_manager.remove_actor("dose_actor")
+
+    # start simulation
     sim.run()
-
-    # print results at the end
-    print(stats)
-    print()
-    ax, plt = plot_pdd(dose_actor, tle_dose_actor)
-    f1 = dose_actor.edep.get_output_path()
-    f2 = tle_dose_actor.edep.get_output_path()
-    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[0], tol=0.15)
+    pps2 = stats.user_output.stats.pps
 
     print()
-    f1 = dose_actor.dose.get_output_path()
-    f2 = tle_dose_actor.dose.get_output_path()
-    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.15) and is_ok
+    r = np.fabs(pps1 - pps2) / pps2
+    tol = 0.08
+    b = r < tol
+    print_test(
+        b, f"Speed PPS is {pps1} vs {pps2} = {r*100:.2f}% (tol={tol:.2f}) ==> {b}"
+    )
 
-    # output
-    f = paths.output / f"pdd_vox.png"
-    plt.savefig(f)
-    print(f"PDD image saved in {f}")
-
+    is_ok = b
     utility.test_ok(is_ok)

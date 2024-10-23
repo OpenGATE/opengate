@@ -37,7 +37,7 @@ def add_waterbox(sim):
     return waterbox
 
 
-def add_source(sim):
+def add_source(sim, n=1e5):
     cm = gate.g4_units.cm
     keV = gate.g4_units.keV
     source = sim.add_source("GenericSource", "source")
@@ -48,7 +48,7 @@ def add_source(sim):
     source.position.translation = [0, 0, -55 * cm]
     source.direction.type = "focused"
     source.direction.focus_point = [0, 0, -20 * cm]
-    source.n = 1e5 / sim.number_of_threads
+    source.n = n / sim.number_of_threads
     if sim.visu:
         source.n = 10
     return source
