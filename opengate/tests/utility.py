@@ -2033,7 +2033,7 @@ def plot_compare_profile(ref_names, test_names, options):
 def get_image_1d_profile(filename, axis):
     img = sitk.ReadImage(filename)
     spacing = img.GetSpacing()
-    img_arr = sitk.GetArrayViewFromImage(img)
+    img_arr = sitk.GetArrayFromImage(img)
     s = img_arr.shape
     pdd_x = pdd_y = None
     if axis == "z":
