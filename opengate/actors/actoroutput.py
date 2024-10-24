@@ -10,6 +10,7 @@ from .dataitems import (
     SingleItkImageWithVariance,
     QuotientItkImage,
     QuotientMeanItkImage,
+    StatisticsItemContainer,
     merge_data,
 )
 
@@ -802,6 +803,69 @@ class ActorOutputQuotientImage(ActorOutputImage):
 
 class ActorOutputQuotientMeanImage(ActorOutputImage):
     data_container_class = QuotientMeanItkImage
+
+
+def _setter_hook_encoder(self, value):
+    if value == "encoder":
+        self.default_suffix = "json"
+    else:
+        self.default_suffix = "txt"
+    return value
+
+
+class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
+    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
+
+    _default_interface_class = UserInterfaceToActorOutputStatisticsActor
+    data_container_class = StatisticsItemContainer
+
+    # hints for IDE
+    encoder: str
+
+    user_info_defaults = {
+        "encoder": (
+            "json",
+            {
+                "doc": "How should the output be encoded?",
+                "allowed_values": ("json", "legacy"),
+            },
+        ),
+        # "output_filename": (
+        #     "auto",
+        #     {
+        #         "doc": "Filename for the data represented by this actor output. "
+        #         "Relative paths and filenames are taken "
+        #         "relative to the global simulation output folder "
+        #         "set via the Simulation.output_dir option. ",
+        #         "setter_hook": _setter_hook_stats_actor_output_filename,
+        #     },
+        # ),
+        # "write_to_disk": (
+        #     False,
+        #     {
+        #         "doc": "Should the output be written to disk, or only kept in memory? ",
+        #     },
+        # ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        self.default_suffix = 'json'
+        super().__init__(*args, **kwargs)
+
+    def initialize(self):
+        output_filename = self.get_output_filename()
+        if output_filename != "" and output_filename is not None:
+            self.set_write_to_disk(True)
+        super().initialize()
+
+    # def store_data(self, data, **kwargs):
+    #     self.merged_data.update(data)
+    #
+    def __str__(self):
+        if self.merged_data is not None:
+            return self.merged_data.__str__()
+        else:
+            return "No data found. "
 
 
 class ActorOutputRoot(ActorOutputBase):
