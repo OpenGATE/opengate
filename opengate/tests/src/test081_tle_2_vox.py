@@ -61,6 +61,7 @@ if __name__ == "__main__":
     dose_actor.dose.active = True
     dose_actor.size = [100, 100, 100]
     dose_actor.spacing = [x / y for x, y in zip(waterbox_size, dose_actor.size)]
+    dose_actor.density.active = True
     print(f"Dose actor pixels : {dose_actor.size}")
     print(f"Dose actor spacing : {dose_actor.spacing} mm")
     print(f"Dose actor size : {waterbox_size} mm")
@@ -73,6 +74,8 @@ if __name__ == "__main__":
     tle_dose_actor.dose.active = True
     tle_dose_actor.size = dose_actor.size
     tle_dose_actor.spacing = dose_actor.spacing
+    tle_dose_actor.density.active = True
+    tle_dose_actor.score_in = "material"  # only 'material' is allowed
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox_size} mm")
@@ -101,5 +104,12 @@ if __name__ == "__main__":
     f = paths.output / f"pdd_vox.png"
     plt.savefig(f)
     print(f"PDD image saved in {f}")
+
+    # check density
+    utility.assert_images(
+        dose_actor.density.get_output_path(),
+        tle_dose_actor.density.get_output_path(),
+        tolerance=0.001,
+    )
 
     utility.test_ok(is_ok)

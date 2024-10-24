@@ -762,6 +762,13 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
             }
         )
 
+    def initialize(self, *args):
+        if self.score_in != "material":
+            fatal(
+                f"TLEDoseActor cannot score in {self.score_in}, only 'material' is allowed."
+            )
+        super().initialize(args)
+
 
 def _setter_hook_score_in_let_actor(self, value):
     if value in ("water", "Water"):
