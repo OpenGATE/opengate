@@ -725,6 +725,8 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     """
 
     energy_min: float
+    energy_max: float
+    database: str
 
     user_info_defaults = {
         "energy_min": (
@@ -735,6 +737,13 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
             1.0 * g4_units.MeV,
             {
                 "doc": "Above this energy, do not perform TLE (TLE is only relevant for low energy gamma)"
+            },
+        ),
+        "database": (
+            "EPDL",
+            {
+                "doc": "which database to use",
+                "allowed_values": ("EPDL", "NIST"),  # "simulated" does not work
             },
         ),
     }

@@ -65,7 +65,7 @@ public:
   G4Cache<threadLocalT> fThreadLocalData;
 
   // Database of mu
-  GateMaterialMuHandler *fMaterialMuHandler;
+  std::shared_ptr<GateMaterialMuHandler> fMaterialMuHandler;
 };
 
 #endif // GateTLEDoseActor_h

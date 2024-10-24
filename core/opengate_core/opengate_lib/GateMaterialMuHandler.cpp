@@ -17,8 +17,28 @@
 #include "G4VAtomDeexcitation.hh"
 #include "G4VEmProcess.hh"
 
-GateMaterialMuHandler *GateMaterialMuHandler::fSingletonMaterialMuHandler =
-    nullptr;
+// GateMaterialMuHandler *GateMaterialMuHandler::fSingletonMaterialMuHandler =
+// nullptr;
+std::map<std::tuple<std::string, double>,
+         std::shared_ptr<GateMaterialMuHandler>>
+    GateMaterialMuHandler::fInstances;
+
+std::shared_ptr<GateMaterialMuHandler>
+GateMaterialMuHandler::GetInstance(std::string database, double energy_max) {
+  // Create a key based on database and energy_max
+  auto key = std::make_tuple(database, energy_max);
+
+  // Check if an instance already exists for this key
+  if (fInstances.find(key) == fInstances.end()) {
+    // If not, create a new instance and store it in the map
+    fInstances[key] = std::make_shared<GateMaterialMuHandler>();
+    fInstances[key]->SetDatabaseName(database);
+    fInstances[key]->SetEMax(energy_max);
+  }
+
+  // Return the instance corresponding to the key
+  return fInstances[key];
+}
 
 GateMaterialMuHandler::GateMaterialMuHandler() {
   fIsInitialized = false;
@@ -88,6 +108,9 @@ inline double interpolation(double Xa, double Xb, double Ya, double Yb,
 }
 
 void GateMaterialMuHandler::Initialize() {
+  if (fIsInitialized)
+    return;
+
   if (fDatabaseName == "simulated") {
     SimulateMaterialTable();
   } else if (fDatabaseName == "NIST" || fDatabaseName == "EPDL") {
@@ -126,7 +149,8 @@ void GateMaterialMuHandler::Initialize() {
     std::ostringstream oss;
     oss << "GateMaterialMuHandler -- mu/mu_en database option '"
         << fDatabaseName
-        << "' doesn't exist. Available database are 'NIST', 'EPDL' and 'user'"
+        << "' doesn't exist. Available database are 'NIST', 'EPDL' and "
+           "'simulated'"
         << std::endl;
     Fatal(oss.str());
   }
@@ -617,13 +641,6 @@ void GateMaterialMuHandler::MergeAtomicShell(
       (*muStorage)[e].energy = (*muStorage)[e].atomicShellEnergy;
     }
   }
-}
-
-GateMaterialMuHandler *GateMaterialMuHandler::GetInstance() {
-  if (fSingletonMaterialMuHandler == nullptr) {
-    fSingletonMaterialMuHandler = new GateMaterialMuHandler();
-  }
-  return fSingletonMaterialMuHandler;
 }
 
 G4String GateMaterialMuHandler::GetDatabaseName() const {

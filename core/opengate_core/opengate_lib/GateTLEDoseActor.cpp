@@ -28,13 +28,14 @@ GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
     : GateDoseActor(user_info) {
   // FIXME WARNING : not checked for MT
   fVoxelVolume = 0;
-  fMaterialMuHandler = GateMaterialMuHandler::GetInstance();
 }
 
 void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
   GateDoseActor::InitializeUserInput(user_info);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
   fEnergyMax = py::cast<double>(user_info["energy_max"]);
+  auto database = py::cast<std::string>(user_info["database"]);
+  fMaterialMuHandler = GateMaterialMuHandler::GetInstance(database, fEnergyMax);
 }
 
 void GateTLEDoseActor::InitializeCpp() { GateDoseActor::InitializeCpp(); }

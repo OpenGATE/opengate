@@ -25,7 +25,7 @@ if __name__ == "__main__":
     sim.random_seed = "auto"
     sim.output_dir = paths.output
     sim.progress_bar = True
-    sim.number_of_threads = 2
+    sim.number_of_threads = 1
 
     # units
     m = gate.g4_units.m

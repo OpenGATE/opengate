@@ -12,8 +12,11 @@
 #include "G4MaterialCutsCouple.hh"
 #include "G4ParticleTable.hh"
 #include "G4UnitsTable.hh"
+
 #include "GateMuTables.h"
 #include <map>
+#include <memory>
+#include <tuple>
 
 struct MuStorageStruct {
   double energy;
@@ -38,8 +41,8 @@ struct MuStorageStruct {
 class GateMaterialMuHandler {
 
 public:
-  static GateMaterialMuHandler *GetInstance();
-  ;
+  static std::shared_ptr<GateMaterialMuHandler>
+  GetInstance(std::string database, double energy_max);
 
   ~GateMaterialMuHandler();
 
@@ -94,6 +97,11 @@ public:
 
   void CheckLastCall(const G4MaterialCutsCouple *);
 
+  // static GateMaterialMuHandler *fSingletonMaterialMuHandler;
+  static std::map<std::tuple<std::string, double>,
+                  std::shared_ptr<GateMaterialMuHandler>>
+      fInstances;
+
   std::map<const G4MaterialCutsCouple *, GateMuTable *> fCoupleTable;
   GateMuTable **fElementsTable;
   int fElementNumber;
@@ -104,7 +112,6 @@ public:
   int fEnergyNumber;
   double fAtomicShellEnergyMin;
   double fPrecision;
-  static GateMaterialMuHandler *fSingletonMaterialMuHandler;
   const G4MaterialCutsCouple *fLastCouple;
   GateMuTable *fLastMuTable;
 };
