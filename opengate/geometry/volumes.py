@@ -784,6 +784,12 @@ class RepeatParametrisedVolume(VolumeBase):
         self.g4_repeat_parametrisation.SetUserInfo(p)
 
 
+def _setter_hook_image(self, image):
+    if image != self.image:
+        self._itk_image = None
+    return image
+
+
 class ImageVolume(VolumeBase, solids.ImageSolid):
     """
     Store information about a voxelized volume
@@ -798,7 +804,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ),
         "image": (
             "",
-            {"doc": "Path to the image file", "is_input_file": True, "dynamic": True},
+            {"doc": "Path to the image file",
+             "is_input_file": True,
+             "dynamic": True,
+             "setter_hook": _setter_hook_image},
         ),
         "dump_label_image": (
             None,
