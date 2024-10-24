@@ -92,12 +92,13 @@ class DataItem:
                 f"because the following ValueError was encountered: \n{e}"
             )
 
-    def inplace_merge_with(self, other):
+    def inplace_merge_with(self, *other):
         """The base class implements merging as summation.
         Specific classes can override this, e.g. to merge mean values.
         """
         try:
-            self += other
+            for o in other:
+                self.__iadd__(o)
         except ValueError as e:
             raise NotImplementedError(
                 f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
@@ -267,6 +268,10 @@ class ItkImageDataItem(DataItem):
         else:
             self.set_data(divide_itk_images(self.data, other.data))
         return self
+
+    def inplace_merge_with(self, *other):
+        for o in other:
+            self.__iadd__(o)
 
     def set_image_properties(self, **properties):
         if not self.data_is_none:
@@ -525,12 +530,12 @@ class DataItemContainer(DataContainer):
                 if (self.data[i] is None or self.data[i].data is None) is not (
                     other.data[i] is None or other.data[i].data is None
                 ):
-                    s_not = {True: "", False: "not_"}
+                    s_not = {True: "", False: "not "}
                     fatal(
                         "Cannot apply inplace merge data to container "
                         "with unset (None) data items. "
-                        f"In this case, the inplace item {i} is {s_not[self.data[i] is None]} None, "
-                        f"and the other item {i} is {s_not[other.data[i] is None]} None. "
+                        f"In this case, the inplace item {i} is {s_not[self.data[i] is None]}None, "
+                        f"and the other item {i} is {s_not[other.data[i] is None]}None. "
                         f"This is likely an implementation error in GATE. "
                     )
         return self
@@ -748,8 +753,11 @@ class QuotientMeanItkImage(QuotientItkImage):
 
 def merge_data(list_of_data):
     merged_data = list_of_data[0]
-    for d in list_of_data[1:]:
-        merged_data.inplace_merge_with(d)
+    try:
+        merged_data.inplace_merge_with(*list_of_data[1:])
+    except:
+        for d in list_of_data[1:]:
+            merged_data.inplace_merge_with(d)
     return merged_data
 
 

@@ -46,11 +46,12 @@ class BaseUserInterfaceToActorOutput:
         For earlier python version (<3.11), __getstate__ may not be defined.
         We provide a simple workaround here to return a copy of the internal dict.
         """
-        try:
-            return_dict = super().__getstate__()
-        except AttributeError:
-            # If there is no superclass with __getstate__, use self.__dict__
-            return_dict = self.__dict__.copy()
+        # try:
+        #     return_dict = super().__getstate__()
+        # except AttributeError:
+        #     # If there is no superclass with __getstate__, use self.__dict__
+        #     return_dict = self.__dict__.copy()
+        return_dict = self.__dict__.copy()
         # Safely remove 'belongs_to_actor' if it exists
         return_dict.pop("belongs_to_actor", None)
         return return_dict
@@ -343,6 +344,10 @@ class ActorOutputBase(GateObject):
     def get_output_path_as_string(self, **kwargs):
         return ensure_filename_is_str(self.get_output_path(**kwargs))
 
+    def reset_data(self):
+        self.merged_data = None
+        self.data_per_run = {}
+
     def close(self):
         if self.keep_data_in_memory is False:
             self.data_per_run = {}
@@ -366,6 +371,9 @@ class ActorOutputBase(GateObject):
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
         )
+
+    def import_data_from_actor_output(self, *actor_output, **kwargs):
+        raise NotImplementedError("This is the base class. ")
 
 
 class MergeableActorOutput(ActorOutputBase):
@@ -415,6 +423,31 @@ class MergeableActorOutput(ActorOutputBase):
                 f"and/or write_data() method. "
                 f"A developer needs to fix this. "
             )
+
+    def import_data_from_actor_output(self, *actor_output, discard_existing_data=True):
+        run_indices_to_import = set()
+        for ao in actor_output:
+            run_indices_to_import.union(ao.data_per_run.keys())
+        which_output_per_run_index = dict(
+            [
+                (r, [ao for ao in actor_output if r in ao.data_per_run])
+                for r in run_indices_to_import
+            ]
+        )
+        for r in run_indices_to_import:
+            data_to_import = [
+                ao.data_per_run[r] for ao in which_output_per_run_index[r]
+            ]
+            if discard_existing_data is False and r in self.data_per_run:
+                data_to_import.append(self.data_per_run[r])
+            self.data_per_run[r] = merge_data(data_to_import)
+        merged_data_to_import = [
+            ao.merged_data for ao in actor_output if ao.merged_data is not None
+        ]
+        if discard_existing_data is False and self.merged_data is not None:
+            merged_data_to_import.append(self.merged_data)
+        if len(merged_data_to_import) > 0:
+            self.merged_data = merge_data(merged_data_to_import)
 
 
 class ActorOutputUsingDataItemContainer(MergeableActorOutput):
