@@ -41,6 +41,9 @@ class DataItem:
     def data_is_none(self):
         return self.data is None
 
+    def reset_data(self):
+        raise NotImplementedError
+
     def _assert_data_is_not_none(self):
         if self.data_is_none:
             raise ValueError(
