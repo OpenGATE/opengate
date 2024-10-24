@@ -101,6 +101,19 @@ class BaseUserInterfaceToActorOutput:
         self._user_output.set_output_filename(value, **self._kwargs_for_interface_calls)
 
     @property
+    def keep_data_per_run(self):
+        try:
+            return self._user_output.get_keep_data_per_run(
+                **self._kwargs_for_interface_calls
+            )
+        except NotImplementedError:
+            raise AttributeError
+
+    @keep_data_per_run.setter
+    def keep_data_per_run(self, value):
+        self._user_output.keep_data_per_run = value
+
+    @property
     def item_suffix(self):
         try:
             return self._user_output.get_item_suffix(**self._kwargs_for_interface_calls)
