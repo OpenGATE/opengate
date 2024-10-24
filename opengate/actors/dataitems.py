@@ -129,6 +129,155 @@ class DataItem:
         self.meta_data["number_of_samples"] = int(value)
 
 
+class StatisticsDataItem(DataItem):
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     # super leaves data=None if no data is passed as kwarg,
+    #     # but we want to initialize with a pre-filled Box
+    #     if self.data is None:
+    #         self.reset_data()
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            if k == "track_types":
+                if len(v["value"]) > 0:
+                    s += "track_types\n"
+                    for t, n in v["value"].items():
+                        s += f"{' ' * 24}{t}: {n}\n"
+            else:
+                if v["unit"] is None:
+                    unit = ""
+                else:
+                    unit = str(v["unit"])
+                s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
+        # remove last line break
+        return s.rstrip("\n")
+
+    def set_data(self, data, **kwargs):
+        """The input data must behave like a dictionary.
+        """
+        self.reset_data()
+        self.data.update(data)
+
+    def reset_data(self):
+        self.data = Box()
+        self.data.runs = 0
+        self.data.events = 0
+        self.data.tracks = 0
+        self.data.steps = 0
+        self.data.duration = 0
+        self.data.start_time = 0
+        self.data.stop_time = 0
+        self.data.sim_start_time = 0
+        self.data.sim_stop_time = 0
+        self.data.init = 0
+        self.data.track_types = {}
+        self.data.nb_threads = 1
+
+    def inplace_merge_with(self, *other):
+        if self.data is None:
+            self.reset_data()
+        for o in other:
+            self.data.runs += o.data.runs
+            self.data.events += o.data.events
+            self.data.steps += o.data.steps
+            self.data.tracks += o.data.tracks
+            self.data.duration += o.data.duration
+            self.data.init += o.data.init
+
+            common_entries = set(self.data.track_types.keys()).intersection(o.data.track_types.keys())
+            new_entries = set(o.data.track_types.keys()).difference(self.data.track_types.keys())
+            for k in common_entries:
+                self.data.track_types[k] += o.data.track_types[k]
+            for k in new_entries:
+                self.data.track_types[k] = o.data.track_types[k]
+
+            # self.data.start_time = 0
+            # self.data.stop_time = 0
+            # self.data.sim_start_time = 0
+            # self.data.sim_stop_time = 0
+
+    @property
+    def pps(self):
+        if self.data.duration != 0:
+            return int(
+                self.data.events / (self.data.duration / g4_units.s)
+            )
+        else:
+            return 0
+
+    @property
+    def tps(self):
+        if self.data.duration != 0:
+            return int(
+                self.data.tracks / (self.data.duration / g4_units.s)
+            )
+        else:
+            return 0
+
+    @property
+    def sps(self):
+        if self.data.duration != 0:
+            return int(
+                self.data.steps / (self.data.duration / g4_units.s)
+            )
+        else:
+            return 0
+
+    def get_processed_output(self):
+        d = {}
+        d["runs"] = {"value": self.data.runs, "unit": None}
+        d["events"] = {"value": self.data.events, "unit": None}
+        d["tracks"] = {"value": self.data.tracks, "unit": None}
+        d["steps"] = {"value": self.data.steps, "unit": None}
+        val, unit = g4_best_unit_tuple(self.data.init, "Time")
+        d["init"] = {
+            "value": val,
+            "unit": unit,
+        }
+        val, unit = g4_best_unit_tuple(self.data.duration, "Time")
+        d["duration"] = {
+            "value": val,
+            "unit": unit,
+        }
+        d["pps"] = {"value": self.pps, "unit": None}
+        d["tps"] = {"value": self.tps, "unit": None}
+        d["sps"] = {"value": self.sps, "unit": None}
+        d["start_time"] = {
+            "value": self.data.start_time,
+            "unit": None,
+        }
+        d["stop_time"] = {
+            "value": self.data.stop_time,
+            "unit": None,
+        }
+        val, unit = g4_best_unit_tuple(self.data.sim_start_time, "Time")
+        d["sim_start_time"] = {
+            "value": val,
+            "unit": unit,
+        }
+        val, unit = g4_best_unit_tuple(self.data.sim_stop_time, "Time")
+        d["sim_stop_time"] = {
+            "value": val,
+            "unit": unit,
+        }
+        d["threads"] = {"value": self.data.nb_threads, "unit": None}
+        d["arch"] = {"value": platform.system(), "unit": None}
+        d["python"] = {"value": platform.python_version(), "unit": None}
+        d["track_types"] = {"value": self.data.track_types, "unit": None}
+        return d
+
+    def write(self, path, encoder="json", **kwargs):
+        """Override virtual method from base class."""
+        with open(path, "w+") as f:
+            if encoder == "json":
+                dump_json(self.get_processed_output(), f, indent=4)
+            else:
+                f.write(self.__str__())
+
+
 class MeanValueDataItemMixin:
     """This class cannot be instantiated on its own.
     It is solely meant to be mixed into a class that inherits from DataItem (or daughters).
