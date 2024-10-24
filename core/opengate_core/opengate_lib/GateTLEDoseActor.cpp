@@ -55,10 +55,19 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
 }
 
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
+  auto &l = fThreadLocalData.Get();
   if (track->GetDefinition()->GetParticleName() == "gamma") {
-    auto &l = fThreadLocalData.Get();
     l.fIsTLEGamma = false;
     l.fLastTrackId = 1;
+  } else {
+    auto track_id = track->GetTrackID();
+    if (track_id < l.fLastTrackId) {
+      // if the track_id is lower than the lastTrack, it means all the following
+      // tracks will be without TLE mode (tracks are processed LIFO), so we
+      // reset fLastTrackId to allow all tertiary (or more) tracks
+      l.fIsTLEGamma = false;
+      l.fLastTrackId = 1;
+    }
   }
 }
 
