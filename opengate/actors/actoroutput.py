@@ -78,6 +78,10 @@ class BaseUserInterfaceToActorOutput:
         kwargs.update(self._kwargs_for_interface_calls)
         return self._user_output.get_run_indices(**kwargs)
 
+    def get_data(self, **kwargs):
+        kwargs.update(self._kwargs_for_interface_calls)
+        return self._user_output.get_data(**kwargs)
+
     @property
     def write_to_disk(self):
         try:
