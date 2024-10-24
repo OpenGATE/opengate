@@ -804,10 +804,12 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ),
         "image": (
             "",
-            {"doc": "Path to the image file",
-             "is_input_file": True,
-             "dynamic": True,
-             "setter_hook": _setter_hook_image},
+            {
+                "doc": "Path to the image file",
+                "is_input_file": True,
+                "dynamic": True,
+                "setter_hook": _setter_hook_image,
+            },
         ),
         "dump_label_image": (
             None,

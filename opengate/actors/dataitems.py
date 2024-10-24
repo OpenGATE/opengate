@@ -315,6 +315,7 @@ class DataContainer:
     def __copy__(self):
         return type(self)(self.belongs_to)
 
+
 class DataDictionary(DataContainer):
 
     def __init__(self, initial_dict, *args, encoder="json", **kwargs):
@@ -754,7 +755,9 @@ class QuotientMeanItkImage(QuotientItkImage):
 
 
 def merge_data(list_of_data):
-    merged_data = type(list_of_data[0])(list_of_data[0].belongs_to, data=list_of_data[0].data)
+    merged_data = type(list_of_data[0])(
+        list_of_data[0].belongs_to, data=list_of_data[0].data
+    )
     for d in list_of_data[1:]:
         merged_data.inplace_merge_with(d)
     return merged_data
