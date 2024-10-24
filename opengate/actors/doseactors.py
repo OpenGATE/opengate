@@ -128,6 +128,23 @@ class VoxelDepositActor(ActorBase):
                     f"{self.attached_to} ({self.attached_to_volume.volume_type})"
                 )
 
+    def initialize(self):
+        super().initialize()
+
+        msg = (
+            f"cannot be used in actor {self.name} "
+            f"because the volume ({self.attached_to}, {self.attached_to_volume.type_name}) "
+            f"to which the actor is attached does not support it. "
+        )
+        if self.spacing == 'like_image_volume':
+            if not hasattr(self.attached_to_volume, 'spacing'):
+                fatal("spacing = 'like_image_volume' " + msg)
+            self.spacing = self.attached_to_volume.spacing
+        if self.size == 'like_image_volume':
+            if not hasattr(self.attached_to_volume, 'size_pix'):
+                fatal("size = 'like_image_volume' " + msg)
+            self.size = self.attached_to_volume.size_pix
+
     def get_physical_volume_name(self):
         # init the origin and direction according to the physical volume
         # (will be updated in the BeginOfRun)
