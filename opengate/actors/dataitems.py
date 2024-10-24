@@ -347,6 +347,11 @@ class DataItemContainer(DataContainer):
         if data is not None:
             self.set_data(*data)
 
+    def __copy__(self):
+        obj = super().__copy__()
+        obj.set_data(*self.data)
+        return obj
+
     @classmethod
     def get_default_data_item_config(cls):
         default_data_item_config = None
