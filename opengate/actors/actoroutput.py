@@ -267,6 +267,9 @@ class ActorOutputBase(GateObject):
     def __len__(self):
         return len(self.data_per_run)
 
+    def get_run_indices(self, **kwargs):
+        return [k for k, v in self.data_per_run.items() if v is not None]
+
     def set_write_to_disk(self, value, **kwargs):
         raise NotImplementedError
 
