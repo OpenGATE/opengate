@@ -11,9 +11,6 @@ from ..utility import (
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    divide_itk_images,
-    scale_itk_image,
-    get_info_from_image,
     images_have_same_domain,
     resample_itk_image_like,
 )
@@ -722,6 +719,57 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
+    """
+    TLE = Track Length Estimator
+    """
+
+    energy_min: float
+    energy_max: float
+    database: str
+
+    user_info_defaults = {
+        "energy_min": (
+            0.0,
+            {"doc": "Kill the gamma if below this energy"},
+        ),
+        "energy_max": (
+            1.0 * g4_units.MeV,
+            {
+                "doc": "Above this energy, do not perform TLE (TLE is only relevant for low energy gamma)"
+            },
+        ),
+        "database": (
+            "EPDL",
+            {
+                "doc": "which database to use",
+                "allowed_values": ("EPDL", "NIST"),  # "simulated" does not work
+            },
+        ),
+    }
+
+    def __initcpp__(self):
+        g4.GateTLEDoseActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+                "PreUserTrackingAction",
+            }
+        )
+
+    def initialize(self, *args):
+        if self.score_in != "material":
+            fatal(
+                f"TLEDoseActor cannot score in {self.score_in}, only 'material' is allowed."
+            )
+        super().initialize(args)
+
+
 def _setter_hook_score_in_let_actor(self, value):
     if value in ("water", "Water"):
         return "G4_WATER"
@@ -731,6 +779,7 @@ def _setter_hook_score_in_let_actor(self, value):
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
     """
+    LET = Linear energy transfer
     LETActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
 
@@ -983,5 +1032,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
+process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(FluenceActor)

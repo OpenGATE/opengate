@@ -75,7 +75,9 @@ public:
   typedef itk::Image<double, 3> Image3DType;
 
   int sub2ind(Image3DType::IndexType index3D);
+
   void ind2sub(int index, Image3DType::IndexType &index3D);
+
   double GetMaxValueOfImage(Image3DType::Pointer imageP);
 
   // The image is accessible on py side (shared by all threads)
@@ -100,6 +102,9 @@ public:
   void FlushSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image);
 
   void PrepareLocalDataForRun(threadLocalT &data, int numberOfVoxels);
+
+  void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
+                        Image3DType::IndexType &index) const;
 
   // Option: indicate we must convert to dose to water
   bool fToWaterFlag{};
