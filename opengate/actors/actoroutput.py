@@ -332,7 +332,7 @@ class ActorOutputBase(GateObject):
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
                 run_index = None  # remove warning from IDE
-            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
+            return insert_suffix_before_extension(full_data_path, f"run{run_index}")
 
     def get_output_path(self, which="merged", **kwargs):
         # try to get the output_filename via 2 successive attempts
