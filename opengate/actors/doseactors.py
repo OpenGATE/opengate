@@ -55,7 +55,8 @@ class VoxelDepositActor(ActorBase):
             [1 * g4_units.mm, 1 * g4_units.mm, 1 * g4_units.mm],
             {
                 "doc": "Voxel spacing along the x-, y-, z-axes. "
-                "(The user set the units by multiplication with g4_units.XX)",
+                       "The user sets the units by multiplication with g4_units.XX. "
+                       "The default spacing is in g4_unit.mm. ",
             },
         ),
         "translation": (
