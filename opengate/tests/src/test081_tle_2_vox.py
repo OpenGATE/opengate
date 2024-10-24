@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # main options
     # sim.visu = True
     sim.visu_type = "qt"
-    sim.random_seed = "auto"
+    sim.random_seed = 321654
     sim.output_dir = paths.output
     sim.progress_bar = True
     sim.number_of_threads = 1
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # default source for tests
-    source = add_source(sim)
+    source = add_source(sim, n=2e5)
 
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")

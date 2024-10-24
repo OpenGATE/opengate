@@ -18,7 +18,7 @@ if __name__ == "__main__":
     # main options
     # sim.visu = True
     sim.visu_type = "qt"
-    sim.random_seed = "auto"
+    sim.random_seed = 987456
     sim.output_dir = paths.output
     sim.progress_bar = True
     sim.number_of_threads = 1

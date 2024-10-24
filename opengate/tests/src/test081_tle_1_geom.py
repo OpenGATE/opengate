@@ -20,7 +20,7 @@ def main(argv):
     # main options
     # sim.visu = True
     sim.visu_type = "qt"
-    sim.random_seed = "auto"
+    sim.random_seed = 12356654
     sim.output_dir = paths.output
     sim.progress_bar = True
     sim.number_of_threads = 1
@@ -51,7 +51,7 @@ def main(argv):
     sim.physics_manager.set_user_limits_particles("gamma")
 
     # default source for tests
-    source = add_source(sim, n=1e5)
+    source = add_source(sim, n=2e5)
 
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
