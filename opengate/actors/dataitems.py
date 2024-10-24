@@ -312,6 +312,8 @@ class DataContainer:
     def __init__(self, belongs_to, *args, **kwargs):
         self.belongs_to = belongs_to
 
+    def __copy__(self):
+        return type(self)(self.belongs_to)
 
 class DataDictionary(DataContainer):
 
