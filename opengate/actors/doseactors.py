@@ -119,7 +119,8 @@ class VoxelDepositActor(ActorBase):
                 self.attached_to_volume, "native_translation"
             ) or not hasattr(self.attached_to_volume, "native_rotation"):
                 fatal(
-                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} is not compatible "
+                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} "
+                    f"of actor {self.name} is not compatible "
                     f"with the volume to which this actor is attached: "
                     f"{self.attached_to} ({self.attached_to_volume.volume_type})"
                 )
