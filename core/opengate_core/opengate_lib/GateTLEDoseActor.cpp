@@ -22,10 +22,11 @@
 #include <itkImageRegionIterator.h>
 #include <vector>
 
+G4Mutex SetPixelTLEMutex = G4MUTEX_INITIALIZER;
+
 GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
     : GateDoseActor(user_info) {
   // FIXME WARNING : not checked for MT
-  fVoxelVolume = 0;
   fVoxelVolume = 0;
   fMaterialMuHandler = GateMaterialMuHandler::GetInstance();
 }
@@ -33,6 +34,7 @@ GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
 void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
   GateDoseActor::InitializeUserInput(user_info);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
+  fEnergyMax = py::cast<double>(user_info["energy_max"]);
 }
 
 void GateTLEDoseActor::InitializeCpp() { GateDoseActor::InitializeCpp(); }
@@ -51,20 +53,52 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
   GateDoseActor::BeginOfEventAction(event);
 }
 
+void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
+  if (track->GetDefinition()->GetParticleName() == "gamma") {
+    auto &l = fThreadLocalData.Get();
+    l.fIsTLEGamma = false;
+    l.fLastTrackId = 1;
+  }
+}
+
 void GateTLEDoseActor::SteppingAction(G4Step *step) {
-  // Ignore non-gamma particle
-  if (step->GetTrack()->GetDefinition()->GetParticleName() != "gamma")
-    return;
+  auto &l = fThreadLocalData.Get();
+  // Update the track id if there is secondary in the current non TLE particle
+  if (!l.fIsTLEGamma)
+    l.fLastTrackId += step->GetSecondaryInCurrentStep()->size();
+
+  // For non-gamma particle, no TLE
+  if (step->GetTrack()->GetDefinition()->GetParticleName() != "gamma") {
+    auto track_id = step->GetTrack()->GetTrackID();
+    if (track_id > l.fLastTrackId) {
+      // If the current track id is larger than the stored one: this is a
+      // track from a TLE gamma, so we ignore all other particles.
+      return;
+    } else {
+      // If not, the track count as a conventional DoseActor
+      return GateDoseActor::SteppingAction(step);
+    }
+  }
 
   auto pre_step = step->GetPreStepPoint();
-  double step_length = step->GetStepLength();
   double energy = pre_step->GetKineticEnergy();
+
+  // For too high energy, no TLE
+  if (energy > fEnergyMax) {
+    return GateDoseActor::SteppingAction(step);
+  }
+  l.fIsTLEGamma = true;
+
+  auto weight = step->GetTrack()->GetWeight();
+  auto step_length = step->GetStepLength();
   auto density = pre_step->GetMaterial()->GetDensity();
-  double mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
+  auto mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
       pre_step->GetMaterialCutsCouple(), energy);
   // (0.1 because length is in mm -> cm)
-  double edep = 0.1 * energy * mu_en_over_rho * step_length * density /
-                (CLHEP::g / CLHEP::cm3);
+  auto edep = weight * 0.1 * energy * mu_en_over_rho * step_length * density /
+              (CLHEP::g / CLHEP::cm3);
+
+  // Kill photon below a given energy
   if (energy <= fEnergyMin) {
     edep = energy;
     step->GetTrack()->SetTrackStatus(fStopAndKill);
@@ -80,6 +114,7 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   if (!isInside)
     return;
 
+  // G4AutoLock mutex(&SetPixelTLEMutex);
   if (fDoseFlag) {
     ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
   }

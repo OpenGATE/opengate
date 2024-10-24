@@ -5,6 +5,8 @@ import SimpleITK as sitk
 import numpy as np
 import opengate as gate
 from matplotlib import pyplot as plt
+
+from opengate import g4_units
 from opengate.tests.utility import get_image_1d_profile, print_test
 
 
@@ -37,14 +39,21 @@ def add_waterbox(sim):
     return waterbox
 
 
-def add_source(sim, n=1e5):
+def add_source(
+    sim,
+    n=1e5,
+    energy=350 * g4_units.keV,
+    sigma=0.3 * g4_units.MeV,
+    radius=3 * g4_units.cm,
+):
     cm = gate.g4_units.cm
-    keV = gate.g4_units.keV
     source = sim.add_source("GenericSource", "source")
-    source.energy.mono = 350 * keV
+    source.energy.mono = energy
+    source.energy.type = "gauss"
+    source.energy.sigma_gauss = sigma
     source.particle = "gamma"
     source.position.type = "sphere"
-    source.position.radius = 3 * cm
+    source.position.radius = radius
     source.position.translation = [0, 0, -55 * cm]
     source.direction.type = "focused"
     source.direction.focus_point = [0, 0, -20 * cm]
@@ -73,14 +82,18 @@ def voxelize_waterbox(sim, output_folder):
     sim.output_dir = a
 
 
-def plot_pdd(dose_actor, tle_dose_actor):
+def plot_pdd(dose_actor, tle_dose_actor, offset=(0, 0)):
     # plot pdd
     fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(13, 5))
 
     a = ax[0]
-    pdd_x, pdd_y = get_image_1d_profile(dose_actor.edep.get_output_path(), "z")
+    pdd_x, pdd_y = get_image_1d_profile(
+        dose_actor.edep.get_output_path(), "z", offset=offset
+    )
     a.plot(pdd_x, pdd_y, label="edep analog")
-    pdd_x, pdd_y = get_image_1d_profile(tle_dose_actor.edep.get_output_path(), "z")
+    pdd_x, pdd_y = get_image_1d_profile(
+        tle_dose_actor.edep.get_output_path(), "z", offset=offset
+    )
     a.plot(pdd_x, pdd_y, label="edep TLE")
     a.set_xlabel("distance [mm]")
     a.set_ylabel("edep [MeV]")
@@ -88,7 +101,7 @@ def plot_pdd(dose_actor, tle_dose_actor):
 
     a = a.twinx()
     pdd_x, pdd_y = get_image_1d_profile(
-        dose_actor.dose_uncertainty.get_output_path(), "z"
+        dose_actor.dose_uncertainty.get_output_path(), "z", offset=offset
     )
     a.plot(
         pdd_x,
@@ -99,7 +112,7 @@ def plot_pdd(dose_actor, tle_dose_actor):
         color="lightseagreen",
     )
     pdd_x, pdd_y = get_image_1d_profile(
-        tle_dose_actor.dose_uncertainty.get_output_path(), "z"
+        tle_dose_actor.dose_uncertainty.get_output_path(), "z", offset=offset
     )
     a.plot(
         pdd_x,
@@ -112,9 +125,13 @@ def plot_pdd(dose_actor, tle_dose_actor):
     a.legend()
 
     a = ax[1]
-    pdd_x, pdd_y = get_image_1d_profile(dose_actor.dose.get_output_path(), "z")
+    pdd_x, pdd_y = get_image_1d_profile(
+        dose_actor.dose.get_output_path(), "z", offset=offset
+    )
     a.plot(pdd_x, pdd_y, label="dose analog")
-    pdd_x, pdd_y = get_image_1d_profile(tle_dose_actor.dose.get_output_path(), "z")
+    pdd_x, pdd_y = get_image_1d_profile(
+        tle_dose_actor.dose.get_output_path(), "z", offset=offset
+    )
     a.plot(pdd_x, pdd_y, label="dose TLE")
     a.set_xlabel("distance [mm]")
     a.set_ylabel("dose [Gy]")
@@ -141,14 +158,14 @@ def mean_rel_diff(arr1, arr2, i1, i2, spacing, ax, tol):
     return b
 
 
-def compare_pdd(f1, f2, spacing, ax, tol):
+def compare_pdd(f1, f2, spacing, ax, tol, offset=0):
     img1 = sitk.ReadImage(f1)
     img2 = sitk.ReadImage(f2)
-    img1_arr = sitk.GetArrayViewFromImage(img1)
-    img2_arr = sitk.GetArrayViewFromImage(img2)
+    img1_arr = sitk.GetArrayFromImage(img1)
+    img2_arr = sitk.GetArrayFromImage(img2)
     s = img1_arr.shape
-    img1_arr = img1_arr[:, int(s[1] / 2), int(s[2] / 2)]
-    img2_arr = img2_arr[:, int(s[1] / 2), int(s[2] / 2)]
+    img1_arr = img1_arr[:, int(s[1] / 2), int(s[2] / 2) + offset]
+    img2_arr = img2_arr[:, int(s[1] / 2), int(s[2] / 2) + offset]
 
     # param of the box
     cm = gate.g4_units.cm

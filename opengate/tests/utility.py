@@ -2030,19 +2030,19 @@ def plot_compare_profile(ref_names, test_names, options):
     return plt
 
 
-def get_image_1d_profile(filename, axis):
+def get_image_1d_profile(filename, axis, offset=(0, 0)):
     img = sitk.ReadImage(filename)
     spacing = img.GetSpacing()
     img_arr = sitk.GetArrayFromImage(img)
     s = img_arr.shape
     pdd_x = pdd_y = None
     if axis == "z":
-        pdd_y = img_arr[:, int(s[1] / 2), int(s[2] / 2)]
+        pdd_y = img_arr[:, int(s[1] / 2) + offset[0], int(s[2] / 2) + offset[1]]
         pdd_x = np.arange(0, s[0] * spacing[2], spacing[2])
     if axis == "y":
-        pdd_y = img_arr[int(s[0] / 2), :, int(s[2] / 2)]
+        pdd_y = img_arr[int(s[0] / 2) + offset[0], :, int(s[2] / 2) + offset[1]]
         pdd_x = np.arange(0, s[1] * spacing[1], spacing[1])
     if axis == "x":
-        pdd_y = img_arr[int(s[0] / 2), int(s[1] / 2), :]
+        pdd_y = img_arr[int(s[0] / 2) + offset[0], int(s[1] / 2) + offset[1], :]
         pdd_x = np.arange(0, s[2] * spacing[0], spacing[0])
     return pdd_x, pdd_y

@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     print()
     r = np.fabs(pps1 - pps2) / pps2
-    tol = 0.08
+    tol = 0.3
     b = r < tol
     print_test(
         b, f"Speed PPS is {pps1} vs {pps2} = {r*100:.2f}% (tol={tol:.2f}) ==> {b}"

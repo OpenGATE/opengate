@@ -25,7 +25,7 @@ if __name__ == "__main__":
     sim.random_seed = "auto"
     sim.output_dir = paths.output
     sim.progress_bar = True
-    sim.number_of_threads = 1
+    sim.number_of_threads = 2
 
     # units
     m = gate.g4_units.m
@@ -72,9 +72,7 @@ if __name__ == "__main__":
     tle_dose_actor.dose_uncertainty.active = True
     tle_dose_actor.dose.active = True
     tle_dose_actor.size = dose_actor.size
-    tle_dose_actor.spacing = [
-        x / y for x, y in zip(waterbox_size, tle_dose_actor.size)
-    ]  # dose_actor.spacing
+    tle_dose_actor.spacing = dose_actor.spacing
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox_size} mm")

@@ -730,7 +730,13 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
         "energy_min": (
             0.0,
             {"doc": "Kill the gamma if below this energy"},
-        )
+        ),
+        "energy_max": (
+            1.0 * g4_units.MeV,
+            {
+                "doc": "Above this energy, do not perform TLE (TLE is only relevant for low energy gamma)"
+            },
+        ),
     }
 
     def __initcpp__(self):
@@ -743,6 +749,7 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
                 "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
+                "PreUserTrackingAction",
             }
         )
 
