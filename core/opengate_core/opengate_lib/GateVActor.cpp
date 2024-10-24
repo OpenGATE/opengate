@@ -12,6 +12,7 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateMultiFunctionalDetector.h"
+#include "GateSourceManager.h"
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
@@ -204,3 +205,5 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
 //   string::path path = func(output_type, run_index);
 //   return path
 // }
+
+void GateVActor::SetSourceManager(GateSourceManager *s) { fSourceManager = s; }

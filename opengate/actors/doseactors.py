@@ -433,15 +433,27 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "goal_uncertainty": (
             0,
             {
-                "doc": "FIXME",
+                "doc": "If set, it defines the statistical uncertainty at which the run is aborted.",
                 "setter_hook": _setter_hook_goal_uncertainty,
-                "deprecated": "Currently not implemented. ",
+            },
+        ),
+        "first_check_after_n_events": (
+            1e4,
+            {
+                "doc": "Number of events after which uncertainty is evaluated the first time, for each run."
+                "After the first evaluation, the value is updated with an estimation of the N events needed to achieve the target uncertainty.",
             },
         ),
         "thresh_voxel_edep_for_unc_calc": (
             0.7,
             {
-                "doc": "FIXME",
+                "doc": "For the calculation of the mean uncertainty of the edep image, only voxels that are above this fraction of the max edep are considered.",
+            },
+        ),
+        "overshoot_factor": (
+            1.05,
+            {
+                "doc": "Factor multiplying the estimated N events needed to achieve the target uncertainty.",
             },
         ),
         "dose_calc_on_the_fly": (
@@ -547,6 +559,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
+                "EndOfEventAction",
             }
         )
 
@@ -581,6 +594,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 item=("uncertainty", "std", "variance")
             )
             is True
+            or self.goal_uncertainty >= 0
         ):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
@@ -627,6 +641,12 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.SetCountsFlag(self.user_output.counts.get_active())
         # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
         self.SetToWaterFlag(self.score_in == "water")
+
+        # variables for stop on uncertainty functionality
+        self.SetUncertaintyGoal(self.goal_uncertainty)
+        self.SetThreshEdepPerc(self.thresh_voxel_edep_for_unc_calc)
+        self.SetOvershoot(self.overshoot_factor)
+        self.SetNbEventsFirstCheck(int(self.first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
