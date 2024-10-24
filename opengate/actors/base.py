@@ -218,6 +218,16 @@ class ActorBase(GateObject):
         for k, v in self.interfaces_to_user_output.items():
             v.write_to_disk = write_to_disk
 
+    @property
+    @shortcut_for_single_output_actor
+    def keep_data_per_run(self):
+        return list(self.interfaces_to_user_output.values())[0].keep_data_per_run
+
+    @keep_data_per_run.setter
+    def keep_data_per_run(self, keep_data_per_run):
+        for k, v in self.interfaces_to_user_output.items():
+            v.keep_data_per_run = keep_data_per_run
+
     def get_output_path(self, name=None, **kwargs):
         if name is not None:
             try:
