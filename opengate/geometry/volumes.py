@@ -869,12 +869,16 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     # FIXME: replace this property by function in opengate.image
     @property
     def size_pix(self):
+        if self.itk_image is None:
+            self.load_input_image()
         return np.array(itk.size(self.itk_image)).astype(int)
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
     @property
     def spacing(self):
+        if self.itk_image is None:
+            self.load_input_image()
         return np.array(self.itk_image.GetSpacing())
 
     # @requires_fatal("itk_image")
