@@ -52,8 +52,8 @@ class VoxelDepositActor(ActorBase):
             [1 * g4_units.mm, 1 * g4_units.mm, 1 * g4_units.mm],
             {
                 "doc": "Voxel spacing along the x-, y-, z-axes. "
-                       "The user sets the units by multiplication with g4_units.XX. "
-                       "The default spacing is in g4_unit.mm. ",
+                "The user sets the units by multiplication with g4_units.XX. "
+                "The default spacing is in g4_unit.mm. ",
             },
         ),
         "translation": (
@@ -133,12 +133,12 @@ class VoxelDepositActor(ActorBase):
             f"because the volume ({self.attached_to}, {self.attached_to_volume.type_name}) "
             f"to which the actor is attached does not support it. "
         )
-        if self.spacing == 'like_image_volume':
-            if not hasattr(self.attached_to_volume, 'spacing'):
+        if self.spacing == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "spacing"):
                 fatal("spacing = 'like_image_volume' " + msg)
             self.spacing = self.attached_to_volume.spacing
-        if self.size == 'like_image_volume':
-            if not hasattr(self.attached_to_volume, 'size_pix'):
+        if self.size == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "size_pix"):
                 fatal("size = 'like_image_volume' " + msg)
             self.size = self.attached_to_volume.size_pix
 
