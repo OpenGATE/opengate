@@ -2,9 +2,10 @@ import itk
 import numpy as np
 import json
 from box import Box
+import platform
 
 from ..exception import fatal, warning, GateImplementationError
-from ..utility import ensure_filename_is_str, calculate_variance
+from ..utility import ensure_filename_is_str, calculate_variance, g4_units, g4_best_unit_tuple
 from ..image import (
     sum_itk_images,
     divide_itk_images,
@@ -14,6 +15,7 @@ from ..image import (
     write_itk_image,
     get_info_from_image,
 )
+from ..serialization import dump_json
 
 
 # base classes
