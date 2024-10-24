@@ -905,6 +905,16 @@ class QuotientMeanItkImage(QuotientItkImage):
     )
 
 
+class StatisticsItemContainer(DataItemContainer):
+
+    _data_item_classes = (StatisticsDataItem,)
+    default_data_item_config = Box(
+        {
+            0: Box({"output_filename": "auto", "write_to_disk": False, "active": True}),
+        }
+    )
+
+
 def merge_data(list_of_data):
     merged_data = list_of_data[0]
     try:
