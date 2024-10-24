@@ -74,6 +74,14 @@ class BaseUserInterfaceToActorOutput:
         kwargs.update(self._kwargs_for_interface_calls)
         return self._user_output.get_output_path(**kwargs)
 
+    def get_run_indices(self, **kwargs):
+        kwargs.update(self._kwargs_for_interface_calls)
+        return self._user_output.get_run_indices(**kwargs)
+
+    def get_data(self, **kwargs):
+        kwargs.update(self._kwargs_for_interface_calls)
+        return self._user_output.get_data(**kwargs)
+
     @property
     def write_to_disk(self):
         try:
@@ -99,6 +107,19 @@ class BaseUserInterfaceToActorOutput:
     @output_filename.setter
     def output_filename(self, value):
         self._user_output.set_output_filename(value, **self._kwargs_for_interface_calls)
+
+    @property
+    def keep_data_per_run(self):
+        try:
+            return self._user_output.get_keep_data_per_run(
+                **self._kwargs_for_interface_calls
+            )
+        except NotImplementedError:
+            raise AttributeError
+
+    @keep_data_per_run.setter
+    def keep_data_per_run(self, value):
+        self._user_output.keep_data_per_run = value
 
     @property
     def item_suffix(self):
@@ -246,6 +267,9 @@ class ActorOutputBase(GateObject):
     def __len__(self):
         return len(self.data_per_run)
 
+    def get_run_indices(self, **kwargs):
+        return [k for k, v in self.data_per_run.items() if v is not None]
+
     def set_write_to_disk(self, value, **kwargs):
         raise NotImplementedError
 
@@ -308,7 +332,7 @@ class ActorOutputBase(GateObject):
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
                 run_index = None  # remove warning from IDE
-            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
+            return insert_suffix_before_extension(full_data_path, f"run{run_index}")
 
     def get_output_path(self, which="merged", **kwargs):
         # try to get the output_filename via 2 successive attempts
@@ -392,19 +416,28 @@ class MergeableActorOutput(ActorOutputBase):
     def merge_data_from_runs(self):
         self.merged_data = merge_data(list(self.data_per_run.values()))
 
-    def merge_into_merged_data(self, data):
-        if self.merged_data is None:
-            self.merged_data = data
-        else:
-            self.merged_data = merge_data([self.merged_data, data])
+    # def merge_into_merged_data(self, data):
+    #     if self.merged_data is None:
+    #         self.merged_data = data
+    #     else:
+    #         self.merged_data = merge_data([self.merged_data, data])
 
     def end_of_run(self, run_index):
-        if self.merge_data_after_simulation is True:
-            self.merge_into_merged_data(self.data_per_run[run_index])
-        if self.keep_data_per_run is False:
-            self.data_per_run.pop(run_index)
+        pass
+        # if self.merge_data_after_simulation is True:
+        #     if self.merged_data is None:
+        #         self.merged_data = copy.copy(self.data_per_run[run_index])
+        #     else:
+        #         self.merged_data.inplace_merge_with(self.data_per_run[run_index])
+        #     # self.merge_into_merged_data(self.data_per_run[run_index])
+        # if self.keep_data_per_run is False:
+        #     self.data_per_run.pop(run_index)
 
     def end_of_simulation(self, **kwargs):
+        if self.merge_data_after_simulation is True:
+            self.merge_data_from_runs()
+        if self.keep_data_per_run is False:
+            self.data_per_run = {}
         try:
             self.write_data_if_requested(which="all", **kwargs)
         except NotImplementedError:

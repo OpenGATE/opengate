@@ -55,7 +55,8 @@ class VoxelDepositActor(ActorBase):
             [1 * g4_units.mm, 1 * g4_units.mm, 1 * g4_units.mm],
             {
                 "doc": "Voxel spacing along the x-, y-, z-axes. "
-                "(The user set the units by multiplication with g4_units.XX)",
+                "The user sets the units by multiplication with g4_units.XX. "
+                "The default spacing is in g4_unit.mm. ",
             },
         ),
         "translation": (
@@ -121,10 +122,28 @@ class VoxelDepositActor(ActorBase):
                 self.attached_to_volume, "native_translation"
             ) or not hasattr(self.attached_to_volume, "native_rotation"):
                 fatal(
-                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} is not compatible "
+                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} "
+                    f"of actor {self.name} is not compatible "
                     f"with the volume to which this actor is attached: "
                     f"{self.attached_to} ({self.attached_to_volume.volume_type})"
                 )
+
+    def initialize(self):
+        super().initialize()
+
+        msg = (
+            f"cannot be used in actor {self.name} "
+            f"because the volume ({self.attached_to}, {self.attached_to_volume.type_name}) "
+            f"to which the actor is attached does not support it. "
+        )
+        if self.spacing == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "spacing"):
+                fatal("spacing = 'like_image_volume' " + msg)
+            self.spacing = self.attached_to_volume.spacing
+        if self.size == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "size_pix"):
+                fatal("size = 'like_image_volume' " + msg)
+            self.size = self.attached_to_volume.size_pix
 
     def get_physical_volume_name(self):
         # init the origin and direction according to the physical volume
