@@ -17,11 +17,12 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path("..", "..").resolve()))
+sys.path.insert(0, str(Path("..", "..").resolve()))
 print("DEBUG: ", os.listdir(str(Path("..", "..").resolve())))
 print("DEBUG: ", sys.path)
 print("DEBUG: ", __file__)
 import opengate
+sys.path.pop(0)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
