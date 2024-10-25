@@ -12,11 +12,12 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-from datetime import datetime
 import os
+import sys
+from datetime import datetime
+
+sys.path.insert(0, os.path.abspath('../../opengate'))
+# import opengate
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -27,7 +28,7 @@ import os
 project = "OPENGATE"
 now = datetime.now()
 copyright = (
-    str(now.year) + ", OpenGATE Collaboration. Updated on " + now.strftime("%B %d, %Y")
+        str(now.year) + ", OpenGATE Collaboration. Updated on " + now.strftime("%B %d, %Y")
 )
 author = "OpenGate Collaboration"
 
@@ -121,7 +122,6 @@ html_context = {
     "github_version": "master",
     "doc_path": "docs/source",
 }
-
 
 # html_theme_options = {
 #     "toc_depth": 3,
