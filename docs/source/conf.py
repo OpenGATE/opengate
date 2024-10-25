@@ -17,7 +17,7 @@ import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path("..", "..").resolve()))
+sys.path.append(str(Path("..", "..").resolve()))
 print("DEBUG: ", os.listdir(str(Path("..", "..").resolve())))
 print("DEBUG: ", sys.path)
 print("DEBUG: ", __file__)
