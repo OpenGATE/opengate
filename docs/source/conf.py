@@ -18,7 +18,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(".").resolve()))
+print("DEBUG: ", sys.path)
+print("DEBUG: ", __file__)
 import opengate
+
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
