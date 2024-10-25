@@ -83,8 +83,10 @@ if __name__ == "__main__":
     dose.output_filename = "test.nii.gz"
 
     # add stat actor
-    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.track_types_flag = True
+    stat_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat_actor.write_to_disk = True
+    stat_actor.output_filename = "stats.json"
+    stat_actor.track_types_flag = True
 
     # # start simulation
     t1 = time.time()
@@ -119,7 +121,6 @@ if __name__ == "__main__":
         path_edep_nproc1,
         path_edep_nproc4,
         tolerance=13,
-        ignore_value=None,
         sum_tolerance=1,
     )
     #
