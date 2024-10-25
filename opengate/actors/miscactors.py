@@ -50,7 +50,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         # )
 
     # def EndOfRunActionMasterThread(self, run_index):
-        # self.user_output.stats.store_data()
+    # self.user_output.stats.store_data()
 
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
@@ -69,15 +69,9 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
         data["sim_start"] = sim_start
         data["sim_stop"] = sim_stop
-        data["sim_start_time"] = (
-            self.simulation.run_timing_intervals[0][0]
-        )
-        data["sim_stop_time"] = (
-            self.simulation.run_timing_intervals[-1][1]
-        )
-        data["nb_threads"] = (
-            self.simulation.number_of_threads
-        )
+        data["sim_start_time"] = self.simulation.run_timing_intervals[0][0]
+        data["sim_stop_time"] = self.simulation.run_timing_intervals[-1][1]
+        data["nb_threads"] = self.simulation.number_of_threads
         self.user_output.stats.store_data("merged", data)
 
         self.user_output.stats.write_data_if_requested()

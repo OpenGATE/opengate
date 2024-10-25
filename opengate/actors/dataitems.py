@@ -5,7 +5,12 @@ from box import Box
 import platform
 
 from ..exception import fatal, warning, GateImplementationError
-from ..utility import ensure_filename_is_str, calculate_variance, g4_units, g4_best_unit_tuple
+from ..utility import (
+    ensure_filename_is_str,
+    calculate_variance,
+    g4_units,
+    g4_best_unit_tuple,
+)
 from ..image import (
     sum_itk_images,
     divide_itk_images,
@@ -156,8 +161,7 @@ class StatisticsDataItem(DataItem):
         return s.rstrip("\n")
 
     def set_data(self, data, **kwargs):
-        """The input data must behave like a dictionary.
-        """
+        """The input data must behave like a dictionary."""
         self.reset_data()
         self.data.update(data)
 
@@ -187,8 +191,12 @@ class StatisticsDataItem(DataItem):
             self.data.duration += o.data.duration
             self.data.init += o.data.init
 
-            common_entries = set(self.data.track_types.keys()).intersection(o.data.track_types.keys())
-            new_entries = set(o.data.track_types.keys()).difference(self.data.track_types.keys())
+            common_entries = set(self.data.track_types.keys()).intersection(
+                o.data.track_types.keys()
+            )
+            new_entries = set(o.data.track_types.keys()).difference(
+                self.data.track_types.keys()
+            )
             for k in common_entries:
                 self.data.track_types[k] += o.data.track_types[k]
             for k in new_entries:
@@ -202,27 +210,21 @@ class StatisticsDataItem(DataItem):
     @property
     def pps(self):
         if self.data.duration != 0:
-            return int(
-                self.data.events / (self.data.duration / g4_units.s)
-            )
+            return int(self.data.events / (self.data.duration / g4_units.s))
         else:
             return 0
 
     @property
     def tps(self):
         if self.data.duration != 0:
-            return int(
-                self.data.tracks / (self.data.duration / g4_units.s)
-            )
+            return int(self.data.tracks / (self.data.duration / g4_units.s))
         else:
             return 0
 
     @property
     def sps(self):
         if self.data.duration != 0:
-            return int(
-                self.data.steps / (self.data.duration / g4_units.s)
-            )
+            return int(self.data.steps / (self.data.duration / g4_units.s))
         else:
             return 0
 

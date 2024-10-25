@@ -176,11 +176,15 @@ class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemCon
         return self._user_output.get_data(**self._kwargs_for_interface_calls)
 
 
-class UserInterfaceToActorOutputStatisticsActor(UserInterfaceToActorOutputUsingDataItemContainer):
+class UserInterfaceToActorOutputStatisticsActor(
+    UserInterfaceToActorOutputUsingDataItemContainer
+):
 
     @property
     def counts(self):
-        return self._user_output.get_data(which="merged", **self._kwargs_for_interface_calls)
+        return self._user_output.get_data(
+            which="merged", **self._kwargs_for_interface_calls
+        )
 
 
 def _setter_hook_belongs_to(self, belongs_to):
@@ -870,7 +874,7 @@ class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
     }
 
     def __init__(self, *args, **kwargs):
-        self.default_suffix = 'json'
+        self.default_suffix = "json"
         super().__init__(*args, **kwargs)
 
     def initialize(self):
