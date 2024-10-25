@@ -646,6 +646,19 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
 
+    def reset_data(self):
+        # try to delegate the reset to the data item container (and the data items in them)
+        try:
+            if self.merged_data is not None:
+                self.merged_data.reset_data()
+            for v in self.data_per_run.values():
+                if v is not None:
+                    v.reset_data()
+        # if they do not implement the reset_data() method,
+        # fallback to the simple reset from the super class
+        except NotImplementedError:
+            super().reset_data()
+
     def get_data(self, which="merged", item=0):
         container = self.get_data_container(which)
         if container is None:
