@@ -16,7 +16,7 @@ import os
 import sys
 from datetime import datetime
 
-sys.path.insert(0, os.path.abspath('../../opengate'))
+sys.path.insert(0, os.path.abspath("../../opengate"))
 # import opengate
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.abspath('../../opengate'))
 project = "OPENGATE"
 now = datetime.now()
 copyright = (
-        str(now.year) + ", OpenGATE Collaboration. Updated on " + now.strftime("%B %d, %Y")
+    str(now.year) + ", OpenGATE Collaboration. Updated on " + now.strftime("%B %d, %Y")
 )
 author = "OpenGate Collaboration"
 
