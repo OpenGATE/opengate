@@ -22,6 +22,7 @@ print("DEBUG: ", os.listdir(str(Path("..", "..").resolve())))
 print("DEBUG: ", sys.path)
 print("DEBUG: ", __file__)
 import opengate
+
 sys.path.pop(0)
 
 
