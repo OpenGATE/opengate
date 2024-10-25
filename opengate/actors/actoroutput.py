@@ -211,7 +211,6 @@ class ActorOutputBase(GateObject):
     keep_data_in_memory: bool
 
     _default_interface_class = BaseUserInterfaceToActorOutput
-    default_suffix = None
 
     user_info_defaults = {
         "belongs_to": (
@@ -245,6 +244,8 @@ class ActorOutputBase(GateObject):
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
+        self.default_suffix = ""
+
         # internal flag which can set by the actor when it creating an actor output
         # via _add_actor_output
         # __can_be_deactivated = False forces the "active" user info to True
