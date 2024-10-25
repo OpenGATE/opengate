@@ -449,9 +449,9 @@ class ActorBase(GateObject):
                         f"because the function is not yet implemented for this type of output."
                     )
 
-    def store_output_data(self, output_name, run_index, *data):
-        self._assert_output_exists(output_name)
-        self.user_output[output_name].store_data(run_index, *data)
+    # def store_output_data(self, output_name, run_index, *data):
+    #     self._assert_output_exists(output_name)
+    #     self.user_output[output_name].store_data(run_index, *data)
 
     def write_output_to_disk_if_requested(self, output_name):
         self._assert_output_exists(output_name)
