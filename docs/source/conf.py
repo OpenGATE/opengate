@@ -43,6 +43,7 @@ autodoc_mock_imports = [
     "PyYAML",
 ]
 import opengate
+
 # sys.path.pop(0)
 
 
