@@ -1,5 +1,8 @@
 from box import Box
 from typing import Optional
+import uproot
+import tqdm
+import numpy as np
 
 from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
@@ -957,6 +960,96 @@ class ActorOutputRoot(ActorOutputBase):
                 self.name, self.get_output_path_as_string()
             )
 
+    def merge_data_from_actor_output(self, *actor_output, luts_run_index=None, **kwargs):
+        """
+        luts_run_index: a list of lookup table, one for each root file.
+        The run index in the root file to be merged serves as array index to the lookup table.
+        The value recovered from the lookup table is the new run index to be written into the merged file.
+        """
+
+        uproot.default_library = "np"
+
+        out = uproot.recreate(self.get_output_path())
+        rootfiles = [a.get_output_path() for a in actor_output]
+
+        # Previous ID values to be able to increment runIn or EventId
+        previous_id = {}
+
+        # create the dict reading all input root files
+        trees = {}  # TTree with TBranch
+        hists = {}  # Directory with THist
+        pbar = tqdm.tqdm(total=len(rootfiles))
+        for rootfile_index, rf in enumerate(rootfiles):
+            with uproot.open(rf) as root:
+                tree_names = unicity(root.keys())
+                for tree_name in tree_names:
+                    if hasattr(root[tree_name], 'keys'):
+                        if tree_name not in trees:
+                            trees[tree_name] = {"rootDictType": {}, "rootDictValue": {}}
+                            hists[tree_name] = {"rootDictType": {}, "rootDictValue": {}}
+                            previous_id[tree_name] = {}
+                        for branch in root[tree_name].keys():
+                            # HISTOGRAMS
+                            if isinstance(root[tree_name], uproot.reading.ReadOnlyDirectory):
+                                print(branch)
+                                array = root[tree_name][branch].values()
+                                if len(array) > 0:
+                                    branch_name = tree_name + "/" + branch
+                                    if isinstance(array[0], str):
+                                        array = np.zeros(len(array))
+                                    if branch_name not in hists[tree_name]["rootDictType"]:
+                                        hists[tree_name]["rootDictType"][branch_name] = root[tree_name][branch].to_numpy()
+                                        hists[tree_name]["rootDictValue"][branch_name] = np.zeros(len(array))
+                                    hists[tree_name]["rootDictValue"][branch_name] += array
+                            else:
+                                # ARRAYS
+                                array = root[tree_name][branch].array(library="np")
+                                if len(array) > 0 and not isinstance(array[0], np.ndarray):
+                                    if isinstance(array[0], str):
+                                        array = np.zeros(len(array))
+                                    if branch not in trees[tree_name]["rootDictType"]:
+                                        trees[tree_name]["rootDictType"][branch] = type(array[0])
+                                        trees[tree_name]["rootDictValue"][branch] = np.array([])
+                                    if branch.startswith('RunID') and luts_run_index is not None:
+                                        luts_run_index = np.asarray(luts_run_index)
+                                        array = luts_run_index[rootfile_index][array.astype(int)]
+                                    if branch.startswith('EventID'):
+                                        if branch not in previous_id[tree_name]:
+                                            previous_id[tree_name][branch] = 0
+                                        array += previous_id[tree_name][branch]
+                                        previous_id[tree_name][branch] = max(array) + 1
+                                    trees[tree_name]["rootDictValue"][branch] = np.append(
+                                        trees[tree_name]["rootDictValue"][branch], array)
+            pbar.update(1)
+        pbar.close()
+
+        # Set the dict in the output root file
+        for tree_name in trees:
+            if not trees[tree_name]["rootDictValue"] == {} or not trees[tree_name]["rootDictType"] == {}:
+                # out.mktree(tree, trees[tree]["rootDictType"])
+                out[tree_name] = trees[tree_name]["rootDictValue"]
+        for hist in hists.values():
+            if len(hist["rootDictValue"]) > 0 and len(hist["rootDictType"]) > 0:
+                for branch in hist["rootDictValue"]:
+                    for i in range(len(hist["rootDictValue"][branch])):
+                        hist["rootDictType"][branch][0][i] = hist["rootDictValue"][branch][i]
+                    out[branch[:-2]] = hist["rootDictType"][branch]
+
+
+def unicity(root_keys):
+    """
+    Return an array containing the keys of the root file only one (without the version number)
+    """
+    root_array = []
+    for key in root_keys:
+        name = key.split(";")
+        if len(name) > 2:
+            name = ";".join(name)
+        else:
+            name = name[0]
+        if name not in root_array:
+            root_array.append(name)
+    return root_array
 
 process_cls(ActorOutputBase)
 process_cls(MergeableActorOutput)
