@@ -385,7 +385,7 @@ class ActorOutputBase(GateObject):
             f"but it should be implemented in the specific derived class"
         )
 
-    def import_data_from_actor_output(self, *actor_output, **kwargs):
+    def merge_data_from_actor_output(self, *actor_output, **kwargs):
         raise NotImplementedError("This is the base class. ")
 
 
@@ -437,7 +437,7 @@ class MergeableActorOutput(ActorOutputBase):
                 f"A developer needs to fix this. "
             )
 
-    def import_data_from_actor_output(self, *actor_output, discard_existing_data=True):
+    def merge_data_from_actor_output(self, *actor_output, discard_existing_data=True, **kwargs):
         run_indices_to_import = set()
         for ao in actor_output:
             run_indices_to_import.union(ao.data_per_run.keys())

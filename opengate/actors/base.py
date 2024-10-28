@@ -439,8 +439,8 @@ class ActorBase(GateObject):
         else:
             for k in self.user_output:
                 try:
-                    self.user_output[k].import_data_from_actor_output(
-                        *[a.user_output[k] for a in actor]
+                    self.user_output[k].merge_data_from_actor_output(
+                        *[a.user_output[k] for a in actor], **kwargs
                     )
                 except NotImplementedError:
                     self.warn_user(
