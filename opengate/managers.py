@@ -1795,6 +1795,7 @@ class Simulation(GateObject):
         merge_after_multiprocessing=True,
         clear_output_dir_before_run=False
     ):
+        global __spec__
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
@@ -1854,7 +1855,7 @@ class Simulation(GateObject):
             try:
                 multiprocessing.set_start_method("spawn")
             except RuntimeError:
-                print("Could not set start method 'spawn'.")
+                print(f"Could not set start method 'spawn'. __spec__ = {__spec__}")
                 pass
             # q = multiprocessing.Queue()
 
