@@ -1784,6 +1784,7 @@ class Simulation(GateObject):
 
         output = self._run_simulation_engine(True, process_index=process_index)
         print(f"run_in_process finished in process {process_index}")
+        self.to_json_file()
         return output
 
     def run(
