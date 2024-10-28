@@ -1531,6 +1531,7 @@ class Simulation(GateObject):
 
         self.meta_data = SimulationMetaData()
         self.meta_data_per_process = {}
+        self.sub_process_registry = None
 
         # main managers
         self.volume_manager = VolumeManager(self)
@@ -1789,6 +1790,7 @@ class Simulation(GateObject):
         start_new_process=False,
         number_of_sub_processes=0,
         avoid_write_to_disk_in_subprocess=True,
+        merge_after_multiprocessing=True,
         clear_output_dir_before_run=False
     ):
         # if windows and MT -> fail
@@ -1853,13 +1855,19 @@ class Simulation(GateObject):
                 pass
             # q = multiprocessing.Queue()
 
+            self.sub_process_registry = dict([(i, {"output_dir": str(Path(self.output_dir) / f"process_{i}")})
+                                              for i in range(number_of_sub_processes)])
+
             with multiprocessing.Pool(number_of_sub_processes) as pool:
                 results = [
                     pool.apply_async(
                         self.run_in_process,
-                        (multi_proc_handler, i, avoid_write_to_disk_in_subprocess),
+                        (multi_proc_handler,
+                         k,
+                         v["output_dir"],
+                         avoid_write_to_disk_in_subprocess),
                     )
-                    for i in range(number_of_sub_processes)
+                    for k, v in self.sub_process_registry.items()
                 ]
                 # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
                 list_of_output = [res.get() for res in results]
