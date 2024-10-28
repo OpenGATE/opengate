@@ -8,7 +8,9 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "", output_folder="test019_multiproc")
+    paths = utility.get_default_test_paths(
+        __file__, "", output_folder="test019_multiproc"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -77,7 +79,7 @@ if __name__ == "__main__":
         "EventPosition",
         "PDGCode",
         "EventID",
-        "RunID"
+        "RunID",
     ]
     phsp_actor.debug = False
 
@@ -85,30 +87,33 @@ if __name__ == "__main__":
     source.direction.momentum = [0, 0, -1]
     phsp_actor.output_filename = "test019_phsp_actor.root"
 
-    sim.run_timing_intervals = [(i, i+1) for i in range(3)]
+    sim.run_timing_intervals = [(i, i + 1) for i in range(3)]
 
     # run
     nb_proc = 3
     sim.output_dir = paths.output / "multiproc"
-    sim.run(number_of_sub_processes=nb_proc,
-            avoid_write_to_disk_in_subprocess=False,
-            clear_output_dir_before_run=True)
+    sim.run(
+        number_of_sub_processes=nb_proc,
+        avoid_write_to_disk_in_subprocess=False,
+        clear_output_dir_before_run=True,
+    )
     path_phsp_output_single = phsp_actor.get_output_path()
 
     sim.output_dir = paths.output / "singleproc"
-    sim.run(number_of_sub_processes=nb_proc,
-            avoid_write_to_disk_in_subprocess=False,
-            clear_output_dir_before_run=True)
+    sim.run(
+        number_of_sub_processes=nb_proc,
+        avoid_write_to_disk_in_subprocess=False,
+        clear_output_dir_before_run=True,
+    )
     path_phsp_output_multi = phsp_actor.get_output_path()
 
-
     f_multi = uproot.open(path_phsp_output_multi)
-    eventid_multi = np.asarray(f_multi['PhaseSpace;1']['EventID'])
-    runid_multi = np.asarray(f_multi['PhaseSpace;1']['RunID'])
+    eventid_multi = np.asarray(f_multi["PhaseSpace;1"]["EventID"])
+    runid_multi = np.asarray(f_multi["PhaseSpace;1"]["RunID"])
 
     f_single = uproot.open(path_phsp_output_single)
-    eventid_single = np.asarray(f_single['PhaseSpace;1']['EventID'])
-    runid_single = np.asarray(f_single['PhaseSpace;1']['RunID'])
+    eventid_single = np.asarray(f_single["PhaseSpace;1"]["EventID"])
+    runid_single = np.asarray(f_single["PhaseSpace;1"]["RunID"])
 
     assert len(set(eventid_multi)) == len(eventid_multi)
     assert set(runid_multi) == set([i for i in range(len(sim.run_timing_intervals))])

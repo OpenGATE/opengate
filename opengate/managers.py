@@ -36,7 +36,7 @@ from .utility import (
     ensure_directory_exists,
     ensure_filename_is_str,
     insert_suffix_before_extension,
-    delete_folder_contents
+    delete_folder_contents,
 )
 from . import logger
 from .logger import log
@@ -1755,7 +1755,11 @@ class Simulation(GateObject):
         return output
 
     def run_in_process(
-        self, multi_process_handler, process_index, output_dir, avoid_write_to_disk_in_subprocess
+        self,
+        multi_process_handler,
+        process_index,
+        output_dir,
+        avoid_write_to_disk_in_subprocess,
     ):
         # Important: this method is intended to run in a processes spawned off the main process.
         # Therefore, self is actually a separate instance from the original simulation
@@ -1793,7 +1797,7 @@ class Simulation(GateObject):
         number_of_sub_processes=0,
         avoid_write_to_disk_in_subprocess=True,
         merge_after_multiprocessing=True,
-        clear_output_dir_before_run=False
+        clear_output_dir_before_run=False,
     ):
         global __spec__
         # if windows and MT -> fail
@@ -1859,17 +1863,23 @@ class Simulation(GateObject):
                 pass
             # q = multiprocessing.Queue()
 
-            self.sub_process_registry = dict([(i, {"output_dir": str(Path(self.output_dir) / f"process_{i}")})
-                                              for i in range(number_of_sub_processes)])
+            self.sub_process_registry = dict(
+                [
+                    (i, {"output_dir": str(Path(self.output_dir) / f"process_{i}")})
+                    for i in range(number_of_sub_processes)
+                ]
+            )
 
             with multiprocessing.Pool(number_of_sub_processes) as pool:
                 results = [
                     pool.apply_async(
                         self.run_in_process,
-                        (self.multi_proc_handler,
-                         k,
-                         v["output_dir"],
-                         avoid_write_to_disk_in_subprocess),
+                        (
+                            self.multi_proc_handler,
+                            k,
+                            v["output_dir"],
+                            avoid_write_to_disk_in_subprocess,
+                        ),
                     )
                     for k, v in self.sub_process_registry.items()
                 ]
@@ -1906,19 +1916,26 @@ class Simulation(GateObject):
         """To be run after a simulation has run in a multiple subprocesses.
         Currently, the input is a list of SimulationOutput instances,
         but in the future the input will be a list of Simulation instances
-        (returned or recreated from the subprocesses). """
+        (returned or recreated from the subprocesses)."""
         if self.multi_proc_handler is None:
-            fatal("Cannot execute merge_simulations_from_multiprocessing without a multi_proc_handler. ")
+            fatal(
+                "Cannot execute merge_simulations_from_multiprocessing without a multi_proc_handler. "
+            )
 
-        luts_run_index = [self.multi_proc_handler.get_original_run_timing_indices_for_process(o.process_index)
-                          for o in list_of_output]
+        luts_run_index = [
+            self.multi_proc_handler.get_original_run_timing_indices_for_process(
+                o.process_index
+            )
+            for o in list_of_output
+        ]
 
         # loop over actors in original simulation
         for actor in self.actor_manager.actors.values():
-            actors_to_merge = [o.get_actor(actor.name) for o in list_of_output]  # these are the actors from the process
+            actors_to_merge = [
+                o.get_actor(actor.name) for o in list_of_output
+            ]  # these are the actors from the process
             actor.import_user_output_from_actor(
-                *actors_to_merge,
-                luts_run_index=luts_run_index
+                *actors_to_merge, luts_run_index=luts_run_index
             )
 
         for actor in self.actor_manager.actors.values():
