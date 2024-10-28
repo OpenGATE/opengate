@@ -926,6 +926,7 @@ class SimulationOutput:
         self.current_random_seed = None
         self.user_hook_log = []
         self.warnings = None
+        self.process_index = None
 
     def store_output_from_simulation_engine(self, simulation_engine):
         self.store_actors(simulation_engine)
@@ -937,6 +938,7 @@ class SimulationOutput:
         )
         self.warnings = simulation_engine.simulation.warnings
         self.simulation_id = id(simulation_engine.simulation)
+        self.process_index = simulation_engine.process_index
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.simulation.actor_manager.actors
