@@ -1876,43 +1876,15 @@ class Simulation(GateObject):
                 list_of_output = [res.get() for res in results]
             log.info("End of multiprocessing")
 
-            # FOR DEBUGGING. remove when ready
-            self.multi_proc_handler = multi_proc_handler
+            if merge_after_multiprocessing is True:
+                self.merge_simulations_from_multiprocessing(list_of_output)
 
-            # loop over actors in original simulation
-            for actor in self.actor_manager.actors.values():
-                actor.import_user_output_from_actor(
-                    *[
-                        o.get_actor(actor.name) for o in list_of_output
-                    ]  # these are the actors from the process
-                )
-
-            for actor in self.actor_manager.actors.values():
-                actor.EndOfMultiProcessAction()
-
-            self.meta_data.extract_from_simulation_output(*list_of_output)
-            for i, o in enumerate(list_of_output):
-                self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
-
-            # FIXME: temporary workaround to collect extra info from output
-            # will be implemented similar to actor.import_user_output_from_actor after source refactoring
-            for source in self.source_manager.user_info_sources.values():
-                for o in list_of_output:
-                    try:
-                        s = o.get_source(source.name)
-                    except:
-                        continue
-                    if "fTotalSkippedEvents" in s.user_info.__dict__:
-                        if not hasattr(source, "fTotalSkippedEvents"):
-                            source.fTotalSkippedEvents = 0
-                            source.fTotalZeroEvents = 0
-                        source.fTotalSkippedEvents += s.user_info.fTotalSkippedEvents
-                        source.fTotalZeroEvents += s.user_info.fTotalZeroEvents
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             output = self._run_simulation_engine(False)
             self.meta_data.extract_from_simulation_output(output)
+
         if self.store_json_archive is True:
             self.to_json_file()
 
@@ -1928,6 +1900,47 @@ class Simulation(GateObject):
                 print(w)
                 print()
             print("*" * 20)
+
+    def merge_simulations_from_multiprocessing(self, list_of_output):
+        """To be run after a simulation has run in a multiple subprocesses.
+        Currently, the input is a list of SimulationOutput instances,
+        but in the future the input will be a list of Simulation instances
+        (returned or recreated from the subprocesses). """
+        if self.multi_proc_handler is None:
+            fatal("Cannot execute merge_simulations_from_multiprocessing without a multi_proc_handler. ")
+
+        luts_run_index = [self.multi_proc_handler.get_original_run_timing_indices_for_process(o.process_index)
+                          for o in list_of_output]
+
+        # loop over actors in original simulation
+        for actor in self.actor_manager.actors.values():
+            actors_to_merge = [o.get_actor(actor.name) for o in list_of_output]  # these are the actors from the process
+            actor.import_user_output_from_actor(
+                *actors_to_merge,
+                luts_run_index=luts_run_index
+            )
+
+        for actor in self.actor_manager.actors.values():
+            actor.EndOfMultiProcessAction()
+
+        self.meta_data.extract_from_simulation_output(*list_of_output)
+        for i, o in enumerate(list_of_output):
+            self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
+
+        # FIXME: temporary workaround to collect extra info from output
+        # will be implemented similar to actor.import_user_output_from_actor after source refactoring
+        for source in self.source_manager.user_info_sources.values():
+            for o in list_of_output:
+                try:
+                    s = o.get_source(source.name)
+                except:
+                    continue
+                if "fTotalSkippedEvents" in s.user_info.__dict__:
+                    if not hasattr(source, "fTotalSkippedEvents"):
+                        source.fTotalSkippedEvents = 0
+                        source.fTotalZeroEvents = 0
+                    source.fTotalSkippedEvents += s.user_info.fTotalSkippedEvents
+                    source.fTotalZeroEvents += s.user_info.fTotalZeroEvents
 
     def voxelize_geometry(
         self,
