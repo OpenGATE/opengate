@@ -1,5 +1,8 @@
 import multiprocessing
 import queue
+import numpy as np
+import tqdm
+import uproot
 
 from .exception import fatal
 from .base import GateObject
@@ -142,3 +145,87 @@ class MultiProcessingHandlerEqualPerRunTimingInterval(MultiProcessingHandlerBase
                 process_index += 1
         self.dispatch_configuration = dispatch_configuration
         return dispatch_configuration
+
+def unicity(root_keys):
+    """
+    Return an array containing the keys of the root file only one (without the version number)
+    """
+    root_array = []
+    for key in root_keys:
+        name = key.split(";")
+        if len(name) > 2:
+            name = ";".join(name)
+        else:
+            name = name[0]
+        if name not in root_array:
+            root_array.append(name)
+    return root_array
+
+
+def merge_root(rootfiles, outputfile, increment_run_id=False):
+    """
+    Merge root files in output files
+    """
+
+    uproot.default_library = "np"
+
+    out = uproot.recreate(outputfile)
+
+    # Previous ID values to be able to increment runIn or EventId
+    previous_id = {}
+
+    # create the dict reading all input root files
+    trees = {}  # TTree with TBranch
+    hists = {}  # Directory with THist
+    pbar = tqdm.tqdm(total=len(rootfiles))
+    for rf in rootfiles:
+        root = uproot.open(rf)
+        tree_names = unicity(root.keys())
+        for tree_name in tree_names:
+            if hasattr(root[tree_name], 'keys'):
+                if tree_name not in trees:
+                    trees[tree_name] = {"rootDictType": {}, "rootDictValue": {}}
+                    hists[tree_name] = {"rootDictType": {}, "rootDictValue": {}}
+                    previous_id[tree_name] = {}
+                for branch in root[tree_name].keys():
+                    if isinstance(root[tree_name], uproot.reading.ReadOnlyDirectory):
+                        print(branch)
+                        array = root[tree_name][branch].values()
+                        if len(array) > 0:
+                            branch_name = tree_name + "/" + branch
+                            if isinstance(array[0], str):
+                                array = np.zeros(len(array))
+                            if branch_name not in hists[tree_name]["rootDictType"]:
+                                hists[tree_name]["rootDictType"][branch_name] = root[tree_name][branch].to_numpy()
+                                hists[tree_name]["rootDictValue"][branch_name] = np.zeros(len(array))
+                            hists[tree_name]["rootDictValue"][branch_name] += array
+                    else:
+                        array = root[tree_name][branch].array(library="np")
+                        if len(array) > 0 and not isinstance(array[0], np.ndarray):
+                            if isinstance(array[0], str):
+                                array = np.zeros(len(array))
+                            if branch not in trees[tree_name]["rootDictType"]:
+                                trees[tree_name]["rootDictType"][branch] = type(array[0])
+                                trees[tree_name]["rootDictValue"][branch] = np.array([])
+                            if (not increment_run_id and branch.startswith('eventID')) or (
+                                    increment_run_id and branch.startswith('runID')):
+                                if branch not in previous_id[tree_name]:
+                                    previous_id[tree_name][branch] = 0
+                                array += previous_id[tree_name][branch]
+                                previous_id[tree_name][branch] = max(array) + 1
+                            trees[tree_name]["rootDictValue"][branch] = np.append(
+                                trees[tree_name]["rootDictValue"][branch], array)
+        pbar.update(1)
+    pbar.close()
+
+    # Set the dict in the output root file
+    for tree_name in trees:
+        if not trees[tree_name]["rootDictValue"] == {} or not trees[tree_name]["rootDictType"] == {}:
+            # out.mktree(tree, trees[tree]["rootDictType"])
+            out[tree_name] = trees[tree_name]["rootDictValue"]
+    for hist in hists.values():
+        if len(hist["rootDictValue"]) > 0 and len(hist["rootDictType"]) > 0:
+            for branch in hist["rootDictValue"]:
+                for i in range(len(hist["rootDictValue"][branch])):
+                    hist["rootDictType"][branch][0][i] = hist["rootDictValue"][branch][i]
+                out[branch[:-2]] = hist["rootDictType"][branch]
