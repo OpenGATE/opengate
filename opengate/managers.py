@@ -1532,6 +1532,7 @@ class Simulation(GateObject):
         self.meta_data = SimulationMetaData()
         self.meta_data_per_process = {}
         self.sub_process_registry = None
+        self.multi_proc_handler = None
 
         # main managers
         self.volume_manager = VolumeManager(self)
@@ -1842,12 +1843,13 @@ class Simulation(GateObject):
             self.meta_data.extract_from_simulation_output(output)
 
         elif number_of_sub_processes > 1:
-            multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(
+            self.multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(
                 name="multi_proc_handler",
                 simulation=self,
                 number_of_processes=number_of_sub_processes,
             )
             multi_proc_handler.initialize()
+            self.multi_proc_handler.initialize()
             try:
                 multiprocessing.set_start_method("spawn")
             except RuntimeError:
@@ -1862,7 +1864,7 @@ class Simulation(GateObject):
                 results = [
                     pool.apply_async(
                         self.run_in_process,
-                        (multi_proc_handler,
+                        (self.multi_proc_handler,
                          k,
                          v["output_dir"],
                          avoid_write_to_disk_in_subprocess),
