@@ -200,7 +200,7 @@ def get_transform_world_to_local(volume, repetition_index=None):
         crot = volume.rotation_list[i]
         for vol in volume.ancestor_volumes[::-1]:
             # in parallel world, the rotation_list does not exist
-            if "rotation_list" in vol.__dict__:
+            if hasattr(vol, "rotation_list"):
                 crot = np.matmul(vol.rotation_list[0], crot)
                 ctr = vol.rotation_list[0].dot(ctr) + vol.translation_list[0]
         cumulative_translation.append(ctr)
