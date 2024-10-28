@@ -1,8 +1,5 @@
 import multiprocessing
 import queue
-import numpy as np
-import tqdm
-import uproot
 
 from .exception import fatal
 from .base import GateObject
