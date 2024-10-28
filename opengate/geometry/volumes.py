@@ -1132,6 +1132,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
 class ParallelWorldVolume(NodeMixin):
     def __init__(self, name, volume_manager):
+        # VolumeBase.__init__(self, name)
+        # NodeMixin.__init__(self)
         super().__init__()
         self.name = name
         self.volume_manager = volume_manager
