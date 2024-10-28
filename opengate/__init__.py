@@ -1,4 +1,3 @@
-# This file handles the way opengate is imported.
 import os
 import sys
 
@@ -6,12 +5,32 @@ import sys
 def restart_with_glibc_tunables():
     """
     Restart the current process with GLIBC_TUNABLES set.
+    If interactive: we cannot do anything.
     """
     # tunables_value = "glibc.rtld.optional_static_tls=2048000"
     tunables_value = "glibc.rtld.optional_static_tls=1500000"
 
+    def is_python_interactive_shell():
+        import __main__
+
+        return not hasattr(__main__, "__file__")
+
     # Check if the environment variable is already set correctly
     if os.environ.get("GLIBC_TUNABLES") != tunables_value:
+
+        if is_python_interactive_shell():
+            try:
+                import opengate_core
+            except ImportError as e:
+                print(e)
+                if "cannot allocate memory in static TLS block" in str(e):
+                    print(
+                        f"Please use the following export before: \n"
+                        f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=1500000"
+                    )
+                    sys.exit()
+            return
+
         # Set the environment variable
         new_env = os.environ.copy()
         new_env["GLIBC_TUNABLES"] = tunables_value
