@@ -1780,9 +1780,7 @@ class Simulation(GateObject):
                 actor.write_to_disk = False
 
         output = self._run_simulation_engine(True, process_index=process_index)
-        print(
-            f"run_in_process finished in process {process_index}"
-        )
+        print(f"run_in_process finished in process {process_index}")
         return output
 
     def run(
@@ -1840,8 +1838,7 @@ class Simulation(GateObject):
             multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(
                 name="multi_proc_handler",
                 simulation=self,
-                number_of_processes=
-                number_of_sub_processes
+                number_of_processes=number_of_sub_processes,
             )
             multi_proc_handler.initialize()
             try:
