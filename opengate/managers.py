@@ -1755,14 +1755,14 @@ class Simulation(GateObject):
         return output
 
     def run_in_process(
-        self, multi_process_handler, process_index, avoid_write_to_disk_in_subprocess
+        self, multi_process_handler, process_index, output_dir, avoid_write_to_disk_in_subprocess
     ):
         # Important: this method is intended to run in a processes spawned off the main process.
         # Therefore, self is actually a separate instance from the original simulation
         # and we can safely adapt it in this process.
 
         # adapt the output_dir
-        self.output_dir = str(Path(self.output_dir) / f"process_{process_index}")
+        self.output_dir = output_dir
         if self.random_seed != "auto":
             self.random_seed += process_index
 
@@ -1848,8 +1848,8 @@ class Simulation(GateObject):
                 simulation=self,
                 number_of_processes=number_of_sub_processes,
             )
-            multi_proc_handler.initialize()
             self.multi_proc_handler.initialize()
+            __spec__ = None
             try:
                 multiprocessing.set_start_method("spawn")
             except RuntimeError:
