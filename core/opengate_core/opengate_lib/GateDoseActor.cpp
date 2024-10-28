@@ -45,6 +45,7 @@ void GateDoseActor::InitializeUserInput(py::dict &user_info) {
 }
 
 void GateDoseActor::InitializeCpp() {
+  GateVActor::InitializeCpp();
   NbOfThreads = G4Threading::GetNumberOfRunningWorkerThreads();
 
   // Create the image pointers

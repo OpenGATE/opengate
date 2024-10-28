@@ -26,8 +26,9 @@ G4Mutex SetPixelTLEMutex = G4MUTEX_INITIALIZER;
 
 GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
     : GateDoseActor(user_info) {
-  // FIXME WARNING : not checked for MT
   fVoxelVolume = 0;
+  // FIXME WARNING : no MT yet
+  fMultiThreadReady = false;
 }
 
 void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
