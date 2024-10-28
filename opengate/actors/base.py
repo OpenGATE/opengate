@@ -431,7 +431,7 @@ class ActorBase(GateObject):
         for v in self.interfaces_to_user_output.values():
             v.belongs_to_actor = self
 
-    def import_user_output_from_actor(self, *actor):
+    def import_user_output_from_actor(self, *actor, **kwargs):
         if not all([self.type_name == a.type_name for a in actor]):
             fatal("An actor can only import user output from the same type of actor.")
         if len(actor) == 1:
