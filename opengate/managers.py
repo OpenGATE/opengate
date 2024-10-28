@@ -36,6 +36,7 @@ from .utility import (
     ensure_directory_exists,
     ensure_filename_is_str,
     insert_suffix_before_extension,
+    delete_folder_contents
 )
 from . import logger
 from .logger import log
@@ -1788,6 +1789,7 @@ class Simulation(GateObject):
         start_new_process=False,
         number_of_sub_processes=0,
         avoid_write_to_disk_in_subprocess=True,
+        clear_output_dir_before_run=False
     ):
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
@@ -1802,6 +1804,9 @@ class Simulation(GateObject):
         self.meta_data.reset()
         self.meta_data.number_of_sub_processes = number_of_sub_processes
         self.meta_data.start_new_process = start_new_process
+
+        if clear_output_dir_before_run is True:
+            delete_folder_contents(self.get_output_path())
 
         for actor in self.actor_manager.actors.values():
             actor.reset_user_output()
