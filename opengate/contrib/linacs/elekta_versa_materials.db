@@ -9,6 +9,13 @@ Hydrogen:   S= H   ; Z=  1. ; A=   1.01  g/mole
 Carbon:     S= C   ; Z=  6. ; A=  12.01  g/mole
 Oxygen:     S= O   ; Z=  8. ; A=  16.00  g/mole
 Aluminium:  S= Al  ; Z= 13. ; A=  26.98  g/mole
+Manganese:  S=Mn   ; Z= 25. ; A=  54.94  g/mole
+Nitrogen:   S=N    ; Z=  7. ; A=  14.006 g/mole
+Phosphorus: S= P   ; Z= 15. ; A=  30.974 g/mole
+Sulfur:     S=S    ; Z= 16. ; A=  32.065 g/mole
+Silicon:    S=Si   ; Z= 14. ; A=  28.085 g/mole
+
+
 
 [Materials]
 
@@ -31,7 +38,7 @@ mat_leaf: d=18 g/cm3; n=3
 	+el: name=Nickel;   f=0.0375
 	+el: name=Iron;     f=0.0125
 
-target_tungsten: d=19.4 g/cm3; n=2
+target_tungsten: d=19.49 g/cm3; n=2
 	+el: name=Tungsten; 	f=0.90
 	+el: name=Rhenium;	f=0.10
 
@@ -44,6 +51,27 @@ flattening_filter_material: d=7.9 g/cm3; n=3
 	+el: name=Chromium;	f=0.17
 	+el: name=Iron;		f=0.75
 	+el: name=Nickel;	f=0.08
+
+
+flattening_filter_material_stain_steel: d=7.9 g/cm3; n=10
+    +el: name=Carbon; f = 0.005
+	+el: name=Chromium;	f=0.18
+	+el: name=Copper; f= 0.005
+	+el: name=Manganese; f = 0.01
+	+el: name=Nitrogen; f=0.00055
+	+el: name=Nickel;	f=0.09
+	+el: name=Phosphorus; f=0.000225
+	+el: name=Sulfur; f = 0.00175
+	+el: name=Silicon; f=0.005
+	+el: name=Iron;		f=0.702475
+
+
+flattening_filter_material_mild_steel: d=7.9 g/cm3; n=5
+    +el: name=Carbon; f = 0.0015
+	+el: name=Manganese; f = 0.0075
+	+el: name=Phosphorus; f=0.00075
+	+el: name=Sulfur; f = 0.0005
+	+el: name=Iron;		f=0.98975
 
 
 linac_aluminium: d=2.7 g/cm3 ; n=1 ; state=solid

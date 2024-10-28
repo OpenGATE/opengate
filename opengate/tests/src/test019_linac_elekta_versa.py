@@ -28,6 +28,7 @@ if __name__ == "__main__":
     nm = gate.g4_units.nm
     m = gate.g4_units.m
     mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
 
     # world
     world = sim.world
@@ -43,7 +44,7 @@ if __name__ == "__main__":
     )
 
     # add linac e- source
-    source = versa.add_electron_source(sim, linac.name)
+    source = versa.add_electron_source(sim, linac.name,6.49*MeV, 1 * mm,0.5*mm)
     source.n = 8e4 / sim.number_of_threads
     if sim.visu:
         source.n = 200
@@ -70,6 +71,7 @@ if __name__ == "__main__":
 
     # compare root
     br = "versa_phsp_plane_phsp"
+    print(paths.output_ref)
     root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
     tols = [0.1, 2.5, 2.5]
