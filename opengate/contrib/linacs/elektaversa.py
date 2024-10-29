@@ -454,8 +454,6 @@ def add_electron_source(sim, linac_name,ekin,sx,sy):
     source.position.sigma_y = sy * mm
     source.position.translation = [0, 0, 0.5 * mm - 1 * nm]
     source.direction.type = "momentum"
-    # source.direction.phi = [0, 360 * deg]
-    # source.direction.theta = [0, 2*deg]
     source.direction.momentum = [0,0,-1]
     source.direction_relative_to_attached_volume=True
     source.n = 10
@@ -531,7 +529,6 @@ def add_phase_space_source(sim, plane_name):
     source.particle = ""
     source.batch_size = 100000
     # source.translate_position = True
-    # source.position.translation = [0 * m, 0 * m, -1000 * mm]
     return source
 
 
@@ -1147,9 +1144,7 @@ def rotation_around_user_point(
     linac.rotation = rot.as_matrix()
 
 
-def jaw_dynamic_translation(
-    sim, linac_name, jaw, jaw_positions, side, cp_id="all_cp", sad=1000
-):
+def jaw_dynamic_translation(sim, linac_name, jaw, jaw_positions, side, cp_id="all_cp", sad=1000,only_return_position=False):
     linac = sim.volume_manager.get_volume(linac_name)
     z_linac = linac.size[2]
     mm = g4_units.mm
@@ -1177,13 +1172,15 @@ def jaw_dynamic_translation(
             rotations.append(rot_jaw)
         jaw_translation = jaw.translation + np.array([0, jaws_y_aperture, 0])
         translations.append(jaw_translation)
-    jaw.add_dynamic_parametrisation(translation=translations, rotation=rotations)
+
+    if only_return_position:
+        return np.array(jaws_y_aperture),np.array(rotations)
+    else :
+        jaw.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
 
 
-def mlc_leaves_dynamic_translation(
-    sim, linac_name, mlc, leaves_position, cp_id="all_cp", sad=1000
-):
+def mlc_leaves_dynamic_translation(sim, linac_name, mlc, leaves_position, cp_id="all_cp", sad=1000, only_return_position = False):
     linac = sim.volume_manager.get_volume(linac_name)
     mm = g4_units.mm
     center_mlc = 349.3 * mm
@@ -1216,9 +1213,12 @@ def mlc_leaves_dynamic_translation(
             motion_leaves_t[i].append( translation_mlc[i]+ np.array([mlc_x_aperture[i],0,0]))
             motion_leaves_r[i].append(mlc.rotation[i])
 
-    for i in range(nb_leaves):
-        mlc.add_dynamic_parametrisation(repetition_index = i ,translation=motion_leaves_t[i], rotation=motion_leaves_r[i])
-
+    print(mlc_x_aperture)
+    if only_return_position:
+        return np.array(mlc_x_aperture),np.array(motion_leaves_r)
+    else :
+        for i in range(nb_leaves):
+            mlc.add_dynamic_parametrisation(repetition_index = i ,translation=motion_leaves_t[i], rotation=motion_leaves_r[i])
 
 def set_linac_head_motion(sim, linac_name, jaws, mlc, rt_plan_parameters, cp_id="all_cp", sad=1000):
     leaves_position = rt_plan_parameters["leaves"]

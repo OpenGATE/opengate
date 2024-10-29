@@ -11,28 +11,61 @@ import numpy as np
 import itk
 
 
-def calc_mlc_aperture(
-    x_leaf_position, y_jaws, pos_mlc=349.3, pos_jaws=470.5, sad=1000, leaf_width=1.85
-):
+# def calc_mlc_aperture(
+#     x_leaf_position, y_jaws, pos_mlc=349.3, pos_jaws=470.5, sad=1000, leaf_width=1.85
+# ):
+#     mm = gate.g4_units.mm
+#     leaf_width = leaf_width * mm
+#     left = x_leaf_position[:80] * pos_mlc / sad
+#     right = x_leaf_position[80:] * pos_mlc / sad
+#     left[left != 0] = left[left != 0] - left[left != 0] % 0.5
+#     right[right != 0] = right[right != 0] + 0.5 - right[right != 0] % 0.5
+#
+#     pos_y_leaf = np.arange(
+#         -leaf_width * 40 + leaf_width / 2,
+#         leaf_width * 40 - leaf_width / 2 + 0.01,
+#         leaf_width,
+#     )
+#     left[pos_y_leaf < y_jaws[0] * pos_jaws / sad] = 0
+#     left[pos_y_leaf > y_jaws[1] * pos_jaws / sad] = 0
+#     right[pos_y_leaf < y_jaws[0] * pos_jaws / sad] = 0
+#     right[pos_y_leaf > y_jaws[1] * pos_jaws / sad] = 0
+#     diff = np.array(right - left)
+#
+#     return np.sum(diff) * leaf_width
+
+def calc_mlc_aperture(x_leaf_position,y_jaws_position,mlc):
+    # print(mlc.translation[:,1])
+    y_jaws_position[0] = y_jaws_position[0] *349.3/470.5
+    y_jaws_position[1] = y_jaws_position[1] * 349.3 / 470.5
+    y_leaf_position = mlc.translation[:,1]
+    leaves_thickness  = np.zeros(len(mlc.translation[:,1]))
+
+    for i,rot in enumerate(mlc.rotation):
+        new_y = rot.dot(np.array([0,1,0]))
+        new_thickness = (np.abs(1/new_y[1]) *1.85)
+        leaves_thickness[i] = new_thickness
     mm = gate.g4_units.mm
-    leaf_width = leaf_width * mm
-    left = x_leaf_position[:80] * pos_mlc / sad
-    right = x_leaf_position[80:] * pos_mlc / sad
-    left[left != 0] = left[left != 0] - left[left != 0] % 0.5
-    right[right != 0] = right[right != 0] + 0.5 - right[right != 0] % 0.5
+    # print(leaves_thickness)
+    left = x_leaf_position[:80]
+    right = x_leaf_position[80:]
 
-    pos_y_leaf = np.arange(
-        -leaf_width * 40 + leaf_width / 2,
-        leaf_width * 40 - leaf_width / 2 + 0.01,
-        leaf_width,
-    )
-    left[pos_y_leaf < y_jaws[0] * pos_jaws / sad] = 0
-    left[pos_y_leaf > y_jaws[1] * pos_jaws / sad] = 0
-    right[pos_y_leaf < y_jaws[0] * pos_jaws / sad] = 0
-    right[pos_y_leaf > y_jaws[1] * pos_jaws / sad] = 0
-    diff = np.array(right - left)
+    # print(left,right)
 
-    return np.sum(diff) * leaf_width
+    left_y = y_leaf_position[:80]
+    right_y = y_leaf_position[80:]
+    # print(y_jaws_position[0],y_jaws_position[1])
+    # print(left_y)
+
+    left[(left_y < y_jaws_position[0]) | (left_y > y_jaws_position[1])] = 0
+    right[(right_y < y_jaws_position[0]) | (right_y > y_jaws_position[1])] = 0
+
+    # print(left, right)
+
+
+    diff = np.array(right - left)* leaves_thickness[:80]
+
+    return np.sum(diff)
 
 
 def add_volume_to_irradiate(sim, name, l_cp):
@@ -178,14 +211,13 @@ if __name__ == "__main__":
     linac.material = "G4_Galactic"
 
     # jaws
-    if sim.visu:
-        jaws = versa.add_jaws_visu(sim, linac.name)
-    else:
-        jaws = versa.add_jaws(sim, linac.name)
+
+    jaws = versa.add_jaws(sim, linac.name)
 
     # mlc
     mlc = versa.add_mlc(sim, linac.name)
-
+    mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
+    mlc_box.material = "G4_Galactic"
     # add alpha source :
     nb_part = 750000
     z_linac = linac.size[2]
@@ -221,17 +253,31 @@ if __name__ == "__main__":
     # The number of particles provided (sim.activity) will be adapted
     # according to the number of MU delivered at each control points.
     versa.set_time_intervals_from_rtplan(sim, rt_plan_parameters, cp_id=l_cp)
+    leaves_position = rt_plan_parameters["leaves"]
+    jaw_1_positions = rt_plan_parameters["jaws 1"]
+    jaw_2_positions = rt_plan_parameters["jaws 2"]
+    leaves_pos, leaves_rot = versa.mlc_leaves_dynamic_translation(sim, "linac_box", mlc, leaves_position, l_cp, sad,only_return_position=True)
+    jaw_1_pos,jaw_1_rot = versa.jaw_dynamic_translation(sim, "linac_box", jaws[0], jaw_1_positions, "left", l_cp, sad,only_return_position=True)
+    jaw_2_pos,jaw_2_rot = versa.jaw_dynamic_translation(sim, "linac_box", jaws[1], jaw_2_positions, "right", l_cp, sad,only_return_position=True)
+    # print(leaves_pos)
+
+    jaw_pos = [jaw_1_pos, jaw_2_pos]
+    theoretical_area = calc_mlc_aperture(leaves_pos, jaw_pos, mlc)
+    leaves = rt_plan_parameters["leaves"][l_cp[0]]
+    jaws_1 = rt_plan_parameters["jaws 1"][l_cp[0]]
+    jaws_2 = rt_plan_parameters["jaws 2"][l_cp[0]]
+    jaws = [jaws_1, jaws_2]
+
+    print(leaves)
+
+
     sim.run()
 
     # print results
     print(stats)
 
     # test
-    leaves = rt_plan_parameters["leaves"][l_cp[0]]
-    jaws_1 = rt_plan_parameters["jaws 1"][l_cp[0]]
-    jaws_2 = rt_plan_parameters["jaws 2"][l_cp[0]]
-    jaws = [jaws_1, jaws_2]
-    theoretical_area = calc_mlc_aperture(leaves, jaws, sad=sad)
+
 
     dose2 = sim.get_actor("dose_water_slice")
     img_MC = dose2.edep.get_data()
