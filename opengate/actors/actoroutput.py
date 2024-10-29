@@ -179,17 +179,6 @@ class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemCon
         return self._user_output.get_data(**self._kwargs_for_interface_calls)
 
 
-class UserInterfaceToActorOutputStatisticsActor(
-    UserInterfaceToActorOutputUsingDataItemContainer
-):
-
-    @property
-    def counts(self):
-        return self._user_output.get_data(
-            which="merged", **self._kwargs_for_interface_calls
-        )
-
-
 def _setter_hook_belongs_to(self, belongs_to):
     if belongs_to is None:
         fatal("The belongs_to attribute of an ActorOutput cannot be None.")
@@ -846,7 +835,7 @@ def _setter_hook_encoder(self, value):
 class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
     """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
 
-    _default_interface_class = UserInterfaceToActorOutputStatisticsActor
+    _default_interface_class = UserInterfaceToActorOutputUsingDataItemContainer
     data_container_class = StatisticsItemContainer
 
     # hints for IDE
