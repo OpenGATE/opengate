@@ -34,6 +34,10 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
         self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
+    @property
+    def counts(self):
+        return self.user_output.stats.merged_data
+
     def __str__(self):
         s = self.user_output["stats"].__str__()
         return s
