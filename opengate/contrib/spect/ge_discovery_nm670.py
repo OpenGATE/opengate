@@ -50,7 +50,9 @@ def add_materials(sim):
         sim.volume_manager.add_material_database(fdb)
 
 
-def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
+def add_spect_head(
+    sim, name="spect", collimator_type="lehr", debug=False, crystal_size="3/8"
+):
     """
     Collimators:
     - False : no collimator
@@ -67,12 +69,13 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
 
     # check overlap
     sim.check_volumes_overlap = False  # set to True for debug
+    sim.check_volumes_overlap = True
 
     # spect head
-    head, lead_cover = add_spect_box(sim, name)
+    head, lead_cover = add_spect_box(sim, name, crystal_size)
 
     # spect head
-    crystal = add_crystal(sim, name, lead_cover)
+    crystal = add_crystal(sim, name, lead_cover, crystal_size)
 
     # spect collimator
     colli = None
@@ -113,7 +116,7 @@ def distance_to_center_of_crystal(sim, name="spect"):
     return d
 
 
-def add_spect_box(sim, name):
+def add_spect_box(sim, name, crystal_size):
     cm = g4_units.cm
 
     # colors
@@ -149,6 +152,12 @@ def add_spect_box(sim, name):
     lead_cover.material = "Lead"
     lead_cover.color = gray
 
+    # crystal size
+    if crystal_size == "3/8":
+        cs = 0.9525 * cm
+    else:
+        cs = 1.5875 * cm
+
     # shielding alu cover
     alu_cover = sim.add_volume("Box", f"{name}_alu_cover")
     alu_cover.mother = lead_cover.name
@@ -161,7 +170,10 @@ def add_spect_box(sim, name):
     reflector = sim.add_volume("Box", f"{name}_reflector")
     reflector.mother = lead_cover.name
     reflector.size = [54 * cm, 40 * cm, 0.12 * cm]
-    reflector.translation = [0, 0, 3.92625 * cm]
+    # reflector.translation = [0, 0, 3.92625 * cm] # for 3/8
+    reflector.translation[2] = (
+        lead_cover.size[2] / 2 - alu_cover.size[2] - cs - reflector.size[2] / 2
+    )
     reflector.material = "TiO2"
     reflector.color = green
 
@@ -170,23 +182,31 @@ def add_spect_box(sim, name):
     # spectrum: the model shown here is simplified
     backside = sim.add_volume("Box", f"{name}_backside")
     backside.mother = lead_cover.name
+    h = alu_cover.size[2] + cs + reflector.size[2]
     backside.size = [54 * cm, 40 * cm, 8 * cm]
-    backside.translation = [0, 0, -0.13375 * cm]
+    # backside.translation = [0, 0, -0.13375 * cm] # for 3/8
+    t = lead_cover.size[2] / 2 - h - backside.size[2] / 2
+    backside.translation[2] = t
     backside.material = "Pyrex66"
     backside.color = blue
 
     return head, lead_cover
 
 
-def add_crystal(sim, name, lead_cover):
+def add_crystal(sim, name, lead_cover, crystal_size):
     cm = g4_units.cm
     yellow = [1, 1, 0, 1]
+    alu_cover_z = 0.13 * cm
+    ref_z = 0.12 * cm
     # mono-bloc crystal thickness 3/8 of inch = 0.9525 cm
     # (if 5/8 inch = 1.5875 ; but probably need to translate elements)
     crystal = sim.add_volume("Box", f"{name}_crystal")
     crystal.mother = lead_cover.name
-    crystal.size = [54 * cm, 40 * cm, 0.9525 * cm]
-    crystal.translation = [0, 0, 4.4625 * cm]
+    if crystal_size == "3/8":
+        crystal.size = [54 * cm, 40 * cm, 0.9525 * cm]
+    else:
+        crystal.size = [54 * cm, 40 * cm, 1.5875 * cm]
+    crystal.translation[2] = lead_cover.size[2] / 2 - crystal.size[2] / 2 - alu_cover_z
     crystal.material = "NaITl"
     crystal.color = yellow
     return crystal
@@ -727,7 +747,12 @@ def rotate_gantry(
         current_angle_deg += step_angle_deg
 
     # set the motion for the SPECT head
-    head.add_dynamic_parametrisation(translation=translations, rotation=rotations)
+    if nb_angle > 1:
+        head.add_dynamic_parametrisation(translation=translations, rotation=rotations)
+    # we set the initial position in all cases, this allows for check_overlap to be done
+    # with the first position
+    head.translation = translations[0]
+    head.rotation = rotations[0]
 
 
 def add_source_for_arf_training_dataset(
