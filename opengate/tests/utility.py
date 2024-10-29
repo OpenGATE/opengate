@@ -128,21 +128,20 @@ def print_test(b, s):
 
 def assert_stats(stats_actor_1, stats_actor_2, tolerance=0):
     return assert_stats_json(
-        stats_actor_1.user_output.stats,
-        stats_actor_2.user_output.stats,
+        stats_actor_1,
+        stats_actor_2,
         tolerance,
         track_types_flag=stats_actor_1.track_types_flag,
     )
 
 
 def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_flag=None):
-    output1 = stats_actor_1  # .user_output.stats
-    output2 = stats_actor_2  # .user_output.stats
-    if track_types_flag is None:
-        track_types_flag = len(output1.track_types) > 0
 
-    counts1 = output1.merged_data
-    counts2 = output2.merged_data
+    counts1 = stats_actor_1.counts
+    counts2 = stats_actor_2.counts
+
+    if track_types_flag is None:
+        track_types_flag = len(counts1.track_types) > 0
     if counts2.events != 0:
         event_d = counts1.events / counts2.events * 100 - 100
     else:
@@ -155,18 +154,18 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
         step_d = counts1.steps / counts2.steps * 100 - 100
     else:
         step_d = 100
-    if output2.pps != 0:
-        pps_d = output1.pps / output2.pps * 100 - 100
+    if counts2.pps != 0:
+        pps_d = counts1.pps / counts2.pps * 100 - 100
     else:
         pps_d = 100
 
-    if output2.tps != 0:
-        tps_d = output1.tps / output2.tps * 100 - 100
+    if counts2.tps != 0:
+        tps_d = counts1.tps / counts2.tps * 100 - 100
     else:
         tps_d = 100
 
-    if output2.sps != 0:
-        sps_d = output1.sps / output2.sps * 100 - 100
+    if counts2.sps != 0:
+        sps_d = counts1.sps / counts2.sps * 100 - 100
     else:
         sps_d = 100
 
@@ -198,17 +197,17 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
 
     print_test(
         True,
-        f"PPS:          {output1.pps:.1f} {output2.pps:.1f} : "
+        f"PPS:          {counts1.pps:.1f} {counts2.pps:.1f} : "
         f"{pps_d:+.1f}%    speedup = x{(pps_d + 100) / 100:.1f}",
     )
     print_test(
         True,
-        f"TPS:          {output1.tps:.1f} {output2.tps:.1f} : "
+        f"TPS:          {counts1.tps:.1f} {counts2.tps:.1f} : "
         f"{tps_d:+.1f}%    speedup = x{(tps_d + 100) / 100:.1f}",
     )
     print_test(
         True,
-        f"SPS:          {output1.sps:.1f} {output2.sps:.1f} : "
+        f"SPS:          {counts1.sps:.1f} {counts2.sps:.1f} : "
         f"{sps_d:+.1f}%    speedup = x{(sps_d + 100) / 100:.1f}",
     )
 
