@@ -254,28 +254,6 @@ def create_image_with_volume_extent(volume, spacing=(1, 1, 1), margin=0):
     return create_image_with_extent((extent_lower, extent_upper), spacing, margin)
 
 
-# FIXME: should not require a simulation engine as input
-def voxelize_volume(se, image):
-    """
-    The voxelization do not check which volume is voxelized.
-    Every voxel will be assigned an ID corresponding to the material at this position
-    in the world.
-    """
-    # simulation engine : initialization is needed
-    # because it builds the hierarchy of G4 volumes
-    # that are needed by the "voxelize" function
-    if not se.is_initialized:
-        se.initialize()
-
-    # start voxelization
-    vox = g4.GateVolumeVoxelizer()
-    update_image_py_to_cpp(image, vox.fImage, False)
-    vox.Voxelize()
-    image = get_py_image_from_cpp_image(vox.fImage)
-    labels = vox.fLabels
-    return labels, image
-
-
 def transform_images_point(p, img1, img2):
     index = img1.TransformPhysicalPointToIndex(p)
     pbis = img2.TransformIndexToPhysicalPoint(index)

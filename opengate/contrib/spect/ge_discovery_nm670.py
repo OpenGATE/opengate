@@ -560,7 +560,7 @@ def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
-def add_digitizer_lu177(sim, crystal_name, name):
+def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -605,6 +605,8 @@ def add_digitizer_lu177(sim, crystal_name, name):
         *energy_windows_peak_scatter("peak113", "scatter1", "scatter2", p1, 0.2, 0.1),
         *energy_windows_peak_scatter("peak208", "scatter3", "scatter4", p2, 0.2, 0.1),
     ]
+    if not spectrum_channel:
+        channels.pop(0)
     cc.channels = channels
 
     # projection
