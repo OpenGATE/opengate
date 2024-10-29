@@ -85,6 +85,8 @@ class DataItem:
                         getattr(self.data, item)(*args, **kwargs)
 
                     return hand_down
+                else:
+                    return getattr(self.data, item)
             else:
                 raise AttributeError(f"No such attribute '{item}'")
         else:
