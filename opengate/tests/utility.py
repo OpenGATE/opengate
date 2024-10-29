@@ -112,7 +112,7 @@ def read_stat_file_legacy(filename):
                 counts.nb_threads = int(a)
             except:
                 counts.nb_threads = "?"
-    stat.user_output.stats.store_data(counts)
+    stat.user_output.stats.store_data("merged", counts)
     return stat
 
 
