@@ -521,19 +521,19 @@ def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
     sc.policy = "EnergyWinnerPosition"
 
     # detection efficiency
-    ea = digitizer.add_module("DigitizerEfficiencyActor")
+    ea = digitizer.add_module("DigitizerEfficiencyActor", f"{name}_eff")
     ea.efficiency = 0.86481  # FAKE
 
     # energy blurring
     keV = g4_units.keV
-    eb = digitizer.add_module("DigitizerBlurringActor")
+    eb = digitizer.add_module("DigitizerBlurringActor", f"{name}_blur")
     eb.blur_attribute = "TotalEnergyDeposit"
     eb.blur_method = "InverseSquare"
     eb.blur_resolution = 0.063  # FAKE
     eb.blur_reference_value = 140.57 * keV
 
     # spatial blurring
-    sb = digitizer.add_module("DigitizerSpatialBlurringActor")
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sp_blur")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 7.6 * mm  # FAKE
     sb.keep_in_solid_limits = True
