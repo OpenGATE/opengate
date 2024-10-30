@@ -62,11 +62,15 @@ void GateSimulationStatisticsActor::StartSimulationAction() {
 
 py::dict GateSimulationStatisticsActor::GetCounts() {
   auto dd = py::dict(
-      "runs"_a = fCounts["runs"], "events"_a = fCounts["events"],
-      "tracks"_a = fCounts["tracks"], "steps"_a = fCounts["steps"],
-      "duration"_a = fCountsD["duration"], "init"_a = fCountsD["init"],
-      "start_time"_a = fCountsStr["start_time"],
-      "stop_time"_a = fCountsStr["stop_time"], "track_types"_a = fTrackTypes);
+      "runs"_a = fCounts["runs"],
+      "events"_a = fCounts["events"],
+      "tracks"_a = fCounts["tracks"],
+      "steps"_a = fCounts["steps"],
+      "duration"_a = fCountsD["duration"],
+      "init"_a = fCountsD["init"],
+      "start_time"_a = fCountsD["start_time"],
+      "stop_time"_a = fCountsD["stop_time"],
+      "track_types"_a = fTrackTypes);
   return dd;
 }
 
