@@ -1134,7 +1134,6 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
                                        'Chordoma': {'alpha_ref':0.1, 'beta_ref':0.05},
                                        }
         
-        self.rbe_dose_img = None
         
         ## -- all models will need the dose --
         self._add_user_output(ActorOutputSingleImage,"dose") # we need to initialize the image on cpp side 
@@ -1398,12 +1397,12 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         
         # create new data item for the survival image. Same metadata as the other images, but new image array
         img = itk_image_from_array(rbe_dose_arr)
-        self.rbe_dose_img = ItkImageDataItem(data=img)
-        self.rbe_dose_img.copy_image_properties(dose_img.image)
+        self.rbe_dose_image = ItkImageDataItem(data=img)
+        self.rbe_dose_image.copy_image_properties(dose_img.image)
         
         img = itk_image_from_array(rbe_arr)
-        self.rbe_img = ItkImageDataItem(data=img)
-        self.rbe_img.copy_image_properties(dose_img.image)
+        self.rbe_image = ItkImageDataItem(data=img)
+        self.rbe_image.copy_image_properties(dose_img.image)
         
         
 

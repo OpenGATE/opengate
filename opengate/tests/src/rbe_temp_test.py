@@ -125,7 +125,7 @@ if __name__ == "__main__":
     
     # analyze RBE dose
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    rbe_dose_img = RBEActor_IDD_d.rbe_dose_img.image
+    rbe_dose_img = RBEActor_IDD_d.rbe_dose_image.image
     dose_img = doseIDD.dose.merged_data.data[0].image
     alpha_mix_img = RBEActor_IDD_d.alpha_mix.merged_data.quotient.image
     utility.plot_img_axis(ax,rbe_dose_img,'RBE dose',axis='x')
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     utility.plot_img_axis(ax,alpha_mix_img,'alpha mix',axis='x')
     
     fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    rbe_img = RBEActor_IDD_d.rbe_img.image
+    rbe_img = RBEActor_IDD_d.rbe_image.image
     utility.plot_img_axis(ax,rbe_img,'RBE',axis='x')
     
     plt.show()
