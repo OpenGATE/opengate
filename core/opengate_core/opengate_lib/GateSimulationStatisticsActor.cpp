@@ -156,12 +156,18 @@ void GateSimulationStatisticsActor::EndSimulationAction() {
     std::stringstream ss;
     auto t_c = std::chrono::system_clock::to_time_t(fStartTime);
     ss << strtok(std::ctime(&t_c), "\n");
-    fCountsStr["start_time"] = ss.str();
+    auto startTimeSec = std::chrono::time_point_cast<std::chrono::seconds>(fStartTime);
+    long startTimeSecDouble = startTimeSec.time_since_epoch().count();
+    fCountsD["start_time"] = startTimeSecDouble;
+//    fCountsStr["start_time"] = ss.str();
   }
   {
     std::stringstream ss;
     auto t_c = std::chrono::system_clock::to_time_t(fStopTime);
     ss << strtok(std::ctime(&t_c), "\n");
-    fCountsStr["stop_time"] = ss.str();
+    auto stopTimeSec = std::chrono::time_point_cast<std::chrono::seconds>(fStopTime);
+    long stopTimeSecDouble = stopTimeSec.time_since_epoch().count();
+    fCountsD["stop_time"] = stopTimeSecDouble;
+//    fCountsStr["stop_time"] = ss.str();
   }
 }
