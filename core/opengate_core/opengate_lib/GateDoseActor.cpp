@@ -219,7 +219,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     if (fDoseFlag) {
       ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
     }
-
   }
 
   if (fCountsFlag) {
@@ -233,7 +232,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       //        G4AutoLock mutex(&SetPixelMutex);
       ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
                         edep, event_id, index);
-
     }
     if (fDoseSquaredFlag) {
       //        G4AutoLock mutex(&SetPixelMutex);
