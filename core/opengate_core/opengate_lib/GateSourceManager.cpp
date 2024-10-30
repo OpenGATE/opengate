@@ -165,7 +165,7 @@ void GateSourceManager::StartMasterThread() {
     if (G4Threading::IsMultithreadedApplication() &&
         G4Threading::G4GetThreadId() != 0)
       return;
-    l.fProgressBar->mark_as_completed();
+    // l.fProgressBar->mark_as_completed(); // seems to 'duplicate' progress bar
     show_console_cursor(true);
   }
 }

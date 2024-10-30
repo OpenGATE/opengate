@@ -141,7 +141,7 @@ def create_simulation(sim, aa_flag, paths, version):
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     proj.origin_as_image_center = False
-    proj.output_filename = "proj029{version}.mhd"
+    proj.output_filename = f"proj029{version}.mhd"
 
     translations = []
     rotations = []
@@ -167,7 +167,7 @@ def create_simulation(sim, aa_flag, paths, version):
     spect.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
     # Warning : we set the initial position for the spect
-    # is it not really used (because the motion actor) but needed to test overlap
+    # it is used for computing origin/offset of the projection image
     spect.translation = translations[0]
     spect.rotation = rotations[0]
 

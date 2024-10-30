@@ -9,8 +9,7 @@ detailed explanation. The user can select the physics list with the following:
 
 ```python
 # Assume that sim is a simulation
-phys = sim.get_physics_info()
-phys.name = 'QGSP_BERT_EMZ'
+sim.physics_manager.physics_list_name = 'QGSP_BERT_EMZ'
 ```
 
 The default physics list is QGSP_BERT_EMV. The Geant4 standard physics list are composed of a first part:
@@ -77,20 +76,80 @@ G4OpticalPhysics
 
 Note that EMV, EMX, EMY, EMZ corresponds to option1, 2, 3, 4 (don't ask us why).
 
-**WARNING** The decay process, if needed, must be added explicitly. This is done with:
+
+###  Radioactive decay
+
+The decay process, if needed, must be added explicitly. This is done with:
 
 ```python
-sim.enable_decay(True)
-# or
-sim.physics_manager = True
+sim.physics_manager.enable_decay(True)
 ```
 
 Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and G4RadioactiveDecayPhysics. Those processes are required in particular if decaying generic ion (such as F18) is used as source. Additional information can be found in the following:
 
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process>
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html>
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>
-- <http://www.lnhb.fr/nuclear-data/nuclear-data-table/>
+- [Geant4 Particle decay process](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process)
+- [Geant4 decay physics](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html)
+- [Physics list](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html)
+- [Nuclear data table](http://www.lnhb.fr/nuclear-data/nuclear-data-table/)
+
+
+###  Acollinearity of annihilation photons
+
+Without further modifications, most of the annihilation photon pairs resulting from positron-electron annihilation will be collinear.
+For water between 20&deg;C–30&deg;C, it was shown that acollinearity of annihilation photons, or more precisely its 2D angular deviation relative to the collinear case, follows a 2D Gaussian distribution with a FWHM of 0.5&deg; ([Colombino et al. 1965](https://link.springer.com/article/10.1007/BF02748591)).
+
+#### Ion or e+ source
+To enable this behavior in a simulation, the user needs to set the `MeanEnergyPerIonPair` of all the materials where acollinearity of annihilation photons is to be simulated to 0.5 eV ([Geant4 Release note](www.geant4.org/download/release-notes/notes-v10.7.0.html)).
+This is done differently depending on whether the material is defined by Geant4, in `GateMaterials.db` or created dynamically.
+
+##### Geant4 default material
+```python
+# First, get a reference to the material where acollinearity of annihilation photons is to be simulated.
+# This is done by providing the name of the materials, e.g., "G4_WATER", to the volume manager.
+mat = sim.volume_manager.find_or_build_material(material_of_interest)
+
+# Second, get a reference to the material ionisation property.
+# You can get the value of MeanEnergyPerIonPair of the materials with the command 'ionisation.GetMeanExcitationEnergy() / eV'
+# By default, MeanEnergyPerIonPair of a material is 0.0 eV
+ionisation = mat.GetIonisation()
+
+# Set the value of MeanEnergyPerIonPair to the desired value. Here, we use the recommended 5.0 eV.
+ionisation.SetMeanEnergyPerIonPair(5.0 * eV)
+# The previous command is equivalent to mat.GetIonisation().SetMeanEnergyPerIonPair(5.0 * eV)
+```
+
+##### Material defined in `GateMaterials.db`
+```python
+# Provide the location of GateMaterials.db to the volume manager.
+sim.volume_manager.add_material_database(path_to_gate_materials_db)
+
+# Set the MeanEnergyPerIonPair of the material in the physics manager
+# material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
+sim.physics_manager.mean_energy_per_ion_pair[material_of_interest] = 5.0 * eV
+```
+
+##### Material created dynamically
+```python
+# Provide a description of the material to the volume manager
+# material_of_interest is the name of the material of interest
+sim.volume_manager.material_database.add_material_nb_atoms(material_of_interest, ex_elems, ex_nbAtoms, ex_density)
+
+# Set the MeanEnergyPerIonPair of the material in the physics manager
+# material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
+sim.physics_manager.mean_energy_per_ion_pair[material_of_interest] = 5.0 * eV
+```
+
+#### Back-to-back source
+Currently, simulating this behavior cannot be reproduced (yet!) with back-to-back source.
+
+#### Further considerations
+The property needed to simulate acollinearity, as expected in PET imaging, is defined at the level of materials, not at the volume level.
+In other words, if one needs a water volume with acollinearity and another water volume without acollinearity in the simulation, two materials (e.g., water_aco and water_colin) need to be defined, with only the former using the code previously shown.
+
+More recently, [Shibuya et al. 2007](https://iopscience.iop.org/article/10.1088/0031-9155/52/17/010) have shown that acollinearity of annihilation photons in a human subject follows a double Gaussian distribution with a combined FWHM of 0.55&deg;.
+While the double Gaussian distribution currently cannot be reproduced in GATE, setting the `MeanEnergyPerIonPair` of the material to 6.0 eV results in a 2D Gaussian with a FWHM of 0.55&deg;.
+
+**WARNING:** Currently, it is unknown if setting the `MeanEnergyPerIonPair` parameter to a non-zero value has an impact on other facets of Geant4 physics and thus on the GATE simulation.
 
 ## Optical Physics Processes
 
@@ -220,27 +279,35 @@ Users of Gate need to specify four properties to define the fluorescent material
 
 #### Simulation of the Fluorescein
 
-```xml
 We define the refractive index of the fluorophore’s environment (water or alcohol):
-<material name="Fluorescein">
-<propertiestable>
-<propertyvector name="RINDEX" energyunit="eV">
-<ve energy="1.0" value="1.4"/>
-<ve energy="4.13" value="1.4"/>
-</propertyvector>
-```
-
-The WLS process encompasses both absorption and emission spectra. If these spectra overlap, a WLS photon might be absorbed and re-emitted repeatedly. To avoid this, one must ensure there is no overlap between these spectra. In the WLS process, there's no distinction between original photons and WLS photons.
 
 ```xml
-We describe the fluorescein absorption length taken from measurements or literature as function of the photon energy:
-<propertyvector name="WLSABSLENGTH" unit="cm" energyunit="eV">
-<ve energy="3.19" value="2.81"/>
-<ve energy="3.20" value="2.82"/>
-<ve energy="3.21" value="2.81"/>
+<material name="Fluorescein">
+    <propertiestable>
+    <propertyvector name="RINDEX" energyunit="eV">
+    <ve energy="1.0" value="1.4"/>
+    <ve energy="4.13" value="1.4"/>
 </propertyvector>
 
-We describe the fluorescein Emission spectrum taken from measurements or literature as function of the photon energy:
+<!--
+The WLS process encompasses both absorption and emission spectra. If these spectra overlap, a WLS photon might be absorbed and re-emitted repeatedly. To avoid this, one must ensure there is no overlap between these spectra. In the WLS process, there's no distinction between original photons and WLS photons.
+-->
+
+<!--
+We describe the fluorescein absorption length taken from measurements or literature as function of the photon energy:
+-->
+
+<propertyvector name="WLSABSLENGTH" unit="cm" energyunit="eV">
+  <ve energy="3.19" value="2.81"/>
+  <ve energy="3.20" value="2.82"/>
+  <ve energy="3.21" value="2.81"/>
+</propertyvector>
+
+<!--
+We describe the fluorescein Emission spectrum taken from measurements or literature as function of
+the photon energy:
+-->
+
 <propertyvector name="WLSCOMPONENT" energyunit="eV">
     <ve energy="1.771"  value="0.016"/>
     <ve energy="1.850"  value="0.024"/>
@@ -435,21 +502,33 @@ The hits generated by the detection of the optical photons are generated in the 
 
 ## Electromagnetic parameters
 
-WARNING : this part is work in progress. DO NOT USE YET.
-
 Electromagnetic parameters are managed by a specific Geant4 object called G4EmParameters. It is available with the following:
 
 ```python
-phys = sim.get_physics_info()
-em = phys.g4_em_parameters
-em.SetFluo(True)
-em.SetAuger(True)
-em.SetAugerCascade(True)
-em.SetPixe(True)
-em.SetDeexActiveRegion('world', True, True, True)
+sim.physics_manager.em_parameters.fluo = True
+sim.physics_manager.em_parameters.auger = True
+sim.physics_manager.em_parameters.auger_cascade = True
+sim.physics_manager.em_parameters.pixe = True
+sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
 ```
 
-WARNING: it must be set **after** the initialization (after `sim.initialize()` and before `output = sim.start()`).
+It is possible to enable/disable some physics options within a given region that need to be defined before by associating the region with a volume:
+
+```python
+region_b1 = sim.physics_manager.add_region("region_b1")
+region_b1.em_switches.deex = True
+region_b1.em_switches.auger = False
+region_b1.associate_volume(b1)
+```
+
+Or for the world:
+```python
+sim.physics_manager.em_switches_world.deex = True
+sim.physics_manager.em_switches_world.auger = True
+sim.physics_manager.em_switches_world.pixe = True
+```
+
+See test063.
 
 The complete description is available in this page: <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html>
 

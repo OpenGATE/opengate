@@ -72,7 +72,7 @@ if __name__ == "__main__":
             mat = "G4_LEAD_OXIDE"
         if "center_cylinder_hole" in l:
             mat = "G4_LEAD_OXIDE"
-        m = [labels[l], labels[l] + 1, mat]
+        m = [labels[l]["label"], labels[l]["label"] + 1, mat]
         iec2.voxel_materials.append(m)
 
     pMin, pMax = sim.volume_manager.volumes["iec1"].bounding_limits

@@ -166,3 +166,7 @@ failing_tests.txt
 opengate/tests/output_dashboard
 
 nohup.out
+
+temp/
+venv_osx_3.12
+preload*

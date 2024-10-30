@@ -11,9 +11,6 @@ from ..utility import (
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    divide_itk_images,
-    scale_itk_image,
-    get_info_from_image,
     images_have_same_domain,
     resample_itk_image_like,
     itk_image_from_array,
@@ -376,7 +373,7 @@ def _setter_hook_uncertainty(self, value):
     return value
 
 
-def _setter_hook_goal_uncertainty(self, value):
+def _setter_hook_uncertainty_goal(self, value):
     if value < 0.0 or value > 1.0:
         fatal(f"Goal uncertainty must be > 0 and < 1. The provided value is: {value}")
     return value
@@ -496,30 +493,30 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "deactivated": True,
             },
         ),
-        "goal_uncertainty": (
+        "uncertainty_goal": (
             0,
             {
                 "doc": "If set, it defines the statistical uncertainty at which the run is aborted.",
-                "setter_hook": _setter_hook_goal_uncertainty,
+                "setter_hook": _setter_hook_uncertainty_goal,
             },
         ),
-        "first_check_after_n_events": (
+        "uncertainty_first_check_after_n_events": (
             1e4,
             {
                 "doc": "Number of events after which uncertainty is evaluated the first time, for each run."
                 "After the first evaluation, the value is updated with an estimation of the N events needed to achieve the target uncertainty.",
             },
         ),
-        "thresh_voxel_edep_for_unc_calc": (
+        "uncertainty_voxel_edep_threshold": (
             0.7,
             {
                 "doc": "For the calculation of the mean uncertainty of the edep image, only voxels that are above this fraction of the max edep are considered.",
             },
         ),
-        "overshoot_factor": (
+        "uncertainty_overshoot_factor_N_events": (
             1.05,
             {
-                "doc": "Factor multiplying the estimated N events needed to achieve the target uncertainty.",
+                "doc": "Factor multiplying the estimated N events needed to achieve the target uncertainty, to ensure faster convergence.",
             },
         ),
         "dose_calc_on_the_fly": (
@@ -660,7 +657,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 item=("uncertainty", "std", "variance")
             )
             is True
-            or self.goal_uncertainty >= 0
+            or self.uncertainty_goal >= 0
         ):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
@@ -709,10 +706,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.SetToWaterFlag(self.score_in == "water")
 
         # variables for stop on uncertainty functionality
-        self.SetUncertaintyGoal(self.goal_uncertainty)
-        self.SetThreshEdepPerc(self.thresh_voxel_edep_for_unc_calc)
-        self.SetOvershoot(self.overshoot_factor)
-        self.SetNbEventsFirstCheck(int(self.first_check_after_n_events))
+        self.SetUncertaintyGoal(self.uncertainty_goal)
+        self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
+        self.SetOvershoot(self.uncertainty_overshoot_factor_N_events)
+        self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -808,6 +805,57 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
+    """
+    TLE = Track Length Estimator
+    """
+
+    energy_min: float
+    energy_max: float
+    database: str
+
+    user_info_defaults = {
+        "energy_min": (
+            0.0,
+            {"doc": "Kill the gamma if below this energy"},
+        ),
+        "energy_max": (
+            1.0 * g4_units.MeV,
+            {
+                "doc": "Above this energy, do not perform TLE (TLE is only relevant for low energy gamma)"
+            },
+        ),
+        "database": (
+            "EPDL",
+            {
+                "doc": "which database to use",
+                "allowed_values": ("EPDL", "NIST"),  # "simulated" does not work
+            },
+        ),
+    }
+
+    def __initcpp__(self):
+        g4.GateTLEDoseActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+                "PreUserTrackingAction",
+            }
+        )
+
+    def initialize(self, *args):
+        if self.score_in != "material":
+            fatal(
+                f"TLEDoseActor cannot score in {self.score_in}, only 'material' is allowed."
+            )
+        super().initialize(args)
+
+
 def _setter_hook_score_in_let_actor(self, value):
     if value in ("water", "Water"):
         return "G4_WATER"
@@ -817,6 +865,7 @@ def _setter_hook_score_in_let_actor(self, value):
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
     """
+    LET = Linear energy transfer
     LETActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
 
@@ -1402,6 +1451,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
+process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(RBEActor)
 process_cls(FluenceActor)
