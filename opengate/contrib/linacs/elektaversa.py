@@ -1144,9 +1144,7 @@ def rotation_around_user_point(
     linac.rotation = rot.as_matrix()
 
 
-def jaw_dynamic_translation(sim, linac_name, jaw, jaw_positions, side, cp_id="all_cp", sad=1000,only_return_position=False):
-    linac = sim.volume_manager.get_volume(linac_name)
-    z_linac = linac.size[2]
+def jaw_dynamic_translation(jaw, jaw_positions, side, cp_id="all_cp", sad=1000):
     mm = g4_units.mm
     translations = []
     rotations = []
@@ -1172,16 +1170,11 @@ def jaw_dynamic_translation(sim, linac_name, jaw, jaw_positions, side, cp_id="al
             rotations.append(rot_jaw)
         jaw_translation = jaw.translation + np.array([0, jaws_y_aperture, 0])
         translations.append(jaw_translation)
-
-    if only_return_position:
-        return np.array(jaws_y_aperture),np.array(rotations)
-    else :
-        jaw.add_dynamic_parametrisation(translation=translations, rotation=rotations)
+    jaw.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
 
 
-def mlc_leaves_dynamic_translation(sim, linac_name, mlc, leaves_position, cp_id="all_cp", sad=1000, only_return_position = False):
-    linac = sim.volume_manager.get_volume(linac_name)
+def mlc_leaves_dynamic_translation(mlc, leaves_position, cp_id="all_cp", sad=1000, only_return_position = False):
     mm = g4_units.mm
     center_mlc = 349.3 * mm
     center_curve_mlc = center_mlc - 7.5 * mm
@@ -1212,13 +1205,9 @@ def mlc_leaves_dynamic_translation(sim, linac_name, mlc, leaves_position, cp_id=
             translation_mlc.append(np.copy(mlc.translation[i]))
             motion_leaves_t[i].append( translation_mlc[i]+ np.array([mlc_x_aperture[i],0,0]))
             motion_leaves_r[i].append(mlc.rotation[i])
+    for i in range(nb_leaves):
+        mlc.add_dynamic_parametrisation(repetition_index = i ,translation=motion_leaves_t[i])
 
-    print(mlc_x_aperture)
-    if only_return_position:
-        return np.array(mlc_x_aperture),np.array(motion_leaves_r)
-    else :
-        for i in range(nb_leaves):
-            mlc.add_dynamic_parametrisation(repetition_index = i ,translation=motion_leaves_t[i], rotation=motion_leaves_r[i])
 
 def set_linac_head_motion(sim, linac_name, jaws, mlc, rt_plan_parameters, cp_id="all_cp", sad=1000):
     leaves_position = rt_plan_parameters["leaves"]
@@ -1226,9 +1215,9 @@ def set_linac_head_motion(sim, linac_name, jaws, mlc, rt_plan_parameters, cp_id=
     jaw_2_positions = rt_plan_parameters["jaws 2"]
     linac_head_positions = rt_plan_parameters["gantry angle"]
     collimation_rotation = rt_plan_parameters["collimation angle"]
-    mlc_leaves_dynamic_translation(sim, linac_name, mlc, leaves_position, cp_id, sad)
-    jaw_dynamic_translation(sim, linac_name, jaws[0], jaw_1_positions, "left", cp_id, sad)
-    jaw_dynamic_translation(sim, linac_name, jaws[1], jaw_2_positions, "right", cp_id, sad)
+    mlc_leaves_dynamic_translation(mlc, leaves_position, cp_id, sad)
+    jaw_dynamic_translation(jaws[0], jaw_1_positions, "left", cp_id, sad)
+    jaw_dynamic_translation(jaws[1], jaw_2_positions, "right", cp_id, sad)
     linac_rotation(sim, linac_name, [linac_head_positions,collimation_rotation], cp_id)
 
 

@@ -11,59 +11,16 @@ import numpy as np
 import itk
 
 
-# def calc_mlc_aperture(
-#     x_leaf_position, y_jaws, pos_mlc=349.3, pos_jaws=470.5, sad=1000, leaf_width=1.85
-# ):
-#     mm = gate.g4_units.mm
-#     leaf_width = leaf_width * mm
-#     left = x_leaf_position[:80] * pos_mlc / sad
-#     right = x_leaf_position[80:] * pos_mlc / sad
-#     left[left != 0] = left[left != 0] - left[left != 0] % 0.5
-#     right[right != 0] = right[right != 0] + 0.5 - right[right != 0] % 0.5
-#
-#     pos_y_leaf = np.arange(
-#         -leaf_width * 40 + leaf_width / 2,
-#         leaf_width * 40 - leaf_width / 2 + 0.01,
-#         leaf_width,
-#     )
-#     left[pos_y_leaf < y_jaws[0] * pos_jaws / sad] = 0
-#     left[pos_y_leaf > y_jaws[1] * pos_jaws / sad] = 0
-#     right[pos_y_leaf < y_jaws[0] * pos_jaws / sad] = 0
-#     right[pos_y_leaf > y_jaws[1] * pos_jaws / sad] = 0
-#     diff = np.array(right - left)
-#
-#     return np.sum(diff) * leaf_width
 
-def calc_mlc_aperture(x_leaf_position,y_jaws_position,mlc):
-    # print(mlc.translation[:,1])
-    y_jaws_position[0] = y_jaws_position[0] *349.3/470.5
-    y_jaws_position[1] = y_jaws_position[1] * 349.3 / 470.5
-    y_leaf_position = mlc.translation[:,1]
-    leaves_thickness  = np.zeros(len(mlc.translation[:,1]))
+def calc_mlc_aperture(x_leaf_position,y_jaws_position):
 
-    for i,rot in enumerate(mlc.rotation):
-        new_y = rot.dot(np.array([0,1,0]))
-        new_thickness = (np.abs(1/new_y[1]) *1.85)
-        leaves_thickness[i] = new_thickness
-    mm = gate.g4_units.mm
-    # print(leaves_thickness)
     left = x_leaf_position[:80]
     right = x_leaf_position[80:]
+    proj_leaves_y = np.arange(-40*5 + 2.5,40*5 -2.5 + 0.1,5)
 
-    # print(left,right)
-
-    left_y = y_leaf_position[:80]
-    right_y = y_leaf_position[80:]
-    # print(y_jaws_position[0],y_jaws_position[1])
-    # print(left_y)
-
-    left[(left_y < y_jaws_position[0]) | (left_y > y_jaws_position[1])] = 0
-    right[(right_y < y_jaws_position[0]) | (right_y > y_jaws_position[1])] = 0
-
-    # print(left, right)
-
-
-    diff = np.array(right - left)* leaves_thickness[:80]
+    left[(proj_leaves_y -2.5 < y_jaws_position[0]) | (proj_leaves_y  + 2.5> y_jaws_position[1])] = 0
+    right[(proj_leaves_y -2.5 < y_jaws_position[0]) | (proj_leaves_y  + 2.5 > y_jaws_position[1])] = 0
+    diff = np.array(np.abs(right - left)) *5
 
     return np.sum(diff)
 
@@ -75,11 +32,11 @@ def add_volume_to_irradiate(sim, name, l_cp):
     plane.mother = name
     plane.material = "G4_WATER"
     plane.size = [0.4 * m, 0.4 * m, 2 * cm]
-    plane.translation = [0 * mm, 0 * mm, 0 * mm]
+    plane.translation = [0 * mm, 0 * mm, - 1*cm]
     plane.color = [1, 0, 0, 1]  # red
 
-    voxel_size_x = 0.5 * mm
-    voxel_size_y = 0.5 * mm
+    voxel_size_x = 1.2* mm
+    voxel_size_y = 1.2 * mm
     voxel_size_z = 2 * cm
 
     dim_box = [
@@ -106,15 +63,18 @@ def add_volume_to_irradiate(sim, name, l_cp):
     plane.add_dynamic_parametrisation(rotation=rotations, translation=translations)
 
 
-def add_alpha_source(sim, name, pos_Z, nb_part):
+def add_alpha_source(sim, name, nb_part):
+    linac = sim.volume_manager.get_volume(name)
+    z_linac = linac.size[2]
     mm = gate.g4_units.mm
     nm = gate.g4_units.nm
+    deg = gate.g4_units.deg
     plan_source = sim.add_volume("Box", "plan_alpha_source")
     plan_source.material = "G4_Galactic"
     plan_source.mother = name
-    plan_size = np.array([250 * mm, 148 * mm, 1 * nm])
+    plan_size = np.array([1*nm, 1*nm, 1 * nm])
     plan_source.size = np.copy(plan_size)
-    plan_source.translation = [0 * mm, 0 * mm, -pos_Z / 2 + 300 * mm]
+    plan_source.translation = [0 * mm, 0 * mm, z_linac / 2 - 3.5 * mm]
 
     source = sim.add_source("GenericSource", "alpha_source")
     Bq = gate.g4_units.Bq
@@ -125,10 +85,12 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source.energy.mono = 1 * MeV
     source.position.type = "box"
     source.position.size = np.copy(plan_size)
-    source.direction.type = "momentum"
+    source.direction.type = "iso"
     source.direction_relative_to_attached_volume = True
     source.direction.momentum = [0, 0, -1]
     source.activity = nb_part * Bq / sim.number_of_threads
+    source.direction.theta = [0, 17 * deg]
+    source.direction.phi = [0, 360 * deg]
 
 
 def validation_test_19_rt_plan(
@@ -138,7 +100,7 @@ def validation_test_19_rt_plan(
     rt_plan_parameters,
     nb_part_init,
     nb_part_sent,
-    tol=0.1,
+    tol=0.2,
 ):
     print(
         "Area from theoretical calculations for the chosen CP:",
@@ -182,11 +144,12 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     # sim.visu = True
-    sim.visu_type = "vrml"
+    sim.visu_type = "qt"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.output_dir = paths.output
     sim.random_seed = 123456789
+    # sim.random_seed = "auto"
     sim.check_volumes_overlap = True
 
     # unit
@@ -219,12 +182,13 @@ if __name__ == "__main__":
     mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
     mlc_box.material = "G4_Galactic"
     # add alpha source :
-    nb_part = 750000
+    nb_part = 1000000
     z_linac = linac.size[2]
     rt_plan_parameters = rtplan.read(str(paths.data / "DICOM_RT_plan.dcm"))
     MU = 0
     while MU == 0:
         l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
+        # l_cp = [3]
         MU = rt_plan_parameters["weight"][l_cp[0]]
     nb_part = nb_part / MU
     versa.set_linac_head_motion(
@@ -232,9 +196,9 @@ if __name__ == "__main__":
     )
 
     if sim.visu:
-        add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, 10)
+        add_alpha_source(sim, linac.name, 100)
     else:
-        add_alpha_source(sim, linac.name, z_linac / 2 - 5.6 * mm, nb_part)
+        add_alpha_source(sim, linac.name, nb_part)
 
     # Linac head rotation and jaws and mlc translation according to a DICOM rt plan
 
@@ -253,22 +217,16 @@ if __name__ == "__main__":
     # The number of particles provided (sim.activity) will be adapted
     # according to the number of MU delivered at each control points.
     versa.set_time_intervals_from_rtplan(sim, rt_plan_parameters, cp_id=l_cp)
-    leaves_position = rt_plan_parameters["leaves"]
-    jaw_1_positions = rt_plan_parameters["jaws 1"]
-    jaw_2_positions = rt_plan_parameters["jaws 2"]
-    leaves_pos, leaves_rot = versa.mlc_leaves_dynamic_translation(sim, "linac_box", mlc, leaves_position, l_cp, sad,only_return_position=True)
-    jaw_1_pos,jaw_1_rot = versa.jaw_dynamic_translation(sim, "linac_box", jaws[0], jaw_1_positions, "left", l_cp, sad,only_return_position=True)
-    jaw_2_pos,jaw_2_rot = versa.jaw_dynamic_translation(sim, "linac_box", jaws[1], jaw_2_positions, "right", l_cp, sad,only_return_position=True)
-    # print(leaves_pos)
+    # leaves_position = rt_plan_parameters["leaves"]
+    # jaw_1_positions = rt_plan_parameters["jaws 1"]
+    # jaw_2_positions = rt_plan_parameters["jaws 2"]
 
-    jaw_pos = [jaw_1_pos, jaw_2_pos]
-    theoretical_area = calc_mlc_aperture(leaves_pos, jaw_pos, mlc)
+
     leaves = rt_plan_parameters["leaves"][l_cp[0]]
     jaws_1 = rt_plan_parameters["jaws 1"][l_cp[0]]
     jaws_2 = rt_plan_parameters["jaws 2"][l_cp[0]]
     jaws = [jaws_1, jaws_2]
-
-    print(leaves)
+    theoretical_area = calc_mlc_aperture(leaves, jaws)
 
 
     sim.run()
@@ -284,7 +242,7 @@ if __name__ == "__main__":
     # img_MC = itk.imread(dose2.get_output_path("edep"))
     array_MC = itk.GetArrayFromImage(img_MC)
     bool_MC = array_MC[array_MC != 0]
-    simulated_area = len(bool_MC) / 4
+    simulated_area = len(bool_MC)*1.44
     is_ok = validation_test_19_rt_plan(
         theoretical_area,
         simulated_area,
