@@ -236,7 +236,7 @@ def assert_stats_json(stats_actor_1, stats_actor_2, tolerance=0, track_types_fla
             n += int(t)
         b = n == counts1.tracks
         print_test(b, f"Tracks      : {counts1.track_types}")
-        if "track_types" in counts2:
+        if hasattr(counts2, "track_types"):
             print_test(b, f"Tracks (ref): {counts2.track_types}")
         print_test(b, f"Tracks vs track_types : {counts1.tracks} {n}")
         is_ok = b and is_ok
