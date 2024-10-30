@@ -3,6 +3,7 @@ import numpy as np
 import json
 from box import Box
 import platform
+import datetime
 
 from ..exception import fatal, warning, GateImplementationError
 from ..utility import (
@@ -205,9 +206,19 @@ class StatisticsDataItem(DataItem):
                 self.data.track_types[k] = o.data.track_types[k]
 
             # self.data.start_time = 0
-            # self.data.stop_time = 0
-        self.data.sim_start_time = min([o.counts.sim_start_time for o in other])
-        self.data.sim_stop_time = max([o.counts.sim_stop_time for o in other])
+        self.data.start_time = min([o.data.start_time for o in other])
+        self.data.stop_time = max([o.data.stop_time for o in other])
+
+        self.data.sim_start_time = min([o.data.sim_start_time for o in other])
+        self.data.sim_stop_time = max([o.data.sim_stop_time for o in other])
+
+    @property
+    def start_date_time(self):
+        return datetime.datetime.fromtimestamp(int(self.data.start_time)).strftime('%c')
+
+    @property
+    def stop_date_time(self):
+        return datetime.datetime.fromtimestamp(int(self.data.stop_time)).strftime('%c')
 
     @property
     def pps(self):
