@@ -103,9 +103,9 @@ if __name__ == "__main__":
     # dose.uncertainty = False
     # dose.ste_of_mean = True
     # dose.use_more_ram = True
-    dose.goal_uncertainty = unc_goal
-    dose.first_check_after_n_events = 100
-    dose.thresh_voxel_edep_for_unc_calc = thresh_voxel_edep_for_unc_calc
+    dose.uncertainty_goal = unc_goal
+    dose.uncertainty_first_check_after_n_events = 100
+    dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
