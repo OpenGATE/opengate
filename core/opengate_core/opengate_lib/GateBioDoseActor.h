@@ -28,13 +28,24 @@ public:
     Coefficients sqrtBeta;
   };
 
-  using VoxelIndex = Image::IndexType;
+  using ItkVoxelIndex = Image::IndexType;
+  using ItkVoxelIndices = std::set<ItkVoxelIndex>;
+
+  using VoxelIndex = std::array<long, 3>;
   using VoxelIndices = std::set<VoxelIndex>;
 
   using Fragment = std::pair<int, double>;
   using AlphaBetaInterpolTable = std::map<Fragment, AlphaBetaCoefficients>;
 
   using EnergyMaxForZ = std::map<int, double>;
+
+  static VoxelIndex arrayFromItkIndex(ItkVoxelIndex const& idx) {
+    return {idx[0], idx[1], idx[2]};
+  }
+
+  static ItkVoxelIndex itkIndexFromArray(VoxelIndex const& idx) {
+    return {idx[0], idx[1], idx[2]};
+  }
 
 public:
   explicit GateBioDoseActor(py::dict &user_info);
@@ -57,17 +68,26 @@ public:
 
   void EndSimulationAction() override;
 
-	std::string GetPhysicalVolumeName() const {
-		return fPhysicalVolumeName;
-	}
+  std::string GetPhysicalVolumeName() const {
+    return fPhysicalVolumeName;
+  }
 
-	void SetPhysicalVolumeName(std::string s) {
-		fPhysicalVolumeName = s;
-	}
+  void SetPhysicalVolumeName(std::string s) {
+    fPhysicalVolumeName = s;
+  }
+
+  // TODO https://pybind11.readthedocs.io/en/stable/advanced/cast/custom.html
+  // add a custom type_caster for itk::Index<n>
+  // and remove this function and its consequences
+  std::vector<VoxelIndex> GetVoxelIndicesAsVector() const {
+    std::vector<VoxelIndex> v(fVoxelIndices.size());
+    std::copy(std::begin(fVoxelIndices), std::end(fVoxelIndices), std::begin(v));
+    return v;
+  }
 
 protected:
-	void updateData();
-	void loadBiophysicalModel(std::string const&);
+  void updateData();
+  void loadBiophysicalModel(std::string const&);
 
 private:
   std::string fPhysicalVolumeName;
@@ -81,29 +101,30 @@ private:
   std::string fDataBase;
   std::string fCellLine;
   std::string fBioPhysicalModel;
-  double fAlphaRef;
-  double fBetaRef;
+  double fAlphaRef = 0;
+  double fBetaRef = 0;
   double fDoseScaleFactor = 1.;
   double fSOBPWeight;
 
   AlphaBetaInterpolTable fAlphaBetaInterpolTable;
 
-  VoxelIndices fEventVoxelIndices;
+  ItkVoxelIndices fEventVoxelIndices;
   VoxelIndices fVoxelIndices;
 
-	// from Python
+  // from Python
   Image::Pointer fEdepImage;
   Image::Pointer fDoseImage;
   Image::Pointer fAlphaMixImage;
   Image::Pointer fSqrtBetaMixImage;
+  Image::Pointer fHitEventCountImage;
 
-	// only C++-side
+  // only C++-side
   Image::Pointer fEventEdepImage;
   Image::Pointer fEventDoseImage;
   Image::Pointer fEventAlphaImage;
   Image::Pointer fEventSqrtBetaImage;
 
-	// metadata
+  // metadata
   double fVoxelVolume = 0;
 
   int fStepCount = 0;

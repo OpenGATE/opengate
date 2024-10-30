@@ -1,3 +1,4 @@
+from box import Box
 import numpy as np
 import pandas as pd
 import os
@@ -1764,6 +1765,8 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
     # hints for IDE
     cell_line: str
     biophysical_model: str
+    alpha_ref: float
+    beta_ref: float
 
     user_info_defaults = {
         "cell_line": (
@@ -1773,6 +1776,18 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
             },
         ),
         "biophysical_model": (
+            "",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "alpha_ref": (
+            "",
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "beta_ref": (
             "",
             {
                 "doc": "FIXME",
@@ -1821,6 +1836,22 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
         )
         self.user_output.biodose.set_item_suffix("sqrtbetamix", item=3)
 
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "biodose",
+            "hiteventcount",
+            item=4,
+        )
+        self.user_output.biodose.set_item_suffix("hiteventcount", item=4)
+
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "biodose",
+            "biodose",
+            item="biodose",
+        )
+        self.user_output.biodose.set_item_suffix("biodose", item="biodose")
+
         self.__initcpp__()
         self.__finalize_init__()
 
@@ -1863,6 +1894,7 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
             self.cpp_dose_image,
             self.cpp_alphamix_image,
             self.cpp_sqrtbetamix_image,
+            self.cpp_hiteventcount_image,
         )
 
         g4.GateBioDoseActor.BeginOfRunActionMasterThread(self, run_index)
@@ -1875,8 +1907,18 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
             self.cpp_dose_image,
             self.cpp_alphamix_image,
             self.cpp_sqrtbetamix_image,
+            self.cpp_hiteventcount_image,
         )
         self._update_output_coordinate_system("biodose", run_index)
+        self.user_output.biodose.store_meta_data(
+            run_index, alpha_ref=self.alpha_ref
+        )
+        self.user_output.biodose.store_meta_data(
+            run_index, beta_ref=self.beta_ref
+        )
+        self.user_output.biodose.store_meta_data(
+            run_index, voxel_indices=self.GetVoxelIndicesAsVector()
+        )
 
         return VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 

@@ -27,6 +27,8 @@ void GateBioDoseActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
 
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
+  fAlphaRef = DictGetDouble(user_info, "alpha_ref");
+  fBetaRef = DictGetDouble(user_info, "beta_ref");
 
   std::string const cellLine = DictGetStr(user_info, "cell_line");
   std::string const bioPhysicalModel = DictGetStr(user_info, "biophysical_model");
@@ -41,6 +43,7 @@ void GateBioDoseActor::InitializeCpp() {
   fDoseImage = Image::New();
   fAlphaMixImage = Image::New();
   fSqrtBetaMixImage = Image::New();
+  fHitEventCountImage = Image::New();
 
   // C++-side images
   fEventEdepImage = Image::New();
@@ -56,6 +59,9 @@ void GateBioDoseActor::BeginOfRunActionMasterThread(int run_id) {
 
   AttachImageToVolume<Image>(fEdepImage, fPhysicalVolumeName, fTranslation);
   AttachImageToVolume<Image>(fDoseImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fAlphaMixImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fSqrtBetaMixImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fHitEventCountImage, fPhysicalVolumeName, fTranslation);
 
   // C++-side images
   fEventEdepImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
@@ -96,7 +102,8 @@ void GateBioDoseActor::EndOfEventAction(const G4Event *) {
     auto const eventAlphaMix = fEventAlphaImage->GetPixel(index) / eventEdep;
     auto const eventSqrtBetaMix = fEventSqrtBetaImage->GetPixel(index) / eventEdep;
 
-    fVoxelIndices.insert(index);
+    fVoxelIndices.insert(arrayFromItkIndex(index));
+    ImageAddValue<Image>(fHitEventCountImage, index, 1);
 
     ImageAddValue<Image>(fEdepImage, index, eventEdep);
     ImageAddValue<Image>(fDoseImage, index, eventDose);
@@ -152,6 +159,10 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
   ImageAddValue<Image>(fEventEdepImage, index, energyDep);
   ImageAddValue<Image>(fEventDoseImage, index, dose);
 
+  // // TODO check performances effect of duplicating this
+  // // to handle specifically known ions cases
+  // fEventVoxelIndices.insert(index);
+
   // Get information from step
   // Particle
   G4int nZ = step->GetTrack()->GetDefinition()->GetAtomicNumber();
@@ -188,6 +199,8 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
     ImageAddValue<Image>(fEventAlphaImage, index, alpha);
     ImageAddValue<Image>(fEventSqrtBetaImage, index, sqrtBeta);
 
+    // TODO check performances effect of duplicating this
+    // to handle specifically known ions cases
     fEventVoxelIndices.insert(index);
   }
 }

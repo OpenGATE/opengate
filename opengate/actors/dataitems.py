@@ -1,4 +1,5 @@
 import itk
+import math
 import numpy as np
 import json
 from box import Box
@@ -763,7 +764,11 @@ class BioDoseImage(DataItemContainer):
         ItkImageDataItem,
         ItkImageDataItem,
         ItkImageDataItem,
+        ItkImageDataItem,
     )
+
+    biodose_image = None
+    rbe_image = None
 
     # Specify which items should be written to disk and how
     # Important: define this at the class level, NOT in the __init__ method
@@ -773,8 +778,74 @@ class BioDoseImage(DataItemContainer):
             1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
             2: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
             3: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            4: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+            "biodose": Box(
+                {"output_filename": "auto", "write_to_disk": True, "active": True}
+            ),
         }
     )
+
+    def calculate_biodose(self):
+        alpha_ref = self.data[0].meta_data.alpha_ref
+        beta_ref = self.data[0].meta_data.beta_ref
+        sq_alpha_ref = alpha_ref * alpha_ref
+        # n = self.NbOfEvent
+        voxel_indices = self.data[0].meta_data.voxel_indices
+
+        # edep_image = self.data[0].data
+        dose_image = self.data[1].data
+        alphamix_image = self.data[2].data
+        sqrtbetamix_image = self.data[3].data
+        hiteventcount_image = self.data[4].data
+
+        edep_array = np.asarray(self.data[0].data)
+
+        # TODO probably a better way to create images
+        biodose_image = itk.image_view_from_array(np.zeros_like(edep_array))
+        biodose_image.CopyInformation(self.data[0].data)
+        rbe_image = itk.image_view_from_array(np.zeros_like(edep_array))
+        rbe_image.CopyInformation(self.data[0].data)
+
+        for index in voxel_indices:
+            hit_event_count = hiteventcount_image.GetPixel(index)
+
+            alphamix_mean = alphamix_image.GetPixel(index) / hit_event_count
+            sqrtbetamix_mean = sqrtbetamix_image.GetPixel(index) / hit_event_count
+            dose = dose_image.GetPixel(index)
+            scaled_dose = 1 * dose  # _doseScaleFactor
+            sq_scaled_dose = scaled_dose * scaled_dose
+            sq_sqrtbetamix_mean = sqrtbetamix_mean * sqrtbetamix_mean
+            delta = sq_alpha_ref + 4 * beta_ref * (alphamix_mean * scaled_dose + sq_sqrtbetamix_mean * sq_scaled_dose)
+
+            sqrt_delta = 0
+            if delta > 0:
+                sqrt_delta = math.sqrt(delta)
+
+            biodose = 0
+            rbe = 0
+
+            if scaled_dose > 0 and alphamix_mean != 0 and sqrtbetamix_mean != 0:
+                biodose = (-alpha_ref + sqrt_delta) / (2 * beta_ref)
+            if biodose < 0:
+                biodose = 0
+
+            # print(f"alphamix_mean: {alphamix_mean}, sqrtbetamix_mean: {sqrtbetamix_mean}, hiteventcount: {hit_event_count}")
+            # print(f"alpha_ref: {alpha_ref}, beta_ref: {beta_ref}, sqrt_delta: {sqrt_delta}")
+            # print(f"dose: {dose}, biodose: {biodose}, OK: {dose <= biodose}")
+
+            if scaled_dose > 0:
+                rbe = biodose / scaled_dose
+
+            biodose_image.SetPixel(index, biodose)
+            rbe_image.SetPixel(index, rbe)
+
+        self.biodose_image = self._data_item_classes[0](data=biodose_image)
+        self.rbe_image = self._data_item_classes[0](data=rbe_image)
+
+    @property
+    def biodose(self):
+        self.calculate_biodose()
+        return self.biodose_image
 
 
 def merge_data(list_of_data):
