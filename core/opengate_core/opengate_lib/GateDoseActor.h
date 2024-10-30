@@ -71,9 +71,9 @@ public:
   inline void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
 
   inline void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
-  
+
   inline void SetOvershoot(const double b) { Overshoot = b; }
-  
+
   inline void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
 
   inline std::string GetPhysicalVolumeName() const {
@@ -139,9 +139,10 @@ public:
   double Overshoot;
 
   int NbOfEvent = 0;
-  // set from python side. It will be overwritten by an estimation of the Nb of events needed to achieve the goal uncertainty.
-  int NbEventsFirstCheck; 
-  int NbEventsNextCheck;  
+  // set from python side. It will be overwritten by an estimation of the Nb of
+  // events needed to achieve the goal uncertainty.
+  int NbEventsFirstCheck;
+  int NbEventsNextCheck;
   int NbOfThreads = 0;
 
   double goalUncertainty;

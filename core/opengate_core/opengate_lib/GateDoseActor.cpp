@@ -70,8 +70,9 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   // Reset the number of events (per run)
   NbOfEvent = 0;
 
-  // for stop on target uncertainty. As we reset the nb of events, we reset also this variable
-  NbEventsNextCheck = NbEventsFirstCheck; 
+  // for stop on target uncertainty. As we reset the nb of events, we reset also
+  // this variable
+  NbEventsNextCheck = NbEventsFirstCheck;
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
@@ -244,33 +245,34 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 
 void GateDoseActor::EndOfEventAction(const G4Event *event) {
 
-    // flush thread local data into global image (postponed for now)
+  // flush thread local data into global image (postponed for now)
 
-    // if the user didn't set uncertainty goal, do nothing
-    if (fUncertaintyGoal == 0){return;}
+  // if the user didn't set uncertainty goal, do nothing
+  if (fUncertaintyGoal == 0) {
+    return;
+  }
 
-    // check if we reached the Nb of events for next evaluation
-    if (NbOfEvent >= NbEventsNextCheck){
-        // get thread idx. Ideally, only one thread should do the uncertainty calculation
-        // don't ask for thread idx if no MT
-        if (!G4Threading::IsMultithreadedApplication() ||
-            G4Threading::G4GetThreadId() == 0) {
-            // check stop criteria
-            std::cout<<"NbEventsNextCheck: "<<NbEventsNextCheck<<std::endl;
-            double UncCurrent = ComputeMeanUncertainty();
-            if (UncCurrent <= fUncertaintyGoal){
-                //fStopRunFlag = true;
-                fSourceManager->SetRunTerminationFlag(true);
-            }
-            else{
-                // estimate Nevents at which next check should occour
-                NbEventsNextCheck = (UncCurrent/fUncertaintyGoal)*(UncCurrent/fUncertaintyGoal)*NbOfEvent*Overshoot;
-            }
-        }
-    
+  // check if we reached the Nb of events for next evaluation
+  if (NbOfEvent >= NbEventsNextCheck) {
+    // get thread idx. Ideally, only one thread should do the uncertainty
+    // calculation don't ask for thread idx if no MT
+    if (!G4Threading::IsMultithreadedApplication() ||
+        G4Threading::G4GetThreadId() == 0) {
+      // check stop criteria
+      std::cout << "NbEventsNextCheck: " << NbEventsNextCheck << std::endl;
+      double UncCurrent = ComputeMeanUncertainty();
+      if (UncCurrent <= fUncertaintyGoal) {
+        // fStopRunFlag = true;
+        fSourceManager->SetRunTerminationFlag(true);
+      } else {
+        // estimate Nevents at which next check should occour
+        NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
+                            (UncCurrent / fUncertaintyGoal) * NbOfEvent *
+                            Overshoot;
+      }
     }
+  }
 }
-
 
 double GateDoseActor::ComputeMeanUncertainty() {
   G4AutoLock mutex(&ComputeUncertaintyMutex);
