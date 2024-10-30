@@ -67,7 +67,7 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
-from .actors.doseactors import DoseActor, LETActor, FluenceActor
+from .actors.doseactors import DoseActor, TLEDoseActor, LETActor, FluenceActor
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -99,6 +99,7 @@ particle_names_Gate_to_G4 = {
 
 actor_types = {
     "DoseActor": DoseActor,
+    "TLEDoseActor": TLEDoseActor,
     "LETActor": LETActor,
     "FluenceActor": FluenceActor,
     "DynamicGeometryActor": DynamicGeometryActor,
@@ -427,6 +428,9 @@ class ActorManager(GateObject):
         if new_actor is not actor:
             return new_actor
 
+    def remove_actor(self, name):
+        self.actors.pop(name)
+
     def _create_actor(self, actor_type, name):
         try:
             cls = actor_types[actor_type]
@@ -639,6 +643,13 @@ class PhysicsManager(GateObject):
             ),
             {
                 "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
+            },
+        ),
+        "mean_energy_per_ion_pair": (
+            Box(),
+            {
+                "doc": "Dict of material_name:energy_value, such that: sim.physics_manager.mean_energy_per_ion_pair['IEC_PLASTIC'] = 5.0 * eV. "
+                "Mostly used for using acolinearity during annihilation in some materials"
             },
         ),
         # "processes_to_bias": (
@@ -1241,6 +1252,8 @@ class Simulation(GateObject):
     g4_commands_after_init: List[str]
     init_only: bool
     progress_bar: bool
+    dyn_geom_open_close: bool
+    dyn_geom_optimise: bool
 
     user_info_defaults = {
         "verbose_level": (
@@ -1444,6 +1457,16 @@ class Simulation(GateObject):
                 "doc": "Display a progress bar during the simulation",
             },
         ),
+        "dyn_geom_open_close": (
+            True,
+            {
+                "doc": "Warning, should be True. Only set it to false if you know what your are doing"
+            },
+        ),
+        "dyn_geom_optimise": (
+            True,
+            {"doc": "'Optimise' geometry when open/close during dynamic simulation. "},
+        ),
     }
 
     def __init__(self, name="simulation", **kwargs):
@@ -1472,6 +1495,7 @@ class Simulation(GateObject):
 
         # hook functions
         self.user_hook_after_init = None
+        self.user_hook_after_init_arg = None
         self.user_hook_after_run = None
         self.user_hook_log = None
 
@@ -1778,10 +1802,10 @@ class Simulation(GateObject):
                 indicated by `extent`.
             filename (str, optional) : The filename/path to which the voxelized image and labels are written.
                 Suffix added automatically. Path can be relative to the global output directory of the simulation.
-            return_path (bool) : Return the absolute path where the voxelixed image was written?
+            return_path (bool) : Return the absolute path where the voxelized image was written?
 
         Returns:
-            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geoemtry;
+            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geometry;
                 optionally: the absolute path where the image was written, if applicable.
         """
         # collect volumes which are directly underneath the world/parallel worlds
@@ -1797,7 +1821,6 @@ class Simulation(GateObject):
 
         if filename is not None:
             outpath = self.get_output_path(filename)
-
             outpath_json = outpath.parent / (outpath.stem + "_labels.json")
             outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
 
@@ -1854,6 +1877,9 @@ class Simulation(GateObject):
             vox.Voxelize()
             image = get_py_image_from_cpp_image(vox.fImage)
             labels = vox.fLabels
+            for key in labels.keys():
+                vol = se.simulation.volume_manager.get_volume(key)
+                labels[key] = {"label": labels[key], "material": vol.material}
 
         return labels, image
 
