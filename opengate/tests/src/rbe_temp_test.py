@@ -93,15 +93,6 @@ if __name__ == "__main__":
     size = [50, 1, 1]
     spacing = [2.0 * mm, 60.0 * mm, 60.0 * mm]
 
-    doseActorName_IDD_d = "IDD_d"
-    doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
-    doseIDD.output_filename = "test050-" + doseActorName_IDD_d + ".mhd"
-    doseIDD.attached_to = phantom_off
-    doseIDD.size = size
-    doseIDD.spacing = spacing
-    doseIDD.hit_type = "random"
-    doseIDD.dose.active = False
-
     RBEActorName_IDD_d = "RBEActorOG_d"
     RBEActor_IDD_d = sim.add_actor("RBEActor", RBEActorName_IDD_d)
     RBEActor_IDD_d.output_filename = "test_rbe-" + RBEActorName_IDD_d + ".mhd"

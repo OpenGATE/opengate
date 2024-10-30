@@ -1133,6 +1133,9 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.cells_radiosensitivity = {'HSG': {'alpha_ref':0.764, 'beta_ref':0.0615},
                                        'Chordoma': {'alpha_ref':0.1, 'beta_ref':0.05},
                                        }
+        
+        self.rbe_dose_img = None
+        
         ## -- all models will need the dose --
         self._add_user_output(ActorOutputSingleImage,"dose") # we need to initialize the image on cpp side 
         self.user_output.dose.set_active(True)
@@ -1290,6 +1293,18 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.prepare_output_for_run("dose", run_index)
         self.push_to_cpp_image("dose", run_index, self.cpp_dose_image)
         
+        '''
+        RBE models scoring images:
+            - mkm:
+                - alpha mix (score separately numerator and denominator)
+            - lemIlda:
+                - alpha mix (score separately numerator and denominator)
+                - beta mix (score separately numerator and denominator)
+            - lemI:
+                - survival
+            Note: all will also score dose
+        '''
+        
         if self.rbe_model == 'mkm' or self.rbe_model == 'lemIlda':
             self.user_output.alpha_mix.set_active(True, item=0)
             self.user_output.alpha_mix.set_active(True, item=1)
@@ -1357,20 +1372,33 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
     def EndSimulationAction(self):
         g4.GateRBEActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
-        self.compute_survival_image()
+        self.compute_rbe_dose()
         
-    def compute_survival_image(self):
+    def compute_rbe_dose(self):
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]['alpha_ref']
+        beta_ref = self.cells_radiosensitivity[self.cell_type]['beta_ref']
+        dose_img = self.user_output.dose.merged_data.data[0]
+        
         if self.rbe_model == 'mkm':
             alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
-            dose_img = self.user_output.dose.merged_data.data[0]
-            exp = alpha_mix_img*dose_img*(-1) + dose_img*dose_img*self.beta_0*(-1)
-            survival_arr = np.exp(exp.image_array)
-            # create new data item for the survival image. Same metadata as the other images, but new image array
-            img = itk_image_from_array(survival_arr)
-            survival_img = ItkImageDataItem(data=img)
-            print(exp.get_image_properties())
-            survival_img.copy_image_properties(exp.image)
+            log_survival = alpha_mix_img*dose_img*(-1) + dose_img*dose_img*self.beta_0*(-1)
+            log_survival_arr = log_survival.image_array
+
+        elif self.rbe_model == 'lemIlda':
+            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            beta_mix_img = self.user_output.beta_mix.merged_data.quotient
+            # to be continued
+        elif self.rbe_model == 'lemI':
+            survival_img = self.user_output.survival.merged_data.data[0]
+            log_survival_arr = np.log(survival_img.image_array)
             
+        # solve linear quadratic equation to get Dx
+        rbe_dose_arr = (-alpha_ref + np.sqrt(alpha_ref**2 - 4*beta_ref*log_survival_arr))/2*beta_ref
+        
+        # create new data item for the survival image. Same metadata as the other images, but new image array
+        img = itk_image_from_array(rbe_dose_arr)
+        self.rbe_dose_img = ItkImageDataItem(data=img)
+        self.rbe_dose_img.copy_image_properties(dose_img.image)
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
