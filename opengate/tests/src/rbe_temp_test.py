@@ -4,7 +4,7 @@
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
-
+import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     do_debug = False
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.output_dir = paths.output
 
-    numPartSimTest = 4000 / sim.number_of_threads
+    numPartSimTest = 40000 / sim.number_of_threads
     numPartSimRef = 1e5
 
     # units
@@ -90,8 +90,8 @@ if __name__ == "__main__":
         0,
     ]
 
-    size = [50, 1, 1]
-    spacing = [2.0 * mm, 60.0 * mm, 60.0 * mm]
+    size = [50, 6, 6]
+    spacing = [2.0 * mm, 10.0 * mm, 10.0 * mm]
 
     RBEActorName_IDD_d = "RBEActorOG_d"
     RBEActor_IDD_d = sim.add_actor("RBEActor", RBEActorName_IDD_d)
@@ -103,15 +103,18 @@ if __name__ == "__main__":
     RBEActor_IDD_d.rbe_model = "mkm"
     RBEActor_IDD_d.lookup_table_path = paths.data / 'NIRS_MKM_reduced_data.txt'
     
-    print(paths)
+    doseActorName_IDD_d = "IDD_d"
+    doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
+    doseIDD.output_filename = "test050-" + doseActorName_IDD_d + ".mhd"
+    doseIDD.attached_to = phantom_off
+    doseIDD.size = size
+    doseIDD.spacing = spacing
+    doseIDD.hit_type = "random"
+    doseIDD.dose.active = True
+    
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    # stats.filters.append(f)
-
-    print("Filters: ", sim.filter_manager)
-    # print(sim.filter_manager.dump())
-
     # start simulation
     sim.run()
 
@@ -119,3 +122,22 @@ if __name__ == "__main__":
     print(stats)
 
     # ----------------------------------------------------------------------------------------------------------------
+    
+    # analyze RBE dose
+    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    rbe_dose_img = RBEActor_IDD_d.rbe_dose_img.image
+    dose_img = doseIDD.dose.merged_data.data[0].image
+    alpha_mix_img = RBEActor_IDD_d.alpha_mix.merged_data.quotient.image
+    utility.plot_img_axis(ax,rbe_dose_img,'RBE dose',axis='x')
+    
+    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    utility.plot_img_axis(ax,dose_img,'Dose',axis='x')
+    
+    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    utility.plot_img_axis(ax,alpha_mix_img,'alpha mix',axis='x')
+    
+    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    rbe_img = RBEActor_IDD_d.rbe_img.image
+    utility.plot_img_axis(ax,rbe_img,'RBE',axis='x')
+    
+    plt.show()

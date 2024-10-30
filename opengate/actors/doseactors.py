@@ -1394,11 +1394,18 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             
         # solve linear quadratic equation to get Dx
         rbe_dose_arr = (-alpha_ref + np.sqrt(alpha_ref**2 - 4*beta_ref*log_survival_arr))/2*beta_ref
+        rbe_arr = rbe_dose_arr / dose_img.image_array
         
         # create new data item for the survival image. Same metadata as the other images, but new image array
         img = itk_image_from_array(rbe_dose_arr)
         self.rbe_dose_img = ItkImageDataItem(data=img)
         self.rbe_dose_img.copy_image_properties(dose_img.image)
+        
+        img = itk_image_from_array(rbe_arr)
+        self.rbe_img = ItkImageDataItem(data=img)
+        self.rbe_img.copy_image_properties(dose_img.image)
+        
+        
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
