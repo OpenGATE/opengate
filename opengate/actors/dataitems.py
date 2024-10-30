@@ -206,8 +206,8 @@ class StatisticsDataItem(DataItem):
 
             # self.data.start_time = 0
             # self.data.stop_time = 0
-            # self.data.sim_start_time = 0
-            # self.data.sim_stop_time = 0
+        self.data.sim_start_time = min([o.counts.sim_start_time for o in other])
+        self.data.sim_stop_time = max([o.counts.sim_stop_time for o in other])
 
     @property
     def pps(self):
