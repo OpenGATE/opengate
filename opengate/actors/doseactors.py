@@ -16,6 +16,7 @@ from ..image import (
     get_info_from_image,
     images_have_same_domain,
     resample_itk_image_like,
+    itk_image_from_array,
 )
 from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
@@ -26,6 +27,9 @@ from .actoroutput import (
     ActorOutputSingleImageWithVariance,
     UserInterfaceToActorOutputImage,
 )
+from .dataitems import (
+    ItkImageDataItem,
+    )
 
 class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
     user_info_defaults = {
@@ -1165,11 +1169,11 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.check_user_input()
         
         # calculate some internal variables
-        self.user_info.A_nucleus = np.pi*self.user_info.r_nucleus**2
-        alpha_ref = self.cells_radiosensitivity[self.user_info.cell_type]['alpha_ref']
-        beta_ref = self.cells_radiosensitivity[self.user_info.cell_type]['beta_ref']
-        self.user_info.s_max = alpha_ref + 2*beta_ref*self.user_info.D_cut
-        self.user_info.lookup_table = self.store_lookup_table(self.user_info.lookup_table_path)
+        self.A_nucleus = np.pi*self.r_nucleus**2
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]['alpha_ref']
+        beta_ref = self.cells_radiosensitivity[self.cell_type]['beta_ref']
+        self.s_max = alpha_ref + 2*beta_ref*self.D_cut
+        self.lookup_table = self.store_lookup_table(self.lookup_table_path)
         
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
@@ -1237,7 +1241,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.prepare_output_for_run("dose", run_index)
         self.push_to_cpp_image("dose", run_index, self.cpp_dose_image)
         
-        if self.user_info.rbe_model == 'mkm' or self.user_info.rbe_model == 'lemIlda':
+        if self.rbe_model == 'mkm' or self.rbe_model == 'lemIlda':
             self.user_output.alpha_mix.set_active(True, item=0)
             self.user_output.alpha_mix.set_active(True, item=1)
             self.user_output.alpha_mix.set_active(True, item="quotient")
@@ -1248,7 +1252,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.push_to_cpp_image(
                 "alpha_mix", run_index, self.cpp_numerator_image, self.cpp_denominator_image)
         
-        if self.user_info.rbe_model == 'lemIlda':
+        if self.rbe_model == 'lemIlda':
             self.user_output.beta_mix.set_active(True, item=0)
             self.user_output.beta_mix.set_active(True, item=1)
             self.user_output.beta_mix.set_active(True, item="quotient")
@@ -1258,7 +1262,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.push_to_cpp_image(
                 "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image)
             
-        if self.user_info.rbe_model == 'lemI':
+        if self.rbe_model == 'lemI':
             self.user_output.survival.set_active(True)
             self.prepare_output_for_run("survival", run_index)
             self.push_to_cpp_image("survival", run_index, self.cpp_numerator_image)
@@ -1274,7 +1278,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             run_index, number_of_samples=self.NbOfEvent
         )
         
-        if self.user_info.rbe_model == 'mkm' or self.user_info.rbe_model == 'lemIlda': 
+        if self.rbe_model == 'mkm' or self.rbe_model == 'lemIlda': 
             self.fetch_from_cpp_image(
                 "alpha_mix", run_index, self.cpp_numerator_image, self.cpp_denominator_image
             )
@@ -1282,7 +1286,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.user_output.alpha_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        if self.user_info.rbe_model == 'lemIlda': 
+        if self.rbe_model == 'lemIlda': 
             self.fetch_from_cpp_image(
                 "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image
             )
@@ -1290,7 +1294,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.user_output.beta_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        if self.user_info.rbe_model == 'lemI':
+        if self.rbe_model == 'lemI':
             self.fetch_from_cpp_image(
                 "survival", run_index, self.cpp_numerator_image)
             self._update_output_coordinate_system("survival", run_index)
@@ -1304,6 +1308,20 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
     def EndSimulationAction(self):
         g4.GateRBEActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
+        self.compute_survival_image()
+        
+    def compute_survival_image(self):
+        if self.rbe_model == 'mkm':
+            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            dose_img = self.user_output.dose.merged_data.data[0]
+            exp = alpha_mix_img*dose_img*(-1) + dose_img*dose_img*self.beta_0*(-1)
+            survival_arr = np.exp(exp.image_array)
+            # create new data item for the survival image. Same metadata as the other images, but new image array
+            img = itk_image_from_array(survival_arr)
+            survival_img = ItkImageDataItem(data=img)
+            print(exp.get_image_properties())
+            survival_img.copy_image_properties(exp.image)
+            
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):

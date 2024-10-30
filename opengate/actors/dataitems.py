@@ -13,6 +13,7 @@ from ..image import (
     create_3d_image,
     write_itk_image,
     get_info_from_image,
+    itk_image_from_array,
 )
 
 
@@ -228,6 +229,10 @@ class ItkImageDataItem(DataItem):
     @property
     def image(self):
         return self.data
+    
+    @property
+    def image_array(self):
+        return itk.array_view_from_image(self.image)
 
     def __iadd__(self, other):
         self._assert_data_is_not_none()
@@ -282,6 +287,13 @@ class ItkImageDataItem(DataItem):
 
     def copy_image_properties(self, other_image):
         self.data.CopyInformation(other_image)
+
+    def set_array_to_image(self, arr):
+        image = itk_image_from_array(arr)
+        image.SetOrigin(self.image.GetOrigin())
+        image.SetSpacing(self.image.GetSpacing())
+        image.SetDirection(self.image.GetDirection())
+        self.data = image
 
     def create_empty_image(
         self,

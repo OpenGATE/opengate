@@ -109,7 +109,7 @@ if __name__ == "__main__":
     RBEActor_IDD_d.size = size
     RBEActor_IDD_d.spacing = spacing
     RBEActor_IDD_d.hit_type = "random"
-    RBEActor_IDD_d.rbe_model = "lemI"
+    RBEActor_IDD_d.rbe_model = "mkm"
     RBEActor_IDD_d.lookup_table_path = paths.data / 'NIRS_MKM_reduced_data.txt'
     
     print(paths)
