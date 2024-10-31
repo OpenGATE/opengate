@@ -723,8 +723,9 @@ class DynamicGateObject(GateObject):
         params_with_incorrect_length = []
         for params in self.dynamic_params.values():
             for k, v in params.items():
-                if (k in self.dynamic_user_info and
-                        len(v) != len(self.simulation.run_timing_intervals)):
+                if k in self.dynamic_user_info and len(v) != len(
+                    self.simulation.run_timing_intervals
+                ):
                     params_with_incorrect_length.append((k, len(v)))
             if len(params_with_incorrect_length) > 0:
                 s = (

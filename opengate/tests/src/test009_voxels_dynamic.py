@@ -111,7 +111,11 @@ if __name__ == "__main__":
 
     # define run timing intervals that do not match the dynamic parameters
     # GATE should raise an exception
-    sim.run_timing_intervals = [(0, 0.5 * sec), (0.5 * sec, 1 * sec), (1 * sec, 1.5 * sec)]
+    sim.run_timing_intervals = [
+        (0, 0.5 * sec),
+        (0.5 * sec, 1 * sec),
+        (1 * sec, 1.5 * sec),
+    ]
     try:
         sim.run(start_new_process=True)
         print("This exception is intentionally provoked and wanted. ")
