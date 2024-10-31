@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 from opengate.utility import g4_units
 import opengate as gate
-from opengate.tests.utility import get_default_test_paths
-
+from opengate.tests.utility import get_default_test_paths, test_ok
 
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, output_folder="test080")
@@ -22,13 +21,20 @@ if __name__ == "__main__":
 
     n_proc = 4 * len(sim.run_timing_intervals)
 
-    output = sim.run(number_of_sub_processes=n_proc)
+    sim.run(number_of_sub_processes=n_proc)
 
-    print("*** output ***")
-    for o in output:
-        print(o)
+    ids = [m.simulation_id for m in sim.meta_data_per_process.values()]
+    print("ID of the main sim:")
+    print(id(sim))
+    print(f"ID of the sims in subprocesses:")
+    for _id in ids:
+        print(_id)
 
-    print(f"ID of the main sim: {id(sim)}")
+    # check that the ID of the Simulation instance in the main process is
+    # different from the IDs in the subprocesses
+    is_ok = id(sim) not in ids
 
-    ids = [o.simulation_id for o in output]
-    assert id(sim) not in ids
+    # Check that the IDs in the subprocesses are mutually independent
+    is_ok = is_ok and len(set(ids)) == len(ids)
+
+    test_ok(is_ok)
