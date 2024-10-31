@@ -214,11 +214,11 @@ class StatisticsDataItem(DataItem):
 
     @property
     def start_date_time(self):
-        return datetime.datetime.fromtimestamp(int(self.data.start_time)).strftime('%c')
+        return datetime.datetime.fromtimestamp(int(self.data.start_time)).strftime("%c")
 
     @property
     def stop_date_time(self):
-        return datetime.datetime.fromtimestamp(int(self.data.stop_time)).strftime('%c')
+        return datetime.datetime.fromtimestamp(int(self.data.stop_time)).strftime("%c")
 
     @property
     def pps(self):

@@ -62,15 +62,11 @@ void GateSimulationStatisticsActor::StartSimulationAction() {
 
 py::dict GateSimulationStatisticsActor::GetCounts() {
   auto dd = py::dict(
-      "runs"_a = fCounts["runs"],
-      "events"_a = fCounts["events"],
-      "tracks"_a = fCounts["tracks"],
-      "steps"_a = fCounts["steps"],
-      "duration"_a = fCountsD["duration"],
-      "init"_a = fCountsD["init"],
+      "runs"_a = fCounts["runs"], "events"_a = fCounts["events"],
+      "tracks"_a = fCounts["tracks"], "steps"_a = fCounts["steps"],
+      "duration"_a = fCountsD["duration"], "init"_a = fCountsD["init"],
       "start_time"_a = fCountsD["start_time"],
-      "stop_time"_a = fCountsD["stop_time"],
-      "track_types"_a = fTrackTypes);
+      "stop_time"_a = fCountsD["stop_time"], "track_types"_a = fTrackTypes);
   return dd;
 }
 
@@ -156,18 +152,20 @@ void GateSimulationStatisticsActor::EndSimulationAction() {
     std::stringstream ss;
     auto t_c = std::chrono::system_clock::to_time_t(fStartTime);
     ss << strtok(std::ctime(&t_c), "\n");
-    auto startTimeSec = std::chrono::time_point_cast<std::chrono::seconds>(fStartTime);
+    auto startTimeSec =
+        std::chrono::time_point_cast<std::chrono::seconds>(fStartTime);
     long startTimeSecDouble = startTimeSec.time_since_epoch().count();
     fCountsD["start_time"] = startTimeSecDouble;
-//    fCountsStr["start_time"] = ss.str();
+    //    fCountsStr["start_time"] = ss.str();
   }
   {
     std::stringstream ss;
     auto t_c = std::chrono::system_clock::to_time_t(fStopTime);
     ss << strtok(std::ctime(&t_c), "\n");
-    auto stopTimeSec = std::chrono::time_point_cast<std::chrono::seconds>(fStopTime);
+    auto stopTimeSec =
+        std::chrono::time_point_cast<std::chrono::seconds>(fStopTime);
     long stopTimeSecDouble = stopTimeSec.time_since_epoch().count();
     fCountsD["stop_time"] = stopTimeSecDouble;
-//    fCountsStr["stop_time"] = ss.str();
+    //    fCountsStr["stop_time"] = ss.str();
   }
 }
