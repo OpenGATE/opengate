@@ -71,7 +71,7 @@ def read_stat_file_json(filename):
     for k, d in data.items():
         counts[k] = d["value"]
     stat = SimulationStatisticsActor(name=r)
-    stat.user_output.stats.store_data(counts)
+    stat.user_output.stats.store_data("merged", counts)
     return stat
 
 
