@@ -2,7 +2,7 @@ import multiprocessing
 import queue
 
 from .exception import fatal
-from .base import GateObject
+from .base import GateObject, process_cls
 
 
 # define thin wrapper function to handle the queue
@@ -142,3 +142,7 @@ class MultiProcessingHandlerEqualPerRunTimingInterval(MultiProcessingHandlerBase
                 process_index += 1
         self.dispatch_configuration = dispatch_configuration
         return dispatch_configuration
+
+
+process_cls(MultiProcessingHandlerBase)
+process_cls(MultiProcessingHandlerEqualPerRunTimingInterval)
