@@ -11,7 +11,7 @@ if __name__ == "__main__":
     )
 
     # create and run the simulation
-    sim = t036.create_simulation("repeat", paths)
+    sim = t036.create_simulation("repeat", paths, "_depth_repeat")
 
     # start simulation
     sim.run()

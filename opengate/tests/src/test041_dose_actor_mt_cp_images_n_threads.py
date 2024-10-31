@@ -112,7 +112,7 @@ def run_test(doseFpath_IDD_singleImage, doseFpath_IDD_NthreadImages, stat):
         doseFpath_IDD_NthreadImages,
         stat,
         tolerance=100,
-        ignore_value=0,
+        ignore_value_data2=0,
         axis="x",
     )
     expected_ratio = 1.00

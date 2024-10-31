@@ -11,7 +11,8 @@ import uproot
 import subprocess
 import os
 
-if __name__ == "__main__":
+
+def main(dependency="test072_coinc_sorter_1.py"):
     # test paths
     paths = utility.get_default_test_paths(
         __file__, output_folder="test072_coinc_sorter"
@@ -21,7 +22,7 @@ if __name__ == "__main__":
     # If the output of test072_coinc_sorter_1.py does not exist, create it
     if not os.path.isfile(paths.output / "test72_output_1.root"):
         print("---------- Begin of test072_coinc_sorter_1.py ----------")
-        subprocess.call(["python", paths.current / "test072_coinc_sorter_1.py"])
+        subprocess.call(["python", paths.current / dependency])
         print("----------- End of test072_coinc_sorter_1.py -----------")
 
     # open root file
@@ -60,3 +61,7 @@ if __name__ == "__main__":
     is_ok = utility.check_diff_abs(int(nc), int(nc_ref), tolerance=nc_tol, txt="")
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

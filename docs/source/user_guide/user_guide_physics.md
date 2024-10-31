@@ -1,16 +1,15 @@
-## Physics
+# Physics
 
 The managements of the physic in Geant4 is rich and complex, with hundreds of options. OPENGATE proposes a subset of available options.
 
-### Physics list and decay
+## Physics list and decay
 
 First, the user needs to select a physics list. A physics list contains a large set of predefined physics options, adapted to different problems. Please refer to the [Geant4 guide](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html) for a
 detailed explanation. The user can select the physics list with the following:
 
 ```python
 # Assume that sim is a simulation
-phys = sim.get_physics_info()
-phys.name = 'QGSP_BERT_EMZ'
+sim.physics_manager.physics_list_name = 'QGSP_BERT_EMZ'
 ```
 
 The default physics list is QGSP_BERT_EMV. The Geant4 standard physics list are composed of a first part:
@@ -77,24 +76,84 @@ G4OpticalPhysics
 
 Note that EMV, EMX, EMY, EMZ corresponds to option1, 2, 3, 4 (don't ask us why).
 
-**WARNING** The decay process, if needed, must be added explicitly. This is done with:
+
+###  Radioactive decay
+
+The decay process, if needed, must be added explicitly. This is done with:
 
 ```python
-sim.enable_decay(True)
-# or
-sim.physics_manager = True
+sim.physics_manager.enable_decay(True)
 ```
 
 Under the hood, this will add two processed to the Geant4 list of processes, G4DecayPhysics and G4RadioactiveDecayPhysics. Those processes are required in particular if decaying generic ion (such as F18) is used as source. Additional information can be found in the following:
 
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process>
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html>
-- <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>
-- <http://www.lnhb.fr/nuclear-data/nuclear-data-table/>
+- [Geant4 Particle decay process](https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process)
+- [Geant4 decay physics](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html)
+- [Physics list](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html)
+- [Nuclear data table](http://www.lnhb.fr/nuclear-data/nuclear-data-table/)
 
-### Optical Physics Processes
 
-#### G4OpticalPhysics physics list
+###  Acollinearity of annihilation photons
+
+Without further modifications, most of the annihilation photon pairs resulting from positron-electron annihilation will be collinear.
+For water between 20&deg;C–30&deg;C, it was shown that acollinearity of annihilation photons, or more precisely its 2D angular deviation relative to the collinear case, follows a 2D Gaussian distribution with a FWHM of 0.5&deg; ([Colombino et al. 1965](https://link.springer.com/article/10.1007/BF02748591)).
+
+#### Ion or e+ source
+To enable this behavior in a simulation, the user needs to set the `MeanEnergyPerIonPair` of all the materials where acollinearity of annihilation photons is to be simulated to 0.5 eV ([Geant4 Release note](www.geant4.org/download/release-notes/notes-v10.7.0.html)).
+This is done differently depending on whether the material is defined by Geant4, in `GateMaterials.db` or created dynamically.
+
+##### Geant4 default material
+```python
+# First, get a reference to the material where acollinearity of annihilation photons is to be simulated.
+# This is done by providing the name of the materials, e.g., "G4_WATER", to the volume manager.
+mat = sim.volume_manager.find_or_build_material(material_of_interest)
+
+# Second, get a reference to the material ionisation property.
+# You can get the value of MeanEnergyPerIonPair of the materials with the command 'ionisation.GetMeanExcitationEnergy() / eV'
+# By default, MeanEnergyPerIonPair of a material is 0.0 eV
+ionisation = mat.GetIonisation()
+
+# Set the value of MeanEnergyPerIonPair to the desired value. Here, we use the recommended 5.0 eV.
+ionisation.SetMeanEnergyPerIonPair(5.0 * eV)
+# The previous command is equivalent to mat.GetIonisation().SetMeanEnergyPerIonPair(5.0 * eV)
+```
+
+##### Material defined in `GateMaterials.db`
+```python
+# Provide the location of GateMaterials.db to the volume manager.
+sim.volume_manager.add_material_database(path_to_gate_materials_db)
+
+# Set the MeanEnergyPerIonPair of the material in the physics manager
+# material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
+sim.physics_manager.mean_energy_per_ion_pair[material_of_interest] = 5.0 * eV
+```
+
+##### Material created dynamically
+```python
+# Provide a description of the material to the volume manager
+# material_of_interest is the name of the material of interest
+sim.volume_manager.material_database.add_material_nb_atoms(material_of_interest, ex_elems, ex_nbAtoms, ex_density)
+
+# Set the MeanEnergyPerIonPair of the material in the physics manager
+# material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
+sim.physics_manager.mean_energy_per_ion_pair[material_of_interest] = 5.0 * eV
+```
+
+#### Back-to-back source
+Currently, simulating this behavior cannot be reproduced (yet!) with back-to-back source.
+
+#### Further considerations
+The property needed to simulate acollinearity, as expected in PET imaging, is defined at the level of materials, not at the volume level.
+In other words, if one needs a water volume with acollinearity and another water volume without acollinearity in the simulation, two materials (e.g., water_aco and water_colin) need to be defined, with only the former using the code previously shown.
+
+More recently, [Shibuya et al. 2007](https://iopscience.iop.org/article/10.1088/0031-9155/52/17/010) have shown that acollinearity of annihilation photons in a human subject follows a double Gaussian distribution with a combined FWHM of 0.55&deg;.
+While the double Gaussian distribution currently cannot be reproduced in GATE, setting the `MeanEnergyPerIonPair` of the material to 6.0 eV results in a 2D Gaussian with a FWHM of 0.55&deg;.
+
+**WARNING:** Currently, it is unknown if setting the `MeanEnergyPerIonPair` parameter to a non-zero value has an impact on other facets of Geant4 physics and thus on the GATE simulation.
+
+## Optical Physics Processes
+
+### G4OpticalPhysics physics list
 
 To include optical processes in the simulation, explicitly enable them with the following code:
 
@@ -120,7 +179,7 @@ sim.physics_manager.set_production_cut("crystal", "electron", 0.1 * mm)
 
 You can find additional details about the G4OpticalPhysics physics list at the following link: <https://geant4-userdoc.web.cern.ch/UsersGuides/AllGuides/html/ForApplicationDevelopers/TrackingAndPhysics/physicsProcess.html?highlight=g4opticalphysics#optical-photon-processes>
 
-#### Optical Physics Properties
+### Optical Physics Properties
 
 The material property table stores the optical properties of materials, where each property is labeled with a name. These properties are of two types: constant properties, which consist of a single value, and property vectors, which are properties varying with the energy of the optical photon. A property vector comprises a series of pairs, each linking a specific energy level with its corresponding value.
 
@@ -130,7 +189,7 @@ To enable Optical physics, material property tables must be stored separately fr
 sim.physics_manager.optical_properties_file = PATH_TO_FILE
 ```
 
-#### Scintillation
+### Scintillation
 
 A scintillator's properties are influenced by its photon emission spectrum, which is characterized by an exponential decay process with up to three time constants. The contribution of each component to the total scintillation yield is defined by the parameters **SCINTILLATIONYIELD1**, **SCINTILLATIONYIELD2**, and **SCINTILLATIONYIELD3**. The emission spectra for these decays are specified through the property vectors **SCINTILLATIONCOMPONENT1**, **SCINTILLATIONCOMPONENT2**, and **SCINTILLATIONCOMPONENT3**, in addition to the time constants **SCINTILLATIONTIMECONSTANT1**, **SCINTILLATIONTIMECONSTANT2**, and **SCINTILLATIONTIMECONSTANT3**. These vectors indicate the probability of emitting a photon at a particular energy, and their total should equal one.
 
@@ -172,15 +231,15 @@ In this equation, **R** stands for the energy resolution (FWHM - Full Width at H
 </material>
 ```
 
-#### Cerenkov photons
+### Cerenkov photons
 
 Cerenkov light emission occurs when a charged particle traverses a dispersive medium at a speed exceeding the medium's group velocity of light. This emission forms a cone-shaped pattern of photons, with the cone's opening angle narrowing as the particle decelerates. To simulate Cerenkov optical photon generation in a material, the refractive index must be defined using the **RINDEX** property of the material.
 
-#### Absorption
+### Absorption
 
 This process kills the particle. It requires the OpticalProperties.xml properties filled by the user with the Absorption length ABSLENGTH (average distance traveled by a photon before being absorbed by the medium).
 
-#### Mie/Rayleigh Scattering
+### Mie/Rayleigh Scattering
 
 Mie Scattering is a solution derived from Maxwell's equations for the scattering of optical photons by spherical particles. This phenomenon becomes significant when the radius of the scattering particle is approximately equal to the photon's wavelength. The formulas for Mie Scattering are complex, and a common simplification used, including in Geant4, is the **Henyey-Greenstein** (HG) approximation. In cases where the size parameter (diameter of the scattering particle) is small, Mie theory simplifies to the Rayleigh approximation.
 
@@ -208,39 +267,47 @@ For both Rayleigh and Mie scattering, it's required that the final momentum, ini
 </material>
 ```
 
-#### Fluorescence
+### Fluorescence
 
 Fluorescence involves a three-stage process: Initially, the fluorophore reaches an excited state after absorbing an optical photon from an external source (like a laser or lamp). This excited state typically lasts between 1-10 ns, during which the fluorophore interacts with its surroundings, eventually transitioning to a relaxed-excited state. The final step involves emitting a fluorescent photon, whose energy/wavelength is lower (or wavelength longer) than the excitation photon.
 
-![](figures/optical_fluorescence.png)
+![](../figures/optical_fluorescence.png)
 
 Geant4 models the process of Wavelength Shifting (WLS) in fibers, which are used in high-energy physics experiments. For example, the CMS Hadronic EndCap calorimeter utilizes scintillator tiles integrated with WLS fibers. These fibers absorb the blue light generated in the tiles and re-emit green light to maximize the light reaching the Photomultiplier Tubes (PMTs).
 
 Users of Gate need to specify four properties to define the fluorescent material: **RINDEX**, **WLSABSLENGTH**, **WLSCOMPONENT**, and **WLSTIMECONSTANT**. **WLSABSLENGTH** indicates the absorption length of fluorescence, representing the average distance a photon travels before being absorbed by the fluorophore. This distance is typically short, but not zero to prevent immediate photon absorption upon entering the fluorescent material, which would result in fluorescent photons emerging only from the surface. **WLSCOMPONENT** details the emission spectrum of the fluorescent material, showing the relative intensity at different photon energies, usually derived from experimental measurements. **WLSTIMECONSTANT** sets the delay between absorption and re-emission of light.
 
-##### Simulation of the Fluorescein
+#### Simulation of the Fluorescein
 
-```xml
 We define the refractive index of the fluorophore’s environment (water or alcohol):
-<material name="Fluorescein">
-<propertiestable>
-<propertyvector name="RINDEX" energyunit="eV">
-<ve energy="1.0" value="1.4"/>
-<ve energy="4.13" value="1.4"/>
-</propertyvector>
-```
-
-The WLS process encompasses both absorption and emission spectra. If these spectra overlap, a WLS photon might be absorbed and re-emitted repeatedly. To avoid this, one must ensure there is no overlap between these spectra. In the WLS process, there's no distinction between original photons and WLS photons.
 
 ```xml
-We describe the fluorescein absorption length taken from measurements or literature as function of the photon energy:
-<propertyvector name="WLSABSLENGTH" unit="cm" energyunit="eV">
-<ve energy="3.19" value="2.81"/>
-<ve energy="3.20" value="2.82"/>
-<ve energy="3.21" value="2.81"/>
+<material name="Fluorescein">
+    <propertiestable>
+    <propertyvector name="RINDEX" energyunit="eV">
+    <ve energy="1.0" value="1.4"/>
+    <ve energy="4.13" value="1.4"/>
 </propertyvector>
 
-We describe the fluorescein Emission spectrum taken from measurements or literature as function of the photon energy:
+<!--
+The WLS process encompasses both absorption and emission spectra. If these spectra overlap, a WLS photon might be absorbed and re-emitted repeatedly. To avoid this, one must ensure there is no overlap between these spectra. In the WLS process, there's no distinction between original photons and WLS photons.
+-->
+
+<!--
+We describe the fluorescein absorption length taken from measurements or literature as function of the photon energy:
+-->
+
+<propertyvector name="WLSABSLENGTH" unit="cm" energyunit="eV">
+  <ve energy="3.19" value="2.81"/>
+  <ve energy="3.20" value="2.82"/>
+  <ve energy="3.21" value="2.81"/>
+</propertyvector>
+
+<!--
+We describe the fluorescein Emission spectrum taken from measurements or literature as function of
+the photon energy:
+-->
+
 <propertyvector name="WLSCOMPONENT" energyunit="eV">
     <ve energy="1.771"  value="0.016"/>
     <ve energy="1.850"  value="0.024"/>
@@ -262,11 +329,11 @@ We describe the fluorescein Emission spectrum taken from measurements or literat
 </material>
 ```
 
-#### Boundary Processes
+### Boundary Processes
 
 When a photon reaches the boundary between two mediums, its behavior is determined by the characteristics of the materials forming the boundary. If the boundary is between two dielectric materials, the photon's reaction – whether it undergoes total internal reflection, refraction, or reflection – depends on factors such as the photon's wavelength, its angle of incidence, and the refractive indices of the materials on either side of the boundary. In contrast, at an interface between a dielectric material and a metal, the photon may either be absorbed by the metal or reflected back into the dielectric material. For simulating a perfectly smooth surface, it's not necessary for the user to input a G4Surface; the only essential property is the refractive index (RINDEX) of the materials on both sides of the interface. In such cases, Geant4 uses Snell’s Law to compute the probabilities of refraction and reflection.
 
-### Defining Surfaces
+## Defining Surfaces
 
 ![](figures/surface-definition.png)
 
@@ -309,7 +376,7 @@ sim.physics_manager.add_optical_Surface("name of volume 2", "name of volume 1", 
 This creates same surface from Volume1 to Volume2 and from Volume2 to Volume1.
 
 
-#### LUT Davis Model
+### LUT Davis Model
 
 Available from GATE V8.0 onwards is a model for optical transport called the LUT Davis model [Roncali& Cherry(2013)]. The model is based on measured surface data and allows the user to choose from a list of available surface finishes. Provided are a rough and a polished surface that can be used without reflector, or in combination with a specular reflector (e.g. ESR) or a Lambertian reflector (e.g. Teflon). The specular reflector can be coupled to the crystal with air or optical grease. Teflon tape is wrapped around the crystal with 4 layers.
 
@@ -357,20 +424,20 @@ Reflectivity LUT DAVIS - data file: .../Rough_LUTR.dat read in!
 LUT DAVIS - data file: .../Detector_LUT.dat read in!
 Reflectivity LUT DAVIS - data file: .../Detector_LUTR.dat read in!
 ```
-##### Detection of Optical Photons
+#### Detection of Optical Photons
 
 Once the simulation is finished, the optical photon data can be found in the Hits Tree in the ROOT output. The Hits Tree consists of events that ended their path in the geometry defined as the sensitive detector (SD). Thus, photons can either be detected or absorbed in the crystal material when set as SD. The user can identify the optical photons from other particles using the PDGEncoding (-22 for optical photons).
 
 **NOTE** - From Geant4 10.7, PDG code for optical photon has changed [from 0 (zero) to -22](https://geant4.kek.jp/lxr/diff/particles/bosons/src/G4OpticalPhoton.cc?v=10.6.p3;diffval=10.7;diffvar=v).
 
-##### Example
+#### Example
 
 The example (https://github.com/OpenGATE/GateContrib/tree/master/imaging/LUTDavisModel) includes a 3 mm x 3 mm x 20 mm scintillation crystal coupled to a 3 mm x 3 mm detector area. The source is positioned at the side of the crystal, irradiating it at 10 mm depth. The set surface is RoughTeflon_LUT in combination with the Detector_LUT as the photo detector surface.
 
 ![](figures/example_lut_davis_model.png)
 
 
-##### Background
+#### Background
 
 The crystal topography is obtained with atomic force microscopy (AFM). From the AFM data, the probability of reflection (1) and the reflection directions (2) are computationally determined, for incidence angles ranging from 0° to 90°. Each LUT is computed for a given surface and reflector configuration. The reflection probability in the LUT combines two cases: directly reflected photons from the crystal surface and photons that are transmitted to the reflector surface and later re-enter the crystal. The key operations of the reflection process are the following: The angle between the incident photon (Old Momentum) and the surface normal are calculated. The probability of reflection is extracted from the first LUT. A Bernoulli test determines whether the photon is reflected or transmitted. In case of reflection two angles are drawn from the reflection direction LUT.
 
@@ -378,7 +445,7 @@ The crystal topography is obtained with atomic force microscopy (AFM). From the 
 
 Old Momentum to New Momentum. The old momentum is the unit vector that describes the incident photon. The reflected/transmitted photon is the New Momentum described by two angles φ, 𝛳.
 
-#### UNIFIED Model
+### UNIFIED Model
 
 The UNIFIED model allows the user to control the radiant intensity of the surface: Specular lobe, Specular spike, Backscatter spike (enhanced on very rough surfaces) and Reflectivity (Lambertian or diffuse distribution). The sum of the four constants is constrained to unity. In that model, the micro-facet normal vectors follow a Gaussian distribution defined by sigmaalpha ($\sigma_a$) given in degrees. This parameter defines the standard deviation of the Gaussian distribution of micro-facets around the average surface normal. In the case of a perfectly polished surface, the normal used by the G4BoundaryProcess is the normal to the surface.
 
@@ -427,33 +494,45 @@ When the paint is on the outside of the surface, whether the photon is reflected
 
 A dielectric_dielectric surface may have a wavelength dependent property TRANSMITTANCE. If this is specified for a surface it overwrites the Snell’s law’s probability. This allows the simulation of anti-reflective coatings.
 
-##### Detection of optical photons
+#### Detection of optical photons
 
 Optical photons can be detected by using a dielectric-metal boundary. In that case, the probability of reflection should be given by the REFLECTIVITY property vector. When the optical photon is reflected, the UNIFIED model is used to determine the reflection angle. When it is absorbed, it is possible to detect it. The property vector EFFICIENCY gives the probability of detecting a photon given its energy and can therefore be considered to give the internal quantum efficiency. Note that many measurements of the quantum efficiency give the external quantum efficiency, which includes the reflection: external quantum efficiency = efficiency*(1-reflectivity).
 
 The hits generated by the detection of the optical photons are generated in the volume from which the optical photons reached the surface. This volume should therefore be a sensitive detector.
 
-### Electromagnetic parameters
-
-WARNING : this part is work in progress. DO NOT USE YET.
+## Electromagnetic parameters
 
 Electromagnetic parameters are managed by a specific Geant4 object called G4EmParameters. It is available with the following:
 
 ```python
-phys = sim.get_physics_info()
-em = phys.g4_em_parameters
-em.SetFluo(True)
-em.SetAuger(True)
-em.SetAugerCascade(True)
-em.SetPixe(True)
-em.SetDeexActiveRegion('world', True, True, True)
+sim.physics_manager.em_parameters.fluo = True
+sim.physics_manager.em_parameters.auger = True
+sim.physics_manager.em_parameters.auger_cascade = True
+sim.physics_manager.em_parameters.pixe = True
+sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
 ```
 
-WARNING: it must be set **after** the initialization (after `sim.initialize()` and before `output = sim.start()`).
+It is possible to enable/disable some physics options within a given region that need to be defined before by associating the region with a volume:
+
+```python
+region_b1 = sim.physics_manager.add_region("region_b1")
+region_b1.em_switches.deex = True
+region_b1.em_switches.auger = False
+region_b1.associate_volume(b1)
+```
+
+Or for the world:
+```python
+sim.physics_manager.em_switches_world.deex = True
+sim.physics_manager.em_switches_world.auger = True
+sim.physics_manager.em_switches_world.pixe = True
+```
+
+See test063.
 
 The complete description is available in this page: <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html>
 
-### Managing the cuts and limits
+## Managing the cuts and limits
 
 WARNING : this part is work in progress. DO NOT USE YET.
 

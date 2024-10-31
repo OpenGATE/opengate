@@ -29,6 +29,7 @@ setup(
         "jsonpickle",
         "pandas",
         "requests",
+        "PyYAML",
     ]
     + install_requires_windows,
 )

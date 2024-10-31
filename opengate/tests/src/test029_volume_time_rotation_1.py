@@ -14,7 +14,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # create sim without AA
-    test029.create_simulation(sim, False, paths)
+    test029.create_simulation(sim, False, paths, "_trot1")
 
     # for later reference, get the actors that were created by the helper function above
     proj_actor = sim.actor_manager.get_actor("Projection")
@@ -49,12 +49,13 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj029.mhd",
-            proj_actor.get_output_path(),  # get the path by asking the actor; better than hard-code the path
+            proj_actor.get_output_path(),
             stats,
             tolerance=59,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
             sum_tolerance=2,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior
         )
         and is_ok
     )

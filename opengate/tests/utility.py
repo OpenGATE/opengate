@@ -24,11 +24,12 @@ from ..utility import (
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_from_array, write_itk_image
 from ..actors.miscactors import SimulationStatisticsActor
+import SimpleITK as sitk
 
 plt = LazyModuleLoader("matplotlib.pyplot")
 
 
-def test_ok(is_ok=False):
+def test_ok(is_ok=False, exceptions=None):
     if is_ok:
         s = "Great, tests are ok."
         s = "\n" + colored.stylize(s, color_ok)
@@ -36,6 +37,14 @@ def test_ok(is_ok=False):
         # sys.exit(0)
     else:
         s = "Error during the tests !"
+        if exceptions is not None:
+            if isinstance(exceptions, str):
+                exceptions = [exceptions]
+            s += f"\nThe following exception"
+            if len(exceptions) > 1:
+                s += "s"
+            s += f" occurred:\n"
+            s += "\n".join([f"- {str(e)}" for e in exceptions])
         s = "\n" + colored.stylize(s, color_error)
         print(s)
         sys.exit(-1)
@@ -45,10 +54,10 @@ def write_stats_txt_gate_style(stats, filepath):
     counts = output.merged_data
     with open(filepath, 'w') as f:
         f.write(f'''
-# NumberOfRun    = {counts.run_count}
-# NumberOfEvents = {counts.event_count}
-# NumberOfTracks = {counts.track_count}
-# NumberOfSteps  = {counts.step_count}
+# NumberOfRun    = {counts.runs}
+# NumberOfEvents = {counts.events}
+# NumberOfTracks = {counts.tracks}
+# NumberOfSteps  = {counts.steps}
 # NumberOfGeometricalSteps  = 
 # NumberOfPhysicalSteps     = 
 # ElapsedTime           = {counts.duration}
@@ -333,7 +342,9 @@ def assert_images(
     filename2,
     stats=None,
     tolerance=0,
-    ignore_value=0,
+    ignore_value_data1=None,
+    ignore_value_data2=None,
+    apply_ignore_mask_to_sum_check=True,
     axis="z",
     fig_name=None,
     sum_tolerance=5,
@@ -357,8 +368,33 @@ def assert_images(
     if scaleImageValuesFactor:
         data2 *= scaleImageValuesFactor
 
-    s1 = np.sum(data1)
-    s2 = np.sum(data2)
+    # do not consider pixels with a certain value
+    if ignore_value_data1 is None and ignore_value_data2 is None:
+        d1 = data1
+        d2 = data2
+    else:
+        if ignore_value_data1 is not None and ignore_value_data2 is not None:
+            mask = np.logical_or(
+                data1 != ignore_value_data1, data2 != ignore_value_data2
+            )
+        elif ignore_value_data1 is not None:
+            mask = data1 != ignore_value_data1
+        else:
+            mask = data2 != ignore_value_data2
+        d1 = data1[mask]
+        d2 = data2[mask]
+
+    # this is a patch to make the function back-compatible
+    # because the ignore value was previously applied only after
+    # taking the sum and some tests fail after that change
+    # apply_ignore_mask_to_sum_check = False recreates the old behavior
+    if apply_ignore_mask_to_sum_check is True:
+        s1 = np.sum(d1)
+        s2 = np.sum(d2)
+    else:
+        s1 = np.sum(data1)
+        s2 = np.sum(data2)
+
     if s1 == 0 and s2 == 0:
         t = 0
     else:
@@ -369,10 +405,6 @@ def assert_images(
 
     print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
     print(f"Image2: {info2.size} {info2.spacing} {info2.origin} {filename2}")
-
-    # do not consider pixels with a value of zero (data2 is the reference)
-    d1 = data1[data2 != ignore_value]
-    d2 = data2[data2 != ignore_value]
 
     # normalise by event
     if stats is not None:
@@ -2026,8 +2058,19 @@ def plot_compare_profile(ref_names, test_names, options):
     return plt
 
 
-class RootComparison:
-
-    def __init__(self, ref_filename, filename):
-        self.root_ref = uproot.open(ref_filename)
-        self.root_cmp = uproot.open(filename)
+def get_image_1d_profile(filename, axis, offset=(0, 0)):
+    img = sitk.ReadImage(filename)
+    spacing = img.GetSpacing()
+    img_arr = sitk.GetArrayFromImage(img)
+    s = img_arr.shape
+    pdd_x = pdd_y = None
+    if axis == "z":
+        pdd_y = img_arr[:, int(s[1] / 2) + offset[0], int(s[2] / 2) + offset[1]]
+        pdd_x = np.arange(0, s[0] * spacing[2], spacing[2])
+    if axis == "y":
+        pdd_y = img_arr[int(s[0] / 2) + offset[0], :, int(s[2] / 2) + offset[1]]
+        pdd_x = np.arange(0, s[1] * spacing[1], spacing[1])
+    if axis == "x":
+        pdd_y = img_arr[int(s[0] / 2) + offset[0], int(s[1] / 2) + offset[1], :]
+        pdd_x = np.arange(0, s[2] * spacing[0], spacing[0])
+    return pdd_x, pdd_y

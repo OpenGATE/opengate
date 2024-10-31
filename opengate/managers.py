@@ -67,7 +67,9 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
-from .actors.doseactors import DoseActor, LETActor, FluenceActor, RBEActor, EmCalculatorActor
+
+from .actors.doseactors import DoseActor, LETActor, FluenceActor, RBEActor, EmCalculatorActor, TLEDoseActor
+
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -99,6 +101,7 @@ particle_names_Gate_to_G4 = {
 
 actor_types = {
     "DoseActor": DoseActor,
+    "TLEDoseActor": TLEDoseActor,
     "LETActor": LETActor,
     "RBEActor": RBEActor,
     "EmCalculatorActor": EmCalculatorActor,
@@ -429,6 +432,9 @@ class ActorManager(GateObject):
         if new_actor is not actor:
             return new_actor
 
+    def remove_actor(self, name):
+        self.actors.pop(name)
+
     def _create_actor(self, actor_type, name):
         try:
             cls = actor_types[actor_type]
@@ -641,6 +647,13 @@ class PhysicsManager(GateObject):
             ),
             {
                 "doc": "Special physics constructors to be added to the physics list, e.g. G4Decay, G4OpticalPhysics. "
+            },
+        ),
+        "mean_energy_per_ion_pair": (
+            Box(),
+            {
+                "doc": "Dict of material_name:energy_value, such that: sim.physics_manager.mean_energy_per_ion_pair['IEC_PLASTIC'] = 5.0 * eV. "
+                "Mostly used for using acolinearity during annihilation in some materials"
             },
         ),
         # "processes_to_bias": (
@@ -1243,12 +1256,15 @@ class Simulation(GateObject):
     g4_commands_after_init: List[str]
     init_only: bool
     progress_bar: bool
+    dyn_geom_open_close: bool
+    dyn_geom_optimise: bool
 
     user_info_defaults = {
         "verbose_level": (
-            logger.INFO,
+            "INFO",
             {
-                "doc": "Gate pre-run verbosity. ",
+                "doc": "Gate pre-run verbosity. "
+                "Will display more or fewer messages during initialization. ",
                 "allowed_values": (
                     "NONE",
                     "INFO",
@@ -1268,31 +1284,45 @@ class Simulation(GateObject):
             False,
             {"doc": "Switch on/off verbose output in __getstate__() methods."},
         ),
-        "running_verbose_level": (0, {"doc": "Gate verbosity during running."}),
+        "running_verbose_level": (
+            0,
+            {
+                "doc": "Gate verbosity while the simulation is running.",
+                # "allowed_values": (0, logger.RUN, logger.EVENT),  # FIXME
+            },
+        ),
         "g4_verbose_level": (
             1,
             # For an unknown reason, when verbose_level == 0, there are some
             # additional print after the G4RunManager destructor. So we default at 1
-            {"doc": "Geant4 verbosity."},
+            {
+                "doc": "Geant4 verbosity. With level 0, Geant4 is mostly silent. "
+                "Level 1 already gives quite a bit of verbose output. "
+                "Level 2 is very detailed and might affect performance. "
+            },
         ),
         "g4_verbose": (False, {"doc": "Switch on/off Geant4's verbose output."}),
         "g4_verbose_level_tracking": (
             -1,
             {
-                "doc": "Activate verbose tracking in Geant4 via G4 command '/tracking/verbose g4_verbose_level_tracking'."
+                "doc": "Activate verbose tracking in Geant4 "
+                "via G4 command '/tracking/verbose g4_verbose_level_tracking'."
             },
         ),
         "visu": (
             False,
             {
-                "doc": "Activate visualization? Note: Use low number of primaries if you activate visualization. Default: False"
+                "doc": "Activate visualization? "
+                "Note: Use low number of primaries if you activate visualization. "
             },
         ),
         "visu_type": (
             "vrml",
             {
-                "doc": "The type of visualization to be used.",
-                "available_values": (
+                "doc": "The type of visualization to be used. "
+                "'qt' will start a Geant4 Qt interface. "
+                "The Geant4 visualisation commands can be adapted via the parameter visu_commands.",
+                "allowed_values": (
                     "qt",
                     "vrml",
                     "gdml",
@@ -1317,7 +1347,11 @@ class Simulation(GateObject):
         "visu_commands": (
             read_mac_file_to_commands("default_visu_commands_qt.mac"),
             {
-                "doc": "Geant4 commands needed to handle the visualization. ",
+                "doc": "Geant4 commands needed to handle the visualization. "
+                "By default, the Geant4 visualisation commands are the ones "
+                "provided in the file ``opengate/mac/default_visu_commands_qt.mac``. "
+                "Custom commands can be loaded via a .mac file, e.g.  "
+                "``sim.visu_commands = gate.read_mac_file_to_commands('my_visu_commands.mac')``.",
             },
         ),
         "visu_commands_vrml": (
@@ -1427,6 +1461,16 @@ class Simulation(GateObject):
                 "doc": "Display a progress bar during the simulation",
             },
         ),
+        "dyn_geom_open_close": (
+            True,
+            {
+                "doc": "Warning, should be True. Only set it to false if you know what your are doing"
+            },
+        ),
+        "dyn_geom_optimise": (
+            True,
+            {"doc": "'Optimise' geometry when open/close during dynamic simulation. "},
+        ),
     }
 
     def __init__(self, name="simulation", **kwargs):
@@ -1455,6 +1499,7 @@ class Simulation(GateObject):
 
         # hook functions
         self.user_hook_after_init = None
+        self.user_hook_after_init_arg = None
         self.user_hook_after_run = None
         self.user_hook_log = None
 
@@ -1761,10 +1806,10 @@ class Simulation(GateObject):
                 indicated by `extent`.
             filename (str, optional) : The filename/path to which the voxelized image and labels are written.
                 Suffix added automatically. Path can be relative to the global output directory of the simulation.
-            return_path (bool) : Return the absolute path where the voxelixed image was written?
+            return_path (bool) : Return the absolute path where the voxelized image was written?
 
         Returns:
-            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geoemtry;
+            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geometry;
                 optionally: the absolute path where the image was written, if applicable.
         """
         # collect volumes which are directly underneath the world/parallel worlds
@@ -1780,7 +1825,6 @@ class Simulation(GateObject):
 
         if filename is not None:
             outpath = self.get_output_path(filename)
-
             outpath_json = outpath.parent / (outpath.stem + "_labels.json")
             outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
 
@@ -1837,6 +1881,9 @@ class Simulation(GateObject):
             vox.Voxelize()
             image = get_py_image_from_cpp_image(vox.fImage)
             labels = vox.fLabels
+            for key in labels.keys():
+                vol = se.simulation.volume_manager.get_volume(key)
+                labels[key] = {"label": labels[key], "material": vol.material}
 
         return labels, image
 
@@ -1849,4 +1896,7 @@ def create_sim_from_json(path):
 
 process_cls(PhysicsManager)
 process_cls(PhysicsListManager)
+process_cls(VolumeManager)
+process_cls(ActorManager)
+process_cls(PostProcessingManager)
 process_cls(Simulation)

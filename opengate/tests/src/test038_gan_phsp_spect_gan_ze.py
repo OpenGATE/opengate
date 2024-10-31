@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    condition_generator = t38.create_simulation(sim, paths)
+    condition_generator = t38.create_simulation(sim, paths, version="_spect_gan_ze")
 
     gsource = sim.get_source_user_info("gaga")
     gsource.skip_policy = "ZeroEnergy"  # this is SkipEvents by default

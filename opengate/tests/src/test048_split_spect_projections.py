@@ -45,7 +45,7 @@ if __name__ == "__main__":
                 output_filenames[i],
                 None,
                 tolerance=1e-6,
-                ignore_value=0,
+                ignore_value_data2=0,
                 axis="x",
             )
             and is_ok

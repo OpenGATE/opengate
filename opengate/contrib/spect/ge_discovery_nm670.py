@@ -1,6 +1,10 @@
 import pathlib
 from opengate.managers import Simulation
-from opengate.geometry.volumes import RepeatParametrisedVolume, HexagonVolume
+from opengate.geometry.volumes import (
+    RepeatParametrisedVolume,
+    HexagonVolume,
+    unite_volumes,
+)
 from opengate.geometry.utility import (
     translate_point_to_volume,
     get_transform_orbiting,
@@ -39,6 +43,13 @@ def get_orientation_for_ct(colli_type, table_shift, radius):
     return get_transform_orbiting(p, "x", 90)
 
 
+def add_materials(sim):
+    f = pathlib.Path(__file__).parent.resolve()
+    fdb = f"{f}/spect_ge_nm670_materials.db"
+    if fdb not in sim.volume_manager.material_database.filenames:
+        sim.volume_manager.add_material_database(fdb)
+
+
 def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     """
     Collimators:
@@ -52,10 +63,7 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     Collimator HEGP: High Energy General Purpose   (for I131)
 
     """
-    f = pathlib.Path(__file__).parent.resolve()
-    fdb = f"{f}/spect_ge_nm670_materials.db"
-    if fdb not in sim.volume_manager.material_database.filenames:
-        sim.volume_manager.add_material_database(fdb)
+    add_materials(sim)
 
     # check overlap
     sim.check_volumes_overlap = False  # set to True for debug
@@ -72,6 +80,28 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
         colli = add_collimator(sim, name, head, collimator_type, debug)
 
     return head, colli, crystal
+
+
+def add_spect_two_heads(
+    sim, name="spect", collimator_type="lehr", debug=False, radius=None
+):
+    cm = g4_units.cm
+    if radius is None:
+        radius = 36 * cm
+    head1, colli1, crystal1 = add_spect_head(
+        sim, f"{name}_1", collimator_type, debug=debug
+    )
+
+    # the second head is the same at 180 degrees
+    head2, colli2, crystal2 = add_spect_head(
+        sim, f"{name}_2", collimator_type, debug=debug
+    )
+
+    # set at their initial position
+    rotate_gantry(head1, radius, start_angle_deg=0, step_angle_deg=1, nb_angle=1)
+    rotate_gantry(head2, radius, start_angle_deg=180, step_angle_deg=1, nb_angle=1)
+
+    return [head1, head2], [crystal1, crystal2]
 
 
 def distance_to_center_of_crystal(sim, name="spect"):
@@ -258,7 +288,6 @@ def add_collimator(sim, name, head, collimator_type, debug):
             f"Error, unknown collimator type {collimator_type}. "
             f'Use "megp" or "lehr" or "hegp" or "False"'
         )
-    sim.volume_manager.add_volume(holep)
 
     return colli_trd
 
@@ -283,6 +312,7 @@ def hegp_collimator_repeater(sim, name, core, debug):
     holep.offset_nb = 2
     holep.offset = [5.0229 * mm, 2.9000 * mm, 0]
 
+    sim.volume_manager.add_volume(holep)
     return holep
 
 
@@ -308,6 +338,7 @@ def megp_collimator_repeater(sim, name, core, debug):
     holep.offset_nb = 2
     holep.offset = [3.50704 * mm, 2.025 * mm, 0]
 
+    sim.volume_manager.add_volume(holep)
     return holep
 
 
@@ -335,7 +366,70 @@ def lehr_collimator_repeater(sim, name, core, debug):
     holep.offset_nb = 2
     holep.offset = [1.47224 * mm, 0.85 * mm, 0]
 
+    sim.volume_manager.add_volume(holep)
     return holep
+
+
+def lehr_collimator_repeater2(sim, name, core, debug):
+    cm = g4_units.cm
+    mm = g4_units.mm
+
+    # one hole
+    hole_a = HexagonVolume(name=f"{name}_collimator_hole_a")
+    hole_a.height = 3.5 * cm
+    hole_a.radius = 0.075 * cm
+    hole_a.material = "G4_AIR"
+    hole_a.mother = core.name
+
+    # double hole
+    hole = unite_volumes(hole_a, hole_a, translation=[1.47224 * mm, 0.85 * mm, 0])
+    sim.volume_manager.add_volume(hole)
+
+    # parameterised holes
+    holep = RepeatParametrisedVolume(repeated_volume=hole)
+    if debug:
+        holep.linear_repeat = [30, 30, 1]
+    else:
+        holep.linear_repeat = [183, 235, 1]
+
+    holep.translation = [2.94449 * mm, 1.7 * mm, 0]
+    sim.volume_manager.add_volume(holep)
+
+    return holep
+
+
+def lehr_collimator_repeater_noparam(sim, name, core, debug):
+    cm = g4_units.cm
+    mm = g4_units.mm
+    # one single hole
+    hole = sim.add_volume("Hexagon", name=f"{name}_collimator_hole")
+    hole.height = 3.5 * cm
+    hole.radius = 0.075 * cm
+    hole.material = "G4_AIR"
+    hole.mother = core.name
+    translations = []
+
+    if debug:
+        linear_repeat = [30, 30, 1]
+    else:
+        linear_repeat = [183, 235, 1]
+
+    offset_nb = 2
+    translation = [2.94449 * mm, 1.7 * mm, 0]
+    offset = [1.47224 * mm, 0.85 * mm, 0]
+    start = [-(x - 1) * y / 2.0 for x, y in zip(linear_repeat, translation)]
+    for i in range(linear_repeat[0]):
+        for j in range(linear_repeat[1]):
+            for k in range(linear_repeat[2]):
+                for o in range(offset_nb):
+                    tr_x = start[0] + i * translation[0] + o * offset[0]
+                    tr_y = start[1] + j * translation[1] + o * offset[1]
+                    tr_z = start[2] + k * translation[2] + o * offset[2]
+                    tr = [tr_x, tr_y, tr_z]
+                    translations.append(tr)
+    hole.translation = translations  # repeated
+
+    return hole
 
 
 def add_simplified_digitizer_tc99m(
@@ -416,7 +510,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     return cc
 
 
-def add_digitizer_tc99m(sim, crystal_name, name):
+def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -451,6 +545,8 @@ def add_digitizer_tc99m(sim, crystal_name, name):
         {"name": f"scatter", "min": 108.57749938965 * keV, "max": 129.5924987793 * keV},
         {"name": f"peak140", "min": 129.5924987793 * keV, "max": 150.60751342773 * keV},
     ]
+    if not spectrum_channel:
+        channels.pop(0)
     cc.channels = channels
 
     # projection
@@ -567,63 +663,14 @@ def get_plane_position_and_distance_to_crystal(collimator_type):
     )
 
 
-def add_fake_table(sim, name="table"):
-    """
-    Add a patient table (fake)
-    """
-
-    # unit
-    mm = g4_units.mm
-    cm = g4_units.cm
-    cm3 = g4_units.cm3
-    deg = g4_units.deg
-    gcm3 = g4_units.g / cm3
-
-    # colors
-    red = [1, 0.7, 0.7, 0.8]
-    white = [1, 1, 1, 1]
-
-    sim.volume_manager.material_database.add_material_weights(
-        f"CarbonFiber", ["C"], [1], 1.78 * gcm3
-    )
-
-    # main bed
-    table = sim.add_volume("Tubs", f"{name}_table")
-    table.mother = "world"
-    table.rmax = 439 * mm
-    table.rmin = 406 * mm
-    table.dz = 200 * cm / 2.0
-    table.sphi = 0 * deg
-    table.dphi = 70 * deg
-    table.translation = [0, 25 * cm, 0]
-    table.rotation = Rotation.from_euler("z", -125, degrees=True).as_matrix()
-    table.material = "CarbonFiber"
-    table.color = white
-
-    # interior of the table
-    tablein = sim.add_volume("Tubs", f"{name}_tablein")
-    tablein.mother = table.name
-    tablein.rmax = 436.5 * mm
-    tablein.rmin = 408.5 * mm
-    tablein.dz = 200 * cm / 2.0
-    tablein.sphi = 0 * deg
-    tablein.dphi = 69 * deg
-    tablein.translation = [0, 0, 0]
-    tablein.rotation = Rotation.from_euler("z", 0.5, degrees=True).as_matrix()
-    tablein.material = "G4_AIR"
-    tablein.color = red
-
-    return table
-
-
 def set_head_orientation(head, collimator_type, radius, gantry_angle=0):
     # pos is the distance from entrance detection plane and head boundary
     pos, _, _ = compute_plane_position_and_distance_to_crystal(collimator_type)
     distance = radius + pos
     # rotation X180 is to set the detector head-foot
     # rotation Z90 is the gantry angle
-    r1 = Rotation.from_euler("x", 90, degrees=True)
-    r2 = Rotation.from_euler("z", gantry_angle, degrees=True)
+    r1 = Rotation.from_euler("X", 90, degrees=True)
+    r2 = Rotation.from_euler("Z", gantry_angle, degrees=True)
     r = r2 * r1
     head.translation = r.apply([0, 0, -distance])
     head.rotation = r.as_matrix()
@@ -657,3 +704,105 @@ def add_detection_plane_for_arf(
     detector_plane.translation = ri.apply([0, 0, -radius])
 
     return detector_plane
+
+
+def rotate_gantry(
+    head, radius, start_angle_deg, step_angle_deg=1, nb_angle=1, initial_rotation=None
+):
+    # compute the nb translation and rotation
+    translations = []
+    rotations = []
+    current_angle_deg = start_angle_deg
+    if initial_rotation is None:
+        initial_rotation = Rotation.from_euler("X", 90, degrees=True)
+    for r in range(nb_angle):
+        t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
+        rot = Rotation.from_matrix(rot)
+        rot = rot * initial_rotation
+        rot = rot.as_matrix()
+        translations.append(t)
+        rotations.append(rot)
+        current_angle_deg += step_angle_deg
+
+    # set the motion for the SPECT head
+    head.add_dynamic_parametrisation(translation=translations, rotation=rotations)
+
+
+def add_source_for_arf_training_dataset(
+    sim, source_name, activity, detector_plane, min_energy, max_energy
+):
+    cm = g4_units.cm
+    # tc99m = 0.01 * MeV - 0.154 * MeV
+    source = sim.add_source("GenericSource", source_name)
+    source.particle = "gamma"
+    source.activity = activity
+    source.position.type = "disc"
+    source.position.radius = 5 * cm
+    source.position.translation = [0, 0, 20 * cm]
+    source.direction.type = "iso"
+    source.energy.type = "range"
+    source.energy.min_energy = min_energy
+    source.energy.max_energy = max_energy
+    source.direction.acceptance_angle.volumes = [detector_plane.name]
+    source.direction.acceptance_angle.intersection_flag = True
+
+    return source
+
+
+def add_actor_for_arf_training_dataset(
+    sim, head, arf_name, colli_type, ene_win_actor, rr
+):
+    mm = g4_units.mm
+    nm = g4_units.nm
+    cm = g4_units.cm
+    # detector input plane
+    pos, crystal_dist, psd = get_plane_position_and_distance_to_crystal(colli_type)
+    pos += 1 * nm  # to avoid overlap
+    detector_plane = sim.add_volume("Box", "arf_plane")
+    detector_plane.mother = head
+    detector_plane.size = [57.6 * cm, 44.6 * cm, 1 * nm]
+    detector_plane.translation = [0, 0, pos]
+    detector_plane.material = "G4_Galactic"
+    detector_plane.color = [0, 1, 0, 1]
+
+    # arf actor for building the training dataset
+    arf = sim.add_actor("ARFTrainingDatasetActor", arf_name)
+    arf.attached_to = detector_plane.name
+    arf.output_filename = "arf_training_dataset.root"
+    arf.energy_windows_actor = ene_win_actor.name
+    arf.russian_roulette = rr
+
+    return detector_plane, arf
+
+
+def add_arf_detector(
+    sim, radius, gantry_angle, size, spacing, colli_type, name, i, pth
+):
+    plane_size = [size[0] * spacing[0], size[1] * spacing[1]]
+    det_plane = add_detection_plane_for_arf(
+        sim,
+        plane_size,
+        colli_type=colli_type,
+        radius=radius,
+        gantry_angle=gantry_angle,
+        det_name=f"{name}_{i}",
+    )
+
+    pos, crystal_distance, psd = compute_plane_position_and_distance_to_crystal(
+        colli_type
+    )
+
+    arf = sim.add_actor("ARFActor", f"{name}_arf_{i}")
+    arf.attached_to = det_plane.name
+    arf.output_filename = f"projection_{i}.mhd"
+    arf.batch_size = 1e5
+    arf.image_size = size
+    arf.image_spacing = spacing
+    arf.verbose_batch = False
+    arf.distance_to_crystal = crystal_distance  # 74.625 * mm
+    arf.pth_filename = pth
+    arf.flip_plane = True  # because the training was backside
+    arf.enable_hit_slice = False
+    arf.gpu_mode = "auto"
+
+    return det_plane, arf

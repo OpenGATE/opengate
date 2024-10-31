@@ -3,7 +3,7 @@ from functools import wraps
 
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
 
@@ -156,6 +156,12 @@ class ActorBase(GateObject):
     #     self.known_attributes.add("fFilters")
     #     # output_filename is a property
     #     self.known_attributes.add("output_filename")
+
+    def configure_like(self, other_obj):
+        super().configure_like(other_obj)
+        # also pick up the configuration of the user output
+        for k, v in self.user_output.items():
+            v.configure_like(other_obj.user_output[k])
 
     def to_dictionary(self):
         d = super().to_dictionary()
@@ -338,22 +344,9 @@ class ActorBase(GateObject):
         )
 
         if automatically_generate_interface is True:
-            # try:
             self._add_interface_to_user_output(
                 actor_output_class.get_default_interface_class(), name, name
             )
-            # except GateImplementationError as e:
-            #     raise GateImplementationError(f"A user interface cannot automatically be added for user output {name}. "
-            #                                   f"A possibly reason is that the actor output "
-            #                                   f"handles data with multiple items. "
-            #                                   f"The developer needs to set automatically_generated_interface=False "
-            #                                   f"and create the interface manually via _add_interface_to_user_output.")
-        # # specify whether this instance of actor output can be deactivated
-        # # (relevant for the setter hook of the "active" parameter)
-        # self.user_output[name].__can_be_deactivated__ = bool(can_be_deactivated)
-        # # Now the setter of active can be used
-        # if active is not None:
-        #     self.user_output[name].active = active
 
         return self.user_output[name]
 
@@ -384,15 +377,27 @@ class ActorBase(GateObject):
             hasattr(type(self), interface_name)
             and unique_interface_name not in self._existing_properties_to_interfaces
         ):
-            raise GateImplementationError(
-                f"Cannot create a property '{interface_name}' "
-                f"for interface class {interface_class_name} "
-                f"in actor {self.name} "
-                f"because a property with that name already exists, "
-                f"but it is not associated with the interface. "
-                f"The developer needs to change the name of the interface "
-                f"(or user_output in case the interface is automatically generated). "
-            )
+            """
+            this is a (temporary) workaround: if an actor inherits from another one (e.g. TLEDoseActor
+            inherits from DoseActor) and if properties have already been created, they are with the
+            parent class name. We check this case here looking at the first parent (__class__.__bases__[0]).
+            It is not a correct fix ...
+            """
+            d = self.__class__.__bases__[0]
+            unique_interface_name = f"{d.__name__}_{interface_name}"
+            if (
+                hasattr(type(self), interface_name)
+                and unique_interface_name not in self._existing_properties_to_interfaces
+            ):
+                raise GateImplementationError(
+                    f"Cannot create a property '{interface_name}' "
+                    f"for interface class {interface_class_name} "
+                    f"in actor {self.name} "
+                    f"because a property with that name already exists, "
+                    f"but it is not associated with the interface. "
+                    f"The developer needs to change the name of the interface "
+                    f"(or user_output in case the interface is automatically generated). "
+                )
         elif not hasattr(type(self), interface_name):
             setattr(type(self), interface_name, property(p))
             self._existing_properties_to_interfaces[unique_interface_name] = (
@@ -451,3 +456,6 @@ class ActorBase(GateObject):
     def EndSimulationAction(self):
         """Default virtual method for inheritance"""
         pass
+
+
+process_cls(ActorBase)

@@ -6,15 +6,36 @@ import sys
 # The available color names are black,
 # red, green, yellow, blue, purple, cyan and white.
 
+
+class CustomFormatter(colorlog.ColoredFormatter):
+    """
+    The levelname (INFO, DEBUG etc) is only printed if not equal to INFO
+    """
+
+    def format(self, record):
+        # Check the log level and adjust the message format accordingly
+        if record.levelname == "INFO":
+            self._style._fmt = "%(log_color)s%(message)s%(reset)s"
+        else:
+            self._style._fmt = (
+                "%(log_color)s%(levelname)-8s%(reset)s%(log_color)s%(message)s"
+            )
+
+        return super().format(record)
+
+
 # main format
-formatter = colorlog.ColoredFormatter(
-    "%(log_color)s%(log_color)s%(message)s",
-    datefmt=None,
-    reset=True,
-    log_colors={"NONE": "cyan", "DEBUG": "cyan", "INFO": "green"},
-    secondary_log_colors={},
-    style="%",
+formatter = CustomFormatter(
+    "%(log_color)s%(levelname)-8s%(reset)s%(log_color)s%(message)s",
+    log_colors={
+        "DEBUG": "cyan",
+        "INFO": "green",
+        "WARNING": "yellow",
+        "ERROR": "red",
+        "CRITICAL": "red,bg_white",
+    },
 )
+
 
 # set output message to standard output
 handler = colorlog.StreamHandler(sys.stdout)

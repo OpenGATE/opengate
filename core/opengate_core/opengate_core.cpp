@@ -206,6 +206,8 @@ void init_G4NavigationHistory(py::module &);
 
 void init_G4Navigator(py::module &);
 
+void init_G4AssemblyVolume(py::module &);
+
 // specific to python
 void init_G4PhysicsLists(py::module &);
 
@@ -296,6 +298,8 @@ void init_GateTrackCreatorProcessFilter(py::module &);
 void init_GateKineticEnergyFilter(py::module &);
 
 void init_GateDoseActor(py::module &m);
+
+void init_GateTLEDoseActor(py::module &m);
 
 void init_GateFluenceActor(py::module &m);
 
@@ -480,6 +484,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4TouchableHistory(m);
   init_G4NavigationHistory(m);
   init_G4Navigator(m);
+  init_G4AssemblyVolume(m);
 
   init_G4PhysicsLists(m);
   init_G4EmParameters(m);
@@ -567,6 +572,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateEventAction(m);
   init_GateTrackingAction(m);
   init_GateDoseActor(m);
+  init_GateTLEDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateRBEActor(m);

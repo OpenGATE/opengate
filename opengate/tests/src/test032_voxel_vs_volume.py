@@ -72,7 +72,7 @@ if __name__ == "__main__":
             mat = "G4_LEAD_OXIDE"
         if "center_cylinder_hole" in l:
             mat = "G4_LEAD_OXIDE"
-        m = [labels[l], labels[l] + 1, mat]
+        m = [labels[l]["label"], labels[l]["label"] + 1, mat]
         iec2.voxel_materials.append(m)
 
     pMin, pMax = sim.volume_manager.volumes["iec1"].bounding_limits
@@ -83,12 +83,12 @@ if __name__ == "__main__":
     # the image coordinate space to iec1 or iec2
     # Coordinate system of iec1 is pMin (the extend)
     # Coordinate system of iec2 is the center of the image bounding box
-    img = itk.imread(str(iec2.image))
-    fake1 = gate.image.create_image_like(img)
+    iec2.load_input_image()
+    fake1 = gate.image.create_image_like(iec2.itk_image)
     pMin = gate.geometry.utility.vec_g4_as_np(pMin)
     fake1.SetOrigin(pMin)
 
-    fake2 = gate.image.create_image_like(img)
+    fake2 = gate.image.create_image_like(iec2.itk_image)
     info = gate.image.get_info_from_image(fake2)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
     fake2.SetOrigin(origin)
@@ -106,9 +106,9 @@ if __name__ == "__main__":
         # and in the analytical phantom (iec1)
         p = [31 * mm, 33 * mm, 36 * mm]
         if i == 1:
-            p = gate.image.transform_images_point(p, img, fake1)
+            p = gate.image.transform_images_point(p, iec2.itk_image, fake1)
         else:
-            p = gate.image.transform_images_point(p, img, fake2)
+            p = gate.image.transform_images_point(p, iec2.itk_image, fake2)
         source.position.translation = p
         source.activity = activity
         source.direction.type = "iso"
@@ -147,6 +147,8 @@ if __name__ == "__main__":
         stats,
         tolerance=87,
         axis="x",
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images()
     )
 
     utility.test_ok(is_ok)

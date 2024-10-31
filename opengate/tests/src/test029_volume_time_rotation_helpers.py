@@ -7,7 +7,7 @@ import opengate.contrib.phantoms.nemaiec as gate_iec
 from scipy.spatial.transform import Rotation
 
 
-def create_simulation(sim, aa_flag, paths):
+def create_simulation(sim, aa_flag, paths, version):
     # main options
     sim.g4_verbose = False
     # sim.visu = True
@@ -102,12 +102,12 @@ def create_simulation(sim, aa_flag, paths):
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stat.output_filename = "stats029.txt"
+    stat.output_filename = f"stats029{version}.txt"
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
     hc.attached_to = "spect_crystal"
-    hc.output_filename = "test029.root"
+    hc.output_filename = f"test029{version}.root"
     if sim.number_of_threads == 1:
         hc.root_output.write_to_disk = False
     hc.attributes = [
@@ -141,7 +141,7 @@ def create_simulation(sim, aa_flag, paths):
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     proj.origin_as_image_center = False
-    proj.output_filename = "proj029.mhd"
+    proj.output_filename = f"proj029{version}.mhd"
 
     translations = []
     rotations = []
@@ -167,7 +167,7 @@ def create_simulation(sim, aa_flag, paths):
     spect.add_dynamic_parametrisation(translation=translations, rotation=rotations)
 
     # Warning : we set the initial position for the spect
-    # is it not really used (because the motion actor) but needed to test overlap
+    # it is used for computing origin/offset of the projection image
     spect.translation = translations[0]
     spect.rotation = rotations[0]
 

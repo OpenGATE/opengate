@@ -11,11 +11,9 @@ from ..utility import (
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
-    divide_itk_images,
-    scale_itk_image,
-    get_info_from_image,
     images_have_same_domain,
     resample_itk_image_like,
+    itk_image_from_array,
 )
 from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
@@ -26,6 +24,9 @@ from .actoroutput import (
     ActorOutputSingleImageWithVariance,
     UserInterfaceToActorOutputImage,
 )
+from .dataitems import (
+    ItkImageDataItem,
+    )
 
 class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
     user_info_defaults = {
@@ -372,7 +373,7 @@ def _setter_hook_uncertainty(self, value):
     return value
 
 
-def _setter_hook_goal_uncertainty(self, value):
+def _setter_hook_uncertainty_goal(self, value):
     if value < 0.0 or value > 1.0:
         fatal(f"Goal uncertainty must be > 0 and < 1. The provided value is: {value}")
     return value
@@ -462,6 +463,20 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             },
         ),
+        # "calculate_density_from": (
+        #     "auto",
+        #     {
+        #         "doc": "How should density be calculated?\n"
+        #                "'simulation': via scoring along with the rest of the quantities.\n"
+        #                "'image': from the CT image, if the actor is attached to an ImageVolume.\n"
+        #                "'auto' (default): Let GATE pick the right one for you. ",
+        #         "allowed_values": (
+        #             "auto",
+        #             "simulation",
+        #             "image"
+        #         ),
+        #     },
+        # ),
         "ste_of_mean": (
             False,
             {
@@ -478,18 +493,30 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "deactivated": True,
             },
         ),
-        "goal_uncertainty": (
+        "uncertainty_goal": (
             0,
             {
-                "doc": "FIXME",
-                "setter_hook": _setter_hook_goal_uncertainty,
-                "deprecated": "Currently not implemented. ",
+                "doc": "If set, it defines the statistical uncertainty at which the run is aborted.",
+                "setter_hook": _setter_hook_uncertainty_goal,
             },
         ),
-        "thresh_voxel_edep_for_unc_calc": (
+        "uncertainty_first_check_after_n_events": (
+            1e4,
+            {
+                "doc": "Number of events after which uncertainty is evaluated the first time, for each run."
+                "After the first evaluation, the value is updated with an estimation of the N events needed to achieve the target uncertainty.",
+            },
+        ),
+        "uncertainty_voxel_edep_threshold": (
             0.7,
             {
-                "doc": "FIXME",
+                "doc": "For the calculation of the mean uncertainty of the edep image, only voxels that are above this fraction of the max edep are considered.",
+            },
+        ),
+        "uncertainty_overshoot_factor_N_events": (
+            1.05,
+            {
+                "doc": "Factor multiplying the estimated N events needed to achieve the target uncertainty, to ensure faster convergence.",
             },
         ),
         "dose_calc_on_the_fly": (
@@ -504,6 +531,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
 
+        # **** EDEP ****
         # This creates a user output with two components: 0=edep, 1=edep_squared
         # additionally, it also provides variance, std, and uncertainty via dynamic properties
         self._add_user_output(
@@ -533,29 +561,54 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             item="uncertainty",
         )
 
+        # **** DOSE ****
         self._add_user_output(
-            ActorOutputSingleImage,
-            "dose",
+            ActorOutputSingleImageWithVariance,
+            "dose_with_uncertainty",
+            automatically_generate_interface=False,
         )
-
-        self._add_user_output(
-            ActorOutputSingleImage,
+        # create an interface to item 0 of user output "dose_with_uncertainty"
+        # and make it available via a property 'dose' in this actor
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage, "dose_with_uncertainty", "dose", item=0
+        )
+        # create an interface to item 1 of user output "dose_with_uncertainty"
+        # and make it available via a property 'dose_squared' in this actor
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "dose_with_uncertainty",
+            "dose_squared",
+            item=1,
+        )
+        self._add_interface_to_user_output(
+            UserInterfaceToActorOutputImage,
+            "dose_with_uncertainty",
             "dose_uncertainty",
+            item="uncertainty",
         )
 
+        # set the defaults for the user output of this actor
         self._add_user_output(ActorOutputSingleMeanImage, "density")
+        self._add_user_output(ActorOutputSingleImage, "counts")
+        self.user_output.dose_with_uncertainty.set_active(False, item="all")
+        self.user_output.density.set_active(False)
+        self.user_output.counts.set_active(False)
 
-        self.user_output.dose.set_active(False)
-        self.user_output.dose_uncertainty.set_active(False)
-
+        # item suffix is used when the filename is auto-generated or
+        # when the user sets one filename per actor
         self.user_output.edep_with_uncertainty.set_item_suffix("edep", item=0)
         self.user_output.edep_with_uncertainty.set_item_suffix("edep_squared", item=1)
         self.user_output.edep_with_uncertainty.set_item_suffix(
             "edep_uncertainty", item="uncertainty"
         )
-        self.user_output.dose.set_item_suffix("dose")
-        self.user_output.dose_uncertainty.set_item_suffix("dose_uncertainty")
+        self.user_output.dose_with_uncertainty.set_item_suffix("dose", item=0)
+        self.user_output.dose_with_uncertainty.set_item_suffix("dose_squared", item=1)
+        self.user_output.dose_with_uncertainty.set_item_suffix(
+            "dose_uncertainty", item="uncertainty"
+        )
+        # The following 2 are single item output and item=0 is default
         self.user_output.density.set_item_suffix("density")
+        self.user_output.counts.set_item_suffix("counts")
 
         self.__initcpp__()
 
@@ -569,59 +622,23 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
+                "EndOfEventAction",
             }
         )
 
-    def compute_dose_from_edep_img(self, input_image, density_image=None):
-        """
-        * create mass image:
-            - from ct HU units, if dose actor attached to ImageVolume.
-            - from material density, if standard volume
-        * compute dose as edep_image /  mass_image
-        """
-        vol = self.attached_to_volume
-        voxel_volume = self.spacing[0] * self.spacing[1] * self.spacing[2]
-        Gy = g4_units.Gy
-        gcm3 = g4_units.g_cm3
+    def create_density_image_from_image_volume(self, deposit_image):
+        if self.attached_to_volume.volume_type != "ImageVolume":
+            fatal(
+                f"Cannot calculate the density map from the ImageVolume "
+                f"because this actor is attached to a {self.attached_to_volume.volume_type}. "
+            )
 
-        if vol.volume_type == "ImageVolume":
-            if self.score_in == "water":
-                # for dose to water, divide by density of water and not density of material
-                scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
-            else:
-                density_image = vol.create_density_image()
-                if images_have_same_domain(input_image, density_image) is False:
-                    density_image = resample_itk_image_like(
-                        density_image, input_image, 0, linear=True
-                    )
-                scaled_image = divide_itk_images(
-                    img1_numerator=input_image,
-                    img2_denominator=density_image,
-                    filterVal=0,
-                    replaceFilteredVal=0,
-                )
-            # divide by voxel volume and convert unit
-            scaled_image = scale_itk_image(scaled_image, 1 / (Gy * voxel_volume))
-
-        else:
-            if self.score_in == "water":
-                # for dose to water, divide by density of water and not density of material
-                scaled_image = scale_itk_image(input_image, 1 / (1.0 * gcm3))
-            else:
-                # the dose actor is attached to a volume, we need the density image
-                # to be computed from the cpp side
-                if density_image is None:
-                    fatal(f"A density image computed via the G4 simulation is needed.")
-                scaled_image = divide_itk_images(
-                    img1_numerator=input_image,
-                    img2_denominator=density_image,
-                    filterVal=0,
-                    replaceFilteredVal=0,
-                )
-            # divide by voxel volume and convert unit
-            scaled_image = scale_itk_image(scaled_image, 1 / (Gy * voxel_volume))
-
-        return scaled_image
+        density_image = self.attached_to_volume.create_density_image()
+        if images_have_same_domain(deposit_image, density_image) is False:
+            density_image = resample_itk_image_like(
+                density_image, deposit_image, 0, linear=True
+            )
+        return density_image
 
     def initialize(self, *args):
         """
@@ -634,36 +651,65 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
-        # dose uncertainty relies on edep_uncertainty. Set active flag accordingly
-        if self.user_output.dose_uncertainty.get_active() is True:
-            self.user_output.dose.set_active(True)
-            self.user_output.edep_with_uncertainty.set_active(True, item="uncertainty")
         # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
         if (
             self.user_output.edep_with_uncertainty.get_active(
                 item=("uncertainty", "std", "variance")
             )
             is True
+            or self.uncertainty_goal >= 0
         ):
-            self.user_output.edep_with_uncertainty.set_active(
-                True, item=1
-            )  # activate squared component
+            # activate the squared component, but avoid writing it to disk
+            # because the user has not activated it and thus most likely does not want it
+            if not self.user_output.edep_with_uncertainty.get_active(item=1):
+                self.user_output.edep_with_uncertainty.set_write_to_disk(False, item=1)
+                self.user_output.edep_with_uncertainty.set_active(
+                    True, item=1
+                )  # activate squared component
 
-        # activate density if we need the dose and the DoseActor is not attached to a volume
+        # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
         if (
-            self.user_output.dose.get_active() is True
+            self.user_output.dose_with_uncertainty.get_active(
+                item=("uncertainty", "std", "variance")
+            )
+            is True
+        ):
+            # activate the squared component, but avoid writing it to disk
+            # because the user has not activated it and thus most likely does not want it
+            if not self.user_output.dose_with_uncertainty.get_active(item=1):
+                self.user_output.dose_with_uncertainty.set_write_to_disk(False, item=1)
+                self.user_output.dose_with_uncertainty.set_active(
+                    True, item=1
+                )  # activate squared component
+
+        if (
+            self.user_output.density.get_active() is True
             and self.attached_to_volume.volume_type != "ImageVolume"
         ):
-            if not self.user_output.density.get_active():
-                self.user_output.density.set_active(True)
-                self.user_output.density.set_write_to_disk(False)
+            fatal(
+                "The dose actor can only produce a density map if it is attached to an ImageVolume. "
+                f"This actor is attached to a {self.attached_to_volume.volume_type} volume. "
+            )
 
         self.InitializeUserInput(self.user_info)  # C++ side
-        self.SetSquareFlag(self.user_output.edep_with_uncertainty.get_active(item=1))
-        self.SetDensityFlag(
-            self.user_output.density.get_active()
-        )  # item=0 is the default
+        # Set the flags on C++ side so the C++ knows which quantities need to be scored
+        self.SetEdepSquaredFlag(
+            self.user_output.edep_with_uncertainty.get_active(item=1)
+        )
+        self.SetDoseFlag(self.user_output.dose_with_uncertainty.get_active(item=0))
+        self.SetDoseSquaredFlag(
+            self.user_output.dose_with_uncertainty.get_active(item=1)
+        )
+        # item=0 is the default
+        self.SetCountsFlag(self.user_output.counts.get_active())
+        # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
         self.SetToWaterFlag(self.score_in == "water")
+
+        # variables for stop on uncertainty functionality
+        self.SetUncertaintyGoal(self.uncertainty_goal)
+        self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
+        self.SetOvershoot(self.uncertainty_overshoot_factor_N_events)
+        self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -675,15 +721,21 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             "edep_with_uncertainty",
             run_index,
             self.cpp_edep_image,
-            self.cpp_square_image,
+            self.cpp_edep_squared_image,
         )
 
-        if self.user_output.density.get_active():
-            self.prepare_output_for_run("density", run_index)
-            self.push_to_cpp_image("density", run_index, self.cpp_density_image)
+        if self.user_output.dose_with_uncertainty.get_active(item="any"):
+            self.prepare_output_for_run("dose_with_uncertainty", run_index)
+            self.push_to_cpp_image(
+                "dose_with_uncertainty",
+                run_index,
+                self.cpp_dose_image,
+                self.cpp_dose_squared_image,
+            )
 
-        if self.user_output.dose_uncertainty.get_active():
-            self.prepare_output_for_run("dose_uncertainty", run_index)
+        if self.user_output.counts.get_active():
+            self.prepare_output_for_run("counts", run_index)
+            self.push_to_cpp_image("counts", run_index, self.cpp_counts_image)
 
         g4.GateDoseActor.BeginOfRunActionMasterThread(self, run_index)
 
@@ -692,56 +744,53 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             "edep_with_uncertainty",
             run_index,
             self.cpp_edep_image,
-            self.cpp_square_image,
+            self.cpp_edep_squared_image,
         )
         self._update_output_coordinate_system("edep_with_uncertainty", run_index)
         self.user_output.edep_with_uncertainty.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
 
-        # density image
-        if self.user_output.density.get_active():
-            self.fetch_from_cpp_image("density", run_index, self.cpp_density_image)
-            self._update_output_coordinate_system("density", run_index)
-            self.user_output.density.store_meta_data(
+        if self.user_output.dose_with_uncertainty.get_active(item="any"):
+            self.fetch_from_cpp_image(
+                "dose_with_uncertainty",
+                run_index,
+                self.cpp_dose_image,
+                self.cpp_dose_squared_image,
+            )
+            self._update_output_coordinate_system("dose_with_uncertainty", run_index)
+            self.user_output.dose_with_uncertainty.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+            # divide by voxel volume and scale to unit Gy
+            if self.user_output.dose_with_uncertainty.get_active(item=0):
+                self.user_output.dose_with_uncertainty.data_per_run[run_index].data[
+                    0
+                ] /= (g4_units.Gy * self.spacing[0] * self.spacing[1] * self.spacing[2])
+            if self.user_output.dose_with_uncertainty.get_active(item=1):
+                # in the squared component 1, the denominator needs to be squared
+                self.user_output.dose_with_uncertainty.data_per_run[run_index].data[
+                    1
+                ] /= (
+                    g4_units.Gy * self.spacing[0] * self.spacing[1] * self.spacing[2]
+                ) ** 2
+
+        if self.user_output.counts.get_active():
+            self.fetch_from_cpp_image("counts", run_index, self.cpp_counts_image)
+            self._update_output_coordinate_system("counts", run_index)
+            self.user_output.counts.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
 
-        # dose
-        if self.user_output.dose.get_active():
+        # density image
+        if self.user_output.density.get_active():
             edep_image = self.user_output.edep_with_uncertainty.get_data(
                 run_index, item=0
             )
-            density_image = None
-            if self.user_output.density.get_active():
-                density_image = self.user_output.density.get_data(run_index)
-            dose_image = self.compute_dose_from_edep_img(edep_image, density_image)
-            dose_image.CopyInformation(edep_image)
-            self.store_output_data(
-                "dose",
-                run_index,
-                dose_image,
+            self.user_output.density.store_data(
+                run_index, self.create_density_image_from_image_volume(edep_image)
             )
-            self.user_output.dose.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
-
-        if self.user_output.dose_uncertainty.get_active() is True:
-            # scale by density
-            edep_uncertainty_image = self.user_output.edep_with_uncertainty.get_data(
-                run_index, item="uncertainty"
-            )
-            density_image = None
-            if self.user_output.density.get_active():
-                density_image = self.user_output.density.get_data(run_index)
-            dose_uncertainty_image = self.compute_dose_from_edep_img(
-                edep_uncertainty_image, density_image
-            )
-            dose_uncertainty_image.CopyInformation(edep_uncertainty_image)
-            self.user_output.dose_uncertainty.store_data(
-                run_index, dose_uncertainty_image
-            )
-            self.user_output.dose_uncertainty.store_meta_data(
+            self.user_output.density.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
 
@@ -756,6 +805,57 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
+    """
+    TLE = Track Length Estimator
+    """
+
+    energy_min: float
+    energy_max: float
+    database: str
+
+    user_info_defaults = {
+        "energy_min": (
+            0.0,
+            {"doc": "Kill the gamma if below this energy"},
+        ),
+        "energy_max": (
+            1.0 * g4_units.MeV,
+            {
+                "doc": "Above this energy, do not perform TLE (TLE is only relevant for low energy gamma)"
+            },
+        ),
+        "database": (
+            "EPDL",
+            {
+                "doc": "which database to use",
+                "allowed_values": ("EPDL", "NIST"),  # "simulated" does not work
+            },
+        ),
+    }
+
+    def __initcpp__(self):
+        g4.GateTLEDoseActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+                "PreUserTrackingAction",
+            }
+        )
+
+    def initialize(self, *args):
+        if self.score_in != "material":
+            fatal(
+                f"TLEDoseActor cannot score in {self.score_in}, only 'material' is allowed."
+            )
+        super().initialize(args)
+
+
 def _setter_hook_score_in_let_actor(self, value):
     if value in ("water", "Water"):
         return "G4_WATER"
@@ -765,6 +865,7 @@ def _setter_hook_score_in_let_actor(self, value):
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
     """
+    LET = Linear energy transfer
     LETActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
 
@@ -1032,6 +1133,8 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.cells_radiosensitivity = {'HSG': {'alpha_ref':0.764, 'beta_ref':0.0615},
                                        'Chordoma': {'alpha_ref':0.1, 'beta_ref':0.05},
                                        }
+        
+        
         ## -- all models will need the dose --
         self._add_user_output(ActorOutputSingleImage,"dose") # we need to initialize the image on cpp side 
         self.user_output.dose.set_active(True)
@@ -1117,11 +1220,11 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.check_user_input()
         
         # calculate some internal variables
-        self.user_info.A_nucleus = np.pi*self.user_info.r_nucleus**2
-        alpha_ref = self.cells_radiosensitivity[self.user_info.cell_type]['alpha_ref']
-        beta_ref = self.cells_radiosensitivity[self.user_info.cell_type]['beta_ref']
-        self.user_info.s_max = alpha_ref + 2*beta_ref*self.user_info.D_cut
-        self.user_info.lookup_table = self.store_lookup_table(self.user_info.lookup_table_path)
+        self.A_nucleus = np.pi*self.r_nucleus**2
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]['alpha_ref']
+        beta_ref = self.cells_radiosensitivity[self.cell_type]['beta_ref']
+        self.s_max = alpha_ref + 2*beta_ref*self.D_cut
+        self.lookup_table = self.store_lookup_table(self.lookup_table_path)
         
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
@@ -1189,7 +1292,19 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.prepare_output_for_run("dose", run_index)
         self.push_to_cpp_image("dose", run_index, self.cpp_dose_image)
         
-        if self.user_info.rbe_model == 'mkm' or self.user_info.rbe_model == 'lemIlda':
+        '''
+        RBE models scoring images:
+            - mkm:
+                - alpha mix (score separately numerator and denominator)
+            - lemIlda:
+                - alpha mix (score separately numerator and denominator)
+                - beta mix (score separately numerator and denominator)
+            - lemI:
+                - survival
+            Note: all will also score dose
+        '''
+        
+        if self.rbe_model == 'mkm' or self.rbe_model == 'lemIlda':
             self.user_output.alpha_mix.set_active(True, item=0)
             self.user_output.alpha_mix.set_active(True, item=1)
             self.user_output.alpha_mix.set_active(True, item="quotient")
@@ -1200,7 +1315,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.push_to_cpp_image(
                 "alpha_mix", run_index, self.cpp_numerator_image, self.cpp_denominator_image)
         
-        if self.user_info.rbe_model == 'lemIlda':
+        if self.rbe_model == 'lemIlda':
             self.user_output.beta_mix.set_active(True, item=0)
             self.user_output.beta_mix.set_active(True, item=1)
             self.user_output.beta_mix.set_active(True, item="quotient")
@@ -1210,7 +1325,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.push_to_cpp_image(
                 "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image)
             
-        if self.user_info.rbe_model == 'lemI':
+        if self.rbe_model == 'lemI':
             self.user_output.survival.set_active(True)
             self.prepare_output_for_run("survival", run_index)
             self.push_to_cpp_image("survival", run_index, self.cpp_numerator_image)
@@ -1226,7 +1341,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             run_index, number_of_samples=self.NbOfEvent
         )
         
-        if self.user_info.rbe_model == 'mkm' or self.user_info.rbe_model == 'lemIlda': 
+        if self.rbe_model == 'mkm' or self.rbe_model == 'lemIlda': 
             self.fetch_from_cpp_image(
                 "alpha_mix", run_index, self.cpp_numerator_image, self.cpp_denominator_image
             )
@@ -1234,7 +1349,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.user_output.alpha_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        if self.user_info.rbe_model == 'lemIlda': 
+        if self.rbe_model == 'lemIlda': 
             self.fetch_from_cpp_image(
                 "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image
             )
@@ -1242,7 +1357,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.user_output.beta_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        if self.user_info.rbe_model == 'lemI':
+        if self.rbe_model == 'lemI':
             self.fetch_from_cpp_image(
                 "survival", run_index, self.cpp_numerator_image)
             self._update_output_coordinate_system("survival", run_index)
@@ -1256,6 +1371,40 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
     def EndSimulationAction(self):
         g4.GateRBEActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
+        self.compute_rbe_dose()
+        
+    def compute_rbe_dose(self):
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]['alpha_ref']
+        beta_ref = self.cells_radiosensitivity[self.cell_type]['beta_ref']
+        dose_img = self.user_output.dose.merged_data.data[0]
+        
+        if self.rbe_model == 'mkm':
+            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            log_survival = alpha_mix_img*dose_img*(-1) + dose_img*dose_img*self.beta_0*(-1)
+            log_survival_arr = log_survival.image_array
+
+        elif self.rbe_model == 'lemIlda':
+            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            beta_mix_img = self.user_output.beta_mix.merged_data.quotient
+            # to be continued
+        elif self.rbe_model == 'lemI':
+            survival_img = self.user_output.survival.merged_data.data[0]
+            log_survival_arr = np.log(survival_img.image_array)
+            
+        # solve linear quadratic equation to get Dx
+        rbe_dose_arr = (-alpha_ref + np.sqrt(alpha_ref**2 - 4*beta_ref*log_survival_arr))/2*beta_ref
+        rbe_arr = rbe_dose_arr / dose_img.image_array
+        
+        # create new data item for the survival image. Same metadata as the other images, but new image array
+        img = itk_image_from_array(rbe_dose_arr)
+        self.rbe_dose_image = ItkImageDataItem(data=img)
+        self.rbe_dose_image.copy_image_properties(dose_img.image)
+        
+        img = itk_image_from_array(rbe_arr)
+        self.rbe_image = ItkImageDataItem(data=img)
+        self.rbe_image.copy_image_properties(dose_img.image)
+        
+        
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
@@ -1336,6 +1485,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
+process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(RBEActor)
 process_cls(FluenceActor)
