@@ -1218,6 +1218,7 @@ class SimulationMetaData(Box):
         self.current_random_seed = None
         self.number_of_sub_processes = None
         self.start_new_process = None
+        self.simulation_id = None
         if simulation_output is not None:
             self.extract_from_simulation_output(simulation_output)
 
@@ -1247,6 +1248,7 @@ class SimulationMetaData(Box):
             self.user_hook_log.extend(so.user_hook_log)
             if self.current_random_seed is None:
                 self.current_random_seed = so.current_random_seed
+            self.simulation_id = so.simulation_id
 
 
 def setter_hook_verbose_level(self, verbose_level):
