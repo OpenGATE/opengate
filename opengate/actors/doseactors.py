@@ -308,8 +308,8 @@ def _setter_hook_uncertainty(self, value):
 
 
 def _setter_hook_uncertainty_goal(self, value):
-    if value < 0.0 or value > 1.0:
-        fatal(f"Goal uncertainty must be > 0 and < 1. The provided value is: {value}")
+    if value is not None and (value < 0.0 or value > 1.0):
+        fatal(f"Uncertainty goal must be > 0 and < 1, where 1 means 100%. The provided value is: {value}")
     return value
 
 
@@ -428,7 +428,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             },
         ),
         "uncertainty_goal": (
-            0,
+            None,
             {
                 "doc": "If set, it defines the statistical uncertainty at which the run is aborted.",
                 "setter_hook": _setter_hook_uncertainty_goal,
@@ -591,7 +591,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 item=("uncertainty", "std", "variance")
             )
             is True
-            or self.uncertainty_goal >= 0
+            or self.uncertainty_goal is not None
         ):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
@@ -640,7 +640,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.SetToWaterFlag(self.score_in == "water")
 
         # variables for stop on uncertainty functionality
-        self.SetUncertaintyGoal(self.uncertainty_goal)
+        if self.uncertainty_goal is None:
+            self.SetUncertaintyGoal(0)
+        else:
+            self.SetUncertaintyGoal(self.uncertainty_goal)
         self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
         self.SetOvershoot(self.uncertainty_overshoot_factor_N_events)
         self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
