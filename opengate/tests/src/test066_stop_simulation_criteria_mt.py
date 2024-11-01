@@ -30,13 +30,13 @@ if __name__ == "__main__":
         __file__, "gate_test029_volume_time_rotation", "test066"
     )
 
-    # check statistical uncertainty every n_check simlated particles
+    # check statistical uncertainty every n_check simulated particles
     n_planned = 650000
     n_threads = 3
 
     # goal uncertainty
-    unc_goal = 0.05
-    thresh_voxel_edep_for_unc_calc = 0.7
+    unc_goal = 0.05  # means 5%
+    thresh_voxel_edep_for_unc_calc = 0.7  # calculated over the voxels whose value is > 0.7 * max edep value
 
     # create the simulation
     sim = gate.Simulation()
@@ -58,8 +58,7 @@ if __name__ == "__main__":
     sec = gate.g4_units.second
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro
@@ -100,17 +99,15 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
     dose.edep_uncertainty.active = True
-    # dose.uncertainty = False
-    # dose.ste_of_mean = True
-    # dose.use_more_ram = True
     dose.uncertainty_goal = unc_goal
     dose.uncertainty_first_check_after_n_events = 100
     dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc
+    dose.write_to_disk = False
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
-    # s.output = paths.output / "stats066.txt"
+    stat.write_to_disk = False
 
     # start simulation
     sim.run()
@@ -122,10 +119,8 @@ if __name__ == "__main__":
     # test that final mean uncertainty satisfies the goal uncertainty
     test_thresh_rel = 0.01
 
-    edep_img = itk.imread(dose.edep.get_output_path())
-    edep_arr = itk.GetArrayViewFromImage(edep_img)
-    unc_img = itk.imread(dose.edep_uncertainty.get_output_path())
-    unc_array = itk.GetArrayFromImage(unc_img)
+    edep_arr = np.asarray(dose.edep.image)
+    unc_array = np.asarray(dose.edep_uncertainty.image)
 
     unc_mean = calculate_mean_unc(
         edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
@@ -134,7 +129,8 @@ if __name__ == "__main__":
     print(f"{unc_mean = }")
     ok = unc_mean < unc_goal and unc_mean > unc_goal - test_thresh_rel
 
-    # test that the simulation didn't stop because we reached the planned number of events
+    # test that the simulation stopped because of the threshold crtierion,
+    # and not simply because we reached the planned number of events
     n_planned = n_planned * n_threads
     n_effective = stat.counts.events
     print(f"{n_planned = }")
