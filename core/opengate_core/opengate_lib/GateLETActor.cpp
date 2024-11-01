@@ -123,9 +123,6 @@ void GateLETActor::SteppingAction(G4Step *step) {
 
   // set value
   if (isInside) {
-    // With mutex (thread)
-    G4AutoLock mutex(&SetLETPixelMutex);
-
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
@@ -185,10 +182,12 @@ void GateLETActor::SteppingAction(G4Step *step) {
       scor_val_num = steplength * dedx_currstep * w / CLHEP::MeV;
       scor_val_den = steplength * w / CLHEP::mm;
     }
-    ImageAddValue<ImageType>(cpp_numerator_image, index, scor_val_num);
-    ImageAddValue<ImageType>(cpp_denominator_image, index, scor_val_den);
-    //}
-
+    // Call ImageAddValue() in a mutexed {}-scope
+    {
+      G4AutoLock mutex(&SetLETPixelMutex);
+      ImageAddValue<ImageType>(cpp_numerator_image, index, scor_val_num);
+      ImageAddValue<ImageType>(cpp_denominator_image, index, scor_val_den);
+    }
   } // else : outside the image
 }
 
