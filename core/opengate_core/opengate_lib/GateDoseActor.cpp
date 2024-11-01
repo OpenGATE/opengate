@@ -157,7 +157,8 @@ void GateDoseActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
 }
 
 void GateDoseActor::SteppingAction(G4Step *step) {
-  auto event_id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+  auto event_id =
+      G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -190,7 +191,8 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       if (p == G4Gamma::Gamma())
         p = G4Electron::Electron();
       auto &emc = fThreadLocalDataEdep.Get().emcalc;
-      dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+      dedx_currstep =
+          emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
       dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
       if (dedx_currstep == 0 || dedx_water == 0) {
         edep = 0.;
@@ -202,7 +204,8 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     if (fDoseFlag || fDoseSquaredFlag) {
       double density;
       if (fToWaterFlag) {
-        auto *water = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+        auto *water =
+            G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
         density = water->GetDensity();
       } else {
         auto *current_material = step->GetPreStepPoint()->GetMaterial();
@@ -221,7 +224,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       if (fCountsFlag) {
         ImageAddValue<Image3DType>(cpp_counts_image, index, 1);
       }
-    }  // mutex scope
+    } // mutex scope
 
     // ScoreSquaredValue() is thread-safe because it contains a mutex
     if (fEdepSquaredFlag || fDoseSquaredFlag) {
@@ -234,7 +237,7 @@ void GateDoseActor::SteppingAction(G4Step *step) {
                           dose, event_id, index);
       }
     }
-  }  // if(isInside) clause
+  } // if(isInside) clause
 }
 
 int GateDoseActor::sub2ind(Image3DType::IndexType index3D) {

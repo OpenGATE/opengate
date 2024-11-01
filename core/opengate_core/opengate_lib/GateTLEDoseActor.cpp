@@ -122,7 +122,7 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
   if (isInside) {
-    G4AutoLock mutex(&SetPixelTLEMutex);  // mutex is bound to the if-scope
+    G4AutoLock mutex(&SetPixelTLEMutex); // mutex is bound to the if-scope
     if (fDoseFlag) {
       ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
     }
