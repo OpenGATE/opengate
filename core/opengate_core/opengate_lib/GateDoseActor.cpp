@@ -157,6 +157,7 @@ void GateDoseActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
 }
 
 void GateDoseActor::SteppingAction(G4Step *step) {
+  auto event_id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -169,72 +170,71 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
 
-  // set value
-  if (!isInside)
-    return;
+  if (isInside) {
 
-  // get edep in MeV (take weight into account)
-  auto w = step->GetTrack()->GetWeight();
-  auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-  double dose;
+    // get edep in MeV (take weight into account)
+    auto w = step->GetTrack()->GetWeight();
+    auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
+    double dose;
 
-  if (fToWaterFlag) {
-    auto *current_material = step->GetPreStepPoint()->GetMaterial();
-    double dedx_cut = DBL_MAX;
-    double dedx_currstep = 0., dedx_water = 0.;
-    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-    static G4Material *water =
-        G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-    auto energy = (energy1 + energy2) / 2;
-    if (p == G4Gamma::Gamma())
-      p = G4Electron::Electron();
-    auto &emc = fThreadLocalDataEdep.Get().emcalc;
-    dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
-    dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
-    if (dedx_currstep == 0 || dedx_water == 0) {
-      edep = 0.;
-    } else {
-      edep *= (dedx_water / dedx_currstep);
-    }
-  }
-
-  ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
-
-  if (fDoseFlag || fDoseSquaredFlag) {
-    double density;
     if (fToWaterFlag) {
-      auto *water = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-      density = water->GetDensity();
-    } else {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
-      density = current_material->GetDensity();
+      double dedx_cut = DBL_MAX;
+      double dedx_currstep = 0., dedx_water = 0.;
+      const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+      static G4Material *water =
+          G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+      auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+      auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+      auto energy = (energy1 + energy2) / 2;
+      if (p == G4Gamma::Gamma())
+        p = G4Electron::Electron();
+      auto &emc = fThreadLocalDataEdep.Get().emcalc;
+      dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+      dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
+      if (dedx_currstep == 0 || dedx_water == 0) {
+        edep = 0.;
+      } else {
+        edep *= (dedx_water / dedx_currstep);
+      }
     }
-    dose = edep / density;
-    if (fDoseFlag) {
-      ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
-    }
-  }
 
-  if (fCountsFlag) {
-    ImageAddValue<Image3DType>(cpp_counts_image, index, 1);
-  }
+    if (fDoseFlag || fDoseSquaredFlag) {
+      double density;
+      if (fToWaterFlag) {
+        auto *water = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+        density = water->GetDensity();
+      } else {
+        auto *current_material = step->GetPreStepPoint()->GetMaterial();
+        density = current_material->GetDensity();
+      }
+      dose = edep / density;
+    }
 
-  if (fEdepSquaredFlag || fDoseSquaredFlag) {
-    auto event_id =
-        G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-    if (fEdepSquaredFlag) {
-      //        G4AutoLock mutex(&SetPixelMutex);
-      ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
-                        edep, event_id, index);
+    // all ImageAddValue calls in a mutexed {}-scope
+    {
+      G4AutoLock mutex(&SetPixelMutex);
+      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+      if (fDoseFlag) {
+        ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+      }
+      if (fCountsFlag) {
+        ImageAddValue<Image3DType>(cpp_counts_image, index, 1);
+      }
+    }  // mutex scope
+
+    // ScoreSquaredValue() is thread-safe because it contains a mutex
+    if (fEdepSquaredFlag || fDoseSquaredFlag) {
+      if (fEdepSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
+                          edep, event_id, index);
+      }
+      if (fDoseSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
+                          dose, event_id, index);
+      }
     }
-    if (fDoseSquaredFlag) {
-      //        G4AutoLock mutex(&SetPixelMutex);
-      ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
-                        dose, event_id, index);
-    }
-  }
+  }  // if(isInside) clause
 }
 
 int GateDoseActor::sub2ind(Image3DType::IndexType index3D) {
@@ -253,7 +253,7 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
 }
 
 void GateDoseActor::EndOfRunAction(const G4Run *run) {
-
+  // FlushSquaredValue() is thread-safe because it contains a mutex
   if (fEdepSquaredFlag) {
     GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(),
                                      cpp_edep_squared_image);
@@ -268,7 +268,6 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
                                       Image3DType::Pointer cpp_image,
                                       double value, int event_id,
                                       Image3DType::IndexType index) {
-  G4AutoLock mutex(&SetPixelMutex);
   int index_flat = sub2ind(index);
   auto previous_id = data.lastid_worker_flatimg[index_flat];
   data.lastid_worker_flatimg[index_flat] = event_id;
@@ -280,7 +279,10 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
     // Different event : square deposited quantity from the last event ID
     // and start accumulating deposited quantity for this new event ID
     auto v = data.squared_worker_flatimg[index_flat];
-    ImageAddValue<Image3DType>(cpp_image, index, v * v);
+    {
+      G4AutoLock mutex(&SetPixelMutex);
+      ImageAddValue<Image3DType>(cpp_image, index, v * v);
+    }
     // new temp value
     data.squared_worker_flatimg[index_flat] = value;
   }
@@ -288,8 +290,7 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
 
 void GateDoseActor::FlushSquaredValue(threadLocalT &data,
                                       Image3DType::Pointer cpp_image) {
-  //  G4AutoLock mutex(&SetWorkerEndRunMutex);
-
+  G4AutoLock mutex(&SetPixelMutex);
   itk::ImageRegionIterator<Image3DType> iterator3D(
       cpp_image, cpp_image->GetLargestPossibleRegion());
   for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
