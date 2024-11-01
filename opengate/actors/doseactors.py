@@ -309,7 +309,9 @@ def _setter_hook_uncertainty(self, value):
 
 def _setter_hook_uncertainty_goal(self, value):
     if value is not None and (value < 0.0 or value > 1.0):
-        fatal(f"Uncertainty goal must be > 0 and < 1, where 1 means 100%. The provided value is: {value}")
+        fatal(
+            f"Uncertainty goal must be > 0 and < 1, where 1 means 100%. The provided value is: {value}"
+        )
     return value
 
 

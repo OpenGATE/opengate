@@ -36,7 +36,9 @@ if __name__ == "__main__":
 
     # goal uncertainty
     unc_goal = 0.05  # means 5%
-    thresh_voxel_edep_for_unc_calc = 0.7  # calculated over the voxels whose value is > 0.7 * max edep value
+    thresh_voxel_edep_for_unc_calc = (
+        0.7  # calculated over the voxels whose value is > 0.7 * max edep value
+    )
 
     # create the simulation
     sim = gate.Simulation()

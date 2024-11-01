@@ -40,8 +40,9 @@ if __name__ == "__main__":
     unc_expected = unc_goal_run / np.sqrt(
         n_runs
     )  # uncertainty expected at the end of the simulation
-    thresh_voxel_edep_for_unc_calc = 0.7  # calculated over the voxels whose value is > 0.7 * max edep value
-
+    thresh_voxel_edep_for_unc_calc = (
+        0.7  # calculated over the voxels whose value is > 0.7 * max edep value
+    )
 
     # create the simulation
     sim = gate.Simulation()
