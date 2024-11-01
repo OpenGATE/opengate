@@ -113,6 +113,7 @@ if __name__ == "__main__":
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
+    stat.write_to_disk = False
 
     # start simulation
     lower = np.arange(0, 1, 1 / n_runs) * sec
@@ -122,7 +123,6 @@ if __name__ == "__main__":
 
     # print results at the end
     print(stat)
-    print(dose)
 
     # test that final mean uncertainty satisfies the goal uncertainty
     test_thresh_rel = 0.01

@@ -114,7 +114,6 @@ if __name__ == "__main__":
 
     # print results at the end
     print(stat)
-    print(dose)
 
     # test that final mean uncertainty satisfies the goal uncertainty
     test_thresh_rel = 0.01
