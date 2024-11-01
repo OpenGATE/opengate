@@ -82,21 +82,24 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     return head, colli, crystal
 
 
-def add_spect_two_heads(sim, name="spect", collimator_type="lehr", debug=False):
+def add_spect_two_heads(
+    sim, name="spect", collimator_type="lehr", debug=False, radius=None
+):
     cm = g4_units.cm
-    radius = 36 * cm
+    if radius is None:
+        radius = 36 * cm
     head1, colli1, crystal1 = add_spect_head(
         sim, f"{name}_1", collimator_type, debug=debug
     )
-    head1.translation = [0, radius, 0]
-    head1.rotation = Rotation.from_euler("X", 90, degrees=True).as_matrix()
 
     # the second head is the same at 180 degrees
     head2, colli2, crystal2 = add_spect_head(
         sim, f"{name}_2", collimator_type, debug=debug
     )
-    head2.translation = [0, radius, 0]
-    head2.rotation = Rotation.from_euler("XZ", [-90, 180], degrees=True).as_matrix()
+
+    # set at their initial position
+    rotate_gantry(head1, radius, start_angle_deg=0, step_angle_deg=1, nb_angle=1)
+    rotate_gantry(head2, radius, start_angle_deg=180, step_angle_deg=1, nb_angle=1)
 
     return [head1, head2], [crystal1, crystal2]
 
@@ -704,7 +707,7 @@ def add_detection_plane_for_arf(
 
 
 def rotate_gantry(
-    head, radius, start_angle_deg, step_angle_deg, nb_angle, initial_rotation=None
+    head, radius, start_angle_deg, step_angle_deg=1, nb_angle=1, initial_rotation=None
 ):
     # compute the nb translation and rotation
     translations = []

@@ -1,5 +1,7 @@
 import re
 import os
+from typing import List
+
 import numpy as np
 import itk
 import json
@@ -795,6 +797,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     Store information about a voxelized volume
     """
 
+    voxel_materials: List
+    image: str
+    dump_label_image: bool
+
     user_info_defaults = {
         "voxel_materials": (
             [[-np.inf, np.inf, "G4_AIR"]],
@@ -911,6 +917,31 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             return np.array(self.itk_image.GetDirection())
         else:
             return None
+
+    def set_materials_from_voxelisation(self, labels_json):
+        """
+        Reads a JSON file containing label information and sets the voxel materials
+        based on the data provided in the JSON file. The JSON file should contain a
+        dictionary where each entry has a 'label' and 'material' field.
+
+        The json file could have been generated with 'voxelize_geometry'
+
+        Args:
+            labels_json (str): Path to the JSON file containing label data.
+
+        Raises:
+            FileNotFoundError: If the specified JSON file cannot be found.
+            json.JSONDecodeError: If the JSON file contains invalid JSON.
+
+        Attributes:
+            voxel_materials (list): A list where each entry is a list containing a
+                                    label, the next label, and the corresponding material.
+        """
+        with open(labels_json) as f:
+            labels = json.load(f)
+        self.voxel_materials = [
+            [l["label"], l["label"] + 1, l["material"]] for k, l in labels.items()
+        ]
 
     @requires_fatal("volume_engine")
     def construct(self):
@@ -1147,6 +1178,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
 class ParallelWorldVolume(NodeMixin):
     def __init__(self, name, volume_manager):
+        # VolumeBase.__init__(self, name)
+        # NodeMixin.__init__(self)
         super().__init__()
         self.name = name
         self.volume_manager = volume_manager

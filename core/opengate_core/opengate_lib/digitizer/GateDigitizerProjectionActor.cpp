@@ -51,6 +51,12 @@ void GateDigitizerProjectionActor::StartSimulationAction() {
   }
 }
 
+void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
+  // Set the image to the correct position/orientation
+  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
+                                 fDetectorOrientationMatrix);
+}
+
 void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
   if (run->GetRunID() == 0) {
@@ -62,11 +68,6 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
       l.fInputPos[slice] = &att_pos->Get3Values();
     }
   }
-
-  // Important ! The volume may have moved, so we re-attach each run
-  G4AutoLock mutex(&DigitizerProjectionActorMutex);
-  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
-                                 fDetectorOrientationMatrix);
 }
 
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
