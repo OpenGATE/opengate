@@ -28,7 +28,7 @@ GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
     : GateDoseActor(user_info) {
   fVoxelVolume = 0;
   // FIXME WARNING : no MT yet
-  fMultiThreadReady = false;
+  fMultiThreadReady = true;
 }
 
 void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
@@ -116,20 +116,18 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   }
   double dose = edep / density;
 
-  // Get the voxel index
+  // Get the voxel index and check if the step was within the 3D image
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
-
-  if (!isInside)
-    return;
-
-  // G4AutoLock mutex(&SetPixelTLEMutex);
-  if (fDoseFlag) {
-    ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+  if (isInside) {
+    G4AutoLock mutex(&SetPixelTLEMutex);  // mutex is bound to the if-scope
+    if (fDoseFlag) {
+      ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+    }
+    ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
   }
-  ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
 }
 
 void GateTLEDoseActor::EndOfRunAction(const G4Run *run) {
