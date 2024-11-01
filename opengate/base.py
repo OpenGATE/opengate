@@ -668,7 +668,7 @@ class DynamicGateObject(GateObject):
         "dynamic_params": (
             None,
             {
-                "doc": "List of dictionaries, where each dictionary specifies how the parameters "
+                "doc": "Dictionary of dictionaries, where each dictionary specifies how the parameters "
                 "of this object should evolve over time during the simulation. "
                 "You cannot set this parameter directly. "
                 "Instead, use the 'add_dynamic_parametrisation()' method of your object."
@@ -715,24 +715,30 @@ class DynamicGateObject(GateObject):
         for k, v in params.items():
             if callable(v):
                 params[k] = v(self.simulation.run_timing_intervals)
+
+        return params, extra_params
+
+    def check_if_dynamic_params_match_run_timing_intervals(self):
         # check that the length of all parameter lists match the simulation's timing intervals
         params_with_incorrect_length = []
-        for k, v in params.items():
-            if len(v) != len(self.simulation.run_timing_intervals):
-                params_with_incorrect_length.append((k, len(v)))
-        if len(params_with_incorrect_length) > 0:
-            s = (
-                "The length of the following dynamic parameters "
-                "does not match the number of timing intervals of the simulation:\n"
-            )
-            for p in params_with_incorrect_length:
-                s += f"{p[0]}: {p[1]}\n"
-            s += (
-                f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
-                f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
-            )
-            fatal(s)
-        return params, extra_params
+        for params in self.dynamic_params.values():
+            for k, v in params.items():
+                if k in self.dynamic_user_info and len(v) != len(
+                    self.simulation.run_timing_intervals
+                ):
+                    params_with_incorrect_length.append((k, len(v)))
+            if len(params_with_incorrect_length) > 0:
+                s = (
+                    "The length of the following dynamic parameters "
+                    "does not match the number of timing intervals of the simulation:\n"
+                )
+                for p in params_with_incorrect_length:
+                    s += f"{p[0]}: {p[1]}\n"
+                s += (
+                    f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
+                    f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
+                )
+                fatal(s)
 
     def _add_dynamic_parametrisation_to_userinfo(self, params, name):
         """This base class implementation only acts as a setter.
