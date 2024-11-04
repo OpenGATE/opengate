@@ -2,7 +2,7 @@ from scipy.spatial.transform import Rotation
 import opengate_core
 from opengate.contrib.tps.ionbeamtherapy import *
 import os
-
+import sys
 
 class TreatmentPlanPhsSource(TreatmentPlanSource):
 
@@ -101,7 +101,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
                     "ERROR in TreatmentPlanPhsSource: Energy requested from plan file does not exist. Aborting."
                 )
                 print("Requested energy was: ", spot.energy)
-                exit(-1)
+                sys.exit(-1)
 
             # set keys of phase space file to use
             source.position_key_x = self.position_key_x
@@ -182,7 +182,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
                     )
                 )
                 print("Error: File in Phase space dictionary does not exist. Aborting.")
-                exit(-1)
+                sys.exit(-1)
         return True
 
     def read_list_of_Phs(self, file_name: str, path_to_phsp=""):
@@ -220,7 +220,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
                     file_name,
                     " Aborting.",
                 )
-                exit(-1)
+                sys.exit(-1)
             if input_arr.ndim == 0:
                 # only single line read, convert to array
                 input_arr = np.array([input_arr])
@@ -238,12 +238,12 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
                 "Error in TreatmentPlanPhsSource: could not read the phase space file list. Aborting."
             )
             print("The error was: ", e)
-            exit(-1)
+            sys.exit(-1)
         if len(phs_dict) == 0:
             print(
                 "Error in TreatmentPlanPhsSource: the phase space file list is empty. Aborting."
             )
-            exit(-1)
+            sys.exit(-1)
         return phs_dict
 
     def verify_necessary_parameters_are_set(self):
@@ -254,25 +254,25 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
             print(
                 "Error in TreatmentPlanPhsSource: phaseSpaceList_file_name is None. Aborting."
             )
-            exit(-1)
+            sys.exit(-1)
         if self.distance_source_to_isocenter is None:
             print(
                 "Error in TreatmentPlanPhsSource: distance_source_to_isocenter is None. Aborting."
             )
-            exit(-1)
+            sys.exit(-1)
         if self.distance_stearmag_to_isocenter_x is None:
             print(
                 "Error in TreatmentPlanPhsSource: distance_stearmag_to_isocenter_x is None. Aborting."
             )
-            exit(-1)
+            sys.exit(-1)
         if self.distance_stearmag_to_isocenter_y is None:
             print(
                 "Error in TreatmentPlanPhsSource: distance_stearmag_to_isocenter_y is None. Aborting."
             )
-            exit(-1)
+            sys.exit(-1)
         if self.batch_size is None:
             print("Error in TreatmentPlanPhsSource: batch_size is None. Aborting.")
-            exit(-1)
+            sys.exit(-1)
         if self.spots is None:
             print("Error in TreatmentPlanPhsSource: No spots have been set. Aborting.")
-            exit(-1)
+            sys.exit(-1)

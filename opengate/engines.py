@@ -29,7 +29,7 @@ class EngineBase:
     Base class for all engines (SimulationEngine, VolumeEngine, etc.)
     """
 
-    def __init__(self, simulation_engine):
+    def __init__(self, simulation_engine) -> None:
         self.simulation_engine = simulation_engine
         # debug verbose
         self.verbose_getstate = simulation_engine.verbose_getstate
@@ -87,7 +87,7 @@ class SourceEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing SourceEngine")
+            warning("Closing SourceEngine")
         self.release_g4_references()
         super().close()
 
@@ -102,7 +102,7 @@ class SourceEngine(EngineBase):
         assert_run_timing(self.run_timing_intervals)
         if len(self.simulation_engine.simulation.source_manager.sources) == 0:
             self.simulation_engine.simulation.warn_user(
-                f"No source: no particle will be generated"
+                "No source: no particle will be generated"
             )
         self.progress_bar = progress_bar
 
@@ -229,7 +229,7 @@ class PhysicsEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing PhysicsEngine")
+            warning("Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
         self.release_optical_surface_g4_references()
@@ -325,7 +325,7 @@ class PhysicsEngine(EngineBase):
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
             self.physics_manager.warn_user(
-                f"WARNING ! SetEnergyRange only works in MT mode"
+                "WARNING ! SetEnergyRange only works in MT mode"
             )
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
@@ -492,7 +492,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing ActionEngine")
+            warning("Closing ActionEngine")
         self.release_g4_references()
         super().close()
 
@@ -589,7 +589,7 @@ class ActorEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing ActorEngine")
+            warning("Closing ActorEngine")
         for actor in self.actor_manager.actors.values():
             actor.close()
         super().close()
@@ -939,9 +939,9 @@ class SimulationOutput:
         self.sources = {}
         if simulation_engine.simulation.multithreaded is True:
             th = {}
-            self.sources_by_thread = [{}] * (
-                simulation_engine.simulation.number_of_threads + 1
-            )
+            self.sources_by_thread = [
+                {} for _ in range(simulation_engine.simulation.number_of_threads + 1)
+            ]
             for source in simulation_engine.source_engine.sources:
                 n = source.user_info.name
                 if n in th:
@@ -977,7 +977,7 @@ class SimulationOutput:
             self.simulation.number_of_threads <= 1
             and not self.simulation.force_multithread_mode
         ):
-            fatal(f"Cannot use get_source_mt in monothread mode")
+            fatal("Cannot use get_source_mt in monothread mode")
         if thread >= len(self.sources_by_thread):
             fatal(
                 f"Cannot get source {name} with thread {thread}, while "
@@ -1219,7 +1219,7 @@ class SimulationEngine(GateSingletonFatal):
             f"Simulation: STOP. Run: {len(self.run_timing_intervals)}. "
             # f'Events: {self.source_manager.total_events_count}. '
             f"Time: {end - start:0.1f} seconds.\n"
-            + f"-" * 80
+            + "-" * 80
         )
 
     def initialize_random_engine(self):
@@ -1231,7 +1231,7 @@ class SimulationEngine(GateSingletonFatal):
             self.g4_HepRandomEngine = g4.MTwistEngine()
         if not self.g4_HepRandomEngine:
             s = f"Cannot find the random engine {engine_name}\n"
-            s += f"Use: MersenneTwister or MixMaxRng"
+            s += "Use: MersenneTwister or MixMaxRng"
             fatal(s)
 
         # set the random engine
@@ -1442,7 +1442,7 @@ class SimulationEngine(GateSingletonFatal):
             500: "fParameterOutOfCandidates",
             600: "fAliasNotFound",
         }
-        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
+        closest_err_code = max([x for x in err_codes if x <= code])
         closest_err_msg = err_codes[closest_err_code]
         fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
 

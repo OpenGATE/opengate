@@ -24,7 +24,7 @@ class FilterBase(GateObject):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     def __initcpp__(self):

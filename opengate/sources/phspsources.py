@@ -3,6 +3,7 @@ import numpy as np
 import numbers
 from scipy.spatial.transform import Rotation
 from box import Box
+import sys
 
 import opengate_core
 from ..exception import fatal, warning
@@ -57,7 +58,7 @@ class PhaseSpaceSourceGenerator:
             fatal(
                 f"PhaseSpaceSourceGenerator: No usable branches in the root file {self.user_info.phsp_file}. Aborting."
             )
-            exit()
+            sys.exit()
 
         self.num_entries = int(self.root_file.num_entries)
 
@@ -71,7 +72,7 @@ class PhaseSpaceSourceGenerator:
         ui = self.user_info
         if not opengate_core.IsMultithreadedApplication():
             if not isinstance(ui.entry_start, numbers.Number):
-                fatal(f"entry_start must be a simple number is mono-thread mode")
+                fatal("entry_start must be a simple number is mono-thread mode")
             n = int(self.user_info.entry_start % self.num_entries)
             if self.user_info.entry_start > self.num_entries:
                 warning(
@@ -334,11 +335,11 @@ class PhaseSpaceSource(SourceBase):
         if ui.generate_until_next_primary:
             if ui.primary_PDGCode == 0:
                 fatal(
-                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
+                    "PhaseSpaceSource: generate_until_next_primary is True but no primary particle is defined"
                 )
             if ui.primary_lower_energy_threshold <= 0:
                 fatal(
-                    f"PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
+                    "PhaseSpaceSource: generate_until_next_primary is True but no primary_lower_energy_threshold is defined"
                 )
 
         # if not set, initialize the entry_start to 0 or to a list for multithreading

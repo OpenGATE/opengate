@@ -224,7 +224,7 @@ class DigitizerBase(ActorBase):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(self, *args, **kwargs)
 
     def _add_user_output_root(self, **kwargs):
