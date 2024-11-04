@@ -70,6 +70,10 @@ void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   // Reset the number of events (per run)
   NbOfEvent = 0;
 
+  // for stop on target uncertainty. As we reset the nb of events, we reset also
+  // this variable
+  NbEventsNextCheck = NbEventsFirstCheck;
+
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
                                    fTranslation);
@@ -238,6 +242,88 @@ void GateDoseActor::SteppingAction(G4Step *step) {
       }
     }
   } // if(isInside) clause
+}
+
+void GateDoseActor::EndOfEventAction(const G4Event *event) {
+
+  // flush thread local data into global image (postponed for now)
+
+  // if the user didn't set uncertainty goal, do nothing
+  if (fUncertaintyGoal == 0) {
+    return;
+  }
+
+  // check if we reached the Nb of events for next evaluation
+  if (NbOfEvent >= NbEventsNextCheck) {
+    // get thread idx. Ideally, only one thread should do the uncertainty
+    // calculation don't ask for thread idx if no MT
+    if (!G4Threading::IsMultithreadedApplication() ||
+        G4Threading::G4GetThreadId() == 0) {
+      // check stop criteria
+      std::cout << "NbEventsNextCheck: " << NbEventsNextCheck << std::endl;
+      double UncCurrent = ComputeMeanUncertainty();
+      if (UncCurrent <= fUncertaintyGoal) {
+        // fStopRunFlag = true;
+        fSourceManager->SetRunTerminationFlag(true);
+      } else {
+        // estimate Nevents at which next check should occour
+        NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
+                            (UncCurrent / fUncertaintyGoal) * NbOfEvent *
+                            Overshoot;
+      }
+    }
+  }
+}
+
+double GateDoseActor::ComputeMeanUncertainty() {
+  G4AutoLock mutex(&ComputeUncertaintyMutex);
+  itk::ImageRegionIterator<Image3DType> edep_iterator3D(
+      cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
+  double mean_unc = 0.0;
+  int n_voxel_unc = 0;
+  double n = 2.0;
+  n = NbOfEvent;
+
+  if (n < 2.0) {
+    n = 2.0;
+  }
+  double max_edep = GetMaxValueOfImage(cpp_edep_image);
+
+  for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+       ++edep_iterator3D) {
+    Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
+    double val = cpp_edep_image->GetPixel(index_f);
+
+    if (val > max_edep * fThreshEdepPerc) {
+      val /= n;
+      n_voxel_unc++;
+      double val_squared_mean = cpp_edep_squared_image->GetPixel(index_f) / n;
+
+      double unc_i = (1.0 / (n - 1.0)) * (val_squared_mean - pow(val, 2));
+      if (unc_i < 0) {
+        std::cout << "unc_i: " << unc_i << std::endl;
+        std::cout << "edep: " << val << std::endl;
+        std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+      }
+
+      unc_i = sqrt(unc_i) / (val);
+
+      if (unc_i > 1) {
+        std::cout << "unc_i: " << unc_i << std::endl;
+        std::cout << "edep: " << val << std::endl;
+        std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+      }
+      mean_unc += unc_i;
+    }
+  };
+
+  if (n_voxel_unc > 0 && mean_unc > 0) {
+    mean_unc = mean_unc / n_voxel_unc;
+  } else {
+    mean_unc = 1.;
+  }
+  std::cout << "unc: " << mean_unc << std::endl;
+  return mean_unc;
 }
 
 int GateDoseActor::sub2ind(Image3DType::IndexType index3D) {
