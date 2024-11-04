@@ -18,33 +18,27 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path("..", "..").resolve()))
-print("DEBUG: ", os.listdir(str(Path("..", "..").resolve())))
-print("DEBUG: ", sys.path)
-print("DEBUG: ", __file__)
 autodoc_mock_imports = [
-    "colored",
     "opengate_core",
-    "gatetools",
-    "click",
-    "python-box",
-    "anytree",
-    "numpy",
-    "itk",
-    "uproot",
-    "scipy",
-    "matplotlib",
-    "GitPython",
-    "colorlog",
-    "numpy-stl",
-    "radioactivedecay",
-    "jsonpickle",
-    "pandas",
-    "requests",
-    "PyYAML",
+    # "colored",
+    # "gatetools",
+    # "click",
+    # "python-box",
+    # "anytree",
+    # "numpy",
+    # "itk",
+    # "uproot",
+    # "scipy",
+    # "matplotlib",
+    # "GitPython",
+    # "colorlog",
+    # "numpy-stl",
+    # "radioactivedecay",
+    # "jsonpickle",
+    # "pandas",
+    # "requests",
+    # "PyYAML",
 ]
-import opengate
-
-# sys.path.pop(0)
 
 
 # If extensions (or modules to document with autodoc) are in another directory,
