@@ -86,7 +86,6 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
     // set value
     if (isInside) {
       G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
-      // add hit
       ImageAddValue<Image3DType>(cpp_fluence_image, index, w);
     } // else : outside the image
   }

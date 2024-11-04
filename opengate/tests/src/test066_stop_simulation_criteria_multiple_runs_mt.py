@@ -30,9 +30,9 @@ if __name__ == "__main__":
         __file__, "gate_test029_volume_time_rotation", "test066"
     )
 
-    # check statistical uncertainty every n_check simlated particles
+    # check statistical uncertainty every n_check simulated particles
     n_planned = 650000
-    n_threads = 3
+    n_threads = 1
     n_runs = 4
 
     # goal uncertainty
@@ -40,7 +40,9 @@ if __name__ == "__main__":
     unc_expected = unc_goal_run / np.sqrt(
         n_runs
     )  # uncertainty expected at the end of the simulation
-    thresh_voxel_edep_for_unc_calc = 0.7
+    thresh_voxel_edep_for_unc_calc = (
+        0.7  # calculated over the voxels whose value is > 0.7 * max edep value
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -104,36 +106,30 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
     dose.edep_uncertainty.active = True
-    # dose.uncertainty = False
-    # dose.ste_of_mean = True
-    # dose.use_more_ram = True
     dose.uncertainty_goal = unc_goal_run
     dose.uncertainty_first_check_after_n_events = 100
     dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc
+    dose.write_to_disk = False  # we don't need to save the images for this test
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
-    # s.output = paths.output / "stats066.txt"
+    stat.write_to_disk = False
 
     # start simulation
-    upper = np.arange(1 / n_runs, 1 + 1 / n_runs, 1 / n_runs) * sec
     lower = np.arange(0, 1, 1 / n_runs) * sec
-    run_intervals = list(zip(lower, upper))
-    sim.run_timing_intervals = run_intervals
+    upper = lower + 1 / n_runs * sec
+    sim.run_timing_intervals = list(zip(lower, upper))
     sim.run()
 
     # print results at the end
     print(stat)
-    print(dose)
 
     # test that final mean uncertainty satisfies the goal uncertainty
     test_thresh_rel = 0.01
 
-    edep_img = itk.imread(dose.edep.get_output_path())
-    edep_arr = itk.GetArrayViewFromImage(edep_img)
-    unc_img = itk.imread(dose.edep_uncertainty.get_output_path())
-    unc_array = itk.GetArrayFromImage(unc_img)
+    edep_arr = np.asarray(dose.edep.image)
+    unc_array = np.asarray(dose.edep_uncertainty.image)
 
     unc_mean = calculate_mean_unc(
         edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
@@ -142,7 +138,8 @@ if __name__ == "__main__":
     print(f"{unc_mean = }")
     ok = unc_mean < unc_expected and unc_mean > unc_expected - test_thresh_rel
 
-    # test that the simulation didn't stop because we reached the planned number of events
+    # test that the simulation stopped because of the threshold crtierion,
+    # and not simply because we reached the planned number of events
     n_planned = n_planned * n_threads
     n_effective = stat.counts.events
     print(f"{n_planned = }")
