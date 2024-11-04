@@ -137,10 +137,10 @@ def HU_find_max_density_difference(hu_min, hu_max, d_min, d_max, densities):
         j = j + 1
     j = j - 1
     for x in range(i, j, 1):
-        if densities[i]["density"] < d_min:
-            d_min = densities[i]["density"]
-        if densities[i]["density"] > d_max:
-            d_max = densities[i]["density"]
+        if densities[x]["density"] < d_min:
+            d_min = densities[x]["density"]
+        if densities[x]["density"] > d_max:
+            d_max = densities[x]["density"]
     return d_max - d_min
 
 
@@ -761,7 +761,7 @@ class MaterialDatabase:
     def FindOrBuildElement(self, element_name):
         self.init_NIST()
         # return if already exist
-        if element_name in self.g4_elements.keys():
+        if element_name in self.g4_elements:
             return self.g4_elements[element_name]
         # we build and store the G4 element if not
         if element_name in self.nist_element_names:

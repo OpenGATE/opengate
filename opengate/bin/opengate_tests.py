@@ -447,9 +447,9 @@ def run_test_cases(
     start = time.time()
     if processes_run in ["legacy"]:
         run_single_case = lambda k: run_one_test_case(k, processes_run, path_tests_src)
-        runs_status_info = list(map(run_single_case, files))
+        runs_status_info = [run_single_case(file) for file in files]
     elif processes_run in ["sp"]:
-        runs_status_info = list(map(run_one_test_case_mp, files))
+        runs_status_info = [run_one_test_case_mp(file) for file in files]
     else:
         num_processes = int(float(num_processes)) if num_processes != "all" else None
         with Pool(processes=num_processes) as pool:

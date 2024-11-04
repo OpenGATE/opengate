@@ -256,7 +256,7 @@ class SourceManager:
         return s
 
     def dump_source_types(self):
-        s = f""
+        s = ""
         # FIXME: workaround to avoid circular import, will be solved when refactoring sources
         from opengate.sources.builders import source_builders
 
@@ -330,7 +330,7 @@ class ActorManager(GateObject):
     Manage all the actors in the simulation
     """
 
-    def __init__(self, simulation, *args, **kwargs):
+    def __init__(self, simulation, *args, **kwargs) -> None:
         kwargs["name"] = "actor_manager"
         kwargs["simulation"] = simulation
         super().__init__(*args, **kwargs)
@@ -397,10 +397,10 @@ class ActorManager(GateObject):
 
     def get_actor_user_info(self, name):
         self.warn_user(
-            f"Deprecation warning: The function 'get_actor_user_info' will soon be removed."
-            f"Use my_actor.user_info instead, where 'my_actor' "
-            f"should be replace by your actor object. "
-            f"You can also access user input parameters directly, e.g. my_actor.attached_to=..."
+            "Deprecation warning: The function 'get_actor_user_info' will soon be removed."
+            "Use my_actor.user_info instead, where 'my_actor' "
+            "should be replace by your actor object. "
+            "You can also access user input parameters directly, e.g. my_actor.attached_to=..."
         )
         actor = self.get_actor(name)
         return actor.user_info
@@ -669,7 +669,7 @@ class PhysicsManager(GateObject):
         # ),
     }
 
-    def __init__(self, simulation, *args, **kwargs):
+    def __init__(self, simulation, *args, **kwargs) -> None:
         super().__init__(name="physics_manager", *args, **kwargs)
 
         # Keep a pointer to the current simulation
@@ -756,7 +756,7 @@ class PhysicsManager(GateObject):
         for k, v in self.user_info.global_production_cuts.items():
             s += f"{k}: {v}\n"
         if len(self.regions.keys()) > 0:
-            s += f"*** Production cuts per regions ***\n"
+            s += "*** Production cuts per regions ***\n"
             for region in self.regions.values():
                 s += f"In region {region.name}:\n"
                 s += region.dump_production_cuts()
@@ -814,7 +814,7 @@ class PhysicsManager(GateObject):
         name = "optical_surface_" + volume_from + "_" + volume_to
 
         # Throw an error if the optical surface already exists
-        if name in self.optical_surfaces.keys():
+        if name in self.optical_surfaces:
             fatal("An optical surface between these volumes already exists")
 
         self.optical_surfaces[name] = OpticalSurface(
@@ -828,13 +828,13 @@ class PhysicsManager(GateObject):
         return self.optical_surfaces[name]
 
     def add_region(self, name):
-        if name in self.regions.keys():
+        if name in self.regions:
             fatal("A region with this name already exists.")
         self.regions[name] = Region(name=name, simulation=self.simulation)
         return self.regions[name]
 
     def find_or_create_region(self, volume_name):
-        if volume_name not in self.volumes_regions_lut.keys():
+        if volume_name not in self.volumes_regions_lut:
             region = self.add_region(volume_name + "_region")
             region.associate_volume(volume_name)
         else:
@@ -955,7 +955,7 @@ class PostProcessingManager(GateObject):
         try:
             name = post_processor.name
         except AttributeError:
-            fatal(f"Cannot retrieve the name of the post-processor.")
+            fatal("Cannot retrieve the name of the post-processor.")
         if name not in self.post_processors:
             self.post_processors[name] = post_processor
             # add finalizers to make sure the post-processor is shut down gracefully
@@ -964,7 +964,7 @@ class PostProcessingManager(GateObject):
                 post_processor, post_processor.close
             )
         else:
-            fatal(f"A post-processor with this name has already been added. ")
+            fatal("A post-processor with this name has already been added. ")
 
 
 class VolumeManager(GateObject):
@@ -988,7 +988,7 @@ class VolumeManager(GateObject):
         "TesselatedVolume": TesselatedVolume,
     }
 
-    def __init__(self, simulation, *args, **kwargs):
+    def __init__(self, simulation, *args, **kwargs) -> None:
         """
         Class that store geometry description.
         """
@@ -1137,7 +1137,7 @@ class VolumeManager(GateObject):
         # check that another element with the same name does not already exist
         volume_type_variants = [volume_type, volume_type + "Volume"]
         for vt in volume_type_variants:
-            if vt in self.volume_types.keys():
+            if vt in self.volume_types:
                 return self.volume_types[vt](name=name)
         fatal(
             f"Unknown volume type {volume_type}. Known types are: {list(self.volume_types.keys())}."
@@ -1188,7 +1188,7 @@ class VolumeManager(GateObject):
         print(self.dump_volume_tree())
 
     def dump_volume_types(self):
-        s = f""
+        s = ""
         for vt in self.volume_types:
             s += f"{vt} "
         return s
@@ -1586,17 +1586,17 @@ class Simulation(GateObject):
 
     def from_json_string(self, json_string):
         warning(
-            f"**********************************************************************************\n"
-            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            f"**********************************************************************************\n"
+            "**********************************************************************************\n"
+            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            "**********************************************************************************\n"
         )
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
         warning(
-            f"**********************************************************************************\n"
-            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            f"**********************************************************************************\n"
+            "**********************************************************************************\n"
+            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            "**********************************************************************************\n"
         )
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))

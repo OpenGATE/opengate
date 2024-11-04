@@ -456,6 +456,7 @@ jobs:
           pip install pandas numpy
           python compile_opengate_tests_results.py
     - name: Pushes to another repository
+      continue-on-error: true
       uses: cpina/github-action-push-to-another-repository@main
       env:
           API_TOKEN_GITHUB: ${{ secrets.PUSH_OPENGATE_TESTS_RESULTS }}

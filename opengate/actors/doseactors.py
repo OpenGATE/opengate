@@ -95,9 +95,9 @@ class VoxelDepositActor(ActorBase):
         "img_coord_system": (
             None,
             {
-                "deprecated": f"The user input parameter 'img_coord_system' is deprecated. "
-                f"Use my_actor.output_coordinate_system='attached_to_image' instead, "
-                f"where my_actor should be replaced with your actor object. ",
+                "deprecated": "The user input parameter 'img_coord_system' is deprecated. "
+                "Use my_actor.output_coordinate_system='attached_to_image' instead, "
+                "where my_actor should be replaced with your actor object. ",
             },
         ),
         "output_coordinate_system": (
@@ -109,7 +109,7 @@ class VoxelDepositActor(ActorBase):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         ActorBase.__init__(self, *args, **kwargs)
 
     def check_user_input(self):
@@ -1029,7 +1029,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         # no options yet
         if self.uncertainty or self.scatter:
-            fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
+            fatal("FluenceActor : uncertainty and scatter not implemented yet")
 
         self.InitializeUserInput(self.user_info)
         # Set the physical volume name on the C++ side
