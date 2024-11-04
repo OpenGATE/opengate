@@ -265,7 +265,7 @@ class VoxelDepositActor(ActorBase):
     def EndSimulationAction(self):
         # inform actor output that this simulation is over and write data
         for u in self.user_output.values():
-            if u.get_active(item="all"):
+            if u.get_active(item="any"):
                 u.end_of_simulation()
 
 
