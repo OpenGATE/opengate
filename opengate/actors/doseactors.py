@@ -133,11 +133,11 @@ class VoxelDepositActor(ActorBase):
             f"because the volume ({self.attached_to}, {self.attached_to_volume.type_name}) "
             f"to which the actor is attached does not support it. "
         )
-        if self.spacing == "like_image_volume":
+        if isinstance(self.spacing, str) and self.spacing == "like_image_volume":
             if not hasattr(self.attached_to_volume, "spacing"):
                 fatal("spacing = 'like_image_volume' " + msg)
             self.spacing = self.attached_to_volume.spacing
-        if self.size == "like_image_volume":
+        if isinstance(self.size, str) and self.size == "like_image_volume":
             if not hasattr(self.attached_to_volume, "size_pix"):
                 fatal("size = 'like_image_volume' " + msg)
             self.size = self.attached_to_volume.size_pix
