@@ -439,7 +439,7 @@ class MergeableActorOutput(ActorOutputBase):
         if self.keep_data_per_run is False:
             self.data_per_run = {}
         try:
-            self.write_data_if_requested(which="all", **kwargs)
+            self.write_data_if_requested(**kwargs)
         except NotImplementedError:
             raise GateImplementationError(
                 "Unable to run end_of_simulation "
@@ -740,7 +740,8 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         self.write_data(which=which, item=items)
 
     def end_of_simulation(self, item="all", **kwargs):
-        self.write_data_if_requested(which="all", item=item)
+        super().end_of_simulation(which="all", item=item)
+        # self.write_data_if_requested(which="all", item=item)
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
