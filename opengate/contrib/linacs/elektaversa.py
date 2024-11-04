@@ -7,6 +7,7 @@ from opengate.geometry.volumes import unite_volumes, intersect_volumes, subtract
 from opengate.geometry import volumes
 import scipy
 import numpy as np
+import itk
 
 
 
@@ -1219,6 +1220,29 @@ def set_linac_head_motion(sim, linac_name, jaws, mlc, rt_plan_parameters, cp_id=
     jaw_dynamic_translation(jaws[0], jaw_1_positions, "left", cp_id, sad)
     jaw_dynamic_translation(jaws[1], jaw_2_positions, "right", cp_id, sad)
     linac_rotation(sim, linac_name, [linac_head_positions,collimation_rotation], cp_id)
+
+
+def get_patient_translation_and_rotation_from_RT_plan_to_IEC(rt_plan_parameters,img):
+    isocenter = rt_plan_parameters["isocenter"][0]
+    image = itk.imread(img)
+    offset = np.array(image.GetOrigin())
+    dim = np.array(image.GetLargestPossibleRegion().GetSize())
+    spacing = np.array(image.GetSpacing())
+
+    # IMAGE ROTATION ACCORDING TO IEC 61217
+
+    size = (dim - 1) * spacing
+    center = offset + size / 2
+    rotation_to_apply = Rotation.from_euler("X", -90, degrees=True).as_matrix()
+
+    isocenter_vector = isocenter - center
+    rotated_isocenter_vector = np.dot(rotation_to_apply, isocenter_vector)
+
+    isocenter_rot_img = center + rotated_isocenter_vector
+    translation_to_apply = (center - isocenter_rot_img)
+
+    return(translation_to_apply,rotation_to_apply)
+
 
 
 def set_time_intervals_from_rtplan(sim, rt_plan_parameters, cp_id="all_cp"):
