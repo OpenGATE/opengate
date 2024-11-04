@@ -248,6 +248,7 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(G4Step* initS
   for (int j = 0; j < batchSize;j++){
     G4int NbOfSecondaries = 0;
     
+    G4int count =0;
     while (NbOfSecondaries  == 0){
       if (process->GetProcessName() == "eBrem") {
         G4Track aTrack = eBremProcessFinalState(fTrackToSplit,initStep,process);
@@ -265,6 +266,15 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(G4Step* initS
       NbOfSecondaries = processFinalState->GetNumberOfSecondaries();
       if (NbOfSecondaries == 0){
         processFinalState->Clear();
+      }
+      count ++;
+      //Security break, in case of infinite loop
+      if (count > 10000){
+        G4ExceptionDescription ed;
+        ed << " infinite loop detected during the track creation for the " <<process->GetProcessName() <<" process"<<G4endl;
+        G4Exception("GateLastVertexInteractionSplittingActor::SecondariesSplitting","BIAS.LV1",JustWarning,ed);
+        G4RunManager::GetRunManager()->AbortEvent();
+        break;
       }
     }
 
