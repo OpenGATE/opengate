@@ -17,6 +17,10 @@ import os
 import sys
 from pathlib import Path
 
+# this variable is used by opengate_core to detect that the import is triggered on ReadTheDocs
+# and no Geant4 data should be downloaded
+os.environ["GATEONRTD"] = "1"
+
 sys.path.insert(0, str(Path("..", "..").resolve()))
 autodoc_mock_imports = [
     "opengate_core",
