@@ -46,6 +46,7 @@ autodoc_mock_imports = [
 ]
 
 import cmd
+
 print(cmd.Cmd)
 
 # If extensions (or modules to document with autodoc) are in another directory,
