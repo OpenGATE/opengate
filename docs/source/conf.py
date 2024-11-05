@@ -21,7 +21,8 @@ from pathlib import Path
 # and no Geant4 data should be downloaded
 os.environ["GATEONRTD"] = "1"
 
-sys.path.insert(0, str(Path("..", "..").resolve()))
+# sys.path.insert(0, str(Path("..", "..").resolve()))
+sys.path.append(str(Path("..", "..").resolve()))
 autodoc_mock_imports = [
     "opengate_core",
     # "colored",
