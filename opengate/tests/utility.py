@@ -1839,8 +1839,8 @@ def np_plot_slice(
     img, crop_coord = np_img_crop(img, crop_center, crop_width)
 
     # slice
-    slice = img[num_slice, :, :]
-    im = ax.imshow(slice, cmap="gray")
+    lslice = img[num_slice, :, :]
+    im = ax.imshow(lslice, cmap="gray")
 
     # prepare ticks
     nticks = 6
