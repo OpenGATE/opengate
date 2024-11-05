@@ -470,7 +470,7 @@ def assert_filtered_imagesprofile1D(
     filter_data = np.squeeze(itk.GetArrayViewFromImage(filter_img1).ravel())
     data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
     data2 = np.squeeze(itk.GetArrayViewFromImage(img2).ravel())
-    flipflag = True #FIXME
+    flipflag = True  # FIXME
     if flipflag:
         filter_data = np.flip(filter_data)
         data1 = np.flip(data1)
