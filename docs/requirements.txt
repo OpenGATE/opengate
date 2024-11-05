@@ -2,6 +2,7 @@ sphinx
 sphinx_pdj_theme
 autoapi
 myst_parser
+sphinx-autodoc2
 sphinx-autoapi
 sphinx_copybutton
 pydata-sphinx-theme

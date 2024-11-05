@@ -21,34 +21,6 @@ from pathlib import Path
 # and no Geant4 data should be downloaded
 os.environ["GATEONRTD"] = "1"
 
-# sys.path.insert(0, str(Path("..", "..").resolve()))
-sys.path.append(str(Path("..", "..").resolve()))
-autodoc_mock_imports = [
-    "opengate_core",
-    # "colored",
-    # "gatetools",
-    # "click",
-    # "python-box",
-    # "anytree",
-    # "numpy",
-    # "itk",
-    # "uproot",
-    # "scipy",
-    # "matplotlib",
-    # "GitPython",
-    # "colorlog",
-    # "numpy-stl",
-    # "radioactivedecay",
-    # "jsonpickle",
-    # "pandas",
-    # "requests",
-    # "PyYAML",
-]
-
-import cmd
-
-print(cmd.Cmd)
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -76,13 +48,16 @@ release = ""
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "autodoc2",
     "sphinx.ext.mathjax",
     "myst_parser",
     "sphinx.ext.linkcode",
     "sphinx_copybutton",
     # "autoapi.extension",
-    "sphinx.ext.autodoc",
 ]
+
+autodoc2_packages = ["../../opengate"]
+autodoc2_render_plugin = "myst"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
