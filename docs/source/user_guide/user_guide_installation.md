@@ -48,6 +48,8 @@ For some systems (clusters or older computers), the main opengate_core cannot be
 
     pip install --force-reinstall "opengate[novis]"
 
+Note that the option ```--force-reinstall``` is only needed if you already installed the conventional opengate before.
+
 ## Additional command lines tools
 
 There is some additional commands lines tools that can also be used, see the [addons section](user_guide_addons.md).
