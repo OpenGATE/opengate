@@ -166,6 +166,90 @@ available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See
 http://www.lnhb.fr/nuclear-data/module-lara. One example is available in
 ``test031``.
 
+Energy spectrums
+^^^^^^^^^^^^^^^^
+
+##### Discrete for gamma spectrum
+
+One can configure a generic source to produce particles with energies depending on weights.
+To do so, one must provide two lists of the same size: one for energies, one for weights.
+Each energy is associated to the corresponding weight.
+Probabilities are derived from weights simply by normalizing the weights list.
+
+Several spectrums are provided through the `get_rad_gamma_spectrum` function:
+
+.. code:: python
+
+   spectrum = gate.sources.generic.get_rad_gamma_spectrum("Lu177")
+
+
+The source can be configured like this:
+
+
+.. code:: python
+
+   source = sim.add_source("GenericSource", "source")
+   source.particle = "gamma"
+   source.energy.type = "spectrum_discrete"
+   source.energy.spectrum_energies = spectrum.energies
+   source.energy.spectrum_weights = spectrum.weights
+
+
+For example, using this:
+.. code:: python
+
+   source.energy.spectrum_energies = [0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]
+   source.energy.spectrum_weights = [0.2, 0.4, 0.6, 0.8, 1.0, 0.8, 0.6, 0.4, 0.2]
+
+The produced particles will follow this pattern:
+
+.. image:: ../figures/generic_source_spectrum_discrete.png
+
+##### Histogram for beta spectrum
+
+One can configure a generic source to produce particles with energies according to a given histogram.
+Histograms are defined in the same way as `numpy`, using bin edges and histogram values.
+
+Several spectrums are provided through the `get_rad_beta_spectrum` function.
+This data comes from [doseinfo-radar](https://www.doseinfo-radar.com/RADARDecay.html)
+([direct link to the excel file](https://www.doseinfo-radar.com/BetaSpec.zip)).
+
+.. code:: python
+
+   spectrum = gate.sources.generic.get_rad_beta_spectrum("Lu177")
+
+The source can be configured like this:
+
+.. code:: python
+
+   source = sim.add_source("GenericSource", "source")
+   source.particle = "e-"
+   source.energy.type = "spectrum_histogram"
+   source.energy.spectrum_energy_bin_edges = spectrum.energy_bin_edges
+   source.energy.spectrum_weights = spectrum.weights
+
+For example, using this (which is what you get from `get_rad_beta_spectrum("Lu177")`):
+.. code:: python
+
+   source.energy.spectrum_energies = [
+	0.0, 0.0249, 0.0497, 0.0746, 0.0994, 0.1243, 0.1491,
+    0.174, 0.1988, 0.2237, 0.2485, 0.2734, 0.2983, 0.3231,
+    0.348, 0.3728, 0.3977, 0.4225, 0.4474, 0.4722, 0.497,
+   ]
+   source.energy.spectrum_weights = [
+	0.135, 0.122, 0.109, 0.0968, 0.0851, 0.0745, 0.0657,
+    0.0588, 0.0522, 0.0456, 0.0389, 0.0324, 0.0261, 0.0203,
+    0.015, 0.0105, 0.00664, 0.00346, 0.00148, 0.000297,
+   ]
+
+The produced particles will follow this pattern:
+
+.. image:: ../figures/generic_source_spectrum_histogram.png
+
+##### Interpolation
+
+TODO
+
 Confined source
 ^^^^^^^^^^^^^^^
 
