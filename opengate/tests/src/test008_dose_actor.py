@@ -81,11 +81,13 @@ if __name__ == "__main__":
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
     dose.output_filename = "test.nii.gz"
+    dose.edep.keep_data_per_run = True
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
 
+    sim.run_timing_intervals = [(i * gate.g4_units.s, (i + 1) * gate.g4_units.s) for i in range(3)]
     # start simulation
     sim.run(start_new_process=True)
 
