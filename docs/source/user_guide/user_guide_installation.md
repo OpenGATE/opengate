@@ -44,8 +44,7 @@ Once installed, we recommend to check the installation by printing GATE informat
 
 ### Cluster / no-OpenGL version
 
-For some systems (espacialy clusters or older computers), the main opengate_core cannot be run due to the lack of libGL, or other librairies. For linux system, we offer a version without visualization pro
-perties and using older librairies. You can install it with:
+For some systems (clusters or older computers), the main opengate_core cannot be used due to the lack of libGL, or other visualisation librairies. For linux system, we offer a version without visualization and using older librairies. You can install it with:
 
     pip install --force-reinstall "opengate[novis]"
 
