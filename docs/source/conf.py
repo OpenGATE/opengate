@@ -45,6 +45,8 @@ autodoc_mock_imports = [
     # "PyYAML",
 ]
 
+import cmd
+print(cmd.Cmd)
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
