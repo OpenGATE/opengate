@@ -12,6 +12,7 @@
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
+#include <G4Threading.hh>
 #include <iostream>
 #include <pybind11/stl.h>
 
@@ -42,6 +43,8 @@ public:
 
   void BeginOfEventAction(const G4Event *event) override;
 
+  void EndOfEventAction(const G4Event *event) override;
+
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
 
@@ -65,6 +68,14 @@ public:
 
   inline bool GetCountsFlag() const { return fCountsFlag; }
 
+  inline void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
+
+  inline void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
+
+  inline void SetOvershoot(const double b) { Overshoot = b; }
+
+  inline void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
+
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
   }
@@ -79,6 +90,7 @@ public:
   void ind2sub(int index, Image3DType::IndexType &index3D);
 
   double GetMaxValueOfImage(Image3DType::Pointer imageP);
+  double ComputeMeanUncertainty();
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
@@ -120,8 +132,21 @@ public:
   bool fCountsFlag{};
 
   double fVoxelVolume{};
+
+  // Option: set target statistical uncertainty for each run
+  double fUncertaintyGoal;
+  double fThreshEdepPerc;
+  double Overshoot;
+
   int NbOfEvent = 0;
+  // set from python side. It will be overwritten by an estimation of the Nb of
+  // events needed to achieve the goal uncertainty.
+  int NbEventsFirstCheck;
+  int NbEventsNextCheck;
   int NbOfThreads = 0;
+
+  double goalUncertainty;
+  double threshEdepPerc{};
 
   std::string fPhysicalVolumeName;
 

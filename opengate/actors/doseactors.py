@@ -307,9 +307,11 @@ def _setter_hook_uncertainty(self, value):
     return value
 
 
-def _setter_hook_goal_uncertainty(self, value):
-    if value < 0.0 or value > 1.0:
-        fatal(f"Goal uncertainty must be > 0 and < 1. The provided value is: {value}")
+def _setter_hook_uncertainty_goal(self, value):
+    if value is not None and (value < 0.0 or value > 1.0):
+        fatal(
+            f"Uncertainty goal must be > 0 and < 1, where 1 means 100%. The provided value is: {value}"
+        )
     return value
 
 
@@ -427,18 +429,30 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "deactivated": True,
             },
         ),
-        "goal_uncertainty": (
-            0,
+        "uncertainty_goal": (
+            None,
             {
-                "doc": "FIXME",
-                "setter_hook": _setter_hook_goal_uncertainty,
-                "deprecated": "Currently not implemented. ",
+                "doc": "If set, it defines the statistical uncertainty at which the run is aborted.",
+                "setter_hook": _setter_hook_uncertainty_goal,
             },
         ),
-        "thresh_voxel_edep_for_unc_calc": (
+        "uncertainty_first_check_after_n_events": (
+            1e4,
+            {
+                "doc": "Number of events after which uncertainty is evaluated the first time, for each run."
+                "After the first evaluation, the value is updated with an estimation of the N events needed to achieve the target uncertainty.",
+            },
+        ),
+        "uncertainty_voxel_edep_threshold": (
             0.7,
             {
-                "doc": "FIXME",
+                "doc": "For the calculation of the mean uncertainty of the edep image, only voxels that are above this fraction of the max edep are considered.",
+            },
+        ),
+        "uncertainty_overshoot_factor_N_events": (
+            1.05,
+            {
+                "doc": "Factor multiplying the estimated N events needed to achieve the target uncertainty, to ensure faster convergence.",
             },
         ),
         "dose_calc_on_the_fly": (
@@ -544,6 +558,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
+                "EndOfEventAction",
             }
         )
 
@@ -578,6 +593,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 item=("uncertainty", "std", "variance")
             )
             is True
+            or self.uncertainty_goal is not None
         ):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
@@ -624,6 +640,15 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         self.SetCountsFlag(self.user_output.counts.get_active())
         # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
         self.SetToWaterFlag(self.score_in == "water")
+
+        # variables for stop on uncertainty functionality
+        if self.uncertainty_goal is None:
+            self.SetUncertaintyGoal(0)
+        else:
+            self.SetUncertaintyGoal(self.uncertainty_goal)
+        self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
+        self.SetOvershoot(self.uncertainty_overshoot_factor_N_events)
+        self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())

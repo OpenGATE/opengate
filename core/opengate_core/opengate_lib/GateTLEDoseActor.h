@@ -28,26 +28,10 @@ public:
 
   void InitializeUserInput(py::dict &user_info) override;
 
-  void InitializeCpp() override;
-
-  void BeginOfRunActionMasterThread(int run_id) override;
-
-  void BeginOfRunAction(const G4Run *run) override;
-
-  void BeginOfEventAction(const G4Event *event) override;
-
   void PreUserTrackingAction(const G4Track *track) override;
 
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
-
-  // Called every time a Run ends (all threads)
-  void EndOfRunAction(const G4Run *run) override;
-
-  int EndOfRunActionMasterThread(int run_id) override;
-
-  // volume of a voxel
-  double fVoxelVolume;
 
   // Kill the gamma if below this energy
   double fEnergyMin;
