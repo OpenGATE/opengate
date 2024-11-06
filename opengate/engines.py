@@ -752,6 +752,8 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
 
     def initialize_dynamic_parametrisations(self):
         dynamic_volumes = self.volume_manager.dynamic_volumes
+        for vol in self.volume_manager.dynamic_volumes:
+            vol.check_if_dynamic_params_match_run_timing_intervals()
         if len(dynamic_volumes) > 0:
             dynamic_geometry_actor = self.simulation_engine.simulation.add_actor(
                 "DynamicGeometryActor", "dynamic_geometry_actor"

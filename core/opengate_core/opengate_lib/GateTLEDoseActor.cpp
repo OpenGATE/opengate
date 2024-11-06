@@ -26,9 +26,7 @@ G4Mutex SetPixelTLEMutex = G4MUTEX_INITIALIZER;
 
 GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
     : GateDoseActor(user_info) {
-  fVoxelVolume = 0;
-  // FIXME WARNING : no MT yet
-  fMultiThreadReady = false;
+  fMultiThreadReady = true;
 }
 
 void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
@@ -37,22 +35,6 @@ void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
   fEnergyMax = py::cast<double>(user_info["energy_max"]);
   auto database = py::cast<std::string>(user_info["database"]);
   fMaterialMuHandler = GateMaterialMuHandler::GetInstance(database, fEnergyMax);
-}
-
-void GateTLEDoseActor::InitializeCpp() { GateDoseActor::InitializeCpp(); }
-
-void GateTLEDoseActor::BeginOfRunActionMasterThread(int run_id) {
-  GateDoseActor::BeginOfRunActionMasterThread(run_id);
-}
-
-void GateTLEDoseActor::BeginOfRunAction(const G4Run *run) {
-  GateDoseActor::BeginOfRunAction(run);
-  auto s = cpp_edep_image->GetSpacing();
-  fVoxelVolume = s[0] * s[1] * s[2];
-}
-
-void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
-  GateDoseActor::BeginOfEventAction(event);
 }
 
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
@@ -116,26 +98,16 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   }
   double dose = edep / density;
 
-  // Get the voxel index
+  // Get the voxel index and check if the step was within the 3D image
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
-
-  if (!isInside)
-    return;
-
-  // G4AutoLock mutex(&SetPixelTLEMutex);
-  if (fDoseFlag) {
-    ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+  if (isInside) {
+    G4AutoLock mutex(&SetPixelTLEMutex); // mutex is bound to the if-scope
+    if (fDoseFlag) {
+      ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+    }
+    ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
   }
-  ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
-}
-
-void GateTLEDoseActor::EndOfRunAction(const G4Run *run) {
-  GateDoseActor::EndOfRunAction(run);
-}
-
-int GateTLEDoseActor::EndOfRunActionMasterThread(int run_id) {
-  return GateDoseActor::EndOfRunActionMasterThread(run_id);
 }

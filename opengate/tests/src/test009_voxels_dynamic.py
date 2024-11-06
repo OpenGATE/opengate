@@ -59,7 +59,6 @@ if __name__ == "__main__":
         [800, 6000, "G4_BONE_COMPACT_ICRU"],
     ]
 
-    sim.run_timing_intervals = [(0, 0.5 * sec), (0.5 * sec, 1 * sec)]
     patient.add_dynamic_parametrisation(
         image=[paths.data / "patient-4mm.mhd", paths.data / "patient-4mm.mhd"]
     )
@@ -110,8 +109,24 @@ if __name__ == "__main__":
     # verbose
     sim.g4_commands_after_init.append("/tracking/verbose 0")
 
-    # start simulation
-    sim.run(start_new_process=False)
+    # define run timing intervals that do not match the dynamic parameters
+    # GATE should raise an exception
+    sim.run_timing_intervals = [
+        (0, 0.5 * sec),
+        (0.5 * sec, 1 * sec),
+        (1 * sec, 1.5 * sec),
+    ]
+    try:
+        sim.run(start_new_process=True)
+        print("This exception is intentionally provoked and wanted. ")
+        is_ok = False
+    except:
+        is_ok = True
+
+    # define the run timing intervals at the very last moment as a test
+    # GATE should allow this
+    sim.run_timing_intervals = [(0, 0.5 * sec), (0.5 * sec, 1 * sec)]
+    sim.run(start_new_process=True)
 
     # print results at the end
     print(stats)
@@ -124,7 +139,7 @@ if __name__ == "__main__":
         "Setting run count to 1, although more than 1 run was used in the simulation. "
         "This is to avoid a wrongly failing test."
     )
-    is_ok = utility.assert_stats(stats, stats_ref, 0.15)
+    is_ok = is_ok and utility.assert_stats(stats, stats_ref, 0.15)
     print(is_ok)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",

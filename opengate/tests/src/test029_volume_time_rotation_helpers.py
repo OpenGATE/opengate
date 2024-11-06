@@ -141,7 +141,7 @@ def create_simulation(sim, aa_flag, paths, version):
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
     proj.origin_as_image_center = False
-    proj.output_filename = "proj029{version}.mhd"
+    proj.output_filename = f"proj029{version}.mhd"
 
     translations = []
     rotations = []
