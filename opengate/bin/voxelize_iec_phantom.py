@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+from pathlib import Path
 import click
 import json
 import itk
@@ -58,7 +58,7 @@ def go(output, spacing, output_source, activities, no_shell):
     print(f"Image origin={info.origin}")
 
     # write labels
-    lf = output.replace(".mhd", ".json")
+    lf = Path(output).with_suffix(".json")
     outfile = open(lf, "w")
     json.dump(labels, outfile, indent=4)
 
