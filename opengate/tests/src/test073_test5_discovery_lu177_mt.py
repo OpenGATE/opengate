@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     # source
     Bq = gate.g4_units.Bq
-    set_source_rad_energy_spectrum(source, "lu177")
+    set_source_rad_energy_spectrum(source, "Lu177")
     source.activity = 3e8 * Bq / sim.number_of_threads
 
     # start simulation
