@@ -137,7 +137,7 @@ def update_tac_activity_ui(ui, g4_source):
         )
 
     # scale the activity if energy_spectrum is given (because total may not be 100%)
-    total = sum(ui.energy.spectrum_weight)
+    total = sum(ui.energy.spectrum_weights)
     sec = g4_units.s
     Bq = g4_units.Bq
 
@@ -158,7 +158,7 @@ def update_tac_activity_ui(ui, g4_source):
     if ui.verbose:
         print(
             f"GammaFromIon source {ui.name}    total = {total * 100:8.2f}%   "
-            f" gammas lines = {len(ui.energy.spectrum_weight)}   "
+            f" gammas lines = {len(ui.energy.spectrum_weights)}   "
             f" total activity = {sum(ui.tac_activities) / Bq:10.3f}"
             f" first activity = {ui.tac_activities[0] / Bq:5.2f}"
             f" last activity = {ui.tac_activities[-1] / Bq:5.2f}"

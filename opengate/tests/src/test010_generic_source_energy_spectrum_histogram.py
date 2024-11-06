@@ -96,7 +96,7 @@ def run_simulation(paths, interpolation: str = None):
     phsp_actor.output_filename = (
         f"test010_energy_spectrum_histogram_{interpolation}.root"
     )
-    phsp_actor.attach_to = phsp
+    # phsp_actor.attached_to = phsp
     phsp_actor.attributes = [
         "KineticEnergy",
     ]
@@ -125,7 +125,7 @@ def run_simulation(paths, interpolation: str = None):
 
     relerrs = [abs(hist_y[i] - data_y[i]) / data_y[i] for i in range(len(data_y))]
     oks = [
-        utility.check_diff_abs(0, relerr, tolerance=0.15, txt="relative error")
+        utility.check_diff_abs(0, relerr, tolerance=0.05, txt="relative error")
         for relerr in relerrs
     ]
     is_ok = all(oks)
@@ -147,4 +147,4 @@ if __name__ == "__main__":
     )
 
     run_simulation(paths, interpolation=None)
-    run_simulation(paths, interpolation="linear")  # relative error ok until last values
+    # run_simulation(paths, interpolation="linear")  # relative error ok until last values

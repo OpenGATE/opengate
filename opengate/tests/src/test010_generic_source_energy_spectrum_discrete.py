@@ -65,7 +65,7 @@ def run_simulation(paths):
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.number_of_threads = 1
-    sim.random_seed = 987654321
+    # sim.random_seed = 987654321
     sim.output_dir = paths.output
 
     # units
@@ -82,7 +82,7 @@ def run_simulation(paths):
     world.material = "Vacuum"
 
     phsp = sim.add_volume("Sphere", "phsp")
-    phsp.rmin = 0 * m
+    phsp.rmin = 0.1 * m
     phsp.rmax = 1 * m
     phsp.material = world.material
 
@@ -91,7 +91,7 @@ def run_simulation(paths):
     # actors
     phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp_actor")
     phsp_actor.output_filename = "test010_energy_spectrum_discrete.root"
-    phsp_actor.attach_to = phsp
+    phsp_actor.attached_to = phsp.name
     phsp_actor.attributes = [
         "KineticEnergy",
     ]
@@ -100,7 +100,7 @@ def run_simulation(paths):
     sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
-    sim.run(start_new_process=True)
+    sim.run()
 
     # get info
     ekin = root_load_ekin(str(phsp_actor.get_output_path()))
@@ -120,12 +120,11 @@ def run_simulation(paths):
             energy_counts[energy] = 0
         energy_counts[energy] += 1
 
-    output_y = list(energy_counts.values())
-    print(output_y)
+    output_y = [energy_counts[x] for x in data_x]
 
     relerrs = [abs(output_y[i] - data_y[i]) / data_y[i] for i in range(len(data_y))]
     oks = [
-        utility.check_diff_abs(0, relerr, tolerance=0.15, txt="relative error")
+        utility.check_diff_abs(0, relerr, tolerance=0.05, txt="relative error")
         for relerr in relerrs
     ]
     is_ok = all(oks)

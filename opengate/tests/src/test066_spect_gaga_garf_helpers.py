@@ -227,10 +227,9 @@ def add_iec_Tc99m_source(sim, activity_concentration):
 
     for source in sources:
         source.particle = "gamma"
-        source.energy.type = "spectrum"
-        source.energy.spectrum_type = "discrete"
-        source.energy.spectrum_weight = w
-        source.energy.spectrum_energy = e
+        source.energy.type = "spectrum_discrete"
+        source.energy.spectrum_weights = w
+        source.energy.spectrum_energies = e
         total_activity += source.activity
         print(
             f"Activity {source.name} = {source.activity / Bq:.2f} Bq  {activity_concentration / BqmL:.0f} Bq/mL"
