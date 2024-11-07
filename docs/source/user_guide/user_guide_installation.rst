@@ -46,22 +46,21 @@ Once installed, we recommend checking the installation by printing GATE informat
 
 **WARNING 1**: The first time a simulation is executed, Geant4 data must be downloaded and installed. This step is automated but may take some time depending on your bandwidth. Note that this is only done once. Running `opengate_info` will display details and the path of the data.
 
-.. note::
-    **WARNING 2**: With some Linux systems (not all), you may encounter an error like "cannot allocate memory in static TLS block." In that case, you need to add a specific path to the linker as follows:
+### Cluster / No-OpenGL Version
 
-    .. code-block:: bash
+For some systems (clusters or older computers), the main `opengate_core` cannot be used due to the lack of libGL or other visualization libraries. For Linux systems, we offer a version without visualization and using older libraries. You can install it with:
 
-        export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
+.. code-block:: bash
 
-    The libraries (libG4processes and libG4geometry) are typically found in the Geant4 folder, e.g., `~/build-geant4.11.0.2/BuildProducts/lib64`.
+    pip install --force-reinstall "opengate[novis]"
 
-Additional Command Line Tools
------------------------------
+Note that the option `--force-reinstall` is only needed if you already installed the conventional `opengate` before.
 
-There are additional command line tools available; see the `addons section <user_guide_addons>`_.
+## Additional Command Line Tools
 
-Teaching Resources and Examples
--------------------------------
+There are additional command line tools available; see the `addons section <user_guide_addons.md>`_.
+
+## Teaching Resources and Examples
 
 *Warning*: These resources are only updated infrequently; you may need to adapt them to changes in the Opengate version.
 
