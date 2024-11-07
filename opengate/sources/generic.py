@@ -115,6 +115,9 @@ def get_ion_gamma_spectrum(ion):
     with open(path, "r") as f:
         data = json.load(f)
 
+    if ion not in data:
+        fatal(f"get_ion_gamma_spectrum: {path} does not contain data for ion {ion}")
+
     # select data for specific ion
     data = Box(data[ion])
 
@@ -133,6 +136,9 @@ def get_ion_beta_spectrum(ion: str):
     )
     with open(path, "r") as f:
         data = json.load(f)
+
+    if ion not in data:
+        fatal(f"get_ion_gamma_spectrum: {path} does not contain data for ion {ion}")
 
     # select data for specific ion
     data = Box(data[ion])
