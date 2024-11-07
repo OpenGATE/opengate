@@ -17,8 +17,6 @@ GateTDigiAttribute<T>::GateTDigiAttribute(std::string vname)
   Fatal("GateTDigiAttribute constructor must be specialized for this type");
 }
 
-template <class T> GateTDigiAttribute<T>::~GateTDigiAttribute() {}
-
 template <class T>
 void GateTDigiAttribute<T>::InitDefaultProcessHitsFunction() {
   // By default, "do nothing" in the process hit function

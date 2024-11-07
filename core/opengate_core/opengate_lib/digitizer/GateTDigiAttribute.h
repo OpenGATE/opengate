@@ -17,41 +17,39 @@ template <class T> class GateTDigiAttribute : public GateVDigiAttribute {
 public:
   explicit GateTDigiAttribute(std::string vname);
 
-  ~GateTDigiAttribute() override;
+  int GetSize() const override;
 
-  virtual int GetSize() const override;
+  std::vector<double> &GetDValues() override;
 
-  virtual std::vector<double> &GetDValues() override;
+  std::vector<int> &GetIValues() override;
 
-  virtual std::vector<int> &GetIValues() override;
+  std::vector<std::string> &GetSValues() override;
 
-  virtual std::vector<std::string> &GetSValues() override;
+  std::vector<G4ThreeVector> &Get3Values() override;
 
-  virtual std::vector<G4ThreeVector> &Get3Values() override;
-
-  virtual std::vector<GateUniqueVolumeID::Pointer> &GetUValues() override;
+  std::vector<GateUniqueVolumeID::Pointer> &GetUValues() override;
 
   const std::vector<T> &GetValues() const;
 
-  virtual void FillToRoot(size_t index) const override;
+  void FillToRoot(size_t index) const override;
 
-  virtual void FillDValue(double v) override;
+  void FillDValue(double v) override;
 
-  virtual void FillSValue(std::string v) override;
+  void FillSValue(std::string v) override;
 
-  virtual void FillIValue(int v) override;
+  void FillIValue(int v) override;
 
-  virtual void Fill3Value(G4ThreeVector v) override;
+  void Fill3Value(G4ThreeVector v) override;
 
-  virtual void FillUValue(GateUniqueVolumeID::Pointer v) override;
+  void FillUValue(GateUniqueVolumeID::Pointer v) override;
 
-  virtual void Fill(GateVDigiAttribute *input, size_t index) override;
+  void Fill(GateVDigiAttribute *input, size_t index) override;
 
-  virtual void FillDigiWithEmptyValue() override;
+  void FillDigiWithEmptyValue() override;
 
-  virtual void Clear() override;
+  void Clear() override;
 
-  virtual std::string Dump(int i) const override;
+  std::string Dump(int i) const override;
 
 protected:
   struct threadLocal_t {

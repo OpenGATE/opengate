@@ -24,21 +24,21 @@ public:
   // Constructor
   GateLETActor(py::dict &user_info);
 
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInput(py::dict &user_info) override;
 
-  virtual void InitializeCpp() override;
+  void InitializeCpp() override;
 
   // Main function called every step in attached volume
-  virtual void SteppingAction(G4Step *) override;
+  void SteppingAction(G4Step *) override;
 
-  virtual void BeginOfEventAction(const G4Event *event) override;
+  void BeginOfEventAction(const G4Event *event) override;
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run) override;
+  void BeginOfRunAction(const G4Run *run) override;
 
-  virtual void BeginOfRunActionMasterThread(int run_id) override;
+  void BeginOfRunActionMasterThread(int run_id) override;
 
-  virtual void EndSimulationAction() override;
+  void EndSimulationAction() override;
 
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
