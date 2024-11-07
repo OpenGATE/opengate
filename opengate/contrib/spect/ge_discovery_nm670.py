@@ -51,7 +51,12 @@ def add_materials(sim):
 
 
 def add_spect_head(
-    sim, name="spect", collimator_type="lehr", debug=False, crystal_size="3/8"
+    sim,
+    name="spect",
+    collimator_type="lehr",
+    rotation_deg=0,
+    debug=False,
+    crystal_size="3/8",
 ):
     """
     Collimators:
@@ -80,7 +85,7 @@ def add_spect_head(
     # spect collimator
     colli = None
     if collimator_type:
-        colli = add_collimator(sim, name, head, collimator_type, debug)
+        colli = add_collimator(sim, name, head, collimator_type, rotation_deg, debug)
 
     return head, colli, crystal
 
@@ -212,7 +217,7 @@ def add_crystal(sim, name, lead_cover, crystal_size):
     return crystal
 
 
-def add_collimator(sim, name, head, collimator_type, debug):
+def add_collimator(sim, name, head, collimator_type, rotation_deg, debug):
     """
     Start with default lehr collimator description,
     then change some parameters for the other types
@@ -309,6 +314,9 @@ def add_collimator(sim, name, head, collimator_type, debug):
             f'Use "megp" or "lehr" or "hegp" or "False"'
         )
 
+    # should we rotate the collimator holes ?
+    holep.rotation = Rotation.from_euler("Z", rotation_deg, degrees=True).as_matrix()
+
     return colli_trd
 
 
@@ -382,6 +390,7 @@ def lehr_collimator_repeater(sim, name, core, debug):
         holep.linear_repeat = [183, 235, 1]
 
     holep.translation = [2.94449 * mm, 1.7 * mm, 0]
+
     # do it twice, with the following offset
     holep.offset_nb = 2
     holep.offset = [1.47224 * mm, 0.85 * mm, 0]
@@ -390,7 +399,7 @@ def lehr_collimator_repeater(sim, name, core, debug):
     return holep
 
 
-def lehr_collimator_repeater2(sim, name, core, debug):
+def lehr_collimator_repeater2_WIP(sim, name, core, debug):
     cm = g4_units.cm
     mm = g4_units.mm
 
@@ -418,7 +427,7 @@ def lehr_collimator_repeater2(sim, name, core, debug):
     return holep
 
 
-def lehr_collimator_repeater_noparam(sim, name, core, debug):
+def lehr_collimator_repeater_noparam_WIP(sim, name, core, debug):
     cm = g4_units.cm
     mm = g4_units.mm
     # one single hole
