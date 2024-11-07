@@ -480,7 +480,7 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
                 colored.stylize(": failed", color_error),
                 end="\n",
             )
-            if os.name == 'nt':
+            if os.name == "nt":
                 os.system("type " + shell_output_k.log_fpath)
             else:
                 os.system("cat " + shell_output_k.log_fpath)
