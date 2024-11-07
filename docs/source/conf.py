@@ -48,7 +48,7 @@ release = ""
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "autodoc2",
+    "sphinx.ext.autodoc",
     "sphinx.ext.mathjax",
     "myst_parser",
     "sphinx.ext.linkcode",
