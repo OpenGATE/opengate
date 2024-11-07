@@ -347,7 +347,7 @@ Check all test044 for usage examples.
 
 In ion beam therapy, a target’s volume is irradiated by scanning a pencil beam across the transverse plane using steering magnets, while adjusting the beam energy to reach different depths within the target. The Treatment Plan source simulates the delivery of a scanned ion pencil beam treatment plan.
 
-The treatment plan specifies, for each beam and each energy layer, the positions (x,y) of the spots to be irradiated and their weight, represented as either the number of particles or monitor units. Here, the (x,y) coordinates indicate where the beam intersects the plane of the room’s isocenter. The plan also includes the gantry angle for each beam. 
+The treatment plan specifies, for each beam and each energy layer, the positions (x,y) of the spots to be irradiated and their weight, represented as either the number of particles or monitor units. Here, the (x,y) coordinates indicate where the beam intersects the plane of the room’s isocenter. The plan also includes the gantry angle for each beam.
 
 The Treatment Plan source reads the treatment plan file provided by the user and generates a Pencil Beam source whose parameters are updated in order to cover the spots described in the plan. To determine the position and orientation of each pencil beam, essential beamline geometrical parameters are required, such as the position of the stearing magnets and the virtual source to isocenter distance. Moreover, the beamline energy dependent optics parameters and the energy spread should be characterized.
 
