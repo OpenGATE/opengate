@@ -400,6 +400,7 @@ def sum_itk_images(itk_image_list):
         summed_image = sitk.Add(summed_image, sitk_image)
     return sitk_to_itk(summed_image)
 
+
 def multiply_itk_images(images):
     image_type = type(images[0])
     multiply_image_filter = itk.MultiplyImageFilter[
