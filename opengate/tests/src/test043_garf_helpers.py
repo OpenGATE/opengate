@@ -46,7 +46,7 @@ def sim_phys(sim):
 
 
 def sim_source_test(sim, activity):
-    tc99m = gate.sources.generic.get_ion_gamma_spectrum("Tc99m")
+    tc99m = gate.sources.generic.get_rad_gamma_spectrum("Tc99m")
     e = tc99m.energies
     w = tc99m.weights
 

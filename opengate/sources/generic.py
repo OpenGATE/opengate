@@ -104,21 +104,21 @@ def generate_isotropic_directions(
     return v
 
 
-def get_ion_gamma_spectrum(ion):
+def get_rad_gamma_spectrum(rad):
     path = (
         pathlib.Path(os.path.dirname(__file__))
         / ".."
         / "data"
-        / "ion_gamma_spectrum.json"
+        / "rad_gamma_spectrum.json"
     )
     with open(path, "r") as f:
         data = json.load(f)
 
-    if ion not in data:
-        fatal(f"get_ion_gamma_spectrum: {path} does not contain data for ion {ion}")
+    if rad not in data:
+        fatal(f"get_rad_gamma_spectrum: {path} does not contain data for ion {rad}")
 
     # select data for specific ion
-    data = Box(data[ion])
+    data = Box(data[rad])
 
     data.energies = np.array(data.energies) * g4_units.MeV
     data.weights = np.array(data.weights)
@@ -126,21 +126,21 @@ def get_ion_gamma_spectrum(ion):
     return data
 
 
-def get_ion_beta_spectrum(ion: str):
+def get_rad_beta_spectrum(rad: str):
     path = (
         pathlib.Path(os.path.dirname(__file__))
         / ".."
         / "data"
-        / "ion_beta_spectrum.json"
+        / "rad_beta_spectrum.json"
     )
     with open(path, "r") as f:
         data = json.load(f)
 
-    if ion not in data:
-        fatal(f"get_ion_gamma_spectrum: {path} does not contain data for ion {ion}")
+    if rad not in data:
+        fatal(f"get_rad_beta_spectrum: {path} does not contain data for ion {rad}")
 
     # select data for specific ion
-    data = Box(data[ion])
+    data = Box(data[rad])
 
     bin_edges = data.energy_bin_edges
     n = len(bin_edges) - 1
@@ -154,7 +154,7 @@ def get_ion_beta_spectrum(ion: str):
 
 
 def set_source_rad_energy_spectrum(source, rad):
-    rad_spectrum = get_ion_gamma_spectrum(rad)
+    rad_spectrum = get_rad_gamma_spectrum(rad)
 
     source.particle = "gamma"
     source.energy.type = "spectrum_discrete"
