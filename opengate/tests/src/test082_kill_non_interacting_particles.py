@@ -51,9 +51,6 @@ def test082_test(entry_data, exit_data_1, exit_data_2):
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__)
     output_path = paths.output
-
-
-    print(output_path)
     # create the simulation
     sim = gate.Simulation()
     sim.output_dir = output_path
@@ -90,16 +87,16 @@ if __name__ == "__main__":
     #  adapt world size
     world = sim.world
     world.size = [1 * m, 1 * m, 1 * m]
-    world.material = "G4_AIR"
+    world.material = "G4_Galactic"
 
     big_box = sim.add_volume("Box", "big_box")
     big_box.mother = world.name
-    big_box.material = "G4_AIR"
+    big_box.material = "G4_Galactic"
     big_box.size = [0.8 * m, 0.8 * m, 0.8 * m]
 
     actor_box = sim.add_volume("Box", "actor_box")
     actor_box.mother = big_box.name
-    actor_box.material = "G4_AIR"
+    actor_box.material = "G4_Galactic"
     actor_box.size = [0.6 * m, 0.6 * m, 0.6 * m]
     actor_box.translation = [0, 0, -0.1 * m]
 
@@ -107,8 +104,8 @@ if __name__ == "__main__":
     source.particle = "gamma"
     source.position.type = "box"
     source.mother = world.name
-    source.position.size = [6 * cm, 6 * cm, 6 * cm]
-    source.position.translation = [0, 0, 0.3 * m]
+    source.position.size = [6 * cm, 6 * cm, 4 * cm]
+    source.position.translation = [0, 0, 0.205 * m]
     source.direction.type = "momentum"
     source.direction_relative_to_attached_volume = True
     # source1.direction.focus_point = [0*cm, 0*cm, -5 *cm]
@@ -131,23 +128,23 @@ if __name__ == "__main__":
     kill_No_int_act.attached_to = actor_box.name
 
     entry_phase_space = sim.add_volume("Box", "entry_phase_space")
-    entry_phase_space.mother = big_box
-    entry_phase_space.size = [0.8 * m, 0.8 * m, 1 * nm]
-    entry_phase_space.material = "G4_AIR"
-    entry_phase_space.translation = [0, 0, 0.21 * m]
+    entry_phase_space.mother = actor_box.name
+    entry_phase_space.size = [0.6 * m, 0.6 * m, 1 * nm]
+    entry_phase_space.material = "G4_Galactic"
+    entry_phase_space.translation = [0, 0, 0.255* m]
     entry_phase_space.color = [0.5, 0.9, 0.3, 1]
 
     exit_phase_space_1 = sim.add_volume("Box", "exit_phase_space_1")
     exit_phase_space_1.mother = actor_box
     exit_phase_space_1.size = [0.6 * m, 0.6 * m, 1 * nm]
-    exit_phase_space_1.material = "G4_AIR"
+    exit_phase_space_1.material = "G4_Galactic"
     exit_phase_space_1.translation = [0, 0, -0.3 * m + 1 * nm]
     exit_phase_space_1.color = [0.5, 0.9, 0.3, 1]
 
     exit_phase_space_2 = sim.add_volume("Box", "exit_phase_space_2")
     exit_phase_space_2.mother = world.name
     exit_phase_space_2.size = [0.6 * m, 0.6 * m, 1 * nm]
-    exit_phase_space_2.material = "G4_AIR"
+    exit_phase_space_2.material = "G4_Galactic"
     exit_phase_space_2.translation = [0, 0, -0.4 * m - 1 * nm]
     exit_phase_space_2.color = [0.5, 0.9, 0.3, 1]
 

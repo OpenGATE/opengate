@@ -303,8 +303,9 @@ class KillActor(ActorBase, g4.GateKillActor):
 class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingParticleActor):
 
     """
-    If a particle, not generated within the volume at which our actor is attached, crosses the volume
-    without interaction, the particle is killed
+    If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
+    without interaction, the particle is killed. Warning : this actor being based on energy measurement, Rayleigh photon
+    may not be killed.
     """
 
     def __init__(self, *args, **kwargs):
