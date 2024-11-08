@@ -27,7 +27,7 @@ First, clone the unique repository that contains both packages:
 git clone --recurse-submodules https://github.com/OpenGATE/opengate
 ```
 
-:warning: When you update, the data for the tests must also be updated, use : `git submodule update --init --recursive`. This also update the included subpackages (pybind11, etc). 
+:warning: When you update, the data for the tests must also be updated, use : `git submodule update --init --recursive`. This also update the included subpackages (pybind11, etc).
 
 The subpackage `opengate_core` depends on the ITK and Geant4 libraries. Therefore, you first need to download and compile both [Geant4](https://geant4.web.cern.ch) and [ITK](https://itk.org). Note: In the user install, this step is not necessary because Geant4 and ITK are shipped pre-compiled via pip.
 
