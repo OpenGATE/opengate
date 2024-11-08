@@ -15,9 +15,6 @@
 GateKillNonInteractingParticleActor::GateKillNonInteractingParticleActor(
     py::dict &user_info)
     : GateVActor(user_info, false) {
-  fActions.insert("StartSimulationAction");
-  fActions.insert("SteppingAction");
-  fActions.insert("PreUserTrackingAction");
 }
 
 
@@ -38,13 +35,11 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
   G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()
                                      ->GetVolume(fMotherVolumeName)
                                      ->GetName();
-  G4String physicalVolumeNamePreStep =
-      step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
-  if ((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() !=
-       logNameMotherVolume) &&
-      (fIsFirstStep)) {
-    if ((fPassedByTheMotherVolume == false) &&
-        (physicalVolumeNamePreStep == fMotherVolumeName) &&
+  G4String physicalVolumeNamePreStep = "None";
+  if (step->GetPreStepPoint()->GetPhysicalVolume() !=0)                                
+    physicalVolumeNamePreStep = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
+  if ((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() != logNameMotherVolume) && (fIsFirstStep)) {
+    if ((fPassedByTheMotherVolume == false) && (physicalVolumeNamePreStep == fMotherVolumeName) &&
         (step->GetPreStepPoint()->GetStepStatus() == 1)) {
       fPassedByTheMotherVolume = true;
       fKineticEnergyAtTheEntrance = step->GetPreStepPoint()->GetKineticEnergy();
@@ -52,12 +47,8 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
     }
   }
 
-  G4String logicalVolumeNamePostStep = step->GetPostStepPoint()
-                                           ->GetPhysicalVolume()
-                                           ->GetLogicalVolume()
-                                           ->GetName();
-  if ((fPassedByTheMotherVolume) &&
-      (step->GetPostStepPoint()->GetStepStatus() == 1)) {
+  G4String logicalVolumeNamePostStep = step->GetPostStepPoint()->GetPhysicalVolume()->GetLogicalVolume()->GetName();
+  if ((fPassedByTheMotherVolume) && (step->GetPostStepPoint()->GetStepStatus() == 1)) {
     if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(),
                   logicalVolumeNamePostStep) != fListOfVolumeAncestor.end()) {
       if ((step->GetTrack()->GetTrackID() == ftrackIDAtTheEntrance) &&

@@ -7,6 +7,8 @@ from .actoroutput import ActorOutputBase
 from ..serialization import dump_json
 from ..exception import warning
 from ..base import process_cls
+from anytree import Node, RenderTree
+
 
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
@@ -298,11 +300,42 @@ class KillActor(ActorBase, g4.GateKillActor):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
+class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingParticleActor):
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateKillNonInteractingParticleActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"StartSimulationAction","PreUserTrackingAction", "SteppingAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        print(type(volume_tree))
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+
 def _setter_hook_particles(self, value):
     if isinstance(value, str):
         return [value]
     else:
         return list(value)
+
 
 
 class SplittingActorBase(ActorBase):
