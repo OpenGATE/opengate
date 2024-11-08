@@ -1,6 +1,10 @@
 User Guide
 ==========
 
+This is just a test:
+
+.. autofunction:: autodoctest.test_func_for_autodoc
+
 .. toctree::
    :caption: Getting started
    :maxdepth: 2
