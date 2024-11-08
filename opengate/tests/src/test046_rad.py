@@ -67,7 +67,7 @@ if __name__ == "__main__":
     yields = [0.885, 0.172168, 1.847315, 1.0024600000000004]
     i = 0
     for rad in radionuclides:
-        rad_spectrum = gate.sources.generic.get_ion_gamma_spectrum(rad)
+        rad_spectrum = gate.sources.generic.get_rad_gamma_spectrum(rad)
         tw = rad_spectrum["weights"].sum()
         ok = tw == yields[i]
         utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]} {ok}")

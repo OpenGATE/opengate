@@ -41,7 +41,7 @@ def root_load_ekin(root_file: str):
 
 
 def add_source_energy_spectrum_discrete(sim, phsp):
-    spectrum = gate.sources.generic.get_ion_gamma_spectrum("Lu177")
+    spectrum = gate.sources.generic.get_rad_gamma_spectrum("Lu177")
 
     source = sim.add_source("GenericSource", "beam")
     source.mother = phsp.name

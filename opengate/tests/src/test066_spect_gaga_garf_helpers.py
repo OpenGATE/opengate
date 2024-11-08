@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 import opengate.sources.gansources as gansources
-from opengate.sources.generic import get_ion_gamma_spectrum
+from opengate.sources.generic import get_rad_gamma_spectrum
 from opengate.contrib.spect import ge_discovery_nm670
 from scipy.spatial.transform import Rotation
 
@@ -221,7 +221,7 @@ def add_iec_Tc99m_source(sim, activity_concentration):
     sources = gate_iec.add_spheres_sources(sim, "iec", "src", "all", all_activities)
     total_activity = 0
     print(f"Activity concentration = {all_activities[5] / BqmL:.0f} BqmL")
-    tc99m = get_ion_gamma_spectrum("Tc99m")
+    tc99m = get_rad_gamma_spectrum("Tc99m")
     w = tc99m.weights
     e = tc99m.energies
 
