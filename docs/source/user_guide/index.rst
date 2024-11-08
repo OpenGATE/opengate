@@ -3,7 +3,7 @@ User Guide
 
 This is just a test:
 
-.. autofunction:: autodoctest.test_func_for_autodoc
+.. autoclass:: opengate.Simulation
 
 .. toctree::
    :caption: Getting started
