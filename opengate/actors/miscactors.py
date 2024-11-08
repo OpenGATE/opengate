@@ -302,6 +302,11 @@ class KillActor(ActorBase, g4.GateKillActor):
 
 class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingParticleActor):
 
+    """
+    If a particle, not generated within the volume at which our actor is attached, crosses the volume
+    without interaction, the particle is killed
+    """
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
