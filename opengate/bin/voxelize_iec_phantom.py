@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+from pathlib import Path
 import click
 import json
 import itk
@@ -41,30 +41,24 @@ def go(output, spacing, output_source, activities, no_shell):
     sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a iec phantom
-    # FIXME add param
     iec = gate_iec.add_iec_phantom(
         sim, sphere_starting_angle=False, toggle_sphere_order=False
     )
 
-    # create an empty image with the size (extent) of the volume
-    # add one pixel margin
-    image = create_image_with_volume_extent(
-        iec, spacing=[spacing, spacing, spacing], margin=1
-    )
+    # voxelized the iec volume
+    print("Starting voxelization ...")
+    spacing = (spacing, spacing, spacing)
+    labels, image = sim.voxelize_geometry(extent=iec, spacing=spacing, margin=1)
+    print(f"Output labels: ")
+    print_dic(labels)
+
     info = get_info_from_image(image)
     print(f"Image size={info.size}")
     print(f"Image spacing={info.spacing}")
     print(f"Image origin={info.origin}")
 
-    # voxelized a volume
-    print("Starting voxelization ...")
-    with SimulationEngine(sim) as se:
-        labels, image = voxelize_volume(se, image)
-    print(f"Output labels: ")
-    print_dic(labels)
-
     # write labels
-    lf = output.replace(".mhd", ".json")
+    lf = Path(output).with_suffix(".json")
     outfile = open(lf, "w")
     json.dump(labels, outfile, indent=4)
 
@@ -86,7 +80,7 @@ def go(output, spacing, output_source, activities, no_shell):
         print()
         print(f"Voxelized source: ")
         for l in labels:
-            label_index = labels[l]
+            label_index = labels[l]["label"]
             # consider iec_sphere_XXmm AND iec_sphere_shell_XXmm
             if l.startswith("iec_sphere_"):
                 if no_shell and "shell" in l:
@@ -100,9 +94,6 @@ def go(output, spacing, output_source, activities, no_shell):
                     f"Sphere {sph}mm : index = {label_index} "
                     f"-> {spheres_activity_concentration[sph_index]} BqmL"
                 )
-            # else:
-            #    arr[label_arr == lab_index] = 0
-            #    print(f"Unknown label {l}")
         print(f"Write image source {output_source}")
         itk.imwrite(vox_img, output_source)
     else:
