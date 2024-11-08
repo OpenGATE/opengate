@@ -278,6 +278,11 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
 class KillActor(ActorBase, g4.GateKillActor):
 
+    """
+    Actor which kill a particle entering in a volume with the following attached actor.
+
+    """
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self.number_of_killed_particles = 0
@@ -306,6 +311,13 @@ def _setter_hook_particles(self, value):
 
 
 class SplittingActorBase(ActorBase):
+    """
+    Actors based on the G4GenericBiasing class of GEANT4. This class provides tools to interact with GEANT4 processes
+    during a simulation, allowing direct modification of process properties. Additionally, it enables non-physics-based
+    particle splitting (e.g., pure geometrical splitting) to introduce biasing into simulations. SplittingActorBase
+    serves as a foundational class for particle splitting operations, with parameters for configuring the splitting
+    behavior based on various conditions.
+    """
     # hints for IDE
     splitting_factor: int
     bias_primary_only: bool
@@ -344,6 +356,14 @@ class SplittingActorBase(ActorBase):
 
 
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
+
+    """
+       This splitting actor enables process-based splitting specifically for Compton interactions. Each time a Compton
+        process occurs, its behavior is modified by generating multiple Compton scattering tracks
+        (splitting factor - 1 additional tracks plus the original) associated with the initial particle.
+        Compton electrons produced in the interaction are also included, in accordance with the secondary cut settings
+        provided by the user.
+    """
     # hints for IDE
     min_weight_of_particle: float
     russian_roulette: bool
@@ -400,6 +420,13 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+    """
+        This splitting actor enables process-based splitting specifically for bremsstrahlung process. Each time a Brem
+        process occurs, its behavior is modified by generating multiple secondary Brem scattering tracks
+        (splitting factor) attached to  the initial charged particle.
+    """
+
+
     # hints for IDE
     processes: list
 
