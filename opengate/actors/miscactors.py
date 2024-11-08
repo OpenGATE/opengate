@@ -318,7 +318,6 @@ class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingPartic
         self.InitializeUserInput(self.user_info)
         self.InitializeCpp()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
-        print(type(volume_tree))
         dico_of_volume_tree = {}
         for pre, _, node in RenderTree(volume_tree):
             dico_of_volume_tree[str(node.name)] = node
