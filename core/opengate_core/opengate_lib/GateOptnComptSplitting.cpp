@@ -81,13 +81,12 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
     // splitting low weights particles.
 
     if ((fSplittingFactor == 1 && fRussianRoulette == false) ||
-        track->GetWeight() < fWeightThreshold)
+        (track->GetWeight() < fMinWeightOfParticle  && fRussianRoulette == false) )
       return processFinalState;
 
     castedProcessInitFinalState = (G4ParticleChangeForGamma *)processFinalState;
     nbSecondaries = processFinalState->GetNumberOfSecondaries();
-    G4ThreeVector initMomentum =
-        castedProcessInitFinalState->GetProposedMomentumDirection();
+    G4ThreeVector initMomentum = castedProcessInitFinalState->GetProposedMomentumDirection();
     G4double cosTheta = fVectorDirector * initMomentum;
     G4double theta = std::acos(cosTheta);
 

@@ -54,7 +54,6 @@ void GateOptrComptSplittingActor::InitializeUserInput(py::dict &user_info) {
   GateVActor::InitializeUserInput(user_info);
   //    fMotherVolumeName = DictGetStr(user_info, "mother");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
-  fWeightThreshold = DictGetDouble(user_info, "weight_threshold");
   fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");
   // Since the russian roulette uses as a probablity 1/splitting, we need to
   // have a double, but the splitting factor provided by the user is logically
@@ -96,7 +95,6 @@ void GateOptrComptSplittingActor::StartSimulationAction() {
   // AttachAllLogicalDaughtersVolumes.
   AttachAllLogicalDaughtersVolumes(biasingVolume);
   fComptSplittingOperation->SetSplittingFactor(fSplittingFactor);
-  fComptSplittingOperation->SetWeightThreshold(fWeightThreshold);
   fComptSplittingOperation->SetMaxTheta(fMaxTheta);
   fComptSplittingOperation->SetRussianRoulette(fRussianRoulette);
   fComptSplittingOperation->SetMinWeightOfParticle(fMinWeightOfParticle);
