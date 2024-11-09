@@ -8,7 +8,8 @@ build:
     python: "3.11"
   jobs:
     pre_build:
-      - sed -i '2iimport sys\nprint("DEBUG:sys.path={}".format(sys.path))\nimport cmd\nprint("DEBUG:cmd.__file__={}".format(cmd.__file__))' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - sed -i '2iimport sys' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - sed -i '3iprint("DEBUG:sys.path={}".format(sys.path))' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
 
 
 
