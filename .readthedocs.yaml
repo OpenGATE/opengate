@@ -9,7 +9,11 @@ build:
   jobs:
     pre_build:
       - cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-      - { head -n 1 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak; echo "import sys"; tail -n +2 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak; } > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - >
+        { head -n 1 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak;
+        echo "import sys";
+        tail -n +2 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak; }
+        > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
 
 #      - sed -i '2s/^/import sys/' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
 #      - sed -i '2iimport sys' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
