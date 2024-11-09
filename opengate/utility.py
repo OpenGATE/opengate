@@ -491,6 +491,33 @@ def get_tests_folder():
     return get_gate_folder() / "tests" / "src"
 
 
+def get_library_path():
+    folder_base = (get_gate_folder() / "..").resolve()
+
+    subpaths = [Path("opengate_core"), Path("core") / "opengate_core"]
+    path = None
+
+    for subpath in subpaths:
+        try_path = folder_base / subpath
+        if os.path.exists(try_path):
+            path = try_path
+            break
+
+    if not path:
+        return "unknown"
+
+    files = os.listdir(path)
+    lib_ext = "dll" if os.name == "nt" else "so"
+    libs = list(filter(lambda file: file.endswith(f".{lib_ext}"), files))
+    if len(libs) == 0:
+        return "unknown"
+    elif len(libs) > 1:
+        warning(f"multiple .{lib_ext} files in {path}")
+        return "unknown"
+
+    return path / libs[0]
+
+
 def get_contrib_path():
     module_path = os.path.dirname(__file__)
     return Path(module_path) / "contrib"
@@ -524,6 +551,7 @@ def print_opengate_info():
     print(f"GATE folder      {module_path}")
     print(f"GATE data        {get_data_folder()}")
     print(f"GATE tests       {get_tests_folder()}")
+    print(f"GATE core path   {get_library_path()}")
 
     # check if from a git version ?
     git_path = Path(module_path).parent

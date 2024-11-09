@@ -1,5 +1,5 @@
 ![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/OpenGATE/opengate?logo=github)
-[![Read the Docs](https://img.shields.io/readthedocs/opengate-python?logo=read-the-docs&style=plastic)](https://opengate-python.readthedocs.io/)
+[![Read the Docs](https://img.shields.io/readthedocs/opengate-python/master?logo=read-the-docs&style=plastic)](https://opengate-python.readthedocs.io/)
 [![CI](https://github.com/OpenGATE/opengate/actions/workflows/main.yml/badge.svg)](https://github.com/OpenGATE/opengate/actions/workflows/main.yml)
 [![cirrus CI](https://api.cirrus-ci.com/github/OpenGATE/opengate.svg)](https://cirrus-ci.com/github/OpenGATE/opengate)
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/OpenGATE/opengate/master.svg)](https://results.pre-commit.ci/latest/github/OpenGATE/opengate/master)
@@ -64,13 +64,13 @@ pip install gaga-phsp
 export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
 ````
 
-The documentation is here: https://opengate-python.readthedocs.io/en/latest/user_guide.html
+The documentation is here: https://opengate-python.readthedocs.io/en/master/user_guide/index.html
 
 The test history can be visualized here: https://opengate.github.io/opengate_tests_results/
 
 ### How to install (long version, for developers)
 
-See the [developer guide](https://opengate-python.readthedocs.io/en/latest/developer_guide/index.html#installation-for-developers)
+See the [developer guide](https://opengate-python.readthedocs.io/en/master/developer_guide/index.html#installation-for-developers)
 
 
 ## Included third party C++ libraries
