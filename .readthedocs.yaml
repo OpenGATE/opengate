@@ -9,9 +9,13 @@ build:
   jobs:
     pre_build:
       - cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - cp /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak
       - >
         { head -n 1 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak;
         echo "import sys";
+        echo "print('DEBUG: sys.path = ', sys.path)";
+        echo "import cmd";
+        echo "print('DEBUG: cmd.__file__=', cmd.__file__)";
         tail -n +2 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak; }
         > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
 
