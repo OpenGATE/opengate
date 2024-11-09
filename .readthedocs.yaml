@@ -6,6 +6,10 @@ build:
   os: "ubuntu-24.04"
   tools:
     python: "3.11"
+  jobs:
+    pre_build:
+      - sed -i '2i\import cmd\nprint("DEBUG:cmd.__file__={cmd.__file__}")' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+
 
 # Build from the docs/ directory with Sphinx
 sphinx:
