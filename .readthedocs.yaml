@@ -9,10 +9,14 @@ build:
   jobs:
     pre_build:
       - cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-      - sed -i '' $'2s/^/import sys\\\n/' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-      - sed -i '' $'3s/^/print("DEBUG:sys.path=",sys.path)\\\n/' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-      - sed -i '' $'4s/^/import cmd\\\n/' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-      - sed -i '' $'5s/^/print("DEBUG:cmd.__file__=",cmd.__file__)\\\n/' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - sed -i '' '2s/^/import sys\
+        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - sed -i '' '3s/^/print("DEBUG:sys.path=",sys.path)\
+        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - sed -i '' '4s/^/import cmd\
+        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+      - sed -i '' '5s/^/print("DEBUG:cmd.__file__=",cmd.__file__)\
+        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
 
 
 
