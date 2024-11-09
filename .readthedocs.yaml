@@ -8,7 +8,7 @@ build:
     python: "3.11"
   jobs:
     pre_build:
-      - cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+#      - cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
       - cp /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak
       - |
         { head -n 1 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak;
@@ -18,21 +18,12 @@ build:
         echo "print(\"DEBUG: cmd.__file__=\", cmd.__file__)";
         tail -n +2 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak; }
         > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-
-#      - sed -i '2s/^/import sys/' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-#      - sed -i '2iimport sys' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-#      - sed -i '3i\' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-#      - sed -i '3s/^/print("DEBUG:sys.path=",sys.path)\n/' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-#      - sed -i '' '2s/^/import sys\
-#        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-#      - sed -i '' '3s/^/print("DEBUG:sys.path=",sys.path)\
-#        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-#      - sed -i '' '4s/^/import cmd\
-#        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-#      - sed -i '' '5s/^/print("DEBUG:cmd.__file__=",cmd.__file__)\
-#        /' /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
-
-
+      - cp /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py.bak
+      - |
+        { echo "import pdb";
+        echo "print(\"DEBUG: pdb.__file__=\", pdb.__file__)";
+        cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py.bak; }
+        > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py
 
 # Build from the docs/ directory with Sphinx
 sphinx:
