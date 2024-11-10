@@ -88,7 +88,7 @@ templates_path = ["sources/_templates"]
 # source_suffix = ['.rst', '.md']
 source_suffix = {
     ".rst": "restructuredtext",
-    ".txt": "markdown",
+    # ".txt": "markdown",
     ".md": "markdown",
 }
 
