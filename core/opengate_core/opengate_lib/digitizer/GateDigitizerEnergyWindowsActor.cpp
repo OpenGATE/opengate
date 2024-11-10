@@ -23,8 +23,6 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
   fActions.insert("EndSimulationAction");
 }
 
-GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
-
 void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
   GateVActor::InitializeUserInput(user_info);
   // options

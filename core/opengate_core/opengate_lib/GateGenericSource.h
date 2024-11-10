@@ -113,7 +113,7 @@ protected:
 
   virtual void InitializeEnergy(py::dict user_info);
 
-  virtual void UpdateActivity(double time) override;
+  void UpdateActivity(double time) override;
 
   void UpdateEffectiveEventTime(double current_simulation_time,
                                 unsigned long skipped_particle);
