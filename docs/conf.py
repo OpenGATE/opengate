@@ -93,7 +93,7 @@ source_suffix = {
 }
 
 # The master toctree document.
-master_doc = "source/index"
+master_doc = "index"
 
 # Use number references for figures
 numfig = False
