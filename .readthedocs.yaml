@@ -33,7 +33,7 @@ build:
 
 # Build from the docs/ directory with Sphinx
 sphinx:
-  configuration: docs/source/conf.py
+  configuration: docs/conf.py
 
 # Explicitly set the version of Python and its requirements
 python:
