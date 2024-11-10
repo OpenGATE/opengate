@@ -24,6 +24,12 @@ build:
         echo "print(\"DEBUG: pdb.__file__=\", pdb.__file__)";
         cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py.bak; }
         > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py
+      - cp /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py.bak
+      - |
+        { head -n 188 /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py.bak;
+        echo "print(\"DEBUG: doctest.__file__=\", doctest.__file__)";
+        tail -n +189 /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py.bak; }
+        > /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py
 
 # Build from the docs/ directory with Sphinx
 sphinx:
