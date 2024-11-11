@@ -21,7 +21,8 @@ from pathlib import Path
 # and no Geant4 data should be downloaded
 os.environ["GATEONRTD"] = "1"
 
-# sys.path.append(str(Path(__file__).resolve().parents[2]))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+print("DEBUG: sys.path = ", sys.path)
 # sys.path.append(str(Path("..", "..").resolve()))
 autodoc_mock_imports = [
     "opengate_core",
