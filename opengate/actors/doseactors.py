@@ -262,6 +262,12 @@ class VoxelDepositActor(ActorBase):
                 u.end_of_run(run_index)
         return 0
 
+    def StartSimulationAction(self):
+        # inform actor output that this simulation is starting
+        for u in self.user_output.values():
+            if u.get_active(item="any"):
+                u.start_of_simulation()
+
     def EndSimulationAction(self):
         # inform actor output that this simulation is over and write data
         for u in self.user_output.values():

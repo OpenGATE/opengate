@@ -763,23 +763,22 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     #         self.merged_data = merge_data([self.merged_data, data])
 
     def end_of_run(self, run_index):
-        pass
-        # if self.merge_data_after_simulation is True:
-        #     if self.merged_data is None:
-        #         self.merged_data = copy.copy(self.data_per_run[run_index])
-        #     else:
-        #         self.merged_data.inplace_merge_with(self.data_per_run[run_index])
-        #     # self.merge_into_merged_data(self.data_per_run[run_index])
-        # if self.keep_data_per_run is False:
-        #     self.data_per_run.pop(run_index)
+        if self.merge_data_after_simulation is True:
+            self.merged_data.inplace_merge_with(self.data_per_run[run_index])
+        if self.keep_data_per_run is False:
+            self.data_per_run.pop(run_index)
+
+    def start_of_simulation(self, **kwargs):
+        if self.merge_data_after_simulation is True:
+            self.merged_data = self.data_container_class(belongs_to=self)
 
     def end_of_simulation(self, item="all", **kwargs):
-        if self.merge_data_after_simulation is True:
-            self.merge_data_from_runs()
-        if self.keep_data_per_run is False:
-            self.data_per_run = {}
+        # if self.merge_data_after_simulation is True:
+        #     self.merge_data_from_runs()
+        # if self.keep_data_per_run is False:
+        #     self.data_per_run = {}
         try:
-            self.write_data_if_requested(item=item, **kwargs)
+            self.write_data_if_requested(item='all', **kwargs)
         except NotImplementedError:
             raise GateImplementationError(
                 "Unable to run end_of_simulation "
