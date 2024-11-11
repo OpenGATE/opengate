@@ -9,7 +9,7 @@ This is just a test:
 .. toctree::
    :maxdepth: 2
 
-   source/user_guide/index
+   user_guide/index
 
 Developer guide
 ===============
@@ -17,7 +17,7 @@ Developer guide
 .. toctree::
    :maxdepth: 2
 
-   source/developer_guide/index
+   developer_guide/index
 
 References
 ==========

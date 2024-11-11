@@ -21,8 +21,8 @@ from pathlib import Path
 # and no Geant4 data should be downloaded
 os.environ["GATEONRTD"] = "1"
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-print("DEBUG: sys.path = ", sys.path)
+# sys.path.append(str(Path(__file__).resolve().parents[1]))
+# print("DEBUG: sys.path = ", sys.path)
 # sys.path.append(str(Path("..", "..").resolve()))
 autodoc_mock_imports = [
     "opengate_core",
@@ -81,7 +81,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["sources/_templates"]
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -131,7 +131,7 @@ pygments_style = None
 #
 # html_theme = 'sphinx_rtd_theme'
 html_theme = "pydata_sphinx_theme"
-html_logo = "source/_static/gate_logo.png"
+html_logo = "_static/gate_logo.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -161,7 +161,7 @@ html_context = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["source/_static"]
+html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
