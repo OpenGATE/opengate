@@ -392,11 +392,70 @@ class ActorOutputBase(GateObject):
         )
 
 
-class MergeableActorOutput(ActorOutputBase):
+# class MergeableActorOutput(ActorOutputBase):
+#
+#     # hints for IDE
+#     merge_data_after_simulation: bool
+#     keep_data_per_run: bool
+#
+#     user_info_defaults = {
+#         "merge_data_after_simulation": (
+#             True,
+#             {
+#                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
+#             },
+#         ),
+#         "keep_data_per_run": (
+#             False,
+#             {
+#                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
+#             },
+#         ),
+#     }
+#
+#     def merge_data_from_runs(self):
+#         self.merged_data = merge_data(list(self.data_per_run.values()))
+#
+#     # def merge_into_merged_data(self, data):
+#     #     if self.merged_data is None:
+#     #         self.merged_data = data
+#     #     else:
+#     #         self.merged_data = merge_data([self.merged_data, data])
+#
+#     def end_of_run(self, run_index):
+#         pass
+#         # if self.merge_data_after_simulation is True:
+#         #     if self.merged_data is None:
+#         #         self.merged_data = copy.copy(self.data_per_run[run_index])
+#         #     else:
+#         #         self.merged_data.inplace_merge_with(self.data_per_run[run_index])
+#         #     # self.merge_into_merged_data(self.data_per_run[run_index])
+#         # if self.keep_data_per_run is False:
+#         #     self.data_per_run.pop(run_index)
+#
+#     def end_of_simulation(self, **kwargs):
+#         if self.merge_data_after_simulation is True:
+#             self.merge_data_from_runs()
+#         if self.keep_data_per_run is False:
+#             self.data_per_run = {}
+#         try:
+#             self.write_data_if_requested(**kwargs)
+#         except NotImplementedError:
+#             raise GateImplementationError(
+#                 "Unable to run end_of_simulation "
+#                 f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
+#                 f"because the class does not implement a write_data_if_requested() "
+#                 f"and/or write_data() method. "
+#                 f"A developer needs to fix this. "
+#             )
+
+
+class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     # hints for IDE
     merge_data_after_simulation: bool
     keep_data_per_run: bool
+    data_item_config: Optional[Box]
 
     user_info_defaults = {
         "merge_data_after_simulation": (
@@ -411,51 +470,6 @@ class MergeableActorOutput(ActorOutputBase):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
-    }
-
-    def merge_data_from_runs(self):
-        self.merged_data = merge_data(list(self.data_per_run.values()))
-
-    # def merge_into_merged_data(self, data):
-    #     if self.merged_data is None:
-    #         self.merged_data = data
-    #     else:
-    #         self.merged_data = merge_data([self.merged_data, data])
-
-    def end_of_run(self, run_index):
-        pass
-        # if self.merge_data_after_simulation is True:
-        #     if self.merged_data is None:
-        #         self.merged_data = copy.copy(self.data_per_run[run_index])
-        #     else:
-        #         self.merged_data.inplace_merge_with(self.data_per_run[run_index])
-        #     # self.merge_into_merged_data(self.data_per_run[run_index])
-        # if self.keep_data_per_run is False:
-        #     self.data_per_run.pop(run_index)
-
-    def end_of_simulation(self, **kwargs):
-        if self.merge_data_after_simulation is True:
-            self.merge_data_from_runs()
-        if self.keep_data_per_run is False:
-            self.data_per_run = {}
-        try:
-            self.write_data_if_requested(**kwargs)
-        except NotImplementedError:
-            raise GateImplementationError(
-                "Unable to run end_of_simulation "
-                f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
-                f"because the class does not implement a write_data_if_requested() "
-                f"and/or write_data() method. "
-                f"A developer needs to fix this. "
-            )
-
-
-class ActorOutputUsingDataItemContainer(MergeableActorOutput):
-
-    # hints for IDE
-    data_item_config: Optional[Box]
-
-    user_info_defaults = {
         "data_item_config": (
             Box(
                 {
@@ -739,9 +753,41 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         ]
         self.write_data(which=which, item=items)
 
+    def merge_data_from_runs(self):
+        self.merged_data = merge_data(list(self.data_per_run.values()))
+
+    # def merge_into_merged_data(self, data):
+    #     if self.merged_data is None:
+    #         self.merged_data = data
+    #     else:
+    #         self.merged_data = merge_data([self.merged_data, data])
+
+    def end_of_run(self, run_index):
+        pass
+        # if self.merge_data_after_simulation is True:
+        #     if self.merged_data is None:
+        #         self.merged_data = copy.copy(self.data_per_run[run_index])
+        #     else:
+        #         self.merged_data.inplace_merge_with(self.data_per_run[run_index])
+        #     # self.merge_into_merged_data(self.data_per_run[run_index])
+        # if self.keep_data_per_run is False:
+        #     self.data_per_run.pop(run_index)
+
     def end_of_simulation(self, item="all", **kwargs):
-        super().end_of_simulation(which="all", item=item)
-        # self.write_data_if_requested(which="all", item=item)
+        if self.merge_data_after_simulation is True:
+            self.merge_data_from_runs()
+        if self.keep_data_per_run is False:
+            self.data_per_run = {}
+        try:
+            self.write_data_if_requested(item=item, **kwargs)
+        except NotImplementedError:
+            raise GateImplementationError(
+                "Unable to run end_of_simulation "
+                f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
+                f"because the class does not implement a write_data_if_requested() "
+                f"and/or write_data() method. "
+                f"A developer needs to fix this. "
+            )
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
@@ -871,7 +917,7 @@ class ActorOutputRoot(ActorOutputBase):
 
 
 process_cls(ActorOutputBase)
-process_cls(MergeableActorOutput)
+# process_cls(MergeableActorOutput)
 process_cls(ActorOutputUsingDataItemContainer)
 process_cls(ActorOutputImage)
 process_cls(ActorOutputSingleImage)
