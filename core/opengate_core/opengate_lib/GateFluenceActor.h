@@ -23,17 +23,17 @@ public:
   // Constructor
   GateFluenceActor(py::dict &user_info);
 
-  virtual void InitializeCpp() override;
+  void InitializeCpp() override;
 
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInput(py::dict &user_info) override;
 
   // Function called every step in attached volume
   // This where the scoring takes place
-  virtual void SteppingAction(G4Step *) override;
+  void SteppingAction(G4Step *) override;
 
-  virtual void BeginOfEventAction(const G4Event *event) override;
+  void BeginOfEventAction(const G4Event *event) override;
 
-  virtual void BeginOfRunActionMasterThread(int run_id) override;
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   inline std::string GetPhysicalVolumeName() { return fPhysicalVolumeName; }
 
