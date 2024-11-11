@@ -12,11 +12,39 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
 from datetime import datetime
 import os
+import sys
+from pathlib import Path
+
+# this variable is used by opengate_core to detect that the import is triggered on ReadTheDocs
+# and no Geant4 data should be downloaded
+os.environ["GATEONRTD"] = "1"
+
+# sys.path.append(str(Path(__file__).resolve().parents[1]))
+# print("DEBUG: sys.path = ", sys.path)
+# sys.path.append(str(Path("..", "..").resolve()))
+autodoc_mock_imports = [
+    "opengate_core",
+    # "colored",
+    # "gatetools",
+    # "click",
+    # "python-box",
+    # "anytree",
+    # "numpy",
+    # "itk",
+    # "uproot",
+    # "scipy",
+    # "matplotlib",
+    # "GitPython",
+    # "colorlog",
+    # "numpy-stl",
+    # "radioactivedecay",
+    # "jsonpickle",
+    # "pandas",
+    # "requests",
+    # "PyYAML",
+]
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -45,12 +73,11 @@ release = ""
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx.ext.autodoc",
     "sphinx.ext.mathjax",
-    "myst_parser",
     "sphinx.ext.linkcode",
     "sphinx_copybutton",
     # "autoapi.extension",
-    "sphinx.ext.autodoc",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -62,7 +89,7 @@ templates_path = ["_templates"]
 # source_suffix = ['.rst', '.md']
 source_suffix = {
     ".rst": "restructuredtext",
-    ".txt": "markdown",
+    # ".txt": "markdown",
     ".md": "markdown",
 }
 
@@ -119,9 +146,8 @@ html_context = {
     "github_user": "OpenGATE",
     "github_repo": "opengate",
     "github_version": "master",
-    "doc_path": "docs/source",
+    "doc_path": "docs",
 }
-
 
 # html_theme_options = {
 #     "toc_depth": 3,

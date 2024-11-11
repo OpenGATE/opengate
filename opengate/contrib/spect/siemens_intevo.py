@@ -409,6 +409,7 @@ def add_collimator_he(sim, head, debug):
 def add_crystal(sim, head):
     mm = g4_units.mm
     front_shield_size = 76 * mm * 2
+    red = [1, 0.0, 0.0, 0.9]
 
     name = head.name
     crystal_sheath = sim.add_volume("Box", f"{name}_crystal_sheath")
@@ -432,7 +433,7 @@ def add_crystal(sim, head):
 
     crystal.translation = [-61.8276 * mm, 0, 0]
     crystal.material = "NaI"
-    crystal.color = yellow
+    crystal.color = red
 
     return crystal
 
