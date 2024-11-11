@@ -87,7 +87,9 @@ if __name__ == "__main__":
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
 
-    sim.run_timing_intervals = [(i * gate.g4_units.s, (i + 1) * gate.g4_units.s) for i in range(3)]
+    sim.run_timing_intervals = [
+        (i * gate.g4_units.s, (i + 1) * gate.g4_units.s) for i in range(3)
+    ]
     # start simulation
     sim.run(start_new_process=True)
 

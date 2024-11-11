@@ -30,7 +30,7 @@ setup(
         "pandas",
         "requests",
         "PyYAML",
-        "SimpleITK"
+        "SimpleITK",
     ]
     + install_requires_windows,
 )
