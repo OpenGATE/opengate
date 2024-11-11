@@ -93,7 +93,7 @@ source_suffix = {
 }
 
 # The master toctree document.
-master_doc = "index"
+master_doc = "source/index"
 
 # Use number references for figures
 numfig = False
@@ -145,7 +145,7 @@ html_context = {
     "github_user": "OpenGATE",
     "github_repo": "opengate",
     "github_version": "master",
-    "doc_path": "docs/source",
+    "doc_path": "docs",
 }
 
 # html_theme_options = {
