@@ -141,11 +141,15 @@ class MeanValueDataItemMixin:
         return result
 
     def inplace_merge_with(self, other):
-        self *= self.number_of_samples
-        other *= other.number_of_samples
-        self += other
-        self /= self.number_of_samples + other.number_of_samples
-        self.number_of_samples = self.number_of_samples + other.number_of_samples
+        if self.data is None:
+            self.set_data(other.data)
+            self.number_of_samples = other.number_of_samples
+        else:
+            self *= self.number_of_samples
+            other *= other.number_of_samples
+            self += other
+            self /= self.number_of_samples + other.number_of_samples
+            self.number_of_samples = self.number_of_samples + other.number_of_samples
         return self
 
 
@@ -228,6 +232,13 @@ class ItkImageDataItem(DataItem):
     @property
     def image(self):
         return self.data
+
+    def inplace_merge_with(self, other):
+        if self.data is None:
+            self.set_data(other.data)
+        else:
+            self.__iadd__(other)
+        return self
 
     def __iadd__(self, other):
         self._assert_data_is_not_none()
@@ -520,20 +531,16 @@ class DataItemContainer(DataContainer):
         for i in range(self._tuple_length):
             # can only apply merge of both items exist (and contain data)
             if (
-                (self.data[i] is not None)
-                and (other.data[i] is not None)
-                and (self.data[i].data is not None)
-                and (other.data[i].data is not None)
+                self.data[i] is not None
+                and other.data[i] is not None
             ):
                 self.data[i].inplace_merge_with(other.data[i])
             else:
                 # the case of both item None is acceptable
                 # because the component not be activated in the actor, e.g. edep uncertainty,
                 # but it should not occur that one item is None and the other is not.
-                if (self.data[i] is None or self.data[i].data is None) is not (
-                    other.data[i] is None or other.data[i].data is None
-                ):
-                    s_not = {True: "", False: "not_"}
+                if (self.data[i] is None) is not (other.data[i] is None):
+                    s_not = {True: "", False: "not"}
                     fatal(
                         "Cannot apply inplace merge data to container "
                         "with unset (None) data items. "
