@@ -2,10 +2,6 @@
 User guide
 ==========
 
-This is just a test:
-
-.. autoclass:: opengate.Simulation
-
 .. toctree::
    :maxdepth: 2
 
