@@ -87,12 +87,17 @@ def delete_folder_contents(folder_path):
                 warning(f"Failed to delete {file_path}. Reason: {e}")
 
 
+# units were previously loaded dynamically from G4
 # g4_units = Box()
 # for t in g4.G4UnitDefinition.GetUnitsTable():
 #     for a in t.GetUnitsList():
 #         g4_units[str(a.GetName())] = a.GetValue()
 #         g4_units[str(a.GetSymbol())] = a.GetValue()
 
+# This dictionary was created with devtools.print_g4units_dict_string()
+# It should be updated if Geant4 (ever) changes the units.
+# It is hard-coded, as opposed to the dynamic variant above,
+# because the build process on readthedocs cannot call G4 functions
 g4_units = Box(
     {
         "parsec": 3.0856775807e19,
