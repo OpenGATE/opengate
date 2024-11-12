@@ -139,6 +139,12 @@ The pip install will run cmake, compile the sources and create the
 module. If you are curious you can have a look the compilation folder in
 the ``build/`` folder.
 
+With Windows, change the `:` with `;` (https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html)
+
+.. code:: bash
+
+   set CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/;<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
+
 STEP 4 - ``opengate`` module (python)
 -------------------------------------
 
