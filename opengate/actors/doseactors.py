@@ -243,11 +243,16 @@ class VoxelDepositActor(ActorBase):
                 u.end_of_run(run_index)
         return 0
 
-    def EndSimulationAction(self):
-        # inform actor output that this simulation is over and write data
+    def inform_user_output_about_end(self):
         for u in self.user_output.values():
             if u.get_active(item="all"):
                 u.end_of_simulation()
+
+    def EndSimulationAction(self):
+        self.inform_user_output_about_end()
+
+    def EndOfMultiProcessAction(self):
+        self.inform_user_output_about_end()
 
 
 def compute_std_from_sample(
@@ -399,20 +404,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             },
         ),
-        # "calculate_density_from": (
-        #     "auto",
-        #     {
-        #         "doc": "How should density be calculated?\n"
-        #                "'simulation': via scoring along with the rest of the quantities.\n"
-        #                "'image': from the CT image, if the actor is attached to an ImageVolume.\n"
-        #                "'auto' (default): Let GATE pick the right one for you. ",
-        #         "allowed_values": (
-        #             "auto",
-        #             "simulation",
-        #             "image"
-        #         ),
-        #     },
-        # ),
         "ste_of_mean": (
             False,
             {

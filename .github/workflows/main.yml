@@ -383,52 +383,52 @@ jobs:
         packages_dir: dist_opengate/
         skip_existing: true
 
-#  ssh_session:
-#    env:
-#      GEANT4_VERSION: 'v11.2.1'
-#      ITK_VERSION: 'v5.2.1'
-#    runs-on: macos-13
-#    steps:
-#    - name: Checkout github repo
-#      uses: actions/checkout@v4
-#    - name: Checkout submodules
-#      shell: bash -l {0}
-#      run: |
-#        export GIT_SSL_NO_VERIFY=1
-#        git submodule update --init --recursive
-#    - name: Set up Python
-#      uses: actions/setup-python@v5
-#      with:
-#        python-version: 3.9
-#        architecture: 'x64'
-#    - name: Get OS version
-#      id: get-os-version
-#      shell: bash -l {0}
-#      run: |
-#        varOS=`sw_vers | grep "ProductVersion:"`
-#        varOS="${varOS#*:}"
-#        echo "release=${varOS:1}" >> $GITHUB_OUTPUT
-#    - name: Cache modules
-#      id: cache_opengate_core_dependencies
-#      uses: actions/cache@v4
-#      with:
-#        path: ~/software
-#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-#    - uses: conda-incubator/setup-miniconda@v3
-#      with:
-#          miniconda-version: "latest"
-#          auto-update-conda: true
-#          activate-environment: opengate_core
-#          python-version: 3.9
-#    - name: Set up Homebrew
-#      id: set-up-homebrew
-#      uses: Homebrew/actions/setup-homebrew@master
-#    - name: Start SSH session
-#      uses: luchihoratiu/debug-via-ssh@main
-#      with:
-#        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
-#        SSH_PASS: ${{ secrets.SSH_PASS }}
+  ssh_session:
+    env:
+      GEANT4_VERSION: 'v11.2.1'
+      ITK_VERSION: 'v5.2.1'
+    runs-on: macos-13
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v4
+    - name: Checkout submodules
+      shell: bash -l {0}
+      run: |
+        export GIT_SSL_NO_VERIFY=1
+        git submodule update --init --recursive
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: 3.9
+        architecture: 'x64'
+    - name: Get OS version
+      id: get-os-version
+      shell: bash -l {0}
+      run: |
+        varOS=`sw_vers | grep "ProductVersion:"`
+        varOS="${varOS#*:}"
+        echo "release=${varOS:1}" >> $GITHUB_OUTPUT
+    - name: Cache modules
+      id: cache_opengate_core_dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/software
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          activate-environment: opengate_core
+          python-version: 3.9
+    - name: Set up Homebrew
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    - name: Start SSH session
+      uses: luchihoratiu/debug-via-ssh@main
+      with:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+        SSH_PASS: ${{ secrets.SSH_PASS }}
 
   test_wheel:
     runs-on: ${{ matrix.os }}
