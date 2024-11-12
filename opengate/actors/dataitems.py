@@ -538,10 +538,7 @@ class DataItemContainer(DataContainer):
     def inplace_merge_with(self, other):
         for i in range(self._tuple_length):
             # can only apply merge of both items exist (and contain data)
-            if (
-                self.data[i] is not None
-                and other.data[i] is not None
-            ):
+            if self.data[i] is not None and other.data[i] is not None:
                 self.data[i].inplace_merge_with(other.data[i])
             else:
                 # the case of both item None is acceptable

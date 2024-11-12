@@ -778,7 +778,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         # if self.keep_data_per_run is False:
         #     self.data_per_run = {}
         try:
-            self.write_data_if_requested(item='all', **kwargs)
+            self.write_data_if_requested(item="all", **kwargs)
         except NotImplementedError:
             raise GateImplementationError(
                 "Unable to run end_of_simulation "
