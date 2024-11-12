@@ -17,13 +17,10 @@ from .miscactors import (
     SourceInfoActor,
     TestActor,
     KillActor,
-    KillInteractingParticleActor,
     BremSplittingActor,
     ComptSplittingActor,
     LastVertexInteractionSplittingActor,
-    LastVertexInteractionSplittingActorOld,
     ComptPseudoTransportationActor,
-    KillNonInteractingParticleActor,
     SurfaceSplittingActor,
 )
 from .dynamicactors import DynamicGeometryActor
@@ -50,12 +47,10 @@ actor_type_names = {
     ARFTrainingDatasetActor,
     TestActor,
     KillActor,
-    KillInteractingParticleActor,
     BremSplittingActor,
     ComptSplittingActor,
     LastVertexInteractionSplittingActor,
     ComptPseudoTransportationActor,
-    KillNonInteractingParticleActor,
     SurfaceSplittingActor,
     DynamicGeometryActor,
 }

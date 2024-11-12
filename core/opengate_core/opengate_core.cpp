@@ -302,11 +302,7 @@ void init_GateARFTrainingDatasetActor(py::module &m);
 
 void init_GateKillActor(py::module &);
 
-void init_GateKillNonInteractingParticleActor(py::module &);
-
 void init_GateSurfaceSplittingActor(py::module &);
-
-void init_GateKillInteractingParticleActor(py::module &);
 
 void init_itk_image(py::module &);
 
@@ -345,8 +341,6 @@ void init_GatePhaseSpaceActor(py::module &);
 void init_GateOptrComptSplittingActor(py::module &m);
 
 void init_GateLastVertexInteractionSplittingActor(py::module &m);
-
-void init_GateLastVertexInteractionSplittingActorOld(py::module &m); 
 
 void init_GateOptrComptPseudoTransportationActor(py::module &m);
 
@@ -575,7 +569,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateOptrComptPseudoTransportationActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateLastVertexInteractionSplittingActor(m);
-  init_GateLastVertexInteractionSplittingActorOld(m);
   init_GateHitsCollectionActor(m);
   init_GateMotionVolumeActor(m);
   init_GateHitsAdderActor(m);
@@ -588,9 +581,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
-  init_GateKillNonInteractingParticleActor(m);
   init_GateSurfaceSplittingActor(m);
-  init_GateKillInteractingParticleActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
