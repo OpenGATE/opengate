@@ -23,7 +23,7 @@ os.environ["GATEONRTD"] = "1"
 
 # sys.path.append(str(Path(__file__).resolve().parents[1]))
 # print("DEBUG: sys.path = ", sys.path)
-# sys.path.append(str(Path("..", "..").resolve()))
+sys.path.append(str(Path("..", "..").resolve()))
 autodoc_mock_imports = [
     "opengate_core",
     # "colored",
@@ -270,3 +270,10 @@ epub_exclude_files = ["search.html"]
 # autoapi_type = "python"
 # autoapi_dirs = ["../../opengate", "../../core"]
 # autoapi_ignore = ["*/opengate/tests/src*"]
+
+# Create the doc with sphinx-build instead of python -m sphinx
+if not sys.argv[0].endswith("sphinx-build"):
+    import subprocess
+
+    command = "sphinx-build -T -b html -d _build/doctrees -D language=en . html"
+    subprocess.run(command.split())

@@ -122,15 +122,15 @@ The names of the attributes align with Geant4 terminology. The list of available
 
 Attributes correspondence with Gate 9.X for Hits and Singles:
 
-+------------------------+-------------------------+
-| Gate 9.X               | Gate 10                 |
-+========================+=========================+
-| edep or energy         | TotalEnergyDeposit       |
-+------------------------+-------------------------+
-| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z    |
-+------------------------+-------------------------+
-| time                   | GlobalTime              |
-+------------------------+-------------------------+
++----------------------------+-------------------------+
+| Gate 9.X                   | Gate 10                 |
++============================+=========================+
+| edep or energy             | TotalEnergyDeposit      |
++----------------------------+-------------------------+
+| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z      |
++----------------------------+-------------------------+
+| time                       | GlobalTime              |
++----------------------------+-------------------------+
 
 The list of hits can be written to a ROOT file at the end of the simulation. Like in Gate, hits with zero energy are ignored. If zero-energy hits are needed, use a PhaseSpaceActor.
 
