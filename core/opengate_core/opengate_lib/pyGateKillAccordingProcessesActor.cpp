@@ -9,13 +9,13 @@
 
 namespace py = pybind11;
 
-#include "GateKillInteractingParticleActor.h"
+#include "GateKillAccordingProcessesActor.h"
 
-void init_GateKillInteractingParticleActor(py::module &m) {
-  py::class_<GateKillInteractingParticleActor,
-             std::unique_ptr<GateKillInteractingParticleActor, py::nodelete>,
-             GateVActor>(m, "GateKillInteractingParticleActor")
+void init_GateKillAccordingProcessesActor(py::module &m) {
+  py::class_<GateKillAccordingProcessesActor,
+             std::unique_ptr<GateKillAccordingProcessesActor, py::nodelete>,
+             GateVActor>(m, "GateKillAccordingProcessesActor")
       .def_readwrite("fListOfVolumeAncestor",
-                     &GateKillInteractingParticleActor::fListOfVolumeAncestor)
+                     &GateKillAccordingProcessesActor::fListOfVolumeAncestor)
       .def(py::init<py::dict &>());
 }

@@ -73,7 +73,7 @@ from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
-    KillInteractingParticleActor,
+    KillAccordingProcessesActor,
     SplittingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
@@ -108,7 +108,7 @@ actor_types = {
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
-    "KillInteractingParticleActor": KillInteractingParticleActor,
+    "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "BremSplittingActor": BremSplittingActor,
     "ComptSplittingActor": ComptSplittingActor,
     "DigitizerAdderActor": DigitizerAdderActor,
