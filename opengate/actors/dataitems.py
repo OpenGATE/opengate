@@ -242,8 +242,10 @@ class ItkImageDataItem(DataItem):
     def inplace_merge_with(self, other):
         if self.data is None:
             self.set_data(other.data)
+            self.number_of_samples = other.number_of_samples
         else:
             self.__iadd__(other)
+            self.number_of_samples += other.number_of_samples
         return self
 
     def __iadd__(self, other):
