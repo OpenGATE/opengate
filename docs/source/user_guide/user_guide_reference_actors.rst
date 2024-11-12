@@ -20,7 +20,7 @@ The SimulationStatisticsActor actor is a very basic tool that allows counting th
    print(stats)
    print(stats.counts)
 
- In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
+In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
 
 
 Reference
@@ -307,8 +307,7 @@ The Angular Response Function (ARF) is a method designed to accelerate SPECT sim
 3.	Apply the trained ARF to enhance simulation efficiency.
 
 .. warning::
-
-Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
+  Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
 
 Step 1: Creating the Training Dataset
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

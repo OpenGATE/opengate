@@ -62,10 +62,10 @@ STEP 1 - Geant4 and Qt
 ----------------------
 
 :warning: When using conda, be sure to activate your environment before
-compiling Geant4. The reason is that conda comes with its own compiler
-and you will likely have mismatched libraries, e.g. lib c++, if not all
-installation steps involving compilaton are performed in the same conda
-environment.
+  compiling Geant4. The reason is that conda comes with its own compiler
+  and you will likely have mismatched libraries, e.g. lib c++, if not all
+  installation steps involving compilaton are performed in the same conda
+  environment.
 
 Installing QT is optional. Currently, QT visualisation is not working on
 all architectures.
