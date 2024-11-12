@@ -2,6 +2,7 @@ import opengate_core
 from opengate.contrib.tps.ionbeamtherapy import *
 from ...exception import fatal
 
+
 class TreatmentPlanPhsSource(TreatmentPlanSource):
 
     def __init__(self, name, sim):
@@ -175,7 +176,7 @@ class TreatmentPlanPhsSource(TreatmentPlanSource):
             if not os.path.isfile(phs_file):
                 fatal(
                     f"Error in ThreatmenPlanPhsSource: File {phs_file} does not exist. Aborting"
-                    )
+                )
         return True
 
     def read_list_of_Phs(self, file_name: str, path_to_phsp=""):
