@@ -20,8 +20,6 @@ from box import Box
 import ast
 import importlib.util
 
-# import os
-
 from opengate.exception import fatal, colored, color_ok, color_error, color_warning
 from opengate_core.testsDataSetup import check_tests_data_folder
 from opengate.bin.opengate_library_path import return_tests_path
@@ -482,7 +480,10 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
                 colored.stylize(": failed", color_error),
                 end="\n",
             )
-            os.system("cat " + shell_output_k.log_fpath)
+            if os.name == "nt":
+                os.system("type " + shell_output_k.log_fpath)
+            else:
+                os.system("cat " + shell_output_k.log_fpath)
 
     print(f"Summary pass: {n_passed}/{len(files)} passed the tests:")
     for k in tests_passed:

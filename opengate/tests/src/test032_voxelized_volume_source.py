@@ -24,11 +24,7 @@ if __name__ == "__main__":
         f"-a 666 555 444 333 222 111 "
     )
     print(cmd)
-    # r = os.system(f"{cmd}")
     subprocess.call(cmd.split())
-
-    # if r != 0:
-    #    is_ok = False
 
     # test 2 = 9mm and without shell
     f3 = paths.output / "iec_9mm.mhd"
@@ -41,13 +37,10 @@ if __name__ == "__main__":
         f"--no_shell "
     )
     print(cmd)
-    # r = os.system(f"{cmd}")
     subprocess.call(cmd.split())
-    # if r != 0:
-    #    is_ok = False
 
     # compare images
-    gate.exception.warning("\nDifference with ref image")
+    print("\nCheck difference with ref image")
     is_ok = (
         utility.assert_images(
             paths.output_ref / "iec_10mm.mhd", f1, stats=None, tolerance=0.001
