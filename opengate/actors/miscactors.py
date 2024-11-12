@@ -7,6 +7,7 @@ from .actoroutput import ActorOutputBase
 from ..serialization import dump_json
 from ..exception import warning
 from ..base import process_cls
+from anytree import Node, RenderTree
 
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
@@ -274,7 +275,71 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
         do_something()
 """
+class ActorOutputKillInteractingParticleActor(ActorOutputBase):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_killed_particles = 0
+
+
+    def get_processed_output(self):
+        d = {}
+        d["particles killed"] = self.number_of_killed_particles
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            s = k + ": " + str(v)
+            s += "\n"
+        return(s)
+
+
+
+class KillInteractingParticleActor(ActorBase, g4.GateKillInteractingParticleActor):
+
+    """
+    If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
+    without interaction, the particle is killed. Warning : this actor being based on energy measurement, Rayleigh photon
+    may not be killed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputKillInteractingParticleActor, "kill_interacting_particles")
+        self.__initcpp__()
+        self.list_of_volume_name = []
+        self.number_of_killed_particles = 0
+
+    def __initcpp__(self):
+        g4.GateKillInteractingParticleActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"StartSimulationAction","PreUserTrackingAction", "SteppingAction","EndOfSimulationAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+
+    def EndSimulationAction(self):
+        self.user_output.kill_interacting_particles.number_of_killed_particles = self.number_of_killed_particles
+
+
+    def __str__(self):
+        s = self.user_output["kill_non_interacting_particles"].__str__()
+        return s
 
 class KillActor(ActorBase, g4.GateKillActor):
 

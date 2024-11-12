@@ -73,6 +73,7 @@ from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
+    KillInteractingParticleActor,
     SplittingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
@@ -107,6 +108,7 @@ actor_types = {
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
+    "KillInteractingParticleActor": KillInteractingParticleActor,
     "BremSplittingActor": BremSplittingActor,
     "ComptSplittingActor": ComptSplittingActor,
     "DigitizerAdderActor": DigitizerAdderActor,
@@ -1183,9 +1185,13 @@ class VolumeManager(GateObject):
             # FIXME: pre should be used directly but cannot be encoded correctly in Windows
             s += len(pre) * " " + f"{node.name}\n"
         return s
+    
+    def get_volume_tree(self):
+       return self.volume_tree_root
 
     def print_volume_tree(self):
         print(self.dump_volume_tree())
+        
 
     def dump_volume_types(self):
         s = f""
