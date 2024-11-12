@@ -205,17 +205,6 @@ def _setter_hook_belongs_to(self, belongs_to):
     return belongs_to_name
 
 
-def _setter_hook_active(self, active):
-    if self.__can_be_deactivated__ is True:
-        return bool(active)
-    else:
-        if bool(active) is not True:
-            warning(
-                f"The output {self.name} of actor {self.belongs_to_actor.name} cannot be deactivated."
-            )
-        return True
-
-
 class ActorOutputBase(GateObject):
 
     # hints for IDE
@@ -257,12 +246,6 @@ class ActorOutputBase(GateObject):
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
-        # internal flag which can set by the actor when it creating an actor output
-        # via _add_actor_output
-        # __can_be_deactivated = False forces the "active" user info to True
-        # This is the expected behavior in most digitizers
-        # In the DoseActor, on the other hand, users might not want to calculate uncertainty
-        self.__can_be_deactivated__ = False
 
     def __len__(self):
         return len(self.data_per_run)
@@ -303,19 +286,6 @@ class ActorOutputBase(GateObject):
 
     def _generate_auto_output_filename(self, **kwargs):
         return f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
-
-    # def initialize_output_filename(self, **kwargs):
-    #     if self.get_output_filename(**kwargs) == 'auto':
-    #         self.set_output_filename(self._generate_auto_output_filename(), **kwargs)
-    #
-    # for k, v in self.data_item_config.items():
-    #     if 'write_to_disk' in v and v['write_to_disk'] is True:
-    #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-    #             if len(self.data_item_config) > 0:
-    #                 item_suffix = k
-    #             else:
-    #                 item_suffix = ''
-    #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
 
     def _compose_output_path(self, which, output_filename):
         full_data_path = self.simulation.get_output_path(output_filename)
@@ -390,64 +360,6 @@ class ActorOutputBase(GateObject):
             f"Your are calling this method from the base class {type(self).__name__}, "
             f"but it should be implemented in the specific derived class"
         )
-
-
-# class MergeableActorOutput(ActorOutputBase):
-#
-#     # hints for IDE
-#     merge_data_after_simulation: bool
-#     keep_data_per_run: bool
-#
-#     user_info_defaults = {
-#         "merge_data_after_simulation": (
-#             True,
-#             {
-#                 "doc": "In case the simulation has multiple runs, should results from separate runs be merged?"
-#             },
-#         ),
-#         "keep_data_per_run": (
-#             False,
-#             {
-#                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
-#             },
-#         ),
-#     }
-#
-#     def merge_data_from_runs(self):
-#         self.merged_data = merge_data(list(self.data_per_run.values()))
-#
-#     # def merge_into_merged_data(self, data):
-#     #     if self.merged_data is None:
-#     #         self.merged_data = data
-#     #     else:
-#     #         self.merged_data = merge_data([self.merged_data, data])
-#
-#     def end_of_run(self, run_index):
-#         pass
-#         # if self.merge_data_after_simulation is True:
-#         #     if self.merged_data is None:
-#         #         self.merged_data = copy.copy(self.data_per_run[run_index])
-#         #     else:
-#         #         self.merged_data.inplace_merge_with(self.data_per_run[run_index])
-#         #     # self.merge_into_merged_data(self.data_per_run[run_index])
-#         # if self.keep_data_per_run is False:
-#         #     self.data_per_run.pop(run_index)
-#
-#     def end_of_simulation(self, **kwargs):
-#         if self.merge_data_after_simulation is True:
-#             self.merge_data_from_runs()
-#         if self.keep_data_per_run is False:
-#             self.data_per_run = {}
-#         try:
-#             self.write_data_if_requested(**kwargs)
-#         except NotImplementedError:
-#             raise GateImplementationError(
-#                 "Unable to run end_of_simulation "
-#                 f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
-#                 f"because the class does not implement a write_data_if_requested() "
-#                 f"and/or write_data() method. "
-#                 f"A developer needs to fix this. "
-#             )
 
 
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
@@ -674,12 +586,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             try:
                 run_index = int(which)  # might be a run_index
-                # if run_index not in self.data_per_run:
-                # else:
-                #     fatal(
-                #         f"A data item is already set for run index {run_index}. "
-                #         f"You can only merge additional data into it. Overwriting is not allowed. "
-                #     )
             except ValueError:
                 fatal(
                     f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
@@ -756,12 +662,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     def merge_data_from_runs(self):
         self.merged_data = merge_data(list(self.data_per_run.values()))
 
-    # def merge_into_merged_data(self, data):
-    #     if self.merged_data is None:
-    #         self.merged_data = data
-    #     else:
-    #         self.merged_data = merge_data([self.merged_data, data])
-
     def end_of_run(self, run_index):
         if self.merge_data_after_simulation is True:
             self.merged_data.inplace_merge_with(self.data_per_run[run_index])
@@ -773,10 +673,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             self.merged_data = self.data_container_class(belongs_to=self)
 
     def end_of_simulation(self, item="all", **kwargs):
-        # if self.merge_data_after_simulation is True:
-        #     self.merge_data_from_runs()
-        # if self.keep_data_per_run is False:
-        #     self.data_per_run = {}
         try:
             self.write_data_if_requested(item="all", **kwargs)
         except NotImplementedError:
@@ -916,7 +812,6 @@ class ActorOutputRoot(ActorOutputBase):
 
 
 process_cls(ActorOutputBase)
-# process_cls(MergeableActorOutput)
 process_cls(ActorOutputUsingDataItemContainer)
 process_cls(ActorOutputImage)
 process_cls(ActorOutputSingleImage)
