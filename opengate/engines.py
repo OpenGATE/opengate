@@ -327,7 +327,7 @@ class PhysicsEngine(EngineBase):
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
             self.physics_manager.warn_user(
-                "WARNING ! SetEnergyRange only works in MT mode"
+                "SetEnergyRange only works in MT mode"
             )
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
