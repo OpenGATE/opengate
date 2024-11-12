@@ -135,12 +135,13 @@ if __name__ == "__main__":
             edep_arr, unc_arr, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
         )
         b = unc_mean < unc_goal_run
-        print(f"For run index {i}: \n"
-              f"    mean uncertainty = {unc_mean}, "
-              f"    goal = {unc_goal_run}"
-              f"    OK? -> {b}")
+        print(
+            f"For run index {i}: \n"
+            f"    mean uncertainty = {unc_mean}, "
+            f"    goal = {unc_goal_run}"
+            f"    OK? -> {b}"
+        )
         ok &= b
-
 
     # Test that mean uncertainty satisfies the goal uncertainty
     # in the edep image merged over the runs
@@ -158,7 +159,10 @@ if __name__ == "__main__":
     )
     print(f"{unc_expected = }")
     print(f"{unc_mean = }")
-    ok &= unc_mean < unc_expected + test_thresh_rel and unc_mean > unc_expected - test_thresh_rel
+    ok &= (
+        unc_mean < unc_expected + test_thresh_rel
+        and unc_mean > unc_expected - test_thresh_rel
+    )
     print("OK? -> ", ok)
 
     # test that the simulation stopped because of the threshold crtierion,
