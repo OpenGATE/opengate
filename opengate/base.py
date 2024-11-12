@@ -435,7 +435,7 @@ class GateObject:
         if type(parent).__name__ != "pybind11_type":
             try:
                 super().__init__(*args, **kwargs)
-            except TypeError as e:
+            except TypeError:
                 raise TypeError(
                     f"There was a problem "
                     f"while trying to create the {type(self).__name__} called {self.name}. \n"
@@ -533,7 +533,7 @@ class GateObject:
                 close_matches = get_close_matches(key, known_attributes)
                 if len(close_matches) > 0:
                     msg_close_matches = (
-                        f"Did you mean: " + " or ".join(close_matches) + "\n"
+                        "Did you mean: " + " or ".join(close_matches) + "\n"
                     )
                     msg += msg_close_matches
                 known_attr = ", ".join(
@@ -581,7 +581,6 @@ class GateObject:
                 warning(
                     f"close() called in object '{self.name}' of type {type(self).__name__}."
                 )
-        pass
 
     def release_g4_references(self):
         """Dummy implementation for inherited classes which do not implement this method."""
