@@ -565,7 +565,10 @@ class RepeatableVolume(VolumeBase):
 
 
 class BooleanVolume(RepeatableVolume, solids.BooleanSolid):
-    """Volume resulting from a boolean operation of the solids contained in two volumes."""
+    """
+    Volume resulting from a boolean operation
+    of the solids contained in two volumes.
+    """
 
 
 # Function to handle boolean operations on volumes
@@ -675,7 +678,10 @@ class TubsVolume(RepeatableVolume, solids.TubsSolid):
 
 
 class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
-    """Volume based on a mesh volume by reading an STL file."""
+    """
+    Volume based on a mesh volume
+    by reading an STL file.
+    """
 
 
 class RepeatParametrisedVolume(VolumeBase):
