@@ -8,13 +8,13 @@ from opengate.tests import utility
 if __name__ == "__main__":
     # create sim
     sim = gate.Simulation()
-    test019.create_simu_test019_phsp_source(sim)
+    test019.create_simu_test019_phsp_source(sim, "_phsp_src")
 
     # start simulation
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # analyse

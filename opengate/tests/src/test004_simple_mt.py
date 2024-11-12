@@ -62,23 +62,22 @@ if __name__ == "__main__":
     source.n = 200000 / sim.number_of_threads
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # start simulation
-    # sim.add_g4_command_after_init("/run/verbose 0")
-    # sim.add_g4_command_after_init("/run/eventModulo 5000 1")
+    # sim.g4_commands_after_init.append("/run/verbose 0")
+    # sim.g4_commands_after_init.append("/run/eventModulo 5000 1")
     sim.run()
 
     # get results
-    stats = sim.output.get_actor("Stats")
     print(stats)
     print("track type", stats.counts.track_types)
 
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    stats_ref.counts.run_count = sim.number_of_threads
+    stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
 
     utility.test_ok(is_ok)

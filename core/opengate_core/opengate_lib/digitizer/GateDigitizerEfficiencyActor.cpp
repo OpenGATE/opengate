@@ -17,12 +17,13 @@ GateDigitizerEfficiencyActor::GateDigitizerEfficiencyActor(py::dict &user_info)
 
   // actions
   fActions.insert("EndOfEventAction");
+}
 
+void GateDigitizerEfficiencyActor::InitializeUserInput(py::dict &user_info) {
+  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
   // efficiency method
   fEfficiency = DictGetDouble(user_info, "efficiency");
 }
-
-GateDigitizerEfficiencyActor::~GateDigitizerEfficiencyActor() = default;
 
 void GateDigitizerEfficiencyActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {

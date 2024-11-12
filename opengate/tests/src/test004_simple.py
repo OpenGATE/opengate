@@ -112,14 +112,13 @@ if __name__ == "__main__":
     (The commented line indicates how to indicate to Geant4 to verbose during the simulation,
     if the flag sim.g4_verbose is True).
     """
-    # sim.add_g4_command_after_init("/run/verbose 1")
+    # sim.g4_commands_after_init.append("/run/verbose 1")
     sim.user_hook_after_init = check_production_cuts
     sim.run()
 
     """
     Now the simulation is terminated. The results are retrieved and can be displayed.
     """
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # Comparison with gate simulation

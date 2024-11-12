@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
     sim.random_seed = 654923
+    sim.output_dir = paths.output
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
 
@@ -89,12 +90,13 @@ if __name__ == "__main__":
 
     # add phsp actor detector 1 (overlap!)
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
-    phsp.output = paths.output / "test054.root"
-    phsp.mother = det.name
+    phsp.output_filename = "test054.root"
+    phsp.attached_to = det.name
     phsp.attributes = [
         "KineticEnergy",
         "PrePosition",
     ]
+    phsp.steps_to_store = "exiting first"
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -108,10 +110,7 @@ if __name__ == "__main__":
     sim.run(True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-    print(stat)
-    d = sim.output.get_actor("phsp")
-    print(d)
+    print(stats)
 
     keys = ["KineticEnergy", "PrePosition_X", "PrePosition_Y", "PrePosition_Z"]
     tols = [0.01, 2.6, 1.8, 1.7]
@@ -119,7 +118,7 @@ if __name__ == "__main__":
     f = paths.output / "test054.png"
     is_ok = utility.compare_root3(
         ref,
-        phsp.output,
+        phsp.get_output_path(),
         "phsp",
         "phsp",
         keys,

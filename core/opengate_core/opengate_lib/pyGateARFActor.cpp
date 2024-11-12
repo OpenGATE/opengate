@@ -13,10 +13,29 @@ namespace py = pybind11;
 
 #include "GateARFActor.h"
 
+class PyGateARFActor : public GateARFActor {
+public:
+  // Inherit the constructors
+  using GateARFActor::GateARFActor;
+
+  void BeginOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(void, GateARFActor, BeginOfRunActionMasterThread, run_id);
+  }
+
+  int EndOfRunActionMasterThread(int run_id) override {
+    PYBIND11_OVERLOAD(int, GateARFActor, EndOfRunActionMasterThread, run_id);
+  }
+};
+
 void init_GateARFActor(py::module &m) {
-  py::class_<GateARFActor, std::unique_ptr<GateARFActor, py::nodelete>,
-             GateVActor>(m, "GateARFActor")
+  py::class_<GateARFActor, PyGateARFActor,
+             std::unique_ptr<GateARFActor, py::nodelete>, GateVActor>(
+      m, "GateARFActor")
       .def(py::init<py::dict &>())
+      .def("BeginOfRunActionMasterThread",
+           &GateARFActor::BeginOfRunActionMasterThread)
+      .def("EndOfRunActionMasterThread",
+           &GateARFActor::EndOfRunActionMasterThread)
       .def("SetARFFunction", &GateARFActor::SetARFFunction)
       .def("GetCurrentNumberOfHits", &GateARFActor::GetCurrentNumberOfHits)
       .def("GetCurrentRunId", &GateARFActor::GetCurrentRunId)

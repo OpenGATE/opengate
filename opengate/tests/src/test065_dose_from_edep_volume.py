@@ -1,18 +1,19 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import opengate as gate
-import itk
-import os
-import numpy as np
-import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
 from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", "test065_dose_from_edep_volume"
+    )
 
     output_path = paths.output / "output_test059_rtp"
-    ref_path = paths.output_ref / "test059_ref"
+    ref_path = paths.output_ref / ".." / "test059"
 
     # create output dir, if it doesn't exist
     output_path.mkdir(parents=True, exist_ok=True)
@@ -21,12 +22,12 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.visu = False
-    ui.random_seed = 12365478910
-    ui.random_engine = "MersenneTwister"
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.visu = False
+    sim.random_seed = 12365478910
+    sim.random_engine = "MersenneTwister"
+    sim.output_dir = paths.output
 
     # units
     km = gate.g4_units.km
@@ -90,14 +91,8 @@ if __name__ == "__main__":
     # patient
     target = sim.add_volume("Box", "patient")
     target.size = [252 * mm, 252 * mm, 220 * mm]
-    # patient.mother = phantom.name
-    # patient.translation = list((img_origin - origin_when_centered) - iso)
     target.material = "G4_WATER"  # material used by default
-    # patient.voxel_materials = [
-    #     [-1024, -300, "G4_AIR"],
-    #     [-300, 3000, "G4_WATER"],
-    # ]
-    sim.physics_manager.set_max_step_size(target.name, 0.8)
+    target.set_max_step_size(0.8 * mm)
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -105,24 +100,28 @@ if __name__ == "__main__":
 
     # add dose actor
     dose_postprocess = sim.add_actor("DoseActor", "dose_postprocess")
-    dose_postprocess.output = output_path / "dose_volume_post.mhd"
-    dose_postprocess.mother = target.name
+    dose_postprocess.dose.output_filename = "dose_volume_post.mhd"
+    dose_postprocess.attached_to = target
     dose_postprocess.size = [63, 63, 55]
     dose_postprocess.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose_postprocess.hit_type = "random"
-    dose_postprocess.dose = True
-    dose_postprocess.dose_calc_on_the_fly = (
-        False  # calc dose as edep/mass after end of simulation
-    )
+    dose_postprocess.dose.active = True
+    # OPTION CURRENTLY UNAVAILABLE
+    # dose_postprocess.dose_calc_on_the_fly = (
+    #     False  # calc dose as edep/mass after end of simulation
+    # )
 
     dose_in_step = sim.add_actor("DoseActor", "dose_in_step")
-    dose_in_step.output = output_path / "dose_volume_step.mhd"
-    dose_in_step.mother = target.name
+    dose_in_step.dose.output_filename = "dose_volume_step.mhd"
+    dose_in_step.attached_to = target
     dose_in_step.size = [63, 63, 55]
     dose_in_step.spacing = [4 * mm, 4 * mm, 4 * mm]
     dose_in_step.hit_type = "random"
-    dose_in_step.dose = True  # calculate dose directly in stepping action
-    dose_in_step.dose_calc_on_the_fly = True
+    dose_in_step.dose.active = True
+
+    # OPTION CURRENTLY UNAVAILABLE
+    # calculate dose directly in stepping action
+    # dose_in_step.dose_calc_on_the_fly = True
 
     ## source
     nSim = 4000  # 328935  # particles to simulate per beam
@@ -137,26 +136,20 @@ if __name__ == "__main__":
     run_simulation = True
     if run_simulation:
         # add stat actor
-        s = sim.add_actor("SimulationStatisticsActor", "Stats")
-        s.track_types_flag = True
+        stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+        stat.track_types_flag = True
         # start simulation
         sim.run()
-        output = sim.output
 
         # print results at the end
-        stat = output.get_actor("Stats")
         print(stat)
 
     # read output
-    d_post_path = sim.output.get_actor("dose_postprocess").user_info.output
-    d_step_path = sim.output.get_actor("dose_in_step").user_info.output
+    d_post_path = dose_postprocess.dose.get_output_path()
+    d_step_path = dose_in_step.dose.get_output_path()
     # img_mhd_out = itk.imread(d_post_path)
     # img_mhd_ref = itk.imread(d_step_path)
 
-    ok = utility.assert_images(
-        d_step_path,
-        d_post_path,
-        tolerance=10,
-    )
+    ok = utility.assert_images(d_step_path, d_post_path, tolerance=10)
 
     utility.test_ok(ok)

@@ -7,10 +7,8 @@ from scipy.spatial.transform import Rotation
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "gate_test036_adder_depth")
 
-
-def create_simulation(geom):
+def create_simulation(geom, paths, version):
     # create the simulation
     sim = gate.Simulation()
 
@@ -19,6 +17,7 @@ def create_simulation(geom):
     sim.visu = False
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -118,8 +117,9 @@ def create_simulation(geom):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
-    hc.output = paths.output / "test036.root"
+    hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
+    hc.output_filename = f"test036{version}.root"
     hc.attributes = [
         "KineticEnergy",
         "PostPosition",
@@ -134,12 +134,13 @@ def create_simulation(geom):
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.mother = crystal.name
+    sc.attached_to = crystal.name
+    sc.authorize_repeated_volumes = True
     sc.input_digi_collection = "Hits"
     # sc.policy = 'EnergyWinnerPosition'
     sc.policy = "EnergyWeightedCentroidPosition"
     # same filename, there will be two branches in the file
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     sec = gate.g4_units.second
     sim.running_verbose_level = 2
@@ -149,13 +150,13 @@ def create_simulation(geom):
     # print cuts
     print(sim.physics_manager.dump_production_cuts())
 
-    # add a user hook function to dump production cuts frmo Geant4
+    # add a user hook function to dump production cuts from Geant4
     sim.user_hook_after_init = check_production_cuts
 
     return sim
 
 
-def test_output(output):
+def test_output(sim, paths):
     # retrieve the information about the touched volumes
     man = g4.GateUniqueVolumeIDManager.GetInstance()
     vols = man.GetAllVolumeIDs()
@@ -169,16 +170,16 @@ def test_output(output):
 
     # stat
     gate.exception.warning("Compare stats")
-    stats = output.get_actor("Stats")
+    stats = sim.actor_manager.get_actor("Stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1
     stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # root compare HITS
     print()
-    hc = output.get_actor("Hits").user_info
+    hc = sim.actor_manager.get_actor("Hits")
     gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
@@ -186,22 +187,25 @@ def test_output(output):
     scalings = [1.0] * len(scalings2)
     tols[2] = 2  # Z
     # tols[4] = 0.01  # energy
-    is_ok = utility.compare_root3(
-        gate_file,
-        hc.output,
-        "Hits",
-        "Hits",
-        keys1,
-        keys2,
-        tols,
-        scalings,
-        scalings2,
-        paths.output / "test036_hits.png",
+    is_ok = (
+        utility.compare_root3(
+            gate_file,
+            hc.get_output_path(),
+            "Hits",
+            "Hits",
+            keys1,
+            keys2,
+            tols,
+            scalings,
+            scalings2,
+            paths.output / "test036_hits.png",
+        )
+        and is_ok
     )
 
     # Root compare SINGLES
     print()
-    sc = output.get_actor("Singles").user_info
+    sc = sim.actor_manager.get_actor("Singles")
     gate.exception.warning("Compare SINGLES")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
@@ -214,7 +218,7 @@ def test_output(output):
     is_ok = (
         utility.compare_root3(
             gate_file,
-            sc.output,
+            sc.get_output_path(),
             "Singles",
             "Singles",
             keys1,

@@ -13,10 +13,10 @@ from test037_pet_hits_singles_helpers import (
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur")
+paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur", "test049")
 
 
-def create_simulation(sim, threads=1, singles_name="Singles"):
+def create_simulation(sim, threads=1, singles_name="Singles", fname_suffix=""):
     # main options
     sim.visu = False
     sim.number_of_threads = threads
@@ -36,7 +36,10 @@ def create_simulation(sim, threads=1, singles_name="Singles"):
     # add a PET Biograph
     pet = pet_biograph.add_pet(sim, "pet")
     singles = pet_biograph.add_digitizer(
-        sim, pet.name, paths.output / f"test049_pet.root", singles_name=singles_name
+        sim,
+        pet.name,
+        paths.output / f"test049_pet_{fname_suffix}.root",
+        singles_name=singles_name,
     )
 
     # add NECR phantom
@@ -131,8 +134,10 @@ def check_timing(
     ref_root_file,
     root_file,
 ):
-    times_ref = uproot.open(ref_root_file)["Hits"].arrays(library="numpy")["time"] * 1e9
-    times = uproot.open(root_file)["Hits"].arrays(library="numpy")["GlobalTime"]
+    with uproot.open(ref_root_file) as h:
+        times_ref = h["Hits"].arrays(library="numpy")["time"] * 1e9
+    with uproot.open(root_file) as h:
+        times = h["Hits"].arrays(library="numpy")["GlobalTime"]
 
     def rel_d(a, b, norm, tol):
         r = np.fabs(a - b) / norm * 100
@@ -154,10 +159,10 @@ def check_timing(
     utility.print_test(b, f"Hits timing ref:\n{s}, Passed? {b}")
     is_ok = b
 
-    times_ref = (
-        uproot.open(ref_root_file)["Singles"].arrays(library="numpy")["time"] * 1e9
-    )
-    times = uproot.open(root_file)["Singles"].arrays(library="numpy")["GlobalTime"]
+    with uproot.open(ref_root_file) as h:
+        times_ref = h["Singles"].arrays(library="numpy")["time"] * 1e9
+    with uproot.open(root_file) as h:
+        times = h["Singles"].arrays(library="numpy")["GlobalTime"]
 
     print()
     s, b = compare_stat(times_ref, times, tol)

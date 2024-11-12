@@ -1,5 +1,7 @@
 import re
 import os
+from typing import List
+
 import numpy as np
 import itk
 import json
@@ -12,8 +14,8 @@ from ..base import DynamicGateObject, process_cls
 from . import solids
 from ..utility import ensure_filename_is_str
 from ..exception import fatal, warning
-from ..image import update_image_py_to_cpp, write_itk_image
-from ..image import create_3d_image, update_image_py_to_cpp
+from ..image import write_itk_image
+from ..image import update_image_py_to_cpp
 from .utility import (
     vec_np_as_g4,
     rot_np_as_g4,
@@ -26,6 +28,7 @@ from ..actors.dynamicactors import (
     VolumeTranslationChanger,
     VolumeRotationChanger,
 )
+from .materials import create_density_img
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -182,30 +185,20 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
-        # Volume_manager is not compulsory when creating a volume, e.g. for boolean operations,
-        # but without a volume_manager, the volume is not known to the simulation
-        # and certain functionality is unavailable
-        try:
-            self.volume_manager = kwargs["volume_manager"]
-        except KeyError:
-            self.volume_manager = None
-
+    def __init__(self, *args, template=None, **kwargs):
         # GateObject base class digests all user info provided as kwargs
+        # template = kwargs.pop('template', None)
         super().__init__(*args, **kwargs)
 
         # if a template volume is provided, clone all user info items from it
         # except for the name of course
-        if "template" in kwargs:
-            # FIXME: use from_dictionary()
-            self.copy_user_info(kwargs["template"])
+        if template is not None:
+            # FIXME: consider using from_dictionary()
+            self.configure_like(template)
             # put back user infos which were explicitly passed as keyword argument
             for k in self.user_info.keys():
-                if k != "name":
-                    try:
-                        setattr(self, k, kwargs[k])
-                    except KeyError:
-                        pass
+                if k != "name" and k in kwargs:
+                    setattr(self, k, kwargs[k])
 
         # this attribute is used internally for the volumes tree
         # do not set it manually!
@@ -224,6 +217,8 @@ class VolumeBase(DynamicGateObject, NodeMixin):
 
     def close(self):
         self.release_g4_references()
+        self.volume_engine = None
+        self._is_constructed = False
         super().close()
 
     def release_g4_references(self):
@@ -238,10 +233,18 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # They created when running a simulation
         return_dict["g4_logical_volume"] = None
         return_dict["g4_vis_attributes"] = None
-        return_dict["g4_physical_volumes"] = None
+        return_dict["g4_physical_volumes"] = []
         return_dict["g4_material"] = None
         return_dict["volume_engine"] = None
+        return_dict["_is_constructed"] = False
         return return_dict
+
+    def __finalize_init__(self):
+        super().__finalize_init__()
+        # need to add this explicitly because anytree does not properly declare
+        # the attribute __parent in the NodeMixin.__init__ which leads to falls warnings
+        self.known_attributes.add("_NodeMixin__parent")
+        self.known_attributes.add("_NodeMixin__children")
 
     def _update_node(self):
         """Internal method which retrieves the volume object
@@ -266,11 +269,18 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 "Probably the volume has not yet been added to the simulation. "
             )
 
-    # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
+    # # FIXME: maybe store reference to simulation directly, rather than reference to volume_manager?
     @property
-    @requires_fatal("volume_manager")
-    def simulation(self):
-        return self.volume_manager.simulation
+    def volume_manager(self):
+        # It is not compulsory for a GateObject to belong to a simulation,
+        # and the volume might therefore not have any reference to a volume manager
+        # (e.g. in volumes created for boolean operations),
+        # but without a simulation/volume_manager, the volume is not known to the simulation
+        # and certain functionality is unavailable
+        if self.simulation is not None:
+            return self.simulation.volume_manager
+        else:
+            return None
 
     @property
     def volume_type(self):
@@ -463,16 +473,16 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                         name=f"{self.name}_volume_translation_changer_{len(changers)}",
                         translations=dp["translation"],
                         attached_to=self,
-                        volume_manager=self.volume_manager,
+                        simulation=self.simulation,
                         repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
                     changers.append(new_changer)
                 if "rotation" in dp:
                     new_changer = VolumeRotationChanger(
-                        name=f"{self.name}_volume_translation_changer_{len(changers)}",
-                        attached_to=self,
-                        volume_manager=self.volume_manager,
+                        name=f"{self.name}_volume_rotation_changer_{len(changers)}",
                         rotations=dp["rotation"],
+                        attached_to=self,
+                        simulation=self.simulation,
                         repetition_index=dp["extra_params"].pop("repetition_index", 0),
                     )
                     changers.append(new_changer)
@@ -587,6 +597,8 @@ def _make_boolean_volume(
 def intersect_volumes(
     volume_1, volume_2, translation=None, rotation=None, new_name=None
 ):
+    """Creates a boolean representing the intersection of two volumes."""
+
     return _make_boolean_volume(
         volume_1,
         volume_2,
@@ -598,6 +610,8 @@ def intersect_volumes(
 
 
 def unite_volumes(volume_1, volume_2, translation=None, rotation=None, new_name=None):
+    """Creates a boolean representing the union of two volumes."""
+
     return _make_boolean_volume(
         volume_1,
         volume_2,
@@ -611,6 +625,8 @@ def unite_volumes(volume_1, volume_2, translation=None, rotation=None, new_name=
 def subtract_volumes(
     volume_1, volume_2, translation=None, rotation=None, new_name=None
 ):
+    """Creates a boolean representing the first volume minus the overlapping portion of the second volume."""
+
     return _make_boolean_volume(
         volume_1,
         volume_2,
@@ -680,8 +696,6 @@ class RepeatParametrisedVolume(VolumeBase):
         "start": ("auto", {"doc": "FIXME"}),
     }
 
-    type_name = "RepeatParametrised"
-
     def __init__(self, repeated_volume, *args, **kwargs):
         # FIXME: This should probably be a user_info
         self.repeated_volume = repeated_volume
@@ -691,11 +705,22 @@ class RepeatParametrisedVolume(VolumeBase):
         super().__init__(*args, **kwargs)
         if repeated_volume.build_physical_volume is True:
             repeated_volume.build_physical_volume = False
-        self.repeat_parametrisation = None
+        self.g4_repeat_parametrisation = None
 
     def close(self):
         self.repeated_volume.close()
         super().close()
+
+    def release_g4_references(self):
+        super().release_g4_references()
+        # FIXME: unsure. If not set to None, we get the following error:
+        # "cannot pickle 'opengate_core.opengate_core.GateRepeatParameterisation' object"
+        self.g4_repeat_parametrisation = None
+
+    def __getstate__(self):
+        return_dict = super().__getstate__()
+        return_dict["g4_repeat_parametrisation"] = None
+        return return_dict
 
     def construct(self):
         if self._is_constructed is False:
@@ -730,7 +755,7 @@ class RepeatParametrisedVolume(VolumeBase):
                 self.mother_g4_logical_volume,
                 g4.EAxis.kUndefined,
                 n,
-                self.repeat_parametrisation,
+                self.g4_repeat_parametrisation,
                 False,  # very slow if True
             )
         )
@@ -757,14 +782,18 @@ class RepeatParametrisedVolume(VolumeBase):
         p = {}
         for k in keys:
             p[k] = getattr(self, k)
-        self.repeat_parametrisation = g4.GateRepeatParameterisation()
-        self.repeat_parametrisation.SetUserInfo(p)
+        self.g4_repeat_parametrisation = g4.GateRepeatParameterisation()
+        self.g4_repeat_parametrisation.SetUserInfo(p)
 
 
 class ImageVolume(VolumeBase, solids.ImageSolid):
     """
     Store information about a voxelized volume
     """
+
+    voxel_materials: List
+    image: str
+    dump_label_image: bool
 
     user_info_defaults = {
         "voxel_materials": (
@@ -793,7 +822,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.material_to_label_lut = None
 
         # ITK images
-        self.itk_image = None  # the input
+        self._itk_image = None  # the input
         self.label_image = None  # image storing material labels
         # G4 references (additionally to those in base class)
         self.g4_physical_x = None
@@ -828,6 +857,20 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_physical_z = None
         self.g4_voxel_param = None
 
+    @property
+    def itk_image(self):
+        if self._itk_image is None:
+            warning(
+                f"The itk_image in {self.type_name} '{self.name}' is None. "
+                f"If this is unexpected, run my_image_volume.load_input_image() first, "
+                f"where my_image_volume is the variable name of the {self.type_name} in your script. "
+            )
+        return self._itk_image
+
+    @itk_image.setter
+    def itk_image(self, image):
+        self._itk_image = image
+
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
     @property
@@ -840,13 +883,58 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     def spacing(self):
         return np.array(self.itk_image.GetSpacing())
 
+    # @requires_fatal("itk_image")
+    @property
+    def native_translation(self):
+        if self.itk_image is not None:
+            origin = np.array(self.itk_image.GetOrigin())
+            spacing = np.array(self.itk_image.GetSpacing())
+            size = np.array(self.itk_image.GetLargestPossibleRegion().GetSize())
+            center = (size - 1.0) * spacing / 2.0
+            return origin + Rotation.from_matrix(self.native_rotation).apply(center)
+        else:
+            return None
+
+    # @requires_fatal("itk_image")
+    @property
+    def native_rotation(self):
+        if self.itk_image is not None:
+            return np.array(self.itk_image.GetDirection())
+        else:
+            return None
+
+    def set_materials_from_voxelisation(self, labels_json):
+        """
+        Reads a JSON file containing label information and sets the voxel materials
+        based on the data provided in the JSON file. The JSON file should contain a
+        dictionary where each entry has a 'label' and 'material' field.
+
+        The json file could have been generated with 'voxelize_geometry'
+
+        Args:
+            labels_json (str): Path to the JSON file containing label data.
+
+        Raises:
+            FileNotFoundError: If the specified JSON file cannot be found.
+            json.JSONDecodeError: If the JSON file contains invalid JSON.
+
+        Attributes:
+            voxel_materials (list): A list where each entry is a list containing a
+                                    label, the next label, and the corresponding material.
+        """
+        with open(labels_json) as f:
+            labels = json.load(f)
+        self.voxel_materials = [
+            [l["label"], l["label"] + 1, l["material"]] for k, l in labels.items()
+        ]
+
     @requires_fatal("volume_engine")
     def construct(self):
         self.material_to_label_lut = self.create_material_to_label_lut()
         # make sure the materials are created in Geant4
         for m in self.material_to_label_lut:
             self.volume_manager.find_or_build_material(m)
-        self.itk_image = self.read_input_image()
+        self.itk_image = self.load_input_image()
         self.label_image = self.create_label_image()
         if self.dump_label_image:
             self.save_label_image()
@@ -931,7 +1019,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
         return material_to_label_lut
 
-    def read_input_image(self, path=None):
+    def load_input_image(self, path=None):
         if path is None:
             itk_image = itk.imread(ensure_filename_is_str(self.image))
             self.itk_image = itk_image
@@ -943,7 +1031,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         # read image
         if itk_image is None:
             if self.itk_image is None:
-                self.itk_image = self.read_input_image()
+                self.itk_image = self.load_input_image()
             itk_image = self.itk_image
 
         if self.material_to_label_lut is None:
@@ -1033,6 +1121,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             -(self.size_pix * self.spacing) / 2.0 + self.spacing / 2.0
         )
 
+    def create_density_image(self):
+        return create_density_img(
+            self, self.volume_manager.material_database.g4_materials
+        )
+
     def create_changers(self):
         # get the changers from the mother classes and append those specific to the ImageVolume class
         changers = super().create_changers()
@@ -1043,12 +1136,12 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                     # create a LUT of image parametrisations
                     label_image = {}
                     for path_to_image in set(dp["image"]):
-                        itk_image = self.read_input_image(path_to_image)
+                        itk_image = self.load_input_image(path_to_image)
                         label_image[path_to_image] = self.create_label_image(itk_image)
                     new_changer = VolumeImageChanger(
                         name=f"{self.name}_volume_image_changer_{len(changers)}",
                         attached_to=self,
-                        volume_manager=self.volume_manager,
+                        simulation=self.simulation,
                         images=dp["image"],
                         label_image=label_image,
                     )
@@ -1070,6 +1163,8 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
 class ParallelWorldVolume(NodeMixin):
     def __init__(self, name, volume_manager):
+        # VolumeBase.__init__(self, name)
+        # NodeMixin.__init__(self)
         super().__init__()
         self.name = name
         self.volume_manager = volume_manager
@@ -1088,6 +1183,7 @@ class ParallelWorldVolume(NodeMixin):
 
     def close(self):
         self.release_g4_references()
+        self.parallel_world_engine = None
 
     def __getstate__(self):
         return_dict = self.__dict__
@@ -1115,7 +1211,6 @@ class VolumeTreeRoot(NodeMixin):
     def __init__(self, volume_manager) -> None:
         super().__init__()
         self.volume_manager = volume_manager
-        self.volume_engine = None
         self.name = "volume_tree_root"
         self.parent = None  # None means this is a tree root
 
@@ -1123,9 +1218,6 @@ class VolumeTreeRoot(NodeMixin):
         return_dict = self.__dict__
         return_dict["volume_engine"] = None
         return return_dict
-
-    def close(self):
-        self.volume_engine = None
 
 
 # The following lines make sure that all classes which

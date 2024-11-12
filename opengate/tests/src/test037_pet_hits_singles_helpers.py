@@ -21,6 +21,7 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
     sim.visu = False
     sim.check_volumes_overlap = False
     sim.random_seed = 123456789
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -88,9 +89,10 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
 def add_digitizer(sim, paths, nb, crystal):
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
+    hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
     print("Crystal :", crystal.name)
-    hc.output = paths.output / f"test037_test{nb}.root"
+    hc.output_filename = f"test037_test{nb}.root"
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -103,7 +105,7 @@ def add_digitizer(sim, paths, nb, crystal):
     sc.input_digi_collection = "Hits"
     # sc.policy = "EnergyWinnerPosition"
     sc.policy = "EnergyWeightedCentroidPosition"
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     return sim
 

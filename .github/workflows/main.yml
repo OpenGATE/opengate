@@ -12,13 +12,45 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_wheel:
+  build_opengate_wheel:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
-        python-version: [3.8, 3.9, '3.10', '3.11']
+        os: [ubuntu-latest]
+        python-version: [3.9]
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v4
+    - name: Checkout submodules
+      shell: bash -l {0}
+      run: |
+        export GIT_SSL_NO_VERIFY=1
+        git submodule update --init --recursive
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: 'x64'
+    - name: Create opengate Wheel
+      run: |
+          rm -rf $GITHUB_WORKSPACE/opengate/tests/data
+          cp $GITHUB_WORKSPACE/.git/modules/gam-tests/data/HEAD $GITHUB_WORKSPACE/opengate/tests/
+          pip install build
+          python -m build
+    - name: Upload wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-opengate
+        path: dist/
+
+  build_opengate_core_wheel:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-13, windows-latest]
+        python-version: [3.9, '3.10', '3.11', '3.12']
 
     env:
       GEANT4_VERSION: 'v11.2.1'
@@ -33,7 +65,7 @@ jobs:
         if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
           export GIT_SSL_NO_VERIFY=1
           git submodule update --init --recursive
-        elif [[ ${{ matrix.os }} == "macos-12" ]]; then
+        elif [[ ${{ matrix.os }} == "macos-13" ]]; then
           export GIT_SSL_NO_VERIFY=1
           git submodule update --init --recursive
         else
@@ -53,7 +85,7 @@ jobs:
             varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
             varOS=($varOS)
             echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
-        elif [[ ${{ matrix.os }} == "macos-12" ]]; then
+        elif [[ ${{ matrix.os }} == "macos-13" ]]; then
             varOS=`sw_vers | grep "ProductVersion:"`
             varOS="${varOS#*:}"
             echo "release=${varOS:1}" >> $GITHUB_OUTPUT
@@ -66,29 +98,19 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-    - name: Create opengate Wheel
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-          if [ ${{ matrix.python-version }} == "3.9" ]; then
-              rm -rf $GITHUB_WORKSPACE/opengate/tests/data
-              cp $GITHUB_WORKSPACE/.git/modules/gam-tests/data/HEAD $GITHUB_WORKSPACE/opengate/tests/
-              pip install build
-              python -m build
-              mv dist dist_opengate
-          fi
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
     - name: Create opengate_core Wheel Linux
       if: matrix.os == 'ubuntu-latest'
       run: |
-          if [ ${{ matrix.python-version }} == "3.8" ]; then
-            export PYTHONFOLDER="cp38-cp38"
-          elif [ ${{ matrix.python-version }} == "3.9" ]; then
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
           elif [ ${{ matrix.python-version }} == "3.10" ]; then
             export PYTHONFOLDER="cp310-cp310"
           elif [ ${{ matrix.python-version }} == "3.11" ]; then
             export PYTHONFOLDER="cp311-cp311"
+          elif [ ${{ matrix.python-version }} == "3.12" ]; then
+            export PYTHONFOLDER="cp312-cp312"
           fi
           mkdir -p $HOME/software
           docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
@@ -96,25 +118,19 @@ jobs:
           rm -rf dist
           mv wheelhouse dist
           sudo chown -R runner:docker dist
-          if [ ${{ matrix.python-version }} == "3.9" ]; then
-              ls -lrt .
-              ls -lrt dist/
-              ls -lrt dist_opengate/
-              mv dist_opengate/* dist/
-          fi
     - uses: conda-incubator/setup-miniconda@v3
-      if: (matrix.os == 'macos-12') || (matrix.os == 'windows-latest')
+      if: (matrix.os == 'macos-13') || (matrix.os == 'windows-latest')
       with:
           miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
           python-version: ${{ matrix.python-version }}
     - name: Set up Homebrew
-      if: matrix.os == 'macos-12'
+      if: matrix.os == 'macos-13'
       id: set-up-homebrew
       uses: Homebrew/actions/setup-homebrew@master
     - name: Create opengate_core Wheel Mac
-      if: matrix.os == 'macos-12'
+      if: matrix.os == 'macos-13'
       shell: bash -l {0}
       run: |
           brew install python@3.12 || true
@@ -139,8 +155,8 @@ jobs:
           python --version
           export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
           pip install wget colored
-          pip install cibuildwheel==2.17.0
-          conda install -c conda-forge qt==5.15.6
+          pip install wheel delocate
+          conda install conda-forge::qt6-main conda-forge::qt6-3d
           mkdir -p $HOME/software
           if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
               cd $HOME/software
@@ -153,7 +169,8 @@ jobs:
                     -DGEANT4_INSTALL_DATA=OFF \
                     -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
                     -DGEANT4_USE_QT=ON \
-                    -DGEANT4_USE_OPENGL_X11=ON \
+                    -DGEANT4_USE_OPENGL_X11=OFF \
+                    -DGEANT4_USE_QT_QT6=ON \
                     -DGEANT4_USE_SYSTEM_EXPAT=OFF \
                     -DGEANT4_BUILD_MULTITHREADED=ON \
                     -DGEANT4_USE_GDML=ON \
@@ -174,26 +191,23 @@ jobs:
               make -j4
           fi
           cd $GITHUB_WORKSPACE
-          ls /Users/runner/miniconda3/envs/opengate_core/plugins/platforms
           source $HOME/software/geant4/bin/geant4make.sh
           export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
           cd core
           mkdir opengate_core/plugins
-          mkdir opengate_core/plugins/miniconda
+          cp -r /Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms/* opengate_core/plugins/
+          cp -r /Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/imageformats opengate_core/plugins/
+          python3 setup.py sdist bdist_wheel
+          ls dist
+          export DYLD_LIBRARY_PATH=$HOME/software/geant4/bin/BuildProducts/lib:/Users/runner/miniconda3/envs/opengate_core/lib/qt6/plugins/platforms:/opt/X11/lib/:$DYLD_LIBRARY_PATH:/Users/runner/miniconda3/envs/opengate_core/lib
+          delocate-listdeps --all dist/*.whl
+          delocate-wheel -w fixed_wheels -v dist/*.whl
           rm -rf dist
-          if [ ${{ matrix.python-version }} == "3.8" ]; then
-            export CIBW_BUILD="cp38-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.9" ]; then
-            export CIBW_BUILD="cp39-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.10" ]; then
-            export CIBW_BUILD="cp310-macosx_x86_64"
-          elif [ ${{ matrix.python-version }} == "3.11" ]; then
-            export CIBW_BUILD="cp311-macosx_x86_64"
-          fi
-          export CIBW_ENVIRONMENT='MACOSX_DEPLOYMENT_TARGET=10.14'
-          export CIBW_BEFORE_BUILD="python -m pip install colored"
-          python -m cibuildwheel --output-dir dist
+          ls fixed_wheels
+          delocate-listdeps --all fixed_wheels/*.whl
+          mv fixed_wheels dist
           cd dist
+          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_13_0/macosx_10_9}' {} \;
           cd ../..
           mv core/dist .
     - name: Create opengate_core Wheel Windows
@@ -208,7 +222,7 @@ jobs:
           python --version
           export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
           pip install wheel wget colored
-          pip install cibuildwheel==2.12.0
+          pip install cibuildwheel==2.21.1
           which pip
           mkdir -p $HOME/software
           if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
@@ -238,14 +252,14 @@ jobs:
           source $HOME/software/geant4/bin/geant4make.sh
           export CMAKE_PREFIX_PATH=$HOME/software/geant4/bin:$HOME/software/itk/bin/:${CMAKE_PREFIX_PATH}
           cd core
-          if [[ ${{ matrix.python-version }} == "3.8" ]]; then
-            export CIBW_BUILD="cp38-win_amd64"
-          elif [[ ${{ matrix.python-version }} == "3.9" ]]; then
+          if [[ ${{ matrix.python-version }} == "3.9" ]]; then
             export CIBW_BUILD="cp39-win_amd64"
           elif [[ ${{ matrix.python-version }} == "3.10" ]]; then
             export CIBW_BUILD="cp310-win_amd64"
           elif [[ ${{ matrix.python-version }} == "3.11" ]]; then
             export CIBW_BUILD="cp311-win_amd64"
+          elif [[ ${{ matrix.python-version }} == "3.12" ]]; then
+            export CIBW_BUILD="cp312-win_amd64"
           fi
           find $HOME/software/geant4/bin/ -iname "*.dll"
           ls $HOME/software/geant4/bin/BuildProducts/Release/bin
@@ -261,12 +275,75 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: dist-${{ matrix.os }}-${{ matrix.python-version }}
+        name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core
+        path: dist/
+
+  build_opengate_core_novis_wheel:
+    if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.9, '3.10', '3.11', '3.12']
+
+    env:
+      GEANT4_VERSION: 'v11.2.1'
+      ITK_VERSION: 'v5.2.1'
+
+    steps:
+    - name: Checkout github repo
+      uses: actions/checkout@v4
+    - name: Checkout submodules
+      shell: bash -l {0}
+      run: |
+        export GIT_SSL_NO_VERIFY=1
+        git submodule update --init --recursive
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: 'x64'
+    - name: Get OS version
+      id: get-os-version
+      shell: bash -l {0}
+      run: |
+        varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
+        varOS=($varOS)
+        echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
+    - name: Cache modules
+      id: cache_opengate_core_dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/software
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+    - name: Create opengate_core_novis Wheel Linux
+      run: |
+          if [ ${{ matrix.python-version }} == "3.9" ]; then
+            export PYTHONFOLDER="cp39-cp39"
+          elif [ ${{ matrix.python-version }} == "3.10" ]; then
+            export PYTHONFOLDER="cp310-cp310"
+          elif [ ${{ matrix.python-version }} == "3.11" ]; then
+            export PYTHONFOLDER="cp311-cp311"
+          elif [ ${{ matrix.python-version }} == "3.12" ]; then
+            export PYTHONFOLDER="cp312-cp312"
+          fi
+          mkdir -p $HOME/software
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}_novis /home/.github/workflows/createWheelLinux_novis.sh
+          ls wheelhouse
+          rm -rf dist
+          mv wheelhouse dist
+          sudo chown -R runner:docker dist
+    - name: Upload wheels
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-${{ matrix.os }}-${{ matrix.python-version }}-opengate-core-novis
         path: dist/
 
   publish_wheel:
     runs-on: ubuntu-latest
-    needs: [build_wheel]
+    needs: [build_opengate_wheel, build_opengate_core_wheel]
     steps:
     - name: Checkout github repo
       uses: actions/checkout@v4
@@ -277,9 +354,18 @@ jobs:
         path: dist/
     - name: Separate the wheels
       run: |
-          mkdir dist_opengate_core dist_opengate
+          mkdir dist_opengate_core dist_opengate dist_opengate_core_novis
+          mv dist/opengate_core_novis-* dist_opengate_core_novis/ || true
           mv dist/opengate_core-* dist_opengate_core/
           mv dist/opengate-* dist_opengate/
+    - name: Publish to PyPI opengate_core_novis
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_OPENGATE_CORE }}
+        packages_dir: dist_opengate_core_novis/
+        skip_existing: true
     - name: Publish to PyPI opengate_core
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/')
       uses: pypa/gh-action-pypi-publish@release/v1
@@ -301,7 +387,7 @@ jobs:
 #    env:
 #      GEANT4_VERSION: 'v11.2.1'
 #      ITK_VERSION: 'v5.2.1'
-#    runs-on: macos-12
+#    runs-on: macos-13
 #    steps:
 #    - name: Checkout github repo
 #      uses: actions/checkout@v4
@@ -327,8 +413,8 @@ jobs:
 #      uses: actions/cache@v4
 #      with:
 #        path: ~/software
-#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
-#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build1
+#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
 #    - uses: conda-incubator/setup-miniconda@v3
 #      with:
 #          miniconda-version: "latest"
@@ -346,12 +432,12 @@ jobs:
 
   test_wheel:
     runs-on: ${{ matrix.os }}
-    needs: [build_wheel]
+    needs: [build_opengate_wheel, build_opengate_core_wheel]
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-12, windows-latest]
-        python-version: [3.8, 3.9, '3.10', '3.11']
+        os: [ubuntu-latest, macos-13, windows-latest]
+        python-version: [3.9, '3.10', '3.11', '3.12']
     steps:
     - uses: actions/download-artifact@v4
       with:
@@ -366,22 +452,20 @@ jobs:
     - name: Run tests
       shell: bash {0}
       run: |
-          if [[ ${{ matrix.python-version }} == "3.8" ]]; then
-            export PYTHONFOLDER="cp38-cp38"
-          elif [[ ${{ matrix.python-version }} == "3.9" ]]; then
+          if [[ ${{ matrix.python-version }} == "3.9" ]]; then
             export PYTHONFOLDER="cp39-cp39"
           elif [[ ${{ matrix.python-version }} == "3.10" ]]; then
             export PYTHONFOLDER="cp310-cp310"
-            pip install --pre itk
           elif [[ ${{ matrix.python-version }} == "3.11" ]]; then
             export PYTHONFOLDER="cp311-cp311"
-            pip install --pre itk
+          elif [[ ${{ matrix.python-version }} == "3.12" ]]; then
+            export PYTHONFOLDER="cp312-cp312"
           fi
           if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
             export OSNAME="manylinux"
             export PLATFORM="x86_"
             pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
-          elif [[ ${{ matrix.os }} == "macos-12" ]]; then
+          elif [[ ${{ matrix.os }} == "macos-13" ]]; then
             export OSNAME="macosx"
             export PLATFORM="x86_"
             which python
@@ -401,10 +485,6 @@ jobs:
           if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
               path=`opengate_library_path.py -p site_packages`
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
-              path=`opengate_library_path.py -p libG4processes`
-              export LD_PRELOAD=${path}:${LD_PRELOAD}
-              path=`opengate_library_path.py -p libG4geometry`
-              export LD_PRELOAD=${path}:${LD_PRELOAD}
           fi
           if [[ ${{ matrix.os }} == "windows-latest" ]]; then
               path=`opengate_library_path.py -p site_packages`

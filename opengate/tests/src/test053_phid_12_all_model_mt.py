@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 from test053_phid_helpers2 import *
 
-if __name__ == "__main__":
+
+def main(dependency="test053_phid_10_all_ref_mt.py"):
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
     # bi213 83 213
@@ -24,7 +25,7 @@ if __name__ == "__main__":
         if os.name == "nt":
             test_ok(True)
             sys.exit(0)
-        cmd = "python " + str(paths.current / "test053_phid_10_all_ref_mt.py")
+        cmd = "python " + str(paths.current / dependency)
         r = os.system(cmd)
 
     sim = gate.Simulation()
@@ -53,13 +54,13 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # print stats
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     print(stats)
 
     # compare
     warning(f"check root files")
     root_ref = paths.output_ref / f"test053_{nuclide.nuclide}_10_ref.root"
-    root_model = sim.get_actor_user_info("phsp").output
+    root_model = sim.get_actor("phsp").get_output_path()
     is_ok = compare_root_energy(
         root_ref,
         root_model,
@@ -71,3 +72,7 @@ if __name__ == "__main__":
     )
 
     test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

@@ -19,37 +19,41 @@
 
 // Mutex that will be used by thread to write the output image
 G4Mutex SetPixelFluenceMutex = G4MUTEX_INITIALIZER;
+G4Mutex SetNbEventMutexFluence = G4MUTEX_INITIALIZER;
 
 GateFluenceActor::GateFluenceActor(py::dict &user_info)
     : GateVActor(user_info, true) {
-  // Create the image pointer
-  // (the size and allocation will be performed on the py side)
-  cpp_fluence_image = Image3DType::New();
+
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
-  fActions.insert("BeginOfEventAction");
-  fActions.insert("EndSimulationAction");
-  // translation
-  fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 
-void GateFluenceActor::ActorInitialize() {}
+void GateFluenceActor::InitializeUserInput(py::dict &user_info) {
+  // IMPORTANT: call the base class method
+  GateVActor::InitializeUserInput(user_info);
+  fTranslation = DictGetG4ThreeVector(user_info, "translation");
+}
 
-void GateFluenceActor::BeginOfRunAction(const G4Run *) {
-  Image3DType::RegionType region =
-      cpp_fluence_image->GetLargestPossibleRegion();
-  size_fluence = region.GetSize();
+void GateFluenceActor::InitializeCpp() {
+  GateVActor::InitializeCpp();
 
-  // Important ! The volume may have moved, so we re-attach each run
+  // Create the image pointer
+  // (the size and allocation will be performed on the py side)
+  cpp_fluence_image = Image3DType::New();
+}
+
+void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
+  G4AutoLock mutex(&SetNbEventMutexFluence);
+  NbOfEvent++;
+}
+
+void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
+  // Important ! The volume may have moved, so we (re-)attach each run
   AttachImageToVolume<Image3DType>(cpp_fluence_image, fPhysicalVolumeName,
-                                   fInitialTranslation);
-  // compute volume of a dose voxel
-  auto sp = cpp_fluence_image->GetSpacing();
-  fVoxelVolume = sp[0] * sp[1] * sp[2];
+                                   fTranslation);
+  NbOfEvent = 0;
 }
-
-void GateFluenceActor::BeginOfEventAction(const G4Event *event) {}
 
 void GateFluenceActor::SteppingAction(G4Step *step) {
   // same method to consider only entering tracks
@@ -82,10 +86,7 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
     // set value
     if (isInside) {
       G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
-      // add hit
       ImageAddValue<Image3DType>(cpp_fluence_image, index, w);
     } // else : outside the image
   }
 }
-
-void GateFluenceActor::EndSimulationAction() {}

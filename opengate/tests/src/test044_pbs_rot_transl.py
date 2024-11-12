@@ -8,17 +8,19 @@ from opengate.tests import utility
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs_rot_transl")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs_rot_transl", "test044_rot_transl"
+    )
 
     particle = "Carbon_"
     energy = "1440MeV_"
     beam_shape = "sourceShapePBS"
     folder = particle + energy + beam_shape
 
-    output_path = paths.output / "output_test044_rot_transl"
+    output_path = paths.output
     ref_path = paths.gate_output
 
-    # for for loop
+    # for loop
     start = -500
     spacing = 100
     end = -start + spacing
@@ -33,6 +35,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = paths.output
 
     # units
     km = gate.g4_units.km
@@ -107,8 +110,8 @@ if __name__ == "__main__":
     for i in planePositionsV:
         dose = sim.add_actor("DoseActor", "doseInYZ" + str(i))
         filename = "plane" + str(i) + "a.mhd"
-        dose.output = output_path / filename
-        dose.mother = "planeNr" + str(i) + "a"
+        dose.output_filename = filename
+        dose.attached_to = "planeNr" + str(i) + "a"
         dose.size = [250, 250, 1]
         dose.spacing = [0.4, 0.4, 2]
         dose.hit_type = "random"
@@ -127,7 +130,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
+    stat = sim.get_actor("Stats")
     print(stat)
 
     print("Start to analyze data")
@@ -142,7 +145,7 @@ if __name__ == "__main__":
     # )
     override = True
     output_pathV = [
-        sim.output.get_actor("doseInYZ" + str(i)).user_info.output
+        sim.get_actor("doseInYZ" + str(i)).edep.get_output_path()
         for i in planePositionsV
     ]
     if (not os.path.exists(output_path / "sigma_values.txt")) or override:
@@ -164,16 +167,16 @@ if __name__ == "__main__":
     for i in planePositionsV:
         print("\nDifference for EDEP plane " + str(i))
         # mhd_gate = "plane" + str(i) + "a.mhd"
-        mhd_gate = sim.output.get_actor("doseInYZ" + str(i)).user_info.output
+        mhd_gate = sim.get_actor("doseInYZ" + str(i)).edep.get_output_path()
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             utility.assert_images(
                 ref_path / mhd_ref,
                 output_path / mhd_gate,
                 stat,
-                axis="x",
                 tolerance=50,
-                ignore_value=0,
+                ignore_value_data2=0,
+                axis="x",
             )
             and is_ok
         )

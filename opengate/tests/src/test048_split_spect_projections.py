@@ -6,8 +6,10 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__)
-    paths.data = paths.data / "t048_split_spect_projections"
+    paths = utility.get_default_test_paths(
+        __file__, output_folder="test048_split_spect_projections"
+    )
+    paths.data = paths.data / "test048_split_spect_projections"
 
     # input of 4 heads projection images, with 3 energy windows
     input_filenames = []
@@ -25,7 +27,7 @@ if __name__ == "__main__":
     # write them
     e = 0
     output_filenames = []
-    output_filename = str(paths.output / "t048_projection.mhd")
+    output_filename = str(paths.output / "test048_projection.mhd")
     for o in outputs:
         f = output_filename.replace(".mhd", f"_{e}.mhd")
         itk.imwrite(o, f)
@@ -43,7 +45,7 @@ if __name__ == "__main__":
                 output_filenames[i],
                 None,
                 tolerance=1e-6,
-                ignore_value=0,
+                ignore_value_data2=0,
                 axis="x",
             )
             and is_ok

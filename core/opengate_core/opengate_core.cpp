@@ -4,6 +4,7 @@
    of the GNU Lesser General  Public Licence (LGPL)
    See LICENSE.md for further details
    -------------------------------------------------- */
+#define PYBIND11_NO_ASSERT_GIL_HELD_INCREF_DECREF
 
 #include "g4_bindings/GateConfiguration.h"
 #include <pybind11/pybind11.h>
@@ -205,6 +206,8 @@ void init_G4NavigationHistory(py::module &);
 
 void init_G4Navigator(py::module &);
 
+void init_G4AssemblyVolume(py::module &);
+
 // specific to python
 void init_G4PhysicsLists(py::module &);
 
@@ -284,6 +287,8 @@ void init_GateVFilter(py::module &);
 
 void init_GateParticleFilter(py::module &);
 
+void init_GatePrimaryScatterFilter(py::module &);
+
 void init_GateThresholdAttributeFilter(py::module &);
 
 void init_GateTrackCreatorProcessFilter(py::module &);
@@ -291,6 +296,8 @@ void init_GateTrackCreatorProcessFilter(py::module &);
 void init_GateKineticEnergyFilter(py::module &);
 
 void init_GateDoseActor(py::module &m);
+
+void init_GateTLEDoseActor(py::module &m);
 
 void init_GateFluenceActor(py::module &m);
 
@@ -347,6 +354,8 @@ void init_GateOptrComptPseudoTransportationActor(py::module &m);
 void init_GateBOptrBremSplittingActor(py::module &m);
 
 void init_G4VBiasingOperator(py::module &m);
+
+void init_GateVDigitizerWithOutputActor(py::module &);
 
 void init_GateHitsCollectionActor(py::module &);
 
@@ -475,6 +484,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4TouchableHistory(m);
   init_G4NavigationHistory(m);
   init_G4Navigator(m);
+  init_G4AssemblyVolume(m);
 
   init_G4PhysicsLists(m);
   init_G4EmParameters(m);
@@ -538,6 +548,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateActorManager(m);
   init_GateVFilter(m);
   init_GateParticleFilter(m);
+  init_GatePrimaryScatterFilter(m);
   init_GateTrackCreatorProcessFilter(m);
   init_GateKineticEnergyFilter(m);
   init_GateThresholdAttributeFilter(m);
@@ -561,6 +572,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateEventAction(m);
   init_GateTrackingAction(m);
   init_GateDoseActor(m);
+  init_GateTLEDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateSimulationStatisticsActor(m);
@@ -571,6 +583,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateLastVertexInteractionSplittingActor(m);
   init_GateHitsCollectionActor(m);
   init_GateMotionVolumeActor(m);
+  init_GateVDigitizerWithOutputActor(m);
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
   init_GateDigitizerBlurringActor(m);

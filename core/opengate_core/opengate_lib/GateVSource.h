@@ -18,6 +18,9 @@ namespace py = pybind11;
 class GateVSource {
 
 public:
+  typedef std::pair<double, double> TimeInterval;
+  typedef std::vector<TimeInterval> TimeIntervals;
+
   GateVSource();
 
   virtual ~GateVSource();
@@ -40,6 +43,9 @@ public:
   virtual void GeneratePrimaries(G4Event *event, double time);
 
   virtual void SetOrientationAccordingToMotherVolume();
+
+  virtual long GetExpectedNumberOfEvents(TimeIntervals time_intervals);
+  virtual long GetExpectedNumberOfEvents(TimeInterval time_interval);
 
   std::string fName;
   double fStartTime;

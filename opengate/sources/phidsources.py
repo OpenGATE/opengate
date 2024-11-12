@@ -213,7 +213,7 @@ class PhotonIonDecayIsomericTransitionExtractor:
         # go
         sim.run(start_new_process=True)
         # get output
-        self.gammas = sim.output.hook_log[0]  # gammas
+        self.gammas = sim.user_hook_log[0]  # gammas
 
     def _get_all_gamma_emissions(self, sim_engine):
         v = self.verbose
@@ -260,7 +260,7 @@ class PhotonIonDecayIsomericTransitionExtractor:
                 )
 
         # store output
-        sim_engine.hook_log.append(self.gammas)
+        sim_engine.user_hook_log.append(self.gammas)
 
     def _get_all_decay_channels(self):
         # get ion

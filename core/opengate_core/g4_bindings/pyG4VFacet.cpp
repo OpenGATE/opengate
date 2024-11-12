@@ -11,7 +11,7 @@ namespace py = pybind11;
 #include "G4VFacet.hh"
 
 void init_G4VFacet(py::module &m) {
-  py::class_<G4VFacet>(m, "G4VFacet");
+  py::class_<G4VFacet, std::unique_ptr<G4VFacet, py::nodelete>>(m, "G4VFacet");
   py::enum_<G4FacetVertexType>(m, "G4FacetVertexType")
       .value("ABSOLUTE", G4FacetVertexType::ABSOLUTE)
       .value("RELATIVE", G4FacetVertexType::RELATIVE);

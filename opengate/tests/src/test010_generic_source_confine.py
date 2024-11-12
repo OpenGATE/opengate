@@ -7,7 +7,7 @@ import pathlib
 import os
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, output_folder="test010_confine")
 
     # create the simulation
     sim = gate.Simulation()
@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.number_of_threads = 1
+    sim.output_dir = paths.output
 
     # some units
     mm = gate.g4_units.mm
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     """
        the source is confined in the given volume ('stuff'), it means that
        all particles will be emitted only in this volume.
-       The 'box' type is reqsimred to defined a larger volume that 'stuff'.
+       The 'box' type is required to define a larger volume than 'stuff'.
        It is done here by computing the bounding box
        Daughter volumes of 'stuff' do not count : no particle will be generated
        from 'stuff_inside'
@@ -100,35 +101,34 @@ if __name__ == "__main__":
     source.energy.mono = 1 * MeV
 
     # actors
-    sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test010-2.mhd"
-    # dose.output = paths.output_ref / 'test010-2-edep.mhd'
-    dose.mother = "waterbox"
-    dose.size = [100, 100, 100]
-    dose.spacing = [2 * mm, 1 * mm, 1 * mm]
+    dose_actor = sim.add_actor("DoseActor", "dose_actor")
+    dose_actor.output_filename = "test010-2.mhd"
+    # dose_actor.output_filename = paths.output_ref / 'test010-2-edep.mhd'
+    dose_actor.attached_to = waterbox
+    dose_actor.size = [100, 100, 100]
+    dose_actor.spacing = [2 * mm, 1 * mm, 1 * mm]
 
     # start simulation
     sim.run()
 
     # print
-    print("Simulation seed:", sim.output.current_random_seed)
+    print("Simulation seed:", sim.current_random_seed)
 
     # get results
-    stats = sim.output.get_actor("Stats")
-    dose = sim.output.get_actor("dose")
     print(stats)
-    # stats.write(paths.output_ref / 'test010_confine_stats.txt')
 
     # tests
     stats_ref = utility.read_stat_file(paths.output_ref / "test010_confine_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test010-2-edep.mhd",
-        paths.output / dose.user_info.output,
+        dose_actor.edep.get_output_path(),
         stats,
         tolerance=59,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
 
     utility.test_ok(is_ok)

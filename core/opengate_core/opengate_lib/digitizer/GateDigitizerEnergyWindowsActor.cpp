@@ -21,9 +21,11 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
   fActions.insert("EndOfRunAction");
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
+}
 
+void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   // options
-  fOutputFilename = DictGetStr(user_info, "output");
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
   fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
@@ -35,12 +37,12 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
     fChannelMin.push_back(DictGetDouble(d, "min"));
     fChannelMax.push_back(DictGetDouble(d, "max"));
   }
-
-  // init
-  fInputDigiCollection = nullptr;
 }
 
-GateDigitizerEnergyWindowsActor::~GateDigitizerEnergyWindowsActor() = default;
+void GateDigitizerEnergyWindowsActor::InitializeCpp() {
+  GateVActor::InitializeCpp();
+  fInputDigiCollection = nullptr;
+}
 
 // Called when the simulation start
 void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
@@ -57,7 +59,13 @@ void GateDigitizerEnergyWindowsActor::StartSimulationAction() {
   // Create the output digi collections (one for each energy window channel)
   for (const auto &name : fChannelNames) {
     auto *hc = hcm->NewDigiCollection(name);
-    hc->SetFilenameAndInitRoot(fOutputFilename);
+    std::string outputPath;
+    if (!GetWriteToDisk(fOutputNameRoot)) {
+      outputPath = "";
+    } else {
+      outputPath = GetOutputPath(fOutputNameRoot);
+    }
+    hc->SetFilenameAndInitRoot(outputPath);
     // hc->InitDigiAttributesFromNames(names);
     hc->InitDigiAttributesFromCopy(fInputDigiCollection,
                                    fUserSkipDigiAttributeNames);

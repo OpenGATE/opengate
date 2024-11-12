@@ -18,6 +18,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.visu_type = "vrml"
     sim.random_seed = 321654987
+    sim.output_dir = test43.paths.output
 
     # units
     nm = gate.g4_units.nm
@@ -60,8 +61,8 @@ if __name__ == "__main__":
 
     # arf actor
     arf = sim.add_actor("ARFActor", "arf")
-    arf.mother = detPlane.name
-    arf.output = test43.paths.output / "test043_projection_garf.mhd"
+    arf.attached_to = detPlane.name
+    arf.output_filename = "test043_projection_garf.mhd"
     arf.batch_size = 2e5
     arf.image_size = [128, 128]
     arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
@@ -76,8 +77,8 @@ if __name__ == "__main__":
     # with set "cpu" to avoid mps errors
     arf.gpu_mode = utility.get_gpu_mode_for_tests()
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "stats")
+    stat.track_types_flag = True
 
     # start simulation to check if ok with start_new_process
     s1a = s1.activity
@@ -95,23 +96,20 @@ if __name__ == "__main__":
     sim.run(False)
 
     # print results at the end
-    output = sim.output
-    stat = output.get_actor("stats")
     print(stat)
 
     # print info
     print("")
-    arf = output.get_actor("arf")
-    img = itk.imread(str(arf.user_info.output))
+    img = itk.imread(str(arf.get_output_path()))
     # set the first channel to the same channel (spectrum) than the analog
     img[0, :] = img[1, :] + img[2, :]
     print(f"Number of batch: {arf.batch_nb}")
     print(f"Number of detected particles: {arf.detected_particles}")
-    filename1 = str(arf.user_info.output).replace(".mhd", "_0.mhd")
+    filename1 = str(arf.get_output_path()).replace(".mhd", "_0.mhd")
     itk.imwrite(img, filename1)
 
     # high stat
-    filename2 = str(arf.user_info.output).replace(".mhd", "_hs.mhd")
+    filename2 = str(arf.get_output_path()).replace(".mhd", "_hs.mhd")
     scale = 4e8 * Bq / activity
     print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
     img2 = gate.image.scale_itk_image(img, scale)
@@ -123,7 +121,7 @@ if __name__ == "__main__":
     gate.exception.warning("Tests stats file")
     stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
     # dont compare steps of course
-    stats_ref.counts.step_count = stat.counts.step_count
+    stats_ref.counts.steps = stat.counts.steps
     is_ok = utility.assert_stats(stat, stats_ref, 0.01)
 
     print()
@@ -134,7 +132,7 @@ if __name__ == "__main__":
             filename1,
             stat,
             tolerance=100,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
             sum_tolerance=20,
         )
@@ -149,7 +147,7 @@ if __name__ == "__main__":
             filename2,
             stat,
             tolerance=52,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
         )
         and is_ok

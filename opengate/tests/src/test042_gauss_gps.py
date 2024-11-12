@@ -6,7 +6,9 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test042_gauss_gps")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test042_gauss_gps", "test042"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -16,6 +18,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -78,38 +81,37 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInXZ")
-    dose.output = paths.output / "test042-lateral_xz.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = paths.output / "test042-lateral_xz.mhd"
+    dose.attached_to = phantom.name
     dose.size = [250, 1, 250]
     dose.spacing = [0.4, 100, 0.4]
     dose.hit_type = "random"
 
     dose = sim.add_actor("DoseActor", "doseInXY")
-    dose.output = paths.output / "test042-lateral_xy.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = paths.output / "test042-lateral_xy.mhd"
+    dose.attached_to = phantom.name
     dose.size = [250, 250, 1]
     dose.spacing = [0.4, 0.4, 100]
     dose.hit_type = "random"
 
     dose = sim.add_actor("DoseActor", "doseInYZ")
-    dose.output = paths.output / "test042-lateral_yz.mhd"
-    dose.mother = phantom.name
+    dose.output_filename = paths.output / "test042-lateral_yz.mhd"
+    dose.attached_to = phantom.name
     dose.size = [1, 250, 250]
     dose.spacing = [100, 0.4, 0.4]
     dose.hit_type = "random"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
-    print(stat)
+    print(stats)
 
-    dose = sim.output.get_actor("doseInXZ")
+    dose = sim.get_actor("doseInXZ")
     print(dose)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -117,17 +119,17 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Tests stats file")
     stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
-    is_ok = utility.assert_stats(stat, stats_ref, 0.14)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.14)
 
     print()
     gate.exception.warning("Difference for EDEP XZ")
     is_ok = (
         utility.assert_images(
             paths.gate_output / "lateral_xz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.output.get_actor("doseInXZ").user_info.output,
-            stat,
+            paths.output / sim.get_actor("doseInXZ").get_output_path("edep"),
+            stats,
             tolerance=10,
-            ignore_value=0,
+            ignore_value_data2=0,
         )
         and is_ok
     )
@@ -137,10 +139,10 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "lateral_xy_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.output.get_actor("doseInXY").user_info.output,
-            stat,
+            paths.output / sim.get_actor("doseInXY").get_output_path("edep"),
+            stats,
             tolerance=10,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
         )
         and is_ok
@@ -151,10 +153,10 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.gate_output / "lateral_yz_Protons_40MeV_sourceShapeGaussian-Edep.mhd",
-            paths.output / sim.output.get_actor("doseInYZ").user_info.output,
-            stat,
+            paths.output / sim.get_actor("doseInYZ").get_output_path("edep"),
+            stats,
             tolerance=30,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="y",
         )
         and is_ok

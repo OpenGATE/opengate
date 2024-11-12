@@ -8,7 +8,7 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "")
+    paths = utility.get_default_test_paths(__file__, output_folder="test051")
 
     """
     Check the options in DigitizerAdderActor
@@ -34,6 +34,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # world size
     world = sim.world
@@ -48,8 +49,8 @@ if __name__ == "__main__":
 
     # spect digitizer
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits")
-    hc.mother = crystal.name
-    hc.output = ""  # No output
+    hc.attached_to = crystal.name
+    hc.output_filename = ""  # No output
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -57,11 +58,11 @@ if __name__ == "__main__":
         "GlobalTime",
     ]
     sc = sim.add_actor("DigitizerAdderActor", f"Singles")
-    sc.mother = hc.mother
+    sc.attached_to = hc.attached_to
     sc.input_digi_collection = hc.name
     sc.time_difference = True
     sc.number_of_hits = True
-    sc.output = paths.output / "test051_singles.root"
+    sc.output_filename = "test051_singles.root"
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -79,9 +80,9 @@ if __name__ == "__main__":
     s1.activity = 1e4 * Bq / sim.number_of_threads
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
-    s.output = paths.output / "test051_stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
+    stats.output_filename = "test051_stats.txt"
 
     # go
     sim.run(start_new_process=True)
@@ -89,7 +90,6 @@ if __name__ == "__main__":
     # check stats
     print()
     gate.exception.warning("Check stats")
-    stats = sim.output.get_actor("stats")
     stats_ref = utility.read_stat_file(paths.output_ref / "test051_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     root1, n1 = utility.open_root_as_np(
         paths.output_ref / "test051_singles.root", "Singles"
     )
-    root2, n2 = utility.open_root_as_np(sc.output, "Singles")
+    root2, n2 = utility.open_root_as_np(sc.get_output_path(), "Singles")
 
     # time difference
     td1 = root1["TimeDifference"]

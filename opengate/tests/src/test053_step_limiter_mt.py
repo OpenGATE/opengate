@@ -123,25 +123,23 @@ def simulate(number_of_threads=1, start_new_process=False):
     source.n = 1e1
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = False
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = False
 
     # se = gate.SimulationEngine(sim)
     # Set the hook function user_fct_after_init
     # to the function defined below
     sim.user_hook_after_init = check_user_limit
     sim.run(start_new_process=start_new_process)
-    output = sim.output
 
     # get results
-    stats = output.get_actor("Stats")
     print("**** STATS ****")
     print(stats)
     print("track type", stats.counts.track_types)
     print("**** STATS END ****")
 
     print("Checking step limits:")
-    for item in output.hook_log:
+    for item in sim.user_hook_log:
         print(f"Volume {item[0]}:")
         value_dict = item[1]
         print(f"Requested max_step_size: {requested_stepsizes[item[0]]}")
@@ -184,7 +182,7 @@ def check_user_limit(simulation_engine):
                 min_ekine = volume.g4_region.GetUserLimits().GetUserMinEkine(
                     g4.G4Track()
                 )
-                simulation_engine.hook_log.append(
+                simulation_engine.user_hook_log.append(
                     (
                         volume_name,
                         {"max_step_size": max_step_size, "min_ekine": min_ekine},

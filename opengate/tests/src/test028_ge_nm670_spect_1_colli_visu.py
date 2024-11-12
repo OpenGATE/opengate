@@ -6,7 +6,9 @@ import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test028_ge_nm670_spect")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test028_ge_nm670_spect", output_folder="test028"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -18,6 +20,7 @@ if __name__ == "__main__":
     sim.visu_filename = "geant4VisuFile.wrl"
     sim.number_of_threads = 1
     sim.check_volumes_overlap = False
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -32,7 +35,7 @@ if __name__ == "__main__":
     sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect, crystal = gate_spect.add_spect_head(sim, "spect", debug=True)
+    spect, colli, crystal = gate_spect.add_spect_head(sim, "spect", debug=True)
     psd = 6.11 * cm
     spect.translation = [0, 0, -(20 * cm + psd)]
 
@@ -89,10 +92,10 @@ if __name__ == "__main__":
 
     # stat
     gate.exception.warning("Compare stats")
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1
     stats_ref = utility.read_stat_file(paths.gate_output / "stat1.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
 

@@ -1,459 +1,414 @@
-import uuid
 from box import Box
-from datetime import datetime
-import uproot
-import numpy as np
-import time
 import platform
 from anytree import Node, RenderTree
 import opengate_core as g4
 from anytree import Node, RenderTree
 from .base import ActorBase
-from ..exception import fatal
-from ..geometry.utility import rot_np_as_g4, vec_np_as_g4, vec_g4_as_np
-from ..utility import g4_units
-from ..userinfo import UserInfo
+from ..utility import g4_units, g4_best_unit_tuple
+from .actoroutput import ActorOutputBase
+from ..serialization import dump_json
+from ..exception import warning
+from ..base import process_cls
 
 
-class SimulationStatisticsActor(g4.GateSimulationStatisticsActor, ActorBase):
+def _setter_hook_stats_actor_output_filename(self, output_filename):
+    # By default, write_to_disk is False.
+    # However, if user actively sets the output_filename
+    # s/he most likely wants to write to disk also
+    if output_filename != "" and output_filename is not None:
+        self.write_to_disk = True
+    return output_filename
+
+
+class ActorOutputStatisticsActor(ActorOutputBase):
+    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
+
+    # hints for IDE
+    encoder: str
+    output_filename: str
+    write_to_disk: bool
+
+    user_info_defaults = {
+        "encoder": (
+            "json",
+            {
+                "doc": "How should the output be encoded?",
+                "allowed_values": ("json", "legacy"),
+            },
+        ),
+        "output_filename": (
+            "auto",
+            {
+                "doc": "Filename for the data represented by this actor output. "
+                "Relative paths and filenames are taken "
+                "relative to the global simulation output folder "
+                "set via the Simulation.output_dir option. ",
+                "setter_hook": _setter_hook_stats_actor_output_filename,
+            },
+        ),
+        "write_to_disk": (
+            False,
+            {
+                "doc": "Should the output be written to disk, or only kept in memory? ",
+            },
+        ),
+    }
+
+    default_suffix = "json"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # predefine the merged_data
+        self.merged_data = Box()
+        self.merged_data.runs = 0
+        self.merged_data.events = 0
+        self.merged_data.tracks = 0
+        self.merged_data.steps = 0
+        self.merged_data.duration = 0
+        self.merged_data.start_time = 0
+        self.merged_data.stop_time = 0
+        self.merged_data.sim_start_time = 0
+        self.merged_data.sim_stop_time = 0
+        self.merged_data.init = 0
+        self.merged_data.track_types = {}
+        self.merged_data.nb_threads = 1
+
+    @property
+    def pps(self):
+        if self.merged_data.duration != 0:
+            return int(
+                self.merged_data.events / (self.merged_data.duration / g4_units.s)
+            )
+        else:
+            return 0
+
+    @property
+    def tps(self):
+        if self.merged_data.duration != 0:
+            return int(
+                self.merged_data.tracks / (self.merged_data.duration / g4_units.s)
+            )
+        else:
+            return 0
+
+    @property
+    def sps(self):
+        if self.merged_data.duration != 0:
+            return int(
+                self.merged_data.steps / (self.merged_data.duration / g4_units.s)
+            )
+        else:
+            return 0
+
+    def store_data(self, data, **kwargs):
+        self.merged_data.update(data)
+
+    def get_data(self, **kwargs):
+        if "which" in kwargs and kwargs["which"] != "merged":
+            warning(
+                f"The statistics actor output only stores merged data currently. "
+                f"The which={kwargs['which']} you provided will be ignored. "
+            )
+        # the statistics actor currently only handles merged data, so we return it
+        # no input variable 'which' as in other output classes
+        return self.merged_data
+
+    def get_processed_output(self):
+        d = {}
+        d["runs"] = {"value": self.merged_data.runs, "unit": None}
+        d["events"] = {"value": self.merged_data.events, "unit": None}
+        d["tracks"] = {"value": self.merged_data.tracks, "unit": None}
+        d["steps"] = {"value": self.merged_data.steps, "unit": None}
+        val, unit = g4_best_unit_tuple(self.merged_data.init, "Time")
+        d["init"] = {
+            "value": val,
+            "unit": unit,
+        }
+        val, unit = g4_best_unit_tuple(self.merged_data.duration, "Time")
+        d["duration"] = {
+            "value": val,
+            "unit": unit,
+        }
+        d["pps"] = {"value": self.pps, "unit": None}
+        d["tps"] = {"value": self.tps, "unit": None}
+        d["sps"] = {"value": self.sps, "unit": None}
+        d["start_time"] = {
+            "value": self.merged_data.start_time,
+            "unit": None,
+        }
+        d["stop_time"] = {
+            "value": self.merged_data.stop_time,
+            "unit": None,
+        }
+        val, unit = g4_best_unit_tuple(self.merged_data.sim_start_time, "Time")
+        d["sim_start_time"] = {
+            "value": val,
+            "unit": unit,
+        }
+        val, unit = g4_best_unit_tuple(self.merged_data.sim_stop_time, "Time")
+        d["sim_stop_time"] = {
+            "value": val,
+            "unit": unit,
+        }
+        d["threads"] = {"value": self.merged_data.nb_threads, "unit": None}
+        d["arch"] = {"value": platform.system(), "unit": None}
+        d["python"] = {"value": platform.python_version(), "unit": None}
+        d["track_types"] = {"value": self.merged_data.track_types, "unit": None}
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            if k == "track_types":
+                if len(v["value"]) > 0:
+                    s += "track_types\n"
+                    for t, n in v["value"].items():
+                        s += f"{' ' * 24}{t}: {n}\n"
+            else:
+                if v["unit"] is None:
+                    unit = ""
+                else:
+                    unit = str(v["unit"])
+                s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
+        # remove last line break
+        return s.rstrip("\n")
+
+    def write_data(self, **kwargs):
+        """Override virtual method from base class."""
+        with open(self.get_output_path(which="merged"), "w+") as f:
+            if self.encoder == "json":
+                dump_json(self.get_processed_output(), f, indent=4)
+            else:
+                f.write(self.__str__())
+
+    def write_data_if_requested(self, **kwargs):
+        if self.write_to_disk is True:
+            self.write_data(**kwargs)
+
+
+class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
     """
     Store statistics about a simulation run.
     """
 
-    type_name = "SimulationStatisticsActor"
+    # hints for IDE
+    track_types_flag: bool
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.track_types_flag = False
-        user_info.output = ""
+    user_info_defaults = {
+        "track_types_flag": (
+            False,
+            {
+                "doc": "Should the type of tracks be counted?",
+            },
+        ),
+    }
 
-    def __init__(self, user_info=None):
-        # need to initialize (sometimes it is read from disk)
-        self.simulation = None
-        # user_info can be null when create empty actor (that read file)
-        if not user_info:
-            user_info = UserInfo("Actor", self.type_name, name=uuid.uuid4().__str__())
-        ActorBase.__init__(self, user_info)
-        g4.GateSimulationStatisticsActor.__init__(self, user_info.__dict__)
-        actions = {"EndSimulationAction"}
-        self.AddActions(actions)
-        # actions are also set from the cpp side
-        # empty results for the moment
-        self.counts = Box()
-        self.counts.run_count = 0
-        self.counts.event_count = 0
-        self.counts.track_count = 0
-        self.counts.step_count = 0
-        self.counts.duration = 0
-        self.counts.start_time = 0
-        self.counts.stop_time = 0
-        self.counts.init = 0
-        self.counts.track_types = {}
-        self.nb_thread = 1
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputStatisticsActor, "stats")
+        self.__initcpp__()
 
-    @property
-    def pps(self):
-        sec = g4_units.s
-        if self.counts.duration != 0:
-            return self.counts.event_count / self.counts.duration * sec
-        return 0
-
-    @property
-    def tps(self):
-        sec = g4_units.s
-        if self.counts.duration != 0:
-            return self.counts.track_count / self.counts.duration * sec
-        return 0
-
-    @property
-    def sps(self):
-        sec = g4_units.s
-        if self.counts.duration != 0:
-            return self.counts.step_count / self.counts.duration * sec
-        return 0
-
-    @property
-    def simu_start_time(self):
-        if not self.simulation is None:
-            sim_start = self.simulation.run_timing_intervals[0][0]
-        else:
-            sim_start = 0
-        return sim_start
-
-    @property
-    def simu_end_time(self):
-        if not self.simulation is None:
-            sim_end = self.simulation.run_timing_intervals[-1][1]
-        else:
-            sim_end = 0
-        return sim_end
+    def __initcpp__(self):
+        g4.GateSimulationStatisticsActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
 
     def __str__(self):
-        if not self.counts:
-            return ""
-        sec = g4_units.second
-        s = (
-            f"Runs      {self.counts.run_count}\n"
-            f"Events    {self.counts.event_count}\n"
-            f"Tracks    {self.counts.track_count}\n"
-            f"Step      {self.counts.step_count}\n"
-            f'Init      {self.counts.init / sec} \t{g4.G4BestUnit(self.counts.init, "Time")}\n'
-            f'Duration  {self.counts.duration / sec} \t{g4.G4BestUnit(self.counts.duration, "Time")}\n'
-            f"PPS       {self.pps:.0f}\n"
-            f"TPS       {self.tps:.0f}\n"
-            f"SPS       {self.sps:.0f}\n"
-            f"Start     {self.counts.start_time}\n"
-            f"Stop      {self.counts.stop_time}\n"
-            f'Sim start {g4.G4BestUnit(self.simu_start_time, "Time")}\n'
-            f'Sim end   {g4.G4BestUnit(self.simu_end_time, "Time")}\n'
-            f"Threads   {self.nb_thread}\n"
-            f"Arch      {platform.system()}\n"
-            f"Python    {platform.python_version()}"
-        )
-        if self.user_info.track_types_flag:
-            s += f"\n" f"Track types: {self.counts.track_types}"
+        s = self.user_output["stats"].__str__()
         return s
+
+    @property
+    def counts(self):
+        return self.user_output.stats.merged_data
+
+    def store_output_data(self, output_name, run_index, *data):
+        raise NotImplementedError
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def StartSimulationAction(self):
         g4.GateSimulationStatisticsActor.StartSimulationAction(self)
-        self.nb_thread = self.simulation.user_info.number_of_threads
+        self.user_output.stats.merged_data.nb_threads = (
+            self.simulation.number_of_threads
+        )
 
     def EndSimulationAction(self):
         g4.GateSimulationStatisticsActor.EndSimulationAction(self)
-        self.counts = Box(self.GetCounts())
-        # write the file if an output filename was set
-        if self.user_info.output != "":
-            self.write(self.user_info.output)
+        self.user_output.stats.store_data(self.GetCounts())
 
-    """
-        It is feasible to get callback every Run, Event, Track, Step in the python side.
-        However, it is VERY time consuming. For SteppingAction, expect large performance drop.
-        It could be however useful for prototyping or tests.
+        if self.simulation is not None:
+            sim_start = self.simulation.run_timing_intervals[0][0]
+        else:
+            sim_start = 0
 
-        it requires "trampoline functions" on the cpp side.
+        if self.simulation is not None:
+            sim_stop = self.simulation.run_timing_intervals[-1][1]
+        else:
+            sim_stop = 0
 
-        # feasible but very slow !
-        def SteppingAction(self, step, touchable):
-            g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
-            do_something()
-    """
-
-    def write(self, filename):
-        """
-        Attempt to be mostly compatible to previous Gate stat output file
-        """
-        sec = g4_units.s
-        f = open(filename, "w+")
-        s = f"# NumberOfRun    = {self.counts.run_count}\n"
-        s += f"# NumberOfEvents = {self.counts.event_count}\n"
-        s += f"# NumberOfTracks = {self.counts.track_count}\n"
-        s += f"# NumberOfSteps  = {self.counts.step_count}\n"
-        s += f"# NumberOfGeometricalSteps  = ?\n"
-        s += f"# NumberOfPhysicalSteps     = ?\n"
-        s += f"# ElapsedTime           = {self.counts.duration / sec + self.counts.init / sec}\n"
-        s += f"# ElapsedTimeWoInit     = {self.counts.duration / sec}\n"
-        s += (
-            f'# StartDate             = {g4.G4BestUnit(self.simu_start_time, "Time")}\n'
+        self.user_output.stats.store_data(
+            {"sim_start": sim_start, "sim_stop": sim_stop}
         )
-        s += f'# EndDate               = {g4.G4BestUnit(self.simu_end_time, "Time")}\n'
-        s += f"# PPS (Primary per sec)      = {self.pps:.0f}\n"
-        s += f"# TPS (Track per sec)        = {self.tps:.0f}\n"
-        s += f"# SPS (Step per sec)         = {self.sps:.0f}\n"
-        s += f"# Threads                    = {self.nb_thread}\n"
-        s += f"# Date                       = {datetime.now()}\n"
-        s += f"# Arch                       = {platform.system()}\n"
-        s += f"# Python                     = {platform.python_version()}\n"
-        if self.user_info.track_types_flag:
-            s += f"# Track types:\n"
-            for t in self.counts.track_types:
-                s += f"# {t} = {self.counts.track_types[t]}\n"
-        f.write(s)
-
-
-class MotionVolumeActor(g4.GateMotionVolumeActor, ActorBase):
-    """
-    Every run, move a volume according to the given translations and rotations.
-    """
-
-    type_name = "MotionVolumeActor"
-
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.translations = []
-        user_info.rotations = []
-        user_info.priority = 10
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        # check rotations and translation
-        u = user_info
-        if len(u.translations) != len(u.rotations):
-            fatal(
-                f"Error, translations and rotations must have the same length, while it is"
-                f" {len(u.translations)} and {len(u.rotations)}"
-            )
-        g4.GateMotionVolumeActor.__init__(self, user_info.__dict__)
-        actions = {"StartSimulationAction", "EndSimulationAction"}
-        self.AddActions(actions)
-        self.g4_rotations = []
-        self.g4_translations = []
-
-    def __str__(self):
-        s = f"MotionVolumeActor {self.user_info.name}"
-        return s
-
-    def close(self):
-        ActorBase.close(self)
-        self.g4_rotations = []
-        self.g4_translations = []
-
-    def initialize(self, volume_engine=None):
-        super().initialize(volume_engine)
-        # check translations and rotations
-        rt = self.simulation.run_timing_intervals
-        ui = self.user_info
-        if len(ui.translations) != len(rt):
-            fatal(
-                f"Error in actor {ui}. "
-                f"Translations must be the same length than the number of runs. "
-                f"While it is {len(ui.translations)} instead of {len(rt)}"
-            )
-        if len(ui.rotations) != len(rt):
-            fatal(
-                f"Error in actor {ui}. "
-                f"Rotations must be the same length than the number of runs. "
-                f"While it is {len(ui.rotations)} instead of {len(rt)}"
-            )
-        # convert rotation matrix and translation to g4
-        for rot in ui.rotations:
-            r = rot_np_as_g4(rot)
-            self.g4_rotations.append(r)
-        for tr in ui.translations:
-            t = vec_np_as_g4(tr)
-            self.g4_translations.append(t)
-        # send rotations and translations to cpp
-        self.SetTranslations(self.g4_translations)
-        self.SetRotations(self.g4_rotations)
-
-
-class SourceInfoActor(g4.GateVActor, ActorBase):
-    """
-    TODO
-    """
-
-    type_name = "SourceInfoActor"
-
-    def __init__(self, name):
-        g4.GateVActor.__init__(self, self.type_name)
-        ActorBase.__init__(self, name)
-        # default actions
-        self.actions = ["BeginOfRunAction", "EndOfRunAction", "BeginOfEventAction"]
-        # parameters
-        self.user_info.filename = None
-        self.tree = None
-        self.file = None
-        # FIXME --> do it by batch
-        self.positions = []
-
-    def initialize(self, volume_engine=None):
-        super().initialize(volume_engine)
-        if not self.user_info.filename:
-            fatal(f"Provide a filename to the actor {self.user_info.physics_list_name}")
-        # create the root tree
-        self.file = uproot.recreate(self.user_info.filename)
-        self.file[self.user_info.physics_list_name] = uproot.newtree(
-            {
-                "position_x": np.float64,
-                "position_y": np.float64,
-                "position_z": np.float64,
-            }
+        self.user_output.stats.merged_data.sim_start_time = (
+            self.simulation.run_timing_intervals[0][0]
         )
-        self.tree = self.file[self.user_info.physics_list_name]
-        print(self.tree)
-
-    def BeginOfRunAction(self, run):
-        print("Start run SourceInfoActor")
-
-    def EndOfRunAction(self, run):
-        print("End run SourceInfoActor")
-        print(len(self.positions))
-        self.positions = np.array(self.positions)
-        self.tree.extend(
-            {
-                "position_x": self.positions[:, 0],
-                "position_y": self.positions[:, 1],
-                "position_z": self.positions[:, 2],
-            }
+        self.user_output.stats.merged_data.sim_stop_time = (
+            self.simulation.run_timing_intervals[-1][1]
         )
-
-    def BeginOfEventAction(self, event):
-        p = event.GetPrimaryVertex(0).GetPosition()
-        # print('BeginOfEventAction')
-        self.positions.append(vec_g4_as_np(p))
-
-
-class TestActor(g4.GateVActor, ActorBase):
-    """
-    Test actor: only py side (no cpp)
-    For prototyping (slow)
-    """
-
-    type_name = "TestActor"
-
-    @staticmethod
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.track_types_flag = False
-
-    def __init__(self, user_info=None):
-        # user_info can be null when create empty actor (that read file)
-        if not user_info:
-            user_info = UserInfo("Actor", self.type_name, name=uuid.uuid4().__str__())
-        ActorBase.__init__(self, user_info)
-        g4.GateVActor.__init__(self, user_info.__dict__)
-        actions = {
-            "StartSimulationAction",
-            "EndSimulationAction",
-            "BeginOfEventAction",
-            "EndOfRunAction",
-            "PreUserTrackingAction",
-            "SteppingAction",
-        }
-        self.AddActions(actions)
-        # empty results for the moment
-        self.run_count = 0
-        self.event_count = 0
-        self.track_count = 0
-        self.step_count = 0
-        self.duration = 0
-        self.track_types = {}
-        self.start_time = 0
-        self.end_time = 0
-
-    @property
-    def pps(self):
-        sec = g4_units.s
-        if self.duration != 0:
-            return self.event_count / self.duration * sec
-        return 0
-
-    @property
-    def tps(self):
-        sec = g4_units.s
-        if self.duration != 0:
-            return self.track_count / self.duration * sec
-        return 0
-
-    @property
-    def sps(self):
-        sec = g4_units.s
-        if self.duration != 0:
-            return self.step_count / self.duration * sec
-        return 0
-
-    def __str__(self):
-        if not self:
-            return ""
-        s = (
-            f"Runs     {self.run_count}\n"
-            f"Events   {self.event_count}\n"
-            f"Tracks   {self.track_count}\n"
-            f"Step     {self.step_count}\n"
-            f'Duration {g4.G4BestUnit(self.duration, "Time")}\n'
-            f"PPS      {self.pps:.0f}\n"
-            f"TPS      {self.tps:.0f}\n"
-            f"SPS      {self.sps:.0f}"
+        self.user_output.stats.merged_data.nb_threads = (
+            self.simulation.number_of_threads
         )
-        if self.user_info.track_types_flag:
-            s += f"\n" f"Track types: {self.track_types}"
-        return s
+        self.user_output.stats.write_data_if_requested()
 
-    def StartSimulationAction(self):
-        self.start_time = time.time()
 
-    def BeginOfEventAction(self, event):
-        pass
+"""
+    It is feasible to get callback every Run, Event, Track, Step in the python side.
+    However, it is VERY time consuming. For SteppingAction, expect large performance drop.
+    It could be however useful for prototyping or tests.
 
-    def PreUserTrackingAction(self, track):
-        self.track_count += 1
-        if self.user_info.track_types_flag:
-            p = track.GetParticleName()
-            try:
-                self.track_types[p] += 1
-            except:
-                self.track_types[p] = 1
+    it requires "trampoline functions" on the cpp side.
 
-    def EndOfRunAction(self, run):
-        self.run_count += 1
-        self.event_count += run.GetNumberOfEvent()
-
+    # it is feasible but very slow !
     def SteppingAction(self, step, touchable):
-        self.step_count += 1
+        g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
+        do_something()
+"""
+
+
+class KillActor(ActorBase, g4.GateKillActor):
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.number_of_killed_particles = 0
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateKillActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"StartSimulationAction", "EndSimulationAction", "SteppingAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
     def EndSimulationAction(self):
-        self.end_time = time.time()
-        sec = g4_units.s
-        self.duration = (self.end_time - self.start_time) * sec
-
-    def write(self, filename):
-        sec = g4_units.s
-        f = open(filename, "w+")
-        s = f"# NumberOfRun    = {self.run_count}\n"
-        s += f"# NumberOfEvents = {self.event_count}\n"
-        s += f"# NumberOfTracks = {self.track_count}\n"
-        s += f"# NumberOfSteps  = {self.step_count}\n"
-        s += f"# NumberOfGeometricalSteps  = ?\n"
-        s += f"# NumberOfPhysicalSteps     = ?\n"
-        s += f"# ElapsedTime           = {self.duration / sec}\n"
-        s += f"# ElapsedTimeWoInit     = {self.duration / sec}\n"
-        s += f"# StartDate             = ?\n"
-        s += f"# EndDate               = ?\n"
-        s += f"# PPS (Primary per sec)      = {self.pps:.0f}\n"
-        s += f"# TPS (Track per sec)        = {self.tps:.0f}\n"
-        s += f"# SPS (Step per sec)         = {self.sps:.0f}\n"
-        if self.user_info.track_types_flag:
-            s += f"# Track types:\n"
-            for t in self.track_types:
-                s += f"# {t} = {self.track_types[t]}\n"
-        f.write(s)
+        self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
-class KillActor(g4.GateKillActor, ActorBase):
-    type_name = "KillActor"
-
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateKillActor.__init__(self, user_info.__dict__)
+def _setter_hook_particles(self, value):
+    if isinstance(value, str):
+        return [value]
+    else:
+        return list(value)
 
 
-class ComptSplittingActor(g4.GateOptrComptSplittingActor, ActorBase):
-    type_name = "ComptSplittingActor"
+class SplittingActorBase(ActorBase):
+    # hints for IDE
+    splitting_factor: int
+    bias_primary_only: bool
+    bias_only_once: bool
+    particles: list
 
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        deg = g4_units.deg
-        user_info.splitting_factor = 1
-        user_info.weight_threshold = 0
-        user_info.bias_primary_only = True
-        user_info.min_weight_of_particle = 0
-        user_info.bias_only_once = True
-        user_info.processes = ["compt"]
-        user_info.russian_roulette = False
-        user_info.rotation_vector_director = False
-        user_info.vector_director = [0, 0, 1]
-        user_info.max_theta = 90 * deg
+    user_info_defaults = {
+        "splitting_factor": (
+            1,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "bias_primary_only": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "bias_only_once": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "particles": (
+            [
+                "all",
+            ],
+            {
+                "doc": "FIXME",
+                "setter_hook": _setter_hook_particles,
+            },
+        ),
+    }
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateOptrComptSplittingActor.__init__(self, user_info.__dict__)
+
+class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
+    # hints for IDE
+    weight_threshold: float
+    min_weight_of_particle: float
+    russian_roulette: bool
+    rotation_vector_director: bool
+    vector_director: list
+    max_theta: float
+
+    user_info_defaults = {
+        "weight_threshold": (
+            0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "min_weight_of_particle": (
+            0,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "russian_roulette": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "rotation_vector_director": (
+            False,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "vector_director": (
+            [0, 0, 1],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "max_theta": (
+            90 * g4_units.deg,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
+    processes = ("compt",)
+
+    def __init__(self, *args, **kwargs):
+        SplittingActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
+
+    def initialize(self):
+        SplittingActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
 
-class LastVertexInteractionSplittingActor(g4.GateLastVertexInteractionSplittingActor, ActorBase):
+class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteractionSplittingActor):
     type_name = "LastVertexInteractionSplittingActor"
    
     def set_default_user_info(user_info):
@@ -487,76 +442,37 @@ class LastVertexInteractionSplittingActor(g4.GateLastVertexInteractionSplittingA
         self.fListOfVolumeAncestor = self.list_of_volume_name
         print(self.fListOfVolumeAncestor)
 
+class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+    # hints for IDE
+    processes: list
 
-class ComptPseudoTransportationActor(
-    g4.GateOptrComptPseudoTransportationActor, ActorBase
-):
-    type_name = "ComptPseudoTransportationActor"
+    user_info_defaults = {
+        "processes": (
+            ["eBrem"],
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
 
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        deg = g4_units.deg
-        user_info.attach_to_logical_holder = True
-        user_info.splitting_factor = 1
-        user_info.relative_min_weight_of_particle = np.inf
-        user_info.gamma_processes = ["compt", "phot", "conv","Rayl"]
-        user_info.electron_processes = ["eBrem"]
-        user_info.positron_processes = ["annihil", "eBrem"]
-        user_info.russian_roulette_for_angle = False
-        user_info.rotation_vector_director = False
-        user_info.vector_director = [0, 0, 1]
-        user_info.max_theta = 90 * deg
-        user_info.russian_roulette_for_weights = False
+    processes = ("eBrem",)
 
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateOptrComptPseudoTransportationActor.__init__(self, user_info.__dict__)
+    def __init__(self, *args, **kwargs):
+        SplittingActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
 
+    def __initcpp__(self):
+        g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})
 
-
-class BremSplittingActor(g4.GateBOptrBremSplittingActor, ActorBase):
-    type_name = "BremSplittingActor"
-
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.splitting_factor = 1
-        user_info.bias_primary_only = True
-        user_info.bias_only_once = True
-        user_info.processes = ["eBrem"]
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateBOptrBremSplittingActor.__init__(self, user_info.__dict__)
+    def initialize(self):
+        SplittingActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
 
 
-
-
-class SurfaceSplittingActor(g4.GateSurfaceSplittingActor, ActorBase):
-    type_name = "SurfaceSplittingActor"
-
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        user_info.list_of_volume_name = []
-        user_info.splitting_factor = 1
-        user_info.split_entering_particles = False
-        user_info.split_exiting_particles = False
-        user_info.weight_threshold = 0
-
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateSurfaceSplittingActor.__init__(self, user_info.__dict__)
-        self.list_of_volume_name = user_info.list_of_volume_name
-        self.user_info.mother = user_info.mother
-
-    def initialize(self, volume_engine=None):
-        super().initialize(volume_engine)
-        volume_tree = self.simulation.volume_manager.get_volume_tree()
-        dico_of_volume_tree = {}
-        for pre, _, node in RenderTree(volume_tree):
-            dico_of_volume_tree[str(node.name)] = node
-        volume_name = self.user_info.mother
-        while volume_name != "world":
-            node = dico_of_volume_tree[volume_name]
-            volume_name = node.mother
-            self.list_of_volume_name.append(volume_name)
-        self.fListOfVolumeAncestor = self.list_of_volume_name
+process_cls(ActorOutputStatisticsActor)
+process_cls(SimulationStatisticsActor)
+process_cls(KillActor)
+process_cls(SplittingActorBase)
+process_cls(ComptSplittingActor)
+process_cls(BremSplittingActor)

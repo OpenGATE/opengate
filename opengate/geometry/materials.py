@@ -11,25 +11,25 @@ from ..definitions import elements_name_symbol
 
 def read_voxel_materials(filename, def_mat="G4_AIR"):
     p = os.path.abspath(filename)
-    f = open(p, "r")
     current = 0
     materials = []
-    for line in f:
-        for word in line.split():
-            if word[0] == "#":
-                break
-            if current == 0:
-                start = float(word)
-                current = 1
-            else:
-                if current == 1:
-                    stop = float(word)
-                    current = 2
+    with open(p, "r") as f:
+        for line in f:
+            for word in line.split():
+                if word[0] == "#":
+                    break
+                if current == 0:
+                    start = float(word)
+                    current = 1
                 else:
-                    if current == 2:
-                        mat = word
-                        current = 0
-                        materials.append([start, stop, mat])
+                    if current == 1:
+                        stop = float(word)
+                        current = 2
+                    else:
+                        if current == 2:
+                            mat = word
+                            current = 0
+                            materials.append([start, stop, mat])
 
     # sort according to starting interval
     materials = sorted(materials)
@@ -58,56 +58,56 @@ def read_voxel_materials(filename, def_mat="G4_AIR"):
 
 def HU_read_materials_table(file_mat):
     p = os.path.abspath(file_mat)
-    f = open(p, "r")
     elements = ["HU"]
     materials = []
     current_section = None
     current_material = None
-    for line in f:
-        i = 0
-        for word in line.split():
-            if word[0] == "#":
-                break
-            if word == "[Elements]":
-                current_section = "element"
-                break
-            if word == "[/Elements]":
-                elements.append("name")
-                current_section = "table"
-                break
-            if current_section is None:
-                break
-            if current_section == "element":
-                elements.append(word)
-            if current_section == "table":
-                if current_material is None:
-                    current_material = {}
-                if i == 0:
-                    current_material[elements[i]] = int(word)
-                else:
-                    if i == len(elements) - 1:
-                        current_material[elements[i]] = word
+    with open(p, "r") as f:
+        for line in f:
+            i = 0
+            for word in line.split():
+                if word[0] == "#":
+                    break
+                if word == "[Elements]":
+                    current_section = "element"
+                    break
+                if word == "[/Elements]":
+                    elements.append("name")
+                    current_section = "table"
+                    break
+                if current_section is None:
+                    break
+                if current_section == "element":
+                    elements.append(word)
+                if current_section == "table":
+                    if current_material is None:
+                        current_material = {}
+                    if i == 0:
+                        current_material[elements[i]] = int(word)
                     else:
-                        current_material[elements[i]] = float(word)
-            i += 1
-        if current_material:
-            materials.append(current_material)
-        current_material = None
+                        if i == len(elements) - 1:
+                            current_material[elements[i]] = word
+                        else:
+                            current_material[elements[i]] = float(word)
+                i += 1
+            if current_material:
+                materials.append(current_material)
+            current_material = None
     return materials, elements
 
 
 def HU_read_density_table(file_density):
     p = os.path.abspath(file_density)
-    f = open(p, "r")
     densities = []
-    for line in f:
-        words = line.split()
-        if len(words) < 1:
-            continue
-        if words[0][0] == "#":
-            continue
-        d = {"HU": int(words[0]), "density": float(words[1])}
-        densities.append(d)
+    with open(p, "r") as f:
+        for line in f:
+            words = line.split()
+            if len(words) < 1:
+                continue
+            if words[0][0] == "#":
+                continue
+            d = {"HU": int(words[0]), "density": float(words[1])}
+            densities.append(d)
     return densities
 
 
@@ -303,24 +303,18 @@ def create_density_img(img_volume, material_database):
     Returns
     -------
     rho : itk.Image
-        image of the same size and resolution of the ct. The voxel value is the density of the voxel.
-        Density is returned in G4 1/kg.
+        Image of the same size and resolution of the ct. The voxel value is the density of the voxel converted to g/cm3.
 
     """
-    voxel_materials = img_volume.user_info.voxel_materials
-    ct_itk = img_volume.itk_image
-    act = itk.GetArrayFromImage(ct_itk)
+    act = itk.GetArrayFromImage(img_volume.itk_image)
     arho = np.zeros(act.shape, dtype=np.float32)
 
-    for material in voxel_materials:
-        *hu_interval, mat_name = material
-        hu0, hu1 = hu_interval
-        m = (act >= hu0) * (act < hu1)
-        density = material_database[mat_name].GetDensity()
-        arho[m] = density
+    for hu0, hu1, mat_name in img_volume.voxel_materials:
+        arho[(act >= hu0) * (act < hu1)] = material_database[mat_name].GetDensity()
 
+    arho *= g4_units.cm3 / g4_units.g
     rho = itk.GetImageFromArray(arho)
-    rho.CopyInformation(ct_itk)
+    rho.CopyInformation(img_volume.itk_image)
 
     return rho
 
@@ -655,12 +649,12 @@ class MaterialDatabase:
         self.current_filename = filename
         self.element_builders_by_filename[self.current_filename] = {}
         self.material_builders_by_filename[self.current_filename] = {}
-        f = open(filename, "r")
-        line = f.readline()
-        while line:
-            line = line.strip().replace("\t", " ")
-            self.read_one_item(f, line)
+        with open(filename, "r") as f:
             line = f.readline()
+            while line:
+                line = line.strip().replace("\t", " ")
+                self.read_one_item(f, line)
+                line = f.readline()
 
     def read_one_item(self, f, line):
         # skip empty lines
@@ -750,19 +744,19 @@ class MaterialDatabase:
     def FindOrBuildMaterial(self, material_name):
         self.init_NIST()
         self.init_user_mat()
-        # return if already exist
-        if material_name in self.g4_materials:
-            return self.g4_materials[material_name]
-        # we build and store the G4 material if not
-        if material_name in self.nist_material_names:
-            bm = self.g4_NistManager.FindOrBuildMaterial(material_name)
-            self.g4_materials[material_name] = bm
-            return bm
-        if material_name not in self.material_builders:
-            fatal(f'Cannot find nor build material named "{material_name}"')
-        bm = self.material_builders[material_name].build()
-        self.g4_materials[material_name] = bm
-        return bm
+        # try to build the material if it does not yet exist
+        if material_name not in self.g4_materials:
+            if material_name in self.nist_material_names:
+                self.g4_materials[material_name] = (
+                    self.g4_NistManager.FindOrBuildMaterial(material_name)
+                )
+            elif material_name in self.material_builders:
+                self.g4_materials[material_name] = self.material_builders[
+                    material_name
+                ].build()
+            else:
+                fatal(f'Cannot find nor build material named "{material_name}"')
+        return self.g4_materials[material_name]
 
     def FindOrBuildElement(self, element_name):
         self.init_NIST()

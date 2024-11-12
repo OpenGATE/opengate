@@ -1,9 +1,10 @@
+import json
+
 import numpy as np
 import math
 
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
-from opengate.element import copy_user_info
 from opengate.geometry.volumes import unite_volumes
 from opengate.sources.generic import generate_isotropic_directions
 
@@ -40,7 +41,8 @@ def add_iec_phantom(
     create_material(simulation)
 
     # check overlap only for debug
-    simulation.g4_check_overlap_flag = check_overlap
+    original_check_overlap_flag = simulation.check_volumes_overlap
+    simulation.check_volumes_overlap = check_overlap
 
     # Outside structure
     iec, _, _ = add_iec_body(simulation, name)
@@ -65,6 +67,7 @@ def add_iec_phantom(
         simulation, name, thickness_z, sphere_starting_angle, toggle_sphere_order
     )
 
+    simulation.check_volumes_overlap = original_check_overlap_flag
     return iec
 
 
@@ -98,7 +101,7 @@ def add_iec_body(simulation, name, thickness=0.0, thickness_z=0.0):
     bottom_right_shell = opengate.geometry.volumes.TubsVolume(
         name=f"{name}_bottom_right_shell"
     )
-    copy_user_info(bottom_left_shell, bottom_right_shell)
+    bottom_right_shell.configure_like(bottom_left_shell)
     bottom_right_shell.sphi = 180 * deg
     bottom_right_shell.dphi = 90 * deg
 
@@ -245,7 +248,7 @@ def add_iec_one_sphere(
 
     # capillary outer shell
     caps = sim.add_volume("Tubs", f"{name}_capillary_shell_{d}")
-    caps.copy_user_info(cap)
+    caps.configure_like(cap)
     caps.material = iec_plastic
     caps.rmax = cap_thick
     caps.rmin = cap.rmax
@@ -424,6 +427,11 @@ def add_background_source(
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_Bq_mL * s.cubic_volume
+    # the confine procedure from G4 seems to be confused when using a boolean solid like {iec_name}_interior
+    # (or I did understand correctly how it works)
+    # so, we need to move the source for correct sampling of the volume
+    mm = g4_units.mm
+    bg.position.translation = [0, 35 * mm, 0]
     # verbose ?
     if verbose:
         # print(f"Bg volume {s.cubic_volume} cc")
@@ -540,7 +548,7 @@ def get_n_samples_from_ratio(n, ratio):
     return n_samples
 
 
-def compute_sphere_centers_and_volumes(sim, name):
+def compute_sphere_centers_and_volumes_OLD_NEVER_CALLED(sim, name):
     spheres_diam = [10, 13, 17, 22, 28, 37]
     centers = []
     volumes = []
@@ -606,3 +614,31 @@ def get_default_sphere_centers_and_volumes():
         26521.84878038063,
     ]
     return centers, volumes
+
+
+def add_iec_phantom_vox(sim, name, image_filename, labels_filename):
+    iec = sim.add_volume("Image", name)
+    iec.image = image_filename
+    iec.material = "IEC_PLASTIC"
+    labels = json.loads(open(labels_filename).read())
+    iec.voxel_materials = []
+    create_material(sim)
+    material_list = {}
+    for l in labels:
+        mat = "IEC_PLASTIC"
+        if "capillary" in l:
+            mat = "G4_WATER"
+        if "cylinder_hole" in l:
+            mat = "G4_AIR"
+        if "world" in l:
+            mat = "G4_AIR"
+        if "interior" in l:
+            mat = "G4_WATER"
+        if "sphere" in l:
+            mat = "G4_WATER"
+        if "shell" in l:
+            mat = "IEC_PLASTIC"
+        material_list[l] = mat
+        m = [labels[l], labels[l] + 1, mat]
+        iec.voxel_materials.append(m)
+    return iec, material_list

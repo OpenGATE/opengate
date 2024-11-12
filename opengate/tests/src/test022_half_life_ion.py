@@ -9,7 +9,7 @@ import sys
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "", "test022")
+    paths = utility.get_default_test_paths(__file__, output_folder="test022")
 
     # create the simulation
     sim = gate.Simulation()
@@ -26,6 +26,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.number_of_threads = n
     sim.random_seed = 92344321
+    sim.output_dir = paths.output
     print(sim)
 
     # units
@@ -70,7 +71,7 @@ if __name__ == "__main__":
     )  # all means: proton, electron, positron, gamma
 
     # activity
-    activity_Bq = 4000 * Bq
+    activity_Bq = 8000 * Bq
     half_life = 5 * sec
     lifetime = half_life / math.log(2.0)
 
@@ -109,37 +110,39 @@ if __name__ == "__main__":
     print()
 
     # add stat actor
-    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats_actor.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # hit actor w1
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
-    ta1.mother = "waterbox1"
+    ta1.attached_to = "waterbox1"
     ta1.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
-    f.policy = "keep"
+    f.policy = "accept"
     ta1.filters.append(f)
-    ta1.output = paths.output / "test022_half_life_ion1.root"
+    ta1.output_filename = "test022_half_life_ion1.root"
+    ta1.steps_to_store = "first"
 
     # hit actor w2
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
-    ta2.mother = "waterbox2"
+    ta2.attached_to = "waterbox2"
     ta2.attributes = ["KineticEnergy", "GlobalTime", "PreGlobalTime"]
     ta2.filters.append(f)
-    ta2.output = paths.output / "test022_half_life_ion2.root"
+    ta2.output_filename = "test022_half_life_ion2.root"
+    ta2.steps_to_store = "first"
 
     # start simulation
     sim.run()
 
     # get result
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # tests
     fig, ax = plt.subplots(ncols=2, nrows=1, figsize=(15, 5))
-    b1, n1 = test022.test_half_life_fit(sim, ta1.output, half_life, ax[0])
-    b2, n2 = test022.test_half_life_fit(sim, ta2.output, half_life, ax[1])
+    b1, n1 = test022.test_half_life_fit(sim, ta1.get_output_path(), half_life, ax[0])
+    b2, n2 = test022.test_half_life_fit(sim, ta2.get_output_path(), half_life, ax[1])
     fn = paths.output / "test022_half_life_ion_fit.png"
     print("Figure in ", fn)
     plt.savefig(fn)

@@ -22,6 +22,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
+    sim.output_dir = paths.output / "test070"
 
     # add a material database
     sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     # image
     patient = sim.add_volume("Image", "patient")
     patient.image = path_to_4d_ct / "0.0.mhd"
-    patient.read_input_image()
+    patient.load_input_image()
     patient.material = "G4_AIR"  # material used by default
     f1 = str(paths.gate_data / "Schneider2000MaterialsTable.txt")
     f2 = str(paths.gate_data / "Schneider2000DensitiesTable.txt")
@@ -94,11 +95,11 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = sim.get_output_path(paths.output / "test070" / "test070_edep.mhd")
-    dose.mother = "patient"
+    dose.output_filename = "test070.mhd"
+    dose.attached_to = "patient"
     dose.size = patient.size_pix
     dose.spacing = patient.spacing
-    dose.img_coord_system = True
+    dose.output_coordinate_system = "attached_to_image"
     # dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.hit_type = "random"
 
@@ -107,17 +108,15 @@ if __name__ == "__main__":
     stats.track_types_flag = False
 
     # print info
-    print(sim.volume_manager.dump_volumes())
+    sim.volume_manager.print_volumes()
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulation
     sim.run()
 
     # print results at the end
     gate.exception.warning(f"Check stats")
-    stat = sim.output.get_actor("Stats")
-    print(stat)
-    d = sim.output.get_actor("dose")
-    print(d)
+    print(stats)
+    print(dose)

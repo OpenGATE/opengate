@@ -13,7 +13,7 @@ paths = utility.get_default_test_paths(
 )
 
 
-def init_test019(nt):
+def init_test019(nt, version):
     # create the simulation
     sim = gate.Simulation()
 
@@ -24,6 +24,7 @@ def init_test019(nt):
     sim.check_volumes_overlap = False
     sim.number_of_threads = nt
     sim.random_seed = 123456789
+    sim.output_dir = paths.output
     print(sim)
 
     # units
@@ -71,7 +72,7 @@ def init_test019(nt):
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta2.mother = plane.name
+    ta2.attached_to = plane.name
     ta2.attributes = [
         "KineticEnergy",
         "Weight",
@@ -88,8 +89,9 @@ def init_test019(nt):
         "EventPosition",
         "PDGCode",
     ]
-    ta2.output = paths.output / "test019_hits.root"
+    ta2.output_filename = f"test019_hits_{version}.root"
     ta2.debug = False
+    ta2.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     ta2.filters.append(f)
@@ -112,16 +114,16 @@ def run_test019(sim):
     # FIXME: should be a user info in Region
     s = f"/process/em/setSecBiasing eBrem {region_linac.name} 100 100 MeV"
     print(s)
-    sim.add_g4_command_after_init(s)
+    sim.g4_commands_after_init.append(s)
 
     # start simulation
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
-    h = sim.output.get_actor("PhaseSpace")
+    h = sim.get_actor("PhaseSpace")
     print(h)
 
     # FIXME: missing features:
@@ -132,14 +134,14 @@ def run_test019(sim):
     # check stats
     print()
     stats_ref = utility.read_stat_file(paths.gate_output / "output-writePhS-stat.txt")
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1
     is_ok = utility.assert_stats(stats, stats_ref, 0.2)
 
     # compare the phsp tree
     print()
     fn1 = paths.gate_output / "output-PhS-g.root"
-    fn2 = paths.output / "test019_hits.root"
+    fn2 = h.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
     data_ref, keys_ref, m_ref = phsp.load(fn1)
@@ -173,7 +175,7 @@ def run_test019(sim):
     utility.test_ok(is_ok)
 
 
-def create_simu_test019_phsp_source(sim):
+def create_simu_test019_phsp_source(sim, version):
     # main options
     sim.g4_verbose = False
     # sim.visu = True
@@ -182,6 +184,7 @@ def create_simu_test019_phsp_source(sim):
     # sim.running_verbose_level = gate.logger.EVENT
     sim.number_of_threads = 1
     sim.random_seed = 987654321
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -241,13 +244,14 @@ def create_simu_test019_phsp_source(sim):
 
     # PhaseSpace Actor
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
-    ta1.mother = plane.name
+    ta1.attached_to = plane.name
     ta1.attributes = [
         "KineticEnergy",
         "Weight",
         "PostPosition",
         "PrePosition",
         "PrePositionLocal",
+        "PostPositionLocal",
         "ParticleName",
         "PreDirection",
         "PreDirectionLocal",
@@ -257,15 +261,16 @@ def create_simu_test019_phsp_source(sim):
         "LocalTime",
         "EventPosition",
     ]
-    ta1.output = paths.output / "test019_hits_phsp_source_local.root"
+    ta1.output_filename = "test019_hits_phsp_source_local{version}.root"
     ta1.debug = False
+    ta1.steps_to_store = "exiting"
     f = sim.add_filter("ParticleFilter", "f")
     f.particle = "gamma"
     ta1.filters.append(f)
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
-    ta2.mother = plane2.name
+    ta2.attached_to = plane2.name
     ta2.attributes = [
         "KineticEnergy",
         "Weight",
@@ -281,9 +286,9 @@ def create_simu_test019_phsp_source(sim):
         "LocalTime",
         "EventPosition",
     ]
-    ta2.output = paths.output / "test019_hits_phsp_source_global.root"
+    ta2.output_filename = "test019_hits_phsp_source_global{version}.root"
     ta2.debug = False
-    f = sim.add_filter("ParticleFilter", "f")
+    f = sim.add_filter("ParticleFilter", "f2")
     f.particle = "gamma"
     ta2.filters.append(f)
 
@@ -297,23 +302,22 @@ def create_simu_test019_phsp_source(sim):
 
 def analyse_test019_phsp_source(sim):
     # print results
-    output = sim.output
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # print source phsp info
-    s1 = output.get_source("phsp_source_local").particle_generator
+    s1 = sim.source_manager.get_source_info("phsp_source_local").particle_generator
     print(f"Source local :  {s1.num_entries} elements, {s1.cycle_count} cycle")
-    s2 = output.get_source("phsp_source_global").particle_generator
+    s2 = sim.source_manager.get_source_info("phsp_source_global").particle_generator
     print(f"Source global : {s2.num_entries} elements, {s2.cycle_count} cycle")
 
     # --------------------------------------------------------------
     # Test LOCAL position
     print()
-    print("Test GLOBAL position")
+    print("Test LOCAL position")
     fn1 = paths.output_ref / "test019_hits.root"
-    ta1 = output.get_actor("PhaseSpace1").user_info
-    fn2 = ta1.output
+    ta1 = sim.get_actor("PhaseSpace1")
+    fn2 = ta1.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
     data, keys, _ = phsp.load(fn2, "PhaseSpace1")
@@ -345,8 +349,8 @@ def analyse_test019_phsp_source(sim):
     print()
     print("Test GLOBAL position")
     fn1 = paths.output_ref / "test019_hits.root"
-    ta2 = output.get_actor("PhaseSpace2").user_info
-    fn2 = ta2.output
+    ta2 = sim.get_actor("PhaseSpace2")
+    fn2 = ta2.get_output_path()
     print("Reference gate tree : ", fn1)
     print("Checked Tree : ", fn2)
     data, keys, _ = phsp.load(fn2, "PhaseSpace2")

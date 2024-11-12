@@ -17,9 +17,9 @@ class GateDigiCollectionManager {
 public:
   static GateDigiCollectionManager *GetInstance();
 
-  GateDigiCollection *NewDigiCollection(std::string name);
+  GateDigiCollection *NewDigiCollection(const std::string &name);
 
-  GateDigiCollection *GetDigiCollection(std::string name);
+  GateDigiCollection *GetDigiCollection(const std::string &name);
 
   std::string DumpAllDigiCollections();
 

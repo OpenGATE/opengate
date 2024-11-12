@@ -18,6 +18,10 @@ if __name__ == "__main__":
     gate.logger.log.debug(sim)
 
     cm = gate.g4_units.cm
+    MeV = gate.g4_units.MeV
+    mm = gate.g4_units.mm
+    Bq = gate.g4_units.Bq
+    sec = gate.g4_units.second
 
     # add a simple volume
     waterbox = sim.add_volume("Box", "Waterbox")
@@ -26,10 +30,6 @@ if __name__ == "__main__":
     waterbox.material = "G4_WATER"
 
     # default source for tests
-    MeV = gate.g4_units.MeV
-    mm = gate.g4_units.mm
-    Bq = gate.g4_units.Bq
-    sec = gate.g4_units.second
     source1 = sim.add_source("GenericSource", "source1")
     source1.particle = "proton"
     source1.energy.mono = 150 * MeV
@@ -55,7 +55,6 @@ if __name__ == "__main__":
     source3.start_time = 0.50 * sec
     source3.direction.type = "momentum"
     source3.direction.momentum = [0, 0, 1]
-    source3.toto = 120  # raise a warning
 
     # Expected total of events
     # 100 + 175 + 120 = 395
@@ -66,8 +65,8 @@ if __name__ == "__main__":
     # sim.source_manager.sources.pop('source3')
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # run timing test #1
     sim.run_timing_intervals = [
@@ -83,15 +82,15 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
-    stats = sim.output.get_actor("Stats")
+    # print stats (useful comment isn't it ?)
     print(stats)
 
-    stats_ref = gate.actors.miscactors.SimulationStatisticsActor()
+    stats_ref = gate.actors.miscactors.SimulationStatisticsActor(name="stat_ref")
     c = stats_ref.counts
-    c.run_count = 3
-    c.event_count = 7800
-    c.track_count = 37584  # 56394
-    c.step_count = 266582  # 217234
+    c.runs = 3
+    c.events = 7800
+    c.tracks = 37584  # 56394
+    c.steps = 266582  # 217234
     # stats_ref.pps = 4059.6 3 3112.2
     c.duration = 1 / 4059.6 * 7800 * sec
     print("-" * 80)

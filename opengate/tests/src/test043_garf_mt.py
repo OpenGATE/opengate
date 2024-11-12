@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 3
     sim.visu = False
     sim.random_seed = 321654987
+    sim.output_dir = test43.paths.output
 
     # units
     nm = gate.g4_units.nm
@@ -57,8 +58,8 @@ if __name__ == "__main__":
 
     # arf actor
     arf = sim.add_actor("ARFActor", "arf")
-    arf.mother = detPlane.name
-    arf.output = test43.paths.output / "test043_projection_garf_mt.mhd"
+    arf.attached_to = detPlane.name
+    arf.output_filename = test43.paths.output / "test043_projection_garf_mt.mhd"
     arf.batch_size = 2e5
     arf.image_size = [128, 128]
     arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
@@ -74,29 +75,28 @@ if __name__ == "__main__":
     )  # should be "auto" but "cpu" for macOS github actions to avoid mps errors
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # start simulation
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
-    print(stat)
+    print(stats)
 
     # print info
     print("")
-    arf = sim.output.get_actor("arf")
-    img = itk.imread(str(arf.user_info.output))
+    arf = sim.get_actor("arf")
+    img = itk.imread(str(arf.get_output_path()))
     # set the first channel to the same channel (spectrum) than the analog
     img[0, :] = img[1, :] + img[2, :]
     print(f"Number of batch: {arf.batch_nb}")
     print(f"Number of detected particles: {arf.detected_particles}")
-    filename1 = str(arf.user_info.output).replace(".mhd", "_0.mhd")
+    filename1 = str(arf.get_output_path()).replace(".mhd", "_0.mhd")
     itk.imwrite(img, filename1)
 
     # high stat
-    filename2 = str(arf.user_info.output).replace(".mhd", "_hs.mhd")
+    filename2 = str(arf.get_output_path()).replace(".mhd", "_hs.mhd")
     scale = 4e8 * Bq / activity / sim.number_of_threads
     print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
     img2 = gate.image.scale_itk_image(img, scale)
@@ -108,9 +108,9 @@ if __name__ == "__main__":
     gate.exception.warning("Tests stats file")
     stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
     # dont compare steps of course
-    stats_ref.counts.step_count = stat.counts.step_count
-    stats_ref.counts.run_count = 3
-    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
+    stats_ref.counts.steps = stats.counts.steps
+    stats_ref.counts.runs = 3
+    is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     print()
     gate.exception.warning("Compare image to analog")
@@ -118,9 +118,9 @@ if __name__ == "__main__":
         utility.assert_images(
             test43.paths.output_ref / "test043_projection_analog.mhd",
             filename1,
-            stat,
+            stats,
             tolerance=100,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
             sum_tolerance=20,
         )
@@ -133,9 +133,9 @@ if __name__ == "__main__":
         utility.assert_images(
             test43.paths.output_ref / "test043_projection_analog_high_stat.mhd",
             filename2,
-            stat,
+            stats,
             tolerance=52,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
         )
         and is_ok

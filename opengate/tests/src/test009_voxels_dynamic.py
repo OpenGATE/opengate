@@ -59,7 +59,6 @@ if __name__ == "__main__":
         [800, 6000, "G4_BONE_COMPACT_ICRU"],
     ]
 
-    sim.run_timing_intervals = [(0, 0.5 * sec), (0.5 * sec, 1 * sec)]
     patient.add_dynamic_parametrisation(
         image=[paths.data / "patient-4mm.mhd", paths.data / "patient-4mm.mhd"]
     )
@@ -92,11 +91,11 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test009-edep.mhd"
-    dose.mother = "patient"
+    dose.output_filename = "test009-edep.mhd"
+    dose.attached_to = "patient"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.img_coord_system = True
+    dose.output_coordinate_system = "attached_to_image"
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.hit_type = "random"
 
@@ -105,34 +104,50 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # print info
-    print(sim.volume_manager.dump_volumes())
+    sim.volume_manager.print_volumes()
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
-    # start simulation
-    sim.run(start_new_process=False)
+    # define run timing intervals that do not match the dynamic parameters
+    # GATE should raise an exception
+    sim.run_timing_intervals = [
+        (0, 0.5 * sec),
+        (0.5 * sec, 1 * sec),
+        (1 * sec, 1.5 * sec),
+    ]
+    try:
+        sim.run(start_new_process=True)
+        print("This exception is intentionally provoked and wanted. ")
+        is_ok = False
+    except:
+        is_ok = True
+
+    # define the run timing intervals at the very last moment as a test
+    # GATE should allow this
+    sim.run_timing_intervals = [(0, 0.5 * sec), (0.5 * sec, 1 * sec)]
+    sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-    print(stat)
-    d = sim.output.get_actor("dose")
-    print(d)
+    print(stats)
+    print(dose)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    stat.counts.run_count = 1
+    stats.counts.runs = 1
     print(
         "Setting run count to 1, although more than 1 run was used in the simulation. "
         "This is to avoid a wrongly failing test."
     )
-    is_ok = utility.assert_stats(stat, stats_ref, 0.15)
+    is_ok = is_ok and utility.assert_stats(stats, stats_ref, 0.15)
     print(is_ok)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        d.user_info.output,
-        stat,
+        dose.edep.get_output_path(),
+        stats,
         tolerance=35,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
     print(is_ok)
 

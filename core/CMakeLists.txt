@@ -14,6 +14,9 @@ project(opengate_core)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Enable Position Independent Code for all targets (-fPIC)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 # Need Geant4
 find_package(Geant4 REQUIRED OPTIONAL_COMPONENTS qt)
 include(${Geant4_USE_FILE})
@@ -103,13 +106,8 @@ if (WIN32)
     endif ()
 endif ()
 
-# correct one on OSX
-#target_link_libraries(opengate_core PRIVATE pybind11::module ${Geant4_LIBRARIES} Threads::Threads ${ITK_LIBRARIES})
-
 # additional utilities
 target_include_directories(opengate_core PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/external/)
 
 #set(CMAKE_VERBOSE_MAKEFILE on)
 target_link_libraries(opengate_core PRIVATE pybind11::module ${Geant4_LIBRARIES} Threads::Threads ${ITK_LIBRARIES} fmt::fmt-header-only)
-
-# Do not not add ${PYTHON_LIBRARIES}) here (seg fault)

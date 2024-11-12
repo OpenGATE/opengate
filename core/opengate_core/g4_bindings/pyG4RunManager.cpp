@@ -43,7 +43,6 @@ void init_G4RunManager(py::module &m) {
 
       .def("SetVerboseLevel", &G4RunManager::SetVerboseLevel)
       .def("GetVerboseLevel", &G4RunManager::GetVerboseLevel)
-      .def("Initialize", &G4RunManager::Initialize)
 
       // .def("BeamOn", &G4RunManager::BeamOn)
       // .def("BeamOn",

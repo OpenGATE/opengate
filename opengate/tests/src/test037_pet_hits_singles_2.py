@@ -6,7 +6,7 @@ import test037_pet_hits_singles_helpers as t37
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test037_pet")
+    paths = utility.get_default_test_paths(__file__, "gate_test037_pet", "test037")
 
     # test version
     v = "2_2"
@@ -20,8 +20,9 @@ if __name__ == "__main__":
 
     # digitizer hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
-    hc.output = paths.output / f"test037_test{v}.root"
+    hc.attached_to = crystal.name
+    hc.authorize_repeated_volumes = True
+    hc.output_filename = f"test037_test{v}.root"
     hc.attributes = [
         "PostPosition",
         "TotalEnergyDeposit",
@@ -31,7 +32,8 @@ if __name__ == "__main__":
 
     # Readout (not need for adder)
     sc = sim.add_actor("DigitizerReadoutActor", "Singles2_1")
-    sc.output = paths.output / f"test037_test{v}.root"
+    sc.authorize_repeated_volumes = True
+    sc.output_filename = f"test037_test{v}.root"
     sc.input_digi_collection = "Hits"
     sc.group_volume = stack.name  # should be depth=1 in Gate
     sc.discretize_volume = crystal.name
@@ -39,7 +41,7 @@ if __name__ == "__main__":
 
     # Readout: another one, with different option (in the same output file)
     sc = sim.add_actor("DigitizerReadoutActor", "Singles2_2")
-    sc.output = paths.output / f"test037_test{v}.root"
+    sc.output_filename = f"test037_test{v}.root"
     sc.input_digi_collection = "Hits"
     sc.group_volume = crystal.name  # should be depth=4 in Gate
     sc.discretize_volume = crystal.name
@@ -53,7 +55,7 @@ if __name__ == "__main__":
     sim.run()
 
     # print results
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
 
     # ----------------------------------------------------------------------------------------------------------
@@ -67,18 +69,22 @@ if __name__ == "__main__":
     is_ok = utility.assert_stats(stats, stats_ref, 0.03)
 
     # check root hits
-    hc = sim.output.get_actor("Hits").user_info
+    hc = sim.get_actor("Hits")
     f = p / f"output{v}.root"
-    is_ok = t37.check_root_hits(paths, v, f, hc.output) and is_ok
+    is_ok = t37.check_root_hits(paths, v, f, hc.get_output_path()) and is_ok
 
     # check root singles
-    sc = sim.output.get_actor("Singles2_1").user_info
+    sc = sim.get_actor("Singles2_1")
     f = p / f"output2_1.root"
-    is_ok = t37.check_root_singles(paths, "2_1", f, sc.output, sc.name) and is_ok
+    is_ok = (
+        t37.check_root_singles(paths, "2_1", f, sc.get_output_path(), sc.name) and is_ok
+    )
 
     # check root singles
-    sc = sim.output.get_actor("Singles2_2").user_info
+    sc = sim.get_actor("Singles2_2")
     f = p / f"output2_2.root"
-    is_ok = t37.check_root_singles(paths, "2_2", f, sc.output, sc.name) and is_ok
+    is_ok = (
+        t37.check_root_singles(paths, "2_2", f, sc.get_output_path(), sc.name) and is_ok
+    )
 
     utility.test_ok(is_ok)

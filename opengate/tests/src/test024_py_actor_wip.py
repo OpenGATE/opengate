@@ -44,11 +44,11 @@ if __name__ == "__main__":
     # run simulation
     sim.run()
 
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
     print("-" * 50)
 
-    stats = sim.output.get_actor("Stats2")
+    stats = sim.get_actor("Stats2")
     print(stats)
 
     # FIXME todo

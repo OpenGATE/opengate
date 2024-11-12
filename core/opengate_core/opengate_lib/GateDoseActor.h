@@ -12,6 +12,7 @@
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
+#include <G4Threading.hh>
 #include <iostream>
 #include <pybind11/stl.h>
 
@@ -25,95 +26,136 @@ class GateDoseActor : public GateVActor {
 public:
   // Constructor
   GateDoseActor(py::dict &user_info);
-  // explicit GateDoseActor(py::dict &user_info);
-  // virtual ~GateDoseActor();
 
-  virtual void ActorInitialize() override;
+  void InitializeUserInput(py::dict &user_info) override;
+
+  void InitializeCpp() override;
 
   // Main function called every step in attached volume
-  virtual void SteppingAction(G4Step *) override;
+  void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
-  virtual void BeginOfRunAction(const G4Run *run) override;
+  void BeginOfRunAction(const G4Run *run) override;
 
-  virtual void BeginOfRunActionMasterThread(int run_id) override;
+  void BeginOfRunActionMasterThread(int run_id) override;
 
-  virtual int EndOfRunActionMasterThread(int run_id) override;
+  int EndOfRunActionMasterThread(int run_id) override;
 
-  virtual void BeginOfEventAction(const G4Event *event) override;
+  void BeginOfEventAction(const G4Event *event) override;
 
-  // virtual void EndOfEventAction(const G4Event *event) override;
-
-  // Called every time the simulation is about to end (all threads)
-  // virtual void EndOfSimulationWorkerAction(const G4Run *lastRun) override;
+  void EndOfEventAction(const G4Event *event) override;
 
   // Called every time a Run ends (all threads)
-  virtual void EndOfRunAction(const G4Run *run) override;
+  void EndOfRunAction(const G4Run *run) override;
 
-  // virtual void EndSimulationAction();
+  inline bool GetToWaterFlag() const { return fToWaterFlag; }
+
+  inline void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
+
+  inline bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
+
+  inline void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
+
+  inline void SetDoseFlag(const bool b) { fDoseFlag = b; }
+
+  inline bool GetDoseFlag() const { return fDoseFlag; }
+
+  inline void SetDoseSquaredFlag(const bool b) { fDoseSquaredFlag = b; }
+
+  inline bool GetDoseSquaredFlag() const { return fDoseSquaredFlag; }
+
+  inline void SetCountsFlag(const bool b) { fCountsFlag = b; }
+
+  inline bool GetCountsFlag() const { return fCountsFlag; }
+
+  inline void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
+
+  inline void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
+
+  inline void SetOvershoot(const double b) { Overshoot = b; }
+
+  inline void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
+
+  inline std::string GetPhysicalVolumeName() const {
+    return fPhysicalVolumeName;
+  }
+
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
   // Image type needs to be 3D double by default
   typedef itk::Image<double, 3> Image3DType;
 
   int sub2ind(Image3DType::IndexType index3D);
+
   void ind2sub(int index, Image3DType::IndexType &index3D);
-  void ComputeSquareImage();
-  double ComputeMeanUncertainty();
+
   double GetMaxValueOfImage(Image3DType::Pointer imageP);
+  double ComputeMeanUncertainty();
 
   // The image is accessible on py side (shared by all threads)
   Image3DType::Pointer cpp_edep_image;
+  Image3DType::Pointer cpp_edep_squared_image;
+  Image3DType::Pointer cpp_dose_image;
+  Image3DType::Pointer cpp_dose_squared_image;
+  Image3DType::Pointer cpp_density_image;
+  Image3DType::Pointer cpp_counts_image;
+  Image3DType::SizeType size_edep{};
 
-  // Option: indicate if we must compute uncertainty
-  bool fUncertaintyFlag;
+  struct threadLocalT {
+    G4EmCalculator emcalc;
+    std::vector<double> squared_worker_flatimg;
+    std::vector<int> lastid_worker_flatimg;
+  };
 
-  // Option: indicate if we must compute square
-  bool fSquareFlag;
+  void ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image,
+                         double value, int event_id,
+                         Image3DType::IndexType index);
 
-  // Option: indicate if we must compute dose in Gray also
-  bool fDoseFlag;
+  void FlushSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image);
+
+  void PrepareLocalDataForRun(threadLocalT &data, int numberOfVoxels);
+
+  void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
+                        Image3DType::IndexType &index) const;
 
   // Option: indicate we must convert to dose to water
-  bool fToWaterFlag;
+  bool fToWaterFlag{};
 
-  // Option: calculate dose in stepping action. If False, calc only edep and
-  // divide by masss at the end of the simulation, on py side
-  bool fOnFlyCalcFlag;
+  // Option: indicate if we must compute edep squared
+  bool fEdepSquaredFlag{};
 
-  // Option: cp image for each thread
-  bool fcpImageForThreadsFlag;
+  // Option: Is dose to be scored?
+  bool fDoseFlag{};
+  bool fDoseSquaredFlag{};
 
-  // Option: calculate the standard error of the mean
-  bool fSTEofMeanFlag;
+  // Option: Are counts to be scored
+  bool fCountsFlag{};
 
-  // For uncertainty computation, we need temporary images
+  double fVoxelVolume{};
 
-  Image3DType::Pointer cpp_square_image;
-  Image3DType::SizeType size_edep;
+  // Option: set target statistical uncertainty for each run
+  double fUncertaintyGoal;
+  double fThreshEdepPerc;
+  double Overshoot;
 
-  double fVoxelVolume;
   int NbOfEvent = 0;
+  // set from python side. It will be overwritten by an estimation of the Nb of
+  // events needed to achieve the goal uncertainty.
+  int NbEventsFirstCheck;
+  int NbEventsNextCheck;
   int NbOfThreads = 0;
+
   double goalUncertainty;
-  double threshEdepPerc;
-  // struct timeval mTimeOfLastSaveEvent;
+  double threshEdepPerc{};
 
   std::string fPhysicalVolumeName;
 
-  G4ThreeVector fInitialTranslation;
+  G4ThreeVector fTranslation;
   std::string fHitType;
 
 protected:
-  struct threadLocalT {
-    G4EmCalculator emcalc;
-    std::vector<double> edep_worker_flatimg;
-    std::vector<double> edepSquared_worker_flatimg;
-    std::vector<int> lastid_worker_flatimg;
-    int NbOfEvent_worker = 0;
-    // Image3DType::IndexType index3D;
-    // int index_flat;
-  };
-  G4Cache<threadLocalT> fThreadLocalData;
+  G4Cache<threadLocalT> fThreadLocalDataEdep;
+  G4Cache<threadLocalT> fThreadLocalDataDose;
 };
 
 #endif // GateDoseActor_h

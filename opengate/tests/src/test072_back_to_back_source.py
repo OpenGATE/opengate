@@ -107,6 +107,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123456
+    sim.output_dir = paths.output
 
     # set the world size like in the Gate macro
     world = sim.world
@@ -144,20 +145,21 @@ if __name__ == "__main__":
         "PostPosition",
         "PreDirection",
     ]
-    phsp_actor.output = paths.output / "b2b.root"
+    phsp_actor.steps_to_store = "first"
+    phsp_actor.output_filename = "b2b.root"
 
     # verbose
     # sim.g4_verbose = True
-    # sim.add_g4_command_after_init("/tracking/verbose 2")
-    # sim.add_g4_command_after_init("/run/verbose 2")
-    # sim.add_g4_command_after_init("/event/verbose 2")
-    # sim.add_g4_command_after_init("/tracking/verbose 1")
+    # sim.g4_commands_after_init.append("/tracking/verbose 2")
+    # sim.g4_commands_after_init.append("/run/verbose 2")
+    # sim.g4_commands_after_init.append("/event/verbose 2")
+    # sim.g4_commands_after_init.append("/tracking/verbose 1")
 
     # start simulation
     sim.run()
 
     # test
-    is_ok = test_back_to_back(phsp_actor.output, nbEvents)
+    is_ok = test_back_to_back(phsp_actor.get_output_path(), nbEvents)
     # FIXME confirm acolin when activated
     # FIXME Other tests?
 

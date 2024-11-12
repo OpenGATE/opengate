@@ -6,23 +6,19 @@ from opengate.tests import utility
 import uproot
 import sys
 
-if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "", "test022")
+
+def test022_half_life(n_threads=1):
+    paths = utility.get_default_test_paths(__file__, output_folder="test022")
 
     # create the simulation
     sim = gate.Simulation()
 
-    # multithread ?
-    argv = sys.argv
-    n = 1
-    if len(argv) > 1:
-        n = int(argv[1])
-
     # main options
     sim.g4_verbose = False
     sim.visu = False
-    sim.number_of_threads = n
+    sim.number_of_threads = n_threads
     sim.random_seed = 12344321
+    sim.output_dir = paths.output
     print(sim)
 
     # units
@@ -82,14 +78,14 @@ if __name__ == "__main__":
     # source2.n = 50
 
     # add stat actor
-    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats_actor.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.track_types_flag = True
 
     # hit actor
     ta = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
-    ta.mother = "detector"
+    ta.attached_to = "detector"
     ta.attributes = ["KineticEnergy", "GlobalTime"]
-    ta.output = paths.output / "test022_half_life.root"
+    ta.output_filename = f"test022_half_lifev_{n_threads}.root"
 
     # timing
     sim.run_timing_intervals = [
@@ -101,16 +97,14 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     # get result
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # read phsp
-
-    root = uproot.open(ta.output)
-    branch = root["PhaseSpace"]["GlobalTime"]
-    time = branch.array(library="numpy") / sec
-    branch = root["PhaseSpace"]["KineticEnergy"]
-    E = branch.array(library="numpy")
+    with uproot.open(ta.get_output_path()) as root:
+        branch = root["PhaseSpace"]["GlobalTime"]
+        time = branch.array(library="numpy") / sec
+        branch = root["PhaseSpace"]["KineticEnergy"]
+        E = branch.array(library="numpy")
 
     # consider time of arrival for both sources
     time1 = time[E < 110 * keV]
@@ -146,8 +140,8 @@ if __name__ == "__main__":
     is_ok = is_ok and b
 
     # check thread
-    b = sim.number_of_threads * len(sim.run_timing_intervals) == stats.counts.run_count
-    utility.print_test(b, f"Number of run: {stats.counts.run_count}")
+    b = sim.number_of_threads * len(sim.run_timing_intervals) == stats.counts.runs
+    utility.print_test(b, f"Number of run: {stats.counts.runs}")
 
     is_ok = is_ok and b
 
@@ -183,3 +177,11 @@ if __name__ == "__main__":
     plt.savefig(fn)
 
     utility.test_ok(is_ok)
+
+
+def main():
+    test022_half_life(n_threads=1)
+
+
+if __name__ == "__main__":
+    main()

@@ -25,6 +25,7 @@ if __name__ == "__main__":
 
     # create simulation
     sim = gate.Simulation()
+    sim.progress_bar = True
     ion_name, _ = create_ion_gamma_simulation(sim, paths, z, a)
 
     # get list of nuclide organized per ion
@@ -46,13 +47,13 @@ if __name__ == "__main__":
 
     # --------------------------------------------------------------------------
     # go
-    # sim.user_info.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     sim.run()
     end = end / sec
     # --------------------------------------------------------------------------
 
     # print
-    stats = sim.output.get_actor("stats")
+    stats = sim.get_actor("stats")
     print(stats)
 
     # analyse

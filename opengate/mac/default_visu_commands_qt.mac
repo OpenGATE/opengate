@@ -1,0 +1,38 @@
+
+# default visualization
+#/vis/open OGLSQt
+
+/vis/open OGL
+/vis/scene/create
+/vis/drawVolume worlds
+/vis/viewer/flush
+
+# no verbose
+/control/verbose 0
+
+
+# Work but generate txt on terminal
+/vis/scene/add/axes 0 0 0 50 cm
+/vis/scene/add/text 10 0 0 cm  20 0 0   X
+/vis/scene/add/text 0 10 0 cm  20 0 0   Y
+/vis/scene/add/text 0 0 10 cm  20 0 0   Z
+
+# change orientation (for debug)
+#/vis/viewer/set/upVector 0 0 1
+#/vis/viewer/set/viewpointVector 0 1 0
+
+#/vis/viewer/set/upVector 1 0 0
+#/vis/viewer/set/viewpointVector 0 0 1
+
+#/vis/viewer/set/upVector 0 1 0
+#/vis/viewer/set/viewpointVector 1 0 0
+
+/vis/sceneHandler/attach
+
+/vis/modeling/trajectories/create/drawByParticleID
+
+/tracking/storeTrajectory 1
+/vis/scene/endOfEventAction accumulate
+/vis/scene/add/trajectories
+
+/vis/viewer/set/auxiliaryEdge true

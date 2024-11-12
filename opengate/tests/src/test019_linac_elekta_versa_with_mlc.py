@@ -86,6 +86,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output  # FIXME (not yet)
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
+    sim.output_dir = paths.output
 
     # unit
     nm = gate.g4_units.nm
@@ -139,8 +140,8 @@ if __name__ == "__main__":
     sim.physics_manager.set_production_cut("world", "all", 1000 * m)
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
 
     # add phase space
     plane = sim.add_volume("Box", "phsp_plane")
@@ -150,7 +151,7 @@ if __name__ == "__main__":
     plane.color = [1, 0, 0, 1]  # red
 
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
-    phsp.mother = plane.name
+    phsp.attached_to = plane.name
     phsp.attributes = [
         "KineticEnergy",
         "Weight",
@@ -161,19 +162,17 @@ if __name__ == "__main__":
         "PDGCode",
         "ParticleName",
     ]
-    phsp.output = paths.output / "phsp_versa_mlc.root"
+    phsp.output_filename = "phsp_versa_mlc.root"
 
     # start simulation
     sim.run()
 
     # print results
-    stats = sim.output.get_actor(s.name)
     print(stats)
 
     # end
-
-    f_phsp = uproot.open(paths.output / "phsp_versa_mlc.root")
-    arr = f_phsp["phsp"].arrays()
+    with uproot.open(phsp.get_output_path()) as f_phsp:
+        arr = f_phsp["phsp"].arrays()
 
     is_ok = is_ok_test019(arr, x_field, y_field)
     utility.test_ok(is_ok)

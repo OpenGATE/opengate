@@ -56,7 +56,7 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # start simulation
-    # sim.add_g4_command_after_init("/run/verbose 1")
+    # sim.g4_commands_after_init.append("/run/verbose 1")
     sim.run(True)
 
     # visu

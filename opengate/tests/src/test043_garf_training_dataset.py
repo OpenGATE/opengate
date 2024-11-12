@@ -5,9 +5,10 @@ import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
 from opengate.tests import utility
+from opengate.tests.utility import print_test, test_ok
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test043_garf")
+    paths = utility.get_default_test_paths(__file__, "gate_test043_garf", "test043")
 
     # create the simulation
     sim = gate.Simulation()
@@ -17,7 +18,8 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
     sim.visu = False
-    sim.random_seed = 123654
+    sim.random_seed = 12365
+    sim.output_dir = test43.paths.output
 
     # units
     nm = gate.g4_units.nm
@@ -74,8 +76,8 @@ if __name__ == "__main__":
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
-    arf.mother = detPlane.name
-    arf.output = paths.output / "test043_arf_training_dataset.root"
+    arf.attached_to = detPlane.name
+    arf.output_filename = "test043_arf_training_dataset.root"
     arf.energy_windows_actor = cc.name
     arf.russian_roulette = 100
 
@@ -83,23 +85,35 @@ if __name__ == "__main__":
     print(f"Position of the detector plane {dpz} mm")
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "stats")
-    s.track_types_flag = True
-    s.output = str(arf.output).replace(".root", "_stats.txt")
+    stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
+    stats.output_filename = "test043_arf_training_dataset_stats.txt"
+    stats.stats.write_to_disk = True
 
     # start simulation
-    sim.run()
+    sim.run(start_new_process=True)
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
-    print(stat)
-    skip = gate.sources.generic.get_source_skipped_events(sim.output, "s1")
-    print(f"Nb of skip particles {skip}  {(skip / stat.counts.event_count) * 100:.2f}%")
+    print(stats)
+
+    # FIXME: will work once the source_manager will be refactored.
+    skip = gate.sources.generic.get_source_skipped_events(sim, "s1")
+    ref_skip = 615782
+    is_ok = True
+    if abs(skip - ref_skip) / ref_skip > 0.01:
+        is_ok = False
+    print_test(
+        is_ok,
+        f"Nb of skip particles {skip} (vs {ref_skip}) "
+        f"{(skip / stats.counts.events) * 100:.2f}%",
+    )
 
     # ----------------------------------------------------------------------------------------------------------------
     gate.exception.warning("Compare stats")
-    stats_ref = utility.read_stat_file(paths.output_ref / s.output)
-    is_ok = utility.assert_stats(stat, stats_ref, 0.01)
+    stats_ref = utility.read_stat_file(
+        paths.output_ref / "test043_arf_training_dataset_stats.txt"
+    )
+    is_ok = utility.assert_stats(stats, stats_ref, 0.01) and is_ok
 
     gate.exception.warning("Compare root")
     checked_keys = [
@@ -111,7 +125,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.compare_root2(
             paths.output_ref / "test043_arf_training_dataset.root",
-            arf.output,
+            arf.get_output_path(),
             "ARF (training)",
             "ARF (training)",
             checked_keys,
@@ -120,3 +134,5 @@ if __name__ == "__main__":
         )
         and is_ok
     )
+
+    test_ok(is_ok)

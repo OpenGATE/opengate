@@ -17,6 +17,7 @@ if __name__ == "__main__":
         activity_kBq=1000,
         aa_enabled=True,
         aa_mode="ZeroEnergy",
+        version="_4_acc_angle_aa_ze",
     )
 
     # go
@@ -26,6 +27,10 @@ if __name__ == "__main__":
 
     # check
     is_ok = test028.compare_result(
-        sim.output, proj, "test028_aa_zero_energy.png", sum_tolerance=17
+        sim,
+        proj,
+        "test028_aa_zero_energy.png",
+        sum_tolerance=17,
+        version="_4_acc_angle_aa_ze",
     )
     utility.test_ok(is_ok)

@@ -8,7 +8,9 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test053_digit_efficiency")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test053_digit_efficiency", "test057"
+    )
 
     """
     PET simulation to test efficiency options of the digitizer
@@ -23,6 +25,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.check_volumes_overlap = False
     sim.random_seed = 321654
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -85,11 +88,11 @@ if __name__ == "__main__":
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
+    hc.attached_to = crystal.name
     mt = ""
     if sim.number_of_threads > 1:
         mt = "_MT"
-    hc.output = paths.output / ("test053_hits" + mt + ".root")
+    hc.output_filename = f"test053_hits{mt}.root"
     hc.attributes = [
         "TotalEnergyDeposit",
         "KineticEnergy",
@@ -104,20 +107,20 @@ if __name__ == "__main__":
 
     # EfficiencyActor
     ea = sim.add_actor("DigitizerEfficiencyActor", "Efficiency")
-    ea.mother = hc.mother
+    ea.attached_to = hc.attached_to
     ea.input_digi_collection = "Hits"
-    ea.output = hc.output
+    ea.output_filename = hc.output_filename
     ea.efficiency = 0.3
 
+    # go
     sim.run()
-    output = sim.output
 
     # Compare Hits and Efficiency
-    hits1 = uproot.open(hc.output)["Hits"]
+    hits1 = uproot.open(hc.get_output_path())["Hits"]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
 
-    hits2 = uproot.open(hc.output)["Efficiency"]
+    hits2 = uproot.open(hc.get_output_path())["Efficiency"]
     hits2_n = hits2.num_entries
     hits2 = hits2.arrays(library="numpy")
 

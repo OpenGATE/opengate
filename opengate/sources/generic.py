@@ -180,31 +180,17 @@ def set_source_rad_energy_spectrum(source, rad):
     source.energy.spectrum_energy = en
 
 
-def get_source_skipped_events(output, source_name):
-    n = 0
-    if (
-        output.simulation.number_of_threads > 1
-        or output.simulation.force_multithread_mode
-    ):
-        for i in range(1, output.simulation.number_of_threads + 1):
-            s = output.get_source_mt(source_name, i)
-            n += s.fTotalSkippedEvents
-    else:
-        n = output.get_source(source_name).fTotalSkippedEvents
+def get_source_skipped_events(sim, source_name):
+    n = sim.get_source_user_info(source_name).fTotalSkippedEvents
+    # FIXME this is *not* the correct way to do. Workaround until source is refactored
+    n = n * sim.number_of_threads
     return n
 
 
-def get_source_zero_events(output, source_name):
-    n = 0
-    if (
-        output.simulation.number_of_threads > 1
-        or output.simulation.force_multithread_mode
-    ):
-        for i in range(1, output.simulation.number_of_threads + 1):
-            s = output.get_source_mt(source_name, i)
-            n += s.fTotalZeroEvents
-    else:
-        n = output.get_source(source_name).fTotalZeroEvents
+def get_source_zero_events(sim, source_name):
+    n = sim.get_source_user_info(source_name).fTotalZeroEvents
+    # FIXME this is *not* the correct way to do. Workaround until source is refactored
+    n = n * sim.number_of_threads
     return n
 
 
@@ -290,18 +276,8 @@ class SourceBase(UserElement):
     def prepare_output(self):
         pass
 
-    def get_estimated_number_of_events(self, run_timing_interval):
-        """# by default, all event have the same time, so we check that
-        # this time is included into the given time interval
-        if (
-            run_timing_interval[0]
-            <= self.user_info.start_time
-            <= run_timing_interval[1]
-        ):
-            return self.user_info.n
-        return 0"""
-        fatal(f"Not implemented yet: get_estimated_number_of_events")
-        exit()
+    def can_predict_number_of_events(self):
+        return True
 
 
 class GenericSource(SourceBase):
@@ -527,8 +503,9 @@ class GenericSource(SourceBase):
     def prepare_output(self):
         SourceBase.prepare_output(self)
         # store the output from G4 object
-        self.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
-        self.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
+        # FIXME will be refactored like the actors
+        self.user_info.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
+        self.user_info.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
 
     def update_tac_activity(self):
         ui = self.user_info
@@ -544,6 +521,14 @@ class GenericSource(SourceBase):
         ui.start_time = ui.tac_times[0]
         ui.activity = ui.tac_activities[0]
         self.g4_source.SetTAC(ui.tac_times, ui.tac_activities)
+
+    def can_predict_number_of_events(self):
+        aa = self.user_info.direction.acceptance_angle
+        if aa.intersection_flag or aa.normal_flag:
+            if aa.skip_policy == "ZeroEnergy":
+                return True
+            return False
+        return True
 
 
 class TemplateSource(SourceBase):

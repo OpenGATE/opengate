@@ -19,15 +19,26 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
-  fOutputFilename = DictGetStr(user_info, "output");
+  fPhysicalVolumeName = "None";
+}
+
+GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
+
+void GateDigitizerProjectionActor::InitializeUserInput(py::dict &user_info) {
+  GateVActor::InitializeUserInput(user_info);
   auto r = DictGetMatrix(user_info, "detector_orientation_matrix");
   fDetectorOrientationMatrix = ConvertToG4RotationMatrix(r);
   fInputDigiCollectionNames =
       DictGetVecStr(user_info, "input_digi_collections");
+}
+
+void GateDigitizerProjectionActor::InitializeCpp() {
   fImage = ImageType::New();
 }
 
-GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
+void GateDigitizerProjectionActor::SetPhysicalVolumeName(std::string name) {
+  fPhysicalVolumeName = name;
+}
 
 // Called when the simulation start
 void GateDigitizerProjectionActor::StartSimulationAction() {
@@ -38,6 +49,12 @@ void GateDigitizerProjectionActor::StartSimulationAction() {
     fInputDigiCollections.push_back(hc);
     CheckRequiredAttribute(hc, "PostPosition");
   }
+}
+
+void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
+  // Set the image to the correct position/orientation
+  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
+                                 fDetectorOrientationMatrix);
 }
 
 void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
@@ -51,11 +68,6 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
       l.fInputPos[slice] = &att_pos->Get3Values();
     }
   }
-
-  // Important ! The volume may have moved, so we re-attach each run
-  G4AutoLock mutex(&DigitizerProjectionActorMutex);
-  AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
-                                 fDetectorOrientationMatrix);
 }
 
 void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {

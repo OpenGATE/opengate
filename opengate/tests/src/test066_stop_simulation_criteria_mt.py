@@ -1,41 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Wed Oct 16 15:00:21 2024
+
+@author: fava
+"""
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import opengate as gate
 from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 import itk
 import numpy as np
-
-
-def define_run_timing_intervals(
-    n_part_per_core, n_part_check, n_threads, skip_first_n_part=0, n_last_run=1000
-):
-    sec = gate.g4_units.second
-    n_tot_planned = n_part_per_core * n_threads
-    if skip_first_n_part == 0:
-        run_timing_intervals = []
-        start_0 = 0
-    else:
-        run_timing_intervals = [[0, (skip_first_n_part / n_tot_planned) * sec]]
-        start_0 = (skip_first_n_part / n_tot_planned) * sec
-
-    end_last = (n_last_run / n_tot_planned) * sec
-    n_runs = round(((n_tot_planned - skip_first_n_part - n_last_run) / n_part_check))
-    # print(n_runs)
-
-    # end = start + 1 * sec / n_runs
-    end = start_0 + (1 * sec - start_0 - end_last) / n_runs
-    start = start_0
-    for r in range(n_runs):
-        run_timing_intervals.append([start, end])
-        start = end
-        end += (1 * sec - start_0 - end_last) / n_runs
-
-    run_timing_intervals.append([start, start + end_last])
-    # print(run_timing_intervals)
-
-    return run_timing_intervals
 
 
 def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
@@ -52,18 +30,15 @@ if __name__ == "__main__":
         __file__, "gate_test029_volume_time_rotation", "test066"
     )
 
-    # check statistical uncertainty every n_check simlated particles
+    # check statistical uncertainty every n_check simulated particles
     n_planned = 650000
-    n_check = 3000
-    n_threads = 16
-    # n_runs = round(n_planned*n_threads/(n_check))
-    run_timing_intervals = define_run_timing_intervals(
-        n_planned, n_check, n_threads, skip_first_n_part=11000
-    )
+    n_threads = 3
 
     # goal uncertainty
-    unc_goal = 0.03
-    thresh_voxel_edep_for_unc_calc = 0.7
+    unc_goal = 0.05  # means 5%
+    thresh_voxel_edep_for_unc_calc = (
+        0.7  # calculated over the voxels whose value is > 0.7 * max edep value
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -85,8 +60,7 @@ if __name__ == "__main__":
     sec = gate.g4_units.second
 
     #  change world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    sim.world.size = [1 * m, 1 * m, 1 * m]
 
     # add a simple fake volume to test hierarchy
     # translation and rotation like in the Gate macro
@@ -121,44 +95,33 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test066-edep.mhd"
-    dose.mother = "waterbox"
+    dose.output_filename = "test066-edep.mhd"
+    dose.attached_to = "waterbox"
     dose.size = [40, 40, 40]
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
-    dose.uncertainty = False
-    dose.ste_of_mean = True
-    # dose.use_more_ram = True
-    dose.goal_uncertainty = unc_goal
-    dose.thresh_voxel_edep_for_unc_calc = thresh_voxel_edep_for_unc_calc
+    dose.edep_uncertainty.active = True
+    dose.uncertainty_goal = unc_goal
+    dose.uncertainty_first_check_after_n_events = 100
+    dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc
+    dose.write_to_disk = False
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
-    s.output = paths.output / "stats066.txt"
-
-    # motion
-    sim.run_timing_intervals = run_timing_intervals
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
+    stat.write_to_disk = False
 
     # start simulation
     sim.run()
-    output = sim.output
 
     # print results at the end
-    stat = output.get_actor("Stats")
     print(stat)
-
-    dose = output.get_actor("dose")
-    print(dose)
 
     # test that final mean uncertainty satisfies the goal uncertainty
     test_thresh_rel = 0.01
-    d = output.get_actor("dose")
 
-    edep_img = itk.imread(paths.output / d.user_info.output)
-    edep_arr = itk.GetArrayViewFromImage(edep_img)
-    unc_img = itk.imread(paths.output / d.user_info.output_uncertainty)
-    unc_array = itk.GetArrayFromImage(unc_img)
+    edep_arr = np.asarray(dose.edep.image)
+    unc_array = np.asarray(dose.edep_uncertainty.image)
 
     unc_mean = calculate_mean_unc(
         edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
@@ -167,12 +130,12 @@ if __name__ == "__main__":
     print(f"{unc_mean = }")
     ok = unc_mean < unc_goal and unc_mean > unc_goal - test_thresh_rel
 
-    # test that the simulation didn't stop because we reached the planned number of runs
-    stats_ref = utility.read_stat_file(paths.output / "stats066.txt")
-    n_runs_planned = len(run_timing_intervals) * n_threads
-    n_effective_runs = stats_ref.counts.run_count
-    print(f"{n_runs_planned = }")
-    print(f"{n_effective_runs = }")
-    ok = ok and n_effective_runs < n_runs_planned
+    # test that the simulation stopped because of the threshold crtierion,
+    # and not simply because we reached the planned number of events
+    n_planned = n_planned * n_threads
+    n_effective = stat.counts.events
+    print(f"{n_planned = }")
+    print(f"{n_effective = }")
+    ok = ok and n_effective < n_planned
 
     utility.test_ok(ok)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from test053_phid_helpers1 import *
+import os
 
 paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -15,7 +16,10 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     ui = sim.user_info
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
+    n_threads = int(os.cpu_count() / 2)
+    if os.name == "nt":
+        n_threads = 1
+    ui.number_of_threads = n_threads
     ui.visu = False
     ui.random_seed = 123654
 
@@ -25,7 +29,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     world.material = "G4_WATER"
 
     # physics
-    sim.physics_list_name = "QGSP_BERT_EMZ"
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = True
     sim.physics_manager.global_production_cuts.all = 1e6 * mm
     sim.g4_commands_after_init.append("/process/em/pixeXSmodel ECPSSR_ANSTO")
@@ -34,7 +38,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
-    s.output = output / f"test053_{sim_name}.txt"
+    s.output_filename = output / f"test053_{sim_name}.txt"
 
     # phsp actor
     phsp = sim.add_actor("PhaseSpaceActor", "phsp")
@@ -47,8 +51,9 @@ def create_sim_test053(sim, sim_name, output=paths.output):
         "TrackCreatorProcess",
         "ProcessDefinedStep",
     ]
-    phsp.output = output / f"test053_{sim_name}.root"
+    phsp.output_filename = output / f"test053_{sim_name}.root"
     phsp.debug = False
+    phsp.steps_to_store = "exiting first"
 
     f = sim.add_filter("ParticleFilter", "f1")
     f.particle = "gamma"
@@ -56,8 +61,13 @@ def create_sim_test053(sim, sim_name, output=paths.output):
 
     if "ref" in sim_name:
         f = sim.add_filter("TrackCreatorProcessFilter", "f2")
-        # f.process_name = "RadioactiveDecay" # G4 11.1
-        f.process_name = "Radioactivation"  # G4 11.2
+        gi = g4.GateInfo
+        v = gi.get_G4Version().replace("$Name: ", "")
+        v = v.replace("$", "")
+        if "geant4-11-01" in v:
+            f.process_name = "RadioactiveDecay"  # G4 11.1
+        else:
+            f.process_name = "Radioactivation"  # G4 11.2
         # phsp.debug = True
         phsp.filters.append(f)
 
@@ -77,6 +87,7 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     s1.direction.type = "iso"
     s1.activity = activity
     s1.half_life = nuclide.half_life("s") * sec
+    print(f"{s1.name = }")
     print(f"Half Life is {s1.half_life / sec:.2f} sec")
 
     return s1

@@ -14,7 +14,11 @@ if __name__ == "__main__":
     sim = gate.Simulation()
 
     # create sim without AA
-    test029.create_simulation(sim, False)
+    test029.create_simulation(sim, False, paths, "_trot1")
+
+    # for later reference, get the actors that were created by the helper function above
+    proj_actor = sim.actor_manager.get_actor("Projection")
+    stats = sim.actor_manager.get_actor("Stats")
 
     # initialize & start
     sim.run()
@@ -31,13 +35,12 @@ if __name__ == "__main__":
 
     # -------------------------
     gate.exception.warning("Compare stats")
-    stats = sim.output.get_actor("Stats")
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "stats029.txt")
     print(
-        f"Number of steps was {stats.counts.step_count}, forced to the same value (because of angle acceptance). "
+        f"Number of steps was {stats.counts.steps}, forced to the same value (because of angle acceptance). "
     )
-    stats.counts.step_count = stats_ref.counts.step_count  # force to id
+    stats.counts.steps = stats_ref.counts.steps  # force to id
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
     print(is_ok)
 
@@ -46,12 +49,13 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj029.mhd",
-            paths.output / "proj029.mhd",
+            proj_actor.get_output_path(),
             stats,
             tolerance=59,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
             sum_tolerance=2,
+            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior
         )
         and is_ok
     )

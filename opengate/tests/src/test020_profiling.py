@@ -75,11 +75,11 @@ if __name__ == "__main__":
 
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test20-edep.mhd"
-    dose.mother = "patient"
+    dose.output_filename = paths.output / "test20-edep.mhd"
+    dose.attached_to = "patient"
     dose.size = [100, 100, 100]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose.img_coord_system = True  # default is True
+    dose.output_coordinate_system = "attached_to_image"
     dose.translation = [0 * mm, 0 * mm, 1 * mm]
 
     # add stat actor
@@ -87,25 +87,25 @@ if __name__ == "__main__":
     stats.track_types_flag = True
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
 
     # start simulations
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-    print(stat)
-    dose = sim.output.get_actor("dose")
+    print(stats)
     print(dose)
 
     # tests
     stats_ref = utility.read_stat_file(paths.gate / "output" / "stat_profiling.txt")
-    stats_ref.counts.run_count = sim.number_of_threads
-    is_ok = utility.assert_stats(stat, stats_ref, 0.1)
+    stats_ref.counts.runs = sim.number_of_threads
+    is_ok = utility.assert_stats(stats, stats_ref, 0.1)
     is_ok = is_ok and utility.assert_images(
         paths.gate / "output" / "output_profiling-Edep.mhd",
-        paths.output / dose.user_info.output,
-        stat,
+        dose.edep.get_output_path(),
+        stats,
         tolerance=79,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
     utility.test_ok(is_ok)

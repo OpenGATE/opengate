@@ -4,41 +4,43 @@
 from opengate.tests import utility
 from test013_phys_lists_helpers import create_pl_sim
 
-paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
-# create simulation
-sim = create_pl_sim()
+if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
 
-# remove ion sources
-sim.source_manager.user_info_sources.pop("ion1")
-sim.source_manager.user_info_sources.pop("ion2")
+    # create simulation
+    sim = create_pl_sim()
 
-# change physics
-sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
+    # remove ion sources
+    sim.source_manager.user_info_sources.pop("ion1")
+    sim.source_manager.user_info_sources.pop("ion2")
 
-# em parameters
-sim.physics_manager.em_parameters.fluo = True
-sim.physics_manager.em_parameters.auger = True
-sim.physics_manager.em_parameters.auger_cascade = True
-sim.physics_manager.em_parameters.pixe = True
-sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
+    # change physics
+    sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
 
-sim.physics_manager.em_switches_world.deex = True
-sim.physics_manager.em_switches_world.auger = True
-sim.physics_manager.em_switches_world.pixe = True
+    # em parameters
+    sim.physics_manager.em_parameters.fluo = True
+    sim.physics_manager.em_parameters.auger = True
+    sim.physics_manager.em_parameters.auger_cascade = True
+    sim.physics_manager.em_parameters.pixe = True
+    sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
 
-print("Phys list cuts:")
-print(sim.physics_manager.dump_production_cuts())
+    sim.physics_manager.em_switches_world.deex = True
+    sim.physics_manager.em_switches_world.auger = True
+    sim.physics_manager.em_switches_world.pixe = True
 
-# start simulation
-# sim.set_g4_verbose(True)
-# sim.add_g4_command_after_init("/tracking/verbose 1")
-sim.run()
+    print("Phys list cuts:")
+    print(sim.physics_manager.dump_production_cuts())
 
-stats = sim.output.get_actor("Stats")
+    # start simulation
+    # sim.set_g4_verbose(True)
+    # sim.g4_commands_after_init.append("/tracking/verbose 1")
+    sim.run()
 
-# Gate mac/main_2.mac
-stats_ref = utility.read_stat_file(paths.gate_output / "stat_2.txt")
-is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
+    stats = sim.get_actor("Stats")
 
-utility.test_ok(is_ok)
+    # Gate mac/main_2.mac
+    stats_ref = utility.read_stat_file(paths.gate_output / "stat_2.txt")
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
+
+    utility.test_ok(is_ok)

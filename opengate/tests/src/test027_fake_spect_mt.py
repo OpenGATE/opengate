@@ -5,7 +5,9 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test027_fake_spect")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test027_fake_spect", "test027_fake_spect"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -14,6 +16,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.visu = False
     sim.number_of_threads = 2
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -41,29 +44,6 @@ if __name__ == "__main__":
     crystal.material = "NaITl"
     crystal.color = [1, 1, 0, 1]
 
-    # # colli
-    # colli = sim.add_volume('Box', 'colli')
-    # colli.mother = 'SPECThead'
-    # colli.size = [55 * cm, 42 * cm, 6 * cm]
-    # colli.material = 'Lead'
-    # hole = sim.add_volume('Polyhedra', 'hole')
-    # hole.mother = 'colli'
-    # h = 5.8 * cm
-    # hole.zplane = [-h / 2, h - h / 2]
-    # hole.radius_outer = [0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm, 0.15 * cm]
-    #
-    # size = [77, 100, 1]
-    # #size = [7, 10, 1]
-    # tr = [7.01481 * mm, 4.05 * mm, 0]
-    #
-    # ## not correct position
-    # start = [-(size[0] * tr[0]) / 2.0, -(size[1] * tr[1]) / 2.0, 0]
-    # translations_1 = gate.geometry.utility.get_grid_repetition(size, tr, start=start)
-    # start[0] += 3.50704 * mm
-    # start[1] += 2.025 * mm
-    # translations_2 = gate.geometry.utility.get_grid_repetition(size, tr, start=start)
-    # hole.translation = translations_1 + translations_2
-
     # physic list
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
     sim.physics_manager.enable_decay = False
@@ -88,8 +68,8 @@ if __name__ == "__main__":
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
-    hc.output = paths.output / "test027.root"
+    hc.attached_to = crystal.name
+    hc.output_filename = "test027.root"
     hc.attributes = [
         "KineticEnergy",
         "PostPosition",
@@ -106,12 +86,12 @@ if __name__ == "__main__":
 
     # singles collection
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.mother = crystal.name
+    sc.attached_to = crystal.name
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     # sc.policy = 'EnergyWeightedCentroidPosition'
     # same filename, there will be two branches in the file
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     sec = gate.g4_units.second
     sim.running_verbose_level = 2
@@ -126,10 +106,10 @@ if __name__ == "__main__":
 
     # stat
     gate.exception.warning("Compare stats")
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.run_count}. Set to 1 before comparison")
-    stats.counts.run_count = 1  # force to 1
+    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
+    stats.counts.runs = 1  # force to 1
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
@@ -139,7 +119,12 @@ if __name__ == "__main__":
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     utility.compare_root(
-        gate_file, hc.output, "Hits", "Hits", checked_keys, paths.output / "test027.png"
+        gate_file,
+        hc.get_output_path(),
+        "Hits",
+        "Hits",
+        checked_keys,
+        paths.output / "test027.png",
     )
 
     # Root compare SINGLES
@@ -149,7 +134,7 @@ if __name__ == "__main__":
     checked_keys = ["globalposX", "globalposY", "globalposZ", "energy"]
     utility.compare_root(
         gate_file,
-        sc.output,
+        sc.get_output_path(),
         "Singles",
         "Singles",
         checked_keys,

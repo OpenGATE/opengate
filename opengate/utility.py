@@ -16,9 +16,10 @@ import json
 import importlib
 import importlib.util
 from importlib.metadata import version
+import shutil
 
 import opengate_core as g4
-from .exception import fatal
+from .exception import fatal, warning
 
 
 class LazyModuleLoader:
@@ -39,7 +40,9 @@ class LazyModuleLoader:
         if self.module is None:
             # Check module existence and import it
             try:
+                # print(f"LazyModuleLoader is importing module {self.module_name} ...")
                 self.module = importlib.import_module(self.module_name)
+                # print("... done")
             except ModuleNotFoundError:
                 fatal(
                     f"The module '{self.module_name}' is not installed. "
@@ -71,11 +74,220 @@ def ensure_directory_exists(directory):
     p.mkdir(parents=True, exist_ok=True)
 
 
-g4_units = Box()
-for t in g4.G4UnitDefinition.GetUnitsTable():
-    for a in t.GetUnitsList():
-        g4_units[str(a.GetName())] = a.GetValue()
-        g4_units[str(a.GetSymbol())] = a.GetValue()
+def delete_folder_contents(folder_path):
+    if os.path.exists(folder_path):
+        for filename in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                warning(f"Failed to delete {file_path}. Reason: {e}")
+
+
+# units were previously loaded dynamically from G4
+# g4_units = Box()
+# for t in g4.G4UnitDefinition.GetUnitsTable():
+#     for a in t.GetUnitsList():
+#         g4_units[str(a.GetName())] = a.GetValue()
+#         g4_units[str(a.GetSymbol())] = a.GetValue()
+
+# This dictionary was created with devtools.print_g4units_dict_string()
+# It should be updated if Geant4 (ever) changes the units.
+# It is hard-coded, as opposed to the dynamic variant above,
+# because the build process on readthedocs cannot call G4 functions
+g4_units = Box(
+    {
+        "parsec": 3.0856775807e19,
+        "pc": 3.0856775807e19,
+        "kilometer": 1000000.0,
+        "km": 1000000.0,
+        "meter": 1000.0,
+        "m": 1000.0,
+        "centimeter": 10.0,
+        "cm": 10.0,
+        "millimeter": 1.0,
+        "mm": 1.0,
+        "micrometer": 0.001,
+        "um": 0.001,
+        "nanometer": 1.0000000000000002e-06,
+        "nm": 1.0000000000000002e-06,
+        "angstrom": 1.0000000000000001e-07,
+        "Ang": 1.0000000000000001e-07,
+        "fermi": 1e-12,
+        "fm": 1e-12,
+        "kilometer2": 1000000000000.0,
+        "km2": 1000000000000.0,
+        "meter2": 1000000.0,
+        "m2": 1000000.0,
+        "centimeter2": 100.0,
+        "cm2": 100.0,
+        "millimeter2": 1.0,
+        "mm2": 1.0,
+        "barn": 9.999999999999999e-23,
+        "millibarn": 9.999999999999999e-26,
+        "mbarn": 9.999999999999999e-26,
+        "microbarn": 9.999999999999999e-29,
+        "mubarn": 9.999999999999999e-29,
+        "nanobarn": 1e-31,
+        "nbarn": 1e-31,
+        "picobarn": 1e-34,
+        "pbarn": 1e-34,
+        "kilometer3": 1e18,
+        "km3": 1e18,
+        "meter3": 1000000000.0,
+        "m3": 1000000000.0,
+        "centimeter3": 1000.0,
+        "cm3": 1000.0,
+        "millimeter3": 1.0,
+        "mm3": 1.0,
+        "liter": 1000000.0,
+        "L": 1000000.0,
+        "dL": 100000.0,
+        "cL": 10000.0,
+        "mL": 1000.0,
+        "radian": 1.0,
+        "rad": 1.0,
+        "milliradian": 0.001,
+        "mrad": 0.001,
+        "degree": 0.017453292519943295,
+        "deg": 0.017453292519943295,
+        "steradian": 1.0,
+        "sr": 1.0,
+        "millisteradian": 0.001,
+        "msr": 0.001,
+        "second": 1000000000.0,
+        "s": 1000000000.0,
+        "millisecond": 1000000.0,
+        "ms": 1000000.0,
+        "microsecond": 1000.0,
+        "us": 1000.0,
+        "nanosecond": 1.0,
+        "ns": 1.0,
+        "picosecond": 0.001,
+        "ps": 0.001,
+        "minute": 60000000000.0,
+        "min": 60000000000.0,
+        "hour": 3600000000000.0,
+        "h": 3600000000000.0,
+        "day": 86400000000000.0,
+        "d": 86400000000000.0,
+        "year": 3.1536e16,
+        "y": 3.1536e16,
+        "hertz": 1e-09,
+        "Hz": 1e-09,
+        "kilohertz": 1.0000000000000002e-06,
+        "kHz": 1.0000000000000002e-06,
+        "megahertz": 0.001,
+        "MHz": 0.001,
+        "cm/ns": 10.0,
+        "mm/ns": 1.0,
+        "cm/us": 0.01,
+        "km/s": 0.001,
+        "cm/ms": 1e-05,
+        "m/s": 1e-06,
+        "cm/s": 1e-08,
+        "mm/s": 1e-09,
+        "eplus": 1.0,
+        "e+": 1.0,
+        "coulomb": 6.241509074460763e18,
+        "C": 6.241509074460763e18,
+        "electronvolt": 1e-06,
+        "eV": 1e-06,
+        "kiloelectronvolt": 0.001,
+        "keV": 0.001,
+        "megaelectronvolt": 1.0,
+        "MeV": 1.0,
+        "gigaelectronvolt": 1000.0,
+        "GeV": 1000.0,
+        "teraelectronvolt": 1000000.0,
+        "TeV": 1000000.0,
+        "petaelectronvolt": 1000000000.0,
+        "PeV": 1000000000.0,
+        "millielectronVolt": 1e-09,
+        "meV": 1e-09,
+        "joule": 6241509074460.763,
+        "J": 6241509074460.763,
+        "eV/c": 1e-06,
+        "keV/c": 0.001,
+        "MeV/c": 1.0,
+        "GeV/c": 1000.0,
+        "TeV/c": 1000000.0,
+        "GeV/cm": 100.0,
+        "MeV/cm": 0.1,
+        "keV/cm": 0.0001,
+        "eV/cm": 1e-07,
+        "milligram": 6.241509074460762e18,
+        "mg": 6.241509074460762e18,
+        "gram": 6.241509074460762e21,
+        "g": 6.241509074460762e21,
+        "kilogram": 6.241509074460762e24,
+        "kg": 6.241509074460762e24,
+        "g/cm3": 6.241509074460762e18,
+        "mg/cm3": 6241509074460762.0,
+        "kg/m3": 6241509074460762.0,
+        "g/cm2": 6.241509074460761e19,
+        "mg/cm2": 6.2415090744607624e16,
+        "kg/cm2": 6.2415090744607614e22,
+        "cm2/g": 1.6021766340000004e-20,
+        "eV*cm2/g": 1.6021766340000002e-26,
+        " eV*cm2/g": 1.6021766340000002e-26,
+        "keV*cm2/g": 1.6021766340000002e-23,
+        "MeV*cm2/g": 1.6021766340000004e-20,
+        "GeV*cm2/g": 1.6021766340000003e-17,
+        "watt": 6241.509074460762,
+        "W": 6241.509074460762,
+        "newton": 6241509074.460763,
+        "N": 6241509074.460763,
+        "pascal": 6241.509074460763,
+        "Pa": 6241.509074460763,
+        "bar": 624150907.4460763,
+        "atmosphere": 632420906.9697368,
+        "atm": 632420906.9697368,
+        "ampere": 6241509074.460763,
+        "A": 6241509074.460763,
+        "milliampere": 6241509.0744607635,
+        "mA": 6241509.0744607635,
+        "microampere": 6241.509074460762,
+        "muA": 6241.509074460762,
+        "nanoampere": 6.2415090744607635,
+        "nA": 6.2415090744607635,
+        "volt": 1e-06,
+        "V": 1e-06,
+        "kilovolt": 0.001,
+        "kV": 0.001,
+        "megavolt": 1.0,
+        "MV": 1.0,
+        "volt/m": 9.999999999999999e-10,
+        "V/m": 9.999999999999999e-10,
+        "kilovolt/m": 1e-06,
+        "kV/m": 1e-06,
+        "megavolt/m": 0.001,
+        "MV/m": 0.001,
+        "weber": 1000.0,
+        "Wb": 1000.0,
+        "tesla": 0.001,
+        "T": 0.001,
+        "kilogauss": 0.0001,
+        "kG": 0.0001,
+        "gauss": 1.0000000000000001e-07,
+        "G": 1.0000000000000001e-07,
+        "kelvin": 1.0,
+        "K": 1.0,
+        "mole": 1.0,
+        "mol": 1.0,
+        "g/mole": 6.241509074460762e21,
+        "g/mol": 6.241509074460762e21,
+        "becquerel": 1e-09,
+        "Bq": 1e-09,
+        "curie": 37.0,
+        "Ci": 37.0,
+        "gray": 1.0000000000000002e-12,
+        "Gy": 1.0000000000000002e-12,
+    }
+)
 
 
 # def g4_units(name: str) -> float:
@@ -106,6 +318,14 @@ def get_material_name_variants(material_name):
 
 def g4_best_unit(value, unit_type):
     return g4.G4BestUnit(value, unit_type)
+
+
+def g4_best_unit_tuple(value, unit_type):
+    bu = g4.G4BestUnit(value, unit_type)
+    parts = str(bu).split(" ", 1)
+    float_part = float(parts[0])
+    unit_part = parts[1].strip()
+    return float_part, unit_part
 
 
 def assert_key(key: str, d: Box):
@@ -173,29 +393,29 @@ def read_mac_file_to_commands(filename):
 
 
 def ensure_filename_is_str(filename):
-    # Algorithms (itk) do not support Path -> convert to str
+    # Some software packages, e.g. itk, do not support Path -> convert to str
     if isinstance(filename, Path):
         return str(filename)
-    return filename
-
-
-def insert_suffix_before_extension(file_path, suffix, suffixSeparator="-"):
-    print(file_path)
-    print(suffix)
-    if suffix:
-        suffix = suffix.strip("_- *")
-        suffix = suffix.lower()
+    elif filename is None:
+        return ""
     else:
-        return file_path
-    if not isinstance(file_path, Path):
-        path = Path(file_path)
+        return filename
+
+
+def insert_suffix_before_extension(file_path, suffix, suffix_separator="-"):
+    path = Path(file_path)
+    if not suffix:
+        return path
+
+    suffix = suffix.strip("_- *").lower()
+    # Handle filenames with nested extensions e.g. '.nii.gz'
+    if path.name.endswith(".nii.gz"):
+        stem = path.name[: -len(".nii.gz")]
+        new_path = path.with_name(f"{stem}{suffix_separator}{suffix}.nii.gz")
     else:
-        path = file_path
+        new_path = path.with_name(f"{path.stem}{suffix_separator}{suffix}{path.suffix}")
 
-    new_file_name = path.with_name(path.stem + suffixSeparator + suffix + path.suffix)
-    print(new_file_name)
-
-    return new_file_name
+    return new_path
 
 
 def get_random_folder_name(size=8, create=True):
@@ -276,6 +496,33 @@ def get_tests_folder():
     return get_gate_folder() / "tests" / "src"
 
 
+def get_library_path():
+    folder_base = (get_gate_folder() / "..").resolve()
+
+    subpaths = [Path("opengate_core"), Path("core") / "opengate_core"]
+    path = None
+
+    for subpath in subpaths:
+        try_path = folder_base / subpath
+        if os.path.exists(try_path):
+            path = try_path
+            break
+
+    if not path:
+        return "unknown"
+
+    files = os.listdir(path)
+    lib_ext = "dll" if os.name == "nt" else "so"
+    libs = list(filter(lambda file: file.endswith(f".{lib_ext}"), files))
+    if len(libs) == 0:
+        return "unknown"
+    elif len(libs) > 1:
+        warning(f"multiple .{lib_ext} files in {path}")
+        return "unknown"
+
+    return path / libs[0]
+
+
 def get_contrib_path():
     module_path = os.path.dirname(__file__)
     return Path(module_path) / "contrib"
@@ -298,6 +545,7 @@ def print_opengate_info():
 
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
+    print(f"Geant4 Qt        {gi.get_G4VIS_USE_OPENGLQT()} {gi.get_QT_VERSION()}")
     print(f"Geant4 GDML      {gi.get_G4GDML()}")
     print(f"Geant4 date      {gi.get_G4Date().replace(')', '').replace('(', '')}")
     print(f"Geant4 data      {g4.get_g4_data_folder()}")
@@ -308,6 +556,7 @@ def print_opengate_info():
     print(f"GATE folder      {module_path}")
     print(f"GATE data        {get_data_folder()}")
     print(f"GATE tests       {get_tests_folder()}")
+    print(f"GATE core path   {get_library_path()}")
 
     # check if from a git version ?
     git_path = Path(module_path).parent
@@ -321,6 +570,18 @@ def print_opengate_info():
 
     except:
         print(f"GATE date        {get_release_date(version('opengate'))} (pypi)")
+
+
+def calculate_variance(value_array, squared_value_array, number_of_samples):
+    return np.clip(
+        (
+            squared_value_array / number_of_samples
+            - np.power(value_array / number_of_samples, 2)
+        )
+        / (number_of_samples - 1),
+        0,
+        None,
+    )
 
 
 def standard_error_c4_correction(n):

@@ -5,10 +5,8 @@ import opengate as gate
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
 
-paths = utility.get_default_test_paths(__file__, "")
 
-
-def create_simu(nb_threads):
+def create_simu(nb_threads, paths):
     # create the simulation
     sim = gate.Simulation()
 
@@ -16,8 +14,9 @@ def create_simu(nb_threads):
     sim.g4_verbose = False
     sim.visu = False
     sim.number_of_threads = nb_threads
-    sim.random_seed = 987654321  # 123456
+    sim.random_seed = 987654321
     sim.check_volumes_overlap = False
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -74,8 +73,8 @@ def create_simu(nb_threads):
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
-    hc.mother = crystal.name
-    hc.output = ""  # paths.output / 'test039_hits.root'
+    hc.attached_to = crystal.name
+    hc.output_filename = None  # ""  # paths.output / 'test039_hits.root'
     hc.clear_every = 1
     hc.attributes = [
         "TotalEnergyDeposit",
@@ -91,14 +90,14 @@ def create_simu(nb_threads):
     ]
 
     sc = sim.add_actor("DigitizerAdderActor", "Singles")
-    sc.mother = crystal.name
+    sc.attached_to = crystal.name
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     sc.clear_every = 333
-    sc.output = paths.output / "test039_singles.root"
+    sc.output_filename = "test039_singles.root"
 
     cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
-    cc.mother = crystal.name
+    cc.attached_to = crystal.name
     cc.input_digi_collection = "Singles"
     cc.clear_every = 10
     cc.channels = [
@@ -110,7 +109,7 @@ def create_simu(nb_threads):
             "max": 5000 * keV,
         },  # should be strictly equal to 'Singles'
     ]
-    cc.output = paths.output / "test039_win_e.root"
+    cc.output_filename = "test039_win_e.root"
 
     # set hook function to dump cuts from G4
     sim.user_hook_after_init = check_production_cuts
@@ -119,7 +118,7 @@ def create_simu(nb_threads):
 
 
 # go
-# output = sim.start()
+# sim.run()
 
 # On linux
 # valgrind --tool=massif --massif-out-file=./massif_t039_no_cleared.out  python test039_hits_memory_check_MP.py
@@ -181,21 +180,21 @@ def create_simu(nb_threads):
 """
 
 
-def test_results(output):
+def test_results(sim, paths):
     # Compare stats file
-    stats = output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     # stats.write(paths.output_ref / 'test039_stats.txt')
     print(stats)
     stats_ref = utility.read_stat_file(paths.output_ref / "test039_stats.txt")
-    stats.counts.run_count = 2  # sim.number_of_threads
+    stats.counts.runs = 2  # sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, 0.05)
 
     # Compare singles
     print()
-    sc = output.get_actor("Singles").user_info
+    sc = sim.get_actor("Singles")
     gate.exception.warning(f"Check singles")
     ref_file = paths.output_ref / "test039_singles.root"
-    hc_file = sc.output
+    hc_file = sc.get_output_path()
     checked_keys = [
         "GlobalTime",
         "TotalEnergyDeposit",

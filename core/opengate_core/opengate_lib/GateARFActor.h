@@ -23,11 +23,13 @@ public:
   // Constructor
   explicit GateARFActor(py::dict &user_info);
 
+  void InitializeUserInput(py::dict &user_info) override;
+
   // Beginning run callback
-  virtual void BeginOfRunAction(const G4Run * /*run*/) override;
+  void BeginOfRunAction(const G4Run * /*run*/) override;
 
   // End run callback
-  virtual void EndOfRunAction(const G4Run * /*run*/) override;
+  void EndOfRunAction(const G4Run * /*run*/) override;
 
   int GetCurrentNumberOfHits() const;
 

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
-    stats = sim.output.get_actor("Stats")
+    stats = sim.get_actor("Stats")
     print(stats)
     print("-" * 80)
 
@@ -73,6 +73,6 @@ if __name__ == "__main__":
         / "output"
         / "stat.txt"
     )
-    stats_ref.counts.run_count = sim.number_of_threads * len(sim.run_timing_intervals)
+    stats_ref.counts.runs = sim.number_of_threads * len(sim.run_timing_intervals)
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.03)
     utility.test_ok(is_ok)

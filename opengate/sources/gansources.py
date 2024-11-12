@@ -14,41 +14,11 @@ from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
 from scipy.spatial.transform import Rotation
 from ..utility import LazyModuleLoader
+import random
 
 #
 torch = LazyModuleLoader("torch")
 gaga = LazyModuleLoader("gaga_phsp")
-
-
-def import_gaga_phsp():
-    # Try to import torch
-    try:
-        import torch
-    except:
-        fatal(
-            f'The module "torch" is needed, see https://pytorch.org/get-started/locally/ to install it'
-        )
-
-    # Try to import gaga_phsp
-    try:
-        import gaga_phsp as gaga
-    except:
-        fatal("The module \"gaga_phsp\" is needed. Use 'pip install gaga_phsp'")
-
-    # Check minimal version of gaga_phsp
-    import pkg_resources
-    from packaging import version
-
-    gaga_version = pkg_resources.get_distribution("gaga_phsp").version
-    gaga_minimal_version = "0.7.1"
-    if version.parse(gaga_version) < version.parse(gaga_minimal_version):
-        fatal(
-            "The minimal version of gaga_phsp is not correct. You should install at least the version "
-            + gaga_minimal_version
-            + ". Your version is "
-            + gaga_version
-        )
-    return gaga
 
 
 class VoxelizedSourcePDFSampler:
@@ -216,6 +186,8 @@ class VoxelizedSourceConditionGenerator:
     def initialize_source(self):
         # FIXME warning, this is call in the same thread but several time (???)
         if self.image is None:
+            # sleep to avoid concurrent access (??)
+            time.sleep(random.uniform(0.3, 1.0))
             self.image = itk.imread(self.activity_source_filename)
         self.source_img_info = get_info_from_image(self.image)
         if self.sampler is None:

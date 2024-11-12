@@ -1,16 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import opengate as gate
 from opengate.tests import utility
-import gatetools
-import numpy as np
 import pathlib
 
 
 if __name__ == "__main__":
-    current_path = pathlib.Path(__file__).parent.resolve()
-    ref_path = current_path.parent / "data" / "output_ref" / "test010"
-    paths = utility.get_default_test_paths(
-        __file__, gate_folder=None, output_folder="test010"
-    )
+    paths = utility.get_default_test_paths(__file__, output_folder="test010")
+    ref_path = paths.output_ref
 
     # units
     m = gate.g4_units.m
@@ -33,14 +31,14 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.number_of_threads = 1
     sim.random_seed = 123654
-    sim.output_dir = current_path.parent / "output"
+    sim.output_dir = paths.output
 
     # set the world size like in the Gate macro
     world = sim.world
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_AIR"
 
-    # set daugther volume for doseactor
+    # set daughter volume for doseactor
     image_volume = sim.add_volume("Box", "image_volume")
     image_volume.material = "G4_Pb"
     image_volume.mother = "world"
@@ -71,23 +69,21 @@ if __name__ == "__main__":
     source.energy.mono = 70 * keV
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = "test010-generic_source_angular_distribution.mhd"
-    dose.mother = "image_volume"
+    dose.output_filename = "test010-generic_source_angular_distribution.mhd"
+    dose.edep_uncertainty.active = True
+    dose.attached_to = "image_volume"
     dose.size = [100, 1, 100]
     dose.spacing = [10 * mm, 1 * cm, 10 * mm]
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
 
     # start simulation
     sim.run()
 
     # get results
-    stat = sim.output.get_actor("Stats")
     print(stat)
-
-    dose = sim.output.get_actor("dose")
     print(dose)
 
     # tests
@@ -100,10 +96,10 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             ref_path / "test010-generic_source_angular_distribution_edep_ref.mhd",
-            sim.output_dir / "test010-generic_source_angular_distribution-edep.mhd",
+            dose.edep.get_output_path(),
             stat,
             tolerance=13,
-            ignore_value=0,
+            ignore_value_data2=0,
             sum_tolerance=1,
         )
         and is_ok
@@ -114,11 +110,10 @@ if __name__ == "__main__":
         utility.assert_images(
             ref_path
             / "test010-generic_source_angular_distribution_edep_uncertainty_ref.mhd",
-            sim.output_dir
-            / "test010-generic_source_angular_distribution-edep-uncertainty.mhd",
+            dose.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
-            ignore_value=1,
+            ignore_value_data2=0,
             sum_tolerance=1,
         )
         and is_ok

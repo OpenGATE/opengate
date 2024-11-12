@@ -1,18 +1,21 @@
 
-GATE documentation
-==================
+User guide
+==========
 
 .. toctree::
-   :maxdepth: 4
-   :caption: Contents:
-   :numbered:
+   :maxdepth: 2
 
-   user_guide
-   developer_guide
+   user_guide/index
 
-Indices and tables
-==================
+Developer guide
+===============
 
-* :ref:`genindex`
+.. toctree::
+   :maxdepth: 2
+
+   developer_guide/index
+
+References
+==========
+
 * :ref:`modindex`
-* :ref:`search`

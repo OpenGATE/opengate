@@ -6,11 +6,7 @@ import colored
 from pathlib import Path
 from .g4DataSetup import *
 
-try:
-    color_error = colored.fg("red") + colored.attr("bold")
-except AttributeError:
-    # new syntax in colored>=1.5
-    color_error = colored.fore("red") + colored.style("bold")
+color_error = colored.fore("red") + colored.style("bold")
 
 
 # Check and download opengate tests data if not present:

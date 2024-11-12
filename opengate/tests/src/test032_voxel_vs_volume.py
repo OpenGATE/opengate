@@ -20,6 +20,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.check_volumes_overlap = True
     sim.random_seed = 1548765
+    sim.output_dir = paths.output
 
     # units
     m = gate.g4_units.m
@@ -71,7 +72,7 @@ if __name__ == "__main__":
             mat = "G4_LEAD_OXIDE"
         if "center_cylinder_hole" in l:
             mat = "G4_LEAD_OXIDE"
-        m = [labels[l], labels[l] + 1, mat]
+        m = [labels[l]["label"], labels[l]["label"] + 1, mat]
         iec2.voxel_materials.append(m)
 
     pMin, pMax = sim.volume_manager.volumes["iec1"].bounding_limits
@@ -82,12 +83,12 @@ if __name__ == "__main__":
     # the image coordinate space to iec1 or iec2
     # Coordinate system of iec1 is pMin (the extend)
     # Coordinate system of iec2 is the center of the image bounding box
-    img = itk.imread(str(iec2.image))
-    fake1 = gate.image.create_image_like(img)
+    iec2.load_input_image()
+    fake1 = gate.image.create_image_like(iec2.itk_image)
     pMin = gate.geometry.utility.vec_g4_as_np(pMin)
     fake1.SetOrigin(pMin)
 
-    fake2 = gate.image.create_image_like(img)
+    fake2 = gate.image.create_image_like(iec2.itk_image)
     info = gate.image.get_info_from_image(fake2)
     origin = -info.size * info.spacing / 2.0 + info.spacing / 2.0
     fake2.SetOrigin(origin)
@@ -105,9 +106,9 @@ if __name__ == "__main__":
         # and in the analytical phantom (iec1)
         p = [31 * mm, 33 * mm, 36 * mm]
         if i == 1:
-            p = gate.image.transform_images_point(p, img, fake1)
+            p = gate.image.transform_images_point(p, iec2.itk_image, fake1)
         else:
-            p = gate.image.transform_images_point(p, img, fake2)
+            p = gate.image.transform_images_point(p, iec2.itk_image, fake2)
         source.position.translation = p
         source.activity = activity
         source.direction.type = "iso"
@@ -119,33 +120,35 @@ if __name__ == "__main__":
     # add dose actor
     for i in range(1, 3):
         dose = sim.add_actor("DoseActor", f"dose{i}")
-        dose.output = paths.output / f"test032_iec{i}.mhd"
-        dose.mother = f"iec{i}"
+        dose.output_filename = f"test032_iec{i}.mhd"
+        dose.attached_to = f"iec{i}"
         dose.size = [100, 100, 100]
         dose.spacing = [2 * mm, 2 * mm, 2 * mm]
         # translate the iec1 to have the exact same dose origin
         # (only needed to perform the assert_image test)
         if i == 1:
             dose.translation = [0 * mm, 35 * mm, 0 * mm]
-        # only for voxelized:
-        dose.img_coord_system = True
+        if i == 2:
+            # only for voxelized:
+            dose.output_coordinate_system = "attached_to_image"
 
     # initialize & start
     sim.run()
 
     # stats
-    stats = sim.output.get_actor("stats")
     print(stats)
-    dose1 = sim.output.get_actor("dose1")
-    dose2 = sim.output.get_actor("dose2")
+    dose1 = sim.get_actor("dose1")
+    dose2 = sim.get_actor("dose2")
     # compare edep map
 
     is_ok = utility.assert_images(
-        dose1.user_info.output,
-        dose2.user_info.output,
+        dose1.edep.get_output_path(),
+        dose2.edep.get_output_path(),
         stats,
         tolerance=87,
         axis="x",
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images()
     )
 
     utility.test_ok(is_ok)

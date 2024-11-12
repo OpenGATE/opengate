@@ -7,13 +7,6 @@ from opengate.tests import utility
 if __name__ == "__main__":
     sim = gate.Simulation()
 
-    # options
-    # warning the visualisation is slow !
-    # sim.visu = True
-    sim.visu_type = "vrml"
-    sim.random_seed = 123456
-    sim.number_of_threads = 1
-
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
@@ -38,10 +31,19 @@ if __name__ == "__main__":
         __file__, output_folder="test072_coinc_sorter"
     )
 
+    # options
+    # warning the visualisation is slow !
+    # sim.visu = True
+    sim.visu_type = "vrml"
+    sim.random_seed = 123456
+    sim.number_of_threads = 1
+    sim.output_dir = paths.output
+    sim.store_json_archive = True
+    sim.json_archive_filename = "simulation.json"
+
     # world
-    world = sim.world
-    world.size = [450 * mm, 450 * mm, 70 * mm]
-    world.material = "G4_AIR"
+    sim.world.size = [450 * mm, 450 * mm, 70 * mm]
+    sim.world.material = "G4_AIR"
 
     # create the materials
     sim.volume_manager.material_database.add_material_nb_atoms(
@@ -76,7 +78,7 @@ if __name__ == "__main__":
 
     # block
     block = sim.add_volume("Box", "block")
-    block.mother = pet.name
+    block.mother = pet
     block.size = [60 * mm, 10 * mm, 10 * mm]
     translations_ring, rotations_ring = gate.geometry.utility.get_circular_repetition(
         80, [160 * mm, 0.0 * mm, 0], start_angle_deg=180, axis=[0, 0, 1]
@@ -88,7 +90,7 @@ if __name__ == "__main__":
 
     # Crystal
     crystal = sim.add_volume("Box", "crystal")
-    crystal.mother = block.name
+    crystal.mother = block
     crystal.size = [60 * mm, 10 * mm, 10 * mm]
     crystal.material = "LYSO"
     crystal.color = green
@@ -107,13 +109,14 @@ if __name__ == "__main__":
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
 
     # actors
-    stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats_actor.output = paths.output / "stats.txt"
+    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats.output_filename = "stats.txt"
 
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal.name}")
-    hc.mother = crystal.name
-    hc.output = paths.output / "test72_output_1.root"
+    hc.attached_to = crystal
+    hc.authorize_repeated_volumes = True
+    hc.output_filename = "test72_output_1.root"
     hc.attributes = [
         "EventID",
         "PostPosition",
@@ -124,10 +127,11 @@ if __name__ == "__main__":
 
     # Singles
     sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal.name}")
-    sc.mother = hc.mother
+    sc.attached_to = hc.attached_to
+    sc.authorize_repeated_volumes = True
     sc.input_digi_collection = hc.name
     sc.policy = "EnergyWinnerPosition"
-    sc.output = hc.output
+    sc.output_filename = hc.output_filename
 
     # timing
     sim.run_timing_intervals = [[0, 200 * sec]]
@@ -136,7 +140,6 @@ if __name__ == "__main__":
     sim.run()
 
     # end
-    stats = sim.output.get_actor("Stats")
     print(stats)
 
     # This test produces the data for the other 072_coinc_sorter tests

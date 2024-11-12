@@ -7,12 +7,12 @@ with open("VERSION", "r") as fh:
 # For windows, this package is needed
 install_requires_windows = []
 if os.name == "nt":
-    install_requires_windows = [msvc - runtime]
+    install_requires_windows = ["msvc-runtime"]
 
 setup(
     install_requires=[
-        "colored",
-        "opengate_core==" + version,
+        "colored>1.5",
+        "opengate-core==" + version,
         "gatetools",
         "click",
         "python-box<7.0.0",
@@ -29,6 +29,7 @@ setup(
         "jsonpickle",
         "pandas",
         "requests",
+        "PyYAML",
     ]
     + install_requires_windows,
 )

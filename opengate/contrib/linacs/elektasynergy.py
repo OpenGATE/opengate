@@ -31,17 +31,13 @@ def create_material(simulation, name):
 
 def add_linac(sim, name="linac", sad=1000):
     # unit
-    m = g4_units.m
     create_material(sim, name)
 
     # for debug : should be the same as create_material
     # sim.volume_manager.add_material_database('../contrib/elekta_synergy_materials.db')
 
-    # colors
-    white = [1, 1, 1, 0.8]
-
     # check overlap
-    sim.g4_check_overlap_flag = True
+    sim.check_volumes_overlap = True
 
     # global box
     linac = add_empty_linac_box(sim, name, sad)
@@ -167,7 +163,7 @@ def kill_around_target(sim, linac_name):
 
     # psycho killer
     killer = sim.add_actor("KillActor", f"{target.name}_kill")
-    killer.mother = [target_above.name, target_around.name]
+    killer.attached_to = [target_above.name, target_around.name]
 
 
 def add_primary_collimator(sim, linac_name):
@@ -346,13 +342,14 @@ def add_mirror(sim, linac_name):
 
 
 def enable_brem_splitting(sim, linac_name, splitting_factor):
+    # FIXME: consider using new biasing mechanism instead of G4 commands
     # create a region
     linac = sim.volume_manager.get_volume(linac_name)
     region_linac = sim.physics_manager.add_region(name=f"{linac.name}_region")
     region_linac.associate_volume(linac)
     # set the brem splitting
     s = f"/process/em/setSecBiasing eBrem {region_linac.name} {splitting_factor} 50 MeV"
-    sim.add_g4_command_after_init(s)
+    sim.g4_commands_after_init.append(s)
 
 
 def add_electron_source(sim, linac_name, rotation_matrix):
@@ -413,7 +410,7 @@ def add_phase_space_plane(sim, linac_name, src_phsp_distance):
 
 def add_phase_space(sim, plane_name):
     phsp = sim.add_actor("PhaseSpaceActor", f"{plane_name}_phsp")
-    phsp.mother = plane_name
+    phsp.attached_to = plane_name
     phsp.attributes = [
         "KineticEnergy",
         "Weight",

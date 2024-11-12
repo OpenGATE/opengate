@@ -1,10 +1,19 @@
 import copy
 from pathlib import Path
+from typing import Optional, List
+from difflib import get_close_matches
+from functools import wraps
 
 from box import Box
 import sys
 
-from .exception import fatal, warning
+from .exception import (
+    fatal,
+    warning,
+    GateDeprecationError,
+    GateFeatureUnavailableError,
+    GateImplementationError,
+)
 from .definitions import (
     __gate_list_objects__,
     __gate_dictionary_objects__,
@@ -14,7 +23,29 @@ from .decorators import requires_fatal
 from .logger import log
 
 
-# META CLASSES
+# Singletons
+class MetaSingletonFatal(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in MetaSingletonFatal._instances:
+            MetaSingletonFatal._instances[cls] = super(
+                MetaSingletonFatal, cls
+            ).__call__(*args, **kwargs)
+            return MetaSingletonFatal._instances[cls]
+        else:
+            fatal(
+                f"You are trying to create another instance of {cls.__name__}, but an instance already exists "
+                f"in this process. Only one instance per process can be created. "
+                f"Please open a new python session and run the simulation again. "
+            )
+
+
+class GateSingletonFatal(metaclass=MetaSingletonFatal):
+    pass
+
+
+# base class for objects handling user input
 class MetaUserInfo(type):
     _created_classes = {}
 
@@ -25,33 +56,76 @@ class MetaUserInfo(type):
         )
 
 
-class MetaUserInfoSingleton(type):
-    _instances = {}
-    _created_classes = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in MetaUserInfoSingleton._instances:
-            process_cls(cls)
-            MetaUserInfoSingleton._instances[cls] = super(
-                MetaUserInfoSingleton, type(cls)._created_classes[cls]
-            ).__call__(*args, **kwargs)
-        return MetaUserInfoSingleton._instances[cls]
-
-
 def process_cls(cls):
-    """Digest the class's user_infos and store the augmented class
-    in a dictionary inside the meta class which handles the class creation.
-    Note: type(cls) yields the meta class MetaUserInfo or MetaUserInfoSingleton,
-    depending on the class in question (e.g. GateObject, GateObjectSingleton).
+    """The factory function is meant to process classes inheriting from GateObject.
+    It digests the user info parametrisation from all classes in the inheritance tree
+    and enhances the __init__ method, so it calls the __finalize_init__ method at the
+    very end of the __init__ call, which is required to check for invalid attribute setting.
     """
-    if cls not in type(cls)._created_classes:
+    # The class attribute inherited_user_info_defaults is exclusively set by this factory function
+    # Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
+    # it means that it has not been processed yet.
+    # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
+    # because it would potentially find the attribute from already processed super classes
+    # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
+    if not cls.has_been_processed():
         try:
-            type(cls)._created_classes[cls] = digest_user_info_defaults(cls)
+            digest_user_info_defaults(cls)
         except AttributeError:
-            fatal(
-                "Developer error: Looks like you are calling process_cls on a class "
+            raise GateImplementationError(
+                "Looks like you are calling process_cls on a class "
                 "that does not inherit from GateObject."
             )
+        # the class attribute known_attributes is needed by the __setattr__ method of GateObject
+        cls.known_attributes = set()
+        # enhance the __init__ method to ensure __finalize_init__ is called at the end
+        wrap_init_method(cls)
+
+
+def wrap_init_method(cls):
+    """This is a factory function to process classes which inherit from GateObject.
+    It is called from the main factory function process_cls().
+    This function wraps and reattaches the __init__ method of this class, if it implements one.
+    The wrapped __init__ first calls the "original" __init__ and subsequently the method
+    __finalize_init__, which has a base implementation in GateObject,
+    in case the __init__ is the furthest down in the inheritance chain.
+    The method __finalize_init__ is needed to allow GateObject.__setattr__ to check for invalid attribute setting.
+    """
+    # Get the __init__ method as the class implements it
+    original_init = cls.__dict__.get("__init__")
+    # if it is implemented, i.e. present in __dict__, wrap it
+    if original_init is not None:
+        # define a closure
+        @wraps(original_init)
+        def wrapped_init(self, *args, **kwargs):
+            # original_init is the __init__ captured in the closure
+            original_init(self, *args, **kwargs)
+            # figure out in which class the __init__ method is implemented.
+            # It could be in some super class with respect to the instance self.
+            class_to_which_original_init_belongs = vars(
+                sys.modules[original_init.__module__]
+            )[original_init.__qualname__.split(".")[0]]
+            # Now figure out which is the "last" class in the inheritance chain
+            # (with respect to the instance self)
+            # which implements an __init__ method. Plus the children which do not implement an __init__
+            classes_up_to_first_init_in_mro = []
+            for c in type(self).mro():
+                classes_up_to_first_init_in_mro.append(c)
+                if "__init__" in c.__dict__:
+                    # found an __init__, so __init__ methods in classes further up the inheritance tree
+                    # should not call the __finalize_init__ method
+                    break
+            # Now check if the class in which the __init__ we are wrapping is implemented
+            # is among the previously extracted classes.
+            # If that is the case, the call to this __init__ will be the last one to terminate
+            # in the chain if super().__init__() calls.
+            # In other words, we are at the very end of __init__, including calls to super classes,
+            # and it is time to call __finalize_init__
+            if class_to_which_original_init_belongs in classes_up_to_first_init_in_mro:
+                self.__finalize_init__()
+
+        # reattach the wrapped __init__ to the class, so it is used instead of the original one.
+        setattr(cls, "__init__", wrapped_init)
 
 
 # Utility function for object creation
@@ -80,22 +154,35 @@ def digest_user_info_defaults(cls):
     inherited_user_info_defaults = {}
     # loop through MRO backwards so that inherited classes
     # are processed first
-    for c in cls.mro()[::-1]:
+    for c in cls.mro():
         # check if the class actual define user_info_defaults
         # note: hasattr() would not work because it would yield the attribute from the
         # base class if the inherited class does not define user_info_defaults
         if "user_info_defaults" in c.__dict__:
             # Make sure there are no duplicate user info items.
-            if set(c.user_info_defaults).isdisjoint(
+            # First check for user info defaults that override the one from super classes and exclude them
+            inherited_user_info_defaults_keys_override_true = [
+                k
+                for k, v in inherited_user_info_defaults.items()
+                if "override" in v[1] and v[1]["override"] is True
+            ]
+            user_info_defaults_to_be_added = dict(
+                [
+                    (k, v)
+                    for k, v in c.user_info_defaults.items()
+                    if k not in inherited_user_info_defaults_keys_override_true
+                ]
+            )
+            if set(user_info_defaults_to_be_added.keys()).isdisjoint(
                 set(inherited_user_info_defaults.keys())
             ):
-                inherited_user_info_defaults.update(c.user_info_defaults)
+                inherited_user_info_defaults.update(user_info_defaults_to_be_added)
             else:
                 fatal(
                     f"Implementation error. "
                     f"Duplicate user info defined for class {cls}."
-                    f"Found {c.user_info_defaults}."
-                    f"Base classes already contain {inherited_user_info_defaults.keys()}. "
+                    f"Found {list(user_info_defaults_to_be_added.keys())}."
+                    f"Base classes already contain {list(inherited_user_info_defaults.keys())}. "
                 )
         else:
             # Ensure that the class defines an empty dictionary
@@ -109,7 +196,18 @@ def digest_user_info_defaults(cls):
     # rather than accumulating user info defaults?
     cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
-    make_docstring(cls, inherited_user_info_defaults)
+
+    if cls.__doc__ is not None:
+        docstring = cls.__doc__
+        docstring += "\n" + 20 * "*" + "\n\n"
+    else:
+        docstring = ""
+    cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
+    docstring += cls.__user_info_doc__
+    docstring += 20 * "*"
+    docstring += "\n"
+    cls.__doc__ = docstring
+
     return cls
 
 
@@ -117,12 +215,13 @@ def add_properties_to_class(cls, user_info_defaults):
     """Add user_info defaults as properties to class if not yet present."""
     for p_name, default_value_and_options in user_info_defaults.items():
         _ok = False
-        if isinstance(default_value_and_options, tuple):
-            if len(default_value_and_options) == 2:
-                default_value = default_value_and_options[0]
-                options = default_value_and_options[1]
-                _ok = True
-        if not _ok:
+        if (
+            isinstance(default_value_and_options, tuple)
+            and len(default_value_and_options) == 2
+        ):
+            default_value = default_value_and_options[0]
+            options = default_value_and_options[1]
+        else:
             s = (
                 f"*** DEVELOPER WARNING ***"
                 f"User info defaults possibly not implemented correctly for class {cls}.\n"
@@ -131,38 +230,47 @@ def add_properties_to_class(cls, user_info_defaults):
                 "and the second item is a (possibly empty) dictionary of options.\n"
             )
             fatal(s)
-        if not hasattr(cls, p_name):
-            check_property_name(p_name)
-            setattr(cls, p_name, _make_property(p_name, options=options))
+            options = None  # remove warning from IDE
+            default_value = None  # remove warning from IDE
+        if "deprecated" not in options:
+            if not hasattr(cls, p_name):
+                check_property_name(p_name)
+                setattr(
+                    cls, p_name, _make_property(p_name, default_value, options=options)
+                )
 
-            try:
-                expose_items = options["expose_items"]
-            except KeyError:
-                expose_items = False
-            if expose_items is True:
-                # expose_items can only be used on dictionary-type user infos
-                # try to get keys and fail of impossible (=not dict type)
                 try:
-                    for item_name, item_default_value in default_value.items():
-                        check_property_name(item_name)
-                        if not hasattr(cls, item_name):
-                            setattr(
-                                cls,
-                                item_name,
-                                _make_property(item_name, container_dict=p_name),
-                            )
-                        else:
-                            fatal(
-                                f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
-                            )
-                except AttributeError:
-                    fatal(
-                        "Option 'expose_items=True' not available for default_user_info {p_name}."
-                    )
+                    expose_items = options["expose_items"]
+                except KeyError:
+                    expose_items = False
+                if expose_items is True:
+                    # expose_items can only be used on dictionary-type user infos
+                    # try to get keys and fail of impossible (=not dict type)
+                    try:
+                        for item_name, item_default_value in default_value.items():
+                            check_property_name(item_name)
+                            if not hasattr(cls, item_name):
+                                setattr(
+                                    cls,
+                                    item_name,
+                                    _make_property(
+                                        item_name,
+                                        item_default_value,
+                                        container_dict=p_name,
+                                    ),
+                                )
+                            else:
+                                fatal(
+                                    f"Duplicate user info {item_name} defined for class {cls}. Check also base classes or set 'expose_items=False."
+                                )
+                    except AttributeError:
+                        fatal(
+                            "Option 'expose_items=True' not available for default_user_info {p_name}."
+                        )
     return cls
 
 
-def _make_property(property_name, options=None, container_dict=None):
+def _make_property(property_name, default_value, options=None, container_dict=None):
     """Return a property that stores the user_info item in a
     dictionary which is an attribute of the object (self).
 
@@ -171,8 +279,8 @@ def _make_property(property_name, options=None, container_dict=None):
     if options is None:
         options = {}
 
-    @property
-    def prop(self):
+    # @property
+    def prop_getter(self):
         if container_dict is None:
             if "getter_hook" in options:
                 return options["getter_hook"](self, self.user_info[property_name])
@@ -181,52 +289,94 @@ def _make_property(property_name, options=None, container_dict=None):
         else:
             return self.user_info[container_dict][property_name]
 
-    try:
-        read_only = options["read_only"]
-    except KeyError:
-        read_only = False
+    read_only = options.get("read_only", False)
     if read_only is False:
 
-        @prop.setter
-        def prop(self, value):
+        # @prop.setter
+        def prop_setter(self, value):
+            if "deactivated" in options and options["deactivated"] is True:
+                if value != self.inherited_user_info_defaults[property_name][0]:
+                    raise GateFeatureUnavailableError(
+                        f"The user input parameter {property_name} "
+                        f"is currently deactivated and cannot be set."
+                    )
+            if "deprecated" in options:
+                raise GateDeprecationError(options["deprecated"])
             if container_dict is None:
                 if "setter_hook" in options:
-                    self.user_info[property_name] = options["setter_hook"](self, value)
+                    value_to_be_set = options["setter_hook"](self, value)
                 else:
-                    self.user_info[property_name] = value
+                    value_to_be_set = value
+                if "allowed_values" in options:
+                    if value_to_be_set not in options["allowed_values"]:
+                        fatal(
+                            f"Object {self.name} received illegal value {value_to_be_set} "
+                            f"for user input {property_name}. Allow values are: {options['allowed_values']}."
+                        )
+                self.user_info[property_name] = value_to_be_set
             else:
                 self.user_info[container_dict][property_name] = value
+
+    else:
+        prop_setter = None
+
+    prop_doc = make_docstring_for_user_info(property_name, default_value, options)
+    prop = property(fget=prop_getter, fset=prop_setter, doc=prop_doc)
 
     return prop
 
 
-def make_docstring(cls, user_info_defaults):
-    if cls.__doc__ is not None:
-        docstring = cls.__doc__
-        docstring += "\n"
+def make_docstring_for_user_info(name, default_value, options):
+    begin_of_line = "* "
+    docstring = f"{name}"
+    if "deprecated" in options:
+        docstring += f"\n\n{begin_of_line}Deprecated: {options['deprecated']}\n\n"
+        # docstring += indent
+        # docstring += "Info: "
+        # docstring += options["deprecated"]
+        # docstring += "\n\n"
     else:
-        docstring = ""
-    docstring += 20 * "*" + "\n\n"
-    docstring += "This class has the following user infos and default values:\n\n"
+        if "required" in options and options["required"] is True:
+            docstring += " (must be provided)"
+        if "read_only" in options and options["read_only"] is True:
+            docstring += " (set internally, i.e. read-only)"
+        docstring += ":\n\n"
+        # docstring += (20 - len(k)) * " "
+        docstring += f"{begin_of_line}Default value: {default_value}\n\n"
+        if "allowed_values" in options:
+            docstring += (
+                f"{begin_of_line}Allowed values: {options['allowed_values']}\n\n"
+            )
+        if "doc" in options:
+            docstring += f"{begin_of_line}Description: {options['doc']}\n\n"
+            # docstring += options["doc"]
+            # docstring += "\n\n"
+    # docstring += "\n"
+    return docstring
+
+
+def make_docstring(cls, user_info_defaults):
+    docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
-        docstring += f"{k}:"
-        docstring += (15 - len(k)) * " "
-        docstring += f"{v[0]}"
-        if "required" in options and options["required"] is True:
-            docstring += "  (must be provided)"
-        docstring += "\n"
-        if "doc" in options:
-            docstring += options["doc"]
-        docstring += "\n"
-    docstring += 20 * "*"
-    docstring += "\n"
-    cls.__doc__ = docstring
+        docstring += make_docstring_for_user_info(k, default_value, options)
+    return docstring
+
+
+def help_on_user_info(obj):
+    if hasattr(obj, "__user_info_doc__"):
+        print(obj.__user_info_doc__)
+    elif type(obj) is property and hasattr(obj, "__doc__"):
+        print(obj.__doc__)
+    else:
+        raise GateImplementationError(
+            f"No __user_info_doc__ or __doc__ available for {obj}. "
+        )
 
 
 def restore_userinfo_properties(cls, attributes):
-    # In the context of subprocessing and pickling,
+    # In the context of sub-processing and pickling,
     # the following line makes sure the class is processed by the function
     # which sets handles the user_info definitions
     # before the class is used to create a new object instance.
@@ -238,18 +388,35 @@ def restore_userinfo_properties(cls, attributes):
     return obj
 
 
-def attach_methods(GateObjectClass):
-    """Convenience function to avoid redundant code.
-    Can be used to add common methods to classes
-    that differ otherwise, e.g. GateObject and GateObjectSingleton.
+# class GateObject(metaclass=MetaUserInfo):
+class GateObject:
+    """This is the base class used for all objects that handle user input in GATE.
 
+    The class is assumed to be processed by process_cls(), either explicitly
+    or via the metaclass MetaUserInfo, before any instances of the class are created.
+    Some class attributes, e.g. inherited_user_info_defaults, are created as part of this processing.
     """
 
+    # hints for IDE
+    name: str
+    inherited_user_info_defaults: dict
+
+    user_info_defaults = {"name": (None, {"required": True})}
+
+    @classmethod
+    def has_been_processed(cls):
+        return "inherited_user_info_defaults" in cls.__dict__
+
     def __new__(cls, *args, **kwargs):
-        new_instance = super(GateObjectClass, cls).__new__(cls)
+        process_cls(cls)
+        new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, simulation=None, **kwargs):
+        self._simulation = simulation
+        # keep internal number of raised warnings (for debug)
+        self.number_of_warnings = 0
+        self._temporary_warning_cache = []
         # prefill user info with defaults
         self.user_info = Box(
             [
@@ -259,14 +426,9 @@ def attach_methods(GateObjectClass):
         )
         # now iterate over them and check if kwargs provide user-specific values
         for k, v in self.inherited_user_info_defaults.items():
-            default_value = v[0]
             options = v[1]
             if k in kwargs:
-                # if "check_func" in options.keys():
-                #     user_info_value = options["check_func"](kwargs[k])
-                # else:
                 user_info_value = kwargs[k]
-                # check_property(k, user_info_value, default_value)
                 if "setter_hook" in options:
                     user_info_value = options["setter_hook"](self, user_info_value)
                 self.user_info[k] = user_info_value
@@ -276,7 +438,30 @@ def attach_methods(GateObjectClass):
                     fatal(
                         f"No value provided for argument '{k}', but required when constructing a {type(self).__name__} object."
                     )
-        super(GateObjectClass, self).__init__()
+        mro = type(self).__mro__
+        parent = mro[mro.index(__class__) + 1]
+        if type(parent).__name__ != "pybind11_type":
+            try:
+                super().__init__(*args, **kwargs)
+            except TypeError as e:
+                raise TypeError(
+                    f"There was a problem "
+                    f"while trying to create the {type(self).__name__} called {self.name}. \n"
+                    f"Check if you have provided unknown keyword arguments. "
+                    f"You provided: {list(kwargs.keys())}. \n"
+                    f"Hint: The user input parameters of {type(self).__name__} are: "
+                    f"{list(self.inherited_user_info_defaults.keys())}.\n"
+                )
+
+    @property
+    def simulation(self):
+        return self._simulation
+
+    @simulation.setter
+    def simulation(self, sim):
+        sim.warnings.extend(self._temporary_warning_cache)
+        self._temporary_warning_cache = []
+        self._simulation = sim
 
     def __str__(self):
         ret_string = (
@@ -286,28 +471,49 @@ def attach_methods(GateObjectClass):
         )
         for k, v in self.user_info.items():
             if k != "name":
-                ret_string += f"{__one_indent__}{k}:\n{2*__one_indent__}{v}\n"
+                ret_string += f"{__one_indent__}{k}"
+                if "deprecated" in self.inherited_user_info_defaults[k][1]:
+                    ret_string += " (deprecated)"
+                ret_string += f":\n{2 * __one_indent__}{v}\n"
         ret_string += "***\n"
         return ret_string
 
     def __getstate__(self):
-        """Method needed for pickling. May be be overridden in inheriting classes."""
+        """Method needed for pickling. May be overridden in inheriting classes."""
+        for k, v in self.__dict__.items():
+            if "engine" in k and v is not None:
+                warning(
+                    f"Potential bug: Object {self.name} of type {self.type_name} "
+                    f"had a reference to {k} that was not None when being pickled. "
+                    f"That should not be the case! \n"
+                    f"Info for developers: \n"
+                    f"Probably, a line self.{k}=None is needed in {self.type_name}.close()."
+                )
+        if self.simulation is not None and self.simulation.verbose_getstate:
+            warning(
+                f"__getstate__() called in object '{self.name}' of type {self.type_name}."
+            )
         return self.__dict__
 
     def __setstate__(self, d):
-        """Method needed for pickling. May be be overridden in inheriting classes."""
+        """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
+        """print(
+            f"DEBUG: in __setstate__ of {type(self).__name__}: {type(self).known_attributes}"
+        )
+        print(f"DEBUG:    type(self).known_attributes: {type(self).known_attributes}")
+        print(f"DEBUG:    list(self.__dict__.keys()): {list(self.__dict__.keys())}")"""
 
     def __reduce__(self):
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
         but objects handling user_infos need a custom __reduce__ to make sure
-        the properties linked to the user_infos are properly created as per the meta class
+        the properties linked to the user_infos are properly created
 
         The return arguments are:
         1) A callable used to create the instance when unpickling
         2) A tuple of arguments to be passed to the callable in 1
-        3) The dictionary of the objects properties to be passed to the __setstate__ method (if defined)
+        3) The dictionary of the object's properties to be passed to the __setstate__ method (if defined)
         """
         state_dict = self.__getstate__()
         return (
@@ -316,41 +522,85 @@ def attach_methods(GateObjectClass):
             state_dict,
         )
 
+    def __setattr__(self, key, value):
+        # raise an error if the user tries to set an attribute
+        # associated with a deprecated user input parameter
+        if (
+            key in self.inherited_user_info_defaults
+            and "deprecated" in self.inherited_user_info_defaults[key][1]
+        ):
+            raise GateDeprecationError(
+                self.inherited_user_info_defaults[key][1]["deprecated"]
+            )
+
+        # check if the attribute is known, otherwise warn the user
+        known_attributes = type(self).__dict__.get("known_attributes")
+        if known_attributes is None:
+            raise GateImplementationError(
+                f"Did not find 'known_attributes' in the {self.type_name}. "
+                f"Has the class correctly been processed by process_cls()?"
+            )
+        if len(known_attributes) > 0:
+            if key not in known_attributes:
+                msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                close_matches = get_close_matches(key, known_attributes)
+                if len(close_matches) > 0:
+                    msg_close_matches = (
+                        f"Did you mean: " + " or ".join(close_matches) + "\n"
+                    )
+                    msg += msg_close_matches
+                known_attr = ", ".join(
+                    str(a) for a in known_attributes if not a.startswith("_")
+                )
+                msg += f"Known attributes of this object are: {known_attr}"
+                self.warn_user(msg)
+                self.number_of_warnings += 1
+        super().__setattr__(key, value)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        self.close()
+        return False
+
+    def __finalize_init__(self):
+        """
+        This method should be called once all attributes have been defined, usually
+        at the end of the __init__ method. It defines the set of known_attribues that will
+        be used to detect errors when the user tries to use a new attribute
+        or misspells an attribute, e.g. box.mohter instead of box.mother.
+        """
+
+        # we define this at the class-level
+        type(self).known_attributes = set(dir(self))
+
+    def __add_to_simulation__(self):
+        """Hook method which can be called by managers.
+        Specific classes can use this to implement actions to be taken
+        when an object is being added to the simulation,
+        e.g. adding a certain actor implies switching on certain physics options.
+        """
+        pass
+
+    @property
+    def type_name(self):
+        return str(type(self).__name__)
+
     def close(self):
         """Dummy implementation for inherited classes which do not implement this method."""
+        if "simulation" in self.__dict__ and self.simulation is not None:
+            if self.simulation.verbose_close:
+                warning(
+                    f"close() called in object '{self.name}' of type {type(self).__name__}."
+                )
         pass
 
     def release_g4_references(self):
         """Dummy implementation for inherited classes which do not implement this method."""
         pass
 
-    GateObjectClass.__new__ = __new__
-    GateObjectClass.__init__ = __init__
-    GateObjectClass.__str__ = __str__
-    GateObjectClass.__getstate__ = __getstate__
-    GateObjectClass.__setstate__ = __setstate__
-    GateObjectClass.__reduce__ = __reduce__
-    GateObjectClass.close = close
-    GateObjectClass.release_g4_references = release_g4_references
-
-
-# GateObject classes
-class GateObjectSingleton(metaclass=MetaUserInfoSingleton):
-    user_info_defaults = {
-        "name": (
-            None,
-            {"required": True, "doc": "Unique name of this object. Required."},
-        )
-    }
-
-
-attach_methods(GateObjectSingleton)
-
-
-class GateObject(metaclass=MetaUserInfo):
-    user_info_defaults = {"name": (None, {"required": True})}
-
-    def copy_user_info(self, other_obj):
+    def configure_like(self, other_obj):
         for k in self.user_info.keys():
             if k not in ["name", "_name"]:
                 try:
@@ -390,21 +640,38 @@ class GateObject(metaclass=MetaUserInfo):
                     if getattr(type(self), k).fset is not None:
                         setattr(self, k, d["user_info"][k])
                 else:
-                    warning(
-                        f"Could not find user info {k} while populating object {self.name} of type {type(self).__name__} from dictionary."
-                    )
+                    if "deprecated" not in self.inherited_user_info_defaults[k][1]:
+                        warning(
+                            f"Could not find user info {k} while populating object {self.name} "
+                            f"of type {type(self).__name__} from dictionary. "
+                            f"The reason could be that the user parameter is marked as deprecated. "
+                            f"In that case, simply ignore the warning. "
+                        )
 
-
-attach_methods(GateObject)
+    def warn_user(self, message):
+        # If this GateObject does not (yet) have a reference to the simulation,
+        # we store the warning in a temporary cache
+        # (will be registered later to the simulation's warning cache)
+        if self.simulation is None:
+            self._temporary_warning_cache.append(message)
+        # if possible, register the warning directly
+        else:
+            self.simulation._user_warnings.append(message)
+        warning(message)
 
 
 class DynamicGateObject(GateObject):
+    # hints for IDE
+    dynamic_params: Optional[List]
+
     user_info_defaults = {
         "dynamic_params": (
             None,
             {
-                "doc": "List of dictionaries, where each dictionary specifies how the parameters "
+                "doc": "Dictionary of dictionaries, where each dictionary specifies how the parameters "
                 "of this object should evolve over time during the simulation. "
+                "You cannot set this parameter directly. "
+                "Instead, use the 'add_dynamic_parametrisation()' method of your object."
                 "If None, the object is static (default).",
                 "read_only": True,
             },
@@ -448,24 +715,30 @@ class DynamicGateObject(GateObject):
         for k, v in params.items():
             if callable(v):
                 params[k] = v(self.simulation.run_timing_intervals)
+
+        return params, extra_params
+
+    def check_if_dynamic_params_match_run_timing_intervals(self):
         # check that the length of all parameter lists match the simulation's timing intervals
         params_with_incorrect_length = []
-        for k, v in params.items():
-            if len(v) != len(self.simulation.run_timing_intervals):
-                params_with_incorrect_length.append((k, len(v)))
-        if len(params_with_incorrect_length) > 0:
-            s = (
-                f"The length of the following dynamic parameters "
-                f"does not match the number of timing intervals of the simulation:\n"
-            )
-            for p in params_with_incorrect_length:
-                s += f"{p[0]}: {p[1]}\n"
-            s += (
-                f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
-                f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
-            )
-            fatal(s)
-        return params, extra_params
+        for params in self.dynamic_params.values():
+            for k, v in params.items():
+                if k in self.dynamic_user_info and len(v) != len(
+                    self.simulation.run_timing_intervals
+                ):
+                    params_with_incorrect_length.append((k, len(v)))
+            if len(params_with_incorrect_length) > 0:
+                s = (
+                    "The length of the following dynamic parameters "
+                    "does not match the number of timing intervals of the simulation:\n"
+                )
+                for p in params_with_incorrect_length:
+                    s += f"{p[0]}: {p[1]}\n"
+                s += (
+                    f"The simulation's timing intervals are: {self.simulation.run_timing_intervals} and "
+                    f"can be adjusted via the simulation parameter 'run_timing_intervals'. "
+                )
+                fatal(s)
 
     def _add_dynamic_parametrisation_to_userinfo(self, params, name):
         """This base class implementation only acts as a setter.
@@ -491,7 +764,7 @@ class DynamicGateObject(GateObject):
             name = f"parametrisation_{len(self.dynamic_params)}"
         self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
         # issue debugging message
-        s = f"Added the folowing dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
+        s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
         log.debug(s)
@@ -502,6 +775,58 @@ class DynamicGateObject(GateObject):
 
 
 # DICTIONARY HANDLING
+
+
+class GateUserInputSwitchDict(Box):
+    """
+    NOT USED YET!
+
+    Specialized version of a Box (dict) to represent a dictionary with boolean switches.
+
+    The switches handled by the object need to be defined when the object is created
+    via a dictionary passed as argument 'default_switches'.
+    No switches can be added later, nor can switches be removed.
+    Switch values are automatically converted to Bool if possible.
+    """
+
+    def __init__(self, default_switches, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._switches = tuple(default_switches.keys())
+        for k, v in default_switches.items():
+            self[k] = v
+
+    def __setitem__(self, key, value):
+        # Do not allow setting entries under the key '_switches' which is used as special attribute
+        if key == "_switches":
+            raise KeyError(f"Keyword '_switches' is not allowed.")
+        # only try setting the item if the key is known
+        elif key in self._switches:
+            try:
+                value_bool = bool(value)
+            except ValueError:
+                raise ValueError(
+                    "You must provide a boolean (or compatible) input, i.e. True or False."
+                )
+            super().__setitem__(key, value_bool)
+        else:
+            raise KeyError(
+                "You cannot add additional switches. You can only turn on/off existing switches."
+            )
+
+    def __delitem__(self, key):
+        """The 'del' operator applied on items is blocked so no entries can be removed."""
+        raise NotImplementedError("You cannot remove switches.")
+
+    def __setattr__(self, key, value):
+        """Make sure to by-pass the __setattr__ method from the Box class for the key '_switches'
+        because Box would otherwise turn this into an entry in self, but we want it to be a pure attribute.
+        """
+        if key == "_switches":
+            object.__setattr__(self, key, value)
+        else:
+            super().__setattr__(key, value)
+
+
 def recursive_userinfo_to_dict(obj):
     """Walk recursively across entries of user_info and convert to appropriate structure.
     Dictionary-like structures are mapped to dictionary and walked across recursively.
@@ -518,7 +843,7 @@ def recursive_userinfo_to_dict(obj):
         ret = []
         for e in obj:
             ret.append(recursive_userinfo_to_dict(e))
-    elif isinstance(obj, (GateObject, GateObjectSingleton)):
+    elif isinstance(obj, (GateObject)):
         ret = obj.to_dictionary()
     else:
         ret = obj
@@ -586,6 +911,7 @@ def _get_user_info_options(user_info_name, object_type, class_module):
         ).inherited_user_info_defaults[user_info_name][1]
     except KeyError:
         fatal(f"Could not find user info {user_info_name} in {object_type}. ")
+        options = None  # remove warning from IDE
     return options
 
 
@@ -594,11 +920,15 @@ def create_gate_object_from_dict(dct):
 
     Used as part of the deserialization chain, when reading simulations stored as JSON file.
     """
-    if not "class_module" in dct:
+    if "class_module" not in dct:
         fatal(
-            f"Error while trying to create GateObject from dictionary: Incompatible dictionary"
+            "Error while trying to create GateObject from dictionary: Incompatible dictionary"
         )
     obj = getattr(sys.modules[dct["class_module"]], dct["object_type"])(
         name=dct["user_info"]["name"]
     )
     return obj
+
+
+process_cls(GateObject)
+process_cls(DynamicGateObject)

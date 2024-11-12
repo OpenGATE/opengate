@@ -13,15 +13,15 @@
 
 GateThresholdAttributeFilter::GateThresholdAttributeFilter() : GateVFilter() {}
 
-void GateThresholdAttributeFilter::Initialize(py::dict &user_info) {
+void GateThresholdAttributeFilter::InitializeUserInput(py::dict &user_info) {
   fAttributeName = DictGetStr(user_info, "attribute");
   fValueMin = DictGetDouble(user_info, "value_min");
   fValueMax = DictGetDouble(user_info, "value_max");
-  fFilterName = DictGetStr(user_info, "_name");
+  fFilterName = DictGetStr(user_info, "name");
   fPolicy = DictGetStr(user_info, "policy");
-  if (fPolicy == "keep")
+  if (fPolicy == "accept")
     fKeep = true;
-  else if (fPolicy == "discard")
+  else if (fPolicy == "reject")
     fKeep = false;
   else {
     std::ostringstream oss;

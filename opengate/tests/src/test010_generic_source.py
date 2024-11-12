@@ -6,7 +6,9 @@ from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test010_generic_source")
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test010_generic_source", output_folder="test010"
+    )
 
     # create the simulation
     sim = gate.Simulation()
@@ -16,6 +18,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.number_of_threads = 1
+    sim.output_dir = paths.output
 
     # useful units
     MeV = gate.g4_units.MeV
@@ -94,28 +97,25 @@ if __name__ == "__main__":
     # src_info.filename = 'output/sources.root'
 
     dose = sim.add_actor("DoseActor", "dose")
-    dose.output = paths.output / "test010.mhd"
-    dose.mother = "waterbox"
+    dose.output_filename = "test010.mhd"
+    dose.attached_to = waterbox
     dose.size = [50, 50, 50]
     dose.spacing = [4 * mm, 4 * mm, 4 * mm]
 
     # verbose
-    sim.add_g4_command_after_init("/tracking/verbose 0")
-    # sim.add_g4_command_after_init("/run/verbose 2")
-    # sim.add_g4_command_after_init("/event/verbose 2")
-    # sim.add_g4_command_after_init("/tracking/verbose 1")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
+    # sim.g4_commands_after_init.append("/run/verbose 2")
+    # sim.g4_commands_after_init.append("/event/verbose 2")
+    # sim.g4_commands_after_init.append("/tracking/verbose 1")
 
     # start simulation
     sim.run()
 
     # print
-    print("Simulation seed:", sim.output.current_random_seed)
+    print("Simulation seed:", sim.current_random_seed)
 
     # get results
-    stats = sim.output.get_actor("Stats")
-    print(stats)
-
-    dose = sim.output.get_actor("dose")
+    print(stats_actor)
     print(dose)
 
     # gate_test10
@@ -123,12 +123,14 @@ if __name__ == "__main__":
     # Current version is two times slower :(
     stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
     print("-" * 80)
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
+    is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.05)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",
-        paths.output / dose.user_info.output,
-        stats,
+        dose.edep.get_output_path(),
+        stats_actor,
         tolerance=30,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
 
     utility.test_ok(is_ok)

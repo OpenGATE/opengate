@@ -17,11 +17,14 @@ if __name__ == "__main__":
         number_of_threads=1,
         activity_kBq=1000,
         aa_enabled=False,
+        version="_4_acc_angle_noaa",
     )
 
     # go
     sim.run()
 
     # check
-    is_ok = test028.compare_result(sim.output, proj, "test028_aa_noaa.png")
+    is_ok = test028.compare_result(
+        sim, proj, "test028_aa_noaa.png", version="_4_acc_angle_noaa"
+    )
     utility.test_ok(is_ok)

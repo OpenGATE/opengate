@@ -5,6 +5,7 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
+#include "../GatePrimaryScatterFilter.h"
 #include "../GateUniqueVolumeIDManager.h"
 #include "../GateUserEventInformation.h"
 #include "G4Run.hh"
@@ -237,6 +238,13 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
         att->Fill3Value(pos);
       });
+  DefineDigiAttribute(
+      "PostPositionLocal", '3', FILLF {
+        const auto *theTouchable = step->GetPostStepPoint()->GetTouchable();
+        auto pos = step->GetPostStepPoint()->GetPosition();
+        theTouchable->GetHistory()->GetTopTransform().ApplyPointTransform(pos);
+        att->Fill3Value(pos);
+      });
 
   DefineDigiAttribute(
       "EventPosition", '3', FILLFS {
@@ -290,4 +298,10 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "TrackLength", 'D',
       FILLF { att->FillDValue(step->GetTrack()->GetTrackLength()); });
+
+  // -----------------------------------------------------
+  // Scatter information
+  DefineDigiAttribute(
+      "UnscatteredPrimaryFlag", 'I',
+      FILLF { att->FillIValue(IsUnscatteredPrimary(step)); });
 }

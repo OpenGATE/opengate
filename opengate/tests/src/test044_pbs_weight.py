@@ -7,8 +7,10 @@ import opengate as gate
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
-    output_path = paths.output / "output_test044_weight"
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test044_pbs", "test044_pbs_weight"
+    )
+    output_path = paths.output
 
     # create the simulation
     sim = gate.Simulation()
@@ -19,6 +21,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.random_seed = 123654789
     sim.random_engine = "MersenneTwister"
+    sim.output_dir = output_path
 
     # units
     km = gate.g4_units.km
@@ -86,8 +89,8 @@ if __name__ == "__main__":
     # add dose actor
     dose = sim.add_actor("DoseActor", "doseInYZ_1")
     filename = "phantom_a_1.mhd"
-    dose.output = output_path / filename
-    dose.mother = "phantom_a_1"
+    dose.output_filename = output_path / filename
+    dose.attached_to = "phantom_a_1"
     dose.size = [250, 250, 1]
     dose.spacing = [0.4, 0.4, 2]
     dose.hit_type = "random"
@@ -140,15 +143,15 @@ if __name__ == "__main__":
     # add dose actor
     dose2 = sim.add_actor("DoseActor", "doseInYZ_2")
     filename = "phantom_a_2.mhd"
-    dose2.output = output_path / filename
-    dose2.mother = "phantom_a_2"
+    dose2.output_filename = filename
+    dose2.attached_to = "phantom_a_2"
     dose2.size = [250, 250, 1]
     dose2.spacing = [0.4, 0.4, 2]
     dose2.hit_type = "random"
 
     # add stat actor
-    s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    s.track_types_flag = True
+    stat = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stat.track_types_flag = True
 
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
@@ -163,8 +166,6 @@ if __name__ == "__main__":
     sim.run()
 
     # print results at the end
-    stat = sim.output.get_actor("Stats")
-
     print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
@@ -174,8 +175,8 @@ if __name__ == "__main__":
     # to be double the one of source one
 
     print("\nDifference for EDEP")
-    mhd_1 = sim.output.get_actor("doseInYZ_1").user_info.output
-    mhd_2 = sim.output.get_actor("doseInYZ_2").user_info.output
+    mhd_1 = sim.get_actor("doseInYZ_1").get_output_path("edep")
+    mhd_2 = sim.get_actor("doseInYZ_2").get_output_path("edep")
     test = True
     # test = utility.assert_images(
     #     output_path / mhd_1,
@@ -183,7 +184,7 @@ if __name__ == "__main__":
     #     stat,
     #     axis="x",
     #     tolerance=50,
-    #     ignore_value=0,
+    #     ignore_value_data2=0,
     # )
     fig1 = utility.create_2D_Edep_colorMap(output_path / mhd_1, show=False)
     fig2 = utility.create_2D_Edep_colorMap(output_path / mhd_2, show=False)

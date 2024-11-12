@@ -40,10 +40,10 @@ if __name__ == "__main__":
     sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # verbose (WARNING : sim.g4_verbose must be True !)
-    sim.add_g4_command_after_init("/tracking/verbose 0")
-    # sim.add_g4_command_after_init("/run/verbose 2")
-    # sim.add_g4_command_after_init("/event/verbose 2")
-    # sim.add_g4_command_after_init("/tracking/verbose 1")
+    sim.g4_commands_after_init.append("/tracking/verbose 0")
+    # sim.g4_commands_after_init.append("/run/verbose 2")
+    # sim.g4_commands_after_init.append("/event/verbose 2")
+    # sim.g4_commands_after_init.append("/tracking/verbose 1")
 
     print(sim.source_manager.dump_sources())
 
@@ -51,8 +51,8 @@ if __name__ == "__main__":
     sim.run()
 
     # get results
-    stats = sim.output.get_actor("Stats")
-    print("Simulation seed:", sim.output.current_random_seed)
+    stats = sim.get_actor("Stats")
+    print("Simulation seed:", sim.current_random_seed)
     print(stats)
 
     # gate_test5_proton
