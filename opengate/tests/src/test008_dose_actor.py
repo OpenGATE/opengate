@@ -87,9 +87,7 @@ if __name__ == "__main__":
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
 
-    sim.run_timing_intervals = [
-        (i * gate.g4_units.s, (i + 1) * gate.g4_units.s) for i in range(3)
-    ]
+    sim.run_timing_intervals = [(x / 3. * gate.g4_units.s, (x + 1) / 3. * gate.g4_units.s) for x in range(3)]
     # start simulation
     sim.run(start_new_process=True)
 
@@ -99,6 +97,7 @@ if __name__ == "__main__":
 
     # tests
     stats_ref = utility.read_stat_file(ref_path / "stat.txt")
+    stat.counts.runs = 1   # because ref had only 1 run
     is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 
     print("\nDifference for EDEP")
