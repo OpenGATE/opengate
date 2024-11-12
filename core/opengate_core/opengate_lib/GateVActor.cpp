@@ -80,8 +80,8 @@ bool GateVActor::GetWriteToDisk(std::string outputName) {
   } catch (std::out_of_range &e) {
     std::ostringstream msg;
     msg << "(GetWriteToDisk) No actor output with the name " << outputName
-        << " exists.";
-    msg << fAttachedToVolumeName << " " << GetName();
+        << " exists exists in actor " << GetName() << " attached to "
+        << fAttachedToVolumeName << ".";
     Fatal(msg.str());
   }
   return ""; // to avoid warning
