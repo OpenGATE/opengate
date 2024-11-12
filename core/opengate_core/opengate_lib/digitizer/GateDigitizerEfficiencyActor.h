@@ -29,10 +29,7 @@ public:
   // constructor
   explicit GateDigitizerEfficiencyActor(py::dict &user_info);
 
-  // destructor
-  ~GateDigitizerEfficiencyActor() override;
-
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInput(py::dict &user_info) override;
 
   // Called every time an Event ends (all threads)
   void EndOfEventAction(const G4Event *event) override;

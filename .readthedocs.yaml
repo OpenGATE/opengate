@@ -3,9 +3,33 @@
 version: 2
 
 build:
-  os: "ubuntu-20.04"
+  os: "ubuntu-24.04"
   tools:
-    python: "3.9"
+    python: "3.11"
+#  jobs:
+#    pre_build:
+##      - cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+#      - cp /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak
+#      - |
+#        { head -n 1 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak;
+#        echo "import sys";
+#        echo "print(\"DEBUG: sys.path = \", sys.path)";
+#        echo "import cmd";
+#        echo "print(\"DEBUG: cmd.__file__=\", cmd.__file__)";
+#        tail -n +2 /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py.bak; }
+#        > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/pdb.py
+#      - cp /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py.bak
+#      - |
+#        { echo "import pdb";
+#        echo "print(\"DEBUG: pdb.__file__=\", pdb.__file__)";
+#        cat /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py.bak; }
+#        > /home/docs/.asdf/installs/python/3.11.9/lib/python3.11/doctest.py
+#      - cp /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py.bak
+#      - |
+#        { head -n 188 /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py.bak;
+#        echo "print(\"DEBUG: doctest.__file__=\", doctest.__file__)";
+#        tail -n +189 /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py.bak; }
+#        > /home/docs/checkouts/readthedocs.org/user_builds/opengate-python/envs/fix_autodoc/lib/python3.11/site-packages/sphinx/ext/doctest.py
 
 # Build from the docs/ directory with Sphinx
 sphinx:

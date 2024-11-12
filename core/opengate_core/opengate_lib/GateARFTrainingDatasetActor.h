@@ -22,7 +22,7 @@ public:
   // Constructor
   explicit GateARFTrainingDatasetActor(py::dict &user_info);
 
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInput(py::dict &user_info) override;
 
   // Main function called every step in attached volume
   void StartSimulationAction() override;
