@@ -11,7 +11,8 @@ Dose rate computation
 Phantoms
 --------
 
-### Phantom: IEC 6 spheres NEMA phantom
+Phantom: IEC 6 spheres NEMA phantom
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An analytical model of the 6 spheres IEC NEMA phantom is provided. It can be used as follows:
 
@@ -32,7 +33,8 @@ The rotation should be adapted according to your need. The order of the 6 sphere
 
 Examples can be found in `test015 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test015_iec_phantom_1.py>`_ (and others).
 
-### Phantom: cylinder phantom for PET NECR
+Phantom: cylinder phantom for PET NECR
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 An analytical model of the simple NECR phantom (cylinder and linear source) is provided. It can be used as follows:
 
@@ -68,7 +70,8 @@ The following models are available:
     linac1 = synergy.add_linac(sim)
     linac2 = versa.add_linac(sim)
 
-### LINACs reference systems
+LINACs reference systems
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Each LINAC head is simulated with a z-axis translation relative to the world center. This translation aligns the machine's isocenter with the world center, with a user-defined Source-Axis Distance (SAD). The "translation_from_sad" function (example in `test019_linac_elekta_versa.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test019_linac_elekta_versa.py>`_) can be used to move the LINAC head with a translation relative to the SAD.
 
@@ -85,12 +88,15 @@ The "rotation_around_user_point" function enables LINAC head rotation around eit
 SPECT imaging systems
 ---------------------
 
-**Important Notice**: Please be aware that the models provided within the OpenGate toolkit are based on approximate simulations. Users are strongly encouraged to independently verify these models against empirical data to ensure their applicability and accuracy for specific use cases.
+**Important Notice**: The models provided within the OpenGate toolkit are based on approximate simulations. Users are strongly encouraged to independently verify these models against empirical data to confirm their accuracy and applicability to specific use cases. Validation efforts are ongoing.
 
-The following models are available:
+The following models are currently available:
 
-- GE Discovery 670 SPECT
-- Siemens Symbia Intevo Bold SPECT
+- **GE Discovery 670 SPECT**
+- **Siemens Symbia Intevo Bold SPECT**
+
+
+To set up these SPECT imaging systems in a simulation, use the following example. This script demonstrates configuring two GE Discovery and two Siemens Intevo systems with different collimator and crystal settings.
 
 .. code-block:: python
 
@@ -98,25 +104,26 @@ The following models are available:
     import opengate.contrib.spect.ge_discovery_nm670 as discovery
     import opengate.contrib.spect.siemens_intevo as intevo
 
+    # Initialize the simulation
     sim = gate.Simulation()
 
-    spect = discovery.add_spect_head(sim, "discovery1", collimator_type="melp")
-    crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+    # Configure GE Discovery system with different settings
+    head, colli, crystal = discovery.add_spect_head(sim, name="discovery1", collimator_type="melp", crystal_size="3/8")
     discovery.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
 
-    spect = discovery.add_spect_head(sim, "discovery12", collimator_type="lehr")
-    crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+    head, colli, crystal = discovery.add_spect_head(sim, name="discovery2", collimator_type="lehr", crystal_size="5/8")
     discovery.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
 
-    spect = intevo.add_spect_head(sim, "intevo1", collimator_type="melp")
-    crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+    # Configure Siemens Intevo system with different settings
+    head, colli, crystal = intevo.add_spect_head(sim, name="intevo1", collimator_type="melp")
     intevo.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
 
-    spect = discovery.add_spect_head(sim, "intevo2", collimator_type="lehr")
-    crystal = sim.volume_manager.get_volume(f"{spect.name}_crystal")
+    head, colli, crystal = intevo.add_spect_head(sim, name="intevo2", collimator_type="lehr")
     intevo.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
 
-test028
+
+To help users validate and familiarize themselves with these models, the tests `test028` and `test073` demonstrate simulations using both models and can be used as a starting point. Note that the digitizers are currently undergoing tuning, and validation is still in progress.
+
 
 PET imaging systems
 -------------------
@@ -125,7 +132,7 @@ PET imaging systems
 
 The following models are available:
 
-- Philips Vereos Digital PET
-- Siemens Biograph Vision PET
+- **Philips Vereos Digital PET**
+- **Siemens Biograph Vision PET**
 
 test037
