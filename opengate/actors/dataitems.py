@@ -16,8 +16,18 @@ from ..image import (
 )
 
 
-# base classes
 class DataItem:
+    """This is the base class for all data items.
+    It stores the actual data, e.g. an array, an image, etc. in an attribute 'data'.
+
+    Derived classes can (should) implement merge_with and inplace_merge_with
+    so actor output using this data container with the respective data items can be merged after runs.
+
+    Derived classes should also implement an appropriate write method
+    if data writing is supposed to be handled on the python-side.
+
+    Derived classes can also implement arithmetic operator like __add__, __mul__, etc.
+    """
 
     def __init__(self, *args, data=None, meta_data=None, **kwargs):
         self.data = None
@@ -87,13 +97,6 @@ class DataItem:
         raise NotImplementedError(
             f"Method 'inplace_merge_with' not implemented for data item class {type(self)} "
         )
-        # try:
-        #     return self + other
-        # except ValueError as e:
-        #     raise NotImplementedError(
-        #         f"method 'merge_with' probably not implemented for data item class {type(self)} "
-        #         f"because the following ValueError was encountered: \n{e}"
-        #     )
 
     def inplace_merge_with(self, other):
         """The base class does not implement merging.
@@ -102,14 +105,6 @@ class DataItem:
         raise NotImplementedError(
             f"Method 'inplace_merge_with' not implemented for data item class {type(self)} "
         )
-        # try:
-        #     self += other
-        # except ValueError as e:
-        #     raise NotImplementedError(
-        #         f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
-        #         f"because the following ValueError was encountered: \n{e}"
-        #     )
-        # return self
 
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
@@ -681,9 +676,6 @@ class SingleItkImageWithVariance(DataItemContainer):
 
     def get_variance_or_uncertainty(self, which_quantity):
         try:
-            # if not self.data[0].number_of_samples == self.data[1].number_of_samples:
-            #     fatal(f"Something is wrong in this data item container: "
-            #           f"the two data items contain different numbers of samples. ")
             number_of_samples = self.data[0].number_of_samples
             value_array = np.asarray(self.data[0].data)
             if not number_of_samples > 1:
