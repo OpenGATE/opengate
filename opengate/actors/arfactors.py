@@ -207,7 +207,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.batch_nb = 0
         self.detected_particles = 0
         # need a lock when the ARF is applied
-        self.lock = threading.Lock()
+        self.lock = None
         # local variables
         self.image_plane_spacing = None
         self.image_plane_size_pixel = None
@@ -243,6 +243,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
     def initialize(self):
         # call the initialize() method from the super class (python-side)
         ActorBase.initialize(self)
+        self.lock = threading.Lock()
 
         self.debug_nb_hits_before = 0
         self.debug_nb_hits = 0

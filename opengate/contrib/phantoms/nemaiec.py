@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import math
 
@@ -612,3 +614,31 @@ def get_default_sphere_centers_and_volumes():
         26521.84878038063,
     ]
     return centers, volumes
+
+
+def add_iec_phantom_vox(sim, name, image_filename, labels_filename):
+    iec = sim.add_volume("Image", name)
+    iec.image = image_filename
+    iec.material = "IEC_PLASTIC"
+    labels = json.loads(open(labels_filename).read())
+    iec.voxel_materials = []
+    create_material(sim)
+    material_list = {}
+    for l in labels:
+        mat = "IEC_PLASTIC"
+        if "capillary" in l:
+            mat = "G4_WATER"
+        if "cylinder_hole" in l:
+            mat = "G4_AIR"
+        if "world" in l:
+            mat = "G4_AIR"
+        if "interior" in l:
+            mat = "G4_WATER"
+        if "sphere" in l:
+            mat = "G4_WATER"
+        if "shell" in l:
+            mat = "IEC_PLASTIC"
+        material_list[l] = mat
+        m = [labels[l], labels[l] + 1, mat]
+        iec.voxel_materials.append(m)
+    return iec, material_list

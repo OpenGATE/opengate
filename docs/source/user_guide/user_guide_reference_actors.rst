@@ -300,8 +300,65 @@ Refer to test072 for more details.
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------
 
-.. note::
-   Documentation TODO. Refer to test043 for current examples.
+The Angular Response Function (ARF) is a method designed to accelerate SPECT simulations by replacing full particle tracking within the SPECT head (collimator and crystal) with an analytical function. This function provides the detection probability of a photon across all energy windows based on its direction and energy. Specifically, ARF estimates the probability that an incident photon will interact with or pass through the collimator and reach the detector plane at a specified energy window. By approximating the SPECT head’s behavior in this manner, ARF allows for faster planar and SPECT simulations. Using ARF involves three steps:
+
+1.	Create a training dataset.
+2.	Build the ARF function.
+3.	Apply the trained ARF to enhance simulation efficiency.
+
+.. warning::
+
+Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
+
+Step 1: Creating the Training Dataset
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The initial step involves creating a dataset for training. This can be implemented by following the example in `test043_garf_training_dataset.py`. Configure a simplified simulation to emit photons across the expected energy range (e.g., slightly above 140.5 keV for Tc99m) through the SPECT head, recording detected counts. The `ARFTrainingDatasetActor` is utilized here, with input from a detector plane positioned directly in front of the collimator. This actor stores detected counts per energy window in a ROOT file. For efficiency, a Russian roulette technique reduces the data size for photons with low detection probabilities due to large incident angles. Users must specify energy windows by referencing the name of the `DigitizerEnergyWindowsActor` associated with the SPECT system.
+
+.. code-block:: python
+
+    # arf actor for building the training dataset
+    arf = sim.add_actor("ARFTrainingDatasetActor", "my_arf_actor")
+    arf.attached_to = detector_plane.name
+    arf.output_filename = "arf_training_dataset.root"
+    arf.energy_windows_actor = ene_win_actor.name
+    arf.russian_roulette = 50
+
+
+Step 2: Training the ARF Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+After generating the dataset, train the ARF model using garf_train, which trains a neural network to represent the ARF function. This requires the previous dataset as input, with training options specified in a JSON configuration file (e.g., `train_arf_v058.json` in `tests/data/test043`). A suitable GPU is recommended for training. The output is a .pth file containing the trained model and its associated weights.
+
+.. code-block:: bash
+
+    garf_train  train_arf_options.json arf_training_dataset.root arf.pth
+
+Step 3: Using the Trained ARF Model in Simulation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+With the trained model (.pth file), you can now substitute direct photon tracking in the SPECT head with the ARF model. This is accomplished with the `ARFActor`, which takes the trained .pth file, consider a detector plane, and generates a 2D projection image with estimated detection counts. Note that the values represent probabilities rather than integer counts, as this is a variance reduction method. Although the computation time per particle is comparable to full tracking, ARF accelerates convergence towards the mean counts across all pixels. Consequently, an ARF-based simulation can achieve the same noise level as a traditional simulation but with up to 5-10 times fewer particles. The `distance_to_crystal` parameter defines the spacing between the detector plane and the crystal center, allowing for positional correction in the 2D projection.
+
+.. code-block:: python
+
+    arf = sim.add_actor("ARFActor", "arf")
+    arf.attached_to = detector_plane
+    arf.output_filename = "projection.mhd"
+    arf.image_size = [128, 128]
+    arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
+    arf.verbose_batch = True
+    arf.distance_to_crystal = 74.625 * mm
+    arf.pth_filename = "arf.pth"
+    arf.batch_size = 2e5
+    arf.gpu_mode = "auto"
+
+
+The source code for garf is here : https://github.com/OpenGATE/garf
+The associated publication is:
+
+    Learning SPECT detector angular response function with neural network for accelerating Monte-Carlo simulations. Sarrut D, Krah N, Badel JN, Létang JM. Phys Med Biol. 2018 Oct 17;63(20):205013. doi: 10.1088/1361-6560/aae331.  https://www.ncbi.nlm.nih.gov/pubmed/30238925
+
 
 LETActor
 --------

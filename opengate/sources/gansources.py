@@ -14,6 +14,7 @@ from ..image import compute_image_3D_CDF
 from .generic import generate_isotropic_directions
 from scipy.spatial.transform import Rotation
 from ..utility import LazyModuleLoader
+import random
 
 #
 torch = LazyModuleLoader("torch")
@@ -185,6 +186,8 @@ class VoxelizedSourceConditionGenerator:
     def initialize_source(self):
         # FIXME warning, this is call in the same thread but several time (???)
         if self.image is None:
+            # sleep to avoid concurrent access (??)
+            time.sleep(random.uniform(0.3, 1.0))
             self.image = itk.imread(self.activity_source_filename)
         self.source_img_info = get_info_from_image(self.image)
         if self.sampler is None:
