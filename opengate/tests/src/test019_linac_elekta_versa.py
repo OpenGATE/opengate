@@ -44,7 +44,7 @@ if __name__ == "__main__":
     )
 
     # add linac e- source
-    source = versa.add_electron_source(sim, linac.name,6.49*MeV, 1 * mm,0.5*mm)
+    source = versa.add_electron_source(sim, linac.name, 6.49 * MeV, 1 * mm, 0.5 * mm)
     source.n = 8e4 / sim.number_of_threads
     if sim.visu:
         source.n = 200

@@ -11,16 +11,21 @@ import numpy as np
 import itk
 
 
-
-def calc_mlc_aperture(x_leaf_position,y_jaws_position):
+def calc_mlc_aperture(x_leaf_position, y_jaws_position):
 
     left = x_leaf_position[:80]
     right = x_leaf_position[80:]
-    proj_leaves_y = np.arange(-40*5 + 2.5,40*5 -2.5 + 0.1,5)
+    proj_leaves_y = np.arange(-40 * 5 + 2.5, 40 * 5 - 2.5 + 0.1, 5)
 
-    left[(proj_leaves_y -2.5 < y_jaws_position[0]) | (proj_leaves_y  + 2.5> y_jaws_position[1])] = 0
-    right[(proj_leaves_y -2.5 < y_jaws_position[0]) | (proj_leaves_y  + 2.5 > y_jaws_position[1])] = 0
-    diff = np.array(np.abs(right - left)) *5
+    left[
+        (proj_leaves_y - 2.5 < y_jaws_position[0])
+        | (proj_leaves_y + 2.5 > y_jaws_position[1])
+    ] = 0
+    right[
+        (proj_leaves_y - 2.5 < y_jaws_position[0])
+        | (proj_leaves_y + 2.5 > y_jaws_position[1])
+    ] = 0
+    diff = np.array(np.abs(right - left)) * 5
 
     return np.sum(diff)
 
@@ -32,10 +37,10 @@ def add_volume_to_irradiate(sim, name, l_cp):
     plane.mother = name
     plane.material = "G4_WATER"
     plane.size = [0.4 * m, 0.4 * m, 2 * cm]
-    plane.translation = [0 * mm, 0 * mm, - 1*cm]
+    plane.translation = [0 * mm, 0 * mm, -1 * cm]
     plane.color = [1, 0, 0, 1]  # red
 
-    voxel_size_x = 1.2* mm
+    voxel_size_x = 1.2 * mm
     voxel_size_y = 1.2 * mm
     voxel_size_z = 2 * cm
 
@@ -72,7 +77,7 @@ def add_alpha_source(sim, name, nb_part):
     plan_source = sim.add_volume("Box", "plan_alpha_source")
     plan_source.material = "G4_Galactic"
     plan_source.mother = name
-    plan_size = np.array([1*nm, 1*nm, 1 * nm])
+    plan_size = np.array([1 * nm, 1 * nm, 1 * nm])
     plan_source.size = np.copy(plan_size)
     plan_source.translation = [0 * mm, 0 * mm, z_linac / 2 - 3.5 * mm]
 
@@ -221,13 +226,11 @@ if __name__ == "__main__":
     # jaw_1_positions = rt_plan_parameters["jaws 1"]
     # jaw_2_positions = rt_plan_parameters["jaws 2"]
 
-
     leaves = rt_plan_parameters["leaves"][l_cp[0]]
     jaws_1 = rt_plan_parameters["jaws 1"][l_cp[0]]
     jaws_2 = rt_plan_parameters["jaws 2"][l_cp[0]]
     jaws = [jaws_1, jaws_2]
     theoretical_area = calc_mlc_aperture(leaves, jaws)
-
 
     sim.run()
 
@@ -236,13 +239,12 @@ if __name__ == "__main__":
 
     # test
 
-
     dose2 = sim.get_actor("dose_water_slice")
     img_MC = dose2.edep.get_data()
     # img_MC = itk.imread(dose2.get_output_path("edep"))
     array_MC = itk.GetArrayFromImage(img_MC)
     bool_MC = array_MC[array_MC != 0]
-    simulated_area = len(bool_MC)*1.44
+    simulated_area = len(bool_MC) * 1.44
     is_ok = validation_test_19_rt_plan(
         theoretical_area,
         simulated_area,
