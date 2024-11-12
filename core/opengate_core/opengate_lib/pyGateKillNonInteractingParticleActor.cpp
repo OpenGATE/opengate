@@ -18,5 +18,6 @@ void init_GateKillNonInteractingParticleActor(py::module &m) {
       .def_readwrite(
           "fListOfVolumeAncestor",
           &GateKillNonInteractingParticleActor::fListOfVolumeAncestor)
+      .def_readwrite("number_of_killed_particles", &GateKillNonInteractingParticleActor::fNbOfKilledParticles)
       .def(py::init<py::dict &>());
 }

@@ -206,4 +206,6 @@ if __name__ == "__main__":
 
     is_ok = test082_test(df_entry, df_exit_1, df_exit_2)
 
+    print(kill_No_int_act.user_output.kill_non_interacting_particles)
+
     utility.test_ok(is_ok)

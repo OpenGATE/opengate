@@ -277,7 +277,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         do_something()
 """
 
-
 class KillActor(ActorBase, g4.GateKillActor):
 
     def __init__(self, *args, **kwargs):
@@ -300,6 +299,27 @@ class KillActor(ActorBase, g4.GateKillActor):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
+class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_killed_particles = 0
+
+
+    def get_processed_output(self):
+        d = {}
+        d["particles killed"] = self.number_of_killed_particles
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            s = k + ": " + str(v)
+            s += "\n"
+        return(s)
+
+
+
 class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingParticleActor):
 
     """
@@ -310,13 +330,15 @@ class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingPartic
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles")
         self.__initcpp__()
         self.list_of_volume_name = []
+        self.number_of_killed_particles = 0
 
     def __initcpp__(self):
         g4.GateKillNonInteractingParticleActor.__init__(self, self.user_info)
         self.AddActions(
-            {"StartSimulationAction","PreUserTrackingAction", "SteppingAction"}
+            {"StartSimulationAction","PreUserTrackingAction", "SteppingAction","EndOfSimulationAction"}
         )
 
     def initialize(self):
@@ -333,6 +355,15 @@ class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingPartic
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
+
+
+    def EndSimulationAction(self):
+        self.user_output.kill_non_interacting_particles.number_of_killed_particles = self.number_of_killed_particles
+
+
+    def __str__(self):
+        s = self.user_output["kill_non_interacting_particles"].__str__()
+        return s
 
 
 def _setter_hook_particles(self, value):
@@ -475,6 +506,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
+process_cls(KillNonInteractingParticleActor)
 process_cls(SplittingActorBase)
 process_cls(ComptSplittingActor)
 process_cls(BremSplittingActor)
