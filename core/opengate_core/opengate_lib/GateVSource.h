@@ -50,9 +50,8 @@ public:
   std::string fName;
   double fStartTime;
   double fEndTime;
-  unsigned long fNumberOfGeneratedEvents;
 
-  std::string fMother;
+  std::string fAttachedToVolumeName;
   std::vector<G4ThreeVector> fTranslations;
   std::vector<G4RotationMatrix> fRotations;
 
@@ -70,6 +69,7 @@ protected:
   double fDecayConstant;
 
   struct threadLocalT {
+    unsigned long fNumberOfGeneratedEvents;
     G4ThreeVector fGlobalTranslation;
     G4RotationMatrix fGlobalRotation;
   };

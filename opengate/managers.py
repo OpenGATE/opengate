@@ -48,6 +48,12 @@ from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
 
+from .sources.generic import SourceBase, GenericSource
+
+source_types = {
+    "GenericSource": GenericSource,
+}
+
 from .geometry.volumes import (
     VolumeBase,
     BoxVolume,
@@ -231,31 +237,36 @@ class FilterManager:
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
 
-class SourceManager:
+class SourceManager(GateObject):
     """
     Manage all the sources in the simulation.
     The function prepare_generate_primaries will be called during
     the main run loop to set the current time and source.
     """
 
-    def __init__(self, simulation):
-        # Keep a pointer to the current simulation
-        self.simulation = simulation
+    def __init__(self, simulation, *args, **kwargs):
+        print(f"SourceManager __init__")
+        kwargs["name"] = "source_manager"
+        kwargs["simulation"] = simulation
+        super().__init__(*args, **kwargs)
         # List of run times intervals
         self.run_timing_intervals = None
         self.current_run_interval = None
         # List of sources user info
-        self.user_info_sources = {}
+        self.sources = {}
+        print(f"SourceManager __init__ done")
 
     def __str__(self):
         """
         str only dump the user info on a single line
         """
-        v = [v.name for v in self.user_info_sources.values()]
-        s = f'{" ".join(v)} ({len(self.user_info_sources)})'
+        v = [v.name for v in self.sources.values()]
+        s = f'{" ".join(v)} ({len(self.sources)})'
         return s
 
     def dump_source_types(self):
+        print(f"FIXME dump_source_types")
+        fatal(f"todo")
         s = f""
         # FIXME: workaround to avoid circular import, will be solved when refactoring sources
         from opengate.sources.builders import source_builders
@@ -265,20 +276,21 @@ class SourceManager:
         return s
 
     def dump_sources(self):
-        n = len(self.user_info_sources)
+        n = len(self.sources)
         s = f"Number of sources: {n}"
-        for source in self.user_info_sources.values():
+        for source in self.sources.values():
             a = f"\n {source}"
             s += indent(2, a)
         return s
 
-    def get_source_info(self, name):
-        if name not in self.user_info_sources:
+    def get_source(self, source_name):
+        try:
+            return self.sources[source_name]
+        except KeyError:
             fatal(
-                f"The source {name} is not in the current "
-                f"list of sources: {self.user_info_sources}"
+                f"Cannot find the source {source_name}. "
+                f"Sources included in this simulation are: {list(self.sources.keys())}"
             )
-        return self.user_info_sources[name]
 
     """def get_source(self, name):
         n = len(self.g4_thread_source_managers)
@@ -309,18 +321,46 @@ class SourceManager:
             f"list of sources: {self.user_info_sources}"
         )"""
 
-    def add_source(self, source_type, name):
-        # check that another element with the same name does not already exist
-        assert_unique_element_name(self.user_info_sources, name)
-        # init the user info
-        s = UserInfo("Source", source_type, name)
-        # append to the list
-        self.user_info_sources[name] = s
-        # return the info
-        return s
+    def add_source(self, source, name):
+        print(f"add source ", name)
+        new_source = None
+        if isinstance(source, str):
+            if name is None:
+                fatal("You must provide a name for the source.")
+            new_source = self._create_source(source, name)
+        elif isinstance(source, SourceBase):
+            new_source = source
+        else:
+            fatal(
+                "You need to either provide an actor type and name, or an actor object."
+            )
+
+        if new_source.name in self.sources:
+            fatal(
+                f"The source named {new_source.name} already exists. "
+                f"Existing source names are: {self.sources.keys()}"
+            )
+        self.sources[new_source.name] = new_source
+        self.sources[new_source.name].simulation = self.simulation
+        # return the volume if it has not been passed as input, i.e. it was created here
+        if new_source is not source:
+            return new_source
+
+    def _create_source(self, source_type, name):
+        cls = None
+        try:
+            cls = source_types[source_type]
+        except KeyError:
+            fatal(
+                f"Unknown source type {source_type}. "
+                f"Known types are: \n."
+                f"{self.dump_source_types()}."
+            )
+        print(f"create source, call cls", cls)
+        return cls(name=name, simulation=self.simulation)
 
     def initialize_before_g4_engine(self):
-        for source in self.user_info_sources.values():
+        for source in self.sources.values():
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
 
@@ -335,9 +375,8 @@ class ActorManager(GateObject):
         kwargs["simulation"] = simulation
         super().__init__(*args, **kwargs)
         self.user_info_actors = {}
-        self.actors = (
-            {}
-        )  # dictionary of actor objects. Do not fill manually. Use add_actor() method.
+        # dictionary of actor objects. Do not fill manually. Use add_actor() method.
+        self.actors = {}
 
     def __str__(self):
         s = "The actor manager contains the following actors: \n"
@@ -406,6 +445,7 @@ class ActorManager(GateObject):
         return actor.user_info
 
     def add_actor(self, actor, name):
+        new_actor = None
         if isinstance(actor, str):
             if name is None:
                 fatal("You must provide a name for the actor.")
@@ -419,7 +459,7 @@ class ActorManager(GateObject):
 
         if new_actor.name in self.actors:
             fatal(
-                f"The actor name {new_actor.name} already exists. "
+                f"The actor named {new_actor.name} already exists. "
                 f"Existing actor names are: {self.actors.keys()}"
             )
         self.actors[new_actor.name] = new_actor
@@ -432,6 +472,7 @@ class ActorManager(GateObject):
         self.actors.pop(name)
 
     def _create_actor(self, actor_type, name):
+        cls = None
         try:
             cls = actor_types[actor_type]
         except KeyError:
@@ -1739,7 +1780,7 @@ class Simulation(GateObject):
 
             # FIXME: temporary workaround to copy from output the additional
             # information of the source (such as fTotalSkippedEvents)
-            for source in self.source_manager.user_info_sources.values():
+            for source in self.source_manager.sources.values():
                 try:
                     s = output.get_source(source.name)
                 except:

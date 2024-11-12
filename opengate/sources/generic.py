@@ -3,11 +3,16 @@ from scipy.spatial.transform import Rotation
 import pathlib
 import numpy as np
 
-import opengate_core
+import opengate_core as g4
+from ..actors.base import _setter_hook_attached_to
+
+# from ..managers import retrieve_g4_physics_constructor_class
+from ..base import GateObject, process_cls
 from ..utility import g4_units
 from ..exception import fatal, warning
 from ..definitions import __world_name__
-from ..userelement import UserElement
+
+# from ..userelement import UserElement
 
 gate_source_path = pathlib.Path(__file__).parent.resolve()
 
@@ -194,44 +199,86 @@ def get_source_zero_events(sim, source_name):
     return n
 
 
-class SourceBase(UserElement):
+class SourceBase(GateObject):
     """
     Base class for all source types.
     """
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        UserElement.set_default_user_info(user_info)
-        # user properties shared by all sources
-        user_info.mother = __world_name__
-        user_info.start_time = None
-        user_info.end_time = None
-        user_info.n = 0
-        user_info.activity = 0
-        user_info.half_life = -1  # negative value is no half_life
+    user_info_defaults = {
+        "attached_to": (
+            __world_name__,
+            {
+                "doc": "Name of the volume to which the source is attached.",
+                "setter_hook": _setter_hook_attached_to,
+            },
+        ),
+        "mother": (
+            None,
+            {
+                "deprecated": "The user input parameter 'mother' is deprecated. Use 'attached_to' instead. ",
+            },
+        ),
+        "start_time": (
+            None,
+            {
+                "doc": "Starting time of the source",
+            },
+        ),
+        "end_time": (
+            None,
+            {
+                "doc": "End time of the source",
+            },
+        ),
+        "n": (
+            0,
+            {
+                "doc": "Number of particle to generate (exclusive with 'activity')",
+            },
+        ),
+        "activity": (
+            0,
+            {
+                "doc": "Activity of the source in Bq (exclusive with 'n')",
+            },
+        ),
+        "half_life": (
+            -1,
+            {
+                "doc": "Half-life decay (-1 if no decay). Only when used with 'activity'",
+            },
+        ),
+    }
 
-    def __init__(self, user_info):
-        # type_name MUST be defined in class that inherit from SourceBase
-        super().__init__(user_info)
-        # the cpp counterpart of the source
-        self.g4_source = self.create_g4_source()
+    def __init__(self, *args, **kwargs):
+        print(f"SourceBase __init__")
+        GateObject.__init__(self, *args, **kwargs)
         # all times intervals
         self.run_timing_intervals = None
         # threading
         self.current_thread_id = None
+        # FIXME debug
+        self.verbose_getstate = True
+
+    def __initcpp__(self):
+        print(f"SourceBase __initcpp__")
+        # the cpp counterpart of the source
+        # self.g4_source = self.create_g4_source()
+        """Nothing to do in the base class."""
 
     def __str__(self):
         s = f"{self.user_info.name}: {self.user_info}"
         return s
 
     def __getstate__(self):
-        if self.verbose_getstate:
-            warning(
-                f"Getstate SourceBase {self.user_info.type_name} {self.user_info.name}"
-            )
-        self.simulation = None
-        self.g4_source = None
-        return self.__dict__
+        print("SourceBase get state")
+        state_dict = super().__getstate__()
+        return state_dict
+
+    def __setstate__(self, state):
+        print("SourceBase __setstate__")
+        super().__setstate__(state)
+        self.__initcpp__()
 
     def dump(self):
         sec = g4_units.s
@@ -249,7 +296,7 @@ class SourceBase(UserElement):
         )
         return s
 
-    def create_g4_source(self):
+    def create_g4_source_TO_REMOVE(self):
         fatal('The function "create_g4_source" *must* be overridden')
 
     def initialize_source_before_g4_engine(self, source):
@@ -268,10 +315,10 @@ class SourceBase(UserElement):
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
         # this will initialize and set user_info to the cpp side
-        self.g4_source.InitializeUserInfo(self.user_info.__dict__)
+        self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):
-        source_manager.AddSource(self.g4_source)
+        source_manager.AddSource(self)
 
     def prepare_output(self):
         pass
@@ -280,83 +327,135 @@ class SourceBase(UserElement):
         return True
 
 
-class GenericSource(SourceBase):
+def _generic_source_default_position():
+    return Box(
+        {
+            "type": "point",
+            "radius": 0,
+            "sigma_x": 0,
+            "sigma_y": 0,
+            "size": [0, 0, 0],
+            "translation": [0, 0, 0],
+            "rotation": Rotation.identity().as_matrix(),
+            "confine": None,
+        }
+    )
+
+
+def _generic_source_default_direction():
+    return Box(
+        {
+            "type": "iso",
+            "theta": [0, 180],
+            "phi": [0, 360],
+            "momentum": [0, 0, 1],
+            "focus_point": [0, 0, 0],
+            "sigma": [0, 0],
+            "acceptance_angle": _generic_source_default_aa(),
+            "accolinearity_flag": False,
+            "histogram_theta_weight": [],
+            "histogram_theta_angle": [],
+            "histogram_phi_weight": [],
+            "histogram_phi_angle": [],
+        }
+    )
+
+
+def _generic_source_default_aa():
+    deg = g4_units.deg
+    return Box(
+        {
+            "skip_policy": "SkipEvents",
+            "volumes": [],
+            "intersection_flag": False,
+            "normal_flag": False,
+            "normal_vector": [0, 0, 1],
+            "normal_tolerance": 3 * deg,
+        }
+    )
+
+
+def _generic_source_default_energy():
+    return Box(
+        {
+            "type": "mono",
+            "mono": 0,
+            "sigma_gauss": 0,
+            "is_cdf": False,
+            "min_energy": None,
+            "max_energy": None,
+            "histogram_weight": None,
+            "histogram_energy": None,
+        }
+    )
+
+
+class GenericSource(SourceBase, g4.GateGenericSource):
     """
     GenericSource close to the G4 SPS, but a bit simpler.
     The G4 source created by this class is GateGenericSource.
     """
 
-    type_name = "GenericSource"
+    user_info_defaults = {
+        "particle": (
+            "gamma",
+            {"doc": "Name of the particle generated by the source"},
+        ),
+        "ion": (
+            Box({"Z": 0, "A": 0, "E": 0}),
+            {
+                "doc": "If the particle is an ion, you can set Z: Atomic Number, A: Atomic Mass (nn + np +nlambda), E: Excitation energy (i.e. for metastable)"
+            },
+        ),
+        "weight": (
+            1,
+            {"doc": "Particle initial weight (for variance reduction technique)"},
+        ),
+        "weight_sigma": (
+            1,
+            {"doc": "TODO"},
+        ),
+        "user_particle_life_time": (
+            -1,
+            {"doc": "FIXME "},
+        ),
+        "tac_times": (
+            None,
+            {
+                "doc": "TAC: Time Activity Curve, this set the vector for the times. Must be used with tac_activities."
+            },
+        ),
+        "tac_activities": (
+            None,
+            {
+                "doc": "TAC: Time Activity Curve, this set the vector for the activities. Must be used with tac_times."
+            },
+        ),
+        "direction_relative_to_attached_volume": (
+            False,
+            {
+                "doc": "When the volume is move (with dynamic parametrisation) should we update the direction of the particle or not?"
+            },
+        ),
+        "position": (
+            _generic_source_default_position(),
+            {"doc": "FIXME"},
+        ),
+        "direction": (
+            _generic_source_default_direction(),
+            {"doc": "FIXME"},
+        ),
+        "energy": (
+            _generic_source_default_energy(),
+            {"doc": "FIXME"},
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        SourceBase.set_default_user_info(user_info)
-
-        # initial user info
-        user_info.particle = "gamma"
-        user_info.ion = Box()
-        user_info.weight = -1
-        user_info.weight_sigma = -1
-        user_info.user_particle_life_time = -1  # negative means : by default
-        user_info.tac_times = None
-        user_info.tac_activities = None
-        user_info.direction_relative_to_attached_volume = False
-
-        # ion
-        user_info.ion = Box()
-        user_info.ion.Z = 0  # Z: Atomic Number
-        user_info.ion.A = 0  # A: Atomic Mass (nn + np +nlambda)
-        user_info.ion.E = 0  # E: Excitation energy (i.e. for metastable)
-
-        # position
-        user_info.position = Box()
-        user_info.position.type = "point"
-        user_info.position.radius = 0
-        user_info.position.sigma_x = 0
-        user_info.position.sigma_y = 0
-        user_info.position.size = [0, 0, 0]
-        user_info.position.translation = [0, 0, 0]
-        user_info.position.rotation = Rotation.identity().as_matrix()
-        user_info.position.confine = None
-
-        # angle (direction)
-        deg = g4_units.deg
-        user_info.direction = Box()
-        user_info.direction.type = "iso"
-        user_info.direction.theta = [0, 180 * deg]
-        user_info.direction.phi = [0, 360 * deg]
-        user_info.direction.momentum = [0, 0, 1]
-        user_info.direction.focus_point = [0, 0, 0]
-        user_info.direction.sigma = [0, 0]
-        user_info.direction.acceptance_angle = Box()
-        user_info.direction.acceptance_angle.skip_policy = "SkipEvents"  # or ZeroEnergy
-        user_info.direction.acceptance_angle.volumes = []
-        user_info.direction.acceptance_angle.intersection_flag = False
-        user_info.direction.acceptance_angle.normal_flag = False
-        user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
-        user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
-        user_info.direction.accolinearity_flag = False  # only for back_to_back source
-        user_info.direction.histogram_theta_weight = []
-        user_info.direction.histogram_theta_angle = []
-        user_info.direction.histogram_phi_weight = []
-        user_info.direction.histogram_phi_angle = []
-
-        # energy
-        user_info.energy = Box()
-        user_info.energy.type = "mono"
-        user_info.energy.mono = 0
-        user_info.energy.sigma_gauss = 0
-        user_info.energy.is_cdf = False
-        user_info.energy.min_energy = None
-        user_info.energy.max_energy = None
-        user_info.energy.histogram_weight = None
-        user_info.energy.histogram_energy = None
-
-    def create_g4_source(self):
-        return opengate_core.GateGenericSource()
-
-    def __init__(self, user_info):
-        super().__init__(user_info)
+    def __init__(self, *args, **kwargs):
+        print(f"GenericSource __init__")
+        self.__initcpp__()  # FIXME should be first ????
+        super().__init__(self, *args, **kwargs)
+        print("current user_info", self.user_info)
         if not self.user_info.particle.startswith("ion"):
             return
         words = self.user_info.particle.split(" ")
@@ -371,20 +470,12 @@ class GenericSource(SourceBase):
         self.fTotalZeroEvents = 0
         self.fTotalSkippedEvents = 0
 
+    def __initcpp__(self):
+        g4.GateGenericSource.__init__(self)
+
     def initialize(self, run_timing_intervals):
-        # Check user_info type
-        # if not isinstance(self.user_info, Box):
-        #    fatal(f'Generic Source: user_info must be a Box, but is: {self.user_info}')
-        # Infer whether self.user_info is a UserInfo object
-        # without explicitly using the UserInfo class (circular import)
-        if not hasattr(self.user_info, "element_type"):
-            fatal(
-                f"Generic Source: user_info must be a UserInfo, but is: {self.user_info}"
-            )
-        # if not isinstance(self.user_info, UserInfo):
-        #     fatal(
-        #         f"Generic Source: user_info must be a UserInfo, but is: {self.user_info}"
-        #     )
+        print(f"Generic source initialize", run_timing_intervals)
+
         if not isinstance(self.user_info.position, Box):
             fatal(
                 f"Generic Source: user_info.position must be a Box, but is: {self.user_info.position}"
@@ -504,8 +595,10 @@ class GenericSource(SourceBase):
         SourceBase.prepare_output(self)
         # store the output from G4 object
         # FIXME will be refactored like the actors
-        self.user_info.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
-        self.user_info.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
+        # self.user_info.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
+        # self.user_info.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
+        # self.user_info.fTotalZeroEvents = self.fTotalZeroEvents
+        # self.user_info.fTotalSkippedEvents = self.fTotalSkippedEvents
 
     def update_tac_activity(self):
         ui = self.user_info
@@ -531,6 +624,7 @@ class GenericSource(SourceBase):
         return True
 
 
+'''
 class TemplateSource(SourceBase):
     """
     Source template: to create a new type of source, copy-paste
@@ -566,3 +660,8 @@ class TemplateSource(SourceBase):
 
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
+'''
+
+
+process_cls(SourceBase)
+process_cls(GenericSource)

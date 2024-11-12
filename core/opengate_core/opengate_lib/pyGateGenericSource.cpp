@@ -15,8 +15,8 @@ void init_GateGenericSource(py::module &m) {
 
   py::class_<GateGenericSource, GateVSource>(m, "GateGenericSource")
       .def(py::init())
-      .def_readonly("fNumberOfGeneratedEvents",
-                    &GateGenericSource::fNumberOfGeneratedEvents)
+      //.def_readonly("fNumberOfGeneratedEvents",
+      //              &GateGenericSource::fNumberOfGeneratedEvents)
       .def("InitializeUserInfo", &GateGenericSource::InitializeUserInfo)
       .def("SetEnergyCDF", &GateGenericSource::SetEnergyCDF)
       .def("SetProbabilityCDF", &GateGenericSource::SetProbabilityCDF)

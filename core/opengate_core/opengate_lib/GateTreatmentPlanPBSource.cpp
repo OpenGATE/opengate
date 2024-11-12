@@ -24,7 +24,8 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   // Create single particle source only once. Parameters are then updated for
   // the different spots.
-  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(), fMother);
+  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
+                                                   fAttachedToVolumeName);
 
   // common to all spots
   InitializeParticle(user_info);

@@ -73,7 +73,8 @@ void GateGANPairSource::GeneratePrimaries(G4Event *event,
   fCurrentIndex++;
 
   // update the number of generated event
-  fNumberOfGeneratedEvents++;
+  auto &l = fThreadLocalData.Get();
+  l.fNumberOfGeneratedEvents++;
 }
 
 void GateGANPairSource::GeneratePrimariesPair(G4Event *event,

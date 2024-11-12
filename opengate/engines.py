@@ -5,6 +5,7 @@ import os
 import weakref
 from box import Box
 from anytree import PreOrderIter
+import copy
 
 import opengate_core as g4
 from .exception import fatal, warning, GateImplementationError
@@ -13,7 +14,6 @@ from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
-from .element import new_element
 from .physics import (
     UserLimitsPhysics,
     translate_particle_name_gate_to_geant4,
@@ -100,7 +100,7 @@ class SourceEngine(EngineBase):
     def initialize(self, run_timing_intervals, progress_bar=False):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
-        if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
+        if len(self.simulation_engine.simulation.source_manager.sources) == 0:
             self.simulation_engine.simulation.warn_user(
                 f"No source: no particle will be generated"
             )
@@ -119,29 +119,26 @@ class SourceEngine(EngineBase):
         )
 
     def create_master_source_manager(self):
-        # create particles table # FIXME in physics ??
-        # NK: I don't think this is the correct approach
-        # The particles are constructed through the RunManager when the
-        # physics list is initialized, namely in G4RunManagerKernel::SetupPhysics()
-        # self.g4_particle_table = g4.G4ParticleTable.GetParticleTable()
-        # self.g4_particle_table.CreateAllParticles()  # Warning: this is a hard-coded list!
         # create the master source for the masterThread
-        self.g4_master_source_manager = self.create_g4_source_manager(append=False)
+        self.g4_master_source_manager = self.create_g4_thread_source_manager(
+            append=False
+        )
         return self.g4_master_source_manager
 
-    def create_g4_source_manager(self, append=True):
+    def create_g4_thread_source_manager(self, append=True):
         """
         This is called by all threads
         This object is needed here, because it can only be
         created after physics initialization
         """
+        # create a source manager for the current thread
         ms = g4.GateSourceManager()
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
-        for vu in source_manager.user_info_sources.values():
-            source = new_element(vu, self.simulation_engine.simulation)
+        for source in source_manager.sources.values():
             source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)
+            # store all the sources (will be used later by SimulationOutput)
             self.sources.append(source)
 
         # Copy visualization parameters
@@ -171,6 +168,7 @@ class SourceEngine(EngineBase):
         # keep pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
+
         return ms
 
     def start(self):
@@ -540,7 +538,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
             self.g4_main_PrimaryGenerator = p
         else:
             # else create a source for each thread
-            p = self.simulation_engine.source_engine.create_g4_source_manager()
+            p = self.simulation_engine.source_engine.create_g4_thread_source_manager()
 
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
@@ -937,6 +935,7 @@ class SimulationOutput:
         self.user_hook_log = simulation_engine.user_hook_log
 
     def store_sources(self, simulation_engine):
+        print("store sources")
         self.sources = {}
         if simulation_engine.simulation.multithreaded is True:
             th = {}
@@ -953,8 +952,10 @@ class SimulationOutput:
         else:
             s = {}
             for source in simulation_engine.source_engine.sources:
+                print(source.name)
                 s[source.user_info.name] = source
             self.sources = s
+        print("end store sources", len(self.sources))
 
     def get_actor(self, name):
         if name not in self.actors:

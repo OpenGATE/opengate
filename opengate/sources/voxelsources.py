@@ -46,7 +46,7 @@ class VoxelsSource(GenericSource):
         self.image = None
         return self.__dict__
 
-    def create_g4_source(self):
+    def create_g4_source_TO_REMOVE(self):
         return opengate_core.GateVoxelsSource()
 
     def set_transform_from_user_info(self):

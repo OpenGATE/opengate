@@ -300,7 +300,7 @@ class PhaseSpaceSource(SourceBase):
         user_info.verbose_batch = False
         user_info.verbose = False
 
-    def create_g4_source(self):
+    def create_g4_source_TO_REMOVE(self):
         return opengate_core.GatePhaseSpaceSource()
 
     def __init__(self, user_info):

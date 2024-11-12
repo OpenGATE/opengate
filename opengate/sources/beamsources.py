@@ -28,7 +28,7 @@ class IonPencilBeamSource(GenericSource):
         user_info.direction.partPhSp_x = [0, 0, 0, 0]
         user_info.direction.partPhSp_y = [0, 0, 0, 0]
 
-    def create_g4_source(self):
+    def create_g4_source_TO_REMOVE(self):
         return opengate_core.GatePencilBeamSource()
 
     def __init__(self, user_info):
@@ -116,7 +116,7 @@ class TreatmentPlanPBSource(SourceBase):
         if len(words) > 3:
             self.user_info.ion.E = words[3]
 
-    def create_g4_source(self):
+    def create_g4_source_TO_REMOVE(self):
         return opengate_core.GateTreatmentPlanPBSource()
 
     def initialize(self, run_timing_intervals):

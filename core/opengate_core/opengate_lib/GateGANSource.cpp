@@ -165,7 +165,8 @@ void GateGANSource::GeneratePrimaries(G4Event *event,
   fCurrentIndex++;
 
   // update the number of generated event
-  fNumberOfGeneratedEvents++;
+  auto &l = fThreadLocalData.Get();
+  l.fNumberOfGeneratedEvents++;
 }
 
 void GateGANSource::GenerateOnePrimary(G4Event *event,

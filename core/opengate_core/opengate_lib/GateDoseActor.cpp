@@ -34,9 +34,9 @@ G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
 GateDoseActor::GateDoseActor(py::dict &user_info)
     : GateVActor(user_info, true) {}
 
-void GateDoseActor::InitializeUserInput(py::dict &user_info) {
+void GateDoseActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
 
   // translation
   fTranslation = DictGetG4ThreeVector(user_info, "translation");

@@ -15,7 +15,8 @@ GatePencilBeamSource::GatePencilBeamSource() : GateGenericSource() {}
 GatePencilBeamSource::~GatePencilBeamSource() = default;
 
 void GatePencilBeamSource::CreateSPS() {
-  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(), fMother);
+  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
+                                                   fAttachedToVolumeName);
   fSPS = fSPS_PB;
 }
 

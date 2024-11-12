@@ -91,7 +91,7 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.initialize(self)
         self.check_energy_window_actor()
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -255,7 +255,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_array = np.zeros(self.output_size, dtype=np.float64)
 
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         self.SetARFFunction(self.apply)
 

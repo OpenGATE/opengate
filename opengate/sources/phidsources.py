@@ -90,7 +90,7 @@ class PhotonFromIonDecaySource(GenericSource):
         self.log = user_info.log
         super().__init__(user_info)
 
-    def create_g4_source(self):
+    def create_g4_source_TO_REMOVE(self):
         # create all sub sources (one per decaying ion)
         for _ in range(len(self.ui_sub_sources)):
             self.g4_sub_sources.append(g4.GateGenericSource())

@@ -1,9 +1,12 @@
-from .generic import GenericSource, TemplateSource
+# from .generic import GenericSource
+
+""", TemplateSource)
 from .voxelsources import VoxelsSource
 from .gansources import GANSource, GANPairsSource
 from .beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .phspsources import PhaseSpaceSource
 from .phidsources import PhotonFromIonDecaySource
+"""
 from ..utility import make_builders
 
 
@@ -13,7 +16,7 @@ from ..utility import make_builders
     Energy spectra for beta+ emitters
 """
 
-source_type_names = {
+"""source_type_names = {
     GenericSource,
     VoxelsSource,
     GANSource,
@@ -25,3 +28,4 @@ source_type_names = {
     PhotonFromIonDecaySource,
 }
 source_builders = make_builders(source_type_names)
+"""

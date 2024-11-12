@@ -51,7 +51,7 @@ void GateGenericSource::CleanWorkerThread() {
 }
 
 void GateGenericSource::CreateSPS() {
-  fSPS = new GateSingleParticleSource(fMother);
+  fSPS = new GateSingleParticleSource(fAttachedToVolumeName);
 }
 
 void GateGenericSource::SetEnergyCDF(const std::vector<double> &cdf) {
@@ -88,7 +88,8 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   // FIXME todo polarization
 
   // init number of events
-  fNumberOfGeneratedEvents = 0;
+  auto &l = fThreadLocalData.Get();
+  l.fNumberOfGeneratedEvents = 0;
   fCurrentSkippedEvents = 0;
   fTotalSkippedEvents = 0;
   fEffectiveEventTime = -1;
@@ -154,9 +155,8 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
   }
 
   // check according to t MaxN
-  // std::cout<<fNumberOfGeneratedEvents<<std::endl;
-
-  if (fNumberOfGeneratedEvents + cse >= fMaxN) {
+  auto &l = fThreadLocalData.Get();
+  if (l.fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }
   return fStartTime;
@@ -266,7 +266,8 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
     }
   }
 
-  fNumberOfGeneratedEvents++;
+  auto &ll = fThreadLocalData.Get();
+  ll.fNumberOfGeneratedEvents++;
 }
 
 void GateGenericSource::InitializeParticle(py::dict &user_info) {

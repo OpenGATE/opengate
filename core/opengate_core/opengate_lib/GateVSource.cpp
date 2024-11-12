@@ -12,30 +12,30 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
 
-G4Mutex SourceOrientationMutex = G4MUTEX_INITIALIZER;
-
 GateVSource::GateVSource() {
   fName = "";
   fStartTime = 0;
   fEndTime = 0;
-  fMother = "";
+  fAttachedToVolumeName = "";
   fLocalTranslation = G4ThreeVector();
   fLocalRotation = G4RotationMatrix();
-  fNumberOfGeneratedEvents = 0;
+  auto &l = fThreadLocalData.Get();
+  l.fNumberOfGeneratedEvents = 0;
   fMaxN = 0;
   fActivity = 0;
   fHalfLife = -1;
   fDecayConstant = -1;
+  fInitialActivity = 0;
 }
 
-GateVSource::~GateVSource() {}
+GateVSource::~GateVSource() = default;
 
 void GateVSource::InitializeUserInfo(py::dict &user_info) {
   // get info from the dict
-  fName = DictGetStr(user_info, "_name");
+  fName = DictGetStr(user_info, "name");
   fStartTime = DictGetDouble(user_info, "start_time");
   fEndTime = DictGetDouble(user_info, "end_time");
-  fMother = DictGetStr(user_info, "mother");
+  fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
 
   // get user info about activity or nb of events
   fMaxN = DictGetInt(user_info, "n");
@@ -76,13 +76,13 @@ void GateVSource::SetOrientationAccordingToMotherVolume() {
   l.fGlobalTranslation = fLocalTranslation;
 
   // No change in the translation rotation if mother is the world
-  if (fMother == "world")
+  if (fAttachedToVolumeName == "world")
     return;
 
   // compute global translation rotation and keep it.
   // Will be used for example in GenericSource to change position
-  ComputeTransformationFromVolumeToWorld(fMother, l.fGlobalTranslation,
-                                         l.fGlobalRotation, false);
+  ComputeTransformationFromVolumeToWorld(
+      fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
 }
 
 long GateVSource::GetExpectedNumberOfEvents(TimeIntervals simulation_times) {
