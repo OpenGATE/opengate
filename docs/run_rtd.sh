@@ -16,4 +16,5 @@ python -m pip install --upgrade --no-cache-dir sphinx
 python -m pip install --exists-action=w --no-cache-dir -r docs/requirements.txt
 mkdir docs/output
 cd docs/source
+sphinx-build -T -b html -d _build/doctrees -D language=en . ../output/html
 python -m sphinx -T -b html -d _build/doctrees -D language=en . ../output/html

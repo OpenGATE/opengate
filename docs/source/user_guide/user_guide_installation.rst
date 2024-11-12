@@ -66,4 +66,4 @@ There are additional command line tools available; see the `addons section <user
 
 - `Exercises <https://gitlab.in2p3.fr/davidsarrut/gate_exercices_2>`_ (initially developed for DQPRM, French medical physics diploma)
 
-- `Exercises <https://drive.google.com/drive/folders/1bcIS5OPLOBzhLo0NvrLJL5IxVQidNYCF>`_ (initially developed for Opengate teaching)
+- `Training <https://drive.google.com/drive/folders/1bcIS5OPLOBzhLo0NvrLJL5IxVQidNYCF>`_ (initially developed for Opengate teaching)

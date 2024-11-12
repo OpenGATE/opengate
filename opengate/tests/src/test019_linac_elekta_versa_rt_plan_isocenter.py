@@ -25,7 +25,8 @@ def add_phase_space_isocenter(sim, name, pos):
     isocenter_sphere.material = "G4_Galactic"
     isocenter_sphere.mother = name
     isocenter_sphere.translation = pos
-    isocenter_sphere.radius = 1 * cm
+    isocenter_sphere.rmax = 0
+    isocenter_sphere.rmax = 1 * cm
     isocenter_sphere.color = [0, 1, 0, 1]  # red
 
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
