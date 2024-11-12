@@ -23,7 +23,7 @@ class DataItem:
         self.data = None
         if data is not None:
             self.set_data(data)
-        self.meta_data = Box()
+        self.meta_data = Box({"number_of_samples": 1})
         if meta_data:
             try:
                 for k, v in meta_data.items():
