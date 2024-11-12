@@ -106,6 +106,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
     dose.spacing = [2.5 * mm, 2.5 * mm, 2.5 * mm]
     dose.edep_uncertainty.active = True
+    dose.edep.keep_data_per_run = True
     dose.uncertainty_goal = unc_goal_run
     dose.uncertainty_first_check_after_n_events = 100
     dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc
@@ -125,7 +126,28 @@ if __name__ == "__main__":
     # print results at the end
     print(stat)
 
-    # test that final mean uncertainty satisfies the goal uncertainty
+    ok = True
+    # test that the uncertainty goal was met in each run:
+    for i in range(len(sim.run_timing_intervals)):
+        edep_arr = np.asarray(dose.edep.get_data(which=i))
+        unc_arr = np.asarray(dose.edep_uncertainty.get_data(which=i))
+        unc_mean = calculate_mean_unc(
+            edep_arr, unc_arr, edep_thresh_rel=thresh_voxel_edep_for_unc_calc
+        )
+        b = unc_mean < unc_goal_run
+        print(f"For run index {i}: \n"
+              f"    mean uncertainty = {unc_mean}, "
+              f"    goal = {unc_goal_run}"
+              f"    OK? -> {b}")
+        ok &= b
+
+
+    # Test that mean uncertainty satisfies the goal uncertainty
+    # in the edep image merged over the runs
+    # The goal might not be strictly met
+    # because the voxels over which the uncertainty is calculated are not strictly the same
+    # because they are threshold-based
+    # Therefore, we allow some margin around the goal
     test_thresh_rel = 0.01
 
     edep_arr = np.asarray(dose.edep.image)
@@ -136,7 +158,8 @@ if __name__ == "__main__":
     )
     print(f"{unc_expected = }")
     print(f"{unc_mean = }")
-    ok = unc_mean < unc_expected and unc_mean > unc_expected - test_thresh_rel
+    ok &= unc_mean < unc_expected + test_thresh_rel and unc_mean > unc_expected - test_thresh_rel
+    print("OK? -> ", ok)
 
     # test that the simulation stopped because of the threshold crtierion,
     # and not simply because we reached the planned number of events
@@ -144,6 +167,8 @@ if __name__ == "__main__":
     n_effective = stat.counts.events
     print(f"{n_planned = }")
     print(f"{n_effective = }")
-    ok = ok and n_effective < n_planned
+    b = n_effective < n_planned
+    print("OK? -> ", b)
+    ok = ok and b
 
     utility.test_ok(ok)
