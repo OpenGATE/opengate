@@ -204,15 +204,15 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
             weights_nz = []
             elems_symbol_nz = []
             # remove the weight equal to zero
-            lsum = 0
+            sum_of_weights = 0
             for a, e in zip(weights, elems_symbol):
                 if a > 0:
                     weights_nz.append(a)
                     elems_symbol_nz.append(e)
-                    lsum += a
+                    sum_of_weights += a
             # normalise weight
             for k in range(len(weights_nz)):
-                weights_nz[k] = weights_nz[k] / lsum
+                weights_nz[k] = weights_nz[k] / sum_of_weights
             # define a new material (will be created later at MaterialDatabase initialize)
             name = f'{mat["name"]}_{num}'
             simulation.volume_manager.material_database.add_material_weights(
@@ -782,5 +782,4 @@ class MaterialDatabase:
             fatal(
                 f"The database '{db}' is not in the list of read database: {self.filenames}"
             )
-        llist = self.material_builders_by_filename[db]
-        return [name for name in llist]
+        return [name for name in self.material_builders_by_filename[db]]
