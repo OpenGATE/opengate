@@ -469,11 +469,9 @@ def assert_filtered_imagesprofile1D(
     filter_data = np.squeeze(itk.GetArrayViewFromImage(filter_img1).ravel())
     data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
     data2 = np.squeeze(itk.GetArrayViewFromImage(img2).ravel())
-    flipflag = True  # FIXME
-    if flipflag:
-        filter_data = np.flip(filter_data)
-        data1 = np.flip(data1)
-        data2 = np.flip(data2)
+    filter_data = np.flip(filter_data)
+    data1 = np.flip(data1)
+    data2 = np.flip(data2)
     max_ind = np.argmax(filter_data)
     L_filter = range(max_ind)
     d1 = data1[L_filter]
@@ -1504,7 +1502,7 @@ def compareRange(
     diff = abs(r2 - r1)
 
     if diff > thresh:
-        print(f"\033[91mRange difference is {diff}mm, threshold is {thresh}mm \033[0m")
+        print(f"Range difference is {diff}mm, threshold is {thresh}mm")
         ok = False
 
     return ok
@@ -1560,7 +1558,7 @@ def compare_dose_at_points(
 
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:
-        print("\033[91mDose difference above threshold \033[0m")
+        print("Dose difference above threshold. ")
         ok = False
     return ok
 
