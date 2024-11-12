@@ -1,3 +1,6 @@
+
+.. _actors-label:
+
 Actors
 ======
 
@@ -331,7 +334,7 @@ After generating the dataset, train the ARF model using garf_train, which trains
 
 .. code-block:: bash
 
-    garf_train  train_arf_options.json arf_training_dataset.root arf.pth
+    garf_train  train_arf_v058.json arf_training_dataset.root arf.pth
 
 Step 3: Using the Trained ARF Model in Simulation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
