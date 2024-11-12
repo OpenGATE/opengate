@@ -93,6 +93,47 @@ To dump a list of all available volume types:
    print('Volume types :')
    print(sim.volume_manager.dump_volume_types())
 
+Examples of possible volumes
+---------------------------
+
+.. code:: python
+
+   # A box
+   myBoxVolume = sim.add_volume("Box", "myBoxVolume")
+   myBoxVolume.size = [8 * cm, 20 * cm, 8 * cm]
+   myBoxVolume.translation = [0 * cm, 8 * cm, 0 * cm]
+   myBoxVolume.mother = "world"
+   myBoxVolume.material = "Water" # from your GateMaterials.db
+   myBoxVolume.color = [0, 0, 0, 0.5]
+
+
+.. code:: python
+
+   # A sphere
+   mySphereVolume = sim.add_volume("Sphere", "mySphereVolume")
+   mySphereVolume.mother = "world"
+   mySphereVolume.rmin = 0 * cm
+   mySphereVolume.rmax = 5 * cm
+   mySphereVolume.translation = [0 * cm, 0 * cm, 20 * cm]
+   mySphereVolume.material = "Water" # from your GateMaterials.db
+   mySphereVolume.color = [1, 0, 0, 1]
+
+
+.. code:: python
+
+   # A Trd is a trapezoid with the x and y dimensions varying along z
+   myTrdVolume = sim.add_volume("Trd", "myTrdVolume")
+   myTrdVolume.mother = "world"
+   myTrdVolume.dx1 = 5.0 * cm
+   myTrdVolume.dx2 = 5.0 * cm
+   myTrdVolume.dy1 = 5.5 * cm
+   myTrdVolume.dy2 = 2.5 * cm
+   myTrdVolume.dz = 10 * cm
+   myTrdVolume.translation = [0 * cm, -12 * cm, 20 * cm]
+   myTrdVolume.material = "Water"    # from your GateMaterials.db
+   myTrdVolume.color = [0, 1, 0, 1]
+
+
 Volume hierarchy
 ----------------
 
