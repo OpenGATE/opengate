@@ -416,15 +416,15 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         ),
         "position": (
             _generic_source_default_position(),
-            {"doc": "FIXME"},
+            {"doc": "Define the position of the primary particles"},
         ),
         "direction": (
             _generic_source_default_direction(),
-            {"doc": "FIXME"},
+            {"doc": "Define the direction of the primary particles"},
         ),
         "energy": (
             _generic_source_default_energy(),
-            {"doc": "FIXME"},
+            {"doc": "Define the energy of the primary particles"},
         ),
     }
 
