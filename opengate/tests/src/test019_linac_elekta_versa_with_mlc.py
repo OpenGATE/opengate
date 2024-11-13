@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # add alpha source
     source = sim.add_source("GenericSource", f"alpha_source")
     source.particle = "alpha"
-    source.mother = linac.name
+    source.attached_to = linac.name
     z_linac = linac.size[2]
     source.energy.type = "gauss"
     source.energy.mono = 1 * MeV

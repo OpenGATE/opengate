@@ -53,7 +53,7 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   // AAManager is already set in GenericSource BUT MUST be iso direction here ?
   auto d = py::dict(user_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
-  auto &l = fThreadLocalDataAA.Get();
+  auto &l = fThreadLocalDataGenericSource.Get();
   l.fAAManager->Initialize(dd, true);
   fSPS->SetAAManager(l.fAAManager);
 
@@ -73,12 +73,13 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   }
 
   // FIXME generic ion ? Should be possible, not tested
-  if (fInitGenericIon) {
+  auto &ll = fThreadLocalDataGenericSource.Get();
+  if (ll.fInitGenericIon) {
     Fatal("Sorry, generic ion is not implemented with GAN source");
   }
 
   // FIXME confine ?
-  if (fInitConfine) {
+  if (ll.fInitConfine) {
     Fatal("Sorry, confine is not implemented with GAN source");
   }
 }
@@ -172,7 +173,7 @@ void GateGANSource::GeneratePrimaries(G4Event *event,
 void GateGANSource::GenerateOnePrimary(G4Event *event,
                                        double current_simulation_time) {
   // If AA (Angular Acceptance) is enabled, we perform rejection
-  auto &l = fThreadLocalDataAA.Get();
+  auto &l = fThreadLocalDataGenericSource.Get();
   if (l.fAAManager->IsEnabled())
     return GenerateOnePrimaryWithAA(event, current_simulation_time);
 
@@ -274,14 +275,16 @@ double GateGANSource::GeneratePrimariesEnergy() {
 }
 
 double GateGANSource::GeneratePrimariesTime(double current_simulation_time) {
+  auto &ll = fThreadLocalDataGenericSource.Get();
+
   if (!fTime_is_set_by_GAN) {
-    fEffectiveEventTime = current_simulation_time;
-    return fEffectiveEventTime;
+    ll.fEffectiveEventTime = current_simulation_time;
+    return ll.fEffectiveEventTime;
   }
 
   if (fCurrentZeroEvents > 0) {
-    fEffectiveEventTime = current_simulation_time;
-    return fEffectiveEventTime;
+    ll.fEffectiveEventTime = current_simulation_time;
+    return ll.fEffectiveEventTime;
   }
 
   // if the time is managed by the GAN, it can be relative or absolute.
@@ -293,14 +296,14 @@ double GateGANSource::GeneratePrimariesTime(double current_simulation_time) {
 
   // Get the time from the GAN except if it is a zeroE
   if (fCurrentZeroEvents > 0)
-    fEffectiveEventTime = current_simulation_time;
+    ll.fEffectiveEventTime = current_simulation_time;
   else {
     if (fRelativeTiming)
-      fEffectiveEventTime += fTime[fCurrentIndex];
+      ll.fEffectiveEventTime += fTime[fCurrentIndex];
     else
-      fEffectiveEventTime = fTime[fCurrentIndex];
+      ll.fEffectiveEventTime = fTime[fCurrentIndex];
   }
-  return fEffectiveEventTime;
+  return ll.fEffectiveEventTime;
 }
 
 double GateGANSource::GeneratePrimariesWeight() {
@@ -317,7 +320,7 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
   fCurrentZeroEvents = 0;
   fCurrentSkippedEvents = 0;
   bool cont = true;
-  auto &l = fThreadLocalDataAA.Get();
+  auto &l = fThreadLocalDataGenericSource.Get();
   l.fAAManager->StartAcceptLoop();
 
   while (cont) {

@@ -58,10 +58,9 @@ protected:
   GateSingleParticleSource *fSPS;
   G4ParticleDefinition *fParticleDefinition;
   G4ThreeVector fInitializeMomentum;
-  G4ThreeVector fInitiliazeFocusPoint;
+  G4ThreeVector fInitializeFocusPoint;
   G4ThreeVector fInitTranslation;
   G4String fangType;
-  double fEffectiveEventTime;
   double fUserParticleLifeTime;
 
   // Time Curve Activity
@@ -71,7 +70,7 @@ protected:
 
   // generic ion is controlled separately
   // (maybe initialized once Run is started)
-  bool fInitGenericIon;
+  // bool fInitGenericIon;
   int fA;    // A: Atomic Mass (nn + np +nlambda)
   int fZ;    // Z: Atomic Number
   double fE; // E: Excitation energy
@@ -88,11 +87,14 @@ protected:
   // angular acceptance management
   struct threadLocalT {
     GateAcceptanceAngleTesterManager *fAAManager;
+    bool fInitConfine;
+    bool fInitGenericIon;
+    double fEffectiveEventTime;
   };
-  G4Cache<threadLocalT> fThreadLocalDataAA;
+  G4Cache<threadLocalT> fThreadLocalDataGenericSource;
 
   // if confine is used, must be defined after the initialization
-  bool fInitConfine;
+  // bool fInitConfine;
   std::string fConfineVolume;
 
   // for beta plus CDF

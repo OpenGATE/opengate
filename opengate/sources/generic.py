@@ -383,6 +383,19 @@ class GenericSource(SourceBase, g4.GateGenericSource):
     The G4 source created by this class is GateGenericSource.
     """
 
+    # hints for IDE
+    particle: str
+    ion: Box
+    weight: float
+    weight_sigma: float
+    user_particle_life_time: float
+    tac_times: list
+    tac_activities: list
+    direction_relative_to_attached_volume: bool
+    position: Box
+    direction: Box
+    energy: Box
+
     user_info_defaults = {
         "particle": (
             "gamma",

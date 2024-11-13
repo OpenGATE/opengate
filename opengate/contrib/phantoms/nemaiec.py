@@ -298,10 +298,10 @@ def compute_sphere_activity(simulation, iec_name, src_name, diam):
     Bq = g4_units.Bq
     d = f"{(diam / mm):.0f}mm"
     sname = f"{src_name}_{iec_name}_{d}"
-    if sname not in simulation.source_manager.user_info_sources:
+    if sname not in simulation.source_manager.sources:
         return None, None, None, None
-    src = simulation.get_source_user_info(sname)
-    vname = src.mother
+    src = simulation.source_manager.get_source(sname)
+    vname = src.attached_to
     v = simulation.volume_manager.volumes[vname]
     s = v.solid_info
     ac = src.activity
@@ -342,10 +342,10 @@ def dump_bg_activity(simulation, iec_name, src_name):
     Bq = g4_units.Bq
     BqmL = Bq / cm3
     sname = f"{iec_name}_{src_name}"
-    if sname not in simulation.source_manager.user_info_sources:
+    if sname not in simulation.source_manager.sources:
         return
-    src = simulation.get_source_user_info(sname)
-    v = simulation.volume_manager.volumes[src.mother]
+    src = simulation.source_manager.get_source(sname)
+    v = simulation.volume_manager.volumes[src.attached_to]
     s = v.solid_info
     ac = src.activity
     out = (
@@ -374,7 +374,7 @@ def add_one_sphere_source(
         )
 
     source = simulation.add_source(source_type, f"{src_name}_{iec_name}_{d}")
-    source.mother = sname
+    source.attached_to = sname
     # default values
     source.particle = "e+"
     source.energy.type = "F18"
@@ -391,15 +391,17 @@ def add_central_cylinder_source(
 ):
     # source
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
-    bg.mother = f"{iec_name}_center_cylinder_hole"
-    v = simulation.volume_manager.volumes[bg.mother]
+    bg.attached_to = f"{iec_name}_center_cylinder_hole"
+    v = simulation.volume_manager.volumes[bg.attached_to]
     s = v.solid_info
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
+    bg.position.size = simulation.volume_manager.volumes[
+        bg.attached_to
+    ].bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
     # it is a tubs inside the box
-    bg.position.confine = bg.mother
+    bg.position.confine = bg.attached_to
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_Bq_mL * s.cubic_volume
@@ -416,14 +418,16 @@ def add_background_source(
 ):
     # source
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
-    bg.mother = f"{iec_name}_interior"
-    v = simulation.volume_manager.volumes[bg.mother]
+    bg.attached_to = f"{iec_name}_interior"
+    v = simulation.volume_manager.volumes[bg.attached_to]
     s = v.solid_info
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
+    bg.position.size = simulation.volume_manager.volumes[
+        bg.attached_to
+    ].bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
-    bg.position.confine = bg.mother
+    bg.position.confine = bg.attached_to
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_Bq_mL * s.cubic_volume
