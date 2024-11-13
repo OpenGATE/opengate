@@ -38,3 +38,9 @@ User Guide
    :maxdepth: 2
 
    user_guide_addons
+
+.. toctree::
+   :caption: Migrating from GATE 9
+   :maxdepth: 2
+
+   user_guide_migration
