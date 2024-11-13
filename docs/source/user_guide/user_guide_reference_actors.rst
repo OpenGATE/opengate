@@ -27,12 +27,16 @@ In addition, if the flag `track_types_flag` is enabled, the actor will save a di
 
 
 Reference
-^^^^^^^^^
+~~~~~~~~~
 
 .. autoclass:: opengate.actors.miscactors.SimulationStatisticsActor
 
+
 DoseActor
 ---------
+
+Description
+~~~~~~~~~~~
 
 The DoseActor computes a 3D energy deposition (edep) or absorbed dose map in a given volume. The dose map is a 3D matrix parameterized with: dimension (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the attached volume). By default, the matrix is centered according to the volume center.
 
@@ -54,8 +58,18 @@ Several tests depict the usage of DoseActor: test008, test009, test021, test035,
    dose.uncertainty = True
    dose.hit_type = "random"
 
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.DoseActor
+
+
 PhaseSpaceActor
 ---------------
+
+Description
+~~~~~~~~~~~
 
 A PhaseSpaceActor stores any set of particles reaching a given volume during the simulation. The list of attributes that are kept for each stored particle can be specified by the user.
 
@@ -91,6 +105,13 @@ By default, the PhaseSpaceActor stores information about particles entering the 
 
    phsp.steps_to_store = "entering"  # this is the default
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.PhaseSpaceActor
+
 
 Hits-related actors (digitizer)
 -------------------------------

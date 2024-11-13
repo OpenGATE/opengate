@@ -341,26 +341,13 @@ def _setter_hook_uncertainty_goal(self, value):
 
 
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
-    """
-    DoseActor: compute a 3D edep/dose map for deposited
+    """DoseActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
 
-    The dose map is parameterized with:
-        - size (number of voxels)
-        - spacing (voxel size)
-        - translation (according to the coordinate system of the "attachedTo" volume)
-        - no rotation
-
-    Position:
-    - by default: centered according to the "attachedTo" volume center
-    - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
-        the origin of the attachedTo image is used for the output dose.
-        Hence, the dose can be superimposed with the attachedTo volume
-
-    Options
-        - edep only for the moment
-        - later: add dose, uncertainty, squared etc
-
+    By default, the dose actor is centered according to the "attachedTo" volume center
+    If the attachedTo volume is an Image AND the option "img_coord_system" is True:
+    the origin of the attachedTo image is used for the output dose.
+    Hence, the dose can be superimposed with the attachedTo volume.
     """
 
     # hints for IDE
@@ -424,20 +411,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             },
         ),
-        # "calculate_density_from": (
-        #     "auto",
-        #     {
-        #         "doc": "How should density be calculated?\n"
-        #                "'simulation': via scoring along with the rest of the quantities.\n"
-        #                "'image': from the CT image, if the actor is attached to an ImageVolume.\n"
-        #                "'auto' (default): Let GATE pick the right one for you. ",
-        #         "allowed_values": (
-        #             "auto",
-        #             "simulation",
-        #             "image"
-        #         ),
-        #     },
-        # ),
         "ste_of_mean": (
             False,
             {

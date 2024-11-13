@@ -123,6 +123,8 @@ pygments_style = None
 #     'undoc-members': False,
 #     'exclude-members': '__weakref__'
 # }
+add_module_names = False
+
 
 # -- Options for HTML output -------------------------------------------------
 
