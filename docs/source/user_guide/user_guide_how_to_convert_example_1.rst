@@ -3,7 +3,7 @@ Convert From Gate 9 to Gate 10 - Example :
 This section walks you through Gate 9 and Gate 10 versions of a simulation file used to create optical transport dataset for training OptiGAN.
 
 Defining World Geometry -
-----------------------
+-------------------------
 
 Gate 9 -
 
@@ -110,7 +110,7 @@ Gate 10 -
     pixel.translation = [0 * mm, 0 * mm, 20.065 * mm]
 
 Defining Physics -
-----------------
+------------------
 
 Gate 9 -
 
@@ -245,7 +245,7 @@ Gate 10 -
     opt_surf_grease_to_pixel = sim.physics_manager.add_optical_surface("grease", "pixel", "Customized4_LUT")
 
 Defining Electron Source -
----------------------------
+--------------------------
 
 Gate 9 -
 
@@ -282,7 +282,7 @@ Gate 10 -
     source.position.translation = [0 * mm, 0 * mm, 19 * mm]
 
 Defining Actor -
----------------------------
+----------------
 
 Gate 9 -
 
