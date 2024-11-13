@@ -240,7 +240,7 @@ if __name__ == "__main__":
     # test
 
     dose2 = sim.get_actor("dose_water_slice")
-    img_MC = dose2.edep.get_data()
+    img_MC = dose2.edep.image
     # img_MC = itk.imread(dose2.get_output_path("edep"))
     array_MC = itk.GetArrayFromImage(img_MC)
     bool_MC = array_MC[array_MC != 0]

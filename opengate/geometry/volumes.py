@@ -792,6 +792,12 @@ class RepeatParametrisedVolume(VolumeBase):
         self.g4_repeat_parametrisation.SetUserInfo(p)
 
 
+def _setter_hook_image(self, image):
+    if image != self.image:
+        self._itk_image = None
+    return image
+
+
 class ImageVolume(VolumeBase, solids.ImageSolid):
     """
     Store information about a voxelized volume
@@ -810,7 +816,12 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ),
         "image": (
             "",
-            {"doc": "Path to the image file", "is_input_file": True, "dynamic": True},
+            {
+                "doc": "Path to the image file",
+                "is_input_file": True,
+                "dynamic": True,
+                "setter_hook": _setter_hook_image,
+            },
         ),
         "dump_label_image": (
             None,
@@ -881,12 +892,16 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     # FIXME: replace this property by function in opengate.image
     @property
     def size_pix(self):
+        if self.itk_image is None:
+            self.load_input_image()
         return np.array(itk.size(self.itk_image)).astype(int)
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
     @property
     def spacing(self):
+        if self.itk_image is None:
+            self.load_input_image()
         return np.array(self.itk_image.GetSpacing())
 
     # @requires_fatal("itk_image")
