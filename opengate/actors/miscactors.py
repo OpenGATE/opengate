@@ -409,38 +409,86 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
 
 class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteractionSplittingActor):
-    type_name = "LastVertexInteractionSplittingActor"
-   
-    def set_default_user_info(user_info):
-        ActorBase.set_default_user_info(user_info)
-        deg = g4_units.deg
-        user_info.splitting_factor = 1
-        user_info.angular_kill = False
-        user_info.rotation_vector_director = False
-        user_info.vector_director = [0, 0, -1]
-        user_info.max_theta = 90 * deg
-        user_info.list_of_volume_name = []
-        user_info.batch_size = 1
-    def __init__(self, user_info):
-        ActorBase.__init__(self, user_info)
-        g4.GateLastVertexInteractionSplittingActor.__init__(self, user_info.__dict__)
-        self.list_of_volume_name = user_info.list_of_volume_name
-        self.user_info.mother = user_info.mother
-        
-    def initialize(self, volume_engine=None):
+    """This splitting actor proposes an interaction splitting at the last particle vertex before the exit
+        of the biased volume.  This actor can be usefull for application where collimation are important,
+       such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
+    """
 
-        super().initialize(volume_engine)
+    user_info_defaults = {
+        "splitting_factor": (
+            1,
+            {
+                "doc": "Defines the number of particles exiting at each split process. Unlike other split actors, this splitting factor counts particles that actually exit, not just those generated.",
+            },
+        ),
+
+        "angular_kill": (
+            False,
+            {
+                "doc": "If enabled, particles with momentum outside a specified angular range are killed.",
+            },
+        ),
+
+        "max_theta": (
+            90 * g4_units.deg,
+            {
+                "doc": "Defines the maximum angle (in degrees) from a central axis within which particles are retained. Particles with momentum beyond this angle are removed. The angular range spans from 0 to max_theta, measured from the vector_director",
+            },
+        ),
+
+
+        "vector_director": (
+            [0, 0, 1],
+            {
+                "doc": "Specifies the reference direction vector from which max_theta is measured. Particles’ angular range is calculated based on this direction.",
+            },
+        ),
+        "rotation_vector_director": (
+            False,
+            {
+                "doc": "If enabled, the vector_director rotates in alignment with any rotation applied to the biased volume attached to this actor.",
+            },
+        ),
+        "batch_size": (
+            1,
+            {
+                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+            },
+        ),
+
+
+    }
+
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateLastVertexInteractionSplittingActor.__init__(self, {"name": self.name})
+        self.AddActions({"BeginOfRunAction",
+                         "BeginOfEventAction",
+                         "PreUserTrackingAction",
+                         "SteppingAction",
+                         "PostUserTrackingAction",
+                         "EndOfEventAction"})
+
+        
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
         dico_of_volume_tree = {}
         for pre, _, node in RenderTree(volume_tree):
             dico_of_volume_tree[str(node.name)] = node
-        volume_name = self.user_info.mother
+        volume_name = self.user_info.attached_to
         while volume_name != "world":
             node = dico_of_volume_tree[volume_name]
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
-        print(self.fListOfVolumeAncestor)
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     # hints for IDE
@@ -473,6 +521,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
+process_cls(LastVertexInteractionSplittingActor)
 process_cls(SplittingActorBase)
 process_cls(ComptSplittingActor)
 process_cls(BremSplittingActor)

@@ -56,21 +56,21 @@
 GateLastVertexInteractionSplittingActor::
     GateLastVertexInteractionSplittingActor(py::dict &user_info)
     : GateVActor(user_info, false) {
-  fMotherVolumeName = DictGetStr(user_info, "mother");
-  fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
-  fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
-  fAngularKill = DictGetBool(user_info, "angular_kill");
-  fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
-  fMaxTheta = DictGetDouble(user_info, "max_theta");
-  fBatchSize = DictGetDouble(user_info, "batch_size");
-  fActions.insert("StartSimulationAction");
-  fActions.insert("SteppingAction");
-  fActions.insert("BeginOfEventAction");
-  fActions.insert("BeginOfRunAction");
-  fActions.insert("PreUserTrackingAction");
-  fActions.insert("PostUserTrackingAction");
-  fActions.insert("EndOfEventAction");
   
+  
+  
+}
+
+
+void GateLastVertexInteractionSplittingActor::InitializeUserInput(py::dict &user_info) {
+GateVActor::InitializeUserInput(user_info);
+fMotherVolumeName = DictGetStr(user_info, "attached_to");
+fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
+fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
+fAngularKill = DictGetBool(user_info, "angular_kill");
+fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
+fMaxTheta = DictGetDouble(user_info, "max_theta");
+fBatchSize = DictGetDouble(user_info, "batch_size");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -500,12 +500,15 @@ G4bool GateLastVertexInteractionSplittingActor::IsTheParticleUndergoesALossEnerg
 }
 
 
-void GateLastVertexInteractionSplittingActor::StartSimulationAction (){
+
+void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
+    const G4Run *run) {
+
   fListOfProcessesAccordingParticles["gamma"] = {"compt","phot","conv"};
   fListOfProcessesAccordingParticles["e-"] = {"eBrem","eIoni","msc"};
   fListOfProcessesAccordingParticles["e+"] = {"eBrem","eIoni","msc","annihil"};
 
-
+  std::cout<<fMotherVolumeName<<std::endl;
   G4LogicalVolume *biasingVolume = G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
   fListOfBiasedVolume.push_back(biasingVolume->GetName());
   CreateListOfbiasedVolume(biasingVolume);
@@ -514,14 +517,7 @@ void GateLastVertexInteractionSplittingActor::StartSimulationAction (){
   fVertexSource = (GateLastVertexSource* ) source;
 
   fCosMaxTheta = std::cos(fMaxTheta);
-  std::cout<<"batch size  "<<fBatchSize<<std::endl;
   fStackManager = G4EventManager::GetEventManager()->GetStackManager();
-  
-}
-
-
-void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
-    const G4Run *run) {
 
   if (fRotationVectorDirector) {
     G4VPhysicalVolume *physBiasingVolume =

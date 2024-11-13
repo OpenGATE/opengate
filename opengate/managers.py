@@ -73,6 +73,7 @@ from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
+    LastVertexInteractionSplittingActor,
     SplittingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
@@ -118,6 +119,7 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "PhaseSpaceActor": PhaseSpaceActor,
+    "LastVertexInteractionSplittingActor":LastVertexInteractionSplittingActor,
 }
 
 
