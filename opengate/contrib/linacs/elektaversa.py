@@ -634,7 +634,7 @@ def add_mlc(sim, linac_name):
         "X", np.arctan(3.25 / 349.3), degrees=False
     ).as_matrix()
     mlc.rotation = mlc_bank_rotation
-    mlc.size = [linac.size[0] - 2 * cm, linac.size[1] - 2 * cm, 100 * mm]
+    mlc.size = [linac.size[0] - 2 * cm, linac.size[1] - 2 * cm, 95 * mm]
     mlc.translation = np.array([0, 0, z_linac / 2 - center_mlc])
     mlc.mother = linac_name
     mlc.color = [0, 0, 0, 0]

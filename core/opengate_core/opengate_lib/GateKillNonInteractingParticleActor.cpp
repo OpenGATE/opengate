@@ -40,8 +40,10 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
   G4String physicalVolumeNamePreStep = "None";
   if (step->GetPreStepPoint()->GetPhysicalVolume() !=0)                                
     physicalVolumeNamePreStep = step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
-  if (((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() != logNameMotherVolume) && (fIsFirstStep)) || ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0))) {
-    if ((fPassedByTheMotherVolume == false) && (((step->GetPreStepPoint()->GetStepStatus() == 1) && (physicalVolumeNamePreStep == fMotherVolumeName)) || ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0)))) {
+  //if (((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() != logNameMotherVolume) && (fIsFirstStep)) || ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0))) {
+  if ((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() != logNameMotherVolume) && (fIsFirstStep)) {
+    //if ((fPassedByTheMotherVolume == false) && (((step->GetPreStepPoint()->GetStepStatus() == 1) && (physicalVolumeNamePreStep == fMotherVolumeName)) || ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0)))) {
+    if ((fPassedByTheMotherVolume == false) && (((step->GetPreStepPoint()->GetStepStatus() == 1) && (physicalVolumeNamePreStep == fMotherVolumeName)))) {
       fPassedByTheMotherVolume = true;
       fKineticEnergyAtTheEntrance = step->GetPreStepPoint()->GetKineticEnergy();
       ftrackIDAtTheEntrance = step->GetTrack()->GetTrackID();

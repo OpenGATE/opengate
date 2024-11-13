@@ -10,11 +10,6 @@ from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
 from anytree import Node, RenderTree
-<<<<<<< HEAD
-=======
-
->>>>>>> new_kill_non_interacting_particle
-
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
     # By default, write_to_disk is False.

@@ -55,6 +55,8 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
 }
 
 void GateTLEDoseActor::SteppingAction(G4Step *step) {
+  auto event_id =
+      G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   auto &l = fThreadLocalData.Get();
   // Update the track id if there is secondary in the current non TLE particle
   if (!l.fIsTLEGamma)
@@ -108,6 +110,18 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
     if (fDoseFlag) {
       ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
     }
-    ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+
+    if (fEdepSquaredFlag || fDoseSquaredFlag) {
+      if (fEdepSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
+                          edep, event_id, index);
+      }
+      if (fDoseSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
+                          dose, event_id, index);
+      }
+    }
+    
   }
 }
