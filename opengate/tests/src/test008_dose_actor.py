@@ -81,11 +81,15 @@ if __name__ == "__main__":
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
     dose.output_filename = "test.nii.gz"
+    dose.edep.keep_data_per_run = True
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
 
+    sim.run_timing_intervals = [
+        (x / 3.0 * gate.g4_units.s, (x + 1) / 3.0 * gate.g4_units.s) for x in range(3)
+    ]
     # start simulation
     sim.run(start_new_process=True)
 
@@ -95,6 +99,7 @@ if __name__ == "__main__":
 
     # tests
     stats_ref = utility.read_stat_file(ref_path / "stat.txt")
+    stat.counts.runs = 1  # because ref had only 1 run
     is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 
     print("\nDifference for EDEP")

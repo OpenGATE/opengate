@@ -1,7 +1,9 @@
 from box import Box
 from scipy.spatial.transform import Rotation
+import os
 import pathlib
 import numpy as np
+import json
 
 import opengate_core
 from ..utility import g4_units
@@ -102,82 +104,62 @@ def generate_isotropic_directions(
     return v
 
 
-def get_rad_gamma_energy_spectrum(rad):
-    weights = {}
-    energies = {}
-    MeV = g4_units.MeV
-    # convert to lowcase
-    rad = rad.lower()
-    # Tc99m
-    weights["tc99m"] = [0.885]
-    energies["tc99m"] = [0.140511 * MeV]
-    # Lu177
-    weights["lu177"] = [0.001726, 0.0620, 0.000470, 0.1038, 0.002012, 0.00216]
-    energies["lu177"] = [
-        0.0716418 * MeV,
-        0.1129498 * MeV,
-        0.1367245 * MeV,
-        0.2083662 * MeV,
-        0.2496742 * MeV,
-        0.3213159 * MeV,
-    ]
+def get_rad_gamma_spectrum(rad):
+    path = (
+        pathlib.Path(os.path.dirname(__file__))
+        / ".."
+        / "data"
+        / "rad_gamma_spectrum.json"
+    )
+    with open(path, "r") as f:
+        data = json.load(f)
 
-    # In111
-    weights["in111"] = [0.000015, 0.9061, 0.9412]
-    energies["in111"] = [0.15081 * MeV, 0.17128 * MeV, 0.24535 * MeV]
-    # I131
-    weights["i131"] = [
-        0.02607,
-        0.000051,
-        0.000211,
-        0.00277,
-        0.000023,
-        0.000581,
-        0.0614,
-        0.000012,
-        0.000046,
-        0.000807,
-        0.000244,
-        0.00274,
-        0.00017,
-        0.812,
-        0.000552,
-        0.003540,
-        0.0712,
-        0.002183,
-        0.01786,
-    ]
-    energies["i131"] = [
-        0.080185 * MeV,
-        0.0859 * MeV,
-        0.163930 * MeV,
-        0.177214 * MeV,
-        0.23218 * MeV,
-        0.272498 * MeV,
-        0.284305 * MeV,
-        0.2958 * MeV,
-        0.3024 * MeV,
-        0.318088 * MeV,
-        0.324651 * MeV,
-        0.325789 * MeV,
-        0.3584 * MeV,
-        0.364489 * MeV,
-        0.404814 * MeV,
-        0.503004 * MeV,
-        0.636989 * MeV,
-        0.642719 * MeV,
-        0.722911 * MeV,
-    ]
+    if rad not in data:
+        fatal(f"get_rad_gamma_spectrum: {path} does not contain data for ion {rad}")
 
-    return weights[rad], energies[rad]
+    # select data for specific ion
+    data = Box(data[rad])
+
+    data.energies = np.array(data.energies) * g4_units.MeV
+    data.weights = np.array(data.weights)
+
+    return data
+
+
+def get_rad_beta_spectrum(rad: str):
+    path = (
+        pathlib.Path(os.path.dirname(__file__))
+        / ".."
+        / "data"
+        / "rad_beta_spectrum.json"
+    )
+    with open(path, "r") as f:
+        data = json.load(f)
+
+    if rad not in data:
+        fatal(f"get_rad_beta_spectrum: {path} does not contain data for ion {rad}")
+
+    # select data for specific ion
+    data = Box(data[rad])
+
+    bin_edges = data.energy_bin_edges
+    n = len(bin_edges) - 1
+    energies = [(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(n)]
+
+    data.energy_bin_edges = np.array(data.energy_bin_edges) * g4_units.MeV
+    data.weights = np.array(data.weights)
+    data.energies = np.array(energies)
+
+    return data
 
 
 def set_source_rad_energy_spectrum(source, rad):
-    w, en = get_rad_gamma_energy_spectrum(rad)
+    rad_spectrum = get_rad_gamma_spectrum(rad)
+
     source.particle = "gamma"
-    source.energy.type = "spectrum_lines"
-    source.energy.spectrum_weight = w
-    source.energy.spectrum_energy = en
+    source.energy.type = "spectrum_discrete"
+    source.energy.spectrum_weights = rad_spectrum.weights
+    source.energy.spectrum_energies = rad_spectrum.energies
 
 
 def get_source_skipped_events(sim, source_name):
@@ -351,6 +333,10 @@ class GenericSource(SourceBase):
         user_info.energy.max_energy = None
         user_info.energy.histogram_weight = None
         user_info.energy.histogram_energy = None
+        user_info.energy.spectrum_weights = None
+        user_info.energy.spectrum_energies = None
+        user_info.energy.spectrum_energy_bin_edges = None
+        user_info.energy.spectrum_histogram_interpolation = None
 
     def create_g4_source(self):
         return opengate_core.GateGenericSource()
@@ -411,7 +397,8 @@ class GenericSource(SourceBase):
             "O15_analytic",
             "C11_analytic",
             "histogram",
-            "spectrum_lines",
+            "spectrum_discrete",
+            "spectrum_histogram",
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
@@ -565,4 +552,22 @@ class TemplateSource(SourceBase):
             )
 
         # initialize
+        SourceBase.initialize(self, run_timing_intervals)
+
+
+class LastVertexSource(SourceBase):
+    type_name = "LastVertexSource"
+
+    @staticmethod
+    def set_default_user_info(user_info):
+        SourceBase.set_default_user_info(user_info)
+        user_info.n = 0
+
+    def create_g4_source(self):
+        return opengate_core.GateLastVertexSource()
+
+    def __init__(self, user_info):
+        super().__init__(user_info)
+
+    def initialize(self, run_timing_intervals):
         SourceBase.initialize(self, run_timing_intervals)

@@ -1,24 +1,21 @@
 Developer guide
 ===============
 
-.. code:: {toctree}
-
+.. toctree::
    :caption: The Basics
    :maxdepth: 2
 
    developer_guide_installation
    developer_guide_contribute
 
-.. code:: {toctree}
-
+.. toctree::
    :caption: Get coding
    :maxdepth: 2
 
    developer_guide_code_structure
    developer_guide_how_to_implement
 
-.. code:: {toctree}
-
+.. toctree::
    :caption: Good to know
    :maxdepth: 2
 

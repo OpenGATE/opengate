@@ -118,52 +118,6 @@ if __name__ == "__main__":
     name_phsp = "test083_" + phsp.name + ".root"
     phsp.output_filename= name_phsp
 
-
-
-
-
-
-    #
-    # kill_int_act = sim.add_actor("KillInteractingParticleActor", "killact")
-    # kill_int_act.attached_to = tungsten.name
-    #
-    # entry_phase_space = sim.add_volume("Box", "entry_phase_space")
-    # entry_phase_space.mother = big_box
-    # entry_phase_space.size = [0.8 * m, 0.8 * m, 1 * nm]
-    # entry_phase_space.material = "G4_AIR"
-    # entry_phase_space.translation = [0, 0, 0.21 * m]
-    # entry_phase_space.color = [0.5, 0.9, 0.3, 1]
-    #
-    # exit_phase_space_1 = sim.add_volume("Box", "exit_phase_space_1")
-    # exit_phase_space_1.mother = actor_box
-    # exit_phase_space_1.size = [0.6 * m, 0.6 * m, 1 * nm]
-    # exit_phase_space_1.material = "G4_AIR"
-    # exit_phase_space_1.translation = [0, 0, -0.3 * m + 1 * nm]
-    # exit_phase_space_1.color = [0.5, 0.9, 0.3, 1]
-    #
-    # exit_phase_space_2 = sim.add_volume("Box", "exit_phase_space_2")
-    # exit_phase_space_2.mother = world.name
-    # exit_phase_space_2.size = [0.6 * m, 0.6 * m, 1 * nm]
-    # exit_phase_space_2.material = "G4_AIR"
-    # exit_phase_space_2.translation = [0, 0, -0.4 * m - 1 * nm]
-    # exit_phase_space_2.color = [0.5, 0.9, 0.3, 1]
-    #
-    # # print(sim.volume_manager.dump_volume_tree())
-    # liste_phase_space_name = [
-    #     entry_phase_space.name,
-    #     exit_phase_space_1.name,
-    #     exit_phase_space_2.name,
-    # ]
-    #
-    # sim.output_dir = paths.output
-    # for name in liste_phase_space_name:
-    #
-    #     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace_" + name)
-    #     phsp.attached_to = name
-    #     phsp.attributes = ["EventID", "TrackID", "KineticEnergy"]
-    #     name_phsp = "test083_" + name + ".root"
-    #     phsp.output_filename= name_phsp
-    #
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.gamma = 1 * mm
@@ -171,38 +125,13 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.positron = 1 * mm
     s = f"/process/em/UseGeneralProcess false"
     sim.g4_commands_before_init.append(s)
-    #
-    # s = sim.add_actor("SimulationStatisticsActor", "Stats")
-    # s.track_types_flag = True
-    #
-    # # go !
     sim.run()
     #
     phsp = uproot.open(
         str(output_path)
         + "/test083_PhaseSpace.root"
         + ":PhaseSpace")
-    # exit_phase_space_1 = uproot.open(
-    #     str(output_path)
-    #     + "/test083_"
-    #     + liste_phase_space_name[1]
-    #     + ".root"
-    #     + ":PhaseSpace_"
-    #     + liste_phase_space_name[1]
-    # )
-    # exit_phase_space_2 = uproot.open(
-    #     str(output_path)
-    #     + "/test083_"
-    #     + liste_phase_space_name[2]
-    #     + ".root"
-    #     + ":PhaseSpace_"
-    #     + liste_phase_space_name[2]
-    # )
-    #
+
     df = phsp.arrays()
-    # df_exit_1 = exit_phase_space_1.arrays()
-    # df_exit_2 = exit_phase_space_2.arrays()
-    #
     is_ok = test083_test(df)
-    #
     utility.test_ok(is_ok)

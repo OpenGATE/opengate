@@ -20,15 +20,15 @@ Virtual environment
 -------------------
 
 :warning: It is highly, highly, *highly* recommended to create a python
-environment prior to the installation, for example with
-`venv <https://docs.python.org/3/library/venv.html#module-venv>`__.
+  environment prior to the installation, for example with
+  `venv <https://docs.python.org/3/library/venv.html#module-venv>`__.
 
 :warning: If you use
-`conda <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#>`__
-instead to create your environment, be sure to instruct conda to install
-python when creating your environment. You do so by adding ‘python’
-after the new environment name. Optionally, you can select a specific
-python version by adding ‘=3.XX’.
+  `conda <https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#>`__
+  instead to create your environment, be sure to instruct conda to install
+  python when creating your environment. You do so by adding ‘python’
+  after the new environment name. Optionally, you can select a specific
+  python version by adding ‘=3.XX’.
 
 Example: You can create a new conda environment with Python 3.10
 installed in it via:
@@ -49,8 +49,8 @@ First, clone the unique repository that contains both packages:
    git clone --recurse-submodules https://github.com/OpenGATE/opengate
 
 :warning: When you update, the data for the tests must also be updated,
-use : ``git submodule update --init --recursive``. This also update the
-included subpackages (pybind11, etc).
+  use : ``git submodule update --init --recursive``. This also update the
+  included subpackages (pybind11, etc).
 
 The subpackage ``opengate_core`` depends on the ITK and Geant4
 libraries. Therefore, you first need to download and compile both
@@ -62,10 +62,10 @@ STEP 1 - Geant4 and Qt
 ----------------------
 
 :warning: When using conda, be sure to activate your environment before
-compiling Geant4. The reason is that conda comes with its own compiler
-and you will likely have mismatched libraries, e.g. lib c++, if not all
-installation steps involving compilaton are performed in the same conda
-environment.
+  compiling Geant4. The reason is that conda comes with its own compiler
+  and you will likely have mismatched libraries, e.g. lib c++, if not all
+  installation steps involving compilaton are performed in the same conda
+  environment.
 
 Installing QT is optional. Currently, QT visualisation is not working on
 all architectures.
@@ -138,6 +138,12 @@ Once it is done, you can compile ``opengate_core``.
 The pip install will run cmake, compile the sources and create the
 module. If you are curious you can have a look the compilation folder in
 the ``build/`` folder.
+
+With Windows, change the `:` with `;` (https://cmake.org/cmake/help/latest/envvar/CMAKE_PREFIX_PATH.html)
+
+.. code:: bash
+
+   set CMAKE_PREFIX_PATH=<path-to>/geant4.11-build/;<path-to>/itk-build/:${CMAKE_PREFIX_PATH}
 
 STEP 4 - ``opengate`` module (python)
 -------------------------------------

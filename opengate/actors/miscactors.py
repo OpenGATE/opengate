@@ -1,6 +1,8 @@
 from box import Box
 import platform
+from anytree import Node, RenderTree
 import opengate_core as g4
+from anytree import Node, RenderTree
 from .base import ActorBase
 from ..utility import g4_units, g4_best_unit_tuple
 from .actoroutput import ActorOutputBase
@@ -496,6 +498,88 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
         self.InitializeCpp()
 
 
+class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteractionSplittingActor):
+    """This splitting actor proposes an interaction splitting at the last particle vertex before the exit
+        of the biased volume.  This actor can be usefull for application where collimation are important,
+       such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
+    """
+
+    user_info_defaults = {
+        "splitting_factor": (
+            1,
+            {
+                "doc": "Defines the number of particles exiting at each split process. Unlike other split actors, this splitting factor counts particles that actually exit, not just those generated.",
+            },
+        ),
+
+        "angular_kill": (
+            False,
+            {
+                "doc": "If enabled, particles with momentum outside a specified angular range are killed.",
+            },
+        ),
+
+        "max_theta": (
+            90 * g4_units.deg,
+            {
+                "doc": "Defines the maximum angle (in degrees) from a central axis within which particles are retained. Particles with momentum beyond this angle are removed. The angular range spans from 0 to max_theta, measured from the vector_director",
+            },
+        ),
+
+
+        "vector_director": (
+            [0, 0, 1],
+            {
+                "doc": "Specifies the reference direction vector from which max_theta is measured. Particles’ angular range is calculated based on this direction.",
+            },
+        ),
+        "rotation_vector_director": (
+            False,
+            {
+                "doc": "If enabled, the vector_director rotates in alignment with any rotation applied to the biased volume attached to this actor.",
+            },
+        ),
+        "batch_size": (
+            1,
+            {
+                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+            },
+        ),
+
+
+    }
+
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateLastVertexInteractionSplittingActor.__init__(self, {"name": self.name})
+        self.AddActions({"BeginOfRunAction",
+                         "BeginOfEventAction",
+                         "PreUserTrackingAction",
+                         "SteppingAction",
+                         "PostUserTrackingAction",
+                         "EndOfEventAction"})
+
+        
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInput(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     # hints for IDE
     processes: list
@@ -528,6 +612,7 @@ process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
 process_cls(KillAccordingProcessesActor)
+process_cls(LastVertexInteractionSplittingActor)
 process_cls(SplittingActorBase)
 process_cls(ComptSplittingActor)
 process_cls(BremSplittingActor)
