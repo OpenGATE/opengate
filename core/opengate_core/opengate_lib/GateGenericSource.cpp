@@ -9,8 +9,16 @@
 #include "G4IonTable.hh"
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
+#include "fmt/color.h"
+#include "fmt/core.h"
 #include <G4UnitsTable.hh>
+#include <algorithm>
+#include <iterator>
+#include <locale>
+#include <numeric>
+#include <sstream>
 
 GateGenericSource::GateGenericSource() : GateVSource() {
   fInitGenericIon = false;
@@ -511,41 +519,105 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     fInitialActivity = fActivity;
   }
 
-  if (ene_type == "spectrum_lines") {
-    ene->SetEnergyDisType("spectrum_lines");
-    auto w = DictGetVecDouble(user_info, "spectrum_weight");
-    auto e = DictGetVecDouble(user_info, "spectrum_energy");
-    auto total = 0.0;
-    for (double ww : w)
-      total += ww;
-    // normalize to total
-    for (unsigned long i = 0; i < w.size(); i++) {
-      w[i] = w[i] / total;
+  if (ene_type == "spectrum_discrete") { // TODO rename
+    auto weights = DictGetVecDouble(user_info, "spectrum_weights");
+    auto energies = DictGetVecDouble(user_info, "spectrum_energies");
+
+    if (weights.empty())
+      Fatal("The weights for " + fName + " is zero length. Abort");
+    if (energies.empty())
+      Fatal("The energies for " + fName + " is zero length. Abort");
+    if (weights.size() != energies.size()) {
+      auto const errorMessage =
+          fmt::format("For {}, the spectrum vectors weights and energies"
+                      " must have the same size ({} ≠ {})",
+                      fName, weights.size(), energies.size());
+      Fatal(errorMessage);
     }
+
     // cumulated weights
-    for (unsigned long i = 1; i < w.size(); i++) {
-      w[i] += w[i - 1];
-    }
-    ene->fEnergyCDF = e;
-    ene->fProbabilityCDF = w;
-    if (ene->fEnergyCDF.empty() || ene->fProbabilityCDF.empty()) {
-      std::ostringstream oss;
-      oss << "The spectrum lines for source " << fName
-          << " is zero length. Abort";
-      Fatal(oss.str());
-    }
-    if (ene->fEnergyCDF.size() != ene->fProbabilityCDF.size()) {
-      std::ostringstream oss;
-      oss << "The spectrum vector energy and proba for source " << fName
-          << " must have the same length, while there are  "
-          << ene->fEnergyCDF.size() << " and " << ene->fProbabilityCDF.size();
-      Fatal(oss.str());
-    }
+    std::partial_sum(std::begin(weights), std::end(weights),
+                     std::begin(weights));
+    auto const weightsSum = weights.back();
+
+    // normalize weights to total
+    for (auto &weight : weights)
+      weight /= weightsSum;
+
     // ! important !
     // Modify the activity according to the total sum of weights because we
     // normalize the weights
-    fActivity = fActivity * total;
+    fActivity *= weightsSum;
     fInitialActivity = fActivity;
+
+    ene->SetEnergyDisType(ene_type);
+    ene->SetEmin(energies.front());
+    ene->SetEmax(energies.back());
+    ene->fEnergyCDF = energies;
+    ene->fProbabilityCDF = weights;
+  }
+
+  if (ene_type == "spectrum_histogram") {
+    auto weights = DictGetVecDouble(user_info, "spectrum_weights");
+    auto energy_bin_edges =
+        DictGetVecDouble(user_info, "spectrum_energy_bin_edges");
+    auto interpolation =
+        DictGetStr(user_info, "spectrum_histogram_interpolation");
+
+    if (weights.empty())
+      Fatal("The weights for " + fName + " is zero length. Abort");
+    if (energy_bin_edges.empty())
+      Fatal("The energy_bin_edges for " + fName + " is zero length. Abort");
+    if ((weights.size() + 1) != energy_bin_edges.size()) {
+      auto const errorMessage = fmt::format(
+          "For {}, the spectrum vector energy_bin_edges must have exactly one"
+          " more element than the vector weights ({} ≠ {} + 1)",
+          fName, energy_bin_edges.size(), weights.size());
+      Fatal(errorMessage);
+    }
+
+    if (interpolation == "None" || interpolation == "none") {
+      double accumulatedWeights = 0;
+      for (std::size_t i = 0; i < weights.size(); ++i) {
+        auto const diffEnergy = energy_bin_edges[i + 1] - energy_bin_edges[i];
+        accumulatedWeights += weights[i] * diffEnergy;
+        weights[i] = accumulatedWeights;
+      }
+    } else if (interpolation == "linear") {
+      double accumulatedWeights = 0;
+      for (std::size_t i = 0; i < weights.size(); i++) {
+        auto const diffEnergy = energy_bin_edges[i + 1] - energy_bin_edges[i];
+        auto const diffWeight = weights[i + 1] - weights[i];
+        accumulatedWeights +=
+            diffEnergy * weights[i] - 0.5 * diffEnergy * diffWeight;
+        weights[i] = accumulatedWeights;
+      }
+    } else
+      Fatal("For " + fName +
+            ", invalid spectrum interpolation type: " + interpolation);
+
+    auto const weightsSum = weights.back();
+
+    // normalize weights to total
+    for (auto &weight : weights)
+      weight /= weightsSum;
+
+    // ! important !
+    // Modify the activity according to the total sum of weights because we
+    // normalize the weights
+    fActivity *= weightsSum;
+    fInitialActivity = fActivity;
+
+    std::string interpolation_str = "";
+    if (interpolation != "None" && interpolation != "none")
+      interpolation_str =
+          (interpolation != "none" ? ("_" + interpolation) : "");
+
+    ene->SetEnergyDisType(ene_type + interpolation_str);
+    ene->SetEmin(energy_bin_edges.front());
+    ene->SetEmax(energy_bin_edges.back());
+    ene->fEnergyCDF = energy_bin_edges;
+    ene->fProbabilityCDF = weights;
   }
 
   if (ene_type == "F18_analytic") {

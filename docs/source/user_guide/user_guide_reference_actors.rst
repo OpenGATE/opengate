@@ -1,3 +1,6 @@
+
+.. _actors-label:
+
 Actors
 ======
 
@@ -20,7 +23,7 @@ The SimulationStatisticsActor actor is a very basic tool that allows counting th
    print(stats)
    print(stats.counts)
 
- In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
+In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
 
 
 Reference
@@ -112,7 +115,7 @@ The `DigitizerHitsCollectionActor` collects hits occurring in a given volume (or
    hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                     'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 
-The names of the attributes align with Geant4 terminology. The list of available attributes is defined in the file `GateDigiAttributeList.cpp` and can be printed with:
+In this example, the actor is attached (attached_to option) to several volumes (crystal1 and crystal2 ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attribute names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of a few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `GateDigiAttributeList.cpp` and can be printed with:
 
 .. code-block:: python
 
@@ -120,19 +123,31 @@ The names of the attributes align with Geant4 terminology. The list of available
    am = gate_core.GateDigiAttributeManager.GetInstance()
    print(am.GetAvailableDigiAttributeNames())
 
+Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a “default” version corresponding to the legacy Gate (9.X).
+
++------------------+-------------------+---------------------+
+| Pre version      | Post version      | default version     |
++==================+===================+=====================+
+| PreKineticEnergy | PostKineticEnergy | KineticEnergy (Pre) |
++------------------+-------------------+---------------------+
+| PrePosition      | PostPosition      | Position (Post)     |
++------------------+-------------------+---------------------+
+| PreDirection     | PostDirection     | Direction (Post)    |
++------------------+-------------------+---------------------+
+
 Attributes correspondence with Gate 9.X for Hits and Singles:
 
-+------------------------+-------------------------+
-| Gate 9.X               | Gate 10                 |
-+========================+=========================+
-| edep or energy         | TotalEnergyDeposit       |
-+------------------------+-------------------------+
-| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z    |
-+------------------------+-------------------------+
-| time                   | GlobalTime              |
-+------------------------+-------------------------+
++----------------------------+-------------------------+
+| Gate 9.X                   | Gate 10                 |
++============================+=========================+
+| edep or energy             | TotalEnergyDeposit      |
++----------------------------+-------------------------+
+| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z      |
++----------------------------+-------------------------+
+| time                       | GlobalTime              |
++----------------------------+-------------------------+
 
-The list of hits can be written to a ROOT file at the end of the simulation. Like in Gate, hits with zero energy are ignored. If zero-energy hits are needed, use a PhaseSpaceActor.
+At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is None nothing will be written. Note that, like in Gate, every hit with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using DigitizerHitsCollectionActor are proposed: test025, test028, test035, etc.
 
 The actors used to convert some `hits` to one `digi` are `DigitizerHitsAdderActor` and `DigitizerReadoutActor` (see next sections).
 
@@ -307,8 +322,7 @@ The Angular Response Function (ARF) is a method designed to accelerate SPECT sim
 3.	Apply the trained ARF to enhance simulation efficiency.
 
 .. warning::
-
-Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
+  Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
 
 Step 1: Creating the Training Dataset
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -332,7 +346,7 @@ After generating the dataset, train the ARF model using garf_train, which trains
 
 .. code-block:: bash
 
-    garf_train  train_arf_options.json arf_training_dataset.root arf.pth
+    garf_train  train_arf_v058.json arf_training_dataset.root arf.pth
 
 Step 3: Using the Trained ARF Model in Simulation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

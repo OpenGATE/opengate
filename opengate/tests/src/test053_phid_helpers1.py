@@ -178,7 +178,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
                         print("event id", e["EventID"])
                         print(f"track {len(track)}")
                         print(f"track {track}")
-                        exit(0)
+                        sys.exit(0)
                     ion = track[e["ParentID"]]["ParticleName"]
                     # ene = e["KineticEnergy"]
                     # if ene < 100 * keV:
@@ -248,7 +248,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
 
     # direct computation of gammas
     print()
-    print(f"Data extracted from the database")
+    print("Data extracted from the database")
     ge = PhotonIonDecayIsomericTransitionExtractor(
         z, a, verbose=True
     )  ## FIXME change verbose
@@ -270,7 +270,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     f_mc = str(paths.output / f"test053_{ion_name}_mc.txt")
     with open(f_mc, "w") as f:
         f.write(f"# gamma intensity for {ion_name} -> {' '.join(daughters)}\n")
-        f.write(f"# from Monte Carlo\n")
+        f.write("# from Monte Carlo\n")
         for e, w in zip(g2_ene, g2_w):
             f.write(f"{e} {w}\n")
 
@@ -278,7 +278,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     f_model = str(paths.output / f"test053_{ion_name}_model.txt")
     with open(f_model, "w") as f:
         f.write(f"# gamma intensity for {ion_name} -> {' '.join(daughters)}\n")
-        f.write(f"# from model\n")
+        f.write("# from model\n")
         for e, w in zip(g1_ene, g1_w):
             f.write(f"{e} {w}\n")
 
