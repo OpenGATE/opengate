@@ -264,6 +264,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.user_output.stats.write_data_if_requested()
 
 
+
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
     However, it is VERY time consuming. For SteppingAction, expect large performance drop.
@@ -609,7 +610,9 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
         "batch_size": (
             1,
             {
-                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC 
+              
+              configurations.",
             },
         ),
 
