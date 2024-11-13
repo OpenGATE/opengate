@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     # source ion
     ion_src = sim.add_source("GenericSource", "ion_source")
-    ion_src.mother = wb1.name
+    ion_src.attached_to = wb1.name
     ion_src.particle = "ion 9 18"  # F18
     ion_src.position.type = "sphere"
     ion_src.position.radius = 10 * mm
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # source e+
     beta_src = sim.add_source("GenericSource", "beta+_source")
-    beta_src.mother = wb2.name
+    beta_src.attached_to = wb2.name
     beta_src.particle = "e+"
     beta_src.position.type = "sphere"
     beta_src.position.radius = 10 * mm
