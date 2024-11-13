@@ -49,57 +49,63 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptnVGenericSplitting::
-    GateOptnVGenericSplitting(G4String name)
+GateOptnVGenericSplitting::GateOptnVGenericSplitting(G4String name)
     : G4VBiasingOperation(name), fParticleChange() {}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-GateOptnVGenericSplitting::
-    ~GateOptnVGenericSplitting() {}
+GateOptnVGenericSplitting::~GateOptnVGenericSplitting() {}
 
+void GateOptnVGenericSplitting::TrackInitializationChargedParticle(
+    G4ParticleChange *particleChange, G4VParticleChange *processFinalState,
+    const G4Track *track, G4double split) {
 
-void GateOptnVGenericSplitting::TrackInitializationChargedParticle(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split) {
-
-  G4ParticleChangeForLoss* processFinalStateForLoss =( G4ParticleChangeForLoss* ) processFinalState ;
+  G4ParticleChangeForLoss *processFinalStateForLoss =
+      (G4ParticleChangeForLoss *)processFinalState;
   particleChange->Initialize(*track);
-  particleChange->ProposeTrackStatus(processFinalStateForLoss->GetTrackStatus() );
-  particleChange->ProposeEnergy(processFinalStateForLoss->GetProposedKineticEnergy() );
-  particleChange->ProposeMomentumDirection(processFinalStateForLoss->GetProposedMomentumDirection());
+  particleChange->ProposeTrackStatus(
+      processFinalStateForLoss->GetTrackStatus());
+  particleChange->ProposeEnergy(
+      processFinalStateForLoss->GetProposedKineticEnergy());
+  particleChange->ProposeMomentumDirection(
+      processFinalStateForLoss->GetProposedMomentumDirection());
   particleChange->SetNumberOfSecondaries(fSplittingFactor);
   particleChange->SetSecondaryWeightByProcess(true);
   processFinalStateForLoss->Clear();
 }
 
-void GateOptnVGenericSplitting::TrackInitializationGamma(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split) {
-  G4ParticleChangeForGamma* processFinalStateForGamma = (G4ParticleChangeForGamma *)processFinalState;
+void GateOptnVGenericSplitting::TrackInitializationGamma(
+    G4ParticleChange *particleChange, G4VParticleChange *processFinalState,
+    const G4Track *track, G4double split) {
+  G4ParticleChangeForGamma *processFinalStateForGamma =
+      (G4ParticleChangeForGamma *)processFinalState;
   particleChange->Initialize(*track);
-  particleChange->ProposeTrackStatus(processFinalStateForGamma->GetTrackStatus() );
-  particleChange->ProposeEnergy(processFinalStateForGamma->GetProposedKineticEnergy() );
-  particleChange->ProposeMomentumDirection(processFinalStateForGamma->GetProposedMomentumDirection() );
+  particleChange->ProposeTrackStatus(
+      processFinalStateForGamma->GetTrackStatus());
+  particleChange->ProposeEnergy(
+      processFinalStateForGamma->GetProposedKineticEnergy());
+  particleChange->ProposeMomentumDirection(
+      processFinalStateForGamma->GetProposedMomentumDirection());
   particleChange->SetNumberOfSecondaries(fSplittingFactor);
   particleChange->SetSecondaryWeightByProcess(true);
   processFinalStateForGamma->Clear();
-
-
 }
 
-G4double GateOptnVGenericSplitting::RussianRouletteForAngleSurvival(G4ThreeVector dir,G4ThreeVector vectorDirector,G4double maxTheta,G4double split){
-G4double cosTheta =vectorDirector * dir;
-G4double theta = std::acos(cosTheta);
-G4double weightToApply = 1;
-if (theta > maxTheta){
-  G4double probability = G4UniformRand();
-  if (probability <= 1 / split) {
-    weightToApply = split;
+G4double GateOptnVGenericSplitting::RussianRouletteForAngleSurvival(
+    G4ThreeVector dir, G4ThreeVector vectorDirector, G4double maxTheta,
+    G4double split) {
+  G4double cosTheta = vectorDirector * dir;
+  G4double theta = std::acos(cosTheta);
+  G4double weightToApply = 1;
+  if (theta > maxTheta) {
+    G4double probability = G4UniformRand();
+    if (probability <= 1 / split) {
+      weightToApply = split;
+    } else {
+      weightToApply = 0;
+    }
   }
-  else{
-    weightToApply = 0;
-  }
+  return weightToApply;
 }
-return weightToApply;
-            
-}
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

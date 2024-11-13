@@ -241,9 +241,6 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
           : std::to_string(G4Threading::G4GetThreadId()));
 }
 
-
-
-
 void GateSourceManager::PrepareNextSource() {
   auto &l = fThreadLocalData.Get();
   l.fNextActiveSource = nullptr;

@@ -29,18 +29,17 @@
 #ifndef GateLastVertexInteractionSplittingActor_h
 #define GateLastVertexInteractionSplittingActor_h 1
 
+#include "CLHEP/Vector/ThreeVector.h"
 #include "G4ParticleChangeForGamma.hh"
+#include "G4StackManager.hh"
 #include "G4VEnergyLossProcess.hh"
-#include "GateVActor.h"
-#include <iostream>
-#include <pybind11/stl.h>
+#include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingDataContainer.h"
+#include "GateVActor.h"
 #include "tree.hh"
 #include "tree_util.hh"
 #include <iostream>
-#include "GateLastVertexSource.h"
-#include "CLHEP/Vector/ThreeVector.h"
-#include "G4StackManager.hh"
+#include <pybind11/stl.h>
 using CLHEP::Hep3Vector;
 
 namespace py = pybind11;
@@ -71,35 +70,31 @@ public:
   G4double fSplitCounter = 0;
   G4bool fToSplit = true;
   G4String fActiveSource = "None";
-  G4bool fIsAnnihilAlreadySplit =false;
+  G4bool fIsAnnihilAlreadySplit = false;
   G4int fCounter;
-  G4bool  fKilledBecauseOfProcess = false;
+  G4bool fKilledBecauseOfProcess = false;
   G4bool fFirstSplittedPart = true;
   G4bool fOnlyTree = false;
   G4double fWeight;
   G4double fBatchSize;
   G4int fNumberOfTrackToSimulate = 0;
-  G4int fNbOfBatchForExitingParticle=0;
-  G4int fTracksCounts=0;
-  GateLastVertexSource* fVertexSource = nullptr;
+  G4int fNbOfBatchForExitingParticle = 0;
+  G4int fTracksCounts = 0;
+  GateLastVertexSource *fVertexSource = nullptr;
   tree<LastVertexDataContainer> fTree;
   tree<LastVertexDataContainer>::post_order_iterator fIterator;
   std::vector<LastVertexDataContainer> fListOfContainer;
-  G4StackManager* fStackManager = nullptr;
-
-
+  G4StackManager *fStackManager = nullptr;
 
   G4Track *fTrackToSplit = nullptr;
-  G4Step* fCopyInitStep = nullptr;
+  G4Step *fCopyInitStep = nullptr;
   G4String fProcessNameToSplit;
-  G4VProcess* fProcessToSplit;
+  G4VProcess *fProcessToSplit;
   LastVertexDataContainer fContainer;
 
   std::vector<G4Track> fTracksToPostpone;
-  std::map<G4String,std::vector<G4String>> fListOfProcessesAccordingParticles;
-  std::map<G4int,LastVertexDataContainer> fDataMap; 
-
-
+  std::map<G4String, std::vector<G4String>> fListOfProcessesAccordingParticles;
+  std::map<G4int, LastVertexDataContainer> fDataMap;
 
   std::vector<std::string> fListOfVolumeAncestor;
   std::vector<std::string> fListOfBiasedVolume;
@@ -107,7 +102,7 @@ public:
   std::vector<G4String> fListOfProcesses = {"compt", "annihil", "eBrem", "conv",
                                             "phot"};
 
-   void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInput(py::dict &user_info) override;
   virtual void SteppingAction(G4Step *) override;
   virtual void BeginOfEventAction(const G4Event *) override;
   virtual void EndOfEventAction(const G4Event *) override;
@@ -115,23 +110,33 @@ public:
   virtual void PreUserTrackingAction(const G4Track *track) override;
 
   // Pure splitting functions
-  G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir, G4ThreeVector vectorDirector);
+  G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir,
+                                         G4ThreeVector vectorDirector);
   G4Track *CreateComptonTrack(G4ParticleChangeForGamma *, G4Track, G4double);
-  void ComptonSplitting(G4Step* initStep,G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container, G4double batchSize);
-  void SecondariesSplitting(G4Step* initStep, G4Step *CurrentStep,G4VProcess *process,LastVertexDataContainer container, G4double batchSize);
+  void ComptonSplitting(G4Step *initStep, G4Step *CurrentStep,
+                        G4VProcess *process, LastVertexDataContainer container,
+                        G4double batchSize);
+  void SecondariesSplitting(G4Step *initStep, G4Step *CurrentStep,
+                            G4VProcess *process,
+                            LastVertexDataContainer container,
+                            G4double batchSize);
 
-  void CreateNewParticleAtTheLastVertex(G4Step*init,G4Step *current, LastVertexDataContainer, G4double batchSize);
-  G4Track* CreateATrackFromContainer(LastVertexDataContainer container);
-  G4bool IsTheParticleUndergoesAProcess(G4Step* step);
-  G4bool IsTheParticleUndergoesALossEnergyProcess(G4Step* step);
-  G4VProcess* GetProcessFromProcessName(G4String particleName, G4String pName);
-  G4Track eBremProcessFinalState(G4Track* track, G4Step* step,G4VProcess *process);
-
+  void CreateNewParticleAtTheLastVertex(G4Step *init, G4Step *current,
+                                        LastVertexDataContainer,
+                                        G4double batchSize);
+  G4Track *CreateATrackFromContainer(LastVertexDataContainer container);
+  G4bool IsTheParticleUndergoesAProcess(G4Step *step);
+  G4bool IsTheParticleUndergoesALossEnergyProcess(G4Step *step);
+  G4VProcess *GetProcessFromProcessName(G4String particleName, G4String pName);
+  G4Track eBremProcessFinalState(G4Track *track, G4Step *step,
+                                 G4VProcess *process);
 
   void FillOfDataTree(G4Step *step);
-  G4bool IsParticleExitTheBiasedVolume(G4Step*step);
+  G4bool IsParticleExitTheBiasedVolume(G4Step *step);
   void CreateListOfbiasedVolume(G4LogicalVolume *volume);
-  void print_tree(const tree<LastVertexDataContainer>& tr, tree<LastVertexDataContainer>::pre_order_iterator it, tree<LastVertexDataContainer>::pre_order_iterator end);
+  void print_tree(const tree<LastVertexDataContainer> &tr,
+                  tree<LastVertexDataContainer>::pre_order_iterator it,
+                  tree<LastVertexDataContainer>::pre_order_iterator end);
 };
 
 #endif

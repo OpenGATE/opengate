@@ -11,8 +11,9 @@ namespace py = pybind11;
 
 void init_GateLastVertexInteractionSplittingActor(py::module &m) {
 
-  py::class_<GateLastVertexInteractionSplittingActor, GateVActor,
-             std::unique_ptr<GateLastVertexInteractionSplittingActor, py::nodelete>>(
+  py::class_<
+      GateLastVertexInteractionSplittingActor, GateVActor,
+      std::unique_ptr<GateLastVertexInteractionSplittingActor, py::nodelete>>(
       m, "GateLastVertexInteractionSplittingActor")
       .def_readwrite(
           "fListOfVolumeAncestor",

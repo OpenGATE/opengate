@@ -119,7 +119,7 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "PhaseSpaceActor": PhaseSpaceActor,
-    "LastVertexInteractionSplittingActor":LastVertexInteractionSplittingActor,
+    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
 }
 
 
@@ -1194,19 +1194,18 @@ class VolumeManager(GateObject):
         for vt in self.volume_types:
             s += f"{vt} "
         return s
-        
+
     def get_volume_tree(self):
         return self.volume_tree_root
-        
-       
+
     def print_volume_types(self):
         print(self.dump_volume_types())
 
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
-    
+
     def get_volume_tree(self):
-    	return (self.volume_tree_root)
+        return self.volume_tree_root
 
     def get_volume_tree(self):
         return self.volume_tree_root
