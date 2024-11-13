@@ -9,9 +9,9 @@
 #define GateLastVertexSource_h
 
 #include "GateAcceptanceAngleTesterManager.h"
+#include "GateLastVertexSplittingDataContainer.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
-#include "GateLastVertexSplittingDataContainer.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -19,9 +19,9 @@ namespace py = pybind11;
 /*
  This is NOT a real source type but a template to help writing your own source
  type. Copy-paste this file with a different name ("MyNewSource.hh") and start
- building. You also need to copy : GateLastVertexSource.hh GateLastVertexSource.cpp
- pyGateLastVertexSource.cpp
- And add the source declaration in opengate_core.cpp
+ building. You also need to copy : GateLastVertexSource.hh
+ GateLastVertexSource.cpp pyGateLastVertexSource.cpp And add the source
+ declaration in opengate_core.cpp
  */
 
 class GateLastVertexSource : public GateVSource {
@@ -39,38 +39,25 @@ public:
 
   void GeneratePrimaries(G4Event *event, double time) override;
 
+  void GenerateOnePrimary(G4Event *event, double time, G4int idx);
 
-  void GenerateOnePrimary(G4Event *event, double time,G4int idx);
-
-
-  void SetListOfVertexToSimulate(std::vector<LastVertexDataContainer> list){
+  void SetListOfVertexToSimulate(std::vector<LastVertexDataContainer> list) {
     fListOfContainer = list;
   }
 
-  void SetNumberOfGeneratedEvent(G4int nbEvent){
+  void SetNumberOfGeneratedEvent(G4int nbEvent) {
     fNumberOfGeneratedEvents = nbEvent;
   }
 
-  void SetNumberOfEventToSimulate(G4int N){
-    fN = N;
-  }
+  void SetNumberOfEventToSimulate(G4int N) { fN = N; }
 
-  G4int GetNumberOfEventToSimulate(){
-    return fN;
-  }
+  G4int GetNumberOfEventToSimulate() { return fN; }
 
-  G4int GetNumberOfGeneratedEvent(){
-    return fNumberOfGeneratedEvents;
-  }
+  G4int GetNumberOfGeneratedEvent() { return fNumberOfGeneratedEvents; }
 
-  G4String GetProcessToSplit(){
-    return fProcessToSplit;
-  }
+  G4String GetProcessToSplit() { return fProcessToSplit; }
 
-  LastVertexDataContainer GetLastVertexContainer(){
-    return fContainer;
-  }
-
+  LastVertexDataContainer GetLastVertexContainer() { return fContainer; }
 
 protected:
   G4int fNumberOfGeneratedEvents = 0;

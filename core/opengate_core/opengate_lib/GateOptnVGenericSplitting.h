@@ -70,15 +70,20 @@ public:
     return 0;
   }
 
+  // ----------------------------------------------
+  // -- Methods for the generic splitting
+  // ----------------------------------------------
 
-// ----------------------------------------------
-// -- Methods for the generic splitting
-// ----------------------------------------------
-
-void TrackInitializationChargedParticle(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split);
-void TrackInitializationGamma(G4ParticleChange* particleChange,G4VParticleChange* processFinalState, const G4Track* track,G4double split);
-static G4double RussianRouletteForAngleSurvival(G4ThreeVector dir,G4ThreeVector vectorDirector,G4double maxTheta,G4double split);
-
+  void TrackInitializationChargedParticle(G4ParticleChange *particleChange,
+                                          G4VParticleChange *processFinalState,
+                                          const G4Track *track, G4double split);
+  void TrackInitializationGamma(G4ParticleChange *particleChange,
+                                G4VParticleChange *processFinalState,
+                                const G4Track *track, G4double split);
+  static G4double RussianRouletteForAngleSurvival(G4ThreeVector dir,
+                                                  G4ThreeVector vectorDirector,
+                                                  G4double maxTheta,
+                                                  G4double split);
 
 public:
   // ----------------------------------------------

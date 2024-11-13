@@ -610,8 +610,8 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
         "batch_size": (
             1,
             {
-                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC 
-              
+                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC
+
               configurations.",
             },
         ),
@@ -634,7 +634,7 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
                          "PostUserTrackingAction",
                          "EndOfEventAction"})
 
-        
+
     def initialize(self):
         ActorBase.initialize(self)
         self.InitializeUserInput(self.user_info)

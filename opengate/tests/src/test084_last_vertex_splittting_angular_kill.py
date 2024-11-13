@@ -8,26 +8,27 @@ from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
 
-
-def validation_test(arr_data,vector_director,max_theta):
+def validation_test(arr_data, vector_director, max_theta):
     arr_data = arr_data[arr_data["ParticleName"] == "gamma"]
-    qt_mvt_data = arr_data[["PreDirection_X","PreDirection_Y","PreDirection_Z"]]
-    mom_data = np.zeros((len(qt_mvt_data["PreDirection_X"]),3))
-    mom_data[:,0] += np.array(qt_mvt_data["PreDirection_X"])
+    qt_mvt_data = arr_data[["PreDirection_X", "PreDirection_Y", "PreDirection_Z"]]
+    mom_data = np.zeros((len(qt_mvt_data["PreDirection_X"]), 3))
+    mom_data[:, 0] += np.array(qt_mvt_data["PreDirection_X"])
     mom_data[:, 1] += np.array(qt_mvt_data["PreDirection_Y"])
     mom_data[:, 2] += np.array(qt_mvt_data["PreDirection_Z"])
 
-    l_theta = np.zeros(len(mom_data[:,0]))
+    l_theta = np.zeros(len(mom_data[:, 0]))
 
     for i in range(len(l_theta)):
         theta = np.arccos(mom_data[i].dot(vector_director))
         l_theta[i] = theta
-    print('Number of particles with an angle higher than max_theta:',len(l_theta[l_theta > max_theta]))
+    print(
+        "Number of particles with an angle higher than max_theta:",
+        len(l_theta[l_theta > max_theta]),
+    )
     if len(l_theta[l_theta > max_theta]) == 0:
         return True
     else:
         return False
-
 
 
 if __name__ == "__main__":
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     W_tubs.mother = world.name
 
     W_tubs.rmin = 0
-    W_tubs.rmax = 0.4*cm
+    W_tubs.rmax = 0.4 * cm
     W_tubs.dz = 0.05 * m
     W_tubs.color = [0.8, 0.2, 0.1, 1]
     angle_x = 45
@@ -91,36 +92,33 @@ if __name__ == "__main__":
     ).as_matrix()
     W_tubs.rotation = rotation
 
-    if bias :
-    ###### Last vertex Splitting ACTOR #########
+    if bias:
+        ###### Last vertex Splitting ACTOR #########
         nb_split = 10
-        vertex_splitting_actor = sim.add_actor("LastVertexInteractionSplittingActor", "vertexSplittingW")
+        vertex_splitting_actor = sim.add_actor(
+            "LastVertexInteractionSplittingActor", "vertexSplittingW"
+        )
         vertex_splitting_actor.attached_to = W_tubs.name
         vertex_splitting_actor.splitting_factor = nb_split
         vertex_splitting_actor.angular_kill = True
-        vertex_splitting_actor.vector_director = [0,0,-1]
-        vertex_splitting_actor.max_theta = 15*deg
+        vertex_splitting_actor.vector_director = [0, 0, -1]
+        vertex_splitting_actor.max_theta = 15 * deg
         vertex_splitting_actor.batch_size = 10
-
 
     plan = sim.add_volume("Box", "plan_phsp")
     plan.material = "G4_Galactic"
-    plan.size = [5*cm,5*cm,1*nm]
-    plan.translation = [0,0,-1*cm]
+    plan.size = [5 * cm, 5 * cm, 1 * nm]
+    plan.translation = [0, 0, -1 * cm]
 
-    if bias :
+    if bias:
         vector_director = np.array(vertex_splitting_actor.vector_director)
-
-
-
 
     ####### gamma source ###########
     source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
     source.n = 100000
-    if bias :
-        source.n = source.n/nb_split
-
+    if bias:
+        source.n = source.n / nb_split
 
     source.position.type = "sphere"
     source.position.radius = 1 * nm
@@ -128,15 +126,15 @@ if __name__ == "__main__":
     # source.direction.momentum = [0,0,-1]
     source.direction.momentum = np.dot(rotation, np.array([0, 0, -1]))
     source.energy.type = "mono"
-    source.energy.mono =  4 * MeV
+    source.energy.mono = 4 * MeV
 
     ###### LastVertexSource #############
-    if bias :
+    if bias:
         source_0 = sim.add_source("LastVertexSource", "source_vertex")
         source_0.n = 1
 
     ####### PHASE SPACE ACTOR ##############
-    sim.output_dir =paths.output
+    sim.output_dir = paths.output
     phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp_actor.attached_to = plan.name
     phsp_actor.attributes = [
@@ -149,8 +147,8 @@ if __name__ == "__main__":
         "PrePosition",
         "TrackCreatorProcess",
     ]
-    if bias :
-        phsp_actor.output_filename ="test084_output_data_last_vertex_angular_kill.root"
+    if bias:
+        phsp_actor.output_filename = "test084_output_data_last_vertex_angular_kill.root"
 
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
@@ -165,8 +163,9 @@ if __name__ == "__main__":
     output = sim.run()
     print(s)
 
-    f_data = uproot.open(paths.output / "test084_output_data_last_vertex_angular_kill.root")
+    f_data = uproot.open(
+        paths.output / "test084_output_data_last_vertex_angular_kill.root"
+    )
     arr_data = f_data["PhaseSpace"].arrays()
-    is_ok = validation_test(arr_data, vector_director,vertex_splitting_actor.max_theta)
+    is_ok = validation_test(arr_data, vector_director, vertex_splitting_actor.max_theta)
     utility.test_ok(is_ok)
-

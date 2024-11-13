@@ -131,7 +131,7 @@ if __name__ == "__main__":
     entry_phase_space.mother = actor_box.name
     entry_phase_space.size = [0.6 * m, 0.6 * m, 1 * nm]
     entry_phase_space.material = "G4_Galactic"
-    entry_phase_space.translation = [0, 0, 0.255* m]
+    entry_phase_space.translation = [0, 0, 0.255 * m]
     entry_phase_space.color = [0.5, 0.9, 0.3, 1]
 
     exit_phase_space_1 = sim.add_volume("Box", "exit_phase_space_1")

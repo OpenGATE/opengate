@@ -110,7 +110,7 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
     if (fDoseFlag) {
       ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
     }
-      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+    ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
 
     if (fEdepSquaredFlag || fDoseSquaredFlag) {
       if (fEdepSquaredFlag) {
@@ -122,6 +122,5 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
                           dose, event_id, index);
       }
     }
-    
   }
 }

@@ -119,11 +119,9 @@ void GateOptnForceFreeFlight ::AlongMoveBy(
 
 {
   G4String processName = callingProcess->GetWrappedProcess()->GetProcessName();
-  if (processName != "Rayl"){
-    fWeightChange[processName] =
-      weightChange;
-  }
-  else {
+  if (processName != "Rayl") {
+    fWeightChange[processName] = weightChange;
+  } else {
     fWeightChange[processName] = 1;
   }
 }

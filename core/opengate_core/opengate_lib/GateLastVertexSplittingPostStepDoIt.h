@@ -27,90 +27,77 @@
 #ifndef GateLastVertexSplittingPostStepDoIt_h
 #define GateLastVertexSplittingPostStepDoIt_h
 
-
-#include "G4VEnergyLossProcess.hh"
-#include "G4VEmProcess.hh"
-#include "G4VParticleChange.hh"
-#include "G4eplusAnnihilation.hh"
-#include "G4PhysicalConstants.hh"
-#include "G4MaterialCutsCouple.hh"
-#include "G4Gamma.hh"
 #include "G4Electron.hh"
-#include "G4Positron.hh"
-#include "G4eeToTwoGammaModel.hh"
 #include "G4EmBiasingManager.hh"
-#include "G4EntanglementAuxInfo.hh"
-#include "G4eplusAnnihilationEntanglementClipBoard.hh"
 #include "G4EmParameters.hh"
+#include "G4EntanglementAuxInfo.hh"
+#include "G4Gamma.hh"
+#include "G4MaterialCutsCouple.hh"
+#include "G4PhysicalConstants.hh"
 #include "G4PhysicsModelCatalog.hh"
+#include "G4Positron.hh"
+#include "G4VEmProcess.hh"
+#include "G4VEnergyLossProcess.hh"
+#include "G4VParticleChange.hh"
+#include "G4eeToTwoGammaModel.hh"
+#include "G4eplusAnnihilation.hh"
+#include "G4eplusAnnihilationEntanglementClipBoard.hh"
 #include <iostream>
 
-
-
-
 class GateBremPostStepDoIt : public G4VEnergyLossProcess {
-public :
+public:
+  GateBremPostStepDoIt();
 
-GateBremPostStepDoIt();
+  ~GateBremPostStepDoIt();
 
-~ GateBremPostStepDoIt();
+  virtual G4VParticleChange *PostStepDoIt(const G4Track &track,
+                                          const G4Step &step) override {
+    const G4MaterialCutsCouple *couple =
+        step.GetPreStepPoint()->GetMaterialCutsCouple();
+    currentCouple = couple;
+    G4VParticleChange *particleChange =
+        G4VEnergyLossProcess::PostStepDoIt(track, step);
+    return particleChange;
+  }
 
-virtual G4VParticleChange * PostStepDoIt (const G4Track & track, const G4Step &  step) override 
-{
-  const G4MaterialCutsCouple* couple = step.GetPreStepPoint()->GetMaterialCutsCouple();
-  currentCouple = couple;
-  G4VParticleChange* particleChange = G4VEnergyLossProcess::PostStepDoIt(track,step);
-  return particleChange;
-}
-
-virtual G4VParticleChange * AlongStepDoIt (const G4Track & track, const G4Step &  step) override 
-{
-  G4VParticleChange* particleChange = G4VEnergyLossProcess::AlongStepDoIt(track,step);
-  return particleChange;
-}
-
-
+  virtual G4VParticleChange *AlongStepDoIt(const G4Track &track,
+                                           const G4Step &step) override {
+    G4VParticleChange *particleChange =
+        G4VEnergyLossProcess::AlongStepDoIt(track, step);
+    return particleChange;
+  }
 };
 
-
 class GateGammaEmPostStepDoIt : public G4VEmProcess {
-public :
+public:
+  GateGammaEmPostStepDoIt();
 
-GateGammaEmPostStepDoIt();
+  ~GateGammaEmPostStepDoIt();
 
-~ GateGammaEmPostStepDoIt();
-
-virtual G4VParticleChange * PostStepDoIt(const G4Track & track, const G4Step & step) override 
-{
-  const G4MaterialCutsCouple* couple = step.GetPreStepPoint()->GetMaterialCutsCouple();
-  currentCouple = couple;
-  G4VParticleChange* particleChange = G4VEmProcess::PostStepDoIt(track,step);
-  return particleChange;
-}
-
-
+  virtual G4VParticleChange *PostStepDoIt(const G4Track &track,
+                                          const G4Step &step) override {
+    const G4MaterialCutsCouple *couple =
+        step.GetPreStepPoint()->GetMaterialCutsCouple();
+    currentCouple = couple;
+    G4VParticleChange *particleChange = G4VEmProcess::PostStepDoIt(track, step);
+    return particleChange;
+  }
 };
 
 class GateplusannihilAtRestDoIt : public G4eplusAnnihilation {
-public :
+public:
+  GateplusannihilAtRestDoIt();
+  ~GateplusannihilAtRestDoIt();
 
-GateplusannihilAtRestDoIt();
-~ GateplusannihilAtRestDoIt();
-
-virtual G4VParticleChange* AtRestDoIt(const G4Track& track,
-						   const G4Step& step) override
-// Performs the e+ e- annihilation when both particles are assumed at rest.
+  virtual G4VParticleChange *AtRestDoIt(const G4Track &track,
+                                        const G4Step &step) override
+  // Performs the e+ e- annihilation when both particles are assumed at rest.
   {
-  G4Track copyTrack = G4Track(track);
-  copyTrack.SetStep(&step);
-  G4VParticleChange* particleChange = G4eplusAnnihilation::AtRestDoIt(copyTrack,step);
-  return particleChange;
+    G4Track copyTrack = G4Track(track);
+    copyTrack.SetStep(&step);
+    G4VParticleChange *particleChange =
+        G4eplusAnnihilation::AtRestDoIt(copyTrack, step);
+    return particleChange;
   }
 };
 #endif
-
-
-
-
-
-  

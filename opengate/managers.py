@@ -111,7 +111,7 @@ actor_types = {
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
-    "KillNonInteractingParticleActor":KillNonInteractingParticleActor,
+    "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
     "BremSplittingActor": BremSplittingActor,
     "ComptSplittingActor": ComptSplittingActor,
     "DigitizerAdderActor": DigitizerAdderActor,
@@ -123,7 +123,7 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "PhaseSpaceActor": PhaseSpaceActor,
-    "LastVertexInteractionSplittingActor":LastVertexInteractionSplittingActor,
+    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
 }
 
 
@@ -1189,32 +1189,30 @@ class VolumeManager(GateObject):
             # FIXME: pre should be used directly but cannot be encoded correctly in Windows
             s += len(pre) * " " + f"{node.name}\n"
         return s
-    
+
     def get_volume_tree(self):
-       return self.volume_tree_root
+        return self.volume_tree_root
 
     def print_volume_tree(self):
         print(self.dump_volume_tree())
-        
 
     def dump_volume_types(self):
         s = ""
         for vt in self.volume_types:
             s += f"{vt} "
         return s
-        
+
     def get_volume_tree(self):
         return self.volume_tree_root
-        
-       
+
     def print_volume_types(self):
         print(self.dump_volume_types())
 
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
-    
+
     def get_volume_tree(self):
-    	return (self.volume_tree_root)
+        return self.volume_tree_root
 
     def get_volume_tree(self):
         return self.volume_tree_root

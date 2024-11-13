@@ -151,12 +151,12 @@ double GateGenericSource::PrepareNextTime(double current_simulation_time) {
   if (fMaxN <= 0) {
     if (fEffectiveEventTime < fStartTime)
       return fStartTime;
-    if (fEffectiveEventTime >= fEndTime){
+    if (fEffectiveEventTime >= fEndTime) {
       return -1;
     }
     // get next time according to current fActivity
     double next_time = CalcNextTime(fEffectiveEventTime);
-    if (next_time >= fEndTime){
+    if (next_time >= fEndTime) {
       return -1;
     }
     return next_time;
