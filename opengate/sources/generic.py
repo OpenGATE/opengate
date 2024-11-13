@@ -229,19 +229,11 @@ class SourceBase(GateObject):
     }
 
     def __init__(self, *args, **kwargs):
-        print(f"SourceBase __init__")
         GateObject.__init__(self, *args, **kwargs)
         # all times intervals
         self.run_timing_intervals = None
-        # threading
-        self.current_thread_id = None
-        # FIXME debug
-        self.verbose_getstate = True
 
     def __initcpp__(self):
-        print(f"SourceBase __initcpp__")
-        # the cpp counterpart of the source
-        # self.g4_source = self.create_g4_source()
         """Nothing to do in the base class."""
 
     def __str__(self):
@@ -385,11 +377,11 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             },
         ),
         "weight": (
-            1,
+            -1,
             {"doc": "Particle initial weight (for variance reduction technique)"},
         ),
         "weight_sigma": (
-            1,
+            -1,
             {"doc": "TODO"},
         ),
         "user_particle_life_time": (
