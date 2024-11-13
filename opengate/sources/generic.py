@@ -362,8 +362,7 @@ def _generic_source_default_energy():
             "is_cdf": False,
             "min_energy": None,
             "max_energy": None,
-            "histogram_weight": None,
-            "histogram_energy": None,
+            "spectrum_type": None,
         }
     )
 
