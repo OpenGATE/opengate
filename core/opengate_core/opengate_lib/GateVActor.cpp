@@ -61,8 +61,7 @@ std::string GateVActor::GetOutputPath(std::string outputName) {
   } catch (std::out_of_range &e) {
     std::ostringstream msg;
     msg << "(GetOutputPath) No actor output with the name " << outputName
-        << " exists.";
-    msg << fAttachedToVolumeName << " " << GetName();
+        << " exists, attached to " << fAttachedToVolumeName << " " << GetName();
     Fatal(msg.str());
   }
   return ""; // to avoid warning
