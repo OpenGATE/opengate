@@ -57,20 +57,20 @@ A proton beam with a spiral phantom placed in between two proton detectors.
         yellow = [1, 1, 0, 1]
    * - Geometry
          .. code-block::
-  
+
           /gate/geometry/setMaterialDatabase  data/GateMaterials.db
           /gate/world/setMaterial             Air
-          /gate/world/geometry/setXLength     4 m 
-          /gate/world/geometry/setYLength     4 m 
+          /gate/world/geometry/setXLength     4 m
+          /gate/world/geometry/setYLength     4 m
           /gate/world/geometry/setZLength     4 m
      - .. code-block:: python
-          
+
           sim.volume_manager.add_material_database(path_to_gate_materials)
           sim.world.material = "Air"
           sim.world.size = [4 * m, 4 * m, 4 * m]
    * - Phantom
          .. code-block::
-  
+
           /gate/world/daughters/name              Spiral
           /gate/world/daughters/insert            cylinder
           /gate/Spiral/geometry/setRmin           0 cm
@@ -99,7 +99,7 @@ A proton beam with a spiral phantom placed in between two proton detectors.
           /gate/Spiral/rotation/setSpeed  1 deg/s
           /gate/Spiral/rotation/setAxis   0 0 1
      - .. code-block:: python
-        
+
         def add_spiral_insert(sim, mother, name, rmin=0 * mm, rmax=1 * mm, dz=40 * cm, material="Aluminium", translation=[0 * mm, 0 * mm, 0 * mm], color=yellow):
             spiral_insert = sim.add_volume("Tubs", name=name)
             spiral_insert.mother = mother.name
@@ -160,7 +160,7 @@ A proton beam with a spiral phantom placed in between two proton detectors.
         add_spiral(sim)
    * - Beam
          .. code-block::
-  
+
           /gate/source/addSource mybeam gps
           /gate/source/mybeam/gps/particle       proton
           /gate/source/mybeam/gps/ene/mono       200 MeV
@@ -179,7 +179,7 @@ A proton beam with a spiral phantom placed in between two proton detectors.
           /gate/source/mybeam/gps/ang/focuspoint 1000 0 0 mm
 
      - .. code-block:: python
-        
+
         source = sim.add_source("GenericSource", "mybeam")
         source.particle = "proton"
         source.energy.mono = 200 * MeV
@@ -192,16 +192,16 @@ A proton beam with a spiral phantom placed in between two proton detectors.
         source.n = 720000 / sim.number_of_threads
    * - Physics list
          .. code-block::
-  
+
           /control/execute mac/physicslist_EM_std.mac
           /control/execute mac/physicslist_HAD_std.mac
      - .. code-block:: python
-  
+
         sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
    * - Phase spaces
          .. code-block::
-  
+
           /gate/world/daughters/name                          PlanePhaseSpaceIn
           /gate/world/daughters/insert                        box
           /gate/PlanePhaseSpaceIn/geometry/setXLength         1 nm
@@ -221,7 +221,7 @@ A proton beam with a spiral phantom placed in between two proton detectors.
           /gate/actor/PhaseSpaceIn/enableXDirection           true
           /gate/actor/PhaseSpaceIn/enableYDirection           true
           /gate/actor/PhaseSpaceIn/enableZDirection           true
-          /gate/actor/PhaseSpaceIn/enableProductionVolume     false 
+          /gate/actor/PhaseSpaceIn/enableProductionVolume     false
           /gate/actor/PhaseSpaceIn/enableProductionProcess    false
           /gate/actor/PhaseSpaceIn/enableParticleName         false
           /gate/actor/PhaseSpaceIn/enableWeight               false
@@ -251,7 +251,7 @@ A proton beam with a spiral phantom placed in between two proton detectors.
           /gate/actor/PhaseSpaceOut/enableXDirection           true
           /gate/actor/PhaseSpaceOut/enableYDirection           true
           /gate/actor/PhaseSpaceOut/enableZDirection           true
-          /gate/actor/PhaseSpaceOut/enableProductionVolume     false 
+          /gate/actor/PhaseSpaceOut/enableProductionVolume     false
           /gate/actor/PhaseSpaceOut/enableProductionProcess    false
           /gate/actor/PhaseSpaceOut/enableParticleName         false
           /gate/actor/PhaseSpaceOut/enableWeight               false
@@ -262,7 +262,7 @@ A proton beam with a spiral phantom placed in between two proton detectors.
           /gate/actor/PhaseSpaceOut/particleFilter/addParticle proton
 
      - .. code-block:: python
-        
+
           def add_detector(sim, name, translation):
               plane = sim.add_volume("Box", "PlanePhaseSpace" + name)
               plane.size = [1 * nm, 400 * mm, 400 * mm]
@@ -290,17 +290,17 @@ A proton beam with a spiral phantom placed in between two proton detectors.
           add_detector(sim, "Out", [110 * mm, 0 * mm, 0 * mm])
    * - Particles stats
          .. code-block::
-  
+
           /gate/actor/addActor  SimulationStatisticActor stat
           /gate/actor/stat/save output/protonct.txt
      - .. code-block:: python
-          
+
         stat = sim.add_actor("SimulationStatisticsActor", "stat")
         stat.output_filename = "output/protonct.txt"
    * - Main
          .. code-block::
-  
+
           /gate/application/start
      - .. code-block:: python
-          
+
         sim.run()
