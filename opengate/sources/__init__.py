@@ -1,3 +1,3 @@
-from . import generic
+from . import generic, phspsources
 
 # , beamsources, phspsources, voxelsources, gansources, phidsources)

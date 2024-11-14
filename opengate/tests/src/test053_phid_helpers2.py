@@ -13,15 +13,14 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     mm = g4_units.mm
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
     n_threads = int(os.cpu_count() / 2)
     if os.name == "nt":
         n_threads = 1
-    ui.number_of_threads = n_threads
-    ui.visu = False
-    ui.random_seed = 123654
+    sim.number_of_threads = n_threads
+    sim.visu = False
+    sim.random_seed = 123654
 
     # world size
     world = sim.world
@@ -78,7 +77,7 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     sec = g4_units.second
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
-    activity = activity_in_Bq * Bq / sim.user_info.number_of_threads
+    activity = activity_in_Bq * Bq / sim.phsp_source.number_of_threads
     s1 = sim.add_source("GenericSource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
@@ -99,7 +98,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
     # sources
-    activity = activity_in_Bq * Bq / sim.user_info.number_of_threads
+    activity = activity_in_Bq * Bq / sim.phsp_source.number_of_threads
     s1 = sim.add_source("PhotonFromIonDecaySource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"

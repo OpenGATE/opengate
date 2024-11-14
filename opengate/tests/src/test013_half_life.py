@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.sources.base import get_rad_yield
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test013_hl")
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     beta_src.energy.type = "F18"
     beta_src.direction.type = "iso"
     beta_src.half_life = hl
-    total_yield = gate.sources.generic.get_rad_yield("F18")
+    total_yield = get_rad_yield("F18")
     print(f"{total_yield=}")
     beta_src.activity = activity * total_yield
 

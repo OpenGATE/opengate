@@ -27,8 +27,8 @@ from .image import (
     get_py_image_from_cpp_image,
     write_itk_image,
 )
+from .sources.phspsources import PhaseSpaceSource
 from .utility import (
-    assert_unique_element_name,
     g4_units,
     indent,
     read_mac_file_to_commands,
@@ -44,15 +44,12 @@ from .physics import (
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
 )
-from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
 
-source_types = {
-    "GenericSource": GenericSource,
-}
+source_types = {"GenericSource": GenericSource, "PhaseSpaceSource": PhaseSpaceSource}
 
 from .geometry.volumes import (
     VolumeBase,
@@ -265,15 +262,7 @@ class SourceManager(GateObject):
         return s
 
     def dump_source_types(self):
-        print(f"FIXME dump_source_types")
-        fatal(f"todo")
-        s = f""
-        # FIXME: workaround to avoid circular import, will be solved when refactoring sources
-        from opengate.sources.builders import source_builders
-
-        for t in source_builders:
-            s += f"{t} "
-        return s
+        return "\n".join(list(source_types.keys()))
 
     def dump_sources(self):
         n = len(self.sources)
@@ -1705,7 +1694,7 @@ class Simulation(GateObject):
 
     # FIXME: will we become obsolete when refactoring the sources
     def get_source_user_info(self, name):
-        return self.source_manager.get_source_info(name)
+        return self.source_manager.get_source(name)
 
     def get_actor_user_info(self, name):
         s = self.actor_manager.get_actor_user_info(name)

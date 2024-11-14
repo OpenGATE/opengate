@@ -55,7 +55,7 @@ def init_test019(nt, version):
     # e- source
     source = sim.add_source("GenericSource", "Default")
     source.particle = "e-"
-    source.mother = f"{linac.name}_target"
+    source.attached_to = f"{linac.name}_target"
     source.energy.type = "gauss"
     source.energy.mono = 6.7 * MeV
     source.energy.sigma_gauss = 0.077 * MeV
@@ -183,7 +183,7 @@ def create_simu_test019_phsp_source(sim, version):
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.logger.EVENT
     sim.number_of_threads = 1
-    sim.random_seed = 987654321
+    # sim.random_seed = 987654321 # FIXME
     sim.output_dir = paths.output
 
     # units
@@ -214,7 +214,7 @@ def create_simu_test019_phsp_source(sim, version):
 
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_local")
-    source.mother = plane.name
+    source.attached_to = plane.name
     source.phsp_file = paths.output_ref / "test019_hits.root"
     source.position_key = "PrePositionLocal"
     source.direction_key = "PreDirectionLocal"
@@ -224,10 +224,12 @@ def create_simu_test019_phsp_source(sim, version):
     source.PDGCode_key = "PDGCode"
     source.n = 20000 / sim.number_of_threads
     source.batch_size = source.n
+    source.verbose = False
+    source.verbose_batch = True
 
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = sim.world.name
+    source.attached_to = sim.world.name
     source.phsp_file = paths.output_ref / "test019_hits.root"
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
@@ -236,6 +238,7 @@ def create_simu_test019_phsp_source(sim, version):
     source.PDGCode_key = "PDGCode"
     source.n = 20000 / sim.number_of_threads
     source.batch_size = source.n
+    source.verbose = False
     source.verbose_batch = True
 
     # add stat actor
@@ -306,9 +309,9 @@ def analyse_test019_phsp_source(sim):
     print(stats)
 
     # print source phsp info
-    s1 = sim.source_manager.get_source_info("phsp_source_local").particle_generator
+    s1 = sim.source_manager.get_source("phsp_source_local")
     print(f"Source local :  {s1.num_entries} elements, {s1.cycle_count} cycle")
-    s2 = sim.source_manager.get_source_info("phsp_source_global").particle_generator
+    s2 = sim.source_manager.get_source("phsp_source_global")
     print(f"Source global : {s2.num_entries} elements, {s2.cycle_count} cycle")
 
     # --------------------------------------------------------------

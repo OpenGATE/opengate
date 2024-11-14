@@ -128,7 +128,7 @@ def add_gaga_source(sim, total_activity, activity_source, gaga_pth_filename):
     gsource.time_key = None
     gsource.batch_size = 5e4  # OSX
     # Linux 5e4 with 1 thread, 1e4 with 8 threads
-    gsource.batch_size = 2e5 / sim.user_info.number_of_threads
+    gsource.batch_size = 2e5 / sim.phsp_source.number_of_threads
     gsource.verbose_generator = False  # True
     gsource.gpu_mode = "auto"
 
@@ -195,7 +195,7 @@ def add_arf_actor(sim, detector_plane, size, spacing, crystal_dist, name, pth_fi
 def set_duration(sim, total_activity, w, duration):
     Bq = gate.g4_units.Bq
     sec = gate.g4_units.second
-    ui = sim.user_info
+    ui = sim.phsp_source
     nb_decays = total_activity / Bq * duration / sec * ui.number_of_threads
     weights = sum(w)
     print(f"Estimated total decay {nb_decays:.0f} decays")
@@ -211,7 +211,7 @@ def add_iec_Tc99m_source(sim, activity_concentration):
     kBq = 1000 * Bq
     MBq = 1000 * kBq
     BqmL = Bq / cm3
-    ui = sim.user_info
+    ui = sim.phsp_source
 
     # same concentration in all spheres
     a = activity_concentration / ui.number_of_threads

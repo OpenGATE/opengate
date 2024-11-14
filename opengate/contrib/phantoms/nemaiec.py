@@ -6,7 +6,7 @@ import math
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
-from opengate.sources.generic import generate_isotropic_directions
+from opengate.sources.base import generate_isotropic_directions
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
@@ -21,10 +21,10 @@ transparent = [0, 0, 0, 0]
 
 def create_material(simulation):
     elems = ["C", "H", "O"]
-    nbAtoms = [5, 8, 2]
+    nb_atoms = [5, 8, 2]
     gcm3 = g4_units.g_cm3
     simulation.volume_manager.material_database.add_material_nb_atoms(
-        "IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3
+        "IEC_PLASTIC", elems, nb_atoms, 1.18 * gcm3
     )
 
 
