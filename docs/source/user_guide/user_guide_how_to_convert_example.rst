@@ -1,4 +1,4 @@
-Convert From Gate 9 to Gate 10 - Example 
+Convert From Gate 9 to Gate 10 - Example
 ========================================
 This section walks you through Gate 9 and Gate 10 versions of a simulation file used to create optical transport dataset for training OptiGAN.
 

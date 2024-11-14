@@ -342,7 +342,7 @@ def sum_itk_images(itk_image_list):
         summed_image = np.add(summed_image, array)
     image = itk.GetImageFromArray(summed_image)
     image.CopyInformation(itk_image_list[0])
-    return(image)
+    return image
 
 
 def multiply_itk_images(images):
