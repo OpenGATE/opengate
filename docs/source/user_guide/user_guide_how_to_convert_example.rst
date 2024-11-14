@@ -1,11 +1,11 @@
-Convert From Gate 9 to Gate 10 - Example :
-=========================================================================
+Convert From Gate 9 to Gate 10 - Example 
+========================================
 This section walks you through Gate 9 and Gate 10 versions of a simulation file used to create optical transport dataset for training OptiGAN.
 
-Defining World Geometry -
--------------------------
+Defining World Geometry
+-----------------------
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -14,7 +14,7 @@ Gate 9 -
     /gate/world/geometry/setZLength       15. cm
     /gate/world/setMaterial               Air
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -22,7 +22,7 @@ Gate 10 -
 
 The material of the world volume is set to 'Air' by default.
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -34,7 +34,7 @@ Gate 9 -
     /gate/OpticalSystem/placement/setTranslation    0 0 0.0 cm
     /gate/OpticalSystem/setMaterial                 Air
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -43,7 +43,7 @@ Gate 10 -
     optical_system.material = "G4_AIR"
     optical_system.translation = [0 * cm, 0 * cm, 0 * cm]
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -55,7 +55,7 @@ Gate 9 -
     /gate/crystal/placement/setTranslation          0 0 10 mm
     /gate/crystal/setMaterial                       BGO
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -65,7 +65,7 @@ Gate 10 -
     crystal.translation = [0 * mm, 0 * mm, 10 * mm]
     crystal.material = "BGO"
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -77,7 +77,7 @@ Gate 9 -
     /gate/grease/setMaterial                        Epoxy
     /gate/grease/placement/setTranslation           0 0 20.0075 mm
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -87,7 +87,7 @@ Gate 10 -
     grease.material = "Epoxy"
     grease.translation = [0 * mm, 0 * mm, 20.0075 * mm]
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -99,7 +99,7 @@ Gate 9 -
     /gate/pixel/setMaterial                         SiO2
     /gate/pixel/placement/setTranslation            0 0 20.065 mm
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -109,10 +109,10 @@ Gate 10 -
     pixel.material = "SiO2"
     pixel.translation = [0 * mm, 0 * mm, 20.065 * mm]
 
-Defining Physics -
-------------------
+Defining Physics
+----------------
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -131,7 +131,7 @@ Gate 9 -
     /gate/physics/processList Enabled
     /gate/physics/processList Initialized
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -151,10 +151,10 @@ Gate 10 -
     sim.physics_manager.energy_range_max = 1 * MeV
 
 
-Defining Optical Surfaces -
----------------------------
+Defining Optical Surfaces
+-------------------------
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -162,7 +162,7 @@ Gate 9 -
     /gate/crystal/surfaces/insert                      OpticalSystem
     /gate/crystal/surfaces/surface1/setSurface         Customized3_LUT
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -172,7 +172,7 @@ Gate 10 -
         g4_surface_name="Customized3_LUT",
     )
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -180,7 +180,7 @@ Gate 9 -
     /gate/OpticalSystem/surfaces/insert                crystal
     /gate/OpticalSystem/surfaces/surface2/setSurface   Customized3_LUT
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -188,7 +188,7 @@ Gate 10 -
         "crystal", "optical_system", "Customized3_LUT"
     )
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -196,13 +196,13 @@ Gate 9 -
     /gate/crystal/surfaces/insert                grease
     /gate/crystal/surfaces/surface5/setSurface   Customized2_LUT
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
     opt_surf_grease_to_crystal = sim.physics_manager.add_optical_surface("grease", "crystal", "Customized2_LUT")
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -210,13 +210,13 @@ Gate 9 -
     /gate/grease/surfaces/insert                 crystal
     /gate/grease/surfaces/surface6/setSurface    Customized2_LUT
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
     opt_surf_crystal_to_grease = sim.physics_manager.add_optical_surface("crystal", "grease", "Customized2_LUT")
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -224,13 +224,13 @@ Gate 9 -
     /gate/grease/surfaces/insert                   pixel
     /gate/grease/surfaces/Detection1/setSurface    Customized4_LUT
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
     opt_surface_pixel_to_grease = sim.physics_manager.add_optical_surface("pixel", "grease", "Customized4_LUT")
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -238,16 +238,16 @@ Gate 9 -
     /gate/pixel/surfaces/insert                     grease
     /gate/pixel/surfaces/Detection2/setSurface      Customized4_LUT
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
     opt_surf_grease_to_pixel = sim.physics_manager.add_optical_surface("grease", "pixel", "Customized4_LUT")
 
-Defining Electron Source -
---------------------------
+Defining Electron Source
+------------------------
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -265,7 +265,7 @@ Gate 9 -
     /gate/source/Mysource/gps/ang/mintheta 163. deg
     /gate/source/Mysource/gps/ang/maxtheta 165. deg
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
@@ -281,10 +281,10 @@ Gate 10 -
     source.direction.phi = [100 * deg, 110 * deg]
     source.position.translation = [0 * mm, 0 * mm, 19 * mm]
 
-Defining Actor -
-----------------
+Defining Actor
+--------------
 
-Gate 9 -
+Gate 9
 
 .. code-block::
 
@@ -301,7 +301,7 @@ Gate 9 -
     /gate/actor/MyActor/enableElectronicDEDX true
     /gate/actor/MyActor/save ./output/{NameOutputSimu}/MyActorPixel_In.root
 
-Gate 10 -
+Gate 10
 
 .. code-block:: python
 
