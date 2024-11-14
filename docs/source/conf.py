@@ -146,7 +146,7 @@ html_context = {
     "github_user": "OpenGATE",
     "github_repo": "opengate",
     "github_version": "master",
-    "doc_path": "docs",
+    "doc_path": "docs/source",
 }
 
 # html_theme_options = {
