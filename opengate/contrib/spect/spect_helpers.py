@@ -4,7 +4,7 @@ from opengate.geometry.utility import (
     vec_g4_as_np,
 )
 from opengate.actors.digitizers import *
-import SimpleITK as sitk
+import itk
 
 
 def add_fake_table(sim, name="table"):
@@ -69,25 +69,25 @@ def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
     return x[axis]
 
 
-def extract_energy_window_sitk(
-    image: sitk.Image,
+def extract_energy_window_itk(
+    image: itk.Image,
     energy_window: int = "all",
     nb_of_energy_windows: int = 3,
     nb_of_gantries: int = 60,
-) -> sitk.Image:
+) -> itk.Image:
     """
     Extracts a given energy window from a 3D image and returns a reshaped image.
 
     3rd dim is number_of_energy_window x number_of_gantries
 
     Args:
-        image (sitk.Image): The input 3D image of shape (e.g. 128 x 128 x 3 x 60).
+        image (itk.Image): The input 3D image of shape (e.g. 128 x 128 x 3 x 60).
         energy_window : which energy windows to extract (int or 'all').
         nb_of_energy_windows (int): the number of energy windows
         nb_of_gantries (int): The number of gantry positions (default: 60).
 
     Returns:
-        sitk.Image: The extracted and reshaped image of shape (128 x 128 x 60).
+        itk.Image: The extracted and reshaped image of shape (128 x 128 x 60).
     """
 
     # Validate input dimensions
@@ -100,11 +100,11 @@ def extract_energy_window_sitk(
 
     # Extract the relevant slices
     # (warning numpy is z,x,y, while itk is x,y,z)
-    arr = sitk.GetArrayViewFromImage(image)
+    arr = itk.GetArrayViewFromImage(image)
     sub_image_array = arr[energy_window::nb_of_energy_windows, :, :]
 
     # Convert the numpy array back to a SimpleITK image
-    sub_image = sitk.GetImageFromArray(sub_image_array)
+    sub_image = itk.GetImageFromArray(sub_image_array)
 
     # Preserve the original image metadata
     sub_image.SetSpacing(image.GetSpacing())
@@ -127,8 +127,8 @@ def extract_energy_window_from_projection_actors(
     i = 0
     for proj in projections:
         filename = proj.get_output_path()
-        img = sitk.ReadImage(filename)
-        out = extract_energy_window_sitk(
+        img = itk.imread(filename)
+        out = extract_energy_window_itk(
             img,
             energy_window=energy_window,
             nb_of_energy_windows=nb_of_energy_windows,
@@ -142,7 +142,7 @@ def extract_energy_window_from_projection_actors(
             output_filenames.append(output_filename)
         else:
             output_filename = output_filenames[i]
-        sitk.WriteImage(out, output_filename)
+        itk.imwrite(out, output_filename)
         i += 1
     return output_filenames
 
@@ -151,15 +151,13 @@ def merge_several_heads_projections(filenames):
     output_arr = None
     img = None
     for filename in filenames:
-        img = sitk.ReadImage(filename)
-        arr = sitk.GetArrayFromImage(img)
+        img = itk.imread(filename)
+        arr = itk.GetArrayFromImage(img)
         if output_arr is None:
             output_arr = arr
         else:
             output_arr = np.concatenate((output_arr, arr), axis=0)
 
-    output_img = sitk.GetImageFromArray(output_arr)
-    output_img.SetOrigin(img.GetOrigin())
-    output_img.SetSpacing(img.GetSpacing())
-    output_img.SetDirection(img.GetDirection())
+    output_img = itk.GetImageFromArray(output_arr)
+    output_img.CopyInformation(img)
     return output_img

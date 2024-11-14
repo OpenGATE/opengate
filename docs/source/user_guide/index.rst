@@ -13,6 +13,7 @@ User Guide
    :maxdepth: 2
 
    user_guide_first_simulation
+   user_guide_how_to_convert_example_1
    user_guide_volumes
    user_guide_physics
    user_guide_sources
