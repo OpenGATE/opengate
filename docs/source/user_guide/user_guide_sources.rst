@@ -108,9 +108,9 @@ Direction types and Acceptance Angle
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  ``direction.type = 'iso'`` assigns directions to primary particles
-   based on 𝜃 and 𝜙 angles in a `spherical coordinate system 
+   based on 𝜃 and 𝜙 angles in a `spherical coordinate system
    <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`__.
-   By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360° 
+   By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360°
    (such that any direction is possible). You can define the 𝜃 and 𝜙
    ranges with minimum and maximum values as follows:
 
@@ -119,7 +119,7 @@ Direction types and Acceptance Angle
       source.direction.type = "iso"
       source.direction.theta = [0, 10 * deg]
       source.direction.phi = [0, 90 * deg]
-   
+
 -  ``direction.type = 'momentum'`` specifies a fixed direction for the
    primary particles using a momentum vector [x, y, z].
 
@@ -141,7 +141,7 @@ Direction types and Acceptance Angle
       source.direction.focus_point = [1 * cm, 2 * cm, 3 * cm]
 
 -  ``direction.type = 'histogram'``, same as ``'iso'``, but allows you
-   to emit primary particles with directional distributions weighted by 
+   to emit primary particles with directional distributions weighted by
    custom-defined histograms for 𝜃 (theta) and 𝜙 (phi) angles.
 
    .. code:: python
