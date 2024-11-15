@@ -22,8 +22,9 @@ void GateVoxelsSource::PrepareNextRun() {
   GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
-  auto &l = fThreadLocalData.Get();
-  auto *pos = fSPS->GetPosDist();
+  auto &l = GetThreadLocalData();
+  auto &ll = GetThreadLocalDataGenericSource();
+  auto *pos = ll.fSPS->GetPosDist();
   pos->SetCentreCoords(l.fGlobalTranslation);
 
   // orientation according to mother volume
@@ -40,7 +41,8 @@ void GateVoxelsSource::PrepareNextRun() {
 }
 
 void GateVoxelsSource::InitializePosition(py::dict) {
-  fSPS->SetPosGenerator(fVoxelPositionGenerator);
+  auto &ll = GetThreadLocalDataGenericSource();
+  ll.fSPS->SetPosGenerator(fVoxelPositionGenerator);
   // we set a fake value (not used)
   fVoxelPositionGenerator->SetPosDisType("Point");
 }

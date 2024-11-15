@@ -16,7 +16,7 @@ GateGANPairSource::~GateGANPairSource() = default;
 
 void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
   GateGANSource::InitializeUserInfo(user_info);
-  auto &l = fThreadLocalDataGenericSource.Get();
+  auto &l = GetThreadLocalDataGenericSource();
   if (l.fAAManager->IsEnabled()) {
     std::ostringstream oss;
     oss << "Error, cannot use AngularAcceptance with GAN pairs (yet), for the "
@@ -107,7 +107,8 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
   if (!accept_energy) {
     energy = 0;
     // at least one of the two vertices has been skipped with zeroE
-    fCurrentZeroEvents = 1;
+    auto &ll = GetThreadLocalDataGenericSource();
+    ll.fCurrentZeroEvents = 1;
   }
 
   auto &ll = fThreadLocalDataGenericSource.Get();

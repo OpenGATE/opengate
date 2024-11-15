@@ -19,6 +19,9 @@ class VoxelsSource(GenericSource, g4.GateVoxelsSource):
     Sampled with cumulative distribution functions.
     """
 
+    # hints for IDE
+    image: str
+
     user_info_defaults = {
         "image": (
             None,

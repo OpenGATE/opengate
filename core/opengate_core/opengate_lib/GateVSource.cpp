@@ -19,8 +19,6 @@ GateVSource::GateVSource() {
   fAttachedToVolumeName = "";
   fLocalTranslation = G4ThreeVector();
   fLocalRotation = G4RotationMatrix();
-  auto &l = fThreadLocalData.Get();
-  l.fNumberOfGeneratedEvents = 0;
   fMaxN = 0;
   fActivity = 0;
   fHalfLife = -1;
@@ -29,6 +27,10 @@ GateVSource::GateVSource() {
 }
 
 GateVSource::~GateVSource() = default;
+
+GateVSource::threadLocalT &GateVSource::GetThreadLocalData() {
+  return fThreadLocalData.Get();
+}
 
 void GateVSource::InitializeUserInfo(py::dict &user_info) {
   // get info from the dict
@@ -71,7 +73,7 @@ void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
 }
 
 void GateVSource::SetOrientationAccordingToMotherVolume() {
-  auto &l = fThreadLocalData.Get();
+  auto &l = GetThreadLocalData();
   l.fGlobalRotation = fLocalRotation;
   l.fGlobalTranslation = fLocalTranslation;
 

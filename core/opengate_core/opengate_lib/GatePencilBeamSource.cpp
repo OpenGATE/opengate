@@ -14,10 +14,17 @@ GatePencilBeamSource::GatePencilBeamSource() : GateGenericSource() {}
 
 GatePencilBeamSource::~GatePencilBeamSource() = default;
 
+GatePencilBeamSource::threadLocalPencilBeamSource &
+GatePencilBeamSource::GetThreadLocalDataPencilBeamSource() {
+  return fThreadLocalDataPencilBeamSource.Get();
+}
+
 void GatePencilBeamSource::CreateSPS() {
-  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
-                                                   fAttachedToVolumeName);
-  fSPS = fSPS_PB;
+  auto &lll = GetThreadLocalDataPencilBeamSource();
+  lll.fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
+                                                       fAttachedToVolumeName);
+  auto &ll = GetThreadLocalDataGenericSource();
+  ll.fSPS = lll.fSPS_PB;
 }
 
 void GatePencilBeamSource::PrepareNextRun() {
@@ -26,9 +33,9 @@ void GatePencilBeamSource::PrepareNextRun() {
   GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
-  // translation
   auto &l = fThreadLocalData.Get();
-  fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
+  auto &lll = GetThreadLocalDataPencilBeamSource();
+  lll.fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
 }
 
 void GatePencilBeamSource::InitializeDirection(py::dict puser_info) {
@@ -37,7 +44,8 @@ void GatePencilBeamSource::InitializeDirection(py::dict puser_info) {
   auto dir_info = py::dict(puser_info["direction"]);
   auto x_param = DictGetVecDouble(dir_info, "partPhSp_x");
   auto y_param = DictGetVecDouble(dir_info, "partPhSp_y");
-  fSPS_PB->SetPBSourceParam(x_param, y_param);
+  auto &lll = GetThreadLocalDataPencilBeamSource();
+  lll.fSPS_PB->SetPBSourceParam(x_param, y_param);
 
   // angle acceptance ?
   auto d = py::dict(puser_info["direction"]);

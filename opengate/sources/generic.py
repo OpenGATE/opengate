@@ -32,8 +32,8 @@ def _generic_source_default_direction():
     return Box(
         {
             "type": "iso",
-            "theta": [0, 180],
-            "phi": [0, 360],
+            "theta": [0, 180 * g4_units.deg],
+            "phi": [0, 360 * g4_units.deg],
             "momentum": [0, 0, 1],
             "focus_point": [0, 0, 0],
             "sigma": [0, 0],
@@ -173,10 +173,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
     }
 
     def __init__(self, *args, **kwargs):
-        print(f"GenericSource __init__")
-        self.__initcpp__()  # FIXME should be first ????
+        self.__initcpp__()
         super().__init__(self, *args, **kwargs)
-        print("current user_info", self.user_info)
+        self.total_zero_events = 0
+        self.total_skipped_events = 0
         if not self.user_info.particle.startswith("ion"):
             return
         words = self.user_info.particle.split(" ")
@@ -187,16 +187,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         if len(words) > 3:
             self.user_info.ion.E = words[3]
 
-        # will be set by g4 source
-        self.fTotalZeroEvents = 0
-        self.fTotalSkippedEvents = 0
-
     def __initcpp__(self):
         g4.GateGenericSource.__init__(self)
 
     def initialize(self, run_timing_intervals):
-        print(f"Generic source initialize", run_timing_intervals)
-
         if not isinstance(self.user_info.position, Box):
             fatal(
                 f"Generic Source: user_info.position must be a Box, but is: {self.user_info.position}"
@@ -328,13 +322,11 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
     def prepare_output(self):
         print("prepare_output")
+        print(self.GetTotalZeroEvents())
         SourceBase.prepare_output(self)
         # store the output from G4 object
-        # FIXME will be refactored like the actors
-        # self.user_info.fTotalZeroEvents = self.g4_source.fTotalZeroEvents
-        # self.user_info.fTotalSkippedEvents = self.g4_source.fTotalSkippedEvents
-        # self.user_info.fTotalZeroEvents = self.fTotalZeroEvents
-        # self.user_info.fTotalSkippedEvents = self.fTotalSkippedEvents
+        self.total_zero_events = self.GetTotalZeroEvents()
+        self.total_skipped_events = self.GetTotalSkippedEvents()
 
     def update_tac_activity(self):
         ui = self.user_info
@@ -358,6 +350,20 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 return True
             return False
         return True
+
+
+def get_source_skipped_events(sim, source_name):
+    n = sim.source_manager.get_source(source_name).GetTotalSkippedEvents()
+    # FIXME this is *not* the correct way to do. Workaround until source is refactored
+    n = n * sim.number_of_threads
+    return n
+
+
+def get_source_zero_events(sim, source_name):
+    n = sim.source_manager.get_source(source_name).GetTotalZeroEvents()
+    # FIXME this is *not* the correct way to do. Workaround until source is refactored
+    n = n * sim.number_of_threads
+    return n
 
 
 process_cls(GenericSource)

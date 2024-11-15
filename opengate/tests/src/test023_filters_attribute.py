@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # main options
     # sim.visu = True
     sim.visu_type = "vrml"
-    sim.random_seed = 321456987
+    # sim.random_seed = 321456987 # FIXME
     sim.output_dir = paths.output
 
     # units
@@ -40,6 +40,8 @@ if __name__ == "__main__":
     source.position.radius = 1 * cm
     source.direction.type = "iso"
     source.activity = 1000 * Bq
+
+    print(source)
 
     # plane
     plane1a = sim.add_volume("Box", "plane1a")
@@ -127,6 +129,7 @@ if __name__ == "__main__":
 
     # image root files (no comparison here, just for plot)
     print()
+    print("WARNING: no comparison here, only for plot")
     utility.compare_root3(
         phsp1.get_output_path(),
         phsp1.get_output_path(),

@@ -45,6 +45,7 @@ public:
   virtual void SetOrientationAccordingToMotherVolume();
 
   virtual long GetExpectedNumberOfEvents(TimeIntervals time_intervals);
+
   virtual long GetExpectedNumberOfEvents(TimeInterval time_interval);
 
   std::string fName;
@@ -69,11 +70,13 @@ protected:
   double fDecayConstant;
 
   struct threadLocalT {
-    unsigned long fNumberOfGeneratedEvents;
+    unsigned long fNumberOfGeneratedEvents = 0;
     G4ThreeVector fGlobalTranslation;
     G4RotationMatrix fGlobalRotation;
   };
   G4Cache<threadLocalT> fThreadLocalData;
+
+  virtual threadLocalT &GetThreadLocalData();
 };
 
 #endif // GateVSource_h
