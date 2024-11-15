@@ -13,7 +13,7 @@ if __name__ == "__main__":
     # main options
     # sim.visu = True
     sim.visu_type = "vrml"
-    # sim.random_seed = 321456987 # FIXME
+    sim.random_seed = 321456987
     sim.output_dir = paths.output
 
     # units
