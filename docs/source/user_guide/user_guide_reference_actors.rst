@@ -298,14 +298,14 @@ The Coincidence Sorter finds pairs of coincident singles within a defined time w
    time_window = 3 * ns
    policy = "keepAll"
    minSecDiff = 1  # NOT YET IMPLEMENTED
-   
+
    # Apply coincidence sorter
    coincidences = coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=1000000)
 
    output_file = uproot.recreate(paths.output / "coinc2keepAll.root")
    output_file["Coincidences"] = coincidences
    output_file["Singles_crystal"] = copy_tree_for_dump(singles_tree)
-   
+
 Reference
 ^^^^^^^^^
 
