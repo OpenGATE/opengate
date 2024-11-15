@@ -298,19 +298,19 @@ The Coincidence Sorter finds pairs of coincident singles within a defined time w
    time_window = 3 * ns
    policy = "keepAll"
    minSecDiff = 1  # NOT YET IMPLEMENTED
-
+   
    # Apply coincidence sorter
    coincidences = coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=1000000)
 
-The following policies are supported:
+   output_file = uproot.recreate(paths.output / "coinc2keepAll.root")
+   output_file["Coincidences"] = coincidences
+   output_file["Singles_crystal"] = copy_tree_for_dump(singles_tree)
+   
+Reference
+^^^^^^^^^
 
-- **takeAllGoods**: Each good pair is considered.
-- **takeWinnerOfGoods**: Only the pair with the highest energy is considered.
-- **takeWinnerIfIsGood**: If the highest energy pair is good, take it; otherwise, kill the event.
-- **keepIfOnlyOneGood**: If exactly one good pair exists, keep the multicoincidence.
-- **removeMultiples**: No multiple coincidences are accepted, even if there are good pairs.
+.. autoclass:: opengate.actors.coincidences.Coincidences
 
-Refer to test072 for more details.
 
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------
