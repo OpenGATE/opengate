@@ -6,7 +6,7 @@ import math
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
-from opengate.sources.base import generate_isotropic_directions
+from opengate.sources.gansources import generate_isotropic_directions
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"

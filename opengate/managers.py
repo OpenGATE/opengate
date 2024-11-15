@@ -27,8 +27,7 @@ from .image import (
     get_py_image_from_cpp_image,
     write_itk_image,
 )
-from .sources.phspsources import PhaseSpaceSource
-from .sources.voxelsources import VoxelsSource
+
 from .utility import (
     g4_units,
     indent,
@@ -49,11 +48,15 @@ from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
+from .sources.phspsources import PhaseSpaceSource
+from .sources.voxelsources import VoxelsSource
+from .sources.gansources import GANSource
 
 source_types = {
     "GenericSource": GenericSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelsSource": VoxelsSource,
+    "GANSource": GANSource,
 }
 
 from .geometry.volumes import (
@@ -1775,9 +1778,9 @@ class Simulation(GateObject):
                     s = output.get_source(source.name)
                 except:
                     continue
-                if "fTotalSkippedEvents" in s.user_info.__dict__:
-                    source.fTotalSkippedEvents = s.user_info.fTotalSkippedEvents
-                    source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
+                if "total_zero_events" in s.__dict__:
+                    source.total_zero_events = s.__dict__["total_zero_events"]
+                    source.total_skipped_events = s.__dict__["total_skipped_events"]
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process

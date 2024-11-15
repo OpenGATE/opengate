@@ -1,24 +1,55 @@
 import sys
 import time
 import scipy
+from scipy.spatial.transform import Rotation
 import numpy as np
 import threading
 from box import Box
 import itk
 import bisect
-import opengate_core
+import random
+
+import opengate_core as g4
+from .phspsources import PhaseSpaceSource
 from ..exception import fatal
 from .generic import GenericSource
 from ..image import get_info_from_image
 from ..image import compute_image_3D_CDF
-from .generic import generate_isotropic_directions
-from scipy.spatial.transform import Rotation
 from ..utility import LazyModuleLoader
-import random
+from ..base import process_cls
+
 
 #
 torch = LazyModuleLoader("torch")
 gaga = LazyModuleLoader("gaga_phsp")
+
+
+def generate_isotropic_directions(
+    n, min_theta=0, max_theta=np.pi, min_phi=0, max_phi=2 * np.pi, rs=np.random
+):
+    """
+    like in G4SPSAngDistribution.cc
+
+    Later : do a version with torch (gpu) instead of np (cpu) ?
+    """
+    u = rs.uniform(0, 1, size=n)
+    costheta = np.cos(min_theta) - u * (np.cos(min_theta) - np.cos(max_theta))
+    sintheta = np.sqrt(1 - costheta**2)
+
+    v = rs.uniform(0, 1, size=n)
+    phi = min_phi + (max_phi - min_phi) * v
+    sinphi = np.sin(phi)
+    cosphi = np.cos(phi)
+
+    # "direct cosine" method, like in Geant4 (already normalized)
+    px = -sintheta * cosphi
+    py = -sintheta * sinphi
+    pz = -costheta
+
+    # concat
+    v = np.column_stack((px, py, pz))
+
+    return v
 
 
 class VoxelizedSourcePDFSampler:
@@ -142,7 +173,7 @@ class VoxelizedSourcePDFSampler:
 
     def samples_g4(self, n):
         # to compare with cpp version
-        sps = opengate_core.GateSPSVoxelsPosDistribution()
+        sps = g4.GateSPSVoxelsPosDistribution()
         sps.SetCumulativeDistributionFunction(self.cdf_z, self.cdf_y, self.cdf_x)
         p = np.array([sps.VGenerateOneDebug() for a in range(n)])
         return p[:, 2], p[:, 1], p[:, 0]
@@ -238,53 +269,133 @@ class VoxelizedSourceConditionGenerator:
         return np.column_stack((p, v))
 
 
-class GANSource(GenericSource):
+class GANSource(GenericSource, g4.GateGANSource):
     """
     GAN source: the Generator produces particles
     Input is a neural network Generator trained with a GAN
     """
 
-    type_name = "GANSource"
+    user_info_defaults = {
+        "pth_filename": (
+            None,
+            {"doc": "Filename of the Generator (.pth), train with gaga_train"},
+        ),
+        "backward_distance": (
+            None,
+            {
+                "doc": "Change position of the generated particle according to this distance in backward direction (-direction) "
+            },
+        ),
+        "backward_force": (
+            None,
+            {
+                "doc": "if backward is enabled and the time is not managed by the GAN the time cannot be changed (yet). Use 'force' to enable backward if you know what your are doing"
+            },
+        ),
+        "energy_min_threshold": (
+            -1,
+            {
+                "doc": "Minimal energy threshold, if the generator create particle with less that this energy, the particle is skipped"
+            },
+        ),
+        "energy_max_threshold": (
+            sys.float_info.max,
+            {
+                "doc": "Maximal energy threshold, if the generator create particle with higher energy, the particle is skipped"
+            },
+        ),
+        "batch_size": (
+            10000,
+            {
+                "doc": "Batch size of the GAN generated particles",
+            },
+        ),
+        "position_keys": (
+            None,
+            {"doc": "FIXME"},
+        ),
+        "direction_keys": (
+            None,
+            {"doc": "FIXME"},
+        ),
+        "energy_key": (
+            None,
+            {"doc": "FIXME"},
+        ),
+        "time_key": (
+            None,
+            {"doc": "FIXME"},
+        ),
+        "weight_key": (
+            None,
+            {"doc": "FIXME"},
+        ),
+        "relative_timing": (
+            True,
+            {"doc": "FIXME"},
+        ),
+        "generator": (
+            None,
+            {"doc": "FIXME"},
+        ),
+        "verbose_generator": (
+            False,
+            {
+                "doc": "Print information every time the generator generate batch of particles"
+            },
+        ),
+        "use_time": (
+            False,
+            {"doc": "Consider the particle time given by the generator"},
+        ),
+        "use_weight": (
+            False,
+            {"doc": "Consider the particle weight given by the generator"},
+        ),
+        "cond_image": (
+            None,
+            {
+                "doc": "Filename of the image activity distribution to use for the Conditional GAN"
+            },
+        ),
+        "cond_debug": (
+            False,
+            {"doc": "Print debug information for conditional GAN"},
+        ),
+        "compute_directions": (
+            False,
+            {"doc": "FIXME"},
+        ),
+        "skip_policy": (
+            "SkipEvents",
+            {
+                "doc": "When some generated events are skipped (e.g. with the energy threshold), they could be "
+                "either 'skipped' (SkippedEvents) or generated with energy=zero (ZeroEnergy) to preserve "
+                "the correct number of events",
+                "allowed_values": ("SkipEvents", "ZeroEnergy"),
+            },
+        ),
+        "gpu_mode": (
+            "gpu",
+            {
+                "doc": "Use gpu or not for the GAN",
+                "allowed_values": ("auto", "cpu", "gpu"),
+            },
+        ),
+    }
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        GenericSource.set_default_user_info(user_info)
-        # additional param
-        user_info.pth_filename = None
-        user_info.position_keys = None
-        user_info.backward_distance = None
-        # if backward is enabled and the time is not managed by the GAN,
-        # the time cannot be changed (yet). Use 'force' to enable backward
-        user_info.backward_force = False
-        user_info.direction_keys = None
-        user_info.energy_key = None
-        user_info.energy_min_threshold = -1
-        user_info.energy_max_threshold = sys.float_info.max
-        user_info.weight_key = None
-        user_info.time_key = None
-        user_info.relative_timing = True
-        user_info.batch_size = 10000
-        user_info.generator = None
-        user_info.verbose_generator = False
-        user_info.use_time = False
-        user_info.use_weight = False
-        # specific to conditional GAN
-        user_info.cond_image = None
-        user_info.compute_directions = False
-        user_info.cond_debug = False
-        # for skipped particles
-        user_info.skip_policy = "SkipEvents"  # or ZeroEnergy
-        # gpu or cpu or auto
-        user_info.gpu_mode = "auto"
+    def __init__(self, *args, **kwargs):
+        self.__initcpp__()
+        super().__init__(self, *args, **kwargs)
 
-    def create_g4_source_TO_REMOVE(self):
-        return opengate_core.GateGANSource()
-
-    def __init__(self, user_info):
-        super().__init__(user_info)
+    def __initcpp__(self):
+        g4.GateGANSource.__init__(self)
 
     def initialize(self, run_timing_intervals):
         # FIXME -> check input user_info
+
+        tid = g4.G4GetThreadId()
+        print(f"initialize tid={tid}")
 
         # initialize the mother class generic source
         GenericSource.initialize(self, run_timing_intervals)
@@ -299,10 +410,31 @@ class GANSource(GenericSource):
         gen.initialize()
 
         # set the function pointer to the cpp side
-        self.g4_source.SetGeneratorFunction(gen.generator)
+        self.SetGeneratorFunction(gen.generator)
 
         # set the parameters to the cpp side
-        self.g4_source.SetGeneratorInfo(gen.gan_info)
+        self.SetGeneratorInfo(gen.gan_info)
+
+    """def __getstate__(self):
+        state_dict = super().__getstate__()
+        print("get state GANSource", state_dict)
+        return state_dict
+
+    def __setstate__(self, state):
+        print("set state GAN SOURCE", state)
+        super().__setstate__(state)
+        self.__initcpp__()"""
+
+    """def prepare_output(self):
+        GenericSource.prepare_output(self)
+        # store the output from G4 object
+        print("prepare output")
+        self.total_zero_events = self.GetTotalZeroEvents()
+        self.total_skipped_events = self.GetTotalSkippedEvents()
+        # self.user_info.total_zero_events = self.GetTotalZeroEvents()
+        # self.user_info.total_skipped_events = self.GetTotalSkippedEvents()
+        print(self.GetTotalZeroEvents())
+        print(self.GetTotalSkippedEvents())"""
 
     def set_default_generator(self):
         # non-conditional generator
@@ -316,23 +448,18 @@ class GANSource(GenericSource):
         self.user_info.generator = g
 
 
-class GANPairsSource(GANSource):
+class GANPairsSource(GANSource, g4.GateGANPairSource):
     """
     GAN source: the Generator produces pairs of particles (for PET)
     Input is a neural network Generator trained with a GAN
     """
 
-    type_name = "GANPairsSource"
+    def __init__(self, *args, **kwargs):
+        self.__initcpp__()
+        super().__init__(self, *args, **kwargs)
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        GANSource.set_default_user_info(user_info)
-
-    def create_g4_source_TO_REMOVE(self):
-        return opengate_core.GateGANPairSource()
-
-    def __init__(self, user_info):
-        super().__init__(user_info)
+    def __initcpp__(self):
+        g4.GateGANPairSource.__init__(self)
 
     def set_default_generator(self):
         # non-conditional generator
@@ -977,3 +1104,6 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
             print(
                 f"in {end - start_time:0.1f} sec (device={g.params.current_gpu_device})"
             )
+
+
+process_cls(GANSource)

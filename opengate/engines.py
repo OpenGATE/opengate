@@ -5,7 +5,6 @@ import os
 import weakref
 from box import Box
 from anytree import PreOrderIter
-import copy
 
 import opengate_core as g4
 from .exception import fatal, warning, GateImplementationError
@@ -949,7 +948,6 @@ class SimulationOutput:
         else:
             s = {}
             for source in simulation_engine.source_engine.sources:
-                print(source.name)
                 s[source.user_info.name] = source
             self.sources = s
 

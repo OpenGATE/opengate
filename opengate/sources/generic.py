@@ -350,18 +350,4 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         return True
 
 
-def get_source_skipped_events(sim, source_name):
-    n = sim.source_manager.get_source(source_name).GetTotalSkippedEvents()
-    # FIXME this is *not* the correct way to do. Workaround until source is refactored
-    n = n * sim.number_of_threads
-    return n
-
-
-def get_source_zero_events(sim, source_name):
-    n = sim.source_manager.get_source(source_name).GetTotalZeroEvents()
-    # FIXME this is *not* the correct way to do. Workaround until source is refactored
-    n = n * sim.number_of_threads
-    return n
-
-
 process_cls(GenericSource)

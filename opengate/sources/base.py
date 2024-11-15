@@ -75,34 +75,6 @@ def compute_cdf_and_total_yield(data, bins):
     return cdf, total
 
 
-def generate_isotropic_directions(
-    n, min_theta=0, max_theta=np.pi, min_phi=0, max_phi=2 * np.pi, rs=np.random
-):
-    """
-    like in G4SPSAngDistribution.cc
-
-    Later : do a version with torch (gpu) instead of np (cpu) ?
-    """
-    u = rs.uniform(0, 1, size=n)
-    costheta = np.cos(min_theta) - u * (np.cos(min_theta) - np.cos(max_theta))
-    sintheta = np.sqrt(1 - costheta**2)
-
-    v = rs.uniform(0, 1, size=n)
-    phi = min_phi + (max_phi - min_phi) * v
-    sinphi = np.sin(phi)
-    cosphi = np.cos(phi)
-
-    # "direct cosine" method, like in Geant4 (already normalized)
-    px = -sintheta * cosphi
-    py = -sintheta * sinphi
-    pz = -costheta
-
-    # concat
-    v = np.column_stack((px, py, pz))
-
-    return v
-
-
 def get_rad_gamma_spectrum(rad):
     path = (
         pathlib.Path(os.path.dirname(__file__))

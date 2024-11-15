@@ -215,17 +215,17 @@ def analyze_results(sim, paths, all_cond):
     print()
     gate.exception.warning(f"Check stats")
     s = sim.get_source_user_info("gaga")
-    print(f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents}")
-    print(f"Source, nb of zeros   particles (absorbed) : {s.fTotalZeroEvents}")
+    print(f"Source, nb of skipped particles (absorbed) : {s.total_skipped_events}")
+    print(f"Source, nb of zeros   particles (absorbed) : {s.total_zero_events}")
 
     stats = sim.get_actor("Stats")
     print(stats)
-    stats.counts.events += s.fTotalSkippedEvents
+    stats.counts.events += s.total_skipped_events
     stats_ref = utility.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
     r = (stats_ref.counts.steps - stats.counts.steps) / stats_ref.counts.steps
     print(f"Steps cannot be compared => was {stats.counts.steps}, {r:.2f}%")
     stats.counts.steps = stats_ref.counts.steps
-    if s.fTotalSkippedEvents > 0:
+    if s.total_skipped_events > 0:
         print(f"Tracks cannot be compared => was {stats.counts.tracks}")
         stats.counts.tracks = stats_ref.counts.tracks
 
