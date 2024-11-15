@@ -8,7 +8,7 @@ SimulationStatisticsActor
 --------------------------
 
 Description
-^^^^^^^^^^^
+~~~~~~~~~~~
 
 The SimulationStatisticsActor actor is a very basic tool that allows counting the number of runs, events, tracks, and steps that have been created during a simulation. Most simulations should include this actor as it gives valuable information. The `stats` object contains the `counts` dictionary that contains all results.
 
@@ -346,7 +346,7 @@ The Angular Response Function (ARF) is a method designed to accelerate SPECT sim
   Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
 
 Step 1: Creating the Training Dataset
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The initial step involves creating a dataset for training. This can be implemented by following the example in `test043_garf_training_dataset.py`. Configure a simplified simulation to emit photons across the expected energy range (e.g., slightly above 140.5 keV for Tc99m) through the SPECT head, recording detected counts. The `ARFTrainingDatasetActor` is utilized here, with input from a detector plane positioned directly in front of the collimator. This actor stores detected counts per energy window in a ROOT file. For efficiency, a Russian roulette technique reduces the data size for photons with low detection probabilities due to large incident angles. Users must specify energy windows by referencing the name of the `DigitizerEnergyWindowsActor` associated with the SPECT system.
 
@@ -361,7 +361,7 @@ The initial step involves creating a dataset for training. This can be implement
 
 
 Step 2: Training the ARF Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After generating the dataset, train the ARF model using garf_train, which trains a neural network to represent the ARF function. This requires the previous dataset as input, with training options specified in a JSON configuration file (e.g., `train_arf_v058.json` in `tests/data/test043`). A suitable GPU is recommended for training. The output is a .pth file containing the trained model and its associated weights.
 
@@ -370,7 +370,7 @@ After generating the dataset, train the ARF model using garf_train, which trains
     garf_train  train_arf_v058.json arf_training_dataset.root arf.pth
 
 Step 3: Using the Trained ARF Model in Simulation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 With the trained model (.pth file), you can now substitute direct photon tracking in the SPECT head with the ARF model. This is accomplished with the `ARFActor`, which takes the trained .pth file, consider a detector plane, and generates a 2D projection image with estimated detection counts. Note that the values represent probabilities rather than integer counts, as this is a variance reduction method. Although the computation time per particle is comparable to full tracking, ARF accelerates convergence towards the mean counts across all pixels. Consequently, an ARF-based simulation can achieve the same noise level as a traditional simulation but with up to 5-10 times fewer particles. The `distance_to_crystal` parameter defines the spacing between the detector plane and the crystal center, allowing for positional correction in the 2D projection.

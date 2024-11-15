@@ -341,7 +341,8 @@ def _setter_hook_uncertainty_goal(self, value):
 
 
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
-    """DoseActor: compute a 3D edep/dose map for deposited
+    """
+    DoseActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
 
     By default, the dose actor is centered according to the "attachedTo" volume center
