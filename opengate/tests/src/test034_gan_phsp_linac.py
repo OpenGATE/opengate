@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # in the GAN : position, direction, E, weights
     gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
-    gsource.mother = plane.name
+    gsource.attached_to = plane.name
     # gsource.activity = 10 * MBq / sim.number_of_threads
     gsource.n = 1e6 / sim.number_of_threads
     gsource.pth_filename = (

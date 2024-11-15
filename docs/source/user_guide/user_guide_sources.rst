@@ -48,7 +48,7 @@ energy, see the following example:
    MeV = gate.g4_units('MeV')
    Bq = gate.g4_units('Bq')
    source = sim.add_source('Generic', 'mysource')
-   source.mother = 'my_volume'
+   source.attached_to = 'my_volume'
    source.particle = 'proton'
    source.activity = 10000 * Bq
    source.position.type = 'box'
@@ -277,7 +277,7 @@ Voxelized sources can be described as follows:
    source.image = 'an_activity_image.mhd'
    source.direction.type = 'iso'
    source.energy.mono = 100 * keV
-   source.mother = 'my_volume_name'
+   source.attached_to = 'my_volume_name'
 
 This code create a voxelized source. The 3D activity distribution is
 read from the given image. This image is internally normalized such that
@@ -313,7 +313,7 @@ phase space source:
 .. code:: python
 
    source = sim.add_source("PhaseSpaceSource", "phsp_source")
-   source.mother = plane.name
+   source.attached_to = plane.name
    source.phsp_file = "input.root"
    source.position_key = "PrePositionLocal"
    source.direction_key = "PreDirectionLocal"

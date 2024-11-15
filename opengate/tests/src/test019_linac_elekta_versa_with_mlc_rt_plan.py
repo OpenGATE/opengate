@@ -76,7 +76,7 @@ def add_alpha_source(sim, name, nb_part):
     deg = gate.g4_units.deg
     plan_source = sim.add_volume("Box", "plan_alpha_source")
     plan_source.material = "G4_Galactic"
-    plan_source.mother = name
+    plan_source.attached_to = name
     plan_size = np.array([1 * nm, 1 * nm, 1 * nm])
     plan_source.size = np.copy(plan_size)
     plan_source.translation = [0 * mm, 0 * mm, z_linac / 2 - 3.5 * mm]

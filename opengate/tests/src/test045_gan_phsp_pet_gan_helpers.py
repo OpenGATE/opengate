@@ -348,7 +348,7 @@ def add_voxelized_source(sim, p):
 
     # source
     source = sim.add_source("VoxelsSource", "vox")
-    source.mother = "iec"
+    source.attached_to = "iec"
     source.particle = "e+"
     source.energy.type = p.radionuclide
     source.activity = ac

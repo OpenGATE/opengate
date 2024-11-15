@@ -128,7 +128,7 @@ def create_simulation(sim, paths, colli="lehr", version=""):
     gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
     # no phantom, we consider attached to the world at origin
-    # gsource.mother = f'{iec_phantom.name}_interior'
+    # gsource.attached_to = f'{iec_phantom.name}_interior'
     gsource.activity = total_activity
     gsource.pth_filename = paths.gate / "pth2" / "test001_GP_0GP_10_50000.pth"
     gsource.position_keys = ["PrePosition_X", "PrePosition_Y", "PrePosition_Z"]

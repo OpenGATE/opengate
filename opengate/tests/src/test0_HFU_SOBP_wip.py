@@ -112,7 +112,7 @@ def set_gps(spots, nSim, sim, beamline, gantry_angle):
 
         # # set mother
         # if self.mother is not None:
-        #     source.mother = self.mother
+        #     source.attached_to = self.mother
 
         # # POSITION:
         # source.position.translation = self._get_pbs_position(spot)

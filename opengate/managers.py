@@ -28,6 +28,7 @@ from .image import (
     write_itk_image,
 )
 from .sources.phspsources import PhaseSpaceSource
+from .sources.voxelsources import VoxelsSource
 from .utility import (
     g4_units,
     indent,
@@ -49,7 +50,11 @@ from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
 
-source_types = {"GenericSource": GenericSource, "PhaseSpaceSource": PhaseSpaceSource}
+source_types = {
+    "GenericSource": GenericSource,
+    "PhaseSpaceSource": PhaseSpaceSource,
+    "VoxelsSource": VoxelsSource,
+}
 
 from .geometry.volumes import (
     VolumeBase,

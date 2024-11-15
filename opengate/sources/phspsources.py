@@ -240,14 +240,10 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     Source of particles from a (root) phase space.
     Read position + direction + energy + weight from the root and use them as event.
 
-    if global flag is True, the position/direction are global, not
-    in the coordinate system of the mother volume.
-    if the global flag is False, the position/direction are relative
-    to the mother volume
+    If "global flag" is True, the position/direction are global, ie in the world coordinate system.
+    If it is False, it uses the coordinate system of the volume it is attached to.
 
-    - Timing is not used (yet)
-    - NOT ready for multithread (yet)
-    - type of particle not read in the phase space but set by user
+    The Time in the phsp is not implemented (yet)
     """
 
     # hints for IDE
@@ -275,12 +271,17 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     verbose: bool
 
     user_info_defaults = {
-        "phsp_file": (None, {"doc": "Filename of the phase-space file (root)"}),
-        "entry_start": (None, {"doc": "Starting particle in the phase-space (for MT)"}),
-        # "n": (0, {"doc": "FIXME"}), # inherited
-        # "activity": (0, {"doc": "FIXME"}), # inherited
-        # "half_life": (-1, {"doc": "Negative value means no half-life"}), # inherited
-        "particle": ("", {"doc": "FIXME later as key"}),
+        "phsp_file": (
+            None,
+            {"doc": "Filename of the phase-space file (root). This is required"},
+        ),
+        "entry_start": (
+            None,
+            {
+                "doc": "Starting particle in the phase-space (for MT, provide a list of entries, one for each thread)"
+            },
+        ),
+        "particle": ("", {"doc": "FIXME"}),
         "global_flag": (
             False,
             {
@@ -430,7 +431,7 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
         g4.GatePhaseSpaceSource.__init__(self)
 
     def initialize(self, run_timing_intervals):
-        # creatin a generator for each thread
+        # create a generator for each thread
         tid = g4.G4GetThreadId()
         self.particle_generator[tid] = PhaseSpaceSourceGenerator(tid)
 

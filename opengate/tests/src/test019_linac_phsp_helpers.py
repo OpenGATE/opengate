@@ -183,7 +183,7 @@ def create_simu_test019_phsp_source(sim, version):
     sim.check_volumes_overlap = False
     # sim.running_verbose_level = gate.logger.EVENT
     sim.number_of_threads = 1
-    # sim.random_seed = 987654321 # FIXME
+    sim.random_seed = 987654321
     sim.output_dir = paths.output
 
     # units
