@@ -229,7 +229,36 @@ for the required format of database file.
 Parallel worlds
 ---------------
 
-TODO
+In Geant4, volumes must not overlap; any intersection between volumes can lead to undefined behavior since Geant4 cannot reliably determine which volume a particle belongs to. However, certain scenarios, such as those encountered in SPECT simulations with body-contour trajectories, require describing volumes that intersect. For example, simulating a patient represented by a voxelized CT image might result in an overlap with detector components. Such overlaps could produce inaccurate simulations due to ambiguity in volume assignments.
+
+The concept of “parallel worlds” in Geant4 addresses this issue by allowing overlapping volumes to exist in separate, independent worlds. Each “world” operates without interference from the others, enabling accurate simulation while maintaining the required geometric relationships. When a particle is tracked in both volumes at the same time, the second world is chosen.
+
+The following example demonstrates how to simulate a clinical scenario with a voxelized CT patient overlapping detector blocks using parallel worlds:
+
+
+.. code:: python
+
+    world = sim.world
+    world.size = [1 * m, 1 * m, 1 * m]
+    world.material = "G4_AIR"
+
+    # patient
+    ct = sim.add_volume("Image", "voxelized_ct")
+    ct.image = "data/phantom.mha"
+    ct.mother = "world"
+
+    # create two other parallel worlds
+    sim.add_parallel_world("parallel_world")
+
+    # detector in w2 (on top of world)
+    det = sim.add_volume("Box", "detector")
+    det.mother = "parallel_world"
+    det.material = "NaI"
+    det.size = [400 * mm, 400 * mm, 40 * mm]
+    det.translation = [0, 0, 100 * mm]
+
+In this setup, the voxelized CT is placed in the primary world, representing the patient anatomy and the detector is placed in a parallel world to avoid conflicts with the CT volume.
+
 
 Examples of complex geometries: Linac, SPECT, PET, phantoms
 -----------------------------------------------------------
