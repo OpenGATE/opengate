@@ -13,7 +13,6 @@ User Guide
    :maxdepth: 2
 
    user_guide_first_simulation
-   user_guide_how_to_convert_example_1
    user_guide_volumes
    user_guide_physics
    user_guide_sources
@@ -26,12 +25,20 @@ User Guide
    user_guide_reference_simulation
    user_guide_reference_volumes
    user_guide_reference_actors
+   user_guide_reference_sources
+   user_guide_advanced
 
 .. toctree::
    :caption: Preconfigured complex components
    :maxdepth: 2
 
    user_guide_contrib
+
+.. toctree::
+   :caption: How to migrate from Gate 9 to 10
+   :maxdepth: 2
+
+   user_guide_how_to_convert_example
 
 .. toctree::
    :caption: Command line tools

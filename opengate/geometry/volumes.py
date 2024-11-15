@@ -646,35 +646,51 @@ def subtract_volumes(
 
 
 class BoxVolume(RepeatableVolume, solids.BoxSolid):
-    """Volume with a box shape."""
+    """
+    Volume with a box shape.
+    """
 
 
 class HexagonVolume(RepeatableVolume, solids.HexagonSolid):
-    """Volume with a hexagon shape."""
+    """
+    Volume with a hexagon shape.
+    """
 
 
 class ConsVolume(RepeatableVolume, solids.ConsSolid):
-    """Volume with the shape of a cone or conical section."""
+    """
+    Volume with the shape of a cone or conical section.
+    """
 
 
 class PolyhedraVolume(RepeatableVolume, solids.PolyhedraSolid):
-    """Volume with a polyhedral shape."""
+    """
+    Volume with a polyhedral shape.
+    """
 
 
 class SphereVolume(RepeatableVolume, solids.SphereSolid):
-    """Volume with a sphere or spherical shell shape."""
+    """
+    Volume with a sphere or spherical shell shape.
+    """
 
 
 class TrapVolume(RepeatableVolume, solids.TrapSolid):
-    """Volume with a generic trapezoidal shape."""
+    """
+    Volume with a generic trapezoidal shape.
+    """
 
 
 class TrdVolume(RepeatableVolume, solids.TrdSolid):
-    """Volume with a symmetric trapezoidal shape."""
+    """
+    Volume with a symmetric trapezoidal shape.
+    """
 
 
 class TubsVolume(RepeatableVolume, solids.TubsSolid):
-    """Volume with a tube or cylindrical section shape."""
+    """
+    Volume with a tube or cylindrical section shape.
+    """
 
 
 class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
