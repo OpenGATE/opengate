@@ -94,7 +94,7 @@ To dump a list of all available volume types:
    print(sim.volume_manager.dump_volume_types())
 
 Examples of possible volumes
----------------------------
+----------------------------
 
 .. code:: python
 

@@ -91,21 +91,76 @@ last one in the ``times`` vector, the activity is considered as zero.
 The number of elements in the ``times`` linspace (here 500) defined the
 accuracy of the TAC. See example ``test052``.
 
-The positions from were the particles will be generated are defined by a
+The positions from where the particles will be generated are defined by a
 shape (‘box’, ‘sphere’, ‘point’, ‘disc’), defined by several parameters
 (‘size’, ‘radius’) and orientation (‘rotation’, ‘center’). The direction
-are defined with ‘iso’, ‘momentum’, ‘focused’. The energy can be defined
-by a single value (‘mono’) or Gaussian (‘gauss’).
+are defined with ‘iso’, ‘momentum’, ‘focused’ and ‘histogram’. The energy
+can be defined by a single value (‘mono’) or Gaussian (‘gauss’).
 
 The ``mother`` option indicate the coordinate system of the source. By
 default, it is the world, but it is possible to attach a source to any
 volume. In that case, the coordinate system of all emitted particles
 will follow the given volume.
+Using ``source.direction_relative_to_attached_volume = True`` will make
+your source direction change following the rotation of that volume.
 
-Direction and Acceptance Angle
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Direction types and Acceptance Angle
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to indicate a ``angle_acceptance_volume`` to the
+-  ``direction.type = 'iso'`` assigns directions to primary particles
+   based on 𝜃 and 𝜙 angles in a `spherical coordinate system
+   <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`__.
+   By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360°
+   (such that any direction is possible). You can define the 𝜃 and 𝜙
+   ranges with minimum and maximum values as follows:
+
+   .. code:: python
+
+      source.direction.type = "iso"
+      source.direction.theta = [0, 10 * deg]
+      source.direction.phi = [0, 90 * deg]
+
+-  ``direction.type = 'momentum'`` specifies a fixed direction for the
+   primary particles using a momentum vector [x, y, z].
+
+   .. code:: python
+
+      source.direction.type = "momentum"
+      source.direction.momentum = [0,0,1]
+
+-  ``direction.type = 'focused'`` configures the primary particles to be
+   emitted such that they converge towards a specified focus point. The
+   focus point is set using a coordinate array [x, y, z] that defines its
+   position.
+
+   .. code:: python
+
+      source.position.type = "disc"
+      source.position.radius = 2 * cm
+      source.direction.type = "focused"
+      source.direction.focus_point = [1 * cm, 2 * cm, 3 * cm]
+
+-  ``direction.type = 'histogram'``, same as ``'iso'``, but allows you
+   to emit primary particles with directional distributions weighted by
+   custom-defined histograms for 𝜃 (theta) and 𝜙 (phi) angles.
+
+   .. code:: python
+
+      source.direction.type = "histogram"
+      # Put zero as first value of weight
+      source.direction.histogram_theta_weight = [0, 1]
+      source.direction.histogram_theta_angle = [80 * deg, 100 * deg]
+      source.direction.histogram_phi_weight = [0, 0.3, 0.5, 1, 0.5, 0.3]
+      source.direction.histogram_phi_angle = [
+         60 * deg,
+         70 * deg,
+         80 * deg,
+         100 * deg,
+         110 * deg,
+         120 * deg,
+      ]
+
+It is possible to indicate an ``angle_acceptance_volume`` to the
 direction of a source. In that case, the particle will be created only
 if their position & direction make them intersect the given volume. This
 is for example useful for SPECT imaging in order to limit the particle
@@ -115,18 +170,6 @@ anyway but with a zero energy (so not tracked). This mechanism ensures
 to remain consistent with the required activity and timestamps of the
 particles, there is no need to scale with the solid angle. See for
 example ``test028`` test files for more details.
-
-Using ``direction.type = 'iso'``, the directions given to primary
-particles depends on 𝜃 and 𝜙 angles in a `spherical coordinate
-system <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`__.
-By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360° (such
-that any direction is possible). One can define the 𝜃 and 𝜙 ranges
-(minimum and maximum values) like this:
-
-.. code:: python
-
-   source.direction.theta = [0, 10 * deg]
-   source.direction.phi = [0, 90 * deg]
 
 Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
 = -cos𝜃.
@@ -393,8 +436,8 @@ file:
 Source rotation and translation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The starting position and direction from eah particle is read from the
-phase space fiel. It is possible to shift the origin as well as rotate
+The starting position and direction from each particle is read from the
+phase space field. It is possible to shift the origin as well as rotate
 the source.
 
 ::
@@ -407,7 +450,7 @@ the source.
 If translate_position is set to true, the source.position.translation is
 evaluated and translates the starting point of the particles by this
 vector. If rotate_direction is set to true, the source.position.rotation
-is evaluated to rotate the initial particle vectors. It can be set usign
+is evaluated to rotate the initial particle vectors. It can be set using
 the code below, resulting in a rotation of 30 degrees around the x axis.
 
 ::
@@ -424,7 +467,7 @@ after a linac, a phsp file could contain a mixture of particles.
 Typically, one would be interested in simulating a given number of
 primary particles (e.g. protons), simulating, but not counting as
 secondary particles (e.g. secondary electrons) in the number of
-particles to simulate. This can be acchieved by setting
+particles to simulate. This can be achieved by setting
 ``generate_until_next_primary = True``. Furthermore, the PDG code of the
 primary particle needs to be specified, as well as a lower energy
 threshold (in order to identify secondary particles of the same type as
@@ -461,9 +504,9 @@ See all test019 and test060 as examples.
 GAN sources (Generative Adversarial Network)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A Phase-Space (phsp) source typically uses a large file containing particle properties (e.g., energy, position, direction, time) to generate primary events in a simulation. This traditional phsp source can be replaced by a neural network-based particle generator that replicates similar distribution probabilities in a more compact form. GAN sources utilize Generative Adversarial Networks (GANs) trained to reproduce these particle properties based on an initial phsp. This approach, proposed in `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1/>`_, can be applied across various applications:
+A Phase-Space (phsp) source typically uses a large file containing particle properties (e.g., energy, position, direction, time) to generate primary events in a simulation. This traditional phsp source can be replaced by a neural network-based particle generator that replicates similar distribution probabilities in a more compact form. GAN sources utilize Generative Adversarial Networks (GANs) trained to reproduce these particle properties based on an initial phsp. This approach, proposed in `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1/>`__, can be applied across various applications:
 
-- Linac phsp: `test034 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1>`_
+- Linac phsp: `test034 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1>`__
 - SPECT: `test038 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ and `test047 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2021] <https://doi.org/10.1088/1361-6560/abde9a>`_ and `[Saporta et al, PMB, 2022] <https://doi.org/10.1088/1361-6560/aca068>`_
 - PET: `test040 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2023] <https://doi.org/10.1088/1361-6560/acdfb1>`_
 
