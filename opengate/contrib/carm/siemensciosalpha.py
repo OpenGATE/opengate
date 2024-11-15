@@ -110,13 +110,13 @@ class Ciosalpha:
 
         source.direction_relative_to_attached_volume = True
         source.direction.type = "histogram"
-        source.direction.histogram_theta_weight = [0, 1]
-        source.direction.histogram_theta_angle = [85 * deg, 95 * deg]
+        source.direction.histogram_theta_weights = [1]
+        source.direction.histogram_theta_angles = [85 * deg, 95 * deg]
 
         # TODO: Need real values for the anode heel effect
         data = np.load(current_path / "anodeheeleffect.npz")
-        source.direction.histogram_phi_weight = data["weight"]
-        source.direction.histogram_phi_angle = data["angle"]
+        source.direction.histogram_phi_weights = data["weight"]
+        source.direction.histogram_phi_angles = data["angle"]
 
         source.energy.type = "histogram"
         source.energy.histogram_weight = weights
