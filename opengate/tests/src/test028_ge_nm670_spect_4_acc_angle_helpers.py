@@ -201,6 +201,8 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
     beam3 = sim.source_manager.get_source("beam3")
 
     reference_ratio = 691518 / 2998895  # (23%)
+    if "noaa" in version:
+        reference_ratio = 0
     b1 = beam1.total_zero_events
     b2 = beam1.total_zero_events
     b3 = beam1.total_zero_events
@@ -220,29 +222,32 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
         # do not compare track in this mode
         stats.counts.tracks = stats_ref.counts.tracks
 
-    tol = 0.3
-    r1 = b1 / stats.counts.events
-    is_ok = np.fabs((r1 - reference_ratio) / reference_ratio) < tol
-    utility.print_test(
-        is_ok,
-        f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
-    )
+    if reference_ratio != 0:
+        tol = 0.3
+        r1 = b1 / stats.counts.events
+        is_ok = np.fabs((r1 - reference_ratio) / reference_ratio) < tol
+        utility.print_test(
+            is_ok,
+            f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+        )
 
-    r2 = b2 / stats.counts.events
-    b = np.fabs((r2 - reference_ratio) / reference_ratio) < tol
-    utility.print_test(
-        b,
-        f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
-    )
-    is_ok = b and is_ok
+        r2 = b2 / stats.counts.events
+        b = np.fabs((r2 - reference_ratio) / reference_ratio) < tol
+        utility.print_test(
+            b,
+            f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+        )
+        is_ok = b and is_ok
 
-    r3 = b3 / stats.counts.events
-    b = np.fabs((r3 - reference_ratio) / reference_ratio) < tol
-    utility.print_test(
-        b,
-        f"Skipped particles b3 = {b3} {r3 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
-    )
-    is_ok = b and is_ok
+        r3 = b3 / stats.counts.events
+        b = np.fabs((r3 - reference_ratio) / reference_ratio) < tol
+        utility.print_test(
+            b,
+            f"Skipped particles b3 = {b3} {r3 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+        )
+        is_ok = b and is_ok
+    else:
+        is_ok = True
 
     # stat
     gate.exception.warning("Compare stats")

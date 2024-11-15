@@ -933,7 +933,6 @@ class SimulationOutput:
         self.user_hook_log = simulation_engine.user_hook_log
 
     def store_sources(self, simulation_engine):
-        print("store sources")
         self.sources = {}
         if simulation_engine.simulation.multithreaded is True:
             th = {}
@@ -953,7 +952,6 @@ class SimulationOutput:
                 print(source.name)
                 s[source.user_info.name] = source
             self.sources = s
-        print("end store sources", len(self.sources))
 
     def get_actor(self, name):
         if name not in self.actors:

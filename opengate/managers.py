@@ -247,7 +247,6 @@ class SourceManager(GateObject):
     """
 
     def __init__(self, simulation, *args, **kwargs):
-        print(f"SourceManager __init__")
         kwargs["name"] = "source_manager"
         kwargs["simulation"] = simulation
         super().__init__(*args, **kwargs)
@@ -256,7 +255,6 @@ class SourceManager(GateObject):
         self.current_run_interval = None
         # List of sources user info
         self.sources = {}
-        print(f"SourceManager __init__ done")
 
     def __str__(self):
         """
@@ -316,7 +314,6 @@ class SourceManager(GateObject):
         )"""
 
     def add_source(self, source, name):
-        print(f"add source ", name)
         new_source = None
         if isinstance(source, str):
             if name is None:
@@ -350,7 +347,6 @@ class SourceManager(GateObject):
                 f"Known types are: \n."
                 f"{self.dump_source_types()}."
             )
-        print(f"create source, call cls", cls)
         return cls(name=name, simulation=self.simulation)
 
     def initialize_before_g4_engine(self):

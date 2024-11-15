@@ -225,12 +225,10 @@ class SourceBase(GateObject):
         return s
 
     def __getstate__(self):
-        print("SourceBase get state")
         state_dict = super().__getstate__()
         return state_dict
 
     def __setstate__(self, state):
-        print("SourceBase __setstate__")
         super().__setstate__(state)
         self.__initcpp__()
 

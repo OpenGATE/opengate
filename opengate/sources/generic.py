@@ -321,8 +321,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 )
 
     def prepare_output(self):
-        print("prepare_output")
-        print(self.GetTotalZeroEvents())
         SourceBase.prepare_output(self)
         # store the output from G4 object
         self.total_zero_events = self.GetTotalZeroEvents()
