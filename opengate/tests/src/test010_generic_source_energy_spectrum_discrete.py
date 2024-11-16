@@ -65,7 +65,7 @@ def run_simulation(paths):
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.number_of_threads = 1
-    # sim.random_seed = 987654321
+    sim.random_seed = 987654321
     sim.output_dir = paths.output
 
     # units
