@@ -39,10 +39,10 @@ def _generic_source_default_direction():
             "sigma": [0, 0],
             "acceptance_angle": _generic_source_default_aa(),
             "accolinearity_flag": False,
-            "histogram_theta_weight": [],
-            "histogram_theta_angle": [],
-            "histogram_phi_weight": [],
-            "histogram_phi_angle": [],
+            "histogram_theta_weights": [],
+            "histogram_theta_angles": [],
+            "histogram_phi_weights": [],
+            "histogram_phi_angles": [],
         }
     )
 
@@ -339,7 +339,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # may start later than the simulation timing
         ui.start_time = ui.tac_times[0]
         ui.activity = ui.tac_activities[0]
-        self.g4_source.SetTAC(ui.tac_times, ui.tac_activities)
+        self.SetTAC(ui.tac_times, ui.tac_activities)
 
     def can_predict_number_of_events(self):
         aa = self.user_info.direction.acceptance_angle
