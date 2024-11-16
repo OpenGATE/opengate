@@ -318,10 +318,10 @@ class GenericSource(SourceBase):
         user_info.direction.acceptance_angle.normal_vector = [0, 0, 1]
         user_info.direction.acceptance_angle.normal_tolerance = 3 * deg
         user_info.direction.accolinearity_flag = False  # only for back_to_back source
-        user_info.direction.histogram_theta_weight = []
-        user_info.direction.histogram_theta_angle = []
-        user_info.direction.histogram_phi_weight = []
-        user_info.direction.histogram_phi_angle = []
+        user_info.direction.histogram_theta_weights = []
+        user_info.direction.histogram_theta_angles = []
+        user_info.direction.histogram_phi_weights = []
+        user_info.direction.histogram_phi_angles = []
 
         # energy
         user_info.energy = Box()

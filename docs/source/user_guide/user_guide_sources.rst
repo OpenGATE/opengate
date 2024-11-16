@@ -147,11 +147,10 @@ Direction types and Acceptance Angle
    .. code:: python
 
       source.direction.type = "histogram"
-      # Put zero as first value of weight
-      source.direction.histogram_theta_weight = [0, 1]
-      source.direction.histogram_theta_angle = [80 * deg, 100 * deg]
-      source.direction.histogram_phi_weight = [0, 0.3, 0.5, 1, 0.5, 0.3]
-      source.direction.histogram_phi_angle = [
+      source.direction.histogram_theta_weights = [1]
+      source.direction.histogram_theta_angles = [80 * deg, 100 * deg]
+      source.direction.histogram_phi_weights = [0.3, 0.5, 1, 0.5, 0.3]
+      source.direction.histogram_phi_angles = [
          60 * deg,
          70 * deg,
          80 * deg,
