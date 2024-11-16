@@ -56,6 +56,8 @@ public:
 
   void SetBackToBackMode(bool flag, bool accolinearityFlag);
 
+  void SetAccolinearityFWHM(double accolinearityFWHM);
+
 protected:
   G4ParticleDefinition *fParticleDefinition;
   double fCharge;
@@ -66,6 +68,7 @@ protected:
   G4SPSRandomGenerator *fBiasRndm;
   bool fAccolinearityFlag;
   bool fBackToBackMode;
+  double fAccolinearitySigma;
 
   // for acceptance angle
   GateAcceptanceAngleTesterManager *fAAManager;

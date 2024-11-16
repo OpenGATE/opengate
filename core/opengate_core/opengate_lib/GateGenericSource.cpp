@@ -312,7 +312,19 @@ void GateGenericSource::InitializeIon(py::dict &user_info) {
 void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
   auto u = py::dict(user_info["direction"]);
   bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
+  // zxc remove accolinearityFlag here?
   fSPS->SetBackToBackMode(true, accolinearityFlag);
+  if (accolinearityFlag == true) {
+    try {
+      // Change the value if user provided one.
+      double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
+      fSPS->SetAccolinearityFWHM(accolinearityFWHM);
+      // zxc Had to use py::key_error over FatalKeyError, not sure why...
+    } catch (const py::key_error &e) {
+      // zxc log a "The default value was used" or something?
+      // std::cerr << "Error: " << e.what() << std::endl;
+    }
+  }
   // this is photon
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle("gamma");
