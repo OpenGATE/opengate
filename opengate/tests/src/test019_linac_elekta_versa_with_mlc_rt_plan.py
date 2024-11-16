@@ -194,6 +194,7 @@ if __name__ == "__main__":
     while MU == 0:
         l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
         # l_cp = [3]
+        print("Control point: ", l_cp)
         MU = rt_plan_parameters["weight"][l_cp[0]]
     nb_part = nb_part / MU
     versa.set_linac_head_motion(
