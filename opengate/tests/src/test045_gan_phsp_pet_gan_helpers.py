@@ -303,7 +303,7 @@ def add_analytical_source(sim, p):
         [p.ac, p.ac, p.ac, p.ac, p.ac, p.ac],  # in BqmL
         verbose=True,
     )
-    sources = sim.source_manager.user_info_sources
+    sources = sim.source_manager.sources
     for source in sources.values():
         source.particle = "e+"
         source.energy.type = p.radionuclide

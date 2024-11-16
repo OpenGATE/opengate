@@ -50,13 +50,16 @@ from .processing import dispatch_to_subprocess
 from .sources.generic import SourceBase, GenericSource
 from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelsSource
-from .sources.gansources import GANSource
+from .sources.gansources import GANSource, GANPairsSource
+from .sources.beamsources import IonPencilBeamSource
 
 source_types = {
     "GenericSource": GenericSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelsSource": VoxelsSource,
     "GANSource": GANSource,
+    "GANPairsSource": GANPairsSource,
+    "IonPencilBeamSource": IonPencilBeamSource,
 }
 
 from .geometry.volumes import (
@@ -286,35 +289,6 @@ class SourceManager(GateObject):
                 f"Cannot find the source {source_name}. "
                 f"Sources included in this simulation are: {list(self.sources.keys())}"
             )
-
-    """def get_source(self, name):
-        n = len(self.g4_thread_source_managers)
-        if n > 0:
-            gate.exception.warning(f"Cannot get source in multithread mode, use get_source_mt")
-            return None
-        for source in self.sources:
-            if source.user_info.name == name:
-                return source.g4_source
-        gate.exception.fatal(
-            f'The source "{name}" is not in the current '
-            f"list of sources: {self.user_info_sources}"
-        )
-
-    def get_source_mt(self, name, thread):
-        n = len(self.g4_thread_source_managers)
-        if n == 0:
-            gate.exception.warning(f"Cannot get source in mono-thread mode, use get_source")
-            return None
-        i = 0
-        for source in self.sources:
-            if source.user_info.name == name:
-                if i == thread:
-                    return source.g4_source
-                i += 1
-        gate.exception.fatal(
-            f'The source "{name}" is not in the current '
-            f"list of sources: {self.user_info_sources}"
-        )"""
 
     def add_source(self, source, name):
         new_source = None

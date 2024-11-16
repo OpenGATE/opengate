@@ -400,7 +400,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
         self.user_output["arf_projection"].store_data("merged", output_image)
-        # ensure why return 0 ?
+        # unsure why return 0 ?
         return 0
 
     def EndSimulationAction(self):

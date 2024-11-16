@@ -1107,3 +1107,4 @@ class GANSourceConditionalPairsGenerator(GANSourceDefaultPairsGenerator):
 
 
 process_cls(GANSource)
+process_cls(GANPairsSource)

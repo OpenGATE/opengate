@@ -2,56 +2,58 @@ import math
 from box import Box
 import numpy as np
 from scipy.spatial.transform import Rotation
-import opengate_core
+import opengate_core as g4
 from .generic import GenericSource, SourceBase
 from ..contrib.tps.ionbeamtherapy import (
     get_spots_from_beamset_beam,
     spots_info_from_txt,
     BeamsetInfo,
 )
-from ..exception import fatal, warning
+from ..base import process_cls
 
 
-class IonPencilBeamSource(GenericSource):
+def _check_ph_space_params(param_v):
+    sigma = param_v[0]
+    theta = param_v[1]
+    epsilon = param_v[2]
+    conv = param_v[3]
+    pi = math.pi
+    if epsilon == 0:
+        raise ValueError(
+            "Ellipse area is 0 !!! Check epsilon parameter in IonPencilBeamSource."
+        )
+    if pi * sigma * theta < epsilon:
+        raise ValueError(
+            f"pi*sigma*theta < epsilon. Provided values: sigma = {sigma}, theta = {theta}, epsilon = {epsilon}."
+        )
+    if conv not in [0, 1]:
+        raise ValueError("convergence parameter can be only 0 or 1.")
+
+
+class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
     """
     Pencil Beam source
     """
 
-    type_name = "IonPencilBeamSource"
+    def __init__(self, *args, **kwargs):
+        self.__initcpp__()
+        super().__init__(self, *args, **kwargs)
+        self.position.type = "disc"
 
-    @staticmethod
-    def set_default_user_info(user_info):
-        GenericSource.set_default_user_info(user_info)
-        user_info.position.type = "disc"
+        # FIXME: how to change the user_info for this new param ?
+
         # additional parameters: direction
         # sigma, theta, epsilon, conv (0: divergent, 1: convergent)
-        user_info.direction.partPhSp_x = [0, 0, 0, 0]
-        user_info.direction.partPhSp_y = [0, 0, 0, 0]
+        self.direction.partPhSp_x = [0, 0, 0, 0]
+        self.direction.partPhSp_y = [0, 0, 0, 0]
 
-    def create_g4_source_TO_REMOVE(self):
-        return opengate_core.GatePencilBeamSource()
+    def __initcpp__(self):
+        g4.GatePencilBeamSource.__init__(self)
 
-    def __init__(self, user_info):
-        super().__init__(user_info)
-        self.__check_phSpace_params(self.user_info.direction.partPhSp_x)
-        self.__check_phSpace_params(self.user_info.direction.partPhSp_y)
-
-    def __check_phSpace_params(self, paramV):
-        sigma = paramV[0]
-        theta = paramV[1]
-        epsilon = paramV[2]
-        conv = paramV[3]
-        pi = math.pi
-        if epsilon == 0:
-            raise ValueError(
-                "Ellipse area is 0 !!! Check epsilon parameter in IonPencilBeamSource."
-            )
-        if pi * sigma * theta < epsilon:
-            raise ValueError(
-                f"pi*sigma*theta < epsilon. Provided values: sigma = {sigma}, theta = {theta}, epsilon = {epsilon}."
-            )
-        if conv not in [0, 1]:
-            raise ValueError("convergence parameter can be only 0 or 1.")
+    def initialize(self, run_timing_intervals):
+        GenericSource.initialize(self, run_timing_intervals)
+        _check_ph_space_params(self.user_info.direction.partPhSp_x)
+        _check_ph_space_params(self.user_info.direction.partPhSp_y)
 
 
 class TreatmentPlanPBSource(SourceBase):
@@ -117,7 +119,7 @@ class TreatmentPlanPBSource(SourceBase):
             self.user_info.ion.E = words[3]
 
     def create_g4_source_TO_REMOVE(self):
-        return opengate_core.GateTreatmentPlanPBSource()
+        return g4.GateTreatmentPlanPBSource()
 
     def initialize(self, run_timing_intervals):
         # initialize
@@ -269,3 +271,6 @@ class TreatmentPlanPBSource(SourceBase):
         ).as_matrix()
 
         return spot_rotation
+
+
+process_cls(IonPencilBeamSource)
