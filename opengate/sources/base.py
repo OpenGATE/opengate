@@ -196,10 +196,6 @@ class SourceBase(GateObject):
         s = f"{self.user_info.name}: {self.user_info}"
         return s
 
-    def __getstate__(self):
-        state_dict = super().__getstate__()
-        return state_dict
-
     def __setstate__(self, state):
         super().__setstate__(state)
         self.__initcpp__()
