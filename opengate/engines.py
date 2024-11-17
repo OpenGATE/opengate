@@ -182,10 +182,10 @@ class SourceEngine(EngineBase):
             source.prepare_output()
 
     def can_predict_expected_number_of_event(self):
-        can_predict = True
-        for source in self.sources:
-            can_predict = can_predict and source.can_predict_number_of_events()
-        return can_predict
+        # can_predict = True
+        # for source in self.sources:
+        #     can_predict = can_predict and source.can_predict_number_of_events()
+        return all(s.can_predict_number_of_events() for s in self.sources)
 
 
 class PhysicsEngine(EngineBase):
