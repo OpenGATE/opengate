@@ -39,11 +39,12 @@ void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
 
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
+  auto track_id = track->GetTrackID();
   if (track->GetDefinition()->GetParticleName() == "gamma") {
     l.fIsTLEGamma = false;
-    l.fLastTrackId = 1;
+    //l.fLastTrackId = 1;
+    l.fLastTrackId = track_id;
   } else {
-    auto track_id = track->GetTrackID();
     if (track_id < l.fLastTrackId) {
       // if the track_id is lower than the lastTrack, it means all the following
       // tracks will be without TLE mode (tracks are processed LIFO), so we
