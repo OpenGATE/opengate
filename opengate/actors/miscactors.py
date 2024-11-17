@@ -11,6 +11,7 @@ from ..exception import fatal, warning
 from ..base import process_cls
 from anytree import Node, RenderTree
 
+
 def _setter_hook_stats_actor_output_filename(self, output_filename):
     # By default, write_to_disk is False.
     # However, if user actively sets the output_filename
@@ -264,7 +265,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.user_output.stats.write_data_if_requested()
 
 
-
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
     However, it is VERY time consuming. For SteppingAction, expect large performance drop.
@@ -277,12 +277,13 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
         do_something()
 """
+
+
 class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.number_of_killed_particles = 0
-
 
     def get_processed_output(self):
         d = {}
@@ -294,8 +295,7 @@ class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
         for k, v in self.get_processed_output().items():
             s = k + ": " + str(v)
             s += "\n"
-        return(s)
-
+        return s
 
 
 class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor):
@@ -311,7 +311,7 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             {
                 "doc": "If a particle succeded to exit the volume where the actor is attached without undergoing one the processes on the list, the particles and its potential secondaries are killed",
             },
-        )
+        ),
     }
 
     """
@@ -324,7 +324,9 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
         ActorBase.__init__(self, *args, **kwargs)
 
-        self._add_user_output(ActorOutputKillAccordingProcessesActor, "kill_interacting_particles")
+        self._add_user_output(
+            ActorOutputKillAccordingProcessesActor, "kill_interacting_particles"
+        )
         self.__initcpp__()
         self.list_of_volume_name = []
         self.number_of_killed_particles = 0
@@ -332,7 +334,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
     def __initcpp__(self):
         g4.GateKillAccordingProcessesActor.__init__(self, self.user_info)
         self.AddActions(
-            {"BeginOfRunAction","PreUserTrackingAction", "SteppingAction","EndSimulationAction"}
+            {
+                "BeginOfRunAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "EndSimulationAction",
+            }
         )
 
     def initialize(self):
@@ -349,24 +356,21 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
-        common_elements = set(self.processes_to_kill_if_no_occurence).intersection(self.processes_to_kill_if_occurence)
+        common_elements = set(self.processes_to_kill_if_no_occurence).intersection(
+            self.processes_to_kill_if_occurence
+        )
         if len(common_elements) > 0:
-            fatal(
-                "You put the same process on both lists !"
-            )
-
-
-
-
-
+            fatal("You put the same process on both lists !")
 
     def EndSimulationAction(self):
-        self.user_output.kill_interacting_particles.number_of_killed_particles = self.number_of_killed_particles
-
+        self.user_output.kill_interacting_particles.number_of_killed_particles = (
+            self.number_of_killed_particles
+        )
 
     def __str__(self):
         s = self.user_output["kill_non_interacting_particles"].__str__()
         return s
+
 
 class KillActor(ActorBase, g4.GateKillActor):
 
@@ -396,7 +400,6 @@ class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
         super().__init__(*args, **kwargs)
         self.number_of_killed_particles = 0
 
-
     def get_processed_output(self):
         d = {}
         d["particles killed"] = self.number_of_killed_particles
@@ -407,12 +410,12 @@ class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
         for k, v in self.get_processed_output().items():
             s = k + ": " + str(v)
             s += "\n"
-        return(s)
+        return s
 
 
-
-class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingParticleActor):
-
+class KillNonInteractingParticleActor(
+    ActorBase, g4.GateKillNonInteractingParticleActor
+):
     """
     If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
     without interaction, the particle is killed. Warning : this actor being based on energy measurement, Rayleigh photon
@@ -421,7 +424,9 @@ class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingPartic
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles")
+        self._add_user_output(
+            ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles"
+        )
         self.__initcpp__()
         self.list_of_volume_name = []
         self.number_of_killed_particles = 0
@@ -429,7 +434,12 @@ class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingPartic
     def __initcpp__(self):
         g4.GateKillNonInteractingParticleActor.__init__(self, self.user_info)
         self.AddActions(
-            {"StartSimulationAction","PreUserTrackingAction", "SteppingAction","EndOfSimulationAction"}
+            {
+                "StartSimulationAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "EndOfSimulationAction",
+            }
         )
 
     def initialize(self):
@@ -447,10 +457,10 @@ class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingPartic
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
 
-
     def EndSimulationAction(self):
-        self.user_output.kill_non_interacting_particles.number_of_killed_particles = self.number_of_killed_particles
-
+        self.user_output.kill_non_interacting_particles.number_of_killed_particles = (
+            self.number_of_killed_particles
+        )
 
     def __str__(self):
         s = self.user_output["kill_non_interacting_particles"].__str__()
@@ -462,7 +472,6 @@ def _setter_hook_particles(self, value):
         return [value]
     else:
         return list(value)
-
 
 
 class SplittingActorBase(ActorBase):
@@ -566,10 +575,12 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
         self.InitializeCpp()
 
 
-class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteractionSplittingActor):
+class LastVertexInteractionSplittingActor(
+    ActorBase, g4.GateLastVertexInteractionSplittingActor
+):
     """This splitting actor proposes an interaction splitting at the last particle vertex before the exit
-        of the biased volume.  This actor can be usefull for application where collimation are important,
-       such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
+     of the biased volume.  This actor can be usefull for application where collimation are important,
+    such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
     """
 
     user_info_defaults = {
@@ -579,22 +590,18 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
                 "doc": "Defines the number of particles exiting at each split process. Unlike other split actors, this splitting factor counts particles that actually exit, not just those generated.",
             },
         ),
-
         "angular_kill": (
             False,
             {
                 "doc": "If enabled, particles with momentum outside a specified angular range are killed.",
             },
         ),
-
         "max_theta": (
             90 * g4_units.deg,
             {
                 "doc": "Defines the maximum angle (in degrees) from a central axis within which particles are retained. Particles with momentum beyond this angle are removed. The angular range spans from 0 to max_theta, measured from the vector_director",
             },
         ),
-
-
         "vector_director": (
             [0, 0, 1],
             {
@@ -613,10 +620,7 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
                 "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC configurations.",
             },
         ),
-
-
     }
-
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -625,13 +629,16 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
 
     def __initcpp__(self):
         g4.GateLastVertexInteractionSplittingActor.__init__(self, {"name": self.name})
-        self.AddActions({"BeginOfRunAction",
-                         "BeginOfEventAction",
-                         "PreUserTrackingAction",
-                         "SteppingAction",
-                         "PostUserTrackingAction",
-                         "EndOfEventAction"})
-
+        self.AddActions(
+            {
+                "BeginOfRunAction",
+                "BeginOfEventAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "PostUserTrackingAction",
+                "EndOfEventAction",
+            }
+        )
 
     def initialize(self):
         ActorBase.initialize(self)
@@ -647,6 +654,7 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
+
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     # hints for IDE

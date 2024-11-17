@@ -79,7 +79,8 @@ public:
     //			assert(1==0);
     //			std::ostringstream str;
     //			std::cerr << boost::stacktrace::stacktrace() <<
-    //std::endl; 			str << boost::stacktrace::stacktrace(); 			stacktrace=str.str();
+    // std::endl; 			str << boost::stacktrace::stacktrace();
+    // stacktrace=str.str();
   }
 
   //		virtual const char *what() const noexcept override
@@ -579,11 +580,11 @@ private:
 // class iterator_base_less {
 //	public:
 //		bool operator()(const typename tree<T,
-//tree_node_allocator>::iterator_base& one, 						  const typename tree<T,
-//tree_node_allocator>::iterator_base& two) const
+// tree_node_allocator>::iterator_base& one,
+// const typename tree<T, tree_node_allocator>::iterator_base& two) const
 //			{
 //			txtout << "operatorclass<" << one.node < two.node <<
-//std::endl; 			return one.node < two.node;
+// std::endl; 			return one.node < two.node;
 //			}
 // };
 
@@ -609,7 +610,8 @@ private:
 //
 // template <class T, class tree_node_allocator>
 // bool operator>(const typename tree<T, tree_node_allocator>::iterator_base&
-// one, 					const typename tree<T, tree_node_allocator>::iterator_base& two)
+// one, 					const typename tree<T,
+// tree_node_allocator>::iterator_base& two)
 // 	{
 // 	txtout << "operator> " << one.node < two.node << std::endl;
 // 	if(one.node > two.node) return true;
@@ -3202,7 +3204,7 @@ tree<T, tree_node_allocator>::fixed_depth_iterator::operator--() {
   //		this->node=this->node->prev_sibling;
   //		assert(this->node!=0);
   //		if(this->node->parent==0 && this->node->prev_sibling==0) // head
-  //element 			this->node=0;
+  // element 			this->node=0;
   //		}
   //	else {
   //		tree_node *par=this->node->parent;

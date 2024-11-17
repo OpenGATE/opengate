@@ -42,7 +42,7 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
   auto track_id = track->GetTrackID();
   if (track->GetDefinition()->GetParticleName() == "gamma") {
     l.fIsTLEGamma = false;
-    //l.fLastTrackId = 1;
+    // l.fLastTrackId = 1;
     l.fLastTrackId = track_id;
   } else {
     if (track_id < l.fLastTrackId) {
