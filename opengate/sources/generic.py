@@ -155,7 +155,8 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         "direction_relative_to_attached_volume": (
             False,
             {
-                "doc": "When the volume is move (with dynamic parametrisation) should we update the direction of the particle or not?"
+                "doc": "Should we update the direction of the particle "
+                       "when the volume is moved (with dynamic parametrisation)?"
             },
         ),
         "position": (
