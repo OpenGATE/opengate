@@ -473,7 +473,9 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
             else:
                 # create an entry_start array with the correct number of start entries
                 # all entries are spaced by the number of particles/thread
-                n_threads = self.simulation.phsp_source.number_of_threads
+                # FIXME: check this line. I corrected it because it seemed like a typo (NK)
+                n_threads = self.simulation.number_of_threads
+                # n_threads = self.simulation.phsp_source.number_of_threads
                 step = np.ceil(self.n / n_threads) + 1  # Specify the increment value
                 self.entry_start = [i * step for i in range(n_threads)]
 
