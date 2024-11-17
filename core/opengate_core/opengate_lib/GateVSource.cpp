@@ -61,7 +61,9 @@ double GateVSource::CalcNextTime(double current_simulation_time) {
   return next_time;
 }
 
-void GateVSource::PrepareNextRun() { SetOrientationAccordingToMotherVolume(); }
+void GateVSource::PrepareNextRun() {
+  SetOrientationAccordingToAttachedVolume();
+}
 
 double GateVSource::PrepareNextTime(double current_simulation_time) {
   Fatal("PrepareNextTime must be overloaded");
@@ -72,7 +74,7 @@ void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
   Fatal("GeneratePrimaries must be overloaded");
 }
 
-void GateVSource::SetOrientationAccordingToMotherVolume() {
+void GateVSource::SetOrientationAccordingToAttachedVolume() {
   auto &l = GetThreadLocalData();
   l.fGlobalRotation = fLocalRotation;
   l.fGlobalTranslation = fLocalTranslation;
@@ -87,16 +89,18 @@ void GateVSource::SetOrientationAccordingToMotherVolume() {
       fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
 }
 
-long GateVSource::GetExpectedNumberOfEvents(TimeIntervals simulation_times) {
+unsigned long
+GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &simulation_times) {
   if (fMaxN != 0)
     return fMaxN;
-  long n = 0;
+  unsigned long n = 0;
   for (auto time_interval : simulation_times)
     n += GetExpectedNumberOfEvents(time_interval);
   return n;
 }
 
-long GateVSource::GetExpectedNumberOfEvents(TimeInterval time_interval) {
+unsigned long
+GateVSource::GetExpectedNumberOfEvents(const TimeInterval &time_interval) {
   long n = 0;
   auto t0 = time_interval.first / CLHEP::s;
   auto t1 = time_interval.second / CLHEP::s;

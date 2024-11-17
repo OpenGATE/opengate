@@ -34,7 +34,7 @@ public:
 
   virtual void UpdateActivity(double time);
 
-  double CalcNextTime(double current_simulation_time);
+  virtual double CalcNextTime(double current_simulation_time);
 
   virtual void PrepareNextRun();
 
@@ -42,11 +42,13 @@ public:
 
   virtual void GeneratePrimaries(G4Event *event, double time);
 
-  virtual void SetOrientationAccordingToMotherVolume();
+  virtual void SetOrientationAccordingToAttachedVolume();
 
-  virtual long GetExpectedNumberOfEvents(TimeIntervals time_intervals);
+  virtual unsigned long
+  GetExpectedNumberOfEvents(const TimeIntervals &time_intervals);
 
-  virtual long GetExpectedNumberOfEvents(TimeInterval time_interval);
+  virtual unsigned long
+  GetExpectedNumberOfEvents(const TimeInterval &time_interval);
 
   std::string fName;
   double fStartTime;

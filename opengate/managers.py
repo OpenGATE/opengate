@@ -51,7 +51,7 @@ from .sources.generic import SourceBase, GenericSource
 from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelsSource
 from .sources.gansources import GANSource, GANPairsSource
-from .sources.beamsources import IonPencilBeamSource
+from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.phidsources import PhotonFromIonDecaySource
 
 source_types = {
@@ -62,6 +62,7 @@ source_types = {
     "GANPairsSource": GANPairsSource,
     "IonPencilBeamSource": IonPencilBeamSource,
     "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
+    "TreatmentPlanPBSource": TreatmentPlanPBSource,
 }
 
 from .geometry.volumes import (

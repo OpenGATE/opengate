@@ -373,7 +373,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   auto rotation = DictGetMatrix(user_info, "rotation");
 
   // save local translation and rotation (will be used in
-  // SetOrientationAccordingToMotherVolume)
+  // SetOrientationAccordingToAttachedVolume)
   fLocalTranslation = translation;
   fLocalRotation = ConvertToG4RotationMatrix(rotation);
 
