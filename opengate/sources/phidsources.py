@@ -11,6 +11,7 @@ import urllib
 import copy
 import os
 import inspect
+from ..base import process_cls
 
 # the following packages seems to take a bit of time to load
 rd = LazyModuleLoader("radioactivedecay")
@@ -760,3 +761,6 @@ def phid_build_one_sub_source(stype, source, daughter, ene, w, first_nuclide):
     }
 
     return s
+
+
+process_cls(PhotonFromIonDecaySource)

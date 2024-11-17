@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from test053_phid_helpers2 import *
+import opengate as gate
 
 
 def main(dependency="test053_phid_10_all_ref_mt.py"):

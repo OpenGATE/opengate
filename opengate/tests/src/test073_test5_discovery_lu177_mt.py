@@ -3,6 +3,7 @@
 
 from test073_helpers import *
 from opengate.tests import utility
+from opengate.sources.base import set_source_rad_energy_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
