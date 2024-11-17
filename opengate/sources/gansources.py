@@ -295,19 +295,21 @@ class GANSource(GenericSource, g4.GateGANSource):
         "energy_min_threshold": (
             -1,
             {
-                "doc": "Minimal energy threshold, if the generator create particle with less that this energy, the particle is skipped"
+                "doc": "Minimum energy threshold. If the generator creates particles with less than this energy, "
+                       "the particle is skipped"
             },
         ),
         "energy_max_threshold": (
             sys.float_info.max,
             {
-                "doc": "Maximal energy threshold, if the generator create particle with higher energy, the particle is skipped"
+                "doc": "Maximum energy threshold. If the generator creates particles with a higher energy, "
+                       "the particle is skipped"
             },
         ),
         "batch_size": (
             10000,
             {
-                "doc": "Batch size of the GAN generated particles",
+                "doc": "Batch size of the GAN generated particles. ",
             },
         ),
         "position_keys": (
@@ -341,21 +343,21 @@ class GANSource(GenericSource, g4.GateGANSource):
         "verbose_generator": (
             False,
             {
-                "doc": "Print information every time the generator generate batch of particles"
+                "doc": "Print information every time the generator generates a batch of particles. "
             },
         ),
         "use_time": (
             False,
-            {"doc": "Consider the particle time given by the generator"},
+            {"doc": "Consider the particle time given by the generator. "},
         ),
         "use_weight": (
             False,
-            {"doc": "Consider the particle weight given by the generator"},
+            {"doc": "Consider the particle weight given by the generator. "},
         ),
         "cond_image": (
             None,
             {
-                "doc": "Filename of the image activity distribution to use for the Conditional GAN"
+                "doc": "Filename of the activity distribution (provided as image) to use for the conditional GAN"
             },
         ),
         "cond_debug": (
@@ -378,7 +380,7 @@ class GANSource(GenericSource, g4.GateGANSource):
         "gpu_mode": (
             "gpu",
             {
-                "doc": "Use gpu or not for the GAN",
+                "doc": "Use the GPU or CPU for the GAN, or let GATE decide. ",
                 "allowed_values": ("auto", "cpu", "gpu"),
             },
         ),
