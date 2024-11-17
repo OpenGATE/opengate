@@ -192,10 +192,6 @@ class SourceBase(GateObject):
     def __initcpp__(self):
         """Nothing to do in the base class."""
 
-    def __str__(self):
-        s = f"{self.user_info.name}: {self.user_info}"
-        return s
-
     def __setstate__(self, state):
         super().__setstate__(state)
         self.__initcpp__()
