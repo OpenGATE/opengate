@@ -383,7 +383,7 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
         "PDGCode_key": (
             "PDGCode",
             {
-                "doc": "Key in the phsp that contain the PDGCode of the particle (particle type) "
+                "doc": "Key in the phsp that contains the PDGCode of the particle (particle type) "
                 "see https://pdg.lbl.gov/2007/reviews/montecarlorpp.pdf",
             },
         ),
