@@ -192,23 +192,23 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         g4.GateGenericSource.__init__(self)
 
     def initialize(self, run_timing_intervals):
-        if not isinstance(self.user_info.position, Box):
+        if not isinstance(self.position, Box):
             fatal(
-                f"Generic Source: user_info.position must be a Box, but is: {self.user_info.position}"
+                f"Generic Source: user_info.position must be a Box, but is: {self.position}"
             )
-        if not isinstance(self.user_info.direction, Box):
+        if not isinstance(self.direction, Box):
             fatal(
-                f"Generic Source: user_info.direction must be a Box, but is: {self.user_info.direction}"
+                f"Generic Source: user_info.direction must be a Box, but is: {self.direction}"
             )
-        if not isinstance(self.user_info.energy, Box):
+        if not isinstance(self.energy, Box):
             fatal(
-                f"Generic Source: user_info.energy must be a Box, but is: {self.user_info.energy}"
+                f"Generic Source: user_info.energy must be a Box, but is: {self.energy}"
             )
 
-        if self.user_info.particle == "back_to_back":
+        if self.particle == "back_to_back":
             # force the energy to 511 keV
-            self.user_info.energy.type = "mono"
-            self.user_info.energy.mono = 511 * g4_units.keV
+            self.energy.type = "mono"
+            self.energy.mono = 511 * g4_units.keV
 
         # check energy type
         l = [
@@ -223,9 +223,9 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
-        if not self.user_info.energy.type in l:
+        if not self.energy.type in l:
             fatal(
-                f"Cannot find the energy type {self.user_info.energy.type} for the source {self.user_info.name}.\n"
+                f"Cannot find the energy type {self.energy.type} for the source {self.name}.\n"
                 f"Available types are {l}"
             )
 
@@ -235,76 +235,77 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             "histogram",
             "interpolated",
         ]
-        if self.user_info.energy.spectrum_type is not None:
-            if self.user_info.energy.spectrum_type not in valid_spectrum_types:
+        if self.energy.spectrum_type is not None:
+            if self.energy.spectrum_type not in valid_spectrum_types:
                 fatal(
-                    f"Cannot find the energy spectrum type {self.user_info.energy.spectrum_type} for the source {self.user_info.name}.\n"
+                    f"Cannot find the energy spectrum type {self.energy.spectrum_type} for the source {self.name}.\n"
                     f"Available types are {valid_spectrum_types}"
                 )
 
         # special case for beta plus energy spectra
         # FIXME put this elsewhere
-        if self.user_info.particle == "e+":
-            if self.user_info.energy.type in all_beta_plus_radionuclides:
+        if self.particle == "e+":
+            if self.energy.type in all_beta_plus_radionuclides:
                 data = read_beta_plus_spectra(self.user_info.energy.type)
                 ene = data[:, 0] / 1000  # convert from KeV to MeV
                 proba = data[:, 1]
                 cdf, total = compute_cdf_and_total_yield(proba, ene)
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
-                self.user_info.energy.is_cdf = True
+                self.energy.is_cdf = True
                 self.SetEnergyCDF(ene)
                 self.SetProbabilityCDF(cdf)
 
         self.update_tac_activity()
 
         # histogram parameters: histogram_weight, histogram_energy"
-        ene = self.user_info.energy
+        ene = self.energy
         if ene.type == "histogram":
             if len(ene.histogram_weight) != len(ene.histogram_energy):
                 fatal(
-                    f"For the source {self.user_info.name} energy, "
+                    f'For the source {self.name}, the parameters "energy", '
                     f'"histogram_energy" and "histogram_weight" must have the same length'
                 )
 
         # check direction type
         l = ["iso", "histogram", "momentum", "focused", "beam2d"]
-        if not self.user_info.direction.type in l:
+        if not self.direction.type in l:
             fatal(
-                f"Cannot find the direction type {self.user_info.direction.type} for the source {self.user_info.name}.\n"
+                f"Cannot find the direction type {self.direction.type} for the source {self.name}.\n"
                 f"Available types are {l}"
             )
 
         # logic for half life and user_particle_life_time
-        ui = self.user_info
-        if ui.half_life > 0:
+        if self.half_life > 0:
             # if the user set the half life and not the user_particle_life_time
             # we force the latter to zero
-            if ui.user_particle_life_time < 0:
-                ui.user_particle_life_time = 0
+            if self.user_particle_life_time < 0:
+                self.user_particle_life_time = 0
 
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
 
-        if self.user_info.n > 0 and self.user_info.activity > 0:
-            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
-        if self.user_info.n == 0 and self.user_info.activity == 0:
-            fatal(f"Choose either n or activity : {self.user_info}")
-        if self.user_info.activity > 0:
-            self.user_info.n = 0
-        if self.user_info.n > 0:
-            self.user_info.activity = 0
+        if self.n > 0 and self.activity > 0:
+            fatal(f"Cannot use both the two parameters 'n' and 'activity' at the same time. ")
+        if self.n == 0 and self.activity == 0:
+            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
+        if self.activity > 0:
+            self.n = 0
+        if self.n > 0:
+            self.activity = 0
         # warning for non-used ?
 
         # check confine
-        if self.user_info.position.confine:
-            if self.user_info.position.type == "point":
+        if self.position.confine:
+            if self.position.type == "point":
                 warning(
-                    f"In source {self.user_info.name}, "
+                    f"In source {self.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
 
     def check_ui_activity(self, ui):
+        # FIXME: This should rather be a function than a method
+        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
         if ui.n > 0 and ui.activity > 0:
             fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
         if ui.n == 0 and ui.activity == 0:
@@ -315,6 +316,8 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             ui.activity = 0
 
     def check_confine(self, ui):
+        # FIXME: This should rather be a function than a method
+        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
         if ui.position.confine:
             if ui.position.type == "point":
                 warning(
@@ -329,22 +332,20 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         self.total_skipped_events = self.GetTotalSkippedEvents()
 
     def update_tac_activity(self):
-        ui = self.user_info
-        if ui.tac_times is None and ui.tac_activities is None:
+        if self.tac_times is None and self.tac_activities is None:
             return
-        n = len(ui.tac_times)
-        if n != len(ui.tac_activities):
+        if len(self.tac_times) != len(self.tac_activities):
             fatal(
-                f"option tac_activities must have the same size as tac_times in source '{ui.name}'"
+                f"option tac_activities must have the same size as tac_times in source '{self.name}'"
             )
         # it is important to set the starting time for this source as the tac
         # may start later than the simulation timing
-        ui.start_time = ui.tac_times[0]
-        ui.activity = ui.tac_activities[0]
-        self.SetTAC(ui.tac_times, ui.tac_activities)
+        self.start_time = self.tac_times[0]
+        self.activity = self.tac_activities[0]
+        self.SetTAC(self.tac_times, self.tac_activities)
 
     def can_predict_number_of_events(self):
-        aa = self.user_info.direction.acceptance_angle
+        aa = self.direction.acceptance_angle
         if aa.intersection_flag or aa.normal_flag:
             if aa.skip_policy == "ZeroEnergy":
                 return True
