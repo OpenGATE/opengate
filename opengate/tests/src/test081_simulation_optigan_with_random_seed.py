@@ -85,6 +85,7 @@ if __name__ == "__main__":
 
     sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
     sim.run()
+    sim.user_hook_after_run = gate.userhooks.user_hook_dump_material_properties
 
     # *** 2 ways to use OptiGAN ***
 
