@@ -420,8 +420,8 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     }
 
     def __init__(self, *args, **kwargs):
-        self.__initcpp__()
         super().__init__(self, *args, **kwargs)
+        self.__initcpp__()
         # there will be one particle generator per thread
         self.particle_generator = {}
         # number of entries in the phsp root file
