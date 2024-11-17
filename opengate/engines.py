@@ -135,8 +135,8 @@ class SourceEngine(EngineBase):
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
         for source in source_manager.sources.values():
-            source.add_to_source_manager(ms)
             source.initialize(self.run_timing_intervals)
+            source.add_to_source_manager(ms)
             # store all the sources (will be used later by SimulationOutput)
             self.sources.append(source)
 
@@ -939,16 +939,17 @@ class SimulationOutput:
                 {} for _ in range(simulation_engine.simulation.number_of_threads + 1)
             ]
             for source in simulation_engine.source_engine.sources:
-                n = source.user_info.name
+                n = source.name
                 if n in th:
                     th[n] += 1
                 else:
                     th[n] = 0
                 self.sources_by_thread[th[n]][n] = source
+            self.sources = self.sources_by_thread[0]
         else:
             s = {}
             for source in simulation_engine.source_engine.sources:
-                s[source.user_info.name] = source
+                s[source.name] = source
             self.sources = s
 
     def get_actor(self, name):

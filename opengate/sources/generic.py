@@ -294,6 +294,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         if self.user_info.n > 0:
             self.user_info.activity = 0
         # warning for non-used ?
+
         # check confine
         if self.user_info.position.confine:
             if self.user_info.position.type == "point":

@@ -52,6 +52,7 @@ from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelsSource
 from .sources.gansources import GANSource, GANPairsSource
 from .sources.beamsources import IonPencilBeamSource
+from .sources.phidsources import PhotonFromIonDecaySource
 
 source_types = {
     "GenericSource": GenericSource,
@@ -60,6 +61,7 @@ source_types = {
     "GANSource": GANSource,
     "GANPairsSource": GANPairsSource,
     "IonPencilBeamSource": IonPencilBeamSource,
+    "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
 }
 
 from .geometry.volumes import (
@@ -1747,7 +1749,12 @@ class Simulation(GateObject):
 
             # FIXME: temporary workaround to copy from output the additional
             # information of the source (such as fTotalSkippedEvents)
+            s = {}
             for source in self.source_manager.sources.values():
+                # WARNING: when multithread, the sources are stored in
+                # simulation_output.sources_by_thread
+                # The sources of thread=0 are also available in simulation_output.sources
+                # and they are retrieved here by get_source
                 try:
                     s = output.get_source(source.name)
                 except:

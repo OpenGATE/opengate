@@ -70,6 +70,7 @@ def main(dependency="test053_phid_10_all_ref_mt.py"):
         model_index=-1,
         tol=0.055,
         erange=[50, 500],
+        n_tol=0.35,
     )
 
     test_ok(is_ok)

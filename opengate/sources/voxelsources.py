@@ -1,6 +1,4 @@
 import itk
-from box import Box
-from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
 from .generic import GenericSource

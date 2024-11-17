@@ -3,6 +3,7 @@
 
 from test053_phid_helpers1 import *
 import os
+import opengate_core as g4
 
 paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -77,7 +78,7 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     sec = g4_units.second
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
-    activity = activity_in_Bq * Bq / sim.phsp_source.number_of_threads
+    activity = activity_in_Bq * Bq / sim.number_of_threads
     s1 = sim.add_source("GenericSource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
@@ -98,7 +99,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
     # sources
-    activity = activity_in_Bq * Bq / sim.phsp_source.number_of_threads
+    activity = activity_in_Bq * Bq / sim.number_of_threads
     s1 = sim.add_source("PhotonFromIonDecaySource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
@@ -114,7 +115,14 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
 
 
 def compare_root_energy(
-    root_ref, root_model, start_time, end_time, model_index=130, tol=0.008, erange=None
+    root_ref,
+    root_model,
+    start_time,
+    end_time,
+    model_index=130,
+    tol=0.008,
+    erange=None,
+    n_tol=0.15,
 ):
     # read root ref
     print(root_ref)
@@ -151,6 +159,16 @@ def compare_root_energy(
 
     k = "KineticEnergy"
     is_ok = compare_branches_values(ref_g[k], tree[k], k, k, tol=tol)
+
+    # compare nb
+    r = np.fabs(len(ref_g) - tree.num_entries) / len(ref_g)
+    b = r < n_tol
+    print()
+    print_test(
+        b,
+        f"Numbers of entries {tree.num_entries} vs {len(ref_g)} -> {r*100:.2f}% (tol={n_tol*100}%)",
+    )
+    is_ok = is_ok and b
 
     # plot histo
     keV = g4_units.keV
