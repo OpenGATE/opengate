@@ -136,7 +136,7 @@ class SourceEngine(EngineBase):
         source_manager = self.simulation_engine.simulation.source_manager
         for source in source_manager.sources.values():
             source.initialize(self.run_timing_intervals)
-            source.add_to_source_manager(ms)
+            ms.AddSource(source)
             # store all the sources (will be used later by SimulationOutput)
             self.sources.append(source)
 
