@@ -213,7 +213,7 @@ def digest_user_info_defaults(cls):
         docstring = ""
     cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
     docstring += cls.__user_info_doc__
-    docstring += 20 * "*"
+    # docstring += 20 * "*"
     docstring += "\n"
     cls.__doc__ = docstring
 
