@@ -49,7 +49,7 @@ def _setter_hook_input_phsp_actor(self, input_phsp_actor):
             and self.simulation != input_phsp_actor.simulation
         ):
             fatal(
-                "The input_phsp_actor refers to a different simulation than this oOtiGAN. "
+                "The input_phsp_actor refers to a different simulation than this OtiGAN. "
             )
         self.simulation = input_phsp_actor.simulation
         self.root_file_path = input_phsp_actor.get_output_path()
@@ -346,7 +346,7 @@ class OptiGAN(GateObject):
         csv_files = sorted(
             [
                 file
-                for file in os.listdir(self.optigan_csv_output_folder)
+                for file in os.listdir(self.get_absolute_path_to_folder(self.optigan_csv_output_folder))
                 if file.endswith(".csv")
             ],
             key=extract_number,
@@ -354,7 +354,7 @@ class OptiGAN(GateObject):
         print(csv_files)
 
         for file_index, csv_file in enumerate(csv_files):
-            df = pd.read_csv(self.optigan_csv_output_folder / csv_file)
+            df = pd.read_csv(self.get_absolute_path_to_folder(self.optigan_csv_output_folder) / csv_file)
             out_path = self.get_absolute_path_to_folder(
                 self.optigan_plots_folder / f"event{file_index + 1}"
             )
@@ -390,8 +390,8 @@ class OptiGAN(GateObject):
     def generate_and_save_optigan_output(self):
 
         # DEBUG path of optigan input. DELETE later
-        print(f"The path where OptiGAN is looking for input files is {self.simulation.get_output_path(
-            self.optigan_input_folder)}")
+        # print(f"The path where OptiGAN is looking for input files is {self.simulation.get_output_path(
+        #     self.optigan_input_folder)}")
 
         # FIX_ME : The path to optigan_input_folder is wrong.
         # should be absolute path instead of self.simulation.get_output_ath
@@ -484,8 +484,8 @@ class OptiGAN(GateObject):
 
         # Commented to test if the input is being saved properly.
         #
-        # if create_output_graphs:
-        #     self.generate_and_save_optigan_graphs()
+        if create_output_graphs:
+            self.generate_and_save_optigan_graphs()
 
     # This is just a temporary method to get the details printed
     # without creating optigan outputs.
