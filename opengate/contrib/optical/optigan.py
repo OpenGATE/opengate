@@ -194,9 +194,9 @@ class OptiGAN(GateObject):
             "auto",
             {
                 "doc": "The device to be used by torch. "
-                       "With 'auto', OptiGAN will try to get a GPU device "
-                       "and fall back to CPU if no GPU is available. ",
-                "allowed_values": ("gpu", "cpu", "auto")
+                "With 'auto', OptiGAN will try to get a GPU device "
+                "and fall back to CPU if no GPU is available. ",
+                "allowed_values": ("gpu", "cpu", "auto"),
             },
         ),
     }
@@ -263,7 +263,6 @@ class OptiGAN(GateObject):
             self.get_absolute_path_to_folder(self.optigan_input_folder)
         )
         self.device = get_torch_device(self.torch_device)
-
 
     def print_details_of_events(self):
         """
