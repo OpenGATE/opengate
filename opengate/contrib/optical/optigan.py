@@ -193,6 +193,10 @@ class OptiGAN(GateObject):
 
         self.events = {}
         self.extracted_events_details = []
+
+        # Holds generator model
+        self.generator = None
+
         # Arguments for the GAN.
         self.gan_arguments = {
             "noise_dimension": 10,  # input_dim to GAN
@@ -225,6 +229,8 @@ class OptiGAN(GateObject):
 
         # Sub-folders (relative to output_folder
         self.optigan_input_folder = Path("optigan_inputs")
+        # DEBUG statement. DELETE later
+        print(f"The optigan input folder path in def initialize is {self.optigan_input_folder}")
         self.optigan_output_folder = Path("optigan_outputs")
         self.optigan_csv_output_folder = self.optigan_output_folder / "csv_files"
         self.optigan_plots_folder = self.optigan_output_folder / "plots"
@@ -329,6 +335,9 @@ class OptiGAN(GateObject):
         # Set the model to evaluation mode.
         generator.eval()
 
+        # DEBUG statement. DELETE later
+        print(f"The generator has been successfully loaded. ")
+
         return generator
 
     # Plot graphs of OptiGAN outputs.
@@ -380,13 +389,20 @@ class OptiGAN(GateObject):
     # Generates output of OptiGAN.
     def generate_and_save_optigan_output(self):
 
+        # DEBUG path of optigan input. DELETE later
+        print(f"The path where OptiGAN is looking for input files is {self.simulation.get_output_path(
+            self.optigan_input_folder)}")
+
+        # FIX_ME : The path to optigan_input_folder is wrong.
+        # should be absolute path instead of self.simulation.get_output_ath
+
         # Sort and list CSV files.
         csv_files = sorted(
             [
                 file
                 for file in os.listdir(
-                    self.simulation.get_output_path(
-                        self.optigan_input_folder, is_file_or_directory="directory"
+                    self.get_absolute_path_to_folder(
+                        self.optigan_input_folder
                     )
                 )
                 if file.endswith(".csv")
@@ -461,11 +477,12 @@ class OptiGAN(GateObject):
         self.extracted_events_details = self.extract_event_details()
         # self.pretty_print_events()
         # self.print_details_of_events()
-        self.save_optigan_inputs()
+        self.save_optigan_inputs() # works as intended
+        self.generator = self.create_generator() # works as intended
+        self.generate_and_save_optigan_output()
+
 
         # Commented to test if the input is being saved properly.
-        # self.generator = self.create_generator()
-        # self.generate_and_save_optigan_output()
         #
         # if create_output_graphs:
         #     self.generate_and_save_optigan_graphs()
