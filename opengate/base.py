@@ -208,7 +208,7 @@ def digest_user_info_defaults(cls):
 
     if cls.__doc__ is not None:
         docstring = cls.__doc__
-        docstring += "\n" + 20 * "*" + "\n\n"
+        docstring += "\n\n"
     else:
         docstring = ""
     cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
@@ -334,25 +334,31 @@ def _make_property(property_name, default_value, options=None, container_dict=No
 
     return prop
 
+def convert_default_value_to_string(default_value):
+    default_value_str = str(default_value)
+    default_value_str = default_value_str.replace("\n", ", ")
+    return default_value_str
+
 
 def make_docstring_for_user_info(name, default_value, options):
-    begin_of_line = "* "
+    begin_of_line = "  * "
     docstring = f"{name}"
     if "deprecated" in options:
-        docstring += f"\n\n{begin_of_line}Deprecated: {options['deprecated']}\n\n"
+        docstring += ":\n\n"
+        docstring += f"{begin_of_line}Deprecated: {options['deprecated']}\n"
     else:
         if "required" in options and options["required"] is True:
             docstring += " (must be provided)"
         if "read_only" in options and options["read_only"] is True:
             docstring += " (set internally, i.e. read-only)"
         docstring += ":\n\n"
-        docstring += f"{begin_of_line}Default value: {default_value}\n\n"
+        docstring += f"{begin_of_line}Default value: {convert_default_value_to_string(default_value)}\n"
         if "allowed_values" in options:
             docstring += (
-                f"{begin_of_line}Allowed values: {options['allowed_values']}\n\n"
+                f"{begin_of_line}Allowed values: {options['allowed_values']}\n"
             )
         if "doc" in options:
-            docstring += f"{begin_of_line}Description: {options['doc']}\n\n"
+            docstring += f"{begin_of_line}Description: {options['doc']}\n"
     return docstring
 
 
@@ -361,7 +367,10 @@ def make_docstring(cls, user_info_defaults):
     for k, v in user_info_defaults.items():
         default_value = v[0]
         options = v[1]
+        docstring += "* "
         docstring += make_docstring_for_user_info(k, default_value, options)
+        docstring += "\n"
+    docstring += "\n"
     return docstring
 
 
