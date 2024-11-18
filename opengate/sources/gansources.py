@@ -395,10 +395,6 @@ class GANSource(GenericSource, g4.GateGANSource):
 
     def initialize(self, run_timing_intervals):
         # FIXME -> check input user_info
-
-        tid = g4.G4GetThreadId()
-        print(f"initialize tid={tid}")
-
         # initialize the mother class generic source
         GenericSource.initialize(self, run_timing_intervals)
 
@@ -416,27 +412,6 @@ class GANSource(GenericSource, g4.GateGANSource):
 
         # set the parameters to the cpp side
         self.SetGeneratorInfo(gen.gan_info)
-
-    """def __getstate__(self):
-        state_dict = super().__getstate__()
-        print("get state GANSource", state_dict)
-        return state_dict
-
-    def __setstate__(self, state):
-        print("set state GAN SOURCE", state)
-        super().__setstate__(state)
-        self.__initcpp__()"""
-
-    """def prepare_output(self):
-        GenericSource.prepare_output(self)
-        # store the output from G4 object
-        print("prepare output")
-        self.total_zero_events = self.GetTotalZeroEvents()
-        self.total_skipped_events = self.GetTotalSkippedEvents()
-        # self.user_info.total_zero_events = self.GetTotalZeroEvents()
-        # self.user_info.total_skipped_events = self.GetTotalSkippedEvents()
-        print(self.GetTotalZeroEvents())
-        print(self.GetTotalSkippedEvents())"""
 
     def set_default_generator(self):
         # non-conditional generator
