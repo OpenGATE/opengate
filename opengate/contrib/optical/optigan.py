@@ -14,7 +14,6 @@ from opengate.exception import fatal
 from opengate.utility import delete_folder_contents
 
 
-
 def extract_number(filename):
     """
     Extracts the number from the filename.
@@ -60,6 +59,7 @@ def _setter_hook_input_phsp_actor(self, input_phsp_actor):
         self.simulation = input_phsp_actor.simulation
         self.root_file_path = input_phsp_actor.get_output_path()
     return input_phsp_actor
+
 
 def process_root_output_into_events(df_combined):
     """
@@ -238,7 +238,6 @@ class OptiGAN(GateObject):
             self.get_absolute_path_to_folder(self.optigan_input_folder)
         )
 
-
     def print_details_of_events(self):
         """
         Helper method to print event info.
@@ -334,14 +333,19 @@ class OptiGAN(GateObject):
         csv_files = sorted(
             [
                 file
-                for file in os.listdir(self.get_absolute_path_to_folder(self.optigan_csv_output_folder))
+                for file in os.listdir(
+                    self.get_absolute_path_to_folder(self.optigan_csv_output_folder)
+                )
                 if file.endswith(".csv")
             ],
             key=extract_number,
         )
 
         for file_index, csv_file in enumerate(csv_files):
-            df = pd.read_csv(self.get_absolute_path_to_folder(self.optigan_csv_output_folder) / csv_file)
+            df = pd.read_csv(
+                self.get_absolute_path_to_folder(self.optigan_csv_output_folder)
+                / csv_file
+            )
             out_path = self.get_absolute_path_to_folder(
                 self.optigan_plots_folder / f"event{file_index + 1}"
             )
@@ -375,9 +379,7 @@ class OptiGAN(GateObject):
             [
                 file
                 for file in os.listdir(
-                    self.get_absolute_path_to_folder(
-                        self.optigan_input_folder
-                    )
+                    self.get_absolute_path_to_folder(self.optigan_input_folder)
                 )
                 if file.endswith(".csv")
             ],
