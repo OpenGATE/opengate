@@ -1,6 +1,5 @@
 .. _sources-detailed-label:
 
-****************
 Details: Sources
 ****************
 
@@ -156,12 +155,13 @@ decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_li
     source = sim.add_source('Generic', 'mysource')
     source.half_life = 60 * gate.g4_units.s
 
+.. autoproperty:: opengate.sources.generic.GenericSource.half_life
 
 Time Activity Curves (TAC)
 --------------------------
 
 Alternatively, user can provide a TAC (Time Activity Curve) by means of
-two vectors (times and activities) :
+two vectors (times and activities):
 
 .. code:: python
 
@@ -180,11 +180,6 @@ last one in the ``times`` vector, the activity is considered as zero.
 The number of elements in the ``times`` linspace (here 500) defined the
 accuracy of the TAC. See example ``test052``.
 
-Reference
----------
-
-.. autoclass:: opengate.sources.generic.GenericSource
-.. autoproperty:: opengate.sources.generic.GenericSource.half_life
 .. autoproperty:: opengate.sources.generic.GenericSource.tac_times
 .. autoproperty:: opengate.sources.generic.GenericSource.tac_activities
 
@@ -220,8 +215,8 @@ available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See
 http://www.lnhb.fr/nuclear-data/module-lara. One example is available in
 ``test031``.
 
-Energy spectrums
-----------------
+Energy spectra
+--------------
 
 **Discrete for gamma spectrum**
 
@@ -332,9 +327,18 @@ This example confines a Xe133 source within a Trd volume (see :ref:`volumes-refe
    myConfSource.activity = 1000 * Bq
 
 
+Reference
+---------
+
+.. autoclass:: opengate.sources.generic.GenericSource
+
+
 
 Voxelized source
 ================
+
+Description
+-----------
 
 A voxelized source can be created as follows:
 
@@ -365,13 +369,24 @@ image own coordinate system (ITK’s origin) is not considered here. If
 you want to align a voxelized activity with a CT image that have the
 same coordinate system you should compute the correct translation. This
 is done by the function
-``gate.image.get_translation_between_images_center``. See the contrib
+:func:`gate.image.get_translation_between_images_center`. See the contrib
 example ``dose_rate.py``.
 
 .. image:: ../figures/image_coord_system.png
 
+
+Reference
+---------
+
+.. autofunction:: opengate.image.get_translation_between_images_center
+.. autoclass :: opengate.sources.voxelsources.VoxelsSource
+
+
 Phase-Space source
 ==================
+
+Description
+-----------
 
 A phase-space source reads particles properties (position, direction,
 energy, etc.) from a root file and use them as events. Typically one
@@ -527,8 +542,17 @@ end, it will cycle and start back at the beginning.
 
 See all test019 and test060 as examples.
 
+Reference
+---------
+
+.. autoclass:: opengate.sources.phspsources.PhaseSpaceSource
+
+
 GAN sources (Generative Adversarial Network)
 ============================================
+
+Description
+-----------
 
 A Phase-Space (phsp) source typically uses a large file containing particle properties (e.g., energy, position, direction, time) to generate primary events in a simulation. This traditional phsp source can be replaced by a neural network-based particle generator that replicates similar distribution probabilities in a more compact form. GAN sources utilize Generative Adversarial Networks (GANs) trained to reproduce these particle properties based on an initial phsp. This approach, proposed in `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1/>`__, can be applied across various applications:
 
@@ -536,7 +560,8 @@ A Phase-Space (phsp) source typically uses a large file containing particle prop
 - SPECT: `test038 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ and `test047 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2021] <https://doi.org/10.1088/1361-6560/abde9a>`_ and `[Saporta et al, PMB, 2022] <https://doi.org/10.1088/1361-6560/aca068>`_
 - PET: `test040 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2023] <https://doi.org/10.1088/1361-6560/acdfb1>`_
 
-**Installation Requirements**
+Installation Requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To use GAN sources, first install the required `torch` and `gaga_phsp` libraries with:
 
@@ -546,9 +571,10 @@ To use GAN sources, first install the required `torch` and `gaga_phsp` libraries
 
 The `gaga_phsp` library provides tools for training and using GAN models: https://github.com/OpenGATE/gaga-phsp.
 
-**Process Overview**
+Workflow Overview
+^^^^^^^^^^^^^^^^^
 
-The process to use a GAN source involves three main steps:
+The workflow to use a GAN source involves three main steps:
 
 1. Generate the training dataset.
 2. Train the GAN model.
@@ -556,7 +582,8 @@ The process to use a GAN source involves three main steps:
 
 For Linac applications, a conventional Linac phsp can serve as the training dataset. In SPECT or PET applications, a conditional GAN is used to generate particles exiting the patient, conditioned on the activity distribution within the patient. In this case, the training dataset must include not only the particle properties at the patient exit (e.g., position and direction in a spheroid or cylinder around the patient) but also the initial emission point inside the patient (using `EventPosition` and `EventDirection`). An example can be found in `test038_gan_phsp_spect_training_dataset_mt.py`.
 
-**Training the GAN**
+Training the GAN
+^^^^^^^^^^^^^^^^
 
 Once the training data is generated, train the GAN model outside of GATE using `gaga_phsp`. Example command:
 
@@ -566,7 +593,8 @@ Once the training data is generated, train the GAN model outside of GATE using `
 
 A sample JSON file for GAN options, `train_gaga_v124.json`, can be found in the `tests/data/test038` folder. Training can be resource-intensive, typically requiring a GPU and several hours. The resulting generator model is saved as a compact `.pth` file, containing the neural network weights (generally a few tens of MB).
 
-**Using the GAN Source in GATE**
+Using the GAN Source in GATE
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Once trained, the generator can be used as a source in GATE using the ``GANSource`` type, as in the example below:
 
@@ -604,9 +632,19 @@ The GAN operates in batches, with the size defined by `batch_size`. In this case
 The GAN-based source is an experimental feature in GATE. While it offers promising advantages in terms of reduced file size and simulation speed, users are encouraged to approach it cautiously. We strongly recommend thoroughly reviewing the associated publications `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1>`_, `[Sarrut et al, PMB, 2021] <https://doi.org/10.1088/1361-6560/abde9a>`_, and `[Saporta et al, PMB, 2022] <https://doi.org/10.1088/1361-6560/aca068>`_ to understand the method’s assumptions, limitations, and best practices. This method is best suited for research purposes and may not yet be appropriate for clinical or regulatory applications without extensive validation.
 
 
+Reference
+---------
+
+.. autoclass:: opengate.sources.gansources.GANSource
+.. autoclass:: opengate.sources.gansources.GANPairsSource
+
 
 PHID source (Photon from Ion Decay)
 ===================================
+
+Description
+-----------
+
 
 PHID (Photon from Ion Decay) is a virtual source model that generates
 photons emitted in the complex decay chain process of alpha-emitter
@@ -623,8 +661,7 @@ Bremsstrahlung are ignored, but are not significant for SPECT imaging.
 Also, the model is not expected to be correct for gammas below 20-30
 keV.
 
-See Sarrut et al 2024 Phys. Med. Biol.
-https://doi.org/10.1088/1361-6560/ad3881
+See `Sarrut et al 2024 Phys. Med. Biol. <https://doi.org/10.1088/1361-6560/ad3881>`_.
 
 To use such a source, declare a “PhotonFromIonDecaySource” with an ion
 as particle name, like the “GenericSource”. Only the gammas emitted by
@@ -648,6 +685,9 @@ The TAC is then binned and the number of bins can be modified. See tests
    source.dump_log = "phid_log.txt"
    source.verbose = True
 
+Command line tools
+------------------
+
 Also, several command lines tools are provided :
 
 .. code:: bash
@@ -665,11 +705,20 @@ Also, several command lines tools are provided :
 
 |image| |image1| |image2|
 
-Pencil Beam sources
-===================
+Reference
+---------
 
-The Pencil Beam source inherits from the Generic source, and retains
-therefore the same settings. The main difference consists in the
+.. autoclass:: opengate.sources.phidsources.PhotonFromIonDecaySource
+
+
+Ion Pencil Beam Source
+======================
+
+Description
+-----------
+
+The :class:`~.opengate.sources.beamsources.IonPencilBeamSource` inherits from the :class:`~.opengate.sources.generic.GenericSource` and retains
+therefore the same input parameters. The main difference consists in the
 sampling of the position and direction of the particles, which are not
 sampled independently, but are correlated. In fact, the Pencil Beam
 source is meant to describe a beam that can converge or diverge. This
@@ -677,8 +726,13 @@ behaviour is modeled according to the Fermi-Eyges theory (Techniques of
 Proton Radiotherapy: Transport Theory B. Gottschalk May 1, 2012), that
 describes the correlated momentum spread of the particle with 4
 parameters (each for x and y direction, assuming a beam directed as z):
-- spot size 𝜎 - divergence 𝜃 - emittance 𝜀 - convergence flag [1,0] The
-parameters must satisfy the condition:
+
+- spot size 𝜎
+- divergence 𝜃
+- emittance 𝜀
+- convergence flag [1,0]
+
+The parameters must satisfy the condition:
 
 .. code:: python
 
@@ -712,9 +766,7 @@ a 120 MeV/n carbon ion beam.
        0,
    ]
 
-NOTE: the Pencil Beam source is created by default directed as the
-positive z axis. To rotate the source, use the source.position.rotation
-option.
+.. note:: The Pencil Beam source is created by default directed as the positive z axis. To rotate the source, use the source.position.rotation option.
 
 Check all test044 for usage examples.
 
@@ -722,12 +774,18 @@ Check all test044 for usage examples.
 .. |image1| image:: ../figures/ac225_tac.png
 .. |image2| image:: ../figures/ac225_gammas.png
 
+Reference
+---------
 
+.. autoclass:: opengate.sources.beamsources.IonPencilBeamSource
 
 
 
 Treatment Plan Pencil Beam source
 =================================
+
+Description
+-----------
 
 In ion beam therapy, a target’s volume is irradiated by scanning a
 pencil beam across the transverse plane using steering magnets, while
@@ -774,7 +832,8 @@ To set up a Treatment Plan source, the user shall provide:
 -  the **number of particles** to simulate.
 -  the **ion type**.
 
-Additional functionality:
+Additional functionality
+------------------------
 
 -  ``flat_generation`` flag: if True, the same number of particles is
    generated for each spot and the spot weight is applied to the energy
@@ -817,3 +876,8 @@ simulation:
 
 To see more examples on the Treatment Plan source usage, the user can
 refer to test_059*.
+
+Reference
+---------
+
+.. autoclass:: opengate.sources.beamsources.TreatmentPlanPBSource
