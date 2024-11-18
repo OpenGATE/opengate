@@ -186,7 +186,7 @@ Method 1 can be used when a user wants to run OptiGAN within the same simulation
 
 Method 2 can be used when a user wants to use OptiGAN in a file outside their main simulation file. In this case, the ``root_file_path`` must be set to the path of the root file obtained from the simulation.
 
-Workflow of OptiGAN Module in Gate 10
+Workflow of OptiGAN module in Gate 10
 -------------------------------------
 .. image:: ../figures/optigan_working.png
 
@@ -210,8 +210,8 @@ Obtaining the number of optical photons emitted without modifying Geant4 is chal
     ka.attached_to = crystal
     ka.filters.append(fe)
 
-NOTE: Using a kill actor still creates optical photons, but it terminates the track after the first step. This approach provides us with the required information (number of optical photons emitted) as an input for OptiGAN, while also saving tracking time by terminating the photons early.
+.. note:: Using a kill actor still creates optical photons, but it terminates the track after the first step. This approach provides us with the required information (number of optical photons emitted) as an input for OptiGAN, while also saving tracking time by terminating the photons early.
 
 .. image:: ../figures/kill_actor.png
 
-NOTE: The analysis of computation time gained by using OptiGAN in Gate 10 is still in works by the team at UC Davis.
+The analysis of computation time gained by using OptiGAN in GATE 10 is still under investigation by the team at UC Davis.
