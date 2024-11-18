@@ -440,14 +440,15 @@ class GANSource(GenericSource, g4.GateGANSource):
 
     def set_default_generator(self):
         # non-conditional generator
-        if self.user_info.cond_image is None:
-            self.user_info.generator = GANSourceDefaultGenerator(self.user_info)
+        if self.cond_image is None:
+            self.generator = GANSourceDefaultGenerator(self.user_info)
             return
 
-        vcg = VoxelizedSourceConditionGenerator(self.user_info.cond_image, self)
-        vcg.compute_directions = self.user_info.compute_directions
-        g = GANSourceConditionalGenerator(self.user_info, vcg.generate_condition)
-        self.user_info.generator = g
+        # FIXME: I changed this line because the second arg 'self' seemed wrong to me. Check!
+        vcg = VoxelizedSourceConditionGenerator(self.cond_image)
+        # vcg = VoxelizedSourceConditionGenerator(self.cond_image, self)
+        vcg.compute_directions = self.compute_directions
+        self.generator = GANSourceConditionalGenerator(self.user_info, vcg.generate_condition)
 
 
 class GANPairsSource(GANSource, g4.GateGANPairSource):
