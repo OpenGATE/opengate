@@ -400,13 +400,44 @@ LETActor
 
 .. note::
    Documentation TODO. Refer to test050 for current examples.
+   
+   
+   
+TLEDoseActor
+------------
+
+The **Tracking Length Estimator (TLE) Dose Actor** is based on the work of `Baldacci *et al.*, 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_. It is designed to model a photon population instead of treating each photon as a single particle. This approach enables efficient and accurate dose calculation by enabling a multiple energy deposition by a single photon.
+
+**How It Works**  
+During a step, where a typical photon would interact and deposit its energy stochastically, a TLE photon deposits dose based on the material's mass energy-absorption coefficient (`μ_en`) and the step length. This method implies a local dose deposition at the voxel scale, even though secondary electrons are emitted. This actor indeed do not interfer with the GEANT4 tracking.
+
+Since the database does not take into account the radiative part during the TLE energy deposition calculation, this method is applied to all photons, whether originating from the primary source or from secondary radiative processes. This approach offers a computationally efficient alternative to traditional dose calculation methods.
+
+**Energy Threshold Option**  
+A novel feature of the TLE actor is the ability to activate or deactivate the TLE mechanism based on a user-defined energy threshold. This provides flexibility in simulations, allowing users to tailor the behavior of the TLE actor according to the energy ranges of interest.
+
+Here is the a classical way to use the TLEDoseActor : 
+
+.. code-block:: python
+
+   tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
+   tle_dose_actor.output_filename = "my_output.mhd"
+   tle_dose_actor.attached_to = irradiated_volume.name
+   tle_dose_actor.dose.active = True
+   tle_dose_actor.dose_uncertainty.active = True
+   tle_dose_actor.size = [200, 200, 200]
+   tle_dose_actor.spacing = [x / y for x, y in zip(irradiated_volume.size, tle_dose_actor.size)]
+
+Refer to test081 for more details.
+
+---
 
 ComptonSplittingActor
 ---------------------
 
 This actor generates N particles with reduced weight whenever a Compton process occurs. The options include:
 
-- **splitting factor**: Number of splits.
+- **Splitting factor**: Number of splits.
 - **Russian Roulette**: Option for selective elimination based on angle and probability.
 - **Minimum Track Weight**: Avoids splitting very low-weight particles.
 
