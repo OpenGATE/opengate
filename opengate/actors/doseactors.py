@@ -356,13 +356,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     score_in: str
 
     user_info_defaults = {
-        "use_more_ram": (
-            False,
-            {
-                "doc": "FIXME",
-                "deactivated": True,
-            },
-        ),
         "square": (
             True,
             {
