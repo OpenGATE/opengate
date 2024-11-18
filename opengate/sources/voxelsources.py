@@ -11,9 +11,9 @@ from ..utility import ensure_filename_is_str
 from ..base import process_cls
 
 
-class VoxelsSource(GenericSource, g4.GateVoxelsSource):
+class VoxelSource(GenericSource, g4.GateVoxelSource):
     """
-    Voxels source for 3D distributed activity.
+    VoxelSource = 3D activity distribution.
     Sampled with cumulative distribution functions.
     """
 
@@ -38,7 +38,7 @@ class VoxelsSource(GenericSource, g4.GateVoxelsSource):
         self.itk_image = None
 
     def __initcpp__(self):
-        g4.GateVoxelsSource.__init__(self)
+        g4.GateVoxelSource.__init__(self)
 
     def set_transform_from_user_info(self):
         # get source image information
@@ -86,4 +86,4 @@ class VoxelsSource(GenericSource, g4.GateVoxelsSource):
         GenericSource.initialize(self, run_timing_intervals)
 
 
-process_cls(VoxelsSource)
+process_cls(VoxelSource)

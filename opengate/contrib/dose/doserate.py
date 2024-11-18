@@ -80,7 +80,7 @@ def create_simulation(param):
     }
 
     # Activity source from an image
-    source = sim.add_source("VoxelsSource", "vox")
+    source = sim.add_source("VoxelSource", "vox")
     source.attached_to = ct.name
     source.particle = "ion"
     source.ion.Z = rad_list[param.radionuclide]["Z"]

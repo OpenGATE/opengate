@@ -9,14 +9,14 @@
 
 namespace py = pybind11;
 
-#include "GateVoxelsSource.h"
+#include "GateVoxelSource.h"
 
-void init_GateVoxelsSource(py::module &m) {
+void init_GateVoxelSource(py::module &m) {
 
-  py::class_<GateVoxelsSource, GateGenericSource>(m, "GateVoxelsSource")
+  py::class_<GateVoxelSource, GateGenericSource>(m, "GateVoxelSource")
       .def(py::init())
       .def("GetSPSVoxelPosDistribution",
-           &GateVoxelsSource::GetSPSVoxelPosDistribution,
+           &GateVoxelSource::GetSPSVoxelPosDistribution,
            py::return_value_policy::reference_internal)
-      .def("InitializeUserInfo", &GateVoxelsSource::InitializeUserInfo);
+      .def("InitializeUserInfo", &GateVoxelSource::InitializeUserInfo);
 }
