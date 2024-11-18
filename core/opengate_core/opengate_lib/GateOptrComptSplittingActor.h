@@ -71,7 +71,7 @@ public:
   void StartRun() override;
   void StartTracking(const G4Track *) override;
   void EndTracking() override {}
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
   void InitializeCpp() override;
 
 protected:

@@ -21,6 +21,15 @@ from .definitions import (
 )
 from .decorators import requires_fatal
 from .logger import log
+import traceback
+
+
+def print_call_location():
+    stack = traceback.extract_stack()
+    # Get the caller of this function
+    filename, lineno, _, _ = stack[-3]
+    msg = f"Called from file: {filename}, line: {lineno}"
+    return msg
 
 
 # Singletons
@@ -331,17 +340,12 @@ def make_docstring_for_user_info(name, default_value, options):
     docstring = f"{name}"
     if "deprecated" in options:
         docstring += f"\n\n{begin_of_line}Deprecated: {options['deprecated']}\n\n"
-        # docstring += indent
-        # docstring += "Info: "
-        # docstring += options["deprecated"]
-        # docstring += "\n\n"
     else:
         if "required" in options and options["required"] is True:
             docstring += " (must be provided)"
         if "read_only" in options and options["read_only"] is True:
             docstring += " (set internally, i.e. read-only)"
         docstring += ":\n\n"
-        # docstring += (20 - len(k)) * " "
         docstring += f"{begin_of_line}Default value: {default_value}\n\n"
         if "allowed_values" in options:
             docstring += (
@@ -349,9 +353,6 @@ def make_docstring_for_user_info(name, default_value, options):
             )
         if "doc" in options:
             docstring += f"{begin_of_line}Description: {options['doc']}\n\n"
-            # docstring += options["doc"]
-            # docstring += "\n\n"
-    # docstring += "\n"
     return docstring
 
 
@@ -443,7 +444,7 @@ class GateObject:
         if type(parent).__name__ != "pybind11_type":
             try:
                 super().__init__(*args, **kwargs)
-            except TypeError as e:
+            except TypeError:
                 raise TypeError(
                     f"There was a problem "
                     f"while trying to create the {type(self).__name__} called {self.name}. \n"
@@ -498,11 +499,6 @@ class GateObject:
     def __setstate__(self, d):
         """Method needed for pickling. May be overridden in inheriting classes."""
         self.__dict__ = d
-        """print(
-            f"DEBUG: in __setstate__ of {type(self).__name__}: {type(self).known_attributes}"
-        )
-        print(f"DEBUG:    type(self).known_attributes: {type(self).known_attributes}")
-        print(f"DEBUG:    list(self.__dict__.keys()): {list(self.__dict__.keys())}")"""
 
     def __reduce__(self):
         """This method is called when the object is pickled.
@@ -543,10 +539,11 @@ class GateObject:
         if len(known_attributes) > 0:
             if key not in known_attributes:
                 msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                msg += print_call_location() + "\n"
                 close_matches = get_close_matches(key, known_attributes)
                 if len(close_matches) > 0:
                     msg_close_matches = (
-                        f"Did you mean: " + " or ".join(close_matches) + "\n"
+                        "Did you mean: " + " or ".join(close_matches) + "\n"
                     )
                     msg += msg_close_matches
                 known_attr = ", ".join(
@@ -594,7 +591,6 @@ class GateObject:
                 warning(
                     f"close() called in object '{self.name}' of type {type(self).__name__}."
                 )
-        pass
 
     def release_g4_references(self):
         """Dummy implementation for inherited classes which do not implement this method."""
@@ -774,9 +770,6 @@ class DynamicGateObject(GateObject):
         return []
 
 
-# DICTIONARY HANDLING
-
-
 class GateUserInputSwitchDict(Box):
     """
     NOT USED YET!
@@ -843,7 +836,7 @@ def recursive_userinfo_to_dict(obj):
         ret = []
         for e in obj:
             ret.append(recursive_userinfo_to_dict(e))
-    elif isinstance(obj, (GateObject)):
+    elif isinstance(obj, GateObject):
         ret = obj.to_dictionary()
     else:
         ret = obj

@@ -92,6 +92,7 @@ if __name__ == "__main__":
     # add dose actor
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "test009-edep.mhd"
+    dose.edep.keep_data_per_run = True
     dose.attached_to = "patient"
     dose.size = [99, 99, 99]
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]

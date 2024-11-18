@@ -6,6 +6,8 @@ from typing import get_type_hints
 from functools import partial
 from pathlib import Path
 
+import opengate_core
+
 
 def apply_class_check_to_package(
     check_func,
@@ -147,6 +149,20 @@ def find_unprocessed_gateobject_classes():
             ),
         )
     )
+
+
+def print_g4units_dict_string():
+    dict_content_str = ""
+    already_processed_keys = []
+    for t in opengate_core.G4UnitDefinition.GetUnitsTable():
+        for a in t.GetUnitsList():
+            if str(a.GetName()) not in already_processed_keys:
+                dict_content_str += f"    '{str(a.GetName())}': {a.GetValue()}, \n"
+                already_processed_keys.append(str(a.GetName()))
+            if str(a.GetSymbol()) not in already_processed_keys:
+                dict_content_str += f"    '{str(a.GetSymbol())}': {a.GetValue()}, \n"
+                already_processed_keys.append(str(a.GetSymbol()))
+    print("g4_units = Box({\n" + f"{dict_content_str}" + "})")
 
 
 def generate_pyi_for_module(module, output_dir):

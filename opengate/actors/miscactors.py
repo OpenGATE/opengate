@@ -224,7 +224,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -262,20 +262,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.user_output.stats.write_data_if_requested()
 
 
-"""
-    It is feasible to get callback every Run, Event, Track, Step in the python side.
-    However, it is VERY time consuming. For SteppingAction, expect large performance drop.
-    It could be however useful for prototyping or tests.
-
-    it requires "trampoline functions" on the cpp side.
-
-    # it is feasible but very slow !
-    def SteppingAction(self, step, touchable):
-        g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
-        do_something()
-"""
-
-
 class KillActor(ActorBase, g4.GateKillActor):
 
     """
@@ -296,7 +282,7 @@ class KillActor(ActorBase, g4.GateKillActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def EndSimulationAction(self):
@@ -415,7 +401,7 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
     def initialize(self):
         SplittingActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 
@@ -450,7 +436,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 
     def initialize(self):
         SplittingActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 

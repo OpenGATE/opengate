@@ -156,7 +156,7 @@ def simulate(number_of_threads=1, start_new_process=False):
         print(f"Volume {item[0]}:")
         value_dict = item[1]
         if item[0] != "world":
-            if item[0] in requested_cuts_proton.keys():
+            if item[0] in requested_cuts_proton:
                 print(
                     f"Requested production cut for protons: {requested_cuts_proton[item[0]]}"
                 )
@@ -196,7 +196,7 @@ def check_production_cuts(simulation_engine):
     which can be accessed via the output of the simulation.
 
     """
-    print(f"Entered hook")
+    print("Entered hook")
     for (
         volume_name,
         volume,

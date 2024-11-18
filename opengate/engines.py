@@ -13,7 +13,6 @@ from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
-from .element import new_element
 from .physics import (
     UserLimitsPhysics,
     translate_particle_name_gate_to_geant4,
@@ -29,7 +28,7 @@ class EngineBase:
     Base class for all engines (SimulationEngine, VolumeEngine, etc.)
     """
 
-    def __init__(self, simulation_engine):
+    def __init__(self, simulation_engine) -> None:
         self.simulation_engine = simulation_engine
         # debug verbose
         self.verbose_getstate = simulation_engine.verbose_getstate
@@ -87,7 +86,7 @@ class SourceEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing SourceEngine")
+            warning("Closing SourceEngine")
         self.release_g4_references()
         super().close()
 
@@ -100,9 +99,9 @@ class SourceEngine(EngineBase):
     def initialize(self, run_timing_intervals, progress_bar=False):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
-        if len(self.simulation_engine.simulation.source_manager.user_info_sources) == 0:
+        if len(self.simulation_engine.simulation.source_manager.sources) == 0:
             self.simulation_engine.simulation.warn_user(
-                f"No source: no particle will be generated"
+                "No source: no particle will be generated"
             )
         self.progress_bar = progress_bar
 
@@ -119,29 +118,26 @@ class SourceEngine(EngineBase):
         )
 
     def create_master_source_manager(self):
-        # create particles table # FIXME in physics ??
-        # NK: I don't think this is the correct approach
-        # The particles are constructed through the RunManager when the
-        # physics list is initialized, namely in G4RunManagerKernel::SetupPhysics()
-        # self.g4_particle_table = g4.G4ParticleTable.GetParticleTable()
-        # self.g4_particle_table.CreateAllParticles()  # Warning: this is a hard-coded list!
         # create the master source for the masterThread
-        self.g4_master_source_manager = self.create_g4_source_manager(append=False)
+        self.g4_master_source_manager = self.create_g4_thread_source_manager(
+            append=False
+        )
         return self.g4_master_source_manager
 
-    def create_g4_source_manager(self, append=True):
+    def create_g4_thread_source_manager(self, append=True):
         """
         This is called by all threads
         This object is needed here, because it can only be
         created after physics initialization
         """
+        # create a source manager for the current thread
         ms = g4.GateSourceManager()
         # create all sources for this source manager (for all threads)
         source_manager = self.simulation_engine.simulation.source_manager
-        for vu in source_manager.user_info_sources.values():
-            source = new_element(vu, self.simulation_engine.simulation)
-            source.add_to_source_manager(ms)
+        for source in source_manager.sources.values():
             source.initialize(self.run_timing_intervals)
+            source.add_to_source_manager(ms)
+            # store all the sources (will be used later by SimulationOutput)
             self.sources.append(source)
 
         # Copy visualization parameters
@@ -171,6 +167,7 @@ class SourceEngine(EngineBase):
         # keep pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
+
         return ms
 
     def start(self):
@@ -185,10 +182,10 @@ class SourceEngine(EngineBase):
             source.prepare_output()
 
     def can_predict_expected_number_of_event(self):
-        can_predict = True
-        for source in self.sources:
-            can_predict = can_predict and source.can_predict_number_of_events()
-        return can_predict
+        # can_predict = True
+        # for source in self.sources:
+        #     can_predict = can_predict and source.can_predict_number_of_events()
+        return all(s.can_predict_number_of_events() for s in self.sources)
 
 
 class PhysicsEngine(EngineBase):
@@ -231,7 +228,7 @@ class PhysicsEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing PhysicsEngine")
+            warning("Closing PhysicsEngine")
         self.close_physics_constructors()
         self.release_g4_references()
         self.release_optical_surface_g4_references()
@@ -326,9 +323,7 @@ class PhysicsEngine(EngineBase):
 
         # range
         if ui.energy_range_min is not None and ui.energy_range_max is not None:
-            self.physics_manager.warn_user(
-                f"WARNING ! SetEnergyRange only works in MT mode"
-            )
+            self.physics_manager.warn_user("SetEnergyRange only works in MT mode")
             pct = g4.G4ProductionCutsTable.GetProductionCutsTable()
             pct.SetEnergyRange(ui.energy_range_min, ui.energy_range_max)
 
@@ -494,7 +489,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing ActionEngine")
+            warning("Closing ActionEngine")
         self.release_g4_references()
         super().close()
 
@@ -540,7 +535,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
             self.g4_main_PrimaryGenerator = p
         else:
             # else create a source for each thread
-            p = self.simulation_engine.source_engine.create_g4_source_manager()
+            p = self.simulation_engine.source_engine.create_g4_thread_source_manager()
 
         self.SetUserAction(p)
         self.g4_PrimaryGenerator.append(p)
@@ -591,7 +586,7 @@ class ActorEngine(EngineBase):
 
     def close(self):
         if self.verbose_close:
-            warning(f"Closing ActorEngine")
+            warning("Closing ActorEngine")
         for actor in self.actor_manager.actors.values():
             actor.close()
         super().close()
@@ -940,20 +935,21 @@ class SimulationOutput:
         self.sources = {}
         if simulation_engine.simulation.multithreaded is True:
             th = {}
-            self.sources_by_thread = [{}] * (
-                simulation_engine.simulation.number_of_threads + 1
-            )
+            self.sources_by_thread = [
+                {} for _ in range(simulation_engine.simulation.number_of_threads + 1)
+            ]
             for source in simulation_engine.source_engine.sources:
-                n = source.user_info.name
+                n = source.name
                 if n in th:
                     th[n] += 1
                 else:
                     th[n] = 0
                 self.sources_by_thread[th[n]][n] = source
+            self.sources = self.sources_by_thread[0]
         else:
             s = {}
             for source in simulation_engine.source_engine.sources:
-                s[source.user_info.name] = source
+                s[source.name] = source
             self.sources = s
 
     def get_actor(self, name):
@@ -976,7 +972,7 @@ class SimulationOutput:
             self.simulation.number_of_threads <= 1
             and not self.simulation.force_multithread_mode
         ):
-            fatal(f"Cannot use get_source_mt in monothread mode")
+            fatal("Cannot use get_source_mt in monothread mode")
         if thread >= len(self.sources_by_thread):
             fatal(
                 f"Cannot get source {name} with thread {thread}, while "
@@ -1218,7 +1214,7 @@ class SimulationEngine(GateSingletonFatal):
             f"Simulation: STOP. Run: {len(self.run_timing_intervals)}. "
             # f'Events: {self.source_manager.total_events_count}. '
             f"Time: {end - start:0.1f} seconds.\n"
-            + f"-" * 80
+            + "-" * 80
         )
 
     def initialize_random_engine(self):
@@ -1230,7 +1226,7 @@ class SimulationEngine(GateSingletonFatal):
             self.g4_HepRandomEngine = g4.MTwistEngine()
         if not self.g4_HepRandomEngine:
             s = f"Cannot find the random engine {engine_name}\n"
-            s += f"Use: MersenneTwister or MixMaxRng"
+            s += "Use: MersenneTwister or MixMaxRng"
             fatal(s)
 
         # set the random engine
@@ -1441,7 +1437,7 @@ class SimulationEngine(GateSingletonFatal):
             500: "fParameterOutOfCandidates",
             600: "fAliasNotFound",
         }
-        closest_err_code = max(filter(lambda x: x <= code, err_codes.keys()))
+        closest_err_code = max([x for x in err_codes if x <= code])
         closest_err_msg = err_codes[closest_err_code]
         fatal(f'Error in apply_g4_command "{command}": {code} {closest_err_msg}')
 

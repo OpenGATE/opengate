@@ -52,7 +52,8 @@ class VoxelDepositActor(ActorBase):
             [1 * g4_units.mm, 1 * g4_units.mm, 1 * g4_units.mm],
             {
                 "doc": "Voxel spacing along the x-, y-, z-axes. "
-                "(The user set the units by multiplication with g4_units.XX)",
+                "The user sets the units by multiplication with g4_units.XX. "
+                "The default spacing is in g4_unit.mm. ",
             },
         ),
         "translation": (
@@ -95,9 +96,9 @@ class VoxelDepositActor(ActorBase):
         "img_coord_system": (
             None,
             {
-                "deprecated": f"The user input parameter 'img_coord_system' is deprecated. "
-                f"Use my_actor.output_coordinate_system='attached_to_image' instead, "
-                f"where my_actor should be replaced with your actor object. ",
+                "deprecated": "The user input parameter 'img_coord_system' is deprecated. "
+                "Use my_actor.output_coordinate_system='attached_to_image' instead, "
+                "where my_actor should be replaced with your actor object. ",
             },
         ),
         "output_coordinate_system": (
@@ -109,7 +110,7 @@ class VoxelDepositActor(ActorBase):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         ActorBase.__init__(self, *args, **kwargs)
 
     def check_user_input(self):
@@ -118,10 +119,28 @@ class VoxelDepositActor(ActorBase):
                 self.attached_to_volume, "native_translation"
             ) or not hasattr(self.attached_to_volume, "native_rotation"):
                 fatal(
-                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} is not compatible "
+                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} "
+                    f"of actor {self.name} is not compatible "
                     f"with the volume to which this actor is attached: "
                     f"{self.attached_to} ({self.attached_to_volume.volume_type})"
                 )
+
+    def initialize(self):
+        super().initialize()
+
+        msg = (
+            f"cannot be used in actor {self.name} "
+            f"because the volume ({self.attached_to}, {self.attached_to_volume.type_name}) "
+            f"to which the actor is attached does not support it. "
+        )
+        if isinstance(self.spacing, str) and self.spacing == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "spacing"):
+                fatal("spacing = 'like_image_volume' " + msg)
+            self.spacing = self.attached_to_volume.spacing
+        if isinstance(self.size, str) and self.size == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "size_pix"):
+                fatal("size = 'like_image_volume' " + msg)
+            self.size = self.attached_to_volume.size_pix
 
     def get_physical_volume_name(self):
         # init the origin and direction according to the physical volume
@@ -243,10 +262,16 @@ class VoxelDepositActor(ActorBase):
                 u.end_of_run(run_index)
         return 0
 
+    def StartSimulationAction(self):
+        # inform actor output that this simulation is starting
+        for u in self.user_output.values():
+            if u.get_active(item="any"):
+                u.start_of_simulation()
+
     def EndSimulationAction(self):
         # inform actor output that this simulation is over and write data
         for u in self.user_output.values():
-            if u.get_active(item="all"):
+            if u.get_active(item="any"):
                 u.end_of_simulation()
 
 
@@ -320,22 +345,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     DoseActor: compute a 3D edep/dose map for deposited
     energy/absorbed dose in the attached volume
 
-    The dose map is parameterized with:
-        - size (number of voxels)
-        - spacing (voxel size)
-        - translation (according to the coordinate system of the "attachedTo" volume)
-        - no rotation
-
-    Position:
-    - by default: centered according to the "attachedTo" volume center
-    - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
-        the origin of the attachedTo image is used for the output dose.
-        Hence, the dose can be superimposed with the attachedTo volume
-
-    Options
-        - edep only for the moment
-        - later: add dose, uncertainty, squared etc
-
+    By default, the dose actor is centered according to the "attachedTo" volume center
+    If the attachedTo volume is an Image AND the option "img_coord_system" is True:
+    the origin of the attachedTo image is used for the output dose.
+    Hence, the dose can be superimposed with the attachedTo volume.
     """
 
     # hints for IDE
@@ -399,20 +412,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 ),
             },
         ),
-        # "calculate_density_from": (
-        #     "auto",
-        #     {
-        #         "doc": "How should density be calculated?\n"
-        #                "'simulation': via scoring along with the rest of the quantities.\n"
-        #                "'image': from the CT image, if the actor is attached to an ImageVolume.\n"
-        #                "'auto' (default): Let GATE pick the right one for you. ",
-        #         "allowed_values": (
-        #             "auto",
-        #             "simulation",
-        #             "image"
-        #         ),
-        #     },
-        # ),
         "ste_of_mean": (
             False,
             {
@@ -627,7 +626,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 f"This actor is attached to a {self.attached_to_volume.volume_type} volume. "
             )
 
-        self.InitializeUserInput(self.user_info)  # C++ side
+        self.InitializeUserInfo(self.user_info)  # C++ side
         # Set the flags on C++ side so the C++ knows which quantities need to be scored
         self.SetEdepSquaredFlag(
             self.user_output.edep_with_uncertainty.get_active(item=1)
@@ -947,7 +946,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         self.check_user_input()
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
@@ -1029,9 +1028,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         # no options yet
         if self.uncertainty or self.scatter:
-            fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
+            fatal("FluenceActor : uncertainty and scatter not implemented yet")
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()

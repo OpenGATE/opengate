@@ -23,13 +23,13 @@ if __name__ == "__main__":
     head.rotation = head.rotation[0]
 
     # enlarge the source
-    source = sim.source_manager.get_source_info("src2")
+    source = sim.source_manager.get_source("src2")
     source.position.radius = 150 * mm
 
     if sim.visu:
-        source = sim.source_manager.get_source_info("src2")
+        source = sim.source_manager.get_source("src2")
         source.activity = source.activity / 1000
-        source = sim.source_manager.get_source_info("src1")
+        source = sim.source_manager.get_source("src1")
         source.activity = source.activity / 1000
 
     # add a proj actor

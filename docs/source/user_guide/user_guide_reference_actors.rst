@@ -1,3 +1,6 @@
+
+.. _actors-label:
+
 Actors
 ======
 
@@ -5,7 +8,7 @@ SimulationStatisticsActor
 --------------------------
 
 Description
-^^^^^^^^^^^
+~~~~~~~~~~~
 
 The SimulationStatisticsActor actor is a very basic tool that allows counting the number of runs, events, tracks, and steps that have been created during a simulation. Most simulations should include this actor as it gives valuable information. The `stats` object contains the `counts` dictionary that contains all results.
 
@@ -20,16 +23,20 @@ The SimulationStatisticsActor actor is a very basic tool that allows counting th
    print(stats)
    print(stats.counts)
 
- In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
+In addition, if the flag `track_types_flag` is enabled, the actor will save a dictionary structure with all types of particles that have been created during the simulation, which is available as `stats.counts.track_types`. The start and end time of the whole simulation are  available and speeds are estimated (primary per sec, track per sec, and step per sec).
 
 
 Reference
-^^^^^^^^^
+~~~~~~~~~
 
 .. autoclass:: opengate.actors.miscactors.SimulationStatisticsActor
 
+
 DoseActor
 ---------
+
+Description
+~~~~~~~~~~~
 
 The DoseActor computes a 3D energy deposition (edep) or absorbed dose map in a given volume. The dose map is a 3D matrix parameterized with: dimension (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the attached volume). By default, the matrix is centered according to the volume center.
 
@@ -51,8 +58,18 @@ Several tests depict the usage of DoseActor: test008, test009, test021, test035,
    dose.uncertainty = True
    dose.hit_type = "random"
 
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.DoseActor
+
+
 PhaseSpaceActor
 ---------------
+
+Description
+~~~~~~~~~~~
 
 A PhaseSpaceActor stores any set of particles reaching a given volume during the simulation. The list of attributes that are kept for each stored particle can be specified by the user.
 
@@ -89,6 +106,13 @@ By default, the PhaseSpaceActor stores information about particles entering the 
    phsp.steps_to_store = "entering"  # this is the default
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
 
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.PhaseSpaceActor
+
+
 Hits-related actors (digitizer)
 -------------------------------
 
@@ -112,7 +136,7 @@ The `DigitizerHitsCollectionActor` collects hits occurring in a given volume (or
    hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                     'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 
-The names of the attributes align with Geant4 terminology. The list of available attributes is defined in the file `GateDigiAttributeList.cpp` and can be printed with:
+In this example, the actor is attached (attached_to option) to several volumes (crystal1 and crystal2 ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attribute names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of a few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `GateDigiAttributeList.cpp` and can be printed with:
 
 .. code-block:: python
 
@@ -120,19 +144,31 @@ The names of the attributes align with Geant4 terminology. The list of available
    am = gate_core.GateDigiAttributeManager.GetInstance()
    print(am.GetAvailableDigiAttributeNames())
 
+Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a “default” version corresponding to the legacy Gate (9.X).
+
++------------------+-------------------+---------------------+
+| Pre version      | Post version      | default version     |
++==================+===================+=====================+
+| PreKineticEnergy | PostKineticEnergy | KineticEnergy (Pre) |
++------------------+-------------------+---------------------+
+| PrePosition      | PostPosition      | Position (Post)     |
++------------------+-------------------+---------------------+
+| PreDirection     | PostDirection     | Direction (Post)    |
++------------------+-------------------+---------------------+
+
 Attributes correspondence with Gate 9.X for Hits and Singles:
 
-+------------------------+-------------------------+
-| Gate 9.X               | Gate 10                 |
-+========================+=========================+
-| edep or energy         | TotalEnergyDeposit       |
-+------------------------+-------------------------+
-| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z    |
-+------------------------+-------------------------+
-| time                   | GlobalTime              |
-+------------------------+-------------------------+
++----------------------------+-------------------------+
+| Gate 9.X                   | Gate 10                 |
++============================+=========================+
+| edep or energy             | TotalEnergyDeposit      |
++----------------------------+-------------------------+
+| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z      |
++----------------------------+-------------------------+
+| time                       | GlobalTime              |
++----------------------------+-------------------------+
 
-The list of hits can be written to a ROOT file at the end of the simulation. Like in Gate, hits with zero energy are ignored. If zero-energy hits are needed, use a PhaseSpaceActor.
+At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is None nothing will be written. Note that, like in Gate, every hit with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using DigitizerHitsCollectionActor are proposed: test025, test028, test035, etc.
 
 The actors used to convert some `hits` to one `digi` are `DigitizerHitsAdderActor` and `DigitizerReadoutActor` (see next sections).
 
@@ -300,8 +336,64 @@ Refer to test072 for more details.
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------
 
-.. note::
-   Documentation TODO. Refer to test043 for current examples.
+The Angular Response Function (ARF) is a method designed to accelerate SPECT simulations by replacing full particle tracking within the SPECT head (collimator and crystal) with an analytical function. This function provides the detection probability of a photon across all energy windows based on its direction and energy. Specifically, ARF estimates the probability that an incident photon will interact with or pass through the collimator and reach the detector plane at a specified energy window. By approximating the SPECT head’s behavior in this manner, ARF allows for faster planar and SPECT simulations. Using ARF involves three steps:
+
+1.	Create a training dataset.
+2.	Build the ARF function.
+3.	Apply the trained ARF to enhance simulation efficiency.
+
+.. warning::
+  Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
+
+Step 1: Creating the Training Dataset
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The initial step involves creating a dataset for training. This can be implemented by following the example in `test043_garf_training_dataset.py`. Configure a simplified simulation to emit photons across the expected energy range (e.g., slightly above 140.5 keV for Tc99m) through the SPECT head, recording detected counts. The `ARFTrainingDatasetActor` is utilized here, with input from a detector plane positioned directly in front of the collimator. This actor stores detected counts per energy window in a ROOT file. For efficiency, a Russian roulette technique reduces the data size for photons with low detection probabilities due to large incident angles. Users must specify energy windows by referencing the name of the `DigitizerEnergyWindowsActor` associated with the SPECT system.
+
+.. code-block:: python
+
+    # arf actor for building the training dataset
+    arf = sim.add_actor("ARFTrainingDatasetActor", "my_arf_actor")
+    arf.attached_to = detector_plane.name
+    arf.output_filename = "arf_training_dataset.root"
+    arf.energy_windows_actor = ene_win_actor.name
+    arf.russian_roulette = 50
+
+
+Step 2: Training the ARF Model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+After generating the dataset, train the ARF model using garf_train, which trains a neural network to represent the ARF function. This requires the previous dataset as input, with training options specified in a JSON configuration file (e.g., `train_arf_v058.json` in `tests/data/test043`). A suitable GPU is recommended for training. The output is a .pth file containing the trained model and its associated weights.
+
+.. code-block:: bash
+
+    garf_train  train_arf_v058.json arf_training_dataset.root arf.pth
+
+Step 3: Using the Trained ARF Model in Simulation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+With the trained model (.pth file), you can now substitute direct photon tracking in the SPECT head with the ARF model. This is accomplished with the `ARFActor`, which takes the trained .pth file, consider a detector plane, and generates a 2D projection image with estimated detection counts. Note that the values represent probabilities rather than integer counts, as this is a variance reduction method. Although the computation time per particle is comparable to full tracking, ARF accelerates convergence towards the mean counts across all pixels. Consequently, an ARF-based simulation can achieve the same noise level as a traditional simulation but with up to 5-10 times fewer particles. The `distance_to_crystal` parameter defines the spacing between the detector plane and the crystal center, allowing for positional correction in the 2D projection.
+
+.. code-block:: python
+
+    arf = sim.add_actor("ARFActor", "arf")
+    arf.attached_to = detector_plane
+    arf.output_filename = "projection.mhd"
+    arf.image_size = [128, 128]
+    arf.image_spacing = [4.41806 * mm, 4.41806 * mm]
+    arf.verbose_batch = True
+    arf.distance_to_crystal = 74.625 * mm
+    arf.pth_filename = "arf.pth"
+    arf.batch_size = 2e5
+    arf.gpu_mode = "auto"
+
+
+The source code for garf is here : https://github.com/OpenGATE/garf
+The associated publication is:
+
+    Learning SPECT detector angular response function with neural network for accelerating Monte-Carlo simulations. Sarrut D, Krah N, Badel JN, Létang JM. Phys Med Biol. 2018 Oct 17;63(20):205013. doi: 10.1088/1361-6560/aae331.  https://www.ncbi.nlm.nih.gov/pubmed/30238925
+
 
 LETActor
 --------

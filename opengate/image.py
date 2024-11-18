@@ -254,28 +254,6 @@ def create_image_with_volume_extent(volume, spacing=(1, 1, 1), margin=0):
     return create_image_with_extent((extent_lower, extent_upper), spacing, margin)
 
 
-# FIXME: should not require a simulation engine as input
-def voxelize_volume(se, image):
-    """
-    The voxelization do not check which volume is voxelized.
-    Every voxel will be assigned an ID corresponding to the material at this position
-    in the world.
-    """
-    # simulation engine : initialization is needed
-    # because it builds the hierarchy of G4 volumes
-    # that are needed by the "voxelize" function
-    if not se.is_initialized:
-        se.initialize()
-
-    # start voxelization
-    vox = g4.GateVolumeVoxelizer()
-    update_image_py_to_cpp(image, vox.fImage, False)
-    vox.Voxelize()
-    image = get_py_image_from_cpp_image(vox.fImage)
-    labels = vox.fLabels
-    return labels, image
-
-
 def transform_images_point(p, img1, img2):
     index = img1.TransformPhysicalPointToIndex(p)
     pbis = img2.TransformIndexToPhysicalPoint(index)
@@ -355,16 +333,16 @@ def divide_itk_images(
     return imgarrOut
 
 
-def sum_itk_images(images):
-    image_type = type(images[0])
-    add_image_filter = itk.AddImageFilter[image_type, image_type, image_type].New()
-    output = images[0]
-    for img in images[1:]:
-        add_image_filter.SetInput1(output)
-        add_image_filter.SetInput2(img)
-        add_image_filter.Update()
-        output = add_image_filter.GetOutput()
-    return output
+def sum_itk_images(itk_image_list):
+    if not itk_image_list:
+        raise ValueError("The image list is empty.")
+    summed_image = itk.GetArrayFromImage(itk_image_list[0])
+    for itk_image in itk_image_list[1:]:
+        array = itk.GetArrayFromImage(itk_image)
+        summed_image = np.add(summed_image, array)
+    image = itk.GetImageFromArray(summed_image)
+    image.CopyInformation(itk_image_list[0])
+    return image
 
 
 def multiply_itk_images(images):

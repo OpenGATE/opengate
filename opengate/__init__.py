@@ -8,7 +8,7 @@ def restart_with_glibc_tunables():
     If interactive: we cannot do anything.
     """
     # tunables_value = "glibc.rtld.optional_static_tls=2048000"
-    tunables_value = "glibc.rtld.optional_static_tls=1500000"
+    tunables_value = "glibc.rtld.optional_static_tls=2000000"
 
     def is_python_interactive_shell():
         import __main__
@@ -16,8 +16,7 @@ def restart_with_glibc_tunables():
         return not hasattr(__main__, "__file__")
 
     # Check if the environment variable is already set correctly
-    if os.environ.get("GLIBC_TUNABLES") != tunables_value:
-
+    if "GLIBC_TUNABLES" not in os.environ:
         if is_python_interactive_shell():
             try:
                 import opengate_core
@@ -25,11 +24,14 @@ def restart_with_glibc_tunables():
                 print(e)
                 if "cannot allocate memory in static TLS block" in str(e):
                     print(
-                        f"Please use the following export before: \n"
-                        f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=1500000"
+                        f"Please use the following export before importing opengate: \n"
+                        f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000"
                     )
                     sys.exit()
             return
+
+        print(f"Please use the following export before importing opengate:")
+        print(f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000")
 
         # Set the environment variable
         new_env = os.environ.copy()
@@ -37,9 +39,6 @@ def restart_with_glibc_tunables():
 
         # Restart the process with the new environment
         os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
-
-        # Exit the current process
-        sys.exit()
 
 
 if sys.platform.startswith("linux"):

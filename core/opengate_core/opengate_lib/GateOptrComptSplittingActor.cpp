@@ -49,10 +49,10 @@ GateOptrComptSplittingActor::GateOptrComptSplittingActor(py::dict &user_info)
   fActions.insert("StartSimulationAction");
 }
 
-void GateOptrComptSplittingActor::InitializeUserInput(py::dict &user_info) {
+void GateOptrComptSplittingActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
-  //    fMotherVolumeName = DictGetStr(user_info, "mother");
+  GateVActor::InitializeUserInfo(user_info);
+  //    fAttachedToVolumeName = DictGetStr(user_info, "mother");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");
   // Since the russian roulette uses as a probablity 1/splitting, we need to
@@ -88,7 +88,7 @@ void GateOptrComptSplittingActor::AttachAllLogicalDaughtersVolumes(
 
 void GateOptrComptSplittingActor::StartSimulationAction() {
   G4LogicalVolume *biasingVolume =
-      G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+      G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
 
   // Here we need to attach all the daughters and daughters of daughters (...)
   // to the biasing operator. To do that, I use the function
@@ -109,7 +109,7 @@ void GateOptrComptSplittingActor::StartRun() {
   // the case, we launch the russian roulette
   if (fRotationVectorDirector) {
     G4VPhysicalVolume *physBiasingVolume =
-        G4PhysicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+        G4PhysicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
     auto rot = physBiasingVolume->GetObjectRotationValue();
     fVectorDirector = rot * fVectorDirector;
   }
