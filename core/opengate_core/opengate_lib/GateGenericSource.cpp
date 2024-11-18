@@ -440,18 +440,34 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
 
   if (ang_type == "histogram") {
     ang->SetAngDistType("user");
-    auto theta_w = DictGetVecDouble(user_info, "histogram_theta_weight");
-    auto theta_e = DictGetVecDouble(user_info, "histogram_theta_angle");
-    for (unsigned long i = 0; i < theta_w.size(); i++) {
-      G4ThreeVector x(theta_e[i], theta_w[i], 0);
-      ang->UserDefAngTheta(x);
-    }
-    auto phi_w = DictGetVecDouble(user_info, "histogram_phi_weight");
-    auto phi_e = DictGetVecDouble(user_info, "histogram_phi_angle");
-    for (unsigned long i = 0; i < phi_w.size(); i++) {
-      G4ThreeVector x(phi_e[i], phi_w[i], 0);
-      ang->UserDefAngPhi(x);
-    }
+
+    auto theta_w = DictGetVecDouble(user_info, "histogram_theta_weights");
+    auto theta_e = DictGetVecDouble(user_info, "histogram_theta_angles");
+
+    if (theta_w.size() + 1 != theta_e.size())
+      Fatal("GenericSource angular distribution type 'histogram' requires "
+            "'histogram_theta_weights' to have exactly one element less than "
+            "'histogram_theta_angles'.");
+
+    /* TODO
+     * better general solution would be to add a setter_hook Python-side
+     * on the histogram_theta/phi_weight to prepend a 0
+     */
+    ang->UserDefAngTheta({theta_e[0], 0, 0});
+    for (std::size_t i = 1; i < theta_e.size(); i++)
+      ang->UserDefAngTheta({theta_e[i], theta_w[i - 1], 0});
+
+    auto phi_w = DictGetVecDouble(user_info, "histogram_phi_weights");
+    auto phi_e = DictGetVecDouble(user_info, "histogram_phi_angles");
+
+    if (phi_w.size() + 1 != phi_e.size())
+      Fatal("GenericSource angular distribution type 'histogram' requires "
+            "'histogram_phi_weights' to have exactly one element less than "
+            "'histogram_phi_angles'.");
+
+    ang->UserDefAngPhi({phi_e[0], 0, 0});
+    for (std::size_t i = 1; i < phi_e.size(); i++)
+      ang->UserDefAngPhi({phi_e[i], phi_w[i - 1], 0});
   }
 
   // set the angle acceptance volume if needed

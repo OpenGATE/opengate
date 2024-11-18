@@ -147,11 +147,10 @@ Direction types and Acceptance Angle
    .. code:: python
 
       source.direction.type = "histogram"
-      # Put zero as first value of weight
-      source.direction.histogram_theta_weight = [0, 1]
-      source.direction.histogram_theta_angle = [80 * deg, 100 * deg]
-      source.direction.histogram_phi_weight = [0, 0.3, 0.5, 1, 0.5, 0.3]
-      source.direction.histogram_phi_angle = [
+      source.direction.histogram_theta_weights = [1]
+      source.direction.histogram_theta_angles = [80 * deg, 100 * deg]
+      source.direction.histogram_phi_weights = [0.3, 0.5, 1, 0.5, 0.3]
+      source.direction.histogram_phi_angles = [
          60 * deg,
          70 * deg,
          80 * deg,
@@ -306,6 +305,19 @@ volume.
 
 All options have a default values and can be printed with
 ``print(source)``.
+
+This example confines a Xe133 source within a Trd volume (see :ref:`volumes-reference-label`) named "leftLung":
+
+.. code:: python
+
+   myConfSource = sim.add_source("GenericSource", "myConfSource")
+   myConfSource.mother = "leftLung"
+   myConfSource.particle = "ion 54 133"
+   myConfSource.position.type = "box"
+   myConfSource.position.size = sim.volume_manager.volumes[myConfSource.mother].bounding_box_size
+   myConfSource.position.confine = "leftLung"
+   myConfSource.direction.type = "iso"
+   myConfSource.activity = 1000 * Bq
 
 Voxelized sources
 ~~~~~~~~~~~~~~~~~
