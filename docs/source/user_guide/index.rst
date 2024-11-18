@@ -40,10 +40,11 @@ User Guide
    user_guide_contrib_pet
 
 .. toctree::
-   :caption: How to migrate from Gate 9 to 10
+   :caption: How to migrate from GATE 9 to 10
    :maxdepth: 2
 
-   user_guide_how_to_convert_example
+   user_guide_how_to_convert_example_1
+   user_guide_how_to_convert_example_2
 
 .. toctree::
    :caption: Command line tools
