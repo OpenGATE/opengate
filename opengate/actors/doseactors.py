@@ -89,7 +89,7 @@ class VoxelDepositActor(ActorBase):
             {
                 "deprecated": "The output filename is now set via output_filename relative to the output "
                 "directory of the simulation, which can be set via sim.output_dir. "
-                "If no output_filename is provided, it will be generated automatically. \n"
+                "If no output_filename is provided, it will be generated automatically. "
                 "To specify whether the actor output should be written to disk, use write_to_disk=True/False."
             },
         ),
