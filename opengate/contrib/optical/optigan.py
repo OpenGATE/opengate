@@ -26,6 +26,23 @@ def extract_number(filename):
     return 0
 
 
+def get_torch_device(gpu_mode):
+    current_gpu_mode = None
+    current_gpu_device = None
+    if gpu_mode == "cpu":
+        return torch.device("cpu")
+    else:
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            return torch.device("mps")
+        elif gpu_mode == "auto":
+            # could not get a GPU device, so fall back to cpu
+            return torch.device("cpu")
+        else:
+            fatal("GPU requested for torch, but no GPU on this device")
+
+
 class WGANGenerator(nn.Module):
     """
     Generator class architecture for 3x3x3 crystal
@@ -173,6 +190,15 @@ class OptiGAN(GateObject):
                 "and has been trained by the team at UC Davis. ",
             },
         ),
+        "torch_device": (
+            "auto",
+            {
+                "doc": "The device to be used by torch. "
+                       "With 'auto', OptiGAN will try to get a GPU device "
+                       "and fall back to CPU if no GPU is available. ",
+                "allowed_values": ("gpu", "cpu", "auto")
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -209,8 +235,7 @@ class OptiGAN(GateObject):
             "labels_length": 3,
         }
 
-        # FIX ME: should set to gpu if available??
-        self.device = torch.device("cpu")
+        self.device = None
 
     @property
     def _absolute_output_path(self):
@@ -237,6 +262,8 @@ class OptiGAN(GateObject):
         delete_folder_contents(
             self.get_absolute_path_to_folder(self.optigan_input_folder)
         )
+        self.device = get_torch_device(self.torch_device)
+
 
     def print_details_of_events(self):
         """
