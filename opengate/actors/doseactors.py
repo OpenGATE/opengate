@@ -341,18 +341,11 @@ def _setter_hook_uncertainty_goal(self, value):
 
 
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
-    """
-    DoseActor: compute a 3D edep/dose map for deposited
-    energy/absorbed dose in the attached volume
-
-    By default, the dose actor is centered according to the "attachedTo" volume center
-    If the attachedTo volume is an Image AND the option "img_coord_system" is True:
-    the origin of the attachedTo image is used for the output dose.
-    Hence, the dose can be superimposed with the attachedTo volume.
+    """DoseActor: compute a 3D map of the deposited
+    energy/absorbed dose in the volume to which it is attached.
     """
 
     # hints for IDE
-    use_more_ram: bool
     score_in: str
 
     user_info_defaults = {
@@ -737,8 +730,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
 
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
-    """
-    TLE = Track Length Estimator
+    """TLE = Track Length Estimator
     """
 
     energy_min: float
@@ -795,26 +787,7 @@ def _setter_hook_score_in_let_actor(self, value):
 
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
-    """
-    LET = Linear energy transfer
-    LETActor: compute a 3D edep/dose map for deposited
-    energy/absorbed dose in the attached volume
-
-    The dose map is parameterized with:
-        - size (number of voxels)
-        - spacing (voxel size)
-        - translation (according to the coordinate system of the "attachedTo" volume)
-        - no rotation
-
-    Position:
-    - by default: centered according to the "attachedTo" volume center
-    - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
-        the origin of the attachedTo image is used for the output dose.
-        Hence, the dose can be superimposed with the attachedTo volume
-
-    Options
-        - LETd only for the moment
-        - later: LETt, Q, fluence ...
+    """This actor scores the Linear Energy Transfer (LET) on a voxel grid in the volume to which the actor is attached. .
     """
 
     # hints for IDE
@@ -856,21 +829,21 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             False,
             {
                 "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
+                "deprecated": "Use score_in= to specify in which material LET should be scored. ",
             },
         ),
         "let_to_water": (
             True,
             {
                 "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
+                "deprecated": "Use score_in= to specify in which material LET should be scored. ",
             },
         ),
         "other_material": (
             None,
             {
                 "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
+                "deprecated": "Use score_in= to specify in which material LET should be scored. ",
             },
         ),
         "separate_output": (
