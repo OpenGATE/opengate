@@ -73,7 +73,7 @@ if __name__ == "__main__":
     gamma_pairs = read_gamma_pairs(phsp.output_filename)
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
 
-    acolin_scale = plot_acolin_case(mean_energy, acollinearity_angles)
+    acolin_scale = plot_acolin_case_mepip(mean_energy, acollinearity_angles)
 
     f = paths.output / f"acollinearity_angles_{test_key}.png"
     plt.savefig(f)
