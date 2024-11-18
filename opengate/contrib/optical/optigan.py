@@ -300,21 +300,6 @@ class OptiGAN(GateObject):
         # Initialize the model.
         generator = WGANGenerator(input_dim, output_dim, hidden_dim, labels_len)
 
-        # DELETE in future.
-        # Print model and checkpoint state_dict sizes.
-        # print("Model's state_dict:")
-        # for param_tensor in generator.state_dict():
-        #     print(param_tensor, "\t", generator.state_dict()[param_tensor].size())
-        #
-        # print("\nCheckpoint's state_dict:")
-        # for param_tensor in checkpoint["generator_state_dict"]:
-        #     print(
-        #         param_tensor,
-        #         "\t",
-        #         checkpoint["generator_state_dict"][param_tensor].size(),
-        #     )
-        # print()
-
         # Load the state_dict into the model.
         generator.load_state_dict(checkpoint["generator_state_dict"])
 
