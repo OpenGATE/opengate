@@ -1,6 +1,8 @@
 from box import Box
 from typing import Optional
+import sys
 
+import opengate_core as g4
 from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal, GateImplementationError
@@ -793,6 +795,14 @@ class ActorOutputRoot(ActorOutputBase):
         return super().get_output_path(which="merged")
 
     def initialize(self):
+        # Warning, for the moment, MT and root output does not work on windows machine
+        if sys.platform.startswith("nt"):
+            if g4.IsMultithreadedApplication():
+                fatal(
+                    f"Sorry Multithreading and Root output does not work (yet) on windows architecture."
+                    f"You can run the simulation in single-threaded mode of switch to linux/max."
+                )
+
         # for ROOT output, not output_filename means no output to disk (legacy Gate 9 behavior)
         if self.output_filename == "" or self.output_filename is None:
             self.write_to_disk = False
