@@ -1,8 +1,8 @@
 
 .. _actors-label:
 
-Actors
-======
+Details: Actors
+===============
 
 SimulationStatisticsActor
 --------------------------

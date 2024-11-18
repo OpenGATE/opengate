@@ -19,7 +19,7 @@ User Guide
    user_guide_actors
 
 .. toctree::
-   :caption: Description of components
+   :caption: Detailed description of components
    :maxdepth: 2
 
    user_guide_reference_simulation

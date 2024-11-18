@@ -1,5 +1,5 @@
-Physics
-=======
+How to: Physics
+===============
 
 The management of physics in Geant4 is rich and complex, with hundreds of options. OPENGATE proposes a subset of available options.
 

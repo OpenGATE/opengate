@@ -1,5 +1,5 @@
-Installation
-============
+How to: Installation
+====================
 
 You only have to install the Python module with the `--pre` option to get the latest release:
 
