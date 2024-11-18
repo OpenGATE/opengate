@@ -32,6 +32,28 @@ Reference
 .. autoclass:: opengate.actors.miscactors.SimulationStatisticsActor
 
 
+KillActor
+---------
+
+Description
+~~~~~~~~~
+
+The KillActor enables the user to "kill", i.e. to stop this particle tracking, during its first step in a defined volume where this actor is attached.
+The number of killed particle can be retrieved printing the actor object.
+
+.. code-block:: python
+
+    kill_actor = sim.add_actor("KillActor", "KillAct")
+    kill_actor.attached_to = kill_plane
+    print(kill_actor)
+
+Refers tot the test064 for more details.
+
+Reference
+~~~~~~~~~
+.. autoclass:: opengate.actors.miscactors.KillActor
+
+
 DoseActor
 ---------
 
@@ -406,7 +428,7 @@ LETActor
 TLEDoseActor
 ------------
 
-The **Tracking Length Estimator (TLE) Dose Actor** is based on the work of `Baldacci *et al.*, 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_. It is designed to model a photon population instead of treating each photon as a single particle. This approach enables efficient and accurate dose calculation by enabling a multiple energy deposition by a single photon.
+The **Tracking Length Estimator (TLE) Dose Actor** is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_. It is designed to model a photon population instead of treating each photon as a single particle. This approach enables efficient and accurate dose calculation by enabling a multiple energy deposition by a single photon.
 
 **How It Works**  
 During a step, where a typical photon would interact and deposit its energy stochastically, a TLE photon deposits dose based on the material's mass energy-absorption coefficient (`μ_en`) and the step length. This method implies a local dose deposition at the voxel scale, even though secondary electrons are emitted. This actor indeed do not interfer with the GEANT4 tracking.
@@ -430,7 +452,36 @@ Here is the a classical way to use the TLEDoseActor :
 
 Refer to test081 for more details.
 
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.TLEDoseActor
+
 ---
+
+BremSplittingActor
+---------------------
+
+
+Description
+~~~~~~~~~
+
+This actor replicates the behaviour of the bremsstrahlung splitting which can be used using GEANT4 command line.
+When an electron or a positron occurs a bremsstrahlung process, the interaction is split in splitting_factor particles, with
+a weight of 1/splitting_factor.
+
+.. code-block:: python
+
+
+
+
+
+
+Reference
+~~~~~~~~~
+
+
+
 
 ComptonSplittingActor
 ---------------------
@@ -450,8 +501,6 @@ This actor generates N particles with reduced weight whenever a Compton process 
    compt_splitting_actor.rotation_vector_director = True
    compt_splitting_actor.vector_director = [0, 0, -1]
 
-Refer to test071 for more details.
-
 .. code-block:: python
 
   compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplitting")
@@ -461,8 +510,8 @@ Refer to test071 for more details.
   compt_splitting_actor.rotation_vector_director = True
   compt_splitting_actor.vector_director = [0, 0, -1]
 
-The options include:
 
-- the splitting Number: Specifies the number of splits to create.
-- A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
-- A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.miscactors.ComptonSplittingActor
