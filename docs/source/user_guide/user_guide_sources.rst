@@ -163,6 +163,9 @@ So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY
 plane from -X to -Y.
 
 .. image:: ../figures/thetaphi.png
+   :width: 70%
+   :align: center
+
 
 Momentum
 """"""""
@@ -211,6 +214,35 @@ custom-defined histograms for 𝜃 (theta) and 𝜙 (phi) angles.
        110 * deg,
        120 * deg,
     ]
+
+
+See figure below, left:
+
+.. code:: python
+
+    # Example A
+    source.direction.type = "histogram"
+    source.direction.histogram_phi_angle = [70 * deg, 110 * deg]
+    source.direction.histogram_phi_weight = [0, 1]
+
+
+See figure below, right:
+
+.. code:: python
+
+    # Example B
+    source.direction.type = "histogram"
+    source.direction.histogram_phi_angle = [70 * deg, 80 * deg, 90* deg, 100 * deg, 110 * deg]
+    source.direction.histogram_phi_weight = [0, 1, 0, 1, 0]
+
+
+.. image:: ../figures/generic_source_direction_histogram_a.png
+   :width: 49.6%
+
+
+.. image:: ../figures/generic_source_direction_histogram_b.png
+   :width: 49.6%
+
 
 Acceptance angle
 """"""""""""""""
@@ -311,6 +343,8 @@ For example, using this:
 The produced particles will follow this pattern:
 
 .. image:: ../figures/generic_source_spectrum_discrete.png
+   :align: center
+   :width: 70%
 
 
 **Histogram for beta spectrum**
@@ -353,6 +387,9 @@ For example, using this (which is what you get from `get_rad_beta_spectrum("Lu17
 The produced particles will follow this pattern:
 
 .. image:: ../figures/generic_source_spectrum_histogram.png
+   :align: center
+   :width: 70%
+
 
 **Interpolation**
 
