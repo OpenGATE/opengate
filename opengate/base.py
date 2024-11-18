@@ -364,7 +364,7 @@ def make_docstring_for_user_info(name, default_value, options):
 
 def make_docstring(cls, user_info_defaults):
     docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
-    for k, v in user_info_defaults.items():
+    for k, v in sorted(user_info_defaults.items()):
         default_value = v[0]
         options = v[1]
         docstring += "* "
