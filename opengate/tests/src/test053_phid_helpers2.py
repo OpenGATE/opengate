@@ -87,7 +87,6 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     s1.direction.type = "iso"
     s1.activity = activity
     s1.half_life = nuclide.half_life("s") * sec
-    print(f"{s1.name = }")
     print(f"Half Life is {s1.half_life / sec:.2f} sec")
 
     return s1
