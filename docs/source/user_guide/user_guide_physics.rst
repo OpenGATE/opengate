@@ -71,7 +71,6 @@ Specific electromagnetic parameters can be turned on or off like this:
 Production cuts
 ---------------
 
-
 Geant4 allows you to tune the conditions under which it should actually produce anbd track secodnary particles, i.e. particles produced as the results of interactions of an existing particles with the target (or from fragmentation). More specifically, you can set the production cut in terms of range for a given particle. For example, a 10 mm cut applied to electrons means that secondary electrons are only produced if their energy gives them a range of at least 2 mm in the material where they are. As a rule of thumb: the higher the cut value the faster but also the less accurate the simulation.
 
 You can set production cuts globally, i.e. apply them to the entire world, either like this:
@@ -109,4 +108,31 @@ Both of the above commands are equivalent.
 Have a look at section :ref:`production-cuts-details-label` in the detailed part of this user guide for more information.
 
 
-`User Limits <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/userLimits.html>`_
+Limit the step size
+-------------------
+
+Geant4 automatically determines the best step size to be used in given circumstances while it transports a particle. Generally speaking, if interactions are not likely to occur close to the current position of the particle, Geant4 takes a large step. If a next interaction is likely to occur close by the current position, the step size will be small. Clearly, this not only depends on the particle properties, but also on the material, e.g. on its density.
+
+
+You can impose a maximum step size that Geant4 may use, e.g. to guarantee a certain level of accuracy, in a specific volume in your simulation. There are two equivalent ways to achieve this. You can either do:
+
+.. code-block:: python
+
+    my_vol = sim.add_volume("SphereVolume", name="my_vol")
+    sim.physics_manager.set_max_step_size(my_vol.name, 1 * gate.g4_units.mm)
+
+or
+
+.. code-block:: python
+
+    my_vol = sim.add_volume("SphereVolume", name="my_vol")
+    my_vol.set_max_step_size(1 * gate.g4_units.mm)
+
+Additionally, you need to tell GATE to which particles you want to apply the step limit. To apply the 1 mm limit to electrons and positrons, you need this line:
+
+.. code-block:: python
+
+    sim.physics_manager.set_user_limits_particles(['electron', 'positron'])
+
+There are other user limits like ''maximum track length'' and ''minimium kinetic energy'', that are used in analogy to the ''maximum step size''.
+You can also use Regions if your geometry is complex. Have a look at the section :ref:`user-limits-details-label` in the detailed part of this user guide for more info.

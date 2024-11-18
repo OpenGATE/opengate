@@ -78,12 +78,25 @@ Under the hood, the setting ``sim.physics_manager.enable_decay = True`` will add
 
 
 .. _production-cuts-details-label:
+
 Production cuts
 ===============
 
 `Geant4 User Guide: Tracking and Physics <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/thresholdVScut.html>`_
 
 `Cuts per Region <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/cutsPerRegion.html>`_
+
+
+.. _user-limits-details-label:
+
+User limits
+===========
+
+
+.. This last option is global, i.e. a step limit will be imposed on electrons in any volume in which you set a max step size.
+
+`User Limits <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/userLimits.html>`_
+
 
 
 Acollinearity of Annihilation Photons
