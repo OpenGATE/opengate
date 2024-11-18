@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     # source from image for CT #1
     source = sim.add_source("VoxelsSource", "vox_source")
-    source.mother = ct.name
+    source.attached_to = ct.name
     source.particle = "alpha"
     source.activity = 20000 * Bq / sim.number_of_threads
     source.image = str(paths.data / "five_pixels_anisotrop.mhd")

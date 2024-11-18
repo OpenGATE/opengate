@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+from opengate.logger import EVENT
 from test053_phid_helpers2 import *
 import opengate as gate
 
@@ -56,7 +56,8 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
     print(stats)
 
     # compare
-    warning(f"check root files")
+    print()
+    print(f"check root files")
     root_ref = paths.output / f"test053_{nuclide.nuclide}_5_ref.root"
     root_model = sim.get_actor("phsp").get_output_path()
     print(f"{root_ref = }")
@@ -64,7 +65,6 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
     is_ok = compare_root_energy(
         root_ref, root_model, start_time, end_time, model_index=130, tol=0.09
     )
-
     test_ok(is_ok)
 
 

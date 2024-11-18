@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     # source
     source = sim.add_source("GenericSource", "mysource")
-    source.mother = gantry.name
+    source.attached_to = gantry.name
     source.particle = "gamma"
     source.energy.mono = 60 * keV
     source.position.type = "box"

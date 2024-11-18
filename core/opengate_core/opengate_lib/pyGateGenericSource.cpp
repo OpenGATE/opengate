@@ -15,13 +15,12 @@ void init_GateGenericSource(py::module &m) {
 
   py::class_<GateGenericSource, GateVSource>(m, "GateGenericSource")
       .def(py::init())
-      .def_readonly("fNumberOfGeneratedEvents",
-                    &GateGenericSource::fNumberOfGeneratedEvents)
+      //.def_readonly("fNumberOfGeneratedEvents",
+      //              &GateGenericSource::fNumberOfGeneratedEvents)
       .def("InitializeUserInfo", &GateGenericSource::InitializeUserInfo)
       .def("SetEnergyCDF", &GateGenericSource::SetEnergyCDF)
       .def("SetProbabilityCDF", &GateGenericSource::SetProbabilityCDF)
-      .def_readonly("fTotalSkippedEvents",
-                    &GateGenericSource::fTotalSkippedEvents)
-      .def_readonly("fTotalZeroEvents", &GateGenericSource::fTotalZeroEvents)
+      .def("GetTotalSkippedEvents", &GateGenericSource::GetTotalSkippedEvents)
+      .def("GetTotalZeroEvents", &GateGenericSource::GetTotalZeroEvents)
       .def("SetTAC", &GateGenericSource::SetTAC);
 }

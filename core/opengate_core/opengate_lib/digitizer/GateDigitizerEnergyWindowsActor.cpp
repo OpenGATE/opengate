@@ -23,8 +23,8 @@ GateDigitizerEnergyWindowsActor::GateDigitizerEnergyWindowsActor(
   fActions.insert("EndSimulationAction");
 }
 
-void GateDigitizerEnergyWindowsActor::InitializeUserInput(py::dict &user_info) {
-  GateVActor::InitializeUserInput(user_info);
+void GateDigitizerEnergyWindowsActor::InitializeUserInfo(py::dict &user_info) {
+  GateVActor::InitializeUserInfo(user_info);
   // options
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
   fUserSkipDigiAttributeNames = DictGetVecStr(user_info, "skip_attributes");

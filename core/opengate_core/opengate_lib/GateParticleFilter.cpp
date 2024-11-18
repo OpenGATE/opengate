@@ -8,7 +8,7 @@
 #include "GateParticleFilter.h"
 #include "GateHelpersDict.h"
 
-void GateParticleFilter::InitializeUserInput(py::dict &user_info) {
+void GateParticleFilter::InitializeUserInfo(py::dict &user_info) {
   fParticleName = DictGetStr(user_info, "particle");
   fPolicy = DictGetStr(user_info, "policy");
 }

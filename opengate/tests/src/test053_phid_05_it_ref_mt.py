@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 from test053_phid_helpers2 import *
-import os
 import opengate as gate
 
 

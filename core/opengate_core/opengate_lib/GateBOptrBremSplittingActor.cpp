@@ -46,9 +46,9 @@ GateBOptrBremSplittingActor::GateBOptrBremSplittingActor(py::dict &user_info)
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void GateBOptrBremSplittingActor::InitializeUserInput(py::dict &user_info) {
+void GateBOptrBremSplittingActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
   fSplittingFactor = DictGetInt(user_info, "splitting_factor");
   fBiasPrimaryOnly = DictGetBool(user_info, "bias_primary_only");
   fBiasOnlyOnce = DictGetBool(user_info, "bias_only_once");
@@ -69,7 +69,7 @@ StartRun(run);
 void GateBOptrBremSplittingActor::StartRun() {
   fBremSplittingOperation->SetSplittingFactor(fSplittingFactor);
   G4LogicalVolume *biasingVolume =
-      G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+      G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
   if (fBiasPrimaryOnly)
     G4cout << ", biasing only primaries ";
   else

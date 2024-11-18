@@ -174,6 +174,7 @@ def go(
         f"{nuclide.nuclide}\n"
         f"Half-life = {g4_best_unit(half_life, 'Time')}\n"
         f"at t={g4_best_unit(start_h * hour, 'Time')}\n"
+        f"duration t={g4_best_unit(duration_s*sec, 'Time')}\n"
         f"{l} photon sources \n",
         xy=(x, y),
         fontsize=SIZE,

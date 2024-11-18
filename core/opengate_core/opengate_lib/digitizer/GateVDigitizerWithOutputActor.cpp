@@ -37,8 +37,8 @@ void GateVDigitizerWithOutputActor::InitializeCpp() {
 }
 
 // get user input parameters from python side
-void GateVDigitizerWithOutputActor::InitializeUserInput(py::dict &user_info) {
-  GateVActor::InitializeUserInput(user_info);
+void GateVDigitizerWithOutputActor::InitializeUserInfo(py::dict &user_info) {
+  GateVActor::InitializeUserInfo(user_info);
   // options for input
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
 
