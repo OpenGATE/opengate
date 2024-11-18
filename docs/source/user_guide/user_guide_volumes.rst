@@ -213,6 +213,44 @@ for the required format of database file.
    This function creates a material named "mylar", with the given mass density and the composition (H C and O here) described as a vector of percentages. Note that the weights are normalized. The created material can then be used for any volume.
    -->
 
+Parameterized Repeaters
+---------
+
+In GATE10 parametrized repeaters allow you to replicate a base volume multiple times in a simulation, either linearly, as a cubic array or a circular arrangement. These repeaters are useful for creating arrays of volumes, such as crystals in a detector. Below are two examples showcasing linear and circular repeaters.
+
+```python
+import opengate as gate
+
+# Initialize simulation
+sim = gate.Simulation()
+cm = gate.g4_units.cm
+
+# Base volume: a single crystal
+crystal = sim.add_volume("Box", "Crystal")
+crystal.size = [1 * cm, 1 * cm, 1 * cm]  # Define the size of the crystal
+crystal.material = "LYSO"
+
+# Linear repeater configuration
+crystal.linear_repeat = [10, 1, 1]  # Repeat 10 times along X-axis
+crystal.translation = [1.5 * cm, 0, 0]  # Distance between repetitions
+```
+
+A rotation matrix needs to be provided for circular repeaters. This example showcases a rotation matrix along the Z-axis with an angle theta = 30 rads and a translation of 10 cm along the X-axis to define the radius.
+
+```python
+# Define the circular repeater
+theta = np.radians(30)  # Convert 30 degrees to radians
+rotation_matrix = np.array([
+    [np.cos(theta), -np.sin(theta), 0],
+    [np.sin(theta),  np.cos(theta), 0],
+    [0,              0,             1]
+])
+circular_repeater.offset_nb = 12  # Place 12 crystals in a circular arrangement
+circular_repeater.rotation = rotation_matrix  # Rotate each crystal by 30 degrees
+circular_repeater.translation = [10 * cm, 0, 0]  # Place crystals in a 10 cm radius circle
+```
+
+
 Parallel worlds
 ---------------
 
