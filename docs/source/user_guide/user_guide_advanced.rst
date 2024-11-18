@@ -32,6 +32,7 @@ Method 2 can be used when a user wants to use OptiGAN in a file outside their ma
 
 Workflow of OptiGAN Module in Gate 10
 -------------------------------------
+.. image:: ../figures/optigan_working.png
 
 OptiGAN requires two pieces of input information: the position of gamma interaction in the crystal and the number of optical photons emitted. This information is automatically parsed from the root files when users utilize OptiGAN.
 
