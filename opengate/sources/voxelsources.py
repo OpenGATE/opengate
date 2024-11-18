@@ -32,7 +32,6 @@ class VoxelsSource(GenericSource, g4.GateVoxelsSource):
     }
 
     def __init__(self, *args, **kwargs):
-        print(f"VoxelsSource __init__")
         self.__initcpp__()
         super().__init__(self, *args, **kwargs)
         # the loaded image
@@ -40,11 +39,6 @@ class VoxelsSource(GenericSource, g4.GateVoxelsSource):
 
     def __initcpp__(self):
         g4.GateVoxelsSource.__init__(self)
-
-    """def __getstate__(self):
-        super().__getstate__()
-        self.image = None
-        return self.__dict__"""
 
     def set_transform_from_user_info(self):
         # get source image information
