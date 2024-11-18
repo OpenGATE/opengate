@@ -54,7 +54,7 @@ def _setter_hook_input_phsp_actor(self, input_phsp_actor):
             and self.simulation != input_phsp_actor.simulation
         ):
             fatal(
-                "The input_phsp_actor refers to a different simulation than this OtiGAN. "
+                f"The input_phsp_actor {input_phsp_actor.name} refers to a different simulation than this {self.type_name}. "
             )
         self.simulation = input_phsp_actor.simulation
         self.root_file_path = input_phsp_actor.get_output_path()
