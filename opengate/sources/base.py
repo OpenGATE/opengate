@@ -230,6 +230,9 @@ class SourceBase(GateObject):
         # this will initialize and set user_info to the cpp side
         self.InitializeUserInfo(self.user_info)
 
+    def add_to_source_manager(self, source_manager):
+        source_manager.AddSource(self)
+
     def prepare_output(self):
         pass
 
