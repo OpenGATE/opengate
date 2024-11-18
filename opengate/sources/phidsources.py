@@ -82,8 +82,8 @@ class PhotonFromIonDecaySource(GenericSource):
         # init timing intervals for all ui
         self.initialize_start_end_time(run_timing_intervals)
         for sub_source in self.sub_sources:
-            sub_source.start_time = self.user_info.start_time
-            sub_source.end_time = self.user_info.end_time
+            sub_source.start_time = self.start_time
+            sub_source.end_time = self.end_time
 
         # this will initialize and set user_info to the cpp side
         # for all sub_sources
