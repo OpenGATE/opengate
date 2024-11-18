@@ -52,8 +52,8 @@ class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
 
     def initialize(self, run_timing_intervals):
         GenericSource.initialize(self, run_timing_intervals)
-        _check_ph_space_params(self.user_info.direction.partPhSp_x)
-        _check_ph_space_params(self.user_info.direction.partPhSp_y)
+        _check_ph_space_params(self.direction.partPhSp_x)
+        _check_ph_space_params(self.direction.partPhSp_y)
 
 
 class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
@@ -120,11 +120,11 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         if self.particle.startswith("ion"):
             words = self.particle.split(" ")
             if len(words) > 1:
-                self.user_info.ion.Z = words[1]
+                self.ion.Z = words[1]
             if len(words) > 2:
-                self.user_info.ion.A = words[2]
+                self.ion.A = words[2]
             if len(words) > 3:
-                self.user_info.ion.E = words[3]
+                self.ion.E = words[3]
 
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
@@ -141,16 +141,16 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         weights = []
         partPhSp_xV = []
         partPhSp_yV = []
-        beam_nr = self.user_info.beam_nr
-        plan_path = self.user_info.plan_path
-        gantry_rot_axis = self.user_info.gantry_rot_axis
+        beam_nr = self.beam_nr
+        plan_path = self.plan_path
+        gantry_rot_axis = self.gantry_rot_axis
         gantry_angle = None
 
         # get data from plan if provided
         if plan_path:
             if str(plan_path).endswith(".txt"):
                 beam_data = spots_info_from_txt(
-                    plan_path, self.user_info.particle, beam_nr
+                    plan_path, self.particle, beam_nr
                 )
                 self.spots = beam_data["spots"]
                 gantry_angle = beam_data["gantry_angle"]
@@ -162,14 +162,14 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
                 raise ValueError(
                     "Plan path time has to be in .txt or .gantry_rot_axisdcm format"
                 )
-        elif self.user_info.beam_data_dict:
-            self.spots = self.user_info.beam_data_dict["spots"]
-            gantry_angle = self.user_info.beam_data_dict["gantry_angle"]
+        elif self.beam_data_dict:
+            self.spots = self.beam_data_dict["spots"]
+            gantry_angle = self.beam_data_dict["gantry_angle"]
 
         # set variables for spots, to initialize pbs sources on the cpp side
         self.rotation = Rotation.from_euler(gantry_rot_axis, gantry_angle, degrees=True)
-        self.translation = self.user_info.position.translation
-        beamline = self.user_info.beam_model
+        self.translation = self.position.translation
+        beamline = self.beam_model
         self.d_nozzle_to_iso = beamline.distance_nozzle_iso
         self.d_stear_mag_to_iso_x = beamline.distance_stearmag_to_isocenter_x
         self.d_stear_mag_to_iso_y = beamline.distance_stearmag_to_isocenter_y
