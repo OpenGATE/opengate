@@ -387,8 +387,8 @@ class GANSource(GenericSource, g4.GateGANSource):
     }
 
     def __init__(self, *args, **kwargs):
-        self.__initcpp__()
         super().__init__(self, *args, **kwargs)
+        self.__initcpp__()
 
     def __initcpp__(self):
         g4.GateGANSource.__init__(self)
@@ -458,8 +458,8 @@ class GANPairsSource(GANSource, g4.GateGANPairSource):
     """
 
     def __init__(self, *args, **kwargs):
-        self.__initcpp__()
         super().__init__(self, *args, **kwargs)
+        self.__initcpp__()
 
     def __initcpp__(self):
         g4.GateGANPairSource.__init__(self)
