@@ -18,6 +18,6 @@ void init_GateVSource(py::module &m) {
       m, "GateVSource")
       .def(py::init())
       .def("InitializeUserInfo", &GateVSource::InitializeUserInfo)
-      .def("SetOrientationAccordingToMotherVolume",
-           &GateVSource::SetOrientationAccordingToMotherVolume);
+      .def("SetOrientationAccordingToAttachedVolume",
+           &GateVSource::SetOrientationAccordingToAttachedVolume);
 }

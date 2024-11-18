@@ -29,8 +29,8 @@ GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
   fMultiThreadReady = true;
 }
 
-void GateTLEDoseActor::InitializeUserInput(py::dict &user_info) {
-  GateDoseActor::InitializeUserInput(user_info);
+void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
+  GateDoseActor::InitializeUserInfo(user_info);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
   fEnergyMax = py::cast<double>(user_info["energy_max"]);
   auto database = py::cast<std::string>(user_info["database"]);

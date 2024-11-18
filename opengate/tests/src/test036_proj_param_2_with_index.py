@@ -15,7 +15,7 @@ if __name__ == "__main__":
     sim = t036.create_simulation("param", paths, "_windx")
 
     # enlarge the source
-    source = sim.source_manager.get_source_info("src2")
+    source = sim.source_manager.get_source("src2")
     source.position.radius = 150 * mm
 
     # add a proj actor to a repeated volume

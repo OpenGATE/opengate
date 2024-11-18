@@ -73,7 +73,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     # default source for tests
     activity = 30 * kBq
     beam1 = sim.add_source("GenericSource", "beam1")
-    beam1.mother = waterbox.name
+    beam1.attached_to = waterbox.name
     beam1.particle = "gamma"
     beam1.energy.mono = 140.5 * keV
     beam1.position.type = "sphere"
@@ -85,7 +85,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     beam1.activity = activity / sim.number_of_threads
 
     beam2 = sim.add_source("GenericSource", "beam2")
-    beam2.mother = waterbox.name
+    beam2.attached_to = waterbox.name
     beam2.particle = "gamma"
     beam2.energy.mono = 140.5 * keV
     beam2.position.type = "sphere"
@@ -97,7 +97,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     beam2.activity = activity / sim.number_of_threads
 
     beam3 = sim.add_source("GenericSource", "beam3")
-    beam3.mother = waterbox.name
+    beam3.attached_to = waterbox.name
     beam3.particle = "gamma"
     beam3.energy.mono = 140.5 * keV
     beam3.position.type = "sphere"

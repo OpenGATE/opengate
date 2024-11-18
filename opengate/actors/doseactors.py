@@ -626,7 +626,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 f"This actor is attached to a {self.attached_to_volume.volume_type} volume. "
             )
 
-        self.InitializeUserInput(self.user_info)  # C++ side
+        self.InitializeUserInfo(self.user_info)  # C++ side
         # Set the flags on C++ side so the C++ knows which quantities need to be scored
         self.SetEdepSquaredFlag(
             self.user_output.edep_with_uncertainty.get_active(item=1)
@@ -946,7 +946,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         self.check_user_input()
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
@@ -1030,7 +1030,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         if self.uncertainty or self.scatter:
             fatal("FluenceActor : uncertainty and scatter not implemented yet")
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()

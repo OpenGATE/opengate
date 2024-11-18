@@ -32,24 +32,23 @@ if __name__ == "__main__":
     singles = sim.actor_manager.get_actor("Singles_spect1_crystal")
     singles.output_filename = "test038_gan_aa_singles.root"
 
-    # go (cannot be spawn in another process)
+    # go
     sim.run(start_new_process=True)
 
     #
     print()
-    s = sim.source_manager.get_source_info("gaga")
-    print(s)
+    s = sim.source_manager.get_source("gaga")
     ref_se = 220534
-    t_se = (ref_se - s.fTotalSkippedEvents) / ref_se * 100
+    t_se = (ref_se - s.total_skipped_events) / ref_se * 100
     tol = 10
     is_ok = t_se < tol
     utility.print_test(
         is_ok,
-        f"Source, nb of skipped particles (absorbed) : {s.fTotalSkippedEvents} {t_se:0.2f}% (tol = {tol}, {ref_se})",
+        f"Source, nb of skipped particles (absorbed) : {s.total_skipped_events} {t_se:0.2f}% (tol = {tol}, {ref_se})",
     )
 
     print(
-        f"Source, nb of zeros particles (absorbed) : {s.fTotalZeroEvents} (should be around 5)"
+        f"Source, nb of zeros particles (absorbed) : {s.total_zero_events} (should be around 5)"
     )
 
     stats = sim.get_actor("Stats")
@@ -58,7 +57,7 @@ if __name__ == "__main__":
     stats_ref.counts.steps = stats.counts.steps
     is_ok = utility.assert_stats(stats, stats_ref, 0.02) and is_ok
 
-    stats.counts.events += s.fTotalSkippedEvents
+    stats.counts.events += s.total_skipped_events
     print("Number of events is increased by the nb of skipped events")
     print(stats)
 

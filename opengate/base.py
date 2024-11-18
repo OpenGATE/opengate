@@ -21,6 +21,15 @@ from .definitions import (
 )
 from .decorators import requires_fatal
 from .logger import log
+import traceback
+
+
+def print_call_location():
+    stack = traceback.extract_stack()
+    # Get the caller of this function
+    filename, lineno, _, _ = stack[-3]
+    msg = f"Called from file: {filename}, line: {lineno}"
+    return msg
 
 
 # Singletons
@@ -530,6 +539,7 @@ class GateObject:
         if len(known_attributes) > 0:
             if key not in known_attributes:
                 msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                msg += print_call_location() + "\n"
                 close_matches = get_close_matches(key, known_attributes)
                 if len(close_matches) > 0:
                     msg_close_matches = (

@@ -8,12 +8,12 @@ Mandatory basic class structure
 
 -  call the ``initialize()`` method from the python super class.
 -  call the ``InitializeCpp()`` method from the C++ super class
--  call the ``InitializeUserInput()`` method from the C++ super class
+-  call the ``InitializeUserInfo()`` method from the C++ super class
 -  If you need to perform specific checks, e.g. plausibility of user
    input parameters, you will probably want to do that before calling
    the C++ methods.
 -  Example:
-   ``python     def initialize(self):         ActorBase.initialize(self)         # possibly implement some checks here ...         self.InitializeUserInput(self.user_info)         self.InitializeCpp()``
+   ``python     def initialize(self):         ActorBase.initialize(self)         # possibly implement some checks here ...         self.InitializeUserInfo(self.user_info)         self.InitializeCpp()``
 
 2) Implement a ``__initcpp__()`` method. This should at least call the
    C++ constructor method and add actions if needed. Example:

@@ -3,10 +3,10 @@
 
 from box import Box
 import json
-import numpy as np
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 from opengate.tests import utility
+from opengate.sources.base import get_rad_gamma_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test046")
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     yields = [0.885, 0.172168, 1.847315, 1.0024600000000004]
     i = 0
     for rad in radionuclides:
-        rad_spectrum = gate.sources.generic.get_rad_gamma_spectrum(rad)
+        rad_spectrum = get_rad_gamma_spectrum(rad)
         tw = rad_spectrum["weights"].sum()
         ok = tw == yields[i]
         utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]} {ok}")

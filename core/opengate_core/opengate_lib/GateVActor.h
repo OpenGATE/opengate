@@ -32,7 +32,7 @@ public:
   virtual void InitializeCpp();
 
   // get user input parameters from python side
-  virtual void InitializeUserInput(py::dict &user_info);
+  virtual void InitializeUserInfo(py::dict &user_info);
 
   // Used to add a callback to a given volume.
   // Every step in this volume will trigger a SteppingAction
@@ -141,7 +141,7 @@ public:
   std::set<std::string> fActions;
 
   // Name of the mother volume (logical volume)
-  std::string fMotherVolumeName;
+  std::string fAttachedToVolumeName;
 
   // List of active filters
   std::vector<GateVFilter *> fFilters;

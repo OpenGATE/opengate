@@ -97,7 +97,7 @@ if __name__ == "__main__":
     activity = 10 * kBq
     for i in range(1, 3):
         source = sim.add_source("GenericSource", f"src{i}")
-        source.mother = f"iec{i}"
+        source.attached_to = f"iec{i}"
         source.energy.mono = 100 * MeV
         source.particle = "proton"
         source.position.type = "sphere"
