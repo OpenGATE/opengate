@@ -296,14 +296,14 @@ class GANSource(GenericSource, g4.GateGANSource):
             -1,
             {
                 "doc": "Minimum energy threshold. If the generator creates particles with less than this energy, "
-                       "the particle is skipped"
+                "the particle is skipped"
             },
         ),
         "energy_max_threshold": (
             sys.float_info.max,
             {
                 "doc": "Maximum energy threshold. If the generator creates particles with a higher energy, "
-                       "the particle is skipped"
+                "the particle is skipped"
             },
         ),
         "batch_size": (
@@ -448,7 +448,9 @@ class GANSource(GenericSource, g4.GateGANSource):
         vcg = VoxelizedSourceConditionGenerator(self.cond_image)
         # vcg = VoxelizedSourceConditionGenerator(self.cond_image, self)
         vcg.compute_directions = self.compute_directions
-        self.generator = GANSourceConditionalGenerator(self.user_info, vcg.generate_condition)
+        self.generator = GANSourceConditionalGenerator(
+            self.user_info, vcg.generate_condition
+        )
 
 
 class GANPairsSource(GANSource, g4.GateGANPairSource):

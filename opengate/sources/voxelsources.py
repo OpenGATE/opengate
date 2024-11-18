@@ -25,7 +25,7 @@ class VoxelsSource(GenericSource, g4.GateVoxelsSource):
             None,
             {
                 "doc": "Filename of the image of the 3D activity distribution "
-                       "(will be automatically normalized to sum=1)",
+                "(will be automatically normalized to sum=1)",
                 "is_input_file": True,
             },
         )

@@ -149,9 +149,7 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         # get data from plan if provided
         if plan_path:
             if str(plan_path).endswith(".txt"):
-                beam_data = spots_info_from_txt(
-                    plan_path, self.particle, beam_nr
-                )
+                beam_data = spots_info_from_txt(plan_path, self.particle, beam_nr)
                 self.spots = beam_data["spots"]
                 gantry_angle = beam_data["gantry_angle"]
             elif str(plan_path).endswith(".dcm"):

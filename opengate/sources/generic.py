@@ -156,7 +156,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             False,
             {
                 "doc": "Should we update the direction of the particle "
-                       "when the volume is moved (with dynamic parametrisation)?"
+                "when the volume is moved (with dynamic parametrisation)?"
             },
         ),
         "position": (
@@ -286,7 +286,9 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         SourceBase.initialize(self, run_timing_intervals)
 
         if self.n > 0 and self.activity > 0:
-            fatal(f"Cannot use both the two parameters 'n' and 'activity' at the same time. ")
+            fatal(
+                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
+            )
         if self.n == 0 and self.activity == 0:
             fatal(f"You must set one of the two parameters 'n' or 'activity'.")
         if self.activity > 0:
