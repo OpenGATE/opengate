@@ -334,6 +334,7 @@ def _make_property(property_name, default_value, options=None, container_dict=No
 
     return prop
 
+
 def convert_default_value_to_string(default_value):
     default_value_str = str(default_value)
     default_value_str = default_value_str.replace("\n", ", ")
@@ -354,9 +355,7 @@ def make_docstring_for_user_info(name, default_value, options):
         docstring += ":\n\n"
         docstring += f"{begin_of_line}Default value: {convert_default_value_to_string(default_value)}\n"
         if "allowed_values" in options:
-            docstring += (
-                f"{begin_of_line}Allowed values: {options['allowed_values']}\n"
-            )
+            docstring += f"{begin_of_line}Allowed values: {options['allowed_values']}\n"
         if "doc" in options:
             docstring += f"{begin_of_line}Description: {options['doc']}\n"
     return docstring

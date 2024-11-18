@@ -730,8 +730,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
 
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
-    """TLE = Track Length Estimator
-    """
+    """TLE = Track Length Estimator"""
 
     energy_min: float
     energy_max: float
@@ -787,8 +786,7 @@ def _setter_hook_score_in_let_actor(self, value):
 
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
-    """This actor scores the Linear Energy Transfer (LET) on a voxel grid in the volume to which the actor is attached. .
-    """
+    """This actor scores the Linear Energy Transfer (LET) on a voxel grid in the volume to which the actor is attached. ."""
 
     # hints for IDE
     averaging_method: str
