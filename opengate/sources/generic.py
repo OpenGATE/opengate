@@ -174,8 +174,8 @@ class GenericSource(SourceBase, g4.GateGenericSource):
     }
 
     def __init__(self, *args, **kwargs):
-        self.__initcpp__()
         super().__init__(self, *args, **kwargs)
+        self.__initcpp__()
         self.total_zero_events = 0
         self.total_skipped_events = 0
         if not self.user_info.particle.startswith("ion"):
