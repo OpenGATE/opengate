@@ -1,11 +1,11 @@
 Installation
 ============
 
-You only have to install the Python module with the `--pre` option to get the latest release:
+Install GATE with:
 
 .. code-block:: bash
 
-    pip install --pre opengate
+    pip install opengate
 
 Then, you can create a simulation using the `opengate` module (see below). For **developers**, please check the `developer guide <developer_guide>`_ for the developer installation.
 
@@ -15,7 +15,8 @@ Then, you can create a simulation using the `opengate` module (see below). For *
 
     python -m venv opengate_env
     source opengate_env/bin/activate
-    pip install --pre opengate
+    pip install --upgrade pip
+    pip install opengate
 
 or with a `conda` environment:
 
@@ -23,19 +24,14 @@ or with a `conda` environment:
 
     conda create --name opengate_env python=3.10
     conda activate opengate_env
-    pip install --pre opengate
-
-You may need to upgrade the pip module with:
-
-.. code-block:: bash
-
     pip install --upgrade pip
+    pip install opengate
 
 If you already have `opengate` installed, upgrade it with:
 
 .. code-block:: bash
 
-    pip install --upgrade --pre opengate
+    pip install --upgrade opengate
 
 Once installed, we recommend checking the installation by printing GATE information and running the tests:
 
