@@ -40,7 +40,7 @@ class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
         self.__initcpp__()
         self.position.type = "disc"
 
-        # FIXME: how to change the user_info for this new param ?
+        # FIXME: how to change the user_info for this new param ? -> use "override:True" entry in options dict
 
         # additional parameters: direction
         # sigma, theta, epsilon, conv (0: divergent, 1: convergent)
