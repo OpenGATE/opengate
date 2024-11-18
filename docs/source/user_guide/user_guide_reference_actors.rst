@@ -2,7 +2,30 @@
 .. _actors-label:
 
 Details: Actors
-===============
+***************
+
+
+Overview: Types of actors
+-------------------------
+
+Hits-related actors (digitizers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GATE contains a number of actors that work on a per-hit or per-event basis. A hit in Geant4 refers to a single interaction, i.e. with an associated position, potentially deposited energy, etc. Historically, these actors were developed to mimic the digitization chain in nuclear imaging scanners and are therefore called `digitizers`, but they are actually just actors.
+
+Digitizers can store rich information about the particle involved in the hit, e.g. the type of particle, the kinetic properties, position, as well as information about the hit itself.
+
+Most digitizers can be enchained so that the output of one digitizer provides the input to the next one. The :class:`~.opengate.actors.digitizers.HitsCollectionActor` is usually the first one in such a processing chain. It simply collects every hit that occurs in a certain volume and stores in a ROOT file.
+
+The :class:`~.opengate.actors.digitizers.PhaseSpaceActor` is actually a special case of the :class:`~.opengate.actors.digitizers.HitsCollectionActor` that stores only certain hits in a volume, rather than all, e.g. the first hit.
+
+Most of the other digitizers process data per event, i.e. one entry in the data is related to one primary particle. The ''compression'' from per-hit to per-event data is for example achieved by the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`.
+
+Most digitizers create a ROOT file as output (except :class:`~.opengate.actors.digitizers.DigitizerProjectionActor`, which outputs an image). The output can be written to disk with ``my_digitizer.root_output.write_to_disk = True``.
+
+If your simulation contains repeated volumes, you need to decide whether you allow a digitizer to be attached to them or not. You can do that via the parameter :attr:`~.opengate.actors.digitizers.DigitizerBase.authorize_repeated_volumes`: Set this to True to work with repeated volumes, such as in PET systems. However, for SPECT heads, you may want to avoid recording hits from both heads in the same file, in which case, set the flag to False.
+
+
 
 SimulationStatisticsActor
 --------------------------
@@ -30,6 +53,7 @@ Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.miscactors.SimulationStatisticsActor
+
 
 
 DoseActor
@@ -63,6 +87,56 @@ Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.doseactors.DoseActor
+
+
+LETActor
+--------
+
+.. note:: Refer to test050 for current examples.
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.LETActor
+
+
+FluenceActor
+------------
+
+Description
+~~~~~~~~~~~
+
+This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. The FluenceActor will be extended in the future with features to handle scattered radiation, e.g. in cone beam CT imaging.
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.FluenceActor
+
+
+TLEDoseActor
+------------
+
+Description
+~~~~~~~~~~~
+
+This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor` which scores dose due to low energy gammas in another way, namely via the track length in the given voxel. Most options as well as the output are identical to the :class:`~.opengate.actors.doseactors.DoseActor`.
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.TLEDoseActor
+
+
+VoxelDepositActor
+-----------------
+
+This is a common base class used by the actors that scored quantities deposited on voxel grid like the :class:`~.opengate.actors.doseactors.DoseActor`, :class:`~.opengate.actors.doseactors.LETActor`, :class:`~.opengate.actors.doseactors.FluenceActor`, :class:`~.opengate.actors.doseactors.TLEDoseActor`.
+
+.. important:: You cannot use this actor directly in your simulation.
 
 
 PhaseSpaceActor
@@ -120,15 +194,6 @@ Reference
 .. autoclass:: opengate.actors.digitizers.PhaseSpaceActor
 
 
-Hits-related actors (digitizer)
--------------------------------
-
-The digitizer module simulates the behavior of scanner detectors and signal processing chains. It processes and filters a list of interactions (hits) occurring in a detector to produce a final digital value. A digitizer chain begins with defining a `HitsCollectionActor`.
-
-Common features of digitizer actors:
-
-- Most digitizers have a ROOT output (except `DigitizerProjectionActor`, which outputs an image). The output can be written to disk with `my_digitizer.root_output.write_to_disk = True`.
-- `authorize_repeated_volumes`: Set this to True to work with repeated volumes, such as in PET systems. However, for SPECT heads, you may want to avoid recording hits from both heads in the same file, in which case, set the flag to False.
 
 DigitizerHitsCollectionActor
 ----------------------------
@@ -401,12 +466,6 @@ The associated publication is:
 
     Learning SPECT detector angular response function with neural network for accelerating Monte-Carlo simulations. Sarrut D, Krah N, Badel JN, Létang JM. Phys Med Biol. 2018 Oct 17;63(20):205013. doi: 10.1088/1361-6560/aae331.  https://www.ncbi.nlm.nih.gov/pubmed/30238925
 
-
-LETActor
---------
-
-.. note::
-   Documentation TODO. Refer to test050 for current examples.
 
 ComptonSplittingActor
 ---------------------
