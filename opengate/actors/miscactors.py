@@ -461,7 +461,7 @@ class LastVertexInteractionSplittingActor(
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
         dico_of_volume_tree = {}

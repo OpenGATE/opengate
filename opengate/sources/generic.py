@@ -390,21 +390,4 @@ class TemplateSource(SourceBase):
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
 
-
-class LastVertexSource(SourceBase):
-    type_name = "LastVertexSource"
-
-    @staticmethod
-    def set_default_user_info(user_info):
-        SourceBase.set_default_user_info(user_info)
-        user_info.n = 0
-
-    def create_g4_source(self):
-        return opengate_core.GateLastVertexSource()
-
-    def __init__(self, user_info):
-        super().__init__(user_info)
-
-    def initialize(self, run_timing_intervals):
-        SourceBase.initialize(self, run_timing_intervals)
 process_cls(GenericSource)

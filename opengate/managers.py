@@ -48,6 +48,7 @@ from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
+from .sources.lastvertexsources import LastVertexSource
 from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelSource
 from .sources.gansources import GANSource, GANPairsSource
@@ -56,6 +57,7 @@ from .sources.phidsources import PhotonFromIonDecaySource
 
 source_types = {
     "GenericSource": GenericSource,
+    "LastVertexSource":LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
     "GANSource": GANSource,
