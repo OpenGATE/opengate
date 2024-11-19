@@ -1,8 +1,31 @@
 
 .. _actors-label:
 
-Actors
-======
+Details: Actors
+***************
+
+
+Overview: Types of actors
+-------------------------
+
+Hits-related actors (digitizers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GATE contains a number of actors that work on a per-hit or per-event basis. A hit in Geant4 refers to a single interaction, i.e. with an associated position, potentially deposited energy, etc. Historically, these actors were developed to mimic the digitization chain in nuclear imaging scanners and are therefore called `digitizers`, but they are actually just actors.
+
+Digitizers can store rich information about the particle involved in the hit, e.g. the type of particle, the kinetic properties, position, as well as information about the hit itself.
+
+Most digitizers can be enchained so that the output of one digitizer provides the input to the next one. The :class:`~.opengate.actors.digitizers.DigitizerHitsCollectionActor` is usually the first one in such a processing chain. It simply collects every hit that occurs in a certain volume and stores in a ROOT file.
+
+The :class:`~.opengate.actors.digitizers.PhaseSpaceActor` is actually a special case of the :class:`~.opengate.actors.digitizers.DigitizerHitsCollectionActor` that stores only certain hits in a volume, rather than all, e.g. the first hit.
+
+Most of the other digitizers process data per event, i.e. one entry in the data is related to one primary particle. The ''compression'' from per-hit to per-event data is for example achieved by the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`.
+
+Most digitizers create a ROOT file as output (except :class:`~.opengate.actors.digitizers.DigitizerProjectionActor`, which outputs an image). The output can be written to disk with ``my_digitizer.root_output.write_to_disk = True``.
+
+If your simulation contains repeated volumes, you need to decide whether you allow a digitizer to be attached to them or not. You can do that via the parameter :attr:`~.opengate.actors.digitizers.DigitizerBase.authorize_repeated_volumes`: Set this to True to work with repeated volumes, such as in PET systems. However, for SPECT heads, you may want to avoid recording hits from both heads in the same file, in which case, set the flag to False.
+
+
 
 SimulationStatisticsActor
 --------------------------
@@ -32,15 +55,32 @@ Reference
 .. autoclass:: opengate.actors.miscactors.SimulationStatisticsActor
 
 
+
 DoseActor
 ---------
 
 Description
 ~~~~~~~~~~~
 
-The DoseActor computes a 3D energy deposition (edep) or absorbed dose map in a given volume. The dose map is a 3D matrix parameterized with: dimension (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the attached volume). By default, the matrix is centered according to the volume center.
+The DoseActor scores the energy deposition (edep) or absorbed dose map in a given volume. The dose map is a 3D matrix parameterized with: size (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the attached volume) and rotation. By default, the matrix is centered according to the volume center. Note that this virtual scoring grid is independent of a potential geometric grid (e.g. simulation using a voxelized CT image as geometry).  The dose map may also have singleton dimensions (dose.size values with 1) reducing its effecctive dimension.
 
-Like any image, the output dose map will have an origin. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True`, the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin.
+A sample code to score the energy deposition (default) is shown below. Let's assume a geometry of type box with name "waterbox" is already defined and is [200, 200, 200] *mm big. The dose actor output would now cover the entire size of the "waterbox" and has the same center.
+.. code-block:: python
+
+   dose_act_obj = sim.add_actor("DoseActor", "dose_act_obj")
+   dose_act_obj.output_filename = "test008-edep.mhd"
+   dose_act_obj.attached_to = "waterbox"
+   dose_act_obj.size = [100, 100, 100]
+   mm = gate.g4_units.mm
+   dose_act_obj.spacing = [2 * mm, 2 * mm, 2 * mm]
+
+Adding following lines
+.. code-block:: python
+   dose_act_obj.user_output.dose.active True
+   dose_act_obj.user_output.uncertainty.active True
+to the dose actor object will trigger an additional image scoring the dose. The unctertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
+
+Like any image, the output dose map will have an origin, spacing and orientation. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True`, the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin.
 
 .. image:: ../figures/image_coord_system.png
 
@@ -48,21 +88,74 @@ Several tests depict the usage of DoseActor: test008, test009, test021, test035,
 
 .. code-block:: python
 
-   dose = sim.add_actor("DoseActor", "dose")
-   dose.output_filename = output_path / "test008-edep.mhd"
-   dose.attached_to = "waterbox"
-   dose.size = [99, 99, 99]
-   mm = gate.g4_units.mm
-   dose.spacing = [2 * mm, 2 * mm, 2 * mm]
-   dose.translation = [2 * mm, 3 * mm, -2 * mm]
-   dose.uncertainty = True
-   dose.hit_type = "random"
+Following would translate and rotate the scoring image:
+   from scipy.spatial.transform import Rotation
+   dose_act_obj.translation = [2 * mm, 3 * mm, -2 * mm]
+   dose_act_obj.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
+In this example a uniform scoring object was created for simplicity. To test trans- and rotations, non-uniform sized and spaced voxelized image are highly encouraged.
 
 Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.doseactors.DoseActor
+
+
+LETActor
+--------
+
+Description
+~~~~~~~~~~~
+
+The LET Actor scores the fluence- (also referred to as track-) or dose averaged LET within a volume using a voxelizing parametrization identical to the Dose Actor. Hence, see the Dose Actor documentation for spatial commands like image resolution, origin etc. - the same commands apply for the LET Actor.
+
+.. note:: In most use cases of LET in literature, only a subset of particles is considered for the calculation of averaged LET, e.g. in proton radiotherapy, where often only protons are considered. Therefore, the LET actor often goes along with a particle filter. See test050 as an example.
+
+.. note:: Refer to test050 for a current example.
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.LETActor
+
+
+FluenceActor
+------------
+
+Description
+~~~~~~~~~~~
+
+This actor scores the particle fluence on a voxel grid, essentially by counting the number of particles passing through each voxel. The FluenceActor will be extended in the future with features to handle scattered radiation, e.g. in cone beam CT imaging.
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.FluenceActor
+
+
+TLEDoseActor
+------------
+
+Description
+~~~~~~~~~~~
+
+This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor` which scores dose due to low energy gammas in another way, namely via the track length in the given voxel. Most options as well as the output are identical to the :class:`~.opengate.actors.doseactors.DoseActor`.
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.TLEDoseActor
+
+
+VoxelDepositActor
+-----------------
+
+This is a common base class used by the actors that scored quantities deposited on voxel grid like the :class:`~.opengate.actors.doseactors.DoseActor`, :class:`~.opengate.actors.doseactors.LETActor`, :class:`~.opengate.actors.doseactors.FluenceActor`, :class:`~.opengate.actors.doseactors.TLEDoseActor`.
+
+.. important:: You cannot use this actor directly in your simulation.
 
 
 PhaseSpaceActor
@@ -106,6 +199,13 @@ By default, the PhaseSpaceActor stores information about particles entering the 
    phsp.steps_to_store = "entering"  # this is the default
    phsp.steps_to_store = "entering exiting first"  # other options (combined)
 
+The option “first” stores the particle information when it enters the volume to which the actor is attached for the first time. The variables to be used are the PrePosition, PreDirection, etc.
+
+The option “entering” stores the particle information whenever it is at the boundary between the surrounding environment (world, another volume) and the volume to which the actor is attached. The variables to be used are the PrePosition, PreDirection, etc.
+For example: if a particle enters the volume only once, its information is stored only once; the option entering is equal to the option first. If a particle passes through a volume, performs n scattering outside of it, and re-enters the volume, its entry information will be stored n times. If a particle interacts with the volume interfaces without exiting the volume (e.g., the reflection of optical photons), the actor will store all instances when the particle is at the boundary (all reflections are stored).
+
+The option “exiting” stores the particle information whenever, starting from within the volume, it is at the boundary between the volume to which the actor is attached and the surrounding environment (world, another volume). The variables to be used are the PostPosition, PostDirection, etc.
+
 
 Reference
 ~~~~~~~~~
@@ -113,20 +213,11 @@ Reference
 .. autoclass:: opengate.actors.digitizers.PhaseSpaceActor
 
 
-Hits-related actors (digitizer)
--------------------------------
-
-The digitizer module simulates the behavior of scanner detectors and signal processing chains. It processes and filters a list of interactions (hits) occurring in a detector to produce a final digital value. A digitizer chain begins with defining a `HitsCollectionActor`.
-
-Common features of digitizer actors:
-
-- Most digitizers have a ROOT output (except `DigitizerProjectionActor`, which outputs an image). The output can be written to disk with `my_digitizer.root_output.write_to_disk = True`.
-- `authorize_repeated_volumes`: Set this to True to work with repeated volumes, such as in PET systems. However, for SPECT heads, you may want to avoid recording hits from both heads in the same file, in which case, set the flag to False.
 
 DigitizerHitsCollectionActor
 ----------------------------
 
-The `DigitizerHitsCollectionActor` collects hits occurring in a given volume (or its daughter volumes). Every time a step occurs in the volume, a list of attributes is recorded. The list of attributes is defined by the user:
+The :class:`~.opengate.actors.digitizers.DigitizerHitsCollectionActor` collects hits occurring in a given volume (or its daughter volumes). Every time a step occurs in the volume, a list of attributes is recorded. The list of attributes is defined by the user:
 
 .. code-block:: python
 
@@ -136,7 +227,7 @@ The `DigitizerHitsCollectionActor` collects hits occurring in a given volume (or
    hc.attributes = ['TotalEnergyDeposit', 'KineticEnergy', 'PostPosition',
                     'CreatorProcess', 'GlobalTime', 'VolumeName', 'RunID', 'ThreadID', 'TrackID']
 
-In this example, the actor is attached (attached_to option) to several volumes (crystal1 and crystal2 ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attribute names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of a few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `GateDigiAttributeList.cpp` and can be printed with:
+In this example, the actor is attached to (attached_to option) several volumes (crystal1 and crystal2 ) but most of the time, one single volume is sufficient. This volume is important: every time an interaction (a step) is occurring in this volume, a hit will be created. The list of attributes is defined with the given array of attribute names. The names of the attributes are as close as possible to the Geant4 terminology. They can be of a few types: 3 (ThreeVector), D (double), S (string), I (int), U (unique volume ID, see DigitizerAdderActor section). The list of available attributes is defined in the file `GateDigiAttributeList.cpp` and can be printed with:
 
 .. code-block:: python
 
@@ -144,7 +235,7 @@ In this example, the actor is attached (attached_to option) to several volumes (
    am = gate_core.GateDigiAttributeManager.GetInstance()
    print(am.GetAvailableDigiAttributeNames())
 
-Warning: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a “default” version corresponding to the legacy Gate (9.X).
+.. warning:: KineticEnergy, Position and Direction are available for PreStep and for PostStep, and there is a “default” version corresponding to the legacy Gate (9.X).
 
 +------------------+-------------------+---------------------+
 | Pre version      | Post version      | default version     |
@@ -156,7 +247,7 @@ Warning: KineticEnergy, Position and Direction are available for PreStep and for
 | PreDirection     | PostDirection     | Direction (Post)    |
 +------------------+-------------------+---------------------+
 
-Attributes correspondence with Gate 9.X for Hits and Singles:
+Attribute correspondence with Gate 9.X for Hits and Singles:
 
 +----------------------------+-------------------------+
 | Gate 9.X                   | Gate 10                 |
@@ -174,9 +265,17 @@ The actors used to convert some `hits` to one `digi` are `DigitizerHitsAdderActo
 
 .. image:: ../figures/digitizer_adder_readout.png
 
+Reference
+~~~~~~~~~
 
-DigitizerHitsAdderActor
+.. autoclass:: opengate.actors.digitizers.DigitizerHitsCollectionActor
+
+
+DigitizerAdderActor
 -----------------------
+
+Description
+~~~~~~~~~~~
 
 This actor groups the hits per different volumes according to the option `group_volume` (by default, this is the deeper volume that contains the hit). All hits occurring in the same event in the same volume are gathered into one single digi according to one of two available policies:
 
@@ -199,12 +298,20 @@ This actor groups the hits per different volumes according to the option `group_
    # sc.policy = "EnergyWinnerPosition"
    sc.group_volume = crystal.name
 
-Note that this actor is only triggered at the end of an event, so the `attached_to` volume has no effect. Examples are available in test 037.
+.. note:: This actor is only triggered at the end of an event, so the `attached_to` volume has no effect. Examples are available in test 037.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerAdderActor
 
 DigitizerReadoutActor
 ---------------------
 
-This actor is similar to `DigitizerHitsAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option `discretize_volume` indicates the volume name where the discrete position will be taken.
+Description
+~~~~~~~~~~~
+
+This actor is similar to the :class:`~.opengate.actors.digitizers.DigitizerAdderActor`, with one additional option: the resulting positions of the digi are set at the center of the defined volumes (discretized). The option :attr:`~.opengate.actors.digitizers.DigitizerAdderActor.discretize_volume` indicates the volume name where the discrete position will be taken.
 
 .. code-block:: python
 
@@ -216,8 +323,17 @@ This actor is similar to `DigitizerHitsAdderActor`, with one additional option: 
 
 Examples are available in test 037.
 
-DigitizerGaussianBlurringActor
-------------------------------
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerReadoutActor
+
+
+DigitizerBlurringActor
+----------------------
+
+Description
+~~~~~~~~~~~
 
 This module applies blurring to an attribute, such as time or energy. The method can be Gaussian, InverseSquare, or Linear:
 
@@ -236,16 +352,33 @@ For Linear blurring, specify `blur_reference_value`, `blur_slope`, and `blur_ref
    bc.blur_method = "Gaussian"
    bc.blur_fwhm = 100 * ns
 
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerBlurringActor
+
+
 DigitizerSpatialBlurringActor
 -----------------------------
 
-.. warning::
-   This documentation is still TODO. Blurring may cause points to fall outside the volume (use the `keep_in_solid_limits` option). This is useful for monocrystals but should not be used for pixelated crystals.
+Description
+~~~~~~~~~~~
+
+   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerSpatialBlurringActor
+
 
 DigitizerEnergyWindowsActor
 ---------------------------
 
-The `DigitizerEnergyWindowsActor` is used in both PET and SPECT simulations to define energy windows, which filter particles by energy range. This helps to reduce noise and select relevant events.
+Description
+~~~~~~~~~~~
+
+The :class:`~.opengate.actors.digitizers.DigitizerEnergyWindowsActor` is used in both PET and SPECT simulations to define energy windows that filter particles by energy range. This helps to reduce noise and select relevant events.
 
 For PET, the window is centered around the 511 keV annihilation photon:
 
@@ -274,10 +407,19 @@ For SPECT, the windows can be more complex, with multiple channels:
 
 For PET, refer to test037; for SPECT, refer to test028.
 
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerEnergyWindowsActor
+
+
 DigitizerProjectionActor
 ------------------------
 
-The `DigitizerProjectionActor` generates 2D projections from digitized particle hits in SPECT or PET simulations. It takes input collections and creates a projection image based on predefined grid spacing and size.
+Description
+~~~~~~~~~~~
+
+The :class:`~.opengate.actors.digitizers.DigitizerProjectionActor` generates 2D projections from digitized particle hits in SPECT or PET simulations. It takes input collections and creates a projection image based on predefined grid spacing and size.
 
 .. code-block:: python
 
@@ -291,8 +433,17 @@ The `DigitizerProjectionActor` generates 2D projections from digitized particle 
 
 Refer to test028 for SPECT examples.
 
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerProjectionActor
+
+
 DigitizerEfficiencyActor
 -------------------------
+
+Description
+~~~~~~~~~~~
 
 This module simulates detection with non-100% efficiency, which can be set as a float between 0 and 1 (where 1 means all digis are stored). For each digi, a random number determines if the digi is kept.
 
@@ -303,6 +454,12 @@ This module simulates detection with non-100% efficiency, which can be set as a 
    ea.efficiency = 0.3
 
 Refer to test057 for more details.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerEfficiencyActor
+
 
 Coincidences Sorter
 -------------------
@@ -336,6 +493,9 @@ Refer to test072 for more details.
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------
 
+Description
+~~~~~~~~~~~
+
 The Angular Response Function (ARF) is a method designed to accelerate SPECT simulations by replacing full particle tracking within the SPECT head (collimator and crystal) with an analytical function. This function provides the detection probability of a photon across all energy windows based on its direction and energy. Specifically, ARF estimates the probability that an incident photon will interact with or pass through the collimator and reach the detector plane at a specified energy window. By approximating the SPECT head’s behavior in this manner, ARF allows for faster planar and SPECT simulations. Using ARF involves three steps:
 
 1.	Create a training dataset.
@@ -343,7 +503,7 @@ The Angular Response Function (ARF) is a method designed to accelerate SPECT sim
 3.	Apply the trained ARF to enhance simulation efficiency.
 
 .. warning::
-  Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: `pip install torch gaga_phsp garf`
+  Ensure that torch and garf (Gate ARF) packages are installed prior to use. Install them with: ``pip install torch gaga_phsp garf``
 
 Step 1: Creating the Training Dataset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -389,20 +549,23 @@ With the trained model (.pth file), you can now substitute direct photon trackin
     arf.gpu_mode = "auto"
 
 
+Reference
+~~~~~~~~~
+
 The source code for garf is here : https://github.com/OpenGATE/garf
 The associated publication is:
 
     Learning SPECT detector angular response function with neural network for accelerating Monte-Carlo simulations. Sarrut D, Krah N, Badel JN, Létang JM. Phys Med Biol. 2018 Oct 17;63(20):205013. doi: 10.1088/1361-6560/aae331.  https://www.ncbi.nlm.nih.gov/pubmed/30238925
 
+.. autoclass:: opengate.actors.arfactors.ARFTrainingDatasetActor
+.. autoclass:: opengate.actors.arfactors.ARFActor
 
-LETActor
---------
-
-.. note::
-   Documentation TODO. Refer to test050 for current examples.
 
 ComptonSplittingActor
 ---------------------
+
+Description
+~~~~~~~~~~~
 
 This actor generates N particles with reduced weight whenever a Compton process occurs. The options include:
 
@@ -412,7 +575,7 @@ This actor generates N particles with reduced weight whenever a Compton process 
 
 .. code-block:: python
 
-   compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplitting")
+   compt_splitting_actor = sim.add_actor("ComptSplittingActor", name="compt_splitting")
    compt_splitting_actor.attached_to = W_tubs.name
    compt_splitting_actor.splitting_factor = nb_split
    compt_splitting_actor.russian_roulette = True
@@ -421,17 +584,28 @@ This actor generates N particles with reduced weight whenever a Compton process 
 
 Refer to test071 for more details.
 
-.. code-block:: python
-
-  compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplitting")
-  compt_splitting_actor.attached_to = W_tubs.name
-  compt_splitting_actor.splitting_factor = nb_split
-  compt_splitting_actor.russian_roulette = True
-  compt_splitting_actor.rotation_vector_director = True
-  compt_splitting_actor.vector_director = [0, 0, -1]
-
 The options include:
 
-- the splitting Number: Specifies the number of splits to create.
+- the splitting factor: Specifies the number of splits to create.
 - A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
 - A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.miscactors.ComptSplittingActor
+
+
+BremSplittingActor
+------------------
+
+Description
+~~~~~~~~~~~
+
+Similar to :class:`~.opengate.actors.miscactors.ComptSplittingActor`
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.miscactors.BremSplittingActor

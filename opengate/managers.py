@@ -49,7 +49,7 @@ from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
 from .sources.phspsources import PhaseSpaceSource
-from .sources.voxelsources import VoxelsSource
+from .sources.voxelsources import VoxelSource
 from .sources.gansources import GANSource, GANPairsSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.phidsources import PhotonFromIonDecaySource
@@ -57,7 +57,7 @@ from .sources.phidsources import PhotonFromIonDecaySource
 source_types = {
     "GenericSource": GenericSource,
     "PhaseSpaceSource": PhaseSpaceSource,
-    "VoxelsSource": VoxelsSource,
+    "VoxelSource": VoxelSource,
     "GANSource": GANSource,
     "GANPairsSource": GANPairsSource,
     "IonPencilBeamSource": IonPencilBeamSource,
