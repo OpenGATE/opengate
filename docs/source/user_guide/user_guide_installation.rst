@@ -1,5 +1,5 @@
-Installation
-============
+How to: Installation
+====================
 
 Install GATE with:
 

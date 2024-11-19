@@ -1,5 +1,5 @@
-Description of the Simulation object
-====================================
+Details: Simulation object
+==========================
 
 You can configure the general behavior of your simulation via the parameters of the :class:`opengate.Simulation` object.
 

@@ -20,7 +20,7 @@ User Guide
    user_guide_resources
 
 .. toctree::
-   :caption: Description of components
+   :caption: Detailed description of components
    :maxdepth: 2
 
    user_guide_reference_simulation
@@ -41,10 +41,12 @@ User Guide
    user_guide_contrib_pet
 
 .. toctree::
-   :caption: How to migrate from Gate 9 to 10
+   :caption: How to migrate from GATE 9 to 10
    :maxdepth: 2
 
-   user_guide_how_to_convert_example
+   user_guide_how_to_convert_intro
+   user_guide_how_to_convert_example_1
+   user_guide_how_to_convert_example_2
 
 .. toctree::
    :caption: Command line tools
