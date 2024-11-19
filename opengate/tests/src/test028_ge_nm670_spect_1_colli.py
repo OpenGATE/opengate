@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # default source for tests
     activity = 100 * kBq
     beam1 = sim.add_source("GenericSource", "beam1")
-    beam1.mother = waterbox.name
+    beam1.attached_to = waterbox.name
     beam1.particle = "gamma"
     beam1.energy.mono = 140.5 * keV
     beam1.position.type = "sphere"

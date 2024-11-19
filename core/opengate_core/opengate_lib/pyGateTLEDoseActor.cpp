@@ -34,7 +34,7 @@ void init_GateTLEDoseActor(py::module &m) {
              std::unique_ptr<GateTLEDoseActor, py::nodelete>, GateDoseActor>(
       m, "GateTLEDoseActor")
       .def(py::init<py::dict &>())
-      .def("InitializeUserInput", &GateTLEDoseActor::InitializeUserInput)
+      .def("InitializeUserInfo", &GateTLEDoseActor::InitializeUserInfo)
       .def("BeginOfRunActionMasterThread",
            &GateTLEDoseActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",

@@ -226,7 +226,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -337,7 +337,7 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
         dico_of_volume_tree = {}
@@ -383,7 +383,7 @@ class KillActor(ActorBase, g4.GateKillActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def EndSimulationAction(self):
@@ -434,7 +434,7 @@ class KillNonInteractingParticleActor(ActorBase, g4.GateKillNonInteractingPartic
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
         dico_of_volume_tree = {}
@@ -562,14 +562,16 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
     def initialize(self):
         SplittingActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 
-class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteractionSplittingActor):
+class LastVertexInteractionSplittingActor(
+    ActorBase, g4.GateLastVertexInteractionSplittingActor
+):
     """This splitting actor proposes an interaction splitting at the last particle vertex before the exit
-        of the biased volume.  This actor can be usefull for application where collimation are important,
-       such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
+     of the biased volume.  This actor can be usefull for application where collimation are important,
+    such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
     """
 
     user_info_defaults = {
@@ -579,22 +581,18 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
                 "doc": "Defines the number of particles exiting at each split process. Unlike other split actors, this splitting factor counts particles that actually exit, not just those generated.",
             },
         ),
-
         "angular_kill": (
             False,
             {
                 "doc": "If enabled, particles with momentum outside a specified angular range are killed.",
             },
         ),
-
         "max_theta": (
             90 * g4_units.deg,
             {
                 "doc": "Defines the maximum angle (in degrees) from a central axis within which particles are retained. Particles with momentum beyond this angle are removed. The angular range spans from 0 to max_theta, measured from the vector_director",
             },
         ),
-
-
         "vector_director": (
             [0, 0, 1],
             {
@@ -610,13 +608,10 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
         "batch_size": (
             1,
             {
-                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC configurations.",
+                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
             },
         ),
-
-
     }
-
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -625,17 +620,20 @@ class LastVertexInteractionSplittingActor(ActorBase,g4.GateLastVertexInteraction
 
     def __initcpp__(self):
         g4.GateLastVertexInteractionSplittingActor.__init__(self, {"name": self.name})
-        self.AddActions({"BeginOfRunAction",
-                         "BeginOfEventAction",
-                         "PreUserTrackingAction",
-                         "SteppingAction",
-                         "PostUserTrackingAction",
-                         "EndOfEventAction"})
-
+        self.AddActions(
+            {
+                "BeginOfRunAction",
+                "BeginOfEventAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "PostUserTrackingAction",
+                "EndOfEventAction",
+            }
+        )
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         volume_tree = self.simulation.volume_manager.get_volume_tree()
         dico_of_volume_tree = {}
@@ -672,7 +670,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 
     def initialize(self):
         SplittingActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 

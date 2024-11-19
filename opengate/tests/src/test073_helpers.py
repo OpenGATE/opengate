@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.sources.generic import set_source_rad_energy_spectrum
+from opengate.sources.base import set_source_rad_energy_spectrum
 from opengate.exception import warning
 from opengate.tests import utility
 import opengate.contrib.spect.siemens_intevo as intevo
@@ -47,7 +47,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
-    sim.enable_decay = False
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.all = 100 * mm
     sim.physics_manager.set_production_cut("spect", "all", 0.1 * mm)
 
@@ -231,7 +231,7 @@ def test073_setup_sim(sim, spect_type, collimator_type):
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
-    sim.enable_decay = False
+    sim.physics_manager.enable_decay = False
     sim.physics_manager.global_production_cuts.all = 100 * mm
     sim.physics_manager.set_production_cut("spect", "all", 0.1 * mm)
 

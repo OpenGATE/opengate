@@ -32,7 +32,7 @@ void init_GateDoseActor(py::module &m) {
              std::unique_ptr<GateDoseActor, py::nodelete>, GateVActor>(
       m, "GateDoseActor")
       .def(py::init<py::dict &>())
-      .def("InitializeUserInput", &GateDoseActor::InitializeUserInput)
+      .def("InitializeUserInfo", &GateDoseActor::InitializeUserInfo)
       .def("BeginOfRunActionMasterThread",
            &GateDoseActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",

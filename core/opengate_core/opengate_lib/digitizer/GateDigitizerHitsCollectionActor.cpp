@@ -28,9 +28,8 @@ GateDigitizerHitsCollectionActor::GateDigitizerHitsCollectionActor(
 
 GateDigitizerHitsCollectionActor::~GateDigitizerHitsCollectionActor() = default;
 
-void GateDigitizerHitsCollectionActor::InitializeUserInput(
-    py::dict &user_info) {
-  GateVActor::InitializeUserInput(user_info);
+void GateDigitizerHitsCollectionActor::InitializeUserInfo(py::dict &user_info) {
+  GateVActor::InitializeUserInfo(user_info);
   // options
   fHitsCollectionName = DictGetStr(user_info, "name");
   fUserDigiAttributeNames = DictGetVecStr(user_info, "attributes");

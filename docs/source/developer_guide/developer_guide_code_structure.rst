@@ -155,7 +155,7 @@ to pick what should be done.
      GateObject base class. Actors and Sources still need to be
      refactored.
 
-How a class in GATE 10 is (usually) set up:
+How a class in GATE 10 is (usually) set up?
 ===========================================
 
 Naming convention

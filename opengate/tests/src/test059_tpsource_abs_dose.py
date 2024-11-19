@@ -8,8 +8,6 @@ import opengate as gate
 from opengate.tests import utility
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
 from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
-import matplotlib.pyplot as plt
-from opengate.tests.utility import plot_img_axis
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(

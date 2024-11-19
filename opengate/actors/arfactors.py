@@ -91,7 +91,7 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.initialize(self)
         self.check_energy_window_actor()
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -255,7 +255,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_array = np.zeros(self.output_size, dtype=np.float64)
 
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         self.SetARFFunction(self.apply)
 
@@ -400,7 +400,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
         self.user_output["arf_projection"].store_data("merged", output_image)
-        # ensure why return 0 ?
+        # unsure why return 0 ?
         return 0
 
     def EndSimulationAction(self):

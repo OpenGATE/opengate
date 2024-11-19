@@ -116,6 +116,10 @@ if __name__ == "__main__":
     mlc = versa.add_mlc(sim, linac.name)
     x_field = np.random.randint(10, 20, 1)[0] * cm
     y_field = np.random.randint(10, 20, 1)[0] * cm
+    x_field = 100
+    y_field = 100
+    # FXIME 150 and 100 = fail
+    print("field: ", x_field, y_field)
     versa.set_rectangular_field(mlc, jaws, x_field, y_field, sad)
 
     mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
@@ -124,7 +128,7 @@ if __name__ == "__main__":
     # add alpha source
     source = sim.add_source("GenericSource", f"alpha_source")
     source.particle = "alpha"
-    source.mother = linac.name
+    source.attached_to = linac.name
     z_linac = linac.size[2]
     source.energy.type = "gauss"
     source.energy.mono = 1 * MeV

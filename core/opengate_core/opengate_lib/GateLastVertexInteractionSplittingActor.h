@@ -102,7 +102,7 @@ public:
   std::vector<G4String> fListOfProcesses = {"compt", "annihil", "eBrem", "conv",
                                             "phot"};
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
   virtual void SteppingAction(G4Step *) override;
   virtual void BeginOfEventAction(const G4Event *) override;
   virtual void EndOfEventAction(const G4Event *) override;

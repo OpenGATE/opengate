@@ -38,7 +38,7 @@ void GateMotionVolumeActor::MoveGeometry(int run_id) {
   // Open/Close geometry MUST only be called in the master thread
   // get the physical volume
   auto pvs = G4PhysicalVolumeStore::GetInstance();
-  auto pv = pvs->GetVolume(fMotherVolumeName);
+  auto pv = pvs->GetVolume(fAttachedToVolumeName);
 
   // open the geometry manager
   // https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomDynamic.html

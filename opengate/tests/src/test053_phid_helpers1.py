@@ -22,15 +22,14 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     kBq = 1000 * Bq
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.visu = False
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 1
+    sim.visu = False
+    sim.random_seed = 123456
 
     # activity
-    activity = 10 * kBq / ui.number_of_threads
+    activity = 10 * kBq / sim.number_of_threads
 
     # world size
     world = sim.world
@@ -46,7 +45,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     sim.g4_commands_before_init.append("/process/em/fluoBearden true")
 
     # sources
-    # ui.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     source = sim.add_source("GenericSource", ion_name)
     source.particle = f"ion {z} {a}"
     source.position.type = "sphere"
@@ -128,7 +127,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     print(f"Source LT = {lifetime / sec} sec")
 
     # ui = sim.user_info
-    # ui.g4_verbose = True
+    # sim.g4_verbose = True
     # sim.g4_commands_after_init.append("/tracking/verbose 2")
     km = g4_units.km
     sim.physics_manager.global_production_cuts.all = 10 * km

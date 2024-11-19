@@ -440,7 +440,7 @@ def add_electron_source(sim, linac_name, ekin, sx, sy):
     deg = g4_units.deg
     source = sim.add_source("GenericSource", f"{linac_name}_e-_source")
     source.particle = "e-"
-    source.mother = f"{linac_name}_target"
+    source.attached_to = f"{linac_name}_target"
     source.energy.type = "gauss"
     source.energy.mono = ekin * MeV
     source.energy.sigma_gauss = source.energy.mono * (0.08 / 2.35)
@@ -503,7 +503,7 @@ def add_phase_space_plane(sim, linac_name, src_phsp_distance):
     return plane
 
 
-def add_phase_space(sim, plane_name, i=0):
+def add_phase_space_actor(sim, plane_name, i=0):
     if i == 0:
         phsp = sim.add_actor("PhaseSpaceActor", f"{plane_name}_phsp")
     else:
@@ -523,7 +523,7 @@ def add_phase_space(sim, plane_name, i=0):
 
 def add_phase_space_source(sim, plane_name):
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = plane_name
+    source.attached_to = plane_name
     source.position_key = "PrePositionLocal"
     source.direction_key = "PreDirectionLocal"
     # source.weight_key = "Weight"

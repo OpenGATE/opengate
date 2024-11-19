@@ -1,113 +1,61 @@
-Physics
-=======
+How to: Physics
+===============
 
 The management of physics in Geant4 is rich and complex, with hundreds of options. OPENGATE proposes a subset of available options.
 
 Physics List and Decay
 ----------------------
 
-First, the user needs to select a physics list. A physics list contains a large set of predefined physics options, adapted to different problems. Please refer to the `Geant4 guide <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>`_ for a detailed explanation. The user can select the physics list with the following:
+With GATE, you can (and should) use Geant4 physics lists, i.e. pre-defined sets of physics processes. You can set the physics list via the `physics_manager` like this:
 
 .. code-block:: python
 
-    # Assume that sim is a simulation
+    sim = gate.Simulation()
+    # ...
     sim.physics_manager.physics_list_name = 'QGSP_BERT_EMZ'
 
-The default physics list is QGSP_BERT_EMV. The Geant4 standard physics lists are composed of a first part:
+The default physics list is QGSP_BERT_EMV. You find more details about physics lists and processes in the detailed part of this used guide in section :ref:`physics-lists-details-label` and in the `Geant4 guide <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>`_.
 
-.. code-block:: text
+You can use the following python command to get a list of all physics lists available in GATE:
 
-    FTFP_BERT
-    FTFP_BERT_TRV
-    FTFP_BERT_ATL
-    FTFP_BERT_HP
-    FTFQGSP_BERT
-    FTFP_INCLXX
-    FTFP_INCLXX_HP
-    FTF_BIC
-    LBE
-    QBBC
-    QGSP_BERT
-    QGSP_BERT_HP
-    QGSP_BIC
-    QGSP_BIC_HP
-    QGSP_BIC_AllHP
-    QGSP_FTFP_BERT
-    QGSP_INCLXX
-    QGSP_INCLXX_HP
-    QGS_BIC
-    Shielding
-    ShieldingLEND
-    ShieldingM
-    NuBeam
+.. code-block:: python
 
-And a second part with the electromagnetic interactions:
+    print(sim.physics_manager.dump_available_physics_lists())
 
-.. code-block:: text
 
-    _EMV
-    _EMX
-    _EMY
-    _EMZ
-    _LIV
-    _PEN
-    __GS
-    __SS
-    _EM0
-    _WVI
-    __LE
+You can also activate additional sets of processes bundled in so-called "special physics constructors". To see which are available and which are active, use:
 
-The lists can change according to the Geant4 version (this list is for 10.7).
+.. code-block:: python
 
-Additional physics lists are available:
+    print(sim.physics_manager.special_physics_constructors)
 
-.. code-block:: text
+If you want to activate one of them, say G4EmDNAPhysics, you add this line to your script:
 
-    G4EmStandardPhysics_option1
-    G4EmStandardPhysics_option2
-    G4EmStandardPhysics_option3
-    G4EmStandardPhysics_option4
-    G4EmStandardPhysicsGS
-    G4EmLowEPPhysics
-    G4EmLivermorePhysics
-    G4EmLivermorePolarizedPhysics
-    G4EmPenelopePhysics
-    G4EmDNAPhysics
-    G4OpticalPhysics
+.. code-block:: python
 
-Note that EMV, EMX, EMY, EMZ corresponds to option1, 2, 3, 4 (don't ask us why).
+    sim.physics_manager.special_physics_constructors.G4EmDNAPhysics = True
+
+
+
 
 Radioactive Decay
 -----------------
 
-The decay process, if needed, must be added explicitly. This is done with:
+Not all Geant4 physics lists include radioactive decay.
+If you want to enable radioactive decay regardless of the list, use:
 
 .. code-block:: python
 
-    sim.physics_manager.enable_decay(True)
+    sim.physics_manager.enable_decay = True
 
-Under the hood, this will add two processes to the Geant4 list of processes: G4DecayPhysics and G4RadioactiveDecayPhysics. These processes are required particularly if a decaying generic ion (such as F18) is used as a source. Additional information can be found here:
+.. important:: This will **not** turn off radioactive decay if the physics list actually includes it. Think of the option as a light switch that turns on the light, but does not turn it off.
 
-- `Geant4 Particle Decay Process <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/physicsProcess.html#particle-decay-process>`_
-- `Geant4 Decay Physics <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/decay/decay.html>`_
-- `Physics List <https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsListGuide/html/physicslistguide.html>`_
-- `Nuclear Data Table <http://www.lnhb.fr/nuclear-data/nuclear-data-table/>`_
 
-Acollinearity of Annihilation Photons
--------------------------------------
-
-Without modifications, most annihilation photon pairs from positron-electron annihilation will be collinear. For water between 20–30°C, the acollinearity of annihilation photons follows a 2D Gaussian distribution with a FWHM of 0.5° (`Colombino et al. 1965 <https://link.springer.com/article/10.1007/BF02748591>`_).
-
-...
-
-[Content continues here following the structured format]
-
-...
 
 Electromagnetic Parameters
 --------------------------
 
-Electromagnetic parameters are managed by a specific Geant4 object called G4EmParameters. It is available with the following:
+Specific electromagnetic parameters can be turned on or off like this:
 
 .. code-block:: python
 
@@ -117,73 +65,73 @@ Electromagnetic parameters are managed by a specific Geant4 object called G4EmPa
     sim.physics_manager.em_parameters.pixe = True
     sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
 
-...
 
-OptiGAN
-========
 
-Refer to this `testcase <https://github.com/OpenGATE/opengate/blob/6cd98d3f7d76144889b1615e28a00873ebc28f81/opengate/tests/src/test081_simulation_optigan_with_random_seed.py>`_ for a simulation example.
+Production cuts
+---------------
 
-In the default optical simulations of Gate v10, each optical photon generated is treated as a separate track, which can be quite resource-intensive. For instance, approximately one second is required to simulate the spatial distribution of optical photons detected from a single 511 keV gamma ray interaction in a 20 mm thick layer of bismuth germanate (BGO), which has a light yield of about 8500 photons per MeV. Recent advancements in Monte Carlo simulations using deep learning, particularly with Generative Adversarial Networks (GANs), have shown significant potential in reducing simulation times. We have adopted a specific type of GAN known as Wasserstein GAN to enhance the efficiency of generating optical photons in scintillation crystals, which we have named OptiGAN. For more detailed information, you can refer to this `research paper <https://iopscience.iop.org/article/10.1088/2632-2153/acc782>`_.
+Geant4 allows you to tune the conditions under which it should actually produce anbd track secodnary particles, i.e. particles produced as the results of interactions of an existing particles with the target (or from fragmentation). More specifically, you can set the production cut in terms of range for a given particle. For example, a 10 mm cut applied to electrons means that secondary electrons are only produced if their energy gives them a range of at least 2 mm in the material where they are. As a rule of thumb: the higher the cut value the faster but also the less accurate the simulation.
 
-The OptiGAN model trained with 3 x 3 x 3 mm\ :sup:`3` BGO crystal is already included with Gate 10. More models will be added in the future.
-
-Users can utilize OptiGAN in two ways: they can integrate it into the simulation file, or they can use it after running the simulation.
-
-Method 1 - Running OptiGAN with Simulation
-------------------------------------------
+You can set production cuts globally, i.e. apply them to the entire world, either like this:
 
 .. code-block:: python
 
-    optigan = OptiGAN(input_phsp_actor=phsp_actor)
+    sim.physics_manager.global_production_cuts.electron = 10 * gate.g4_units.mm
 
-Method 2 - Running OptiGAN After Simulation
--------------------------------------------
-
-.. code-block:: python
-
-    optigan = OptiGAN(root_file_path=hc.get_output_path())
-
-Method 1 can be used when a user wants to run OptiGAN within the same simulation file. The ``input_phsp_actor`` parameter must be set to the phase space actor attached to the crystal in the simulation. The output will then be saved in the folder specified by ``sim.output_dir``.
-
-Method 2 can be used when a user wants to use OptiGAN in a file outside their main simulation file. In this case, the ``root_file_path`` must be set to the path of the root file obtained from the simulation.
-
-Workflow of OptiGAN Module in Gate 10
--------------------------------------
-
-OptiGAN requires two pieces of input information: the position of gamma interaction in the crystal and the number of optical photons emitted. This information is automatically parsed from the root files when users utilize OptiGAN.
-
-- **Position of gamma interaction:** This refers to the coordinate information of gamma interaction with the scintillation crystal.
-
-- **Number of optical photons emitted:** This indicates the total number of optical photons emitted per gamma event.
-
-Obtaining the number of optical photons emitted without modifying Geant4 is challenging. As a workaround for now, we ask users to use a kill actor and add a filter in the test case to eliminate optical photons.
+or like this:
 
 .. code-block:: python
 
-    # filter : remove opticalphoton
-    fe = sim.add_filter("ParticleFilter", "fe")
-    fe.particle = "opticalphoton"
-    fe.policy = "reject"
+    sim.physics_manager.set_production_cut("world", "electron", 10 * gate.g4_units.mm)
 
-    # add a kill actor to the crystal
-    ka = sim.add_actor("KillActor", "kill_actor2")
-    ka.attached_to = crystal
-    ka.filters.append(fe)
+Both of the above commands are equivalent.
 
-NOTE: Using a kill actor still creates optical photons, but it terminates the track after the first step. This approach provides us with the required information (number of optical photons emitted) as an input for OptiGAN, while also saving tracking time by terminating the photons early.
+If you want to apply a cut only to a certain volume, you can either do:
 
-.. image:: ../figures/kill_actor.png
+.. code-block:: python
 
-NOTE: The analysis of computation time gained by using OptiGAN in Gate 10 is still in works by the team at UC Davis.
+    my_vol = sim.add_volume("SphereVolume", name="my_vol")
+    sim.physics_manager.set_production_cut("my_vol", "electron", 10 * gate.g4_units.mm)
 
-Managing Cuts and Limits
-------------------------
+or set the cut via the volume like this:
 
-WARNING: this part is work in progress. DO NOT USE YET.
+.. code-block:: python
 
-`Geant4 User Guide: Tracking and Physics <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/thresholdVScut.html>`_
+    my_vol = sim.add_volume("SphereVolume", name="my_vol")
+    my_vol.set_production_cut("electron", 10 * gate.g4_units.mm)
 
-`Cuts per Region <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/cutsPerRegion.html>`_
+Both of the above commands are equivalent.
 
-`User Limits <https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/TrackingAndPhysics/userLimits.html>`_
+.. important:: Geant4 only applies production cuts to electron, positrons, gammas, and protons. Use "all" instead of a specific particle to apply the cuts to all four particles.
+
+Have a look at section :ref:`production-cuts-details-label` in the detailed part of this user guide for more information.
+
+
+Limit the step size
+-------------------
+
+Geant4 automatically determines the best step size to be used in given circumstances while it transports a particle. Generally speaking, if interactions are not likely to occur close to the current position of the particle, Geant4 takes a large step. If a next interaction is likely to occur close by the current position, the step size will be small. Clearly, this not only depends on the particle properties, but also on the material, e.g. on its density.
+
+
+You can impose a maximum step size that Geant4 may use, e.g. to guarantee a certain level of accuracy, in a specific volume in your simulation. There are two equivalent ways to achieve this. You can either do:
+
+.. code-block:: python
+
+    my_vol = sim.add_volume("SphereVolume", name="my_vol")
+    sim.physics_manager.set_max_step_size(my_vol.name, 1 * gate.g4_units.mm)
+
+or
+
+.. code-block:: python
+
+    my_vol = sim.add_volume("SphereVolume", name="my_vol")
+    my_vol.set_max_step_size(1 * gate.g4_units.mm)
+
+Additionally, you need to tell GATE to which particles you want to apply the step limit. To apply the 1 mm limit to electrons and positrons, you need this line:
+
+.. code-block:: python
+
+    sim.physics_manager.set_user_limits_particles(['electron', 'positron'])
+
+There are other user limits like ''maximum track length'' and ''minimium kinetic energy'', that are used in analogy to the ''maximum step size''.
+You can also use Regions if your geometry is complex. Have a look at the section :ref:`user-limits-details-label` in the detailed part of this user guide for more info.

@@ -329,7 +329,7 @@ void init_GateTemplateSource(py::module &);
 
 void init_GatePencilBeamSource(py::module &m);
 
-void init_GateVoxelsSource(py::module &);
+void init_GateVoxelSource(py::module &);
 
 void init_GateGANSource(py::module &);
 
@@ -350,8 +350,6 @@ void init_GatePhaseSpaceActor(py::module &);
 void init_GateOptrComptSplittingActor(py::module &m);
 
 void init_GateLastVertexInteractionSplittingActor(py::module &m);
-
-void init_GateOptrComptPseudoTransportationActor(py::module &m);
 
 void init_GateBOptrBremSplittingActor(py::module &m);
 
@@ -564,7 +562,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
-  init_GateVoxelsSource(m);
+  init_GateVoxelSource(m);
   init_GateGANSource(m);
   init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);
@@ -580,7 +578,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateSimulationStatisticsActor(m);
   init_GatePhaseSpaceActor(m);
   init_GateBOptrBremSplittingActor(m);
-  init_GateOptrComptPseudoTransportationActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateLastVertexInteractionSplittingActor(m);
   init_GateHitsCollectionActor(m);
