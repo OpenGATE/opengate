@@ -1997,7 +1997,7 @@
       </propertyvector>
     </propertiestable>
   </material>
-  
+
 <material name="LYSO">
     <propertiestable>
       <property name="SCINTILLATIONYIELD" value="33000" unit="1/MeV"/>
@@ -8068,7 +8068,7 @@
             </propertyvector>
           </propertiestable>
         </material>
-      
+
   <material name="BGO">
     <propertiestable>
       <property name="SCINTILLATIONYIELD" value="8500" unit="1/MeV"/>
@@ -9584,7 +9584,7 @@
                 <ve energy="3.8356" value="3.2313"/>
                 <ve energy="3.847" value="2.9875"/>
                 <ve energy="3.8584" value="2.7438"/>
-                <ve energy="3.87" value="2.5"/>   
+                <ve energy="3.87" value="2.5"/>
       </propertyvector>
       <propertyvector name="RINDEX" energyunit="eV">
                <ve energy="1.55" value="2.0712"/>
@@ -10092,7 +10092,7 @@
     </propertiestable>
   </material>
 
-  <material name="Air">  
+  <material name="Air">
     <propertiestable>
       <propertyvector name="ABSLENGTH" unit="m" energyunit="eV">
 	<ve energy="1.84" value="50"/>
@@ -10120,20 +10120,6 @@
     </propertiestable>
   </material>
 
-  <material name="SiO2">  <!--   https://www.crystran.com/optical-materials/fused-silica-sio2  -->
-    <propertiestable>
-      <propertyvector name="ABSLENGTH" unit="m" energyunit="eV">
-    <ve energy="1.55" value="1000"/>
-    <ve energy="3.87" value="1000"/>
-      </propertyvector>
-      <propertyvector name="RINDEX" energyunit="eV">
-    <ve energy="1.55" value="1.4776"/>
-    <ve energy="3.87" value="1.4776"/>
-      </propertyvector>
-    </propertiestable>
-  </material>
-  
-  
   <material name="Biomimic">
     <propertiestable>
      <propertyvector name="ABSLENGTH" unit="cm" energyunit="eV">
@@ -10170,7 +10156,7 @@
       <propertyvector name="MIEHG" unit="mm" energyunit="eV">
 	<ve energy="1.0" value="0.0568"/>
 	<ve energy="2.0" value="0.0568"/>
-      </propertyvector>   
+      </propertyvector>
    </propertiestable>
   </material>
 
@@ -10190,7 +10176,7 @@
       <propertyvector name="MIEHG" unit="mm" energyunit="eV">
 	<ve energy="1.0" value="0.0697"/>
 	<ve energy="2.0" value="0.0697"/>
-      </propertyvector>   
+      </propertyvector>
    </propertiestable>
   </material>
 
@@ -10212,7 +10198,7 @@
 	<ve energy="1.8" value="0.07326"/>
 	<ve energy="1.87" value="0.07326"/>
 	<ve energy="2.0" value="0.07326"/>
-      </propertyvector>   
+      </propertyvector>
    </propertiestable>
   </material>
 
@@ -10234,7 +10220,7 @@
 	<ve energy="1.8" value="0.15873"/>
 	<ve energy="1.87" value="0.15873"/>
 	<ve energy="2.0" value="0.15873"/>
-      </propertyvector>   
+      </propertyvector>
    </propertiestable>
   </material>
 
@@ -10260,7 +10246,7 @@
         <ve energy="4.0" value="10.4"/>
       </propertyvector>-->
 <!-- The *real* values:  photon energy = [1eV, 1.97eV, 2.34eV, 4eV] ==> scattering lengths = [km, 900m, 500m, 70m] -->
-<!-- If you do not provide any RAYLEIGH property vector for Water, Geant4 automatically calculates Water scattering 
+<!-- If you do not provide any RAYLEIGH property vector for Water, Geant4 automatically calculates Water scattering
 lengths using Einstein-Smoluchowski formula -->
 <!--   </propertiestable>-->
   <property name="MIEHG_FORWARD" value="0.6" />
@@ -10298,8 +10284,8 @@ lengths using Einstein-Smoluchowski formula -->
       </propertyvector>
      <propertyvector name="WLSABSLENGTH" unit="cm" energyunit="eV">
 <!-- Only one wavelength is absorbed:
-The WLS process has an absorption spectrum and an emission spectrum. If these overlap then a WLS photon may in 
-turn be absorpted and emitted again. If you do not want that you need to avoid such overlap. The WLS process does 
+The WLS process has an absorption spectrum and an emission spectrum. If these overlap then a WLS photon may in
+turn be absorpted and emitted again. If you do not want that you need to avoid such overlap. The WLS process does
 not distinguish between 'original' photons and WLS photons. -->
 	<ve energy="2.20" value="0.2"/>
 	<ve energy="2.21" value="0.2"/>
@@ -10935,4 +10921,3 @@ not distinguish between 'original' photons and WLS photons. -->
   </material>
 
 </materials>
-
