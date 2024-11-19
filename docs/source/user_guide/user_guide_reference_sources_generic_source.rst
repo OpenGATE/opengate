@@ -1,6 +1,3 @@
-.. The next line draws an horizontal line
------
-
 .. _source-generic-source:
 
 Generic source
@@ -47,6 +44,7 @@ can be defined by a single value (‘mono’) or Gaussian (‘gauss’).
 
 
 .. _source-particle-type:
+
 Particle type
 -------------
 
@@ -79,6 +77,7 @@ Source of ion can be set with the following (see ``test013``)
 
 
 .. _source-position:
+
 Particle initial position
 -------------------------
 
@@ -117,6 +116,7 @@ Here are some examples (mostly from ``test010_generic_source.py``):
 
 
 .. _source-direction:
+
 Particle initial direction
 --------------------------
 
@@ -132,20 +132,6 @@ Particle initial direction
       source.direction.type = "iso"
       source.direction.theta = [0, 10 * deg]
       source.direction.phi = [0, 90 * deg]
-
-
-``direction.type = "iso"`` assigns directions to primary particles
-based on 𝜃 and 𝜙 angles in a `spherical coordinate system
-<https://en.wikipedia.org/wiki/Spherical_coordinate_system>`__.
-By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360°
-(such that any direction is possible). You can define the 𝜃 and 𝜙
-ranges with minimum and maximum values as follows:
-
-.. code:: python
-
-    source.direction.type = "iso"
-    source.direction.theta = [0, 10 * deg]
-    source.direction.phi = [0, 90 * deg]
 
 
 Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
