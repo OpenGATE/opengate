@@ -21,7 +21,7 @@ User Guide
 
 .. toctree::
    :caption: Detailed description of components
-   :maxdepth: 2
+   :maxdepth: 3
 
    user_guide_reference_simulation
    user_guide_reference_volumes

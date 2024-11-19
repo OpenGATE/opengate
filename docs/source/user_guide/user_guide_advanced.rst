@@ -194,11 +194,9 @@ automatically added:
 -  Wave-length shifting
 -  Boundary Scattering
 
-.. note:: It’s important to note that merely including the
-G4OpticalPhysics physics list does not automatically activate the
-Cherenkov process. To generate Cherenkov photons, it’s necessary to set
-an appropriate electron physics cut in the relevant volume. Currently,
-setting the electron physics cut to 0.1 mm has been found effective:
+.. note:: It’s important to note that merely including the G4OpticalPhysics physics list does not automatically activate the Cherenkov process.
+
+To generate Cherenkov photons, it’s necessary to set an appropriate electron physics cut in the relevant volume. Currently, setting the electron physics cut to 0.1 mm has been found effective:
 
 .. code:: python
 
@@ -473,7 +471,7 @@ reflection.
 Defining Surfaces
 -----------------
 
-.. image:: figures/surface-definition.png
+.. image:: ../figures/surface-definition.png
 
 The photon travels through the surface between the two volumes Volume1
 and Volume2. To create an optical surface from Volume1 to Volume2, the
@@ -537,11 +535,15 @@ reflector (e.g. ESR) or a Lambertian reflector (e.g. Teflon). The
 specular reflector can be coupled to the crystal with air or optical
 grease. Teflon tape is wrapped around the crystal with 4 layers.
 
-Surface names of available LUTs - \| \| BARE \| TEFLON \| ESR AIR \| ESR
-GREASE \| \|———–|——————-|——————-|——————-|————————-\| \| POLISHED \|
-Polished_LUT \| PolishedTeflon_LUT\| PolishedESR_LUT \|
-PolishedESRGrease_LUT \| \| ROUGH \| Rough_LUT \| RoughTeflon_LUT \|
-RoughESR_LUT \| RoughESRGrease_LUT \|
+Surface names of available LUTs
+
++-----------+--------------+--------------------+-----------------+-----------------------+
+|           |   BARE       |      TEFLON        |   ESR AIR       |   ESR GREASE          |
++===========+==============+====================+=================+=======================+
+| POLISHED  | Polished_LUT | PolishedTeflon_LUT | PolishedESR_LUT | PolishedESRGrease_LUT |
++-----------+--------------+--------------------+-----------------+-----------------------+
+| ROUGH     | Rough_LUT    | RoughTeflon_LUT    |  RoughESR_LUT   |  RoughESRGrease_LUT   |
++-----------+--------------+--------------------+-----------------+-----------------------+
 
 The user can extend the list of finishes with custom measured surface
 data. In GATE, this can be achieved by utilising
@@ -621,7 +623,7 @@ includes a 3 mm x 3 mm x 20 mm scintillation crystal coupled to a 3 mm x
 irradiating it at 10 mm depth. The set surface is RoughTeflon_LUT in
 combination with the Detector_LUT as the photo detector surface.
 
-.. image:: figures/example_lut_davis_model.png
+.. image:: ../figures/example_lut_davis_model.png
 
 Background
 ----------
@@ -640,7 +642,7 @@ extracted from the first LUT. A Bernoulli test determines whether the
 photon is reflected or transmitted. In case of reflection two angles are
 drawn from the reflection direction LUT.
 
-.. image:: figures/flowchart_lut_model.png
+.. image:: ../figures/flowchart_lut_model.png
 
 Old Momentum to New Momentum. The old momentum is the unit vector that
 describes the incident photon. The reflected/transmitted photon is the
@@ -661,7 +663,7 @@ distribution of micro-facets around the average surface normal. In the
 case of a perfectly polished surface, the normal used by the
 G4BoundaryProcess is the normal to the surface.
 
-.. image:: figures/reflection_types_and_microfacets.png
+.. image:: ../figures/reflection_types_and_microfacets.png
 
 An example of a surface definition looks like:
 
