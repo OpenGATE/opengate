@@ -13,8 +13,8 @@ if __name__ == "__main__":
     sim.g4_verbose = True
 
     # remove ion sources
-    sim.source_manager.user_info_sources.pop("ion1")
-    sim.source_manager.user_info_sources.pop("ion2")
+    sim.source_manager.sources.pop("ion1")
+    sim.source_manager.sources.pop("ion2")
 
     # change physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"

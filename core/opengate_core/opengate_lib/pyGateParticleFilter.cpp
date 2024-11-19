@@ -15,5 +15,5 @@ namespace py = pybind11;
 void init_GateParticleFilter(py::module &m) {
   py::class_<GateParticleFilter, GateVFilter>(m, "GateParticleFilter")
       .def(py::init())
-      .def("InitializeUserInput", &GateParticleFilter::InitializeUserInput);
+      .def("InitializeUserInfo", &GateParticleFilter::InitializeUserInfo);
 }

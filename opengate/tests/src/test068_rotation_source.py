@@ -72,7 +72,7 @@ if __name__ == "__main__":
     source1 = sim.add_source("GenericSource", "photon_source")
     source1.particle = "gamma"
     source1.position.type = "box"
-    source1.mother = plan.name
+    source1.attached_to = plan.name
     source1.position.size = [10 * cm, 10 * cm, 1 * nm]
     source1.direction.type = "momentum"
     source1.direction_relative_to_attached_volume = True
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     source2 = sim.add_source("GenericSource", "photon_source_2")
     source2.particle = "gamma"
     source2.position.type = "box"
-    source2.mother = plan.name
+    source2.attached_to = plan.name
     source2.position.size = [10 * cm, 10 * cm, 1 * nm]
     source2.direction.type = "focused"
     source2.direction_relative_to_attached_volume = True
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     source3.particle = "gamma"
     source3.position.type = "disc"
     source3.position.radius = 0 * mm
-    source3.mother = plan.name
+    source3.attached_to = plan.name
     source3.position.size = [10 * cm, 10 * cm, 1 * nm]
     source3.direction.type = "iso"
     source3.direction.theta = [0 * deg, 10 * deg]

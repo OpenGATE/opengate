@@ -5,25 +5,26 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateVoxelsSource.h"
+#include "GateVoxelSource.h"
 #include "G4ParticleTable.hh"
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
 
-GateVoxelsSource::GateVoxelsSource() : GateGenericSource() {
+GateVoxelSource::GateVoxelSource() : GateGenericSource() {
   fVoxelPositionGenerator = new GateSPSVoxelsPosDistribution();
 }
 
-GateVoxelsSource::~GateVoxelsSource() {}
+GateVoxelSource::~GateVoxelSource() = default;
 
-void GateVoxelsSource::PrepareNextRun() {
+void GateVoxelSource::PrepareNextRun() {
   // GateGenericSource::PrepareNextRun();
   //  rotation and translation to apply, according to mother volume
   GateVSource::PrepareNextRun();
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
-  auto &l = fThreadLocalData.Get();
-  auto *pos = fSPS->GetPosDist();
+  auto &l = GetThreadLocalData();
+  auto &ll = GetThreadLocalDataGenericSource();
+  auto *pos = ll.fSPS->GetPosDist();
   pos->SetCentreCoords(l.fGlobalTranslation);
 
   // orientation according to mother volume
@@ -39,8 +40,9 @@ void GateVoxelsSource::PrepareNextRun() {
   // the direction is 'isotropic' so we don't care about rotating the direction.
 }
 
-void GateVoxelsSource::InitializePosition(py::dict) {
-  fSPS->SetPosGenerator(fVoxelPositionGenerator);
+void GateVoxelSource::InitializePosition(py::dict) {
+  auto &ll = GetThreadLocalDataGenericSource();
+  ll.fSPS->SetPosGenerator(fVoxelPositionGenerator);
   // we set a fake value (not used)
   fVoxelPositionGenerator->SetPosDisType("Point");
 }

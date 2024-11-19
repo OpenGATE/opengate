@@ -141,8 +141,8 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     se = 0
     ze = 0
     for source in sources:
-        se += gate.sources.generic.get_source_skipped_events(sim, source.name)
-        ze += gate.sources.generic.get_source_zero_events(sim, source.name)
+        se += source.total_skipped_events
+        ze += source.total_zero_events
     print(f"Skipped particles {se}")
     print(f"Zeros E particles {ze}")
     s = max(se, ze)

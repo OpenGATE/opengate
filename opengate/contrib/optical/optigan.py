@@ -14,17 +14,39 @@ from opengate.exception import fatal
 from opengate.utility import delete_folder_contents
 
 
-# This extracts the number from the filename.
-# Helpful for sorting the csv files when fetched.
 def extract_number(filename):
+    """
+    Extracts the number from the filename.
+    Helpful for sorting the csv files when fetched.
+    """
+
     match = re.search(r"\d+", filename)
     if match:
         return int(match.group())
     return 0
 
 
-# Generator class architecture for 3x3x3 crystal
+def get_torch_device(gpu_mode):
+    current_gpu_mode = None
+    current_gpu_device = None
+    if gpu_mode == "cpu":
+        return torch.device("cpu")
+    else:
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            return torch.device("mps")
+        elif gpu_mode == "auto":
+            # could not get a GPU device, so fall back to cpu
+            return torch.device("cpu")
+        else:
+            fatal("GPU requested for torch, but no GPU on this device")
+
+
 class WGANGenerator(nn.Module):
+    """
+    Generator class architecture for 3x3x3 crystal
+    """
 
     def __init__(self, input_dim, output_dim, hidden_dim, labels_len):
         super(WGANGenerator, self).__init__()
@@ -49,7 +71,7 @@ def _setter_hook_input_phsp_actor(self, input_phsp_actor):
             and self.simulation != input_phsp_actor.simulation
         ):
             fatal(
-                "The input_phsp_actor refers to a different simulation than this oOtiGAN. "
+                f"The input_phsp_actor {input_phsp_actor.name} refers to a different simulation than this {self.type_name}. "
             )
         self.simulation = input_phsp_actor.simulation
         self.root_file_path = input_phsp_actor.get_output_path()
@@ -57,13 +79,19 @@ def _setter_hook_input_phsp_actor(self, input_phsp_actor):
 
 
 def process_root_output_into_events(df_combined):
+    """
+    This method takes the filtered root output (df_combined) and divides them
+    into a list elements based on gamma event.
+
+    All the info about one gamma event (gamma, electron, and optical photon info)
+    is saved in one list element.
+    """
 
     position_x = df_combined["Position_X"].to_numpy()
     position_y = df_combined["Position_Y"].to_numpy()
     position_z = df_combined["Position_Z"].to_numpy()
     particle_types = df_combined["ParticleType"].to_numpy()
 
-    # variables
     events = {}  # will store all the events
     current_event = []
     event_id = 0
@@ -71,7 +99,7 @@ def process_root_output_into_events(df_combined):
     # flag to check if gamma is followed by electrons or photons
     gamma_has_electrons_or_photons = False
 
-    # counts the occurence of optical photons in current event
+    # counts the occurrence of optical photons in current event
     optical_photon_count = 0
 
     # process each particle and segregate into events
@@ -162,6 +190,15 @@ class OptiGAN(GateObject):
                 "and has been trained by the team at UC Davis. ",
             },
         ),
+        "torch_device": (
+            "auto",
+            {
+                "doc": "The device to be used by torch. "
+                "With 'auto', OptiGAN will try to get a GPU device "
+                "and fall back to CPU if no GPU is available. ",
+                "allowed_values": ("gpu", "cpu", "auto"),
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -186,6 +223,10 @@ class OptiGAN(GateObject):
 
         self.events = {}
         self.extracted_events_details = []
+
+        # Holds generator model
+        self.generator = None
+
         # Arguments for the GAN.
         self.gan_arguments = {
             "noise_dimension": 10,  # input_dim to GAN
@@ -193,8 +234,8 @@ class OptiGAN(GateObject):
             "hidden_dimension": 128,
             "labels_length": 3,
         }
-        # FIX ME: should set to gpu if available??
-        self.device = torch.device("cpu")
+
+        self.device = None
 
     @property
     def _absolute_output_path(self):
@@ -211,12 +252,7 @@ class OptiGAN(GateObject):
         return p
 
     def initialize(self):
-        # if self.simulation is None:
-        #     fatal(f"The {self.type_name} needs a reference to the GATE simulation. "
-        #           "Set it by 'my_optigan.simulation = ...', "
-        #           f"where my_optigan is the {self.type_name} object in your script.")
-
-        # Sub-folders (relative to output_folder
+        # Sub-folders (relative to output_folder)
         self.optigan_input_folder = Path("optigan_inputs")
         self.optigan_output_folder = Path("optigan_outputs")
         self.optigan_csv_output_folder = self.optigan_output_folder / "csv_files"
@@ -226,24 +262,15 @@ class OptiGAN(GateObject):
         delete_folder_contents(
             self.get_absolute_path_to_folder(self.optigan_input_folder)
         )
+        self.device = get_torch_device(self.torch_device)
 
-    # Print the input info in the terminal.
-    def pretty_print_events(self):
-        for seq_id, event in self.events.items():
-            print(f"event ID {seq_id}:")
-            for particle in event:
-                if particle["type"] == "gamma" or particle["type"] == "e-":
-                    print(
-                        f"  Particle {particle['index']}: Type={particle['type']}, Position=({particle['x']:.2f}, {particle['y']:.2f}, {particle['z']:.2f})"
-                    )
-                if particle["type"] == "opticalphoton":
-                    print(
-                        f"Total number of optical photons generated are: {particle['optical_photon_count']}"
-                    )
-            print()
-
-    # Similar to above method but in a different format.
     def print_details_of_events(self):
+        """
+        Helper method to print event info.
+
+        Not currently used by OptiGAN.
+        DELETE in the future.
+        """
         print(
             f"The length of extracted events details {len(self.extracted_events_details)}"
         )
@@ -256,10 +283,10 @@ class OptiGAN(GateObject):
             )
             print()
 
-    # Save the extracted information into csv files.
     def save_optigan_inputs(self):
-
-        print(f"The optigan input files will be saved at {self.optigan_input_folder}")
+        """
+        Saves the required OptiGAN input as csv files.
+        """
 
         for event_id, detail in enumerate(self.extracted_events_details):
             gamma_pos_x = detail["gamma_position"][0]
@@ -274,7 +301,6 @@ class OptiGAN(GateObject):
                 "num_optical_photons": [num_optical_photons],
             }
 
-            # DELETE: delete this file after verification.
             pd.DataFrame(data).to_csv(
                 self.get_absolute_path_to_folder(self.optigan_input_folder)
                 / f"optigan_input_{event_id}.csv",
@@ -287,8 +313,11 @@ class OptiGAN(GateObject):
             )
             print()
 
-    # Loads the OptiGAN model
     def create_generator(self):
+        """
+        Loads the OptiGAN generator and prepares it for generating output.
+        """
+
         input_dim, output_dim, hidden_dim, labels_len = self.gan_arguments.values()
 
         # Load the saved model checkpoint.
@@ -296,19 +325,6 @@ class OptiGAN(GateObject):
 
         # Initialize the model.
         generator = WGANGenerator(input_dim, output_dim, hidden_dim, labels_len)
-
-        # Print model and checkpoint state_dict sizes.
-        print("Model's state_dict:")
-        for param_tensor in generator.state_dict():
-            print(param_tensor, "\t", generator.state_dict()[param_tensor].size())
-
-        print("\nCheckpoint's state_dict:")
-        for param_tensor in checkpoint["generator_state_dict"]:
-            print(
-                param_tensor,
-                "\t",
-                checkpoint["generator_state_dict"][param_tensor].size(),
-            )
 
         # Load the state_dict into the model.
         generator.load_state_dict(checkpoint["generator_state_dict"])
@@ -321,21 +337,26 @@ class OptiGAN(GateObject):
 
         return generator
 
-    # Plot graphs of OptiGAN outputs.
-    # Graphs are saved in different event folders.
     def generate_and_save_optigan_graphs(self):
+        """
+        Saves graphs in a different output folder.
+        """
         csv_files = sorted(
             [
                 file
-                for file in os.listdir(self.optigan_csv_output_folder)
+                for file in os.listdir(
+                    self.get_absolute_path_to_folder(self.optigan_csv_output_folder)
+                )
                 if file.endswith(".csv")
             ],
             key=extract_number,
         )
-        print(csv_files)
 
         for file_index, csv_file in enumerate(csv_files):
-            df = pd.read_csv(self.optigan_csv_output_folder / csv_file)
+            df = pd.read_csv(
+                self.get_absolute_path_to_folder(self.optigan_csv_output_folder)
+                / csv_file
+            )
             out_path = self.get_absolute_path_to_folder(
                 self.optigan_plots_folder / f"event{file_index + 1}"
             )
@@ -348,17 +369,9 @@ class OptiGAN(GateObject):
                 plt.title(f"{column}: Distribution for event {file_index + 1}")
                 plt.xlabel(column)
                 plt.ylabel("Frequency")
-                # # Plot the graph using seaborn
-                # plt.figure(figsize=(10, 6))
-                # plt.hist(
-                #     df['values'], bins='auto', color="blue", edgecolor="black"
-                # )
-                # plt.xlabel(column)
-                # plt.ylabel("Frequency")
-                # plt.title(f"{column} Distribution for Event {file_index + 1}")
                 plt.tight_layout()
 
-                # Construct the file path and save the plot
+                # save the plot
                 plt.savefig(out_path / f"{column}_event_{file_index + 1}.png")
                 plt.close()
 
@@ -367,23 +380,22 @@ class OptiGAN(GateObject):
                 f"in {out_path}"
             )
 
-    # Generates output of OptiGAN.
     def generate_and_save_optigan_output(self):
+        """
+        Generates and saves the optigan output as csv files.
+        """
 
         # Sort and list CSV files.
         csv_files = sorted(
             [
                 file
                 for file in os.listdir(
-                    self.simulation.get_output_path(
-                        self.optigan_input_folder, is_file_or_directory="directory"
-                    )
+                    self.get_absolute_path_to_folder(self.optigan_input_folder)
                 )
                 if file.endswith(".csv")
             ],
             key=extract_number,
         )
-        print(f"The csv files in the folder are {csv_files}")
 
         output_path = self.get_absolute_path_to_folder(self.optigan_output_folder)
         # Clean the output folder.
@@ -442,6 +454,7 @@ class OptiGAN(GateObject):
             )
             generated_df.to_csv(optigan_output_csv_file_save_path, index=False)
             print(f"Saved generated data to {optigan_output_csv_file_save_path}.")
+        print()
 
     # Runs all the methods of OptiGAN
     def run_optigan(self, create_output_graphs):
@@ -449,8 +462,6 @@ class OptiGAN(GateObject):
         df_combined = self.get_dataframe_from_root_file()
         self.events = process_root_output_into_events(df_combined)
         self.extracted_events_details = self.extract_event_details()
-        # self.pretty_print_events()
-        # self.print_details_of_events()
         self.save_optigan_inputs()
         self.generator = self.create_generator()
         self.generate_and_save_optigan_output()
@@ -458,21 +469,15 @@ class OptiGAN(GateObject):
         if create_output_graphs:
             self.generate_and_save_optigan_graphs()
 
-    # This is just a temporary method to get the details printed
-    # without creating optigan outputs.
-    def print_root_info(self):
-        self.events = process_root_output_into_events()
-        self.extracted_events_details = self.extract_event_details()
-        # self.pretty_print_events()
-        self.print_details_of_events()
-
     def get_dataframe_from_root_file(self):
-        print(
-            f"This is inside OptiganHelpers class, the root file is {self.root_file_path}"
-        )
+        """
+        First step in the pipeline to extract OptiGAN input from the root output.
+        Filters the raw root output into a format that is appropriate for OptiGAN.
+        """
+
         with uproot.open(self.root_file_path) as file:
             root_tree = file["Phase"]
-            print(f"The data type of the tree variable is {type(root_tree)}")
+
             # Save the particle co-ordinates and other information
             position_x = root_tree["Position_X"].array(library="np")
             position_y = root_tree["Position_Y"].array(library="np")
@@ -480,7 +485,7 @@ class OptiGAN(GateObject):
             particle_types = root_tree["ParticleName"].array(library="np")
             track_ids = root_tree["TrackID"].array(library="np")
 
-        # Create a DataFrame from the final arrays
+        # Create a DataFrame from the final arrays.
         df = pd.DataFrame(
             {
                 "TrackID": track_ids,
@@ -493,38 +498,38 @@ class OptiGAN(GateObject):
 
         df["OriginalIndex"] = df.index
 
-        # Step 1: Filter out rows where ParticleType is "opticalphoton"
+        # Step 1: Filter out rows where ParticleType is "opticalphoton".
         opticalphoton_df = df[df["ParticleType"] == "opticalphoton"]
 
-        # Step 2: Drop duplicates based on TrackID, keeping the first occurrence
+        # Step 2: Drop duplicates based on TrackID, keeping the first occurrence.
         opticalphoton_df_unique = opticalphoton_df.loc[
             ~opticalphoton_df.duplicated(subset="TrackID", keep="first")
         ]
 
-        # Step 3: Filter out rows where ParticleType is NOT "opticalphoton" (e.g., "gamma")
+        # Step 3: Filter out rows where ParticleType is NOT "opticalphoton" (e.g., "gamma").
         non_opticalphoton_df = df[df["ParticleType"] != "opticalphoton"]
 
-        # Step 4: Concatenate both DataFrames to keep the structure intact
+        # Step 4: Concatenate both DataFrames to keep the structure intact.
         df_combined = pd.concat([opticalphoton_df_unique, non_opticalphoton_df])
 
-        # Step 5: Optionally, sort the DataFrame based on index to restore the original order if needed
+        # Step 5: Sort the DataFrame based on index to restore the original order if needed.
         df_combined = df_combined.sort_index()
-
-        # Save the DataFrame to a CSV file
-        df_combined.to_csv(
-            self.get_absolute_path_to_folder(self.optigan_output_folder) / "output.csv",
-            index=False,
-        )
 
         return df_combined
 
-    # This method will extract gamma, electron
-    # and optical photon information from the file.
-    #  (not separated by events)
-
-    # This method will divide the extracted information
-    # from above method to various events
     def extract_event_details(self):
+        """
+        Third step in the pipeline to extract event details from the root output.
+
+        Extracts gamma, electron, and optical photon data from self.events.
+
+        Note:
+        - `electron_count` is unavailable because the phase space actor does not save
+          this data.
+        - Add a `Hits` actor in the simulation to obtain the required information
+          (FUTURE FIX).
+        """
+
         event_details = []
         for event_id, event in self.events.items():
             # dictionary format to store each event

@@ -21,6 +21,15 @@ from .definitions import (
 )
 from .decorators import requires_fatal
 from .logger import log
+import traceback
+
+
+def print_call_location():
+    stack = traceback.extract_stack()
+    # Get the caller of this function
+    filename, lineno, _, _ = stack[-3]
+    msg = f"Called from file: {filename}, line: {lineno}"
+    return msg
 
 
 # Singletons
@@ -199,12 +208,12 @@ def digest_user_info_defaults(cls):
 
     if cls.__doc__ is not None:
         docstring = cls.__doc__
-        docstring += "\n" + 20 * "*" + "\n\n"
+        docstring += "\n\n"
     else:
         docstring = ""
     cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
     docstring += cls.__user_info_doc__
-    docstring += 20 * "*"
+    # docstring += 20 * "*"
     docstring += "\n"
     cls.__doc__ = docstring
 
@@ -326,33 +335,41 @@ def _make_property(property_name, default_value, options=None, container_dict=No
     return prop
 
 
+def convert_default_value_to_string(default_value):
+    default_value_str = str(default_value)
+    default_value_str = default_value_str.replace("\n", ", ")
+    return default_value_str
+
+
 def make_docstring_for_user_info(name, default_value, options):
-    begin_of_line = "* "
+    begin_of_line = "  * "
     docstring = f"{name}"
     if "deprecated" in options:
-        docstring += f"\n\n{begin_of_line}Deprecated: {options['deprecated']}\n\n"
+        docstring += ":\n\n"
+        docstring += f"{begin_of_line}Deprecated: {options['deprecated']}\n"
     else:
         if "required" in options and options["required"] is True:
             docstring += " (must be provided)"
         if "read_only" in options and options["read_only"] is True:
             docstring += " (set internally, i.e. read-only)"
         docstring += ":\n\n"
-        docstring += f"{begin_of_line}Default value: {default_value}\n\n"
+        docstring += f"{begin_of_line}Default value: {convert_default_value_to_string(default_value)}\n"
         if "allowed_values" in options:
-            docstring += (
-                f"{begin_of_line}Allowed values: {options['allowed_values']}\n\n"
-            )
+            docstring += f"{begin_of_line}Allowed values: {options['allowed_values']}\n"
         if "doc" in options:
-            docstring += f"{begin_of_line}Description: {options['doc']}\n\n"
+            docstring += f"{begin_of_line}Description: {options['doc']}\n"
     return docstring
 
 
 def make_docstring(cls, user_info_defaults):
     docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
-    for k, v in user_info_defaults.items():
+    for k, v in sorted(user_info_defaults.items()):
         default_value = v[0]
         options = v[1]
+        docstring += "* "
         docstring += make_docstring_for_user_info(k, default_value, options)
+        docstring += "\n"
+    docstring += "\n"
     return docstring
 
 
@@ -530,6 +547,7 @@ class GateObject:
         if len(known_attributes) > 0:
             if key not in known_attributes:
                 msg = f'For object "{self.name}", attribute "{key}" is not known. Maybe a typo?\n'
+                msg += print_call_location() + "\n"
                 close_matches = get_close_matches(key, known_attributes)
                 if len(close_matches) > 0:
                     msg_close_matches = (

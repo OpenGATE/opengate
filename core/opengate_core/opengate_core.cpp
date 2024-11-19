@@ -325,7 +325,7 @@ void init_GateTemplateSource(py::module &);
 
 void init_GatePencilBeamSource(py::module &m);
 
-void init_GateVoxelsSource(py::module &);
+void init_GateVoxelSource(py::module &);
 
 void init_GateGANSource(py::module &);
 
@@ -560,7 +560,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
-  init_GateVoxelsSource(m);
+  init_GateVoxelSource(m);
   init_GateGANSource(m);
   init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);

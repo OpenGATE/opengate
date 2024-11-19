@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # in the GAN : position, direction, E, weights
     gsource = sim.add_source("GANSource", "gaga")
     gsource.particle = "gamma"
-    gsource.mother = plane.name
+    gsource.attached_to = plane.name
     # gsource.activity = 10 * MBq / sim.number_of_threads
     gsource.n = 1e6 / sim.number_of_threads
     gsource.pth_filename = (
@@ -107,8 +107,8 @@ if __name__ == "__main__":
     # start simulation
     sim.run()
 
-    s = sim.source_manager.get_source_info("gaga")
-    print(f"Source, nb of E<=0: {s.fTotalSkippedEvents}")
+    s = sim.source_manager.get_source("gaga")
+    print(f"Source, nb of E<=0: {s.GetTotalSkippedEvents()}")
 
     # print results
     gate.exception.warning(f"Check stats")

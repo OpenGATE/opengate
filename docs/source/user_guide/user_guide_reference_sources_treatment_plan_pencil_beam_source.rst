@@ -1,5 +1,13 @@
+.. The next line draws an horizontal line
+-----
+
+.. _source-treatment-plan-pencil-beam-source:
+
 Treatment Plan Pencil Beam source
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=================================
+
+Description
+-----------
 
 In ion beam therapy, a target’s volume is irradiated by scanning a
 pencil beam across the transverse plane using steering magnets, while
@@ -46,7 +54,8 @@ To set up a Treatment Plan source, the user shall provide:
 -  the **number of particles** to simulate.
 -  the **ion type**.
 
-Additional functionality:
+Additional functionality
+------------------------
 
 -  ``flat_generation`` flag: if True, the same number of particles is
    generated for each spot and the spot weight is applied to the energy
@@ -89,3 +98,8 @@ simulation:
 
 To see more examples on the Treatment Plan source usage, the user can
 refer to test_059*.
+
+Reference
+---------
+
+.. autoclass:: opengate.sources.beamsources.TreatmentPlanPBSource

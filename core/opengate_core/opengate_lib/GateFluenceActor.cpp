@@ -29,9 +29,9 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
   fActions.insert("BeginOfRunAction");
 }
 
-void GateFluenceActor::InitializeUserInput(py::dict &user_info) {
+void GateFluenceActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 

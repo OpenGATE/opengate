@@ -1,5 +1,7 @@
-Volumes
-=======
+.. _volumes-reference-label:
+
+Details: Volumes
+================
 
 This section describes the different volumes available in GATE 10 and
 their parameters.
@@ -19,9 +21,9 @@ Common parameters are:
    to the reference frame of the mother volume and therefore moves with
    the mother volume.
 -  ``material``: the name of the material that composes the volume,
-   e.g. ``G4_WATER``. See section `Materials <#materials>`__
+   e.g. ``G4_WATER``. See section `Materials <#materials>`__
 -  ``translation``: list of 3 numerical values,
-   e.g. ``[0, 2*cm, 3*mm]``. It defines the translation of the volume
+   e.g. ``[0, 2*cm, 3*mm]``. It defines the translation of the volume
    with respect to the reference frame of the mother volume. Note: the
    origin of the reference frame is always at the center of the shape in
    Geant4.
@@ -39,7 +41,8 @@ Description
 
 An image volumes is essentially a box filled with a voxelized volumetric
 (3D) image. The box containing the image behaves pretty much like a
-``BoxVolume`` and its size is automatically adjusted to match the size
+:class:`opengate.geometry.volumes.BoxVolume`
+and its size is automatically adjusted to match the size
 of the input image. The image should be provided in a format readable by
 the *itk* package and the path to the image file is set via the
 parameter ``image``. In general, we advocate the use of the mhd/raw file
@@ -132,10 +135,32 @@ Reference
 
 .. autoclass:: opengate.geometry.volumes.ImageVolume
 
+
+CSG Volumes
+-----------
+
+Description
+~~~~~~~~~~~
+
+CSG volumes have a shape that can be analytically described and parametrised, such as a sphere, a cone, a box. GATE provides the CSG volumes implemented in Geant4. They can be repeated.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.geometry.volumes.BoxVolume
+.. autoclass:: opengate.geometry.volumes.HexagonVolume
+.. autoclass:: opengate.geometry.volumes.ConsVolume
+.. autoclass:: opengate.geometry.volumes.PolyhedraVolume
+.. autoclass:: opengate.geometry.volumes.SphereVolume
+.. autoclass:: opengate.geometry.volumes.TrapVolume
+.. autoclass:: opengate.geometry.volumes.TrdVolume
+.. autoclass:: opengate.geometry.volumes.TubsVolume
+
+
 Tesselated (STL) volumes
 ------------------------
 
-.. _description-1:
+.. _description-tesselated-volume:
 
 Description
 ~~~~~~~~~~~
@@ -179,8 +204,6 @@ Reference
 Repeated volumes
 ----------------
 
-.. _description-2:
-
 Description
 ~~~~~~~~~~~
 
@@ -204,7 +227,8 @@ obtained from a given copy index (counting starts at 0) via the method
 :py:meth:`opengate.geometry.volumes.RepeatableVolume.get_repetition_name_from_index`
 
 . Or vice versa, the copy index can be obtained from the copy name via
-``get_repetition_index_from_name()``.
+
+:py:meth:`opengate.geometry.volumes.RepeatableVolume.get_repetition_index_from_name`
 
 Gate comes with utility functions to generate translation and rotation
 parameters for common types of volume repetitions - see below.
@@ -276,13 +300,19 @@ Note that, if the volume contains sub-volumes (via their ``mother``
 parameter, everything will be repeated, albeit in an optimized and
 efficient way.
 
+Reference
+~~~~~~~~~
+
+.. autofunction:: opengate.geometry.volumes.RepeatableVolume.get_repetition_name_from_index
+.. autofunction:: opengate.geometry.volumes.RepeatableVolume.get_repetition_index_from_name
+
 Repeat Parametrised Volumes
 ---------------------------
 
 In some situations, the repeater concept explained in the previous
 section is not sufficient and can be inefficient when the number of
 repetitions is large. A specific example is a collimator for SPECT
-imaging containing a large number of holes. ``RepeatParametrisedVolume``
+imaging containing a large number of holes. :class:`opengate.geometry.volumes.RepeatParametrisedVolume`
 is an alternative repeated volume type which suits this use case. See
 this example:
 
@@ -319,6 +349,13 @@ The user guide on this will soon be updated and extended.
    param.start = [-(x - 1) * y / 2.0 for x, y in zip(size, tr)]
    param.offset_nb = 1
    param.offset = [0, 0, 0]
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.geometry.volumes.RepeatParametrisedVolume
+
 
 Boolean volumes
 ---------------
@@ -388,3 +425,5 @@ Reference
 
 .. autoclass:: opengate.geometry.volumes.BooleanVolume
 .. autofunction:: opengate.geometry.volumes.unite_volumes
+.. autofunction:: opengate.geometry.volumes.subtract_volumes
+.. autofunction:: opengate.geometry.volumes.intersect_volumes

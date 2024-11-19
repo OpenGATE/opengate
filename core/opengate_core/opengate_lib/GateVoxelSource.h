@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateVoxelsSource_h
-#define GateVoxelsSource_h
+#ifndef GateVoxelSource_h
+#define GateVoxelSource_h
 
 #include "GateGenericSource.h"
 #include "GateSPSVoxelsPosDistribution.h"
@@ -15,12 +15,12 @@
 
 namespace py = pybind11;
 
-class GateVoxelsSource : public GateGenericSource {
+class GateVoxelSource : public GateGenericSource {
 
 public:
-  GateVoxelsSource();
+  GateVoxelSource();
 
-  ~GateVoxelsSource() override;
+  ~GateVoxelSource() override;
 
   void PrepareNextRun() override;
 
@@ -34,4 +34,4 @@ protected:
   GateSPSVoxelsPosDistribution *fVoxelPositionGenerator;
 };
 
-#endif // GateVoxelsSource_h
+#endif // GateVoxelSource_h

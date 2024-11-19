@@ -226,7 +226,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -279,7 +279,7 @@ class KillActor(ActorBase, g4.GateKillActor):
 
     def initialize(self):
         ActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def EndSimulationAction(self):
@@ -390,7 +390,7 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
 
     def initialize(self):
         SplittingActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 
@@ -499,7 +499,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 
     def initialize(self):
         SplittingActorBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 

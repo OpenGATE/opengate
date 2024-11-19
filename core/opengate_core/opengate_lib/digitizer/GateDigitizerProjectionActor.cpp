@@ -24,8 +24,8 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
 
 GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
 
-void GateDigitizerProjectionActor::InitializeUserInput(py::dict &user_info) {
-  GateVActor::InitializeUserInput(user_info);
+void GateDigitizerProjectionActor::InitializeUserInfo(py::dict &user_info) {
+  GateVActor::InitializeUserInfo(user_info);
   auto r = DictGetMatrix(user_info, "detector_orientation_matrix");
   fDetectorOrientationMatrix = ConvertToG4RotationMatrix(r);
   fInputDigiCollectionNames =

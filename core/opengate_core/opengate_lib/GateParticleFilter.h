@@ -18,7 +18,7 @@ class GateParticleFilter : public GateVFilter {
 public:
   GateParticleFilter() : GateVFilter() {}
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   // To avoid gcc -Woverloaded-virtual
   // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
