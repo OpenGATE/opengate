@@ -60,7 +60,11 @@ void init_G4OpticalSurface(py::module &m) {
       .value("PolishedESR_LUT", G4OpticalSurfaceFinish::PolishedESR_LUT)
       .value("PolishedESRGrease_LUT",
              G4OpticalSurfaceFinish::PolishedESRGrease_LUT)
-      .value("Detector_LUT", G4OpticalSurfaceFinish::Detector_LUT)
+      .value("Customized_LUT", G4OpticalSurfaceFinish::Customized_LUT)
+      .value("Customized2_LUT", G4OpticalSurfaceFinish::Customized2_LUT)
+      .value("Customized3_LUT", G4OpticalSurfaceFinish::Customized3_LUT)
+      .value("Customized4_LUT", G4OpticalSurfaceFinish::Customized4_LUT)
+      .value("Customized5_LUT", G4OpticalSurfaceFinish::Customized5_LUT)
       .export_values();
 
   // Binding for G4SurfaceType enumeration
