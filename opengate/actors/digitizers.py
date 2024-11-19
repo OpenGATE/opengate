@@ -525,6 +525,16 @@ class DigitizerSpatialBlurringActor(
     Digitizer module for blurring a (global) spatial position.
     """
 
+    # hints for IDE
+    attributes: List
+    input_digi_collection: str
+    skip_attributes: List
+    clear_every: int
+    blur_attribute: str
+    blur_fwhm: float
+    blur_sigma: float
+    keep_in_solid_limits: bool
+
     user_info_defaults = {
         "attributes": (
             [],
@@ -545,7 +555,7 @@ class DigitizerSpatialBlurringActor(
             },
         ),
         "clear_every": (
-            1e5,
+            int(1e5),
             {
                 "doc": "FIXME",
             },

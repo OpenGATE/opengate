@@ -17,6 +17,7 @@ User Guide
    user_guide_physics
    user_guide_sources
    user_guide_actors
+   user_guide_resources
 
 .. toctree::
    :caption: Detailed description of components

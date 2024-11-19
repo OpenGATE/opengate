@@ -85,6 +85,10 @@ def get_rad_gamma_spectrum(rad):
     with open(path, "r") as f:
         data = json.load(f)
 
+    # consider lower case
+    data = {key.lower(): value for key, value in data.items()}
+    rad = rad.lower()
+
     if rad not in data:
         fatal(f"get_rad_gamma_spectrum: {path} does not contain data for ion {rad}")
 

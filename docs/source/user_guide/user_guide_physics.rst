@@ -65,7 +65,6 @@ Specific electromagnetic parameters can be turned on or off like this:
     sim.physics_manager.em_parameters.pixe = True
     sim.physics_manager.em_parameters.deexcitation_ignore_cut = True
 
-...
 
 
 Production cuts
