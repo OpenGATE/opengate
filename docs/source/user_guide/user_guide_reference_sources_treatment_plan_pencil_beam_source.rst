@@ -1,6 +1,3 @@
-.. The next line draws an horizontal line
------
-
 .. _source-treatment-plan-pencil-beam-source:
 
 Treatment Plan Pencil Beam source

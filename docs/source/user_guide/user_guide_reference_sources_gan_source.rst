@@ -1,6 +1,3 @@
-.. The next line draws an horizontal line
------
-
 .. _source-gan-source:
 
 GAN sources (Generative Adversarial Network)
