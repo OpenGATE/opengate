@@ -48,7 +48,7 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source = sim.add_source("GenericSource", "alpha_source")
     MeV = gate.g4_units.MeV
     source.particle = "alpha"
-    source.mother = plan_source.name
+    source.attached_to = plan_source.name
     source.energy.type = "mono"
     source.energy.mono = 1 * MeV
     source.position.type = "box"

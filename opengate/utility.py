@@ -517,8 +517,7 @@ def get_library_path():
     if len(libs) == 0:
         return "unknown"
     elif len(libs) > 1:
-        warning(f"multiple .{lib_ext} files in {path}")
-        return "unknown"
+        return f"unknown: multiple .{lib_ext} files in {path} ({libs})"
 
     return path / libs[0]
 

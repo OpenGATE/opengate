@@ -80,7 +80,7 @@ void init_GateVActor(py::module &m) {
       //      this -> problems with pickle
       .def_readwrite("fFilters", &GateVActor::fFilters)
       .def("InitializeCpp", &GateVActor::InitializeCpp)
-      .def("InitializeUserInput", &GateVActor::InitializeUserInput)
+      .def("InitializeUserInfo", &GateVActor::InitializeUserInfo)
       .def("AddActions", &GateVActor::AddActions)
       .def("IsSensitiveDetector", &GateVActor::IsSensitiveDetector)
       .def("HasAction", &GateVActor::HasAction)

@@ -103,7 +103,7 @@ class Ciosalpha:
         ).as_matrix()
 
         source = self.sim.add_source("GenericSource", f"{self.machine_name}_source")
-        source.mother = sourcebox.name
+        source.attached_to = sourcebox.name
         source.particle = "gamma"
         source.position.type = "disc"
         source.position.radius = 0 * mm

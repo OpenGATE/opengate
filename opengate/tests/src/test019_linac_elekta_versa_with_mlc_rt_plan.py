@@ -85,7 +85,7 @@ def add_alpha_source(sim, name, nb_part):
     Bq = gate.g4_units.Bq
     MeV = gate.g4_units.MeV
     source.particle = "alpha"
-    source.mother = plan_source.name
+    source.attached_to = plan_source.name
     source.energy.type = "mono"
     source.energy.mono = 1 * MeV
     source.position.type = "box"
@@ -194,6 +194,7 @@ if __name__ == "__main__":
     while MU == 0:
         l_cp = [np.random.randint(0, len(rt_plan_parameters["jaws 1"]), 1)[0]]
         # l_cp = [3]
+        print("Control point: ", l_cp)
         MU = rt_plan_parameters["weight"][l_cp[0]]
     nb_part = nb_part / MU
     versa.set_linac_head_motion(

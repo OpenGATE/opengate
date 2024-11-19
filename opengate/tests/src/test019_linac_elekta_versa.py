@@ -60,7 +60,7 @@ if __name__ == "__main__":
 
     # add phase space
     plane = versa.add_phase_space_plane(sim, linac.name, linac.size[2] - 1 * nm)
-    phsp = versa.add_phase_space(sim, plane.name)
+    phsp = versa.add_phase_space_actor(sim, plane.name)
     phsp.output_filename = "phsp_versa.root"
 
     # start simulation

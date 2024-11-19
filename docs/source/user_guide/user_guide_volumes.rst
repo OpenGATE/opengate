@@ -1,5 +1,5 @@
-Geometry and volumes
-====================
+How to: Geometry and volumes
+============================
 
 Gate fundamentally relies on the geometry principles of Geant4, but
 provides the user with an easy-to-use interface to set up the geometry

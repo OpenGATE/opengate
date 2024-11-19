@@ -34,7 +34,7 @@ public:
 
   virtual void UpdateActivity(double time);
 
-  double CalcNextTime(double current_simulation_time);
+  virtual double CalcNextTime(double current_simulation_time);
 
   virtual void PrepareNextRun();
 
@@ -42,17 +42,19 @@ public:
 
   virtual void GeneratePrimaries(G4Event *event, double time);
 
-  virtual void SetOrientationAccordingToMotherVolume();
+  virtual void SetOrientationAccordingToAttachedVolume();
 
-  virtual long GetExpectedNumberOfEvents(TimeIntervals time_intervals);
-  virtual long GetExpectedNumberOfEvents(TimeInterval time_interval);
+  virtual unsigned long
+  GetExpectedNumberOfEvents(const TimeIntervals &time_intervals);
+
+  virtual unsigned long
+  GetExpectedNumberOfEvents(const TimeInterval &time_interval);
 
   std::string fName;
   double fStartTime;
   double fEndTime;
-  unsigned long fNumberOfGeneratedEvents;
 
-  std::string fMother;
+  std::string fAttachedToVolumeName;
   std::vector<G4ThreeVector> fTranslations;
   std::vector<G4RotationMatrix> fRotations;
 
@@ -70,10 +72,13 @@ protected:
   double fDecayConstant;
 
   struct threadLocalT {
+    unsigned long fNumberOfGeneratedEvents = 0;
     G4ThreeVector fGlobalTranslation;
     G4RotationMatrix fGlobalRotation;
   };
   G4Cache<threadLocalT> fThreadLocalData;
+
+  virtual threadLocalT &GetThreadLocalData();
 };
 
 #endif // GateVSource_h

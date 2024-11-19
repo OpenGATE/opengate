@@ -13,7 +13,6 @@
 #include "CLHEP/Random/RandomEngine.h"
 #include "Randomize.hh"
 
-// #include "GateAcceptanceAngleTesterManager.h"
 #include "GateSingleParticleSourcePencilBeam.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
@@ -24,43 +23,40 @@ class GateTreatmentPlanPBSource : public GateVSource {
 
 public:
   GateTreatmentPlanPBSource();
-
   ~GateTreatmentPlanPBSource() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
   void GeneratePrimaries(G4Event *event, double time) override;
   double PrepareNextTime(double current_simulation_time) override;
   void PrepareNextRun() override;
-  double CalcNextTime(double current_simulation_time);
+  double CalcNextTime(double current_simulation_time) override;
 
   unsigned long fNumberOfGeneratedEvents;
   py::list GetGeneratedPrimaries();
 
-protected:
   // variables common to all spots
-  CLHEP::HepRandomEngine *engine;
-  CLHEP::RandGeneral *mDistriGeneral;
-  double fEffectiveEventTime;
-  G4String mParticleType;
-  bool mSortedSpotGenerationFlag;
+  CLHEP::HepRandomEngine *fEngine;
+  CLHEP::RandGeneral *fDistriGeneral;
+  G4String fParticleType;
+  bool fSortedSpotGenerationFlag;
   GateSingleParticleSourcePencilBeam *fSPS_PB;
 
   // vectors collecting spot-specific variables
-  double *mPDF;
-  std::vector<int> mNbIonsToGenerate;
-  std::vector<int> mNbGeneratedSpots;
-  std::vector<double> mSpotWeight;
-  std::vector<double> mSpotEnergy;
-  std::vector<double> mSigmaEnergy;
-  std::vector<std::vector<double>> mPhSpaceX;
-  std::vector<std::vector<double>> mPhSpaceY;
-  std::vector<G4ThreeVector> mSpotPosition;
-  std::vector<G4RotationMatrix> mSpotRotation;
+  double *fPDF;
+  std::vector<int> fNbIonsToGenerate;
+  std::vector<int> fNbGeneratedSpots;
+  std::vector<double> fSpotWeight;
+  std::vector<double> fSpotEnergy;
+  std::vector<double> fSigmaEnergy;
+  std::vector<std::vector<double>> fPhSpaceX;
+  std::vector<std::vector<double>> fPhSpaceY;
+  std::vector<G4ThreeVector> fSpotPosition;
+  std::vector<G4RotationMatrix> fSpotRotation;
 
   // other variables
-  int mCurrentSpot;
-  int mPreviousSpot;
-  int mTotalNumberOfSpots;
+  int fCurrentSpot;
+  int fPreviousSpot;
+  int fTotalNumberOfSpots;
   bool fInitGenericIon;
   int fA;    // A: Atomic Mass (nn + np +nlambda)
   int fZ;    // Z: Atomic Number
@@ -71,7 +67,8 @@ protected:
   void FindNextSpot();
   void ConfigureSingleSpot();
   void UpdateEnergySPS(double energy, double sigma);
-  void UpdatePositionSPS(G4ThreeVector localTransl, G4RotationMatrix localRot);
+  void UpdatePositionSPS(const G4ThreeVector &localTransl,
+                         const G4RotationMatrix &localRot);
   void InitializeParticle(py::dict &user_info);
   void InitializeIon(py::dict &user_info);
   void InitRandomEngine();

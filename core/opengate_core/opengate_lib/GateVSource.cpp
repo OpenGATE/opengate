@@ -12,30 +12,32 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersGeometry.h"
 
-G4Mutex SourceOrientationMutex = G4MUTEX_INITIALIZER;
-
 GateVSource::GateVSource() {
   fName = "";
   fStartTime = 0;
   fEndTime = 0;
-  fMother = "";
+  fAttachedToVolumeName = "";
   fLocalTranslation = G4ThreeVector();
   fLocalRotation = G4RotationMatrix();
-  fNumberOfGeneratedEvents = 0;
   fMaxN = 0;
   fActivity = 0;
   fHalfLife = -1;
   fDecayConstant = -1;
+  fInitialActivity = 0;
 }
 
-GateVSource::~GateVSource() {}
+GateVSource::~GateVSource() = default;
+
+GateVSource::threadLocalT &GateVSource::GetThreadLocalData() {
+  return fThreadLocalData.Get();
+}
 
 void GateVSource::InitializeUserInfo(py::dict &user_info) {
   // get info from the dict
-  fName = DictGetStr(user_info, "_name");
+  fName = DictGetStr(user_info, "name");
   fStartTime = DictGetDouble(user_info, "start_time");
   fEndTime = DictGetDouble(user_info, "end_time");
-  fMother = DictGetStr(user_info, "mother");
+  fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
 
   // get user info about activity or nb of events
   fMaxN = DictGetInt(user_info, "n");
@@ -59,7 +61,9 @@ double GateVSource::CalcNextTime(double current_simulation_time) {
   return next_time;
 }
 
-void GateVSource::PrepareNextRun() { SetOrientationAccordingToMotherVolume(); }
+void GateVSource::PrepareNextRun() {
+  SetOrientationAccordingToAttachedVolume();
+}
 
 double GateVSource::PrepareNextTime(double current_simulation_time) {
   Fatal("PrepareNextTime must be overloaded");
@@ -70,31 +74,33 @@ void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {
   Fatal("GeneratePrimaries must be overloaded");
 }
 
-void GateVSource::SetOrientationAccordingToMotherVolume() {
-  auto &l = fThreadLocalData.Get();
+void GateVSource::SetOrientationAccordingToAttachedVolume() {
+  auto &l = GetThreadLocalData();
   l.fGlobalRotation = fLocalRotation;
   l.fGlobalTranslation = fLocalTranslation;
 
   // No change in the translation rotation if mother is the world
-  if (fMother == "world")
+  if (fAttachedToVolumeName == "world")
     return;
 
   // compute global translation rotation and keep it.
   // Will be used for example in GenericSource to change position
-  ComputeTransformationFromVolumeToWorld(fMother, l.fGlobalTranslation,
-                                         l.fGlobalRotation, false);
+  ComputeTransformationFromVolumeToWorld(
+      fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
 }
 
-long GateVSource::GetExpectedNumberOfEvents(TimeIntervals simulation_times) {
+unsigned long
+GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &simulation_times) {
   if (fMaxN != 0)
     return fMaxN;
-  long n = 0;
+  unsigned long n = 0;
   for (auto time_interval : simulation_times)
     n += GetExpectedNumberOfEvents(time_interval);
   return n;
 }
 
-long GateVSource::GetExpectedNumberOfEvents(TimeInterval time_interval) {
+unsigned long
+GateVSource::GetExpectedNumberOfEvents(const TimeInterval &time_interval) {
   long n = 0;
   auto t0 = time_interval.first / CLHEP::s;
   auto t1 = time_interval.second / CLHEP::s;

@@ -31,7 +31,7 @@ class FilterBase(GateObject):
         """Nothing to do in the base class."""
 
     def initialize(self):
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
 
     def __setstate__(self, state):
         self.__dict__ = state

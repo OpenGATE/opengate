@@ -22,7 +22,7 @@ public:
 
   ~GateSimulationStatisticsActor() override;
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;

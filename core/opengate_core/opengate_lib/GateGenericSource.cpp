@@ -11,32 +11,21 @@
 #include "G4RandomTools.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
-#include "fmt/color.h"
 #include "fmt/core.h"
 #include <G4UnitsTable.hh>
 #include <algorithm>
 #include <iterator>
 #include <locale>
 #include <numeric>
-#include <sstream>
 
 GateGenericSource::GateGenericSource() : GateVSource() {
-  fInitGenericIon = false;
   fA = 0;
   fZ = 0;
   fE = 0;
-  fInitConfine = false;
   fWeight = -1;
   fWeightSigma = -1;
-  fTotalSkippedEvents = 0;
-  fCurrentSkippedEvents = 0;
-  fTotalZeroEvents = 0;
-  fCurrentZeroEvents = 0;
-  fSPS = nullptr;
   fInitialActivity = 0;
   fParticleDefinition = nullptr;
-  fEffectiveEventTime = -1;
-  fEffectiveEventTime = -1;
   fDirectionRelativeToAttachedVolume = false;
   fUserParticleLifeTime = -1;
   fBackToBackMode = false;
@@ -47,11 +36,16 @@ GateGenericSource::~GateGenericSource() {
   // I dont know exactly why.
   // Maybe because it has been created in a thread which
   // can be different from the thread that delete.
-  auto &l = fThreadLocalDataAA.Get();
+  auto &l = fThreadLocalDataGenericSource.Get();
   if (l.fAAManager != nullptr) {
     // delete l.fAAManager;
   }
   // delete fSPS;
+}
+
+GateGenericSource::threadLocalGenericSource &
+GateGenericSource::GetThreadLocalDataGenericSource() {
+  return fThreadLocalDataGenericSource.Get();
 }
 
 void GateGenericSource::CleanWorkerThread() {
@@ -59,7 +53,8 @@ void GateGenericSource::CleanWorkerThread() {
 }
 
 void GateGenericSource::CreateSPS() {
-  fSPS = new GateSingleParticleSource(fMother);
+  auto &l = fThreadLocalDataGenericSource.Get();
+  l.fSPS = new GateSingleParticleSource(fAttachedToVolumeName);
 }
 
 void GateGenericSource::SetEnergyCDF(const std::vector<double> &cdf) {
@@ -96,10 +91,6 @@ void GateGenericSource::InitializeUserInfo(py::dict &user_info) {
   // FIXME todo polarization
 
   // init number of events
-  fNumberOfGeneratedEvents = 0;
-  fCurrentSkippedEvents = 0;
-  fTotalSkippedEvents = 0;
-  fEffectiveEventTime = -1;
   fDirectionRelativeToAttachedVolume =
       DictGetBool(user_info, "direction_relative_to_attached_volume");
 }
@@ -135,36 +126,36 @@ void GateGenericSource::UpdateActivityWithTAC(double time) {
 }
 
 double GateGenericSource::PrepareNextTime(double current_simulation_time) {
+  auto &ll = GetThreadLocalDataGenericSource();
   // initialization of the effective event time (it can be in the
   // future according to the current_simulation_time)
-  if (fEffectiveEventTime < current_simulation_time) {
-    fEffectiveEventTime = current_simulation_time;
+  if (ll.fEffectiveEventTime < current_simulation_time) {
+    ll.fEffectiveEventTime = current_simulation_time;
   }
-  UpdateActivity(fEffectiveEventTime);
-  fTotalSkippedEvents += fCurrentSkippedEvents;
-  fTotalZeroEvents += fCurrentZeroEvents;
-  fCurrentZeroEvents = 0;
-  auto cse = fCurrentSkippedEvents;
-  fCurrentSkippedEvents = 0;
+  UpdateActivity(ll.fEffectiveEventTime);
+  fTotalSkippedEvents += ll.fCurrentSkippedEvents; // FIXME lock ?
+  fTotalZeroEvents += ll.fCurrentZeroEvents;
+  ll.fCurrentZeroEvents = 0;
+  auto cse = ll.fCurrentSkippedEvents;
+  ll.fCurrentSkippedEvents = 0;
 
   // if MaxN is below zero, we check the time
   if (fMaxN <= 0) {
-    if (fEffectiveEventTime < fStartTime)
+    if (ll.fEffectiveEventTime < fStartTime)
       return fStartTime;
-    if (fEffectiveEventTime >= fEndTime)
+    if (ll.fEffectiveEventTime >= fEndTime)
       return -1;
 
     // get next time according to current fActivity
-    double next_time = CalcNextTime(fEffectiveEventTime);
+    double next_time = CalcNextTime(ll.fEffectiveEventTime);
     if (next_time >= fEndTime)
       return -1;
     return next_time;
   }
 
   // check according to t MaxN
-  // std::cout<<fNumberOfGeneratedEvents<<std::endl;
-
-  if (fNumberOfGeneratedEvents + cse >= fMaxN) {
+  auto &l = GetThreadLocalData();
+  if (l.fNumberOfGeneratedEvents + cse >= fMaxN) {
     return -1;
   }
   return fStartTime;
@@ -177,8 +168,9 @@ void GateGenericSource::PrepareNextRun() {
 
   // This global transformation is given to the SPS that will
   // generate particles in the correct coordinate system
-  auto &l = fThreadLocalData.Get();
-  auto *pos = fSPS->GetPosDist();
+  auto &l = GetThreadLocalData();
+  auto &ll = GetThreadLocalDataGenericSource();
+  auto *pos = ll.fSPS->GetPosDist();
   pos->SetCentreCoords(l.fGlobalTranslation);
 
   // orientation according to mother volume
@@ -190,7 +182,7 @@ void GateGenericSource::PrepareNextRun() {
 
   // For the direction, the orientation may or may not be
   // relative to the volume according to user option
-  auto *ang = fSPS->GetAngDist();
+  auto *ang = ll.fSPS->GetAngDist();
   ang->fDirectionRelativeToAttachedVolume = fDirectionRelativeToAttachedVolume;
   ang->fGlobalRotation = l.fGlobalRotation;
   ang->fGlobalTranslation = l.fGlobalTranslation;
@@ -200,7 +192,7 @@ void GateGenericSource::PrepareNextRun() {
     ang->fDirectionRelativeToAttachedVolume = false;
   }
   if (fangType == "focused" && fDirectionRelativeToAttachedVolume) {
-    auto vec_f = fInitiliazeFocusPoint - fInitTranslation;
+    auto vec_f = fInitializeFocusPoint - fInitTranslation;
     auto rot_f = rotation * vec_f;
     auto new_f = rot_f + l.fGlobalTranslation;
     ang->SetFocusPoint(new_f);
@@ -210,53 +202,54 @@ void GateGenericSource::PrepareNextRun() {
 
 void GateGenericSource::UpdateEffectiveEventTime(
     double current_simulation_time, unsigned long skipped_particle) {
+  auto &ll = GetThreadLocalDataGenericSource();
   unsigned long n = 0;
-  fEffectiveEventTime = current_simulation_time;
+  ll.fEffectiveEventTime = current_simulation_time;
   while (n < skipped_particle) {
-    fEffectiveEventTime =
-        fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
+    ll.fEffectiveEventTime =
+        ll.fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
     n++;
   }
 }
 
 void GateGenericSource::GeneratePrimaries(G4Event *event,
                                           double current_simulation_time) {
+  auto &ll = GetThreadLocalDataGenericSource();
   // Generic ion cannot be created at initialization.
   // It must be created the first time we get there
-  if (fInitGenericIon) {
+  if (ll.fInitGenericIon) {
     auto *ion_table = G4IonTable::GetIonTable();
     auto *ion = ion_table->GetIon(fZ, fA, fE);
-    fSPS->SetParticleDefinition(ion);
+    ll.fSPS->SetParticleDefinition(ion);
     SetLifeTime(ion);
-    fInitGenericIon = false; // only the first time
+    ll.fInitGenericIon = false; // only the first time
   }
 
   // Confine cannot be initialized at initialization (because need all volumes
   // to be created) It must be set here, the first time we get there
-  if (fInitConfine) {
-    auto *pos = fSPS->GetPosDist();
+  if (ll.fInitConfine) {
+    auto *pos = ll.fSPS->GetPosDist();
     pos->ConfineSourceToVolume(fConfineVolume);
-    fInitConfine = false;
+    ll.fInitConfine = false;
   }
 
   // sample the particle properties with SingleParticleSource
   // (acceptance angle is included)
-  fSPS->SetParticleTime(current_simulation_time);
-  fSPS->GeneratePrimaryVertex(event);
+  ll.fSPS->SetParticleTime(current_simulation_time);
+  ll.fSPS->GeneratePrimaryVertex(event);
 
   // update the time according to skipped events
-  fEffectiveEventTime = current_simulation_time;
-  auto &l = fThreadLocalDataAA.Get();
-  if (l.fAAManager->IsEnabled()) {
-    if (l.fAAManager->GetPolicy() ==
+  ll.fEffectiveEventTime = current_simulation_time;
+  if (ll.fAAManager->IsEnabled()) {
+    if (ll.fAAManager->GetPolicy() ==
         GateAcceptanceAngleTesterManager::AASkipEvent) {
       UpdateEffectiveEventTime(current_simulation_time,
-                               l.fAAManager->GetNumberOfNotAcceptedEvents());
-      fCurrentSkippedEvents = l.fAAManager->GetNumberOfNotAcceptedEvents();
-      event->GetPrimaryVertex(0)->SetT0(fEffectiveEventTime);
+                               ll.fAAManager->GetNumberOfNotAcceptedEvents());
+      ll.fCurrentSkippedEvents = ll.fAAManager->GetNumberOfNotAcceptedEvents();
+      event->GetPrimaryVertex(0)->SetT0(ll.fEffectiveEventTime);
     } else {
-      fCurrentZeroEvents =
-          l.fAAManager->GetNumberOfNotAcceptedEvents(); // 1 or 0
+      ll.fCurrentZeroEvents =
+          ll.fAAManager->GetNumberOfNotAcceptedEvents(); // 1 or 0
     }
   }
 
@@ -274,17 +267,19 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
     }
   }
 
-  fNumberOfGeneratedEvents++;
+  auto &l = GetThreadLocalData();
+  l.fNumberOfGeneratedEvents++;
 }
 
 void GateGenericSource::InitializeParticle(py::dict &user_info) {
+  auto &ll = fThreadLocalDataGenericSource.Get();
   std::string pname = DictGetStr(user_info, "particle");
   // Is the particle an ion (name start with ion) ?
   if (pname.rfind("ion", 0) == 0) {
     InitializeIon(user_info);
     return;
   }
-  fInitGenericIon = false;
+  ll.fInitGenericIon = false;
   // Is the particle a back to back ?
   if (pname.rfind("back_to_back") == 0) {
     InitializeBackToBackMode(user_info);
@@ -297,7 +292,7 @@ void GateGenericSource::InitializeParticle(py::dict &user_info) {
   if (fParticleDefinition == nullptr) {
     Fatal("Cannot find the particle '" + pname + "'.");
   }
-  fSPS->SetParticleDefinition(fParticleDefinition);
+  ll.fSPS->SetParticleDefinition(fParticleDefinition);
   SetLifeTime(fParticleDefinition);
 }
 
@@ -306,19 +301,21 @@ void GateGenericSource::InitializeIon(py::dict &user_info) {
   fA = DictGetInt(u, "A");
   fZ = DictGetInt(u, "Z");
   fE = DictGetDouble(u, "E");
-  fInitGenericIon = true;
+  auto &ll = fThreadLocalDataGenericSource.Get();
+  ll.fInitGenericIon = true;
 }
 
 void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
+  auto &ll = fThreadLocalDataGenericSource.Get();
   auto u = py::dict(user_info["direction"]);
   bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
   // zxc remove accolinearityFlag here?
-  fSPS->SetBackToBackMode(true, accolinearityFlag);
+  ll.fSPS->SetBackToBackMode(true, accolinearityFlag);
   if (accolinearityFlag == true) {
     try {
       // Change the value if user provided one.
       double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
-      fSPS->SetAccolinearityFWHM(accolinearityFWHM);
+      ll.fSPS->SetAccolinearityFWHM(accolinearityFWHM);
       // zxc Had to use py::key_error over FatalKeyError, not sure why...
     } catch (const py::key_error &e) {
       // zxc log a "The default value was used" or something?
@@ -328,7 +325,7 @@ void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
   // this is photon
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle("gamma");
-  fSPS->SetParticleDefinition(fParticleDefinition);
+  ll.fSPS->SetParticleDefinition(fParticleDefinition);
   // The energy is fixed to 511 keV in the python side
 }
 
@@ -340,8 +337,9 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   * New interface -> point box sphere disc (later: ellipse)
   * translation rotation size radius
   */
+  auto &ll = fThreadLocalDataGenericSource.Get();
   auto user_info = py::dict(puser_info["position"]);
-  auto *pos = fSPS->GetPosDist();
+  auto *pos = ll.fSPS->GetPosDist();
   auto pos_type = DictGetStr(user_info, "type");
   std::vector<std::string> l = {"sphere", "point", "box", "disc", "cylinder"};
   CheckIsIn(pos_type, l);
@@ -387,7 +385,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
   auto rotation = DictGetMatrix(user_info, "rotation");
 
   // save local translation and rotation (will be used in
-  // SetOrientationAccordingToMotherVolume)
+  // SetOrientationAccordingToAttachedVolume)
   fLocalTranslation = translation;
   fLocalRotation = ConvertToG4RotationMatrix(rotation);
 
@@ -396,7 +394,7 @@ void GateGenericSource::InitializePosition(py::dict puser_info) {
     auto v = DictGetStr(user_info, "confine");
     if (v != "None") {
       fConfineVolume = v;
-      fInitConfine = true;
+      ll.fInitConfine = true;
     }
   }
 }
@@ -409,13 +407,14 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
    * New ones: iso, focus, direction
    * (Later: beam, user defined)
    */
+  auto &ll = fThreadLocalDataGenericSource.Get();
   auto user_info = py::dict(puser_info["direction"]);
-  auto *ang = fSPS->GetAngDist();
+  auto *ang = ll.fSPS->GetAngDist();
   auto ang_type = DictGetStr(user_info, "type");
   fangType = ang_type;
-  std::vector<std::string> ll = {"iso", "histogram", "momentum", "focused",
-                                 "beam2d"};
-  CheckIsIn(ang_type, ll);
+  std::vector<std::string> llt = {"iso", "histogram", "momentum", "focused",
+                                  "beam2d"};
+  CheckIsIn(ang_type, llt);
 
   if (ang_type == "iso") {
     ang->SetAngDistType("iso");
@@ -439,7 +438,7 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   if (ang_type == "focused") {
     ang->SetAngDistType("focused");
     auto f = DictGetG4ThreeVector(user_info, "focus_point");
-    fInitiliazeFocusPoint = f;
+    fInitializeFocusPoint = f;
     ang->SetFocusPoint(f);
   }
 
@@ -487,10 +486,9 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   auto dd = py::dict(d["acceptance_angle"]);
   auto is_valid_type =
       ang->GetDistType() == "iso" || ang->GetDistType() == "user";
-  auto &l = fThreadLocalDataAA.Get();
-  l.fAAManager = new GateAcceptanceAngleTesterManager;
-  l.fAAManager->Initialize(dd, is_valid_type);
-  fSPS->SetAAManager(l.fAAManager);
+  ll.fAAManager = new GateAcceptanceAngleTesterManager;
+  ll.fAAManager->Initialize(dd, is_valid_type);
+  ll.fSPS->SetAAManager(ll.fAAManager);
 }
 
 void GateGenericSource::InitializeEnergy(py::dict puser_info) {
@@ -503,8 +501,9 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
    * New interface: mono gauss // later 'user'
    *
    */
+  auto &ll = fThreadLocalDataGenericSource.Get();
   auto user_info = py::dict(puser_info["energy"]);
-  auto *ene = fSPS->GetEneDist();
+  auto *ene = ll.fSPS->GetEneDist();
   auto ene_type = DictGetStr(user_info, "type");
   auto is_cdf = DictGetBool(user_info, "is_cdf");
 
@@ -635,7 +634,7 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
     fActivity *= weightsSum;
     fInitialActivity = fActivity;
 
-    std::string interpolation_str = "";
+    std::string interpolation_str;
     if (interpolation != "None" && interpolation != "none")
       interpolation_str =
           (interpolation != "none" ? ("_" + interpolation) : "");
@@ -673,4 +672,12 @@ void GateGenericSource::SetLifeTime(G4ParticleDefinition *p) {
     return;
   // We set the LifeTime as proposed by the user
   p->SetPDGLifeTime(fUserParticleLifeTime);
+}
+
+unsigned long GateGenericSource::GetTotalSkippedEvents() const {
+  return fTotalSkippedEvents;
+}
+
+unsigned long GateGenericSource::GetTotalZeroEvents() const {
+  return fTotalZeroEvents;
 }

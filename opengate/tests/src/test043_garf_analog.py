@@ -92,6 +92,7 @@ if __name__ == "__main__":
             tolerance=75,
             ignore_value_data2=0,
             axis="x",
+            sum_tolerance=35,
         )
         and is_ok
     )
@@ -106,6 +107,9 @@ if __name__ == "__main__":
             tolerance=80,
             ignore_value_data2=0,
             axis="x",
+            sum_tolerance=25,
         )
         and is_ok
     )
+
+    utility.test_ok(is_ok)
