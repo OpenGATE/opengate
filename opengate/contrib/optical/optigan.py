@@ -77,6 +77,7 @@ def _setter_hook_input_phsp_actor(self, input_phsp_actor):
         self.root_file_path = input_phsp_actor.get_output_path()
     return input_phsp_actor
 
+
 class OptiGAN(GateObject):
     """
     Class Responsibilities:
@@ -439,7 +440,7 @@ class OptiGAN(GateObject):
 
         # process each particle and segregate into events
         for index, (ptype, x, y, z) in enumerate(
-                zip(particle_types, position_x, position_y, position_z)
+            zip(particle_types, position_x, position_y, position_z)
         ):
             if ptype == "gamma":
                 # store the previous event if it started with a gamma
@@ -455,7 +456,9 @@ class OptiGAN(GateObject):
                     event_id += 1
                     optical_photon_count = 0
                 # if it is a new event, add the gamma particle to it
-                current_event = [{"index": index, "type": ptype, "x": x, "y": y, "z": z}]
+                current_event = [
+                    {"index": index, "type": ptype, "x": x, "y": y, "z": z}
+                ]
                 gamma_has_electrons_or_photons = False
             elif ptype == "opticalphoton":
                 # if the particle is optical photon, just increment the count
