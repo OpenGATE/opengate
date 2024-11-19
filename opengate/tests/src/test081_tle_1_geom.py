@@ -76,7 +76,6 @@ def main(argv):
     print(f"Dose actor spacing : {dose_actor.spacing} mm")
     print(f"Dose actor size : {waterbox.size} mm")
 
-
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True

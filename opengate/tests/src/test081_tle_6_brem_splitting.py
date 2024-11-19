@@ -15,11 +15,11 @@ import itk
 
 """
 To correctly check if the TLE applied to a high number of track per event, a brem splitting of 6 MeV electrons
-is applied at a target before the waterbox entrance, with a very low 
+is applied at a target before the waterbox entrance, with a very low
 """
 
 
-def test(f1,f2,f1_err,f2_err):
+def test(f1, f2, f1_err, f2_err):
     img1 = itk.imread(f1)
     img2 = itk.imread(f2)
     img1_err = itk.imread(f1_err)
@@ -29,11 +29,11 @@ def test(f1,f2,f1_err,f2_err):
     img1_err_arr = np.sum(itk.GetArrayFromImage(img1_err))
     img2_err_arr = np.sum(itk.GetArrayFromImage(img2_err))
 
-    tot_err = np.sqrt((img1_arr * img1_err_arr)**2 + (img2_arr * img2_err_arr)**2)
-    print("dose actor:", img1_arr, "+-",img1_err_arr*img1_arr,"Gy")
-    print("TLE dose actor:", img2_arr, "+-", img2_err_arr*img2_arr, "Gy")
-    if np.abs(img2_arr - img1_arr) < 4*tot_err :
-        return(True)
+    tot_err = np.sqrt((img1_arr * img1_err_arr) ** 2 + (img2_arr * img2_err_arr) ** 2)
+    print("dose actor:", img1_arr, "+-", img1_err_arr * img1_arr, "Gy")
+    print("TLE dose actor:", img2_arr, "+-", img2_err_arr * img2_arr, "Gy")
+    if np.abs(img2_arr - img1_arr) < 4 * tot_err:
+        return True
 
 
 def main(argv):
@@ -59,7 +59,7 @@ def main(argv):
     keV = gate.g4_units.keV
     MeV = gate.g4_units.MeV
     Bq = gate.g4_units.Bq
-    gcm3 = gate.g4_units.g/gate.g4_units.cm3
+    gcm3 = gate.g4_units.g / gate.g4_units.cm3
 
     #  change world size
     world = sim.world
@@ -85,15 +85,14 @@ def main(argv):
     )
 
     # default source for tests
-    source = add_source(sim, n=2500, energy = 2.5*MeV)
+    source = add_source(sim, n=2500, energy=2.5 * MeV)
     source.particle = "e-"
 
-
-    target = sim.add_volume("Box","target")
-    target.size = [10*cm,10*cm,2*mm]
+    target = sim.add_volume("Box", "target")
+    target.size = [10 * cm, 10 * cm, 2 * mm]
     target.material = "Tungsten"
-    target.translation = [0,0, - waterbox.size[2]/2 - 1 * mm]
-    target.color = [0.6,0.8,0.4,0.9]
+    target.translation = [0, 0, -waterbox.size[2] / 2 - 1 * mm]
+    target.color = [0.6, 0.8, 0.4, 0.9]
 
     region_linac = sim.physics_manager.add_region(name=f"{target.name}_region")
     region_linac.associate_volume(target)
@@ -107,24 +106,23 @@ def main(argv):
     tle_dose_actor.attached_to = waterbox
     tle_dose_actor.dose_uncertainty.active = True
     tle_dose_actor.dose.active = True
-    tle_dose_actor.size = [1,1,1]
+    tle_dose_actor.size = [1, 1, 1]
     tle_dose_actor.spacing = [x / y for x, y in zip(waterbox.size, tle_dose_actor.size)]
     tle_dose_actor.energy_max = 2.5 * MeV
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
 
-    #add conventional dose actor
+    # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
     dose_actor.output_filename = "test081.mhd"
     dose_actor.attached_to = waterbox
     dose_actor.dose_uncertainty.active = True
     dose_actor.dose.active = True
-    dose_actor.size = [1,1,1]
+    dose_actor.size = [1, 1, 1]
     dose_actor.spacing = [x / y for x, y in zip(waterbox.size, dose_actor.size)]
     print(f"Dose actor pixels : {dose_actor.size}")
     print(f"Dose actor spacing : {dose_actor.spacing} mm")
     print(f"Dose actor size : {waterbox.size} mm")
-
 
     print(f"TLE Dose actor size : {waterbox.size} mm")
 
@@ -140,13 +138,11 @@ def main(argv):
     f1_bis = dose_actor.dose_uncertainty.get_output_path()
     f2_bis = tle_dose_actor.dose_uncertainty.get_output_path()
 
-
-    is_ok = test(f1,f2,f1_bis,f2_bis)
+    is_ok = test(f1, f2, f1_bis, f2_bis)
     utility.test_ok(is_ok)
 
     # print results at the end
     print(stats)
-
 
 
 if __name__ == "__main__":
