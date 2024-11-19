@@ -347,8 +347,6 @@ void init_GateOptrComptSplittingActor(py::module &m);
 
 void init_GateLastVertexInteractionSplittingActor(py::module &m);
 
-void init_GateOptrComptPseudoTransportationActor(py::module &m);
-
 void init_GateBOptrBremSplittingActor(py::module &m);
 
 void init_G4VBiasingOperator(py::module &m);
@@ -576,7 +574,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateSimulationStatisticsActor(m);
   init_GatePhaseSpaceActor(m);
   init_GateBOptrBremSplittingActor(m);
-  init_GateOptrComptPseudoTransportationActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateLastVertexInteractionSplittingActor(m);
   init_GateHitsCollectionActor(m);
