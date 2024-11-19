@@ -27,8 +27,8 @@ You can add a to the simulation like this:
 
     sim = gate.Simulation()
     # ...
-    source1 = sim.add_source('Generic', 'MyFirstSource')
-    source2 = sim.add_source('Voxels', 'MySecondSource')
+    source1 = sim.add_source('GenericSource', 'MyFirstSource')
+    source2 = sim.add_source('VoxelSource', 'MySecondSource')
 
 
 How to set the number of primaries
@@ -41,7 +41,7 @@ The preferred way to do that is by specifying the activity, i.e. how many partic
 
     source2.activity = 10 * gate.g4_units.Bq
 
-The total number of particles is given by this activity and the length of the run timing interval(s) of the simulation. **Be default, a GATE simulation has one run timing interval that is 1 second long**. The source ``source2`` above will therefore produce 10 particles on total.
+The total number of particles is given by this activity and the length of the run timing interval(s) of the simulation. **Be default, a GATE simulation has one run timing interval that is 1 second long**. The source ``source2`` above will therefore produce (about) 10 particles on total. The activity is stochastic so it will be 10 on average.
 
 In simulations with multiple run timing intervals, e.g. in moving geometries, the number of primary particles per run is the source activity times the length of each run timing interval.
 
