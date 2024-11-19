@@ -3,9 +3,9 @@ How to: Sources
 ***************
 
 Sources are the objects that create the primary particles in a simulation.
-A GATE simulation can contian multiiple sources at the same time.
+A GATE simulation can contain multiple sources at the same time.
 
-Information about the availavble sources may be displayed with:
+Information about the available sources may be displayed with:
 
 .. code:: python
 

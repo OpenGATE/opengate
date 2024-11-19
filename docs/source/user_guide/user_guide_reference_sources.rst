@@ -3,13 +3,64 @@
 Details: Sources
 ****************
 
-Detailed general settings
-=========================
+Common parameters
+=================
+
+Sources are the objects that create particles *ex nihilo*. The particles
+created from sources are called the *Event* in the Geant4 terminology,
+they got a *EventID* which is unique in a given *Run*.
+
+Several sources can be defined and are managed at the same time. To add
+a source description to the simulation, you do:
+
+.. code:: python
+
+   source1 = sim.add_source('GenericSource', 'source1')
+   source1.n = 100
+
+   source2 = sim.add_source('VoxelSource', 'source2')
+   source2.activity = 10 * g4_units.Bq
+
+There are several source types, each one with different parameter. In
+this example, ``source1.n`` indicates that this source will generate 100
+Events. The second source manages the time and will generate 10 Events
+per second, so according to the simulation run timing, a different
+number of Events will be generated.
+
+Information about the sources may be displayed with:
+
+.. code:: python
+
+   # Print all types of source
+   print(sim.dump_source_types())
+
+   # Print information about all sources
+   print(sim.dump_sources())
+
+Some of the parameters are common to **all** types of sources, while others
+are specific to a certain type of source.
+Given a source ``source``, use ``print(source)`` to display the
+source's parameters and their default values.
+
+Common parameters are:
+
+* | ``attached_to``: the name of the volume to which the source is attached (``world`` by default) in the hierarchy of volumes.
+  | See :ref:`geometry-and-volumes` for more details.
+* | ``position.translation``: list of 2 numerical values, e.g. ``[0, 2 * cm, 3 * mm]``.
+  | It defines the translation of the source with respect to the reference frame of the attached volume.
+  | Note: the origin of the reference frame is always at the center of the shape in Geant4.
+* | ``rotation``: a 3×3 rotation matrix.
+  | Rotation of the volume with respect to the attached volume.
+  | We advocate the use of `scipy.spatial.transform.Rotation` to manage the rotation matrix.
+* | ``n``: the number (integer) of particles to emit (the number of Geant4 Events).
+* | ``activity``: the number (real, in Bq) of particle to emit per second.
+  | The number of Geant4 Events will depend on the simulation time.
+
 
 Coordinate system
 -----------------
 
-The :attr:`~.opengate.sources.base.SourceBase.attached_to` option indicate the coordinate system of the source. By
+The :attr:`~.opengate.sources.base.SourceBase.attached_to` option indicates the coordinate system of the source. By
 default, it is the world, but it is possible to attach a source to any
 volume. In that case, the coordinate system of all emitted particles
 will follow the given volume.
@@ -21,6 +72,10 @@ Reference
 ---------
 
 .. autoproperty:: opengate.sources.base.SourceBase.attached_to
+
+
+.. The next line draws an horizontal line
+-----
 
 Generic source
 ==============
@@ -39,7 +94,7 @@ energy, see the following example:
 
    MeV = gate.g4_units('MeV')
    Bq = gate.g4_units('Bq')
-   source = sim.add_source('Generic', 'mysource')
+   source = sim.add_source('GenericSource', 'mysource')
    source.attached_to = 'my_volume'
    source.particle = 'proton'
    source.activity = 10000 * Bq
@@ -65,8 +120,79 @@ are defined with ‘iso’, ‘momentum’, ‘focused’ and ‘histogram’. T
 can be defined by a single value (‘mono’) or Gaussian (‘gauss’).
 
 
-Direction types
----------------
+.. _source-particle-type:
+Particle type
+-------------
+
+The particle type can be set to any valid Geant4 name
+(e.g. ``"gamma"``, ``"e+"``, ``"e-"``", ``"proton"``):
+
+.. code:: python
+
+   source.particle = "gamma"
+
+It is also possible to use ions with the key word "ion" followed by Z and A.
+Source of ion can be set with the following (see ``test013``):
+
+.. code:: python
+
+   source1 = sim.add_source('GenericSource, 'ion1')
+   source1.particle = 'ion 9 18'  # Fluorine18
+   source2 = sim.add_source('GenericSource, 'ion2')
+   source2.particle = 'ion 53 124'  # Iodine 124
+
+
+Source of ion can be set with the following (see ``test013``)
+
+.. code:: python
+
+   source1 = sim.add_source('GenericSource, 'ion1')
+   source1.particle = 'ion 9 18'  # Fluorine18
+   source2 = sim.add_source('GenericSource, 'ion2')
+   source2.particle = 'ion 53 124'  # Iodine 124
+
+
+.. _source-position:
+Particle initial position
+-------------------------
+
+The positions from were the particles will be generated are defined by a shape
+(e.g. "point", "box", "sphere", "disc"), defined by several parameters ("size", "radius")
+and orientation ("rotation", "center").
+A translation relative to the ``attached_to`` volume can also be set.
+
+Here are some examples (mostly from ``test010_generic_source.py``):
+
+.. code:: python
+
+    source.position.type = "point"
+    source.position.translation = [0 * cm, 0 * cm, -30 * cm]
+
+
+.. code:: python
+
+    source.position.type = "sphere"
+    source.position.radius = 5 * mm
+    source.position.translation = [-3 * cm, 30 * cm, -3 * cm]
+
+
+.. code:: python
+
+    source.position.type = "disc"
+    source.position.radius = 5 * mm
+    source.position.translation = [6 * cm, 5 * cm, -30 * cm]
+
+
+.. code:: python
+
+    source.position.type = "box"
+    source.position.size = [4 * cm, 4 * cm, 4 * cm]
+    source.position.translation = [8 * cm, 8 * cm, 30 * cm]
+
+
+.. _source-direction:
+Particle initial direction
+--------------------------
 
 -  ``direction.type = 'iso'`` assigns directions to primary particles
    based on 𝜃 and 𝜙 angles in a `spherical coordinate system
@@ -80,6 +206,33 @@ Direction types
       source.direction.type = "iso"
       source.direction.theta = [0, 10 * deg]
       source.direction.phi = [0, 90 * deg]
+
+
+``direction.type = "iso"`` assigns directions to primary particles
+based on 𝜃 and 𝜙 angles in a `spherical coordinate system
+<https://en.wikipedia.org/wiki/Spherical_coordinate_system>`__.
+By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360°
+(such that any direction is possible). You can define the 𝜃 and 𝜙
+ranges with minimum and maximum values as follows:
+
+.. code:: python
+
+    source.direction.type = "iso"
+    source.direction.theta = [0, 10 * deg]
+    source.direction.phi = [0, 90 * deg]
+
+
+Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
+= -cos𝜃.
+
+So 𝜃 is the angle in XOZ plane, from -Z to -X; and 𝜙 is the angle in XOY
+plane from -X to -Y.
+
+.. image:: ../figures/thetaphi.png
+   :width: 70%
+   :align: center
+
+
 
 -  ``direction.type = 'momentum'`` specifies a fixed direction for the
    primary particles using a momentum vector [x, y, z].
@@ -111,14 +264,39 @@ Direction types
       source.direction.histogram_theta_weights = [1]
       source.direction.histogram_theta_angles = [80 * deg, 100 * deg]
       source.direction.histogram_phi_weights = [0.3, 0.5, 1, 0.5, 0.3]
-      source.direction.histogram_phi_angles = [
-         60 * deg,
-         70 * deg,
-         80 * deg,
-         100 * deg,
-         110 * deg,
-         120 * deg,
-      ]
+      source.direction.histogram_phi_angles = [ 60 * deg, 70 * deg, 80 * deg, 100 * deg, 110 * deg, 120 * deg]
+
+See figure below, left:
+
+.. code:: python
+
+    # Example A
+    source.direction.type = "histogram"
+    source.direction.histogram_phi_angle = [70 * deg, 110 * deg]
+    source.direction.histogram_phi_weight = [0, 1]
+
+
+See figure below, right:
+
+.. code:: python
+
+    # Example B
+    source.direction.type = "histogram"
+    source.direction.histogram_phi_angle = [70 * deg, 80 * deg, 90* deg, 100 * deg, 110 * deg]
+    source.direction.histogram_phi_weight = [0, 1, 0, 1, 0]
+
+
+.. image:: ../figures/generic_source_direction_histogram_a.png
+   :width: 49.6%
+
+
+.. image:: ../figures/generic_source_direction_histogram_b.png
+   :width: 49.6%
+
+
+Using ``source.direction_relative_to_attached_volume = True`` will make
+your source direction change following the rotation of that volume.
+
 
 
 Acceptance Angle
@@ -152,7 +330,7 @@ decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_li
 
 .. code-block:: python
 
-    source = sim.add_source('Generic', 'mysource')
+    source = sim.add_source('GenericSource, 'mysource')
     source.half_life = 60 * gate.g4_units.s
 
 .. autoproperty:: opengate.sources.generic.GenericSource.half_life
@@ -184,39 +362,54 @@ accuracy of the TAC. See example ``test052``.
 .. autoproperty:: opengate.sources.generic.GenericSource.tac_activities
 
 
-Ion source
-----------
 
-Source of ion can be set with the following (see ``test013``)
+.. _source-energy:
 
-.. code:: python
+Energy
+------
 
-   source1 = sim.add_source('Generic', 'ion1')
-   source1.particle = 'ion 9 18'  # Fluorine18
-   source2 = sim.add_source('Generic', 'ion2')
-   source2.particle = 'ion 53 124'  # Iodine 124
+Mono
+""""
 
-
-Predefined energy spectrum for beta+
-------------------------------------
-
-There is some predefined energy spectrum of positron (e+):
+``energy.type = "mono"`` corresponds to a single energy value to be used
+for every particle.
 
 .. code:: python
 
-   source = sim.add_source('Generic', 'Default')
-   source.particle = 'e+'
-   source.energy.type = 'F18'  # F18 or Ga68 or C11 ...
+    source.energy.type = "mono"
+    source.energy.mono = 1 * MeV
 
-It means the positrons will be generated following the (approximated)
-energy spectrum of the F18 ion. Source code is
-``GateSPSEneDistribution.cpp``. Energy spectrum for beta+ emitters are
-available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See
-http://www.lnhb.fr/nuclear-data/module-lara. One example is available in
-``test031``.
+Range
+"""""
 
-Energy spectra
---------------
+``energy.type = "range"`` corresponds to a range of energy values between
+``min_energy`` and ``max_energy`` with a uniform random distribution.
+
+.. code:: python
+
+    source.energy.type = "range"
+    source.energy.min_energy = 3 * keV
+    source.energy.max_energy = 57 * keV
+
+
+Gauss
+"""""
+
+``energy.type = "gauss"`` allows to produce particles according to a
+normal distribution with:
+
+* μ = ``source.energy.mono``
+* σ = ``source.energy.sigma_gauss``
+
+.. code:: python
+
+    source.energy.type = "gauss"
+    source.energy.mono = 140 * MeV
+    source.energy.sigma_gauss = 10 * MeV
+
+
+Spectra
+"""""""
 
 **Discrete for gamma spectrum**
 
@@ -225,7 +418,7 @@ To do so, one must provide two lists of the same size: one for energies, one for
 Each energy is associated to the corresponding weight.
 Probabilities are derived from weights simply by normalizing the weights list.
 
-Several spectrums are provided through the `get_rad_gamma_spectrum` function:
+Several spectra are provided through the `get_rad_gamma_spectrum` function:
 
 .. code:: python
 
@@ -254,13 +447,16 @@ For example, using this:
 The produced particles will follow this pattern:
 
 .. image:: ../figures/generic_source_spectrum_discrete.png
+   :align: center
+   :width: 70%
+
 
 **Histogram for beta spectrum**
 
 One can configure a generic source to produce particles with energies according to a given histogram.
 Histograms are defined in the same way as `numpy`, using bin edges and histogram values.
 
-Several spectrums are provided through the `get_rad_beta_spectrum` function.
+Several spectra are provided through the `get_rad_beta_spectrum` function.
 This data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDecay.html>`_ (`[direct link to the excel file] <https://www.doseinfo-radar.com/BetaSpec.zip>`_).
 
 .. code:: python
@@ -281,7 +477,7 @@ For example, using this (which is what you get from `get_rad_beta_spectrum("Lu17
 
 .. code:: python
 
-   source.energy.spectrum_energies = [
+   source.energy.spectrum_energy_bin_edges = [
     0.0, 0.0249, 0.0497, 0.0746, 0.0994, 0.1243, 0.1491,
     0.174, 0.1988, 0.2237, 0.2485, 0.2734, 0.2983, 0.3231,
     0.348, 0.3728, 0.3977, 0.4225, 0.4474, 0.4722, 0.497,
@@ -295,10 +491,33 @@ For example, using this (which is what you get from `get_rad_beta_spectrum("Lu17
 The produced particles will follow this pattern:
 
 .. image:: ../figures/generic_source_spectrum_histogram.png
+   :align: center
+   :width: 70%
+
 
 **Interpolation**
 
-TODO
+Not yet available in GATE.
+
+
+Predefined energy spectrum for beta+
+""""""""""""""""""""""""""""""""""""
+
+There is some predefined energy spectrum of positron (e+):
+
+.. code:: python
+
+   source = sim.add_source('GenericSource, 'Default')
+   source.particle = 'e+'
+   source.energy.type = 'F18'  # F18 or Ga68 or C11 ...
+
+It means the positrons will be generated following the (approximated)
+energy spectrum of the F18 ion. Source code is
+``GateSPSEneDistribution.cpp``. Energy spectrum for beta+ emitters are
+available : F18, Ga68, Zr89, Na22, C11, N13, O15, Rb82. See
+http://www.lnhb.fr/nuclear-data/module-lara. One example is available in
+``test031``.
+
 
 Confined source
 ---------------
@@ -318,10 +537,10 @@ This example confines a Xe133 source within a Trd volume (see :ref:`volumes-refe
 .. code:: python
 
    myConfSource = sim.add_source("GenericSource", "myConfSource")
-   myConfSource.mother = "leftLung"
+   myConfSource.attached_to = "leftLung"
    myConfSource.particle = "ion 54 133"
    myConfSource.position.type = "box"
-   myConfSource.position.size = sim.volume_manager.volumes[myConfSource.mother].bounding_box_size
+   myConfSource.position.size = sim.volume_manager.volumes[myConfSource.attached_to].bounding_box_size
    myConfSource.position.confine = "leftLung"
    myConfSource.direction.type = "iso"
    myConfSource.activity = 1000 * Bq
@@ -332,6 +551,9 @@ Reference
 
 .. autoclass:: opengate.sources.generic.GenericSource
 
+
+.. The next line draws an horizontal line
+-----
 
 
 Voxelized source
@@ -344,7 +566,7 @@ A voxelized source can be created as follows:
 
 .. code:: python
 
-   source = sim.add_source('Voxels', 'vox')
+   source = sim.add_source('VoxelSource', 'vox')
    source.particle = 'e-'
    source.activity = 4000 * Bq
    source.image = 'an_activity_image.mhd'
@@ -362,7 +584,7 @@ inside the voxel is performed uniformly. In the given example, 4 kBq of
 electrons of 140 keV will be generated.
 
 Like all objects, by default, the source is located according to the
-coordinate system of its mother volume. For example, if the mother
+coordinate system of its attached_to volume. For example, if the attached_to
 volume is a box, it will be the center of the box. If it is a voxelized
 volume (typically a CT image), it will the **center** of this image: the
 image own coordinate system (ITK’s origin) is not considered here. If
@@ -381,6 +603,9 @@ Reference
 .. autofunction:: opengate.image.get_translation_between_images_center
 .. autoclass :: opengate.sources.voxelsources.VoxelsSource
 
+
+.. The next line draws an horizontal line
+-----
 
 Phase-Space source
 ==================
@@ -408,7 +633,7 @@ phase space source:
 
 In that case, the key “PrePositionLocal” in the root tree file will be
 used to define the position of all generated particles. The flag
-“global_flag” is False so the position will be relative to the mother
+“global_flag” is False so the position will be relative to the attached_to
 volume (the plane here) ; otherwise, position is considered as global
 (in the world coordinate system).
 
@@ -547,6 +772,9 @@ Reference
 
 .. autoclass:: opengate.sources.phspsources.PhaseSpaceSource
 
+
+.. The next line draws an horizontal line
+-----
 
 GAN sources (Generative Adversarial Network)
 ============================================
