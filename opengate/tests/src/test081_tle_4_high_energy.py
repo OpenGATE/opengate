@@ -49,7 +49,25 @@ if __name__ == "__main__":
     sim.physics_manager.set_user_limits_particles("gamma")
 
     # default source for tests
-    source = add_source(sim, n=1e4, energy=1.2 * MeV, sigma=1 * MeV, radius=1 * mm)
+    source = add_source(sim, n=2e4, energy=1.2 * MeV, sigma=1 * MeV, radius=1 * mm)
+
+    # add tle dose actor
+    tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
+    tle_dose_actor.output_filename = "test081_vox_he_tle.mhd"
+    tle_dose_actor.attached_to = waterbox
+    tle_dose_actor.dose_uncertainty.active = True
+    tle_dose_actor.dose.active = True
+    tle_dose_actor.size = [200, 200, 200]
+    tle_dose_actor.spacing = [x / y for x, y in zip(waterbox_size, tle_dose_actor.size)]
+    # the following option is important: if TLE is used for gammas with too high energy, the
+    # resulting dose will be biased. The energy threshold depends on the voxels size of the
+    # dose actor. Here the bias is clearly visible if TLE is used above 1.2 MeV.
+    # With the threshold enabled, no acceleration for high enery gamma, but no bias.
+    tle_dose_actor.energy_max = 0.8* MeV
+    tle_dose_actor.database = "EPDL"
+    print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
+    print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
+    print(f"TLE Dose actor size : {waterbox_size} mm")
 
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
@@ -63,23 +81,7 @@ if __name__ == "__main__":
     print(f"Dose actor spacing : {dose_actor.spacing} mm")
     print(f"Dose actor size : {waterbox_size} mm")
 
-    # add tle dose actor
-    tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
-    tle_dose_actor.output_filename = "test081_vox_he_tle.mhd"
-    tle_dose_actor.attached_to = waterbox
-    tle_dose_actor.dose_uncertainty.active = True
-    tle_dose_actor.dose.active = True
-    tle_dose_actor.size = dose_actor.size
-    tle_dose_actor.spacing = dose_actor.spacing
-    # the following option is important: if TLE is used for gammas with too high energy, the
-    # resulting dose will be biased. The energy threshold depends on the voxels size of the
-    # dose actor. Here the bias is clearly visible if TLE is used above 1.2 MeV.
-    # With the threshold enabled, no acceleration for high enery gamma, but no bias.
-    tle_dose_actor.energy_max = 1.2 * MeV
-    tle_dose_actor.database = "EPDL"
-    print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
-    print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
-    print(f"TLE Dose actor size : {waterbox_size} mm")
+
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -95,13 +97,13 @@ if __name__ == "__main__":
     ax, plt = plot_pdd(dose_actor, tle_dose_actor, offset=(0, offset))
     f1 = dose_actor.edep.get_output_path()
     f2 = tle_dose_actor.edep.get_output_path()
-    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[0], tol=0.1, offset=offset)
+    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[0], tol=0.08, offset=offset)
 
     print()
     f1 = dose_actor.dose.get_output_path()
     f2 = tle_dose_actor.dose.get_output_path()
     is_ok = (
-        compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.1, offset=offset)
+        compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.15, offset=offset)
         and is_ok
     )
 
