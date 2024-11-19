@@ -21,7 +21,7 @@ public:
   GateKillAccordingProcessesActor(py::dict &user_info);
   std::vector<G4String> GetListOfPhysicsListProcesses();
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   void BeginOfRunAction(const G4Run *) override;
 

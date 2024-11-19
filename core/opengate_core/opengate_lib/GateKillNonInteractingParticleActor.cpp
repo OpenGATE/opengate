@@ -34,7 +34,7 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
                                ->GetNavigatorForTracking();
 
   G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()
-                                     ->GetVolume(fMotherVolumeName)
+                                     ->GetVolume(fAttachedToVolumeName)
                                      ->GetName();
   G4String physicalVolumeNamePreStep = "None";
   if (step->GetPreStepPoint()->GetPhysicalVolume() != 0)
@@ -48,11 +48,11 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
       (fIsFirstStep)) {
     // if ((fPassedByTheMotherVolume == false) &&
     // (((step->GetPreStepPoint()->GetStepStatus() == 1) &&
-    // (physicalVolumeNamePreStep == fMotherVolumeName)) || ((fIsFirstStep) &&
+    // (physicalVolumeNamePreStep == fAttachedToVolumeName)) || ((fIsFirstStep) &&
     // (step->GetTrack()->GetParentID() == 0)))) {
     if ((fPassedByTheMotherVolume == false) &&
         (((step->GetPreStepPoint()->GetStepStatus() == 1) &&
-          (physicalVolumeNamePreStep == fMotherVolumeName)))) {
+          (physicalVolumeNamePreStep == fAttachedToVolumeName)))) {
       fPassedByTheMotherVolume = true;
       fKineticEnergyAtTheEntrance = step->GetPreStepPoint()->GetKineticEnergy();
       ftrackIDAtTheEntrance = step->GetTrack()->GetTrackID();

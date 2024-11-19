@@ -43,8 +43,8 @@ GateKillAccordingProcessesActor::GetListOfPhysicsListProcesses() {
   return listOfAllProcesses;
 }
 
-void GateKillAccordingProcessesActor::InitializeUserInput(py::dict &user_info) {
-  GateVActor::InitializeUserInput(user_info);
+void GateKillAccordingProcessesActor::InitializeUserInfo(py::dict &user_info) {
+  GateVActor::InitializeUserInfo(user_info);
   fProcessesToKillIfOccurence =
       DictGetVecStr(user_info, "processes_to_kill_if_occurence");
   fProcessesToKillIfNoOccurence =
@@ -96,7 +96,7 @@ void GateKillAccordingProcessesActor::PreUserTrackingAction(
 void GateKillAccordingProcessesActor::SteppingAction(G4Step *step) {
 
   G4String logNameMotherVolume = G4LogicalVolumeStore::GetInstance()
-                                     ->GetVolume(fMotherVolumeName)
+                                     ->GetVolume(fAttachedToVolumeName)
                                      ->GetName();
   G4String physicalVolumeNamePreStep = "None";
   if (step->GetPreStepPoint()->GetPhysicalVolume() != 0)
@@ -107,7 +107,7 @@ void GateKillAccordingProcessesActor::SteppingAction(G4Step *step) {
        (fIsFirstStep)) ||
       ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0))) {
     if (((step->GetPreStepPoint()->GetStepStatus() == 1) &&
-         (physicalVolumeNamePreStep == fMotherVolumeName)) ||
+         (physicalVolumeNamePreStep == fAttachedToVolumeName)) ||
         ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0))) {
       fKill = true;
     }
