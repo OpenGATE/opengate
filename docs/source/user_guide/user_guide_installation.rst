@@ -22,7 +22,7 @@ or with a `conda` environment:
 
 .. code-block:: bash
 
-    conda create --name opengate_env python=3.10
+    conda create --name opengate_env python=3.12
     conda activate opengate_env
     pip install --upgrade pip
     pip install opengate
@@ -40,7 +40,7 @@ Once installed, we recommend checking the installation by printing GATE informat
     opengate_info
     opengate_tests
 
-**WARNING 1**: The first time a simulation is executed, Geant4 data must be downloaded and installed. This step is automated but may take some time depending on your bandwidth. Note that this is only done once. Running `opengate_info` will display details and the path of the data.
+The first time a simulation is executed, Geant4 data must be downloaded and installed. This step is automated but may take some time depending on your bandwidth. Note that this is only done once. Running `opengate_info` will display details and the path of the data.
 
 For some systems (clusters or older computers), the main `opengate_core` cannot be used due to the lack of libGL or other visualization libraries. For Linux systems, we offer a version without visualization and using older libraries. You can install it with:
 
