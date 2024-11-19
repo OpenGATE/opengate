@@ -62,9 +62,9 @@ DoseActor
 Description
 ~~~~~~~~~~~
 
-The DoseActor scores the energy deposition (edep) or absorbed dose map in a given volume. The dose map is a 3D matrix parameterized with: size (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the attached volume) and rotation. By default, the matrix is centered according to the volume center. Note that this virtual scoring grid is independent of a potential geometric grid (e.g. simulation using a voxelized CT image as geometry).  The dose map may also have singleton dimensions (dose.size values with 1) reducing its effecctive dimension. 
+The DoseActor scores the energy deposition (edep) or absorbed dose map in a given volume. The dose map is a 3D matrix parameterized with: size (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the attached volume) and rotation. By default, the matrix is centered according to the volume center. Note that this virtual scoring grid is independent of a potential geometric grid (e.g. simulation using a voxelized CT image as geometry).  The dose map may also have singleton dimensions (dose.size values with 1) reducing its effecctive dimension.
 
-A sample code to score the energy deposition (default) is shown below. Let's assume a geometry of type box with name "waterbox" is already defined and is [200, 200, 200] *mm big. The dose actor output would now cover the entire size of the "waterbox" and has the same center. 
+A sample code to score the energy deposition (default) is shown below. Let's assume a geometry of type box with name "waterbox" is already defined and is [200, 200, 200] *mm big. The dose actor output would now cover the entire size of the "waterbox" and has the same center.
 .. code-block:: python
 
    dose_act_obj = sim.add_actor("DoseActor", "dose_act_obj")
@@ -78,7 +78,7 @@ Adding following lines
 .. code-block:: python
    dose_act_obj.user_output.dose.active True
    dose_act_obj.user_output.uncertainty.active True
-to the dose actor object will trigger an additional image scoring the dose. The unctertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose. 
+to the dose actor object will trigger an additional image scoring the dose. The unctertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
 
 Like any image, the output dose map will have an origin, spacing and orientation. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True`, the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin.
 
@@ -93,7 +93,7 @@ Following would translate and rotate the scoring image:
    dose_act_obj.translation = [2 * mm, 3 * mm, -2 * mm]
    dose_act_obj.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
-In this example a uniform scoring object was created for simplicity. To test trans- and rotations, non-uniform sized and spaced voxelized image are highly encouraged. 
+In this example a uniform scoring object was created for simplicity. To test trans- and rotations, non-uniform sized and spaced voxelized image are highly encouraged.
 
 Reference
 ~~~~~~~~~
@@ -107,7 +107,7 @@ LETActor
 Description
 ~~~~~~~~~~~
 
-The LET Actor scores the fluence- (also referred to as track-) or dose averaged LET within a volume using a voxelizing parametrization identical to the Dose Actor. Hence, see the Dose Actor documentation for spatial commands like image resolution, origin etc. - the same commands apply for the LET Actor.  
+The LET Actor scores the fluence- (also referred to as track-) or dose averaged LET within a volume using a voxelizing parametrization identical to the Dose Actor. Hence, see the Dose Actor documentation for spatial commands like image resolution, origin etc. - the same commands apply for the LET Actor.
 
 .. note:: In most use cases of LET in literature, only a subset of particles is considered for the calculation of averaged LET, e.g. in proton radiotherapy, where often only protons are considered. Therefore, the LET actor often goes along with a particle filter. See test050 as an example.
 
