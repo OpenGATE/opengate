@@ -537,11 +537,15 @@ reflector (e.g. ESR) or a Lambertian reflector (e.g. Teflon). The
 specular reflector can be coupled to the crystal with air or optical
 grease. Teflon tape is wrapped around the crystal with 4 layers.
 
-Surface names of available LUTs - \| \| BARE \| TEFLON \| ESR AIR \| ESR
-GREASE \| \|———–|——————-|——————-|——————-|————————-\| \| POLISHED \|
-Polished_LUT \| PolishedTeflon_LUT\| PolishedESR_LUT \|
-PolishedESRGrease_LUT \| \| ROUGH \| Rough_LUT \| RoughTeflon_LUT \|
-RoughESR_LUT \| RoughESRGrease_LUT \|
+Surface names of available LUTs
+
++-----------+--------------+--------------------+-----------------+-----------------------+
+|           |   BARE       |      TEFLON        |   ESR AIR       |   ESR GREASE          |
++===========+==============+====================+=================+=======================+
+| POLISHED  | Polished_LUT | PolishedTeflon_LUT | PolishedESR_LUT | PolishedESRGrease_LUT |
++-----------+--------------+--------------------+-----------------+-----------------------+
+| ROUGH     | Rough_LUT    | RoughTeflon_LUT    |  RoughESR_LUT   |  RoughESRGrease_LUT   |
++-----------+--------------+--------------------+-----------------+-----------------------+
 
 The user can extend the list of finishes with custom measured surface
 data. In GATE, this can be achieved by utilising
