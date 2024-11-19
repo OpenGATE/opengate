@@ -48,8 +48,8 @@ void GateKillNonInteractingParticleActor::SteppingAction(G4Step *step) {
       (fIsFirstStep)) {
     // if ((fPassedByTheMotherVolume == false) &&
     // (((step->GetPreStepPoint()->GetStepStatus() == 1) &&
-    // (physicalVolumeNamePreStep == fAttachedToVolumeName)) || ((fIsFirstStep) &&
-    // (step->GetTrack()->GetParentID() == 0)))) {
+    // (physicalVolumeNamePreStep == fAttachedToVolumeName)) || ((fIsFirstStep)
+    // && (step->GetTrack()->GetParentID() == 0)))) {
     if ((fPassedByTheMotherVolume == false) &&
         (((step->GetPreStepPoint()->GetStepStatus() == 1) &&
           (physicalVolumeNamePreStep == fAttachedToVolumeName)))) {

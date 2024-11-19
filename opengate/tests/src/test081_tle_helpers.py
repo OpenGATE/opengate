@@ -38,6 +38,7 @@ def add_waterbox(sim):
 
     return waterbox
 
+
 def add_simple_waterbox(sim):
     # units
     cm = gate.g4_units.cm
