@@ -56,10 +56,10 @@ GateLastVertexInteractionSplittingActor::
     GateLastVertexInteractionSplittingActor(py::dict &user_info)
     : GateVActor(user_info, false) {}
 
-void GateLastVertexInteractionSplittingActor::InitializeUserInput(
+void GateLastVertexInteractionSplittingActor::InitializeUserInfo(
     py::dict &user_info) {
-  GateVActor::InitializeUserInput(user_info);
-  fMotherVolumeName = DictGetStr(user_info, "attached_to");
+  GateVActor::InitializeUserInfo(user_info);
+  fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
   fAngularKill = DictGetBool(user_info, "angular_kill");
@@ -540,9 +540,8 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
   fListOfProcessesAccordingParticles["e+"] = {"eBrem", "eIoni", "msc",
                                               "annihil"};
 
-  std::cout << fMotherVolumeName << std::endl;
   G4LogicalVolume *biasingVolume =
-      G4LogicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+      G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
   fListOfBiasedVolume.push_back(biasingVolume->GetName());
   CreateListOfbiasedVolume(biasingVolume);
 
@@ -554,7 +553,7 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
 
   if (fRotationVectorDirector) {
     G4VPhysicalVolume *physBiasingVolume =
-        G4PhysicalVolumeStore::GetInstance()->GetVolume(fMotherVolumeName);
+        G4PhysicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
     auto rot = physBiasingVolume->GetObjectRotationValue();
     fVectorDirector = rot * fVectorDirector;
   }
