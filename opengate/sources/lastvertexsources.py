@@ -13,7 +13,7 @@ from ..utility import g4_units
 from ..exception import fatal, warning
 
 
-class LastVertexSource(SourceBase,g4.GateLastVertexSource):
+class LastVertexSource(SourceBase, g4.GateLastVertexSource):
     """
     The source used to replay position, energy, direction and weight of last vertex particles actor
     """
@@ -21,7 +21,7 @@ class LastVertexSource(SourceBase,g4.GateLastVertexSource):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
         self.__initcpp__()
-        
+
     def __initcpp__(self):
         g4.GateLastVertexSource.__init__(self)
 
@@ -30,4 +30,3 @@ class LastVertexSource(SourceBase,g4.GateLastVertexSource):
 
 
 process_cls(LastVertexSource)
-

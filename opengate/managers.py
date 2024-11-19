@@ -57,7 +57,7 @@ from .sources.phidsources import PhotonFromIonDecaySource
 
 source_types = {
     "GenericSource": GenericSource,
-    "LastVertexSource":LastVertexSource,
+    "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
     "GANSource": GANSource,

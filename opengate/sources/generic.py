@@ -354,6 +354,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             return False
         return True
 
+
 class TemplateSource(SourceBase):
     """
     Source template: to create a new type of source, copy-paste
@@ -389,5 +390,6 @@ class TemplateSource(SourceBase):
 
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
+
 
 process_cls(GenericSource)
