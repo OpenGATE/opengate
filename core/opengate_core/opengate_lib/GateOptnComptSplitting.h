@@ -77,7 +77,6 @@ public:
   }
   G4double GetSplittingFactor() const { return fSplittingFactor; }
 
-
   void SetRussianRoulette(G4bool russianRoulette) {
     fRussianRoulette = russianRoulette;
   }
