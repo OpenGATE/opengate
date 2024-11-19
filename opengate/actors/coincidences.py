@@ -2,6 +2,7 @@ import awkward as ak
 from tqdm import tqdm
 from ..exception import fatal
 from .base import ActorBase
+from ..base import process_cls
 
 class Coincidences(ActorBase):
     """
@@ -184,3 +185,5 @@ def remove_multiples(coincidences):
     ids = coincidences["EventID1"]
     ids = [i for i in ids if ids.count(i) == 1]
     return ids
+
+process_cls(Coincidences)
