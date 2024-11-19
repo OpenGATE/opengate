@@ -264,17 +264,13 @@ class DigitizerBase(ActorBase):
 
 
 class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
-    """
-    Equivalent to Gate "adder": gather all hits of an event in the same volume.
+    """Equivalent to Gate "adder": gather all hits of an event in the same volume.
     Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
     Output: a Single collections
 
     Policies:
-    - EnergyWinnerPosition: consider position and energy of the hit with the max energy
-       for all other attributes (Time, etc.): the value of the winner is used.
-    - EnergyWeightedCentroidPosition: computed the energy-weighted centroid position
-       for all other attributes (Time, etc.): the value the last seen hit is used.
-
+    - EnergyWinnerPosition: consider position and energy of the hit with the max energy for all other attributes (Time, etc.): the value of the winner is used.
+    - EnergyWeightedCentroidPosition: computed the energy-weighted centroid position for all other attributes (Time, etc.): the value the last seen hit is used.
     """
 
     user_info_defaults = {

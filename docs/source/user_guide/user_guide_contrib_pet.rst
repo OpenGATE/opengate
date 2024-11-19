@@ -18,9 +18,9 @@ The Philips Vereos Digital PET model can be included in your simulation using th
 
 This command will include the whole PET head as described in `[Salvadori2020, EJNMMI] <http://doi.org/10.1186/s40658-020-00288-w>`_. It comprises 18 modules, each containing 4x5 stacks of 4x4 die, with each die consisting of 2x2 crystals.
 
-Detail of the head description is `available here <https://github.com/OpenGATE/opengate/blob/master/opengate/contrib/pet/philipsvereos.py#L39>`_
+Details of the head description are `available here <https://github.com/OpenGATE/opengate/blob/master/opengate/contrib/pet/philipsvereos.py#L39>`_
 
-**Note**: A validated digitizer for this PET model is not yet available. Development is ongoing. For examples, refer to the test037 test case.
+.. note:: A validated digitizer for this PET model is not yet available. Development is ongoing. For examples, refer to the test037 test case.
 
 Siemens Biograph Vision PET
 ---------------------------

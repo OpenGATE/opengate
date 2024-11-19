@@ -1,7 +1,7 @@
 .. _volumes-reference-label:
 
-Volumes
-=======
+Details: Volumes
+================
 
 This section describes the different volumes available in GATE 10 and
 their parameters.
