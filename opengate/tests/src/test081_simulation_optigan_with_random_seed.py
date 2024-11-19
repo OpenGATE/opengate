@@ -16,7 +16,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     sim.g4_verbose = True
     sim.output_dir = paths.output
-    # sim.random_seed = 600
+    sim.random_seed = 600
 
     # units
     m = gate.g4_units.m
@@ -76,7 +76,10 @@ if __name__ == "__main__":
         "TrackID",
     ]
 
-    phsp_actor.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
+    # IMPORTANT
+    # When using OptiGAN, always set steps_to_store = "first"
+    phsp_actor.steps_to_store = "first"
+    phsp_actor.output_filename = "test075_simulation_optigan_with_random_seed_600_first.root"
 
     # add a kill actor to the crystal
     ka = sim.add_actor("KillActor", "kill_actor2")
