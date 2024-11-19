@@ -179,6 +179,7 @@ def get_files_to_run():
         "test043_garf_mt.py",
         "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
+        "test081_simulation_optigan_with_random_seed.py",
     ]
     try:
         import torch
