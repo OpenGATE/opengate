@@ -105,7 +105,7 @@ class ActorBase(GateObject):
         "filters_boolean_operator": (
             "and",
             {
-                "doc": "Boolean operator to join the filters of this actor. ",
+                "doc": "Boolean operator to join multiple filters of this actor. ",
                 "allowed_values": (
                     "and",
                     "or",
