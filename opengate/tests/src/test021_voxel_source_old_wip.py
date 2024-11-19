@@ -86,7 +86,7 @@ if __name__ == "__main__":
     source.energy.mono = 1 * MeV
 
     # source from spect
-    source = sim.add_source("VoxelsSource", "vox")
+    source = sim.add_source("VoxelSource", "vox")
     source.attached_to = "ct_even"
     source.particle = "alpha"
     source.activity = 1000 * Bq / sim.number_of_threads
