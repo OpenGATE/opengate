@@ -1,6 +1,3 @@
-.. The next line draws an horizontal line
------
-
 .. _source-generic-source:
 
 Generic source
@@ -47,6 +44,7 @@ can be defined by a single value (‘mono’) or Gaussian (‘gauss’).
 
 
 .. _source-particle-type:
+
 Particle type
 -------------
 
@@ -79,6 +77,7 @@ Source of ion can be set with the following (see ``test013``)
 
 
 .. _source-position:
+
 Particle initial position
 -------------------------
 
@@ -117,6 +116,7 @@ Here are some examples (mostly from ``test010_generic_source.py``):
 
 
 .. _source-direction:
+
 Particle initial direction
 --------------------------
 
