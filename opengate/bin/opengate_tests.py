@@ -468,7 +468,9 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
     }
 
     tests_passed = [f for f in files if dashboard_dict[f][0]]
+    tests_passed.sort()
     tests_failed = [f for f in files if not dashboard_dict[f][0]]
+    tests_failed.sort()
 
     n_passed = sum([k[0] for k in dashboard_dict.values()])
     n_failed = sum([not k[0] for k in dashboard_dict.values()])
