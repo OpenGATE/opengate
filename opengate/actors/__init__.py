@@ -1,1 +1,9 @@
-from . import digitizers, doseactors, miscactors, filters, arfactors, dynamicactors, coincidences
+from . import (
+    digitizers,
+    doseactors,
+    miscactors,
+    filters,
+    arfactors,
+    dynamicactors,
+    coincidences,
+)
