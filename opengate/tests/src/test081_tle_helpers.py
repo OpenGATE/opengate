@@ -38,6 +38,17 @@ def add_waterbox(sim):
 
     return waterbox
 
+def add_simple_waterbox(sim):
+    # units
+    cm = gate.g4_units.cm
+
+    # waterbox
+    waterbox = sim.add_volume("Box", "waterbox")
+    waterbox.size = [30 * cm, 30 * cm, 30 * cm]
+    waterbox.material = "G4_WATER"
+    waterbox.color = [0, 0, 1, 1]
+    return waterbox
+
 
 def add_source(
     sim,
