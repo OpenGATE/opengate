@@ -401,7 +401,8 @@ class ActorBase(GateObject):
                     f"(or user_output in case the interface is automatically generated). "
                 )
         elif not hasattr(type(self), interface_name):
-            setattr(type(self), interface_name, property(p))
+            setattr(type(self), interface_name,
+                    property(fget=p, doc=self.interfaces_to_user_output[interface_name].__get_docstring__()))
             self._existing_properties_to_interfaces[unique_interface_name] = (
                 interface_class_name
             )
