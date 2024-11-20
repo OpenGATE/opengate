@@ -26,22 +26,26 @@ class BaseUserInterfaceToActorOutput:
         "__setstate__",
         "__getstate__",
         "user_output_name",
+        "interface_name",
         "belongs_to_actor",
         "_kwargs_for_interface_calls",
+        "__user_docstring__"
     )
 
     def __init__(
-        self, belongs_to_actor, user_output_name, kwargs_for_interface_calls=None
+        self, belongs_to_actor, user_output_name, interface_name, user_docstring=None, kwargs_for_interface_calls=None
     ):
         # Important: we need to write the attributes directly into the __dict__ here because
         # they are set for the first time and assigning them via self.user_output_name = ...
         # would interfere with the __setattr__ method
         self.user_output_name = user_output_name
+        self.interface_name = interface_name
         self.belongs_to_actor = belongs_to_actor
         if kwargs_for_interface_calls is None:
             self._kwargs_for_interface_calls = {}
         else:
             self._kwargs_for_interface_calls = kwargs_for_interface_calls
+        self.__user_docstring__ = user_docstring
 
     def __getstate__(self):
         """
@@ -56,6 +60,21 @@ class BaseUserInterfaceToActorOutput:
         # Safely remove 'belongs_to_actor' if it exists
         return_dict.pop("belongs_to_actor", None)
         return return_dict
+
+    def __get_docstring__(self):
+        begin_of_line = "* "
+        if self.__user_docstring__ is None:
+            docstring = ""
+        else:
+            docstring = self.__user_docstring__
+        docstring += (f"Output {self.interface_name} of {self.belongs_to_actor.type_name} "
+                      f"has the following default parameters: \n\n")
+        docstring += f"{begin_of_line} active = {self.active}\n"
+        docstring += f"{begin_of_line} output_filename = {self.output_filename}\n"
+        docstring += f"{begin_of_line} write_to_disk = {self.write_to_disk}\n"
+        docstring += f"{begin_of_line} keep_data_per_run = {self.keep_data_per_run}\n"
+        docstring += "\n"
+        return docstring
 
     @property
     def _user_output(self):

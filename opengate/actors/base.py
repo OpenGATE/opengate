@@ -357,7 +357,7 @@ class ActorBase(GateObject):
     ):
         if interface_name not in self.interfaces_to_user_output:
             self.interfaces_to_user_output[interface_name] = interface_class(
-                self, user_output_name, **kwargs
+                self, user_output_name, interface_name, **kwargs
             )
         else:
             raise GateImplementationError(
