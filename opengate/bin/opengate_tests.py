@@ -179,6 +179,7 @@ def get_files_to_run():
         "test043_garf_mt.py",
         "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
+        "test081_simulation_optigan_with_random_seed.py",
     ]
     try:
         import torch
@@ -467,7 +468,9 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
     }
 
     tests_passed = [f for f in files if dashboard_dict[f][0]]
+    tests_passed.sort()
     tests_failed = [f for f in files if not dashboard_dict[f][0]]
+    tests_failed.sort()
 
     n_passed = sum([k[0] for k in dashboard_dict.values()])
     n_failed = sum([not k[0] for k in dashboard_dict.values()])
