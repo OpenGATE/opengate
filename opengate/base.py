@@ -570,8 +570,7 @@ class GateObject:
         return False
 
     def __finalize_init__(self):
-        """
-        This method should be called once all attributes have been defined, usually
+        """This method is called once all attributes have been defined, i.e.
         at the end of the __init__ method. It defines the set of known_attribues that will
         be used to detect errors when the user tries to use a new attribute
         or misspells an attribute, e.g. box.mohter instead of box.mother.
