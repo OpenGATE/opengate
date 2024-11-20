@@ -367,7 +367,7 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
-        password: ${{ secrets.PYPI_OPENGATE_CORE }}
+        password: ${{ secrets.PYPI_OPENGATE_CORE_NOVIS }}
         packages_dir: dist_opengate_core_novis/
         skip_existing: true
     - name: Publish to PyPI opengate_core
