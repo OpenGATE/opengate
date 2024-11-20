@@ -71,6 +71,10 @@ def _generic_source_default_energy():
             "min_energy": None,
             "max_energy": None,
             "spectrum_type": None,
+            "spectrum_weights": [],
+            "spectrum_energies": [],
+            "spectrum_energy_bin_edges": [],
+            "spectrum_histogram_interpolation": None,
         }
     )
 
