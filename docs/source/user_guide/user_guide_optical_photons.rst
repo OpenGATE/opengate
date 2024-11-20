@@ -83,7 +83,7 @@ The parameters `RESOLUTIONSCALE` can be calculated from the energy resolution of
 
 where `R` is the energy resolution (FWHM - Full width at half maximum) at energy `E`:
 
-.. raw:: XML
+.. code:: XML
 
     <material name="BGO">
         <propertiestable>
@@ -111,7 +111,7 @@ Cerenkov photons
 
 The radiation of Cerenkov light occurs when a charged particle moves through a dispersive medium faster than the group velocity of light in that medium. Photons are emitted on the surface of a cone, whose opening angle with respect to the particle’s instantaneous direction decreases as the particle slows down. To generate Cerenkov optical photons in a material, refractive index must be specified using the material property name `RINDEX`. 
 
-.. raw:: XML
+.. code:: XML
 
     <material name="PWO">
         <propertiestable>
@@ -135,7 +135,7 @@ Absorption
 
 This process kills the particle. It requires the Material.xml properties filled by the user with the Absorption length ABSLENGTH (average distance traveled by a photon before being absorbed by the medium):
 
-.. raw:: XML
+.. code:: XML
 
     <material name="LSO">
         <propertiestable>
@@ -167,7 +167,7 @@ where the forward (repectively backward) anisotropy is defined by the parameter 
 
 the average cosine of the forward and backward scatterings angle :math:`\theta_{f,b}`. These forward and backward anisotropies are defined in GATE in the *Materials.xml* file as the parameters `MIEHG_FORWARD` and `MIEHG_BACKWARD`. The parameter :math:`r` is the ratio of forward to total scattering. It is defined in GATE in the *Materials.xml* file as the parameter `MIEHG_FORWARD_RATIO`. Finally the energy-dependant scattering length is defined in the *Materials.xml* file as the parameter `MIEHG`.
 
-.. raw:: XML
+.. code:: XML
 
     <material name="Epidermis">
         <propertiestable>
@@ -189,7 +189,7 @@ Rayleigh Scattering
 
 Rayleigh scattering is the scattering of light by particles much smaller than the wavelength of the light. It is implemented in Geant4 as a special case of Mie scattering. It is defined in GATE as a energy-dependant scattering length vector in the *Materials.xml* file with the parameter `RAYLEIGH`.
 
-.. raw:: XML
+.. code:: XML
 
     <material name="Water">
         <propertiestable>
@@ -214,7 +214,7 @@ Fluorescence is a 3 step process: The fluorophore is in an excited state after t
 Gate user needs to provide four parameters/properties to define the fluorescent material: `RINDEX`, `WLSABSLENGTH`, `WLSCOMPONENT` and `WLSTIMECONSTANT`. The `WLSABSLENGTH` defines the fluorescence absorption length which is the average distance travelled by a photon before it is absorbed by the fluorophore. This distance could be very small but probably not set to 0 otherwise the photon will be absorbed immediately upon entering the fluorescent volume and fluorescent photon will appear only from the surface. The `WLSCOMPONENT` describes the emission spectrum of the fluorescent volume by giving the relative strength between different photon energies. Usually these numbers are taken from measurements (i.e. emission spectrum). The `WLSTIMECONSTANT` defines the time delay between the absorption and re-emission.
 The WLS process has an absorption spectrum and an emission spectrum. If these overlap then a WLS photon may in turn be absorpted and emitted again. If you do not want that you need to avoid such overlap. The WLS process does not distinguish between "original" photons and WLS photons:
 
-.. raw:: XML
+.. code:: XML
 
     <material name="Fluorescein">
         <propertiestable>
@@ -293,7 +293,120 @@ Surfaces can be defined  in this file in two ways corresponding to two boundary 
 LUT_Davis model
 ~~~~~~~~~~~~~~~
 
-Available from GATE V8.0 onwards is a model for optical transport called the LUT Davis model [Roncali& Cherry(2013)]. The model is based on measured surface data and allows the user to choose from a list of available surface finishes. Provided are a rough and a polished surface that can be used without reflector, or in combination with a specular reflector (e.g. ESR) or a Lambertian reflector (e.g. Teflon). The specular reflector can be coupled to the crystal with air or optical grease. Teflon tape is wrapped around the crystal with 4 layers.
+This is a model for optical transport called the LUT Davis model [Roncali& Cherry(2013)]. The model is based on measured surface data and allows the user to choose from a list of available surface finishes. Provided are a rough and a polished surface that can be used without reflector, or in combination with a specular reflector (e.g. ESR) or a Lambertian reflector (e.g. Teflon). The specular reflector can be coupled to the crystal with air or optical grease. Teflon tape is wrapped around the crystal with 4 layers.
 
-Surface names of available LUTs
+.. code:: XML
+
+    <surface model="DAVIS" name="RoughTeflon_LUT" type="dielectric_LUTDAVIS" finish="RoughTeflon_LUT">
+    </surface>
+
+The above example show how the `RoughTeflon_LUT` surface name is defined. Surface names of available LUTs are:
+
+.. list-table::
+   :widths: 25 25 50
+   :header-rows: 1
+
+   * - 
+     - BARE
+     - TEFLON
+     - ESR AIR
+     - ESR GREASE
+   * - POLISHED
+     - Polished_LUT
+     - PolishedTeflon_LUT
+     - PolishedESR_LUT
+     - PolishedESRGrease_LUT
+   * - ROUGH
+     - Rough_LUT
+     - RoughTeflon_LUT
+     - RoughESR_LUT
+     - RoughESRGrease_LUT
+  
+The user can extend the list of finishes with custom measured surface data. In GATE, this can be achieved by utilising `this<https://github.com/LUTDavisModel/Standalone-Application-Installers>`_ tool to calculate LUTs. In the LUT database, typical roughness parameters obtained from the measurements are provided to characterize the type of surface modelled:
+- ROUGH: :math:`Ra=0.48 µm`, :math:`\sigma=0.57 µm`, :math:`Rpv=3.12 µm`
+- POLISHED: :math:`Ra=20.8 nm`, :math:`\sigma=26.2 nm`, :math:`Rpv=34.7 nm`
+
+with :math:`Ra` the average roughness ; :math:`\sigma` the roughness rms and :math:`Rpv` the peak-to-valley ratio.
+
+In addition, the detector surface, called **Detector_LUT**, defines a polished surface coupled to a photodetector with optical grease or a glass interface (similar index of refraction 1.5). Any surface can be used as a detector surface when the Efficiency is set according to the following example:
+
+.. code:: XML
+
+     <surface model="DAVIS" name="Detector_LUT" type="dielectric_LUTDAVIS" finish="Detector_LUT">
+     <propertiestable>
+        <propertyvector name="EFFICIENCY" energyunit="eV">
+            <ve energy="1.84" value="1"/>
+            <ve energy="4.08" value="1"/>
+        </propertyvector>
+    </propertiestable>
+  </surface>
+
+Background
+^^^^^^^^^^
+
+The crystal topography is obtained with atomic force microscopy (AFM). From the AFM data, the probability of reflection (1) and the reflection directions (2) are computationally determined, for incidence angles ranging from 0° to 90°. Each LUT is computed for a given surface and reflector configuration. The reflection probability in the LUT combines two cases: directly reflected photons from the crystal surface and photons that are transmitted to the reflector surface and later re-enter the crystal. The key operations of the reflection process are the following: The angle between the incident photon (Old Momentum) and the surface normal are calculated. The probability of reflection is extracted from the first LUT. A Bernoulli test determines whether the photon is reflected or transmitted. In case of reflection two angles are dcoden from the reflection direction LUT.
+
+.. image:: ../figures/FlowChartLUTModel.png
+
+Old Momentum to New Momentum. The old momentum is the unit vector that describes the incident photon. The reflected/transmitted photon is the New Momentum described by two angles :math:`\phi`, :math:`\theta`.
+
+UNIFIED Model
+~~~~~~~~~~~~
+
+The UNIFIED model allows the user to control the radiant intensity of the surface: Specular lobe, Specular spike, Backscatter spike (enhanced on very rough surfaces) and Reflectivity (Lambertian or diffuse distribution). The sum of the four constants is constrained to unity. In that model, the micro-facet normal vectors follow a Gaussian distribution defined by sigmaalpha (:math:`\sigma_{\alpha}`) given in degrees. This parameter defines the standard deviation of the Gaussian distribution of micro-facets around the average surface normal. In the case of a perfectly polished surface, the normal used by the G4BoundaryProcess is the normal to the surface.
+
+.. image:: ../figures/ReflectionTypes-and-Microfacets.png
+
+An example of a surface definition looks like:
+
+.. code:: XML
+
+    <surface name="rough_teflon_wrapped" type="dielectric_dielectric" sigmaalpha="0.1" finish="groundbackpainted">
+        <propertiestable>
+            <propertyvector name="SPECULARLOBECONSTANT" energyunit="eV">
+                <ve energy="4.08" value="1"/>
+                <ve energy="1.84" value="1"/>
+            </propertyvector>
+            <propertyvector name="RINDEX" energyunit="eV">
+                <ve energy="4.08" value="1"/>
+                <ve energy="1.84" value="1"/>
+            </propertyvector>
+            <propertyvector name="REFLECTIVITY" energyunit="eV">
+                <ve energy="1.84" value="0.95"/>
+                <ve energy="4.08" value="0.95"/>
+            </propertyvector>
+            <propertyvector name="EFFICIENCY" energyunit="eV">
+                <ve energy="1.84" value="0"/>
+                <ve energy="4.08" value="0"/>
+            </propertyvector>
+        </propertiestable>
+    </surface>
+
+The attribute type can be either dielectric_dielectric or dielectric_metal, to model either a surface between two dielectrica or between a dielectricum and a metal. The attribute sigma-alpha models the surface roughness and is discussed in the next section. The attribute finish can have one of the following values: ground, polished, ground-back-painted, polished-back-painted, ground-front-painted and polished-front-painted. It is therefore possible to cover the surface on the inside or outside with a coating that reflects optical photons using Lambertian reflection. In case the finish of the surface is polished, the surface normal is used to calculate the probability of reflection. In case the finish of the surface is ground, the surface is modeled as consisting of small micro-facets. When an optical photon reaches a surface, a random angle
+
+is dcoden for the micro facet that is hit by the optical photon. Using the angle of incidence of the optical photon with respect to this micro facet and the refractive indices of the two media, the probability of reflection is calculated.
+
+In case the optical photon is reflected, four kinds of reflection are possible. The probabilities of the first three are given by the following three property vectors:
+- SPECULARSPIKECONSTANT gives the probability of specular reflection about the average surface normal
+- SPECULARLOBECONSTANT gives the probability of specular reflection about the surface normal of the micro facet
+- BACKSCATTERCONSTANT gives the probability of reflection in the direction the optical photon came from
+
+LAMBERTIAN (diffuse) reflection occurs when none of the other three types of reflection happens. The probability of Lambertian reflection is thus given by one minus the sum of the other three constants.
+
+.. image:: ../figures/Reflections_Specular_Diffuse_Spread.gif
+
+    When the photon is refracted, the angle of refraction is calculated from the surface normal (of the average surface for polished and of the micro facet for rough) and the refractive indices of the two media.
+
+When an optical photon reaches a painted layer, the probability of reflection is given by the property vector `REFLECTIVITY`. In case the paint is on the inside of the surface, the refractive indices of the media are ignored, and when the photon is reflected, it undergoes Lambertian reflection.
+
+When the paint is on the outside of the surface, whether the photon is reflected on the interface between the two media is calculated first, using the method described in the previous section. However, in this case the refractive index given by the property vector RINDEX of the surface is used. When the photon is refracted, it is reflected using Lambertian reflection with a probability `REFLECTIVITY`. It then again has to pass the boundary between the two media. For this, the method described in the previous section is used again and again, until the photon is eventually reflected back into the first medium or is absorbed by the paint.
+
+A dielectric_dielectric surface may have a wavelength dependent property `TRANSMITTANCE`. If this is specified for a surface it overwrites the Snell’s law’s probability. This allows the simulation of anti-reflective coatings.
+
+Detection of optical photons
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Optical photons can be detected by using a dielectric-metal boundary. In that case, the probability of reflection should be given by the `REFLECTIVITY` property vector. When the optical photon is reflected, the UNIFIED model is used to determine the reflection angle. When it is absorbed, it is possible to detect it. The property vector `EFFICIENCY` gives the probability of detecting a photon given its energy and can therefore be considered to give the internal quantum efficiency. Note that many measurements of the quantum efficiency give the external quantum efficiency, which includes the reflection: :math:`external quantum efficiency = EFFICIENCY \cdot(1-REFLECTIVITY)`.
+
+The hits generated by the detection of the optical photons are generated in the volume from which the optical photons reached the surface. This volume should therefore contain a digitizer.
 
