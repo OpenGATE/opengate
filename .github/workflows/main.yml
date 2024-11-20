@@ -53,8 +53,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, windows-latest]
+        os: [ubuntu-latest, macos-13, macos-14, windows-latest]
         python-version: [3.9, '3.10', '3.11', '3.12']
+        exclude:
+          - os: macos-14
+            python-version: 3.9
+          - os: macos-14
+            python-version: '3.10'
 
     env:
       GEANT4_VERSION: 'v11.2.1'
@@ -66,16 +71,12 @@ jobs:
     - name: Checkout submodules
       shell: bash -l {0}
       run: |
-        if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
-          export GIT_SSL_NO_VERIFY=1
-          git submodule update --init --recursive
-        elif [[ ${{ matrix.os }} == "macos-13" ]]; then
-          export GIT_SSL_NO_VERIFY=1
-          git submodule update --init --recursive
-        else
+        if [[ ${{ matrix.os }} == "windows-latest" ]]; then
           set "GIT_SSL_NO_VERIFY=1"
-          git submodule update --init --recursive
+        else
+          export GIT_SSL_NO_VERIFY=1
         fi
+        git submodule update --init --recursive
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
@@ -89,7 +90,7 @@ jobs:
             varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
             varOS=($varOS)
             echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
-        elif [[ ${{ matrix.os }} == "macos-13" ]]; then
+        elif [[ ${{ matrix.os }} == "macos-13" ]] || [[ ${{ matrix.os }} == "macos-14" ]]; then
             varOS=`sw_vers | grep "ProductVersion:"`
             varOS="${varOS#*:}"
             echo "release=${varOS:1}" >> $GITHUB_OUTPUT
@@ -123,18 +124,18 @@ jobs:
           mv wheelhouse dist
           sudo chown -R runner:docker dist
     - uses: conda-incubator/setup-miniconda@v3
-      if: (matrix.os == 'macos-13') || (matrix.os == 'windows-latest')
+      if: (matrix.os == 'macos-13') || (matrix.os == 'macos-14') || (matrix.os == 'windows-latest')
       with:
           miniconda-version: "latest"
           auto-update-conda: true
           activate-environment: opengate_core
           python-version: ${{ matrix.python-version }}
     - name: Set up Homebrew
-      if: matrix.os == 'macos-13'
+      if: (matrix.os == 'macos-13') || (matrix.os == 'macos-14')
       id: set-up-homebrew
       uses: Homebrew/actions/setup-homebrew@master
     - name: Create opengate_core Wheel Mac
-      if: matrix.os == 'macos-13'
+      if: (matrix.os == 'macos-13') || (matrix.os == 'macos-14')
       shell: bash -l {0}
       run: |
           brew install python@3.12 || true
@@ -211,7 +212,8 @@ jobs:
           delocate-listdeps --all fixed_wheels/*.whl
           mv fixed_wheels dist
           cd dist
-          find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_13_0/macosx_10_9}' {} \;
+          if [[ ${{ matrix.os }} == "macos-13" ]]; then
+              find . -name '*whl' -exec bash -c ' mv $0 ${0/macosx_13_0/macosx_10_9}' {} \;
           cd ../..
           mv core/dist .
     - name: Create opengate_core Wheel Windows
