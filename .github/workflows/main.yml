@@ -161,7 +161,11 @@ jobs:
           export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
           pip install wget colored
           pip install wheel delocate
-          conda install conda-forge::qt6-main conda-forge::qt6-3d
+          if [[ ${{ matrix.os }} == "macos-13" ]]; then          
+              conda install conda-forge::qt6-main conda-forge::qt6-3d
+          else
+              brew install qt
+          fi
           mkdir -p $HOME/software
           if [ "${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}" != 'true' ]; then
               cd $HOME/software
