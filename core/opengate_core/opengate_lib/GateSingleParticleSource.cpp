@@ -32,7 +32,8 @@ GateSingleParticleSource::GateSingleParticleSource(
   fBackToBackMode = false;
   fAccolinearityFlag = false;
   // Probably an underestimation in most cases, but it is the most cited (Moses
-  // 2011) zxc pi must be defined somewhere...
+  // 2011)
+  // zxc pi must be defined somewhere...
   fAccolinearitySigma = 0.5 / 180.0 * 3.14159265358979323846 * fwhm_to_sigma;
 }
 
@@ -147,7 +148,7 @@ void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
     G4ThreeVector particle2_direction(sin(theta) * phi / theta,
                                       sin(theta) * psi / theta, cos(theta));
     // zxc need to keep magnitude of momemtum?
-    // zxc describe following
+    // Apply accolinearity deviation relative to the colinear case
     particle2_direction.rotateUz(-1.0 * particle1->GetMomentum().unit());
     particle2->SetMomentumDirection(particle2_direction);
   } else {
