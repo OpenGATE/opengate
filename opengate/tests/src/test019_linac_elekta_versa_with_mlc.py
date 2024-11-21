@@ -10,9 +10,6 @@ import uproot
 import matplotlib.pyplot as plt
 
 
-def generalised_normal(x, A, mu, alpha, beta):
-    return A * np.exp(-((abs(x - mu) / alpha) ** beta))
-
 
 def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
     x = rootfile["PrePosition_X"][rootfile["ParticleName"] == "alpha"]
