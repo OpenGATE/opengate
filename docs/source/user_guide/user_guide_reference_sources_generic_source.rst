@@ -334,7 +334,7 @@ Several spectra are provided through the `get_rad_gamma_spectrum` function:
 
 .. code:: python
 
-   spectrum = gate.sources.generic.get_rad_gamma_spectrum("Lu177")
+   spectrum = gate.sources.base.get_rad_gamma_spectrum("Lu177")
 
 
 The source can be configured like this:
@@ -373,7 +373,7 @@ This data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDeca
 
 .. code:: python
 
-   spectrum = gate.sources.generic.get_rad_beta_spectrum("Lu177")
+   spectrum = gate.sources.base.get_rad_beta_spectrum("Lu177")
 
 The source can be configured like this:
 
