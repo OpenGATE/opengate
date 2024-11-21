@@ -13,21 +13,29 @@ def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
     x = rootfile["PrePosition_X"][rootfile["ParticleName"] == "alpha"]
     y = rootfile["PrePosition_Y"][rootfile["ParticleName"] == "alpha"]
 
-    hist_x_pos = np.histogram(x, bins=50, density=True,range = [- 1.5* x_field/2, 1.5* x_field/2])
+    hist_x_pos = np.histogram(
+        x, bins=50, density=True, range=[-1.5 * x_field / 2, 1.5 * x_field / 2]
+    )
     x_hist_x_pos = hist_x_pos[1][:-1] + 0.5 * (hist_x_pos[1][1] - hist_x_pos[1][0])
     median_hist_x_pos = np.median(hist_x_pos[0][hist_x_pos[0] > 0])
     y_hist_x_pos = hist_x_pos[0]
-    fwhm_x_pos = - x_hist_x_pos[np.where(hist_x_pos[0] > median_hist_x_pos / 3)[0]][0] + \
-             x_hist_x_pos[np.where(hist_x_pos[0] > median_hist_x_pos / 3)[0]][-1]
+    fwhm_x_pos = (
+        -x_hist_x_pos[np.where(hist_x_pos[0] > median_hist_x_pos / 3)[0]][0]
+        + x_hist_x_pos[np.where(hist_x_pos[0] > median_hist_x_pos / 3)[0]][-1]
+    )
 
-    hist_y_pos = np.histogram(y, bins=40, density=True, range = [- 1.5* y_field/2,1.5* y_field/2])
+    hist_y_pos = np.histogram(
+        y, bins=40, density=True, range=[-1.5 * y_field / 2, 1.5 * y_field / 2]
+    )
     x_hist_y_pos = hist_y_pos[1][:-1] + 0.5 * (hist_y_pos[1][1] - hist_y_pos[1][0])
     median_hist_y_pos = np.median(hist_y_pos[0][hist_y_pos[0] > 0])
 
-    fwhm_y_pos =  - x_hist_y_pos[np.where(hist_y_pos[0] >median_hist_y_pos/3)[0]][0] + x_hist_y_pos[np.where(hist_y_pos[0] >median_hist_y_pos/3)[0]][-1]
+    fwhm_y_pos = (
+        -x_hist_y_pos[np.where(hist_y_pos[0] > median_hist_y_pos / 3)[0]][0]
+        + x_hist_y_pos[np.where(hist_y_pos[0] > median_hist_y_pos / 3)[0]][-1]
+    )
     fwhm_y_pos += x_hist_y_pos[2] - x_hist_y_pos[0]
-    #a trick to correct the fact that the jaws aperture for alpha is a bit underestimated
-
+    # a trick to correct the fact that the jaws aperture for alpha is a bit underestimated
 
     bool_x_pos = (fwhm_x_pos > x_field * (1 - tol)) & (fwhm_x_pos < x_field * (1 + tol))
     bool_y_pos = (fwhm_y_pos > y_field * (1 - tol)) & (fwhm_y_pos < y_field * (1 + tol))
@@ -37,6 +45,7 @@ def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
     print("field dimension on the y-axis position :", y_field, "mm")
     print("FWHM measured for the y-axis beam :", fwhm_y_pos, "mm")
     return bool_x_pos and bool_y_pos
+
 
 if __name__ == "__main__":
     # paths
