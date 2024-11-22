@@ -40,10 +40,10 @@ public:
 
   // Called every time a Track starts (even if not in the volume attached to
   // this actor)
-  void PreUserTrackingAction(const G4Track *track);
+  // void PreUserTrackingAction(const G4Track *track);
 
   // Called every time a Track ends
-  void PostUserTrackingAction(const G4Track *track);
+  void PostUserTrackingAction(const G4Track *track) override;
 
   void EndSimulationAction() override;
 
@@ -62,12 +62,9 @@ public:
 
   // Option: indicate if we must compute dose in Gray also
   std::string fPhysicalVolumeName;
-  std::string fAveragingMethod;
-  std::string fScoreIn;
+  std::string fMethod;
   bool fStopImageEnabled;
-  bool ftrackAverage;
-  bool fLETtoOtherMaterial;
-  std::string fotherMaterial;
+  bool fProductionImageEnabled;
 
   int NbOfEvent = 0;
 

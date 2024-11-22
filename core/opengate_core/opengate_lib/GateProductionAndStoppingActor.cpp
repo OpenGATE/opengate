@@ -35,6 +35,7 @@ GateProductionAndStoppingActor::GateProductionAndStoppingActor(
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
+  fActions.insert("PostUserTrackingAction");
   fActions.insert("EndSimulationAction");
 }
 
@@ -42,10 +43,13 @@ void GateProductionAndStoppingActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInfo(user_info);
 
-  fAveragingMethod = DictGetStr(user_info, "averaging_method");
-  fScoreIn = DictGetStr(user_info, "score_in");
-  if (fScoreIn != "material") {
-    fScoreInOtherMaterial = true;
+  fMethod = DictGetStr(user_info, "method");
+  if (fMethod == "production") {
+    fProductionImageEnabled = true;
+    fStopImageEnabled = false;
+  } else if (fMethod == "stopping") {
+    fProductionImageEnabled = false;
+    fStopImageEnabled = true;
   }
 
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
@@ -71,13 +75,7 @@ void GateProductionAndStoppingActor::BeginOfRunActionMasterThread(int run_id) {
   fVoxelVolume = sp[0] * sp[1] * sp[2];
 }
 
-void GateProductionAndStoppingActor::BeginOfRunAction(const G4Run *) {
-  if (fScoreInOtherMaterial) {
-    auto &l = fThreadLocalData.Get();
-    l.materialToScoreIn =
-        G4NistManager::Instance()->FindOrBuildMaterial(fScoreIn);
-  }
-}
+void GateProductionAndStoppingActor::BeginOfRunAction(const G4Run *) {}
 
 void GateProductionAndStoppingActor::BeginOfEventAction(const G4Event *event) {
   G4AutoLock mutex(&SetProdStopEventMutex);
@@ -85,7 +83,11 @@ void GateProductionAndStoppingActor::BeginOfEventAction(const G4Event *event) {
 }
 
 void GateProductionAndStoppingActor::SteppingAction(G4Step *step) {
-
+  // G4cout<<"Stepping action test" << G4endl;
+}
+void GateProductionAndStoppingActor::PostUserTrackingAction(
+    const G4Track *track) {
+  auto step = track->GetStep();
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -123,69 +125,23 @@ void GateProductionAndStoppingActor::SteppingAction(G4Step *step) {
   if (isInside) {
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
-    auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-    double dedx_cut = DBL_MAX;
-
-    auto *current_material = step->GetPreStepPoint()->GetMaterial();
-    auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
-    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-
-    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
-    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
-    auto energy = (energy1 + energy2) / 2;
-    // Accounting for particles with dedx=0; i.e. gamma and neutrons
-    // For gamma we consider the dedx of electrons instead - testing
-    // with 1.3 MeV photon beam or 150 MeV protons or 1500 MeV carbon ion
-    // beam showed that the error induced is 0 		when comparing
-    // dose and dosetowater in the material G4_WATER For neutrons the dose
-    // is neglected - testing with 1.3 MeV photon beam or 150 MeV protons or
-    // 1500 MeV carbon ion beam showed that the error induced is < 0.01%
-    //		when comparing dose and dosetowater in the material
-    // G4_WATER (we are systematically missing a little bit of dose of
-    // course with this solution)
-
-    if (p == G4Gamma::Gamma()) {
-      p = G4Electron::Electron();
-    }
+    /*
     auto &l = fThreadLocalData.Get();
     auto dedx_currstep =
         l.emcalc.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
         CLHEP::MeV * CLHEP::mm;
-
-    if (fScoreInOtherMaterial) {
-      auto dedx_other_material = l.emcalc.ComputeElectronicDEDX(
-                                     energy, p, l.materialToScoreIn, dedx_cut) /
-                                 CLHEP::MeV * CLHEP::mm;
-
-      // Do we not need to consider the density ratio as well?
-      //      auto density_other_material = l.materialToScoreIn->GetDensity() /
-      //      CLHEP::g * CLHEP::cm3; auto density_current_material =
-      //      current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
-
-      auto SPR_otherMaterial = dedx_other_material / dedx_currstep;
-      if (!std::isnan(SPR_otherMaterial)) {
-        edep *= SPR_otherMaterial;
-        dedx_currstep *= SPR_otherMaterial;
-      }
-    }
-
-    double scor_val_num = 0.;
-    double scor_val_den = 0.;
-
-    if (fAveragingMethod == "dose_average") {
-      scor_val_num = edep * dedx_currstep / CLHEP::MeV / CLHEP::MeV * CLHEP::mm;
-      scor_val_den = edep / CLHEP::MeV;
-    } else if (fAveragingMethod == "track_average") {
-      auto steplength = step->GetStepLength() / CLHEP::mm;
-      scor_val_num = steplength * dedx_currstep * w / CLHEP::MeV;
-      scor_val_den = steplength * w / CLHEP::mm;
-    }
+    */
     // Call ImageAddValue() in a mutexed {}-scope
     {
       G4AutoLock mutex(&SetProdStopPixelMutex);
       ImageAddValue<ImageType>(cpp_value_image, index, w);
     }
   } // else : outside the image
+  else {
+    G4cout << "Outside image" << G4endl;
+    G4cout << "Point: " << point[0] << "  " << point[1] << "  " << point[2]
+           << G4endl;
+  }
 }
 
 void GateProductionAndStoppingActor::EndSimulationAction() {}
