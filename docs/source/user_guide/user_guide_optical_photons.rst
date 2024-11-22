@@ -63,11 +63,11 @@ Scintillation
 A scintillator is characterized by its photon emission spectrum. The scintillation follows an exponential decay with up to three time constants. The relative strength of the components as a fraction of the total scintillation yield is given by `SCINTILLATIONYIELD1`, `SCINTILLATIONYIELD2` and `SCINTILLATIONYIELD3`. The emission spectra of the decays are given by the property vectors `SCINTILLATIONCOMPONENT1`, `SCINTILLATIONCOMPONENT2` and `SCINTILLATIONCOMPONENT3` and the time constants `SCINTILLATIONTIMECONSTANT1`, `SCINTILLATIONTIMECONSTANT2` and `SCINTILLATIONTIMECONSTANT3`. These vectors specify the probability that a photon with the given energy is emitted. The sum of each of the vectors should therefore be one.
 
 In order to have scintillation in a material, the first parameter that has to be specified is the `SCINTILLATIONYIELD` (1/Mev, 1/keV), which gives the number of photons that is emitted per amount of energy absorbed, or, more precisely, it gives the expectation value of this number, since the real number of emitted photons follows a normal distribution. The variance of this normal distribution is `RESOLUTIONSCALE` times this expectation value. Thus, for example, when a gamma photon deposits
-amount of energy in the scintillator, optical photons are emitted with an expectation value of: 
+amount of energy in the scintillator, optical photons are emitted with an expectation value of:
 .. math::
 
     \mu_N = E \cdot SCINTILLATIONYIELD
-    
+
 ...
 
 and a standard deviation of :
@@ -111,7 +111,7 @@ In the above example the scintillation of BGO (Bismuth Germanate) is set to have
 Cerenkov photons
 ----------------
 
-The radiation of Cerenkov light occurs when a charged particle moves through a dispersive medium faster than the group velocity of light in that medium. Photons are emitted on the surface of a cone, whose opening angle with respect to the particle’s instantaneous direction decreases as the particle slows down. To generate Cerenkov optical photons in a material, refractive index must be specified using the material property name `RINDEX`. 
+The radiation of Cerenkov light occurs when a charged particle moves through a dispersive medium faster than the group velocity of light in that medium. Photons are emitted on the surface of a cone, whose opening angle with respect to the particle’s instantaneous direction decreases as the particle slows down. To generate Cerenkov optical photons in a material, refractive index must be specified using the material property name `RINDEX`.
 
 .. code:: XML
 
@@ -125,7 +125,7 @@ The radiation of Cerenkov light occurs when a charged particle moves through a d
     </material>
 
 In this example, the refractive index of PWO (Lead Tunstate) is set to a constant value of 2.16 on the optical photon energy range of 1.84 eV to 4.08 eV.
-    
+
 **Warning about Cherenkov process:** Only activating the Cherenkov process is not enough to add the Cerenkov process in a volume. One also need to define an appropriate physics cut in the volume of interest, for the particule type of interest. For instance a cut in the order of 0.1 mm is required for electrons in order to generate Cerenkov photons.
 
 .. code:: python
@@ -311,7 +311,7 @@ The above example show how the `RoughTeflon_LUT` surface name is defined. Surfac
 +-----------+--------------+--------------------+-----------------+-----------------------+
 | ROUGH     | Rough_LUT    | RoughTeflon_LUT    |  RoughESR_LUT   |  RoughESRGrease_LUT   |
 +-----------+--------------+--------------------+-----------------+-----------------------+
-  
+
 The user can extend the list of finishes with custom measured surface data. In GATE, this can be achieved by utilising `this<https://github.com/LUTDavisModel/Standalone-Application-Installers>`_ tool to calculate LUTs. In the LUT database, typical roughness parameters obtained from the measurements are provided to characterize the type of surface modelled:
 
 - ROUGH: :math:`Ra=0.48 µm`, :math:`\sigma=0.57 µm`, :math:`Rpv=3.12 µm`
