@@ -78,6 +78,10 @@ Source of ion can be set with the following (see ``test013``)
 GATE also provide a ``back_to_back`` particle, which is an alias for colinear
 gamma pairs of 511 keV.
 
+.. code:: python
+
+   source.particle = "back_to_back"
+
 
 .. _source-position:
 
