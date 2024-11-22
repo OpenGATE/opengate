@@ -942,161 +942,76 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
-# class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
-#     """This actor scores the Linear Energy Transfer (LET) on a voxel grid in the volume to which the actor is attached. ."""
+class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
+    """This actor scores the number of particles stopping or starting in a voxel grid in the volume to which the actor is attached to."""
 
-#     # hints for IDE
-#     averaging_method: str
-#     score_in: str
+    # hints for IDE
+    method: str
 
-#     user_info_defaults = {
-#         "averaging_method": (
-#             "dose_average",
-#             {
-#                 "doc": "How to calculate the LET?",
-#                 "allowed_values": ("dose_average", "track_average"),
-#             },
-#         ),
-#         "dose_average": (
-#             False,
-#             {
-#                 "doc": "Calculate dose-averaged LET?",
-#                 "deprecated": "Use averaging_method='dose_average' instead",
-#             },
-#         ),
-#         "track_average": (
-#             False,
-#             {
-#                 "doc": "Calculate track-averaged LET?",
-#                 "deprecated": "Use averaging_method='track_average' instead",
-#             },
-#         ),
-#         "score_in": (
-#             "G4_WATER",
-#             {
-#                 "doc": "In which material should the LET be scored? "
-#                 "You can provide a valid G4 material name, the term 'water', "
-#                 "or the term 'material' which means 'the local material where LET is scored. ",
-#                 "setter_hook": _setter_hook_score_in_let_actor,
-#             },
-#         ),
-#         "let_to_other_material": (
-#             False,
-#             {
-#                 "doc": "FIXME",
-#                 "deprecated": "Use score_in= to specify in which material LET should be scored. ",
-#             },
-#         ),
-#         "let_to_water": (
-#             True,
-#             {
-#                 "doc": "FIXME",
-#                 "deprecated": "Use score_in= to specify in which material LET should be scored. ",
-#             },
-#         ),
-#         "other_material": (
-#             None,
-#             {
-#                 "doc": "FIXME",
-#                 "deprecated": "Use score_in= to specify in which material LET should be scored. ",
-#             },
-#         ),
-#         "separate_output": (
-#             False,
-#             {
-#                 "doc": "FIXME",
-#                 "deprecated": "Denominator and numerator images are automatically handled and stored. ",
-#             },
-#         ),
-#     }
+    user_info_defaults = {
+        "method": (
+            "stopping",
+            {
+                "doc": "Want to score production or stopping of particles?",
+                "allowed_values": ("production", "stopping"),
+            },
+        )
+    }
 
-#     def __init__(self, *args, **kwargs):
-#         VoxelDepositActor.__init__(self, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        VoxelDepositActor.__init__(self, *args, **kwargs)
 
-#         self._add_user_output(
-#             ActorOutputQuotientMeanImage, "let", automatically_generate_interface=False
-#         )
-#         self._add_interface_to_user_output(
-#             UserInterfaceToActorOutputImage, "let", "numerator", item=0
-#         )
-#         self._add_interface_to_user_output(
-#             UserInterfaceToActorOutputImage, "let", "denominator", item=1
-#         )
-#         self._add_interface_to_user_output(
-#             UserInterfaceToActorOutputImage, "let", "let", item="quotient"
-#         )
+        self._add_user_output(ActorOutputSingleImage, "production_stopping")
 
-#         # configure the default item config for the output of the LET actor,
-#         # which is different from the generic quotient image container class:
+        self.__initcpp__()
 
-#         # Suffix to be appended in case a common output_filename per actor is assigned
-#         self.user_output.let.set_item_suffix(None, item="quotient")
-#         self.user_output.let.set_item_suffix("numerator", item=0)
-#         self.user_output.let.set_item_suffix("denominator", item=1)
+    def __initcpp__(self):
+        g4.GateProductionAndStoppingActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfEventAction",
+            }
+        )
 
-#         # the LET always needs both components to calculate LET
-#         self.user_output.let.set_active(True, item=0)
-#         self.user_output.let.set_active(True, item=1)
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the attached volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        VoxelDepositActor.initialize(self)
 
-#         # Most users will probably only want the LET image written to disk,
-#         # not the numerator and denominator
-#         self.user_output.let.set_write_to_disk(False, item=0)
-#         self.user_output.let.set_write_to_disk(False, item=1)
-#         self.user_output.let.set_write_to_disk(True, item="quotient")
+        self.check_user_input()
 
-#         self.__initcpp__()
+        self.InitializeUserInfo(self.user_info)
+        # Set the physical volume name on the C++ side
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
 
-#     def __initcpp__(self):
-#         g4.GateLETActor.__init__(self, self.user_info)
-#         self.AddActions(
-#             {
-#                 "BeginOfRunActionMasterThread",
-#                 "EndOfRunActionMasterThread",
-#                 "BeginOfEventAction",
-#             }
-#         )
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("production_stopping", run_index)
 
-#     def initialize(self):
-#         """
-#         At the start of the run, the image is centered according to the coordinate system of
-#         the attached volume. This function computes the correct origin = center + translation.
-#         Note that there is a half-pixel shift to align according to the center of the pixel,
-#         like in ITK.
-#         """
-#         VoxelDepositActor.initialize(self)
+        self.push_to_cpp_image("production_stopping", run_index, self.cpp_value_image)
+        g4.GateProductionAndStoppingActor.BeginOfRunActionMasterThread(self, run_index)
 
-#         self.check_user_input()
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(
+            "production_stopping", run_index, self.cpp_value_image
+        )
+        self._update_output_coordinate_system("production_stopping", run_index)
+        self.user_output.production_stopping.store_meta_data(
+            run_index, number_of_samples=self.NbOfEvent
+        )
 
-#         self.InitializeUserInfo(self.user_info)
-#         # Set the physical volume name on the C++ side
-#         self.SetPhysicalVolumeName(self.get_physical_volume_name())
-#         self.InitializeCpp()
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+        return 0
 
-#     def BeginOfRunActionMasterThread(self, run_index):
-#         self.prepare_output_for_run("let", run_index)
-#         # self.prepare_output_for_run("let_numerator", run_index)
-#         # self.prepare_output_for_run("let_denominator", run_index)
-
-#         self.push_to_cpp_image(
-#             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
-#         )
-#         g4.GateLETActor.BeginOfRunActionMasterThread(self, run_index)
-
-#     def EndOfRunActionMasterThread(self, run_index):
-#         self.fetch_from_cpp_image(
-#             "let", run_index, self.cpp_numerator_image, self.cpp_denominator_image
-#         )
-#         self._update_output_coordinate_system("let", run_index)
-#         self.user_output.let.store_meta_data(
-#             run_index, number_of_samples=self.NbOfEvent
-#         )
-
-#         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
-#         return 0
-
-#     def EndSimulationAction(self):
-#         g4.GateLETActor.EndSimulationAction(self)
-#         VoxelDepositActor.EndSimulationAction(self)
+    def EndSimulationAction(self):
+        g4.GateProductionAndStoppingActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
@@ -1180,3 +1095,4 @@ process_cls(DoseActor)
 process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(FluenceActor)
+process_cls(ProductionAndStoppingActor)

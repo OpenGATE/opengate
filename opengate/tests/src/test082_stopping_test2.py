@@ -25,6 +25,7 @@ def get_1Dimg_data(fpath):
 
 
 if __name__ == "__main__":
+    x_source = -5
     do_debug = False
     paths = utility.get_default_test_paths(
         __file__, "test050_let_actor_letd", "test050"
@@ -66,14 +67,6 @@ if __name__ == "__main__":
     phantom.material = "G4_WATER"
     phantom.color = [0, 0, 1, 1]
 
-    test_material_name = "G4_WATER"
-    phantom_off = sim.add_volume("Box", "phantom_off")
-    phantom_off.mother = phantom.name
-    phantom_off.size = [100 * mm, 60 * mm, 60 * mm]
-    phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]
-    phantom_off.material = test_material_name
-    phantom_off.color = [0, 0, 1, 1]
-
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
     # sim.physics_manager.set_production_cut("world", "all", 1000 * km)
@@ -91,9 +84,10 @@ if __name__ == "__main__":
     source.position.type = "disc"
     source.position.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
     source.position.radius = 4 * mm
-    source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
+    source.position.translation = [x_source * mm, 0 * mm, 0 * mm]
+
     # print(dir(source.energy))
     source.n = numPartSimTest
     # source.activity = 100 * kBq
@@ -102,76 +96,34 @@ if __name__ == "__main__":
     # f = sim.add_filter("ParticleFilter", "f")
     # f.particle = "proton"
 
-    size = [100, 1, 1]
-    spacing = [1.0 * mm, 60.0 * mm, 60.0 * mm]
+    size = [200, 1, 1]
+    spacing = [0.50 * mm, 100.0 * mm, 100.0 * mm]
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
     doseIDD.output_filename = "test050-" + doseActorName_IDD_d + ".mhd"
-    doseIDD.attached_to = phantom_off
+    doseIDD.attached_to = phantom
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
     doseIDD.dose.active = False
 
-    ProductionAndStoppingActorName_IDD_d = "ProductionAndStoppingActorOG_d"
+    ProdAct = "production_actor"
     ProductionAndStoppingActor_IDD_d = sim.add_actor(
-        "ProductionAndStoppingActor", ProductionAndStoppingActorName_IDD_d
+        "ProductionAndStoppingActor", ProdAct
     )
-    ProductionAndStoppingActor_IDD_d.output_filename = (
-        "test050-" + ProductionAndStoppingActorName_IDD_d + ".mhd"
-    )
-    ProductionAndStoppingActor_IDD_d.attached_to = phantom_off
+    ProductionAndStoppingActor_IDD_d.output_filename = "test050-" + ProdAct + ".mhd"
+    ProductionAndStoppingActor_IDD_d.attached_to = phantom
     ProductionAndStoppingActor_IDD_d.size = size
     ProductionAndStoppingActor_IDD_d.spacing = spacing
-    ProductionAndStoppingActor_IDD_d.hit_type = "random"
-    ProductionAndStoppingActor_IDD_d.method = "stopping"
-
-    ProductionAndStoppingActorName_IDD_t = "ProductionAndStoppingActorOG_t"
-    ProductionAndStoppingActor_IDD_t = sim.add_actor(
-        "ProductionAndStoppingActor", ProductionAndStoppingActorName_IDD_t
-    )
-    ProductionAndStoppingActor_IDD_t.output_filename = (
-        "test050-" + ProductionAndStoppingActorName_IDD_t + ".mhd"
-    )
-    ProductionAndStoppingActor_IDD_t.attached_to = phantom_off
-    ProductionAndStoppingActor_IDD_t.size = size
-    ProductionAndStoppingActor_IDD_t.spacing = spacing
-    ProductionAndStoppingActor_IDD_t.hit_type = "random"
-    # ProductionAndStoppingActor_IDD_t.averaging_method = "track_average"
-
-    ProductionAndStoppingActorName_IDD_d2w = "ProductionAndStoppingActorOG_d2w"
-    ProductionAndStoppingActor_IDD_d2w = sim.add_actor(
-        "ProductionAndStoppingActor", ProductionAndStoppingActorName_IDD_d2w
-    )
-    ProductionAndStoppingActor_IDD_d2w.output_filename = (
-        "test050-" + ProductionAndStoppingActorName_IDD_d2w + ".mhd"
-    )
-    ProductionAndStoppingActor_IDD_d2w.attached_to = phantom_off
-    ProductionAndStoppingActor_IDD_d2w.size = size
-    ProductionAndStoppingActor_IDD_d2w.spacing = spacing
-    ProductionAndStoppingActor_IDD_d2w.hit_type = "random"
-    # ProductionAndStoppingActor_IDD_d2w.score_in = "water"
-    # ProductionAndStoppingActor_IDD_d2w.averaging_method = "dose_average"
-
-    LET_primaries = "LETprimaries"
-    ProductionAndStoppingActor_primaries = sim.add_actor(
-        "ProductionAndStoppingActor", LET_primaries
-    )
-    ProductionAndStoppingActor_primaries.output_filename = (
-        "test050-" + LET_primaries + ".mhd"
-    )
-    ProductionAndStoppingActor_primaries.attached_to = phantom_off
-    ProductionAndStoppingActor_primaries.size = size
-    ProductionAndStoppingActor_primaries.spacing = spacing
-    # ProductionAndStoppingActor_primaries.hit_type = "random"
-    # ProductionAndStoppingActor_primaries.averaging_method = "dose_average"
+    ProductionAndStoppingActor_IDD_d.hit_type = "pre"
+    ProductionAndStoppingActor_IDD_d.method = "production"
 
     # # add dose actor, without e- (to check)
     fe = sim.add_filter("ParticleFilter", "f")
     fe.particle = "proton"
     fe.policy = "accept"
-    ProductionAndStoppingActor_primaries.filters.append(fe)
+    ProductionAndStoppingActor_IDD_d.filters.append(fe)
     print(fe)
 
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
@@ -210,29 +162,17 @@ if __name__ == "__main__":
         )
 
     tests_pass = []
-    is_ok = utility.assert_filtered_imagesprofile1D(
-        ref_filter_filename1=str(doseIDD.edep.get_output_path()),
-        ref_filename1=ref_path
-        / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
-        filename2=str(
-            ProductionAndStoppingActor_IDD_d.production_stopping.get_output_path()
-        ),
-        tolerance=40,
-        # plt_ylim=[0, 25],
-    )
-    tests_pass.append(is_ok)
-    print(f"218 {is_ok =}")
 
     idd_x, idd_d, idd_img_info = get_1Dimg_data(str(doseIDD.edep.get_output_path()))
 
-    filename2 = ProductionAndStoppingActor_IDD_t.production_stopping.get_output_path()
-    stop_x, stop_v, stop_img_info = get_1Dimg_data(str(filename2))
+    filename2 = ProductionAndStoppingActor_IDD_d.production_stopping.get_output_path()
+    production_x, production_v, production_img_info = get_1Dimg_data(str(filename2))
     debug_level = 0
     if debug_level > 1:
         for x, y in zip(idd_x, idd_d):
             print(f"{x:.2f} {y:.2e}")
         print("=================")
-        for x, y in zip(stop_x, stop_v):
+        for x, y in zip(production_x, production_v):
             print(f"{x:.2f} {y:.2e}")
 
     _, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
@@ -240,15 +180,16 @@ if __name__ == "__main__":
     utility.plot_profile(ax[0], idd_x, idd_img_info.spacing[0], "dose")
 
     r50, d_r50 = utility.getRange(idd_x, idd_d, percentLevel=0.5)
-    print(f"{r50=}")
+    x_source = x_source * (-1)
+    print(f"{x_source=}")
 
-    a = np.argmax(stop_v)
-    stop_pos = stop_x[a]
-    print(f"{stop_pos=}")
-    range_diff = r50 - stop_pos
+    a = np.argmax(production_v)
+    production_pos = production_x[a]
+    print(f"{production_pos=}")
+    range_diff = x_source - production_pos
     print(
-        f"""The difference in range 50% of the depth dose profile
-          and the mode position in the stopping particles image is: {range_diff:.2f} mm."""
+        f"""The difference of the source position in x
+        and the mode position in the production particles image is: {range_diff:.2f} mm."""
     )
     print(f"The spacing and match condition is: { idd_img_info.spacing[0]} mm.")
     if np.abs(range_diff) < idd_img_info.spacing[0]:

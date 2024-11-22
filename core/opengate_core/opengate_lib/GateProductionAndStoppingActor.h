@@ -44,6 +44,7 @@ public:
 
   // Called every time a Track ends
   void PostUserTrackingAction(const G4Track *track) override;
+  void AddValueToImage(const G4Step *step);
 
   void EndSimulationAction() override;
 

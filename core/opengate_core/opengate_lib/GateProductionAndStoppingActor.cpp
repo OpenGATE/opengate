@@ -46,10 +46,13 @@ void GateProductionAndStoppingActor::InitializeUserInfo(py::dict &user_info) {
   fMethod = DictGetStr(user_info, "method");
   if (fMethod == "production") {
     fProductionImageEnabled = true;
-    fStopImageEnabled = false;
+    fStopImageEnabled = !fProductionImageEnabled;
+
+    G4cout << "===== > Going to score PRODUCING particles " << G4endl;
   } else if (fMethod == "stopping") {
     fProductionImageEnabled = false;
-    fStopImageEnabled = true;
+    fStopImageEnabled = !fProductionImageEnabled;
+    G4cout << "===== > Going to score stopping particles " << G4endl;
   }
 
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
@@ -83,11 +86,26 @@ void GateProductionAndStoppingActor::BeginOfEventAction(const G4Event *event) {
 }
 
 void GateProductionAndStoppingActor::SteppingAction(G4Step *step) {
-  // G4cout<<"Stepping action test" << G4endl;
+  //
+  if (fProductionImageEnabled) {
+    if (step->GetTrack()->GetCurrentStepNumber() == 1) {
+      AddValueToImage(step);
+      // G4cout<<"Stepping action: " << step->GetTrack()->GetCurrentStepNumber()
+      // << G4endl;
+    }
+  }
 }
 void GateProductionAndStoppingActor::PostUserTrackingAction(
     const G4Track *track) {
-  auto step = track->GetStep();
+  if (fStopImageEnabled) {
+    auto step = track->GetStep();
+    AddValueToImage(track->GetStep());
+  }
+}
+
+void GateProductionAndStoppingActor::EndSimulationAction() {}
+
+void GateProductionAndStoppingActor::AddValueToImage(const G4Step *step) {
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -121,6 +139,8 @@ void GateProductionAndStoppingActor::PostUserTrackingAction(
   ImageType::IndexType index;
   bool isInside = cpp_value_image->TransformPhysicalPointToIndex(point, index);
 
+  // G4cout << "Point: " << point[0] << "  " << point[1] << "  " << point[2]
+  //<< G4endl;
   // set value
   if (isInside) {
     // get edep in MeV (take weight into account)
@@ -128,8 +148,8 @@ void GateProductionAndStoppingActor::PostUserTrackingAction(
     /*
     auto &l = fThreadLocalData.Get();
     auto dedx_currstep =
-        l.emcalc.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
-        CLHEP::MeV * CLHEP::mm;
+            l.emcalc.ComputeElectronicDEDX(energy, p, current_material,
+    dedx_cut) / CLHEP::MeV * CLHEP::mm;
     */
     // Call ImageAddValue() in a mutexed {}-scope
     {
@@ -139,9 +159,5 @@ void GateProductionAndStoppingActor::PostUserTrackingAction(
   } // else : outside the image
   else {
     G4cout << "Outside image" << G4endl;
-    G4cout << "Point: " << point[0] << "  " << point[1] << "  " << point[2]
-           << G4endl;
   }
 }
-
-void GateProductionAndStoppingActor::EndSimulationAction() {}
