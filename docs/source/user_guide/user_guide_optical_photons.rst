@@ -26,6 +26,7 @@ Optical photon physics
 ----------------------
 
 To enable optical physics in Gate10, one must add the following line:
+
 .. code:: python
 
     sim.physics_manager.special_physics_constructors.G4OpticalPhysics = True
