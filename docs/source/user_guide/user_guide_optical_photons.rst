@@ -7,7 +7,7 @@ Before discussing how to use the optical photon tracking, it has to be mentioned
 
 Optical Photon Generation
 -------------------------
-Optical photon source can be implemented as any particle source using the GenericSource class. The particle type should be set to 'opticalphoton'.
+Optical photon source can be implemented as any particle source using the GenericSource class. The particle type should be set to `opticalphoton`.
 Optical photon polarization is not yet implemented. A random polarization is therefore assumed.
 
 
