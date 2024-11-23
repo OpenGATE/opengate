@@ -63,7 +63,12 @@ class BaseUserInterfaceToActorOutput:
         return docstring
 
     def __init__(
-            self, belongs_to_actor, user_output_name, interface_name, kwargs_for_interface_calls=None, **kwargs
+        self,
+        belongs_to_actor,
+        user_output_name,
+        interface_name,
+        kwargs_for_interface_calls=None,
+        **kwargs,
     ):
         # Important: we need to write the attributes directly into the __dict__ here because
         # they are set for the first time and assigning them via self.user_output_name = ...
@@ -96,8 +101,7 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def active(self):
-        """Should the actor consider and score this output?
-        """
+        """Should the actor consider and score this output?"""
         try:
             return self._user_output.get_active(**self._kwargs_for_interface_calls)
         except NotImplementedError:
@@ -120,7 +124,7 @@ class BaseUserInterfaceToActorOutput:
         kwargs.update(self._kwargs_for_interface_calls)
         return self._user_output.get_run_indices(**kwargs)
 
-    def get_data(self, which='merged', **kwargs):
+    def get_data(self, which="merged", **kwargs):
         """Get the data stored in this output, e.g. an ITK image.
         Use the argument 'which' to specify whether you refer to the cumulative output
         of the entire simulation (which='merged'), or to a specific run,
@@ -224,9 +228,9 @@ class BaseUserInterfaceToActorOutput:
     def __setattr__(self, item, value):
         # if item in type(self).__dict__["_known_attributes"]:
         if item in (
-                "user_output_name",
-                "belongs_to_actor",
-                "_kwargs_for_interface_calls",
+            "user_output_name",
+            "belongs_to_actor",
+            "_kwargs_for_interface_calls",
         ):
             self.__dict__[item] = value
         else:
@@ -297,8 +301,8 @@ class ActorOutputBase(GateObject):
             True,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                       "Careful: Large data structures like a phase space need a lot of memory.",
+                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                "Careful: Large data structures like a phase space need a lot of memory.",
             },
         ),
     }
@@ -518,7 +522,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 f"specified for class {cls.__name__}."
             )
         # current_info_tuple = cls.inherited_user_info_defaults["data_item_config"]
-        cls._default_data_item_config = cls.data_container_class.get_default_data_item_config()
+        cls._default_data_item_config = (
+            cls.data_container_class.get_default_data_item_config()
+        )
         if interfaces is not None:
             for k, v in interfaces.items():
                 cls._default_data_item_config[v["item"]]["suffix"] = k
@@ -637,7 +643,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         return items
 
     def get_output_path(
-            self, which="merged", item=0, always_return_dict=False, **kwargs
+        self, which="merged", item=0, always_return_dict=False, **kwargs
     ):
         return_dict = {}
         for i in self._collect_item_identifiers(item):
@@ -654,8 +660,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             try:
                 run_index = int(which)  # might be a run_index
                 if (
-                        run_index in self.data_per_run
-                        and self.data_per_run[run_index] is not None
+                    run_index in self.data_per_run
+                    and self.data_per_run[run_index] is not None
                 ):
                     return self.data_per_run[run_index]
                 else:
@@ -757,7 +763,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             i
             for i in self._collect_item_identifiers(item)
             if self.get_write_to_disk(item=i) is True
-               and self.get_active(item=i) is True
+            and self.get_active(item=i) is True
             # FIXME: the active is True check should not be here. self.write_data() should handle that
         ]
         self.write_data(which=which, item=items)
@@ -859,9 +865,9 @@ class ActorOutputRoot(ActorOutputBase):
             "auto",
             {
                 "doc": "Filename for the data represented by this actor output. "
-                       "Relative paths and filenames are taken "
-                       "relative to the global simulation output folder "
-                       "set via the Simulation.output_dir option. ",
+                "Relative paths and filenames are taken "
+                "relative to the global simulation output folder "
+                "set via the Simulation.output_dir option. ",
             },
         ),
         "write_to_disk": (
@@ -874,9 +880,9 @@ class ActorOutputRoot(ActorOutputBase):
             False,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                       "Careful: Large data structures like a phase space need a lot of memory. \n"
-                       "Warning: Feature not supported for ROOT output yet. The options is forced to False. ",
+                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                "Careful: Large data structures like a phase space need a lot of memory. \n"
+                "Warning: Feature not supported for ROOT output yet. The options is forced to False. ",
                 "override": True,
                 "read_only": True,
             },
@@ -897,7 +903,10 @@ class ActorOutputRoot(ActorOutputBase):
         for k in ["output_filename", "write_to_disk"]:
             if k in kwargs:
                 current_default_tuple = cls.inherited_user_info_defaults[k]
-                cls.inherited_user_info_defaults[k] = (kwargs.pop(k), current_default_tuple[1])
+                cls.inherited_user_info_defaults[k] = (
+                    kwargs.pop(k),
+                    current_default_tuple[1],
+                )
         super().set_user_info_default_values_interface(**kwargs)
 
     def get_output_path(self, *args, **kwargs):

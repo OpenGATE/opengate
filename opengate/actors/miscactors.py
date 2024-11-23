@@ -19,8 +19,7 @@ def _setter_hook_stats_actor_output_filename(self, output_filename):
 
 
 class ActorOutputStatisticsActor(ActorOutputBase):
-    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor.
-    """
+    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
 
     # hints for IDE
     encoder: str
@@ -187,8 +186,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
-    """Store statistics about a simulation run.
-    """
+    """Store statistics about a simulation run."""
 
     # hints for IDE
     track_types_flag: bool

@@ -131,8 +131,7 @@ class ActorBase(GateObject):
 
     @classmethod
     def __process_this__(cls):
-        """This is a specialized version of the class method __process_this__ for actor classes.
-        """
+        """This is a specialized version of the class method __process_this__ for actor classes."""
         super().__process_this__()
         cls._user_output_classes = {}
         cls._existing_properties_to_interfaces = []
@@ -141,23 +140,38 @@ class ActorBase(GateObject):
             try:
                 actor_output_class = output_config["actor_output_class"]
             except KeyError:
-                raise GateImplementationError(f"In actor {cls.__name__}: "
-                                              f"No entry 'actor_output_class' specified "
-                                              f"in _user_output_config for user_output {output_name}.")
+                raise GateImplementationError(
+                    f"In actor {cls.__name__}: "
+                    f"No entry 'actor_output_class' specified "
+                    f"in _user_output_config for user_output {output_name}."
+                )
             interfaces = output_config.get("interfaces", None)
             # no interfaces defined -> generate one automatically
             if interfaces is None:
-                interfaces = {output_name:
-                                  {"interface_class": actor_output_class.get_default_interface_class()}}
-                config_for_auto_interface = dict([(k, v) for k, v in output_config.items()
-                                                  if k not in ("actor_output_class", "interfaces")])
+                interfaces = {
+                    output_name: {
+                        "interface_class": actor_output_class.get_default_interface_class()
+                    }
+                }
+                config_for_auto_interface = dict(
+                    [
+                        (k, v)
+                        for k, v in output_config.items()
+                        if k not in ("actor_output_class", "interfaces")
+                    ]
+                )
                 interfaces[output_name].update(config_for_auto_interface)
                 interfaces[output_name]["item"] = 0
             cls._user_output_classes[output_name] = cls.make_actor_output_class(
-                actor_output_class, output_name, interfaces)
-            cls._user_output_classes[output_name].__hook_after_factory_function__(interfaces=interfaces)
+                actor_output_class, output_name, interfaces
+            )
+            cls._user_output_classes[output_name].__hook_after_factory_function__(
+                interfaces=interfaces
+            )
 
-            _create_interface_properties(cls, cls._user_output_classes[output_name], interfaces)
+            _create_interface_properties(
+                cls, cls._user_output_classes[output_name], interfaces
+            )
         cls.__doc__ += cls.__get_docstring_user_output__()
 
     @classmethod
@@ -375,19 +389,24 @@ class ActorBase(GateObject):
             try:
                 actor_output_class = self._user_output_classes[output_name]
             except KeyError:
-                raise GateImplementationError(f"In actor {self.type_name}: "
-                                              f"No entry 'actor_output_class' specified "
-                                              f"in ._user_output_classes for user_output {output_name}.")
+                raise GateImplementationError(
+                    f"In actor {self.type_name}: "
+                    f"No entry 'actor_output_class' specified "
+                    f"in ._user_output_classes for user_output {output_name}."
+                )
             interfaces = output_config.get("interfaces", None)
             self._add_user_output(actor_output_class, output_name)
             for interface_name, interface_config in interfaces.items():
-                interface_params = dict([(_k, _v) for _k, _v in interface_config.items()])
+                interface_params = dict(
+                    [(_k, _v) for _k, _v in interface_config.items()]
+                )
                 try:
                     interface_class = interface_params.pop("interface_class")
                 except KeyError:
                     raise GateImplementationError
-                self._add_interface_to_user_output(interface_class, output_name, interface_name,
-                                                   **interface_params)
+                self._add_interface_to_user_output(
+                    interface_class, output_name, interface_name, **interface_params
+                )
 
     def _add_user_output(
         self,
@@ -479,7 +498,9 @@ def _get_docstring_for_interface(user_output_class, interface_name, **interface_
     docstring += interface_config["interface_class"].__get_docstring__()
     docstring += "\n"
     docstring += "* Defaults:\n\n"
-    defaults = user_output_class.get_user_info_default_values_interface(**interface_config)
+    defaults = user_output_class.get_user_info_default_values_interface(
+        **interface_config
+    )
     for k, v in defaults.items():
         docstring += f"  * {k} = {v}\n"
     docstring += "\n"
@@ -489,6 +510,7 @@ def _get_docstring_for_interface(user_output_class, interface_name, **interface_
 def _create_interface_properties(actor_class, user_output_class, interfaces):
     # create a property in the actor so the user can quickly access the interface
     for interface_name, config in interfaces.items():
+
         def p(self):
             return self.interfaces_to_user_output[interface_name]
 
@@ -499,7 +521,8 @@ def _create_interface_properties(actor_class, user_output_class, interfaces):
         # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
         if (
             hasattr(actor_class, interface_name)
-            and unique_interface_name not in actor_class._existing_properties_to_interfaces
+            and unique_interface_name
+            not in actor_class._existing_properties_to_interfaces
         ):
             # before we raise an exception, we check if this property was created by a parent class
             # in that case, we just override it here in the child class
@@ -523,9 +546,10 @@ def _create_interface_properties(actor_class, user_output_class, interfaces):
                     f"(or user_output in case the interface is automatically generated). "
                 )
         elif not hasattr(actor_class, interface_name):
-            doc_string = _get_docstring_for_interface(user_output_class, interface_name, **config)
-            setattr(actor_class, interface_name,
-                    property(fget=p, doc=doc_string))
+            doc_string = _get_docstring_for_interface(
+                user_output_class, interface_name, **config
+            )
+            setattr(actor_class, interface_name, property(fget=p, doc=doc_string))
             actor_class._existing_properties_to_interfaces.append(unique_interface_name)
         else:
             pass

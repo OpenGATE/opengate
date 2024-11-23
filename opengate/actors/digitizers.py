@@ -634,7 +634,9 @@ class DigitizerSpatialBlurringActor(
         g4.GateDigitizerSpatialBlurringActor.EndSimulationAction(self)
 
 
-class DigitizerEfficiencyActor(DigitizerWithRootOutput, g4.GateDigitizerEfficiencyActor):
+class DigitizerEfficiencyActor(
+    DigitizerWithRootOutput, g4.GateDigitizerEfficiencyActor
+):
     """
     Digitizer module for simulating efficiency.
     """
@@ -702,7 +704,9 @@ class DigitizerEfficiencyActor(DigitizerWithRootOutput, g4.GateDigitizerEfficien
         g4.GateDigitizerEfficiencyActor.EndSimulationAction(self)
 
 
-class DigitizerEnergyWindowsActor(DigitizerWithRootOutput, g4.GateDigitizerEnergyWindowsActor):
+class DigitizerEnergyWindowsActor(
+    DigitizerWithRootOutput, g4.GateDigitizerEnergyWindowsActor
+):
     """
     Consider a list of hits and arrange them according to energy intervals.
     Input: one DigiCollection
@@ -765,7 +769,9 @@ class DigitizerEnergyWindowsActor(DigitizerWithRootOutput, g4.GateDigitizerEnerg
         g4.GateDigitizerEnergyWindowsActor.EndSimulationAction(self)
 
 
-class DigitizerHitsCollectionActor(DigitizerWithRootOutput, g4.GateDigitizerHitsCollectionActor):
+class DigitizerHitsCollectionActor(
+    DigitizerWithRootOutput, g4.GateDigitizerHitsCollectionActor
+):
     """
     Build a list of hits in a given volume.
     - the list of attributes to be stored is given in the 'attributes' options

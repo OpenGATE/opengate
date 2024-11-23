@@ -343,6 +343,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
     """Computes the deposited energy or absorbed dose in the volume to which it is attached.
     It creates a virtual voxelized scoring image, whose shape and position can be defined by the user.
     """
+
     # hints for IDE
     score_in: str
 
@@ -452,10 +453,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "edep_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "edep": {
-                    "interface_class": UserInterfaceToActorOutputImage,
-                    "item": 0
-                },
+                "edep": {"interface_class": UserInterfaceToActorOutputImage, "item": 0},
                 "edep_squared": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
@@ -466,7 +464,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                     "item": "uncertainty",
                     "active": False,
                 },
-            }
+            },
         },
         "dose_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
@@ -486,7 +484,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                     "item": "uncertainty",
                     "active": False,
                 },
-            }
+            },
         },
         "density": {
             "actor_output_class": ActorOutputSingleMeanImage,
@@ -774,13 +772,13 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
             "G4_WATER",
             {
                 "doc": "The score_in command allows to convert the LET from the material, "
-                       "which is defined in the geometry, to any user defined material. "
-                       "Note that this does not change the material definition in the geometry. "
-                       "The default value is 'material', which means that no conversion is "
-                       "performed and the LET to the local material is scored. "
-                       "You can use any material defined in the simulation "
-                       "or pre-defined by Geant4 such as 'G4_WATER', "
-                       "which may be one of the most use cases of this functionality.",
+                "which is defined in the geometry, to any user defined material. "
+                "Note that this does not change the material definition in the geometry. "
+                "The default value is 'material', which means that no conversion is "
+                "performed and the LET to the local material is scored. "
+                "You can use any material defined in the simulation "
+                "or pre-defined by Geant4 such as 'G4_WATER', "
+                "which may be one of the most use cases of this functionality.",
                 "setter_hook": _setter_hook_score_in_let_actor,
             },
         ),
@@ -815,10 +813,9 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
                     "write_to_disk": True,
                     "suffix": None,
                 },
-            }
+            },
         },
     }
-
 
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
