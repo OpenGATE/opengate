@@ -346,13 +346,14 @@ def help_on_user_info(obj):
         )
 
 
-def restore_userinfo_properties(cls, attributes):
+def restore_class(cls, attributes):
     # In the context of sub-processing and pickling,
     # the following line makes sure the class is processed by the function
     # which sets handles the user_info definitions
     # before the class is used to create a new object instance.
     # Otherwise, the new instance would lack the user_info properties.
-    process_cls(cls)
+    # process_cls(cls)
+    cls.__process_this__()
     # this is just conventional unpickling logic:
     obj = cls.__new__(cls)
     obj.__dict__.update(attributes)
@@ -541,7 +542,7 @@ class GateObject:
         """
         state_dict = self.__getstate__()
         return (
-            restore_userinfo_properties,
+            restore_class,
             (self.__class__, state_dict),
             state_dict,
         )
