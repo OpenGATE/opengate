@@ -394,7 +394,8 @@ class ActorBase(GateObject):
                     f"No entry 'actor_output_class' specified "
                     f"in ._user_output_classes for user_output {output_name}."
                 )
-            interfaces = output_config.get("interfaces", None)
+            interfaces = actor_output_class._interface_config
+            # interfaces = output_config.get("interfaces", None)
             self._add_user_output(actor_output_class, output_name)
             for interface_name, interface_config in interfaces.items():
                 interface_params = dict(
