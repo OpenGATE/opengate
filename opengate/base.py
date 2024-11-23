@@ -66,29 +66,14 @@ class MetaUserInfo(type):
 
 
 def process_cls(cls):
-    """The factory function is meant to process classes inheriting from GateObject.
-    It digests the user info parametrisation from all classes in the inheritance tree
-    and enhances the __init__ method, so it calls the __finalize_init__ method at the
-    very end of the __init__ call, which is required to check for invalid attribute setting.
+    """This factory function is meant to process classes inheriting from GateObject.
+    GateObject.__process_this__() handles the user infos of GateObjects
+    and general functionality common to GateObjects.
+    Subsets of classes, e.g. the actor classes,
+    can specialize the factoring steps in their own __process_this__() class method.
     """
-    # The class attribute inherited_user_info_defaults is exclusively set by this factory function
-    # Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
-    # it means that it has not been processed yet.
-    # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
-    # because it would potentially find the attribute from already processed super classes
-    # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
     if not cls.has_been_processed():
-        try:
-            digest_user_info_defaults(cls)
-        except AttributeError:
-            raise GateImplementationError(
-                "Looks like you are calling process_cls on a class "
-                "that does not inherit from GateObject."
-            )
-        # the class attribute known_attributes is needed by the __setattr__ method of GateObject
-        cls.known_attributes = set()
-        # enhance the __init__ method to ensure __finalize_init__ is called at the end
-        wrap_init_method(cls)
+        cls.__process_this__()
 
 
 def wrap_init_method(cls):
@@ -415,6 +400,36 @@ class GateObject:
     @classmethod
     def has_been_processed(cls):
         return "inherited_user_info_defaults" in cls.__dict__
+
+    @classmethod
+    def __process_this__(cls):
+        """Internal interface class method used e.g. by __reduce__().
+        Certain subgroups of classes, e.g. actor classes, may implement this differently
+        without the need to adapt the __reduce__()  method.
+
+        This factory method is meant to process classes inheriting from GateObject.
+        It digests the user info parametrisation from all classes in the inheritance tree
+        and enhances the __init__ method, so it calls the __finalize_init__ method at the
+        very end of the __init__ call, which is required to check for invalid attribute setting.
+        """
+        # The class attribute inherited_user_info_defaults is exclusively set by this factory function
+        # Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
+        # it means that it has not been processed yet.
+        # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
+        # because it would potentially find the attribute from already processed super classes
+        # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
+        try:
+            digest_user_info_defaults(cls)
+        except AttributeError:
+            raise GateImplementationError(
+                "Looks like you are calling process_cls on a class "
+                "that does not inherit from GateObject."
+            )
+        # the class attribute known_attributes is needed by the __setattr__ method of GateObject
+        cls.known_attributes = set()
+        cls.__doc__ = cls.__get_docstring__()
+        # enhance the __init__ method to ensure __finalize_init__ is called at the end
+        wrap_init_method(cls)
 
     def __new__(cls, *args, **kwargs):
         process_cls(cls)
