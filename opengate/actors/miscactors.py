@@ -19,7 +19,8 @@ def _setter_hook_stats_actor_output_filename(self, output_filename):
 
 
 class ActorOutputStatisticsActor(ActorOutputBase):
-    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
+    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor.
+    """
 
     # hints for IDE
     encoder: str
@@ -186,8 +187,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
-    """
-    Store statistics about a simulation run.
+    """Store statistics about a simulation run.
     """
 
     # hints for IDE
@@ -202,9 +202,15 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         ),
     }
 
+    user_output_config = {
+        "stats": {
+            "actor_output_class": ActorOutputStatisticsActor,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputStatisticsActor, "stats")
+        # self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
 
     def __initcpp__(self):
