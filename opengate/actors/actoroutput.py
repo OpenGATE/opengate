@@ -1,3 +1,5 @@
+import copy
+import inspect
 from box import Box
 from typing import Optional
 import sys
@@ -16,8 +18,26 @@ from .dataitems import (
 )
 
 
-class BaseUserInterfaceToActorOutput:
+def format_docstring_rst(cls, attr_name, begin_of_line="  - "):
+    """Format a property's docstring into a reST bullet point."""
+    attr = getattr(cls, attr_name, None)
+    if not attr:
+        raise GateImplementationError(f"Attribute {attr_name} not found in {cls}.")
 
+    docstring = inspect.getdoc(attr)
+    prop_of_func = attr_name
+    if inspect.isfunction(attr):
+        prop_of_func += "()"
+
+    if not docstring:
+        return f"{begin_of_line} **{prop_of_func}**: No description available.\n\n"
+
+    description = " ".join(line.strip() for line in docstring.splitlines())
+
+    return f"{begin_of_line} **{prop_of_func}**: {description}\n\n"
+
+
+class BaseUserInterfaceToActorOutput:
     # these attributes are known to the class
     # and should be treated differently by __getattr__() and __setattr__(),
     # namely they should be retrieved directly from __dict__
@@ -29,11 +49,21 @@ class BaseUserInterfaceToActorOutput:
         "interface_name",
         "belongs_to_actor",
         "_kwargs_for_interface_calls",
-        "__user_docstring__"
     )
 
+    @classmethod
+    def __get_docstring__(cls):
+        docstring = ""
+        docstring += format_docstring_rst(cls, "active")
+        docstring += format_docstring_rst(cls, "output_filename")
+        docstring += format_docstring_rst(cls, "write_to_disk")
+        docstring += format_docstring_rst(cls, "keep_data_per_run")
+        docstring += format_docstring_rst(cls, "get_output_path")
+        docstring += format_docstring_rst(cls, "get_data")
+        return docstring
+
     def __init__(
-        self, belongs_to_actor, user_output_name, interface_name, user_docstring=None, kwargs_for_interface_calls=None
+            self, belongs_to_actor, user_output_name, interface_name, kwargs_for_interface_calls=None, **kwargs
     ):
         # Important: we need to write the attributes directly into the __dict__ here because
         # they are set for the first time and assigning them via self.user_output_name = ...
@@ -45,7 +75,6 @@ class BaseUserInterfaceToActorOutput:
             self._kwargs_for_interface_calls = {}
         else:
             self._kwargs_for_interface_calls = kwargs_for_interface_calls
-        self.__user_docstring__ = user_docstring
 
     def __getstate__(self):
         """
@@ -60,21 +89,6 @@ class BaseUserInterfaceToActorOutput:
         # Safely remove 'belongs_to_actor' if it exists
         return_dict.pop("belongs_to_actor", None)
         return return_dict
-
-    def __get_docstring__(self):
-        begin_of_line = "* "
-        if self.__user_docstring__ is None:
-            docstring = ""
-        else:
-            docstring = self.__user_docstring__
-        docstring += (f"Output {self.interface_name} of {self.belongs_to_actor.type_name} "
-                      f"has the following default parameters: \n\n")
-        docstring += f"{begin_of_line} active = {self.active}\n"
-        docstring += f"{begin_of_line} output_filename = {self.output_filename}\n"
-        docstring += f"{begin_of_line} write_to_disk = {self.write_to_disk}\n"
-        docstring += f"{begin_of_line} keep_data_per_run = {self.keep_data_per_run}\n"
-        docstring += "\n"
-        return docstring
 
     @property
     def _user_output(self):
@@ -210,9 +224,9 @@ class BaseUserInterfaceToActorOutput:
     def __setattr__(self, item, value):
         # if item in type(self).__dict__["_known_attributes"]:
         if item in (
-            "user_output_name",
-            "belongs_to_actor",
-            "_kwargs_for_interface_calls",
+                "user_output_name",
+                "belongs_to_actor",
+                "_kwargs_for_interface_calls",
         ):
             self.__dict__[item] = value
         else:
@@ -236,6 +250,12 @@ class UserInterfaceToActorOutputUsingDataItemContainer(BaseUserInterfaceToActorO
 
 class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemContainer):
 
+    @classmethod
+    def __get_docstring__(cls):
+        docstring = super().__get_docstring__()
+        docstring += format_docstring_rst(cls, "image")
+        return docstring
+
     @property
     def image(self):
         """Shortcut to the ITK image containing the cumulative result of this actor,
@@ -257,7 +277,6 @@ def _setter_hook_belongs_to(self, belongs_to):
 
 
 class ActorOutputBase(GateObject):
-
     # hints for IDE
     belongs_to: str
     keep_data_in_memory: bool
@@ -278,8 +297,8 @@ class ActorOutputBase(GateObject):
             True,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                "Careful: Large data structures like a phase space need a lot of memory.",
+                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                       "Careful: Large data structures like a phase space need a lot of memory.",
             },
         ),
     }
@@ -291,6 +310,22 @@ class ActorOutputBase(GateObject):
                 f"This class has no _default_interface_class class attribute defined. "
             )
         return cls._default_interface_class
+
+    @classmethod
+    def get_user_info_default_values_interface(cls, **kwargs):
+        # defaults = {"keep_data_in_memory": cls.inherited_user_info_defaults["keep_data_in_memory"][0]}
+        defaults = {}
+        return defaults
+
+    @classmethod
+    def set_user_info_default_values_interface(cls, **kwargs):
+        pass
+
+    @classmethod
+    def __hook_after_factory_function__(cls, interfaces=None, **kwargs):
+        if interfaces is not None:
+            for v in interfaces.values():
+                cls.set_user_info_default_values_interface(**v)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -414,7 +449,6 @@ class ActorOutputBase(GateObject):
 
 
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
-
     # hints for IDE
     merge_data_after_simulation: bool
     keep_data_per_run: bool
@@ -433,53 +467,66 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
-        "data_item_config": (
-            Box(
-                {
-                    0: Box(
-                        {
-                            "output_filename": "auto",
-                            "write_to_disk": True,
-                            "active": True,
-                        }
-                    )
-                }
-            ),
-            {
-                "doc": "Dictionary (Box) to specify which"
-                "should be written to disk and how. "
-                "The default is picked up from the data container class during instantiation, "
-                "and can be changed by the user afterwards. "
-            },
-        ),
+        # "data_item_config": (
+        #     # Box(
+        #     #     {
+        #     #         0: Box(
+        #     #             {
+        #     #                 "output_filename": "auto",
+        #     #                 "write_to_disk": True,
+        #     #                 "active": True,
+        #     #             }
+        #     #         )
+        #     #     }
+        #     # ),
+        #     None,
+        #     {
+        #         "doc": "Dictionary (Box) to specify which"
+        #         "should be written to disk and how. "
+        #         "The default is picked up from the data container class during instantiation, "
+        #         "and can be changed by the user afterwards. "
+        #     },
+        # ),
     }
 
     # this intermediate base class defines a class attribute data_container_class,
     # but leaves it as None. Specific classes need to set it to the correct class or tuple of classes
     data_container_class = None
     _default_interface_class = UserInterfaceToActorOutputUsingDataItemContainer
+    _default_data_item_config = None
 
-    def __init__(self, *args, **kwargs):
-        # consistence check if the base class calling this __init__ implements the mandatory class attribute
-        if self.data_container_class is None:
+    @classmethod
+    def get_user_info_default_values_interface(cls, item=0, **kwargs):
+        defaults = super().get_user_info_default_values_interface(**kwargs)
+        for k, v in cls._default_data_item_config[item].items():
+            defaults[k] = v
+        return defaults
+
+    @classmethod
+    def set_user_info_default_values_interface(cls, item=0, **kwargs):
+        known_defaults = list(cls._default_data_item_config[item].keys())
+        for k in known_defaults:
+            if k in kwargs:
+                cls._default_data_item_config[item][k] = kwargs.pop(k)
+        super().set_user_info_default_values_interface(**kwargs)
+
+    @classmethod
+    def __hook_after_factory_function__(cls, interfaces=None, **kwargs):
+        if cls.data_container_class is None:
             raise GateImplementationError(
                 f"No 'data_container_class' class attribute "
-                f"specified for class {type(self)}."
+                f"specified for class {cls.__name__}."
             )
-        data_item_config = kwargs.pop("data_item_config", None)
+        # current_info_tuple = cls.inherited_user_info_defaults["data_item_config"]
+        cls._default_data_item_config = cls.data_container_class.get_default_data_item_config()
+        if interfaces is not None:
+            for k, v in interfaces.items():
+                cls._default_data_item_config[v["item"]]["suffix"] = k
+        super().__hook_after_factory_function__(interfaces=interfaces, **kwargs)
+
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if data_item_config is None:
-            # get the default write config from the container class
-            self.data_item_config = (
-                self.data_container_class.get_default_data_item_config()
-            )
-        else:
-            # set the parameters provided by the user in kwargs
-            self.data_item_config = data_item_config
-        # temporary fix to guarantee there is an 'output_filename' in data_item_config
-        for k, v in self.data_item_config.items():
-            if "output_filename" not in v:
-                v["output_filename"] = "auto"
+        self.data_item_config = copy.deepcopy(self._default_data_item_config)
 
     def initialize_cpp_parameters(self):
         items = self._collect_item_identifiers("all")
@@ -492,6 +539,11 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             self.belongs_to_actor.SetOutputPath(
                 identifier, self.get_output_path_as_string(item=h)
             )
+
+    def to_dictionary(self):
+        d = super().to_dictionary()
+        d["data_item_config"] = self.data_item_config
+        return d
 
     def _fatal_unknown_item(self, item):
         fatal(
@@ -585,7 +637,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         return items
 
     def get_output_path(
-        self, which="merged", item=0, always_return_dict=False, **kwargs
+            self, which="merged", item=0, always_return_dict=False, **kwargs
     ):
         return_dict = {}
         for i in self._collect_item_identifiers(item):
@@ -602,8 +654,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             try:
                 run_index = int(which)  # might be a run_index
                 if (
-                    run_index in self.data_per_run
-                    and self.data_per_run[run_index] is not None
+                        run_index in self.data_per_run
+                        and self.data_per_run[run_index] is not None
                 ):
                     return self.data_per_run[run_index]
                 else:
@@ -705,7 +757,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             i
             for i in self._collect_item_identifiers(item)
             if self.get_write_to_disk(item=i) is True
-            and self.get_active(item=i) is True
+               and self.get_active(item=i) is True
             # FIXME: the active is True check should not be here. self.write_data() should handle that
         ]
         self.write_data(which=which, item=items)
@@ -737,7 +789,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
-
     _default_interface_class = UserInterfaceToActorOutputImage
 
     def __init__(self, *args, **kwargs):
@@ -798,7 +849,6 @@ class ActorOutputQuotientMeanImage(ActorOutputImage):
 
 
 class ActorOutputRoot(ActorOutputBase):
-
     # hints for IDE
     output_filename: str
     write_to_disk: bool
@@ -809,9 +859,9 @@ class ActorOutputRoot(ActorOutputBase):
             "auto",
             {
                 "doc": "Filename for the data represented by this actor output. "
-                "Relative paths and filenames are taken "
-                "relative to the global simulation output folder "
-                "set via the Simulation.output_dir option. ",
+                       "Relative paths and filenames are taken "
+                       "relative to the global simulation output folder "
+                       "set via the Simulation.output_dir option. ",
             },
         ),
         "write_to_disk": (
@@ -824,9 +874,9 @@ class ActorOutputRoot(ActorOutputBase):
             False,
             {
                 "doc": "Should the data be kept in memory after the end of the simulation? "
-                "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
-                "Careful: Large data structures like a phase space need a lot of memory. \n"
-                "Warning: Feature not supported for ROOT output yet. The options is forced to False. ",
+                       "Otherwise, it is only stored on disk and needs to be re-loaded manually. "
+                       "Careful: Large data structures like a phase space need a lot of memory. \n"
+                       "Warning: Feature not supported for ROOT output yet. The options is forced to False. ",
                 "override": True,
                 "read_only": True,
             },
@@ -834,6 +884,21 @@ class ActorOutputRoot(ActorOutputBase):
     }
 
     default_suffix = "root"
+
+    @classmethod
+    def get_user_info_default_values_interface(cls, **kwargs):
+        defaults = super().get_user_info_default_values_interface(**kwargs)
+        for k in ["output_filename", "write_to_disk"]:
+            defaults[k] = cls.inherited_user_info_defaults[k][0]
+        return defaults
+
+    @classmethod
+    def set_user_info_default_values_interface(cls, **kwargs):
+        for k in ["output_filename", "write_to_disk"]:
+            if k in kwargs:
+                current_default_tuple = cls.inherited_user_info_defaults[k]
+                cls.inherited_user_info_defaults[k] = (kwargs.pop(k), current_default_tuple[1])
+        super().set_user_info_default_values_interface(**kwargs)
 
     def get_output_path(self, *args, **kwargs):
         if "which" in kwargs and kwargs["which"] != "merged":
