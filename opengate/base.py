@@ -191,17 +191,6 @@ def digest_user_info_defaults(cls):
     cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
 
-    if cls.__doc__ is not None:
-        docstring = cls.__doc__
-        docstring += "\n\n"
-    else:
-        docstring = ""
-    cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
-    docstring += cls.__user_info_doc__
-    # docstring += 20 * "*"
-    docstring += "\n"
-    cls.__doc__ = docstring
-
     return cls
 
 
@@ -346,18 +335,6 @@ def make_docstring_for_user_info(name, default_value, options):
     return docstring
 
 
-def make_docstring(cls, user_info_defaults):
-    docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
-    for k, v in sorted(user_info_defaults.items()):
-        default_value = v[0]
-        options = v[1]
-        docstring += "* "
-        docstring += make_docstring_for_user_info(k, default_value, options)
-        docstring += "\n"
-    docstring += "\n"
-    return docstring
-
-
 def help_on_user_info(obj):
     if hasattr(obj, "__user_info_doc__"):
         print(obj.__user_info_doc__)
@@ -396,6 +373,34 @@ class GateObject:
     inherited_user_info_defaults: dict
 
     user_info_defaults = {"name": (None, {"required": True})}
+
+    @classmethod
+    def __get_user_info_docstring__(cls):
+        line = f"The class {cls.__qualname__} has the following user input parameters and default values:"
+        underline = "~" * len(line)
+        docstring = f"{line}\n{underline}\n\n"
+        # docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
+        for k, v in sorted(cls.inherited_user_info_defaults.items()):
+            default_value = v[0]
+            options = v[1]
+            docstring += "* "
+            docstring += make_docstring_for_user_info(k, default_value, options)
+            docstring += "\n"
+        docstring += "\n"
+        return docstring
+
+    @classmethod
+    def __get_docstring__(cls):
+        if cls.__doc__ is not None:
+            docstring = cls.__doc__
+            docstring += "\n\n"
+        else:
+            docstring = ""
+        cls.__user_info_doc__ = cls.__get_user_info_docstring__()
+        docstring += cls.__user_info_doc__
+        # docstring += 20 * "*"
+        docstring += "\n"
+        return docstring
 
     @classmethod
     def has_been_processed(cls):
