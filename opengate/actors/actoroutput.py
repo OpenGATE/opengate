@@ -82,6 +82,8 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def active(self):
+        """Should the actor consider and score this output?
+        """
         try:
             return self._user_output.get_active(**self._kwargs_for_interface_calls)
         except NotImplementedError:
@@ -91,20 +93,31 @@ class BaseUserInterfaceToActorOutput:
     def active(self, value):
         self._user_output.set_active(value, **self._kwargs_for_interface_calls)
 
-    def get_output_path(self, **kwargs):
+    def get_output_path(self, which="merged", **kwargs):
+        """Get the path (absolute) where GATE stores this output.
+        Use the argument 'which' to specify whether you refer to the cumulative output
+        of the entire simulation (which='merged'), or to a specific run,
+        e.g. which=2 for run index 2 (run indices start at 0).
+        """
         kwargs.update(self._kwargs_for_interface_calls)
-        return self._user_output.get_output_path(**kwargs)
+        return self._user_output.get_output_path(which=which, **kwargs)
 
     def get_run_indices(self, **kwargs):
         kwargs.update(self._kwargs_for_interface_calls)
         return self._user_output.get_run_indices(**kwargs)
 
-    def get_data(self, **kwargs):
+    def get_data(self, which='merged', **kwargs):
+        """Get the data stored in this output, e.g. an ITK image.
+        Use the argument 'which' to specify whether you refer to the cumulative output
+        of the entire simulation (which='merged'), or to a specific run,
+        e.g. which=2 for run index 2 (run indices start at 0).
+        """
         kwargs.update(self._kwargs_for_interface_calls)
         return self._user_output.get_data(**kwargs)
 
     @property
     def write_to_disk(self):
+        """Should this output be stored on disk?"""
         try:
             return self._user_output.get_write_to_disk(
                 **self._kwargs_for_interface_calls
@@ -118,6 +131,11 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def output_filename(self):
+        """Output filename used for this output.
+        An automatic suffix is appended for per-run data.
+        You can also specify a relative path, i.e. relative to the simulation's output directory,
+        e.g. output_file = Path('dose_output') / 'patient_dose.mhd'.
+        """
         try:
             return self._user_output.get_output_filename(
                 **self._kwargs_for_interface_calls
@@ -131,6 +149,9 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def keep_data_per_run(self):
+        """Should data be kept in memory for individual runs? If False, only the cumulative data is kept.
+        Note: Not every kind of user output supports this, e.g. ROOT output cannot per stored on a per-run basis.
+        """
         try:
             return self._user_output.get_keep_data_per_run(
                 **self._kwargs_for_interface_calls
@@ -144,6 +165,10 @@ class BaseUserInterfaceToActorOutput:
 
     @property
     def item_suffix(self):
+        """Specify the automatic suffix to be used for this output in case the output_filename is set
+        via the actor for all output handled by the actor.
+        The default item suffix is equal to the output name and there should be no need to change it.
+        """
         try:
             return self._user_output.get_item_suffix(**self._kwargs_for_interface_calls)
         except NotImplementedError:
@@ -213,6 +238,11 @@ class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemCon
 
     @property
     def image(self):
+        """Shortcut to the ITK image containing the cumulative result of this actor,
+        e.g. the dose scored over the entire simulation. If you need to get the image
+        corresponding to a certain run, use get_data(which=RUN_INDEX).
+        For example: get_data(which=3) to get the image from run 3 (run indices start at 0).
+        """
         return self._user_output.get_data(**self._kwargs_for_interface_calls)
 
 
