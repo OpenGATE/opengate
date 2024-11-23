@@ -176,7 +176,7 @@ plane from -X to -Y.
       source.direction.histogram_theta_weights = [1]
       source.direction.histogram_theta_angles = [80 * deg, 100 * deg]
       source.direction.histogram_phi_weights = [0.3, 0.5, 1, 0.5, 0.3]
-      source.direction.histogram_phi_angles = [ 60 * deg, 70 * deg, 80 * deg, 100 * deg, 110 * deg, 120 * deg]
+      source.direction.histogram_phi_angles = [60 * deg, 70 * deg, 80 * deg, 100 * deg, 110 * deg, 120 * deg]
 
 See figure below, left:
 
@@ -184,8 +184,8 @@ See figure below, left:
 
     # Example A
     source.direction.type = "histogram"
-    source.direction.histogram_phi_angle = [70 * deg, 110 * deg]
-    source.direction.histogram_phi_weight = [0, 1]
+    source.direction.histogram_phi_angles = [70 * deg, 110 * deg]
+    source.direction.histogram_phi_weights = [1]
 
 
 See figure below, right:
@@ -194,8 +194,8 @@ See figure below, right:
 
     # Example B
     source.direction.type = "histogram"
-    source.direction.histogram_phi_angle = [70 * deg, 80 * deg, 90* deg, 100 * deg, 110 * deg]
-    source.direction.histogram_phi_weight = [0, 1, 0, 1, 0]
+    source.direction.histogram_phi_angles = [70 * deg, 80 * deg, 90 * deg, 100 * deg, 110 * deg]
+    source.direction.histogram_phi_weights = [1, 0, 1, 0]
 
 
 .. image:: ../figures/generic_source_direction_histogram_a.png
@@ -334,7 +334,7 @@ Several spectra are provided through the `get_rad_gamma_spectrum` function:
 
 .. code:: python
 
-   spectrum = gate.sources.generic.get_rad_gamma_spectrum("Lu177")
+   spectrum = gate.sources.base.get_rad_gamma_spectrum("Lu177")
 
 
 The source can be configured like this:
@@ -373,7 +373,7 @@ This data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDeca
 
 .. code:: python
 
-   spectrum = gate.sources.generic.get_rad_beta_spectrum("Lu177")
+   spectrum = gate.sources.base.get_rad_beta_spectrum("Lu177")
 
 The source can be configured like this:
 

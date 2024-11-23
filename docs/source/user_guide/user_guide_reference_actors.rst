@@ -56,6 +56,29 @@ Reference
 
 
 
+KillActor
+---------
+
+Description
+~~~~~~~~~~~
+
+The KillActor enables the user to "kill", i.e. to stop this particle tracking, during its first step in a defined volume where this actor is attached.
+The number of killed particle can be retrieved printing the actor object.
+
+.. code-block:: python
+
+    kill_actor = sim.add_actor("KillActor", "KillAct")
+    kill_actor.attached_to = kill_plane
+    print(kill_actor)
+
+Refers tot the test064 for more details.
+
+Reference
+~~~~~~~~~
+.. autoclass:: opengate.actors.miscactors.KillActor
+
+=======
+
 DoseActor
 ---------
 
@@ -89,11 +112,12 @@ Like any image, the output dose map will have an origin, spacing and orientation
 .. image:: ../figures/image_coord_system.png
 
 Several tests depict the usage of DoseActor: test008, test009, test021, test035, etc.
+The following would translate and rotate the scored image:
 
 .. code-block:: python
 
-Following would translate and rotate the scoring image:
    from scipy.spatial.transform import Rotation
+   mm = gate.g4_units.mm
    dose_act_obj.translation = [2 * mm, 3 * mm, -2 * mm]
    dose_act_obj.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
@@ -146,7 +170,29 @@ Description
 ~~~~~~~~~~~
 
 This is a variant of the normal :class:`~.opengate.actors.doseactors.DoseActor` which scores dose due to low energy gammas in another way, namely via the track length in the given voxel. Most options as well as the output are identical to the :class:`~.opengate.actors.doseactors.DoseActor`.
+It is based on the work of `Baldacci et al., 2014 <https://doi.org/10.1016/j.zemedi.2014.04.001>`_. It is designed to model a photon population instead of treating each photon as a single particle. This approach enables efficient and accurate dose calculation by enabling a multiple energy deposition by a single photon.
 
+**How It Works**
+During a step, where a typical photon would interact and deposit its energy stochastically, a TLE photon deposits dose based on the material's mass energy-absorption coefficient (`μ_en`) and the step length. This method implies a local dose deposition at the voxel scale, even though secondary electrons are emitted. This actor indeed do not interfer with the GEANT4 tracking.
+
+Since the database does not take into account the radiative part during the TLE energy deposition calculation, this method is applied to all photons, whether originating from the primary source or from secondary radiative processes. This approach offers a computationally efficient alternative to traditional dose calculation methods.
+
+**Energy Threshold Option**
+A novel feature of the TLE actor is the ability to activate or deactivate the TLE mechanism based on a user-defined energy threshold. This provides flexibility in simulations, allowing users to tailor the behavior of the TLE actor according to the energy ranges of interest.
+
+Here is the a classical way to use the TLEDoseActor :
+
+.. code-block:: python
+
+   tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
+   tle_dose_actor.output_filename = "my_output.mhd"
+   tle_dose_actor.attached_to = irradiated_volume.name
+   tle_dose_actor.dose.active = True
+   tle_dose_actor.dose_uncertainty.active = True
+   tle_dose_actor.size = [200, 200, 200]
+   tle_dose_actor.spacing = [x / y for x, y in zip(irradiated_volume.size, tle_dose_actor.size)]
+
+Refer to test081 for more details.
 
 Reference
 ~~~~~~~~~
@@ -564,6 +610,38 @@ The associated publication is:
 .. autoclass:: opengate.actors.arfactors.ARFTrainingDatasetActor
 .. autoclass:: opengate.actors.arfactors.ARFActor
 
+LETActor
+--------
+
+.. note::
+   Documentation TODO. Refer to test050 for current examples.
+
+
+BremSplittingActor
+---------------------
+
+
+Description
+~~~~~~~~~
+
+This actor replicates the behaviour of the bremsstrahlung splitting which can be used using GEANT4 command line.
+When an electron or a positron occurs a bremsstrahlung process, the interaction is split in splitting_factor particles, with
+a weight of 1/splitting_factor.
+
+.. code-block:: python
+
+    nb_split = 100
+    brem_splitting_actor = sim.add_actor("BremSplittingActor", "eBremSplittingW")
+    brem_splitting_actor.attached_to = W_tubs.name
+    brem_splitting_actor.splitting_factor = nb_split
+    brem_splitting_actor.particles = "e-", "e+"
+
+To be noted that the GEANT4 command line is a more straightforward way to obtain the same result.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.miscactors.BremSplittingActor
 
 ComptonSplittingActor
 ---------------------
@@ -572,10 +650,6 @@ Description
 ~~~~~~~~~~~
 
 This actor generates N particles with reduced weight whenever a Compton process occurs. The options include:
-
-- **splitting factor**: Number of splits.
-- **Russian Roulette**: Option for selective elimination based on angle and probability.
-- **Minimum Track Weight**: Avoids splitting very low-weight particles.
 
 .. code-block:: python
 
