@@ -622,7 +622,7 @@ BremSplittingActor
 
 
 Description
-~~~~~~~~~
+~~~~~~~~~~~
 
 This actor replicates the behaviour of the bremsstrahlung splitting which can be used using GEANT4 command line.
 When an electron or a positron occurs a bremsstrahlung process, the interaction is split in splitting_factor particles, with
@@ -674,16 +674,3 @@ Reference
 
 .. autoclass:: opengate.actors.miscactors.ComptSplittingActor
 
-
-BremSplittingActor
-------------------
-
-Description
-~~~~~~~~~~~
-
-Similar to :class:`~.opengate.actors.miscactors.ComptSplittingActor`
-
-Reference
-~~~~~~~~~
-
-.. autoclass:: opengate.actors.miscactors.BremSplittingActor
