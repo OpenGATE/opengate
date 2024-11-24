@@ -227,21 +227,21 @@ class DigitizerBase(ActorBase):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(self, *args, **kwargs)
 
-    def _add_user_output_root(self, **kwargs):
-        """Specialized method to add a root user output in digitizers.
-        The output name is hard-coded at the class-level and the same for all digitizers,
-        i.e. in all digitizers, the user can do:
-        digitizer.user_output.root_output
-        Additionally, the C++ classes expect an output with this name.
-        """
-
-        if self._output_name_root in self.user_output:
-            fatal(
-                f"The actor '{self.name}' already has a user_output called '{self._output_name_root}'."
-                f"Probably, the method _add_user_output_root() was called more than once, "
-                f"while it can be used only to add a single root output as in most digitizers. "
-            )
-        return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
+    # def _add_user_output_root(self, **kwargs):
+    #     """Specialized method to add a root user output in digitizers.
+    #     The output name is hard-coded at the class-level and the same for all digitizers,
+    #     i.e. in all digitizers, the user can do:
+    #     digitizer.user_output.root_output
+    #     Additionally, the C++ classes expect an output with this name.
+    #     """
+    #
+    #     if self._output_name_root in self.user_output:
+    #         fatal(
+    #             f"The actor '{self.name}' already has a user_output called '{self._output_name_root}'."
+    #             f"Probably, the method _add_user_output_root() was called more than once, "
+    #             f"while it can be used only to add a single root output as in most digitizers. "
+    #         )
+    #     return self._add_user_output(ActorOutputRoot, self._output_name_root, **kwargs)
 
     def initialize(self):
         ActorBase.initialize(self)
