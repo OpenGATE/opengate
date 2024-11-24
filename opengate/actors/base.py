@@ -192,7 +192,7 @@ class ActorBase(GateObject):
         Only used by GATE internally.
         """
         new_class_name = f"{output_class.__name__}_{output_name}_{cls.__name__}"
-        extra_attributes = {"_interface_config": interfaces}
+        extra_attributes = {"__interfaces__": interfaces}
         new_class = type(new_class_name, (output_class,), extra_attributes)
         return new_class
 
@@ -397,16 +397,19 @@ class ActorBase(GateObject):
             )
 
     def _init_user_output_instance(self):
-        for output_name, output_config in self.user_output_config.items():
+        for output_name, actor_output_class in self._user_output_classes.items():
+            # try:
+            #     actor_output_class = self._user_output_classes[output_name]
+            # except KeyError:
+            #     raise GateImplementationError(
+            #         f"In actor {self.type_name}: "
+            #         f"No entry 'actor_output_class' specified "
+            #         f"in ._user_output_classes for user_output {output_name}."
+            #     )
             try:
-                actor_output_class = self._user_output_classes[output_name]
-            except KeyError:
-                raise GateImplementationError(
-                    f"In actor {self.type_name}: "
-                    f"No entry 'actor_output_class' specified "
-                    f"in ._user_output_classes for user_output {output_name}."
-                )
-            interfaces = actor_output_class._interface_config
+                interfaces = actor_output_class.__interfaces__
+            except AttributeError:
+                raise GateImplementationError(f"Special variable __interfaces__ not filled in actor output class {actor_output_class}. ")
             # interfaces = output_config.get("interfaces", None)
             self._add_user_output(actor_output_class, output_name)
             for interface_name, interface_config in interfaces.items():
