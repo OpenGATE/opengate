@@ -369,6 +369,9 @@ class ActorOutputBase(GateObject):
 
     @property
     def belongs_to_actor(self):
+        if self.simulation is None:
+            fatal("Cannot determine the actor to which this output belongs. "
+                  "Probably, the actor has not yet been added to a simulation. ")
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def initialize(self):
