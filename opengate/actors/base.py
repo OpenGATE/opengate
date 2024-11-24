@@ -419,7 +419,9 @@ class ActorBase(GateObject):
                 try:
                     interface_class = interface_params.pop("interface_class")
                 except KeyError:
-                    raise GateImplementationError
+                    raise GateImplementationError(f"Incorrectly configured interface {interface_name} "
+                                                  f"for actor output {output_name}"
+                                                  f"in {self.type_name}: No 'interface_class' specified. ")
                 self._add_interface_to_user_output(
                     interface_class, output_name, interface_name, **interface_params
                 )
