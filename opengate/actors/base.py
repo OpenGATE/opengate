@@ -430,7 +430,6 @@ class ActorBase(GateObject):
         self,
         actor_output_class,
         name,
-        automatically_generate_interface=True,
         **kwargs,
     ):
         """Method to be called internally (not by user) in the specific actor class implementations."""
@@ -449,13 +448,6 @@ class ActorBase(GateObject):
             belongs_to=self,
             **kwargs,
         )
-
-        if automatically_generate_interface is True:
-            self._add_interface_to_user_output(
-                actor_output_class.get_default_interface_class(), name, name
-            )
-
-        return self.user_output[name]
 
     def _add_interface_to_user_output(
         self, interface_class, user_output_name, interface_name, **kwargs
