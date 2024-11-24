@@ -148,14 +148,15 @@ class ActorBase(GateObject):
                     f"No entry 'actor_output_class' specified "
                     f"in user_output_config for user_output {output_name}."
                 )
-            interfaces = output_config.get("interfaces", None)
 
             # default to "auto" if output_config has no key "interfaces"
             interfaces = output_config.get("interfaces", "auto")
             # no interfaces defined -> generate one automatically
-            if interfaces is None:
+            # if the GATE developer has not defined any interfaces, we create one automatically
+            if interfaces == "auto":
+                interface_name = output_name  # use the output name as interface name
                 interfaces = {
-                    output_name: {
+                    interface_name: {
                         "interface_class": actor_output_class.get_default_interface_class()
                     }
                 }
@@ -168,8 +169,8 @@ class ActorBase(GateObject):
                         if k not in ("actor_output_class", "interfaces")
                     ]
                 )
-                interfaces[output_name].update(config_for_auto_interface)
-                interfaces[output_name]["item"] = 0
+                config_for_auto_interface["item"] = 0
+                interfaces[interface_name].update(config_for_auto_interface)
             cls._user_output_classes[output_name] = cls.make_actor_output_class(
                 actor_output_class, output_name, interfaces
             )
