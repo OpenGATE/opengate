@@ -133,8 +133,11 @@ class ActorBase(GateObject):
     def __process_this__(cls):
         """This is a specialized version of the class method __process_this__ for actor classes."""
         super().__process_this__()
+
+        # reset these class attribute before processing the class:
         cls._user_output_classes = {}
         cls._existing_properties_to_interfaces = []
+
         for output_name, output_config in cls.user_output_config.items():
             # if output_name not in cls._user_output_classes:
             try:
@@ -143,9 +146,12 @@ class ActorBase(GateObject):
                 raise GateImplementationError(
                     f"In actor {cls.__name__}: "
                     f"No entry 'actor_output_class' specified "
-                    f"in _user_output_config for user_output {output_name}."
+                    f"in user_output_config for user_output {output_name}."
                 )
             interfaces = output_config.get("interfaces", None)
+
+            # default to "auto" if output_config has no key "interfaces"
+            interfaces = output_config.get("interfaces", "auto")
             # no interfaces defined -> generate one automatically
             if interfaces is None:
                 interfaces = {
@@ -153,6 +159,8 @@ class ActorBase(GateObject):
                         "interface_class": actor_output_class.get_default_interface_class()
                     }
                 }
+                # pick up parameters from the output config (where the GATE developer might have put them)
+                # and add them to the interface config
                 config_for_auto_interface = dict(
                     [
                         (k, v)
@@ -165,6 +173,9 @@ class ActorBase(GateObject):
             cls._user_output_classes[output_name] = cls.make_actor_output_class(
                 actor_output_class, output_name, interfaces
             )
+            # call the hook (class) method on the newly created actor output class
+            # to set the defaults as specified in the user_output_config class attribute of this actor class.
+            # The defaults are picked up from the interfaces dictionary, where the GATE developer should have set them.
             cls._user_output_classes[output_name].__hook_after_factory_function__(
                 interfaces=interfaces
             )
