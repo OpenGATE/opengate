@@ -81,7 +81,7 @@ if __name__ == "__main__":
     )
 
     # with acceptance angle (?) # FIXME
-    sources = sim.source_manager.user_info_sources
+    sources = sim.source_manager.sources
     for source in sources.values():
         source.particle = "e+"
         source.energy.type = "Ga68"

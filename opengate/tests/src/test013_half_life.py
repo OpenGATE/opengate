@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.sources.base import get_rad_yield
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test013_hl")
@@ -49,7 +50,7 @@ if __name__ == "__main__":
 
     # source ion
     ion_src = sim.add_source("GenericSource", "ion_source")
-    ion_src.mother = wb1.name
+    ion_src.attached_to = wb1.name
     ion_src.particle = "ion 9 18"  # F18
     ion_src.position.type = "sphere"
     ion_src.position.radius = 10 * mm
@@ -61,14 +62,14 @@ if __name__ == "__main__":
 
     # source e+
     beta_src = sim.add_source("GenericSource", "beta+_source")
-    beta_src.mother = wb2.name
+    beta_src.attached_to = wb2.name
     beta_src.particle = "e+"
     beta_src.position.type = "sphere"
     beta_src.position.radius = 10 * mm
     beta_src.energy.type = "F18"
     beta_src.direction.type = "iso"
     beta_src.half_life = hl
-    total_yield = gate.sources.generic.get_rad_yield("F18")
+    total_yield = get_rad_yield("F18")
     print(f"{total_yield=}")
     beta_src.activity = activity * total_yield
 

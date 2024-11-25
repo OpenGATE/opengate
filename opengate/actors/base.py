@@ -105,7 +105,7 @@ class ActorBase(GateObject):
         "filters_boolean_operator": (
             "and",
             {
-                "doc": "Boolean operator to join the filters of this actor. ",
+                "doc": "Boolean operator to join multiple filters of this actor. ",
                 "allowed_values": (
                     "and",
                     "or",
@@ -148,14 +148,6 @@ class ActorBase(GateObject):
             v.belongs_to_actor = self
         self.__initcpp__()
         self.__update_interface_properties__()
-
-    # def __finalize_init__(self):
-    #     super().__finalize_init__()
-    #     # The following attributes exist. They are declared here to avoid warning
-    #     # fFilters is not known here because ActorBase does not inherit from a cpp counterpart.
-    #     self.known_attributes.add("fFilters")
-    #     # output_filename is a property
-    #     self.known_attributes.add("output_filename")
 
     def configure_like(self, other_obj):
         super().configure_like(other_obj)
@@ -225,6 +217,16 @@ class ActorBase(GateObject):
     def write_to_disk(self, write_to_disk):
         for k, v in self.interfaces_to_user_output.items():
             v.write_to_disk = write_to_disk
+
+    @property
+    @shortcut_for_single_output_actor
+    def keep_data_per_run(self):
+        return list(self.interfaces_to_user_output.values())[0].keep_data_per_run
+
+    @keep_data_per_run.setter
+    def keep_data_per_run(self, keep_data_per_run):
+        for k, v in self.interfaces_to_user_output.items():
+            v.keep_data_per_run = keep_data_per_run
 
     def get_output_path(self, name=None, **kwargs):
         if name is not None:

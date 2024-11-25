@@ -7,6 +7,7 @@ import uproot
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.sources.base import compute_bins_density, get_rad_yield
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test031")
@@ -43,7 +44,7 @@ if __name__ == "__main__":
         x = data[:, 0]  # energy E(keV)
         y = data[:, 1]  # proba  dNtot/dE b+
         # normalize taking into account the bins density
-        dx = gate.sources.generic.compute_bins_density(x)
+        dx = compute_bins_density(x)
         s = (y * dx).sum()
         y = y / s
         ax1.plot(x, y, label=rad, color=rad_color[rad])
@@ -80,7 +81,7 @@ if __name__ == "__main__":
         si = len(rads)
         add_box(si)
         source = sim.add_source("GenericSource", f"source_{rad}")
-        source.mother = f"b{si}"
+        source.attached_to = f"b{si}"
         source.particle = "e+"
         source.energy.type = f"{rad}"
         source.position.type = "point"
@@ -89,7 +90,7 @@ if __name__ == "__main__":
             WARNING
             with real simulation, the activity should be weighted by the total yield !
         """
-        total_yield = gate.sources.generic.get_rad_yield(rad)
+        total_yield = get_rad_yield(rad)
         source.activity = activity  # * total_yield  <--- this should be taken into account in real simulation
         yi = rad_yields[rad]
         t = (total_yield - yi) / yi < tol

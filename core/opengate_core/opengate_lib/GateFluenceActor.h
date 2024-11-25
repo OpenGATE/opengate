@@ -25,7 +25,7 @@ public:
 
   void InitializeCpp() override;
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   // Function called every step in attached volume
   // This where the scoring takes place

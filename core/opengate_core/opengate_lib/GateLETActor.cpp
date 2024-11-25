@@ -36,9 +36,9 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("EndSimulationAction");
 }
 
-void GateLETActor::InitializeUserInput(py::dict &user_info) {
+void GateLETActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
 
   fAveragingMethod = DictGetStr(user_info, "averaging_method");
   fScoreIn = DictGetStr(user_info, "score_in");

@@ -3,6 +3,7 @@
 
 from test053_phid_helpers1 import *
 import os
+import opengate_core as g4
 
 paths = get_default_test_paths(__file__, "", output_folder="test053")
 
@@ -13,15 +14,14 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     mm = g4_units.mm
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
     n_threads = int(os.cpu_count() / 2)
     if os.name == "nt":
         n_threads = 1
-    ui.number_of_threads = n_threads
-    ui.visu = False
-    ui.random_seed = 123654
+    sim.number_of_threads = n_threads
+    sim.visu = False
+    sim.random_seed = 123654
 
     # world size
     world = sim.world
@@ -78,7 +78,7 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     sec = g4_units.second
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
-    activity = activity_in_Bq * Bq / sim.user_info.number_of_threads
+    activity = activity_in_Bq * Bq / sim.number_of_threads
     s1 = sim.add_source("GenericSource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
@@ -87,7 +87,6 @@ def add_source_generic(sim, z, a, activity_in_Bq=1000):
     s1.direction.type = "iso"
     s1.activity = activity
     s1.half_life = nuclide.half_life("s") * sec
-    print(f"{s1.name = }")
     print(f"Half Life is {s1.half_life / sec:.2f} sec")
 
     return s1
@@ -99,7 +98,7 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
     # sources
-    activity = activity_in_Bq * Bq / sim.user_info.number_of_threads
+    activity = activity_in_Bq * Bq / sim.number_of_threads
     s1 = sim.add_source("PhotonFromIonDecaySource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
@@ -115,7 +114,14 @@ def add_source_model(sim, z, a, activity_in_Bq=1000):
 
 
 def compare_root_energy(
-    root_ref, root_model, start_time, end_time, model_index=130, tol=0.008, erange=None
+    root_ref,
+    root_model,
+    start_time,
+    end_time,
+    model_index=130,
+    tol=0.008,
+    erange=None,
+    n_tol=0.15,
 ):
     # read root ref
     print(root_ref)
@@ -152,6 +158,16 @@ def compare_root_energy(
 
     k = "KineticEnergy"
     is_ok = compare_branches_values(ref_g[k], tree[k], k, k, tol=tol)
+
+    # compare nb
+    r = np.fabs(len(ref_g) - tree.num_entries) / len(ref_g)
+    b = r < n_tol
+    print()
+    print_test(
+        b,
+        f"Numbers of entries {tree.num_entries} vs {len(ref_g)} -> {r*100:.2f}% (tol={n_tol*100}%)",
+    )
+    is_ok = is_ok and b
 
     # plot histo
     keV = g4_units.keV

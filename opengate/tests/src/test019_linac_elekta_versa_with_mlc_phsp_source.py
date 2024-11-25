@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    world.size = [2 * m, 2 * m, 2.1 * m]
     world.material = "G4_Galactic"
     a = np.array([0])
 
@@ -109,16 +109,15 @@ if __name__ == "__main__":
     linac.material = "G4_Galactic"
 
     # jaws
-    if sim.visu:
-        jaws = versa.add_jaws_visu(sim, linac.name)
-    else:
-        jaws = versa.add_jaws(sim, linac.name)
+    jaws = versa.add_jaws(sim, linac.name)
 
     # mlc
     mlc = versa.add_mlc(sim, linac.name)
+    mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
+    mlc_box.material = "G4_Galactic"
     x_field = np.random.randint(10, 20, 1)[0] * cm
     y_field = np.random.randint(10, 20, 1)[0] * cm
-    versa.set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad)
+    versa.set_rectangular_field(mlc, jaws, x_field, y_field, sad)
 
     # add alpha source
     plan = versa.add_phase_space_plane(sim, linac.name, 300)

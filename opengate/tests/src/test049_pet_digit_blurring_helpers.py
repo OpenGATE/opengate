@@ -12,6 +12,7 @@ from test037_pet_hits_singles_helpers import (
 )
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
+from opengate.sources.base import get_rad_yield
 
 paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur", "test049")
 
@@ -53,7 +54,7 @@ def create_simulation(sim, threads=1, singles_name="Singles", fname_suffix=""):
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
-    total_yield = gate.sources.generic.get_rad_yield("F18")
+    total_yield = get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
     source.activity = 1787.914158 * MBq * total_yield / sim.number_of_threads
@@ -75,7 +76,7 @@ def create_simulation(sim, threads=1, singles_name="Singles", fname_suffix=""):
     sim.user_hook_after_init = check_production_cuts
 
 
-def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
+def check_root_hits(the_paths, nb, ref_hits_output, hits_output, png_output="auto"):
     if png_output == "auto":
         png_output = f"test037_test{nb}_hits.png"
     # check phsp (new version)
@@ -89,7 +90,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
     p2 = utility.root_compare_param_tree(hits_output, "Hits", k2)
     # p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p1.scaling[p1.the_keys.index("time")] = 1e9  # time in ns
-    p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
+    p = utility.root_compare_param(p1.the_keys, the_paths.output / png_output)
     p.hits_tol = 6  # % tolerance (including the edep zeros)
     p.tols[k1.index("posX")] = 12
     p.tols[k1.index("posY")] = 13
@@ -102,7 +103,7 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
 
 
 def check_root_singles(
-    paths, v, ref_singles_output, singles_output, sname="Singles", png_output="auto"
+    the_paths, v, ref_singles_output, singles_output, sname="Singles", png_output="auto"
 ):
     if png_output == "auto":
         png_output = f"test037_test{v}_singles.png"
@@ -117,7 +118,7 @@ def check_root_singles(
     p2 = utility.root_compare_param_tree(singles_output, sname, k2)
     # p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p1.scaling[p1.the_keys.index("time")] = 1e9  # time in ns
-    p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
+    p = utility.root_compare_param(p1.the_keys, the_paths.output / png_output)
     p.hits_tol = 5  # % tolerance (including the edep zeros)
     p.tols[k1.index("globalPosX")] = 8
     p.tols[k1.index("globalPosY")] = 5

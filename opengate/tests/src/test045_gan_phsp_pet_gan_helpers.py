@@ -303,7 +303,7 @@ def add_analytical_source(sim, p):
         [p.ac, p.ac, p.ac, p.ac, p.ac, p.ac],  # in BqmL
         verbose=True,
     )
-    sources = sim.source_manager.user_info_sources
+    sources = sim.source_manager.sources
     for source in sources.values():
         source.particle = "e+"
         source.energy.type = p.radionuclide
@@ -347,8 +347,8 @@ def add_voxelized_source(sim, p):
     ac = ac * Bq
 
     # source
-    source = sim.add_source("VoxelsSource", "vox")
-    source.mother = "iec"
+    source = sim.add_source("VoxelSource", "vox")
+    source.attached_to = "iec"
     source.particle = "e+"
     source.energy.type = p.radionuclide
     source.activity = ac

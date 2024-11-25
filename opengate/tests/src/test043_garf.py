@@ -93,7 +93,10 @@ if __name__ == "__main__":
     s1.activity = s1a
     s2.activity = s2a
     s3.activity = s3a
-    sim.run(False)
+    # FIXME does not work if first in new process and second in same process
+    # this seems related to ARFActor::EndOfRunActionMasterThread with itk CastImageFilter
+    # sim.run(False)
+    sim.run(True)
 
     # print results at the end
     print(stat)

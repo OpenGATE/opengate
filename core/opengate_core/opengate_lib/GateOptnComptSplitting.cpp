@@ -81,7 +81,8 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
     // splitting low weights particles.
 
     if ((fSplittingFactor == 1 && fRussianRoulette == false) ||
-        track->GetWeight() < fWeightThreshold)
+        (track->GetWeight() < fMinWeightOfParticle &&
+         fRussianRoulette == false))
       return processFinalState;
 
     castedProcessInitFinalState = (G4ParticleChangeForGamma *)processFinalState;

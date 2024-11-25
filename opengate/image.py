@@ -333,16 +333,16 @@ def divide_itk_images(
     return imgarrOut
 
 
-def sum_itk_images(images):
-    image_type = type(images[0])
-    add_image_filter = itk.AddImageFilter[image_type, image_type, image_type].New()
-    output = images[0]
-    for img in images[1:]:
-        add_image_filter.SetInput1(output)
-        add_image_filter.SetInput2(img)
-        add_image_filter.Update()
-        output = add_image_filter.GetOutput()
-    return output
+def sum_itk_images(itk_image_list):
+    if not itk_image_list:
+        raise ValueError("The image list is empty.")
+    summed_image = itk.GetArrayFromImage(itk_image_list[0])
+    for itk_image in itk_image_list[1:]:
+        array = itk.GetArrayFromImage(itk_image)
+        summed_image = np.add(summed_image, array)
+    image = itk.GetImageFromArray(summed_image)
+    image.CopyInformation(itk_image_list[0])
+    return image
 
 
 def multiply_itk_images(images):

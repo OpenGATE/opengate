@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import SimpleITK as sitk
+import itk
 import numpy as np
 import opengate as gate
 from matplotlib import pyplot as plt
@@ -36,6 +36,18 @@ def add_waterbox(sim):
     high_density_box.material = "G4_Pyrex_Glass"  # density is around 2.23
     high_density_box.color = [1, 0, 0, 1]
 
+    return waterbox
+
+
+def add_simple_waterbox(sim):
+    # units
+    cm = gate.g4_units.cm
+
+    # waterbox
+    waterbox = sim.add_volume("Box", "waterbox")
+    waterbox.size = [30 * cm, 30 * cm, 30 * cm]
+    waterbox.material = "G4_WATER"
+    waterbox.color = [0, 0, 1, 1]
     return waterbox
 
 
@@ -159,10 +171,10 @@ def mean_rel_diff(arr1, arr2, i1, i2, spacing, ax, tol):
 
 
 def compare_pdd(f1, f2, spacing, ax, tol, offset=0):
-    img1 = sitk.ReadImage(f1)
-    img2 = sitk.ReadImage(f2)
-    img1_arr = sitk.GetArrayFromImage(img1)
-    img2_arr = sitk.GetArrayFromImage(img2)
+    img1 = itk.imread(f1)
+    img2 = itk.imread(f2)
+    img1_arr = itk.GetArrayFromImage(img1)
+    img2_arr = itk.GetArrayFromImage(img2)
     s = img1_arr.shape
     img1_arr = img1_arr[:, int(s[1] / 2), int(s[2] / 2) + offset]
     img2_arr = img2_arr[:, int(s[1] / 2), int(s[2] / 2) + offset]

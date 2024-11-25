@@ -23,7 +23,7 @@ os.environ["GATEONRTD"] = "1"
 
 # sys.path.append(str(Path(__file__).resolve().parents[1]))
 # print("DEBUG: sys.path = ", sys.path)
-# sys.path.append(str(Path("..", "..").resolve()))
+sys.path.append(str(Path("..", "..").resolve()))
 autodoc_mock_imports = [
     "opengate_core",
     # "colored",
@@ -123,6 +123,8 @@ pygments_style = None
 #     'undoc-members': False,
 #     'exclude-members': '__weakref__'
 # }
+add_module_names = False
+
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -131,7 +133,7 @@ pygments_style = None
 #
 # html_theme = 'sphinx_rtd_theme'
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/gate_logo.png"
+# html_logo = "_static/gate_logo.png"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -146,7 +148,7 @@ html_context = {
     "github_user": "OpenGATE",
     "github_repo": "opengate",
     "github_version": "master",
-    "doc_path": "docs",
+    "doc_path": "docs/source",
 }
 
 # html_theme_options = {

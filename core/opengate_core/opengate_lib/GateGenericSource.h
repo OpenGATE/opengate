@@ -32,17 +32,6 @@ public:
 
   void GeneratePrimaries(G4Event *event, double time) override;
 
-  /// Current number of simulated events in this source
-  /// (do not include skipped events)
-  // unsigned long fNumberOfGeneratedEvents;
-
-  /// Count the number of skipped events
-  /// (e.g. Acceptance Angle or in GANSource)
-  unsigned long fTotalSkippedEvents;
-  unsigned long fCurrentSkippedEvents;
-  unsigned long fCurrentZeroEvents;
-  unsigned long fTotalZeroEvents;
-
   void SetEnergyCDF(const std::vector<double> &cdf);
 
   void SetProbabilityCDF(const std::vector<double> &cdf);
@@ -52,16 +41,17 @@ public:
 
   void InitializeBackToBackMode(py::dict &user_info);
 
+  unsigned long GetTotalSkippedEvents() const;
+  unsigned long GetTotalZeroEvents() const;
+
 protected:
   //  We cannot not use a std::unique_ptr
   //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
-  GateSingleParticleSource *fSPS;
   G4ParticleDefinition *fParticleDefinition;
   G4ThreeVector fInitializeMomentum;
-  G4ThreeVector fInitiliazeFocusPoint;
+  G4ThreeVector fInitializeFocusPoint;
   G4ThreeVector fInitTranslation;
   G4String fangType;
-  double fEffectiveEventTime;
   double fUserParticleLifeTime;
 
   // Time Curve Activity
@@ -71,7 +61,7 @@ protected:
 
   // generic ion is controlled separately
   // (maybe initialized once Run is started)
-  bool fInitGenericIon;
+  // bool fInitGenericIon;
   int fA;    // A: Atomic Mass (nn + np +nlambda)
   int fZ;    // Z: Atomic Number
   double fE; // E: Excitation energy
@@ -85,14 +75,26 @@ protected:
   // source, eg: needed for motion actor
   bool fDirectionRelativeToAttachedVolume;
 
-  // angular acceptance management
-  struct threadLocalT {
-    GateAcceptanceAngleTesterManager *fAAManager;
+  // thread local structure
+  struct threadLocalGenericSource {
+    GateSingleParticleSource *fSPS = nullptr;
+    GateAcceptanceAngleTesterManager *fAAManager = nullptr;
+    bool fInitConfine = false;
+    bool fInitGenericIon = false;
+    double fEffectiveEventTime = -1;
+    unsigned long fCurrentSkippedEvents = 0;
+    unsigned long fCurrentZeroEvents = 0;
   };
-  G4Cache<threadLocalT> fThreadLocalDataAA;
+  G4Cache<threadLocalGenericSource> fThreadLocalDataGenericSource;
+
+  // sum of all threads
+  unsigned long fTotalSkippedEvents = 0;
+  unsigned long fTotalZeroEvents = 0;
+
+  threadLocalGenericSource &GetThreadLocalDataGenericSource();
 
   // if confine is used, must be defined after the initialization
-  bool fInitConfine;
+  // bool fInitConfine;
   std::string fConfineVolume;
 
   // for beta plus CDF

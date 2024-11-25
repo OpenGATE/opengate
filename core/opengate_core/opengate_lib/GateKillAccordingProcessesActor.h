@@ -21,7 +21,7 @@ public:
   GateKillAccordingProcessesActor(py::dict &user_info);
   std::vector<G4String> GetListOfPhysicsListProcesses();
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   void BeginOfRunAction(const G4Run *) override;
 
@@ -31,13 +31,11 @@ public:
   void PreUserTrackingAction(const G4Track *) override;
 
   std::vector<G4String> fParticlesTypeToKill;
-  G4double fKineticEnergyAtTheEntrance = 0;
-  G4int ftrackIDAtTheEntrance = 0;
   G4bool fIsFirstStep = true;
-  std::vector<std::string> fProcessesToKillIfOccurence;
-  std::vector<std::string> fProcessesToKillIfNoOccurence;
-  G4bool fKill = true;
+  std::vector<std::string> fProcessesToKill;
   std::vector<std::string> fListOfVolumeAncestor;
+  G4bool fKillIfAnyInteraction = false;
+  G4bool fIsRayleighAnInteraction = false;
 
   long fNbOfKilledParticles{};
 };

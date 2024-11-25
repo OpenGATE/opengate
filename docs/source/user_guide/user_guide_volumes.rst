@@ -1,5 +1,5 @@
-Geometry and volumes
-====================
+How to: Geometry and volumes
+============================
 
 Gate fundamentally relies on the geometry principles of Geant4, but
 provides the user with an easy-to-use interface to set up the geometry
@@ -16,8 +16,8 @@ Volumes are the components that make up the simulation geometry.
 Following Geant4 logic, a volume contains information about its shape,
 its placement in space, its material, and possibly settings about
 physics modeling within that volume. In Gate, all these properties are
-stored and handled in a single volume object, e.g. a ``BoxVolume``,
-``SphereVolume``, ``ImageVolume``.
+stored and handled in a single volume object, e.g.a :class:`opengate.geometry.volumes.BoxVolume`,
+:class:`opengate.geometry.volumes.SphereVolume`, :class:`opengate.geometry.volumes.ImageVolume`.
 
 Create a volume
 ---------------
@@ -93,6 +93,34 @@ To dump a list of all available volume types:
    print('Volume types :')
    print(sim.volume_manager.dump_volume_types())
 
+Examples of volumes
+-------------------
+
+These are examples of how to add and configure volumes in Gate. A more detailed description is in section :ref:`volumes-reference-label`.
+
+.. code:: python
+
+   # A box
+   myBoxVolume = sim.add_volume("Box", "myBoxVolume")
+   myBoxVolume.size = [8 * cm, 20 * cm, 8 * cm]
+   myBoxVolume.translation = [0 * cm, 8 * cm, 0 * cm]
+   myBoxVolume.mother = "world"
+   myBoxVolume.material = "Water" # from your GateMaterials.db
+   myBoxVolume.color = [0, 0, 0, 0.5]
+
+
+.. code:: python
+
+   # A sphere
+   mySphereVolume = sim.add_volume("Sphere", "mySphereVolume")
+   mySphereVolume.mother = "world"
+   mySphereVolume.rmin = 0 * cm
+   mySphereVolume.rmax = 5 * cm
+   mySphereVolume.translation = [0 * cm, 0 * cm, 20 * cm]
+   mySphereVolume.material = "Water" # from your GateMaterials.db
+   mySphereVolume.color = [1, 0, 0, 1]
+
+
 Volume hierarchy
 ----------------
 
@@ -102,8 +130,8 @@ the ``mother`` parameter and Gate will extract its name from it. By
 default, a volume’s mother is the world volume (which has the name
 ``world``). Gate creates a hierarchy of volumes based on each volume’s
 ``mother`` parameter, according to Geant4’s logic of hierarchically
-nested volumes. The volume hierarchy can be inspected with the command
-``dump_volume_tree`` of the volume manager. Example:
+nested volumes. The volume hierarchy can be inspected with the function
+:meth:`opengate.managers.VolumeManager.dump_volume_tree` of the volume manager. Example:
 
 .. code:: python
 
@@ -188,7 +216,36 @@ for the required format of database file.
 Parallel worlds
 ---------------
 
-TODO
+In Geant4, volumes must not overlap; any intersection between volumes can lead to undefined behavior since Geant4 cannot reliably determine which volume a particle belongs to. However, certain scenarios, such as those encountered in SPECT simulations with body-contour trajectories, require describing volumes that intersect. For example, simulating a patient represented by a voxelized CT image might result in an overlap with detector components. Such overlaps could produce inaccurate simulations due to ambiguity in volume assignments.
+
+The concept of “parallel worlds” in Geant4 addresses this issue by allowing overlapping volumes to exist in separate, independent worlds. Each “world” operates without interference from the others, enabling accurate simulation while maintaining the required geometric relationships. When a particle is tracked in both volumes at the same time, the second world is chosen.
+
+The following example demonstrates how to simulate a clinical scenario with a voxelized CT patient overlapping detector blocks using parallel worlds:
+
+
+.. code:: python
+
+    world = sim.world
+    world.size = [1 * m, 1 * m, 1 * m]
+    world.material = "G4_AIR"
+
+    # patient
+    ct = sim.add_volume("Image", "voxelized_ct")
+    ct.image = "data/phantom.mha"
+    ct.mother = "world"
+
+    # create two other parallel worlds
+    sim.add_parallel_world("parallel_world")
+
+    # detector in w2 (on top of world)
+    det = sim.add_volume("Box", "detector")
+    det.mother = "parallel_world"
+    det.material = "NaI"
+    det.size = [400 * mm, 400 * mm, 40 * mm]
+    det.translation = [0, 0, 100 * mm]
+
+In this setup, the voxelized CT is placed in the primary world, representing the patient anatomy and the detector is placed in a parallel world to avoid conflicts with the CT volume.
+
 
 Examples of complex geometries: Linac, SPECT, PET, phantoms
 -----------------------------------------------------------

@@ -22,15 +22,14 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     kBq = 1000 * Bq
 
     # main options
-    ui = sim.user_info
-    ui.g4_verbose = False
-    ui.g4_verbose_level = 1
-    ui.number_of_threads = 1
-    ui.visu = False
-    ui.random_seed = 123456
+    sim.g4_verbose = False
+    sim.g4_verbose_level = 1
+    sim.number_of_threads = 1
+    sim.visu = False
+    sim.random_seed = 123456
 
     # activity
-    activity = 10 * kBq / ui.number_of_threads
+    activity = 10 * kBq / sim.number_of_threads
 
     # world size
     world = sim.world
@@ -46,7 +45,7 @@ def create_ion_gamma_simulation(sim, paths, z, a):
     sim.g4_commands_before_init.append("/process/em/fluoBearden true")
 
     # sources
-    # ui.running_verbose_level = gate.EVENT
+    # sim.running_verbose_level = gate.EVENT
     source = sim.add_source("GenericSource", ion_name)
     source.particle = f"ion {z} {a}"
     source.position.type = "sphere"
@@ -128,7 +127,7 @@ def update_sim_for_tac(sim, ion_name, nuclide, activity, end):
     print(f"Source LT = {lifetime / sec} sec")
 
     # ui = sim.user_info
-    # ui.g4_verbose = True
+    # sim.g4_verbose = True
     # sim.g4_commands_after_init.append("/tracking/verbose 2")
     km = g4_units.km
     sim.physics_manager.global_production_cuts.all = 10 * km
@@ -178,7 +177,7 @@ def analyse_ion_gamma_from_root(filename, ion_names, events_nb):
                         print("event id", e["EventID"])
                         print(f"track {len(track)}")
                         print(f"track {track}")
-                        exit(0)
+                        sys.exit(0)
                     ion = track[e["ParentID"]]["ParticleName"]
                     # ene = e["KineticEnergy"]
                     # if ene < 100 * keV:
@@ -248,7 +247,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
 
     # direct computation of gammas
     print()
-    print(f"Data extracted from the database")
+    print("Data extracted from the database")
     ge = PhotonIonDecayIsomericTransitionExtractor(
         z, a, verbose=True
     )  ## FIXME change verbose
@@ -270,7 +269,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     f_mc = str(paths.output / f"test053_{ion_name}_mc.txt")
     with open(f_mc, "w") as f:
         f.write(f"# gamma intensity for {ion_name} -> {' '.join(daughters)}\n")
-        f.write(f"# from Monte Carlo\n")
+        f.write("# from Monte Carlo\n")
         for e, w in zip(g2_ene, g2_w):
             f.write(f"{e} {w}\n")
 
@@ -278,7 +277,7 @@ def analyse(paths, sim, output, ion_name, z, a, daughters, log_flag=True, tol=0.
     f_model = str(paths.output / f"test053_{ion_name}_model.txt")
     with open(f_model, "w") as f:
         f.write(f"# gamma intensity for {ion_name} -> {' '.join(daughters)}\n")
-        f.write(f"# from model\n")
+        f.write("# from model\n")
         for e, w in zip(g1_ene, g1_w):
             f.write(f"{e} {w}\n")
 

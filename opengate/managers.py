@@ -27,8 +27,8 @@ from .image import (
     get_py_image_from_cpp_image,
     write_itk_image,
 )
+
 from .utility import (
-    assert_unique_element_name,
     g4_units,
     indent,
     read_mac_file_to_commands,
@@ -44,9 +44,26 @@ from .physics import (
     cut_particle_names,
     translate_particle_name_gate_to_geant4,
 )
-from .userinfo import UserInfo
 from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
+
+from .sources.generic import SourceBase, GenericSource
+from .sources.phspsources import PhaseSpaceSource
+from .sources.voxelsources import VoxelSource
+from .sources.gansources import GANSource, GANPairsSource
+from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
+from .sources.phidsources import PhotonFromIonDecaySource
+
+source_types = {
+    "GenericSource": GenericSource,
+    "PhaseSpaceSource": PhaseSpaceSource,
+    "VoxelSource": VoxelSource,
+    "GANSource": GANSource,
+    "GANPairsSource": GANPairsSource,
+    "IonPencilBeamSource": IonPencilBeamSource,
+    "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
+    "TreatmentPlanPBSource": TreatmentPlanPBSource,
+}
 
 from .geometry.volumes import (
     VolumeBase,
@@ -233,96 +250,89 @@ class FilterManager:
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
 
-class SourceManager:
+class SourceManager(GateObject):
     """
     Manage all the sources in the simulation.
     The function prepare_generate_primaries will be called during
     the main run loop to set the current time and source.
     """
 
-    def __init__(self, simulation):
-        # Keep a pointer to the current simulation
-        self.simulation = simulation
+    def __init__(self, simulation, *args, **kwargs):
+        kwargs["name"] = "source_manager"
+        kwargs["simulation"] = simulation
+        super().__init__(*args, **kwargs)
         # List of run times intervals
         self.run_timing_intervals = None
         self.current_run_interval = None
         # List of sources user info
-        self.user_info_sources = {}
+        self.sources = {}
 
     def __str__(self):
         """
         str only dump the user info on a single line
         """
-        v = [v.name for v in self.user_info_sources.values()]
-        s = f'{" ".join(v)} ({len(self.user_info_sources)})'
+        v = [v.name for v in self.sources.values()]
+        s = f'{" ".join(v)} ({len(self.sources)})'
         return s
 
     def dump_source_types(self):
-        s = f""
-        # FIXME: workaround to avoid circular import, will be solved when refactoring sources
-        from opengate.sources.builders import source_builders
-
-        for t in source_builders:
-            s += f"{t} "
-        return s
+        return "\n".join(list(source_types.keys()))
 
     def dump_sources(self):
-        n = len(self.user_info_sources)
+        n = len(self.sources)
         s = f"Number of sources: {n}"
-        for source in self.user_info_sources.values():
+        for source in self.sources.values():
             a = f"\n {source}"
             s += indent(2, a)
         return s
 
-    def get_source_info(self, name):
-        if name not in self.user_info_sources:
+    def get_source(self, source_name):
+        try:
+            return self.sources[source_name]
+        except KeyError:
             fatal(
-                f"The source {name} is not in the current "
-                f"list of sources: {self.user_info_sources}"
+                f"Cannot find the source {source_name}. "
+                f"Sources included in this simulation are: {list(self.sources.keys())}"
             )
-        return self.user_info_sources[name]
 
-    """def get_source(self, name):
-        n = len(self.g4_thread_source_managers)
-        if n > 0:
-            gate.exception.warning(f"Cannot get source in multithread mode, use get_source_mt")
-            return None
-        for source in self.sources:
-            if source.user_info.name == name:
-                return source.g4_source
-        gate.exception.fatal(
-            f'The source "{name}" is not in the current '
-            f"list of sources: {self.user_info_sources}"
-        )
+    def add_source(self, source, name):
+        new_source = None
+        if isinstance(source, str):
+            if name is None:
+                fatal("You must provide a name for the source.")
+            new_source = self._create_source(source, name)
+        elif isinstance(source, SourceBase):
+            new_source = source
+        else:
+            fatal(
+                "You need to either provide an actor type and name, or an actor object."
+            )
 
-    def get_source_mt(self, name, thread):
-        n = len(self.g4_thread_source_managers)
-        if n == 0:
-            gate.exception.warning(f"Cannot get source in mono-thread mode, use get_source")
-            return None
-        i = 0
-        for source in self.sources:
-            if source.user_info.name == name:
-                if i == thread:
-                    return source.g4_source
-                i += 1
-        gate.exception.fatal(
-            f'The source "{name}" is not in the current '
-            f"list of sources: {self.user_info_sources}"
-        )"""
+        if new_source.name in self.sources:
+            fatal(
+                f"The source named {new_source.name} already exists. "
+                f"Existing source names are: {self.sources.keys()}"
+            )
+        self.sources[new_source.name] = new_source
+        self.sources[new_source.name].simulation = self.simulation
+        # return the volume if it has not been passed as input, i.e. it was created here
+        if new_source is not source:
+            return new_source
 
-    def add_source(self, source_type, name):
-        # check that another element with the same name does not already exist
-        assert_unique_element_name(self.user_info_sources, name)
-        # init the user info
-        s = UserInfo("Source", source_type, name)
-        # append to the list
-        self.user_info_sources[name] = s
-        # return the info
-        return s
+    def _create_source(self, source_type, name):
+        cls = None
+        try:
+            cls = source_types[source_type]
+        except KeyError:
+            fatal(
+                f"Unknown source type {source_type}. "
+                f"Known types are: \n."
+                f"{self.dump_source_types()}."
+            )
+        return cls(name=name, simulation=self.simulation)
 
     def initialize_before_g4_engine(self):
-        for source in self.user_info_sources.values():
+        for source in self.sources.values():
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
 
@@ -332,14 +342,13 @@ class ActorManager(GateObject):
     Manage all the actors in the simulation
     """
 
-    def __init__(self, simulation, *args, **kwargs):
+    def __init__(self, simulation, *args, **kwargs) -> None:
         kwargs["name"] = "actor_manager"
         kwargs["simulation"] = simulation
         super().__init__(*args, **kwargs)
         self.user_info_actors = {}
-        self.actors = (
-            {}
-        )  # dictionary of actor objects. Do not fill manually. Use add_actor() method.
+        # dictionary of actor objects. Do not fill manually. Use add_actor() method.
+        self.actors = {}
 
     def __str__(self):
         s = "The actor manager contains the following actors: \n"
@@ -399,15 +408,16 @@ class ActorManager(GateObject):
 
     def get_actor_user_info(self, name):
         self.warn_user(
-            f"Deprecation warning: The function 'get_actor_user_info' will soon be removed."
-            f"Use my_actor.user_info instead, where 'my_actor' "
-            f"should be replace by your actor object. "
-            f"You can also access user input parameters directly, e.g. my_actor.attached_to=..."
+            "Deprecation warning: The function 'get_actor_user_info' will soon be removed."
+            "Use my_actor.user_info instead, where 'my_actor' "
+            "should be replace by your actor object. "
+            "You can also access user input parameters directly, e.g. my_actor.attached_to=..."
         )
         actor = self.get_actor(name)
         return actor.user_info
 
     def add_actor(self, actor, name):
+        new_actor = None
         if isinstance(actor, str):
             if name is None:
                 fatal("You must provide a name for the actor.")
@@ -421,7 +431,7 @@ class ActorManager(GateObject):
 
         if new_actor.name in self.actors:
             fatal(
-                f"The actor name {new_actor.name} already exists. "
+                f"The actor named {new_actor.name} already exists. "
                 f"Existing actor names are: {self.actors.keys()}"
             )
         self.actors[new_actor.name] = new_actor
@@ -434,6 +444,7 @@ class ActorManager(GateObject):
         self.actors.pop(name)
 
     def _create_actor(self, actor_type, name):
+        cls = None
         try:
             cls = actor_types[actor_type]
         except KeyError:
@@ -671,7 +682,7 @@ class PhysicsManager(GateObject):
         # ),
     }
 
-    def __init__(self, simulation, *args, **kwargs):
+    def __init__(self, simulation, *args, **kwargs) -> None:
         super().__init__(name="physics_manager", *args, **kwargs)
 
         # Keep a pointer to the current simulation
@@ -758,7 +769,7 @@ class PhysicsManager(GateObject):
         for k, v in self.user_info.global_production_cuts.items():
             s += f"{k}: {v}\n"
         if len(self.regions.keys()) > 0:
-            s += f"*** Production cuts per regions ***\n"
+            s += "*** Production cuts per regions ***\n"
             for region in self.regions.values():
                 s += f"In region {region.name}:\n"
                 s += region.dump_production_cuts()
@@ -816,7 +827,7 @@ class PhysicsManager(GateObject):
         name = "optical_surface_" + volume_from + "_" + volume_to
 
         # Throw an error if the optical surface already exists
-        if name in self.optical_surfaces.keys():
+        if name in self.optical_surfaces:
             fatal("An optical surface between these volumes already exists")
 
         self.optical_surfaces[name] = OpticalSurface(
@@ -830,13 +841,13 @@ class PhysicsManager(GateObject):
         return self.optical_surfaces[name]
 
     def add_region(self, name):
-        if name in self.regions.keys():
+        if name in self.regions:
             fatal("A region with this name already exists.")
         self.regions[name] = Region(name=name, simulation=self.simulation)
         return self.regions[name]
 
     def find_or_create_region(self, volume_name):
-        if volume_name not in self.volumes_regions_lut.keys():
+        if volume_name not in self.volumes_regions_lut:
             region = self.add_region(volume_name + "_region")
             region.associate_volume(volume_name)
         else:
@@ -957,7 +968,7 @@ class PostProcessingManager(GateObject):
         try:
             name = post_processor.name
         except AttributeError:
-            fatal(f"Cannot retrieve the name of the post-processor.")
+            fatal("Cannot retrieve the name of the post-processor.")
         if name not in self.post_processors:
             self.post_processors[name] = post_processor
             # add finalizers to make sure the post-processor is shut down gracefully
@@ -966,7 +977,7 @@ class PostProcessingManager(GateObject):
                 post_processor, post_processor.close
             )
         else:
-            fatal(f"A post-processor with this name has already been added. ")
+            fatal("A post-processor with this name has already been added. ")
 
 
 class VolumeManager(GateObject):
@@ -990,7 +1001,7 @@ class VolumeManager(GateObject):
         "TesselatedVolume": TesselatedVolume,
     }
 
-    def __init__(self, simulation, *args, **kwargs):
+    def __init__(self, simulation, *args, **kwargs) -> None:
         """
         Class that store geometry description.
         """
@@ -1139,7 +1150,7 @@ class VolumeManager(GateObject):
         # check that another element with the same name does not already exist
         volume_type_variants = [volume_type, volume_type + "Volume"]
         for vt in volume_type_variants:
-            if vt in self.volume_types.keys():
+            if vt in self.volume_types:
                 return self.volume_types[vt](name=name)
         fatal(
             f"Unknown volume type {volume_type}. Known types are: {list(self.volume_types.keys())}."
@@ -1194,7 +1205,7 @@ class VolumeManager(GateObject):
         
 
     def dump_volume_types(self):
-        s = f""
+        s = ""
         for vt in self.volume_types:
             s += f"{vt} "
         return s
@@ -1592,17 +1603,17 @@ class Simulation(GateObject):
 
     def from_json_string(self, json_string):
         warning(
-            f"**********************************************************************************\n"
-            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            f"**********************************************************************************\n"
+            "**********************************************************************************\n"
+            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            "**********************************************************************************\n"
         )
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
         warning(
-            f"**********************************************************************************\n"
-            f"*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            f"**********************************************************************************\n"
+            "**********************************************************************************\n"
+            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
+            "**********************************************************************************\n"
         )
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
@@ -1670,7 +1681,7 @@ class Simulation(GateObject):
 
     # FIXME: will we become obsolete when refactoring the sources
     def get_source_user_info(self, name):
-        return self.source_manager.get_source_info(name)
+        return self.source_manager.get_source(name)
 
     def get_actor_user_info(self, name):
         s = self.actor_manager.get_actor_user_info(name)
@@ -1745,14 +1756,19 @@ class Simulation(GateObject):
 
             # FIXME: temporary workaround to copy from output the additional
             # information of the source (such as fTotalSkippedEvents)
-            for source in self.source_manager.user_info_sources.values():
+            s = {}
+            for source in self.source_manager.sources.values():
+                # WARNING: when multithread, the sources are stored in
+                # simulation_output.sources_by_thread
+                # The sources of thread=0 are also available in simulation_output.sources
+                # and they are retrieved here by get_source
                 try:
                     s = output.get_source(source.name)
                 except:
                     continue
-                if "fTotalSkippedEvents" in s.user_info.__dict__:
-                    source.fTotalSkippedEvents = s.user_info.fTotalSkippedEvents
-                    source.fTotalZeroEvents = s.user_info.fTotalZeroEvents
+                if "total_zero_events" in s.__dict__:
+                    source.total_zero_events = s.__dict__["total_zero_events"]
+                    source.total_skipped_events = s.__dict__["total_skipped_events"]
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process
@@ -1902,3 +1918,4 @@ process_cls(VolumeManager)
 process_cls(ActorManager)
 process_cls(PostProcessingManager)
 process_cls(Simulation)
+process_cls(SourceManager)

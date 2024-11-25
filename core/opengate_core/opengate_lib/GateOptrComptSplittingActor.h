@@ -58,7 +58,6 @@ public:
 
   G4double fSplittingFactor;
   G4double fMinWeightOfParticle;
-  G4double fWeightThreshold;
   G4bool fBiasPrimaryOnly;
   G4bool fBiasOnlyOnce;
   G4int fNInteractions = 0;
@@ -72,7 +71,7 @@ public:
   void StartRun() override;
   void StartTracking(const G4Track *) override;
   void EndTracking() override {}
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
   void InitializeCpp() override;
 
 protected:

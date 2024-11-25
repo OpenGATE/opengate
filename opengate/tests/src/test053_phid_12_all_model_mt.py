@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 from test053_phid_helpers2 import *
+import opengate as gate
 
 
 def main(dependency="test053_phid_10_all_ref_mt.py"):
@@ -37,6 +39,7 @@ def main(dependency="test053_phid_10_all_ref_mt.py"):
     s = add_source_model(sim, z, a, activity_in_Bq)
     s.atomic_relaxation_flag = True
     s.isomeric_transition_flag = True
+    s.verbose = False
 
     # go
     sec = g4_units.second
@@ -69,6 +72,7 @@ def main(dependency="test053_phid_10_all_ref_mt.py"):
         model_index=-1,
         tol=0.055,
         erange=[20, 600],
+        n_tol=0.35,
     )
 
     test_ok(is_ok)

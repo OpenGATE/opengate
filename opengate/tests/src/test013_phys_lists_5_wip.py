@@ -16,7 +16,7 @@ if __name__ == "__main__":
     sim = create_pl_sim()
 
     # keep only ion sources
-    sim.source_manager.user_info_sources.pop("gamma")
+    sim.source_manager.sources.pop("gamma")
 
     # change physics
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"

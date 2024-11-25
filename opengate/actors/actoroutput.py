@@ -1,6 +1,8 @@
 from box import Box
 from typing import Optional
+import sys
 
+import opengate_core as g4
 from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal, GateImplementationError
@@ -74,6 +76,14 @@ class BaseUserInterfaceToActorOutput:
         kwargs.update(self._kwargs_for_interface_calls)
         return self._user_output.get_output_path(**kwargs)
 
+    def get_run_indices(self, **kwargs):
+        kwargs.update(self._kwargs_for_interface_calls)
+        return self._user_output.get_run_indices(**kwargs)
+
+    def get_data(self, **kwargs):
+        kwargs.update(self._kwargs_for_interface_calls)
+        return self._user_output.get_data(**kwargs)
+
     @property
     def write_to_disk(self):
         try:
@@ -99,6 +109,19 @@ class BaseUserInterfaceToActorOutput:
     @output_filename.setter
     def output_filename(self, value):
         self._user_output.set_output_filename(value, **self._kwargs_for_interface_calls)
+
+    @property
+    def keep_data_per_run(self):
+        try:
+            return self._user_output.get_keep_data_per_run(
+                **self._kwargs_for_interface_calls
+            )
+        except NotImplementedError:
+            raise AttributeError
+
+    @keep_data_per_run.setter
+    def keep_data_per_run(self, value):
+        self._user_output.keep_data_per_run = value
 
     @property
     def item_suffix(self):
@@ -184,17 +207,6 @@ def _setter_hook_belongs_to(self, belongs_to):
     return belongs_to_name
 
 
-def _setter_hook_active(self, active):
-    if self.__can_be_deactivated__ is True:
-        return bool(active)
-    else:
-        if bool(active) is not True:
-            warning(
-                f"The output {self.name} of actor {self.belongs_to_actor.name} cannot be deactivated."
-            )
-        return True
-
-
 class ActorOutputBase(GateObject):
 
     # hints for IDE
@@ -236,15 +248,12 @@ class ActorOutputBase(GateObject):
 
         self.data_per_run = {}  # holds the data per run in memory
         self.merged_data = None  # holds the data merged from multiple runs in memory
-        # internal flag which can set by the actor when it creating an actor output
-        # via _add_actor_output
-        # __can_be_deactivated = False forces the "active" user info to True
-        # This is the expected behavior in most digitizers
-        # In the DoseActor, on the other hand, users might not want to calculate uncertainty
-        self.__can_be_deactivated__ = False
 
     def __len__(self):
         return len(self.data_per_run)
+
+    def get_run_indices(self, **kwargs):
+        return [k for k, v in self.data_per_run.items() if v is not None]
 
     def set_write_to_disk(self, value, **kwargs):
         raise NotImplementedError
@@ -280,19 +289,6 @@ class ActorOutputBase(GateObject):
     def _generate_auto_output_filename(self, **kwargs):
         return f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}.{self.default_suffix}"
 
-    # def initialize_output_filename(self, **kwargs):
-    #     if self.get_output_filename(**kwargs) == 'auto':
-    #         self.set_output_filename(self._generate_auto_output_filename(), **kwargs)
-    #
-    # for k, v in self.data_item_config.items():
-    #     if 'write_to_disk' in v and v['write_to_disk'] is True:
-    #         if 'output_filename' not in v or v['output_filename'] in ['auto', '', None]:
-    #             if len(self.data_item_config) > 0:
-    #                 item_suffix = k
-    #             else:
-    #                 item_suffix = ''
-    #             v['output_filename'] = f"{self.name}_from_{self.belongs_to_actor.type_name.lower()}_{self.belongs_to_actor.name}_{item_suffix}.{self.default_suffix}"
-
     def _compose_output_path(self, which, output_filename):
         full_data_path = self.simulation.get_output_path(output_filename)
 
@@ -308,7 +304,7 @@ class ActorOutputBase(GateObject):
                     f"Valid arguments are a run index (int) or the term 'merged'. "
                 )
                 run_index = None  # remove warning from IDE
-            return insert_suffix_before_extension(full_data_path, f"run{run_index:04f}")
+            return insert_suffix_before_extension(full_data_path, f"run{run_index}")
 
     def get_output_path(self, which="merged", **kwargs):
         # try to get the output_filename via 2 successive attempts
@@ -368,11 +364,12 @@ class ActorOutputBase(GateObject):
         )
 
 
-class MergeableActorOutput(ActorOutputBase):
+class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     # hints for IDE
     merge_data_after_simulation: bool
     keep_data_per_run: bool
+    data_item_config: Optional[Box]
 
     user_info_defaults = {
         "merge_data_after_simulation": (
@@ -387,42 +384,6 @@ class MergeableActorOutput(ActorOutputBase):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
-    }
-
-    def merge_data_from_runs(self):
-        self.merged_data = merge_data(list(self.data_per_run.values()))
-
-    def merge_into_merged_data(self, data):
-        if self.merged_data is None:
-            self.merged_data = data
-        else:
-            self.merged_data = merge_data([self.merged_data, data])
-
-    def end_of_run(self, run_index):
-        if self.merge_data_after_simulation is True:
-            self.merge_into_merged_data(self.data_per_run[run_index])
-        if self.keep_data_per_run is False:
-            self.data_per_run.pop(run_index)
-
-    def end_of_simulation(self, **kwargs):
-        try:
-            self.write_data_if_requested(which="all", **kwargs)
-        except NotImplementedError:
-            raise GateImplementationError(
-                "Unable to run end_of_simulation "
-                f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
-                f"because the class does not implement a write_data_if_requested() "
-                f"and/or write_data() method. "
-                f"A developer needs to fix this. "
-            )
-
-
-class ActorOutputUsingDataItemContainer(MergeableActorOutput):
-
-    # hints for IDE
-    data_item_config: Optional[Box]
-
-    user_info_defaults = {
         "data_item_config": (
             Box(
                 {
@@ -627,12 +588,6 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         else:
             try:
                 run_index = int(which)  # might be a run_index
-                # if run_index not in self.data_per_run:
-                # else:
-                #     fatal(
-                #         f"A data item is already set for run index {run_index}. "
-                #         f"You can only merge additional data into it. Overwriting is not allowed. "
-                #     )
             except ValueError:
                 fatal(
                     f"Invalid argument 'which' in store_data() method of ActorOutput {self.name}. "
@@ -706,8 +661,30 @@ class ActorOutputUsingDataItemContainer(MergeableActorOutput):
         ]
         self.write_data(which=which, item=items)
 
+    def merge_data_from_runs(self):
+        self.merged_data = merge_data(list(self.data_per_run.values()))
+
+    def end_of_run(self, run_index):
+        if self.merge_data_after_simulation is True:
+            self.merged_data.inplace_merge_with(self.data_per_run[run_index])
+        if self.keep_data_per_run is False:
+            self.data_per_run.pop(run_index)
+
+    def start_of_simulation(self, **kwargs):
+        if self.merge_data_after_simulation is True:
+            self.merged_data = self.data_container_class(belongs_to=self)
+
     def end_of_simulation(self, item="all", **kwargs):
-        self.write_data_if_requested(which="all", item=item)
+        try:
+            self.write_data_if_requested(item="all", **kwargs)
+        except NotImplementedError:
+            raise GateImplementationError(
+                "Unable to run end_of_simulation "
+                f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
+                f"because the class does not implement a write_data_if_requested() "
+                f"and/or write_data() method. "
+                f"A developer needs to fix this. "
+            )
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
@@ -818,6 +795,14 @@ class ActorOutputRoot(ActorOutputBase):
         return super().get_output_path(which="merged")
 
     def initialize(self):
+        # Warning, for the moment, MT and root output does not work on windows machine
+        if sys.platform.startswith("nt"):
+            if g4.IsMultithreadedApplication():
+                fatal(
+                    f"Sorry Multithreading and Root output does not work (yet) on windows architecture."
+                    f"You can run the simulation in single-threaded mode of switch to linux/max."
+                )
+
         # for ROOT output, not output_filename means no output to disk (legacy Gate 9 behavior)
         if self.output_filename == "" or self.output_filename is None:
             self.write_to_disk = False
@@ -837,7 +822,6 @@ class ActorOutputRoot(ActorOutputBase):
 
 
 process_cls(ActorOutputBase)
-process_cls(MergeableActorOutput)
 process_cls(ActorOutputUsingDataItemContainer)
 process_cls(ActorOutputImage)
 process_cls(ActorOutputSingleImage)

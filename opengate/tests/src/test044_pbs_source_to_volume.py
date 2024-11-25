@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # default source for tests (from test42)
     source = sim.add_source("IonPencilBeamSource", "mysource")
-    source.mother = "waterbox"
+    source.attached_to = "waterbox"
     source.energy.mono = 1440 * MeV
     source.particle = "ion 6 12"  # carbon
     source.position.type = "disc"  # pos = Beam, shape = circle + sigma

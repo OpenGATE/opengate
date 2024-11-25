@@ -224,7 +224,7 @@ class DigitizerBase(ActorBase):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(self, *args, **kwargs)
 
     def _add_user_output_root(self, **kwargs):
@@ -264,17 +264,13 @@ class DigitizerBase(ActorBase):
 
 
 class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
-    """
-    Equivalent to Gate "adder": gather all hits of an event in the same volume.
+    """Equivalent to Gate "adder": gather all hits of an event in the same volume.
     Input: a HitsCollection, need aat least TotalEnergyDeposit and PostPosition attributes
     Output: a Single collections
 
     Policies:
-    - EnergyWinnerPosition: consider position and energy of the hit with the max energy
-       for all other attributes (Time, etc.): the value of the winner is used.
-    - EnergyWeightedCentroidPosition: computed the energy-weighted centroid position
-       for all other attributes (Time, etc.): the value the last seen hit is used.
-
+    - EnergyWinnerPosition: consider position and energy of the hit with the max energy for all other attributes (Time, etc.): the value of the winner is used.
+    - EnergyWeightedCentroidPosition: computed the energy-weighted centroid position for all other attributes (Time, etc.): the value the last seen hit is used.
     """
 
     user_info_defaults = {
@@ -357,7 +353,7 @@ class DigitizerAdderActor(DigitizerBase, g4.GateDigitizerAdderActor):
                 f"EnergyWeightedCentroidPosition, while is is '{self.policy}'"
             )
         DigitizerBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def set_group_by_depth(self):
@@ -465,7 +461,7 @@ class DigitizerBlurringActor(DigitizerBase, g4.GateDigitizerBlurringActor):
     def initialize(self):
         self.initialize_blurring_parameters()
         DigitizerBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def initialize_blurring_parameters(self):
@@ -529,6 +525,16 @@ class DigitizerSpatialBlurringActor(
     Digitizer module for blurring a (global) spatial position.
     """
 
+    # hints for IDE
+    attributes: List
+    input_digi_collection: str
+    skip_attributes: List
+    clear_every: int
+    blur_attribute: str
+    blur_fwhm: float
+    blur_sigma: float
+    keep_in_solid_limits: bool
+
     user_info_defaults = {
         "attributes": (
             [],
@@ -549,7 +555,7 @@ class DigitizerSpatialBlurringActor(
             },
         ),
         "clear_every": (
-            1e5,
+            int(1e5),
             {
                 "doc": "FIXME",
             },
@@ -608,7 +614,7 @@ class DigitizerSpatialBlurringActor(
     def initialize(self):
         self.initialize_blurring_parameters()
         DigitizerBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -676,7 +682,7 @@ class DigitizerEfficiencyActor(DigitizerBase, g4.GateDigitizerEfficiencyActor):
     def initialize(self):
         self.initialize_blurring_parameters()
         DigitizerBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -738,7 +744,7 @@ class DigitizerEnergyWindowsActor(DigitizerBase, g4.GateDigitizerEnergyWindowsAc
 
     def initialize(self):
         DigitizerBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -795,7 +801,7 @@ class DigitizerHitsCollectionActor(DigitizerBase, g4.GateDigitizerHitsCollection
 
     def initialize(self):
         DigitizerBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -883,7 +889,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
                 f"set 'authorize_repeated_volumes' to False"
             )
         DigitizerBase.initialize(self)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     @property
@@ -1118,7 +1124,7 @@ class PhaseSpaceActor(DigitizerBase, g4.GatePhaseSpaceActor):
             self.SetStoreExitingStepFlag(True)
         if "first" in self.steps_to_store:
             self.SetStoreFirstStepInVolumeFlag(True)
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
