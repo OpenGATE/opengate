@@ -453,7 +453,11 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "edep_with_uncertainty": {
             "actor_output_class": ActorOutputSingleImageWithVariance,
             "interfaces": {
-                "edep": {"interface_class": UserInterfaceToActorOutputImage, "item": 0},
+                "edep": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True
+                },
                 "edep_squared": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
