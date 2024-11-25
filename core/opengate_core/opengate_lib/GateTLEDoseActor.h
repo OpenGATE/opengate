@@ -28,7 +28,7 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  void BeginOfEventAction(const G4Event* event) override;
+  void BeginOfEventAction(const G4Event *event) override;
 
   void PreUserTrackingAction(const G4Track *track) override;
 
@@ -45,8 +45,7 @@ public:
     // Bool if current track is a TLE gamma or not
     bool fIsTLEGamma;
     bool fIsTLESecondary;
-    std::map<G4int,G4int> fSecNbWhichDeposit;
-
+    std::map<G4int, G4int> fSecNbWhichDeposit;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

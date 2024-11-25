@@ -64,7 +64,6 @@ if __name__ == "__main__":
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox_size} mm")
 
-
     # add conventional dose actor
     dose_actor = sim.add_actor("TLEDoseActor", "dose_actor")
     dose_actor.output_filename = "test081_db_epdl.mhd"
@@ -77,8 +76,6 @@ if __name__ == "__main__":
     print(f"Dose actor pixels : {dose_actor.size}")
     print(f"Dose actor spacing : {dose_actor.spacing} mm")
     print(f"Dose actor size : {waterbox_size} mm")
-
-
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

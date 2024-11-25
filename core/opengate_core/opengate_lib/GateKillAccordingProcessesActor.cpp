@@ -15,9 +15,11 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
+G4Mutex SetNbKillAccordingProcessesMutex = G4MUTEX_INITIALIZER;
+
 GateKillAccordingProcessesActor::GateKillAccordingProcessesActor(
     py::dict &user_info)
-    : GateVActor(user_info, false) {}
+    : GateVActor(user_info, true) {}
 
 std::vector<G4String>
 GateKillAccordingProcessesActor::GetListOfPhysicsListProcesses() {
@@ -45,16 +47,15 @@ GateKillAccordingProcessesActor::GetListOfPhysicsListProcesses() {
 
 void GateKillAccordingProcessesActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
-  fProcessesToKillIfOccurence =
-      DictGetVecStr(user_info, "processes_to_kill_if_occurence");
-  fProcessesToKillIfNoOccurence =
-      DictGetVecStr(user_info, "processes_to_kill_if_no_occurence");
+  fProcessesToKill = DictGetVecStr(user_info, "processes_to_kill");
+  fIsRayleighAnInteraction = DictGetBool(user_info, "is_rayleigh_an_interaction");
 }
 
 void GateKillAccordingProcessesActor::BeginOfRunAction(const G4Run *run) {
   fNbOfKilledParticles = 0;
   std::vector<G4String> listOfAllProcesses = GetListOfPhysicsListProcesses();
-  for (auto process : fProcessesToKillIfOccurence) {
+  listOfAllProcesses.push_back("all");
+  for (auto process : fProcessesToKill) {
     if (std::find(listOfAllProcesses.begin(), listOfAllProcesses.end(),
                   process) == listOfAllProcesses.end()) {
       G4String errorMessage =
@@ -70,23 +71,14 @@ void GateKillAccordingProcessesActor::BeginOfRunAction(const G4Run *run) {
                   errorMessage);
     }
   }
-  for (auto process : fProcessesToKillIfNoOccurence) {
-    if (std::find(listOfAllProcesses.begin(), listOfAllProcesses.end(),
-                  process) == listOfAllProcesses.end()) {
-      G4String errorMessage =
-          "Process '" + process + "' not found. Existing processes are '";
-      for (auto aProcess : listOfAllProcesses) {
-        errorMessage = errorMessage + aProcess + "', ";
-      }
-      errorMessage.pop_back();
-      errorMessage.pop_back();
-      G4Exception("CheckProcessExistence", // Exception origin
-                  "ProcessNotFound.2",     // Exception code
-                  FatalException,          // Exception severity
-                  errorMessage);
+  if (fProcessesToKill[0] == "all"){
+    if (fProcessesToKill.size() == 1){
+      fKillIfAnyInteraction = true;
     }
   }
+
 }
+
 
 void GateKillAccordingProcessesActor::PreUserTrackingAction(
     const G4Track *track) {
@@ -99,59 +91,41 @@ void GateKillAccordingProcessesActor::SteppingAction(G4Step *step) {
                                      ->GetVolume(fAttachedToVolumeName)
                                      ->GetName();
   G4String physicalVolumeNamePreStep = "None";
-  if (step->GetPreStepPoint()->GetPhysicalVolume() != 0)
-    physicalVolumeNamePreStep =
-        step->GetPreStepPoint()->GetPhysicalVolume()->GetName();
-  if (((step->GetTrack()->GetLogicalVolumeAtVertex()->GetName() !=
-        logNameMotherVolume) &&
-       (fIsFirstStep)) ||
-      ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0))) {
-    if (((step->GetPreStepPoint()->GetStepStatus() == 1) &&
-         (physicalVolumeNamePreStep == fAttachedToVolumeName)) ||
-        ((fIsFirstStep) && (step->GetTrack()->GetParentID() == 0))) {
-      fKill = true;
-    }
-  }
 
   G4String processName = "None";
   const G4VProcess *process = step->GetPostStepPoint()->GetProcessDefinedStep();
   if (process != 0)
     processName = process->GetProcessName();
+  
 
   // Positron exception to retrieve the annihilation process, since it's an at
   // rest process most of the time
 
-  if ((step->GetTrack()->GetParticleDefinition()->GetParticleName() == "e+") &&
-      (step->GetTrack()->GetTrackStatus() == 1))
+  if ((step->GetTrack()->GetParticleDefinition()->GetParticleName() == "e+") && (step->GetTrack()->GetTrackStatus() == 1))
     processName = "annihil";
 
-  if (std::find(fProcessesToKillIfNoOccurence.begin(),
-                fProcessesToKillIfNoOccurence.end(),
-                processName) != fProcessesToKillIfNoOccurence.end()) {
-    fKill = false;
-  }
 
-  G4String logicalVolumeNamePostStep = step->GetPostStepPoint()
-                                           ->GetPhysicalVolume()
-                                           ->GetLogicalVolume()
-                                           ->GetName();
-  if (step->GetPostStepPoint()->GetStepStatus() == 1) {
-    if (std::find(fListOfVolumeAncestor.begin(), fListOfVolumeAncestor.end(),
-                  logicalVolumeNamePostStep) != fListOfVolumeAncestor.end()) {
-      if (fKill == true) {
+  if (fKillIfAnyInteraction){
+    if (processName != "Transportation"){
+      if (fIsRayleighAnInteraction == true){
         step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
+        G4AutoLock mutex(&SetNbKillAccordingProcessesMutex);
         fNbOfKilledParticles++;
+      }
+      else {
+        if (processName != "Rayl"){
+          step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
+          G4AutoLock mutex(&SetNbKillAccordingProcessesMutex);
+          fNbOfKilledParticles++;
+        }
       }
     }
   }
-
-  if (std::find(fProcessesToKillIfOccurence.begin(),
-                fProcessesToKillIfOccurence.end(),
-                processName) != fProcessesToKillIfOccurence.end()) {
-    step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
-    fNbOfKilledParticles++;
-  } else {
-    if (step->GetTrack()->GetTrackStatus() == 3)
-      fKill = true;
+  else{
+    if (std::find(fProcessesToKill.begin(),fProcessesToKill.end(),processName) != fProcessesToKill.end()) {
+      step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
+      G4AutoLock mutex(&SetNbKillAccordingProcessesMutex);
+      fNbOfKilledParticles++;
+    }
   }
 }

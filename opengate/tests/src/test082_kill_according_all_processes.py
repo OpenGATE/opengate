@@ -9,30 +9,21 @@ from anytree import Node, RenderTree
 import uproot
 
 
-"""
-The kill actor according processes is able to kill if a process occurred or if a process did not occured.
-To verify it here, I shot 6 MeV gamma with high cut on electrons in a tungsten target. It means that I have 4 types
-of photons : without any interaction, just compton photons, conv and therefore compton, and brem (with or without cmpton)
-
-With a interdiction for photons to exit the volume if they did not undergo a conv, combined with a kill if eBrem occured.
-I normally just have photons created by annihilation which undergo or not a compton. The test is now straightforward:
-if the number of detected photons is equal to the number of detected photons and created by conv, and if in average, the
-energy at the vertex is different of the measured energy, the actor is working.
-
-"""
-
-
 def test083_test(df):
+    df = df[df["PDGCode"] ==22]
+    nb_event = len(df["ParentID"])
+    nb_event_to_interest = len(df["ParentID"][df["ParentID"] == 0])
 
-    photon_array = df[df["PDGCode"] == 22]
-    if len(photon_array) == len(
-        photon_array[photon_array["TrackCreatorProcess"] == "annihil"]
-    ):
-        if np.mean(photon_array["KineticEnergy"]) != np.mean(
-            photon_array["TrackVertexKineticEnergy"]
-        ):
-            return True
+    tab_vertex_ekin = df["TrackVertexKineticEnergy"]
+    tab_ekin  = df["KineticEnergy"]
+
+    dz_diff = df["PreDirection_Z"][df["PreDirection_Z"] != -1]
+
+    print("Number of photons undergoing at least one rayleigh process", len(dz_diff))
+    if (nb_event_to_interest == nb_event) and (np.all(tab_ekin == tab_vertex_ekin) and len(dz_diff >0)):
+        return True
     return False
+
 
 
 if __name__ == "__main__":
@@ -74,71 +65,72 @@ if __name__ == "__main__":
 
     #  adapt world size
     world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
+    world.size = [0.2 * m, 0.2 * m, 0.2 * m]
     world.material = "G4_Galactic"
 
     source = sim.add_source("GenericSource", "photon_source")
     source.particle = "gamma"
     source.position.type = "box"
-    source.mother = world.name
-    source.position.size = [1 * nm, 1 * nm, 1 * nm]
-    source.position.translation = [0, 0, 10 * cm + 1 * mm]
+    source.attached_to = world.name
+    source.position.size = [1*nm,1*nm,1*nm]
+    source.position.translation = [0, 0, 10*cm + 1 * mm]
     source.direction.type = "momentum"
     source.direction_relative_to_attached_volume = True
     # source1.direction.focus_point = [0*cm, 0*cm, -5 *cm]
     source.direction.momentum = [0, 0, -1]
     source.energy.type = "mono"
-    source.energy.mono = 6 * MeV
+    source.energy.mono = 1 * MeV
     source.n = 100000
 
     tungsten = sim.add_volume("Box", "tungsten_box")
-    tungsten.size = [4 * cm, 4 * cm, 20 * cm]
+    tungsten.size = [3 * cm, 3 * cm, 1  * cm]
     tungsten.material = "Tungsten"
     tungsten.mother = world.name
     tungsten.color = [0.5, 0.9, 0.3, 1]
 
     kill_proc_act = sim.add_actor("KillAccordingProcessesActor", "kill_proc_act")
     kill_proc_act.attached_to = tungsten.name
-    kill_proc_act.processes_to_kill_if_occurence = ["eBrem"]
-    kill_proc_act.processes_to_kill_if_no_occurence = ["conv"]
+    kill_proc_act.is_rayleigh_an_interaction = False
+    kill_proc_act.processes_to_kill=["all"]
 
-    kill_plan = sim.add_volume("Box", "plan")
-    kill_plan.size = [4 * cm, 4 * cm, 1 * nm]
-    kill_plan.translation = [0, 0, -tungsten.size[2] / 2 - kill_plan.size[2]]
-
-    kill_actor = sim.add_actor("KillActor", "kill_actor_plan")
-    kill_actor.attached_to = kill_plan.name
 
     phsp_sphere = sim.add_volume("Sphere", "phsp_sphere")
-    phsp_sphere.mother = world.name
-    phsp_sphere.rmin = 15 * cm
-    phsp_sphere.rmax = 15 * cm + 1 * nm
+    phsp_sphere.mother =world.name
+    phsp_sphere.material = "G4_Galactic"
+    phsp_sphere.rmin = 5 *cm
+    phsp_sphere.rmax = 5 * cm +1*nm
+
 
     sim.output_dir = output_path
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp.attached_to = phsp_sphere.name
-    phsp.attributes = [
-        "EventID",
-        "TrackID",
-        "KineticEnergy",
-        "TrackVertexKineticEnergy",
-        "TrackCreatorProcess",
-        "PDGCode",
-    ]
+    phsp.attributes = ["ParentID","EventID", "TrackID", "KineticEnergy","TrackVertexKineticEnergy","PreDirection","PDGCode"]
     name_phsp = "test083_" + phsp.name + ".root"
-    phsp.output_filename = name_phsp
+    phsp.output_filename= name_phsp
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = False
-    sim.physics_manager.global_production_cuts.gamma = 1 * mm
+    sim.physics_manager.global_production_cuts.gamma = 1 * km
     sim.physics_manager.global_production_cuts.electron = 1 * km
-    sim.physics_manager.global_production_cuts.positron = 1 * mm
+    sim.physics_manager.global_production_cuts.positron = 1 * km
+
+    #Mandatory for this actor, since gamma processes are encompassed in GammaGeneralProc without.
     s = f"/process/em/UseGeneralProcess false"
     sim.g4_commands_before_init.append(s)
+
+    #
+    # s = sim.add_actor("SimulationStatisticsActor", "Stats")
+    # s.track_types_flag = True
+    #
+    # # go !
     sim.run()
     #
-    phsp = uproot.open(str(output_path) + "/test083_PhaseSpace.root" + ":PhaseSpace")
+    phsp = uproot.open(
+        str(output_path)
+        + "/test083_PhaseSpace.root"
+        + ":PhaseSpace")
 
     df = phsp.arrays()
     is_ok = test083_test(df)
+    #
     utility.test_ok(is_ok)

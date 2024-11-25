@@ -58,7 +58,6 @@ public:
 
   G4double fSplittingFactor;
   G4double fMinWeightOfParticle;
-  G4double fWeightThreshold;
   G4bool fBiasPrimaryOnly;
   G4bool fBiasOnlyOnce;
   G4int fNInteractions = 0;
