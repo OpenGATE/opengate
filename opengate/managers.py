@@ -48,6 +48,7 @@ from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
+from .sources.lastvertexsources import LastVertexSource
 from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelSource
 from .sources.gansources import GANSource, GANPairsSource
@@ -56,6 +57,7 @@ from .sources.phidsources import PhotonFromIonDecaySource
 
 source_types = {
     "GenericSource": GenericSource,
+    "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
     "GANSource": GANSource,
@@ -90,6 +92,7 @@ from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
+    LastVertexInteractionSplittingActor,
     SplittingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
@@ -135,6 +138,7 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "PhaseSpaceActor": PhaseSpaceActor,
+    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
 }
 
 
@@ -1204,11 +1208,23 @@ class VolumeManager(GateObject):
             s += f"{vt} "
         return s
 
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
     def print_volume_types(self):
         print(self.dump_volume_types())
 
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
 
     def print_material_database_names(self):
         print(self.dump_material_database_names())
