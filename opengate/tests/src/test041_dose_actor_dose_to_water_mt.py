@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     dose_actor_IDD_d2w = sim.add_actor("DoseActor", "IDD_d2w")
     dose_actor_IDD_d2w.attached_to = phantom_off
-    dose_actor_IDD_d2w.score_in = "water"
+    dose_actor_IDD_d2w.score_in = "G4_WATER"
     dose_actors.append(dose_actor_IDD_d2w)
 
     dose_actor_water_slab_insert_d = sim.add_actor("DoseActor", "IDD_waterSlab_d")
@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
     dose_actor_water_slab_insert_d2w = sim.add_actor("DoseActor", "IDD_waterSlab_d2w")
     dose_actor_water_slab_insert_d2w.attached_to = water_slab_insert
-    dose_actor_water_slab_insert_d2w.score_in = "water"
+    dose_actor_water_slab_insert_d2w.score_in = "G4_WATER"
     dose_actors.append(dose_actor_water_slab_insert_d2w)
 
     dose_actor_entranceRegiont_d = sim.add_actor("DoseActor", "IDD_entranceRegion_d")
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         "DoseActor", "IDD_entranceRegion_d2w"
     )
     dose_actor_entranceRegiont_d2w.attached_to = entranceRegion
-    dose_actor_entranceRegiont_d2w.score_in = "water"
+    dose_actor_entranceRegiont_d2w.score_in = "G4_WATER"
     dose_actors.append(dose_actor_entranceRegiont_d2w)
 
     # set common properties

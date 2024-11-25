@@ -77,11 +77,6 @@ public:
   }
   G4double GetSplittingFactor() const { return fSplittingFactor; }
 
-  void SetWeightThreshold(G4double weightThreshold) {
-    fWeightThreshold = weightThreshold;
-  }
-  G4double GetWeightThreshold() const { return fWeightThreshold; }
-
   void SetRussianRoulette(G4bool russianRoulette) {
     fRussianRoulette = russianRoulette;
   }
@@ -111,7 +106,6 @@ public:
 
 private:
   G4double fSplittingFactor;
-  G4double fWeightThreshold;
   G4ParticleChange fParticleChange;
   G4bool fRussianRoulette;
   G4ThreeVector fVectorDirector;

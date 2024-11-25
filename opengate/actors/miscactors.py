@@ -265,6 +265,10 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
 
 class KillActor(ActorBase, g4.GateKillActor):
+    """
+    Actor which kill a particle entering in a volume with the following attached actor.
+
+    """
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -294,6 +298,14 @@ def _setter_hook_particles(self, value):
 
 
 class SplittingActorBase(ActorBase):
+    """
+    Actors based on the G4GenericBiasing class of GEANT4. This class provides tools to interact with GEANT4 processes
+    during a simulation, allowing direct modification of process properties. Additionally, it enables non-physics-based
+    particle splitting (e.g., pure geometrical splitting) to introduce biasing into simulations. SplittingActorBase
+    serves as a foundational class for particle splitting operations, with parameters for configuring the splitting
+    behavior based on various conditions.
+    """
+
     # hints for IDE
     splitting_factor: int
     bias_primary_only: bool
@@ -304,19 +316,19 @@ class SplittingActorBase(ActorBase):
         "splitting_factor": (
             1,
             {
-                "doc": "FIXME",
+                "doc": "Specifies the number of particles to generate each time the splitting mechanism is applied",
             },
         ),
         "bias_primary_only": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "If true, the splitting mechanism is applied only to particles with a ParentID of 1",
             },
         ),
         "bias_only_once": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "If true, the splitting mechanism is applied only once per particle history",
             },
         ),
         "particles": (
@@ -324,7 +336,7 @@ class SplittingActorBase(ActorBase):
                 "all",
             ],
             {
-                "doc": "FIXME",
+                "doc": "Specifies the particles to split. The default value, all, includes all particles",
                 "setter_hook": _setter_hook_particles,
             },
         ),
@@ -332,8 +344,15 @@ class SplittingActorBase(ActorBase):
 
 
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
+    """
+    This splitting actor enables process-based splitting specifically for Compton interactions. Each time a Compton
+     process occurs, its behavior is modified by generating multiple Compton scattering tracks
+     (splitting factor - 1 additional tracks plus the original) associated with the initial particle.
+     Compton electrons produced in the interaction are also included, in accordance with the secondary cut settings
+     provided by the user.
+    """
+
     # hints for IDE
-    weight_threshold: float
     min_weight_of_particle: float
     russian_roulette: bool
     rotation_vector_director: bool
@@ -341,40 +360,34 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     max_theta: float
 
     user_info_defaults = {
-        "weight_threshold": (
-            0,
-            {
-                "doc": "FIXME",
-            },
-        ),
         "min_weight_of_particle": (
             0,
             {
-                "doc": "FIXME",
+                "doc": "Defines a minimum weight for particles. Particles with weights below this threshold will not be split, limiting the splitting cascade of low-weight particles generated during Compton interactions.",
             },
         ),
         "russian_roulette": (
             False,
             {
-                "doc": "FIXME",
-            },
-        ),
-        "rotation_vector_director": (
-            False,
-            {
-                "doc": "FIXME",
+                "doc": "If enabled (True), applies a Russian roulette mechanism. Particles emitted in undesired directions are discarded if a random number exceeds 1 / splitting_factor",
             },
         ),
         "vector_director": (
             [0, 0, 1],
             {
-                "doc": "FIXME",
+                "doc": "Specifies the particle’s direction of interest for the Russian roulette. In this direction, the Russian roulette is not applied",
+            },
+        ),
+        "rotation_vector_director": (
+            False,
+            {
+                "doc": "If enabled, allows the vector_director to rotate based on any rotation applied to a volume to which this actor is attached",
             },
         ),
         "max_theta": (
             90 * g4_units.deg,
             {
-                "doc": "FIXME",
+                "doc": "Sets the angular range (in degrees) around vector_director within which the Russian roulette mechanism is not applied.",
             },
         ),
     }
@@ -476,6 +489,12 @@ class LastVertexInteractionSplittingActor(
 
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+    """
+    This splitting actor enables process-based splitting specifically for bremsstrahlung process. Each time a Brem
+    process occurs, its behavior is modified by generating multiple secondary Brem scattering tracks
+    (splitting factor) attached to  the initial charged particle.
+    """
+
     # hints for IDE
     processes: list
 
@@ -483,7 +502,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
         "processes": (
             ["eBrem"],
             {
-                "doc": "FIXME",
+                "doc": "Specifies the process split by this actor. This parameter is set to eBrem, as the actor is specifically developed for this process. It is recommended not to modify this setting.",
             },
         ),
     }
