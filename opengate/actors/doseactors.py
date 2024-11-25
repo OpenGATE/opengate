@@ -543,6 +543,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
+        # the edep component has to be active in any case
+        self.user_output.edep_with_uncertainty.set_active(True, item=0)
+
         # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
         if (
             self.user_output.edep_with_uncertainty.get_active(
