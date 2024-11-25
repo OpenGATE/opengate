@@ -535,6 +535,7 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
+process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
 process_cls(SplittingActorBase)
 process_cls(ComptSplittingActor)
