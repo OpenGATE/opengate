@@ -2,10 +2,14 @@ name: CI
 
 on:
   push:
+    paths-ignore:
+      - 'docs/**'
     branches: [ master ]
     tags:
       - '*'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
     branches: [ master ]
   schedule:
     - cron: '0 0 * * 0,3'
