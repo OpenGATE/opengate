@@ -121,7 +121,7 @@ if __name__ == "__main__":
     LETActor_IDD_d2w.size = size
     LETActor_IDD_d2w.spacing = spacing
     LETActor_IDD_d2w.hit_type = "random"
-    LETActor_IDD_d2w.score_in = "water"
+    LETActor_IDD_d2w.score_in = "G4_WATER"
     LETActor_IDD_d2w.averaging_method = "dose_average"
 
     LET_primaries = "LETprimaries"

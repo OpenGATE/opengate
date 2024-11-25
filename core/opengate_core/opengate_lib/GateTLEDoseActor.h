@@ -28,6 +28,8 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
+  void BeginOfEventAction(const G4Event *event) override;
+
   void PreUserTrackingAction(const G4Track *track) override;
 
   // Main function called every step in attached volume
@@ -42,9 +44,8 @@ public:
   struct threadLocalT {
     // Bool if current track is a TLE gamma or not
     bool fIsTLEGamma;
-
-    // Store the last track for the current nonTLE gamma
-    size_t fLastTrackId;
+    bool fIsTLESecondary;
+    std::map<G4int, G4int> fSecNbWhichDeposit;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

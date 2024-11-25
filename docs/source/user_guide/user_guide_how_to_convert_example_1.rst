@@ -158,7 +158,6 @@ GATE 10
            add_spiral_insert(sim, spiral, f"SpiralInsert{i:02d}", translation=[posx[i] * mm, posy[i] * mm, 0])
 
       # Spiral rotation
-      sim.run_timing_intervals = gate.runtiming.range_timing(0, 1 * sec, n)
       tr, rot = gate.geometry.utility.volume_orbiting_transform("z", 0, 360, n, spiral.translation, spiral.rotation)
       spiral.add_dynamic_parametrisation(translation=tr, rotation=rot)
 
@@ -202,9 +201,9 @@ GATE 10
     source.energy.type = "mono"
     source.position.type = "box"
     source.position.size = [1 * nm, 16 * mm, 1 * nm]
-    source.position.translation = [-1060 * mm, 0 * mm, 0 * mm]
+    source.position.translation = [1060 * mm, 0 * mm, 0 * mm]
     source.direction.type = "focused"
-    source.direction.focus_point = [-1000 * mm, 0 * mm, 0 * mm]
+    source.direction.focus_point = [1000 * mm, 0 * mm, 0 * mm]
     source.n = 720000 / sim.number_of_threads
 
 
@@ -324,8 +323,8 @@ GATE 10
           phase_space.filters.append(filter)
           return phase_space
 
-      phsp_actor_in = add_detector(sim, "In", [-110 * mm, 0 * mm, 0 * mm])
-      phsp_actor_out = add_detector(sim, "Out", [110 * mm, 0 * mm, 0 * mm])
+      phsp_actor_in = add_detector(sim, "In", [110 * mm, 0 * mm, 0 * mm])
+      phsp_actor_out = add_detector(sim, "Out", [-110 * mm, 0 * mm, 0 * mm])
       phsp_actor_in.output_filename = "PhaseSpaceIn.root"
       phsp_actor_out.output_filename = "PhaseSpaceOut.root"
 
