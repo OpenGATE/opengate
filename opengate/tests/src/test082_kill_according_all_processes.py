@@ -19,7 +19,7 @@ def test083_test(df):
 
     dz_diff = df["PreDirection_Z"][df["PreDirection_Z"] != -1]
 
-    print("Number of photon undergoing at least one rayleigh process", len(dz_diff))
+    print("Number of photons undergoing at least one rayleigh process", len(dz_diff))
     if (nb_event_to_interest == nb_event) and (np.all(tab_ekin == tab_vertex_ekin) and len(dz_diff >0)):
         return True
     return False

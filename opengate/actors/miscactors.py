@@ -301,11 +301,16 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
     processes_to_kill: list
     is_rayleigh_an_interaction: bool
 
+    """
+    This actor enables the user to kill particles according to one or more processes which occur in a volume. If the user
+    wants to kill a particle whenever a proces occurs (except transportation), the "all" option is available.
+    """
+
     user_info_defaults = {
         "processes_to_kill": (
             [],
             {
-                "doc": "If a processes belonging to this list occured, the particle and its potential secondaries are killed. the variable all can be set up to kill a particle if an interaction occured.",
+                "doc": "If a processes belonging to this list occured, the particle and its potential secondaries are killed. the variable all can be set up to kill a particle if an interaction occured."
             },
         ),
         "is_rayleigh_an_interaction":(
@@ -338,7 +343,7 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         if len(self.user_info.processes_to_kill)== 0:
-            fatal("You have to kill at least one process ! ")
+            fatal("You have to select at least one process ! ")
 
 
 

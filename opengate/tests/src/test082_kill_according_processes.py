@@ -18,6 +18,7 @@ def test083_test(df):
     tab_ekin  = df["KineticEnergy"]
     dz_diff = df["PreDirection_Z"][(df["PreDirection_Z"] != -1) & (df["TrackVertexKineticEnergy"] == df["KineticEnergy"])]
 
+    print("Number of detected photons with an energy/a modified momentum:",len(dz_diff))
     if (nb_event_to_interest == nb_event) and (np.all(tab_ekin == tab_vertex_ekin) and (len(dz_diff)== 0)):
         return True
     return False
