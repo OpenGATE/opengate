@@ -320,6 +320,8 @@ void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
     } catch (const py::key_error &e) {
       // zxc log a "The default value was used" or something?
       // std::cerr << "Error: " << e.what() << std::endl;
+      // Use default value.
+      ll.fSPS->SetAccolinearityFWHM();
     }
   }
   // this is photon

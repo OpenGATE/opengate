@@ -31,10 +31,7 @@ GateSingleParticleSource::GateSingleParticleSource(
   fParticleDefinition = nullptr;
   fBackToBackMode = false;
   fAccolinearityFlag = false;
-  // Probably an underestimation in most cases, but it is the most cited (Moses
-  // 2011)
-  // zxc pi must be defined somewhere...
-  fAccolinearitySigma = 0.5 / 180.0 * 3.14159265358979323846 * fwhm_to_sigma;
+  fAccolinearitySigma = 0.0;
 }
 
 GateSingleParticleSource::~GateSingleParticleSource() {
@@ -124,9 +121,7 @@ void GateSingleParticleSource::SetBackToBackMode(bool flag,
 }
 
 void GateSingleParticleSource::SetAccolinearityFWHM(double accolinearityFWHM) {
-  // zxc units agnostic approach?
-  fAccolinearitySigma =
-      accolinearityFWHM / 180.0 * 3.14159265358979323846 * fwhm_to_sigma;
+  fAccolinearitySigma = accolinearityFWHM / CLHEP::rad * fwhm_to_sigma;
 }
 
 void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
@@ -147,7 +142,7 @@ void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
     double theta = sqrt(pow(phi, 2.0) + pow(psi, 2.0));
     G4ThreeVector particle2_direction(sin(theta) * phi / theta,
                                       sin(theta) * psi / theta, cos(theta));
-    // zxc need to keep magnitude of momemtum?
+    // TODO: What to do with the magnitude of momemtum?
     // Apply accolinearity deviation relative to the colinear case
     particle2_direction.rotateUz(-1.0 * particle1->GetMomentum().unit());
     particle2->SetMomentumDirection(particle2_direction);

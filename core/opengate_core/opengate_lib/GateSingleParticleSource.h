@@ -56,7 +56,9 @@ public:
 
   void SetBackToBackMode(bool flag, bool accolinearityFlag);
 
-  void SetAccolinearityFWHM(double accolinearityFWHM);
+  // Probably an underestimation in most cases, but it is the most cited
+  // value (Moses 2011)
+  void SetAccolinearityFWHM(double accolinearityFWHM = 0.5 * CLHEP::deg);
 
 protected:
   G4ParticleDefinition *fParticleDefinition;

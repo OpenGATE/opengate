@@ -77,8 +77,7 @@ if __name__ == "__main__":
     )
     root_filename_custom_acolin = phsp.output_filename
     source.direction.accolinearity_flag = True
-    # zxc Currently, need to remove deg
-    source.direction.accolinearity_fwhm = custom_acolin_FWHM / deg
+    source.direction.accolinearity_fwhm = custom_acolin_FWHM
     sim.run()
 
     # test: without acolinearity, should be mostly colinear
