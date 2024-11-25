@@ -171,7 +171,7 @@ class ActorBase(GateObject):
                 )
                 config_for_auto_interface["item"] = 0
                 interfaces[interface_name].update(config_for_auto_interface)
-            cls._user_output_classes[output_name] = cls.make_actor_output_class(
+            cls._user_output_classes[output_name] = cls.__make_actor_output_class__(
                 actor_output_class, output_name, interfaces
             )
             # call the hook (class) method on the newly created actor output class
@@ -181,13 +181,11 @@ class ActorBase(GateObject):
                 interfaces=interfaces
             )
 
-            _create_interface_properties(
-                cls, cls._user_output_classes[output_name], interfaces
-            )
+            cls.__create_interface_properties__(cls._user_output_classes[output_name])
         cls.__doc__ += cls.__get_docstring_user_output__()
 
     @classmethod
-    def make_actor_output_class(cls, output_class, output_name, interfaces):
+    def __make_actor_output_class__(cls, output_class, output_name, interfaces):
         """Factory function to create a custom copy of an ActorOutput class for a specific actor class.
         Only used by GATE internally.
         """
@@ -195,6 +193,53 @@ class ActorBase(GateObject):
         extra_attributes = {"__interfaces__": interfaces}
         new_class = type(new_class_name, (output_class,), extra_attributes)
         return new_class
+
+    @classmethod
+    def __create_interface_properties__(cls, user_output_class):
+        # create a property in the actor so the user can quickly access the interface
+        for interface_name, config in user_output_class.__interfaces__.items():
+
+            def p(self):
+                return self.interfaces_to_user_output[interface_name]
+
+            # define a unique name by combining the actor class name and the interface name
+            # unique_interface_name = f"{actor_class.__name__}_{interface_name}"
+            unique_interface_name = interface_name
+            # Check if this class already has this property and whether it is associated with an interface.
+            # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
+            if (
+                    hasattr(cls, interface_name)
+                    and unique_interface_name
+                    not in cls._existing_properties_to_interfaces
+            ):
+                # before we raise an exception, we check if this property was created by a parent class
+                properties_in_bases = []
+                for c in cls.__bases__:
+                    try:
+                        properties_in_bases.extend(c._existing_properties_to_interfaces)
+                    except AttributeError:
+                        continue
+                # if the property was not created by a parent class, it must be another attribute of this class,
+                # and we should not override it.
+                if unique_interface_name not in properties_in_bases:
+                    raise GateImplementationError(
+                        f"Cannot create the property for interface '{interface_name}' "
+                        f"associated with output class {user_output_class} "
+                        f"in actor {cls.__name__} "
+                        f"because a property with that name already exists, "
+                        f"but it is not associated with the interface. "
+                        f"These are the exiting properties: {cls._existing_properties_to_interfaces}"
+                        f"The developer needs to change the name of the interface "
+                        f"(or user_output in case the interface is automatically generated). "
+                    )
+            elif not hasattr(cls, interface_name):
+                doc_string = _get_docstring_for_interface(
+                    user_output_class, interface_name, **config
+                )
+                setattr(cls, interface_name, property(fget=p, doc=doc_string))
+                cls._existing_properties_to_interfaces.append(unique_interface_name)
+            else:
+                pass
 
     @classmethod
     def __get_docstring_user_output__(cls):
@@ -515,54 +560,6 @@ def _get_docstring_for_interface(user_output_class, interface_name, **interface_
         docstring += f"  * {k} = {v}\n"
     docstring += "\n"
     return docstring
-
-
-def _create_interface_properties(actor_class, user_output_class, interfaces):
-    # create a property in the actor so the user can quickly access the interface
-    for interface_name, config in interfaces.items():
-
-        def p(self):
-            return self.interfaces_to_user_output[interface_name]
-
-        # define a unique name by combining the actor class name and the interface name
-        # unique_interface_name = f"{actor_class.__name__}_{interface_name}"
-        unique_interface_name = interface_name
-        # Check if this class already has this property and whether it is associated with an interface.
-        # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
-        if (
-            hasattr(actor_class, interface_name)
-            and unique_interface_name
-            not in actor_class._existing_properties_to_interfaces
-        ):
-            # before we raise an exception, we check if this property was created by a parent class
-            # in that case, we just override it here in the child class
-            properties_in_bases = []
-            for c in actor_class.__bases__:
-                try:
-                    properties_in_bases.extend(c._existing_properties_to_interfaces)
-                except AttributeError:
-                    continue
-            # if the property was not created by a parent class, it must be another attribute of this class,
-            # and we should not override it.
-            if unique_interface_name not in properties_in_bases:
-                raise GateImplementationError(
-                    f"Cannot create the property for interface '{interface_name}' "
-                    f"associated with output class {user_output_class} "
-                    f"in actor {actor_class.__name__} "
-                    f"because a property with that name already exists, "
-                    f"but it is not associated with the interface. "
-                    f"These are the exiting properties: {actor_class._existing_properties_to_interfaces}"
-                    f"The developer needs to change the name of the interface "
-                    f"(or user_output in case the interface is automatically generated). "
-                )
-        elif not hasattr(actor_class, interface_name):
-            doc_string = _get_docstring_for_interface(
-                user_output_class, interface_name, **config
-            )
-            setattr(actor_class, interface_name, property(fget=p, doc=doc_string))
-            actor_class._existing_properties_to_interfaces.append(unique_interface_name)
-        else:
-            pass
 
 
 process_cls(ActorBase)
