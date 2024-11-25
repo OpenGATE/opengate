@@ -10,20 +10,21 @@ import uproot
 
 
 def test083_test(df):
-    df = df[df["PDGCode"] ==22]
+    df = df[df["PDGCode"] == 22]
     nb_event = len(df["ParentID"])
     nb_event_to_interest = len(df["ParentID"][df["ParentID"] == 0])
 
     tab_vertex_ekin = df["TrackVertexKineticEnergy"]
-    tab_ekin  = df["KineticEnergy"]
+    tab_ekin = df["KineticEnergy"]
 
     dz_diff = df["PreDirection_Z"][df["PreDirection_Z"] != -1]
 
     print("Number of photons undergoing at least one rayleigh process", len(dz_diff))
-    if (nb_event_to_interest == nb_event) and (np.all(tab_ekin == tab_vertex_ekin) and len(dz_diff >0)):
+    if (nb_event_to_interest == nb_event) and (
+        np.all(tab_ekin == tab_vertex_ekin) and len(dz_diff > 0)
+    ):
         return True
     return False
-
 
 
 if __name__ == "__main__":
@@ -72,8 +73,8 @@ if __name__ == "__main__":
     source.particle = "gamma"
     source.position.type = "box"
     source.attached_to = world.name
-    source.position.size = [1*nm,1*nm,1*nm]
-    source.position.translation = [0, 0, 10*cm + 1 * mm]
+    source.position.size = [1 * nm, 1 * nm, 1 * nm]
+    source.position.translation = [0, 0, 10 * cm + 1 * mm]
     source.direction.type = "momentum"
     source.direction_relative_to_attached_volume = True
     # source1.direction.focus_point = [0*cm, 0*cm, -5 *cm]
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     source.n = 100000
 
     tungsten = sim.add_volume("Box", "tungsten_box")
-    tungsten.size = [3 * cm, 3 * cm, 1  * cm]
+    tungsten.size = [3 * cm, 3 * cm, 1 * cm]
     tungsten.material = "Tungsten"
     tungsten.mother = world.name
     tungsten.color = [0.5, 0.9, 0.3, 1]
@@ -91,22 +92,28 @@ if __name__ == "__main__":
     kill_proc_act = sim.add_actor("KillAccordingProcessesActor", "kill_proc_act")
     kill_proc_act.attached_to = tungsten.name
     kill_proc_act.is_rayleigh_an_interaction = False
-    kill_proc_act.processes_to_kill=["all"]
-
+    kill_proc_act.processes_to_kill = ["all"]
 
     phsp_sphere = sim.add_volume("Sphere", "phsp_sphere")
-    phsp_sphere.mother =world.name
+    phsp_sphere.mother = world.name
     phsp_sphere.material = "G4_Galactic"
-    phsp_sphere.rmin = 5 *cm
-    phsp_sphere.rmax = 5 * cm +1*nm
-
+    phsp_sphere.rmin = 5 * cm
+    phsp_sphere.rmax = 5 * cm + 1 * nm
 
     sim.output_dir = output_path
     phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp.attached_to = phsp_sphere.name
-    phsp.attributes = ["ParentID","EventID", "TrackID", "KineticEnergy","TrackVertexKineticEnergy","PreDirection","PDGCode"]
+    phsp.attributes = [
+        "ParentID",
+        "EventID",
+        "TrackID",
+        "KineticEnergy",
+        "TrackVertexKineticEnergy",
+        "PreDirection",
+        "PDGCode",
+    ]
     name_phsp = "test083_" + phsp.name + ".root"
-    phsp.output_filename= name_phsp
+    phsp.output_filename = name_phsp
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = False
@@ -114,7 +121,7 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.electron = 1 * km
     sim.physics_manager.global_production_cuts.positron = 1 * km
 
-    #Mandatory for this actor, since gamma processes are encompassed in GammaGeneralProc without.
+    # Mandatory for this actor, since gamma processes are encompassed in GammaGeneralProc without.
     s = f"/process/em/UseGeneralProcess false"
     sim.g4_commands_before_init.append(s)
 
@@ -125,10 +132,7 @@ if __name__ == "__main__":
     # # go !
     sim.run()
     #
-    phsp = uproot.open(
-        str(output_path)
-        + "/test083_PhaseSpace.root"
-        + ":PhaseSpace")
+    phsp = uproot.open(str(output_path) + "/test083_PhaseSpace.root" + ":PhaseSpace")
 
     df = phsp.arrays()
     is_ok = test083_test(df)
