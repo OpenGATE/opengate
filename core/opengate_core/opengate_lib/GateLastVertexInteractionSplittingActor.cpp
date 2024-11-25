@@ -66,6 +66,7 @@ void GateLastVertexInteractionSplittingActor::InitializeUserInfo(
   fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
   fMaxTheta = DictGetDouble(user_info, "max_theta");
   fBatchSize = DictGetDouble(user_info, "batch_size");
+  fNbOfMaxBatchPerEvent = DictGetInt(user_info, "nb_of_max_batch_per_event");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -357,7 +358,7 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
   fNumberOfTrackToSimulate =
       fStackManager->GetNTotalTrack() - nbOfTrackAlreadyInStack;
   fNbOfBatchForExitingParticle++;
-  if (fNbOfBatchForExitingParticle > 500) {
+  if (fNbOfBatchForExitingParticle > fNbOfMaxBatchPerEvent) {
     fStackManager->clear();
   }
   // stackManager->clear();
