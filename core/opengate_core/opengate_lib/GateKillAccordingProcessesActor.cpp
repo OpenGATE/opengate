@@ -48,7 +48,8 @@ GateKillAccordingProcessesActor::GetListOfPhysicsListProcesses() {
 void GateKillAccordingProcessesActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
   fProcessesToKill = DictGetVecStr(user_info, "processes_to_kill");
-  fIsRayleighAnInteraction = DictGetBool(user_info, "is_rayleigh_an_interaction");
+  fIsRayleighAnInteraction =
+      DictGetBool(user_info, "is_rayleigh_an_interaction");
 }
 
 void GateKillAccordingProcessesActor::BeginOfRunAction(const G4Run *run) {
@@ -71,14 +72,12 @@ void GateKillAccordingProcessesActor::BeginOfRunAction(const G4Run *run) {
                   errorMessage);
     }
   }
-  if (fProcessesToKill[0] == "all"){
-    if (fProcessesToKill.size() == 1){
+  if (fProcessesToKill[0] == "all") {
+    if (fProcessesToKill.size() == 1) {
       fKillIfAnyInteraction = true;
     }
   }
-
 }
-
 
 void GateKillAccordingProcessesActor::PreUserTrackingAction(
     const G4Track *track) {
@@ -96,33 +95,31 @@ void GateKillAccordingProcessesActor::SteppingAction(G4Step *step) {
   const G4VProcess *process = step->GetPostStepPoint()->GetProcessDefinedStep();
   if (process != 0)
     processName = process->GetProcessName();
-  
 
   // Positron exception to retrieve the annihilation process, since it's an at
   // rest process most of the time
 
-  if ((step->GetTrack()->GetParticleDefinition()->GetParticleName() == "e+") && (step->GetTrack()->GetTrackStatus() == 1))
+  if ((step->GetTrack()->GetParticleDefinition()->GetParticleName() == "e+") &&
+      (step->GetTrack()->GetTrackStatus() == 1))
     processName = "annihil";
 
-
-  if (fKillIfAnyInteraction){
-    if (processName != "Transportation"){
-      if (fIsRayleighAnInteraction == true){
+  if (fKillIfAnyInteraction) {
+    if (processName != "Transportation") {
+      if (fIsRayleighAnInteraction == true) {
         step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
         G4AutoLock mutex(&SetNbKillAccordingProcessesMutex);
         fNbOfKilledParticles++;
-      }
-      else {
-        if (processName != "Rayl"){
+      } else {
+        if (processName != "Rayl") {
           step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
           G4AutoLock mutex(&SetNbKillAccordingProcessesMutex);
           fNbOfKilledParticles++;
         }
       }
     }
-  }
-  else{
-    if (std::find(fProcessesToKill.begin(),fProcessesToKill.end(),processName) != fProcessesToKill.end()) {
+  } else {
+    if (std::find(fProcessesToKill.begin(), fProcessesToKill.end(),
+                  processName) != fProcessesToKill.end()) {
       step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
       G4AutoLock mutex(&SetNbKillAccordingProcessesMutex);
       fNbOfKilledParticles++;
