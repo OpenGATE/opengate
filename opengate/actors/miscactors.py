@@ -275,12 +275,13 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
         do_something()
 """
+
+
 class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.number_of_killed_particles = 0
-
 
     def get_processed_output(self):
         d = {}
@@ -292,8 +293,7 @@ class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
         for k, v in self.get_processed_output().items():
             s = k + ": " + str(v)
             s += "\n"
-        return(s)
-
+        return s
 
 
 class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor):
@@ -313,12 +313,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
                 "doc": "If a processes belonging to this list occured, the particle and its potential secondaries are killed. the variable all can be set up to kill a particle if an interaction occured."
             },
         ),
-        "is_rayleigh_an_interaction":(
+        "is_rayleigh_an_interaction": (
             True,
             {
                 "doc": "Specific case to be faster. If a user wants to kill all interactions which implies an energy loss, this boolean enables to not account Rayleigh process as an interaction"
-            }
-        )
+            },
+        ),
     }
 
     """
@@ -328,32 +328,40 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputKillAccordingProcessesActor, "kill_interacting_particles")
+        self._add_user_output(
+            ActorOutputKillAccordingProcessesActor, "kill_interacting_particles"
+        )
         self.__initcpp__()
         self.number_of_killed_particles = 0
 
     def __initcpp__(self):
         g4.GateKillAccordingProcessesActor.__init__(self, self.user_info)
         self.AddActions(
-            {"BeginOfRunAction","BeginOfEventAction","PreUserTrackingAction", "SteppingAction","EndSimulationAction"}
+            {
+                "BeginOfRunAction",
+                "BeginOfEventAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "EndSimulationAction",
+            }
         )
 
     def initialize(self):
         ActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
-        if len(self.user_info.processes_to_kill)== 0:
+        if len(self.user_info.processes_to_kill) == 0:
             fatal("You have to select at least one process ! ")
 
-
-
     def EndSimulationAction(self):
-        self.user_output.kill_interacting_particles.number_of_killed_particles = self.number_of_killed_particles
-
+        self.user_output.kill_interacting_particles.number_of_killed_particles = (
+            self.number_of_killed_particles
+        )
 
     def __str__(self):
         s = self.user_output["kill_non_interacting_particles"].__str__()
         return s
+
 
 class KillActor(ActorBase, g4.GateKillActor):
     """
