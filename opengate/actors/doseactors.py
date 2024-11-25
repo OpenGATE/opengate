@@ -569,6 +569,10 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
             is True
         ):
+            # activate the dose component
+            self.user_output.dose_with_uncertainty.set_active(
+                True, item=0
+            )
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
             if not self.user_output.dose_with_uncertainty.get_active(item=1):
