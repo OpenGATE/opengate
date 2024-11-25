@@ -584,16 +584,14 @@ class LastVertexInteractionSplittingActor(
     such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
     """
 
-
     # hints for IDE
     splitting_factor: int
     angular_kill: bool
     max_theta: float
     vector_director: list
     rotation_vector_director: bool
-    batch_size:int
-    nb_of_max_batch_per_event:int
-
+    batch_size: int
+    nb_of_max_batch_per_event: int
 
     user_info_defaults = {
         "splitting_factor": (
