@@ -415,6 +415,17 @@ class LastVertexInteractionSplittingActor(
     such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
     """
 
+
+    # hints for IDE
+    splitting_factor: int
+    angular_kill: bool
+    max_theta: float
+    vector_director: list
+    rotation_vector_director: bool
+    batch_size:int
+    nb_of_max_batch_per_event:int
+
+
     user_info_defaults = {
         "splitting_factor": (
             1,
@@ -449,7 +460,13 @@ class LastVertexInteractionSplittingActor(
         "batch_size": (
             1,
             {
-                "doc": "Defines a batch of number of processes to regenerate, calculated as batch_size * splitting_factor. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+                "doc": "Defines a batch of number of processes to regenerate. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+            },
+        ),
+        "nb_of_max_batch_per_event": (
+            500,
+            {
+                "doc": "Defines a maximum number of attempt to enable the particles to exit. Useful to avoid an important loss of time for extremely rare events",
             },
         ),
     }

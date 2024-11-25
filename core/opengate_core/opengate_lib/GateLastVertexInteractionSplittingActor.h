@@ -85,6 +85,7 @@ public:
   tree<LastVertexDataContainer>::post_order_iterator fIterator;
   std::vector<LastVertexDataContainer> fListOfContainer;
   G4StackManager *fStackManager = nullptr;
+  G4int fNbOfMaxBatchPerEvent;
 
   G4Track *fTrackToSplit = nullptr;
   G4Step *fCopyInitStep = nullptr;

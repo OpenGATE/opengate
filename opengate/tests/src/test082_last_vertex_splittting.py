@@ -154,7 +154,8 @@ if __name__ == "__main__":
             vertex_splitting_actor.angular_kill = True
             vertex_splitting_actor.vector_director = [0, 0, -1]
             vertex_splitting_actor.max_theta = 90 * deg
-            vertex_splitting_actor.batch_size = 10
+            vertex_splitting_actor.batch_size = 10*nb_split
+            vertex_splitting_actor.nb_of_max_batch_per_event = 500
 
         plan = sim.add_volume("Box", "plan_phsp")
         plan.material = "G4_Galactic"
