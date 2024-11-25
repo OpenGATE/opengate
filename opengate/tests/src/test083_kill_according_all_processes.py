@@ -16,9 +16,11 @@ def test083_test(df):
 
     tab_vertex_ekin = df["TrackVertexKineticEnergy"]
     tab_ekin  = df["KineticEnergy"]
-    dz_diff = df["PreDirection_Z"][(df["PreDirection_Z"] != -1) & (df["TrackVertexKineticEnergy"] == df["KineticEnergy"])]
 
-    if (nb_event_to_interest == nb_event) and (np.all(tab_ekin == tab_vertex_ekin) and (len(dz_diff)== 0)):
+    dz_diff = df["PreDirection_Z"][df["PreDirection_Z"] != -1]
+
+    print("Number of photon undergoing at least one rayleigh process", len(dz_diff))
+    if (nb_event_to_interest == nb_event) and (np.all(tab_ekin == tab_vertex_ekin) and len(dz_diff >0)):
         return True
     return False
 
@@ -88,7 +90,8 @@ if __name__ == "__main__":
 
     kill_proc_act = sim.add_actor("KillAccordingProcessesActor", "kill_proc_act")
     kill_proc_act.attached_to = tungsten.name
-    kill_proc_act.processes_to_kill=["compt","Rayl"]
+    kill_proc_act.is_rayleigh_an_interaction = False
+    kill_proc_act.processes_to_kill=["all"]
 
 
     phsp_sphere = sim.add_volume("Sphere", "phsp_sphere")
