@@ -531,6 +531,13 @@ class GateObject:
             warning(
                 f"__getstate__() called in object '{self.name}' of type {self.type_name}."
             )
+
+        # Note: returning a copy, e.g. via dict([(k, v) for k, v in self.__dict__.items()]
+        # instead of returning self.__dict__ leads to infinite recursion during pickling.
+        # Reason:
+        # Many objects hold circular references, e.g. Simulation has a reference to VolumeManager and vice versa
+        # The pickle module can handle this as long as the objects are identical.
+        # If we return a copy of dict here, pickle is unable to understand and handle the circularity.
         return self.__dict__
 
     def __setstate__(self, d):
