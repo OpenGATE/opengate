@@ -406,14 +406,6 @@ class ActorBase(GateObject):
 
     def _init_user_output_instance(self):
         for output_name, actor_output_class in self._user_output_classes.items():
-            # try:
-            #     actor_output_class = self._user_output_classes[output_name]
-            # except KeyError:
-            #     raise GateImplementationError(
-            #         f"In actor {self.type_name}: "
-            #         f"No entry 'actor_output_class' specified "
-            #         f"in ._user_output_classes for user_output {output_name}."
-            #     )
             try:
                 interfaces = actor_output_class.__interfaces__
             except AttributeError:
