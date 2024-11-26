@@ -201,11 +201,12 @@ class BaseUserInterfaceToActorOutput:
         # try to get known attributes directly from __dict__
         # to avoid infinite recursion
         if item in (
-            "__setstate__",
-            "__getstate__",
-            "user_output_name",
-            "belongs_to_actor",
-            "_kwargs_for_interface_calls",
+                "__setstate__",
+                "__getstate__",
+                "user_output_name",
+                "interface_name",
+                "belongs_to_actor",
+                "_kwargs_for_interface_calls",
         ):
             try:
                 return self.__dict__[item]
