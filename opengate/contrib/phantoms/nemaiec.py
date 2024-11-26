@@ -5,6 +5,7 @@ import numpy as np
 import math
 
 import opengate.geometry.volumes
+from gatetools import morpho_math
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
 from opengate.sources.gansources import generate_isotropic_directions
@@ -290,6 +291,16 @@ def add_spheres_sources(
         t = compute_total_spheres_activity(simulation, iec_name, src_name)
         print(s)
         print(f"Total activity is {t} Bq")
+    return sources
+
+
+def add_spheres_sources_equal(sim, iec_name, src_name, total_activity):
+    Bq = g4_units.Bq
+    sources = add_spheres_sources(sim, iec_name, src_name, "all", [1.0] * 6)
+    t = compute_total_spheres_activity(sim, iec_name, src_name) * Bq
+    for source in sources:
+        # set the total activity to the asked number of particle
+        source.activity = (source.activity / t) * total_activity
     return sources
 
 
@@ -673,4 +684,6 @@ def create_iec_phantom_source_vox(
         else:
             img_arr[img_arr == l] = 0
 
+    # The coordinate system is different from IEC analytical volume
+    # 35mm should be added in Y
     itk.imwrite(img, source_filename)
