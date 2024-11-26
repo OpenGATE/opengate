@@ -176,13 +176,6 @@ class ActorBase(GateObject):
     def __process_this__(cls):
         """This is a specialized version of the class method __process_this__ for actor classes."""
         super().__process_this__()
-    @classmethod
-    def __make_actor_output_class__(cls, output_class, output_name, interfaces):
-        """Factory function to create a custom copy of an ActorOutput class for a specific actor class.
-        Only used by GATE internally.
-        """
-        new_class_name = f"{output_class.__name__}_{output_name}_{cls.__name__}"
-        extra_attributes = {"__interfaces__": interfaces}
         cls.__process_user_output_classes__()
         cls.__create_interface_properties__()
 
