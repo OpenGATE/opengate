@@ -87,13 +87,9 @@ class BaseUserInterfaceToActorOutput:
         For earlier python version (<3.11), __getstate__ may not be defined.
         We provide a simple workaround here to return a copy of the internal dict.
         """
-        try:
-            return_dict = super().__getstate__()
-        except AttributeError:
-            # If there is no superclass with __getstate__, use self.__dict__
-            return_dict = self.__dict__.copy()
-        # Safely remove 'belongs_to_actor' if it exists
-        return_dict.pop("belongs_to_actor", None)
+        return_dict = self.__dict__.copy()
+        # set 'belongs_to_actor' to None to avoid pickling circles; will be reset during unpickling
+        return_dict["belongs_to_actor"] = None
         return return_dict
 
     @property
