@@ -548,7 +548,7 @@ class GateObject:
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
         but objects handling user_infos need a custom __reduce__ to make sure
-        the properties linked to the user_infos are properly created
+        the properties linked to the user_infos are properly created.
 
         The return arguments are:
         1) A callable used to create the instance when unpickling
