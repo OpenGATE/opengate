@@ -1,11 +1,9 @@
 import json
-
 import itk
 import numpy as np
 import math
 
 import opengate.geometry.volumes
-from gatetools import morpho_math
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
 from opengate.sources.gansources import generate_isotropic_directions
