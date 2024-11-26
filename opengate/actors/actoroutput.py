@@ -5,7 +5,7 @@ from typing import Optional
 import sys
 
 import opengate_core as g4
-from ..base import GateObject, process_cls
+from ..base import GateObject, process_cls, restore_instance_after_pickling
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal, GateImplementationError
 from .dataitems import (
