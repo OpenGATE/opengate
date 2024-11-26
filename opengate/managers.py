@@ -1489,10 +1489,6 @@ class Simulation(GateObject):
         # list to store warning messages issued somewhere in the simulation
         self._user_warnings = []
 
-        # for debug only
-        self.verbose_getstate = False
-        self.verbose_close = False
-
         # main managers
         self.volume_manager = VolumeManager(self)
         self.source_manager = SourceManager(self)
