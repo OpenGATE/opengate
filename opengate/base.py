@@ -377,7 +377,6 @@ class GateObject:
         line = f"The class {cls.__qualname__} has the following user input parameters and default values:"
         underline = "~" * len(line)
         docstring = f"{line}\n{underline}\n\n"
-        # docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
         for k, v in sorted(cls.inherited_user_info_defaults.items()):
             default_value = v[0]
             options = v[1]
