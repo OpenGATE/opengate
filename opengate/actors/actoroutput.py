@@ -71,9 +71,9 @@ class BaseUserInterfaceToActorOutput:
         kwargs_for_interface_calls=None,
         **kwargs,
     ):
-        # Important: we need to write the attributes directly into the __dict__ here because
-        # they are set for the first time and assigning them via self.user_output_name = ...
-        # would interfere with the __setattr__ method
+        # Important: the attributes set here in the __init__ method need to be
+        # listed in the _known_attributes class attribute
+        # because the __setattr__ method needs that
         self.user_output_name = user_output_name
         self.interface_name = interface_name
         self.belongs_to_actor = belongs_to_actor
@@ -204,7 +204,6 @@ class BaseUserInterfaceToActorOutput:
 
         # try to get known attributes directly from __dict__
         # to avoid infinite recursion
-        # if item in type(self).__dict__["_known_attributes"]:
         if item in (
             "__setstate__",
             "__getstate__",
