@@ -384,10 +384,12 @@ class ActorBase(GateObject):
         """This base class method initializes common settings and should be called in all inheriting classes."""
 
         # FIXME: needs to be updated to new actor output API
-        # if len(self.user_output) > 0 and all(
-        #     [v.active is False for v in self.user_output.values()]
-        # ):
-        #     warning(f"The actor {self.name} has no active output. ")
+        any_active = False
+        for p in self._existing_properties_to_interfaces:
+            interface = getattr(self, p)
+            any_active |= interface.active
+        if len(self.user_output) > 0 and not any_active:
+            self.warn_user(f"The actor {self.name} has no active output. ")
 
         for k, v in self.user_output.items():
             v.initialize()
