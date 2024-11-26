@@ -267,9 +267,7 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
 
 
 class KillActor(ActorBase, g4.GateKillActor):
-    """
-    Actor which kill a particle entering in a volume with the following attached actor.
-
+    """Actor which kills a particle entering a volume.
     """
 
     def __init__(self, *args, **kwargs):
