@@ -1,6 +1,3 @@
-.. The next line draws an horizontal line
------
-
 .. _source-generic-source:
 
 Generic source
@@ -47,6 +44,7 @@ can be defined by a single value (‘mono’) or Gaussian (‘gauss’).
 
 
 .. _source-particle-type:
+
 Particle type
 -------------
 
@@ -77,8 +75,14 @@ Source of ion can be set with the following (see ``test013``)
    source2 = sim.add_source('GenericSource, 'ion2')
    source2.particle = 'ion 53 124'  # Iodine 124
 
+Note that the ion will only be simulated if the decay is enabled.
+
+.. code:: python
+
+   sim.physics_manager.enable_decay = True
 
 .. _source-position:
+
 Particle initial position
 -------------------------
 
@@ -117,6 +121,7 @@ Here are some examples (mostly from ``test010_generic_source.py``):
 
 
 .. _source-direction:
+
 Particle initial direction
 --------------------------
 
@@ -132,20 +137,6 @@ Particle initial direction
       source.direction.type = "iso"
       source.direction.theta = [0, 10 * deg]
       source.direction.phi = [0, 90 * deg]
-
-
-``direction.type = "iso"`` assigns directions to primary particles
-based on 𝜃 and 𝜙 angles in a `spherical coordinate system
-<https://en.wikipedia.org/wiki/Spherical_coordinate_system>`__.
-By default, 𝜃 varies from 0° to 180° and 𝜙 varies from 0° to 360°
-(such that any direction is possible). You can define the 𝜃 and 𝜙
-ranges with minimum and maximum values as follows:
-
-.. code:: python
-
-    source.direction.type = "iso"
-    source.direction.theta = [0, 10 * deg]
-    source.direction.phi = [0, 90 * deg]
 
 
 Geant4 defines the direction as: - x = -sin𝜃 cos𝜙; - y = -sin𝜃 sin𝜙; - z
@@ -190,7 +181,7 @@ plane from -X to -Y.
       source.direction.histogram_theta_weights = [1]
       source.direction.histogram_theta_angles = [80 * deg, 100 * deg]
       source.direction.histogram_phi_weights = [0.3, 0.5, 1, 0.5, 0.3]
-      source.direction.histogram_phi_angles = [ 60 * deg, 70 * deg, 80 * deg, 100 * deg, 110 * deg, 120 * deg]
+      source.direction.histogram_phi_angles = [60 * deg, 70 * deg, 80 * deg, 100 * deg, 110 * deg, 120 * deg]
 
 See figure below, left:
 
@@ -198,8 +189,8 @@ See figure below, left:
 
     # Example A
     source.direction.type = "histogram"
-    source.direction.histogram_phi_angle = [70 * deg, 110 * deg]
-    source.direction.histogram_phi_weight = [0, 1]
+    source.direction.histogram_phi_angles = [70 * deg, 110 * deg]
+    source.direction.histogram_phi_weights = [1]
 
 
 See figure below, right:
@@ -208,8 +199,8 @@ See figure below, right:
 
     # Example B
     source.direction.type = "histogram"
-    source.direction.histogram_phi_angle = [70 * deg, 80 * deg, 90* deg, 100 * deg, 110 * deg]
-    source.direction.histogram_phi_weight = [0, 1, 0, 1, 0]
+    source.direction.histogram_phi_angles = [70 * deg, 80 * deg, 90 * deg, 100 * deg, 110 * deg]
+    source.direction.histogram_phi_weights = [1, 0, 1, 0]
 
 
 .. image:: ../figures/generic_source_direction_histogram_a.png
@@ -348,7 +339,7 @@ Several spectra are provided through the `get_rad_gamma_spectrum` function:
 
 .. code:: python
 
-   spectrum = gate.sources.generic.get_rad_gamma_spectrum("Lu177")
+   spectrum = gate.sources.base.get_rad_gamma_spectrum("Lu177")
 
 
 The source can be configured like this:
@@ -387,7 +378,7 @@ This data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDeca
 
 .. code:: python
 
-   spectrum = gate.sources.generic.get_rad_beta_spectrum("Lu177")
+   spectrum = gate.sources.base.get_rad_beta_spectrum("Lu177")
 
 The source can be configured like this:
 

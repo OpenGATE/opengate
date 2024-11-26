@@ -311,6 +311,8 @@ void init_GateARFTrainingDatasetActor(py::module &m);
 
 void init_GateKillActor(py::module &);
 
+void init_GateKillAccordingProcessesActor(py::module &);
+
 void init_itk_image(py::module &);
 
 void init_GateImageNestedParameterisation(py::module &);
@@ -356,8 +358,6 @@ void init_G4VBiasingOperator(py::module &m);
 void init_GateVDigitizerWithOutputActor(py::module &);
 
 void init_GateHitsCollectionActor(py::module &);
-
-void init_GateMotionVolumeActor(py::module &);
 
 void init_GateHitsAdderActor(py::module &);
 
@@ -577,7 +577,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateBOptrBremSplittingActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateHitsCollectionActor(m);
-  init_GateMotionVolumeActor(m);
   init_GateVDigitizerWithOutputActor(m);
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
@@ -589,6 +588,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
+  init_GateKillAccordingProcessesActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);

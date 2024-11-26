@@ -1,6 +1,3 @@
-.. The next line draws an horizontal line
------
-
 .. _source-phid-source:
 
 PHID source (Photon from Ion Decay)
@@ -59,15 +56,27 @@ Also, several command lines tools are provided :
    # print information about a radionuclide bi213, pb212, etc.
    phid_info ac225
 
+|image|
+
+.. code:: bash
+
    # plot time activity curve of a radionuclide. Options may by set to adapt the timing
    phid_tac
+
+|image1|
+
+.. code:: bash
 
    # plot gammas lines from a radionuclide (whatever the time)
    phid_gammas ac225
    phid_atomic_relaxation ac225
    phid_isomeric_transition ac225
 
-|image| |image1| |image2|
+|image2|
+
+.. |image| image:: ../figures/ac225_info.png
+.. |image1| image:: ../figures/ac225_tac.png
+.. |image2| image:: ../figures/ac225_gammas.png
 
 Reference
 ---------

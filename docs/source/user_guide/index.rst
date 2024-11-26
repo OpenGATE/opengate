@@ -21,13 +21,14 @@ User Guide
 
 .. toctree::
    :caption: Detailed description of components
-   :maxdepth: 2
+   :maxdepth: 3
 
    user_guide_reference_simulation
    user_guide_reference_volumes
    user_guide_reference_actors
    user_guide_reference_sources
    user_guide_advanced
+   user_guide_optical_photons
 
 .. toctree::
    :caption: Preconfigured complex components
