@@ -938,8 +938,7 @@ class PhysicsManager(GateObject):
 
 
 class PostProcessingManager(GateObject):
-    """
-    Everything related to post-processing.
+    """Everything related to post-processing. EXPERIMENTAL!
     """
 
     user_info_defaults = {
