@@ -1002,9 +1002,7 @@ class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStopping
             "production_stopping", run_index, self.cpp_value_image
         )
         self._update_output_coordinate_system("production_stopping", run_index)
-        self.user_output.production_stopping.store_meta_data(
-            run_index, number_of_samples=self.NbOfEvent
-        )
+        self.user_output.production_stopping.store_meta_data(run_index)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0

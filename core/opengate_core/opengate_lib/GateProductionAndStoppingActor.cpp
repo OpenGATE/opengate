@@ -24,19 +24,15 @@
 #include "G4Positron.hh"
 #include "G4Proton.hh"
 
-// Mutex that will be used by thread to write in the edep/dose image
+// Mutex that will be used by thread to write in the values to the image
 G4Mutex SetProdStopPixelMutex = G4MUTEX_INITIALIZER;
-
-G4Mutex SetProdStopEventMutex = G4MUTEX_INITIALIZER;
 
 GateProductionAndStoppingActor::GateProductionAndStoppingActor(
     py::dict &user_info)
     : GateVActor(user_info, true) {
   // Action for this actor: during stepping
   fActions.insert("SteppingAction");
-  fActions.insert("BeginOfRunAction");
   fActions.insert("PostUserTrackingAction");
-  fActions.insert("EndSimulationAction");
 }
 
 void GateProductionAndStoppingActor::InitializeUserInfo(py::dict &user_info) {
@@ -48,11 +44,9 @@ void GateProductionAndStoppingActor::InitializeUserInfo(py::dict &user_info) {
     fProductionImageEnabled = true;
     fStopImageEnabled = !fProductionImageEnabled;
 
-    G4cout << "===== > Going to score PRODUCING particles " << G4endl;
   } else if (fMethod == "stopping") {
     fProductionImageEnabled = false;
     fStopImageEnabled = !fProductionImageEnabled;
-    G4cout << "===== > Going to score stopping particles " << G4endl;
   }
 
   fInitialTranslation = DictGetG4ThreeVector(user_info, "translation");
@@ -67,9 +61,6 @@ void GateProductionAndStoppingActor::InitializeCpp() {
 }
 
 void GateProductionAndStoppingActor::BeginOfRunActionMasterThread(int run_id) {
-  // Reset the number of events (per run)
-  NbOfEvent = 0;
-
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<ImageType>(cpp_value_image, fPhysicalVolumeName,
                                  fInitialTranslation);
@@ -78,20 +69,11 @@ void GateProductionAndStoppingActor::BeginOfRunActionMasterThread(int run_id) {
   fVoxelVolume = sp[0] * sp[1] * sp[2];
 }
 
-void GateProductionAndStoppingActor::BeginOfRunAction(const G4Run *) {}
-
-void GateProductionAndStoppingActor::BeginOfEventAction(const G4Event *event) {
-  G4AutoLock mutex(&SetProdStopEventMutex);
-  NbOfEvent++;
-}
-
 void GateProductionAndStoppingActor::SteppingAction(G4Step *step) {
   //
   if (fProductionImageEnabled) {
     if (step->GetTrack()->GetCurrentStepNumber() == 1) {
       AddValueToImage(step);
-      // G4cout<<"Stepping action: " << step->GetTrack()->GetCurrentStepNumber()
-      // << G4endl;
     }
   }
 }
@@ -103,14 +85,10 @@ void GateProductionAndStoppingActor::PostUserTrackingAction(
   }
 }
 
-void GateProductionAndStoppingActor::EndSimulationAction() {}
-
 void GateProductionAndStoppingActor::AddValueToImage(const G4Step *step) {
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
-
-  // FIXME If the volume has multiple copy, touchable->GetCopyNumber(0) ?
 
   // consider random position between pre and post
   auto position = postGlobal;
@@ -139,25 +117,15 @@ void GateProductionAndStoppingActor::AddValueToImage(const G4Step *step) {
   ImageType::IndexType index;
   bool isInside = cpp_value_image->TransformPhysicalPointToIndex(point, index);
 
-  // G4cout << "Point: " << point[0] << "  " << point[1] << "  " << point[2]
-  //<< G4endl;
   // set value
   if (isInside) {
-    // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
-    /*
-    auto &l = fThreadLocalData.Get();
-    auto dedx_currstep =
-            l.emcalc.ComputeElectronicDEDX(energy, p, current_material,
-    dedx_cut) / CLHEP::MeV * CLHEP::mm;
-    */
-    // Call ImageAddValue() in a mutexed {}-scope
     {
       G4AutoLock mutex(&SetProdStopPixelMutex);
       ImageAddValue<ImageType>(cpp_value_image, index, w);
     }
   } // else : outside the image
-  else {
-    G4cout << "Outside image" << G4endl;
-  }
+  // else {
+  // G4cout << "Outside image" << G4endl;
+  //}
 }

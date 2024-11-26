@@ -31,22 +31,13 @@ public:
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
-  void BeginOfEventAction(const G4Event *event) override;
-
   // Called every time a Run starts (all threads)
-  void BeginOfRunAction(const G4Run *run) override;
 
   void BeginOfRunActionMasterThread(int run_id) override;
-
-  // Called every time a Track starts (even if not in the volume attached to
-  // this actor)
-  // void PreUserTrackingAction(const G4Track *track);
 
   // Called every time a Track ends
   void PostUserTrackingAction(const G4Track *track) override;
   void AddValueToImage(const G4Step *step);
-
-  void EndSimulationAction() override;
 
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
@@ -67,21 +58,11 @@ public:
   bool fStopImageEnabled;
   bool fProductionImageEnabled;
 
-  int NbOfEvent = 0;
-
 private:
   double fVoxelVolume;
 
   G4ThreeVector fInitialTranslation;
   std::string fHitType;
-
-  bool fScoreInOtherMaterial = false;
-
-  struct threadLocalT {
-    G4EmCalculator emcalc;
-    G4Material *materialToScoreIn;
-  };
-  G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateProductionAndStoppingActor_h

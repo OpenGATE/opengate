@@ -39,7 +39,6 @@ void init_GateProductionAndStoppingActor(py::module &m) {
            &GateProductionAndStoppingActor::EndOfRunActionMasterThread)
       .def_readwrite("cpp_value_image",
                      &GateProductionAndStoppingActor::cpp_value_image)
-      .def_readwrite("NbOfEvent", &GateProductionAndStoppingActor::NbOfEvent)
       .def("GetPhysicalVolumeName",
            &GateProductionAndStoppingActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName",
