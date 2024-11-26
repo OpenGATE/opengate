@@ -344,7 +344,7 @@ def help_on_user_info(obj):
         )
 
 
-def restore_class(cls, attributes):
+def restore_instance_after_pickling(cls, attributes):
     # In the context of sub-processing and pickling,
     # the following line makes sure the class is processed by the function
     # which sets handles the user_info definitions
@@ -540,8 +540,8 @@ class GateObject:
         """
         state_dict = self.__getstate__()
         return (
-            restore_class,
-            (self.__class__, state_dict),
+            restore_instance_after_pickling,
+            (self.__class__, self.__dict__),
             state_dict,
         )
 
