@@ -394,24 +394,6 @@ class ActorBase(GateObject):
         for k, v in self.user_output.items():
             v.initialize()
 
-        # Create structs on C++ side for each actor output
-        # This struct is only needed by actors that handle output written in C++.
-        # But it does not hurt to populate the info in C++ regardless of the actor
-        # The output path can also be (re-)set by the specific actor in
-        # StartSimulation or BeginOfRunActionMasterThread, if needed
-
-        # for k, v in self.user_output.items():
-        #     if len(v.data_write_config) > 1:
-        #         for h, w in v.data_write_config.items():
-        #             k_h = f"{k}_{h}"
-        #             self.AddActorOutputInfo(k_h)
-        #             self.SetWriteToDisk(k_h, w.write_to_disk)
-        #             self.SetOutputPath(k_h, v.get_output_path_as_string(item=h))
-        #     else:
-        #         self.AddActorOutputInfo(k)
-        #         self.SetWriteToDisk(k, v.write_to_disk)
-        #         self.SetOutputPath(k, v.get_output_path_as_string())
-
         # initialize filters
         try:
             self.fFilters = self.filters
