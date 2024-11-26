@@ -42,6 +42,7 @@ class BaseUserInterfaceToActorOutput:
     # and should be treated differently by __getattr__() and __setattr__(),
     # namely they should be retrieved directly from __dict__
     # or written directly into __dict__ to avoid infinite recursion
+    # IMPORTANT: a copy of this list needs to be defined also in __getattr__ and __setattr__
     _known_attributes = (
         "__setstate__",
         "__getstate__",
@@ -961,6 +962,14 @@ def make_actor_output_class(output_name, output_class, new_class_name, interface
     new_class.__process_user_info_defaults__()
     new_class.__hook_after_factory_function__()
     return new_class
+
+
+def restore_actor_output_instance_after_pickling(output_name, output_class,
+                                                 new_class_name, interfaces, actor_class, attributes):
+    if output_name not in actor_class._user_output_classes:
+        actor_class._user_output_classes[output_name] = (
+            make_actor_output_class(output_name, output_class, new_class_name, interfaces, actor_class))
+    return restore_instance_after_pickling(actor_class._user_output_classes[output_name], attributes)
 
 
 process_cls(ActorOutputBase)
