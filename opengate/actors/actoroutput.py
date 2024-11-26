@@ -535,7 +535,7 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         super().set_user_info_default_values_interface(**kwargs)
 
     @classmethod
-    def __hook_after_factory_function__(cls, interfaces=None, **kwargs):
+    def __hook_after_factory_function__(cls, **kwargs):
         if cls.data_container_class is None:
             raise GateImplementationError(
                 f"No 'data_container_class' class attribute "
@@ -545,10 +545,9 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         cls._default_data_item_config = (
             cls.data_container_class.get_default_data_item_config()
         )
-        if interfaces is not None:
-            for k, v in interfaces.items():
-                cls._default_data_item_config[v["item"]]["suffix"] = k
-        super().__hook_after_factory_function__(interfaces=interfaces, **kwargs)
+        for k, v in cls.__interfaces__.items():
+            cls._default_data_item_config[v["item"]]["suffix"] = k
+        super().__hook_after_factory_function__(**kwargs)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
