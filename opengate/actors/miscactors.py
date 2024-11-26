@@ -53,10 +53,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
         ),
         "active": (
             True,
-            {
-                "doc": "This actor is always active. ",
-                "read_only": True
-            },
+            {"doc": "This actor is always active. ", "read_only": True},
         ),
     }
 
