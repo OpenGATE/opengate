@@ -176,57 +176,6 @@ class ActorBase(GateObject):
     def __process_this__(cls):
         """This is a specialized version of the class method __process_this__ for actor classes."""
         super().__process_this__()
-
-        # reset these class attribute before processing the class:
-        cls._user_output_classes = {}
-        cls._existing_properties_to_interfaces = []
-
-        for output_name, output_config in cls.user_output_config.items():
-            # if output_name not in cls._user_output_classes:
-            try:
-                actor_output_class = output_config["actor_output_class"]
-            except KeyError:
-                raise GateImplementationError(
-                    f"In actor {cls.__name__}: "
-                    f"No entry 'actor_output_class' specified "
-                    f"in user_output_config for user_output {output_name}."
-                )
-
-            # default to "auto" if output_config has no key "interfaces"
-            interfaces = output_config.get("interfaces", "auto")
-            # no interfaces defined -> generate one automatically
-            # if the GATE developer has not defined any interfaces, we create one automatically
-            if interfaces == "auto":
-                interface_name = output_name  # use the output name as interface name
-                interfaces = {
-                    interface_name: {
-                        "interface_class": actor_output_class.get_default_interface_class()
-                    }
-                }
-                # pick up parameters from the output config (where the GATE developer might have put them)
-                # and add them to the interface config
-                config_for_auto_interface = dict(
-                    [
-                        (k, v)
-                        for k, v in output_config.items()
-                        if k not in ("actor_output_class", "interfaces")
-                    ]
-                )
-                config_for_auto_interface["item"] = 0
-                interfaces[interface_name].update(config_for_auto_interface)
-            cls._user_output_classes[output_name] = cls.__make_actor_output_class__(
-                actor_output_class, output_name, interfaces
-            )
-            # call the hook (class) method on the newly created actor output class
-            # to set the defaults as specified in the user_output_config class attribute of this actor class.
-            # The defaults are picked up from the interfaces dictionary, where the GATE developer should have set them.
-            cls._user_output_classes[output_name].__hook_after_factory_function__(
-                interfaces=interfaces
-            )
-
-            cls.__create_interface_properties__(cls._user_output_classes[output_name])
-        cls.__doc__ += cls.__get_docstring_user_output__()
-
     @classmethod
     def __make_actor_output_class__(cls, output_class, output_name, interfaces):
         """Factory function to create a custom copy of an ActorOutput class for a specific actor class.
@@ -234,8 +183,8 @@ class ActorBase(GateObject):
         """
         new_class_name = f"{output_class.__name__}_{output_name}_{cls.__name__}"
         extra_attributes = {"__interfaces__": interfaces}
-        new_class = type(new_class_name, (output_class,), extra_attributes)
-        return new_class
+        cls.__process_user_output_classes__()
+        cls.__create_interface_properties__()
 
     @classmethod
     def __create_interface_properties__(cls, user_output_class):
