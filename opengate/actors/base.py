@@ -127,7 +127,7 @@ class ActorBase(GateObject):
     # private list of property names for interfaces already defined
     # in any actor (assuming all actors inherit from the base class)
     # Do not redefine this in inheriting classes!
-    _existing_properties_to_interfaces = {}
+    _existing_properties_to_interfaces = []
 
     @classmethod
     def __process_this__(cls):
