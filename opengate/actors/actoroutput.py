@@ -353,6 +353,28 @@ class ActorOutputBase(GateObject):
     def __len__(self):
         return len(self.data_per_run)
 
+    def __reduce__(self):
+        """This method is called when the object is pickled.
+        Usually, pickle works well without this custom __reduce__ method,
+        but the actor output classes associated with actors are dynamically created
+        and pickle does not serialize them (not in globals) and
+        can therefore not recreate the ActorOutput instance when unpickling.
+        Therefore, we explicitly pass a faunction (a callable) which processes this class
+        and instantiates it.
+
+        The return arguments are:
+        1) A callable used to create the instance when unpickling
+        2) A tuple of arguments to be passed to the callable in 1
+        3) The dictionary of the object's properties to be passed to the __setstate__ method (if defined)
+        """
+        state_dict = self.__getstate__()
+        return (
+            restore_actor_output_instance_after_pickling,
+            (self.__output_name__, type(self).__base__, type(self).__name__,
+             self.__interfaces__, self.__actor_class__, state_dict),
+            state_dict,
+        )
+
     def get_run_indices(self, **kwargs):
         return [k for k, v in self.data_per_run.items() if v is not None]
 
