@@ -325,10 +325,9 @@ class ActorOutputBase(GateObject):
         pass
 
     @classmethod
-    def __hook_after_factory_function__(cls, interfaces=None, **kwargs):
-        if interfaces is not None:
-            for v in interfaces.values():
-                cls.set_user_info_default_values_interface(**v)
+    def __hook_after_factory_function__(cls, **kwargs):
+        for v in cls.__interfaces__.values():
+            cls.set_user_info_default_values_interface(**v)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
