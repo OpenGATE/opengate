@@ -186,8 +186,6 @@ def digest_user_info_defaults(cls):
             except TypeError:
                 # TypeError is thrown if the class is 'object'
                 pass
-    # FIXME: Check if we should actually process all class in the MRO
-    # rather than accumulating user info defaults?
     cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
 
