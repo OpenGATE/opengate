@@ -51,6 +51,13 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 "doc": "Should the output be written to disk, or only kept in memory? ",
             },
         ),
+        "active": (
+            True,
+            {
+                "doc": "This actor is always active. ",
+                "read_only": True
+            },
+        ),
     }
 
     default_suffix = "json"
