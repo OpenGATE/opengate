@@ -401,6 +401,13 @@ class GateObject:
 
     @classmethod
     def has_been_processed(cls):
+        """The class attribute inherited_user_info_defaults is exclusively set by the  factory mechanism.
+        Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
+        it means that it has not been processed yet.
+        Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
+        because it would potentially find the attribute from already processed base classes.
+        Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object."""
+
         return "inherited_user_info_defaults" in cls.__dict__
 
     @classmethod
@@ -422,12 +429,9 @@ class GateObject:
         and enhances the __init__ method, so it calls the __finalize_init__ method at the
         very end of the __init__ call, which is required to check for invalid attribute setting.
         """
-        # The class attribute inherited_user_info_defaults is exclusively set by this factory function
-        # Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
-        # it means that it has not been processed yet.
-        # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
-        # because it would potentially find the attribute from already processed super classes
-        # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
+        if cls.has_been_processed():
+            return
+
         try:
             digest_user_info_defaults(cls)
         except AttributeError:
