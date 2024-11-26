@@ -502,19 +502,4 @@ class ActorBase(GateObject):
         pass
 
 
-def _get_docstring_for_interface(user_output_class, interface_name, **interface_config):
-    docstring = f"**{interface_name}**\n\n"
-    docstring += "* This output has the following parameters and methods: \n\n"
-    docstring += interface_config["interface_class"].__get_docstring__()
-    docstring += "\n"
-    docstring += "* Defaults:\n\n"
-    defaults = user_output_class.get_user_info_default_values_interface(
-        **interface_config
-    )
-    for k, v in defaults.items():
-        docstring += f"  * {k} = {v}\n"
-    docstring += "\n"
-    return docstring
-
-
 process_cls(ActorBase)
