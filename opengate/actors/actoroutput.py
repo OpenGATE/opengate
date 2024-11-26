@@ -526,6 +526,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     @classmethod
     def set_user_info_default_values_interface(cls, item=0, **kwargs):
+        # pick up the defaults to be stored in the default data item config dictionary
+        # and let the base class handle the rest
         known_defaults = list(cls._default_data_item_config[item].keys())
         for k in known_defaults:
             if k in kwargs:
