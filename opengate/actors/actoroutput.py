@@ -509,26 +509,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 "doc": "In case the simulation has multiple runs, should separate results per run be kept?"
             },
         ),
-        # "data_item_config": (
-        #     # Box(
-        #     #     {
-        #     #         0: Box(
-        #     #             {
-        #     #                 "output_filename": "auto",
-        #     #                 "write_to_disk": True,
-        #     #                 "active": True,
-        #     #             }
-        #     #         )
-        #     #     }
-        #     # ),
-        #     None,
-        #     {
-        #         "doc": "Dictionary (Box) to specify which"
-        #         "should be written to disk and how. "
-        #         "The default is picked up from the data container class during instantiation, "
-        #         "and can be changed by the user afterwards. "
-        #     },
-        # ),
     }
 
     # this intermediate base class defines a class attribute data_container_class,
