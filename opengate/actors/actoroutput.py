@@ -314,6 +314,8 @@ class ActorOutputBase(GateObject):
 
     @classmethod
     def get_user_info_default_values_interface(cls, **kwargs):
+        # FIXME: not sure yet how to handle keep_data_in_memory
+        #        because it is not a per-interface but per actor output parameter
         # defaults = {"keep_data_in_memory": cls.inherited_user_info_defaults["keep_data_in_memory"][0]}
         defaults = {}
         return defaults
