@@ -947,6 +947,22 @@ class ActorOutputRoot(ActorOutputBase):
             )
 
 
+def make_actor_output_class(output_name, output_class, new_class_name, interfaces, actor_class):
+    """Factory function to create a custom copy of an ActorOutput class for a specific actor class.
+    Only used by GATE internally.
+    """
+    extra_attributes = {"__interfaces__": interfaces,
+                        "__output_name__": output_name,
+                        "__actor_class__": actor_class}
+    new_class = type(new_class_name, (output_class,), extra_attributes)
+    # call the hook classmethod on the newly created actor output class
+    # to set the defaults as specified in the user_output_config class attribute of this actor class.
+    # The defaults are picked up from the interfaces dictionary, where the GATE developer should have set them.
+    new_class.__process_user_info_defaults__()
+    new_class.__hook_after_factory_function__()
+    return new_class
+
+
 process_cls(ActorOutputBase)
 process_cls(ActorOutputUsingDataItemContainer)
 process_cls(ActorOutputImage)
