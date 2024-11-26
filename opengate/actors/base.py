@@ -5,7 +5,7 @@ from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
 from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension
-from .actoroutput import ActorOutputRoot
+from .actoroutput import ActorOutputRoot, make_actor_output_class
 
 
 def _setter_hook_attached_to(self, attached_to):
