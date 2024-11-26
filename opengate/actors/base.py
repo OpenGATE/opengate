@@ -382,12 +382,6 @@ class ActorBase(GateObject):
 
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
-        # Prepare the output entries for those items
-        # where the user wants to keep the data in memory
-        # self.RegisterCallBack("get_output_path_string", self.get_output_path_string)
-        # self.RegisterCallBack(
-        #     "get_output_path_for_item_string", self.get_output_path_for_item_string
-        # )
 
         # FIXME: needs to be updated to new actor output API
         # if len(self.user_output) > 0 and all(
