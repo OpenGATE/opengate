@@ -554,6 +554,11 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         self.data_item_config = copy.deepcopy(self._default_data_item_config)
 
     def initialize_cpp_parameters(self):
+        # Create structs on C++ side for this actor output
+        # This struct is only needed by actors that handle output written in C++.
+        # But it does not hurt to populate the info in C++ regardless of the actor
+        # The output path can also be (re-)set by the specific actor in
+        # StartSimulation or BeginOfRunActionMasterThread, if needed
         items = self._collect_item_identifiers("all")
         for h in items:
             identifier = f"{self.name}_{h}"
