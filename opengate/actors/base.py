@@ -128,6 +128,49 @@ class ActorBase(GateObject):
     # in any actor (assuming all actors inherit from the base class)
     # Do not redefine this in inheriting classes!
     _existing_properties_to_interfaces = []
+    _user_output_classes = {}
+
+    @classmethod
+    def __process_user_output_classes__(cls):
+        cls._user_output_classes = {}
+        for output_name, output_config in cls.user_output_config.items():
+            # if output_name not in cls._user_output_classes:
+            try:
+                actor_output_class = output_config["actor_output_class"]
+            except KeyError:
+                raise GateImplementationError(
+                    f"In actor {cls.__name__}: "
+                    f"No entry 'actor_output_class' specified "
+                    f"in user_output_config for user_output {output_name}."
+                )
+
+            # default to "auto" if output_config has no key "interfaces"
+            interfaces = output_config.get("interfaces", "auto")
+            # no interfaces defined -> generate one automatically
+            # if the GATE developer has not defined any interfaces, we create one automatically
+            if interfaces == "auto":
+                interface_name = output_name  # use the output name as interface name
+                interfaces = {
+                    interface_name: {
+                        "interface_class": actor_output_class.get_default_interface_class()
+                    }
+                }
+                # pick up parameters from the output config (where the GATE developer might have put them)
+                # and add them to the interface config
+                config_for_auto_interface = dict(
+                    [
+                        (k, v)
+                        for k, v in output_config.items()
+                        if k not in ("actor_output_class", "interfaces")
+                    ]
+                )
+                config_for_auto_interface["item"] = 0
+                interfaces[interface_name].update(config_for_auto_interface)
+            new_class_name = f"{actor_output_class.__name__}_{output_name}_{cls.__name__}"
+            cls._user_output_classes[output_name] = make_actor_output_class(
+                output_name, actor_output_class, new_class_name, interfaces, cls
+            )
+        cls.__doc__ += cls.__get_docstring_user_output__()
 
     @classmethod
     def __process_this__(cls):
