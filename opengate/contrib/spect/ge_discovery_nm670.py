@@ -589,6 +589,56 @@ def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
+def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
+    # create main chain
+    mm = g4_units.mm
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # detection efficiency
+    # ea = digitizer.add_module("DigitizerEfficiencyActor", f"{name}_eff")
+    # ea.efficiency = 0.86481  # FAKE
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor", f"{name}_blur")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.063  # FAKE
+    eb.blur_reference_value = 140.57 * keV
+
+    # spatial blurring
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sp_blur")
+    sb.blur_attribute = "PostPosition"
+    sb.blur_fwhm = 3 * mm  # FAKE
+    sb.keep_in_solid_limits = True
+
+    # energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    channels = [
+        {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
+        {"name": f"scatter", "min": 108.57749938965 * keV, "max": 129.5924987793 * keV},
+        {"name": f"peak140", "min": 129.5924987793 * keV, "max": 150.60751342773 * keV},
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+    proj.size = [128, 128]
+
+    # end
+    return digitizer
+
+
 def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
