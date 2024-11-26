@@ -329,6 +329,21 @@ class ActorOutputBase(GateObject):
         for v in cls.__interfaces__.values():
             cls.set_user_info_default_values_interface(**v)
 
+    @classmethod
+    def __get_docstring_for_interface__(cls, interface_name, **interface_config):
+        docstring = f"**{interface_name}**\n\n"
+        docstring += "* This output has the following parameters and methods: \n\n"
+        docstring += interface_config["interface_class"].__get_docstring__()
+        docstring += "\n"
+        docstring += "* Defaults:\n\n"
+        defaults = cls.get_user_info_default_values_interface(
+            **interface_config
+        )
+        for k, v in defaults.items():
+            docstring += f"  * {k} = {v}\n"
+        docstring += "\n"
+        return docstring
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
