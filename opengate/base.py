@@ -350,8 +350,7 @@ def restore_instance_after_pickling(cls, attributes):
     # which sets handles the user_info definitions
     # before the class is used to create a new object instance.
     # Otherwise, the new instance would lack the user_info properties.
-    # process_cls(cls)
-    cls.__process_this__()
+    cls.__process_this_when_unpickling__()
     # this is just conventional unpickling logic:
     obj = cls.__new__(cls)
     obj.__dict__.update(attributes)
@@ -407,6 +406,14 @@ class GateObject:
 
     @classmethod
     def __process_this__(cls):
+        cls.__process_user_info_defaults__()
+
+    @classmethod
+    def __process_this_when_unpickling__(cls):
+        cls.__process_user_info_defaults__()
+
+    @classmethod
+    def __process_user_info_defaults__(cls):
         """Internal interface class method used e.g. by __reduce__().
         Certain subgroups of classes, e.g. actor classes, may implement this differently
         without the need to adapt the __reduce__()  method.
