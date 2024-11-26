@@ -653,7 +653,7 @@ def add_iec_phantom_vox(sim, name, image_filename, labels_filename):
         if "shell" in l:
             mat = "IEC_PLASTIC"
         material_list[l] = mat
-        m = [labels[l], labels[l] + 1, mat]
+        m = [labels[l]["label"], labels[l]["label"] + 1, mat]
         iec.voxel_materials.append(m)
     return iec, material_list
 
