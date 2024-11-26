@@ -166,7 +166,9 @@ class ActorBase(GateObject):
                 )
                 config_for_auto_interface["item"] = 0
                 interfaces[interface_name].update(config_for_auto_interface)
-            new_class_name = f"{actor_output_class.__name__}_{output_name}_{cls.__name__}"
+            new_class_name = (
+                f"{actor_output_class.__name__}_{output_name}_{cls.__name__}"
+            )
             cls._user_output_classes[output_name] = make_actor_output_class(
                 output_name, actor_output_class, new_class_name, interfaces, cls
             )
@@ -195,15 +197,17 @@ class ActorBase(GateObject):
                 # Check if this class already has this property and whether it is associated with an interface.
                 # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
                 if (
-                        hasattr(cls, interface_name)
-                        and unique_interface_name
-                        not in cls._existing_properties_to_interfaces
+                    hasattr(cls, interface_name)
+                    and unique_interface_name
+                    not in cls._existing_properties_to_interfaces
                 ):
                     # before we raise an exception, we check if this property was created by a parent class
                     properties_in_bases = []
                     for c in cls.__bases__:
                         try:
-                            properties_in_bases.extend(c._existing_properties_to_interfaces)
+                            properties_in_bases.extend(
+                                c._existing_properties_to_interfaces
+                            )
                         except AttributeError:
                             continue
                     # if the property was not created by a parent class, it must be another attribute of this class,
@@ -220,7 +224,9 @@ class ActorBase(GateObject):
                             f"(or user_output in case the interface is automatically generated). "
                         )
                 elif not hasattr(cls, interface_name):
-                    doc_string = user_output_class.__get_docstring_for_interface__(interface_name, **config)
+                    doc_string = user_output_class.__get_docstring_for_interface__(
+                        interface_name, **config
+                    )
                     setattr(cls, interface_name, property(fget=p, doc=doc_string))
                     cls._existing_properties_to_interfaces.append(unique_interface_name)
                 else:
@@ -409,7 +415,9 @@ class ActorBase(GateObject):
             try:
                 interfaces = actor_output_class.__interfaces__
             except AttributeError:
-                raise GateImplementationError(f"Special variable __interfaces__ not filled in actor output class {actor_output_class}. ")
+                raise GateImplementationError(
+                    f"Special variable __interfaces__ not filled in actor output class {actor_output_class}. "
+                )
             # interfaces = output_config.get("interfaces", None)
             self._add_user_output(actor_output_class, output_name)
             for interface_name, interface_config in interfaces.items():
@@ -419,9 +427,11 @@ class ActorBase(GateObject):
                 try:
                     interface_class = interface_params.pop("interface_class")
                 except KeyError:
-                    raise GateImplementationError(f"Incorrectly configured interface {interface_name} "
-                                                  f"for actor output {output_name}"
-                                                  f"in {self.type_name}: No 'interface_class' specified. ")
+                    raise GateImplementationError(
+                        f"Incorrectly configured interface {interface_name} "
+                        f"for actor output {output_name}"
+                        f"in {self.type_name}: No 'interface_class' specified. "
+                    )
                 self._add_interface_to_user_output(
                     interface_class, output_name, interface_name, **interface_params
                 )

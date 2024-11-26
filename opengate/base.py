@@ -406,7 +406,8 @@ class GateObject:
         it means that it has not been processed yet.
         Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
         because it would potentially find the attribute from already processed base classes.
-        Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object."""
+        Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object.
+        """
 
         return "inherited_user_info_defaults" in cls.__dict__
 

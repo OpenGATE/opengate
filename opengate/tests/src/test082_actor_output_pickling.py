@@ -47,13 +47,17 @@ if __name__ == "__main__":
 
     b = actor1_reloaded_twice.edep.output_filename != actor1.edep.output_filename
     is_ok &= b
-    print(f"output_filename equal in original and "
-          f"re-re-loaded actor output interface edep (should not)? Passed: {b}")
+    print(
+        f"output_filename equal in original and "
+        f"re-re-loaded actor output interface edep (should not)? Passed: {b}"
+    )
 
     b = actor1_reloaded_twice.edep.active is not actor1.edep.active
     is_ok &= b
-    print(f"active in original and "
-          f"re-re-loaded actor output interface edep equal (should not)? Passed: {b}")
+    print(
+        f"active in original and "
+        f"re-re-loaded actor output interface edep equal (should not)? Passed: {b}"
+    )
 
     b = stat.stats.belongs_to_actor is stat
     is_ok &= b

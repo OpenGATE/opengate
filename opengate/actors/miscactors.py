@@ -368,8 +368,7 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
 
 class KillActor(ActorBase, g4.GateKillActor):
-    """Actor which kills a particle entering a volume.
-    """
+    """Actor which kills a particle entering a volume."""
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)

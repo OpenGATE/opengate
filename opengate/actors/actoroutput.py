@@ -201,12 +201,12 @@ class BaseUserInterfaceToActorOutput:
         # try to get known attributes directly from __dict__
         # to avoid infinite recursion
         if item in (
-                "__setstate__",
-                "__getstate__",
-                "user_output_name",
-                "interface_name",
-                "belongs_to_actor",
-                "_kwargs_for_interface_calls",
+            "__setstate__",
+            "__getstate__",
+            "user_output_name",
+            "interface_name",
+            "belongs_to_actor",
+            "_kwargs_for_interface_calls",
         ):
             try:
                 return self.__dict__[item]
@@ -336,9 +336,7 @@ class ActorOutputBase(GateObject):
         docstring += interface_config["interface_class"].__get_docstring__()
         docstring += "\n"
         docstring += "* Defaults:\n\n"
-        defaults = cls.get_user_info_default_values_interface(
-            **interface_config
-        )
+        defaults = cls.get_user_info_default_values_interface(**interface_config)
         for k, v in defaults.items():
             docstring += f"  * {k} = {v}\n"
         docstring += "\n"
@@ -370,8 +368,14 @@ class ActorOutputBase(GateObject):
         state_dict = self.__getstate__()
         return (
             restore_actor_output_instance_after_pickling,
-            (self.__output_name__, type(self).__base__, type(self).__name__,
-             self.__interfaces__, self.__actor_class__, state_dict),
+            (
+                self.__output_name__,
+                type(self).__base__,
+                type(self).__name__,
+                self.__interfaces__,
+                self.__actor_class__,
+                state_dict,
+            ),
             state_dict,
         )
 
@@ -405,8 +409,10 @@ class ActorOutputBase(GateObject):
     @property
     def belongs_to_actor(self):
         if self.simulation is None:
-            fatal("Cannot determine the actor to which this output belongs. "
-                  "Probably, the actor has not yet been added to a simulation. ")
+            fatal(
+                "Cannot determine the actor to which this output belongs. "
+                "Probably, the actor has not yet been added to a simulation. "
+            )
         return self.simulation.actor_manager.get_actor(self.belongs_to)
 
     def initialize(self):
@@ -968,13 +974,17 @@ class ActorOutputRoot(ActorOutputBase):
             )
 
 
-def make_actor_output_class(output_name, output_class, new_class_name, interfaces, actor_class):
+def make_actor_output_class(
+    output_name, output_class, new_class_name, interfaces, actor_class
+):
     """Factory function to create a custom copy of an ActorOutput class for a specific actor class.
     Only used by GATE internally.
     """
-    extra_attributes = {"__interfaces__": interfaces,
-                        "__output_name__": output_name,
-                        "__actor_class__": actor_class}
+    extra_attributes = {
+        "__interfaces__": interfaces,
+        "__output_name__": output_name,
+        "__actor_class__": actor_class,
+    }
     new_class = type(new_class_name, (output_class,), extra_attributes)
     # call the hook classmethod on the newly created actor output class
     # to set the defaults as specified in the user_output_config class attribute of this actor class.
@@ -984,12 +994,16 @@ def make_actor_output_class(output_name, output_class, new_class_name, interface
     return new_class
 
 
-def restore_actor_output_instance_after_pickling(output_name, output_class,
-                                                 new_class_name, interfaces, actor_class, attributes):
+def restore_actor_output_instance_after_pickling(
+    output_name, output_class, new_class_name, interfaces, actor_class, attributes
+):
     if output_name not in actor_class._user_output_classes:
-        actor_class._user_output_classes[output_name] = (
-            make_actor_output_class(output_name, output_class, new_class_name, interfaces, actor_class))
-    return restore_instance_after_pickling(actor_class._user_output_classes[output_name], attributes)
+        actor_class._user_output_classes[output_name] = make_actor_output_class(
+            output_name, output_class, new_class_name, interfaces, actor_class
+        )
+    return restore_instance_after_pickling(
+        actor_class._user_output_classes[output_name], attributes
+    )
 
 
 process_cls(ActorOutputBase)
