@@ -91,12 +91,12 @@ def compute_bins_density(bins):
 
 
 def get_rad_yield(rad_name):
-    if not rad_name in all_beta_plus_radionuclides:
+    if rad_name not in all_beta_plus_radionuclides:
         return 1.0
     data = read_beta_plus_spectra(rad_name)
     ene = data[:, 0] / 1000  # convert from KeV to MeV
     proba = data[:, 1]
-    cdf, total = compute_cdf_and_total_yield(proba, ene)
+    _, total = compute_cdf_and_total_yield(proba, ene)
     total = total * 1000  # (because was in MeV)
     return total
 
