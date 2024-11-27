@@ -74,6 +74,14 @@ def shortcut_for_single_output_actor(func):
     return _with_check
 
 
+def make_property_function(interface_name):
+    def p(self):
+        interface_to_get = interface_name
+        print(f"DEBUG: interface_to_get = {interface_to_get}")
+        return self.interfaces_to_user_output[interface_to_get]
+    return p
+
+
 class ActorBase(GateObject):
 
     # hints for IDE
@@ -188,9 +196,6 @@ class ActorBase(GateObject):
             # create a property in the actor so the user can quickly access the interface
             for interface_name, config in user_output_class.__interfaces__.items():
 
-                def p(self):
-                    return self.interfaces_to_user_output[interface_name]
-
                 # define a unique name by combining the actor class name and the interface name
                 # unique_interface_name = f"{actor_class.__name__}_{interface_name}"
                 unique_interface_name = interface_name
@@ -227,10 +232,10 @@ class ActorBase(GateObject):
                     doc_string = user_output_class.__get_docstring_for_interface__(
                         interface_name, **config
                     )
-                    setattr(cls, interface_name, property(fget=p, doc=doc_string))
                     cls._existing_properties_to_interfaces.append(unique_interface_name)
                 else:
                     pass
+                setattr(cls, interface_name, property(fget=make_property_function(interface_name), doc=doc_string))
 
     @classmethod
     def __get_docstring_user_output__(cls):
