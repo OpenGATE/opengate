@@ -180,7 +180,6 @@ class ActorBase(GateObject):
             cls._user_output_classes[output_name] = make_actor_output_class(
                 output_name, actor_output_class, new_class_name, interfaces, cls
             )
-        cls.__doc__ += cls.__get_docstring_user_output__()
 
     @classmethod
     def __process_this__(cls):
@@ -188,6 +187,7 @@ class ActorBase(GateObject):
         super().__process_this__()
         cls.__process_user_output_classes__()
         cls.__create_interface_properties__()
+        # cls.__doc__ += cls.__get_docstring_user_output__()
 
     @classmethod
     def __create_interface_properties__(cls):
