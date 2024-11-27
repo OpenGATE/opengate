@@ -11,6 +11,7 @@ from opengate.geometry.utility import (
     vec_g4_as_np,
 )
 from opengate.actors.digitizers import *
+from opengate.contrib.spect.spect_helpers import get_volume_position_in_head
 from scipy.spatial.transform import Rotation
 from box import Box
 
@@ -700,20 +701,6 @@ def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
-# FIXME : put this elsewhere
-def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
-    vol = sim.volume_manager.volumes[f"{spect_name}_{vol_name}"]
-    pMin, pMax = vol.bounding_limits
-    x = pMax
-    if pos == "min":
-        x = pMin
-    if pos == "center":
-        x = pMin + (pMax - pMin) / 2.0
-    x = vec_g4_as_np(x)
-    x = translate_point_to_volume(sim, vol, spect_name, x)
-    return x[axis]
-
-
 def compute_plane_position_and_distance_to_crystal(collimator_type):
     sim = Simulation()
     spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
@@ -745,14 +732,14 @@ def get_plane_position_and_distance_to_crystal(collimator_type):
     )
 
 
-def set_head_orientation(head, collimator_type, radius, gantry_angle=0):
+def set_head_orientation(head, collimator_type, radius, gantry_angle_deg=0):
     # pos is the distance from entrance detection plane and head boundary
     pos, _, _ = compute_plane_position_and_distance_to_crystal(collimator_type)
     distance = radius + pos
     # rotation X180 is to set the detector head-foot
     # rotation Z90 is the gantry angle
     r1 = Rotation.from_euler("X", 90, degrees=True)
-    r2 = Rotation.from_euler("Z", gantry_angle, degrees=True)
+    r2 = Rotation.from_euler("Z", gantry_angle_deg, degrees=True)
     r = r2 * r1
     head.translation = r.apply([0, 0, -distance])
     head.rotation = r.as_matrix()
@@ -760,7 +747,7 @@ def set_head_orientation(head, collimator_type, radius, gantry_angle=0):
 
 
 def add_detection_plane_for_arf(
-    sim, plane_size, colli_type, radius, gantry_angle=0, det_name=None
+    sim, plane_size, colli_type, radius, gantry_angle_deg=0, det_name=None
 ):
     if det_name is None:
         det_name = "arf_plane"
@@ -779,7 +766,7 @@ def add_detection_plane_for_arf(
     head = Box()
     head.translation = None
     head.rotation = None
-    ri = set_head_orientation(head, colli_type, radius, gantry_angle)
+    ri = set_head_orientation(head, colli_type, radius, gantry_angle_deg)
 
     # orientation
     detector_plane.rotation = (ri * r).as_matrix()
@@ -819,7 +806,6 @@ def add_source_for_arf_training_dataset(
     sim, source_name, activity, detector_plane, min_energy, max_energy
 ):
     cm = g4_units.cm
-    # tc99m = 0.01 * MeV - 0.154 * MeV
     source = sim.add_source("GenericSource", source_name)
     source.particle = "gamma"
     source.activity = activity
@@ -836,10 +822,7 @@ def add_source_for_arf_training_dataset(
     return source
 
 
-def add_actor_for_arf_training_dataset(
-    sim, head, arf_name, colli_type, ene_win_actor, rr
-):
-    mm = g4_units.mm
+def add_actor_for_arf_training_dataset(sim, head, colli_type, ene_win_actor, rr):
     nm = g4_units.nm
     cm = g4_units.cm
     # detector input plane
@@ -853,7 +836,7 @@ def add_actor_for_arf_training_dataset(
     detector_plane.color = [0, 1, 0, 1]
 
     # arf actor for building the training dataset
-    arf = sim.add_actor("ARFTrainingDatasetActor", arf_name)
+    arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
     arf.attached_to = detector_plane.name
     arf.output_filename = "arf_training_dataset.root"
     arf.energy_windows_actor = ene_win_actor.name
@@ -871,7 +854,7 @@ def add_arf_detector(
         plane_size,
         colli_type=colli_type,
         radius=radius,
-        gantry_angle=gantry_angle,
+        gantry_angle_deg=gantry_angle,
         det_name=f"{name}_{i}",
     )
 
