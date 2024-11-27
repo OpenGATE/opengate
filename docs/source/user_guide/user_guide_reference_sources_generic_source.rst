@@ -336,22 +336,24 @@ normal distribution with:
 Spectra
 """""""
 
-**Discrete for gamma spectrum**
+**Discrete energy spectrum**
 
 One can configure a generic source to produce particles with energies depending on weights.
 To do so, one must provide two lists of the same size: one for energies, one for weights.
 Each energy is associated to the corresponding weight.
 Probabilities are derived from weights simply by normalizing the weights list.
 
-Several spectra are provided through the `get_rad_gamma_spectrum` function:
+1252 isotopes spectra are provided through the `get_icrp107_spectrum` function:
 
 .. code:: python
 
-   spectrum = gate.sources.base.get_rad_gamma_spectrum("Lu177")
+   spectrum = gate.sources.base.get_icrp107_spectrum("Lu177", spectrum_type)
 
+where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron",
+"auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
+only b-spectra is histogram based, the rest are discrete.
 
 The source can be configured like this:
-
 
 .. code:: python
 

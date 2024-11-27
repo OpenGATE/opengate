@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import get_rad_beta_spectrum
+from opengate.sources.base import get_icrp107_spectrum
 import numpy as np
 import gatetools
 
@@ -42,11 +42,11 @@ def root_load_ekin(root_file: str):
 
 
 def add_source_energy_spectrum_histogram(sim, phsp, interpolation: str = None):
-    spectrum = get_rad_beta_spectrum("Lu177")
+    spectrum = get_icrp107_spectrum("Lu177", "b-spectra")
 
     source = sim.add_source("GenericSource", "beam")
     source.attached_to = phsp.name
-    source.particle = "gamma"
+    source.particle = "e-"
     source.n = 5e5 / sim.number_of_threads
     source.position.type = "point"
     source.direction.type = "iso"
