@@ -79,6 +79,7 @@ def make_property_function(interface_name):
         interface_to_get = interface_name
         print(f"DEBUG: interface_to_get = {interface_to_get}")
         return self.interfaces_to_user_output[interface_to_get]
+
     return p
 
 
@@ -199,8 +200,10 @@ class ActorBase(GateObject):
                 unique_interface_name = interface_name
 
                 if unique_interface_name in cls._existing_properties_to_interfaces:
-                    raise GateImplementationError(f"An interface property with unique name {unique_interface_name} "
-                                                  f"already exists in this class. ")
+                    raise GateImplementationError(
+                        f"An interface property with unique name {unique_interface_name} "
+                        f"already exists in this class. "
+                    )
 
                 # Check if this class already has this property and whether it is associated with an interface.
                 if hasattr(cls, interface_name):
@@ -230,7 +233,13 @@ class ActorBase(GateObject):
                 doc_string = user_output_class.__get_docstring_for_interface__(
                     interface_name, **config
                 )
-                setattr(cls, interface_name, property(fget=make_property_function(interface_name), doc=doc_string))
+                setattr(
+                    cls,
+                    interface_name,
+                    property(
+                        fget=make_property_function(interface_name), doc=doc_string
+                    ),
+                )
                 cls._existing_properties_to_interfaces.append(unique_interface_name)
 
     @classmethod
