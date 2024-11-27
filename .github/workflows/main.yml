@@ -218,7 +218,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: bash -l {0}
       run: |
-          choco install cmake
+          choco install cmake --version=3.31.0
           cmake --version
           conda info
           conda list
