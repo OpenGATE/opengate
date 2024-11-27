@@ -349,9 +349,9 @@ Probabilities are derived from weights simply by normalizing the weights list.
 
    spectrum = gate.sources.base.get_icrp107_spectrum("Lu177", spectrum_type)
 
-where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron", 
+where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron",
 "auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
-only b-spectra is histogram based, the rest are discrete. 
+only b-spectra is histogram based, the rest are discrete.
 
 The source can be configured like this:
 
