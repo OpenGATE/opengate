@@ -138,8 +138,10 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
     """
     path = pathlib.Path(os.path.dirname(__file__)).parent / "data" / "icrp107.json"
 
-    if spectrum_type not in icrp107_emissions: #Convert particle name to spectrum type
-        spectrum_type = spectrum_type.lower().replace("e-", "beta-").replace("e+", "beta+")
+    if spectrum_type not in icrp107_emissions:  # Convert particle name to spectrum type
+        spectrum_type = (
+            spectrum_type.lower().replace("e-", "beta-").replace("e+", "beta+")
+        )
 
     if spectrum_type not in icrp107_emissions:
         fatal(f"get_icrp107_spectrum: {spectrum_type} is not valid")
@@ -222,6 +224,7 @@ def set_source_rad_energy_spectrum(source, rad):
     source.energy.spectrum_weights = rad_spectrum.weights
     source.energy.spectrum_energies = rad_spectrum.energies
 
+
 def set_source_icrp107_energy_spectrum(source, rad):
     """
     Set the energy spectrum of a source according to the ICRP107 recommendations.
@@ -232,7 +235,7 @@ def set_source_icrp107_energy_spectrum(source, rad):
         The source to set the energy spectrum for
     rad : str
         The name of the radionuclide to use
-    
+
     Notes
     -----
     The source particle must be set before calling this function.
