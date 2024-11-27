@@ -65,9 +65,10 @@ def shortcut_for_single_output_actor(func):
                 f"You need to access the parameter for each output individually.\n"
             )
             if len(name) > 0:
-                for k in self.user_output:
-                    s += f"ACTOR.user_output.{k}.{name} = ...\n"
+                for k in self.interfaces_to_user_output:
+                    s += f"ACTOR.{k}.{name}\n"
                 s += "... where ACTOR is your actor object."
+            s += f"You can still use the shortcut {name} to *set* the parameter to *all* outputs of this actor. "
             fatal(s)
         return func(self, *args)
 
