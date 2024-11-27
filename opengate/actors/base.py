@@ -197,13 +197,13 @@ class ActorBase(GateObject):
             for interface_name, config in user_output_class.__interfaces__.items():
 
                 unique_interface_name = interface_name
+
+                if unique_interface_name in cls._existing_properties_to_interfaces:
+                    raise GateImplementationError(f"An interface property with unique name {unique_interface_name} "
+                                                  f"already exists in this class. ")
+
                 # Check if this class already has this property and whether it is associated with an interface.
-                # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
-                if (
-                    hasattr(cls, interface_name)
-                    and unique_interface_name
-                    not in cls._existing_properties_to_interfaces
-                ):
+                if hasattr(cls, interface_name):
                     # before we raise an exception, we check if this property was created by a parent class
                     properties_in_bases = []
                     for c in cls.__bases__:
