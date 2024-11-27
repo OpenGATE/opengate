@@ -17,7 +17,10 @@ GateKillActor::GateKillActor(py::dict &user_info)
   fNbOfKilledParticles = 0;
 }
 
-void GateKillActor::StartSimulationAction() { fNbOfKilledParticles = 0; }
+void GateKillActor::StartSimulationAction() {
+  fNbOfKilledParticles = 0;
+  std::cout << "lol" << std::endl;
+}
 
 void GateKillActor::SteppingAction(G4Step *step) {
   auto track = step->GetTrack();

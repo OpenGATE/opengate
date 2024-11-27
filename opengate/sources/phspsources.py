@@ -31,6 +31,7 @@ class PhaseSpaceSourceGenerator:
 
     def initialize(self, phsp_source):
         self.phsp_source = phsp_source
+        self.name = phsp_source.name
         # set the keys and entry start
         self.read_phsp_and_keys()
 

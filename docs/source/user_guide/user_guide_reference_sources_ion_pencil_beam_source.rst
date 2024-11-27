@@ -1,7 +1,3 @@
-.. The next line draws an horizontal line
------
-
-
 .. _source-ion-pencil-beam-source:
 
 Ion Pencil Beam Source
