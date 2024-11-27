@@ -58,9 +58,9 @@ def gate_radname_to_icrp107(rad_name: str) -> str:
     str
         radionuclide name in ICRP 107 format
     """
-    excited = rad_name[-1] == "m" # Handle Tc-99m
+    excited = rad_name[-1] == "m"  # Handle Tc-99m
     at_num = re.findall(r"\d+", rad_name)[0]  # Extract atomic number
-    name = rad_name[:-1] if excited else rad_name # Remove final m
+    name = rad_name[:-1] if excited else rad_name  # Remove final m
     elem = name.replace(at_num, "").replace("-", "")  # Find element code
     elem = elem[0].upper() + elem[1:]  # Fix
     return f'{elem}-{at_num}{"m" if excited else ""}'
