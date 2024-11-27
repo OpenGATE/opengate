@@ -343,22 +343,28 @@ normal distribution with:
 Spectra
 """""""
 
-**Discrete for gamma spectrum**
+**Discrete energy spectrum**
 
 One can configure a generic source to produce particles with energies depending on weights.
 To do so, one must provide two lists of the same size: one for energies, one for weights.
 Each energy is associated to the corresponding weight.
 Probabilities are derived from weights simply by normalizing the weights list.
 
-Several spectra are provided through the `get_rad_gamma_spectrum` function:
+1252 isotopes spectra are provided through the `get_spectrum` function:
 
 .. code:: python
 
-   spectrum = gate.sources.base.get_rad_gamma_spectrum("Lu177")
+   spectrum = gate.sources.utility.get_spectrum("Lu177", spectrum_type, database="icrp107")
 
+where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron",
+"auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
+only b-spectra is histogram based (see next section), the rest are discrete. ``database`` can be "icrp107" or "radar".
+
+ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`
+with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`.
+`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`
 
 The source can be configured like this:
-
 
 .. code:: python
 
@@ -388,12 +394,12 @@ The produced particles will follow this pattern:
 One can configure a generic source to produce particles with energies according to a given histogram.
 Histograms are defined in the same way as `numpy`, using bin edges and histogram values.
 
-Several spectra are provided through the `get_rad_beta_spectrum` function.
-This data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDecay.html>`_ (`[direct link to the excel file] <https://www.doseinfo-radar.com/BetaSpec.zip>`_).
+Several spectra are provided through the `get_spectrum` function. You can use icrp107 data, or radar data.
+Radar data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDecay.html>`_ (`[direct link to the excel file] <https://www.doseinfo-radar.com/BetaSpec.zip>`_).
 
 .. code:: python
 
-   spectrum = gate.sources.base.get_rad_beta_spectrum("Lu177")
+   spectrum = gate.sources.utility.get_spectrum("Lu177", "beta-", database="radar")
 
 The source can be configured like this:
 
@@ -405,7 +411,7 @@ The source can be configured like this:
    source.energy.spectrum_energy_bin_edges = spectrum.energy_bin_edges
    source.energy.spectrum_weights = spectrum.weights
 
-For example, using this (which is what you get from `get_rad_beta_spectrum("Lu177")`):
+For example, using this (which is what you get from `get_spectrum("Lu177", "beta-", database="radar")`):
 
 .. code:: python
 

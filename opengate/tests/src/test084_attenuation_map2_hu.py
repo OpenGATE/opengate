@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import get_rad_gamma_spectrum
+from opengate.sources.utility import get_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test084")
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     mumap = sim.add_actor("AttenuationImageActor", "mumap")
     mumap.image_volume = patient  # FIXME volume for the moment, not the name
     mumap.output_filename = "mumap2.mhd"
-    energies = get_rad_gamma_spectrum("Lu177").energies
+    energies = get_spectrum("Lu177", "gamma", "radar").energies
     mumap.energy = energies[3]  # 0.208 keV
     mumap.database = "EPDL"  # NIST or EPDL
     print(f"Energy is {mumap.energy/keV} keV")

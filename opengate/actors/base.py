@@ -305,7 +305,7 @@ class ActorBase(GateObject):
         docstring += "\n"
         return docstring
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         GateObject.__init__(self, *args, **kwargs)
         self.actor_engine = (
             None  # this is set by the actor engine during initialization
