@@ -196,8 +196,6 @@ class ActorBase(GateObject):
             # create a property in the actor so the user can quickly access the interface
             for interface_name, config in user_output_class.__interfaces__.items():
 
-                # define a unique name by combining the actor class name and the interface name
-                # unique_interface_name = f"{actor_class.__name__}_{interface_name}"
                 unique_interface_name = interface_name
                 # Check if this class already has this property and whether it is associated with an interface.
                 # We need to catch the case that the actor class has an attribute/property with this name for other reasons.
@@ -228,14 +226,12 @@ class ActorBase(GateObject):
                             f"The developer needs to change the name of the interface "
                             f"(or user_output in case the interface is automatically generated). "
                         )
-                elif not hasattr(cls, interface_name):
-                    doc_string = user_output_class.__get_docstring_for_interface__(
-                        interface_name, **config
-                    )
-                    cls._existing_properties_to_interfaces.append(unique_interface_name)
-                else:
-                    pass
+
+                doc_string = user_output_class.__get_docstring_for_interface__(
+                    interface_name, **config
+                )
                 setattr(cls, interface_name, property(fget=make_property_function(interface_name), doc=doc_string))
+                cls._existing_properties_to_interfaces.append(unique_interface_name)
 
     @classmethod
     def __get_docstring_user_output__(cls):
