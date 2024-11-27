@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import get_rad_gamma_spectrum
+from opengate.sources.base import get_icrp107_spectrum
 import numpy as np
 import gatetools
 
@@ -42,7 +42,7 @@ def root_load_ekin(root_file: str):
 
 
 def add_source_energy_spectrum_discrete(sim, phsp):
-    spectrum = get_rad_gamma_spectrum("Lu177")
+    spectrum = get_icrp107_spectrum("Lu177", "gamma")
 
     source = sim.add_source("GenericSource", "beam")
     source.attached_to = phsp.name
