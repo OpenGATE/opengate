@@ -123,10 +123,26 @@ The following would translate and rotate the scored image:
 
 In this example a uniform scoring object was created for simplicity. To test trans- and rotations, non-uniform sized and spaced voxelized image are highly encouraged.
 
+The DoseActor has the following output:
+
+- :attr:`~.opengate.actors.doseactors.DoseActor.edep`
+- :attr:`~.opengate.actors.doseactors.DoseActor.edep_uncertainty`
+- :attr:`~.opengate.actors.doseactors.DoseActor.dose`
+- :attr:`~.opengate.actors.doseactors.DoseActor.dose_uncertainty`
+- :attr:`~.opengate.actors.doseactors.DoseActor.counts`
+- :attr:`~.opengate.actors.doseactors.DoseActor.density`
+
 Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.doseactors.DoseActor
+
+.. autoproperty:: opengate.actors.doseactors.DoseActor.edep
+.. autoproperty:: opengate.actors.doseactors.DoseActor.edep_uncertainty
+.. autoproperty:: opengate.actors.doseactors.DoseActor.dose
+.. autoproperty:: opengate.actors.doseactors.DoseActor.dose_uncertainty
+.. autoproperty:: opengate.actors.doseactors.DoseActor.counts
+.. autoproperty:: opengate.actors.doseactors.DoseActor.density
 
 
 LETActor
