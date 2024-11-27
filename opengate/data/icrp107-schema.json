@@ -1,0 +1,35 @@
+{
+    "title": "ICRP 107",
+    "description": "ICRP 107 database schema",
+    "type": "object",
+    "properties": {
+        "isotope": {
+            "type": "object",
+            "properties": {
+                "Emissions":{
+                    "type": "object",
+                    "properties": {
+                        "alpha": "array",
+                        "alpha recoil": "array",
+                        "Annihilation": "array",
+                        "Auger": "array",
+                        "beta-": "array",
+                        "beta+": "array",
+                        "betaD": "array",
+                        "b-spectra": "array",
+                        "fission": "array",
+                        "IE": "array",
+                        "X": "array",
+                        "gamma": "array",
+                        "neutron": "array"
+                    }
+                },
+                "name": "string",
+                "Half_life": "number",
+                "Time_unit": "string"
+            },
+            "required": ["Emissions", "name", "Half_life", "Time_unit"]
+        }
+    },
+    "required": ["isotope"]
+}
