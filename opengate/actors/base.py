@@ -78,7 +78,6 @@ def shortcut_for_single_output_actor(func):
 def make_property_function(interface_name):
     def p(self):
         interface_to_get = interface_name
-        print(f"DEBUG: interface_to_get = {interface_to_get}")
         return self.interfaces_to_user_output[interface_to_get]
     return p
 
