@@ -243,10 +243,11 @@ def set_source_icrp107_energy_spectrum(source, rad):
     """
     if source.particle == "beta-" or source.particle == "e-":
         rad_spectrum = get_icrp107_spectrum(rad, "b-spectra")
+        source.energy.type = "spectrum_histogram"
     else:
         rad_spectrum = get_icrp107_spectrum(rad, source.particle)
+        source.energy.type = "spectrum_discrete"
 
-    source.energy.type = "spectrum_discrete"
     source.energy.spectrum_weights = rad_spectrum.weights
     source.energy.spectrum_energies = rad_spectrum.energies
 
