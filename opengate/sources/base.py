@@ -65,6 +65,22 @@ def gate_radname_to_icrp107(rad_name: str) -> str:
     elem = elem[0].upper() + elem[1:]  # Fix
     return f'{elem}-{at_num}{"m" if excited else ""}'
 
+def convert_icrp107_time_unit(icrp_time_unit:str) -> float:
+    if icrp_time_unit=="ms":
+        return g4_units.millisecond
+    elif icrp_time_unit=="s":
+        return g4_units.second
+    elif icrp_time_unit=="m":
+        return g4_units.minute
+    elif icrp_time_unit=="h":
+        return g4_units.hour
+    elif icrp_time_unit=="d":
+        return g4_units.day
+    elif icrp_time_unit=="y":
+        return g4_units.year
+    else:
+        fatal(f"unit {icrp_time_unit} not recognized")
+
 
 def read_beta_plus_spectra(rad_name):
     """
@@ -139,7 +155,11 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
         If the radionuclide or spectrum type is not valid.
     """
     rad = gate_radname_to_icrp107(rad_name)
-    path = pathlib.Path(os.path.dirname(__file__)).parent / "data" / "icrp107.json"
+    path = pathlib.Path(os.path.dirname(__file__)).parent 
+    path = path / "data" / "icrp107" / f"{rad}.json"
+
+    if not path.exists():
+        fatal(f"get_icrp107_spectrum: {rad} is not contained in the icrp 107 database")
 
     if spectrum_type not in icrp107_emissions:  # Convert particle name to spectrum type
         spectrum_type = (
@@ -149,19 +169,16 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
     if spectrum_type not in icrp107_emissions:
         fatal(f"get_icrp107_spectrum: {spectrum_type} is not valid")
 
-    with open(path, "r") as f:
-        data = json.load(f)
-        if rad not in data:
-            fatal(
-                f"get_icrp107_spectrum: {path} does not contain data for isotope {rad}"
-            )
+    with open(path, "rb") as f:
+        data = json.loads(json.load(f))
 
         # convert to Box
         gate_data = {}
         gate_data["energies"] = [
-            v[0] * g4_units.MeV for v in data[rad]["Emissions"][spectrum_type]
+            v[0] * g4_units.MeV for v in data["emissions"][spectrum_type]
         ]
-        gate_data["weights"] = [v[1] for v in data[rad]["Emissions"][spectrum_type]]
+        gate_data["weights"] = [v[1] for v in data["emissions"][spectrum_type]]
+        gate_data["half_life"] = data["half_life"] * convert_icrp107_time_unit(data["time_unit"])
         return Box(gate_data)
 
 

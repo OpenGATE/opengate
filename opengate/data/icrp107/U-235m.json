@@ -1,0 +1,1 @@
+"{\"name\": \"U-235m\", \"half_life\": 26.0, \"time_unit\": \"m\", \"emissions\": {\"alpha\": [], \"beta-\": [], \"beta+\": [], \"gamma\": [[7.65e-05, 1e-10]], \"X\": [], \"neutron\": [], \"auger\": [], \"IE\": [[7.65e-05, 1.0]], \"alpha recoil\": [], \"annihilation\": [], \"fission\": [], \"betaD\": [], \"b-spectra\": []}}"
