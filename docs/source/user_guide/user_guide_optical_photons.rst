@@ -261,7 +261,7 @@ In the case of two dielectric materials, the photon can undergo total internal r
 Defining surfaces
 ~~~~~~~~~~~~~~~~~
 
-.. image:: ../figures/Surface-definition.png
+.. image:: ../figures/surface-definition.png
 
 The photon travels through the surface between the two volumes Volume1 and Volume2. The surface between Volume1 and Volume2 is NOT the same surface as that between Volume2 and Volume1; the surface definition is directional. When there is optical transport in both directions, two surfaces should be created.
 
