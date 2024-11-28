@@ -51,17 +51,17 @@
     "name": {
       "type": "string"
     },
-    "Half_life": {
+    "half_life": {
       "type": "number"
     },
-    "Time_unit": {
+    "time_unit": {
       "type": "string"
     }
   },
   "required": [
-    "Emissions",
+    "emissions",
     "name",
-    "Half_life",
-    "Time_unit"
+    "half_life",
+    "time_unit"
   ]
 }
