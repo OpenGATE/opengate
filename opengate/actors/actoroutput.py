@@ -553,12 +553,21 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 f"No 'data_container_class' class attribute "
                 f"specified for class {cls.__name__}."
             )
-        # current_info_tuple = cls.inherited_user_info_defaults["data_item_config"]
-        cls._default_data_item_config = (
-            cls.data_container_class.get_default_data_item_config()
-        )
-        for k, v in cls.__interfaces__.items():
-            cls._default_data_item_config[v["item"]]["suffix"] = k
+        cls._default_data_item_config = {}
+        for k in cls.data_container_class.__get_data_item_names__():
+            if isinstance(k, (int, )):
+                suffix = f"item{k}"
+            else:
+                suffix = k
+            cls._default_data_item_config[k] = {
+                                "output_filename": "auto",
+                                "write_to_disk": True,
+                                "active": False,
+                                "suffix": suffix
+            }
+        # if there is only one item, set suffix to None
+        if len(cls._default_data_item_config) == 1:
+            list(cls._default_data_item_config.values())[0]["suffix"] = None
         super().__hook_after_factory_function__(**kwargs)
 
     def __init__(self, *args, **kwargs):
