@@ -941,11 +941,17 @@ def _get_user_info_options(user_info_name, object_type, class_module):
     """Utility function to retrieve the options associated with a user info given the class name,
     the module in which the class is defined, and the name of the user info.
     """
-
+    # this is a workaround because dynamically created actor output classes
+    # cannot be found in the modules dict and will raise an Attribute error
+    # a better way would be to implement the to_dictionary method in a way
+    # that it also stores a list of input files
+    # so that we do not need to do this recursive search here
     try:
-        options = getattr(
-            sys.modules[class_module], object_type
-        ).inherited_user_info_defaults[user_info_name][1]
+        cls = getattr(sys.modules[class_module], object_type)
+    except AttributeError:
+        return {}
+    try:
+        options = cls.inherited_user_info_defaults[user_info_name][1]
     except KeyError:
         fatal(f"Could not find user info {user_info_name} in {object_type}. ")
         options = None  # remove warning from IDE
