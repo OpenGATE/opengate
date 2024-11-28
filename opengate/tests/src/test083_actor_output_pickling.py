@@ -48,15 +48,17 @@ if __name__ == "__main__":
     b = actor1_reloaded_twice.edep.output_filename != actor1.edep.output_filename
     is_ok &= b
     print(
-        f"output_filename equal in original and "
-        f"re-re-loaded actor output interface edep (should not)? Passed: {b}"
+        f"Test: Is the input parameter 'output_filename' equal in original and "
+        f"re-re-loaded actor output to which interface edep belongs? \n"
+        f"Expected: not equal. Passed: {b}"
     )
 
-    b = actor1_reloaded_twice.edep.active is not actor1.edep.active
+    b = actor1_reloaded_twice.edep_uncertainty.active is not actor1.edep_uncertainty.active
     is_ok &= b
     print(
-        f"active in original and "
-        f"re-re-loaded actor output interface edep equal (should not)? Passed: {b}"
+        f"Test: Is the input parameter 'active' equal in original and "
+        f"re-re-loaded actor output to which interface edep_uncertainty belongs? \n"
+        f"Expected: not equal. Passed: {b}"
     )
 
     b = stat.stats.belongs_to_actor is stat
