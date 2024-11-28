@@ -584,6 +584,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         d["data_item_config"] = self.data_item_config
         return d
 
+    def from_dictionary(self, d):
+        super().from_dictionary(d)
+        self.data_item_config = d["data_item_config"]
+
     def _fatal_unknown_item(self, item):
         fatal(
             f"Unknown item {item}. Known items are {list(self.data_item_config.keys())}."
