@@ -395,10 +395,13 @@ class ActorOutputBase(GateObject):
         raise NotImplementedError
 
     def get_active(self, **kwargs):
-        raise NotImplementedError
+        # actor output is always active in its base implementation; derived classes can implement this differntly, as for example the ActorOutputUsingDataItemContainer class
+        return True
 
     def set_active(self, value, **kwargs):
-        raise NotImplementedError
+        if value is False:
+            self.warn_user(f"You try to deactivate user output {self.name} "
+                           f"belonging to actor {self.belongs_to}, but this output cannot be deactivated. ")
 
     def get_item_suffix(self, **kwargs):
         return None
