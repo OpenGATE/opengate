@@ -353,6 +353,9 @@ class DataItemContainer(DataContainer):
     # Derived classes must specify this at the class level
     _data_item_classes = ()
 
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ()
+
     def __init__(self, *args, data=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -673,6 +676,8 @@ class SingleItkImageWithVariance(DataItemContainer):
             ),
         }
     )
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ("variance", "std", "uncertainty")
 
     def get_variance_or_uncertainty(self, which_quantity):
         try:
@@ -744,6 +749,8 @@ class QuotientItkImage(DataItemContainer):
             ),
         }
     )
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ("quotient", )
 
     @property
     def quotient(self):
