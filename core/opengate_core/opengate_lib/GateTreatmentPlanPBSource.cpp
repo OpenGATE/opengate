@@ -6,7 +6,7 @@
 #include <G4UnitsTable.hh>
 
 GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
-  //fNumberOfGeneratedEvents = 0; // Keeps truck of nb events per RUN
+  // fNumberOfGeneratedEvents = 0; // Keeps truck of nb events per RUN
   fParticleDefinition = nullptr;
   fA = 0;
   fZ = 0;
@@ -31,7 +31,7 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   // Create single particle source only once. Parameters are then updated for
   // the different spots.
   ll.fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
-                                                   fAttachedToVolumeName);
+                                                      fAttachedToVolumeName);
 
   // common to all spots
   InitializeParticle(user_info);
@@ -51,7 +51,7 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
 
   fTotalNumberOfSpots = fSpotWeight.size();
   ll.fNbGeneratedSpots.resize(fTotalNumberOfSpots,
-                           0); // keep track for debug
+                              0); // keep track for debug
 
   // Init the random fEngine
   InitRandomEngine();
@@ -129,7 +129,7 @@ void GateTreatmentPlanPBSource::GeneratePrimaries(
   }
 
   // update number of generated events
-  //fNumberOfGeneratedEvents++;
+  // fNumberOfGeneratedEvents++;
   ll.fNbGeneratedSpots[ll.fCurrentSpot]++;
 
   if (fSortedSpotGenerationFlag) {
@@ -215,7 +215,7 @@ void GateTreatmentPlanPBSource::InitializeParticle(py::dict &user_info) {
     return;
   }
   // If the particle is not an ion
-  //fInitGenericIon = false;
+  // fInitGenericIon = false;
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle(pname);
   if (fParticleDefinition == nullptr) {
@@ -235,9 +235,9 @@ void GateTreatmentPlanPBSource::InitializeIon(py::dict &user_info) {
 
 py::list GateTreatmentPlanPBSource::GetGeneratedPrimaries() {
   py::list n_spot_vec;
-//   for (const auto &item : fNbGeneratedSpots) {
-//     n_spot_vec.append(item);
-//   }
+  //   for (const auto &item : fNbGeneratedSpots) {
+  //     n_spot_vec.append(item);
+  //   }
 
   return n_spot_vec;
 }
