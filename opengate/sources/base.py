@@ -246,7 +246,12 @@ def set_source_icrp107_energy_spectrum(source, rad):
     Otherwise, the function will use the discrete spectrum for the given particle.
 
     """
-    if source.particle == "beta-" or source.particle == "e-" or source.particle == "beta+" or source.particle == "e+":
+    if (
+        source.particle == "beta-"
+        or source.particle == "e-"
+        or source.particle == "beta+"
+        or source.particle == "e+"
+    ):
         rad_spectrum = get_icrp107_spectrum(rad, "b-spectra")
         source.energy.type = "spectrum_histogram"
     else:
