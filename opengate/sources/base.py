@@ -138,6 +138,7 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
     fatal
         If the radionuclide or spectrum type is not valid.
     """
+    rad = gate_radname_to_icrp107(rad_name)
     path = pathlib.Path(os.path.dirname(__file__)).parent / "data" / "icrp107.json"
 
     if spectrum_type not in icrp107_emissions:  # Convert particle name to spectrum type
@@ -150,7 +151,6 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
 
     with open(path, "r") as f:
         data = json.load(f)
-        rad = gate_radname_to_icrp107(rad_name)
         if rad not in data:
             fatal(
                 f"get_icrp107_spectrum: {path} does not contain data for isotope {rad}"
@@ -241,12 +241,12 @@ def set_source_icrp107_energy_spectrum(source, rad):
     Notes
     -----
     The source particle must be set before calling this function.
-    If the source particle is "beta-" or "e-", the function will use the
+    If the source particle is "beta-/e-" or "beta+/e+", the function will use the
     "b-spectra" spectrum from the ICRP107 data.
     Otherwise, the function will use the discrete spectrum for the given particle.
 
     """
-    if source.particle == "beta-" or source.particle == "e-":
+    if source.particle == "beta-" or source.particle == "e-" or source.particle == "beta+" or source.particle == "e+":
         rad_spectrum = get_icrp107_spectrum(rad, "b-spectra")
         source.energy.type = "spectrum_histogram"
     else:
