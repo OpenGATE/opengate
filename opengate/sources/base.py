@@ -65,18 +65,19 @@ def gate_radname_to_icrp107(rad_name: str) -> str:
     elem = elem[0].upper() + elem[1:]  # Fix
     return f'{elem}-{at_num}{"m" if excited else ""}'
 
-def convert_icrp107_time_unit(icrp_time_unit:str) -> float:
-    if icrp_time_unit=="ms":
+
+def convert_icrp107_time_unit(icrp_time_unit: str) -> float:
+    if icrp_time_unit == "ms":
         return g4_units.millisecond
-    elif icrp_time_unit=="s":
+    elif icrp_time_unit == "s":
         return g4_units.second
-    elif icrp_time_unit=="m":
+    elif icrp_time_unit == "m":
         return g4_units.minute
-    elif icrp_time_unit=="h":
+    elif icrp_time_unit == "h":
         return g4_units.hour
-    elif icrp_time_unit=="d":
+    elif icrp_time_unit == "d":
         return g4_units.day
-    elif icrp_time_unit=="y":
+    elif icrp_time_unit == "y":
         return g4_units.year
     else:
         fatal(f"unit {icrp_time_unit} not recognized")
@@ -155,7 +156,7 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
         If the radionuclide or spectrum type is not valid.
     """
     rad = gate_radname_to_icrp107(rad_name)
-    path = pathlib.Path(os.path.dirname(__file__)).parent 
+    path = pathlib.Path(os.path.dirname(__file__)).parent
     path = path / "data" / "icrp107" / f"{rad}.json"
 
     if not path.exists():
@@ -178,7 +179,9 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
             v[0] * g4_units.MeV for v in data["emissions"][spectrum_type]
         ]
         gate_data["weights"] = [v[1] for v in data["emissions"][spectrum_type]]
-        gate_data["half_life"] = data["half_life"] * convert_icrp107_time_unit(data["time_unit"])
+        gate_data["half_life"] = data["half_life"] * convert_icrp107_time_unit(
+            data["time_unit"]
+        )
         return Box(gate_data)
 
 
