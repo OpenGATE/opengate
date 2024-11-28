@@ -86,7 +86,8 @@ void GateOptrComptSplittingActor::AttachAllLogicalDaughtersVolumes(
   }
 }
 
-void GateOptrComptSplittingActor::StartSimulationAction() {
+
+void GateOptrComptSplittingActor::StartRun() {
   G4LogicalVolume *biasingVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
 
@@ -98,9 +99,6 @@ void GateOptrComptSplittingActor::StartSimulationAction() {
   fComptSplittingOperation->SetMaxTheta(fMaxTheta);
   fComptSplittingOperation->SetRussianRoulette(fRussianRoulette);
   fComptSplittingOperation->SetMinWeightOfParticle(fMinWeightOfParticle);
-}
-
-void GateOptrComptSplittingActor::StartRun() {
 
   // The way to behave of the russian roulette is the following :
   // we provide a vector director and the theta angle acceptance, where theta =
@@ -126,6 +124,7 @@ void GateOptrComptSplittingActor::StartTracking(const G4Track *track) {
 G4VBiasingOperation *
 GateOptrComptSplittingActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+  
   if (fBiasPrimaryOnly && (track->GetParentID() != 0))
     return 0;
   if (fBiasOnlyOnce && (fNInteractions > 0))
