@@ -395,7 +395,8 @@ class ActorOutputBase(GateObject):
         raise NotImplementedError
 
     def get_active(self, **kwargs):
-        # actor output is always active in its base implementation; derived classes can implement this differntly, as for example the ActorOutputUsingDataItemContainer class
+        # actor output is always active in its base implementation;
+        # derived classes can implement this differently, as for example the ActorOutputUsingDataItemContainer class
         return True
 
     def set_active(self, value, **kwargs):
