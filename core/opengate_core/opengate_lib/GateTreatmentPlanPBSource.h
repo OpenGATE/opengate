@@ -31,7 +31,7 @@ public:
   void PrepareNextRun() override;
   double CalcNextTime(double current_simulation_time) override;
 
-  //unsigned long fNumberOfGeneratedEvents;
+  // unsigned long fNumberOfGeneratedEvents;
   py::list GetGeneratedPrimaries();
 
 protected:
@@ -45,15 +45,14 @@ protected:
     bool fInitGenericIon = false;
   };
   G4Cache<threadLocalTPSource> fThreadLocalDataTPSource;
-  
+
   threadLocalTPSource &GetThreadLocalDataTPSource();
-  
+
   // variables common to all spots
   CLHEP::HepRandomEngine *fEngine;
   CLHEP::RandGeneral *fDistriGeneral;
   G4String fParticleType;
   bool fSortedSpotGenerationFlag;
-  
 
   // vectors collecting spot-specific variables
   double *fPDF;
