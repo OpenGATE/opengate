@@ -400,8 +400,10 @@ class ActorOutputBase(GateObject):
 
     def set_active(self, value, **kwargs):
         if value is False:
-            self.warn_user(f"You try to deactivate user output {self.name} "
-                           f"belonging to actor {self.belongs_to}, but this output cannot be deactivated. ")
+            self.warn_user(
+                f"You try to deactivate user output {self.name} "
+                f"belonging to actor {self.belongs_to}, but this output cannot be deactivated. "
+            )
 
     def get_item_suffix(self, **kwargs):
         return None
