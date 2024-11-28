@@ -86,7 +86,6 @@ void GateOptrComptSplittingActor::AttachAllLogicalDaughtersVolumes(
   }
 }
 
-
 void GateOptrComptSplittingActor::StartRun() {
   G4LogicalVolume *biasingVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
@@ -124,7 +123,7 @@ void GateOptrComptSplittingActor::StartTracking(const G4Track *track) {
 G4VBiasingOperation *
 GateOptrComptSplittingActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  
+
   if (fBiasPrimaryOnly && (track->GetParentID() != 0))
     return 0;
   if (fBiasOnlyOnce && (fNInteractions > 0))
