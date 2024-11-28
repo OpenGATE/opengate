@@ -930,7 +930,8 @@ def add_detection_plane_for_arf(
 
     # FIXME
     mm = g4_units.mm
-    plane_size = [533 * mm, 387 * mm]
+    if plane_size is None:
+        plane_size = [533 * mm, 387 * mm]
 
     # plane
     nm = g4_units.nm
@@ -1002,7 +1003,7 @@ def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
     arf.energy_windows_actor = ene_win_actor.name
     arf.attached_to = detector_plane.name
-    arf.output_filename = f"arf.root"
+    arf.output_filename = f"arf_training_dataset.root"
     arf.russian_roulette = rr
 
     return detector_plane, arf
@@ -1092,7 +1093,7 @@ def rotate_gantry(
     rotations = []
     current_angle_deg = start_angle_deg
     if initial_rotation is None:
-        initial_rotation = Rotation.from_euler("yx", (90, 90), degrees=True)
+        initial_rotation = Rotation.from_euler("x", 90, degrees=True)
     for r in range(nb_angle):
         t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
