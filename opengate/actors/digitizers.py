@@ -1162,6 +1162,7 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
 
 
 process_cls(DigitizerBase)
+process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
 process_cls(DigitizerBlurringActor)
 process_cls(DigitizerSpatialBlurringActor)
