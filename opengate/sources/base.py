@@ -247,7 +247,7 @@ def set_source_rad_energy_spectrum(source, rad):
     source.energy.spectrum_energies = rad_spectrum.energies
 
 
-def set_source_icrp107_energy_spectrum(source, rad):
+def set_source_icrp107_energy_spectrum(source, rad: str) -> None:
     """
     Set the energy spectrum of a source according to the ICRP107 recommendations.
 
@@ -274,12 +274,13 @@ def set_source_icrp107_energy_spectrum(source, rad):
     ):
         rad_spectrum = get_icrp107_spectrum(rad, "b-spectra")
         source.energy.type = "spectrum_histogram"
+        source.energy.spectrum_weights = rad_spectrum.weights[:-1]
+        source.energy.spectrum_energy_bin_edges = rad_spectrum.energies
     else:
         rad_spectrum = get_icrp107_spectrum(rad, source.particle)
         source.energy.type = "spectrum_discrete"
-
-    source.energy.spectrum_weights = rad_spectrum.weights
-    source.energy.spectrum_energies = rad_spectrum.energies
+        source.energy.spectrum_weights = rad_spectrum.weights
+        source.energy.spectrum_energies = rad_spectrum.energies
 
 
 class SourceBase(GateObject):
