@@ -539,7 +539,8 @@ def mlc_leaf(linac_name):
     interleaf_gap = 0.09 * mm
     leaf_length = 155 * mm
     leaf_height = 90 * mm
-    leaf_mean_width = 1.76 * mm
+    # leaf_mean_width = 1.76 * mm
+    leaf_mean_width = 1.69 * mm
     tongues_length = 0.8 * mm
 
     cyl = volumes.TubsVolume(name=f"{linac_name}_cylinder_leaf")
@@ -552,8 +553,10 @@ def mlc_leaf(linac_name):
     trap_leaf = volumes.TrapVolume(name=f"{linac_name}_trap_leaf")
     dz = leaf_height / 2
     dy1 = leaf_length / 2
-    dx1 = 1.94 * mm / 2
-    dx3 = 1.58 * mm / 2
+    # dx1 = 1.94 * mm / 2
+    # dx3 = 1.58 * mm / 2
+    dx1 = 1.91 * mm / 2
+    dx3 = 1.47 * mm / 2
     theta = 0
 
     alpha1 = 0
@@ -583,11 +586,13 @@ def mlc_leaf(linac_name):
     dy1 = leaf_length / 2
 
     ##FIXME I need to remove 2 um to the tongues to avoid an overleap between leaves
-    dx1 = (interleaf_gap - 2.2 * 10 ** (-3) * mm) / 2
+    # dx1 = (interleaf_gap - 2.2 * 10 ** (-3) * mm) / 2
+    dx1 = (interleaf_gap - 3.3 * 10 ** (-3) * mm) / 2
     dx3 = dx1
     alpha1 = 0
     alpha2 = alpha1
-    theta = np.arctan((1.58 * mm - 1.94 * mm) * 0.5 / leaf_height)
+    # theta = np.arctan((1.58 * mm - 1.94 * mm) * 0.5 / leaf_height)
+    theta = np.arctan((1.47 * mm - 1.91 * mm) * 0.5 / leaf_height)
     phi = 0
     dy2 = dy1
     dx2 = dx1
@@ -624,14 +629,16 @@ def add_mlc(sim, linac_name):
     z_linac = linac.size[2]
     center_mlc = 349.3 * mm + 3.5 * mm
     interleaf_gap = 0.09 * mm
-    leaf_width = 1.76 * mm
+    # leaf_width = 1.76 * mm
+    leaf_width = 1.69 * mm
     leaf_lenght = 155 * mm
     nb_leaf = 160
-    rotation_angle = np.arctan((1.94 * mm - 1.58 * mm) * 0.5 / leaf_height)
+    # rotation_angle = np.arctan((1.94 * mm - 1.58 * mm) * 0.5 / leaf_height)
+    rotation_angle = np.arctan((1.91 * mm - 1.47 * mm) * 0.5 / leaf_height)
 
     mlc = sim.add_volume("Box", f"{linac_name}_mlc")
     mlc_bank_rotation = Rotation.from_euler(
-        "X", np.arctan(3.25 / 349.3), degrees=False
+        "X", - np.arctan(3.25 / 349.3), degrees=False
     ).as_matrix()
     mlc.rotation = mlc_bank_rotation
     mlc.size = [linac.size[0] - 2 * cm, linac.size[1] - 2 * cm, 95 * mm]
