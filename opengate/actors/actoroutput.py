@@ -527,8 +527,10 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                 }
             # if there is only one item, set suffix to None
             # because we do not want to append anything to the output_filename in this case
+            # and activate the output
             if len(cls._default_data_item_config) == 1:
                 list(cls._default_data_item_config.values())[0]["suffix"] = None
+                list(cls._default_data_item_config.values())[0]["active"] = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
