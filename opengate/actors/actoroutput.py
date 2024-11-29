@@ -806,9 +806,13 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     def end_of_run(self, run_index):
         if self.merge_data_after_simulation is True:
-            self.merge_into_merged_data(self.data_per_run[run_index])
+            self.merged_data.inplace_merge_with(self.data_per_run[run_index])
         if self.keep_data_per_run is False:
             self.data_per_run.pop(run_index)
+
+    def start_of_simulation(self, **kwargs):
+        if self.merge_data_after_simulation is True:
+            self.merged_data = self.data_container_class(belongs_to=self)
 
     def merge_data_from_actor_output(
         self, *actor_output, discard_existing_data=True, **kwargs
