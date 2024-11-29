@@ -441,7 +441,7 @@ class GateObject:
         wrap_init_method(cls)
 
     def __new__(cls, *args, **kwargs):
-        process_cls(cls)
+        # process_cls(cls)
         new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
