@@ -374,9 +374,7 @@ class GateObject:
 
     @classmethod
     def __get_user_info_docstring__(cls):
-        line = f"The class {cls.__qualname__} has the following user input parameters and default values:"
-        underline = "~" * len(line)
-        docstring = f"{line}\n{underline}\n\n"
+        docstring = f"User input parameters and default values:\n\n"
         for k, v in sorted(cls.inherited_user_info_defaults.items()):
             default_value = v[0]
             options = v[1]
@@ -414,6 +412,7 @@ class GateObject:
     @classmethod
     def __process_this__(cls):
         cls.__process_user_info_defaults__()
+        cls.__doc__ = cls.__get_docstring__()
 
     @classmethod
     def __process_user_info_defaults__(cls):
@@ -438,7 +437,6 @@ class GateObject:
             )
         # the class attribute known_attributes is needed by the __setattr__ method of GateObject
         cls.known_attributes = set()
-        cls.__doc__ = cls.__get_docstring__()
         # enhance the __init__ method to ensure __finalize_init__ is called at the end
         wrap_init_method(cls)
 
