@@ -493,7 +493,6 @@ class ActorBase(GateObject):
                 interface = self.interfaces_to_user_output[interface_name]
                 for p in default_params:
                     v = interface_config[p]
-                    print("DEBUG: ", p, v)
                     setattr(interface, p, v)
 
     def _add_user_output(
