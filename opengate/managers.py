@@ -736,7 +736,8 @@ class PhysicsManager(GateObject):
         return s
 
     def __getstate__(self):
-        dict_to_return = super().__getstate__()
+        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        # dict_to_return = super().__getstate__()
         dict_to_return["physics_list_manager"] = None
         return dict_to_return
 
