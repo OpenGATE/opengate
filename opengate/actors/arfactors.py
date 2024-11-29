@@ -70,9 +70,15 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         "russian_roulette": (1, {"doc": "Russian roulette factor. "}),
     }
 
+    user_output_config = {
+        "root_output": {
+            "actor_output_class": ActorOutputRoot,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "root_output")
+        # self._add_user_output(ActorOutputRoot, "root_output")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -195,6 +201,12 @@ class ARFActor(ActorBase, g4.GateARFActor):
         ),
     }
 
+    user_output_config = {
+        "arf_projection": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         # import module
@@ -217,7 +229,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_size = None
         self.nb_ene = None
 
-        self._add_user_output(ActorOutputSingleImage, "arf_projection")
+        # self._add_user_output(ActorOutputSingleImage, "arf_projection")
         self.__initcpp__()
 
     def __initcpp__(self):

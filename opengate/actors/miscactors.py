@@ -51,6 +51,10 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 "doc": "Should the output be written to disk, or only kept in memory? ",
             },
         ),
+        "active": (
+            True,
+            {"doc": "This actor is always active. ", "read_only": True},
+        ),
     }
 
     default_suffix = "json"
@@ -187,9 +191,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
-    """
-    Store statistics about a simulation run.
-    """
+    """Store statistics about a simulation run."""
 
     # hints for IDE
     track_types_flag: bool
@@ -203,9 +205,15 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         ),
     }
 
+    user_output_config = {
+        "stats": {
+            "actor_output_class": ActorOutputStatisticsActor,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputStatisticsActor, "stats")
+        # self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -364,10 +372,7 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
 
 class KillActor(ActorBase, g4.GateKillActor):
-    """
-    Actor which kill a particle entering in a volume with the following attached actor.
-
-    """
+    """Actor which kills a particle entering a volume."""
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)

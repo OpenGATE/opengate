@@ -59,7 +59,7 @@ class VoxelDepositActor(ActorBase):
         "translation": (
             [0 * g4_units.mm, 0 * g4_units.mm, 0 * g4_units.mm],
             {
-                "doc": "Translation vector to (optionally) translate the image in along [x, y, z] from the center of the attached volume. The default unit is g4_units.mm and default value is the unity operation [0, 0, 0] *g4_units.mm. ",
+                "doc": "Translation vector to (optionally) translate the image in along [x, y, z] from the center of the attached volume. The default unit is g4_units.mm and default value is the unity operation [0, 0, 0] * g4_units.mm. ",
             },
         ),
         "rotation": (
@@ -340,8 +340,8 @@ def _setter_hook_uncertainty_goal(self, value):
 
 
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
-    """The DoseActor computes the deposited
-    energy or absorbed dose in the volume to which it is attached to. It creates a virtual voxelized scoring image, which shape and position can be defined by the user.
+    """Computes the deposited energy or absorbed dose in the volume to which it is attached.
+    It creates a virtual voxelized scoring image, whose shape and position can be defined by the user.
     """
 
     # hints for IDE
@@ -390,9 +390,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "score_in": (
             "material",
             {
-                "doc": """The score_in command allows to convert the LET from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry.
-                The default value is 'material', which means that no conversion is performed and the LET to the local material is scored.
-                You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
+                "doc": """The score_in command allows to convert the LET from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the LET to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
                 """,
                 "allowed_values": (
                     "material",
@@ -451,88 +449,59 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         ),
     }
 
+    user_output_config = {
+        "edep_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "edep": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                },
+                "edep_squared": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "edep_uncertainty": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "dose_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "dose": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "dose_squared": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "dose_uncertainty": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "density": {
+            "actor_output_class": ActorOutputSingleMeanImage,
+            "active": False,
+        },
+        "counts": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": False,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        # **** EDEP ****
-        # This creates a user output with two components: 0=edep, 1=edep_squared
-        # additionally, it also provides variance, std, and uncertainty via dynamic properties
-        self._add_user_output(
-            ActorOutputSingleImageWithVariance,
-            "edep_with_uncertainty",
-            automatically_generate_interface=False,
-        )
-        # create an interface to item 0 of user output "edep_with_uncertainty"
-        # and make it available via a property 'edep' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "edep_with_uncertainty", "edep", item=0
-        )
-        # create an interface to item 1 of user output "edep_with_uncertainty"
-        # and make it available via a property 'square' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "edep_with_uncertainty",
-            "edep_squared",
-            item=1,
-        )
-        # create an interface to item 'uncertainty' of user output "edep_with_uncertainty"
-        # and make it available via a property 'edep_uncertainty' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "edep_with_uncertainty",
-            "edep_uncertainty",
-            item="uncertainty",
-        )
-
-        # **** DOSE ****
-        self._add_user_output(
-            ActorOutputSingleImageWithVariance,
-            "dose_with_uncertainty",
-            automatically_generate_interface=False,
-        )
-        # create an interface to item 0 of user output "dose_with_uncertainty"
-        # and make it available via a property 'dose' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "dose_with_uncertainty", "dose", item=0
-        )
-        # create an interface to item 1 of user output "dose_with_uncertainty"
-        # and make it available via a property 'dose_squared' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "dose_with_uncertainty",
-            "dose_squared",
-            item=1,
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "dose_with_uncertainty",
-            "dose_uncertainty",
-            item="uncertainty",
-        )
-
-        # set the defaults for the user output of this actor
-        self._add_user_output(ActorOutputSingleMeanImage, "density")
-        self._add_user_output(ActorOutputSingleImage, "counts")
-        self.user_output.dose_with_uncertainty.set_active(False, item="all")
-        self.user_output.density.set_active(False)
-        self.user_output.counts.set_active(False)
-
-        # item suffix is used when the filename is auto-generated or
-        # when the user sets one filename per actor
-        self.user_output.edep_with_uncertainty.set_item_suffix("edep", item=0)
-        self.user_output.edep_with_uncertainty.set_item_suffix("edep_squared", item=1)
-        self.user_output.edep_with_uncertainty.set_item_suffix(
-            "edep_uncertainty", item="uncertainty"
-        )
-        self.user_output.dose_with_uncertainty.set_item_suffix("dose", item=0)
-        self.user_output.dose_with_uncertainty.set_item_suffix("dose_squared", item=1)
-        self.user_output.dose_with_uncertainty.set_item_suffix(
-            "dose_uncertainty", item="uncertainty"
-        )
-        # The following 2 are single item output and item=0 is default
-        self.user_output.density.set_item_suffix("density")
-        self.user_output.counts.set_item_suffix("counts")
-
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -574,6 +543,9 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
+        # the edep component has to be active in any case
+        self.user_output.edep_with_uncertainty.set_active(True, item=0)
+
         # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
         if (
             self.user_output.edep_with_uncertainty.get_active(
@@ -597,6 +569,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
             is True
         ):
+            # activate the dose component
+            self.user_output.dose_with_uncertainty.set_active(True, item=0)
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
             if not self.user_output.dose_with_uncertainty.get_active(item=1):
@@ -806,10 +780,14 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         "score_in": (
             "G4_WATER",
             {
-                "doc": """The score_in command allows to convert the LET from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry.
-                The default value is 'material', which means that no conversion is performed and the LET to the local material is scored.
-                You can use any material defined in the simulation or pre-defined by Geant4 such as "G4_WATER", which may be one of the most use cases of this functionality.
-                """,
+                "doc": "The score_in command allows to convert the LET from the material, "
+                "which is defined in the geometry, to any user defined material. "
+                "Note that this does not change the material definition in the geometry. "
+                "The default value is 'material', which means that no conversion is "
+                "performed and the LET to the local material is scored. "
+                "You can use any material defined in the simulation "
+                "or pre-defined by Geant4 such as 'G4_WATER', "
+                "which may be one of the most use cases of this functionality.",
                 "setter_hook": _setter_hook_score_in_let_actor,
             },
         ),
@@ -822,40 +800,35 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         ),
     }
 
+    user_output_config = {
+        "let": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                "numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "let": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": True,
+                    "suffix": None,  # default suffix would be 'let', but we prefer no suffix
+                },
+            },
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        self._add_user_output(
-            ActorOutputQuotientMeanImage, "let", automatically_generate_interface=False
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "let", "numerator", item=0
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "let", "denominator", item=1
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "let", "let", item="quotient"
-        )
-
-        # configure the default item config for the output of the LET actor,
-        # which is different from the generic quotient image container class:
-
-        # Suffix to be appended in case a common output_filename per actor is assigned
-        self.user_output.let.set_item_suffix(None, item="quotient")
-        self.user_output.let.set_item_suffix("numerator", item=0)
-        self.user_output.let.set_item_suffix("denominator", item=1)
-
-        # the LET always needs both components to calculate LET
-        self.user_output.let.set_active(True, item=0)
-        self.user_output.let.set_active(True, item=1)
-
-        # Most users will probably only want the LET image written to disk,
-        # not the numerator and denominator
-        self.user_output.let.set_write_to_disk(False, item=0)
-        self.user_output.let.set_write_to_disk(False, item=1)
-        self.user_output.let.set_write_to_disk(True, item="quotient")
-
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -927,10 +900,14 @@ class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStopping
         )
     }
 
+    user_output_config = {
+        "production_stopping": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        self._add_user_output(ActorOutputSingleImage, "production_stopping")
 
         self.__initcpp__()
 
@@ -1006,12 +983,14 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         ),
     }
 
+    user_output_config = {
+        "fluence": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        # self.py_fluence_image = None
-        self._add_user_output(ActorOutputSingleImage, "fluence")
-
         self.__initcpp__()
 
     def __initcpp__(self):
