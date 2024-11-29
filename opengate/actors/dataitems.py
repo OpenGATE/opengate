@@ -936,13 +936,3 @@ def merge_data(list_of_data):
     for d in list_of_data[1:]:
         merged_data.inplace_merge_with(d)
     return merged_data
-
-
-available_data_container_classes = {
-    "SingleItkImage": SingleItkImage,
-    "SingleMeanItkImage": SingleMeanItkImage,
-    "QuotientMeanItkImage": QuotientMeanItkImage,
-    "SingleArray": SingleArray,
-    "DoubleArray": DoubleArray,
-    "SingleItkImageWithVariance": SingleItkImageWithVariance,
-}
