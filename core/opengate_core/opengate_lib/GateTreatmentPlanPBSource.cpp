@@ -6,12 +6,8 @@
 #include <G4UnitsTable.hh>
 
 GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
-  fSPS_PB = nullptr;
-  fCurrentSpot = 0;
-  fPreviousSpot = -1;
-  fNumberOfGeneratedEvents = 0; // Keeps truck of nb events per RUN
+  // fNumberOfGeneratedEvents = 0; // Keeps truck of nb events per RUN
   fParticleDefinition = nullptr;
-  fInitGenericIon = false;
   fA = 0;
   fZ = 0;
   fE = 0;
@@ -24,12 +20,18 @@ GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
 
 GateTreatmentPlanPBSource::~GateTreatmentPlanPBSource() = default;
 
+GateTreatmentPlanPBSource::threadLocalTPSource &
+GateTreatmentPlanPBSource::GetThreadLocalDataTPSource() {
+  return fThreadLocalDataTPSource.Get();
+}
+
 void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
+  auto &ll = GetThreadLocalDataTPSource();
   // Create single particle source only once. Parameters are then updated for
   // the different spots.
-  fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
-                                                   fAttachedToVolumeName);
+  ll.fSPS_PB = new GateSingleParticleSourcePencilBeam(std::string(),
+                                                      fAttachedToVolumeName);
 
   // common to all spots
   InitializeParticle(user_info);
@@ -48,8 +50,8 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
   fSpotRotation = DictGetVecG4RotationMatrix(user_info, "rotations");
 
   fTotalNumberOfSpots = fSpotWeight.size();
-  fNbGeneratedSpots.resize(fTotalNumberOfSpots,
-                           0); // keep track for debug
+  ll.fNbGeneratedSpots.resize(fTotalNumberOfSpots,
+                              0); // keep track for debug
 
   // Init the random fEngine
   InitRandomEngine();
@@ -60,11 +62,12 @@ void GateTreatmentPlanPBSource::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateTreatmentPlanPBSource::InitNbPrimariesVec() {
+  auto &ll = GetThreadLocalDataTPSource();
   // Initialize all spots to zero particles
-  fNbIonsToGenerate.resize(fTotalNumberOfSpots, 0);
+  ll.fNbIonsToGenerate.resize(fTotalNumberOfSpots, 0);
   for (long int i = 0; i < fMaxN; i++) {
     int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
-    ++fNbIonsToGenerate[bin];
+    ++ll.fNbIonsToGenerate[bin];
   }
 }
 void GateTreatmentPlanPBSource::InitRandomEngine() {
@@ -107,79 +110,83 @@ void GateTreatmentPlanPBSource::PrepareNextRun() {
 void GateTreatmentPlanPBSource::GeneratePrimaries(
     G4Event *event, double current_simulation_time) {
 
+  auto &ll = GetThreadLocalDataTPSource();
   // Find next spot to initialize
   FindNextSpot();
   // if we moved to a new spot, we need to update the SPS parameters
-  if (fCurrentSpot != fPreviousSpot) {
+  if (ll.fCurrentSpot != ll.fPreviousSpot) {
     ConfigureSingleSpot();
   }
 
   // Generate vertex
-  fSPS_PB->SetParticleTime(current_simulation_time);
-  fSPS_PB->GeneratePrimaryVertex(event);
+  ll.fSPS_PB->SetParticleTime(current_simulation_time);
+  ll.fSPS_PB->GeneratePrimaryVertex(event);
 
   // weight
-  double w = fSpotWeight[fCurrentSpot];
+  double w = fSpotWeight[ll.fCurrentSpot];
   for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
     event->GetPrimaryVertex(i)->SetWeight(w);
   }
 
   // update number of generated events
-  fNumberOfGeneratedEvents++;
-  fNbGeneratedSpots[fCurrentSpot]++;
+  // fNumberOfGeneratedEvents++;
+  ll.fNbGeneratedSpots[ll.fCurrentSpot]++;
 
   if (fSortedSpotGenerationFlag) {
     // we generated an ion from this spot, so we remove it from the vector
-    --fNbIonsToGenerate[fCurrentSpot];
+    --ll.fNbIonsToGenerate[ll.fCurrentSpot];
   }
   // update previous spot
-  fPreviousSpot = fCurrentSpot;
+  ll.fPreviousSpot = ll.fCurrentSpot;
 }
 
 void GateTreatmentPlanPBSource::FindNextSpot() {
+  auto &ll = GetThreadLocalDataTPSource();
   if (fSortedSpotGenerationFlag) {
     // move to next spot if there are no more particles to generate in the
     // current one
-    while ((fCurrentSpot < fTotalNumberOfSpots) &&
-           (fNbIonsToGenerate[fCurrentSpot] <= 0)) {
-      fCurrentSpot++;
+    while ((ll.fCurrentSpot < fTotalNumberOfSpots) &&
+           (ll.fNbIonsToGenerate[ll.fCurrentSpot] <= 0)) {
+      ll.fCurrentSpot++;
     }
 
   } else {
     // select random spot according to PDF
     int bin = fTotalNumberOfSpots * fDistriGeneral->fire();
-    fCurrentSpot = bin;
+    ll.fCurrentSpot = bin;
   }
 }
 
 void GateTreatmentPlanPBSource::ConfigureSingleSpot() {
+  auto &ll = GetThreadLocalDataTPSource();
   // Particle definition if ion
-  if (fInitGenericIon) {
+  if (ll.fInitGenericIon) {
     auto *ion_table = G4IonTable::GetIonTable();
     auto *ion = ion_table->GetIon(fZ, fA, fE);
-    fSPS_PB->SetParticleDefinition(ion);
-    fInitGenericIon = false; // only the first time
+    ll.fSPS_PB->SetParticleDefinition(ion);
+    ll.fInitGenericIon = false; // only the first time
   }
   // Energy
-  double energy = fSpotEnergy[fCurrentSpot];
-  double sigmaE = fSigmaEnergy[fCurrentSpot];
+  double energy = fSpotEnergy[ll.fCurrentSpot];
+  double sigmaE = fSigmaEnergy[ll.fCurrentSpot];
   UpdateEnergySPS(energy, sigmaE);
 
   // rotation and translation
-  G4ThreeVector translation = fSpotPosition[fCurrentSpot];
-  G4RotationMatrix rotation = fSpotRotation[fCurrentSpot];
+  G4ThreeVector translation = fSpotPosition[ll.fCurrentSpot];
+  G4RotationMatrix rotation = fSpotRotation[ll.fCurrentSpot];
   UpdatePositionSPS(translation, rotation);
 
   // Phase space parameters
-  std::vector<double> x_param = fPhSpaceX[fCurrentSpot];
-  std::vector<double> y_param = fPhSpaceY[fCurrentSpot];
-  fSPS_PB->SetPBSourceParam(x_param, y_param);
+  std::vector<double> x_param = fPhSpaceX[ll.fCurrentSpot];
+  std::vector<double> y_param = fPhSpaceY[ll.fCurrentSpot];
+  ll.fSPS_PB->SetPBSourceParam(x_param, y_param);
 }
 
 void GateTreatmentPlanPBSource::UpdatePositionSPS(
     const G4ThreeVector &localTransl, const G4RotationMatrix &localRot) {
 
   // update local translation and rotation
+  auto &ll = GetThreadLocalDataTPSource();
   auto &l = fThreadLocalData.Get();
   fLocalTranslation = localTransl;
   fLocalRotation = localRot; // ConvertToG4RotationMatrix(localRot);
@@ -188,17 +195,19 @@ void GateTreatmentPlanPBSource::UpdatePositionSPS(
   GateVSource::SetOrientationAccordingToAttachedVolume();
 
   // set it to the vertex
-  fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
+  ll.fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
 }
 
 void GateTreatmentPlanPBSource::UpdateEnergySPS(double energy, double sigma) {
-  auto *ene = fSPS_PB->GetEneDist();
+  auto &ll = GetThreadLocalDataTPSource();
+  auto *ene = ll.fSPS_PB->GetEneDist();
   ene->SetEnergyDisType("Gauss");
   ene->SetMonoEnergy(energy);
   ene->SetBeamSigmaInE(sigma);
 }
 
 void GateTreatmentPlanPBSource::InitializeParticle(py::dict &user_info) {
+  auto &ll = GetThreadLocalDataTPSource();
   std::string pname = DictGetStr(user_info, "particle");
   // If the particle is an ion (name start with ion)
   if (pname.rfind("ion", 0) == 0) {
@@ -206,28 +215,29 @@ void GateTreatmentPlanPBSource::InitializeParticle(py::dict &user_info) {
     return;
   }
   // If the particle is not an ion
-  fInitGenericIon = false;
+  // fInitGenericIon = false;
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle(pname);
   if (fParticleDefinition == nullptr) {
     Fatal("Cannot find the particle '" + pname + "'.");
   }
-  fSPS_PB->SetParticleDefinition(fParticleDefinition);
+  ll.fSPS_PB->SetParticleDefinition(fParticleDefinition);
 }
 
 void GateTreatmentPlanPBSource::InitializeIon(py::dict &user_info) {
+  auto &ll = GetThreadLocalDataTPSource();
   auto u = py::dict(user_info["ion"]);
   fA = DictGetInt(u, "A");
   fZ = DictGetInt(u, "Z");
   fE = DictGetDouble(u, "E");
-  fInitGenericIon = true;
+  ll.fInitGenericIon = true;
 }
 
 py::list GateTreatmentPlanPBSource::GetGeneratedPrimaries() {
   py::list n_spot_vec;
-  for (const auto &item : fNbGeneratedSpots) {
-    n_spot_vec.append(item);
-  }
+  //   for (const auto &item : fNbGeneratedSpots) {
+  //     n_spot_vec.append(item);
+  //   }
 
   return n_spot_vec;
 }
