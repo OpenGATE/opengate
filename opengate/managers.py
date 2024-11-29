@@ -18,7 +18,7 @@ from .base import (
 )
 from .definitions import __world_name__, __gate_list_objects__
 from .engines import SimulationEngine
-from .exception import fatal, warning, GateDeprecationError
+from .exception import fatal, warning, GateDeprecationError, GateImplementationError
 from .geometry.materials import MaterialDatabase
 from .image import (
     create_image_with_volume_extent,
@@ -504,10 +504,10 @@ class PhysicsListManager(GateObject):
             return None
 
     def __getstate__(self):
-        # This is needed because cannot be pickled.
-        dict_to_return = super().__getstate__()
-        dict_to_return["created_physics_list_classes"] = None
-        return dict_to_return
+        raise GateImplementationError(f"It seems like {self.type_name} is getting pickled, "
+                                      f"while this should never happen because the PhysicsManager should "
+                                      f"remove it from its state dictionary. In fact, {self.type_name} "
+                                      f"is not compatible with pickling. ")
 
     def __setstate__(self, d):
         self.__dict__ = d
