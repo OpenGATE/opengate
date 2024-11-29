@@ -327,7 +327,7 @@ def compute_image_3D_CDF(image):
 
 
 def scale_itk_image(img, scale):
-    imgarr = itk.array_view_from_image(img)
+    imgarr = itk.array_view_from_image(img).copy()
     imgarr = imgarr * scale
     # this is important to use the corrected function to deal with 1D images
     # img2 = itk.image_from_array(imgarr)
@@ -341,6 +341,7 @@ def divide_itk_images(
 ):
     imgarr1 = itk.array_view_from_image(img1_numerator)
     imgarr2 = itk.array_view_from_image(img2_denominator)
+    # print(imgarr1.dtype, imgarr1.dtype)
     if imgarr1.shape != imgarr2.shape:
         fatal(
             f"Cannot divide images of different shape. Found {imgarr1.shape} vs. {imgarr2.shape}."
@@ -365,6 +366,13 @@ def sum_itk_images(images):
         add_image_filter.Update()
         output = add_image_filter.GetOutput()
     return output
+
+def add_constant_to_itk_image(img,constant):
+    imgarr = itk.array_view_from_image(img).copy()
+    imgarr += constant
+    img2 = itk_image_from_array(imgarr)
+    img2.CopyInformation(img)
+    return img2
 
 
 def multiply_itk_images(images):

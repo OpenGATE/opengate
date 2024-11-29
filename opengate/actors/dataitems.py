@@ -14,6 +14,7 @@ from ..image import (
     write_itk_image,
     get_info_from_image,
     itk_image_from_array,
+    add_constant_to_itk_image,
 )
 
 
@@ -241,7 +242,10 @@ class ItkImageDataItem(DataItem):
 
     def __add__(self, other):
         self._assert_data_is_not_none()
-        return type(self)(data=sum_itk_images([self.data, other.data]))
+        if isinstance(other, (float, int)):
+            return type(self)(data=add_constant_to_itk_image(self.data, other))
+        else:
+            return type(self)(data=sum_itk_images([self.data, other.data]))
 
     def __mul__(self, other):
         self._assert_data_is_not_none()
