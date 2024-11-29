@@ -527,7 +527,7 @@ class GateObject:
                 f"__getstate__() called in object '{self.name}' of type {self.type_name}."
             )
 
-        # Note: returning a copy, e.g. via dict([(k, v) for k, v in self.__dict__.items()]
+        # Note: returning a copy, e.g. via dict([(k, v) for k, v in self.__dict__.items()])
         # instead of returning self.__dict__ leads to infinite recursion during pickling.
         # Reason:
         # Many objects hold circular references, e.g. Simulation has a reference to VolumeManager and vice versa
