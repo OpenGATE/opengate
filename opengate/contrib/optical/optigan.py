@@ -78,72 +78,6 @@ def _setter_hook_input_phsp_actor(self, input_phsp_actor):
     return input_phsp_actor
 
 
-def process_root_output_into_events(df_combined):
-    """
-    This method takes the filtered root output (df_combined) and divides them
-    into a list elements based on gamma event.
-
-    All the info about one gamma event (gamma, electron, and optical photon info)
-    is saved in one list element.
-    """
-
-    position_x = df_combined["Position_X"].to_numpy()
-    position_y = df_combined["Position_Y"].to_numpy()
-    position_z = df_combined["Position_Z"].to_numpy()
-    particle_types = df_combined["ParticleType"].to_numpy()
-
-    events = {}  # will store all the events
-    current_event = []
-    event_id = 0
-
-    # flag to check if gamma is followed by electrons or photons
-    gamma_has_electrons_or_photons = False
-
-    # counts the occurrence of optical photons in current event
-    optical_photon_count = 0
-
-    # process each particle and segregate into events
-    for index, (ptype, x, y, z) in enumerate(
-        zip(particle_types, position_x, position_y, position_z)
-    ):
-        if ptype == "gamma":
-            # store the previous event if it started with a gamma
-            # and is followed by electrons or photons
-            if current_event and gamma_has_electrons_or_photons:
-                current_event.append(
-                    {
-                        "type": "opticalphoton",
-                        "optical_photon_count": optical_photon_count,
-                    }
-                )
-                events[event_id] = current_event
-                event_id += 1
-                optical_photon_count = 0
-            # if it is a new event, add the gamma particle to it
-            current_event = [{"index": index, "type": ptype, "x": x, "y": y, "z": z}]
-            gamma_has_electrons_or_photons = False
-        elif ptype == "opticalphoton":
-            # if the particle is optical photon, just increment the count
-            optical_photon_count += 1
-            gamma_has_electrons_or_photons = True
-        elif ptype == "e-":
-            # Only add e- if there is an ongoing event (started by gamma)
-            if current_event:
-                current_event.append(
-                    {"index": index, "type": ptype, "x": x, "y": y, "z": z}
-                )
-                gamma_has_electrons_or_photons = True
-
-    # Store the last event if it is not empty
-    if len(current_event) > 1:
-        current_event.append(
-            {"type": "opticalphoton", "optical_photon_count": optical_photon_count}
-        )
-        events[event_id] = current_event
-
-    return events
-
-
 class OptiGAN(GateObject):
     """
     Class Responsibilities:
@@ -459,8 +393,8 @@ class OptiGAN(GateObject):
     # Runs all the methods of OptiGAN
     def run_optigan(self, create_output_graphs):
         self.initialize()
-        df_combined = self.get_dataframe_from_root_file()
-        self.events = process_root_output_into_events(df_combined)
+        df = self.get_dataframe_from_root_file()
+        self.events = self.process_root_output_into_events(df)
         self.extracted_events_details = self.extract_event_details()
         self.save_optigan_inputs()
         self.generator = self.create_generator()
@@ -472,50 +406,80 @@ class OptiGAN(GateObject):
     def get_dataframe_from_root_file(self):
         """
         First step in the pipeline to extract OptiGAN input from the root output.
-        Filters the raw root output into a format that is appropriate for OptiGAN.
         """
 
         with uproot.open(self.root_file_path) as file:
             root_tree = file["Phase"]
+            df = root_tree.arrays(library="pd")
 
-            # Save the particle co-ordinates and other information
-            position_x = root_tree["Position_X"].array(library="np")
-            position_y = root_tree["Position_Y"].array(library="np")
-            position_z = root_tree["Position_Z"].array(library="np")
-            particle_types = root_tree["ParticleName"].array(library="np")
-            track_ids = root_tree["TrackID"].array(library="np")
+        return df
 
-        # Create a DataFrame from the final arrays.
-        df = pd.DataFrame(
-            {
-                "TrackID": track_ids,
-                "ParticleType": particle_types,
-                "Position_X": position_x,
-                "Position_Y": position_y,
-                "Position_Z": position_z,
-            }
-        )
+    def process_root_output_into_events(self, df):
+        """
+        This method takes the root output dataframe and divides them
+        into a list elements based on gamma event.
 
-        df["OriginalIndex"] = df.index
+        All the info about one gamma event (gamma, electron, and optical photon info)
+        is saved in one list element.
+        """
 
-        # Step 1: Filter out rows where ParticleType is "opticalphoton".
-        opticalphoton_df = df[df["ParticleType"] == "opticalphoton"]
+        position_x = df["Position_X"].to_numpy()
+        position_y = df["Position_Y"].to_numpy()
+        position_z = df["Position_Z"].to_numpy()
+        particle_types = df["ParticleName"].to_numpy()
 
-        # Step 2: Drop duplicates based on TrackID, keeping the first occurrence.
-        opticalphoton_df_unique = opticalphoton_df.loc[
-            ~opticalphoton_df.duplicated(subset="TrackID", keep="first")
-        ]
+        events = {}  # will store all the events
+        current_event = []
+        event_id = 0
 
-        # Step 3: Filter out rows where ParticleType is NOT "opticalphoton" (e.g., "gamma").
-        non_opticalphoton_df = df[df["ParticleType"] != "opticalphoton"]
+        # flag to check if gamma is followed by electrons or photons
+        gamma_has_electrons_or_photons = False
 
-        # Step 4: Concatenate both DataFrames to keep the structure intact.
-        df_combined = pd.concat([opticalphoton_df_unique, non_opticalphoton_df])
+        # counts the occurrence of optical photons in current event
+        optical_photon_count = 0
 
-        # Step 5: Sort the DataFrame based on index to restore the original order if needed.
-        df_combined = df_combined.sort_index()
+        # process each particle and segregate into events
+        for index, (ptype, x, y, z) in enumerate(
+            zip(particle_types, position_x, position_y, position_z)
+        ):
+            if ptype == "gamma":
+                # store the previous event if it started with a gamma
+                # and is followed by electrons or photons
+                if current_event and gamma_has_electrons_or_photons:
+                    current_event.append(
+                        {
+                            "type": "opticalphoton",
+                            "optical_photon_count": optical_photon_count,
+                        }
+                    )
+                    events[event_id] = current_event
+                    event_id += 1
+                    optical_photon_count = 0
+                # if it is a new event, add the gamma particle to it
+                current_event = [
+                    {"index": index, "type": ptype, "x": x, "y": y, "z": z}
+                ]
+                gamma_has_electrons_or_photons = False
+            elif ptype == "opticalphoton":
+                # if the particle is optical photon, just increment the count
+                optical_photon_count += 1
+                gamma_has_electrons_or_photons = True
+            elif ptype == "e-":
+                # Only add e- if there is an ongoing event (started by gamma)
+                if current_event:
+                    current_event.append(
+                        {"index": index, "type": ptype, "x": x, "y": y, "z": z}
+                    )
+                    gamma_has_electrons_or_photons = True
 
-        return df_combined
+        # Store the last event if it is not empty
+        if len(current_event) > 1:
+            current_event.append(
+                {"type": "opticalphoton", "optical_photon_count": optical_photon_count}
+            )
+            events[event_id] = current_event
+
+        return events
 
     def extract_event_details(self):
         """
