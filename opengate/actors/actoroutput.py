@@ -546,8 +546,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if len(merged_data_to_import) > 0:
             self.merged_data = merge_data(merged_data_to_import)
 
-
-
     # this intermediate base class defines a class attribute data_container_class,
     # but leaves it as None. Specific classes need to set it to the correct class or tuple of classes
     data_container_class = None

@@ -269,10 +269,10 @@ class SplittingActorBase(ActorBase):
 
 class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     """This splitting actor enables process-based splitting specifically for Compton interactions. Each time a Compton
-     process occurs, its behavior is modified by generating multiple Compton scattering tracks
-     (splitting factor - 1 additional tracks plus the original) associated with the initial particle.
-     Compton electrons produced in the interaction are also included, in accordance with the secondary cut settings
-     provided by the user.
+    process occurs, its behavior is modified by generating multiple Compton scattering tracks
+    (splitting factor - 1 additional tracks plus the original) associated with the initial particle.
+    Compton electrons produced in the interaction are also included, in accordance with the secondary cut settings
+    provided by the user.
     """
 
     # hints for IDE
