@@ -91,9 +91,10 @@ from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
     KillAccordingProcessesActor,
-    SplittingActorBase,
+    GenericBiasingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
+    ForceCollisionActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -128,6 +129,7 @@ actor_types = {
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "BremSplittingActor": BremSplittingActor,
     "ComptSplittingActor": ComptSplittingActor,
+    "ForceCollisionActor": ForceCollisionActor,
     "DigitizerAdderActor": DigitizerAdderActor,
     "DigitizerBlurringActor": DigitizerBlurringActor,
     "DigitizerSpatialBlurringActor": DigitizerSpatialBlurringActor,
@@ -863,32 +865,33 @@ class PhysicsManager(GateObject):
         all_particles = charged_particles.union({"gamma"})
 
         # create a dictionary with sets as entries (to ensure uniqueness)
-        particles_processes = dict([(p, set()) for p in all_particles])
+        particles_processes= dict([(p, set()) for p in all_particles])
 
         for actor in self.simulation.actor_manager.actors.values():
-            if isinstance(actor, SplittingActorBase):
+            if isinstance(actor, GenericBiasingActorBase):
                 particles = set()
-                if "all" in actor.particles:
-                    particles.update(all_particles)
-                elif "all_charged" in actor.particles:
-                    particles.update(charged_particles)
-                else:
-                    for particle in actor.particles:
-                        p_ = translate_particle_name_gate_to_geant4(particle)
-                        if p_ in all_particles:
-                            particles.add(p_)
-                        else:
-                            fatal(
-                                f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
-                                f"This is not possible. Compatible particles are: {list(all_particles)}. "
-                            )
-                for p in particles:
-                    particles_processes[p].update(actor.processes)
+                mode = actor.mode
+                for particle in actor.particles:
+                    p_ = translate_particle_name_gate_to_geant4(particle)
+                    if p_ in all_particles:
+                        particles.add(p_)
+                    else:
+                        fatal(
+                            f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
+                            f"This is not possible. Compatible particles are: {list(all_particles)}. "
+                        )
+                for i,p in enumerate(particles):
+                    if mode != "non physics":
+                        print(actor.processes)
+                        particles_processes[p].update(actor.processes[i])
+                    else :
+                        particles_processes[p].update([None])
 
         # convert the dictionary entries back from set to list
+        print(particles_processes.items())
         return dict(
             [
-                (particle, list(processes))
+                (particle, [list(processes),mode])
                 for particle, processes in particles_processes.items()
             ]
         )
