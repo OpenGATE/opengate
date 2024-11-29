@@ -175,10 +175,12 @@ def get_icrp107_spectrum(rad_name: str, spectrum_type="gamma") -> Box:
 
         # convert to Box
         gate_data = {}
-        gate_data["energies"] = [
-            v[0] * g4_units.MeV for v in data["emissions"][spectrum_type]
-        ]
-        gate_data["weights"] = [v[1] for v in data["emissions"][spectrum_type]]
+        gate_data["energies"] = np.array(
+            [v[0] * g4_units.MeV for v in data["emissions"][spectrum_type]]
+        )
+        gate_data["weights"] = np.array(
+            [v[1] for v in data["emissions"][spectrum_type]]
+        )
         gate_data["half_life"] = data["half_life"] * convert_icrp107_time_unit(
             data["time_unit"]
         )
