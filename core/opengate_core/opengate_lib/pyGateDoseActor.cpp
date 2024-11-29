@@ -32,7 +32,7 @@ void init_GateDoseActor(py::module &m) {
              std::unique_ptr<GateDoseActor, py::nodelete>, GateVActor>(
       m, "GateDoseActor")
       .def(py::init<py::dict &>())
-      .def("InitializeUserInput", &GateDoseActor::InitializeUserInput)
+      .def("InitializeUserInfo", &GateDoseActor::InitializeUserInfo)
       .def("BeginOfRunActionMasterThread",
            &GateDoseActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
@@ -47,6 +47,10 @@ void init_GateDoseActor(py::module &m) {
       .def("SetToWaterFlag", &GateDoseActor::SetToWaterFlag)
       .def("GetCountsFlag", &GateDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateDoseActor::SetCountsFlag)
+      .def("SetUncertaintyGoal", &GateDoseActor::SetUncertaintyGoal)
+      .def("SetThreshEdepPerc", &GateDoseActor::SetThreshEdepPerc)
+      .def("SetOvershoot", &GateDoseActor::SetOvershoot)
+      .def("SetNbEventsFirstCheck", &GateDoseActor::SetNbEventsFirstCheck)
       .def("GetPhysicalVolumeName", &GateDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateDoseActor::SetPhysicalVolumeName)
       .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)

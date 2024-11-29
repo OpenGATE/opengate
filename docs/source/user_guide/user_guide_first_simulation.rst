@@ -4,14 +4,15 @@ Set up a first simulation
 The Simulation object
 ----------------------
 
-Any simulation starts by defining the `Simulation` object. A script can only contain one such `Simulation` object.
+Any simulation starts by defining the :class:`~.opengate.managers.Simulation` object.
+A script can only contain **one** such :class:`~.opengate.managers.Simulation` object.
 
 .. code-block:: python
 
    import opengate as gate
    sim = gate.Simulation()
 
-You can set general options via the `Simulation` object, for example:
+You can set general options via the :class:`~.opengate.managers.Simulation` object, for example:
 
 .. code-block:: python
 
@@ -86,11 +87,6 @@ This is necessary if a simulation is run multiple times from the same script, e.
 
    You **should always** place the part of the script that actually executes the simulation in a block protected by ``if __name__ == "__main__":``, as in the example above. Key functionalities of GATE 10 will not work otherwise.
 
-Once they have been defined, the simulation must be initialized and can be started. The initialization corresponds to the Geant4 step needed to create the scene, gather cross-sections, etc.
-
-.. code-block:: python
-
-   output = sim.start()
 
 Units
 -----
@@ -110,3 +106,10 @@ Geant4 physics units are collected in `opengate.g4_units` and you can assign the
 
 The units behave like in the Geant4 `system of units <https://geant4.web.cern.ch/sites/default/files/geant4/collaboration/working_groups/electromagnetic/gallery/units/SystemOfUnits.html>`_.
 
+
+References
+----------
+
+.. autoclass:: opengate.managers.Simulation
+
+.. automethod:: opengate.managers.Simulation.run

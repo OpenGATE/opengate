@@ -95,7 +95,7 @@ def create_test_phsp(
     #  Source
     ##########################################################################################
     source = sim.add_source("GenericSource", "particle_source")
-    source.mother = "world"
+    source.attached_to = "world"
     # source.particle = "ion 6 12"  # Carbon ions
     source.particle = "proton"
     source.position.type = "point"
@@ -176,7 +176,7 @@ def create_phsp_without_source(
     # ##########################################################################################
     # # phsp source
     # source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    # source.mother = world.name
+    # source.attached_to = world.name
     # source.phsp_file = source_name
     # source.position_key = "PrePosition"
     # source.direction_key = "PreDirection"

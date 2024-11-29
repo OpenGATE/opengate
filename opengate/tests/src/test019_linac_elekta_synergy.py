@@ -56,7 +56,7 @@ if __name__ == "__main__":
     # add phase space
     plane = synergy.add_phase_space_plane(sim, linac.name, 299.99 * mm)
     plane.rmax = 70 * mm
-    phsp = synergy.add_phase_space(sim, plane.name)
+    phsp = synergy.add_phase_space_actor(sim, plane.name)
     phsp.output_filename = "phsp_synergy.root"
     print(f"Output filename {phsp.get_output_path()}")
 

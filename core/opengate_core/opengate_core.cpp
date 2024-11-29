@@ -303,11 +303,15 @@ void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
 
+void init_GateProductionAndStoppingActor(py::module &m);
+
 void init_GateARFActor(py::module &m);
 
 void init_GateARFTrainingDatasetActor(py::module &m);
 
 void init_GateKillActor(py::module &);
+
+void init_GateKillAccordingProcessesActor(py::module &);
 
 void init_itk_image(py::module &);
 
@@ -325,7 +329,7 @@ void init_GateTemplateSource(py::module &);
 
 void init_GatePencilBeamSource(py::module &m);
 
-void init_GateVoxelsSource(py::module &);
+void init_GateVoxelSource(py::module &);
 
 void init_GateGANSource(py::module &);
 
@@ -354,8 +358,6 @@ void init_G4VBiasingOperator(py::module &m);
 void init_GateVDigitizerWithOutputActor(py::module &);
 
 void init_GateHitsCollectionActor(py::module &);
-
-void init_GateMotionVolumeActor(py::module &);
 
 void init_GateHitsAdderActor(py::module &);
 
@@ -555,7 +557,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
-  init_GateVoxelsSource(m);
+  init_GateVoxelSource(m);
   init_GateGANSource(m);
   init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);
@@ -568,13 +570,13 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTLEDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
+  init_GateProductionAndStoppingActor(m);
   init_GateSimulationStatisticsActor(m);
   init_GatePhaseSpaceActor(m);
   // init_GateComptonSplittingActor(m);
   init_GateBOptrBremSplittingActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateHitsCollectionActor(m);
-  init_GateMotionVolumeActor(m);
   init_GateVDigitizerWithOutputActor(m);
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
@@ -586,6 +588,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
+  init_GateKillAccordingProcessesActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);

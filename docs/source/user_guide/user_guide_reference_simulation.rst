@@ -1,5 +1,5 @@
-Description of the Simulation object
-====================================
+Details: Simulation object
+==========================
 
 You can configure the general behavior of your simulation via the parameters of the :class:`opengate.Simulation` object.
 
@@ -72,7 +72,7 @@ If you want to personalize the ``pyvista`` GUI, you can set ``sim.visu_type = "v
 GDML
 ^^^^
 
-.. image:: figures/visu_gdml.png
+.. image:: ../figures/visu_gdml.png
 
 With GDML visualization, you can only view the geometry, not the paths of the particles. It is enabled with ``sim.visu_type = "gdml"``. GDML visualization needs to be enabled in Geant4 with ``GEANT4_USE_GDML=ON`` during the compilation, but you need to have ``xerces-c`` available on your computer (install it with yum, brew, or apt-get, ...).
 

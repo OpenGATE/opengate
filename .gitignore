@@ -38,6 +38,7 @@ __pycache__
 /opengate/contrib/dataset1
 /opengate/contrib/save*
 /opengate/contrib/run.*
+/opengate/gate_logo/temp/
 
 /opengate/data/ensdf_230901
 /opengate/data/isomeric_transition/save/
@@ -127,7 +128,8 @@ opengate_temporaire
 /core.egg-info.save
 /core/geant4_data_save
 /core/.idea
-/core/build
+/core/build/
+/core/cmake-build-release*
 /core/opengate_core.egg-info
 /core/opengate_core/*so
 /core/opengate_core/geant4_data
@@ -138,6 +140,7 @@ opengate_temporaire
 /core/opengate_core/opengate_lib/.idea
 /core/save
 
+/venv*
 
 /build_test/
 

@@ -565,7 +565,10 @@ class RepeatableVolume(VolumeBase):
 
 
 class BooleanVolume(RepeatableVolume, solids.BooleanSolid):
-    """Volume resulting from a boolean operation of the solids contained in two volumes."""
+    """
+    Volume resulting from a boolean operation
+    of the solids contained in two volumes.
+    """
 
 
 # Function to handle boolean operations on volumes
@@ -643,39 +646,58 @@ def subtract_volumes(
 
 
 class BoxVolume(RepeatableVolume, solids.BoxSolid):
-    """Volume with a box shape."""
+    """
+    Volume with a box shape.
+    """
 
 
 class HexagonVolume(RepeatableVolume, solids.HexagonSolid):
-    """Volume with a hexagon shape."""
+    """
+    Volume with a hexagon shape.
+    """
 
 
 class ConsVolume(RepeatableVolume, solids.ConsSolid):
-    """Volume with the shape of a cone or conical section."""
+    """
+    Volume with the shape of a cone or conical section.
+    """
 
 
 class PolyhedraVolume(RepeatableVolume, solids.PolyhedraSolid):
-    """Volume with a polyhedral shape."""
+    """
+    Volume with a polyhedral shape.
+    """
 
 
 class SphereVolume(RepeatableVolume, solids.SphereSolid):
-    """Volume with a sphere or spherical shell shape."""
+    """
+    Volume with a sphere or spherical shell shape.
+    """
 
 
 class TrapVolume(RepeatableVolume, solids.TrapSolid):
-    """Volume with a generic trapezoidal shape."""
+    """
+    Volume with a generic trapezoidal shape.
+    """
 
 
 class TrdVolume(RepeatableVolume, solids.TrdSolid):
-    """Volume with a symmetric trapezoidal shape."""
+    """
+    Volume with a symmetric trapezoidal shape.
+    """
 
 
 class TubsVolume(RepeatableVolume, solids.TubsSolid):
-    """Volume with a tube or cylindrical section shape."""
+    """
+    Volume with a tube or cylindrical section shape.
+    """
 
 
 class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
-    """Volume based on a mesh volume by reading an STL file."""
+    """
+    Volume based on a mesh volume
+    by reading an STL file.
+    """
 
 
 class RepeatParametrisedVolume(VolumeBase):
@@ -786,6 +808,12 @@ class RepeatParametrisedVolume(VolumeBase):
         self.g4_repeat_parametrisation.SetUserInfo(p)
 
 
+def _setter_hook_image(self, image):
+    if image != self.image:
+        self._itk_image = None
+    return image
+
+
 class ImageVolume(VolumeBase, solids.ImageSolid):
     """
     Store information about a voxelized volume
@@ -804,7 +832,12 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ),
         "image": (
             "",
-            {"doc": "Path to the image file", "is_input_file": True, "dynamic": True},
+            {
+                "doc": "Path to the image file",
+                "is_input_file": True,
+                "dynamic": True,
+                "setter_hook": _setter_hook_image,
+            },
         ),
         "dump_label_image": (
             None,
@@ -875,12 +908,16 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     # FIXME: replace this property by function in opengate.image
     @property
     def size_pix(self):
+        if self.itk_image is None:
+            self.load_input_image()
         return np.array(itk.size(self.itk_image)).astype(int)
 
     # @requires_fatal('itk_image')
     # FIXME: replace this property by function in opengate.image
     @property
     def spacing(self):
+        if self.itk_image is None:
+            self.load_input_image()
         return np.array(self.itk_image.GetSpacing())
 
     # @requires_fatal("itk_image")

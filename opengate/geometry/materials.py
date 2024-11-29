@@ -137,10 +137,10 @@ def HU_find_max_density_difference(hu_min, hu_max, d_min, d_max, densities):
         j = j + 1
     j = j - 1
     for x in range(i, j, 1):
-        if densities[i]["density"] < d_min:
-            d_min = densities[i]["density"]
-        if densities[i]["density"] > d_max:
-            d_max = densities[i]["density"]
+        if densities[x]["density"] < d_min:
+            d_min = densities[x]["density"]
+        if densities[x]["density"] > d_max:
+            d_max = densities[x]["density"]
     return d_max - d_min
 
 
@@ -204,15 +204,15 @@ def HounsfieldUnit_to_material(simulation, density_tolerance, file_mat, file_den
             weights_nz = []
             elems_symbol_nz = []
             # remove the weight equal to zero
-            sum = 0
+            sum_of_weights = 0
             for a, e in zip(weights, elems_symbol):
                 if a > 0:
                     weights_nz.append(a)
                     elems_symbol_nz.append(e)
-                    sum += a
+                    sum_of_weights += a
             # normalise weight
             for k in range(len(weights_nz)):
-                weights_nz[k] = weights_nz[k] / sum
+                weights_nz[k] = weights_nz[k] / sum_of_weights
             # define a new material (will be created later at MaterialDatabase initialize)
             name = f'{mat["name"]}_{num}'
             simulation.volume_manager.material_database.add_material_weights(
@@ -761,7 +761,7 @@ class MaterialDatabase:
     def FindOrBuildElement(self, element_name):
         self.init_NIST()
         # return if already exist
-        if element_name in self.g4_elements.keys():
+        if element_name in self.g4_elements:
             return self.g4_elements[element_name]
         # we build and store the G4 element if not
         if element_name in self.nist_element_names:
@@ -782,5 +782,4 @@ class MaterialDatabase:
             fatal(
                 f"The database '{db}' is not in the list of read database: {self.filenames}"
             )
-        list = self.material_builders_by_filename[db]
-        return [name for name in list]
+        return [name for name in self.material_builders_by_filename[db]]

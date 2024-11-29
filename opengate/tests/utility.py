@@ -24,7 +24,6 @@ from ..utility import (
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_from_array, write_itk_image
 from ..actors.miscactors import SimulationStatisticsActor
-import SimpleITK as sitk
 
 plt = LazyModuleLoader("matplotlib.pyplot")
 
@@ -40,10 +39,10 @@ def test_ok(is_ok=False, exceptions=None):
         if exceptions is not None:
             if isinstance(exceptions, str):
                 exceptions = [exceptions]
-            s += f"\nThe following exception"
+            s += "\nThe following exception"
             if len(exceptions) > 1:
                 s += "s"
-            s += f" occurred:\n"
+            s += " occurred:\n"
             s += "\n".join([f"- {str(e)}" for e in exceptions])
         s = "\n" + colored.stylize(s, color_error)
         print(s)
@@ -58,7 +57,7 @@ def read_stat_file(filename, encoder=None):
     # guess if it is json or not
     try:
         return read_stat_file_json(filename)
-    except (json.JSONDecodeError, ValueError):
+    except ValueError:
         pass
     return read_stat_file_legacy(filename)
 
@@ -107,7 +106,7 @@ def read_stat_file_legacy(filename):
         if "Date" in line:
             counts.start_time = line[len("# Date                       =") :]
         if "Threads" in line:
-            a = line[len(f"# Threads                    =") :]
+            a = line[len("# Threads                    =") :]
             try:
                 counts.nb_threads = int(a)
             except:
@@ -398,7 +397,7 @@ def assert_images(
     is_ok = is_ok and b
 
     # plot
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    _, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     p1 = plot_img_axis(ax, img1, "reference", axis)
     p2 = plot_img_axis(ax, img2, "test", axis)
     if sad_profile_tolerance is not None:
@@ -468,11 +467,9 @@ def assert_filtered_imagesprofile1D(
     filter_data = np.squeeze(itk.GetArrayViewFromImage(filter_img1).ravel())
     data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
     data2 = np.squeeze(itk.GetArrayViewFromImage(img2).ravel())
-    flipflag = True
-    if flipflag:
-        filter_data = np.flip(filter_data)
-        data1 = np.flip(data1)
-        data2 = np.flip(data2)
+    filter_data = np.flip(filter_data)
+    data1 = np.flip(data1)
+    data2 = np.flip(data2)
     max_ind = np.argmax(filter_data)
     L_filter = range(max_ind)
     d1 = data1[L_filter]
@@ -498,7 +495,7 @@ def assert_filtered_imagesprofile1D(
 
     filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(d2) * 0.7
     # plot
-    fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
+    _, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
     xV = np.arange(len(data1)) * info1.spacing[0]
     x_max = np.ceil(xV[max_ind] * 1.05 + 2)
     plot_profile(ax[0], filter_data_norm_au, info1.spacing[0], "filter")
@@ -545,7 +542,7 @@ def fit_exponential_decay(data, start, end):
     bin_widths = np.diff(bin_borders)
     bin_centers = bin_borders[:-1] + bin_widths / 2
 
-    popt, pcov = scipy.optimize.curve_fit(exponential_func, bin_centers, bin_heights)
+    popt, _ = scipy.optimize.curve_fit(exponential_func, bin_centers, bin_heights)
     xx = np.linspace(start, end, 100)
     yy = exponential_func(xx, *popt)
     hl = np.log(2) / popt[1]
@@ -704,7 +701,6 @@ def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
     print_test(ok, s)
     # figure ?
     if ax:
-        nb_bins = nb_bins
         label = f" {key1} $\mu$={m1:.2f}"
         ax.hist(
             b1, nb_bins, density=True, histtype="stepfilled", alpha=0.5, label=label
@@ -734,7 +730,7 @@ def compare_trees(
     if fig:
         nb_fig = len(keys1)
         nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
-        f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
+        _, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
@@ -1082,7 +1078,7 @@ def get_gauss_param_xy(data, spacing, shape, filepath=None, saveFig=False):
     mu_y = parameters_y[1]
 
     # Save plots
-    if filepath is not None:
+    if saveFig and filepath is not None and img_x is not None and img_y is not None:
         img_x.savefig(filepath + "_x.png")
         img_y.savefig(filepath + "_y.png")
         plt.close(img_x)
@@ -1135,7 +1131,7 @@ def gaussian_fit(positionVec, dose):
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
 
-    parameters, covariance = scipy.optimize.curve_fit(
+    parameters, _ = scipy.optimize.curve_fit(
         gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
     )
     fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
@@ -1504,7 +1500,7 @@ def compareRange(
     diff = abs(r2 - r1)
 
     if diff > thresh:
-        print(f"\033[91mRange difference is {diff}mm, threshold is {thresh}mm \033[0m")
+        print(f"Range difference is {diff}mm, threshold is {thresh}mm")
         ok = False
 
     return ok
@@ -1547,11 +1543,11 @@ def compare_dose_at_points(
 
     for p in pointsV:
         # get dose at the position p [mm]
-        cp1 = min(x1, key=lambda x: abs(x - p))
-        d1_p = doseV1[np.where(x1 == cp1)]
+        cp1 = min(x1, key=lambda x, p=p: abs(x - p))
+        d1_p = doseV1[np.nonzero(x1 == cp1)]
 
-        cp2 = min(x2, key=lambda x: abs(x - p))
-        d2_p = doseV2[np.where(x2 == cp2)]
+        cp2 = min(x2, key=lambda x, p=p: abs(x - p))
+        d2_p = doseV2[np.nonzero(x2 == cp2)]
 
         s1 += d1_p
         s2 += d2_p
@@ -1560,7 +1556,7 @@ def compare_dose_at_points(
 
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:
-        print(f"\033[91mDose difference above threshold \033[0m")
+        print("Dose difference above threshold. ")
         ok = False
     return ok
 
@@ -1627,7 +1623,7 @@ def assert_images_ratio_per_voxel(
     ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
     within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
     N_within_tolerance = np.sum(within_tolerance_M)
-    fraction_within_tolerance = N_within_tolerance / np.array(data1).size
+    # fraction_within_tolerance = N_within_tolerance / np.array(data1).size # FIXME
     fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
 
     mean = np.mean(ratio)
@@ -1743,7 +1739,7 @@ def compare_trees4(p1, p2, param):
     if param.fig:
         nb_fig = len(p1.the_keys)
         nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
-        f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
+        _, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
@@ -1838,8 +1834,7 @@ def np_plot_slice(
     img, crop_coord = np_img_crop(img, crop_center, crop_width)
 
     # slice
-    slice = img[num_slice, :, :]
-    im = ax.imshow(slice, cmap="gray")
+    im = ax.imshow(img[num_slice, :, :], cmap="gray")
 
     # prepare ticks
     nticks = 6
@@ -2029,9 +2024,9 @@ def plot_compare_profile(ref_names, test_names, options):
 
 
 def get_image_1d_profile(filename, axis, offset=(0, 0)):
-    img = sitk.ReadImage(filename)
+    img = itk.imread(filename)
     spacing = img.GetSpacing()
-    img_arr = sitk.GetArrayFromImage(img)
+    img_arr = itk.GetArrayFromImage(img)
     s = img_arr.shape
     pdd_x = pdd_y = None
     if axis == "z":

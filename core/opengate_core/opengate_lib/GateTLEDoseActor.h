@@ -26,13 +26,7 @@ public:
   // Constructor
   explicit GateTLEDoseActor(py::dict &user_info);
 
-  void InitializeUserInput(py::dict &user_info) override;
-
-  void InitializeCpp() override;
-
-  void BeginOfRunActionMasterThread(int run_id) override;
-
-  void BeginOfRunAction(const G4Run *run) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   void BeginOfEventAction(const G4Event *event) override;
 
@@ -40,14 +34,6 @@ public:
 
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
-
-  // Called every time a Run ends (all threads)
-  void EndOfRunAction(const G4Run *run) override;
-
-  int EndOfRunActionMasterThread(int run_id) override;
-
-  // volume of a voxel
-  double fVoxelVolume;
 
   // Kill the gamma if below this energy
   double fEnergyMin;
@@ -58,9 +44,8 @@ public:
   struct threadLocalT {
     // Bool if current track is a TLE gamma or not
     bool fIsTLEGamma;
-
-    // Store the last track for the current nonTLE gamma
-    size_t fLastTrackId;
+    bool fIsTLESecondary;
+    std::map<G4int, G4int> fSecNbWhichDeposit;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

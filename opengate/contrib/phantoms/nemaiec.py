@@ -1,10 +1,12 @@
+import json
+import itk
 import numpy as np
 import math
 
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
-from opengate.sources.generic import generate_isotropic_directions
+from opengate.sources.gansources import generate_isotropic_directions
 
 iec_plastic = "IEC_PLASTIC"
 water = "G4_WATER"
@@ -19,10 +21,10 @@ transparent = [0, 0, 0, 0]
 
 def create_material(simulation):
     elems = ["C", "H", "O"]
-    nbAtoms = [5, 8, 2]
+    nb_atoms = [5, 8, 2]
     gcm3 = g4_units.g_cm3
     simulation.volume_manager.material_database.add_material_nb_atoms(
-        "IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3
+        "IEC_PLASTIC", elems, nb_atoms, 1.18 * gcm3
     )
 
 
@@ -290,16 +292,26 @@ def add_spheres_sources(
     return sources
 
 
+def add_spheres_sources_equal(sim, iec_name, src_name, total_activity):
+    Bq = g4_units.Bq
+    sources = add_spheres_sources(sim, iec_name, src_name, "all", [1.0] * 6)
+    t = compute_total_spheres_activity(sim, iec_name, src_name) * Bq
+    for source in sources:
+        # set the total activity to the asked number of particle
+        source.activity = (source.activity / t) * total_activity
+    return sources
+
+
 def compute_sphere_activity(simulation, iec_name, src_name, diam):
     mm = g4_units.mm
     cm3 = g4_units.cm3
     Bq = g4_units.Bq
     d = f"{(diam / mm):.0f}mm"
     sname = f"{src_name}_{iec_name}_{d}"
-    if sname not in simulation.source_manager.user_info_sources:
+    if sname not in simulation.source_manager.sources:
         return None, None, None, None
-    src = simulation.get_source_user_info(sname)
-    vname = src.mother
+    src = simulation.source_manager.get_source(sname)
+    vname = src.attached_to
     v = simulation.volume_manager.volumes[vname]
     s = v.solid_info
     ac = src.activity
@@ -340,10 +352,10 @@ def dump_bg_activity(simulation, iec_name, src_name):
     Bq = g4_units.Bq
     BqmL = Bq / cm3
     sname = f"{iec_name}_{src_name}"
-    if sname not in simulation.source_manager.user_info_sources:
+    if sname not in simulation.source_manager.sources:
         return
-    src = simulation.get_source_user_info(sname)
-    v = simulation.volume_manager.volumes[src.mother]
+    src = simulation.source_manager.get_source(sname)
+    v = simulation.volume_manager.volumes[src.attached_to]
     s = v.solid_info
     ac = src.activity
     out = (
@@ -372,7 +384,7 @@ def add_one_sphere_source(
         )
 
     source = simulation.add_source(source_type, f"{src_name}_{iec_name}_{d}")
-    source.mother = sname
+    source.attached_to = sname
     # default values
     source.particle = "e+"
     source.energy.type = "F18"
@@ -389,15 +401,17 @@ def add_central_cylinder_source(
 ):
     # source
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
-    bg.mother = f"{iec_name}_center_cylinder_hole"
-    v = simulation.volume_manager.volumes[bg.mother]
+    bg.attached_to = f"{iec_name}_center_cylinder_hole"
+    v = simulation.volume_manager.volumes[bg.attached_to]
     s = v.solid_info
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
+    bg.position.size = simulation.volume_manager.volumes[
+        bg.attached_to
+    ].bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
     # it is a tubs inside the box
-    bg.position.confine = bg.mother
+    bg.position.confine = bg.attached_to
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_Bq_mL * s.cubic_volume
@@ -414,14 +428,16 @@ def add_background_source(
 ):
     # source
     bg = simulation.add_source("GenericSource", f"{iec_name}_{src_name}")
-    bg.mother = f"{iec_name}_interior"
-    v = simulation.volume_manager.volumes[bg.mother]
+    bg.attached_to = f"{iec_name}_interior"
+    v = simulation.volume_manager.volumes[bg.attached_to]
     s = v.solid_info
     # (1 cm3 = 1 mL)
     bg.position.type = "box"
-    bg.position.size = simulation.volume_manager.volumes[bg.mother].bounding_box_size
+    bg.position.size = simulation.volume_manager.volumes[
+        bg.attached_to
+    ].bounding_box_size
     # this source is confined only within the mother volume, it does not include daughter volumes
-    bg.position.confine = bg.mother
+    bg.position.confine = bg.attached_to
     bg.particle = "e+"
     bg.energy.type = "F18"
     bg.activity = activity_Bq_mL * s.cubic_volume
@@ -612,3 +628,60 @@ def get_default_sphere_centers_and_volumes():
         26521.84878038063,
     ]
     return centers, volumes
+
+
+def add_iec_phantom_vox(sim, name, image_filename, labels_filename):
+    iec = sim.add_volume("Image", name)
+    iec.image = image_filename
+    iec.material = "IEC_PLASTIC"
+    labels = json.loads(open(labels_filename).read())
+    iec.voxel_materials = []
+    create_material(sim)
+    material_list = {}
+    for l in labels:
+        mat = "IEC_PLASTIC"
+        if "capillary" in l:
+            mat = "G4_WATER"
+        if "cylinder_hole" in l:
+            mat = "G4_AIR"
+        if "world" in l:
+            mat = "G4_AIR"
+        if "interior" in l:
+            mat = "G4_WATER"
+        if "sphere" in l:
+            mat = "G4_WATER"
+        if "shell" in l:
+            mat = "IEC_PLASTIC"
+        material_list[l] = mat
+        m = [labels[l], labels[l] + 1, mat]
+        iec.voxel_materials.append(m)
+    return iec, material_list
+
+
+def create_iec_phantom_source_vox(
+    image_filename, labels_filename, source_filename, activities=None
+):
+    if activities is None:
+        activities = {
+            "iec_sphere_10mm": 1.0,
+            "iec_sphere_13mm": 1.0,
+            "iec_sphere_17mm": 1.0,
+            "iec_sphere_22mm": 1.0,
+            "iec_sphere_28mm": 1.0,
+            "iec_sphere_37mm": 1.0,
+        }
+
+    img = itk.imread(image_filename)
+    labels = json.loads(open(labels_filename).read())
+    img_arr = itk.GetArrayViewFromImage(img)
+
+    for label in labels:
+        l = labels[label]["label"]
+        if "sphere" in label and "shell" not in label:
+            img_arr[img_arr == l] = activities[label]
+        else:
+            img_arr[img_arr == l] = 0
+
+    # The coordinate system is different from IEC analytical volume
+    # 35mm should be added in Y
+    itk.imwrite(img, source_filename)

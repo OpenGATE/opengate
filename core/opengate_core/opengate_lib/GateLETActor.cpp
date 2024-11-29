@@ -36,9 +36,9 @@ GateLETActor::GateLETActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("EndSimulationAction");
 }
 
-void GateLETActor::InitializeUserInput(py::dict &user_info) {
+void GateLETActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
 
   fAveragingMethod = DictGetStr(user_info, "averaging_method");
   fScoreIn = DictGetStr(user_info, "score_in");
@@ -123,9 +123,6 @@ void GateLETActor::SteppingAction(G4Step *step) {
 
   // set value
   if (isInside) {
-    // With mutex (thread)
-    G4AutoLock mutex(&SetLETPixelMutex);
-
     // get edep in MeV (take weight into account)
     auto w = step->GetTrack()->GetWeight();
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
@@ -185,10 +182,12 @@ void GateLETActor::SteppingAction(G4Step *step) {
       scor_val_num = steplength * dedx_currstep * w / CLHEP::MeV;
       scor_val_den = steplength * w / CLHEP::mm;
     }
-    ImageAddValue<ImageType>(cpp_numerator_image, index, scor_val_num);
-    ImageAddValue<ImageType>(cpp_denominator_image, index, scor_val_den);
-    //}
-
+    // Call ImageAddValue() in a mutexed {}-scope
+    {
+      G4AutoLock mutex(&SetLETPixelMutex);
+      ImageAddValue<ImageType>(cpp_numerator_image, index, scor_val_num);
+      ImageAddValue<ImageType>(cpp_denominator_image, index, scor_val_den);
+    }
   } // else : outside the image
 }
 

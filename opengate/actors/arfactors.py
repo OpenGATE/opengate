@@ -70,9 +70,15 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         "russian_roulette": (1, {"doc": "Russian roulette factor. "}),
     }
 
+    user_output_config = {
+        "root_output": {
+            "actor_output_class": ActorOutputRoot,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "root_output")
+        # self._add_user_output(ActorOutputRoot, "root_output")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -91,7 +97,7 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.initialize(self)
         self.check_energy_window_actor()
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -195,6 +201,12 @@ class ARFActor(ActorBase, g4.GateARFActor):
         ),
     }
 
+    user_output_config = {
+        "arf_projection": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         # import module
@@ -207,7 +219,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.batch_nb = 0
         self.detected_particles = 0
         # need a lock when the ARF is applied
-        self.lock = threading.Lock()
+        self.lock = None
         # local variables
         self.image_plane_spacing = None
         self.image_plane_size_pixel = None
@@ -217,7 +229,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_size = None
         self.nb_ene = None
 
-        self._add_user_output(ActorOutputSingleImage, "arf_projection")
+        # self._add_user_output(ActorOutputSingleImage, "arf_projection")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -243,6 +255,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
     def initialize(self):
         # call the initialize() method from the super class (python-side)
         ActorBase.initialize(self)
+        self.lock = threading.Lock()
 
         self.debug_nb_hits_before = 0
         self.debug_nb_hits = 0
@@ -254,7 +267,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_array = np.zeros(self.output_size, dtype=np.float64)
 
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         self.SetARFFunction(self.apply)
 
@@ -399,7 +412,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
         self.user_output["arf_projection"].store_data("merged", output_image)
-        # ensure why return 0 ?
+        # unsure why return 0 ?
         return 0
 
     def EndSimulationAction(self):

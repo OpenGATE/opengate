@@ -29,9 +29,9 @@ GateFluenceActor::GateFluenceActor(py::dict &user_info)
   fActions.insert("BeginOfRunAction");
 }
 
-void GateFluenceActor::InitializeUserInput(py::dict &user_info) {
+void GateFluenceActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
 }
 
@@ -86,7 +86,6 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
     // set value
     if (isInside) {
       G4AutoLock FluenceMutex(&SetPixelFluenceMutex);
-      // add hit
       ImageAddValue<Image3DType>(cpp_fluence_image, index, w);
     } // else : outside the image
   }

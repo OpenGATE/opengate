@@ -76,7 +76,8 @@ if __name__ == "__main__":
         "TrackID",
     ]
 
-    phsp_actor.output_filename = "simulation_optigan_with_random_seed_600.root"
+    phsp_actor.steps_to_store = "first"
+    phsp_actor.output_filename = "test081_simulation_optigan_with_random_seed_600.root"
 
     # add a kill actor to the crystal
     ka = sim.add_actor("KillActor", "kill_actor2")

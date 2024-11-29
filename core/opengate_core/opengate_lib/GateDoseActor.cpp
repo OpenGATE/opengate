@@ -34,9 +34,9 @@ G4Mutex SetNbEventMutex = G4MUTEX_INITIALIZER;
 GateDoseActor::GateDoseActor(py::dict &user_info)
     : GateVActor(user_info, true) {}
 
-void GateDoseActor::InitializeUserInput(py::dict &user_info) {
+void GateDoseActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
 
   // translation
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
@@ -69,6 +69,10 @@ void GateDoseActor::InitializeCpp() {
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   // Reset the number of events (per run)
   NbOfEvent = 0;
+
+  // for stop on target uncertainty. As we reset the nb of events, we reset also
+  // this variable
+  NbEventsNextCheck = NbEventsFirstCheck;
 
   // Important ! The volume may have moved, so we re-attach each run
   AttachImageToVolume<Image3DType>(cpp_edep_image, fPhysicalVolumeName,
@@ -157,6 +161,8 @@ void GateDoseActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
 }
 
 void GateDoseActor::SteppingAction(G4Step *step) {
+  auto event_id =
+      G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
@@ -169,72 +175,155 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
 
-  // set value
-  if (!isInside)
-    return;
+  if (isInside) {
 
-  // get edep in MeV (take weight into account)
-  auto w = step->GetTrack()->GetWeight();
-  auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-  double dose;
+    // get edep in MeV (take weight into account)
+    auto w = step->GetTrack()->GetWeight();
+    auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
+    double dose;
 
-  if (fToWaterFlag) {
-    auto *current_material = step->GetPreStepPoint()->GetMaterial();
-    double dedx_cut = DBL_MAX;
-    double dedx_currstep = 0., dedx_water = 0.;
-    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-    static G4Material *water =
-        G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-    auto energy = (energy1 + energy2) / 2;
-    if (p == G4Gamma::Gamma())
-      p = G4Electron::Electron();
-    auto &emc = fThreadLocalDataEdep.Get().emcalc;
-    dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
-    dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
-    if (dedx_currstep == 0 || dedx_water == 0) {
-      edep = 0.;
-    } else {
-      edep *= (dedx_water / dedx_currstep);
-    }
-  }
-
-  ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
-
-  if (fDoseFlag || fDoseSquaredFlag) {
-    double density;
     if (fToWaterFlag) {
-      auto *water = G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
-      density = water->GetDensity();
-    } else {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
-      density = current_material->GetDensity();
+      double dedx_cut = DBL_MAX;
+      double dedx_currstep = 0., dedx_water = 0.;
+      const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+      static G4Material *water =
+          G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+      auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+      auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+      auto energy = (energy1 + energy2) / 2;
+      if (p == G4Gamma::Gamma())
+        p = G4Electron::Electron();
+      auto &emc = fThreadLocalDataEdep.Get().emcalc;
+      dedx_currstep =
+          emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+      dedx_water = emc.ComputeTotalDEDX(energy, p, water, dedx_cut);
+      if (dedx_currstep == 0 || dedx_water == 0) {
+        edep = 0.;
+      } else {
+        edep *= (dedx_water / dedx_currstep);
+      }
     }
-    dose = edep / density;
-    if (fDoseFlag) {
-      ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+
+    if (fDoseFlag || fDoseSquaredFlag) {
+      double density;
+      if (fToWaterFlag) {
+        auto *water =
+            G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
+        density = water->GetDensity();
+      } else {
+        auto *current_material = step->GetPreStepPoint()->GetMaterial();
+        density = current_material->GetDensity();
+      }
+      dose = edep / density;
     }
+
+    // all ImageAddValue calls in a mutexed {}-scope
+    {
+      G4AutoLock mutex(&SetPixelMutex);
+      ImageAddValue<Image3DType>(cpp_edep_image, index, edep);
+      if (fDoseFlag) {
+        ImageAddValue<Image3DType>(cpp_dose_image, index, dose);
+      }
+      if (fCountsFlag) {
+        ImageAddValue<Image3DType>(cpp_counts_image, index, 1);
+      }
+    } // mutex scope
+
+    // ScoreSquaredValue() is thread-safe because it contains a mutex
+    if (fEdepSquaredFlag || fDoseSquaredFlag) {
+      if (fEdepSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
+                          edep, event_id, index);
+      }
+      if (fDoseSquaredFlag) {
+        ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
+                          dose, event_id, index);
+      }
+    }
+  } // if(isInside) clause
+}
+
+void GateDoseActor::EndOfEventAction(const G4Event *event) {
+
+  // flush thread local data into global image (postponed for now)
+
+  // if the user didn't set uncertainty goal, do nothing
+  if (fUncertaintyGoal == 0) {
+    return;
   }
 
-  if (fCountsFlag) {
-    ImageAddValue<Image3DType>(cpp_counts_image, index, 1);
+  // check if we reached the Nb of events for next evaluation
+  if (NbOfEvent >= NbEventsNextCheck) {
+    // get thread idx. Ideally, only one thread should do the uncertainty
+    // calculation don't ask for thread idx if no MT
+    if (!G4Threading::IsMultithreadedApplication() ||
+        G4Threading::G4GetThreadId() == 0) {
+      // check stop criteria
+      std::cout << "NbEventsNextCheck: " << NbEventsNextCheck << std::endl;
+      double UncCurrent = ComputeMeanUncertainty();
+      if (UncCurrent <= fUncertaintyGoal) {
+        // fStopRunFlag = true;
+        fSourceManager->SetRunTerminationFlag(true);
+      } else {
+        // estimate Nevents at which next check should occour
+        NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
+                            (UncCurrent / fUncertaintyGoal) * NbOfEvent *
+                            Overshoot;
+      }
+    }
   }
+}
 
-  if (fEdepSquaredFlag || fDoseSquaredFlag) {
-    auto event_id =
-        G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-    if (fEdepSquaredFlag) {
-      //        G4AutoLock mutex(&SetPixelMutex);
-      ScoreSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image,
-                        edep, event_id, index);
-    }
-    if (fDoseSquaredFlag) {
-      //        G4AutoLock mutex(&SetPixelMutex);
-      ScoreSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image,
-                        dose, event_id, index);
-    }
+double GateDoseActor::ComputeMeanUncertainty() {
+  G4AutoLock mutex(&ComputeUncertaintyMutex);
+  itk::ImageRegionIterator<Image3DType> edep_iterator3D(
+      cpp_edep_image, cpp_edep_image->GetLargestPossibleRegion());
+  double mean_unc = 0.0;
+  int n_voxel_unc = 0;
+  double n = 2.0;
+  n = NbOfEvent;
+
+  if (n < 2.0) {
+    n = 2.0;
   }
+  double max_edep = GetMaxValueOfImage(cpp_edep_image);
+
+  for (edep_iterator3D.GoToBegin(); !edep_iterator3D.IsAtEnd();
+       ++edep_iterator3D) {
+    Image3DType::IndexType index_f = edep_iterator3D.GetIndex();
+    double val = cpp_edep_image->GetPixel(index_f);
+
+    if (val > max_edep * fThreshEdepPerc) {
+      val /= n;
+      n_voxel_unc++;
+      double val_squared_mean = cpp_edep_squared_image->GetPixel(index_f) / n;
+
+      double unc_i = (1.0 / (n - 1.0)) * (val_squared_mean - pow(val, 2));
+      if (unc_i < 0) {
+        std::cout << "unc_i: " << unc_i << std::endl;
+        std::cout << "edep: " << val << std::endl;
+        std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+      }
+
+      unc_i = sqrt(unc_i) / (val);
+
+      if (unc_i > 1) {
+        std::cout << "unc_i: " << unc_i << std::endl;
+        std::cout << "edep: " << val << std::endl;
+        std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+      }
+      mean_unc += unc_i;
+    }
+  };
+
+  if (n_voxel_unc > 0 && mean_unc > 0) {
+    mean_unc = mean_unc / n_voxel_unc;
+  } else {
+    mean_unc = 1.;
+  }
+  std::cout << "unc: " << mean_unc << std::endl;
+  return mean_unc;
 }
 
 int GateDoseActor::sub2ind(Image3DType::IndexType index3D) {
@@ -253,7 +342,7 @@ void GateDoseActor::ind2sub(int index_flat, Image3DType::IndexType &index3D) {
 }
 
 void GateDoseActor::EndOfRunAction(const G4Run *run) {
-
+  // FlushSquaredValue() is thread-safe because it contains a mutex
   if (fEdepSquaredFlag) {
     GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(),
                                      cpp_edep_squared_image);
@@ -268,7 +357,6 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
                                       Image3DType::Pointer cpp_image,
                                       double value, int event_id,
                                       Image3DType::IndexType index) {
-  G4AutoLock mutex(&SetPixelMutex);
   int index_flat = sub2ind(index);
   auto previous_id = data.lastid_worker_flatimg[index_flat];
   data.lastid_worker_flatimg[index_flat] = event_id;
@@ -280,7 +368,10 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
     // Different event : square deposited quantity from the last event ID
     // and start accumulating deposited quantity for this new event ID
     auto v = data.squared_worker_flatimg[index_flat];
-    ImageAddValue<Image3DType>(cpp_image, index, v * v);
+    {
+      G4AutoLock mutex(&SetPixelMutex);
+      ImageAddValue<Image3DType>(cpp_image, index, v * v);
+    }
     // new temp value
     data.squared_worker_flatimg[index_flat] = value;
   }
@@ -288,8 +379,7 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
 
 void GateDoseActor::FlushSquaredValue(threadLocalT &data,
                                       Image3DType::Pointer cpp_image) {
-  //  G4AutoLock mutex(&SetWorkerEndRunMutex);
-
+  G4AutoLock mutex(&SetPixelMutex);
   itk::ImageRegionIterator<Image3DType> iterator3D(
       cpp_image, cpp_image->GetLargestPossibleRegion());
   for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {

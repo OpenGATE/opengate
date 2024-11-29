@@ -24,14 +24,14 @@ class FilterBase(GateObject):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
 
     def initialize(self):
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
 
     def __setstate__(self, state):
         self.__dict__ = state

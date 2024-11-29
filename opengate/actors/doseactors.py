@@ -45,27 +45,27 @@ class VoxelDepositActor(ActorBase):
         "size": (
             [10, 10, 10],
             {
-                "doc": "3D size of the dose grid (in number of voxels).",
+                "doc": "Size of the dose grid in number of voxels [N_x, N_y, N_z]. Expects a list of integer values of size 3.",
             },
         ),
         "spacing": (
             [1 * g4_units.mm, 1 * g4_units.mm, 1 * g4_units.mm],
             {
-                "doc": "Voxel spacing along the x-, y-, z-axes. "
-                "(The user set the units by multiplication with g4_units.XX)",
+                "doc": "Voxel spacing vector along the [x, y, z] coordinates with units. "
+                "The user sets the units by multiplication with g4_units.XX. "
+                "The default unit is g4_unit.mm amd the default spacing is [1, 1, 1] [g4_units.mm]",
             },
         ),
         "translation": (
-            [0, 0, 0],
+            [0 * g4_units.mm, 0 * g4_units.mm, 0 * g4_units.mm],
             {
-                # FIXME: check reference for translation of dose actor
-                "doc": "FIXME: Translation with respect to the XXX ",
+                "doc": "Translation vector to (optionally) translate the image in along [x, y, z] from the center of the attached volume. The default unit is g4_units.mm and default value is the unity operation [0, 0, 0] * g4_units.mm. ",
             },
         ),
         "rotation": (
             Rotation.identity().as_matrix(),
             {
-                "doc": "FIXME",
+                "doc": "Rotation matrix to (optionally) rotate the image. Default is the identiy matrix.",
             },
         ),
         "repeated_volume_index": (
@@ -78,8 +78,8 @@ class VoxelDepositActor(ActorBase):
         "hit_type": (
             "random",
             {
-                "doc": "How to determine the position to which the deposited quantity is associated, "
-                "i.e. at the beginning or end of a Geant4 step, or somewhere in between. ",
+                "doc": "For advanced users: define the position of interaction to which the deposited quantity is associated to, "
+                "i.e. at the Geant4 PreStepPoint, PostStepPoint, or somewhere in between (middle or (uniform) random). In doubt use/start with random.",
                 "allowed_values": ("random", "pre", "post", "middle"),
             },
         ),
@@ -88,28 +88,28 @@ class VoxelDepositActor(ActorBase):
             {
                 "deprecated": "The output filename is now set via output_filename relative to the output "
                 "directory of the simulation, which can be set via sim.output_dir. "
-                "If no output_filename is provided, it will be generated automatically. \n"
+                "If no output_filename is provided, it will be generated automatically. "
                 "To specify whether the actor output should be written to disk, use write_to_disk=True/False."
             },
         ),
         "img_coord_system": (
             None,
             {
-                "deprecated": f"The user input parameter 'img_coord_system' is deprecated. "
-                f"Use my_actor.output_coordinate_system='attached_to_image' instead, "
-                f"where my_actor should be replaced with your actor object. ",
+                "deprecated": "The user input parameter 'img_coord_system' is deprecated. "
+                "Use my_actor.output_coordinate_system='attached_to_image' instead, "
+                "where my_actor should be replaced with your actor object. ",
             },
         ),
         "output_coordinate_system": (
             "local",
             {
-                "doc": "FIXME",
+                "doc": "This command sets the refernce coordinate system, which can be the local volume (attached_to commmand), global or attached to image.",
                 "allowed_values": ("local", "global", "attached_to_image", None),
             },
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         ActorBase.__init__(self, *args, **kwargs)
 
     def check_user_input(self):
@@ -118,10 +118,28 @@ class VoxelDepositActor(ActorBase):
                 self.attached_to_volume, "native_translation"
             ) or not hasattr(self.attached_to_volume, "native_rotation"):
                 fatal(
-                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} is not compatible "
+                    f"User input 'output_coordinate_system' = {self.output_coordinate_system} "
+                    f"of actor {self.name} is not compatible "
                     f"with the volume to which this actor is attached: "
                     f"{self.attached_to} ({self.attached_to_volume.volume_type})"
                 )
+
+    def initialize(self):
+        super().initialize()
+
+        msg = (
+            f"cannot be used in actor {self.name} "
+            f"because the volume ({self.attached_to}, {self.attached_to_volume.type_name}) "
+            f"to which the actor is attached does not support it. "
+        )
+        if isinstance(self.spacing, str) and self.spacing == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "spacing"):
+                fatal("spacing = 'like_image_volume' " + msg)
+            self.spacing = self.attached_to_volume.spacing
+        if isinstance(self.size, str) and self.size == "like_image_volume":
+            if not hasattr(self.attached_to_volume, "size_pix"):
+                fatal("size = 'like_image_volume' " + msg)
+            self.size = self.attached_to_volume.size_pix
 
     def get_physical_volume_name(self):
         # init the origin and direction according to the physical volume
@@ -243,9 +261,15 @@ class VoxelDepositActor(ActorBase):
                 u.end_of_run(run_index)
         return 0
 
+    def StartSimulationAction(self):
+        # inform actor output that this simulation is starting
+        for u in self.user_output.values():
+            if u.get_active(item="any"):
+                u.start_of_simulation()
+
     def inform_user_output_about_end(self):
         for u in self.user_output.values():
-            if u.get_active(item="all"):
+            if u.get_active(item="any"):
                 u.end_of_simulation()
 
     def EndSimulationAction(self):
@@ -312,51 +336,27 @@ def _setter_hook_uncertainty(self, value):
     return value
 
 
-def _setter_hook_goal_uncertainty(self, value):
-    if value < 0.0 or value > 1.0:
-        fatal(f"Goal uncertainty must be > 0 and < 1. The provided value is: {value}")
+def _setter_hook_uncertainty_goal(self, value):
+    if value is not None and (value < 0.0 or value > 1.0):
+        fatal(
+            f"Uncertainty goal must be > 0 and < 1, where 1 means 100%. The provided value is: {value}"
+        )
     return value
 
 
 class DoseActor(VoxelDepositActor, g4.GateDoseActor):
-    """
-    DoseActor: compute a 3D edep/dose map for deposited
-    energy/absorbed dose in the attached volume
-
-    The dose map is parameterized with:
-        - size (number of voxels)
-        - spacing (voxel size)
-        - translation (according to the coordinate system of the "attachedTo" volume)
-        - no rotation
-
-    Position:
-    - by default: centered according to the "attachedTo" volume center
-    - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
-        the origin of the attachedTo image is used for the output dose.
-        Hence, the dose can be superimposed with the attachedTo volume
-
-    Options
-        - edep only for the moment
-        - later: add dose, uncertainty, squared etc
-
+    """Computes the deposited energy or absorbed dose in the volume to which it is attached.
+    It creates a virtual voxelized scoring image, whose shape and position can be defined by the user.
     """
 
     # hints for IDE
-    use_more_ram: bool
     score_in: str
 
     user_info_defaults = {
-        "use_more_ram": (
-            False,
-            {
-                "doc": "FIXME",
-                "deactivated": True,
-            },
-        ),
         "square": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "This option will provide an additional output image with the squared energy (or dose) deposited per event. This image can be used to calculate the variance of the output variable, as Var(X) = E[X^2] - E[X]^2. This option enables the E[X^2] image.",
                 "deprecated": "Use: my_actor.user_output.square.active=True/False "
                 "to request uncertainty scoring of the respective quantity, "
                 "where 'my_actor' should be your actor object. "
@@ -367,7 +367,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "uncertainty": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "This option will create an additional output image providing the uncertainty of the scored variable (dose or edep).",
                 "deprecated": "Use: my_actor.user_output.dose_uncertainty.active=True/False and"
                 "my_actor.user_output.edep_uncertainty.active=True/False "
                 "to request uncertainty scoring of the respective quantity, "
@@ -378,7 +378,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "dose": (
             False,
             {
-                "doc": "FIXME",
+                "doc": "This option will enable the calculation of the dose image.",
                 "deprecated": "Use: my_actor.user_output.dose.active=True/False "
                 "to request the actor to score dose, "
                 "where 'my_actor' should be your actor object. "
@@ -388,24 +388,25 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "to_water": (
             False,
             {
-                "deprecated": "Use my_dose_actor.score_in='water' instead. ",
+                "doc": "This option will convert the dose image to dose to water.",
+                "deprecated": "Use my_dose_actor.score_in='G4_WATER' instead. ",
             },
         ),
         "score_in": (
             "material",
             {
-                "doc": "In which kind of material should the deposited quantities be scored? "
-                "'material' means the material defined by the volume to which the actor is attached. ",
+                "doc": """The score_in command allows to convert the LET from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the LET to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
+                """,
                 "allowed_values": (
                     "material",
-                    "water",
+                    "G4_WATER",
                 ),
             },
         ),
         "ste_of_mean": (
             False,
             {
-                "doc": "FIXME",
+                "doc": "Calculate the standard error of the mean. Only working in MT mode and the number of threads are considered the sample. To have a meaningful uncertainty at least 8 threads are needed.",
                 "setter_hook": _setter_hook_ste_of_mean,
                 "deactivated": True,
             },
@@ -413,23 +414,35 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "ste_of_mean_unbiased": (
             False,
             {
-                "doc": "FIXME",
+                "doc": "Similar to ste_of_mean, but compensates for a bias in ste_of_mean for small sample sizes (<8).  ",
                 "setter_hook": _setter_hook_ste_of_mean_unbiased,
                 "deactivated": True,
             },
         ),
-        "goal_uncertainty": (
-            0,
+        "uncertainty_goal": (
+            None,
             {
-                "doc": "FIXME",
-                "setter_hook": _setter_hook_goal_uncertainty,
-                "deprecated": "Currently not implemented. ",
+                "doc": "If set, it defines the statistical uncertainty goal. The simulation will stop once the statistical uncertainty is smaller or equal this value.",
+                "setter_hook": _setter_hook_uncertainty_goal,
             },
         ),
-        "thresh_voxel_edep_for_unc_calc": (
+        "uncertainty_first_check_after_n_events": (
+            1e4,
+            {
+                "doc": "Only applies if uncertainty_goal is set True: Number of events after which uncertainty is evaluated the first time. "
+                "After the first evaluation, the value is updated with an estimation of the N events needed to achieve the uncertainty goal, Therefore it is recommended to select a sufficiently large number so the uncertainty of the uncertainty is not too large.",
+            },
+        ),
+        "uncertainty_voxel_edep_threshold": (
             0.7,
             {
-                "doc": "FIXME",
+                "doc": "Only applies if uncertainty_goal is set True: The calculation of the mean uncertainty of the edep image, only voxels that are above this relative threshold are considered. The threshold must range between [0, 1] and gives the fraction relative to max edep value in the image.",
+            },
+        ),
+        "uncertainty_overshoot_factor_N_events": (
+            1.05,
+            {
+                "doc": "Only applies if uncertainty_goal is set True: Factor multiplying the estimated N events needed to achieve the uncertainty goal, to ensure convergence.",
             },
         ),
         "dose_calc_on_the_fly": (
@@ -441,88 +454,59 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         ),
     }
 
+    user_output_config = {
+        "edep_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "edep": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                },
+                "edep_squared": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "edep_uncertainty": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "dose_with_uncertainty": {
+            "actor_output_class": ActorOutputSingleImageWithVariance,
+            "interfaces": {
+                "dose": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                },
+                "dose_squared": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                },
+                "dose_uncertainty": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "uncertainty",
+                    "active": False,
+                },
+            },
+        },
+        "density": {
+            "actor_output_class": ActorOutputSingleMeanImage,
+            "active": False,
+        },
+        "counts": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": False,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        # **** EDEP ****
-        # This creates a user output with two components: 0=edep, 1=edep_squared
-        # additionally, it also provides variance, std, and uncertainty via dynamic properties
-        self._add_user_output(
-            ActorOutputSingleImageWithVariance,
-            "edep_with_uncertainty",
-            automatically_generate_interface=False,
-        )
-        # create an interface to item 0 of user output "edep_with_uncertainty"
-        # and make it available via a property 'edep' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "edep_with_uncertainty", "edep", item=0
-        )
-        # create an interface to item 1 of user output "edep_with_uncertainty"
-        # and make it available via a property 'square' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "edep_with_uncertainty",
-            "edep_squared",
-            item=1,
-        )
-        # create an interface to item 'uncertainty' of user output "edep_with_uncertainty"
-        # and make it available via a property 'edep_uncertainty' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "edep_with_uncertainty",
-            "edep_uncertainty",
-            item="uncertainty",
-        )
-
-        # **** DOSE ****
-        self._add_user_output(
-            ActorOutputSingleImageWithVariance,
-            "dose_with_uncertainty",
-            automatically_generate_interface=False,
-        )
-        # create an interface to item 0 of user output "dose_with_uncertainty"
-        # and make it available via a property 'dose' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "dose_with_uncertainty", "dose", item=0
-        )
-        # create an interface to item 1 of user output "dose_with_uncertainty"
-        # and make it available via a property 'dose_squared' in this actor
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "dose_with_uncertainty",
-            "dose_squared",
-            item=1,
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "dose_with_uncertainty",
-            "dose_uncertainty",
-            item="uncertainty",
-        )
-
-        # set the defaults for the user output of this actor
-        self._add_user_output(ActorOutputSingleMeanImage, "density")
-        self._add_user_output(ActorOutputSingleImage, "counts")
-        self.user_output.dose_with_uncertainty.set_active(False, item="all")
-        self.user_output.density.set_active(False)
-        self.user_output.counts.set_active(False)
-
-        # item suffix is used when the filename is auto-generated or
-        # when the user sets one filename per actor
-        self.user_output.edep_with_uncertainty.set_item_suffix("edep", item=0)
-        self.user_output.edep_with_uncertainty.set_item_suffix("edep_squared", item=1)
-        self.user_output.edep_with_uncertainty.set_item_suffix(
-            "edep_uncertainty", item="uncertainty"
-        )
-        self.user_output.dose_with_uncertainty.set_item_suffix("dose", item=0)
-        self.user_output.dose_with_uncertainty.set_item_suffix("dose_squared", item=1)
-        self.user_output.dose_with_uncertainty.set_item_suffix(
-            "dose_uncertainty", item="uncertainty"
-        )
-        # The following 2 are single item output and item=0 is default
-        self.user_output.density.set_item_suffix("density")
-        self.user_output.counts.set_item_suffix("counts")
-
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -535,6 +519,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
+                "EndOfEventAction",
             }
         )
 
@@ -563,12 +548,16 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
+        # the edep component has to be active in any case
+        self.user_output.edep_with_uncertainty.set_active(True, item=0)
+
         # Make sure the squared component (item 1) is active if any of the quantities relying on it are active
         if (
             self.user_output.edep_with_uncertainty.get_active(
                 item=("uncertainty", "std", "variance")
             )
             is True
+            or self.uncertainty_goal is not None
         ):
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
@@ -585,6 +574,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             )
             is True
         ):
+            # activate the dose component
+            self.user_output.dose_with_uncertainty.set_active(True, item=0)
             # activate the squared component, but avoid writing it to disk
             # because the user has not activated it and thus most likely does not want it
             if not self.user_output.dose_with_uncertainty.get_active(item=1):
@@ -602,7 +593,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
                 f"This actor is attached to a {self.attached_to_volume.volume_type} volume. "
             )
 
-        self.InitializeUserInput(self.user_info)  # C++ side
+        self.InitializeUserInfo(self.user_info)  # C++ side
         # Set the flags on C++ side so the C++ knows which quantities need to be scored
         self.SetEdepSquaredFlag(
             self.user_output.edep_with_uncertainty.get_active(item=1)
@@ -614,7 +605,16 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         # item=0 is the default
         self.SetCountsFlag(self.user_output.counts.get_active())
         # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
-        self.SetToWaterFlag(self.score_in == "water")
+        self.SetToWaterFlag(self.score_in == "G4_WATER")
+
+        # variables for stop on uncertainty functionality
+        if self.uncertainty_goal is None:
+            self.SetUncertaintyGoal(0)
+        else:
+            self.SetUncertaintyGoal(self.uncertainty_goal)
+        self.SetThreshEdepPerc(self.uncertainty_voxel_edep_threshold)
+        self.SetOvershoot(self.uncertainty_overshoot_factor_N_events)
+        self.SetNbEventsFirstCheck(int(self.uncertainty_first_check_after_n_events))
 
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -711,9 +711,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
 
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
-    """
-    TLE = Track Length Estimator
-    """
+    """TLE = Track Length Estimator"""
 
     energy_min: float
     energy_max: float
@@ -762,34 +760,15 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
 
 
 def _setter_hook_score_in_let_actor(self, value):
-    if value in ("water", "Water"):
+    if value.lower() in ("g4_water", "g4water"):
+        """Assuming a misspelling of G4_WATER and correcting it to correct spelling; Note that this is rather dangerous operation."""
         return "G4_WATER"
     else:
         return value
 
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):
-    """
-    LET = Linear energy transfer
-    LETActor: compute a 3D edep/dose map for deposited
-    energy/absorbed dose in the attached volume
-
-    The dose map is parameterized with:
-        - size (number of voxels)
-        - spacing (voxel size)
-        - translation (according to the coordinate system of the "attachedTo" volume)
-        - no rotation
-
-    Position:
-    - by default: centered according to the "attachedTo" volume center
-    - if the attachedTo volume is an Image AND the option "img_coord_system" is True:
-        the origin of the attachedTo image is used for the output dose.
-        Hence, the dose can be superimposed with the attachedTo volume
-
-    Options
-        - LETd only for the moment
-        - later: LETt, Q, fluence ...
-    """
+    """This actor scores the Linear Energy Transfer (LET) on a voxel grid in the volume to which the actor is attached. Note that the LET Actor puts a virtual grid on the volume it is attached to. Any changes on the LET Actor will not influence the geometry/material or physics of the particle tranpsort simulation."""
 
     # hints for IDE
     averaging_method: str
@@ -799,52 +778,22 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         "averaging_method": (
             "dose_average",
             {
-                "doc": "How to calculate the LET?",
+                "doc": "The LET actor returns either dose or fluence (also called track) average. Select the type with this command.",
                 "allowed_values": ("dose_average", "track_average"),
-            },
-        ),
-        "dose_average": (
-            False,
-            {
-                "doc": "Calculate dose-averaged LET?",
-                "deprecated": "Use averaging_method='dose_average' instead",
-            },
-        ),
-        "track_average": (
-            False,
-            {
-                "doc": "Calculate track-averaged LET?",
-                "deprecated": "Use averaging_method='track_average' instead",
             },
         ),
         "score_in": (
             "G4_WATER",
             {
-                "doc": "In which material should the LET be scored? "
-                "You can provide a valid G4 material name, the term 'water', "
-                "or the term 'material' which means 'the local material where LET is scored. ",
+                "doc": "The score_in command allows to convert the LET from the material, "
+                "which is defined in the geometry, to any user defined material. "
+                "Note that this does not change the material definition in the geometry. "
+                "The default value is 'material', which means that no conversion is "
+                "performed and the LET to the local material is scored. "
+                "You can use any material defined in the simulation "
+                "or pre-defined by Geant4 such as 'G4_WATER', "
+                "which may be one of the most use cases of this functionality.",
                 "setter_hook": _setter_hook_score_in_let_actor,
-            },
-        ),
-        "let_to_other_material": (
-            False,
-            {
-                "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
-            },
-        ),
-        "let_to_water": (
-            True,
-            {
-                "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
-            },
-        ),
-        "other_material": (
-            None,
-            {
-                "doc": "FIXME",
-                "deprecated": "Use score_in=... to specifiy in which material LET should be scored. ",
             },
         ),
         "separate_output": (
@@ -856,40 +805,35 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         ),
     }
 
+    user_output_config = {
+        "let": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                "numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "let": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": True,
+                    "suffix": None,  # default suffix would be 'let', but we prefer no suffix
+                },
+            },
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        self._add_user_output(
-            ActorOutputQuotientMeanImage, "let", automatically_generate_interface=False
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "let", "numerator", item=0
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "let", "denominator", item=1
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "let", "let", item="quotient"
-        )
-
-        # configure the default item config for the output of the LET actor,
-        # which is different from the generic quotient image container class:
-
-        # Suffix to be appended in case a common output_filename per actor is assigned
-        self.user_output.let.set_item_suffix(None, item="quotient")
-        self.user_output.let.set_item_suffix("numerator", item=0)
-        self.user_output.let.set_item_suffix("denominator", item=1)
-
-        # the LET always needs both components to calculate LET
-        self.user_output.let.set_active(True, item=0)
-        self.user_output.let.set_active(True, item=1)
-
-        # Most users will probably only want the LET image written to disk,
-        # not the numerator and denominator
-        self.user_output.let.set_write_to_disk(False, item=0)
-        self.user_output.let.set_write_to_disk(False, item=1)
-        self.user_output.let.set_write_to_disk(True, item="quotient")
-
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -913,7 +857,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
 
         self.check_user_input()
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
@@ -945,6 +889,80 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
+    """This actor scores the number of particles stopping or starting in a voxel grid in the volume to which the actor is attached to."""
+
+    # hints for IDE
+    method: str
+
+    user_info_defaults = {
+        "method": (
+            "stopping",
+            {
+                "doc": "Want to score production or stopping of particles?",
+                "allowed_values": ("production", "stopping"),
+            },
+        )
+    }
+
+    user_output_config = {
+        "production_stopping": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateProductionAndStoppingActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfEventAction",
+            }
+        )
+
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the attached volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        VoxelDepositActor.initialize(self)
+
+        self.check_user_input()
+
+        self.InitializeUserInfo(self.user_info)
+        # Set the physical volume name on the C++ side
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("production_stopping", run_index)
+
+        self.push_to_cpp_image("production_stopping", run_index, self.cpp_value_image)
+        g4.GateProductionAndStoppingActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(
+            "production_stopping", run_index, self.cpp_value_image
+        )
+        self._update_output_coordinate_system("production_stopping", run_index)
+        self.user_output.production_stopping.store_meta_data(run_index)
+
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+        return 0
+
+    def EndSimulationAction(self):
+        g4.GateProductionAndStoppingActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
+
+
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
     FluenceActor: compute a 3D map of fluence
@@ -970,12 +988,14 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         ),
     }
 
+    user_output_config = {
+        "fluence": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        # self.py_fluence_image = None
-        self._add_user_output(ActorOutputSingleImage, "fluence")
-
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -995,9 +1015,9 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
         # no options yet
         if self.uncertainty or self.scatter:
-            fatal(f"FluenceActor : uncertainty and scatter not implemented yet")
+            fatal("FluenceActor : uncertainty and scatter not implemented yet")
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
@@ -1026,3 +1046,4 @@ process_cls(DoseActor)
 process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(FluenceActor)
+process_cls(ProductionAndStoppingActor)

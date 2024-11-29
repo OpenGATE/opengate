@@ -3,8 +3,6 @@
 
 import opengate as gate
 from opengate.tests import utility
-import pathlib
-import os
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test010_confine")
@@ -67,7 +65,7 @@ if __name__ == "__main__":
 
     # test confined source
     source = sim.add_source("GenericSource", "non_confined_src")
-    source.mother = "stuff"
+    source.attached_to = "stuff"
     source.particle = "gamma"
     source.activity = activity / sim.number_of_threads
     source.position.type = "box"
@@ -87,13 +85,15 @@ if __name__ == "__main__":
        from 'stuff_inside'
     """
     source = sim.add_source("GenericSource", "confined_src")
-    source.mother = "stuff"
+    source.attached_to = "stuff"
     source.particle = "gamma"
     source.activity = activity / sim.number_of_threads
     source.position.type = "box"
-    source.position.size = sim.volume_manager.volumes[source.mother].bounding_box_size
+    source.position.size = sim.volume_manager.volumes[
+        source.attached_to
+    ].bounding_box_size
     print("Source size", source.position.size)
-    pMin, pMax = sim.volume_manager.volumes[source.mother].bounding_limits
+    pMin, pMax = sim.volume_manager.volumes[source.attached_to].bounding_limits
     source.position.confine = "stuff"
     source.direction.type = "momentum"
     source.direction.momentum = [1, 0, 0]

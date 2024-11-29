@@ -33,10 +33,12 @@ classifiers = [
 ]
 requires-python = ">=3.9"
 
+[project.optional-dependencies]
+novis = ["opengate-core-novis"]
+
 [project.scripts]
 opengate_tests = "opengate.bin.opengate_tests:go"
 opengate_info = "opengate.bin.opengate_info:go"
-opengate_user_info = "opengate.bin.opengate_user_info:go"
 opengate_visu = "opengate.bin.opengate_visu:go"
 
 dose_rate = "opengate.bin.dose_rate:go"
