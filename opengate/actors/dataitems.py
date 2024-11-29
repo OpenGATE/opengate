@@ -725,7 +725,7 @@ class QuotientItkImage(DataItemContainer):
     # )
 
     # let the class know which properties should be treated as data items
-    __extra_data_items__ = ("quotient", )
+    __extra_data_items__ = ("quotient",)
 
     @property
     def quotient(self):

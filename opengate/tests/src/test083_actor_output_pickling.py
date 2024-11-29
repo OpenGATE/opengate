@@ -53,7 +53,10 @@ if __name__ == "__main__":
         f"Expected: not equal. Passed: {b}"
     )
 
-    b = actor1_reloaded_twice.edep_uncertainty.active is not actor1.edep_uncertainty.active
+    b = (
+        actor1_reloaded_twice.edep_uncertainty.active
+        is not actor1.edep_uncertainty.active
+    )
     is_ok &= b
     print(
         f"Test: Is the input parameter 'active' equal in original and "

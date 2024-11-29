@@ -515,15 +515,15 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
             # ask the container class which data item (including aliases and effective names)
             # it handles so that we can corerctly populate the defaults
             for k in cls.data_container_class.__get_data_item_names__():
-                if isinstance(k, (int, )):
+                if isinstance(k, (int,)):
                     suffix = f"item{k}"
                 else:
                     suffix = k
                 cls._default_data_item_config[k] = {
-                                    "output_filename": "auto",
-                                    "write_to_disk": True,
-                                    "active": False,
-                                    "suffix": suffix
+                    "output_filename": "auto",
+                    "write_to_disk": True,
+                    "active": False,
+                    "suffix": suffix,
                 }
             # if there is only one item, set suffix to None
             # because we do not want to append anything to the output_filename in this case
