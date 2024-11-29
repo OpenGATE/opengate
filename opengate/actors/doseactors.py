@@ -820,7 +820,8 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "quotient",
                     "write_to_disk": True,
-                    "suffix": None,
+                    "active": True,
+                    "suffix": None,  # default suffix would be 'let', but we prefer no suffix
                 },
             },
         },
