@@ -5,7 +5,7 @@ from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
 from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension
-from .actoroutput import ActorOutputRoot, make_actor_output_class
+from .actoroutput import ActorOutputRoot
 
 
 def _setter_hook_attached_to(self, attached_to):
@@ -131,17 +131,23 @@ class ActorBase(GateObject):
         ),
     }
 
+    # this dictionary is filled by the developer in each inheriting actor class
     user_output_config = {}
+    # this dictionary is filled automatically during the class manufacturing process triggered by __process_this__
+    # Do not redefine this manually!
+    _processed_user_output_config = {}
 
     # private list of property names for interfaces already defined
     # in any actor (assuming all actors inherit from the base class)
+    # The list is filled automatically during the class manufacturing process triggered by __process_this__
     # Do not redefine this in inheriting classes!
     _existing_properties_to_interfaces = []
-    _user_output_classes = {}
 
     @classmethod
-    def __process_user_output_classes__(cls):
-        cls._user_output_classes = {}
+    def _process_user_output_config(cls):
+        # it is important to create a new dictionary for this class
+        # because we would otherwise write into the dictionary in the base class
+        cls._processed_user_output_config = {}
         for output_name, output_config in cls.user_output_config.items():
             # if output_name not in cls._user_output_classes:
             try:
@@ -154,54 +160,66 @@ class ActorBase(GateObject):
                 )
 
             # default to "auto" if output_config has no key "interfaces"
-            interfaces = output_config.get("interfaces", "auto")
-            # no interfaces defined -> generate one automatically
+            interfaces_of_this_output = output_config.get("interfaces", "auto")
             # if the GATE developer has not defined any interfaces, we create one automatically
-            if interfaces == "auto":
+            if interfaces_of_this_output == "auto":
                 interface_name = output_name  # use the output name as interface name
-                interfaces = {
+                interfaces_of_this_output = {
                     interface_name: {
-                        "interface_class": actor_output_class.get_default_interface_class()
+                        "interface_class": actor_output_class.get_default_interface_class(),
+                        "item": 0,
                     }
                 }
                 # pick up parameters from the output config (where the GATE developer might have put them)
                 # and add them to the interface config
-                config_for_auto_interface = dict(
+                other_parameters = dict(
                     [
                         (k, v)
                         for k, v in output_config.items()
                         if k not in ("actor_output_class", "interfaces")
                     ]
                 )
-                config_for_auto_interface["item"] = 0
-                interfaces[interface_name].update(config_for_auto_interface)
-            new_class_name = (
-                f"{actor_output_class.__name__}_{output_name}_{cls.__name__}"
-            )
-            cls._user_output_classes[output_name] = make_actor_output_class(
-                output_name, actor_output_class, new_class_name, interfaces, cls
-            )
+                interfaces_of_this_output[interface_name].update(other_parameters)
+
+            # fill in default values where the developer has not defined any for the interface
+            for i_name, config in interfaces_of_this_output.items():
+                if "interface_class" not in config:
+                    raise GateImplementationError(
+                        f"Incorrectly configured interface {i_name} "
+                        f"for actor output '{output_name}'"
+                        f"in {cls}: No 'interface_class' specified. "
+                    )
+                interfaces_of_this_output[i_name]['suffix'] = i_name
+                defaults = actor_output_class.get_user_info_default_values_interface(**config)
+                for k, v in defaults.items():
+                    if k not in interfaces_of_this_output[i_name]:
+                        interfaces_of_this_output[i_name][k] = v
+
+            cls._processed_user_output_config[output_name] = {"actor_output_class": actor_output_class,
+                                                              "interfaces": interfaces_of_this_output}
 
     @classmethod
     def __process_this__(cls):
         """This is a specialized version of the class method __process_this__ for actor classes."""
-        super().__process_this__()
-        cls.__process_user_output_classes__()
-        cls.__create_interface_properties__()
-        # cls.__doc__ += cls.__get_docstring_user_output__()
+        # process user info defaults as in every GateObject class
+        super().__process_user_info_defaults__()
+        # do the actor specific class manufacturing
+        cls._process_user_output_config()
+        cls._create_interface_properties()
+        # we generate the docstring only now when the interface properties have been created
+        cls.__doc__ = cls.__get_docstring__()
 
     @classmethod
-    def __create_interface_properties__(cls):
+    def _create_interface_properties(cls):
         cls._existing_properties_to_interfaces = []
-        for user_output_class in cls._user_output_classes.values():
-            # create a property in the actor so the user can quickly access the interface
-            for interface_name, config in user_output_class.__interfaces__.items():
+        # create properties in the actor class so the user can quickly access the interfaces
+        for output_name, user_output_config in cls._processed_user_output_config.items():
+            for interface_name, config in user_output_config["interfaces"].items():
+                actor_output_class = user_output_config["actor_output_class"]
 
-                unique_interface_name = interface_name
-
-                if unique_interface_name in cls._existing_properties_to_interfaces:
+                if interface_name in cls._existing_properties_to_interfaces:
                     raise GateImplementationError(
-                        f"An interface property with unique name {unique_interface_name} "
+                        f"An interface property with unique name {interface_name} "
                         f"already exists in this class. "
                     )
 
@@ -217,11 +235,11 @@ class ActorBase(GateObject):
                         except AttributeError:
                             continue
                     # if the property was not created by a parent class, it must be another attribute of this class,
-                    # and we should not override it.
-                    if unique_interface_name not in properties_in_bases:
+                    # and we should not override it. The interface name simply collides with an existing attribute
+                    if interface_name not in properties_in_bases:
                         raise GateImplementationError(
                             f"Cannot create the property for interface '{interface_name}'\n"
-                            f"associated with output class {user_output_class} "
+                            f"associated with output class {actor_output_class} "
                             f"in actor {cls.__name__} \n"
                             f"because a property with that name already exists, "
                             f"but it is not associated with the interface. \n"
@@ -230,9 +248,10 @@ class ActorBase(GateObject):
                             f"(or user_output in case the interface is automatically generated). "
                         )
 
-                doc_string = user_output_class.__get_docstring_for_interface__(
-                    interface_name, **config
-                )
+                doc_string = cls._get_docstring_for_interface(output_name, interface_name)
+                # we associate the property with this actor
+                # Note: this does not yet create the actual interface instance
+                #       which will be done only when an actor instance is initialized (__init__)
                 setattr(
                     cls,
                     interface_name,
@@ -240,22 +259,40 @@ class ActorBase(GateObject):
                         fget=make_property_function(interface_name), doc=doc_string
                     ),
                 )
-                cls._existing_properties_to_interfaces.append(unique_interface_name)
+                cls._existing_properties_to_interfaces.append(interface_name)
 
     @classmethod
-    def __get_docstring_user_output__(cls):
-        line = "This actor has the following output:"
-        underline = "~" * len(line)
-        docstring = f"{line}\n{underline}\n\n"
-        for p in cls._existing_properties_to_interfaces:
-            docstring += getattr(cls, p).__doc__
-            docstring += "\n"
+    def __get_user_info_docstring__(cls):
+        # This is a specialized version of this method for actors
+        # which includes info about the output
+        docstring = f"This actor has the following output:\n\n"
+        for interface_name in cls._existing_properties_to_interfaces:
+            docstring += f"* {interface_name}\n"
+        docstring += "\n"
+        docstring += super().__get_user_info_docstring__()
+        return docstring
+
+    @classmethod
+    def _get_docstring_for_interface(cls, output_name, interface_name):
+        interface_config = cls._processed_user_output_config[output_name]["interfaces"][interface_name]
+        actor_output_class = cls._processed_user_output_config[output_name]["actor_output_class"]
+        docstring = f"**{interface_name}**\n\n"
+        docstring += "* Parameters and defaults:\n\n"
+        defaults = actor_output_class.get_user_info_default_values_interface(**interface_config)
+        for k, v in defaults.items():
+            docstring += f"  * {k} = {v}\n"
+        docstring += "\n"
+        docstring += "* Methods: \n\n"
+        docstring += interface_config["interface_class"].__get_docstring_methods__()
+        docstring += "\n"
+        docstring += "* Description of the parameters: \n\n"
+        docstring += interface_config["interface_class"].__get_docstring_attributes__()
+        docstring += "\n"
         return docstring
 
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
-        # this is set by the actor engine during initialization
-        self.actor_engine = None
+        self.actor_engine = None  # this is set by the actor engine during initialization
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
         self._init_user_output_instance()
@@ -328,7 +365,7 @@ class ActorBase(GateObject):
         if len(self.interfaces_to_user_output) > 1:
             for k, v in self.interfaces_to_user_output.items():
                 v.output_filename = insert_suffix_before_extension(
-                    filename, v.item_suffix, suffix_separator="_"
+                    filename, v.suffix, suffix_separator="_"
                 )
         else:
             list(self.interfaces_to_user_output.values())[0].output_filename = filename
@@ -399,7 +436,6 @@ class ActorBase(GateObject):
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
 
-        # FIXME: needs to be updated to new actor output API
         any_active = False
         for p in self._existing_properties_to_interfaces:
             interface = getattr(self, p)
@@ -421,15 +457,23 @@ class ActorBase(GateObject):
             )
 
     def _init_user_output_instance(self):
-        for output_name, actor_output_class in self._user_output_classes.items():
+        for output_name, output_config in self._processed_user_output_config.items():
             try:
-                interfaces = actor_output_class.__interfaces__
+                interfaces = output_config["interfaces"]
             except AttributeError:
                 raise GateImplementationError(
-                    f"Special variable __interfaces__ not filled in actor output class {actor_output_class}. "
+                    f"No interfaces found for output {output_name}. "
                 )
-            # interfaces = output_config.get("interfaces", None)
+            actor_output_class = output_config["actor_output_class"]
+            # get the names of the parameters of this output class
+            # we do not need to specify the item (in case the output handles a container)
+            # because the names are equal for all data items in the container
+            default_params = list(actor_output_class.get_user_info_default_values_interface().keys())
+
+            # create and add the instance of the actor output
             self._add_user_output(actor_output_class, output_name)
+
+            # now create the interface instances linking to the actor output
             for interface_name, interface_config in interfaces.items():
                 interface_params = dict(
                     [(_k, _v) for _k, _v in interface_config.items()]
@@ -445,6 +489,12 @@ class ActorBase(GateObject):
                 self._add_interface_to_user_output(
                     interface_class, output_name, interface_name, **interface_params
                 )
+                # use the newly created interface to set the defaults
+                interface = self.interfaces_to_user_output[interface_name]
+                for p in default_params:
+                    v = interface_config[p]
+                    print("DEBUG: ", p, v)
+                    setattr(interface, p, v)
 
     def _add_user_output(
         self,
@@ -476,6 +526,11 @@ class ActorBase(GateObject):
             self.interfaces_to_user_output[interface_name] = interface_class(
                 self, user_output_name, interface_name, **kwargs
             )
+            # set an instance attribute __doc__ for this interface
+            # equivalent to the property linking to this interface
+            # so that the user gets a meaningful info when using something like
+            # ``help(my_dose_actor.dose_uncertainty)
+            self.interfaces_to_user_output[interface_name].__doc__ = getattr(type(self), interface_name).__doc__
         else:
             raise GateImplementationError(
                 f"An actor output user interface called '{interface_name}' already exists. "

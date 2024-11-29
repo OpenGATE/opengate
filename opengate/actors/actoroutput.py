@@ -5,7 +5,7 @@ from typing import Optional
 import sys
 
 import opengate_core as g4
-from ..base import GateObject, process_cls, restore_instance_after_pickling
+from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal, GateImplementationError
 from .dataitems import (
@@ -18,23 +18,23 @@ from .dataitems import (
 )
 
 
-def format_docstring_rst(cls, attr_name, begin_of_line="  - "):
+def get_formatted_docstring_rst(cls, attr_name, begin_of_line="  - "):
     """Format a property's docstring into a reST bullet point."""
     attr = getattr(cls, attr_name, None)
     if not attr:
         raise GateImplementationError(f"Attribute {attr_name} not found in {cls}.")
 
     docstring = inspect.getdoc(attr)
-    prop_of_func = attr_name
+    prop_or_func = attr_name
     if inspect.isfunction(attr):
-        prop_of_func += "()"
+        prop_or_func += "()"
 
     if not docstring:
-        return f"{begin_of_line} **{prop_of_func}**: No description available.\n\n"
+        return f"{begin_of_line} **{prop_or_func}**: No description available.\n\n"
 
     description = " ".join(line.strip() for line in docstring.splitlines())
 
-    return f"{begin_of_line} **{prop_of_func}**: {description}\n\n"
+    return f"{begin_of_line} **{prop_or_func}**: {description}\n\n"
 
 
 class BaseUserInterfaceToActorOutput:
@@ -53,14 +53,19 @@ class BaseUserInterfaceToActorOutput:
     )
 
     @classmethod
-    def __get_docstring__(cls):
+    def __get_docstring_attributes__(cls):
         docstring = ""
-        docstring += format_docstring_rst(cls, "active")
-        docstring += format_docstring_rst(cls, "output_filename")
-        docstring += format_docstring_rst(cls, "write_to_disk")
-        docstring += format_docstring_rst(cls, "keep_data_per_run")
-        docstring += format_docstring_rst(cls, "get_output_path")
-        docstring += format_docstring_rst(cls, "get_data")
+        docstring += get_formatted_docstring_rst(cls, "active")
+        docstring += get_formatted_docstring_rst(cls, "output_filename")
+        docstring += get_formatted_docstring_rst(cls, "write_to_disk")
+        docstring += get_formatted_docstring_rst(cls, "keep_data_per_run")
+        return docstring
+
+    @classmethod
+    def __get_docstring_methods__(cls):
+        docstring = ""
+        docstring += get_formatted_docstring_rst(cls, "get_output_path")
+        docstring += get_formatted_docstring_rst(cls, "get_data")
         return docstring
 
     def __init__(
@@ -179,7 +184,7 @@ class BaseUserInterfaceToActorOutput:
         self._user_output.keep_data_per_run = value
 
     @property
-    def item_suffix(self):
+    def suffix(self):
         """Specify the automatic suffix to be used for this output in case the output_filename is set
         via the actor for all output handled by the actor.
         The default item suffix is equal to the output name and there should be no need to change it.
@@ -189,8 +194,8 @@ class BaseUserInterfaceToActorOutput:
         except NotImplementedError:
             raise AttributeError
 
-    @item_suffix.setter
-    def item_suffix(self, value):
+    @suffix.setter
+    def suffix(self, value):
         self._user_output.set_item_suffix(value, **self._kwargs_for_interface_calls)
 
     def __getattr__(self, item):
@@ -252,9 +257,9 @@ class UserInterfaceToActorOutputUsingDataItemContainer(BaseUserInterfaceToActorO
 class UserInterfaceToActorOutputImage(UserInterfaceToActorOutputUsingDataItemContainer):
 
     @classmethod
-    def __get_docstring__(cls):
-        docstring = super().__get_docstring__()
-        docstring += format_docstring_rst(cls, "image")
+    def __get_docstring_attributes__(cls):
+        docstring = super().__get_docstring_attributes__()
+        docstring += get_formatted_docstring_rst(cls, "image")
         return docstring
 
     @property
@@ -324,24 +329,6 @@ class ActorOutputBase(GateObject):
     def set_user_info_default_values_interface(cls, **kwargs):
         pass
 
-    @classmethod
-    def __hook_after_factory_function__(cls, **kwargs):
-        for v in cls.__interfaces__.values():
-            cls.set_user_info_default_values_interface(**v)
-
-    @classmethod
-    def __get_docstring_for_interface__(cls, interface_name, **interface_config):
-        docstring = f"**{interface_name}**\n\n"
-        docstring += "* This output has the following parameters and methods: \n\n"
-        docstring += interface_config["interface_class"].__get_docstring__()
-        docstring += "\n"
-        docstring += "* Defaults:\n\n"
-        defaults = cls.get_user_info_default_values_interface(**interface_config)
-        for k, v in defaults.items():
-            docstring += f"  * {k} = {v}\n"
-        docstring += "\n"
-        return docstring
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -350,34 +337,6 @@ class ActorOutputBase(GateObject):
 
     def __len__(self):
         return len(self.data_per_run)
-
-    def __reduce__(self):
-        """This method is called when the object is pickled.
-        Usually, pickle works well without this custom __reduce__ method,
-        but the actor output classes associated with actors are dynamically created
-        and pickle does not serialize them (not in globals) and
-        can therefore not recreate the ActorOutput instance when unpickling.
-        Therefore, we explicitly pass a faunction (a callable) which processes this class
-        and instantiates it.
-
-        The return arguments are:
-        1) A callable used to create the instance when unpickling
-        2) A tuple of arguments to be passed to the callable in 1
-        3) The dictionary of the object's properties to be passed to the __setstate__ method (if defined)
-        """
-        state_dict = self.__getstate__()
-        return (
-            restore_actor_output_instance_after_pickling,
-            (
-                self.__output_name__,
-                type(self).__base__,
-                type(self).__name__,
-                self.__interfaces__,
-                self.__actor_class__,
-                state_dict,
-            ),
-            state_dict,
-        )
 
     def get_run_indices(self, **kwargs):
         return [k for k, v in self.data_per_run.items() if v is not None]
@@ -547,28 +506,29 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         super().set_user_info_default_values_interface(**kwargs)
 
     @classmethod
-    def __hook_after_factory_function__(cls, **kwargs):
-        if cls.data_container_class is None:
-            raise GateImplementationError(
-                f"No 'data_container_class' class attribute "
-                f"specified for class {cls.__name__}."
-            )
-        cls._default_data_item_config = {}
-        for k in cls.data_container_class.__get_data_item_names__():
-            if isinstance(k, (int, )):
-                suffix = f"item{k}"
-            else:
-                suffix = k
-            cls._default_data_item_config[k] = {
-                                "output_filename": "auto",
-                                "write_to_disk": True,
-                                "active": False,
-                                "suffix": suffix
-            }
-        # if there is only one item, set suffix to None
-        if len(cls._default_data_item_config) == 1:
-            list(cls._default_data_item_config.values())[0]["suffix"] = None
-        super().__hook_after_factory_function__(**kwargs)
+    def __process_this__(cls):
+        super().__process_this__()
+        # we need to fill the _default_data_item_config of this class
+        # depending on the container classes it handles
+        if cls.data_container_class is not None:
+            cls._default_data_item_config = {}
+            # ask the container class which data item (including aliases and effective names)
+            # it handles so that we can corerctly populate the defaults
+            for k in cls.data_container_class.__get_data_item_names__():
+                if isinstance(k, (int, )):
+                    suffix = f"item{k}"
+                else:
+                    suffix = k
+                cls._default_data_item_config[k] = {
+                                    "output_filename": "auto",
+                                    "write_to_disk": True,
+                                    "active": False,
+                                    "suffix": suffix
+                }
+            # if there is only one item, set suffix to None
+            # because we do not want to append anything to the output_filename in this case
+            if len(cls._default_data_item_config) == 1:
+                list(cls._default_data_item_config.values())[0]["suffix"] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -628,8 +588,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
 
     def set_output_filename(self, value, item=0):
         if item == "all":
-            for k in self.data_item_config.keys():
-                self.set_output_filename(self._insert_item_suffix(value, k), k)
+            for k, v in self.data_item_config.items():
+                self.set_output_filename(self._insert_item_suffix(value, k), item=k)
         else:
             try:
                 self.data_item_config[item]["output_filename"] = str(value)
@@ -655,7 +615,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         else:
             try:
                 # FIXME: the .get() method implicitly defines a default value, but it should not. Is this a workaround?
-                return self.data_item_config[item].get("suffix", str(item))
+                # return self.data_item_config[item].get("suffix", str(item))
+                return self.data_item_config[item]["suffix"]
             except KeyError:
                 self._fatal_unknown_item(item)
 
@@ -991,38 +952,6 @@ class ActorOutputRoot(ActorOutputBase):
             self.belongs_to_actor.SetOutputPath(
                 self.name, self.get_output_path_as_string()
             )
-
-
-def make_actor_output_class(
-    output_name, output_class, new_class_name, interfaces, actor_class
-):
-    """Factory function to create a custom copy of an ActorOutput class for a specific actor class.
-    Only used by GATE internally.
-    """
-    extra_attributes = {
-        "__interfaces__": interfaces,
-        "__output_name__": output_name,
-        "__actor_class__": actor_class,
-    }
-    new_class = type(new_class_name, (output_class,), extra_attributes)
-    # call the hook classmethod on the newly created actor output class
-    # to set the defaults as specified in the user_output_config class attribute of this actor class.
-    # The defaults are picked up from the interfaces dictionary, where the GATE developer should have set them.
-    new_class.__process_user_info_defaults__()
-    new_class.__hook_after_factory_function__()
-    return new_class
-
-
-def restore_actor_output_instance_after_pickling(
-    output_name, output_class, new_class_name, interfaces, actor_class, attributes
-):
-    if output_name not in actor_class._user_output_classes:
-        actor_class._user_output_classes[output_name] = make_actor_output_class(
-            output_name, output_class, new_class_name, interfaces, actor_class
-        )
-    return restore_instance_after_pickling(
-        actor_class._user_output_classes[output_name], attributes
-    )
 
 
 process_cls(ActorOutputBase)
