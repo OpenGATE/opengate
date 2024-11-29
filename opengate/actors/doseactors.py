@@ -899,10 +899,14 @@ class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStopping
         )
     }
 
+    user_output_config = {
+        "production_stopping": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        self._add_user_output(ActorOutputSingleImage, "production_stopping")
 
         self.__initcpp__()
 
