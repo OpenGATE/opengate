@@ -73,7 +73,9 @@ if __name__ == "__main__":
         tw = rad_spectrum["weights"].sum()
         tw_d = tw / yields[i] * 100 - 100
         ok = abs(tw_d) <= tolerance * 100
-        utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]}: {tw_d:+.2f} % {st} {ok}")
+        utility.print_test(
+            ok, f"Test yield {rad}: {tw} {yields[i]}: {tw_d:+.2f} % {st} {ok}"
+        )
         is_ok = is_ok and ok
         i += 1
 
