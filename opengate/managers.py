@@ -504,10 +504,12 @@ class PhysicsListManager(GateObject):
             return None
 
     def __getstate__(self):
-        raise GateImplementationError(f"It seems like {self.type_name} is getting pickled, "
-                                      f"while this should never happen because the PhysicsManager should "
-                                      f"remove it from its state dictionary. In fact, {self.type_name} "
-                                      f"is not compatible with pickling. ")
+        raise GateImplementationError(
+            f"It seems like {self.type_name} is getting pickled, "
+            f"while this should never happen because the PhysicsManager should "
+            f"remove it from its state dictionary. In fact, {self.type_name} "
+            f"is not compatible with pickling. "
+        )
 
     def __setstate__(self, d):
         self.__dict__ = d

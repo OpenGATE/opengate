@@ -558,10 +558,13 @@ class GateObject:
         state_dict = self.__getstate__()
         return (
             restore_instance_after_pickling,
-            (self.__class__, state_dict),   # the second argument will be reassigned to __dict__
-                                            # when re-instantiating the class, but we must pass state_dict and not
-                                            # self.__dict__ because self.__dict__ might contain non-pickable objects,
-                                            # while __getstate__() should by design return a pickable representation
+            (
+                self.__class__,
+                state_dict,
+            ),  # the second argument will be reassigned to __dict__
+            # when re-instantiating the class, but we must pass state_dict and not
+            # self.__dict__ because self.__dict__ might contain non-pickable objects,
+            # while __getstate__() should by design return a pickable representation
             state_dict,
         )
 
