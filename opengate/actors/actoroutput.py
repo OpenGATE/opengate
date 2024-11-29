@@ -804,12 +804,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
     def end_of_simulation(self, item="all", **kwargs):
         self.write_data_if_requested(which="all", item=item)
 
-    def merge_into_merged_data(self, data):
-        if self.merged_data is None:
-            self.merged_data = data
-        else:
-            self.merged_data = merge_data([self.merged_data, data])
-
     def end_of_run(self, run_index):
         if self.merge_data_after_simulation is True:
             self.merge_into_merged_data(self.data_per_run[run_index])
