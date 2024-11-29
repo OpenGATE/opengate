@@ -553,7 +553,7 @@ class GateObject:
         state_dict = self.__getstate__()
         return (
             restore_instance_after_pickling,
-            (self.__class__, self.__dict__),
+            (self.__class__, state_dict),
             state_dict,
         )
 
