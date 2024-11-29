@@ -441,7 +441,12 @@ class GateObject:
         wrap_init_method(cls)
 
     def __new__(cls, *args, **kwargs):
-        # process_cls(cls)
+        # We need to make sure the class has been processed.
+        # This is relevant for classes defined by the user,
+        # e.g. a CustomTranslationChanger (test030)
+        # where process_cls() is not explicitly called as it is the case
+        # for classes implemented within the GATE package
+        process_cls(cls)
         new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
