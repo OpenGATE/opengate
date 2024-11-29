@@ -1,3 +1,16 @@
+# if pytomography is not installed, we ignore this module
+# this is needed for test080_check_classes_are_processed.py
+# that check all modules
+try:
+    import pytomography
+except ModuleNotFoundError:
+    print("pytomography module is not installed. Skipping pytomography_helpers.")
+    import sys
+
+    # Unload this module to prevent errors in other imports
+    sys.modules[__name__] = None
+    raise SystemExit
+
 import pytomography
 from pytomography.metadata.SPECT import SPECTObjectMeta, SPECTProjMeta
 from pytomography.transforms.SPECT import SPECTPSFTransform
