@@ -31,6 +31,7 @@ setup(
         "requests",
         "PyYAML",
         "SimpleITK",
+        "spekpy",
     ]
     + install_requires_windows,
 )

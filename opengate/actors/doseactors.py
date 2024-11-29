@@ -883,6 +883,76 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
+    """This actor scores the number of particles stopping or starting in a voxel grid in the volume to which the actor is attached to."""
+
+    # hints for IDE
+    method: str
+
+    user_info_defaults = {
+        "method": (
+            "stopping",
+            {
+                "doc": "Want to score production or stopping of particles?",
+                "allowed_values": ("production", "stopping"),
+            },
+        )
+    }
+
+    def __init__(self, *args, **kwargs):
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+
+        self._add_user_output(ActorOutputSingleImage, "production_stopping")
+
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateProductionAndStoppingActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfEventAction",
+            }
+        )
+
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the attached volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        VoxelDepositActor.initialize(self)
+
+        self.check_user_input()
+
+        self.InitializeUserInfo(self.user_info)
+        # Set the physical volume name on the C++ side
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def BeginOfRunActionMasterThread(self, run_index):
+        self.prepare_output_for_run("production_stopping", run_index)
+
+        self.push_to_cpp_image("production_stopping", run_index, self.cpp_value_image)
+        g4.GateProductionAndStoppingActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(
+            "production_stopping", run_index, self.cpp_value_image
+        )
+        self._update_output_coordinate_system("production_stopping", run_index)
+        self.user_output.production_stopping.store_meta_data(run_index)
+
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+        return 0
+
+    def EndSimulationAction(self):
+        g4.GateProductionAndStoppingActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
+
+
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     """
     FluenceActor: compute a 3D map of fluence
@@ -966,3 +1036,4 @@ process_cls(DoseActor)
 process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(FluenceActor)
+process_cls(ProductionAndStoppingActor)

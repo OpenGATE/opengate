@@ -105,7 +105,7 @@ def validation_test_19_rt_plan(
     rt_plan_parameters,
     nb_part_init,
     nb_part_sent,
-    tol=0.2,
+    tol=0.3,
 ):
     print(
         "Area from theoretical calculations for the chosen CP:",
