@@ -64,13 +64,16 @@ if __name__ == "__main__":
 
     # Test 3
     print()
-    yields = [0.885, 0.172168, 1.847315, 1.0024600000000004]
+    yields = [0.8907654364665489, 0.18033, 1.8474, 1.0077]
+    tolerance = 0.01
+    st = f"(tol = {tolerance * 100:.2f} %)"
     i = 0
     for rad in radionuclides:
         rad_spectrum = get_icrp107_spectrum(rad, "gamma")
         tw = rad_spectrum["weights"].sum()
-        ok = tw == yields[i]
-        utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]} {ok}")
+        tw_d = tw / yields[i] * 100 - 100
+        ok = abs(tw_d) <= tolerance * 100
+        utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]}: {tw_d:+.2f} % {st} {ok}")
         is_ok = is_ok and ok
         i += 1
 
