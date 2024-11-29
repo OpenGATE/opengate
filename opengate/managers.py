@@ -743,8 +743,13 @@ class PhysicsManager(GateObject):
         return s
 
     def __getstate__(self):
-        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
-        # dict_to_return = super().__getstate__()
+        # if self.simulation.verbose_getstate:
+        #     self.warn_user("Getstate PhysicsManager")
+
+        # in the case of the PhysicsManager, we make a copy of super().__getstate__()
+        # rather than just using super().__getstate__() (which does not make a copy).
+        # Reason: physics_list_manager would become None also in the base process
+        dict_to_return = dict([(k, v) for k, v in super().__getstate__().items()])
         dict_to_return["physics_list_manager"] = None
         return dict_to_return
 
