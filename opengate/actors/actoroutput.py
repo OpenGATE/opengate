@@ -1,7 +1,5 @@
 import copy
 import inspect
-from box import Box
-from typing import Optional
 import uproot
 import tqdm
 import numpy as np
