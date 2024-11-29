@@ -490,9 +490,6 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         ),
     }
 
-    def merge_data_from_runs(self):
-        self.merged_data = merge_data(list(self.data_per_run.values()))
-
     def merge_into_merged_data(self, data):
         if self.merged_data is None:
             self.merged_data = data
