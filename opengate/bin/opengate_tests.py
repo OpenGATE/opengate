@@ -13,12 +13,8 @@ from pathlib import Path
 import subprocess
 from multiprocessing import Pool
 import yaml
-from re import findall
-
-# from functools import partial
 from box import Box
 import ast
-import importlib.util
 
 from opengate.exception import fatal, colored, color_ok, color_error, color_warning
 from opengate_core.testsDataSetup import check_tests_data_folder
