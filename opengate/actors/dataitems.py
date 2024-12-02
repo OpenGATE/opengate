@@ -353,6 +353,9 @@ class DataItemContainer(DataContainer):
     # Derived classes must specify this at the class level
     _data_item_classes = ()
 
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ()
+
     def __init__(self, *args, data=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -368,36 +371,10 @@ class DataItemContainer(DataContainer):
         return obj
 
     @classmethod
-    def get_default_data_item_config(cls):
-        default_data_item_config = None
-        # try to pick up data write config defined in the specific class or base classes
-        for c in cls.mro():
-            try:
-                default_data_item_config = c.__dict__["default_data_item_config"]
-                break
-            except KeyError:
-                continue
-        # If none of the classes in the inheritance chain specifies data item,
-        # we fill up a dictionary with the default configuration
-        if default_data_item_config is None:
-            default_data_item_config = Box(
-                [
-                    (
-                        i,
-                        Box(
-                            {
-                                "output_filename": "auto",
-                                "write_to_disk": True,
-                                "active": True,
-                            }
-                        ),
-                    )
-                    for i in range(len(cls._data_item_classes))
-                ]
-            )
-            if len(default_data_item_config) == 1:
-                list(default_data_item_config.values())[0]["suffix"] = None
-        return default_data_item_config
+    def __get_data_item_names__(cls):
+        data_item_names = [i for i in range(len(cls._data_item_classes))]
+        data_item_names.extend(cls.__extra_data_items__)
+        return data_item_names
 
     # the actual write config needs to be fetched from the actor output instance
     # which handles this data item container
@@ -653,26 +630,28 @@ class SingleItkImageWithVariance(DataItemContainer):
         ItkImageDataItem,
     )
 
-    # Only the linear quantity is active by default
-    # the uncertainty quantity has write_to_disk=True by default so whenever it is activated,
-    # the results will be written to disk (probably the expected default behavior in most cases)
-    default_data_item_config = Box(
-        {
-            0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            1: Box(
-                {"output_filename": "auto", "write_to_disk": False, "active": False}
-            ),
-            "variance": Box(
-                {"output_filename": "auto", "write_to_disk": False, "active": False}
-            ),
-            "std": Box(
-                {"output_filename": "auto", "write_to_disk": False, "active": False}
-            ),
-            "uncertainty": Box(
-                {"output_filename": "auto", "write_to_disk": True, "active": False}
-            ),
-        }
-    )
+    # # Only the linear quantity is active by default
+    # # the uncertainty quantity has write_to_disk=True by default so whenever it is activated,
+    # # the results will be written to disk (probably the expected default behavior in most cases)
+    # default_data_item_config = Box(
+    #     {
+    #         0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+    #         1: Box(
+    #             {"output_filename": "auto", "write_to_disk": False, "active": False}
+    #         ),
+    #         "variance": Box(
+    #             {"output_filename": "auto", "write_to_disk": False, "active": False}
+    #         ),
+    #         "std": Box(
+    #             {"output_filename": "auto", "write_to_disk": False, "active": False}
+    #         ),
+    #         "uncertainty": Box(
+    #             {"output_filename": "auto", "write_to_disk": True, "active": False}
+    #         ),
+    #     }
+    # )
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ("variance", "std", "uncertainty")
 
     def get_variance_or_uncertainty(self, which_quantity):
         try:
@@ -733,17 +712,20 @@ class QuotientItkImage(DataItemContainer):
         ItkImageDataItem,
     )
 
-    # Specify which items should be written to disk and how
-    # Important: define this at the class level, NOT in the __init__ method
-    default_data_item_config = Box(
-        {
-            0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            "quotient": Box(
-                {"output_filename": "auto", "write_to_disk": True, "active": True}
-            ),
-        }
-    )
+    # # Specify which items should be written to disk and how
+    # # Important: define this at the class level, NOT in the __init__ method
+    # default_data_item_config = Box(
+    #     {
+    #         0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+    #         1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+    #         "quotient": Box(
+    #             {"output_filename": "auto", "write_to_disk": True, "active": True}
+    #         ),
+    #     }
+    # )
+
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ("quotient",)
 
     @property
     def quotient(self):

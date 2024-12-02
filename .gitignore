@@ -38,6 +38,7 @@ __pycache__
 /opengate/contrib/dataset1
 /opengate/contrib/save*
 /opengate/contrib/run.*
+/opengate/gate_logo/temp/
 
 /opengate/data/ensdf_230901
 /opengate/data/isomeric_transition/save/
