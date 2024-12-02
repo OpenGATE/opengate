@@ -2,62 +2,74 @@
 # -*- coding: utf-8 -*-
 
 import click
-from opengate.data.PhotonAttenuationMixture import *
-from opengate import g4_units
+import itk
+import opengate as gate
+import opengate.contrib.phantoms.nemaiec as nemaiec
+from opengate.image import resample_itk_image_like, create_3d_image, get_info_from_image
+from opengate.utility import g4_units
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--mixture", "-m", default="Water", help="Material mixture name")
-@click.option("--energy", "-e", default=0.1405, help="Energy in MeV")
-@click.option("--verbose", "-v", is_flag=True, default=False, help="Verbose output")
+@click.option("--image", "-i", required=True, type=str, help="Input image filename")
+@click.option("--output", "-o", default="output.mhd", help="Output image filename")
 @click.option(
-    "--option",
-    default=1,
-    help="Computation option 1=mass attenuation coefficient of the mixture, μ/ρ in cm²/g"
-    "2=mass energy absorption coefficient of the mixture in cm²/g"
-    "3=linear attenuation coefficient of the mixture µ = (μ/ρ)×ρ in cm⁻¹",
+    "--labels", "-l", required=True, type=str, help="Input label to material (json)"
 )
-def go(mixture, energy, option, verbose):
+@click.option("--energy", "-e", default=0.1405, help="Energy in MeV")
+@click.option("--size", "-s", default=None, help="Attenuation image size")
+@click.option("--spacing", default=None, help="Attenuation image spacing")
+@click.option("--database", default="NIST", help="Database, NIST or EPDL")
+@click.option("--verbose", "-v", is_flag=True, default=False, help="Verbose output")
+def go(image, labels, output, energy, size, spacing, database, verbose):
     """
-    1. Mass Attenuation Coefficient of the Mixture (μ/ρ):
-        Definition: Represents the attenuation of a material per unit mass density, typically expressed in cm²/g.
-        Usage: It describes the probability of interaction (via processes like photoelectric absorption, Compton scattering, etc.) as radiation passes through a material.
-        Dependence: Depends on the photon energy and the composition of the material but is normalized to the material's density.
-        Application in Imaging: Useful for understanding how photons interact with a material, independent of its physical density.
-
-    2. Mass Energy Absorption Coefficient of the Mixture:
-        Definition: Indicates the fraction of energy transferred from the photon beam to the medium (and ultimately absorbed) per unit mass density, expressed in cm²/g.
-        Usage: Relevant to dosimetry, as it reflects energy deposition in tissues or detectors.
-        Dependence: Depends on the energy transfer and absorption mechanisms specific to the material's composition.
-        Application in Imaging: Not directly used in attenuation correction but is critical in dose calculations.
-
-    3. Linear Attenuation Coefficient of the Mixture (µ):
-        Definition: Represents the attenuation of a photon beam per unit path length through a material, typically expressed in cm⁻¹.
-        Usage: Combines the material's density and its mass attenuation coefficient: μ=(μ/ρ)×ρ.
-        Dependence: Depends on the photon energy and both the density and composition of the material.
-        Application in Imaging: Directly used in attenuation correction since it accounts for both the material composition and its physical density.
-
+    FIXME
     """
 
-    [w, El] = ChComposition(mixture)
-    if len(w) == 0:
-        print(f"Cannot find the mixture {mixture}. ")
-        print(f"Known mixtures are: {PropsMix}")
-    result = PhotonAttenuationMixture(mixture, energy, option)
-    if verbose:
-        op = {
-            1: "mass attenuation coefficient",
-            2: "mass energy absorption coefficient",
-            3: "linear attenuation coefficient",
-        }
-        un = {1: "cm²/g", 2: "cm²/g", 3: "cm⁻¹"}
-        print(
-            f"{mixture} energy = {energy/g4_units.keV} keV {op[option]} = {result} {un[option]}"
-        )
-    else:
-        print(result)
+    # options
+    image_filename = image
+    labels_filename = labels
+    if size is None:
+        size = (128, 128, 128)
+    if spacing is None:
+        spacing = (4.42, 4.42, 4.42)
+
+    # read image
+    image = itk.imread(image_filename)
+
+    # resample to the given size
+    verbose and print("Starting resampling ...")
+    like = create_3d_image(size, spacing)
+    info1 = get_info_from_image(like)
+    info2 = get_info_from_image(image)
+    center1 = info1.size / 2.0 * info1.spacing + info1.origin - info1.spacing / 2.0
+    center2 = info2.size / 2.0 * info2.spacing + info2.origin - info2.spacing / 2.0
+    tr = center2 - center1
+    # info1.origin = -(info1.size * info1.spacing) / 2.0 + info1.spacing / 2.0
+    info1.origin = tr
+    like.SetOrigin(info1.origin)
+    image = resample_itk_image_like(image, like, default_pixel_value=0, linear=False)
+    itk.imwrite(image, output)
+
+    # compute attenuation map (another sim)
+    sim = gate.Simulation()
+    phantom, _ = nemaiec.add_iec_phantom_vox(sim, "phantom", output, labels_filename)
+
+    # mu map actor (process at the first begin of run only)
+    mumap = sim.add_actor("AttenuationImageActor", "mumap")
+    mumap.image_volume = phantom
+    mumap.output_filename = output
+    mumap.energy = energy * g4_units.MeV
+    mumap.database = database
+    verbose and print(f"Energy is {mumap.energy/g4_units.keV} keV")
+    verbose and print(f"Database is {mumap.database}")
+
+    # go
+    verbose and print("Starting computing mu ...")
+    sim.run()
+
+    verbose and print(f"Finished computing mu in {output}")
 
 
 if __name__ == "__main__":
