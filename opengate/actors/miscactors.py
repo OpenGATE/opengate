@@ -3,7 +3,6 @@ from box import Box
 import platform
 import opengate_core as g4
 from .base import ActorBase
-from ..image import get_py_image_from_cpp_image
 from ..utility import g4_units, g4_best_unit_tuple
 from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
@@ -576,9 +575,15 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
         ),
     }
 
+    user_output_config = {
+        "mumap": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputSingleImage, "mumap")
         self.__initcpp__()
         self.mu_image = None
 
