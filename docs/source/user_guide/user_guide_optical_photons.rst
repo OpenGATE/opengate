@@ -64,6 +64,7 @@ A scintillator is characterized by its photon emission spectrum. The scintillati
 
 In order to have scintillation in a material, the first parameter that has to be specified is the `SCINTILLATIONYIELD` (1/Mev, 1/keV), which gives the number of photons that is emitted per amount of energy absorbed, or, more precisely, it gives the expectation value of this number, since the real number of emitted photons follows a normal distribution. The variance of this normal distribution is `RESOLUTIONSCALE` times this expectation value. Thus, for example, when a gamma photon deposits
 amount of energy in the scintillator, optical photons are emitted with an expectation value of:
+
 .. math::
 
     \mu_N = E \cdot SCINTILLATIONYIELD
@@ -268,6 +269,7 @@ The photon travels through the surface between the two volumes Volume1 and Volum
 To create optical surfaces from Volume1 to Volume2 and *vice versa*, the following commands should be used:
 
 .. code:: python
+
     sim.physics_manager.add_optical_surface(
         volume_from="name_of_volume 1",
         volume_to="name_of_volume 2",
@@ -312,7 +314,7 @@ The above example show how the `RoughTeflon_LUT` surface name is defined. Surfac
 | ROUGH     | Rough_LUT    | RoughTeflon_LUT    |  RoughESR_LUT   |  RoughESRGrease_LUT   |
 +-----------+--------------+--------------------+-----------------+-----------------------+
 
-The user can extend the list of finishes with custom measured surface data. In GATE, this can be achieved by utilising `this<https://github.com/LUTDavisModel/Standalone-Application-Installers>`_ tool to calculate LUTs. In the LUT database, typical roughness parameters obtained from the measurements are provided to characterize the type of surface modelled:
+The user can extend the list of finishes with custom measured surface data. In GATE, this can be achieved by utilising `this <https://github.com/LUTDavisModel/Standalone-Application-Installers>`_ tool to calculate LUTs. In the LUT database, typical roughness parameters obtained from the measurements are provided to characterize the type of surface modelled:
 
 - ROUGH: :math:`Ra=0.48 µm`, :math:`\sigma=0.57 µm`, :math:`Rpv=3.12 µm`
 - POLISHED: :math:`Ra=20.8 nm`, :math:`\sigma=26.2 nm`, :math:`Rpv=34.7 nm`
@@ -342,7 +344,7 @@ The crystal topography is obtained with atomic force microscopy (AFM). From the 
 Old Momentum to New Momentum. The old momentum is the unit vector that describes the incident photon. The reflected/transmitted photon is the New Momentum described by two angles :math:`\phi`, :math:`\theta`.
 
 UNIFIED Model
-~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 The UNIFIED model allows the user to control the radiant intensity of the surface: Specular lobe, Specular spike, Backscatter spike (enhanced on very rough surfaces) and Reflectivity (Lambertian or diffuse distribution). The sum of the four constants is constrained to unity. In that model, the micro-facet normal vectors follow a Gaussian distribution defined by sigmaalpha (:math:`\sigma_{\alpha}`) given in degrees. This parameter defines the standard deviation of the Gaussian distribution of micro-facets around the average surface normal. In the case of a perfectly polished surface, the normal used by the G4BoundaryProcess is the normal to the surface.
 
@@ -386,7 +388,7 @@ LAMBERTIAN (diffuse) reflection occurs when none of the other three types of ref
 
 .. image:: ../figures/Reflections_Specular_Diffuse_Spread.gif
 
-    When the photon is refracted, the angle of refraction is calculated from the surface normal (of the average surface for polished and of the micro facet for rough) and the refractive indices of the two media.
+When the photon is refracted, the angle of refraction is calculated from the surface normal (of the average surface for polished and of the micro facet for rough) and the refractive indices of the two media.
 
 When an optical photon reaches a painted layer, the probability of reflection is given by the property vector `REFLECTIVITY`. In case the paint is on the inside of the surface, the refractive indices of the media are ignored, and when the photon is reflected, it undergoes Lambertian reflection.
 
@@ -432,6 +434,7 @@ Method 2 can be used when a user wants to use OptiGAN in a file outside their ma
 
 Workflow of OptiGAN module in Gate 10
 -------------------------------------
+
 .. image:: ../figures/optigan_working.png
 
 OptiGAN requires two pieces of input information: the position of gamma interaction in the crystal and the number of optical photons emitted. This information is automatically parsed from the root files when users utilize OptiGAN.

@@ -66,29 +66,14 @@ class MetaUserInfo(type):
 
 
 def process_cls(cls):
-    """The factory function is meant to process classes inheriting from GateObject.
-    It digests the user info parametrisation from all classes in the inheritance tree
-    and enhances the __init__ method, so it calls the __finalize_init__ method at the
-    very end of the __init__ call, which is required to check for invalid attribute setting.
+    """This factory function is meant to process classes inheriting from GateObject.
+    GateObject.__process_this__() handles the user infos of GateObjects
+    and general functionality common to GateObjects.
+    Subsets of classes, e.g. the actor classes,
+    can specialize the factoring steps in their own __process_this__() class method.
     """
-    # The class attribute inherited_user_info_defaults is exclusively set by this factory function
-    # Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
-    # it means that it has not been processed yet.
-    # Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
-    # because it would potentially find the attribute from already processed super classes
-    # Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object
     if not cls.has_been_processed():
-        try:
-            digest_user_info_defaults(cls)
-        except AttributeError:
-            raise GateImplementationError(
-                "Looks like you are calling process_cls on a class "
-                "that does not inherit from GateObject."
-            )
-        # the class attribute known_attributes is needed by the __setattr__ method of GateObject
-        cls.known_attributes = set()
-        # enhance the __init__ method to ensure __finalize_init__ is called at the end
-        wrap_init_method(cls)
+        cls.__process_this__()
 
 
 def wrap_init_method(cls):
@@ -201,21 +186,8 @@ def digest_user_info_defaults(cls):
             except TypeError:
                 # TypeError is thrown if the class is 'object'
                 pass
-    # FIXME: Check if we should actually process all class in the MRO
-    # rather than accumulating user info defaults?
     cls = add_properties_to_class(cls, inherited_user_info_defaults)
     cls.inherited_user_info_defaults = inherited_user_info_defaults
-
-    if cls.__doc__ is not None:
-        docstring = cls.__doc__
-        docstring += "\n\n"
-    else:
-        docstring = ""
-    cls.__user_info_doc__ = make_docstring(cls, inherited_user_info_defaults)
-    docstring += cls.__user_info_doc__
-    # docstring += 20 * "*"
-    docstring += "\n"
-    cls.__doc__ = docstring
 
     return cls
 
@@ -361,18 +333,6 @@ def make_docstring_for_user_info(name, default_value, options):
     return docstring
 
 
-def make_docstring(cls, user_info_defaults):
-    docstring = f"The class {cls.__qualname__} has the following user input parameters and default values:\n\n"
-    for k, v in sorted(user_info_defaults.items()):
-        default_value = v[0]
-        options = v[1]
-        docstring += "* "
-        docstring += make_docstring_for_user_info(k, default_value, options)
-        docstring += "\n"
-    docstring += "\n"
-    return docstring
-
-
 def help_on_user_info(obj):
     if hasattr(obj, "__user_info_doc__"):
         print(obj.__user_info_doc__)
@@ -384,7 +344,7 @@ def help_on_user_info(obj):
         )
 
 
-def restore_userinfo_properties(cls, attributes):
+def restore_instance_after_pickling(cls, attributes):
     # In the context of sub-processing and pickling,
     # the following line makes sure the class is processed by the function
     # which sets handles the user_info definitions
@@ -413,10 +373,79 @@ class GateObject:
     user_info_defaults = {"name": (None, {"required": True})}
 
     @classmethod
+    def __get_user_info_docstring__(cls):
+        docstring = f"User input parameters and default values:\n\n"
+        for k, v in sorted(cls.inherited_user_info_defaults.items()):
+            default_value = v[0]
+            options = v[1]
+            docstring += "* "
+            docstring += make_docstring_for_user_info(k, default_value, options)
+            docstring += "\n"
+        docstring += "\n"
+        return docstring
+
+    @classmethod
+    def __get_docstring__(cls):
+        if cls.__doc__ is not None:
+            docstring = cls.__doc__
+            docstring += "\n\n"
+        else:
+            docstring = ""
+        cls.__user_info_doc__ = cls.__get_user_info_docstring__()
+        docstring += cls.__user_info_doc__
+        # docstring += 20 * "*"
+        docstring += "\n"
+        return docstring
+
+    @classmethod
     def has_been_processed(cls):
+        """The class attribute inherited_user_info_defaults is exclusively set by the  factory mechanism.
+        Therefore, if this class does not yet have an attribute inherited_user_info_defaults,
+        it means that it has not been processed yet.
+        Note: we cannot use hasattr(cls, 'inherited_user_info_defaults')
+        because it would potentially find the attribute from already processed base classes.
+        Therefore, we must use cls.__dict__ which contains only attributes of the specific cls object.
+        """
+
         return "inherited_user_info_defaults" in cls.__dict__
 
+    @classmethod
+    def __process_this__(cls):
+        cls.__process_user_info_defaults__()
+        cls.__doc__ = cls.__get_docstring__()
+
+    @classmethod
+    def __process_user_info_defaults__(cls):
+        """Internal interface class method used e.g. by __reduce__().
+        Certain subgroups of classes, e.g. actor classes, may implement this differently
+        without the need to adapt the __reduce__()  method.
+
+        This factory method is meant to process classes inheriting from GateObject.
+        It digests the user info parametrisation from all classes in the inheritance tree
+        and enhances the __init__ method, so it calls the __finalize_init__ method at the
+        very end of the __init__ call, which is required to check for invalid attribute setting.
+        """
+        if cls.has_been_processed():
+            return
+
+        try:
+            digest_user_info_defaults(cls)
+        except AttributeError:
+            raise GateImplementationError(
+                "Looks like you are calling process_cls on a class "
+                "that does not inherit from GateObject."
+            )
+        # the class attribute known_attributes is needed by the __setattr__ method of GateObject
+        cls.known_attributes = set()
+        # enhance the __init__ method to ensure __finalize_init__ is called at the end
+        wrap_init_method(cls)
+
     def __new__(cls, *args, **kwargs):
+        # We need to make sure the class has been processed.
+        # This is relevant for classes defined by the user,
+        # e.g. a CustomTranslationChanger (test030)
+        # where process_cls() is not explicitly called as it is the case
+        # for classes implemented within the GATE package
         process_cls(cls)
         new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
@@ -502,6 +531,13 @@ class GateObject:
             warning(
                 f"__getstate__() called in object '{self.name}' of type {self.type_name}."
             )
+
+        # Note: returning a copy, e.g. via dict([(k, v) for k, v in self.__dict__.items()])
+        # instead of returning self.__dict__ leads to infinite recursion during pickling.
+        # Reason:
+        # Many objects hold circular references, e.g. Simulation has a reference to VolumeManager and vice versa
+        # The pickle module can handle this as long as the objects are identical.
+        # If we return a copy of dict here, pickle is unable to understand and handle the circularity.
         return self.__dict__
 
     def __setstate__(self, d):
@@ -512,7 +548,7 @@ class GateObject:
         """This method is called when the object is pickled.
         Usually, pickle works well without this custom __reduce__ method,
         but objects handling user_infos need a custom __reduce__ to make sure
-        the properties linked to the user_infos are properly created
+        the properties linked to the user_infos are properly created.
 
         The return arguments are:
         1) A callable used to create the instance when unpickling
@@ -521,8 +557,14 @@ class GateObject:
         """
         state_dict = self.__getstate__()
         return (
-            restore_userinfo_properties,
-            (self.__class__, state_dict),
+            restore_instance_after_pickling,
+            (
+                self.__class__,
+                state_dict,
+            ),  # the second argument will be reassigned to __dict__
+            # when re-instantiating the class, but we must pass state_dict and not
+            # self.__dict__ because self.__dict__ might contain non-pickable objects,
+            # while __getstate__() should by design return a pickable representation
             state_dict,
         )
 
@@ -570,8 +612,7 @@ class GateObject:
         return False
 
     def __finalize_init__(self):
-        """
-        This method should be called once all attributes have been defined, usually
+        """This method is called once all attributes have been defined, i.e.
         at the end of the __init__ method. It defines the set of known_attribues that will
         be used to detect errors when the user tries to use a new attribute
         or misspells an attribute, e.g. box.mohter instead of box.mother.
@@ -905,11 +946,17 @@ def _get_user_info_options(user_info_name, object_type, class_module):
     """Utility function to retrieve the options associated with a user info given the class name,
     the module in which the class is defined, and the name of the user info.
     """
-
+    # this is a workaround because dynamically created actor output classes
+    # cannot be found in the modules dict and will raise an Attribute error
+    # a better way would be to implement the to_dictionary method in a way
+    # that it also stores a list of input files
+    # so that we do not need to do this recursive search here
     try:
-        options = getattr(
-            sys.modules[class_module], object_type
-        ).inherited_user_info_defaults[user_info_name][1]
+        cls = getattr(sys.modules[class_module], object_type)
+    except AttributeError:
+        return {}
+    try:
+        options = cls.inherited_user_info_defaults[user_info_name][1]
     except KeyError:
         fatal(f"Could not find user info {user_info_name} in {object_type}. ")
         options = None  # remove warning from IDE

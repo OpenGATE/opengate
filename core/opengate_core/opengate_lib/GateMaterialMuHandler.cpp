@@ -60,7 +60,6 @@ void GateMaterialMuHandler::CheckLastCall(const G4MaterialCutsCouple *couple) {
   if (!fIsInitialized) {
     Initialize();
   }
-
   if (couple != fLastCouple) {
     fLastCouple = couple;
     fLastMuTable = fCoupleTable[fLastCouple];
@@ -267,7 +266,6 @@ void GateMaterialMuHandler::ConstructMaterial(
 void GateMaterialMuHandler::InitElementTable() {
   const int *energyNumberList;
   const float *data;
-
   if (fDatabaseName == "NIST") {
     fElementNumber = NIST_mu_muen_data_elementNumber;
     energyNumberList = NIST_mu_muen_data_energyNumber;

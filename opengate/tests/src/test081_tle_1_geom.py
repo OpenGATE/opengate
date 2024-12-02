@@ -29,10 +29,7 @@ def main(argv):
 
     # units
     m = gate.g4_units.m
-    cm = gate.g4_units.cm
     mm = gate.g4_units.mm
-    keV = gate.g4_units.keV
-    Bq = gate.g4_units.Bq
 
     #  change world size
     world = sim.world

@@ -13,8 +13,6 @@ from pathlib import Path
 import subprocess
 from multiprocessing import Pool
 import yaml
-
-# from functools import partial
 from box import Box
 import ast
 
