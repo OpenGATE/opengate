@@ -100,6 +100,7 @@ from .actors.miscactors import (
     SplittingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
+    AttenuationImageActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -144,6 +145,7 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "PhaseSpaceActor": PhaseSpaceActor,
+    "AttenuationImageActor": AttenuationImageActor,
 }
 
 

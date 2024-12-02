@@ -1,13 +1,14 @@
+import itk
 from box import Box
 import platform
 import opengate_core as g4
 from .base import ActorBase
+from ..image import get_py_image_from_cpp_image
 from ..utility import g4_units, g4_best_unit_tuple
-from .actoroutput import ActorOutputBase
+from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
-from anytree import Node, RenderTree
 
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
@@ -540,6 +541,62 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
         self.InitializeCpp()
 
 
+class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
+    """
+    This actor generates an attenuation image for a simulation run.
+    The output is a single image volume in cm^-1
+
+    - image_volume: Input volume from which the attenuation map is generated.
+    - energy: The energy level for which to generate the attenuation image.
+    - database: The database source for attenuation coefficients, either 'EPDL' or 'NIST'.
+    """
+
+    user_info_defaults = {
+        "image_volume": (  # FIXME name or not name
+            None,
+            {
+                "doc": "InputVolume image from which the attenuation map is generated.",
+            },
+        ),
+        "energy": (
+            None,
+            {"doc": "The energy level for which to generate the attenuation image"},
+        ),
+        "database": (
+            "EPDL",
+            {
+                "doc": "The database source for attenuation coefficients, either 'EPDL' or 'NIST'",
+                "allowed_values": ("EPDL", "NIST"),
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(ActorOutputSingleImage, "mumap")
+        self.__initcpp__()
+        self.mu_image = None
+
+    def __initcpp__(self):
+        g4.GateAttenuationImageActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunAction"})
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def BeginOfRunAction(self, run):
+        # the attenuation image is created during the first run only
+        if run.GetRunID() != 0:
+            return
+        self.mu_image = self.image_volume.create_attenuation_image(
+            self.database, self.energy
+        )
+        if self.write_to_disk:
+            itk.imwrite(self.mu_image, self.get_output_path())
+
+
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
@@ -548,3 +605,4 @@ process_cls(KillAccordingProcessesActor)
 process_cls(SplittingActorBase)
 process_cls(ComptSplittingActor)
 process_cls(BremSplittingActor)
+process_cls(AttenuationImageActor)

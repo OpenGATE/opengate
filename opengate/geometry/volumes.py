@@ -821,7 +821,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     voxel_materials: List
     image: str
-    dump_label_image: bool
+    dump_label_image: str
 
     user_info_defaults = {
         "voxel_materials": (
@@ -1063,6 +1063,26 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         else:
             itk_image = itk.imread(ensure_filename_is_str(path))
         return itk_image
+
+    def create_attenuation_image(self, database, energy):
+        # convert all materials to mu
+        label_to_mu = {}
+        mu_handler = g4.GateMaterialMuHandler.GetInstance(database, 200)  # MeV
+        prod_cuts_table = g4.G4ProductionCutsTable.GetProductionCutsTable()
+        for i in range(prod_cuts_table.GetTableSize()):
+            couple = prod_cuts_table.GetMaterialCutsCouple(i)
+            mat_name = str(couple.GetMaterial().GetName())
+            label = self.material_to_label_lut[mat_name]
+            mu = mu_handler.GetMu(couple, energy)
+            label_to_mu[label] = mu
+
+        arr = itk.GetArrayViewFromImage(self.label_image)
+        mu_arr = arr.copy().astype("float")
+        for label, mu in label_to_mu.items():
+            mu_arr[mu_arr == label] = mu
+        itk_mu_img = itk.GetImageFromArray(mu_arr)
+        itk_mu_img.CopyInformation(self.itk_image)
+        return itk_mu_img
 
     def create_label_image(self, itk_image=None):
         # read image
