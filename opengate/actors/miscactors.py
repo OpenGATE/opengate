@@ -327,7 +327,6 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
                 "doc": "Specific case to be faster. If a user wants to kill all interactions which implies an energy loss, this boolean enables to not account Rayleigh process as an interaction"
             },
         ),
-
     }
     user_output_config = {
         "kill_according_processes": {

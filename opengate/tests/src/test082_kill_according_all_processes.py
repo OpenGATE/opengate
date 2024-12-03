@@ -133,7 +133,9 @@ if __name__ == "__main__":
     sim.run()
     print(kill_proc_act)
     #
-    phsp = uproot.open(str(output_path) + "/test082_PhaseSpace_all.root" + ":PhaseSpace")
+    phsp = uproot.open(
+        str(output_path) + "/test082_PhaseSpace_all.root" + ":PhaseSpace"
+    )
 
     df = phsp.arrays()
     is_ok = test082_test(df)
