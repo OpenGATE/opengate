@@ -56,7 +56,7 @@ git = LazyModuleLoader("git")
 
 def assert_equal_dic(d1, d2, name=""):
     for k in d1:
-        if not k in d2:
+        if k not in d2:
             fatal(f"ERROR missing key {k} in {name}")
         if isinstance(d1[k], np.ndarray):
             if np.any(d2[k] != d1[k]):
@@ -65,7 +65,7 @@ def assert_equal_dic(d1, d2, name=""):
             if d2[k] != d1[k]:
                 fatal(f"ERROR value for {k} in {name}")
     for k in d2:
-        if not k in d1:
+        if k not in d1:
             fatal(f"ERROR, additional key {k} in {name}")
 
 
@@ -513,7 +513,7 @@ def get_library_path():
 
     files = os.listdir(path)
     lib_ext = "dll" if os.name == "nt" else "so"
-    libs = list(filter(lambda file: file.endswith(f".{lib_ext}"), files))
+    libs = [file for file in files if file.endswith(f".{lib_ext}")]
     if len(libs) == 0:
         return "unknown"
     elif len(libs) > 1:
@@ -604,3 +604,18 @@ def standard_error_c4_correction(n):
     return (
         np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
     )
+
+def read_json_file(filename: Path) -> dict:
+    """
+    Read a JSON file into a Python dictionary.
+
+    :param filename: Path object
+        The filename of the JSON file to read.
+    :return: dict
+        The data from the JSON file.
+    """
+    if not filename.is_file():
+        fatal(f"File {filename} does not exist.")
+
+    with open(filename, "rb") as f:
+        return json.load(f)
