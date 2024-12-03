@@ -2,10 +2,10 @@ from box import Box
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
-from .base import (
-    SourceBase,
+from .base import SourceBase
+from .utility import (
     all_beta_plus_radionuclides,
-    read_beta_plus_spectra,
+    get_spectrum,
     compute_cdf_and_total_yield,
 )
 from ..base import process_cls
@@ -251,10 +251,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # FIXME put this elsewhere
         if self.particle == "e+":
             if self.energy.type in all_beta_plus_radionuclides:
-                data = read_beta_plus_spectra(self.user_info.energy.type)
+                data = get_spectrum(self.user_info.energy.type, "e+", "radar")
                 ene = data[:, 0] / 1000  # convert from KeV to MeV
                 proba = data[:, 1]
-                cdf, total = compute_cdf_and_total_yield(proba, ene)
+                cdf, _ = compute_cdf_and_total_yield(proba, ene)
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
                 self.energy.is_cdf = True

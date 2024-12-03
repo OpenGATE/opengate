@@ -513,7 +513,7 @@ def get_library_path():
 
     files = os.listdir(path)
     lib_ext = "dll" if os.name == "nt" else "so"
-    libs = list(filter(lambda file: file.endswith(f".{lib_ext}"), files))
+    libs = [file for file in files if file.endswith(f".{lib_ext}")]
     if len(libs) == 0:
         return "unknown"
     elif len(libs) > 1:
@@ -604,3 +604,19 @@ def standard_error_c4_correction(n):
     return (
         np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
     )
+
+
+def read_json_file(filename: Path) -> dict:
+    """
+    Read a JSON file into a Python dictionary.
+
+    :param filename: Path object
+        The filename of the JSON file to read.
+    :return: dict
+        The data from the JSON file.
+    """
+    if not filename.is_file():
+        fatal(f"File {filename} does not exist.")
+
+    with open(filename, "rb") as f:
+        return json.load(f)
