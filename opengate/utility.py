@@ -605,6 +605,7 @@ def standard_error_c4_correction(n):
         np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
     )
 
+
 def read_json_file(filename: Path) -> dict:
     """
     Read a JSON file into a Python dictionary.
