@@ -328,6 +328,11 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             },
         ),
     }
+    user_output_config = {
+        "kill_according_processes": {
+            "actor_output_class": ActorOutputKillAccordingProcessesActor,
+        },
+    }
 
     """
     If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
@@ -336,9 +341,6 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(
-            ActorOutputKillAccordingProcessesActor, "kill_interacting_particles"
-        )
         self.__initcpp__()
         self.number_of_killed_particles = 0
 
@@ -362,12 +364,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             fatal("You have to select at least one process ! ")
 
     def EndSimulationAction(self):
-        self.user_output.kill_interacting_particles.number_of_killed_particles = (
+        self.user_output.kill_according_processes.number_of_killed_particles = (
             self.number_of_killed_particles
         )
 
     def __str__(self):
-        s = self.user_output["kill_non_interacting_particles"].__str__()
+        s = self.user_output["kill_according_processes"].__str__()
         return s
 
 
