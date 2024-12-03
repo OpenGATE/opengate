@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from box import Box
-import json
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import get_icrp107_spectrum
+from opengate.sources.utility import get_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test046")
@@ -53,8 +52,8 @@ if __name__ == "__main__":
     json.dump(digit_ns, outfile, indent=4)"""
 
     # check
-    ref_digit = json.loads(open(paths.output_ref / "t046_digitizer.json").read())
-    ref_digit_ns = json.loads(open(paths.output_ref / "t046_digitizer_ns.json").read())
+    ref_digit = utility.read_json_file(paths.output_ref / "t046_digitizer.json")
+    ref_digit_ns = utility.read_json_file(paths.output_ref / "t046_digitizer_ns.json")
     ok = digit == ref_digit
     utility.print_test(ok, f"Test channels (with scatter): {ok}")
     is_ok = is_ok and ok
@@ -69,7 +68,7 @@ if __name__ == "__main__":
     st = f"(tol = {tolerance * 100:.2f} %)"
     i = 0
     for rad in radionuclides:
-        rad_spectrum = get_icrp107_spectrum(rad, "gamma")
+        rad_spectrum = get_spectrum(rad, "gamma")
         tw = rad_spectrum["weights"].sum()
         tw_d = tw / yields[i] * 100 - 100
         ok = abs(tw_d) <= tolerance * 100

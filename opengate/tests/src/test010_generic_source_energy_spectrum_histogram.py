@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import set_source_icrp107_energy_spectrum
+from opengate.sources.utility import set_source_energy_spectrum
 import numpy as np
 import gatetools
 
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 def plot(output_file, ekin, data_x, data_y, relerrs):
     bins = len(data_x)
-    hist_y, hist_x = np.histogram(ekin, bins=bins)
+    hist_y, _ = np.histogram(ekin, bins=bins)
 
     fig, ax = plt.subplots(figsize=(8.5, 6))
     ax.set_xlabel("Energy (MeV)")
@@ -33,7 +33,7 @@ def plot(output_file, ekin, data_x, data_y, relerrs):
 
 
 def root_load_ekin(root_file: str):
-    data_ref, keys_ref, m_ref = gatetools.phsp.load(root_file)
+    data_ref, keys_ref, _ = gatetools.phsp.load(root_file)
 
     index_ekin = keys_ref.index("KineticEnergy")
     ekin = [data_ref_i[index_ekin] for data_ref_i in data_ref]
@@ -50,7 +50,7 @@ def add_source_energy_spectrum_histogram(sim, phsp, interpolation: str = None):
     source.position.type = "point"
     source.direction.type = "iso"
 
-    set_source_icrp107_energy_spectrum(source, "Lu177")  # After defining the particle!!
+    set_source_energy_spectrum(source, "Lu177")  # After defining the particle!!
     source.energy.spectrum_histogram_interpolation = interpolation
 
     return source
@@ -120,7 +120,7 @@ def run_simulation(paths, interpolation: str = None):
     )
 
     bins = len(data_x)
-    hist_y, hist_x = np.histogram(ekin, bins=bins)
+    hist_y, _ = np.histogram(ekin, bins=bins)
 
     relerrs = [abs(hist_y[i] - data_y[i]) / data_y[i] for i in range(len(data_y))]
     oks = [
