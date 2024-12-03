@@ -1,3 +1,4 @@
+import numpy as np
 import pathlib
 import SimpleITK as sitk
 import itk
@@ -186,7 +187,7 @@ def read_projections_as_sinograms(
     filenames = [Path(projections_folder) / f for f in projections_filenames]
 
     # init variables
-    sinograms_per_energy_window = []
+    sinograms_per_energy_window = None
     nb_of_energy_windows = None
     projection_size = None
     projection_origin = None
@@ -222,7 +223,9 @@ def read_projections_as_sinograms(
 
         # concatenate projections for the different heads, for each energy windows
         for ene in range(nb_of_energy_windows):
-            a = arr[ene::nb_of_energy_windows, :, :]
+            # this is important to make a copy here !
+            # Otherwise, the concatenate operation may fail later
+            a = arr[ene::nb_of_energy_windows, :, :].copy()
             if sinograms_per_energy_window[ene] is None:
                 sinograms_per_energy_window[ene] = a
             else:

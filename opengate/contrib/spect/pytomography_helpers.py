@@ -13,7 +13,7 @@ except ModuleNotFoundError:
 
 import pytomography
 from pytomography.metadata.SPECT import SPECTObjectMeta, SPECTProjMeta
-from pytomography.transforms.SPECT import SPECTPSFTransform
+from pytomography.transforms.SPECT import SPECTPSFTransform, SPECTAttenuationTransform
 from pytomography.projectors.SPECT import SPECTSystemMatrix
 from pytomography.likelihoods import PoissonLogLikelihood
 from pytomography.algorithms import OSEM
@@ -25,9 +25,39 @@ import numpy as np
 
 
 def osem_pytomography(sinogram, angles_deg, radii_cm, options):
+    """
+    Perform OSEM (Ordered Subset Expectation Maximization) image reconstruction
+    from a provided sinogram using specific tomography parameters and options.
+
+    Reconstruction is performed with pytomography library https://github.com/PyTomography
+
+    The function constructs the necessary metadata and system matrix for SPECT
+    (single-photon emission computed tomography) reconstruction, applying
+    attenuation and point spread function (PSF) transformations. Before starting
+    the reconstruction process, the function ensures consistency between the
+    dimensions and spacing of the sinogram projections and the reconstructed
+    image. It finally returns the reconstructed image as a SimpleITK image.
+
+    Parameters:
+    sinogram : SimpleITK.Image
+        Input sinogram in SimpleITK image format.
+    angles_deg : List[float]
+        List of angles in degrees at which projections are taken.
+    radii_cm : List[float]
+        List of radii in centimeters for each projection.
+    options : dict
+        Options for the reconstruction process. Must include keys 'size',
+        'spacing', 'collimator_name', 'energy_kev', 'intrinsic_resolution_cm',
+        'n_iters', and 'n_subsets'.
+
+    Returns:
+    SimpleITK.Image
+        The reconstructed image.
+    """
+
     # convert sinogram to torch
-    arr = sitk.GetArrayViewFromImage(sinogram)
-    projections = torch.tensor(arr.copy()).to(pytomography.device).swapaxes(1, 2)
+    arr = sitk.GetArrayFromImage(sinogram)
+    projections = torch.tensor(arr).to(pytomography.device).swapaxes(1, 2)
 
     # set information about the projections
     proj_size = sinogram.GetSize()[0:2]
@@ -53,10 +83,22 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
             f"Image size[2] must be equal to image size[0]: {size[2]} != {size[0]}"
         )
 
-    # attenuation modeling
-    # FIXME
+    # attenuation correction
+    att_transform = None
+    if "attenuation_image" in options:
+        att_filename = options["attenuation_image"]
+        if att_filename is not None:
+            if type(att_filename) is str:
+                img = sitk.ReadImage(att_filename)
+            else:
+                img = att_filename
+            arr = (
+                sitk.GetArrayFromImage(img).astype(np.float32) / 10
+            )  # need cm-1 -> ???? FIXME
+            attenuation_map = torch.tensor(arr).to(pytomography.device).swapaxes(1, 2)
+            att_transform = SPECTAttenuationTransform(attenuation_map=attenuation_map)
 
-    # PSF information
+    # PSF correction
     psf_meta = dicom.get_psfmeta_from_scanner_params(
         options["collimator_name"],
         options["energy_kev"],
@@ -68,8 +110,11 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
     # FIXME
 
     # Build the system matrix
+    obj2obj_transforms = [psf_transform]
+    if att_transform is not None:
+        obj2obj_transforms = [att_transform, psf_transform]
     system_matrix = SPECTSystemMatrix(
-        obj2obj_transforms=[psf_transform],
+        obj2obj_transforms=obj2obj_transforms,
         proj2proj_transforms=[],
         object_meta=object_meta,
         proj_meta=proj_meta,
