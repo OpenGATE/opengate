@@ -82,7 +82,7 @@ def get_spectrum(
             return __get_rad_beta_spectrum(rad_name)
         elif spectrum_type == "gamma":
             return __get_rad_gamma_spectrum(rad_name)
-        else: #FIXME use icrp107 for missing spectrum types
+        else:  # FIXME use icrp107 for missing spectrum types
             fatal(f"databse {database} doesn't contain spectrum type {spectrum_type}")
 
 

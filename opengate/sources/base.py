@@ -3,6 +3,7 @@ from ..base import GateObject, process_cls
 from ..utility import g4_units
 from ..definitions import __world_name__
 
+
 class SourceBase(GateObject):
     """
     Base class for all source types.

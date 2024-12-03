@@ -353,7 +353,7 @@ where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neut
 "auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
 only b-spectra is histogram based (see next section), the rest are discrete. ``database`` can be "icrp107" or "radar".
 
-ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>` 
+ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`
 with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`.
 `[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`
 
