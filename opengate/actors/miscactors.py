@@ -327,6 +327,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
                 "doc": "Specific case to be faster. If a user wants to kill all interactions which implies an energy loss, this boolean enables to not account Rayleigh process as an interaction"
             },
         ),
+
+    }
+    user_output_config = {
+        "kill_according_processes": {
+            "actor_output_class": ActorOutputKillAccordingProcessesActor,
+        },
     }
 
     """
@@ -336,9 +342,6 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(
-            ActorOutputKillAccordingProcessesActor, "kill_interacting_particles"
-        )
         self.__initcpp__()
         self.number_of_killed_particles = 0
 
@@ -362,12 +365,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             fatal("You have to select at least one process ! ")
 
     def EndSimulationAction(self):
-        self.user_output.kill_interacting_particles.number_of_killed_particles = (
+        self.user_output.kill_according_processes.number_of_killed_particles = (
             self.number_of_killed_particles
         )
 
     def __str__(self):
-        s = self.user_output["kill_non_interacting_particles"].__str__()
+        s = self.user_output["kill_according_processes"].__str__()
         return s
 
 
