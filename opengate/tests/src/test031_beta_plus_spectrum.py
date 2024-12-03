@@ -7,7 +7,7 @@ import uproot
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import compute_bins_density, get_rad_yield
+from opengate.sources.utility import compute_bins_density, get_rad_yield
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test031")
