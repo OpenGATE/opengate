@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import json
-import itk
 from scipy.spatial.transform import Rotation
 import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
@@ -52,7 +50,7 @@ if __name__ == "__main__":
     iec2.material = "G4_AIR"
     iec2.translation = [-40 * cm, 0 * cm, 0 * cm]
     iec2.dump_label_image = paths.output / "test032_iec_label.mhd"
-    labels = json.loads(open(paths.output_ref / "test032_labels.json").read())
+    labels = utility.read_json_file(paths.output_ref / "test032_labels.json")
     iec2.voxel_materials = []
     for l in labels:
         mat = "IEC_PLASTIC"
@@ -76,7 +74,7 @@ if __name__ == "__main__":
         iec2.voxel_materials.append(m)
 
     pMin, pMax = sim.volume_manager.volumes["iec1"].bounding_limits
-    print(f"pMin and pMax of iec1", pMin, pMax)
+    print("pMin and pMax of iec1", pMin, pMax)
 
     # the origin of iec1 is different from the origin of iec2
     # we create fake images to be able to convert from

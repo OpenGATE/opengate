@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import get_icrp107_spectrum
+from opengate.sources.utility import get_spectrum
 import numpy as np
 import gatetools
 
@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 def plot(output_file, ekin, data_x, data_y, relerrs):
     bins = len(data_x)
-    hist_y, hist_x = np.histogram(ekin, bins=bins)
+    hist_y, _ = np.histogram(ekin, bins=bins)
 
     fig, ax = plt.subplots(figsize=(8.5, 6))
     ax.set_xlabel("Energy (MeV)")
@@ -33,7 +33,7 @@ def plot(output_file, ekin, data_x, data_y, relerrs):
 
 
 def root_load_ekin(root_file: str):
-    data_ref, keys_ref, m_ref = gatetools.phsp.load(root_file)
+    data_ref, keys_ref, _ = gatetools.phsp.load(root_file)
 
     index_ekin = keys_ref.index("KineticEnergy")
     ekin = [data_ref_i[index_ekin] for data_ref_i in data_ref]
@@ -42,7 +42,7 @@ def root_load_ekin(root_file: str):
 
 
 def add_source_energy_spectrum_discrete(sim, phsp):
-    spectrum = get_icrp107_spectrum("Lu177", "gamma")
+    spectrum = get_spectrum("Lu177", "gamma")
 
     source = sim.add_source("GenericSource", "beam")
     source.attached_to = phsp.name
