@@ -579,6 +579,9 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
         "attenuation_image": {
             "actor_output_class": ActorOutputSingleImage,
             "active": True,
+            "write_to_disk": True,
+            # "keep_data_per_run": False,
+            # "merge_data_after_simulation": True,
         },
     }
 
@@ -602,7 +605,8 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
         mu_image = self.image_volume.create_attenuation_image(
             self.database, self.energy
         )
-        self.user_output.attenuation_image.store_data(0, mu_image)
+        self.user_output.attenuation_image.store_data("merged", mu_image)
+        self.user_output.attenuation_image.end_of_simulation()
 
 
 process_cls(ActorOutputStatisticsActor)

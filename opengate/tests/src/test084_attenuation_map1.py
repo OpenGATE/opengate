@@ -47,6 +47,8 @@ if __name__ == "__main__":
     mumap.output_filename = "mumap.mhd"
     mumap.energy = 140.511 * keV
     mumap.database = "NIST"  # EPDL
+    mumap.attenuation_image.write_to_disk = True
+    mumap.attenuation_image.active = True
     print(f"Energy is {mumap.energy/keV} keV")
     print(f"Database is {mumap.database}")
 
