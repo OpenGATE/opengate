@@ -47,6 +47,7 @@ void init_GateMaterialMuHandler(py::module &);
 // surfaces
 
 void init_G4OpticalSurface(py::module &);
+
 void init_G4LogicalBorderSurface(py::module &);
 
 // run
@@ -391,6 +392,8 @@ void init_GateNTuple(py::module &);
 
 void init_GateHelpers(py::module &);
 
+void init_GateVolumeVoxelizer(py::module &);
+
 void init_GateUniqueVolumeIDManager(py::module &);
 
 void init_GateUniqueVolumeID(py::module &);
@@ -603,6 +606,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
   init_GateHelpers(m);
+  init_GateVolumeVoxelizer(m);
   init_GateUniqueVolumeIDManager(m);
   init_GateUniqueVolumeID(m);
   init_GateVolumeDepthID(m);
