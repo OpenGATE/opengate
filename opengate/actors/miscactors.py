@@ -576,7 +576,7 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     }
 
     user_output_config = {
-        "mumap": {
+        "attenuation_image": {
             "actor_output_class": ActorOutputSingleImage,
             "active": True,
         },
@@ -585,7 +585,6 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
-        self.mu_image = None
 
     def __initcpp__(self):
         g4.GateAttenuationImageActor.__init__(self, self.user_info)
@@ -600,11 +599,10 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
         # the attenuation image is created during the first run only
         if run.GetRunID() != 0:
             return
-        self.mu_image = self.image_volume.create_attenuation_image(
+        mu_image = self.image_volume.create_attenuation_image(
             self.database, self.energy
         )
-        if self.write_to_disk:
-            itk.imwrite(self.mu_image, self.get_output_path())
+        self.user_output.attenuation_image.store_data(0, mu_image)
 
 
 process_cls(ActorOutputStatisticsActor)
