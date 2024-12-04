@@ -29,6 +29,7 @@ User Guide
    user_guide_reference_sources
    user_guide_advanced
    user_guide_optical_photons
+   user_guide_voxelization
 
 .. toctree::
    :caption: Preconfigured complex components
