@@ -103,7 +103,7 @@ class VoxelDepositActor(ActorBase):
         "output_coordinate_system": (
             "local",
             {
-                "doc": "This command sets the refernce coordinate system, which can be the local volume (attached_to commmand), global or attached to image.",
+                "doc": "This command sets the reference coordinate system, which can be the local volume (attached_to commmand), global or attached to image.",
                 "allowed_values": ("local", "global", "attached_to_image", None),
             },
         ),
