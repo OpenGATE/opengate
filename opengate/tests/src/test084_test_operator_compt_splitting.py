@@ -9,7 +9,7 @@ from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
 
-def check_process_user_hook(simulaton_engine):
+def check_process_user_hook(simulation_engine):
     # Check whether the particle 'gamma' actually has
     # the requested processes attached to it
     p_name = "gamma"
@@ -19,12 +19,21 @@ def check_process_user_hook(simulaton_engine):
     if particle is None:
         raise Exception(f"Something went wrong. Could not find particle {p_name}.")
     pm = particle.GetProcessManager()
-    p = pm.GetProcess("compt")
+    process = "compt"
+    process_list = pm.GetProcessList()
+    isInside = False
+    for i in range(process_list.size()):
+        processName = str(process_list[i].GetProcessName())
+        if "biasWrapper(" + process + ")" == processName:
+            isInside = True
+
     # GetProcess returns nullptr if the requested process was not found
-    if p is None:
-        raise Exception(f"Could not find the compt process for particle {p_name}.")
+    if isInside == False:
+        raise Exception(
+            f"Could not find the process '{process}' for particle {p_name}."
+        )
     else:
-        print(f"Hooray, I found the process compt for the particle {p_name}!")
+        print(f"Hooray, I found the process '{process}' for the particle {p_name}!")
 
 
 def bool_validation_test(dico_parameters, tol):
