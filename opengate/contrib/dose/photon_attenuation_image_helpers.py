@@ -22,7 +22,7 @@ def create_photon_attenuation_image(
     image_volume.material = "G4_AIR"
 
     # labels
-    image_volume.voxel_materials = image_volume.read_label_to_material(labels_filename)
+    image_volume.read_label_to_material(labels_filename)
 
     # material
     if material_database is not None:
@@ -39,8 +39,9 @@ def create_photon_attenuation_image(
 
     # go
     verbose and print("Starting computing mu ...")
+    sim.verbose_level = gate.logger.NONE
     sim.run(start_new_process=True)
 
     # retrieve the created image
-    im = mumap.attenuation_image.data_per_run[0].image
+    im = mumap.attenuation_image.merged_data.image
     return im
