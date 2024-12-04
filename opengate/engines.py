@@ -9,7 +9,6 @@ from anytree import PreOrderIter
 import opengate_core as g4
 from .exception import fatal, warning, GateImplementationError
 from .decorators import requires_fatal, requires_warning
-from .logger import log
 from .runtiming import assert_run_timing
 from .uisessions import UIsessionSilent, UIsessionVerbose
 from .exception import ExceptionHandler
@@ -99,10 +98,10 @@ class SourceEngine(EngineBase):
     def initialize(self, run_timing_intervals, progress_bar=False):
         self.run_timing_intervals = run_timing_intervals
         assert_run_timing(self.run_timing_intervals)
-        if len(self.simulation_engine.simulation.source_manager.sources) == 0:
-            self.simulation_engine.simulation.warn_user(
-                "No source: no particle will be generated"
-            )
+        # if len(self.simulation_engine.simulation.source_manager.sources) == 0:
+        #    self.simulation_engine.simulation.warn_user(
+        #        "No source: no particle will be generated"
+        #    )
         self.progress_bar = progress_bar
 
     def initialize_actors(self):
@@ -560,6 +559,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
 
 
 def register_sensitive_detector_to_children(actor, lv):
+    log = actor.simulation.log
     log.debug(
         f'Actor: "{actor.user_info.name}" '
         f'(attached to "{actor.attached_to}") '
@@ -592,6 +592,7 @@ class ActorEngine(EngineBase):
         super().close()
 
     def initialize(self):
+        log = self.simulation_engine.simulation.log
         for actor in self.actor_manager.sorted_actors:
             log.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
             self.simulation_engine.action_engine.register_all_actions(actor)
@@ -1145,6 +1146,8 @@ class SimulationEngine(GateSingletonFatal):
 
         # things to do after init and before run
         self.apply_all_g4_commands_after_init()
+        log = self.simulation.log
+
         if self.user_hook_after_init:
             log.info("Simulation: initialize user fct")
             if self.user_hook_after_init_arg is not None:
@@ -1187,6 +1190,7 @@ class SimulationEngine(GateSingletonFatal):
         """
         Start the simulation. The runs are managed in the SourceManager.
         """
+        log = self.simulation.log
         s = ""
         if self.new_process:
             s = "(in a new process) "
@@ -1271,6 +1275,9 @@ class SimulationEngine(GateSingletonFatal):
         """
         Build the main geant4 objects and initialize them.
         """
+        # get log
+        self.simulation.init_log()
+        log = self.simulation.log
 
         # g4 verbose
         self.initialize_g4_verbose()
@@ -1391,6 +1398,7 @@ class SimulationEngine(GateSingletonFatal):
         and make some basic settings.
 
         """
+        log = self.simulation.log
         if self.simulation.multithreaded is True:
             # GetOptions() returns a set which should contain 'MT'
             # if Geant4 was compiled with G4MULTITHREADED
@@ -1425,6 +1433,7 @@ class SimulationEngine(GateSingletonFatal):
     def add_g4_command_after_init(self, command):
         if self.g4_ui is None:
             self.g4_ui = g4.G4UImanager.GetUIpointer()
+        log = self.simulation.log
         log.info(f"Simulation: apply G4 command '{command}'")
         code = self.g4_ui.ApplyCommand(command)
         if code == 0:
@@ -1464,21 +1473,6 @@ class SimulationEngine(GateSingletonFatal):
     @requires_fatal("g4_StateManager")
     def g4_state(self, g4_application_state):
         self.g4_StateManager.SetNewState(g4_application_state)
-
-    # @property
-    # def initializedAtLeastOnce(self):
-    #     if self.g4_RunManager is None:
-    #         return False
-    #     else:
-    #         return self.g4_RunManager.GetInitializedAtLeastOnce()
-
-    # @initializedAtLeastOnce.setter
-    # def initializedAtLeastOnce(self, tf):
-    #     if self.g4_RunManager is None:
-    #         gate.fatal(
-    #             "Cannot set 'initializedAtLeastOnce' variable. No RunManager available."
-    #         )
-    #     self.g4_RunManager.SetInitializedAtLeastOnce(tf)
 
     def initialize_user_event_information_flag(self):
         self.user_event_information_flag = False
