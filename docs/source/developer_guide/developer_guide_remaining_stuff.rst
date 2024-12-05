@@ -160,13 +160,3 @@ How to develop a new Actor?
 Warning: this is a preliminary (short) documentation at an early stage of the code (July 2022). It could be outdated.
 
 We recommend looking at an example (e.g., `GateDoseActor`). The main concept is to write a cpp class that will act during the simulation and manage all user options and parameters from the python side. Geant4 messengers are no longer used. There is a mechanism, explained below, to convert python options to cpp options. Writing a new actor (a kind of scorer) involves 4 steps.
-
-Documentation for the documentation
-===================================
-
-The document is created with `readthedoc <https://docs.readthedocs.io/en/stable/index.html>`_. To build the html pages locally, use `make html` in the `docs/` folder of the source directory. Configuration is in the `docs/source/config.py` file. The current theme is `sphinx_pdj_theme <https://github.com/jucacrispim/sphinx_pdj_theme>`_.
-
-Help with reStructuredText syntax:
-
-- `quickref <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_
-- `directives <https://docutils.sourceforge.io/docs/ref/rst/directives.html>`_
