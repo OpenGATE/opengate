@@ -28,6 +28,7 @@ from .utility import (
     insert_suffix_before_extension,
 )
 from . import logger
+from .logger import global_log
 from .physics import (
     Region,
     OpticalSurface,
@@ -1230,7 +1231,7 @@ def setter_hook_verbose_level(self, verbose_level):
         level = int(verbose_level)
     except ValueError:
         level = getattr(logging, verbose_level)
-    self.log.setLevel(level)
+    global_log.setLevel(level)
     return verbose_level
 
 
@@ -1504,9 +1505,6 @@ class Simulation(GateObject):
         # list to store warning messages issued somewhere in the simulation
         self._user_warnings = []
 
-        # this is the internal logger
-        self.log = logger.global_log
-
         # main managers
         self.volume_manager = VolumeManager(self)
         self.source_manager = SourceManager(self)
@@ -1752,9 +1750,7 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
-            print(self.verbose_level)
-            setter_hook_verbose_level(self, self.verbose_level)
-            self.log.info("Dispatching simulation to subprocess ...")
+            global_log.info("Dispatching simulation to subprocess ...")
             output = dispatch_to_subprocess(self._run_simulation_engine, True)
 
             # Recover output from unpickled actors coming from sub-process queue

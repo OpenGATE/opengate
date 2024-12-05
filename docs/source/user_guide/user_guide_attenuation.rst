@@ -5,5 +5,7 @@
 Computing attenuation image
 ===========================
 
+actor
 
-TODO
+command line
+

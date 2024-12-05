@@ -1,4 +1,3 @@
-import itk
 from box import Box
 import platform
 import opengate_core as g4

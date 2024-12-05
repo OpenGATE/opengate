@@ -13,7 +13,6 @@ class CustomFormatter(colorlog.ColoredFormatter):
     """
 
     def format(self, record):
-        print("record =>", record.levelname)
         # Check the log level and adjust the message format accordingly
         if record.levelname == "INFO":
             self._style._fmt = "%(log_color)s%(message)s%(reset)s"
@@ -45,11 +44,28 @@ log_handler = colorlog.StreamHandler(sys.stdout)
 log_handler.setFormatter(formatter)
 
 # get main log object
-global_log = colorlog.getLogger(__name__)
-global_log.addHandler(log_handler)
+global_log = colorlog.getLogger("opengate_logger")
+global_log.propagate = False
+if not global_log.hasHandlers():
+    global_log.addHandler(log_handler)
 
 # default log level
-global_log.setLevel(logging.INFO)
+# global_log.setLevel(logging.INFO)
+global_log.setLevel(0)
+
+
+def print_logger_hierarchy(logger_name):
+    logger = logging.getLogger(logger_name)
+    while logger:
+        print(f"Logger: {logger.name}")
+        print(f"  Level: {logger.level}")
+        print(f"  Handlers: {logger.handlers}")
+        # Move to the parent logger
+        if logger.parent and logger.parent is not logger:
+            logger = logger.parent
+        else:
+            break
+
 
 # shorter for level
 NONE = 0
