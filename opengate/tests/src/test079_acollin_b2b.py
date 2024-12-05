@@ -78,11 +78,11 @@ if __name__ == "__main__":
     root_filename_custom_acolin = phsp.output_filename
     source.direction.accolinearity_flag = True
     source.direction.accolinearity_fwhm = custom_acolin_FWHM
-    sim.run()
+    sim.run(start_new_process=True)
 
     # test: without acolinearity, should be mostly colinear
     gamma_pairs = read_gamma_pairs(root_filename_no_acolin, is_btb=True)
-    print(gamma_pairs)
+    # print(gamma_pairs)
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
     colin_median = plot_colin_case(acollinearity_angles)
 
