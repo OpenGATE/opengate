@@ -38,6 +38,8 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.visu = False
+    sim.random_seed = 12345654
+    sim.progress_bar = True
     # set the world size
     sim.world.size = [3 * m, 3 * m, 3 * m]
     sim.world.material = "G4_AIR"
@@ -49,6 +51,12 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 5 * mm
     source.direction.type = "iso"
+
+    print("default accolinearity")
+    print(f"accolinearity_flag = {source.direction.accolinearity_flag}")
+    print(
+        f"accolinearity_fwhm = {source.direction.accolinearity_fwhm/gate.g4_units.deg} deg"
+    )
 
     # add a waterbox
     wb = sim.add_volume("Box", "waterbox")

@@ -33,6 +33,8 @@ def setup_simulation_engine(path):
     # main options
     sim.g4_verbose = False
     sim.visu = False
+    sim.random_seed = 12345654
+    sim.progress_bar = True
 
     # add a material database
     sim.volume_manager.add_material_database(path.data / "GateMaterials.db")

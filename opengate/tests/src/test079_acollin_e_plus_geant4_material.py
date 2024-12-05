@@ -37,6 +37,8 @@ if __name__ == "__main__":
 
     # Define core of the simulation, including physics
     sim = setup_simulation_engine(paths)
+    sim.random_seed = 12345654
+    sim.progress_bar = True
 
     # add a waterbox
     wb = sim.add_volume("Box", "waterbox")
