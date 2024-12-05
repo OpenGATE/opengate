@@ -1,5 +1,23 @@
 import os
 import sys
+import site
+
+
+def get_site_packages_dir():
+    site_package = [p for p in site.getsitepackages() if "site-packages" in p]
+    if len(site_package) > 0:
+        site_package = site_package[0]
+    else:
+        site_package = site.getusersitepackages()
+    return site_package
+
+
+def get_libG4_path(lib):
+    for element in os.listdir(
+        os.path.join(get_site_packages_dir(), "opengate_core.libs")
+    ):
+        if "libG4" + lib in element:
+            return os.path.join(get_site_packages_dir(), "opengate_core.libs", element)
 
 
 def restart_with_glibc_tunables():
@@ -15,34 +33,102 @@ def restart_with_glibc_tunables():
 
         return not hasattr(__main__, "__file__")
 
+    def print_ld_preload():
+        print("Please use the following export lines before importing opengate:")
+        print(
+            "export LD_LIBRARY_PATH="
+            + os.path.join(get_site_packages_dir(), "opengate_core.libs")
+            + ":${LD_LIBRARY_PATH}"
+        )
+        print(
+            "export LD_PRELOAD="
+            + get_libG4_path("processes")
+            + ":"
+            + get_libG4_path("geometry")
+        )
+        print(f"or: \n" f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000")
+
     # Check if the environment variable is already set correctly
-    if "GLIBC_TUNABLES" not in os.environ:
-        if is_python_interactive_shell():
-            try:
-                import opengate_core
-            except ImportError as e:
-                print(e)
-                if "cannot allocate memory in static TLS block" in str(e):
-                    print(
-                        f"Please use the following export before importing opengate: \n"
-                        f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000"
-                    )
-                    sys.exit()
-            return
+    try:
+        import opengate_core
 
-        print(f"Please use the following export before importing opengate:")
-        print(f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000")
+        return
+    except:
+        print("opengate_core cannot be imported...")
 
-        # Set the environment variable
-        new_env = os.environ.copy()
-        new_env["GLIBC_TUNABLES"] = tunables_value
+    if (
+        "site-packages" in pathCurrentFile
+    ):  # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
+        reloadPython = False
+        if (
+            "LD_LIBRARY_PATH" not in os.environ
+            or os.path.join(get_site_packages_dir(), "opengate_core.libs")
+            not in os.environ["LD_LIBRARY_PATH"]
+            or "GLIBC_TUNABLES" not in os.environ
+        ):
+            reloadPython = True
+        if (
+            "LD_PRELOAD" not in os.environ
+            or get_libG4_path("processes") not in os.environ["LD_PRELOAD"]
+            or get_libG4_path("geometry") not in os.environ["LD_PRELOAD"]
+        ):
+            reloadPython = True
 
-        # Restart the process with the new environment
-        os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
+        if reloadPython:
+            if is_python_interactive_shell():
+                try:
+                    import opengate_core
+                except ImportError as e:
+                    print(e)
+                    if "cannot allocate memory in static TLS block" in str(e):
+                        print_ld_preload()
+                return
+            print_ld_preload()
 
+            # Set the environment variable
+            new_env = os.environ.copy()
+            new_env["LD_LIBRARY_PATH"] = (
+                os.path.join(get_site_packages_dir(), "opengate_core.libs")
+                + new_env["LD_LIBRARY_PATH"]
+            )
+            new_env["LD_PRELOAD"] = (
+                get_libG4_path("processes") + ":" + get_libG4_path("geometry")
+            )
+
+            # Restart the process with the new environment
+            os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
+    else:  # pip install -e . -> we do not know where are libG4
+        print(
+            f"You installed opengate as developper mode."
+            f"Please use the following export line before importing opengate (update it):"
+            f"export LD_PRELOAD=<path_to_libG4processes.so>:<path_to_libG4geometry.so>"
+            f"or: \n"
+            f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000"
+        )
+
+
+# Some Python versions distributed by Conda have a buggy `os.add_dll_directory`
+# which prevents binary wheels from finding the FFmpeg DLLs in the `av.libs`
+# directory. We work around this by adding `av.libs` to the PATH.
+if os.name == "nt":
+    os.environ["PATH"] = (
+        os.path.abspath(
+            os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core.libs")
+        )
+        + os.pathsep
+        + os.environ["PATH"]
+    )
+    os.add_dll_directory(
+        os.path.join(os.path.dirname(__file__), os.pardir, "opengate_core.libs")
+    )
+
+pathCurrentFile = os.path.abspath(__file__)
 
 if sys.platform.startswith("linux"):
     restart_with_glibc_tunables()
+elif sys.platform == "win32":
+    print(os.path.dirname(pathCurrentFile))
+    os.add_dll_directory(os.path.dirname(pathCurrentFile))
 
 # subpackages
 import opengate.sources
