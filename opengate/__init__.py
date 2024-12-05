@@ -20,33 +20,47 @@ def get_libG4_path(lib):
             return os.path.join(get_site_packages_dir(), "opengate_core.libs", element)
 
 
-def restart_with_glibc_tunables():
-    """
-    Restart the current process with GLIBC_TUNABLES set.
-    If interactive: we cannot do anything.
-    """
-    # tunables_value = "glibc.rtld.optional_static_tls=2048000"
-    tunables_value = "glibc.rtld.optional_static_tls=2000000"
+tunables_value = "glibc.rtld.optional_static_tls=2000000"
 
-    def is_python_interactive_shell():
-        import __main__
 
-        return not hasattr(__main__, "__file__")
-
-    def print_ld_preload():
-        print("Please use the following export lines before importing opengate:")
+def print_ld_preload_error(developer_mode=False):
+    print("=" * 80)
+    print("=" * 80)
+    print("The opengate_core library cannot be loaded.")
+    print("Error is: cannot allocate memory in static TLS block")
+    print("Please use the following export lines before importing opengate:")
+    print(
+        "export LD_LIBRARY_PATH="
+        + os.path.join(get_site_packages_dir(), "opengate_core.libs")
+        + ":${LD_LIBRARY_PATH}"
+    )
+    if developer_mode:
         print(
-            "export LD_LIBRARY_PATH="
-            + os.path.join(get_site_packages_dir(), "opengate_core.libs")
-            + ":${LD_LIBRARY_PATH}"
+            "export LD_PRELOAD=<path_to_libG4processes.so>:<path_to_libG4processes.so>:${LD_LIBRARY_PATH}"
         )
+    else:
         print(
             "export LD_PRELOAD="
             + get_libG4_path("processes")
             + ":"
             + get_libG4_path("geometry")
         )
-        print(f"or: \n" f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000")
+    print(f"or: \n" f"export GLIBC_TUNABLES={tunables_value}")
+    print("We try to set the variable and restart ...")
+    print("=" * 80)
+    print("=" * 80)
+
+
+def restart_with_glibc_tunables():
+    """
+    Restart the current process with GLIBC_TUNABLES set.
+    If interactive: we cannot do anything.
+    """
+
+    def is_python_interactive_shell():
+        import __main__
+
+        return not hasattr(__main__, "__file__")
 
     # Check if the environment variable is already set correctly
     try:
@@ -54,39 +68,45 @@ def restart_with_glibc_tunables():
 
         return
     except:
-        print("opengate_core cannot be imported...")
+        pass
 
-    if (
-        "site-packages" in pathCurrentFile
-    ):  # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
-        reloadPython = False
+    if "site-packages" in pathCurrentFile:
+        # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
+        developer_mode = False
+        reload_python = False
         if (
             "LD_LIBRARY_PATH" not in os.environ
             or os.path.join(get_site_packages_dir(), "opengate_core.libs")
             not in os.environ["LD_LIBRARY_PATH"]
             or "GLIBC_TUNABLES" not in os.environ
         ):
-            reloadPython = True
+            reload_python = True
         if (
             "LD_PRELOAD" not in os.environ
             or get_libG4_path("processes") not in os.environ["LD_PRELOAD"]
             or get_libG4_path("geometry") not in os.environ["LD_PRELOAD"]
         ):
-            reloadPython = True
+            reload_python = True
 
-        if reloadPython:
-            if is_python_interactive_shell():
-                try:
-                    import opengate_core
-                except ImportError as e:
-                    print(e)
-                    if "cannot allocate memory in static TLS block" in str(e):
-                        print_ld_preload()
-                return
-            print_ld_preload()
+    else:
+        # pip install -e . -> we do not know where are libG4
+        developer_mode = True
+        reload_python = True
 
-            # Set the environment variable
-            new_env = os.environ.copy()
+    if reload_python:
+        if is_python_interactive_shell():
+            try:
+                import opengate_core
+            except ImportError as e:
+                print(e)
+                if "cannot allocate memory in static TLS block" in str(e):
+                    print_ld_preload_error(developer_mode)
+            return
+        print_ld_preload_error(developer_mode)
+
+        # Set the environment variable
+        new_env = os.environ.copy()
+        if not developer_mode:
             new_env["LD_LIBRARY_PATH"] = (
                 os.path.join(get_site_packages_dir(), "opengate_core.libs")
                 + new_env["LD_LIBRARY_PATH"]
@@ -94,17 +114,10 @@ def restart_with_glibc_tunables():
             new_env["LD_PRELOAD"] = (
                 get_libG4_path("processes") + ":" + get_libG4_path("geometry")
             )
+        new_env["GLIBC_TUNABLES"] = tunables_value
 
-            # Restart the process with the new environment
-            os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
-    else:  # pip install -e . -> we do not know where are libG4
-        print(
-            f"You installed opengate as developper mode."
-            f"Please use the following export line before importing opengate (update it):"
-            f"export LD_PRELOAD=<path_to_libG4processes.so>:<path_to_libG4geometry.so>"
-            f"or: \n"
-            f"export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000"
-        )
+        # Restart the process with the new environment
+        os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
 
 
 # Some Python versions distributed by Conda have a buggy `os.add_dll_directory`
@@ -127,7 +140,6 @@ pathCurrentFile = os.path.abspath(__file__)
 if sys.platform.startswith("linux"):
     restart_with_glibc_tunables()
 elif sys.platform == "win32":
-    print(os.path.dirname(pathCurrentFile))
     os.add_dll_directory(os.path.dirname(pathCurrentFile))
 
 # subpackages
