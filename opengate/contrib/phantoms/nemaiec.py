@@ -3,6 +3,7 @@ import itk
 import numpy as np
 import math
 
+from opengate import utility
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
@@ -52,7 +53,7 @@ def add_iec_phantom(
     # Inside space for the water, same as the shell, with 3 mm less
     thickness = 3 * mm
     thickness_z = 10 * mm
-    interior, top_interior, c = add_iec_body(
+    interior, top_interior, _ = add_iec_body(
         simulation, f"{name}_interior", thickness, thickness_z
     )
     interior.mother = iec.name
@@ -634,7 +635,7 @@ def add_iec_phantom_vox(sim, name, image_filename, labels_filename):
     iec = sim.add_volume("Image", name)
     iec.image = image_filename
     iec.material = "IEC_PLASTIC"
-    labels = json.loads(open(labels_filename).read())
+    labels = utility.read_json_file(labels_filename)
     iec.voxel_materials = []
     create_material(sim)
     material_list = {}
@@ -672,7 +673,7 @@ def create_iec_phantom_source_vox(
         }
 
     img = itk.imread(image_filename)
-    labels = json.loads(open(labels_filename).read())
+    labels = utility.read_json_file(labels_filename)
     img_arr = itk.GetArrayViewFromImage(img)
 
     for label in labels:

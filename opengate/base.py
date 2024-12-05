@@ -450,7 +450,7 @@ class GateObject:
         new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
-    def __init__(self, *args, simulation=None, **kwargs):
+    def __init__(self, *args, simulation=None, **kwargs) -> None:
         self._simulation = simulation
         # keep internal number of raised warnings (for debug)
         self.number_of_warnings = 0

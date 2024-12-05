@@ -4,7 +4,7 @@
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 from opengate.tests import utility
-from opengate.sources.base import get_rad_gamma_spectrum
+from opengate.sources.utility import get_spectrum
 
 paths = utility.get_default_test_paths(__file__, "gate_test043_garf", "test043")
 
@@ -47,7 +47,7 @@ def sim_phys(sim):
 
 
 def sim_source_test(sim, activity):
-    tc99m = get_rad_gamma_spectrum("Tc99m")
+    tc99m = get_spectrum("Tc99m", "gamma")
     e = tc99m.energies
     w = tc99m.weights
 
