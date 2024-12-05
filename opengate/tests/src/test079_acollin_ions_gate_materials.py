@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: See test079_acollin_ions_geant4Material.py
+Context: See test079_acollin_ions_geant4_material.py
 
-Test that show how to access ionisation object once G4 is init (before the run), for
-debug purpose. It should be equivalent to _versionA.
+Here, the material, Body is not known from Geant4 BUT it is defined in GateMaterials.db,
+so one only need to set the mean energy per ion in the physics_manager via its
+mean_energy_per_ion_pair property.
 """
 
 from test079_acollin_helpers import *
@@ -20,23 +21,7 @@ import matplotlib.pyplot as plt
 # imaging
 mean_energy = 5.0 * eV
 # Key added to output to make sure that multi-threading the tests does not backfire
-test_key = "p2"
-
-
-def set_ionisation(simulation_engine, param):
-    volume = param["volume"]
-    mean_energy = param["mean_energy"]
-    sim = simulation_engine.simulation
-    mat = sim.volume_manager.find_or_build_material(volume.material)
-    ionisation = mat.GetIonisation()
-    if mean_energy is not None:
-        ionisation.SetMeanEnergyPerIonPair(mean_energy)
-    print(
-        f"material {volume.material} mean excitation energy is {ionisation.GetMeanExcitationEnergy() / eV} eV"
-    )
-    print(
-        f"material {volume.material} mean energy per ion pair is {ionisation.GetMeanEnergyPerIonPair() / eV} eV"
-    )
+test_key = "p3"
 
 
 #########################################################################################
@@ -51,12 +36,7 @@ if __name__ == "__main__":
     # add a waterbox
     wb = sim.add_volume("Box", "waterbox")
     wb.size = [50 * cm, 50 * cm, 50 * cm]
-    elems = ["C", "H", "O"]
-    nbAtoms = [5, 8, 2]
-    sim.volume_manager.material_database.add_material_nb_atoms(
-        "IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3
-    )
-    wb.material = "IEC_PLASTIC"
+    wb.material = "Body"
 
     # set the source
     source = sim.add_source("GenericSource", "f18")
@@ -69,10 +49,6 @@ if __name__ == "__main__":
     phsp = setup_actor(sim, "phsp", wb.name)
     phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
 
-    # set the hook to print the mean energy
-    sim.user_hook_after_init = set_ionisation
-    sim.user_hook_after_init_arg = {"volume": wb, "mean_energy": None}
-
     # go
     sim.run(start_new_process=True)
 
@@ -82,9 +58,7 @@ if __name__ == "__main__":
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
 
-    # set the hook to print the mean energy
-    sim.user_hook_after_init = set_ionisation
-    sim.user_hook_after_init_arg = {"volume": wb, "mean_energy": mean_energy}
+    sim.physics_manager.mean_energy_per_ion_pair["Body"] = mean_energy
 
     # go
     sim.run()

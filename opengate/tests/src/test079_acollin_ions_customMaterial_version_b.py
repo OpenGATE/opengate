@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: See test079_acollin_ions_geant4Material.py
+Context: See test079_acollin_ions_geant4_material.py
 
-Here, the material, IEC_PLASTIC is not known from Geant4 and not defined in
-GateMaterials.db, so one only need to add its definition to the volume_manager and then
-set the mean energy per ion in the physics_manager
+Test that show how to access ionisation object once G4 is init (before the run), for
+debug purpose. It should be equivalent to _versionA.
 """
 
 from test079_acollin_helpers import *
@@ -21,7 +20,23 @@ import matplotlib.pyplot as plt
 # imaging
 mean_energy = 5.0 * eV
 # Key added to output to make sure that multi-threading the tests does not backfire
-test_key = "p1"
+test_key = "p2"
+
+
+def set_ionisation(simulation_engine, param):
+    volume = param["volume"]
+    mean_energy = param["mean_energy"]
+    sim = simulation_engine.simulation
+    mat = sim.volume_manager.find_or_build_material(volume.material)
+    ionisation = mat.GetIonisation()
+    if mean_energy is not None:
+        ionisation.SetMeanEnergyPerIonPair(mean_energy)
+    print(
+        f"material {volume.material} mean excitation energy is {ionisation.GetMeanExcitationEnergy() / eV} eV"
+    )
+    print(
+        f"material {volume.material} mean energy per ion pair is {ionisation.GetMeanEnergyPerIonPair() / eV} eV"
+    )
 
 
 #########################################################################################
@@ -54,6 +69,10 @@ if __name__ == "__main__":
     phsp = setup_actor(sim, "phsp", wb.name)
     phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
 
+    # set the hook to print the mean energy
+    sim.user_hook_after_init = set_ionisation
+    sim.user_hook_after_init_arg = {"volume": wb, "mean_energy": None}
+
     # go
     sim.run(start_new_process=True)
 
@@ -63,7 +82,9 @@ if __name__ == "__main__":
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
 
-    sim.physics_manager.mean_energy_per_ion_pair["IEC_PLASTIC"] = mean_energy
+    # set the hook to print the mean energy
+    sim.user_hook_after_init = set_ionisation
+    sim.user_hook_after_init_arg = {"volume": wb, "mean_energy": mean_energy}
 
     # go
     sim.run()
