@@ -26,7 +26,7 @@
 //
 //
 // --------------------------------------------------------------------
-// GEANT 4 class header file 
+// GEANT 4 class header file
 //
 // Class Description:
 //    Extends G4Track properties with information needed for the
@@ -51,30 +51,30 @@ enum class ForceCollisionState { free, toBeCloned, toBeForced, toBeFreeFlight };
 
 class GateOptrForceCollisionTrackData : public G4VAuxiliaryTrackInformation {
 
-friend class GateOptrForceCollision;
-  
+  friend class GateOptrForceCollision;
+
 public:
-  GateOptrForceCollisionTrackData( const GateOptrForceCollision* );
+  GateOptrForceCollisionTrackData(const GateOptrForceCollision *);
   ~GateOptrForceCollisionTrackData();
-  
+
   // -- from base class:
   void Print() const;
 
   // -- Get methods:
-  G4bool                             IsFreeFromBiasing() const
-  { return ( fForceCollisionState == ForceCollisionState::free);}
-  // -- no set methods are provided : sets are made under exclusive control of G4BOptrForceCollision objects through friendness.
-  
-private:
-  const GateOptrForceCollision* fForceCollisionOperator;
-  ForceCollisionState             fForceCollisionState;
-
-  void Reset()
-  {
-    fForceCollisionOperator = nullptr;
-    fForceCollisionState    = ForceCollisionState::free;
+  G4bool IsFreeFromBiasing() const {
+    return (fForceCollisionState == ForceCollisionState::free);
   }
-  
+  // -- no set methods are provided : sets are made under exclusive control of
+  // G4BOptrForceCollision objects through friendness.
+
+private:
+  const GateOptrForceCollision *fForceCollisionOperator;
+  ForceCollisionState fForceCollisionState;
+
+  void Reset() {
+    fForceCollisionOperator = nullptr;
+    fForceCollisionState = ForceCollisionState::free;
+  }
 };
 
 #endif

@@ -877,7 +877,7 @@ class PhysicsManager(GateObject):
         all_particles = charged_particles.union({"gamma"})
 
         # create a dictionary with sets as entries (to ensure uniqueness)
-        particles_processes= dict([(p, set()) for p in all_particles])
+        particles_processes = dict([(p, set()) for p in all_particles])
 
         for actor in self.simulation.actor_manager.actors.values():
             if isinstance(actor, GenericBiasingActorBase):
@@ -892,18 +892,18 @@ class PhysicsManager(GateObject):
                             f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
                             f"This is not possible. Compatible particles are: {list(all_particles)}. "
                         )
-                for i,p in enumerate(particles):
+                for i, p in enumerate(particles):
                     if mode != "non physics":
                         print(actor.processes)
                         particles_processes[p].update(actor.processes[i])
-                    else :
+                    else:
                         particles_processes[p].update([None])
 
         # convert the dictionary entries back from set to list
         print(particles_processes.items())
         return dict(
             [
-                (particle, [list(processes),mode])
+                (particle, [list(processes), mode])
                 for particle, processes in particles_processes.items()
             ]
         )
