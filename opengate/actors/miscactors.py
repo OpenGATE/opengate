@@ -51,6 +51,10 @@ class ActorOutputStatisticsActor(ActorOutputBase):
                 "doc": "Should the output be written to disk, or only kept in memory? ",
             },
         ),
+        "active": (
+            True,
+            {"doc": "This actor is always active. ", "read_only": True},
+        ),
     }
 
     default_suffix = "json"
@@ -187,9 +191,7 @@ class ActorOutputStatisticsActor(ActorOutputBase):
 
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
-    """
-    Store statistics about a simulation run.
-    """
+    """Store statistics about a simulation run."""
 
     # hints for IDE
     track_types_flag: bool
@@ -203,9 +205,15 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         ),
     }
 
+    user_output_config = {
+        "stats": {
+            "actor_output_class": ActorOutputStatisticsActor,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputStatisticsActor, "stats")
+        # self._add_user_output(ActorOutputStatisticsActor, "stats")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -320,6 +328,11 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             },
         ),
     }
+    user_output_config = {
+        "kill_according_processes": {
+            "actor_output_class": ActorOutputKillAccordingProcessesActor,
+        },
+    }
 
     """
     If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
@@ -328,9 +341,6 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(
-            ActorOutputKillAccordingProcessesActor, "kill_interacting_particles"
-        )
         self.__initcpp__()
         self.number_of_killed_particles = 0
 
@@ -354,20 +364,17 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             fatal("You have to select at least one process ! ")
 
     def EndSimulationAction(self):
-        self.user_output.kill_interacting_particles.number_of_killed_particles = (
+        self.user_output.kill_according_processes.number_of_killed_particles = (
             self.number_of_killed_particles
         )
 
     def __str__(self):
-        s = self.user_output["kill_non_interacting_particles"].__str__()
+        s = self.user_output["kill_according_processes"].__str__()
         return s
 
 
 class KillActor(ActorBase, g4.GateKillActor):
-    """
-    Actor which kill a particle entering in a volume with the following attached actor.
-
-    """
+    """Actor which kills a particle entering a volume."""
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)

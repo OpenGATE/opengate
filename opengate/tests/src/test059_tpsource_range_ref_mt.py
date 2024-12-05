@@ -27,6 +27,7 @@ if __name__ == "__main__":
     sim.random_seed = 12365478910
     sim.random_engine = "MersenneTwister"
     sim.output_dir = output_path
+    sim.number_of_threads = 2
 
     # units
     km = gate.g4_units.km

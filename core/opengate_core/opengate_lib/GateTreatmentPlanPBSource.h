@@ -31,20 +31,31 @@ public:
   void PrepareNextRun() override;
   double CalcNextTime(double current_simulation_time) override;
 
-  unsigned long fNumberOfGeneratedEvents;
+  // unsigned long fNumberOfGeneratedEvents;
   py::list GetGeneratedPrimaries();
+
+protected:
+  // thread local structure
+  struct threadLocalTPSource {
+    GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
+    std::vector<int> fNbIonsToGenerate;
+    std::vector<int> fNbGeneratedSpots;
+    int fCurrentSpot = 0;
+    int fPreviousSpot = -1;
+    bool fInitGenericIon = false;
+  };
+  G4Cache<threadLocalTPSource> fThreadLocalDataTPSource;
+
+  threadLocalTPSource &GetThreadLocalDataTPSource();
 
   // variables common to all spots
   CLHEP::HepRandomEngine *fEngine;
   CLHEP::RandGeneral *fDistriGeneral;
   G4String fParticleType;
   bool fSortedSpotGenerationFlag;
-  GateSingleParticleSourcePencilBeam *fSPS_PB;
 
   // vectors collecting spot-specific variables
   double *fPDF;
-  std::vector<int> fNbIonsToGenerate;
-  std::vector<int> fNbGeneratedSpots;
   std::vector<double> fSpotWeight;
   std::vector<double> fSpotEnergy;
   std::vector<double> fSigmaEnergy;
@@ -54,10 +65,7 @@ public:
   std::vector<G4RotationMatrix> fSpotRotation;
 
   // other variables
-  int fCurrentSpot;
-  int fPreviousSpot;
   int fTotalNumberOfSpots;
-  bool fInitGenericIon;
   int fA;    // A: Atomic Mass (nn + np +nlambda)
   int fZ;    // Z: Atomic Number
   double fE; // E: Excitation energy
