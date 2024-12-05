@@ -15,16 +15,10 @@ from .base import (
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
 )
-from .definitions import __world_name__, __gate_list_objects__
+from .definitions import __world_name__
 from .engines import SimulationEngine
 from .exception import fatal, warning, GateDeprecationError, GateImplementationError
 from .geometry.materials import MaterialDatabase
-from .image import (
-    create_image_with_volume_extent,
-    create_image_with_extent,
-    update_image_py_to_cpp,
-    get_py_image_from_cpp_image,
-)
 
 from .utility import (
     g4_units,
@@ -1236,8 +1230,6 @@ def setter_hook_verbose_level(self, verbose_level):
         level = int(verbose_level)
     except ValueError:
         level = getattr(logging, verbose_level)
-    if self.log is None:
-        self.init_log()
     self.log.setLevel(level)
     return verbose_level
 
@@ -1513,7 +1505,7 @@ class Simulation(GateObject):
         self._user_warnings = []
 
         # this is the internal logger
-        self.log = None
+        self.log = logger.global_log
 
         # main managers
         self.volume_manager = VolumeManager(self)
@@ -1542,12 +1534,6 @@ class Simulation(GateObject):
             f"Actors         : {self.actor_manager}"
         )
         return s
-
-    def init_log(self):
-        if self.log is None:
-            self.log = logger.colorlog.getLogger(self.name)
-            self.log.addHandler(logger.handler)
-        setter_hook_verbose_level(self, self.verbose_level)
 
     @property
     def output(self):
@@ -1766,7 +1752,8 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
-            self.init_log()
+            print(self.verbose_level)
+            setter_hook_verbose_level(self, self.verbose_level)
             self.log.info("Dispatching simulation to subprocess ...")
             output = dispatch_to_subprocess(self._run_simulation_engine, True)
 

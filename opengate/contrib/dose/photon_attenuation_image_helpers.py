@@ -15,6 +15,7 @@ def create_photon_attenuation_image(
 
     # create a temporary simulation
     sim = gate.Simulation()
+    sim.verbose_level = gate.logger.NONE
 
     # add the voxelized image
     image_volume = sim.add_volume("Image", "image")
@@ -39,7 +40,6 @@ def create_photon_attenuation_image(
 
     # go
     verbose and print("Starting computing mu ...")
-    sim.verbose_level = gate.logger.NONE
     sim.run(start_new_process=True)
 
     # retrieve the created image

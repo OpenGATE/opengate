@@ -9,10 +9,11 @@ import sys
 
 class CustomFormatter(colorlog.ColoredFormatter):
     """
-    The levelname (INFO, DEBUG etc) is only printed if not equal to INFO
+    The level name (INFO, DEBUG etc) is only printed if not equal to INFO
     """
 
     def format(self, record):
+        print("record =>", record.levelname)
         # Check the log level and adjust the message format accordingly
         if record.levelname == "INFO":
             self._style._fmt = "%(log_color)s%(message)s%(reset)s"
@@ -38,17 +39,17 @@ formatter = CustomFormatter(
 
 
 # set output message to standard output
-handler = colorlog.StreamHandler(sys.stdout)
+log_handler = colorlog.StreamHandler(sys.stdout)
 
 # install default handler format
-handler.setFormatter(formatter)
+log_handler.setFormatter(formatter)
 
 # get main log object
-log = colorlog.getLogger(__name__)
-log.addHandler(handler)
+global_log = colorlog.getLogger(__name__)
+global_log.addHandler(log_handler)
 
 # default log level
-log.setLevel(logging.INFO)
+global_log.setLevel(logging.INFO)
 
 # shorter for level
 NONE = 0

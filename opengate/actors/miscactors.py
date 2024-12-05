@@ -584,7 +584,6 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
             "write_to_disk": True,
             "keep_data_in_memory": True,
             "keep_data_per_run": True,
-            # "merge_data_after_simulation": True,
         },
     }
 

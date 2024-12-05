@@ -20,7 +20,6 @@ from .definitions import (
     __one_indent__,
 )
 from .decorators import requires_fatal
-from .logger import log
 import traceback
 
 
@@ -812,7 +811,7 @@ class DynamicGateObject(GateObject):
         s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
-        log.debug(s)
+        self.simulation.log.debug(s)
 
     def create_changers(self):
         # this base class implementation is here to keep inheritance intact.

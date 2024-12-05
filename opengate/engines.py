@@ -1276,7 +1276,6 @@ class SimulationEngine(GateSingletonFatal):
         Build the main geant4 objects and initialize them.
         """
         # get log
-        self.simulation.init_log()
         log = self.simulation.log
 
         # g4 verbose
