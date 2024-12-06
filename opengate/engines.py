@@ -182,9 +182,6 @@ class SourceEngine(EngineBase):
             source.prepare_output()
 
     def can_predict_expected_number_of_event(self):
-        # can_predict = True
-        # for source in self.sources:
-        #     can_predict = can_predict and source.can_predict_number_of_events()
         return all(s.can_predict_number_of_events() for s in self.sources)
 
 
@@ -919,9 +916,23 @@ class SimulationOutput:
         self.sources_by_thread = {}
         self.pid = os.getpid()
         self.ppid = os.getppid()
+        self.simulation_id = None
         self.current_random_seed = None
         self.user_hook_log = []
         self.warnings = None
+        self.process_index = None
+
+    def store_output_from_simulation_engine(self, simulation_engine):
+        self.store_actors(simulation_engine)
+        self.store_sources(simulation_engine)
+        self.store_hook_log(simulation_engine)
+        self.current_random_seed = simulation_engine.current_random_seed
+        self.expected_number_of_events = (
+            simulation_engine.source_engine.expected_number_of_events
+        )
+        self.warnings = simulation_engine.simulation.warnings
+        self.simulation_id = id(simulation_engine.simulation)
+        self.process_index = simulation_engine.process_index
 
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.simulation.actor_manager.actors
@@ -1014,6 +1025,7 @@ class SimulationEngine(GateSingletonFatal):
         # this is only for info.
         # Process handling is done in Simulation class, not in SimulationEngine!
         self.new_process = new_process
+        self.process_index = None
 
         # LATER : option to wait the end of completion or not
 
@@ -1138,7 +1150,7 @@ class SimulationEngine(GateSingletonFatal):
         # because everything else has already been executed in the main process
         # and potential warnings have already been registered.
         if self.new_process is True:
-            self.simulation.reset_warnings()
+            self.simulation.meta_data.reset_warnings()
 
         # initialization
         self.initialize()
@@ -1174,13 +1186,7 @@ class SimulationEngine(GateSingletonFatal):
             self.user_hook_after_run(self)
 
         # prepare the output
-        output.store_actors(self)
-        output.store_sources(self)
-        output.store_hook_log(self)
-        output.current_random_seed = self.current_random_seed
-        output.expected_number_of_events = self.source_engine.expected_number_of_events
-        output.warnings = self.simulation.warnings
-
+        output.store_output_from_simulation_engine(self)
         return output
 
     def start_and_stop(self):

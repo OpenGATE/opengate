@@ -701,7 +701,7 @@ class GateObject:
             self._temporary_warning_cache.append(message)
         # if possible, register the warning directly
         else:
-            self.simulation._user_warnings.append(message)
+            self.simulation.warnings.append(message)
         warning(message)
 
 
@@ -748,7 +748,7 @@ class DynamicGateObject(GateObject):
         extra_params = {}
         extra_params["auto_changer"] = params.pop(
             "auto_changer", True
-        )  # True of key not found (default)
+        )  # True if key not found (default)
         if extra_params["auto_changer"] not in (False, True):
             fatal(
                 f"Received wrong value type for 'auto_changer': got {type(extra_params['auto_changer'])}, "
@@ -813,6 +813,14 @@ class DynamicGateObject(GateObject):
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
         log.debug(s)
+
+    def reassign_dynamic_params_for_process(self, run_indices):
+        # loop over all dynamic parametrisations of this object,
+        for param in self.user_info["dynamic_params"].values():
+            for k, v in param.items():
+                # extract the subset of entries to the list that are relevant to this process
+                if k in self.dynamic_user_info:
+                    param[k] = [v[i] for i in run_indices]
 
     def create_changers(self):
         # this base class implementation is here to keep inheritance intact.

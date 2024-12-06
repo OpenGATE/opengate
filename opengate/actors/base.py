@@ -307,9 +307,7 @@ class ActorBase(GateObject):
 
     def __init__(self, *args, **kwargs):
         GateObject.__init__(self, *args, **kwargs)
-        self.actor_engine = (
-            None  # this is set by the actor engine during initialization
-        )
+        self.actor_engine = None  # set by the actor engine during initializatio
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
         self._init_user_output_instance()
@@ -370,6 +368,10 @@ class ActorBase(GateObject):
                 "2) Call get_data() via the output.\n"
                 f"   Example: my_actor.{list(self.interfaces_to_user_output.keys())[0]}.get_data(). "
             )
+
+    def reset_user_output(self):
+        for v in self.user_output.values():
+            v.reset_data()
 
     # *** shortcut properties ***
     @property
@@ -567,9 +569,26 @@ class ActorBase(GateObject):
         for v in self.interfaces_to_user_output.values():
             v.belongs_to_actor = self
 
-    def store_output_data(self, output_name, run_index, *data):
-        self._assert_output_exists(output_name)
-        self.user_output[output_name].store_data(run_index, *data)
+    def import_user_output_from_actor(self, *actor, **kwargs):
+        if not all([self.type_name == a.type_name for a in actor]):
+            fatal("An actor can only import user output from the same type of actor.")
+        if len(actor) == 1:
+            self.recover_user_output(actor[0])
+        else:
+            for k in self.user_output:
+                try:
+                    self.user_output[k].merge_data_from_actor_output(
+                        *[a.user_output[k] for a in actor], **kwargs
+                    )
+                except NotImplementedError:
+                    self.warn_user(
+                        f"User output {k} in {self.type_name} cannot be imported "
+                        f"because the function is not yet implemented for this type of output."
+                    )
+
+    # def store_output_data(self, output_name, run_index, *data):
+    #     self._assert_output_exists(output_name)
+    #     self.user_output[output_name].store_data(run_index, *data)
 
     def write_output_to_disk_if_requested(self, output_name):
         self._assert_output_exists(output_name)
@@ -594,6 +613,9 @@ class ActorBase(GateObject):
 
     def EndSimulationAction(self):
         """Default virtual method for inheritance"""
+        pass
+
+    def EndOfMultiProcessAction(self):
         pass
 
 
