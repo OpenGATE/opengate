@@ -19,6 +19,7 @@ from importlib.metadata import version
 import shutil
 
 import opengate_core as g4
+from opengate import get_site_packages_dir, get_libG4_path
 from .exception import fatal, warning
 
 
@@ -540,7 +541,7 @@ def print_opengate_info():
     pv = sys.version.replace("\n", "")
     print(f"Python version   {pv}")
     print(f"Platform         {sys.platform}")
-    print(f"Site package     {g4.get_site_packages_dir()}")
+    print(f"Site package     {get_site_packages_dir()}")
 
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
