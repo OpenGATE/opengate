@@ -390,13 +390,21 @@ class PhysicsEngine(EngineBase):
     def initialize_physics_biasing(self):
         # get a dictionary {particle:[processes]}
         particles_processes = self.physics_manager.get_biasing_particles_and_processes()
-
         # check if there are any processes requested for any particle
+        print(particles_processes)
         if any([len(v) > 0 for v in particles_processes.values()]):
             g4_biasing_physics = g4.G4GenericBiasingPhysics()
             for particle, processes in particles_processes.items():
-                if len(processes) > 0:
-                    g4_biasing_physics.PhysicsBias(particle, processes)
+                process_list = processes[0]
+                mode = processes[1]
+                if mode != "non physics":
+                    if len(process_list) > 0:
+                        if mode == "physics":
+                            g4_biasing_physics.PhysicsBias(particle, process_list)
+                        elif mode == "both":
+                            g4_biasing_physics.Bias(particle, process_list)
+                else:
+                    g4_biasing_physics.NonPhysicsBias(process_list)
             self.g4_physics_list.RegisterPhysics(g4_biasing_physics)
 
     # This function deals with calling the parse function

@@ -403,7 +403,7 @@ def _setter_hook_particles(self, value):
         return list(value)
 
 
-class SplittingActorBase(ActorBase):
+class GenericBiasingActorBase(ActorBase):
     """
     Actors based on the G4GenericBiasing class of GEANT4. This class provides tools to interact with GEANT4 processes
     during a simulation, allowing direct modification of process properties. Additionally, it enables non-physics-based
@@ -416,7 +416,6 @@ class SplittingActorBase(ActorBase):
     splitting_factor: int
     bias_primary_only: bool
     bias_only_once: bool
-    particles: list
 
     user_info_defaults = {
         "splitting_factor": (
@@ -428,28 +427,19 @@ class SplittingActorBase(ActorBase):
         "bias_primary_only": (
             True,
             {
-                "doc": "If true, the splitting mechanism is applied only to particles with a ParentID of 1",
+                "doc": "If true, the biasing mechanism is applied only to particles with a ParentID of 1",
             },
         ),
         "bias_only_once": (
             True,
             {
-                "doc": "If true, the splitting mechanism is applied only once per particle history",
-            },
-        ),
-        "particles": (
-            [
-                "all",
-            ],
-            {
-                "doc": "Specifies the particles to split. The default value, all, includes all particles",
-                "setter_hook": _setter_hook_particles,
+                "doc": "If true, the biasing mechanism is applied only once per particle history",
             },
         ),
     }
 
 
-class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
+class ComptSplittingActor(GenericBiasingActorBase, g4.GateOptrComptSplittingActor):
     """
     This splitting actor enables process-based splitting specifically for Compton interactions. Each time a Compton
      process occurs, its behavior is modified by generating multiple Compton scattering tracks
@@ -464,6 +454,8 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     rotation_vector_director: bool
     vector_director: list
     max_theta: float
+    mode: str
+    particles: list
 
     user_info_defaults = {
         "min_weight_of_particle": (
@@ -499,21 +491,23 @@ class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
     }
 
     processes = ("compt",)
+    particles = "gamma"
+    mode = "physics"
 
     def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
+        GenericBiasingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
         g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
 
     def initialize(self):
-        SplittingActorBase.initialize(self)
+        GenericBiasingActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 
-class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+class BremSplittingActor(GenericBiasingActorBase, g4.GateBOptrBremSplittingActor):
     """
     This splitting actor enables process-based splitting specifically for bremsstrahlung process. Each time a Brem
     process occurs, its behavior is modified by generating multiple secondary Brem scattering tracks
@@ -522,27 +516,47 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 
     # hints for IDE
     processes: list
+    particles: list
+    mode: list
 
-    user_info_defaults = {
-        "processes": (
-            ["eBrem"],
-            {
-                "doc": "Specifies the process split by this actor. This parameter is set to eBrem, as the actor is specifically developed for this process. It is recommended not to modify this setting.",
-            },
-        ),
-    }
-
-    processes = ("eBrem",)
+    mode = "physics"
+    particles = (
+        "e+",
+        "e-",
+    )
+    processes = (("eBrem",), ("eBrem",))
 
     def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
+        GenericBiasingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
         g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})
 
     def initialize(self):
-        SplittingActorBase.initialize(self)
+        GenericBiasingActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+
+class ForceCollisionActor(GenericBiasingActorBase, g4.GateOptrForceCollision):
+    particles: str
+    processes = list
+    mode: str
+
+    mode = "both"
+    particles = ("gamma",)
+    processes = [("compt", "phot", "conv", "Rayl")]
+
+    def __init__(self, *args, **kwargs):
+        GenericBiasingActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateOptrForceCollision.__init__(self, {"name": self.name})
+
+    def initialize(self):
+        GenericBiasingActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
@@ -552,6 +566,7 @@ process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
-process_cls(SplittingActorBase)
+process_cls(GenericBiasingActorBase)
 process_cls(ComptSplittingActor)
 process_cls(BremSplittingActor)
+process_cls(ForceCollisionActor)
