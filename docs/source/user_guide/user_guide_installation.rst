@@ -50,3 +50,6 @@ For some systems (clusters or older computers), the main `opengate_core` cannot 
 
 Note that the option `--force-reinstall` is only needed if you already installed the conventional `opengate` before.
 
+
+Additional help : `"Installing Gate 10 in Ubuntu 22 in WSL2 in Windows 11 AMD64" <https://drive.google.com/file/d/1lQW2u-935ev0l5oqt5MUDaLGhYRlanVB/view?usp=drive_link>`_
+

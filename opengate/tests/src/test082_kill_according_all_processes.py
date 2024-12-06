@@ -9,7 +9,8 @@ from anytree import Node, RenderTree
 import uproot
 
 
-def test083_test(df):
+def test082_test(df):
+
     df = df[df["PDGCode"] == 22]
     nb_event = len(df["ParentID"])
     nb_event_to_interest = len(df["ParentID"][df["ParentID"] == 0])
@@ -112,7 +113,7 @@ if __name__ == "__main__":
         "PreDirection",
         "PDGCode",
     ]
-    name_phsp = "test083_" + phsp.name + ".root"
+    name_phsp = "test082_" + phsp.name + "_all.root"
     phsp.output_filename = name_phsp
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -131,10 +132,14 @@ if __name__ == "__main__":
     #
     # # go !
     sim.run()
+    print(kill_proc_act)
     #
-    phsp = uproot.open(str(output_path) + "/test083_PhaseSpace.root" + ":PhaseSpace")
+
+    phsp = uproot.open(
+        str(output_path) + "/test082_PhaseSpace_all.root" + ":PhaseSpace"
+    )
 
     df = phsp.arrays()
-    is_ok = test083_test(df)
+    is_ok = test082_test(df)
     #
     utility.test_ok(is_ok)

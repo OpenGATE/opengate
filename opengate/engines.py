@@ -1161,6 +1161,7 @@ class SimulationEngine(GateSingletonFatal):
             output.expected_number_of_events = (
                 self.source_engine.expected_number_of_events
             )
+            output.warnings = self.simulation.warnings
             return output
 
         # go

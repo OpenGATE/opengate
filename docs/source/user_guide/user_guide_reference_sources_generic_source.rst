@@ -75,6 +75,11 @@ Source of ion can be set with the following (see ``test013``)
    source2 = sim.add_source('GenericSource, 'ion2')
    source2.particle = 'ion 53 124'  # Iodine 124
 
+Note that the ion will only be simulated if the decay is enabled.
+
+.. code:: python
+
+   sim.physics_manager.enable_decay = True
 
 .. _source-position:
 

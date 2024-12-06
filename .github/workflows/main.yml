@@ -2,10 +2,14 @@ name: CI
 
 on:
   push:
+    paths-ignore:
+      - 'docs/**'
     branches: [ master ]
     tags:
       - '*'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
     branches: [ master ]
   schedule:
     - cron: '0 0 * * 0,3'
@@ -214,7 +218,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: bash -l {0}
       run: |
-          choco install cmake
+          choco install cmake --version=3.31.0
           cmake --version
           conda info
           conda list
@@ -478,7 +482,6 @@ jobs:
           fi
           pip install SimpleITK
           pip install gaga_phsp==0.7.4
-          pip install spekpy
           pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
           pip install dist/opengate-*.whl
           export GIT_SSL_NO_VERIFY=1

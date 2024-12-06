@@ -60,7 +60,7 @@ KillActor
 ---------
 
 Description
-~~~~~~~~~
+~~~~~~~~~~~
 
 The KillActor enables the user to "kill", i.e. to stop this particle tracking, during its first step in a defined volume where this actor is attached.
 The number of killed particle can be retrieved printing the actor object.
@@ -87,7 +87,7 @@ Description
 
 The DoseActor scores the energy deposition (edep) or absorbed dose map in a given volume. The dose map is a 3D matrix parameterized with: size (number of voxels), spacing (voxel size), and translation (according to the coordinate system of the attached volume) and rotation. By default, the matrix is centered according to the volume center. Note that this virtual scoring grid is independent of a potential geometric grid (e.g. simulation using a voxelized CT image as geometry).  The dose map may also have singleton dimensions (dose.size values with 1) reducing its effecctive dimension.
 
-A sample code to score the energy deposition (default) is shown below. Let's assume a geometry of type box with name "waterbox" is already defined and is [200, 200, 200] *mm big. The dose actor output would now cover the entire size of the "waterbox" and has the same center.
+A sample code to score the energy deposition (default) is shown below. Let's assume a geometry of type box with name "waterbox" is already defined and is ``[200, 200, 200] * mm`` big. The dose actor output would now cover the entire size of the "waterbox" and has the same center.
 
 .. code-block:: python
 
@@ -98,34 +98,51 @@ A sample code to score the energy deposition (default) is shown below. Let's ass
    mm = gate.g4_units.mm
    dose_act_obj.spacing = [2 * mm, 2 * mm, 2 * mm]
 
-
 Adding following lines
 
 .. code-block:: python
 
    dose_act_obj.user_output.dose.active True
-   dose_act_obj.user_output.uncertainty.active True
+   dose_act_obj.user_output.dose_uncertainty.active True
 
-to the dose actor object will trigger an additional image scoring the dose. The unctertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
+to the dose actor object will trigger an additional image scoring the dose. The uncertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
 
 Like any image, the output dose map will have an origin, spacing and orientation. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True`, the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin.
 
 .. image:: ../figures/image_coord_system.png
 
 Several tests depict the usage of DoseActor: test008, test009, test021, test035, etc.
-Following would translate and rotate the scoring image:
+The following would translate and rotate the scored image:
 
 .. code-block:: python
+
    from scipy.spatial.transform import Rotation
+   mm = gate.g4_units.mm
    dose_act_obj.translation = [2 * mm, 3 * mm, -2 * mm]
    dose_act_obj.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
 
 In this example a uniform scoring object was created for simplicity. To test trans- and rotations, non-uniform sized and spaced voxelized image are highly encouraged.
 
+The DoseActor has the following output:
+
+- :attr:`~.opengate.actors.doseactors.DoseActor.edep`
+- :attr:`~.opengate.actors.doseactors.DoseActor.edep_uncertainty`
+- :attr:`~.opengate.actors.doseactors.DoseActor.dose`
+- :attr:`~.opengate.actors.doseactors.DoseActor.dose_uncertainty`
+- :attr:`~.opengate.actors.doseactors.DoseActor.counts`
+- :attr:`~.opengate.actors.doseactors.DoseActor.density`
+
 Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.doseactors.DoseActor
+
+.. autoproperty:: opengate.actors.doseactors.DoseActor.edep
+.. autoproperty:: opengate.actors.doseactors.DoseActor.edep_uncertainty
+.. autoproperty:: opengate.actors.doseactors.DoseActor.dose
+.. autoproperty:: opengate.actors.doseactors.DoseActor.dose_uncertainty
+.. autoproperty:: opengate.actors.doseactors.DoseActor.counts
+.. autoproperty:: opengate.actors.doseactors.DoseActor.density
 
 
 LETActor
@@ -621,7 +638,7 @@ BremSplittingActor
 
 
 Description
-~~~~~~~~~
+~~~~~~~~~~~
 
 This actor replicates the behaviour of the bremsstrahlung splitting which can be used using GEANT4 command line.
 When an electron or a positron occurs a bremsstrahlung process, the interaction is split in splitting_factor particles, with
@@ -659,15 +676,6 @@ This actor generates N particles with reduced weight whenever a Compton process 
    compt_splitting_actor.rotation_vector_director = True
    compt_splitting_actor.vector_director = [0, 0, -1]
 
-.. code-block:: python
-
-  compt_splitting_actor = sim.add_actor("ComptSplittingActor", "ComptSplitting")
-  compt_splitting_actor.attached_to = W_tubs.name
-  compt_splitting_actor.splitting_factor = nb_split
-  compt_splitting_actor.russian_roulette = True
-  compt_splitting_actor.rotation_vector_director = True
-  compt_splitting_actor.vector_director = [0, 0, -1]
-
 Refer to test071 for more details.
 
 The options include:
@@ -681,5 +689,4 @@ Reference
 ~~~~~~~~~
 
 .. autoclass:: opengate.actors.miscactors.ComptSplittingActor
-
 

@@ -18,7 +18,7 @@ from .base import (
 )
 from .definitions import __world_name__, __gate_list_objects__
 from .engines import SimulationEngine
-from .exception import fatal, warning, GateDeprecationError
+from .exception import fatal, warning, GateDeprecationError, GateImplementationError
 from .geometry.materials import MaterialDatabase
 from .image import (
     create_image_with_volume_extent,
@@ -86,7 +86,13 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
-from .actors.doseactors import DoseActor, TLEDoseActor, LETActor, FluenceActor
+from .actors.doseactors import (
+    DoseActor,
+    TLEDoseActor,
+    LETActor,
+    FluenceActor,
+    ProductionAndStoppingActor,
+)
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -123,6 +129,7 @@ actor_types = {
     "DoseActor": DoseActor,
     "TLEDoseActor": TLEDoseActor,
     "LETActor": LETActor,
+    "ProductionAndStoppingActor": ProductionAndStoppingActor,
     "FluenceActor": FluenceActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
@@ -503,10 +510,12 @@ class PhysicsListManager(GateObject):
             return None
 
     def __getstate__(self):
-        # This is needed because cannot be pickled.
-        dict_to_return = super().__getstate__()
-        dict_to_return["created_physics_list_classes"] = None
-        return dict_to_return
+        raise GateImplementationError(
+            f"It seems like {self.type_name} is getting pickled, "
+            f"while this should never happen because the PhysicsManager should "
+            f"remove it from its state dictionary. In fact, {self.type_name} "
+            f"is not compatible with pickling. "
+        )
 
     def __setstate__(self, d):
         self.__dict__ = d
@@ -742,10 +751,13 @@ class PhysicsManager(GateObject):
         return s
 
     def __getstate__(self):
-        if self.simulation.verbose_getstate:
-            warning("Getstate PhysicsManager")
+        # if self.simulation.verbose_getstate:
+        #     self.warn_user("Getstate PhysicsManager")
 
-        dict_to_return = dict([(k, v) for k, v in self.__dict__.items()])
+        # in the case of the PhysicsManager, we make a copy of super().__getstate__()
+        # rather than just using super().__getstate__() (which does not make a copy).
+        # Reason: physics_list_manager would become None also in the base process
+        dict_to_return = dict([(k, v) for k, v in super().__getstate__().items()])
         dict_to_return["physics_list_manager"] = None
         return dict_to_return
 
@@ -949,9 +961,7 @@ class PhysicsManager(GateObject):
 
 
 class PostProcessingManager(GateObject):
-    """
-    Everything related to post-processing.
-    """
+    """Everything related to post-processing. EXPERIMENTAL!"""
 
     user_info_defaults = {
         "auto_process": (
@@ -1515,10 +1525,6 @@ class Simulation(GateObject):
 
         # list to store warning messages issued somewhere in the simulation
         self._user_warnings = []
-
-        # for debug only
-        self.verbose_getstate = False
-        self.verbose_close = False
 
         # main managers
         self.volume_manager = VolumeManager(self)
