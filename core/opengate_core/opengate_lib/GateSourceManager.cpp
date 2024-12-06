@@ -255,6 +255,7 @@ void GateSourceManager::PrepareNextSource() {
       l.fNextSimulationTime = t;
     }
   }
+
   // If no next time in the current interval, active source is NULL
 }
 
