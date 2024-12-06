@@ -382,6 +382,19 @@ void GateSourceManager::InitializeVisualization() {
     G4VisManager::GetInstance()->SetVerboseLevel("all");
   else
     G4VisManager::GetInstance()->SetVerboseLevel("quit");
+
+// Add the image to the g4_solids Need to be done after GL init
+#ifdef GATEIMAGEBOX_USE_OPENGL
+  if (fVisualizationType == "qt") {
+    for (auto *g4_solid : fImageBoxes) {
+      g4_solid->InitialiseSlice();
+    }
+  }
+#endif
+}
+
+void GateSourceManager::RegisterImageBox(GateImageBox *g4_solid) {
+  fImageBoxes.push_back(g4_solid);
 }
 
 void GateSourceManager::StartVisualization() const {
