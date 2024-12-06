@@ -638,7 +638,7 @@ def add_mlc(sim, linac_name):
 
     mlc = sim.add_volume("Box", f"{linac_name}_mlc")
     mlc_bank_rotation = Rotation.from_euler(
-        "X", - np.arctan(3.25 / 349.3), degrees=False
+        "X", -np.arctan(3.25 / 349.3), degrees=False
     ).as_matrix()
     mlc.rotation = mlc_bank_rotation
     mlc.size = [linac.size[0] - 2 * cm, linac.size[1] - 2 * cm, 95 * mm]
