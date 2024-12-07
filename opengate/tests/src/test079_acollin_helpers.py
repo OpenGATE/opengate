@@ -20,6 +20,7 @@ eV = gate.g4_units.eV
 MeV = gate.g4_units.MeV
 Bq = gate.g4_units.Bq
 gcm3 = gate.g4_units.g_cm3
+deg = gate.g4_units.deg
 
 
 #########################################################################################
@@ -32,6 +33,8 @@ def setup_simulation_engine(path):
     # main options
     sim.g4_verbose = False
     sim.visu = False
+    sim.random_seed = 12345654
+    sim.progress_bar = True
 
     # add a material database
     sim.volume_manager.add_material_database(path.data / "GateMaterials.db")
@@ -86,7 +89,7 @@ def calculate_angle(dir1, dir2):
     return np.arccos(np.clip(cos_theta, -1.0, 1.0))  # Clip to avoid numerical errors
 
 
-def read_gamma_pairs(root_filename, actor_name="phsp"):
+def read_gamma_pairs(root_filename, actor_name="phsp", is_btb=False):
     # Load the ROOT file
     file = uproot.open(root_filename)
 
@@ -106,8 +109,11 @@ def read_gamma_pairs(root_filename, actor_name="phsp"):
     # Combine components into a single 3D vector for PreDirection
     pre_dir = np.vstack((pre_dir_x, pre_dir_y, pre_dir_z)).T
 
-    # Filter for gamma particles created by the annihilation process
-    gamma_mask = (particle_name == "gamma") & (creator_process == "annihil")
+    if is_btb:
+        gamma_mask = particle_name == "gamma"
+    else:
+        # Filter for gamma particles created by the annihilation process
+        gamma_mask = (particle_name == "gamma") & (creator_process == "annihil")
 
     # Dictionary to store paired gammas by EventID
     event_id = event_id[gamma_mask]
@@ -172,8 +178,28 @@ def plot_colin_case(acollinearity_angles):
     return colin_median
 
 
-def plot_acolin_case(ion_pair_mean_energy, acollinearity_angles):
-    curr_label = f"With mean energy per Ion par of {ion_pair_mean_energy / eV:.1f} eV"
+def plot_acolin_case_mepip(ion_pair_mean_energy, acollinearity_angles, is_second=False):
+    label = f"With mean energy per Ion par of {ion_pair_mean_energy / eV:.1f} eV"
+    scale = plot_acolin_case(label, acollinearity_angles, is_second)
+
+    return scale
+
+
+def plot_acolin_case_angle(acolin_FWHM, acollinearity_angles, is_second=False):
+    label = f"Acolin. set at {acolin_FWHM / deg:.2f} deg FWHM"
+    scale = plot_acolin_case(label, acollinearity_angles, is_second)
+
+    return scale
+
+
+def plot_acolin_case(label, acollinearity_angles, is_second=False):
+    # If two cases of acolin is shown on the same figure, make sure that we can tell
+    # them apart
+    if is_second:
+        hist_color = "brown"
+    else:
+        hist_color = "red"
+
     # Range of 0.0 to 1.0 is enforced since in some rare instances, acolinearity is
     # very large, which skew the histogram.
     data = plt.hist(
@@ -181,16 +207,23 @@ def plot_acolin_case(ion_pair_mean_energy, acollinearity_angles):
         bins=71,
         range=(0, 1.0),
         alpha=0.7,
-        color="red",
-        label=curr_label,
+        color=hist_color,
+        label=label,
     )
-    plt.ylim((0.0, 2.0 * max(data[0])))
-    plt.xlim((0.0, 1.0))
+
+    if is_second:
+        box_pos = 0.5 * max(data[0])
+        fit_color = "c"
+    else:
+        plt.ylim((0.0, 2.0 * max(data[0])))
+        plt.xlim((0.0, 1.0))
+        plt.xlabel("Acollinearity Angle (Degrees)")
+        plt.ylabel("Counts")
+        plt.title("Acollinearity Distribution of Gamma Pairs")
+        plt.grid(True)
+        box_pos = max(data[0])
+        fit_color = "g"
     plt.legend()
-    plt.xlabel("Acollinearity Angle (Degrees)")
-    plt.ylabel("Counts")
-    plt.title("Acollinearity Distribution of Gamma Pairs")
-    plt.grid(True)
 
     amplitude, scale = fit_rayleigh(data)
     # Negative value change nothing for the fit but it should be positive.
@@ -198,15 +231,20 @@ def plot_acolin_case(ion_pair_mean_energy, acollinearity_angles):
     x_value = np.linspace(0.0, 1.0, 50)
     # The norm of a isotropic 2D Gaussian centered at [0.0 0.0] is a Rayleigh
     # distribution with a scale equal to the sigme of the 2D Gaussian.
-    plt.plot(x_value, rayleigh(x_value, amplitude, scale), "g", linewidth=3)
+    plt.plot(x_value, rayleigh(x_value, amplitude, scale), fit_color, linewidth=3)
 
     textstr = f"FWHM = {2.355 * scale:.2f}°\n$\\sigma$ = {scale:.2f}°"
     props = dict(
-        boxstyle="round", facecolor="wheat", edgecolor="green", linewidth=3, alpha=0.95
+        boxstyle="round",
+        facecolor="wheat",
+        edgecolor=fit_color,
+        linewidth=3,
+        alpha=0.95,
     )
-    plt.text(0.7, max(data[0]), textstr, bbox=props)
 
-    print(curr_label)
+    plt.text(0.7, box_pos, textstr, bbox=props)
+
+    print(label)
     print(textstr)
 
     return scale

@@ -2,11 +2,16 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: See test079_acollin_ions_geant4Material.py
+Context: By default, simulation of e+ source does not result in the expected acolin. of
+PET imaging. To enable this, one need to set ionisation of the material where the
+annihilations will occur to 5.0 eV. The test is in two part:
+1) If nothing is done, more annihilations should be colinear
+2) If the mean energy per ion pair is set to 5.0 eV, the amplitude of acolinearity
+should follow a Rayleight distribution with a scale of 0.21 deg., which corresponds to
+the acolin deviation following a 2D Gaussian with a FWHM of 0.5 deg.
 
-Here, the material, Body is not known from Geant4 BUT it is defined in GateMaterials.db,
-so one only need to set the mean energy per ion in the physics_manager via its
-mean_energy_per_ion_pair property.
+Here, the material, G4_WATER is already known of Geant4, so one only need to set its
+ionisation correctly.
 """
 
 from test079_acollin_helpers import *
@@ -21,7 +26,7 @@ import matplotlib.pyplot as plt
 # imaging
 mean_energy = 5.0 * eV
 # Key added to output to make sure that multi-threading the tests does not backfire
-test_key = "p3"
+test_key = "p4"
 
 
 #########################################################################################
@@ -32,16 +37,28 @@ if __name__ == "__main__":
 
     # Define core of the simulation, including physics
     sim = setup_simulation_engine(paths)
+    sim.random_seed = 12345654
+    sim.progress_bar = True
 
     # add a waterbox
     wb = sim.add_volume("Box", "waterbox")
     wb.size = [50 * cm, 50 * cm, 50 * cm]
-    wb.material = "Body"
+    wb.material = "G4_WATER"
+
+    # test mat properties
+    mat = sim.volume_manager.find_or_build_material(wb.material)
+    ionisation = mat.GetIonisation()
+    print(
+        f"material {wb.material} mean excitation energy is {ionisation.GetMeanExcitationEnergy() / eV} eV"
+    )
+    print(
+        f"material {wb.material} mean energy per ion pair is {ionisation.GetMeanEnergyPerIonPair() / eV} eV"
+    )
 
     # set the source
-    source = sim.add_source("GenericSource", "f18")
-    source.particle = "ion 9 18"
-    source.energy.mono = 0
+    source = sim.add_source("GenericSource", "beta+_source")
+    source.particle = "e+"
+    source.energy.type = "F18"
     source.activity = 10000 * Bq
     source.direction.type = "iso"
 
@@ -57,8 +74,8 @@ if __name__ == "__main__":
     phsp.output_filename = (
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
-
-    sim.physics_manager.mean_energy_per_ion_pair["Body"] = mean_energy
+    ionisation.SetMeanEnergyPerIonPair(mean_energy)
+    print(f"set MeanEnergyPerIonPair to {ionisation.GetMeanEnergyPerIonPair() / eV} eV")
 
     # go
     sim.run()
@@ -73,7 +90,7 @@ if __name__ == "__main__":
     gamma_pairs = read_gamma_pairs(phsp.output_filename)
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
 
-    acolin_scale = plot_acolin_case(mean_energy, acollinearity_angles)
+    acolin_scale = plot_acolin_case_mepip(mean_energy, acollinearity_angles)
 
     f = paths.output / f"acollinearity_angles_{test_key}.png"
     plt.savefig(f)
