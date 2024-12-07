@@ -9,8 +9,12 @@
 
 namespace py = pybind11;
 
-#include "GateHelpersDict.h"
+#include "GateMaterialMuHandler.h"
 
-void init_GateHelpers(py::module &m) {
-  m.def("DictGetG4RotationMatrix", DictGetG4RotationMatrix);
+void init_GateMaterialMuHandler(py::module &m) {
+  py::class_<GateMaterialMuHandler,
+             std::unique_ptr<GateMaterialMuHandler, py::nodelete>>(
+      m, "GateMaterialMuHandler")
+      .def("GetInstance", &GateMaterialMuHandler::GetInstance)
+      .def("GetMu", &GateMaterialMuHandler::GetMu);
 }

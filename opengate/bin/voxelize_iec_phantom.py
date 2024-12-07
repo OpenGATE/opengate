@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from pathlib import Path
 import click
-import json
-import itk
 import opengate.contrib.phantoms.nemaiec as gate_iec
+from opengate import logger
 from opengate.managers import Simulation
-from opengate.engines import SimulationEngine
-from opengate.utility import g4_units, print_dic, fatal
+from opengate.utility import g4_units
 from opengate.image import *
+from opengate.voxelize import write_voxelized_geometry, voxelized_source
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--spacing", "-s", default=4, help="Spacing in mm")
+@click.option("--spacing", "-s", default=4.0, help="Spacing in mm")
 @click.option("--output", "-o", required=True, help="output filename (.mhd)")
 @click.option(
     "--output_source", default=None, help="output filename for vox source (.mhd)"
@@ -26,15 +24,18 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     nargs=6,
     help="List of 6 activities for the 6 spheres: 10, 13, 17, 22, 28, 37",
 )
+@click.option("--bg", default=0.0, help="Activity in the background")
+@click.option("--cyl", default=0.0, help="Activity in the central cylinder")
 @click.option(
     "--no_shell",
     is_flag=True,
     default=False,
     help="If set, do not consider the shell of the sphere (for high resolution)",
 )
-def go(output, spacing, output_source, activities, no_shell):
+def go(output, spacing, output_source, activities, no_shell, bg, cyl):
     # create the simulation
     sim = Simulation()
+    sim.verbose_level = logger.INFO
 
     # world
     m = g4_units.m
@@ -48,57 +49,43 @@ def go(output, spacing, output_source, activities, no_shell):
     # voxelized the iec volume
     print("Starting voxelization ...")
     spacing = (spacing, spacing, spacing)
-    labels, image = sim.voxelize_geometry(extent=iec, spacing=spacing, margin=1)
-    print(f"Output labels: ")
-    print_dic(labels)
+    volume_labels, image = sim.voxelize_geometry(extent=iec, spacing=spacing, margin=1)
 
     info = get_info_from_image(image)
     print(f"Image size={info.size}")
     print(f"Image spacing={info.spacing}")
     print(f"Image origin={info.origin}")
 
-    # write labels
-    lf = Path(output).with_suffix(".json")
-    outfile = open(lf, "w")
-    json.dump(labels, outfile, indent=4)
+    # write files
+    filenames = write_voxelized_geometry(sim, volume_labels, image, output)
+    for f in filenames.values():
+        print(f"Output: {f}")
 
-    # write image
-    print(f"Write image {output}")
-    itk.imwrite(image, output)
+    # voxelized source activities
+    if activities is None:
+        activities = [0.0] * 6
+    a = {
+        "iec_sphere_10mm": activities[0],
+        "iec_sphere_13mm": activities[1],
+        "iec_sphere_17mm": activities[2],
+        "iec_sphere_22mm": activities[3],
+        "iec_sphere_28mm": activities[4],
+        "iec_sphere_37mm": activities[5],
+        "iec_interior": bg,
+        "iec_center_cylinder_hole": cyl,
+    }
+    if not no_shell:
+        a["iec_sphere_shell_10mm"] = activities[0]
+        a["iec_sphere_shell_13mm"] = activities[1]
+        a["iec_sphere_shell_17mm"] = activities[2]
+        a["iec_sphere_shell_22mm"] = activities[3]
+        a["iec_sphere_shell_28mm"] = activities[4]
+        a["iec_sphere_shell_37mm"] = activities[5]
 
-    # voxelized source ?
-    if activities is not None:
-        if output_source is None:
-            fatal(f"Provide --output_source with --activities")
-        spheres_diam = [10, 13, 17, 22, 28, 37]
-        spheres_activity_concentration = activities
-        # new data
-        vox_img = create_image_like(image, allocate=True, pixel_type="float")
-        arr = itk.array_view_from_image(vox_img)
-        arr[:] = 0.0
-        label_arr = itk.array_view_from_image(image)
-        print()
-        print(f"Voxelized source: ")
-        for l in labels:
-            label_index = labels[l]["label"]
-            # consider iec_sphere_XXmm AND iec_sphere_shell_XXmm
-            if l.startswith("iec_sphere_"):
-                if no_shell and "shell" in l:
-                    continue
-                sph = int(l[-4:][:2])
-                sph_index = spheres_diam.index(sph)
-                arr[label_arr == label_index] = spheres_activity_concentration[
-                    sph_index
-                ]
-                print(
-                    f"Sphere {sph}mm : index = {label_index} "
-                    f"-> {spheres_activity_concentration[sph_index]} BqmL"
-                )
+    if output_source is not None:
+        itk_source = voxelized_source(image, volume_labels, a)
         print(f"Write image source {output_source}")
-        itk.imwrite(vox_img, output_source)
-    else:
-        if output_source is not None:
-            fatal(f"Provide --activities with --output_source")
+        itk.imwrite(itk_source, output_source)
 
 
 # --------------------------------------------------------------------------

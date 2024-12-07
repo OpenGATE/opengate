@@ -9,8 +9,14 @@
 
 namespace py = pybind11;
 
-#include "GateHelpersDict.h"
+#include "G4Material.hh"
+#include "G4MaterialCutsCouple.hh"
 
-void init_GateHelpers(py::module &m) {
-  m.def("DictGetG4RotationMatrix", DictGetG4RotationMatrix);
+void init_G4MaterialCutsCouple(py::module &m) {
+
+  py::class_<G4MaterialCutsCouple>(m, "G4MaterialCutsCouple")
+
+      .def(py::init<>())
+      .def(py::init<const G4Material *>())
+      .def("GetMaterial", &G4MaterialCutsCouple::GetMaterial);
 }

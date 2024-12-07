@@ -28,7 +28,8 @@ from ..actors.dynamicactors import (
     VolumeTranslationChanger,
     VolumeRotationChanger,
 )
-from .materials import create_density_img
+from .materials import create_density_img, write_material_database
+from opengate.serialization import dump_json
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -821,7 +822,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     voxel_materials: List
     image: str
-    dump_label_image: bool
+    dump_label_image: str
 
     user_info_defaults = {
         "voxel_materials": (
@@ -1064,6 +1065,26 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             itk_image = itk.imread(ensure_filename_is_str(path))
         return itk_image
 
+    def create_attenuation_image(self, database, energy):
+        # convert all materials to mu
+        label_to_mu = {}
+        mu_handler = g4.GateMaterialMuHandler.GetInstance(database, 200)  # max in MeV
+        prod_cuts_table = g4.G4ProductionCutsTable.GetProductionCutsTable()
+        for i in range(prod_cuts_table.GetTableSize()):
+            couple = prod_cuts_table.GetMaterialCutsCouple(i)
+            mat_name = str(couple.GetMaterial().GetName())
+            label = self.material_to_label_lut[mat_name]
+            mu = mu_handler.GetMu(couple, energy)
+            label_to_mu[label] = mu
+
+        arr = itk.GetArrayViewFromImage(self.label_image)
+        mu_arr = arr.copy().astype("float")
+        for label, mu in label_to_mu.items():
+            mu_arr[mu_arr == label] = mu
+        itk_mu_img = itk.GetImageFromArray(mu_arr)
+        itk_mu_img.CopyInformation(self.itk_image)
+        return itk_mu_img
+
     def create_label_image(self, itk_image=None):
         # read image
         if itk_image is None:
@@ -1196,6 +1217,22 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
                 f"Consider verifying if this is intentional. "
             )
         return changers
+
+    def write_material_database(self, material_filename):
+        # get all the materials names
+        materials = [m[2] for m in self.voxel_materials]
+        # Maintaining order while keeping unique
+        unique_materials = list(dict.fromkeys(materials))
+        write_material_database(self.simulation, unique_materials, material_filename)
+
+    def write_label_to_material(self, labels_filename):
+        with open(labels_filename, "w") as outfile:
+            dump_json(self.voxel_materials, outfile, indent=4)
+
+    def read_label_to_material(self, labels_filename):
+        with open(labels_filename, "r") as infile:
+            labels = json.load(infile)
+        self.voxel_materials = labels
 
 
 class ParallelWorldVolume(NodeMixin):

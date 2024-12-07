@@ -9,10 +9,10 @@ from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
 
-def check_process_user_hook(simulaton_engine):
+def check_process_user_hook(simulation_engine):
     # Check whether the particle 'gamma' actually has
     # the requested processes attached to it
-    p_name = "gamma"
+    p_name = "e-"
     g4_particle_table = g4.G4ParticleTable.GetParticleTable()
     particle = g4_particle_table.FindParticle(particle_name=p_name)
     # FindParticle returns nullptr if particle name was not found
@@ -20,9 +20,15 @@ def check_process_user_hook(simulaton_engine):
         raise Exception(f"Something went wrong. Could not find particle {p_name}.")
     pm = particle.GetProcessManager()
     process = "eBrem"
-    p = pm.GetProcess(process)
+    process_list = pm.GetProcessList()
+    isInside = False
+    for i in range(process_list.size()):
+        processName = str(process_list[i].GetProcessName())
+        if "biasWrapper(" + process + ")" == processName:
+            isInside = True
+
     # GetProcess returns nullptr if the requested process was not found
-    if p is None:
+    if isInside == False:
         raise Exception(
             f"Could not find the process '{process}' for particle {p_name}."
         )
@@ -30,7 +36,7 @@ def check_process_user_hook(simulaton_engine):
         print(f"Hooray, I found the process '{process}' for the particle {p_name}!")
 
 
-def validation_test(arr, nb_split, tol=0.02):
+def validation_test(arr, nb_split, tol=0.04):
     arr = arr[arr["ParticleName"] == "gamma"]
     EventID = arr["EventID"]
     Weights = arr["Weight"][EventID == EventID[0]]

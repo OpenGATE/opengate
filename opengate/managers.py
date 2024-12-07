@@ -5,39 +5,30 @@ from box import Box
 from anytree import RenderTree, LoopError
 import shutil
 import os
-from pathlib import Path
 import weakref
+from pathlib import Path
 
 import opengate_core as g4
-
 from .base import (
     GateObject,
     process_cls,
     find_all_gate_objects,
     find_paths_in_gate_object_dictionary,
 )
-from .definitions import __world_name__, __gate_list_objects__
+from .definitions import __world_name__
 from .engines import SimulationEngine
 from .exception import fatal, warning, GateDeprecationError, GateImplementationError
 from .geometry.materials import MaterialDatabase
-from .image import (
-    create_image_with_volume_extent,
-    create_image_with_extent,
-    update_image_py_to_cpp,
-    get_py_image_from_cpp_image,
-    write_itk_image,
-)
 
 from .utility import (
     g4_units,
     indent,
     read_mac_file_to_commands,
     ensure_directory_exists,
-    ensure_filename_is_str,
     insert_suffix_before_extension,
 )
 from . import logger
-from .logger import log
+from .logger import global_log
 from .physics import (
     Region,
     OpticalSurface,
@@ -53,6 +44,7 @@ from .sources.voxelsources import VoxelSource
 from .sources.gansources import GANSource, GANPairsSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.phidsources import PhotonFromIonDecaySource
+from .voxelize import voxelize_geometry
 
 source_types = {
     "GenericSource": GenericSource,
@@ -100,6 +92,7 @@ from .actors.miscactors import (
     SplittingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
+    AttenuationImageActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -144,6 +137,7 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "PhaseSpaceActor": PhaseSpaceActor,
+    "AttenuationImageActor": AttenuationImageActor,
 }
 
 
@@ -1156,6 +1150,9 @@ class VolumeManager(GateObject):
         if new_volume is not volume:
             return new_volume
 
+    def remove_volume(self, volume_name):
+        self.volumes.pop(volume_name)
+
     def create_volume(self, volume_type, name):
         # check that another element with the same name does not already exist
         volume_type_variants = [volume_type, volume_type + "Volume"]
@@ -1234,7 +1231,7 @@ def setter_hook_verbose_level(self, verbose_level):
         level = int(verbose_level)
     except ValueError:
         level = getattr(logging, verbose_level)
-    log.setLevel(level)
+    global_log.setLevel(level)
     return verbose_level
 
 
@@ -1730,6 +1727,7 @@ class Simulation(GateObject):
         Returns:
             :obj:SimulationOutput : The output of the simulation run.
         """
+
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
@@ -1752,7 +1750,7 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
-            log.info("Dispatching simulation to subprocess ...")
+            global_log.info("Dispatching simulation to subprocess ...")
             output = dispatch_to_subprocess(self._run_simulation_engine, True)
 
             # Recover output from unpickled actors coming from sub-process queue
@@ -1813,57 +1811,7 @@ class Simulation(GateObject):
         filename=None,
         return_path=False,
     ):
-        """Create a voxelized three-dimensional representation of the simulation geometry.
-
-        The user can specify the sub-portion (a rectangular box) of the simulation which is to be extracted.
-
-        Args:
-            extent : By default ('auto'), GATE automatically determines the sub-portion
-                to contain all volumes of the simulation.
-                Alternatively, extent can be either a tuple of 3-vectors indicating the two diagonally
-                opposite corners of the box-shaped
-                sub-portion of the geometry to be extracted, or a volume or list volumes.
-                In the latter case, the box is automatically determined to contain the volume(s).
-            spacing (tuple) : The voxel spacing in x-, y-, z-direction.
-            margin : Width (in voxels) of the additional margin around the extracted box-shaped sub-portion
-                indicated by `extent`.
-            filename (str, optional) : The filename/path to which the voxelized image and labels are written.
-                Suffix added automatically. Path can be relative to the global output directory of the simulation.
-            return_path (bool) : Return the absolute path where the voxelized image was written?
-
-        Returns:
-            dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geometry;
-                optionally: the absolute path where the image was written, if applicable.
-        """
-        # collect volumes which are directly underneath the world/parallel worlds
-        if extent in ("auto", "Auto"):
-            self.volume_manager.update_volume_tree_if_needed()
-            extent = list(self.volume_manager.world_volume.children)
-            for pw in self.volume_manager.parallel_world_volumes.values():
-                extent.extend(list(pw.children))
-
-        labels, image = dispatch_to_subprocess(
-            self._get_voxelized_geometry, extent, spacing, margin
-        )
-
-        if filename is not None:
-            outpath = self.get_output_path(filename)
-            outpath_json = outpath.parent / (outpath.stem + "_labels.json")
-            outpath_mhd = outpath.parent / (outpath.stem + "_image.mhd")
-
-            # write labels
-            with open(outpath_json, "w") as outfile:
-                dump_json(labels, outfile, indent=4)
-
-            # write image
-            write_itk_image(image, ensure_filename_is_str(outpath_mhd))
-        else:
-            outpath_mhd = "not_applicable"
-
-        if return_path is True:
-            return labels, image, outpath_mhd
-        else:
-            return labels, image
+        return voxelize_geometry(self, extent, spacing, margin, filename, return_path)
 
     def initialize_source_before_g4_engine(self):
         """
@@ -1871,44 +1819,6 @@ class Simulation(GateObject):
         initialization of the G4 engine starts. This can be done via this function.
         """
         self.source_manager.initialize_before_g4_engine()
-
-    def _get_voxelized_geometry(self, extent, spacing, margin):
-        """Private method which returns a voxelized image of the simulation geometry
-        given the extent, spacing and margin.
-
-        The voxelization does not check which volume is voxelized.
-        Every voxel will be assigned an ID corresponding to the material at this position
-        in the world.
-        """
-
-        if isinstance(extent, VolumeBase):
-            image = create_image_with_volume_extent(extent, spacing, margin)
-        elif isinstance(extent, __gate_list_objects__) and all(
-            [isinstance(e, VolumeBase) for e in extent]
-        ):
-            image = create_image_with_volume_extent(extent, spacing, margin)
-        elif isinstance(extent, __gate_list_objects__) and all(
-            [isinstance(e, __gate_list_objects__) and len(e) == 3 for e in extent]
-        ):
-            image = create_image_with_extent(extent, spacing, margin)
-        else:
-            fatal(
-                f"The input variable `extent` needs to be a tuple of 3-vectors, or a volume, "
-                f"or a list of volumes. Found: {extent}."
-            )
-
-        with SimulationEngine(self) as se:
-            se.initialize()
-            vox = g4.GateVolumeVoxelizer()
-            update_image_py_to_cpp(image, vox.fImage, False)
-            vox.Voxelize()
-            image = get_py_image_from_cpp_image(vox.fImage)
-            labels = vox.fLabels
-            for key in labels.keys():
-                vol = se.simulation.volume_manager.get_volume(key)
-                labels[key] = {"label": labels[key], "material": vol.material}
-
-        return labels, image
 
 
 def create_sim_from_json(path):

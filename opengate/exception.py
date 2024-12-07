@@ -2,7 +2,7 @@ import inspect
 import colored
 
 import opengate_core as g4
-from .logger import log
+from .logger import global_log
 
 
 class GateDeprecationError(Exception):
@@ -34,15 +34,15 @@ def fatal(s):
     caller = inspect.getframeinfo(inspect.stack()[1][0])
     ss = f"(in {caller.filename} line {caller.lineno})"
     ss = colored.stylize(ss, color_error)
-    log.critical(ss)
+    global_log.critical(ss)
     s = colored.stylize(s, color_error)
-    log.critical(s)
+    global_log.critical(s)
     raise Exception(s)
 
 
 def warning(s):
     s = colored.stylize(s, color_warning)
-    log.warning(s)
+    global_log.warning(s)
 
 
 def raise_except(s):
