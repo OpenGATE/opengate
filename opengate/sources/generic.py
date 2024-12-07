@@ -39,7 +39,7 @@ def _generic_source_default_direction():
             "sigma": [0, 0],
             "acceptance_angle": _generic_source_default_aa(),
             "accolinearity_flag": False,
-            "accolinearity_fwhm": 0.55 * g4_units.deg,
+            "accolinearity_fwhm": 0.5 * g4_units.deg,
             "histogram_theta_weights": [],
             "histogram_theta_angles": [],
             "histogram_phi_weights": [],

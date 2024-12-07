@@ -24,6 +24,7 @@ test_key = "p7"
 # The number of events simulated to validate the distribution of acolineaity in each
 # cases.
 number_Events = 10_000
+default_accolinearity = 0.5 * deg
 # Default acolin. FWHM is 0.5 deg, so here we also test with another value.
 custom_acolin_FWHM = 0.55 * deg
 
@@ -97,8 +98,9 @@ if __name__ == "__main__":
     # test: with acolinearity, its amplitude should have a Rayleigh distribution
     gamma_pairs = read_gamma_pairs(root_filename_default_acolin, is_btb=True)
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
-    # zxc Might be nice to have a hook to get default
-    acolin_scale_default = plot_acolin_case_angle(0.5 * deg, acollinearity_angles)
+    acolin_scale_default = plot_acolin_case_angle(
+        default_accolinearity, acollinearity_angles
+    )
 
     # test: with acolinearity, its amplitude should have a Rayleigh distribution
     gamma_pairs = read_gamma_pairs(root_filename_custom_acolin, is_btb=True)
@@ -115,10 +117,13 @@ if __name__ == "__main__":
     # No acolin
     is_ok_p1 = colin_median < 0.01
     # Basic acolin
-    is_ok_p2 = np.isclose(acolin_scale_default * 2.355, 0.5, atol=0.1)
-    # Custom acolin
     is_ok_p2 = np.isclose(
-        acolin_scale_custom * 2.355, custom_acolin_FWHM / deg, atol=0.1
+        acolin_scale_default * 2.355, default_accolinearity / deg, atol=0.02
+    )
+    print(acolin_scale_default, is_ok_p2)
+    # Custom acolin
+    is_ok_p3 = np.isclose(
+        acolin_scale_custom * 2.355, custom_acolin_FWHM / deg, atol=0.02
     )
 
-    tu.test_ok(is_ok_p1 and is_ok_p2)
+    tu.test_ok(is_ok_p1 and is_ok_p2 and is_ok_p3)

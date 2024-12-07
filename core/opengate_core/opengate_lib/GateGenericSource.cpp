@@ -309,17 +309,14 @@ void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
   auto &ll = fThreadLocalDataGenericSource.Get();
   auto u = py::dict(user_info["direction"]);
   bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
-  // zxc remove accolinearityFlag here?
   ll.fSPS->SetBackToBackMode(true, accolinearityFlag);
   if (accolinearityFlag == true) {
     try {
       // Change the value if user provided one.
       double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
       ll.fSPS->SetAccolinearityFWHM(accolinearityFWHM);
-      // zxc Had to use py::key_error over FatalKeyError, not sure why...
     } catch (const py::key_error &e) {
-      // zxc log a "The default value was used" or something?
-      // std::cerr << "Error: " << e.what() << std::endl;
+      // TODO: log a "The default value was used" or something?
       // Use default value.
       ll.fSPS->SetAccolinearityFWHM();
     }
