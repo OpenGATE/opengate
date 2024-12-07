@@ -4,7 +4,6 @@ from box import Box
 from scipy.spatial.transform import Rotation
 import math
 
-import opengate_core as g4
 from .exception import fatal
 from .geometry.utility import (
     get_transform_world_to_local,
@@ -131,6 +130,12 @@ def get_translation_between_images_center(img_name1, img_name2):
     return center2 - center1
 
 
+def get_translation_to_isocenter(img_filename):
+    info = read_image_info(img_filename)
+    tr = info.size * info.spacing / 2.0 + info.origin
+    return tr
+
+
 def get_origin_wrt_images_g4_position(img_info1, img_info2, translation):
     """
     The two images are considered in the same GATE physical space (coordinate system), so according to the
@@ -185,17 +190,6 @@ def get_image_center(image):
     info = read_image_info(image)
     center = info.size * info.spacing / 2.0  # + info.spacing / 2.0
     return center
-
-
-def get_translation_from_iso_center(img_info, rot, iso_center, centered):
-    if centered:
-        # cf Gate GateVImageVolume.cc, function UpdatePositionWithIsoCenter
-        iso_center = iso_center - img_info.origin
-        center = img_info.size * img_info.spacing / 2.0
-        iso_center -= center
-        t = rot.apply(iso_center)
-        return t
-    fatal(f"not implemented yet")
 
 
 def align_image_with_physical_volume(
@@ -490,3 +484,21 @@ def resample_itk_image_like(img, like_img, default_pixel_value, linear=True):
     resampled_img = resampler.GetOutput()
 
     return resampled_img
+
+
+def resample_itk_image(image, size, spacing, default_pixel_value, linear=True):
+    # create a temporary image
+    like = create_3d_image(size, spacing, allocate=False)
+    # position the image such as the center is the same than the initial image
+    info1 = get_info_from_image(like)
+    center1 = info1.size / 2.0 * info1.spacing + info1.origin - info1.spacing / 2.0
+    info2 = get_info_from_image(image)
+    center2 = info2.size / 2.0 * info2.spacing + info2.origin - info2.spacing / 2.0
+    tr = center2 - center1
+    info1.origin = tr
+    like.SetOrigin(info1.origin)
+    # resample
+    image = resample_itk_image_like(
+        image, like, default_pixel_value=default_pixel_value, linear=linear
+    )
+    return image

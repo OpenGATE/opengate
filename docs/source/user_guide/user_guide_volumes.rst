@@ -246,6 +246,11 @@ The following example demonstrates how to simulate a clinical scenario with a vo
 
 In this setup, the voxelized CT is placed in the primary world, representing the patient anatomy and the detector is placed in a parallel world to avoid conflicts with the CT volume.
 
+Volume voxelization
+-------------------
+
+Tools to convert any volume into voxelized image (a matrix of voxels) is provided. It is described in  `Voxelization <#voxelization>`__.
+
 
 Examples of complex geometries: Linac, SPECT, PET, phantoms
 -----------------------------------------------------------

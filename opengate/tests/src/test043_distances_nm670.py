@@ -15,7 +15,8 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
-    sim.visu = False
+    # sim.visu = True
+    sim.visu_type = "qt"
     sim.random_seed = 123654
     sim.number_of_threads = 1
 
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     # check values
     is_ok = True
     for colli in collis:
-        pp, dc, psd = gate_spect.get_plane_position_and_distance_to_crystal(colli)
+        pp, dc, psd = gate_spect.compute_plane_position_and_distance_to_crystal(colli)
         ok = math.isclose(pp, plane_positions[colli])
         utility.print_test(
             ok,

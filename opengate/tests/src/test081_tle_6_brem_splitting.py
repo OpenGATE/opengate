@@ -3,11 +3,8 @@
 import opengate as gate
 from opengate.tests import utility
 from opengate.tests.src.test081_tle_helpers import (
-    add_waterbox,
     add_simple_waterbox,
     add_source,
-    plot_pdd,
-    compare_pdd,
 )
 import sys
 import numpy as np
