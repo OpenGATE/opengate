@@ -102,8 +102,9 @@ Adding following lines
 
 .. code-block:: python
 
-   dose_act_obj.user_output.dose.active True
-   dose_act_obj.user_output.dose_uncertainty.active True
+   dose_act_obj.dose.active = True
+   dose_act_obj.dose_uncertainty.active = True
+   dose_act_obj.edep_uncertainty.active = True
 
 to the dose actor object will trigger an additional image scoring the dose. The uncertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
 
