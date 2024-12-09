@@ -9,7 +9,7 @@
 
 #include "G4GammaGeneralProcess.hh"
 #include <G4VProcess.hh>
-#if USE_USE_VISU == 1
+#if USE_VISU == 1
 #include <QApplication>
 #include <QWidget>
 #endif
@@ -47,7 +47,7 @@ std::string DebugStep(const G4Step *step) {
 }
 
 int createTestQtWindow() {
-#if USE_USE_VISU == 1
+#if USE_VISU == 1
   int argc = 1;
   char *argv[] = {(char *)"minimal", nullptr};
   QApplication app(argc, argv);
