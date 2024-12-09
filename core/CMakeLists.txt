@@ -38,10 +38,10 @@ IF (Geant4_qt_FOUND OR Geant4_vis_opengl_x11_FOUND)
     message(STATUS "OPENGATE - Geant4 is compiled with QT")
     find_package(OpenGL QUIET)
     include_directories(${OPENGL_INCLUDE_DIR})
-    add_definitions(-DUSE_USE_VISU=1)
+    add_definitions(-DUSE_VISU=1)
 ELSE ()
     message(STATUS "OPENGATE without Geant4 visualisation")
-    add_definitions(-DUSE_USE_VISU=0)
+    add_definitions(-DUSE_VISU=0)
 ENDIF ()
 
 # Need pybind11
