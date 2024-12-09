@@ -604,3 +604,19 @@ def standard_error_c4_correction(n):
     return (
         np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
     )
+
+def update_runid(input_path, run_id, tree, output_path):
+    """
+    Update a ROOT file by setting the RunID to some constant value.
+
+    When a GATE simulation with multiple runs was parallelized by splitting it into several one-run simulations, all output ROOT files have RunIDs equal to one.
+    This can be a problem for post-processing ROOT files based on their RunID.
+    By using this piece of code, one can update the RunID from a ROOT output file to the actual RunID.
+
+    This creates a new ROOT file, and does not operate in-place. The original ROOT file is preserved."""
+    import uproot
+    input_tree = uproot.open(input_path)[tree]
+    input_array = input_tree.arrays(library='np')
+    input_array['RunID'] = np.full(input_array['RunID'].shape, run_id, dtype=input_array['RunID'].dtype)
+    with uproot.recreate(output_path) as output_file:
+        output_file[tree] = input_array
