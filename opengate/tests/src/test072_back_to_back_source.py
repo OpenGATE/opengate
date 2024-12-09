@@ -29,9 +29,6 @@ cm = gate.g4_units.cm
 # Methods used in this test
 #########################################################################################
 def test_back_to_back(_path_to_root_file, _nb_b2b):
-    """
-    Def.: zxc FIXME
-    """
     # get data from root file
     b2b_root = uproot.open(_path_to_root_file)["phsp;1"].arrays(library="numpy")
 
@@ -160,8 +157,6 @@ if __name__ == "__main__":
 
     # test
     is_ok = test_back_to_back(phsp_actor.get_output_path(), nbEvents)
-    # FIXME confirm acolin when activated
-    # FIXME Other tests?
 
     # this is the end, my friend
     utility.test_ok(is_ok)

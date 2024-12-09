@@ -81,6 +81,14 @@ Note that the ion will only be simulated if the decay is enabled.
 
    sim.physics_manager.enable_decay = True
 
+
+GATE also provide a ``back_to_back`` particle, which is an alias for colinear
+gamma pairs of 511 keV.
+
+.. code:: python
+
+   source.particle = "back_to_back"
+
 .. _source-position:
 
 Particle initial position
