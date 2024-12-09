@@ -352,7 +352,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             True,
             {
                 "doc": "This option will provide an additional output image with the squared energy (or dose) deposited per event. This image can be used to calculate the variance of the output variable, as Var(X) = E[X^2] - E[X]^2. This option enables the E[X^2] image.",
-                "deprecated": "Use: my_actor.user_output.square.active=True/False "
+                "deprecated": "Use: my_actor.square.active=True/False "
                 "to request uncertainty scoring of the respective quantity, "
                 "where 'my_actor' should be your actor object. "
                 "Note: activating user_output.edep_uncertainty or user_output.dose_uncertainty "
@@ -363,7 +363,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             True,
             {
                 "doc": "This option will create an additional output image providing the uncertainty of the scored variable (dose or edep).",
-                "deprecated": "Use: my_actor.user_output.dose_uncertainty.active=True/False and"
+                "deprecated": "Use: my_actor.dose_uncertainty.active=True/False and"
                 "my_actor.user_output.edep_uncertainty.active=True/False "
                 "to request uncertainty scoring of the respective quantity, "
                 "where 'my_actor' should be your actor object. ",
@@ -374,7 +374,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             False,
             {
                 "doc": "This option will enable the calculation of the dose image.",
-                "deprecated": "Use: my_actor.user_output.dose.active=True/False "
+                "deprecated": "Use: my_actor.dose.active=True/False "
                 "to request the actor to score dose, "
                 "where 'my_actor' should be your actor object. "
                 "By default, only the deposited energy is scored. ",
