@@ -58,7 +58,7 @@ public:
 
   // Probably an underestimation in most cases, but it is the most cited
   // value (Moses 2011)
-  void SetAccolinearityFWHM(double accolinearityFWHM = 0.5 * CLHEP::deg);
+  void SetAccolinearityFWHM(double accolinearityFWHM);
 
 protected:
   G4ParticleDefinition *fParticleDefinition;
