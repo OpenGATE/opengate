@@ -51,6 +51,52 @@ def print_ld_preload_error(developer_mode=False):
     print("=" * 80)
 
 
+def is_python_interactive_shell():
+    import __main__
+
+    return not hasattr(__main__, "__file__")
+
+
+def restart_with_qt_libs():
+    """
+    Restart the current process with QT libs set.
+    Only for mac and wheel installation
+    """
+
+    if "site-packages" in pathCurrentFile:
+        # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
+        developer_mode = False
+        reload_python = False
+        if (
+            "DYLD_LIBRARY_PATH" not in os.environ
+            or os.path.join(get_site_packages_dir(), "opengate_core/plugins")
+            not in os.environ["DYLD_LIBRARY_PATH"]
+        ):
+            reload_python = True
+
+    else:
+        # pip install -e . -> we do not know where are libG4
+        developer_mode = True
+        reload_python = True
+
+    if reload_python:
+        # Set the environment variable
+        new_env = os.environ.copy()
+        if not developer_mode:
+            if "DYLD_LIBRARY_PATH" in new_env:
+                new_env["DYLD_LIBRARY_PATH"] = (
+                    os.path.join(get_site_packages_dir(), "opengate_core/plugins")
+                    + new_env["DYLD_LIBRARY_PATH"]
+                )
+            else:
+                new_env["DYLD_LIBRARY_PATH"] = (
+                    os.path.join(get_site_packages_dir(), "opengate_core/plugins")
+                )
+
+        # Restart the process with the new environment
+        os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
+
+
 def restart_with_glibc_tunables():
     """
     Restart the current process with GLIBC_TUNABLES set.
@@ -124,6 +170,8 @@ pathCurrentFile = os.path.abspath(__file__)
 
 if sys.platform.startswith("linux"):
     restart_with_glibc_tunables()
+elif sys.platform.startswith("darwin"):
+    restart_with_qt_libs()
 
 # subpackages
 import opengate.sources
