@@ -311,21 +311,16 @@ void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
   bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
   ll.fSPS->SetBackToBackMode(true, accolinearityFlag);
   if (accolinearityFlag == true) {
-    try {
-      // Change the value if user provided one.
-      double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
-      ll.fSPS->SetAccolinearityFWHM(accolinearityFWHM);
-    } catch (const py::key_error &e) {
-      // TODO: log a "The default value was used" or something?
-      // Use default value.
-      ll.fSPS->SetAccolinearityFWHM();
-    }
+    // Change the value if user provided one.
+    double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
+    ll.fSPS->SetAccolinearityFWHM(accolinearityFWHM);
   }
-  // this is photon
-  auto *particle_table = G4ParticleTable::GetParticleTable();
-  fParticleDefinition = particle_table->FindParticle("gamma");
-  ll.fSPS->SetParticleDefinition(fParticleDefinition);
-  // The energy is fixed to 511 keV in the python side
+}
+// this is photon
+auto *particle_table = G4ParticleTable::GetParticleTable();
+fParticleDefinition = particle_table->FindParticle("gamma");
+ll.fSPS->SetParticleDefinition(fParticleDefinition);
+// The energy is fixed to 511 keV in the python side
 }
 
 void GateGenericSource::InitializePosition(py::dict puser_info) {
