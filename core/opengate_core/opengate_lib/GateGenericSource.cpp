@@ -315,11 +315,11 @@ void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
     double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
     ll.fSPS->SetAccolinearityFWHM(accolinearityFWHM);
   }
-// this is photon
-auto *particle_table = G4ParticleTable::GetParticleTable();
-fParticleDefinition = particle_table->FindParticle("gamma");
-ll.fSPS->SetParticleDefinition(fParticleDefinition);
-// The energy is fixed to 511 keV in the python side
+  // this is photon
+  auto *particle_table = G4ParticleTable::GetParticleTable();
+  fParticleDefinition = particle_table->FindParticle("gamma");
+  ll.fSPS->SetParticleDefinition(fParticleDefinition);
+  // The energy is fixed to 511 keV in the python side
 }
 
 void GateGenericSource::InitializePosition(py::dict puser_info) {
