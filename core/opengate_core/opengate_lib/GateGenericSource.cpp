@@ -315,7 +315,6 @@ void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
     double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
     ll.fSPS->SetAccolinearityFWHM(accolinearityFWHM);
   }
-}
 // this is photon
 auto *particle_table = G4ParticleTable::GetParticleTable();
 fParticleDefinition = particle_table->FindParticle("gamma");
