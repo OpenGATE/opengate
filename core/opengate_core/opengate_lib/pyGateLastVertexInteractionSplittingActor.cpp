@@ -18,5 +18,10 @@ void init_GateLastVertexInteractionSplittingActor(py::module &m) {
       .def_readwrite(
           "fListOfVolumeAncestor",
           &GateLastVertexInteractionSplittingActor::fListOfVolumeAncestor)
-      .def(py::init<py::dict &>());
+      .def(py::init<py::dict &>())
+      .def("GetNumberOfKilledParticles",
+           &GateLastVertexInteractionSplittingActor::GetNumberOfKilledParticles)
+      .def("GetNumberOfReplayedParticles",
+           &GateLastVertexInteractionSplittingActor::GetNumberOfReplayedParticles);
 }
+

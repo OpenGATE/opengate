@@ -662,6 +662,7 @@ class LastVertexInteractionSplittingActor(
                 "SteppingAction",
                 "PostUserTrackingAction",
                 "EndOfEventAction",
+                "EndSimulationAction",
             }
         )
 
@@ -679,6 +680,10 @@ class LastVertexInteractionSplittingActor(
             volume_name = node.mother
             self.list_of_volume_name.append(volume_name)
         self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
+        print("Number of killed particle:", self.GetNumberOfKilledParticles())
 
 
 class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
