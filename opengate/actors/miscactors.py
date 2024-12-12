@@ -332,7 +332,6 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         ),
     }
 
-
     user_output_config = {
         "kill_according_processes": {
             "actor_output_class": ActorOutputKillAccordingProcessesActor,
