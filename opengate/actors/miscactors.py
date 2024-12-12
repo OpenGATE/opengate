@@ -388,11 +388,11 @@ class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleName
         ),
     }
 
-    list_of_volume_name = []
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self.number_of_killed_particles = 0
         self.__initcpp__()
+        self.list_of_volume_name = []
 
     def __initcpp__(self):
         g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)

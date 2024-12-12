@@ -15,6 +15,9 @@ void init_GateKillAccordingParticleNameActor(py::module &m) {
   py::class_<GateKillAccordingParticleNameActor, std::unique_ptr<GateKillAccordingParticleNameActor, py::nodelete>,
              GateVActor>(m, "GateKillAccordingParticleNameActor")
       .def(py::init<py::dict &>())
+      .def_readwrite(
+          "fListOfVolumeAncestor",
+          &GateKillAccordingParticleNameActor::fListOfVolumeAncestor)
       .def("GetNumberOfKilledParticles",
            &GateKillAccordingParticleNameActor::GetNumberOfKilledParticles);
 }

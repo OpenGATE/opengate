@@ -23,13 +23,14 @@ public:
     G4bool fIsAParticleToKill = false;
   };
   G4Cache<threadLocalT> fThreadLocalData;
-  std::vector<G4String> fParticlesNameToKill;
+  std::vector<std::string> fParticlesNameToKill;
   std::vector<G4String> fListOfVolumeAncestor;
 
 
   // Main function called every step in attached volume
   void PreUserTrackingAction(const G4Track *) override;
   void SteppingAction(G4Step *) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   inline long GetNumberOfKilledParticles() { return fNbOfKilledParticles; }
 

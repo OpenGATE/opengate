@@ -20,6 +20,12 @@ GateKillAccordingParticleNameActor::GateKillAccordingParticleNameActor(
     : GateVActor(user_info, false) {}
 
 
+void GateKillAccordingParticleNameActor::InitializeUserInfo(py::dict &user_info) {
+  GateVActor::InitializeUserInfo(user_info);
+  fParticlesNameToKill = DictGetVecStr(user_info, "particles_name_to_kill");
+}
+
+
 
 void GateKillAccordingParticleNameActor::PreUserTrackingAction(
     const G4Track *track) {
