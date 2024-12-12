@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: In Shibuya et al. 2007 [1], it was shown that acollinearity of annihilation
-photons in a human subject follows a double Gaussian distribution with a combined FWHM
-of 0.55 deg.
-While the double Gaussian distribution currently cannot be reproduced in GATE, setting the MeanEnergyPerIonPair of the material to 6.0 eV results in a 2D Gaussian with a FWHM of 0.55 deg.
+Context: By default, simulation of Ion source does not result in the expected acolin. of
+PET imaging. To enable this, one need to set ionisation of the material where the
+annihilations will occur to 5.0 eV. The test is in two part:
+1) If nothing is done, more annihilations should be colinear
+2) If the mean energy per ion pair is set to 5.0 eV, the amplitude of acolinearity
+should follow a Rayleight distribution with a scale of 0.21 deg., which corresponds to
+the acolin deviation following a 2D Gaussian with a FWHM of 0.5 deg.
 
-Note: Changing the material to "Body" does not change the value of acollinearity
-compared to water. Unknown if it is a limitation in the simulation or if it is due to
-0.5 deg being obtained in older setup with water at 20 deg vs human that are a little
-more warm?
-
-[1] https://iopscience.iop.org/article/10.1088/0031-9155/52/17/010
+Here, the material, G4_WATER is already known of Geant4, so one only need to set its
+ionisation correctly.
 """
 
 from test079_acollin_helpers import *
@@ -23,10 +22,11 @@ import matplotlib.pyplot as plt
 #########################################################################################
 # Simulations configuration that may be relevant to change
 #########################################################################################
-# Mean energy of Ion Pair to use. 6.0 eV seems to results in 0.55 deg FWHM
-mean_energy = 6.0 * eV
+# Mean energy of Ion Pair to use. 5.0 eV should produce the expected 0.5 deg FWHM in PET
+# imaging
+mean_energy = 5.0 * eV
 # Key added to output to make sure that multi-threading the tests does not backfire
-test_key = "p5"
+test_key = "p0"
 
 
 #########################################################################################
@@ -62,6 +62,13 @@ if __name__ == "__main__":
 
     # add phase actor
     phsp = setup_actor(sim, "phsp", wb.name)
+    phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
+
+    # go
+    sim.run(start_new_process=True)
+
+    # redo test changing the MeanEnergyPerIonPair
+    root_filename = phsp.output_filename
     phsp.output_filename = (
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
@@ -71,18 +78,26 @@ if __name__ == "__main__":
     # go
     sim.run()
 
+    # test: no mean energy, should be mostly colinear
+    gamma_pairs = read_gamma_pairs(root_filename)
+    acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
+
+    colin_median = plot_colin_case(acollinearity_angles)
+
     # test: with mean energy, acolinearity amplitude should have a Rayleigh distribution
     gamma_pairs = read_gamma_pairs(phsp.output_filename)
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
 
-    acolin_scale = plot_acolin_case(mean_energy, acollinearity_angles)
+    acolin_scale = plot_acolin_case_mepip(mean_energy, acollinearity_angles)
 
     f = paths.output / f"acollinearity_angles_{test_key}.png"
     plt.savefig(f)
     print(f"Plot was saved in {f}")
 
     # final
+    # No acolin
+    is_ok_p1 = colin_median < 0.01
     # Basic acolin
-    is_ok_p2 = np.isclose(acolin_scale * 2.355, 0.55, atol=0.2)
+    is_ok_p2 = np.isclose(acolin_scale * 2.355, 0.5, atol=0.2)
 
-    tu.test_ok(is_ok_p2)
+    tu.test_ok(is_ok_p1 and is_ok_p2)
