@@ -650,20 +650,23 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
                (fIsAnnihilAlreadySplit == false))) {
 
             // FIXME : list of process which are not splitable yet
-            if ((fProcessNameToSplit != "msc") &&
-                (fProcessNameToSplit != "conv") &&
-                (fProcessNameToSplit != "eIoni")&&
-                (!((fProcessNameToSplit == "phot") || (step->GetTrack()->GetParticleDefinition()->GetParticleName() == "gamma" )))) {
-              fCopyInitStep = new G4Step(*step);
-              if (fProcessNameToSplit == "eBrem") {
-                fCopyInitStep->SetStepLength(
-                    fContainer.GetContainerToSplit().GetStepLength());
-                fCopyInitStep->GetPreStepPoint()->SetKineticEnergy(
-                    fContainer.GetContainerToSplit().GetEnergy());
+            
+              if ((fProcessNameToSplit != "msc") &&
+                  (fProcessNameToSplit != "conv") &&
+                  (fProcessNameToSplit != "eIoni")&&
+                  (((fProcessNameToSplit != "phot") ||  ((fProcessNameToSplit == "phot")&& (step->GetTrack()->GetParticleDefinition()->GetParticleName() !="gamma"))))
+                  ) {
+                fCopyInitStep = new G4Step(*step);
+                if (fProcessNameToSplit == "eBrem") {
+                  fCopyInitStep->SetStepLength(
+                      fContainer.GetContainerToSplit().GetStepLength());
+                  fCopyInitStep->GetPreStepPoint()->SetKineticEnergy(
+                      fContainer.GetContainerToSplit().GetEnergy());
+                }
+                CreateNewParticleAtTheLastVertex(fCopyInitStep, step, fContainer,
+                                                fBatchSize);
               }
-              CreateNewParticleAtTheLastVertex(fCopyInitStep, step, fContainer,
-                                               fBatchSize);
-            }
+
             step->GetTrack()->SetTrackStatus(fKillTrackAndSecondaries);
 
             if (fProcessNameToSplit == "annihil") {
