@@ -14,7 +14,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output
 
     # shhhht !
-    gate.logger.log.setLevel(gate.logger.NONE)
+    gate.logger.global_log.setLevel(gate.logger.NONE)
 
     m = gate.g4_units.m
     cm = gate.g4_units.cm

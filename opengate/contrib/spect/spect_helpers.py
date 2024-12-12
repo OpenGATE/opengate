@@ -1,10 +1,14 @@
+import numpy as np
 import pathlib
+import SimpleITK as sitk
+import itk
+from pathlib import Path
+
 from opengate.geometry.utility import (
     translate_point_to_volume,
     vec_g4_as_np,
 )
 from opengate.actors.digitizers import *
-import itk
 
 
 def add_fake_table(sim, name="table"):
@@ -161,3 +165,80 @@ def merge_several_heads_projections(filenames):
     output_img = itk.GetImageFromArray(output_arr)
     output_img.CopyInformation(img)
     return output_img
+
+
+def read_projections_as_sinograms(
+    projections_folder, projections_filenames, nb_of_gantry_angles
+):
+    """
+    Reads projection files from a specified folder, processes them into sinograms per
+    energy window, and ensures consistency in image metadata across all projections.
+
+    Args:
+        projections_folder (str|Path): Path to the folder containing projection files.
+        projections_filenames : List of projection filenames to read.
+        nb_of_gantry_angles (int): Number of gantry angles in the projections.
+
+    Returns:
+        list[sitk.Image]: List of SimpleITK Image objects containing the sinograms per
+        energy window.
+    """
+    # get all filenames
+    filenames = [Path(projections_folder) / f for f in projections_filenames]
+
+    # init variables
+    sinograms_per_energy_window = None
+    nb_of_energy_windows = None
+    projection_size = None
+    projection_origin = None
+    projection_spacing = None
+
+    # read all projection files (one per head)
+    for f in filenames:
+        img = sitk.ReadImage(f)
+
+        if nb_of_energy_windows is None:
+            nb_of_energy_windows = int(img.GetSize()[2] / nb_of_gantry_angles)
+            projection_size = img.GetSize()
+            projection_origin = img.GetOrigin()
+            projection_spacing = img.GetSpacing()
+            sinograms_per_energy_window = [None] * nb_of_energy_windows
+
+        # check that size and origin are the same for all images
+        if img.GetSize() != projection_size:
+            raise ValueError(
+                f"Projections in {f} have different size than in {filenames[0]}"
+            )
+        if img.GetOrigin() != projection_origin:
+            raise ValueError(
+                f"Projections in {f} have different origin than in {filenames[0]}"
+            )
+        if img.GetSpacing() != projection_spacing:
+            raise ValueError(
+                f"Projections in {f} have different spacing than in {filenames[0]}"
+            )
+
+        # convert to numpy array
+        arr = sitk.GetArrayViewFromImage(img)
+
+        # concatenate projections for the different heads, for each energy windows
+        for ene in range(nb_of_energy_windows):
+            # this is important to make a copy here !
+            # Otherwise, the concatenate operation may fail later
+            a = arr[ene::nb_of_energy_windows, :, :].copy()
+            if sinograms_per_energy_window[ene] is None:
+                sinograms_per_energy_window[ene] = a
+            else:
+                sinograms_per_energy_window[ene] = np.concatenate(
+                    (sinograms_per_energy_window[ene], a), axis=0
+                )
+
+    # build sitk image from np arrays (to keep spacing, origin information)
+    sinograms = []
+    for ene in range(nb_of_energy_windows):
+        img = sitk.GetImageFromArray(sinograms_per_energy_window[ene])
+        img.SetSpacing(projection_spacing)
+        img.SetOrigin(projection_origin)
+        img.SetDirection(img.GetDirection())
+        sinograms.append(img)
+    return sinograms

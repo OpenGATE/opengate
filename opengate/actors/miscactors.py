@@ -5,11 +5,12 @@ import opengate_core as g4
 from anytree import Node, RenderTree
 from .base import ActorBase
 from ..utility import g4_units, g4_best_unit_tuple
-from .actoroutput import ActorOutputBase
+from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
-from anytree import Node, RenderTree
+from anytree import RenderTree
+
 
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
@@ -371,6 +372,51 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         s = self.user_output["kill_according_processes"].__str__()
         return s
 
+class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleNameActor):
+    """Actor which kills a particle according the particle name provied by the user at the exit of the
+    actorified volume."""
+
+    particles_name_to_kill: list
+
+    user_info_defaults = {
+        "particles_name_to_kill": (
+            [],
+            {
+                "doc": "Put particles name the user wants to kill at the exit of the volume"
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.number_of_killed_particles = 0
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"PreUserTrackingAction", "SteppingAction","EndSimulationAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        self.number_of_killed_particles = self.GetNumberOfKilledParticles()
+
 
 class KillActor(ActorBase, g4.GateKillActor):
     """Actor which kills a particle entering a volume."""
@@ -720,6 +766,70 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
         self.InitializeCpp()
 
 
+class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
+    """
+    This actor generates an attenuation image for a simulation run.
+    The output is a single image volume in cm^-1
+
+    - image_volume: Input volume from which the attenuation map is generated.
+    - energy: The energy level for which to generate the attenuation image.
+    - database: The database source for attenuation coefficients, either 'EPDL' or 'NIST'.
+    """
+
+    user_info_defaults = {
+        "image_volume": (  # FIXME name or not name
+            None,
+            {
+                "doc": "InputVolume image from which the attenuation map is generated.",
+            },
+        ),
+        "energy": (
+            None,
+            {"doc": "The energy level for which to generate the attenuation image"},
+        ),
+        "database": (
+            "EPDL",
+            {
+                "doc": "The database source for attenuation coefficients, either 'EPDL' or 'NIST'",
+                "allowed_values": ("EPDL", "NIST"),
+            },
+        ),
+    }
+
+    user_output_config = {
+        "attenuation_image": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+            "write_to_disk": True,
+            "keep_data_in_memory": True,
+            "keep_data_per_run": True,
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateAttenuationImageActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunAction"})
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def BeginOfRunAction(self, run):
+        # the attenuation image is created during the first run only
+        if run.GetRunID() != 0:
+            return
+        mu_image = self.image_volume.create_attenuation_image(
+            self.database, self.energy
+        )
+        self.user_output.attenuation_image.store_data("merged", mu_image)
+        self.user_output.attenuation_image.end_of_simulation()
+
+
 process_cls(ActorOutputStatisticsActor)
 process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
@@ -730,3 +840,4 @@ process_cls(KillNonInteractingParticleActor)
 process_cls(SplittingActorBase)
 process_cls(ComptSplittingActor)
 process_cls(BremSplittingActor)
+process_cls(AttenuationImageActor)

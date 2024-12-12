@@ -80,7 +80,7 @@ if __name__ == "__main__":
     stat = sim.add_actor("SimulationStatisticsActor", "stats")
     stat.track_types_flag = True
 
-    # start simulation to check if ok with start_new_process
+    """# start simulation to check if ok with start_new_process
     s1a = s1.activity
     s2a = s2.activity
     s3a = s3.activity
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     s3.activity = s3a
     # FIXME does not work if first in new process and second in same process
     # this seems related to ARFActor::EndOfRunActionMasterThread with itk CastImageFilter
-    # sim.run(False)
+    #sim.run(False)"""
     sim.run(True)
 
     # print results at the end

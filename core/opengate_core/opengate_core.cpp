@@ -34,15 +34,20 @@ void init_G4NistManager(py::module &);
 
 void init_G4Material(py::module &);
 
+void init_G4MaterialCutsCouple(py::module &);
+
 void init_G4Element(py::module &);
 
 void init_G4IonisParamMat(py::module &);
 
 void init_G4MaterialPropertiesTable(py::module &);
 
+void init_GateMaterialMuHandler(py::module &);
+
 // surfaces
 
 void init_G4OpticalSurface(py::module &);
+
 void init_G4LogicalBorderSurface(py::module &);
 
 // run
@@ -315,6 +320,10 @@ void init_GateKillAccordingProcessesActor(py::module &);
 
 void init_GateKillNonInteractingParticleActor(py::module &);
 
+void init_GateKillAccordingParticleNameActor(py::module &);
+
+void init_GateAttenuationImageActor(py::module &);
+
 void init_itk_image(py::module &);
 
 void init_GateImageNestedParameterisation(py::module &);
@@ -389,6 +398,8 @@ void init_GateNTuple(py::module &);
 
 void init_GateHelpers(py::module &);
 
+void init_GateVolumeVoxelizer(py::module &);
+
 void init_GateUniqueVolumeIDManager(py::module &);
 
 void init_GateUniqueVolumeID(py::module &);
@@ -409,9 +420,11 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4NistManager(m);
   init_G4Material(m);
+  init_G4MaterialCutsCouple(m);
   init_G4Element(m);
   init_G4IonisParamMat(m);
   init_G4MaterialPropertiesTable(m);
+  init_GateMaterialMuHandler(m);
 
   init_G4VSteppingVerbose(m);
 
@@ -595,11 +608,14 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateKillActor(m);
   init_GateKillAccordingProcessesActor(m);
   init_GateKillNonInteractingParticleActor(m);
+  init_GateKillAccordingParticleNameActor(m);
+  init_GateAttenuationImageActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
   init_GateHelpers(m);
+  init_GateVolumeVoxelizer(m);
   init_GateUniqueVolumeIDManager(m);
   init_GateUniqueVolumeID(m);
   init_GateVolumeDepthID(m);

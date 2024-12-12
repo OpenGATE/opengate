@@ -20,8 +20,8 @@ from .definitions import (
     __one_indent__,
 )
 from .decorators import requires_fatal
-from .logger import log
 import traceback
+from .logger import global_log
 
 
 def print_call_location():
@@ -812,7 +812,7 @@ class DynamicGateObject(GateObject):
         s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
-        log.debug(s)
+        global_log.debug(s)
 
     def create_changers(self):
         # this base class implementation is here to keep inheritance intact.

@@ -783,3 +783,13 @@ class MaterialDatabase:
                 f"The database '{db}' is not in the list of read database: {self.filenames}"
             )
         return [name for name in self.material_builders_by_filename[db]]
+
+
+def write_material_database(sim, materials, filename):
+    fn = str(filename)
+    with open(fn, "w") as file:
+        file.write("[Materials]\n")
+        for mat in materials:
+            m = sim.volume_manager.material_database.FindOrBuildMaterial(mat)
+            s = dump_material_like_Gate(m)
+            file.write(s)

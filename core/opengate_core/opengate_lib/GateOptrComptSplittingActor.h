@@ -67,7 +67,6 @@ public:
   G4double fMaxTheta;
   // Unused but mandatory
 
-  void StartSimulationAction() override;
   void StartRun() override;
   void StartTracking(const G4Track *) override;
   void EndTracking() override {}

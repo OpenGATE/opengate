@@ -23,7 +23,7 @@ kBq = 1000 * Bq
 def sim_set_world(sim):
     # world size
     world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_AIR"
 
     return world
