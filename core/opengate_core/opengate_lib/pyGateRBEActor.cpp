@@ -40,6 +40,7 @@ void init_GateRBEActor(py::module &m) {
       .def_readwrite("cpp_dose_image", &GateRBEActor::cpp_dose_image)
       .def_readwrite("cpp_denominator_image",
                      &GateRBEActor::cpp_denominator_image)
+      .def_readwrite("cpp_nucleus_dose_image", &GateRBEActor::cpp_nucleus_dose_image)
       .def_readwrite("NbOfEvent", &GateRBEActor::NbOfEvent)
       .def("GetPhysicalVolumeName", &GateRBEActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateRBEActor::SetPhysicalVolumeName);

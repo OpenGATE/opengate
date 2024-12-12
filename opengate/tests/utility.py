@@ -284,8 +284,8 @@ def plot_img_axis(ax, img, label, axis="z"):
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 1)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -295,8 +295,8 @@ def plot_img_z(ax, img, label):
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -306,8 +306,8 @@ def plot_img_y(ax, img, label):
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 1)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 1)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()

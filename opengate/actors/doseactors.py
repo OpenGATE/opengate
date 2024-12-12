@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
+from pathlib import Path
+import SimpleITK as sitk
 
 import opengate_core as g4
 from .base import ActorBase
@@ -14,6 +16,7 @@ from ..image import (
     images_have_same_domain,
     resample_itk_image_like,
     itk_image_from_array,
+    divide_itk_images,
 )
 from ..geometry.utility import get_transform_world_to_local
 from ..base import process_cls
@@ -1049,8 +1052,8 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
     RBEActor: 
     Available models:
         - mMKM
-        - LEMI
-        - LEMIlda
+        - LEM1
+        - LEM1lda
 
     """
 
@@ -1059,7 +1062,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             "mkm",
             {
                 "doc": "which RBE model to use?",
-                "allowed_values": ("mkm", "lemI", "lemIlda"),
+                "allowed_values": ("mMKM", "LEM1", "LEM1lda"),
             },
         ),
         "score_in": (
@@ -1074,43 +1077,55 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         "lookup_table_path": (
             "",
             {
-                "doc": "path of the Z_1d* table.",
+                "doc": "path of the z*_1d or alpha_z table.",
             },
         ),
         "lookup_table": (
             "",
             {
-                "doc": "Z_1d* table. Read by the actor",
+                "doc": "z*_1d or alpha_z table. Read by the actor",
             },
         ),
         "alpha_0": (
             0.172,
             {
-                "doc": "",
+                "doc": "mMKM specific fitted parameter, for the calculation of cellline alpha_z per radiation. Unit: Gy-1",
             },
         ),
-        "beta_0": (
-            0.0615,
+        "beta_ref": (
+            None,
             {
-                "doc": "",
+                "doc": "Cellline specific parameter. Initialized according to cell_type.",
+            },
+        ),
+        "F_clin": (
+            2.41,
+            {
+                "doc": "mMKM specific arbituary parameter, the clinical sclaing factor.",
             },
         ),
         "D_cut": (
             30.,
             {
-                "doc": "Cut for the dose, in Gy",
+                "doc": "LEM specific arbituary parameter, the physical dose threshold between linear quadratic and linear cell survival. Unit: Gy.",
+            },
+        ),
+        "lnS_cut": (
+            None,
+            {
+                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
             },
         ),
         "s_max": (
             None,
             {
-                "doc": "Calculated by the actor.",
+                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
             },
         ),
         "r_nucleus": (
-            5.,
+            5,
             {
-                "doc": "nucleus's radius, in um.",
+                "doc": "nucleus's radius, in um. Used when rbe_model is LEM",
             },
         ),
         "A_nucleus": (
@@ -1146,6 +1161,8 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.user_output.dose.set_item_suffix("dose")
         self.user_output.dose.set_write_to_disk(True)
         
+                
+        
         ## ------ alpha mix ------
         self._add_user_output(
             ActorOutputQuotientMeanImage, "alpha_mix", automatically_generate_interface=False
@@ -1164,7 +1181,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         # which is different from the generic quotient image container class:
 
         # Suffix to be appended in case a common output_filename per actor is assigned
-        self.user_output.alpha_mix.set_item_suffix(None, item="quotient")
+        self.user_output.alpha_mix.set_item_suffix('alpha', item="quotient")
         self.user_output.alpha_mix.set_item_suffix("alpha_numerator", item=0)
         self.user_output.alpha_mix.set_item_suffix("alpha_denominator", item=1)
         
@@ -1188,7 +1205,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             UserInterfaceToActorOutputImage, "beta_mix", "beta_mix", item="quotient"
         )
 
-        self.user_output.beta_mix.set_item_suffix(None, item="quotient")
+        self.user_output.beta_mix.set_item_suffix('beta', item="quotient")
         self.user_output.beta_mix.set_item_suffix("beta_numerator", item=0)
         self.user_output.beta_mix.set_item_suffix("beta_denominator", item=1)
         
@@ -1197,6 +1214,11 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.user_output.beta_mix.set_active(False, item="quotient")
         
         ## ------ survival ------
+        self._add_user_output(ActorOutputSingleImage,"nucleus_dose") # we need to initialize the image on cpp side 
+        self.user_output.nucleus_dose.set_active(False)
+        self.user_output.nucleus_dose.set_item_suffix("nucleusdose")
+        
+        
         self._add_user_output(ActorOutputSingleImage,"survival")
         self.user_output.survival.set_active(False)
         self.user_output.survival.set_item_suffix("survival")
@@ -1228,7 +1250,9 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.A_nucleus = np.pi*self.r_nucleus**2
         alpha_ref = self.cells_radiosensitivity[self.cell_type]['alpha_ref']
         beta_ref = self.cells_radiosensitivity[self.cell_type]['beta_ref']
+        self.beta_ref = beta_ref
         self.s_max = alpha_ref + 2*beta_ref*self.D_cut
+        self.lnS_cut = -beta_ref*self.D_cut**2 -alpha_ref*self.D_cut
         self.lookup_table = self.store_lookup_table(self.lookup_table_path)
         
         self.InitializeUserInput(self.user_info)
@@ -1299,38 +1323,50 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         
         '''
         RBE models scoring images:
-            - mkm:
+            - mMKM:
                 - alpha mix (score separately numerator and denominator)
-            - lemIlda:
+            - LEM1lda:
                 - alpha mix (score separately numerator and denominator)
                 - beta mix (score separately numerator and denominator)
-            - lemI:
+            - LEM1:
                 - survival
             Note: all will also score dose
         '''
         
-        if self.rbe_model == 'mkm' or self.rbe_model == 'lemIlda':
+        if self.rbe_model == 'mMKM' or self.rbe_model == 'LEM1lda':
             self.user_output.alpha_mix.set_active(True, item=0)
             self.user_output.alpha_mix.set_active(True, item=1)
             self.user_output.alpha_mix.set_active(True, item="quotient")
             
+            # Most users will probably only want the alpha or beta image written to disk,
+            # not the numerator and denominator
+            self.user_output.alpha_mix.set_write_to_disk(False, item=0)
+            self.user_output.alpha_mix.set_write_to_disk(False, item=1)
             self.user_output.alpha_mix.set_write_to_disk(True, item="quotient")
             
             self.prepare_output_for_run("alpha_mix", run_index)
             self.push_to_cpp_image(
                 "alpha_mix", run_index, self.cpp_numerator_image, self.cpp_denominator_image)
         
-        if self.rbe_model == 'lemIlda':
+        if self.rbe_model == 'LEM1lda':
             self.user_output.beta_mix.set_active(True, item=0)
             self.user_output.beta_mix.set_active(True, item=1)
             self.user_output.beta_mix.set_active(True, item="quotient")
             
+            self.user_output.beta_mix.set_write_to_disk(False, item=0)
+            self.user_output.beta_mix.set_write_to_disk(False, item=1)
             self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
+            
             self.prepare_output_for_run("beta_mix", run_index)
             self.push_to_cpp_image(
                 "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image)
             
-        if self.rbe_model == 'lemI':
+        if self.rbe_model == 'LEM1':
+            self.user_output.nucleus_dose.set_active(True)
+            self.prepare_output_for_run("nucleus_dose", run_index)
+            self.push_to_cpp_image("nucleus_dose", run_index, self.cpp_nucleus_dose_image)
+            self.user_output.nucleus_dose.set_write_to_disk(True)
+            
             self.user_output.survival.set_active(True)
             self.prepare_output_for_run("survival", run_index)
             self.push_to_cpp_image("survival", run_index, self.cpp_numerator_image)
@@ -1346,7 +1382,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             run_index, number_of_samples=self.NbOfEvent
         )
         
-        if self.rbe_model == 'mkm' or self.rbe_model == 'lemIlda': 
+        if self.rbe_model == 'mMKM' or self.rbe_model == 'LEM1lda': 
             self.fetch_from_cpp_image(
                 "alpha_mix", run_index, self.cpp_numerator_image, self.cpp_denominator_image
             )
@@ -1354,7 +1390,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.user_output.alpha_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        if self.rbe_model == 'lemIlda': 
+        if self.rbe_model == 'LEM1lda': 
             self.fetch_from_cpp_image(
                 "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image
             )
@@ -1362,7 +1398,14 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.user_output.beta_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        if self.rbe_model == 'lemI':
+        if self.rbe_model == 'LEM1':
+            self.fetch_from_cpp_image(
+                "nucleus_dose", run_index, self.cpp_nucleus_dose_image)
+            self._update_output_coordinate_system("nucleus_dose", run_index)
+            self.user_output.nucleus_dose.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+            
             self.fetch_from_cpp_image(
                 "survival", run_index, self.cpp_numerator_image)
             self._update_output_coordinate_system("survival", run_index)
@@ -1376,40 +1419,81 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
     def EndSimulationAction(self):
         g4.GateRBEActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
-        self.compute_rbe_dose()
+        self.compute_rbe_weighted_dose()
         
-    def compute_rbe_dose(self):
+    def compute_rbe_weighted_dose(self):
         alpha_ref = self.cells_radiosensitivity[self.cell_type]['alpha_ref']
         beta_ref = self.cells_radiosensitivity[self.cell_type]['beta_ref']
         dose_img = self.user_output.dose.merged_data.data[0]
         
-        if self.rbe_model == 'mkm':
+        if self.rbe_model == 'mMKM':
             alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
-            log_survival = alpha_mix_img*dose_img*(-1) + dose_img*dose_img*self.beta_0*(-1)
+            log_survival = alpha_mix_img*dose_img*(-1) + dose_img*dose_img*beta_ref*(-1)
             log_survival_arr = log_survival.image_array
 
-        elif self.rbe_model == 'lemIlda':
+        elif self.rbe_model == 'LEM1lda':
+            dose_arr = dose_img.image_array
+            arr_mask_linear = dose_arr > self.D_cut
             alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
-            beta_mix_img = self.user_output.beta_mix.merged_data.quotient
-            # to be continued
-        elif self.rbe_model == 'lemI':
-            survival_img = self.user_output.survival.merged_data.data[0]
-            log_survival_arr = np.log(survival_img.image_array)
+            sqrt_beta_mix_img = self.user_output.beta_mix.merged_data.quotient
+            
+            log_survival_lq = alpha_mix_img*dose_img*(-1) + dose_img*dose_img*sqrt_beta_mix_img*sqrt_beta_mix_img*(-1)
+            log_survival_lq_arr = log_survival_lq.image_array
+            log_survival_linear = alpha_mix_img*self.D_cut*(-1) + sqrt_beta_mix_img*sqrt_beta_mix_img*self.D_cut*self.D_cut*(-1) + (dose_img + self.D_cut*(-1))*self.s_max*(-1)
+            log_survival_linear_arr = log_survival_linear.image_array
+            
+            log_survival_arr = np.zeros(log_survival_lq.image_array.shape)
+            log_survival_arr[arr_mask_linear] = log_survival_linear_arr[arr_mask_linear]
+            log_survival_arr[~arr_mask_linear] = log_survival_lq_arr[~arr_mask_linear]
+            
+        elif self.rbe_model == 'LEM1':
+            nucleus_dose_image = self.user_output.nucleus_dose.merged_data.data[0]
+            
+            Nlethal_img = self.user_output.survival.merged_data.data[0]
+            log_survival_img = Nlethal_img * (-1)
+            log_survival_arr = log_survival_img.image_array
+            # arr_mask_notrack = (mean_survival_img.image_array == 0)
+            # log_survival_arr = np.log(mean_survival_img.image_array)
+            # log_survival_arr[arr_mask_notrack] = 0
+            # print(np.min(mean_survival_img.image_array),np.max(mean_survival_img.image_array))
+            # print(np.min(log_survival_arr),np.max(log_survival_arr))
             
         # solve linear quadratic equation to get Dx
-        rbe_dose_arr = (-alpha_ref + np.sqrt(alpha_ref**2 - 4*beta_ref*log_survival_arr))/2*beta_ref
-        rbe_arr = rbe_dose_arr / dose_img.image_array
+        if self.rbe_model == 'mMKM':
+            rbe_dose_arr = (-alpha_ref + np.sqrt(alpha_ref**2 - 4*beta_ref*log_survival_arr))/(2*beta_ref) * self.F_clin
+        else:
+            arr_mask_linear = log_survival_arr < self.lnS_cut
+            rbe_dose_lq_arr = (-alpha_ref + np.sqrt(alpha_ref**2 - 4*beta_ref*log_survival_arr))/(2*beta_ref)
+            rbe_dose_linear_arr = (-log_survival_arr + self.lnS_cut)/self.s_max + self.D_cut
+            rbe_dose_arr = np.zeros(log_survival_arr.shape)
+            rbe_dose_arr[arr_mask_linear] = rbe_dose_linear_arr[arr_mask_linear]
+            rbe_dose_arr[~arr_mask_linear] = rbe_dose_lq_arr[~arr_mask_linear]
+        # rbe_arr = rbe_dose_arr / dose_img.image_array
+        # print(np.min(rbe_dose_arr),np.max(rbe_dose_arr))
         
         # create new data item for the survival image. Same metadata as the other images, but new image array
-        img = itk_image_from_array(rbe_dose_arr)
-        self.rbe_dose_image = ItkImageDataItem(data=img)
-        self.rbe_dose_image.copy_image_properties(dose_img.image)
-        
-        img = itk_image_from_array(rbe_arr)
-        self.rbe_image = ItkImageDataItem(data=img)
-        self.rbe_image.copy_image_properties(dose_img.image)
+        rbedose_img = itk_image_from_array(rbe_dose_arr)
+        rbe_weighted_dose_image = ItkImageDataItem(data=rbedose_img)
+        rbe_weighted_dose_image.copy_image_properties(dose_img.image)
         
         
+        # img = itk_image_from_array(rbe_arr)
+        # rbe_image = ItkImageDataItem(data=img)
+        # rbe_image.copy_image_properties(dose_img.image)
+        # print(np.min(dose_img.image_array),np.max(dose_img.image_array))
+        if self.rbe_model == 'LEM1':
+            rbe_image = rbe_weighted_dose_image / nucleus_dose_image
+        else:
+            rbe_image = rbe_weighted_dose_image / dose_img
+        # print(np.min(rbe_image.image_array),np.max(rbe_image.image_array))
+        
+        
+        dose_output_path = self.user_output.dose.get_output_path()
+        base_output_path = str(dose_output_path)[:-8] # remove the suffix 'dose.mhd'
+        
+        
+        rbe_weighted_dose_image.write(base_output_path + 'rbedose.mhd')
+        rbe_image.write(base_output_path + 'rbe.mhd')
 
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
