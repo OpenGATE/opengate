@@ -12,7 +12,6 @@ from ..base import process_cls
 from anytree import RenderTree
 
 
-
 def _setter_hook_stats_actor_output_filename(self, output_filename):
     # By default, write_to_disk is False.
     # However, if user actively sets the output_filename
@@ -371,6 +370,7 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         s = self.user_output["kill_according_processes"].__str__()
         return s
 
+
 class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleNameActor):
     """Actor which kills a particle according the particle name provied by the user at the exit of the
     actorified volume."""
@@ -395,7 +395,7 @@ class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleName
     def __initcpp__(self):
         g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)
         self.AddActions(
-            {"PreUserTrackingAction", "SteppingAction","EndSimulationAction"}
+            {"PreUserTrackingAction", "SteppingAction", "EndSimulationAction"}
         )
 
     def initialize(self):

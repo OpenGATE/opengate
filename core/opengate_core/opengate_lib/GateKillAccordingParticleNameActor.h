@@ -19,13 +19,12 @@ class GateKillAccordingParticleNameActor : public GateVActor {
 public:
   // Constructor
   GateKillAccordingParticleNameActor(py::dict &user_info);
-    struct threadLocalT {
+  struct threadLocalT {
     G4bool fIsAParticleToKill = false;
   };
   G4Cache<threadLocalT> fThreadLocalData;
   std::vector<std::string> fParticlesNameToKill;
   std::vector<G4String> fListOfVolumeAncestor;
-
 
   // Main function called every step in attached volume
   void PreUserTrackingAction(const G4Track *) override;

@@ -360,7 +360,7 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
   fNbOfBatchForExitingParticle++;
   if (fNbOfBatchForExitingParticle > fNbOfMaxBatchPerEvent) {
     fStackManager->clear();
-    fRemovedParticle ++;
+    fRemovedParticle++;
   }
   // stackManager->clear();
 }
@@ -611,10 +611,11 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
            (DoesParticleEmittedInSolidAngle(
                 step->GetTrack()->GetMomentumDirection(), fVectorDirector) ==
             true))) {
-              if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() != "None"){
-                fListOfContainer.push_back((*fIterator));
-                fNumberOfReplayedParticle ++;
-              }
+        if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() !=
+            "None") {
+          fListOfContainer.push_back((*fIterator));
+          fNumberOfReplayedParticle++;
+        }
       }
 
       step->GetTrack()->SetTrackStatus(fStopAndKill);
@@ -743,7 +744,6 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
     fActiveSource = fSourceManager->GetActiveSourceName();
   }
 }
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
