@@ -652,7 +652,8 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
             // FIXME : list of process which are not splitable yet
             if ((fProcessNameToSplit != "msc") &&
                 (fProcessNameToSplit != "conv") &&
-                (fProcessNameToSplit != "eIoni")) {
+                (fProcessNameToSplit != "eIoni")&&
+                (!((fProcessNameToSplit == "phot") || (step->GetTrack()->GetParticleDefinition()->GetParticleName() == "gamma" )))) {
               fCopyInitStep = new G4Step(*step);
               if (fProcessNameToSplit == "eBrem") {
                 fCopyInitStep->SetStepLength(
