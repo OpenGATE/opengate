@@ -7,7 +7,8 @@ from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
-from .physics import translate_particle_name_gate_to_geant4
+from anytree import RenderTree
+
 
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
@@ -386,6 +387,8 @@ class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleName
             },
         ),
     }
+
+    list_of_volume_name = []
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
         self.number_of_killed_particles = 0
@@ -401,6 +404,16 @@ class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleName
         ActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
 
     def EndSimulationAction(self):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
