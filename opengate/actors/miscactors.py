@@ -7,6 +7,7 @@ from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
+from .physics import translate_particle_name_gate_to_geant4
 
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
@@ -370,6 +371,39 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
     def __str__(self):
         s = self.user_output["kill_according_processes"].__str__()
         return s
+
+class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleNameActor):
+    """Actor which kills a particle according the particle name provied by the user at the exit of the
+    actorified volume."""
+
+    particles_name_to_kill: list
+
+    user_info_defaults = {
+        "particles_name_to_kill": (
+            [],
+            {
+                "doc": "Put particles name the user wants to kill at the exit of the volume"
+            },
+        ),
+    }
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.number_of_killed_particles = 0
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"PreUserTrackingAction", "SteppingAction","EndSimulationAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def EndSimulationAction(self):
+        self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
 class KillActor(ActorBase, g4.GateKillActor):
