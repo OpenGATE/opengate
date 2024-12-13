@@ -104,7 +104,7 @@ def create_simulation_test085(sim, paths, ac=1e5, angle_tolerance=None):
     # sim.g4_commands_before_init.append(s)
 
     if angle_tolerance is None:
-        angle_tolerance = 5 * deg
+        angle_tolerance = 10 * deg
 
     # add iec voxelized source
     iec_source_filename = data_folder / "iec_4mm_activity.mhd"

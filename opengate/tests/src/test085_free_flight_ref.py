@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    create_simulation_test085(sim, paths, ac=2e5)
+    create_simulation_test085(sim, paths, ac=5e5)
 
     # go
     sim.run()
@@ -26,9 +26,9 @@ if __name__ == "__main__":
             paths.output_ref / "projection_1.mhd",
             paths.output / "projection_1.mhd",
             stats,
-            tolerance=120,
+            tolerance=65,
             ignore_value_data1=0,
-            sum_tolerance=14,
+            sum_tolerance=12,
             axis="x",
         )
         and is_ok
@@ -39,9 +39,9 @@ if __name__ == "__main__":
             paths.output_ref / "projection_2.mhd",
             paths.output / "projection_2.mhd",
             stats,
-            tolerance=120,
+            tolerance=65,
             ignore_value_data1=0,
-            sum_tolerance=14,
+            sum_tolerance=12,
             axis="x",
         )
         and is_ok

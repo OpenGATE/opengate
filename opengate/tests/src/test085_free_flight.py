@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    create_simulation_test085(sim, paths, ac=2e5)
+    create_simulation_test085(sim, paths, ac=5e5)
 
     arf1 = sim.get_actor("detector_arf_1")
     arf2 = sim.get_actor("detector_arf_2")
@@ -40,7 +40,7 @@ if __name__ == "__main__":
             paths.output_ref / "projection_1.mhd",
             paths.output / "projection_ff_1.mhd",
             stats,
-            tolerance=150,
+            tolerance=65,
             ignore_value_data1=0,
             sum_tolerance=8,
             axis="x",
@@ -53,7 +53,7 @@ if __name__ == "__main__":
             paths.output_ref / "projection_2.mhd",
             paths.output / "projection_ff_2.mhd",
             stats,
-            tolerance=150,
+            tolerance=65,
             ignore_value_data1=0,
             sum_tolerance=8,
             axis="x",
@@ -66,9 +66,9 @@ if __name__ == "__main__":
             paths.output_ref / "projection_ff_1.mhd",
             paths.output / "projection_ff_1.mhd",
             stats,
-            tolerance=150,
+            tolerance=30,
             ignore_value_data1=0,
-            sum_tolerance=8,
+            sum_tolerance=1,
             axis="x",
         )
         and is_ok
@@ -79,9 +79,9 @@ if __name__ == "__main__":
             paths.output_ref / "projection_ff_2.mhd",
             paths.output / "projection_ff_2.mhd",
             stats,
-            tolerance=150,
+            tolerance=30,
             ignore_value_data1=0,
-            sum_tolerance=8,
+            sum_tolerance=1,
             axis="x",
         )
         and is_ok
