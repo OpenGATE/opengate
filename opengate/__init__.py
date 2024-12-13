@@ -89,8 +89,8 @@ def restart_with_qt_libs():
                     + new_env["DYLD_LIBRARY_PATH"]
                 )
             else:
-                new_env["DYLD_LIBRARY_PATH"] = (
-                    os.path.join(get_site_packages_dir(), "opengate_core/plugins")
+                new_env["DYLD_LIBRARY_PATH"] = os.path.join(
+                    get_site_packages_dir(), "opengate_core/plugins"
                 )
 
         # Restart the process with the new environment
