@@ -20,3 +20,31 @@ if __name__ == "__main__":
     print(stats)
 
     # not really a test, generate reference simulation for FF
+    is_ok = True
+    is_ok = (
+        utility.assert_images(
+            paths.output_ref / "projection_1.mhd",
+            paths.output / "projection_1.mhd",
+            stats,
+            tolerance=120,
+            ignore_value_data1=0,
+            sum_tolerance=14,
+            axis="x",
+        )
+        and is_ok
+    )
+
+    is_ok = (
+        utility.assert_images(
+            paths.output_ref / "projection_2.mhd",
+            paths.output / "projection_2.mhd",
+            stats,
+            tolerance=120,
+            ignore_value_data1=0,
+            sum_tolerance=14,
+            axis="x",
+        )
+        and is_ok
+    )
+
+    utility.test_ok(is_ok)

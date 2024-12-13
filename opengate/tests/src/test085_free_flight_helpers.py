@@ -36,6 +36,7 @@ def create_simulation_test085(sim, paths, ac=1e5):
     sim.store_json_archive = True
     sim.store_input_files = False
     sim.json_archive_filename = "simu.json"
+    sim.random_seed = 321654789
     data_folder = Path(paths.data) / "test085"
 
     # units
