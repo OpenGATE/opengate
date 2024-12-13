@@ -63,7 +63,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.2.1",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.0",
 )
 def go(
     start_id,
@@ -83,7 +83,7 @@ def go(
         try:
             g4_version = get_required_g4_version(path_tests_src)
         except:
-            g4_version = "v11.2.1"
+            g4_version = "v11.3.0"
     if not check_g4_version(g4_version):
         print(False)
         return 0
@@ -264,7 +264,12 @@ def check_g4_version(g4_version: str):
 
 
 def decompose_g4_versioning(g4str):
-    g4str = g4str.lower().replace("-patch", "")
+    # Check if patch is present:
+    patchedVersion = False
+    g4str = g4str.lower()
+    if "-patch" in g4str:
+        patchedVersion = True
+        g4str = g4str.replace("-patch", "")
     # Regular expression pattern to match integers separated by . - _ or p
     pattern = r"\d+(?=[._\-p ])|\d+$"
 
@@ -274,6 +279,8 @@ def decompose_g4_versioning(g4str):
     # removing 4 from "geant4"
     if g4_version and g4_version[0] == int(4):
         g4_version.pop(0)
+    if not patchedVersion and len(g4_version) < 3:
+        g4_version.append(0)
     return g4_version
 
 
