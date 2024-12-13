@@ -24,7 +24,7 @@ def check_process_user_hook(simulation_engine):
         print(processName)
 
 
-def create_simulation_test085(sim, paths, ac=1e5):
+def create_simulation_test085(sim, paths, ac=1e5, angle_tolerance=None):
 
     # main options
     # sim.visu = True  # uncomment to enable visualisation
@@ -36,17 +36,17 @@ def create_simulation_test085(sim, paths, ac=1e5):
     sim.store_json_archive = True
     sim.store_input_files = False
     sim.json_archive_filename = "simu.json"
-    sim.random_seed = 321654789
+    # sim.random_seed = 321654789
     data_folder = Path(paths.data) / "test085"
 
     # units
-    sec = gate.g4_units.s
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     m = gate.g4_units.m
     Bq = gate.g4_units.Bq
     cm3 = gate.g4_units.cm3
     BqmL = Bq / cm3
+    deg = gate.g4_units.deg
 
     # options
     activity = ac * BqmL / sim.number_of_threads
@@ -55,7 +55,7 @@ def create_simulation_test085(sim, paths, ac=1e5):
     # visu
     if sim.visu:
         sim.number_of_threads = 1
-        activity = 10 * BqmL / sim.number_of_threads
+        activity = 1000 * BqmL / sim.number_of_threads
 
     # world
     world = sim.world
@@ -81,15 +81,17 @@ def create_simulation_test085(sim, paths, ac=1e5):
     # voxelize_iec_phantom -o data/iec_4mm.mhd --spacing 4 --output_source data/iec_4mm_activity.mhd -a 1 1 1 1 1 1
 
     # phantom
-    iec_vox_filename = data_folder / "iec_4mm.mhd"
-    iec_label_filename = data_folder / "iec_4mm_labels.json"
-    db_filename = data_folder / "iec_4mm.db"
-    vox = sim.add_volume("ImageVolume", "phantom")
-    vox.image = iec_vox_filename
-    vox.read_label_to_material(iec_label_filename)
-    vox.translation = get_translation_to_isocenter(vox.image)
-    sim.volume_manager.add_material_database(str(db_filename))
-    # phantom = nemaiec.add_iec_phantom(sim, name="phantom")
+    if not sim.visu:
+        iec_vox_filename = data_folder / "iec_4mm.mhd"
+        iec_label_filename = data_folder / "iec_4mm_labels.json"
+        db_filename = data_folder / "iec_4mm.db"
+        vox = sim.add_volume("ImageVolume", "phantom")
+        vox.image = iec_vox_filename
+        vox.read_label_to_material(iec_label_filename)
+        vox.translation = get_translation_to_isocenter(vox.image)
+        sim.volume_manager.add_material_database(str(db_filename))
+    else:
+        phantom = nemaiec.add_iec_phantom(sim, name="phantom")
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -101,6 +103,9 @@ def create_simulation_test085(sim, paths, ac=1e5):
     # s = f"/process/em/UseGeneralProcess false"
     # sim.g4_commands_before_init.append(s)
 
+    if angle_tolerance is None:
+        angle_tolerance = 5 * deg
+
     # add iec voxelized source
     iec_source_filename = data_folder / "iec_4mm_activity.mhd"
     source = sim.add_source("VoxelSource", "src")
@@ -111,6 +116,9 @@ def create_simulation_test085(sim, paths, ac=1e5):
     source.direction.acceptance_angle.volumes = [h.name for h in det_planes]
     source.direction.acceptance_angle.skip_policy = "SkipEvents"
     source.direction.acceptance_angle.intersection_flag = True
+    source.direction.acceptance_angle.normal_flag = True
+    source.direction.acceptance_angle.normal_vector = [0, 0, -1]
+    source.direction.acceptance_angle.normal_tolerance = angle_tolerance
     _, volumes = nemaiec.get_default_sphere_centers_and_volumes()
     source.activity = activity * np.array(volumes).sum()
     print(f"Total activity is {source.activity/ Bq}")

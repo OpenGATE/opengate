@@ -200,7 +200,6 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
 
     def initialize(self):
         GenericBiasingActorBase.initialize(self)
-        print("initialize FreeFlightActor")
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 

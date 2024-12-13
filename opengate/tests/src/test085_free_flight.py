@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    create_simulation_test085(sim, paths, ac=1e5)
+    create_simulation_test085(sim, paths, ac=2e5)
 
     arf1 = sim.get_actor("detector_arf_1")
     arf2 = sim.get_actor("detector_arf_2")
