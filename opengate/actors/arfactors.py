@@ -340,6 +340,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         pos_y = np.array(actor.GetPositionY())
         dir_x = np.array(actor.GetDirectionX())
         dir_y = np.array(actor.GetDirectionY())
+        weights = np.array(actor.GetWeights())
 
         # do nothing if no hits
         if energy.size == 0:
@@ -355,7 +356,10 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.detected_particles += energy.shape[0]
 
         # build the data
-        px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+        if len(weights) == 0:
+            px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+        else:
+            px = np.column_stack((pos_x, pos_y, theta, phi, energy, weights))
         self.debug_nb_hits_before += len(px)
 
         # verbose current batch
