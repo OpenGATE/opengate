@@ -14,7 +14,8 @@ GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
   fActions.insert("EndOfRunAction");
-  // User option: batch size
+  fBatchSize = 0;
+  fKeepNegativeSide = true;
 }
 
 void GateARFActor::InitializeUserInfo(py::dict &user_info) {
@@ -42,6 +43,7 @@ void GateARFActor::EndOfRunAction(const G4Run * /*run*/) {
     l.fDirectionX.clear();
     l.fDirectionY.clear();
     l.fDirectionZ.clear();
+    l.fWeights.clear();
     l.fCurrentNumberOfHits = 0;
   }
 }
@@ -64,6 +66,7 @@ void GateARFActor::SteppingAction(G4Step *step) {
   l.fDirectionX.push_back(dir[0]);
   l.fDirectionY.push_back(dir[1]);
   // l.fDirectionZ.push_back(dir[2]); // not used
+  l.fWeights.push_back(pre->GetWeight());
 
   // get energy
   l.fEnergy.push_back(pre->GetKineticEnergy());
@@ -84,6 +87,7 @@ void GateARFActor::SteppingAction(G4Step *step) {
     l.fDirectionX.clear();
     l.fDirectionY.clear();
     l.fDirectionZ.clear();
+    l.fWeights.clear();
     l.fCurrentNumberOfHits = 0;
   }
 }
@@ -118,4 +122,8 @@ std::vector<double> GateARFActor::GetDirectionY() const {
 
 std::vector<double> GateARFActor::GetDirectionZ() const {
   return fThreadLocalData.Get().fDirectionZ;
+}
+
+std::vector<double> GateARFActor::GetWeights() const {
+  return fThreadLocalData.Get().fWeights;
 }
