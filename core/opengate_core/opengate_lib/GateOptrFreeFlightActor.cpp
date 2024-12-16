@@ -12,7 +12,6 @@ Copyright (C): OpenGATE Collaboration
 
 GateOptrFreeFlightActor::GateOptrFreeFlightActor(py::dict &user_info)
     : G4VBiasingOperator("FreeFlightOperator"), GateVActor(user_info, true) {
-
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation = nullptr;
 }
@@ -38,6 +37,9 @@ void GateOptrFreeFlightActor::ConfigureForWorker() {
   auto *biasedVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
   AttachAllLogicalDaughtersVolumes(biasedVolume);
+  // set to null, will be created the first time in StartTracking
+  threadLocal_t &l = threadLocalData.Get();
+  l.fFreeFlightOperation = nullptr;
 }
 
 void GateOptrFreeFlightActor::AttachAllLogicalDaughtersVolumes(
