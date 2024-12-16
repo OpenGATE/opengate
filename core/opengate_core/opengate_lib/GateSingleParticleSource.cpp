@@ -31,6 +31,7 @@ GateSingleParticleSource::GateSingleParticleSource(
   fParticleDefinition = nullptr;
   fBackToBackMode = false;
   fAccolinearityFlag = false;
+  fAccolinearitySigma = 0.0;
 }
 
 GateSingleParticleSource::~GateSingleParticleSource() {
@@ -119,6 +120,10 @@ void GateSingleParticleSource::SetBackToBackMode(bool flag,
   fAccolinearityFlag = accolinearityFlag;
 }
 
+void GateSingleParticleSource::SetAccolinearityFWHM(double accolinearityFWHM) {
+  fAccolinearitySigma = accolinearityFWHM / CLHEP::rad * fwhm_to_sigma;
+}
+
 void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
     G4Event *event, G4ThreeVector &position, G4ThreeVector &direction,
     double energy) {
@@ -128,13 +133,21 @@ void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
   auto *particle1 = new G4PrimaryParticle(fParticleDefinition);
   particle1->SetKineticEnergy(energy);
   particle1->SetMomentumDirection(direction);
+
   auto *particle2 = new G4PrimaryParticle(fParticleDefinition);
   particle2->SetKineticEnergy(energy);
-  particle2->SetMomentumDirection(-direction);
-
-  // FIXME: if accolineary flag is true: do something clever
   if (fAccolinearityFlag) {
-    Fatal("Accolinearity not implemented yet");
+    double phi = G4RandGauss::shoot(0.0, fAccolinearitySigma);
+    double psi = G4RandGauss::shoot(0.0, fAccolinearitySigma);
+    double theta = sqrt(pow(phi, 2.0) + pow(psi, 2.0));
+    G4ThreeVector particle2_direction(sin(theta) * phi / theta,
+                                      sin(theta) * psi / theta, cos(theta));
+    // TODO: What to do with the magnitude of momemtum?
+    // Apply accolinearity deviation relative to the colinear case
+    particle2_direction.rotateUz(-1.0 * particle1->GetMomentum().unit());
+    particle2->SetMomentumDirection(particle2_direction);
+  } else {
+    particle2->SetMomentumDirection(-direction);
   }
 
   // Associate the two primaries to the vertex
