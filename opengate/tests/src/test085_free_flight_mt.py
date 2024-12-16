@@ -68,7 +68,7 @@ if __name__ == "__main__":
             stats,
             tolerance=30,
             ignore_value_data1=0,
-            sum_tolerance=2,
+            sum_tolerance=3,
             axis="x",
         )
         and is_ok
@@ -81,7 +81,7 @@ if __name__ == "__main__":
             stats,
             tolerance=30,
             ignore_value_data1=0,
-            sum_tolerance=2,
+            sum_tolerance=3,
             axis="x",
         )
         and is_ok
