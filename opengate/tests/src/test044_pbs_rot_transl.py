@@ -177,8 +177,8 @@ def main():
                 tolerance=50,
                 ignore_value_data2=0,
                 axis="x",
-                img_threshold = 0.1,
-                test_sad = False,
+                img_threshold=0.1,
+                test_sad=False,
             )
             and is_ok
         )
@@ -218,7 +218,7 @@ def main():
     )
 
     utility.test_ok(is_ok)
-    
+
 
 if __name__ == "__main__":
     main()

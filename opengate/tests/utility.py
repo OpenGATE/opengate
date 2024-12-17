@@ -321,8 +321,8 @@ def assert_images(
     sum_tolerance=5,
     scaleImageValuesFactor=None,
     sad_profile_tolerance=None,
-    img_threshold = 0,
-    test_sad = True,
+    img_threshold=0,
+    test_sad=True,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -1038,7 +1038,7 @@ def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False)
         # Figure output is saved only if fig names are provided
         fig_name = None
         if saveFig:
-            print(f'plane pos: {i}')
+            print(f"plane pos: {i}")
             fig_name = str(filepath) + "_profile"
             plt.imshow(np.squeeze(data))
             plt.savefig(str(filepath) + "2d.png")
@@ -1048,10 +1048,10 @@ def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False)
             data, spacing, shape, filepath=fig_name, saveFig=saveFig
         )
         if saveFig:
-            
-            print(f'{sigma_x=:.2f} {mu_x=:.2f}')
-            print(f'{sigma_y=:.2f} {mu_y=:.2f}')
-            print(' ')
+
+            print(f"{sigma_x=:.2f} {mu_x=:.2f}")
+            print(f"{sigma_y=:.2f} {mu_y=:.2f}")
+            print(" ")
         sigma_values.append([i, sigma_x, sigma_y])
         mu_values.append([i, mu_x, mu_y])
 
@@ -1144,7 +1144,7 @@ def gaussian_fit(positionVec, dose):
         print(f"Scipy curve fit probably failed : {e}")
         parameters = np.empty(3)
         parameters[:] = np.nan
-    
+
     fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
     return parameters, fit
@@ -1572,16 +1572,31 @@ def compare_dose_at_points(
     return ok
 
 
-def assert_img_sum(img1, img2, sum_tolerance=5, threshold = 0):
+def assert_img_sum(img1, img2, sum_tolerance=5, threshold=0):
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
-    b = assert_img_sum_logic(data1,data2,sum_tolerance=sum_tolerance, threshold = threshold)
+    b = assert_img_sum_logic(
+        data1, data2, sum_tolerance=sum_tolerance, threshold=threshold
+    )
     return b
-def calc_rel_dev(s1,s2):
+
+
+def calc_rel_dev(s1, s2):
     return np.fabs((s1 - s2) / s1) * 100
-def calc_sad_dev(s1,s2):
-    return  np.fabs(s1 - s2).sum() * 100
-def assert_img_sum_logic(data1, data2 , sum_tolerance=5, threshold = 0, quantity_descr = 'Image sums: ', eval_fun = None):
+
+
+def calc_sad_dev(s1, s2):
+    return np.fabs(s1 - s2).sum() * 100
+
+
+def assert_img_sum_logic(
+    data1,
+    data2,
+    sum_tolerance=5,
+    threshold=0,
+    quantity_descr="Image sums: ",
+    eval_fun=None,
+):
     s1 = np.sum(data1)
     s2 = np.sum(data2)
     if eval_fun is None:
@@ -1593,7 +1608,9 @@ def assert_img_sum_logic(data1, data2 , sum_tolerance=5, threshold = 0, quantity
     else:
         t = eval_fun(s1, s2)
     b = t < sum_tolerance
-    print_test(b, f"{quantity_descr} {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+    print_test(
+        b, f"{quantity_descr} {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)"
+    )
     return b
 
 
