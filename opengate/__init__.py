@@ -103,11 +103,6 @@ def restart_with_glibc_tunables():
     If interactive: we cannot do anything.
     """
 
-    def is_python_interactive_shell():
-        import __main__
-
-        return not hasattr(__main__, "__file__")
-
     # Check if the environment variable is already set correctly
     try:
         import opengate_core
