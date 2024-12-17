@@ -878,9 +878,10 @@ class PhysicsManager(GateObject):
 
         # create a dictionary with sets as entries (to ensure uniqueness)
         particles_processes= dict([(p, set()) for p in all_particles])
-
+        activate_biasing = False
         for actor in self.simulation.actor_manager.actors.values():
             if isinstance(actor, GenericBiasingActorBase):
+                activate_biasing = True
                 particles = set()
                 mode = actor.mode
                 for particle in actor.particles:
@@ -900,13 +901,21 @@ class PhysicsManager(GateObject):
                         particles_processes[p].update([None])
 
         # convert the dictionary entries back from set to list
-        print(particles_processes.items())
-        return dict(
-            [
-                (particle, [list(processes),mode])
-                for particle, processes in particles_processes.items()
-            ]
-        )
+        if activate_biasing :
+            print(particles_processes.items())
+            return dict(
+                [
+                    (particle, [list(processes),mode])
+                    for particle, processes in particles_processes.items()
+                ]
+            )
+        else :
+            return dict(
+                [
+                    (particle, list(processes))
+                    for particle, processes in particles_processes.items()
+                ]
+            )
 
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):
