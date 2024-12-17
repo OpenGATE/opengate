@@ -705,10 +705,12 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
           if (fIsFirstStep) {
             if (fSplitCounter <= fSplittingFactor) {
               if (fNumberOfTrackToSimulate == 0) {
-                CreateNewParticleAtTheLastVertex(
-                    fCopyInitStep, step, fContainer,
-                    (fSplittingFactor - fSplitCounter + 1) / fSplittingFactor *
-                        fBatchSize);
+                //CreateNewParticleAtTheLastVertex(
+                   // fCopyInitStep, step, fContainer,
+                    //(fSplittingFactor - fSplitCounter + 1) / fSplittingFactor *
+                      //  fBatchSize);
+                  CreateNewParticleAtTheLastVertex(
+                    fCopyInitStep, step, fContainer,fBatchSize);
               }
             }
           }
