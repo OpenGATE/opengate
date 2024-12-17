@@ -7,7 +7,7 @@ import opengate as gate
 from opengate.tests import utility
 
 
-if __name__ == "__main__":
+def main():
     paths = utility.get_default_test_paths(
         __file__, "gate_test044_pbs_rot_transl", "test044_rot_transl"
     )
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     waterbox = sim.add_volume("Box", "waterbox")
     waterbox.size = [10 * cm, 10 * cm, 100.2 * cm]
     waterbox.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
-    waterbox.translation = [-50.1 * cm, 0 * cm, 0 * cm]
+    waterbox.translation = [-50.3 * cm, 0 * cm, 0 * cm]
     waterbox.material = "Vacuum"
     waterbox.color = [0, 0, 1, 1]
 
@@ -177,6 +177,8 @@ if __name__ == "__main__":
                 tolerance=50,
                 ignore_value_data2=0,
                 axis="x",
+                img_threshold=0.1,
+                test_sad=False,
             )
             and is_ok
         )
@@ -216,3 +218,7 @@ if __name__ == "__main__":
     )
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

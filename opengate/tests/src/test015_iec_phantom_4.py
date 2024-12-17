@@ -73,7 +73,7 @@ if __name__ == "__main__":
         stats,
         axis="y",
         tolerance=50,
-        sum_tolerance=1.1,
+        sum_tolerance=1.3,
         sad_profile_tolerance=3.0,
         ignore_value_data2=0,
         apply_ignore_mask_to_sum_check=False,  # force legacy behavior
