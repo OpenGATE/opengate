@@ -228,7 +228,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
-        if not self.energy.type in l:
+        if self.energy.type not in l:
             fatal(
                 f"Cannot find the energy type {self.energy.type} for the source {self.name}.\n"
                 f"Available types are {l}"
@@ -274,7 +274,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
         # check direction type
         l = ["iso", "histogram", "momentum", "focused", "beam2d"]
-        if not self.direction.type in l:
+        if self.direction.type not in l:
             fatal(
                 f"Cannot find the direction type {self.direction.type} for the source {self.name}.\n"
                 f"Available types are {l}"

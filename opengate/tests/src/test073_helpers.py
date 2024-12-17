@@ -204,13 +204,13 @@ def test073_setup_sim(sim, spect_type, collimator_type):
 
     # spect ?
     if spect_type == "intevo":
-        head, colli, crystal = intevo.add_spect_head(
+        head, _, _ = intevo.add_spect_head(
             sim, "spect", collimator_type=collimator_type, debug=sim.visu
         )
         head.translation = [0, 0, -280 * mm]
         head.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
     if spect_type == "discovery":
-        head, colli, crystal = discovery.add_spect_head(
+        head, _, _ = discovery.add_spect_head(
             sim, "spect", collimator_type=collimator_type, debug=sim.visu
         )
         head.translation = [0, 0, -280 * mm]
