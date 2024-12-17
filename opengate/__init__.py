@@ -55,47 +55,36 @@ def is_python_interactive_shell():
     return not hasattr(__main__, "__file__")
 
 
+def is_developer_installation():
+    path_current_file = os.path.abspath(__file__)
+    if "site-packages" in path_current_file:
+        return False
+    return True
+
+
 def restart_with_qt_libs():
     """
     Restart the current process with QT libs set.
     Only for mac and wheel installation
     """
+    plugin_path = os.path.join(get_site_packages_dir(), "opengate_core/plugins")
 
-    if "site-packages" in pathCurrentFile:
-        # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
-        developer_mode = False
-        reload_python = False
-        if (
-            "DYLD_LIBRARY_PATH" not in os.environ
-            or os.path.join(get_site_packages_dir(), "opengate_core/plugins")
-            not in os.environ["DYLD_LIBRARY_PATH"]
-        ):
-            reload_python = True
+    # do nothing if the plugin_path is already in the env
+    if (
+        "DYLD_LIBRARY_PATH" in os.environ
+        and plugin_path in os.environ["DYLD_LIBRARY_PATH"]
+    ):
+        return
 
+    # Otherwise, we set the env and try to restart the script
+    new_env = os.environ.copy()
+    if "DYLD_LIBRARY_PATH" in new_env:
+        new_env["DYLD_LIBRARY_PATH"] = plugin_path + new_env["DYLD_LIBRARY_PATH"]
     else:
-        # pip install -e . -> we do not know where are libG4
-        developer_mode = True
-        reload_python = False
+        new_env["DYLD_LIBRARY_PATH"] = plugin_path
 
-    if reload_python:
-        # Set the environment variable
-        new_env = os.environ.copy()
-        if not developer_mode:
-            if "DYLD_LIBRARY_PATH" in new_env:
-                new_env["DYLD_LIBRARY_PATH"] = (
-                    os.path.join(get_site_packages_dir(), "opengate_core/plugins")
-                    + new_env["DYLD_LIBRARY_PATH"]
-                )
-            else:
-                new_env["DYLD_LIBRARY_PATH"] = os.path.join(
-                    get_site_packages_dir(), "opengate_core/plugins"
-                )
-
-        # Restart the process with the new environment
-        print(
-            f"Restarting python script with DYLD_LIBRARY_PATH {new_env['DYLD_LIBRARY_PATH']}"
-        )
-        os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
+    # Restart the process with the new environment
+    os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
 
 
 def restart_with_glibc_tunables():
@@ -114,14 +103,14 @@ def restart_with_glibc_tunables():
             print("Cannot import opengate_core module")
             print(e)
 
-    if "site-packages" in pathCurrentFile:
+    core_lib_path = os.path.join(get_site_packages_dir(), "opengate_core.libs")
+    if is_developer_installation():
         # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
         developer_mode = False
         reload_python = False
         if (
             "LD_LIBRARY_PATH" not in os.environ
-            or os.path.join(get_site_packages_dir(), "opengate_core.libs")
-            not in os.environ["LD_LIBRARY_PATH"]
+            or core_lib_path not in os.environ["LD_LIBRARY_PATH"]
             or "GLIBC_TUNABLES" not in os.environ
         ):
             reload_python = True
@@ -151,10 +140,7 @@ def restart_with_glibc_tunables():
         # Set the environment variable
         new_env = os.environ.copy()
         if not developer_mode:
-            new_env["LD_LIBRARY_PATH"] = (
-                os.path.join(get_site_packages_dir(), "opengate_core.libs")
-                + new_env["LD_LIBRARY_PATH"]
-            )
+            new_env["LD_LIBRARY_PATH"] = core_lib_path + new_env["LD_LIBRARY_PATH"]
             new_env["LD_PRELOAD"] = (
                 get_lib_g4_path("processes") + ":" + get_lib_g4_path("geometry")
             )
@@ -163,8 +149,6 @@ def restart_with_glibc_tunables():
         # Restart the process with the new environment
         os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
 
-
-pathCurrentFile = os.path.abspath(__file__)
 
 if sys.platform.startswith("linux"):
     restart_with_glibc_tunables()
