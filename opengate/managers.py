@@ -1235,12 +1235,10 @@ class VolumeManager(GateObject):
 
 
 def setter_hook_verbose_level(self, verbose_level):
-    print("setter hook", verbose_level)
     try:
         level = int(verbose_level)
     except ValueError:
         level = getattr(logging, verbose_level)
-    print(level)
     global_log.setLevel(level)
     # return verbose_level
     return level

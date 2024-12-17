@@ -886,7 +886,6 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
     if not spectrum_channel:
         channels.pop(0)
     cc.channels = channels
-    cc.channels = channels
 
     # projection
     proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
