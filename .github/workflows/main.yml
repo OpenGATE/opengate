@@ -66,7 +66,7 @@ jobs:
             python-version: '3.10'
 
     env:
-      GEANT4_VERSION: 'v11.2.1'
+      GEANT4_VERSION: 'geant4-11-03'
       ITK_VERSION: 'v5.2.1'
 
     steps:
@@ -313,7 +313,7 @@ jobs:
         python-version: [3.9, '3.10', '3.11', '3.12']
 
     env:
-      GEANT4_VERSION: 'v11.2.1'
+      GEANT4_VERSION: 'geant4-11-03'
       ITK_VERSION: 'v5.2.1'
 
     steps:

@@ -83,9 +83,9 @@ def go(
         try:
             g4_version = get_required_g4_version(path_tests_src)
         except:
-            g4_version = "v11.2.1"
+            g4_version = "v11.3.0"
     if not check_g4_version(g4_version):
-        print(False)
+        print("Wrong Geant4 version", g4_version)
         return 0
 
     path_output_dashboard = test_dir_path / "output_dashboard"
@@ -243,7 +243,7 @@ def get_required_g4_version(tests_dir: Path, rel_fpath=".github/workflows/main.y
     fpath = tests_dir.parents[2] / rel_fpath
     with open(fpath) as f:
         githubworfklow = yaml.safe_load(f)
-    g4 = githubworfklow["jobs"]["build_wheel"]["env"]["GEANT4_VERSION"]
+    g4 = githubworfklow["jobs"]["build_opengate_core_wheel"]["env"]["GEANT4_VERSION"]
     return g4
 
 
