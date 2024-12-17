@@ -11,7 +11,7 @@ GATE is an open-source Monte Carlo simulation platform designed for modeling and
 GATE 10 introduces a Python-based interface, replacing the macro scripting of GATE 9.x, offering improved flexibility, readability, and integration with modern scientific workflows. Read our [motivation](https://opengate-python.readthedocs.io/en/master/user_guide/user_guide_intro.html).
 
 - Documentation: see the [User Guide](https://opengate-python.readthedocs.io/en/master/user_guide/index.html).
-- This current version uses [Geant4 11.2.1](https://geant4.web.cern.ch).
+- This current version uses [Geant4 11.2.1](https://geant4.web.cern.ch) (and [Geant4 11.3.0](https://geant4.web.cern.ch) for the developer version)
 - Compatible with Python 3.9, 3.10, 3.11, 3.12. (**Not python 3.13 yet**)
 - **Warning**: on Windows, the multithreading and Qt visualization are not (yet) available.
 
