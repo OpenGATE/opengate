@@ -399,11 +399,11 @@ class PhysicsEngine(EngineBase):
                 mode = processes[1]
                 if mode != "non physics":
                     if len(process_list) > 0:
-                        if mode == "physics" :
+                        if mode == "physics":
                             g4_biasing_physics.PhysicsBias(particle, process_list)
                         elif mode == "both":
-                            g4_biasing_physics.Bias(particle,process_list)
-                else :
+                            g4_biasing_physics.Bias(particle, process_list)
+                else:
                     g4_biasing_physics.NonPhysicsBias(process_list)
             self.g4_physics_list.RegisterPhysics(g4_biasing_physics)
 

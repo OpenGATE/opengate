@@ -25,27 +25,21 @@
 //
 #include "GateOptnCloning.h"
 
-
 GateOptnCloning::GateOptnCloning(G4String name)
-  : G4VBiasingOperation( name    ),
-    fClone1W           ( -1.0    ),
-    fClone2W           ( -1.0    ),
-    fParticleChange(),
-    fCloneTrack        ( nullptr )
-{}
+    : G4VBiasingOperation(name), fClone1W(-1.0), fClone2W(-1.0),
+      fParticleChange(), fCloneTrack(nullptr) {}
 
-GateOptnCloning::~GateOptnCloning()
-{}
+GateOptnCloning::~GateOptnCloning() {}
 
-G4VParticleChange*  GateOptnCloning::GenerateBiasingFinalState( const G4Track* track,
-                                                               const G4Step*       )
-{
+G4VParticleChange *
+GateOptnCloning::GenerateBiasingFinalState(const G4Track *track,
+                                           const G4Step *) {
   fParticleChange.Initialize(*track);
-  fParticleChange.ProposeParentWeight( fClone1W );
+  fParticleChange.ProposeParentWeight(fClone1W);
   fParticleChange.SetSecondaryWeightByProcess(true);
   fParticleChange.SetNumberOfSecondaries(1);
-  fCloneTrack = new G4Track( *track );
-  fCloneTrack->SetWeight( fClone2W );
-  fParticleChange.AddSecondary( fCloneTrack );
+  fCloneTrack = new G4Track(*track);
+  fCloneTrack->SetWeight(fClone2W);
+  fParticleChange.AddSecondary(fCloneTrack);
   return &fParticleChange;
 }

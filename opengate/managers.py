@@ -893,11 +893,11 @@ class PhysicsManager(GateObject):
                             f"Biasing actor {actor.name} wants to apply a bias to particle '{p_}'. "
                             f"This is not possible. Compatible particles are: {list(all_particles)}. "
                         )
-                for i,p in enumerate(particles):
+                for i, p in enumerate(particles):
                     if mode != "non physics":
                         print(actor.processes)
                         particles_processes[p].update(actor.processes[i])
-                    else :
+                    else:
                         particles_processes[p].update([None])
 
         # convert the dictionary entries back from set to list
@@ -916,7 +916,6 @@ class PhysicsManager(GateObject):
                     for particle, processes in particles_processes.items()
                 ]
             )
-
     # New name, more specific
     def set_production_cut(self, volume_name, particle_name, value):
         if volume_name == self.simulation.world.name:

@@ -454,7 +454,7 @@ class ComptSplittingActor(GenericBiasingActorBase, g4.GateOptrComptSplittingActo
     rotation_vector_director: bool
     vector_director: list
     max_theta: float
-    mode : str
+    mode: str
     particles: list
 
     user_info_defaults = {
@@ -490,8 +490,8 @@ class ComptSplittingActor(GenericBiasingActorBase, g4.GateOptrComptSplittingActo
         ),
     }
 
-    processes = (("compt",))
-    particles = ("gamma")
+    processes = ("compt",)
+    particles = "gamma"
     mode = "physics"
 
     def __init__(self, *args, **kwargs):
@@ -517,12 +517,14 @@ class BremSplittingActor(GenericBiasingActorBase, g4.GateBOptrBremSplittingActor
     # hints for IDE
     processes: list
     particles: list
-    mode :list
+    mode: list
 
     mode = "physics"
-    particles = ("e+","e-",)
+    particles = (
+        "e+",
+        "e-",
+    )
     processes = (("eBrem",), ("eBrem",))
-
 
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)
@@ -540,12 +542,11 @@ class BremSplittingActor(GenericBiasingActorBase, g4.GateBOptrBremSplittingActor
 class ForceCollisionActor(GenericBiasingActorBase, g4.GateOptrForceCollision):
     particles: str
     processes = list
-    mode : str
-
+    mode: str
 
     mode = "both"
     particles = ("gamma",)
-    processes = [("compt","phot","conv","Rayl")]
+    processes = [("compt", "phot", "conv", "Rayl")]
 
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)
@@ -558,7 +559,6 @@ class ForceCollisionActor(GenericBiasingActorBase, g4.GateOptrForceCollision):
         GenericBiasingActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
-
 
 
 process_cls(ActorOutputStatisticsActor)
