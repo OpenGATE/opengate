@@ -12,7 +12,7 @@ def get_site_packages_dir():
     return site_package
 
 
-def get_libG4_path(lib):
+def get_lib_g4_path(lib):
     for element in os.listdir(
         os.path.join(get_site_packages_dir(), "opengate_core.libs")
     ):
@@ -41,9 +41,9 @@ def print_ld_preload_error(developer_mode=False):
     else:
         print(
             "export LD_PRELOAD="
-            + get_libG4_path("processes")
+            + get_lib_g4_path("processes")
             + ":"
-            + get_libG4_path("geometry")
+            + get_lib_g4_path("geometry")
         )
     print(f"or: \n" f"export GLIBC_TUNABLES={tunables_value}")
     print("We try to set the variable and restart ...")
@@ -124,8 +124,8 @@ def restart_with_glibc_tunables():
             reload_python = True
         if (
             "LD_PRELOAD" not in os.environ
-            or get_libG4_path("processes") not in os.environ["LD_PRELOAD"]
-            or get_libG4_path("geometry") not in os.environ["LD_PRELOAD"]
+            or get_lib_g4_path("processes") not in os.environ["LD_PRELOAD"]
+            or get_lib_g4_path("geometry") not in os.environ["LD_PRELOAD"]
         ):
             reload_python = True
 
@@ -153,7 +153,7 @@ def restart_with_glibc_tunables():
                 + new_env["LD_LIBRARY_PATH"]
             )
             new_env["LD_PRELOAD"] = (
-                get_libG4_path("processes") + ":" + get_libG4_path("geometry")
+                get_lib_g4_path("processes") + ":" + get_lib_g4_path("geometry")
             )
         new_env["GLIBC_TUNABLES"] = tunables_value
 
