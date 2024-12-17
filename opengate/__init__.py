@@ -25,7 +25,6 @@ tunables_value = "glibc.rtld.optional_static_tls=2000000"
 
 def print_ld_preload_error(developer_mode=False):
     print("=" * 80)
-    print("=" * 80)
     print("The opengate_core library cannot be loaded.")
     print("Error is: cannot allocate memory in static TLS block")
     print("Please use the following export lines before importing opengate:")
@@ -46,9 +45,8 @@ def print_ld_preload_error(developer_mode=False):
             + get_lib_g4_path("geometry")
         )
     print(f"or: \n" f"export GLIBC_TUNABLES={tunables_value}")
-    print("We try to set the variable and restart ...")
     print("=" * 80)
-    print("=" * 80)
+    print()
 
 
 def is_python_interactive_shell():
@@ -77,7 +75,7 @@ def restart_with_qt_libs():
     else:
         # pip install -e . -> we do not know where are libG4
         developer_mode = True
-        reload_python = True
+        reload_python = False
 
     if reload_python:
         # Set the environment variable
@@ -94,6 +92,9 @@ def restart_with_qt_libs():
                 )
 
         # Restart the process with the new environment
+        print(
+            f"Restarting python script with DYLD_LIBRARY_PATH {new_env['DYLD_LIBRARY_PATH']}"
+        )
         os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
 
 
@@ -103,13 +104,15 @@ def restart_with_glibc_tunables():
     If interactive: we cannot do anything.
     """
 
-    # Check if the environment variable is already set correctly
+    # Check if opengate_core can be loaded
     try:
         import opengate_core
 
         return
-    except:
-        pass
+    except ImportError as e:
+        if "cannot allocate memory in static TLS block" not in str(e):
+            print("Cannot import opengate_core module")
+            print(e)
 
     if "site-packages" in pathCurrentFile:
         # opengate_core is installed using wheel (for "pip install -e .", the paths are different)
