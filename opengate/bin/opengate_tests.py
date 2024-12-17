@@ -20,6 +20,7 @@ from opengate.exception import fatal, colored, color_ok, color_error, color_warn
 from opengate_core.testsDataSetup import check_tests_data_folder
 from opengate.bin.opengate_library_path import return_tests_path
 from opengate_core import GateInfo
+from opengate.exception import warning
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -85,8 +86,8 @@ def go(
         except:
             g4_version = "v11.3.0"
     if not check_g4_version(g4_version):
-        print(False)
-        return 0
+        warning(f'The geant4 version "{g4_version}" is not the expected version.')
+        # return 0
 
     path_output_dashboard = test_dir_path / "output_dashboard"
     fpath_dashboard_output = path_output_dashboard / (

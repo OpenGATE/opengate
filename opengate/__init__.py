@@ -113,25 +113,33 @@ def restart_with_glibc_tunables():
         print_ld_preload_error(developer_mode)
         exit(-1)
 
-    # In the developer mode, we don't know the exact lib path, so we stop
-    if developer_mode:
-        print_ld_preload_error(developer_mode)
+    # print error message
+    print_ld_preload_error(developer_mode)
+
+    # check if was here already
+    if "GLIBC_TUNABLES" in os.environ:
+        print(
+            f"GLIBC_TUNABLES is already set but opengate_core cannot be loaded, sorry."
+        )
         exit(-1)
 
-    core_lib_path = os.path.join(get_site_packages_dir(), "opengate_core.libs")
-
     # Set the environment variable
+    core_lib_path = os.path.join(get_site_packages_dir(), "opengate_core.libs")
     new_env = os.environ.copy()
-    new_env["LD_LIBRARY_PATH"] = core_lib_path + new_env["LD_LIBRARY_PATH"]
-    new_env["LD_PRELOAD"] = get_lib_g4_path("processes") + new_env["LD_PRELOAD"]
-    new_env["LD_PRELOAD"] = get_lib_g4_path("geometry") + new_env["LD_PRELOAD"]
+    print("We try to restart with :")
+    if not developer_mode:
+        new_env["LD_LIBRARY_PATH"] = f"{core_lib_path}:{new_env['LD_LIBRARY_PATH']}"
+        new_env["LD_PRELOAD"] = (
+            f'{get_lib_g4_path("processes")}:{new_env["LD_PRELOAD"]}'
+        )
+        new_env["LD_PRELOAD"] = f'{get_lib_g4_path("geometry")}:{new_env["LD_PRELOAD"]}'
+        print(f'export LD_LIBRARY_PATH={new_env["LD_LIBRARY_PATH"]}:$LD_LIBRARY_PATH')
+        print(f'export LD_PRELOAD={new_env["LD_PRELOAD"]}:LD_PRELOAD')
     new_env["GLIBC_TUNABLES"] = tunables_value
+    print(f'export GLIBC_TUNABLES={new_env["GLIBC_TUNABLES"]}')
+    print()
 
     # Restart the process with the new environment
-    print("Try to restart with ")
-    print(new_env["GLIBC_TUNABLES"])
-    print(new_env["LD_PRELOAD"])
-    print(new_env["LD_LIBRARY_PATH"])
     os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
 
 
