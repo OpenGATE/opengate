@@ -44,5 +44,6 @@ void init_GateARFActor(py::module &m) {
       .def("GetPositionY", &GateARFActor::GetPositionY)
       .def("GetDirectionX", &GateARFActor::GetDirectionX)
       .def("GetDirectionY", &GateARFActor::GetDirectionY)
-      .def("GetDirectionZ", &GateARFActor::GetDirectionZ);
+      .def("GetDirectionZ", &GateARFActor::GetDirectionZ)
+      .def("GetWeights", &GateARFActor::GetWeights);
 }

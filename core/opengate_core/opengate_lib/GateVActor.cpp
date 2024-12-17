@@ -7,7 +7,6 @@
 
 #include "GateVActor.h"
 #include "G4SDManager.hh"
-#include "G4UnitsTable.hh"
 #include "GateActorManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
@@ -18,9 +17,12 @@ GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
   // register this actor to the global list of actors
   fMultiThreadReady = MT_ready;
+  fOperatorIsAnd = true;
+  fSourceManager = nullptr;
+  fWriteToDisk = false;
 }
 
-GateVActor::~GateVActor() {}
+GateVActor::~GateVActor() = default;
 
 void GateVActor::InitializeCpp() {
   GateActorManager::AddActor(this);

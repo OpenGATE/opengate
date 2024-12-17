@@ -28,6 +28,9 @@ GateSimulationStatisticsActor::GateSimulationStatisticsActor(
   fActions.insert("EndOfSimulationWorkerAction");
   fActions.insert("EndSimulationAction");
   fDuration = 0;
+  fTrackTypesFlag = false;
+  fInitDuration = 0;
+  fStartRunTimeIsSet = false;
 }
 
 GateSimulationStatisticsActor::~GateSimulationStatisticsActor() = default;

@@ -625,6 +625,10 @@ class ActorEngine(EngineBase):
                         register_sensitive_detector_to_children(
                             actor, volume.g4_logical_volume
                         )
+            # this is specific for BiasingOperator/Actor
+            if hasattr(actor, "ConfigureForWorker"):
+                actor.InitializeUserInfo(actor.user_info)
+                actor.ConfigureForWorker()
 
     def start_simulation(self):
         # consider the priority value of the actors

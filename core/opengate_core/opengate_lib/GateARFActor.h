@@ -47,6 +47,8 @@ public:
 
   std::vector<double> GetDirectionZ() const;
 
+  std::vector<double> GetWeights() const;
+
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
@@ -66,6 +68,7 @@ protected:
     std::vector<double> fDirectionX;
     std::vector<double> fDirectionY;
     std::vector<double> fDirectionZ;
+    std::vector<double> fWeights;
     // number of particle hitting the detector
     int fCurrentNumberOfHits;
     // Current run id (to detect if run has changed)
