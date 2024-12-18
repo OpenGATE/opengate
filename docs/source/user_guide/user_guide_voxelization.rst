@@ -1,9 +1,6 @@
-.. sectnum::
-
-.. _voxelization:
-
-Volume and source voxelization
-===============================
+***************************************
+Details: Volume and source voxelization
+***************************************
 
 Voxelization refers to converting Geant4 volumes, composed of analytical shapes such as boxes, spheres, and cylinders, into a 3D image represented as a matrix of voxels. Although particle tracking is generally slower in voxelized volumes (images), voxelization is valuable in several scenarios, such as computing the attenuation map of volumes for image reconstruction.
 
