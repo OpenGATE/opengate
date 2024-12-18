@@ -24,6 +24,7 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
             test_ok(True)
             sys.exit(0)
         cmd = "python " + str(paths.current / dependency)
+        print(cmd)
         r = os.system(cmd)
 
     sim = gate.Simulation()
