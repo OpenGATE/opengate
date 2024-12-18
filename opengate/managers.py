@@ -1512,6 +1512,7 @@ class Simulation(GateObject):
 
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
+        setter_hook_verbose_level(self, "INFO")
         super().__init__(name=name, **kwargs)
 
         # list to store warning messages issued somewhere in the simulation

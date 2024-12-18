@@ -19,7 +19,7 @@ from importlib.metadata import version
 import shutil
 
 import opengate_core as g4
-from opengate import get_site_packages_dir, get_libG4_path
+from opengate import get_site_packages_dir
 from .exception import fatal, warning
 
 

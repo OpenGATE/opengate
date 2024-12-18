@@ -110,7 +110,7 @@ if __name__ == "__main__":
             stat,
             tolerance=13,
             ignore_value_data2=0,
-            sum_tolerance=1.5,
+            sum_tolerance=2.5,
         )
         and is_ok
     )

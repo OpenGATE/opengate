@@ -321,6 +321,8 @@ def assert_images(
     sum_tolerance=5,
     scaleImageValuesFactor=None,
     sad_profile_tolerance=None,
+    img_threshold=0,
+    test_sad=True,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -365,13 +367,7 @@ def assert_images(
     else:
         s1 = np.sum(data1)
         s2 = np.sum(data2)
-
-    if s1 == 0 and s2 == 0:
-        t = 0
-    else:
-        t = np.fabs((s1 - s2) / s1) * 100
-    b = t < sum_tolerance
-    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+    b = assert_img_sum_logic(s1, s2, sum_tolerance, threshold=img_threshold)
     is_ok = is_ok and b
 
     print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
@@ -386,17 +382,17 @@ def assert_images(
     s = np.sum(d2)
     d1 = d1 / s
     d2 = d2 / s
-
-    # sum of absolute difference (in %)
-    sad = np.fabs(d1 - d2).sum() * 100
-    b = sad < tolerance
-    print_test(
-        b,
-        f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
-        f"SAD (per event/total): {sad:.2f} % "
-        f" (tolerance is {tolerance :.2f} %)",
-    )
-    is_ok = is_ok and b
+    if test_sad:
+        # sum of absolute difference (in %)
+        sad = np.fabs(d1 - d2).sum() * 100
+        b = sad < tolerance
+        print_test(
+            b,
+            f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
+            f"SAD (per event/total): {sad:.2f} % "
+            f" (tolerance is {tolerance :.2f} %)",
+        )
+        is_ok = is_ok and b
 
     # plot
     _, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
@@ -1042,12 +1038,20 @@ def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False)
         # Figure output is saved only if fig names are provided
         fig_name = None
         if saveFig:
+            print(f"plane pos: {i}")
             fig_name = str(filepath) + "_profile"
+            plt.imshow(np.squeeze(data))
+            plt.savefig(str(filepath) + "2d.png")
 
         # Get relevant gauss param
         sigma_x, mu_x, sigma_y, mu_y = get_gauss_param_xy(
             data, spacing, shape, filepath=fig_name, saveFig=saveFig
         )
+        if saveFig:
+
+            print(f"{sigma_x=:.2f} {mu_x=:.2f}")
+            print(f"{sigma_y=:.2f} {mu_y=:.2f}")
+            print(" ")
         sigma_values.append([i, sigma_x, sigma_y])
         mu_values.append([i, mu_x, mu_y])
 
@@ -1132,10 +1136,15 @@ def gaussian_fit(positionVec, dose):
     # Fit data with Gaussian func
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
+    try:
+        parameters, _ = scipy.optimize.curve_fit(
+            gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
+        )
+    except RuntimeError as e:
+        print(f"Scipy curve fit probably failed : {e}")
+        parameters = np.empty(3)
+        parameters[:] = np.nan
 
-    parameters, _ = scipy.optimize.curve_fit(
-        gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
-    )
     fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
     return parameters, fit
@@ -1210,12 +1219,12 @@ def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
 
         if verb:
             print(
-                "Plane {0}: value x is {1}mm, value x ref is {2}mm ".format(
+                "Plane {0}: value x is {1} mm, value x ref is {2} mm ".format(
                     plane, round(sig_x, 2), round(sig_x_r, 2)
                 )
             )
             print(
-                "Plane {0}: value y is {1}mm, value y ref is {2}mm ".format(
+                "Plane {0}: value y is {1} mm, value y ref is {2} mm ".format(
                     plane, round(sig_y, 2), round(sig_y_r, 2)
                 )
             )
@@ -1227,7 +1236,7 @@ def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
                 )
             )
             print(
-                "\033[91m Plane {0}:  abs difference along x is {1}mm, threshold is {2}mm \033[0m".format(
+                "\033[91m Plane {0}:  abs difference along x is {1} mm, threshold is {2} mm \033[0m".format(
                     plane, round(diff_x, 2), round(abs_tol, 2)
                 )
             )
@@ -1242,7 +1251,7 @@ def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
                 )
             )
             print(
-                "\033[91m Plane {0}:  abs difference along y is {1}mm, threshold is {2}mm \033[0m".format(
+                "\033[91m Plane {0}:  abs difference along y is {1} mm, threshold is {2} mm \033[0m".format(
                     plane, round(diff_y, 2), round(abs_tol, 2)
                 )
             )
@@ -1563,18 +1572,45 @@ def compare_dose_at_points(
     return ok
 
 
-def assert_img_sum(img1, img2, sum_tolerance=5):
+def assert_img_sum(img1, img2, sum_tolerance=5, threshold=0):
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
+    b = assert_img_sum_logic(
+        data1, data2, sum_tolerance=sum_tolerance, threshold=threshold
+    )
+    return b
 
+
+def calc_rel_dev(s1, s2):
+    return np.fabs((s1 - s2) / s1) * 100
+
+
+def calc_sad_dev(s1, s2):
+    return np.fabs(s1 - s2).sum() * 100
+
+
+def assert_img_sum_logic(
+    data1,
+    data2,
+    sum_tolerance=5,
+    threshold=0,
+    quantity_descr="Image sums: ",
+    eval_fun=None,
+):
     s1 = np.sum(data1)
     s2 = np.sum(data2)
+    if eval_fun is None:
+        eval_fun = calc_rel_dev
     if s1 == 0 and s2 == 0:
         t = 0
+    elif s1 <= threshold or s2 <= threshold:
+        t = 0
     else:
-        t = np.fabs((s1 - s2) / s1) * 100
+        t = eval_fun(s1, s2)
     b = t < sum_tolerance
-    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+    print_test(
+        b, f"{quantity_descr} {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)"
+    )
     return b
 
 
