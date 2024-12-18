@@ -128,13 +128,17 @@ def restart_with_glibc_tunables():
     new_env = os.environ.copy()
     print("We try to restart with :")
     if not developer_mode:
-        new_env["LD_LIBRARY_PATH"] = f"{core_lib_path}:{new_env['LD_LIBRARY_PATH']}"
-        new_env["LD_PRELOAD"] = (
-            f'{get_lib_g4_path("processes")}:{new_env["LD_PRELOAD"]}'
-        )
+        ldlp = ""
+        if "LD_LIBRARY_PATH" in new_env:
+            ldlp = new_env["LD_LIBRARY_PATH"]
+        new_env["LD_LIBRARY_PATH"] = f"{core_lib_path}:{ldlp}"
+        ldpl = ""
+        if "LD_PRELOAD" in new_env:
+            ldpl = new_env["LD_PRELOAD"]
+        new_env["LD_PRELOAD"] = f'{get_lib_g4_path("processes")}:{ldpl}'
         new_env["LD_PRELOAD"] = f'{get_lib_g4_path("geometry")}:{new_env["LD_PRELOAD"]}'
         print(f'export LD_LIBRARY_PATH={new_env["LD_LIBRARY_PATH"]}:$LD_LIBRARY_PATH')
-        print(f'export LD_PRELOAD={new_env["LD_PRELOAD"]}:LD_PRELOAD')
+        print(f'export LD_PRELOAD={new_env["LD_PRELOAD"]}:$LD_PRELOAD')
     new_env["GLIBC_TUNABLES"] = tunables_value
     print(f'export GLIBC_TUNABLES={new_env["GLIBC_TUNABLES"]}')
     print()
