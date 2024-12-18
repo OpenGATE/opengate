@@ -67,6 +67,12 @@ def restart_with_qt_libs():
     Restart the current process with QT libs set.
     Only for mac and wheel installation
     """
+
+    if is_developer_installation():
+        # we cannot know the real plugin_path nor if DYLD_LIBRARY_PATH is already correctly set
+        # so we ignore.
+        return
+
     plugin_path = os.path.join(get_site_packages_dir(), "opengate_core/plugins")
 
     # do nothing if the plugin_path is already in the env
