@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from opengate.logger import EVENT
 from test053_phid_helpers2 import *
 import opengate as gate
 
@@ -18,6 +17,7 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
 
     # this test need the test053_phid_05 before
     root_ref = paths.output / f"test053_{nuclide.nuclide}_5_ref.root"
+    print(root_ref)
     if not os.path.exists(root_ref):
         # ignore on windows
         if os.name == "nt":
@@ -50,7 +50,7 @@ def main(dependency="test053_phid_05_it_ref_mt.py"):
     sim.run_timing_intervals = [[start_time, end_time]]
 
     # go
-    # sim.run(start_new_process=True)
+    sim.run(start_new_process=True)
 
     # print stats
     stats = sim.get_actor("stats")
