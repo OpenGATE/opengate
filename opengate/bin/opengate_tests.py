@@ -256,11 +256,12 @@ def check_g4_version(g4_version: str):
     g4_should = decompose_g4_versioning(g4_version)
     g4_is = decompose_g4_versioning(v)
     if g4_should == g4_is:
-        print(colored.stylize(" OK", color_ok), end="\n")
+        print(colored.stylize("Geant4 version is OK", color_ok), end="\n")
         return True
     else:
         print(f'{" ".join(map(str,g4_should))}')
         print(f'{" ".join(map(str,g4_is))}')
+        print(colored.stylize("Geant4 version is not ok", color_error), end="\n")
         return False
 
 
