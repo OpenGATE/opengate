@@ -33,7 +33,7 @@ if __name__ == "__main__":
     ns = gate.g4_units.nanosecond
     time_window = 3 * ns
     policy = "takeAllGoods"
-    #policy="removeMultiples"
+    # policy="removeMultiples"
     # policy="takeWinnerOfGoods"
 
     mm = gate.g4_units.mm
@@ -47,7 +47,7 @@ if __name__ == "__main__":
         policy,
         minDistanceXY,
         maxDistanceZ,
-        chunk_size=1000000
+        chunk_size=1000000,
     )
     nc = len(coincidences["GlobalTime1"])
     print(f"There are {nc} coincidences for policy", policy)

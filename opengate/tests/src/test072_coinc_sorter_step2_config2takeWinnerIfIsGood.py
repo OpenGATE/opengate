@@ -33,8 +33,8 @@ if __name__ == "__main__":
     ns = gate.g4_units.nanosecond
     ms = gate.g4_units.millisecond
     time_window = 3 * ns
-    #policy = "keepIfOnlyOneGood"
-    policy="takeWinnerIfIsGood"
+    # policy = "keepIfOnlyOneGood"
+    policy = "takeWinnerIfIsGood"
 
     mm = gate.g4_units.mm
     minDistanceXY = 226.27417 * mm  # 160 *sqrt(2) * mm

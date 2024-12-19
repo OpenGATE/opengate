@@ -8,6 +8,7 @@ from ..exception import fatal
 import numpy as np
 from collections import Counter
 
+
 def coincidences_sorter(
     singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=10000
 ):
@@ -22,7 +23,7 @@ def coincidences_sorter(
 
     DEV NOTES:
     1) potential bug while having several chunks: couple of coincidecnes too much
-    2) potential acceleration is possible 
+    2) potential acceleration is possible
     3) TODO : add check that all necessary attibutes are saved for Singles
     4) TODO: add option allDigiOpenCoincGate=false, so far only for allDigiOpenCoincGate=true
 
@@ -66,7 +67,7 @@ def process_chunk(
 ):
     singles = chunk
     nsingles = len(singles)
- 
+
     # Define policy functions
     policy_functions = {
         "removeMultiples": remove_multiples,
@@ -76,19 +77,19 @@ def process_chunk(
         "takeWinnerIfIsGood": take_winner_if_is_good,
         "takeWinnerIfAllAreGoods": take_winner_if_all_are_goods,
     }
-    
+
     print("-----Sorting------")
-    
-    #coincidences_filtered = []
-    
+
+    # coincidences_filtered = []
+
     coincidences_tmp = {}
     for k in coincidences.keys():
         coincidences_tmp[f"{k}"] = []
 
-    # Loop over singles    
+    # Loop over singles
     for i in tqdm(range(nsingles - 1)):
         time_window_open = singles[i]["GlobalTime"]
-        
+
         for j in range(i + 1, nsingles):
             time = singles[j]["GlobalTime"]
 
@@ -105,79 +106,77 @@ def process_chunk(
                     coincidences_tmp[f"{k}2"].append(singles[j][k])
 
             else:
-                #filter coincidences in the same window
-                
-                # skip if no coincidecnes in this window    
-                if len(coincidences_tmp["EventID1"])==0:
+                # filter coincidences in the same window
+
+                # skip if no coincidecnes in this window
+                if len(coincidences_tmp["EventID1"]) == 0:
                     break
-                
+
                 if policy in policy_functions:
                     coincidences_filtered = policy_functions[policy](
                         coincidences_tmp, minDistanceXY, maxDistanceZ
                     )
-                         
+
                 else:
                     fatal(f"Error in Coincidence Sorter: {policy} is unknown")
 
-                #save the filtered coincidences 
+                # save the filtered coincidences
                 if coincidences_filtered:
                     for key in coincidences:
                         for j in range(len(coincidences_filtered[key])):
                             coincidences[key].append(coincidences_filtered[key][j])
-                            
-                
-                #clean temp containers
+
+                # clean temp containers
                 if coincidences_filtered:
                     coincidences_filtered.clear()
                 for key in coincidences_tmp:
                     coincidences_tmp[key].clear()
-                
+
                 break  # if the time difference exceeds the time window, break the loop
-    
+
     return coincidences
 
 
 def filter_goods(coincidences, minDistanceXY, maxDistanceZ):
-    
+
     indices_to_keep = []
 
     for i in range(len(coincidences["EventID1"])):
-        #XY_diff, Z_diff = calculate_distance(coincidences)
+        # XY_diff, Z_diff = calculate_distance(coincidences)
         x1, y1, z1 = (
             coincidences["PostPosition_X1"][i],
             coincidences["PostPosition_Y1"][i],
-            coincidences["PostPosition_Z1"][i]
+            coincidences["PostPosition_Z1"][i],
         )
         x2, y2, z2 = (
             coincidences["PostPosition_X2"][i],
             coincidences["PostPosition_Y2"][i],
-            coincidences["PostPosition_Z2"][i]
+            coincidences["PostPosition_Z2"][i],
         )
-        
+
         XY_diff = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
         Z_diff = abs(z2 - z1)
 
-        
         if XY_diff > minDistanceXY or Z_diff < maxDistanceZ:
-            indices_to_keep.append(i) 
+            indices_to_keep.append(i)
 
-           
-    coincidences_filtered = {key: [value[i] for i in indices_to_keep] for key, value in coincidences.items()}
-     
+    coincidences_filtered = {
+        key: [value[i] for i in indices_to_keep] for key, value in coincidences.items()
+    }
+
     return coincidences_filtered
 
 
 def filter_multi(coincidences):
 
-    if len(coincidences["EventID1"])==1:
+    if len(coincidences["EventID1"]) == 1:
         return coincidences
     else:
         return {}
-   
 
 
 def filter_max_energy(coincidences):
-    
+
     energy_sums = [
         coincidences["TotalEnergyDeposit1"][i] + coincidences["TotalEnergyDeposit2"][i]
         for i in range(len(coincidences["TotalEnergyDeposit1"]))
@@ -186,8 +185,10 @@ def filter_max_energy(coincidences):
     max_index = energy_sums.index(max(energy_sums))
 
     # Filter the dictionary to include only the element at the max energy sum index
-    coincidences_filtered = {key: [value[max_index]] for key, value in coincidences.items()}
-   
+    coincidences_filtered = {
+        key: [value[max_index]] for key, value in coincidences.items()
+    }
+
     return coincidences_filtered
 
 
@@ -198,56 +199,58 @@ def remove_multiples(coincidences, minDistanceXY, maxDistanceZ):
 
     coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
     coincidences_output = filter_multi(coincidences_goods)
-    return coincidences_output    
+    return coincidences_output
 
 
 def take_all_goods(coincidences, minDistanceXY, maxDistanceZ):
-    # Return all good coincidences  
+    # Return all good coincidences
     return filter_goods(coincidences, minDistanceXY, maxDistanceZ)
 
 
 def take_winner_of_goods(coincidences, minDistanceXY, maxDistanceZ):
-    #Take winner of goods
+    # Take winner of goods
     # 1) check if good
     # 2) take only one with the highest energy (energy1+energy2)
-    
-    coincidences_goods=filter_goods(coincidences, minDistanceXY, maxDistanceZ)
-    
-    coincidences_output=filter_max_energy(coincidences_goods)
-   
+
+    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+
+    coincidences_output = filter_max_energy(coincidences_goods)
+
     return coincidences_output
-   
+
+
 def take_if_only_one_good(coincidences, minDistanceXY, maxDistanceZ):
     # Take winner if only one good
     # 1) check how many goods
     # 2) if one --> keep
-    
-    coincidences_goods=filter_goods(coincidences, minDistanceXY, maxDistanceZ)
-    coincidences_output=filter_multi(coincidences_goods)
-    return coincidences_output 
+
+    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+    coincidences_output = filter_multi(coincidences_goods)
+    return coincidences_output
+
 
 def take_winner_if_is_good(coincidences, minDistanceXY, maxDistanceZ):
     # Take winner if it is good one
     # 1) find the winner with Emax
     # 2) if good --> keep
-    
-    coincidences_winner=filter_max_energy(coincidences)
-    coincidences_output=filter_goods(coincidences_winner, minDistanceXY, maxDistanceZ)
-    return coincidences_output 
-    
+
+    coincidences_winner = filter_max_energy(coincidences)
+    coincidences_output = filter_goods(coincidences_winner, minDistanceXY, maxDistanceZ)
+    return coincidences_output
+
+
 def take_winner_if_all_are_goods(coincidences, minDistanceXY, maxDistanceZ):
     # Take winner if all are goods
     # 1) check if all are goods, if not -> skip
-    # 2) keep winner with Emax 
-    coincidences_goods=filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+    # 2) keep winner with Emax
+    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
 
     if len(coincidences_goods["EventID1"]) != len(coincidences["EventID1"]):
         coincidences_output = {}
     else:
         coincidences_output = filter_max_energy(coincidences_goods)
-    
-    return coincidences_output 
 
+    return coincidences_output
 
 
 def copy_tree_for_dump(input_tree):
