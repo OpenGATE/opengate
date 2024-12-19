@@ -12,7 +12,7 @@ if __name__ == "__main__":
     sim = create_pl_sim()
 
     # keep only ion sources
-    sim.source_manager.user_info_sources.pop("gamma")
+    sim.source_manager.sources.pop("gamma")
 
     # shortcut units
     mm = gate.g4_units.mm

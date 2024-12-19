@@ -16,6 +16,6 @@ void init_GatePrimaryScatterFilter(py::module &m) {
   py::class_<GateUnscatteredPrimaryFilter, GateVFilter>(
       m, "GateUnscatteredPrimaryFilter")
       .def(py::init())
-      .def("InitializeUserInput",
-           &GateUnscatteredPrimaryFilter::InitializeUserInput);
+      .def("InitializeUserInfo",
+           &GateUnscatteredPrimaryFilter::InitializeUserInfo);
 }

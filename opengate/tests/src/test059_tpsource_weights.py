@@ -166,7 +166,7 @@ if __name__ == "__main__":
             output_path / mhd_1,
             stats,
             tolerance=70,
-            ignore_value=0,
+            ignore_value_data2=0,
         )
         and test
     )
@@ -178,7 +178,7 @@ if __name__ == "__main__":
             output_path / mhd_1,
             stats,
             tolerance=70,
-            ignore_value=0,
+            ignore_value_data2=0,
         )
         and test
     )

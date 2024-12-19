@@ -23,8 +23,8 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
 
 GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;
 
-void GateDigitizerAdderActor::InitializeUserInput(py::dict &user_info) {
-  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
+void GateDigitizerAdderActor::InitializeUserInfo(py::dict &user_info) {
+  GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
   // policy
   fPolicy = AdderPolicy::Error;
   auto policy = DictGetStr(user_info, "policy");

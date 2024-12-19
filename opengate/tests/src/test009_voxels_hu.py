@@ -53,7 +53,7 @@ if __name__ == "__main__":
         patient.voxel_materials,
         materials,
     ) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
-    print(f"tol = {tol} g/cm3")
+    print(f"tol = {tol/gcm3} g/cm3")
     print(f"mat : {len(patient.voxel_materials)} materials")
     patient.dump_label_image = paths.output / "test009_hu_label.mhd"
     # cuts
@@ -133,6 +133,8 @@ if __name__ == "__main__":
         dose.edep.get_output_path(),
         stats,
         tolerance=35,
+        ignore_value_data2=0,
+        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
     )
 
     utility.test_ok(is_ok)

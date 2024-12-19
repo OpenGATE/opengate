@@ -80,7 +80,7 @@ if __name__ == "__main__":
 
     # source #1
     source1 = sim.add_source("GenericSource", "source1")
-    source1.mother = "waterbox1"
+    source1.attached_to = "waterbox1"
     source1.particle = "ion 49 111"  # In111 171 keV and 245 keV
     source1.position.type = "sphere"
     source1.position.radius = 1 * mm
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     # source #2
     source2 = sim.add_source("GenericSource", "source2")
-    source2.mother = "waterbox2"
+    source2.attached_to = "waterbox2"
     source2.particle = "ion 49 111"  # In111 171 keV and 245 keV
     source2.position.type = "sphere"
     source2.position.radius = 1 * mm

@@ -26,9 +26,9 @@ GateDigitizerSpatialBlurringActor::GateDigitizerSpatialBlurringActor(
 GateDigitizerSpatialBlurringActor::~GateDigitizerSpatialBlurringActor() =
     default;
 
-void GateDigitizerSpatialBlurringActor::InitializeUserInput(
+void GateDigitizerSpatialBlurringActor::InitializeUserInfo(
     py::dict &user_info) {
-  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
+  GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
   // blurring method
   fBlurAttributeName = DictGetStr(user_info, "blur_attribute");
   fBlurSigma3 = DictGetG4ThreeVector(user_info, "blur_sigma");
@@ -58,11 +58,11 @@ void GateDigitizerSpatialBlurringActor::BeginOfRunAction(const G4Run *run) {
   GateVDigitizerWithOutputActor::BeginOfRunAction(run);
   G4ThreeVector translation;
   G4RotationMatrix rotation;
-  ComputeTransformationFromWorldToVolume(fMotherVolumeName, translation,
+  ComputeTransformationFromWorldToVolume(fAttachedToVolumeName, translation,
                                          rotation);
   fWorldToVolume = G4AffineTransform(rotation.inverse(), translation);
 
-  ComputeTransformationFromVolumeToWorld(fMotherVolumeName, translation,
+  ComputeTransformationFromVolumeToWorld(fAttachedToVolumeName, translation,
                                          rotation, true);
   fVolumeToWorld = G4AffineTransform(rotation.inverse(), translation);
 

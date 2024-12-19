@@ -199,8 +199,10 @@ def get_transform_world_to_local(volume, repetition_index=None):
         ctr = volume.translation_list[i]
         crot = volume.rotation_list[i]
         for vol in volume.ancestor_volumes[::-1]:
-            crot = np.matmul(vol.rotation_list[0], crot)
-            ctr = vol.rotation_list[0].dot(ctr) + vol.translation_list[0]
+            # in parallel world, the rotation_list does not exist
+            if hasattr(vol, "rotation_list"):
+                crot = np.matmul(vol.rotation_list[0], crot)
+                ctr = vol.rotation_list[0].dot(ctr) + vol.translation_list[0]
         cumulative_translation.append(ctr)
         cumulative_rotation.append(crot)
 
@@ -231,7 +233,7 @@ def get_transform_world_to_local_old(vol_name):
             crot = np.matmul(rot, crot)
             ctr = rot.dot(ctr) + tr
 
-        if pv.GetMotherLogical() == None:
+        if pv.GetMotherLogical() is None:
             vol_name = __world_name__
         else:
             vol_name = pv.GetMotherLogical().GetName()
@@ -317,11 +319,11 @@ def get_grid_repetition(size, spacing, start=None, return_lut=False):
         list : A list of translations vectors.
         dict : (Optional) A dictionary mapping copy index to the respective translation vector. Only if `return_lut` is `True`.
     """
-    if not len(size) == 3:
+    if len(size) != 3:
         fatal(
             f"Input `size` must be a 3-item list or numpy array. Found length {len(size)}."
         )
-    if not len(spacing) == 3:
+    if len(spacing) != 3:
         fatal(
             f"Input `spacing` must be a 3-item list or numpy array. Found length {len(spacing)}."
         )

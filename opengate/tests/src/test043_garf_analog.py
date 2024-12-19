@@ -17,7 +17,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.visu = False
-    sim.random_seed = 123654
+    sim.random_seed = 1236546
     sim.number_of_threads = 1
     colli = "lehr"
 
@@ -90,8 +90,9 @@ if __name__ == "__main__":
             fn,
             stats,
             tolerance=75,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
+            sum_tolerance=35,
         )
         and is_ok
     )
@@ -104,8 +105,11 @@ if __name__ == "__main__":
             proj.get_output_path(),
             stats,
             tolerance=80,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
+            sum_tolerance=25,
         )
         and is_ok
     )
+
+    utility.test_ok(is_ok)

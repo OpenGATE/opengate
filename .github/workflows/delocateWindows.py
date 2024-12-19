@@ -48,7 +48,7 @@ def hash_filename(filepath, blocksize=65536):
 
 def find_dll_dependencies(dll_filepath, lib_dir):
     print(dll_filepath)
-    if dll_filepath in global_dll_deps.keys():
+    if dll_filepath in global_dll_deps:
         return global_dll_deps[dll_filepath]
     else:
         dll_deps = {}

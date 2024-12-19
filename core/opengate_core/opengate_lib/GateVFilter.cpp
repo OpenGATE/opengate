@@ -11,7 +11,7 @@ GateVFilter::GateVFilter() = default;
 
 GateVFilter::~GateVFilter() = default;
 
-void GateVFilter::InitializeUserInput(py::dict &) {}
+void GateVFilter::InitializeUserInfo(py::dict &) {}
 
 bool GateVFilter::Accept(const G4Run *) const { return true; }
 

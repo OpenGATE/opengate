@@ -21,7 +21,7 @@ public:
 
   ~GateDigitizerHitsCollectionActor() override;
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   void InitializeCpp() override;
 

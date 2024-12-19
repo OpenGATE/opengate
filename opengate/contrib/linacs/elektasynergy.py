@@ -359,7 +359,7 @@ def add_electron_source(sim, linac_name, rotation_matrix):
     target = sim.volume_manager.get_volume(f"{linac_name}_target")
     source = sim.add_source("GenericSource", f"{linac_name}_e-_source")
     source.particle = "e-"
-    source.mother = f"{linac_name}_target"
+    source.attached_to = f"{linac_name}_target"
     source.energy.type = "gauss"
     source.energy.mono = 6.7 * MeV
     source.energy.sigma_gauss = 0.077 * MeV
@@ -391,24 +391,7 @@ def add_phase_space_plane(sim, linac_name, src_phsp_distance):
     return plane
 
 
-#
-# def add_phase_space_plane(sim, linac_name):
-#     linac = sim.volume_manager.get_volume(linac_name)
-#     z_linac = linac.size[2]
-#     mm = g4_units.mm
-#     nm = g4_units.nm
-#     plane = sim.add_volume("Tubs", f"{linac_name}_phsp_plane")
-#     plane.mother = linac_name
-#     plane.material = "G4_AIR"
-#     plane.rmin = 0
-#     plane.rmax = 70 * mm
-#     plane.dz = 1 * nm  # half height
-#     plane.translation = [0, 0, z_linac / 2 - 299.99 * mm]
-#     plane.color = [1, 0, 0, 1]  # red
-#     return plane
-
-
-def add_phase_space(sim, plane_name):
+def add_phase_space_actor(sim, plane_name):
     phsp = sim.add_actor("PhaseSpaceActor", f"{plane_name}_phsp")
     phsp.attached_to = plane_name
     phsp.attributes = [

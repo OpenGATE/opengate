@@ -157,7 +157,7 @@ if __name__ == "__main__":
     source.position.type = "box"
     source.position.size = [3 * cm, 3 * cm, 0 * cm]
     source.direction.type = "momentum"
-    source.mother = world.name
+    source.attached_to = world.name
     source.direction.momentum = [0, 0, -1]
     source.energy.type = "gauss"
     source.energy.mono = mean_E

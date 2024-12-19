@@ -11,7 +11,7 @@ if __name__ == "__main__":
     test019.create_simu_test019_phsp_source(sim, "_phsp_src_mt")
 
     # make it MT
-    sim.number_of_threads = nt = 4
+    sim.number_of_threads = nt = 2
 
     sl = sim.get_source_user_info("phsp_source_local")
     sl.n /= nt

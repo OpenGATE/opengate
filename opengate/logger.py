@@ -6,28 +6,66 @@ import sys
 # The available color names are black,
 # red, green, yellow, blue, purple, cyan and white.
 
+
+class CustomFormatter(colorlog.ColoredFormatter):
+    """
+    The level name (INFO, DEBUG etc) is only printed if not equal to INFO
+    """
+
+    def format(self, record):
+        # Check the log level and adjust the message format accordingly
+        if record.levelname == "INFO":
+            self._style._fmt = "%(log_color)s%(message)s%(reset)s"
+        else:
+            self._style._fmt = (
+                "%(log_color)s%(levelname)-8s%(reset)s%(log_color)s%(message)s"
+            )
+
+        return super().format(record)
+
+
 # main format
-formatter = colorlog.ColoredFormatter(
-    "%(log_color)s%(log_color)s%(message)s",
-    datefmt=None,
-    reset=True,
-    log_colors={"NONE": "cyan", "DEBUG": "cyan", "INFO": "green"},
-    secondary_log_colors={},
-    style="%",
+formatter = CustomFormatter(
+    "%(log_color)s%(levelname)-8s%(reset)s%(log_color)s%(message)s",
+    log_colors={
+        "DEBUG": "cyan",
+        "INFO": "green",
+        "WARNING": "yellow",
+        "ERROR": "red",
+        "CRITICAL": "red,bg_white",
+    },
 )
 
+
 # set output message to standard output
-handler = colorlog.StreamHandler(sys.stdout)
+log_handler = colorlog.StreamHandler(sys.stdout)
 
 # install default handler format
-handler.setFormatter(formatter)
+log_handler.setFormatter(formatter)
 
 # get main log object
-log = colorlog.getLogger(__name__)
-log.addHandler(handler)
+global_log = colorlog.getLogger("opengate_logger")
+global_log.propagate = False
+if not global_log.hasHandlers():
+    global_log.addHandler(log_handler)
 
 # default log level
-log.setLevel(logging.INFO)
+# global_log.setLevel(logging.INFO)
+global_log.setLevel(0)
+
+
+def print_logger_hierarchy(logger_name):
+    logger = logging.getLogger(logger_name)
+    while logger:
+        print(f"Logger: {logger.name}")
+        print(f"  Level: {logger.level}")
+        print(f"  Handlers: {logger.handlers}")
+        # Move to the parent logger
+        if logger.parent and logger.parent is not logger:
+            logger = logger.parent
+        else:
+            break
+
 
 # shorter for level
 NONE = 0

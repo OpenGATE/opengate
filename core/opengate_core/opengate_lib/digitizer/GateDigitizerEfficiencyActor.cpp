@@ -19,10 +19,8 @@ GateDigitizerEfficiencyActor::GateDigitizerEfficiencyActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
 }
 
-GateDigitizerEfficiencyActor::~GateDigitizerEfficiencyActor() = default;
-
-void GateDigitizerEfficiencyActor::InitializeUserInput(py::dict &user_info) {
-  GateVDigitizerWithOutputActor::InitializeUserInput(user_info);
+void GateDigitizerEfficiencyActor::InitializeUserInfo(py::dict &user_info) {
+  GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
   // efficiency method
   fEfficiency = DictGetDouble(user_info, "efficiency");
 }

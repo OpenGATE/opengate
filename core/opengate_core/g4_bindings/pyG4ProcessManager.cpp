@@ -20,5 +20,7 @@ void init_G4ProcessManager(py::module &m) {
       .def("AddProcess", &G4ProcessManager::AddProcess)
       .def("AddDiscreteProcess", &G4ProcessManager::AddDiscreteProcess)
       .def("GetProcess", &G4ProcessManager::GetProcess,
+           py::return_value_policy::reference_internal)
+      .def("GetProcessList", &G4ProcessManager::GetProcessList,
            py::return_value_policy::reference_internal);
 }

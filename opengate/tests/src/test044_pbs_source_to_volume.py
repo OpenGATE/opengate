@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # default source for tests (from test42)
     source = sim.add_source("IonPencilBeamSource", "mysource")
-    source.mother = "waterbox"
+    source.attached_to = "waterbox"
     source.energy.mono = 1440 * MeV
     source.particle = "ion 6 12"  # carbon
     source.position.type = "disc"  # pos = Beam, shape = circle + sigma
@@ -163,11 +163,7 @@ if __name__ == "__main__":
         mhd_ref = "plane" + str(i) + "a_" + folder + "-Edep.mhd"
         is_ok = (
             utility.assert_images(
-                ref_path / mhd_ref,
-                mhd_gate,
-                stat,
-                tolerance=50,
-                ignore_value=0,
+                ref_path / mhd_ref, mhd_gate, stat, tolerance=50, ignore_value_data2=0
             )
             and is_ok
         )

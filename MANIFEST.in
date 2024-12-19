@@ -6,5 +6,6 @@ recursive-include opengate/tests/src/gate/gate_test* *
 recursive-include opengate/tests/output_ref *
 recursive-include opengate/data *.txt
 recursive-include opengate/data *.xml
+recursive-include opengate/data *.json
 include opengate/tests/HEAD
 include VERSION

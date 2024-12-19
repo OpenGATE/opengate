@@ -13,11 +13,18 @@ namespace py = pybind11;
 void init_G4ProductionCutsTable(py::module &m) {
 
   py::class_<G4ProductionCutsTable>(m, "G4ProductionCutsTable")
-      //.def(py::init())
       .def("GetProductionCutsTable",
            &G4ProductionCutsTable::GetProductionCutsTable,
            py::return_value_policy::reference)
       .def("SetEnergyRange", &G4ProductionCutsTable::SetEnergyRange)
+      .def("GetTableSize", &G4ProductionCutsTable::GetTableSize)
+      .def(
+          "GetMaterialCutsCouple",
+          [](const G4ProductionCutsTable &table,
+             G4int i) -> const G4MaterialCutsCouple * {
+            return table.GetMaterialCutsCouple(i);
+          },
+          py::return_value_policy::reference)
       .def("GetLowEdgeEnergy", &G4ProductionCutsTable::GetLowEdgeEnergy)
       .def("GetHighEdgeEnergy", &G4ProductionCutsTable::GetHighEdgeEnergy)
       .def("ResetConverters", &G4ProductionCutsTable::ResetConverters)

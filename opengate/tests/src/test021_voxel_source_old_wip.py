@@ -72,7 +72,7 @@ if __name__ == "__main__":
     source.particle = "alpha"
     source.activity = 1000 * Bq / sim.number_of_threads
     source.direction.type = "iso"
-    source.mother = "ct_odd"
+    source.attached_to = "ct_odd"
     source.position.translation = [10 * mm, 10 * mm, 10 * mm]
     source.energy.mono = 1 * MeV
 
@@ -81,13 +81,13 @@ if __name__ == "__main__":
     source.particle = "alpha"
     source.activity = 1000 * Bq / sim.number_of_threads
     source.direction.type = "iso"
-    source.mother = "ct_even"
+    source.attached_to = "ct_even"
     source.position.translation = [0 * mm, 0 * mm, 0 * mm]
     source.energy.mono = 1 * MeV
 
     # source from spect
-    source = sim.add_source("VoxelsSource", "vox")
-    source.mother = "ct_even"
+    source = sim.add_source("VoxelSource", "vox")
+    source.attached_to = "ct_even"
     source.particle = "alpha"
     source.activity = 1000 * Bq / sim.number_of_threads
     source.image = paths.data / "five_pixels.mha"

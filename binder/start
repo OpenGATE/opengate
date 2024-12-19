@@ -1,9 +1,0 @@
-#!/bin/bash
-set -ex
-
-# export needed PATH
-export LD_LIBRARY_PATH=/srv/conda/envs/notebook/lib/python3.7/site-packages/opengate_core.libs:${LD_LIBRARY_PATH}
-export LD_PRELOAD=/srv/conda/envs/notebook/lib/python3.7/site-packages/opengate_core.libs/libG4processes-d61601b5.so:/srv/conda/envs/notebook/lib/python3.7/site-packages/opengate_core.libs/libG4geometry-032f248e.so
-
-
-exec "$@"

@@ -207,15 +207,15 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
     print()
     gate.exception.warning(f"Check stats")
     if sim.number_of_threads == 1:
-        s = sim.source_manager.get_source_info("gaga")
+        s = sim.source_manager.get_source("gaga")
     else:
-        s = sim.source_manager.get_source_info_mt("gaga", 0)
-    print(f"Source, nb of skipped particles : {s.fTotalSkippedEvents}")
-    b = gate.sources.generic.get_source_skipped_events(sim, gsource.name)
+        s = sim.source_manager.get_source_mt("gaga", 0)
+    print(f"Source, nb of skipped particles : {s.GetTotalSkippedEvents()}")
+    b = gsource.total_skipped_events
     print(f"Source, nb of skipped particles (check) : {b}")
 
-    print(f"Source, nb of zerosE particles : {s.fTotalZeroEvents}")
-    b = gate.sources.generic.get_source_zero_events(sim, gsource.name)
+    print(f"Source, nb of zerosE particles : {s.total_zero_events}")
+    b = gsource.total_zero_events
     print(f"Source, nb of zerosE particles (check) : {b}")
 
     print(stats)

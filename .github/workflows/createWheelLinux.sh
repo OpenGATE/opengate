@@ -9,7 +9,7 @@ export CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/:${CMAKE_PREFIX_
 mkdir opengate_core/plugins
 cp -r /lib64/qt5/plugins/platforms opengate_core/plugins
 cp -r /lib64/qt5/plugins/imageformats opengate_core/plugins
-/opt/python/${PYTHONFOLDER}/bin/pip install wget colored
+/opt/python/${PYTHONFOLDER}/bin/pip install wget colored setuptools
 /opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
 auditwheel repair /home/core/dist/*.whl -w /software/wheelhouse/ --plat "manylinux2014_x86_64"
 cp -r /software/wheelhouse /home/

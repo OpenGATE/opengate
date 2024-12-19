@@ -32,7 +32,7 @@ int IsUnscatteredPrimary(const G4Step *step) {
   return (event_mom.isNear(track_mom));
 }
 
-void GateUnscatteredPrimaryFilter::InitializeUserInput(py::dict &user_info) {
+void GateUnscatteredPrimaryFilter::InitializeUserInfo(py::dict &user_info) {
   fPolicy = DictGetStr(user_info, "policy");
 }
 

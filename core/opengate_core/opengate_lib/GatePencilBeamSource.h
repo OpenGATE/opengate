@@ -21,16 +21,21 @@ public:
 
   ~GatePencilBeamSource() override;
 
-  void InitializeDirection(py::dict puser_info) override;
+  void InitializeDirection(py::dict user_info) override;
 
   void PrepareNextRun() override;
 
 protected:
-  // the fSPS will be a GateSingleParticleSourcePencilBeam
-  // we store the two pointers fSPS and fSPS_PB to the same object
-  GateSingleParticleSourcePencilBeam *fSPS_PB;
+  // thread local structure
+  struct threadLocalPencilBeamSource {
+    // the fSPS will be a GateSingleParticleSourcePencilBeam
+    // we store the two pointers fSPS and fSPS_PB to the same object
+    GateSingleParticleSourcePencilBeam *fSPS_PB = nullptr;
+  };
+  G4Cache<threadLocalPencilBeamSource> fThreadLocalDataPencilBeamSource;
 
-  // void InitializeUserInfo(py::dict &user_info);
+  threadLocalPencilBeamSource &GetThreadLocalDataPencilBeamSource();
+
   void CreateSPS() override;
 };
 

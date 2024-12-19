@@ -54,10 +54,9 @@ if __name__ == "__main__":
     source.position.translation = [0 * cm, 0 * cm, 0 * cm]
     source.direction.type = "histogram"
     # Put zero as first value of weight
-    source.direction.histogram_theta_weight = [0, 1]
-    source.direction.histogram_theta_angle = [80 * deg, 100 * deg]
-    source.direction.histogram_phi_weight = [0, 0.3, 0.5, 1, 0.5, 0.3]
-    source.direction.histogram_phi_angle = [
+    source.direction.histogram_theta_angles = [80 * deg, 100 * deg]
+    source.direction.histogram_theta_weights = [1]
+    source.direction.histogram_phi_angles = [
         60 * deg,
         70 * deg,
         80 * deg,
@@ -65,6 +64,7 @@ if __name__ == "__main__":
         110 * deg,
         120 * deg,
     ]
+    source.direction.histogram_phi_weights = [0.3, 0.5, 1, 0.5, 0.3]
     source.energy.type = "gauss"
     source.energy.mono = 70 * keV
 
@@ -99,7 +99,7 @@ if __name__ == "__main__":
             dose.edep.get_output_path(),
             stat,
             tolerance=13,
-            ignore_value=0,
+            ignore_value_data2=0,
             sum_tolerance=1,
         )
         and is_ok
@@ -113,7 +113,7 @@ if __name__ == "__main__":
             dose.edep_uncertainty.get_output_path(),
             stat,
             tolerance=30,
-            ignore_value=1,
+            ignore_value_data2=0,
             sum_tolerance=1,
         )
         and is_ok

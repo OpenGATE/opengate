@@ -41,6 +41,8 @@ if __name__ == "__main__":
     source.direction.type = "iso"
     source.activity = 1000 * Bq
 
+    print(source)
+
     # plane
     plane1a = sim.add_volume("Box", "plane1a")
     plane1a.size = [1 * m, 1 * m, 1 * nm]
@@ -127,6 +129,7 @@ if __name__ == "__main__":
 
     # image root files (no comparison here, just for plot)
     print()
+    print("WARNING: no comparison here, only for plot")
     utility.compare_root3(
         phsp1.get_output_path(),
         phsp1.get_output_path(),

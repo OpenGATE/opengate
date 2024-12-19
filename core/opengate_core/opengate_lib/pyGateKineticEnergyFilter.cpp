@@ -15,6 +15,5 @@ namespace py = pybind11;
 void init_GateKineticEnergyFilter(py::module &m) {
   py::class_<GateKineticEnergyFilter, GateVFilter>(m, "GateKineticEnergyFilter")
       .def(py::init())
-      .def("InitializeUserInput",
-           &GateKineticEnergyFilter::InitializeUserInput);
+      .def("InitializeUserInfo", &GateKineticEnergyFilter::InitializeUserInfo);
 }

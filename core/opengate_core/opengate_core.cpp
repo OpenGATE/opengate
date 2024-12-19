@@ -34,15 +34,20 @@ void init_G4NistManager(py::module &);
 
 void init_G4Material(py::module &);
 
+void init_G4MaterialCutsCouple(py::module &);
+
 void init_G4Element(py::module &);
 
 void init_G4IonisParamMat(py::module &);
 
 void init_G4MaterialPropertiesTable(py::module &);
 
+void init_GateMaterialMuHandler(py::module &);
+
 // surfaces
 
 void init_G4OpticalSurface(py::module &);
+
 void init_G4LogicalBorderSurface(py::module &);
 
 // run
@@ -206,6 +211,8 @@ void init_G4NavigationHistory(py::module &);
 
 void init_G4Navigator(py::module &);
 
+void init_G4AssemblyVolume(py::module &);
+
 // specific to python
 void init_G4PhysicsLists(py::module &);
 
@@ -295,15 +302,23 @@ void init_GateKineticEnergyFilter(py::module &);
 
 void init_GateDoseActor(py::module &m);
 
+void init_GateTLEDoseActor(py::module &m);
+
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
+
+void init_GateProductionAndStoppingActor(py::module &m);
 
 void init_GateARFActor(py::module &m);
 
 void init_GateARFTrainingDatasetActor(py::module &m);
 
 void init_GateKillActor(py::module &);
+
+void init_GateKillAccordingProcessesActor(py::module &);
+
+void init_GateAttenuationImageActor(py::module &);
 
 void init_itk_image(py::module &);
 
@@ -321,7 +336,7 @@ void init_GateTemplateSource(py::module &);
 
 void init_GatePencilBeamSource(py::module &m);
 
-void init_GateVoxelsSource(py::module &);
+void init_GateVoxelSource(py::module &);
 
 void init_GateGANSource(py::module &);
 
@@ -351,8 +366,6 @@ void init_GateVDigitizerWithOutputActor(py::module &);
 
 void init_GateHitsCollectionActor(py::module &);
 
-void init_GateMotionVolumeActor(py::module &);
-
 void init_GateHitsAdderActor(py::module &);
 
 void init_GateDigitizerReadoutActor(py::module &m);
@@ -379,6 +392,8 @@ void init_GateNTuple(py::module &);
 
 void init_GateHelpers(py::module &);
 
+void init_GateVolumeVoxelizer(py::module &);
+
 void init_GateUniqueVolumeIDManager(py::module &);
 
 void init_GateUniqueVolumeID(py::module &);
@@ -399,9 +414,11 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4NistManager(m);
   init_G4Material(m);
+  init_G4MaterialCutsCouple(m);
   init_G4Element(m);
   init_G4IonisParamMat(m);
   init_G4MaterialPropertiesTable(m);
+  init_GateMaterialMuHandler(m);
 
   init_G4VSteppingVerbose(m);
 
@@ -474,6 +491,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4TouchableHistory(m);
   init_G4NavigationHistory(m);
   init_G4Navigator(m);
+  init_G4AssemblyVolume(m);
 
   init_G4PhysicsLists(m);
   init_G4EmParameters(m);
@@ -550,7 +568,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTreatmentPlanPBSource(m);
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
-  init_GateVoxelsSource(m);
+  init_GateVoxelSource(m);
   init_GateGANSource(m);
   init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);
@@ -560,15 +578,16 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateEventAction(m);
   init_GateTrackingAction(m);
   init_GateDoseActor(m);
+  init_GateTLEDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
+  init_GateProductionAndStoppingActor(m);
   init_GateSimulationStatisticsActor(m);
   init_GatePhaseSpaceActor(m);
   // init_GateComptonSplittingActor(m);
   init_GateBOptrBremSplittingActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateHitsCollectionActor(m);
-  init_GateMotionVolumeActor(m);
   init_GateVDigitizerWithOutputActor(m);
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
@@ -580,11 +599,14 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
+  init_GateKillAccordingProcessesActor(m);
+  init_GateAttenuationImageActor(m);
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
   init_GateHelpers(m);
+  init_GateVolumeVoxelizer(m);
   init_GateUniqueVolumeIDManager(m);
   init_GateUniqueVolumeID(m);
   init_GateVolumeDepthID(m);

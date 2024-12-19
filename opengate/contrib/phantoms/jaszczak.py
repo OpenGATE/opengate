@@ -63,8 +63,8 @@ def add_background_source(
 ):
     # source
     bg = simulation.add_source("GenericSource", f"{jaszczak_name}_{src_name}")
-    bg.mother = f"{jaszczak_name}_internal_cylinder"
-    v = simulation.volume_manager.volumes[bg.mother]
+    bg.attached_to = f"{jaszczak_name}_internal_cylinder"
+    v = simulation.volume_manager.volumes[bg.attached_to]
     v_info = v.solid_info
     # (1 cm3 = 1 mL)
     """

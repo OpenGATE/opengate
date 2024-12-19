@@ -10,7 +10,7 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
-void GateTrackCreatorProcessFilter::InitializeUserInput(py::dict &user_info) {
+void GateTrackCreatorProcessFilter::InitializeUserInfo(py::dict &user_info) {
   fProcessName = DictGetStr(user_info, "process_name");
   fPolicy = DictGetStr(user_info, "policy");
 }

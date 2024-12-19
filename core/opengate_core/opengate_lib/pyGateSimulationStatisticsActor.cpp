@@ -72,7 +72,7 @@ void init_GateSimulationStatisticsActor(py::module &m) {
              std::unique_ptr<GateSimulationStatisticsActor, py::nodelete>,
              GateVActor>(m, "GateSimulationStatisticsActor")
       .def(py::init<py::dict &>())
-      .def("InitializeUserInput",
-           &GateSimulationStatisticsActor::InitializeUserInput)
+      .def("InitializeUserInfo",
+           &GateSimulationStatisticsActor::InitializeUserInfo)
       .def("GetCounts", &GateSimulationStatisticsActor::GetCounts);
 }

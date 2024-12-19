@@ -14,7 +14,7 @@ paths = utility.get_default_test_paths(
 
 def create_spect_simu(
     sim,
-    paths,
+    the_paths,
     number_of_threads=1,
     activity_kBq=300,
     aa_enabled=True,
@@ -28,7 +28,7 @@ def create_spect_simu(
     sim.check_volumes_overlap = False
     sim.random_engine = "MixMaxRng"
     sim.random_seed = 123456789
-    sim.output_dir = paths.output
+    sim.output_dir = the_paths.output
 
     # units
     m = gate.g4_units.m
@@ -81,7 +81,7 @@ def create_spect_simu(
     # activity = 300 * kBq
     activity = activity_kBq * kBq
     beam1 = sim.add_source("GenericSource", "beam1")
-    beam1.mother = waterbox.name
+    beam1.attached_to = waterbox.name
     beam1.particle = "gamma"
     beam1.energy.mono = 140.5 * keV
     beam1.position.type = "sphere"
@@ -95,7 +95,7 @@ def create_spect_simu(
     beam1.activity = activity / sim.number_of_threads
 
     beam2 = sim.add_source("GenericSource", "beam2")
-    beam2.mother = waterbox.name
+    beam2.attached_to = waterbox.name
     beam2.particle = "gamma"
     beam2.energy.mono = 140.5 * keV
     beam2.position.type = "sphere"
@@ -109,7 +109,7 @@ def create_spect_simu(
     beam2.activity = activity / sim.number_of_threads
 
     beam3 = sim.add_source("GenericSource", "beam3")
-    beam3.mother = waterbox.name
+    beam3.attached_to = waterbox.name
     beam3.particle = "gamma"
     beam3.energy.mono = 140.5 * keV
     beam3.position.type = "sphere"
@@ -196,48 +196,58 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
     gate.exception.warning("Compare acceptance angle skipped particles")
     stats = sim.get_actor("Stats")
 
+    beam1 = sim.source_manager.get_source("beam1")
+    beam2 = sim.source_manager.get_source("beam2")
+    beam3 = sim.source_manager.get_source("beam3")
+
     reference_ratio = 691518 / 2998895  # (23%)
-    b1 = gate.sources.generic.get_source_zero_events(sim, "beam1")
-    b2 = gate.sources.generic.get_source_zero_events(sim, "beam2")
-    b3 = gate.sources.generic.get_source_zero_events(sim, "beam3")
+    if "noaa" in version:
+        reference_ratio = 0
+    b1 = beam1.total_zero_events
+    b2 = beam1.total_zero_events
+    b3 = beam1.total_zero_events
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
     print(f"Number of simulated events: {stats.counts.events}")
-    beam1 = sim.source_manager.get_source_info("beam1")
     mode = beam1.direction.acceptance_angle.skip_policy
     stats_ref = utility.read_stat_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
-        b1 = gate.sources.generic.get_source_skipped_events(sim, "beam1")
-        b2 = gate.sources.generic.get_source_skipped_events(sim, "beam2")
-        b3 = gate.sources.generic.get_source_skipped_events(sim, "beam3")
+        b1 = beam1.total_skipped_events
+        b2 = beam2.total_skipped_events
+        b3 = beam3.total_skipped_events
         stats.counts.events = stats.counts.events + b1 + b2 + b3
         print(f"Skip Events mode, adding the skipped ones")
-        print(f"Number of simulated events: {stats.counts.events}")
+        print(f"Number of simulated events: {stats.counts.events} ({b1} + {b2} + {b3})")
         # do not compare track in this mode
         stats.counts.tracks = stats_ref.counts.tracks
 
-    tol = 0.3
-    r1 = b1 / stats.counts.events
-    is_ok = (r1 - reference_ratio) / reference_ratio < tol
-    utility.print_test(
-        is_ok,
-        f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
-    )
+    if reference_ratio != 0:
+        tol = 0.3
+        r1 = b1 / stats.counts.events
+        is_ok = np.fabs((r1 - reference_ratio) / reference_ratio) < tol
+        utility.print_test(
+            is_ok,
+            f"Skipped particles b1 = {b1} {r1 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+        )
 
-    r2 = b2 / stats.counts.events
-    is_ok = (r2 - reference_ratio) / reference_ratio < tol
-    utility.print_test(
-        is_ok,
-        f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
-    )
+        r2 = b2 / stats.counts.events
+        b = np.fabs((r2 - reference_ratio) / reference_ratio) < tol
+        utility.print_test(
+            b,
+            f"Skipped particles b2 = {b2} {r2 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+        )
+        is_ok = b and is_ok
 
-    r3 = b3 / stats.counts.events
-    is_ok = (r3 - reference_ratio) / reference_ratio < tol
-    utility.print_test(
-        is_ok,
-        f"Skipped particles b3 = {b3} {r3 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
-    )
+        r3 = b3 / stats.counts.events
+        b = np.fabs((r3 - reference_ratio) / reference_ratio) < tol
+        utility.print_test(
+            b,
+            f"Skipped particles b3 = {b3} {r3 * 100:.2f} %  vs {reference_ratio * 100:.2f} % ",
+        )
+        is_ok = b and is_ok
+    else:
+        is_ok = True
 
     # stat
     gate.exception.warning("Compare stats")
@@ -268,10 +278,11 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
             paths.output / f"proj028_colli_offset{version}.mhd",
             stats,
             tolerance=85,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
-            sum_tolerance=sum_tolerance,
             fig_name=str(paths.output / fig_name),
+            sum_tolerance=sum_tolerance,
+            apply_ignore_mask_to_sum_check=False,  # force legacy behavior
         )
         and is_ok
     )

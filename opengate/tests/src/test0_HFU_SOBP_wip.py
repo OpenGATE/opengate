@@ -112,7 +112,7 @@ def set_gps(spots, nSim, sim, beamline, gantry_angle):
 
         # # set mother
         # if self.mother is not None:
-        #     source.mother = self.mother
+        #     source.attached_to = self.mother
 
         # # POSITION:
         # source.position.translation = self._get_pbs_position(spot)
@@ -308,9 +308,9 @@ def simulation(
     # # start simulation
     # # ~ output = sim.start()
     output = sim.run(start_new_process=True)
-    dose_fpath = sim.get_actor("dose").user_info.output
+    dose_fpath = sim.get_actor("dose").phsp_source.output
     if calc_LETd:
-        let_fpath = sim.get_actor("let").user_info.output
+        let_fpath = sim.get_actor("let").phsp_source.output
     else:
         let_fpath = ""
     return output, dose_fpath, let_fpath

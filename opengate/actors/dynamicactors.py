@@ -2,7 +2,7 @@ from typing import Optional
 
 import opengate_core as g4
 from ..definitions import __world_name__
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..geometry.utility import rot_np_as_g4, vec_np_as_g4
 from ..exception import fatal
 from .base import ActorBase
@@ -42,11 +42,15 @@ class DynamicGeometryActor(ActorBase, g4.GateVActor):
             c.initialize()
 
     def BeginOfRunActionMasterThread(self, run_id):
-        gm = g4.G4GeometryManager.GetInstance()
-        gm.OpenGeometry(None)
+        if self.simulation.dyn_geom_open_close:
+            gm = g4.G4GeometryManager.GetInstance()
+            # OpenGeometry (G4VPhysicalVolume *vol=0)
+            gm.OpenGeometry(None)
         for c in self.geometry_changers:
             c.apply_change(run_id)
-        gm.CloseGeometry(True, False, None)
+        if self.simulation.dyn_geom_open_close:
+            # CloseGeometry: pOptimise=true, verbose=false, G4VPhysicalVolume *vol=0
+            gm.CloseGeometry(self.simulation.dyn_geom_optimise, False, None)
 
 
 def _setter_hook_attached_to(self, value):
@@ -261,3 +265,10 @@ class VolumeRotationChanger(GeometryChanger):
 
     def apply_change(self, run_id):
         self.g4_physical_volume.SetRotationHepRep3x3(self.g4_rotations[run_id])
+
+
+process_cls(DynamicGeometryActor)
+process_cls(GeometryChanger)
+process_cls(VolumeImageChanger)
+process_cls(VolumeTranslationChanger)
+process_cls(VolumeRotationChanger)

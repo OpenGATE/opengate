@@ -36,7 +36,7 @@ public:
  * There will be one copy per thread + one for the Master thread
  * Only the master thread call StartMasterThread
  *
- * The Geant4 engine will call GeneratePrimaries for all threads
+ * The Geant4 fEngine will call GeneratePrimaries for all threads
  *
  * GeneratePrimaries:
  * - select one source according to the time
@@ -62,13 +62,16 @@ public:
   // [py side] set the list of actors
   void SetActors(std::vector<GateVActor *> &actors);
 
+  // Return a source
+  GateVSource *FindSourceByName(std::string name) const;
+
   // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 
   // Initialize a new Run
   void PrepareRunToStart(int run_id);
 
-  // Called by G4 engine
+  // Called by G4 fEngine
   void GeneratePrimaries(G4Event *anEvent) override;
 
   // After an event, prepare for the next
@@ -89,6 +92,9 @@ public:
 
   void ComputeExpectedNumberOfEvents();
 
+  void SetRunTerminationFlag(bool flag);
+
+  // bool fRunTerminationFlag = false;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;

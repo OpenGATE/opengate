@@ -59,7 +59,7 @@ if __name__ == "__main__":
     plane_1.color = [0.8, 0.2, 0.1, 1]
 
     source_1 = sim.add_source("PhaseSpaceSource", "phsp_source_global_1")
-    source_1.mother = plane_1.name
+    source_1.attached_to = plane_1.name
     source_1.phsp_file = paths.output_ref.parent / "test019" / "test019_hits.root"
     source_1.position_key = "PrePosition"
     source_1.direction_key = "PreDirection"

@@ -30,7 +30,7 @@
 
 // Initialisation of static variable
 int GateSourceManager::fVerboseLevel = 0;
-bool fUserStoppingCritReached = false;
+bool fRunTerminationFlag = false;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
@@ -49,7 +49,6 @@ GateSourceManager::GateSourceManager() {
   l.fNextActiveSource = nullptr;
   l.fNextSimulationTime = 0;
   fExpectedNumberOfEvents = 0;
-  fUserStoppingCritReached = false;
   fProgressBarStep = 1000;
   fCurrentEvent = 0;
 }
@@ -63,6 +62,10 @@ GateSourceManager::~GateSourceManager() {
       delete l.fProgressBar;
     }
   }
+}
+
+void GateSourceManager::SetRunTerminationFlag(bool flag) {
+  fRunTerminationFlag = flag;
 }
 
 void GateSourceManager::Initialize(TimeIntervals simulation_times,
@@ -103,6 +106,21 @@ void GateSourceManager::AddSource(GateVSource *source) {
 
 void GateSourceManager::SetActors(std::vector<GateVActor *> &actors) {
   fActors = actors;
+  for (auto actor : actors) {
+    actor->SetSourceManager(this);
+  }
+}
+
+GateVSource *GateSourceManager::FindSourceByName(std::string name) const {
+  for (auto *source : fSources) {
+    if (source->fName == name)
+      return source;
+  }
+  std::ostringstream oss;
+  oss << "Cannot find the source '" << name << "' in the source manager"
+      << std::endl;
+  Fatal(oss.str());
+  return nullptr;
 }
 
 void GateSourceManager::StartMasterThread() {
@@ -136,20 +154,10 @@ void GateSourceManager::StartMasterThread() {
     auto *uim = G4UImanager::GetUIpointer();
     uim->ApplyCommand(run);
 
-    bool exit_sim_on_next_run = false;
     for (auto &actor : fActors) {
       int ret = actor->EndOfRunActionMasterThread(run_id);
-      if (ret == 1) {
-        exit_sim_on_next_run = true;
-      }
     }
     StartVisualization();
-    if (exit_sim_on_next_run) {
-      fUserStoppingCritReached = true;
-      if (run_id < (fSimulationTimes.size() - 2)) {
-        run_id = fSimulationTimes.size() - 2;
-      }
-    }
   }
 
   // progress bar (only thread 0)
@@ -157,7 +165,7 @@ void GateSourceManager::StartMasterThread() {
     if (G4Threading::IsMultithreadedApplication() &&
         G4Threading::G4GetThreadId() != 0)
       return;
-    l.fProgressBar->mark_as_completed();
+    // l.fProgressBar->mark_as_completed(); // seems to 'duplicate' progress bar
     show_console_cursor(true);
   }
 }
@@ -215,6 +223,8 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
   l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
+  // reset abort run flag to false
+  fRunTerminationFlag = false;
   // Prepare the run for all sources
   for (auto *source : fSources) {
     source->PrepareNextRun();
@@ -250,7 +260,7 @@ void GateSourceManager::PrepareNextSource() {
 
 void GateSourceManager::CheckForNextRun() {
   auto &l = fThreadLocalData.Get();
-  if (l.fNextActiveSource == nullptr) {
+  if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
     l.fNextRunId++;
@@ -400,5 +410,5 @@ void GateSourceManager::StartVisualization() const {
 
 bool GateSourceManager::IsEndOfSimulationForWorker() const {
   auto &l = fThreadLocalData.Get();
-  return (l.fNextRunId >= fSimulationTimes.size() || fUserStoppingCritReached);
+  return (l.fNextRunId >= fSimulationTimes.size());
 }

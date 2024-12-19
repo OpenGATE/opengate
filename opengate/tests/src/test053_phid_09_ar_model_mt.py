@@ -63,7 +63,7 @@ def main(dependency="test053_phid_08_ar_ref_mt.py"):
     root_ref = paths.output / f"test053_{nuclide.nuclide}_8_ref.root"
     root_model = sim.get_actor("phsp").get_output_path()
     is_ok = compare_root_energy(
-        root_ref, root_model, start_time, end_time, model_index=148, tol=0.015
+        root_ref, root_model, start_time, end_time, model_index=147, tol=0.015
     )
 
     test_ok(is_ok)

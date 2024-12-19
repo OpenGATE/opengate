@@ -157,7 +157,7 @@ def create_test_phs(
     #  Source
     ##########################################################################################
     source = sim.add_source("GenericSource", "particle_source")
-    source.mother = "world"
+    source.attached_to = "world"
     # source.particle = "ion 6 12"  # Carbon ions
     source.particle = "proton"
     source.position.type = "point"
@@ -246,7 +246,7 @@ def create_phs_without_source(
     # ##########################################################################################
     # # phsp source
     # source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    # source.mother = world.name
+    # source.attached_to = world.name
     # source.phsp_file = source_name
     # source.position_key = "PrePosition"
     # source.direction_key = "PreDirection"
@@ -276,7 +276,7 @@ def test_source_name(
     ##########################################################################################
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = "world"
+    source.attached_to = "world"
     source.phsp_file = source_file_name
     source.position_key = "PrePositionLocal"
     source.direction_key = "PreDirectionLocal"
@@ -303,7 +303,7 @@ def test_source_particle_info_from_phs(
     ##########################################################################################
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = "world"
+    source.attached_to = "world"
     source.phsp_file = source_file_name
     source.particle = ""
     source.position_key = "PrePositionLocal"
@@ -329,7 +329,7 @@ def test_source_translation(
     ##########################################################################################
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = "world"
+    source.attached_to = "world"
     source.phsp_file = source_file_name
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
@@ -357,7 +357,7 @@ def test_source_rotation(
     ##########################################################################################
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = "world"
+    source.attached_to = "world"
     source.phsp_file = source_file_name
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"
@@ -387,7 +387,7 @@ def test_source_until_primary(
     number_of_particles = 2
     # phsp source
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.mother = "world"
+    source.attached_to = "world"
     source.phsp_file = source_file_name
     source.position_key = "PrePosition"
     source.direction_key = "PreDirection"

@@ -6,6 +6,7 @@ import opengate.contrib.pet.philipsvereos as pet_vereos
 import opengate.contrib.phantoms.necr as phantom_necr
 from opengate.tests import utility
 from opengate.userhooks import check_production_cuts
+from opengate.sources.base import get_rad_yield
 
 
 def create_pet_simulation(sim, paths, debug=False, create_mat=False):
@@ -65,7 +66,7 @@ def create_pet_simulation(sim, paths, debug=False, create_mat=False):
 
     # default source for tests
     source = phantom_necr.add_necr_source(sim, phantom)
-    total_yield = gate.sources.generic.get_rad_yield("F18")
+    total_yield = get_rad_yield("F18")
     print("Yield for F18 (nb of e+ per decay) : ", total_yield)
     source.activity = 3000 * Bq * total_yield
     source.activity = 1787.914158 * MBq * total_yield

@@ -42,6 +42,13 @@ void GateVolumeVoxelizer::Voxelize() {
                   option::ShowRemainingTime{true},
                   option::MaxProgress{n}};
 
+  // Find isocenter
+  fIndexIsoCenter = GateVolumeVoxelizer::ContinuousIndexType();
+  point[0] = 0;
+  point[1] = 0;
+  point[3] = 0;
+  fImage->TransformPhysicalPointToContinuousIndex(point, fIndexIsoCenter);
+
   // main loop
   using IteratorType = itk::ImageRegionIteratorWithIndex<ImageType>;
   IteratorType outputIt(fImage, fImage->GetRequestedRegion());

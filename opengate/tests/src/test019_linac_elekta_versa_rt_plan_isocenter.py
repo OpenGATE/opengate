@@ -25,7 +25,8 @@ def add_phase_space_isocenter(sim, name, pos):
     isocenter_sphere.material = "G4_Galactic"
     isocenter_sphere.mother = name
     isocenter_sphere.translation = pos
-    isocenter_sphere.radius = 1 * cm
+    isocenter_sphere.rmax = 0
+    isocenter_sphere.rmax = 1 * cm
     isocenter_sphere.color = [0, 1, 0, 1]  # red
 
     phsp = sim.add_actor("PhaseSpaceActor", f"phsp")
@@ -47,7 +48,7 @@ def add_alpha_source(sim, name, pos_Z, nb_part):
     source = sim.add_source("GenericSource", "alpha_source")
     MeV = gate.g4_units.MeV
     source.particle = "alpha"
-    source.mother = plan_source.name
+    source.attached_to = plan_source.name
     source.energy.type = "mono"
     source.energy.mono = 1 * MeV
     source.position.type = "box"

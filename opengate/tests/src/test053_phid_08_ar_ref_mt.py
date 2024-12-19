@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # sources
     activity_in_Bq = 1000
     add_source_generic(sim, z, a, activity_in_Bq)
-    sim.random_seed = 123456
+    sim.random_seed = 44444
 
     # timing
     sec = g4_units.second

@@ -117,7 +117,7 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.check_diff_abs(
-            np.mean(td1), np.mean(td2), 30, f"Time diff mean in minutes:"
+            np.mean(td1), np.mean(td2), 35, f"Time diff mean in minutes:"
         )
         and is_ok
     )

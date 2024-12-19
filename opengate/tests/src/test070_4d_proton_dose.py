@@ -3,12 +3,9 @@
 
 
 import numpy as np
-import matplotlib.pyplot as plt
 import opengate as gate
-from opengate.geometry.materials import MaterialDatabase, assert_same_material
+from opengate.geometry.materials import MaterialDatabase
 from opengate.tests import utility
-import pathlib
-from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test009_voxels")
@@ -42,7 +39,7 @@ if __name__ == "__main__":
     # image
     patient = sim.add_volume("Image", "patient")
     patient.image = path_to_4d_ct / "0.0.mhd"
-    patient.read_input_image()
+    patient.load_input_image()
     patient.material = "G4_AIR"  # material used by default
     f1 = str(paths.gate_data / "Schneider2000MaterialsTable.txt")
     f2 = str(paths.gate_data / "Schneider2000DensitiesTable.txt")

@@ -22,7 +22,7 @@ class GatePhaseSpaceSource : public GateVSource {
 public:
   // signature of the callback function in Python
   // that will generate particles (from phsp file)
-  using ParticleGeneratorType = std::function<int(GatePhaseSpaceSource *)>;
+  using ParticleGeneratorType = std::function<int(GatePhaseSpaceSource *, int)>;
 
   GatePhaseSpaceSource();
 
@@ -45,24 +45,16 @@ public:
 
   void SetGeneratorFunction(ParticleGeneratorType &f) const;
 
-  bool ParticleIsPrimary();
-
-  // virtual void SetGeneratorInfo(py::dict &user_info);
+  bool ParticleIsPrimary() const;
 
   void GenerateBatchOfParticles();
 
-  G4ParticleDefinition *fParticleDefinition;
   G4ParticleTable *fParticleTable;
-
   std::float_t fCharge;
   std::float_t fMass;
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
   bool fVerbose;
-
-  // unsigned long fMaxN;
-  long fNumberOfGeneratedEvents;
-  size_t fCurrentBatchSize;
 
   void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 
@@ -84,10 +76,11 @@ public:
 
   // For MT, all threads local variables are gathered here
   struct threadLocalTPhsp {
+    G4ParticleDefinition *fParticleDefinition;
 
-    bool fgenerate_until_next_primary;
-    std::int32_t fprimary_PDGCode;
-    std::float_t fprimary_lower_energy_threshold;
+    bool fGenerateUntilNextPrimary;
+    std::int32_t fPrimaryPDGCode;
+    std::float_t fPrimaryLowerEnergyThreshold;
 
     ParticleGeneratorType fGenerator;
     unsigned long fNumberOfGeneratedEvents;
@@ -106,7 +99,7 @@ public:
 
     std::float_t *fEnergy;
     std::float_t *fWeight;
-    // double * fTime;
+    // double * fTime; // FIXME todo
   };
   G4Cache<threadLocalTPhsp> fThreadLocalDataPhsp;
 };
