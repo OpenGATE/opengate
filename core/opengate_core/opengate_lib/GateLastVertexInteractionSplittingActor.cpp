@@ -148,7 +148,6 @@ G4Track *GateLastVertexInteractionSplittingActor::CreateATrackFromContainer(
     aTrack->SetWeight(container.GetWeight());
     return aTrack;
   }
-  
 
   return nullptr;
 }
@@ -477,7 +476,7 @@ void GateLastVertexInteractionSplittingActor::FillOfDataTree(G4Step *step) {
       SimpleContainer containerToSplit =
           SimpleContainer(processName, energy, momentum, position, polarization,
                           particleName, weight, trackStatus, nbOfSecondaries,
-                          annihilFlag, stepLength, prePosition,tch);
+                          annihilFlag, stepLength, prePosition, tch);
       container->SetContainerToSplit(containerToSplit);
       container->PushListOfSplittingParameters(containerToSplit);
     }
