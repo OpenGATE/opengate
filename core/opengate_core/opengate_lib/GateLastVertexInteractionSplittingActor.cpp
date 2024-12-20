@@ -134,6 +134,7 @@ G4Track *GateLastVertexInteractionSplittingActor::CreateATrackFromContainer(
         new G4DynamicParticle(particleDefinition, momentum, energy);
     G4double time = 0;
     G4Track *aTrack = new G4Track(dynamicParticle, time, position);
+    aTrack->SetTouchableHandle(container.GetTouchableHandle());
     aTrack->SetPolarization(polarization);
     if (trackStatus == 0) {
       aTrack->SetTrackStatus(fAlive);
@@ -147,6 +148,7 @@ G4Track *GateLastVertexInteractionSplittingActor::CreateATrackFromContainer(
     aTrack->SetWeight(container.GetWeight());
     return aTrack;
   }
+  
 
   return nullptr;
 }
@@ -468,13 +470,14 @@ void GateLastVertexInteractionSplittingActor::FillOfDataTree(G4Step *step) {
       G4int trackStatus = step->GetTrack()->GetTrackStatus();
       G4int nbOfSecondaries = step->GetfSecondary()->size();
       G4double stepLength = step->GetStepLength();
+      G4TouchableHandle tch = step->GetTrack()->GetTouchableHandle();
       if (((processName == "annihil"))) {
         energy -= (step->GetTotalEnergyDeposit());
       }
       SimpleContainer containerToSplit =
           SimpleContainer(processName, energy, momentum, position, polarization,
                           particleName, weight, trackStatus, nbOfSecondaries,
-                          annihilFlag, stepLength, prePosition);
+                          annihilFlag, stepLength, prePosition,tch);
       container->SetContainerToSplit(containerToSplit);
       container->PushListOfSplittingParameters(containerToSplit);
     }

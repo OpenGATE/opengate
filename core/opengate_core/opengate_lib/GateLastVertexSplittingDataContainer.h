@@ -100,7 +100,8 @@ public:
                 tmpContainer.GetNbOfSecondaries(),
                 tmpContainer.GetAnnihilationFlag(),
                 tmpContainer.GetStepLength(),
-                tmpContainer.GetPrePositionToSplit());
+                tmpContainer.GetPrePositionToSplit(),
+                tmpContainer.GetTouchableHandle());
             return aContainer;
           }
         }
@@ -114,7 +115,8 @@ public:
             tmpContainer.GetParticleNameToSplit(), tmpContainer.GetWeight(),
             tmpContainer.GetTrackStatus(), tmpContainer.GetNbOfSecondaries(),
             tmpContainer.GetAnnihilationFlag(), tmpContainer.GetStepLength(),
-            tmpContainer.GetPrePositionToSplit());
+            tmpContainer.GetPrePositionToSplit(),
+            tmpContainer.GetTouchableHandle());
         return aContainer;
       }
     }
