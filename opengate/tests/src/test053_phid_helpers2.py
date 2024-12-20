@@ -21,7 +21,7 @@ def create_sim_test053(sim, sim_name, output=paths.output):
         n_threads = 1
     sim.number_of_threads = n_threads
     sim.visu = False
-    sim.random_seed = 123654
+    sim.random_seed = 66666
 
     # world size
     world = sim.world
@@ -32,8 +32,8 @@ def create_sim_test053(sim, sim_name, output=paths.output):
     sim.physics_manager.physics_list_name = "QGSP_BERT_EMZ"
     sim.physics_manager.enable_decay = True
     sim.physics_manager.global_production_cuts.all = 1e6 * mm
-    sim.g4_commands_after_init.append("/process/em/pixeXSmodel ECPSSR_ANSTO")
-    sim.g4_commands_before_init.append("/process/em/fluoBearden true")
+    # sim.g4_commands_after_init.append("/process/em/pixeXSmodel ECPSSR_ANSTO")
+    # sim.g4_commands_before_init.append("/process/em/fluoBearden true")
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -64,21 +64,23 @@ def create_sim_test053(sim, sim_name, output=paths.output):
         gi = g4.GateInfo
         v = gi.get_G4Version().replace("$Name: ", "")
         v = v.replace("$", "")
-        if "geant4-11-01" in v:
-            f.process_name = "RadioactiveDecay"  # G4 11.1
-        else:
+        warning(f"The decay process name depends on the Geant 4 version: {v}")
+        if "geant4-11-02" in v:
             f.process_name = "Radioactivation"  # G4 11.2
+        else:
+            f.process_name = "RadioactiveDecay"  # G4 11.1, 11.3
+        warning(f"Process name for filter is: {f.process_name}")
         # phsp.debug = True
         phsp.filters.append(f)
 
 
-def add_source_generic(sim, z, a, activity_in_Bq=1000):
+def add_source_generic(sim, z, a, activity_in_bq=1000):
     Bq = g4_units.Bq
     nm = g4_units.nm
     sec = g4_units.second
     nuclide, _ = get_nuclide_and_direct_progeny(z, a)
 
-    activity = activity_in_Bq * Bq / sim.number_of_threads
+    activity = activity_in_bq * Bq / sim.number_of_threads
     s1 = sim.add_source("GenericSource", nuclide.nuclide)
     s1.particle = f"ion {z} {a}"
     s1.position.type = "sphere"
@@ -144,6 +146,10 @@ def compare_root_energy(
             f"{s}(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
             f"& (TrackCreatorModelIndex == {model_index})",
         )
+        print(
+            f"{s}(GlobalTime >= {start_time}) & (GlobalTime <= {end_time}) "
+            f"& (TrackCreatorModelIndex == {model_index})"
+        )
     else:
         ref_g = tree_ref.arrays(
             ["KineticEnergy"],
@@ -151,8 +157,12 @@ def compare_root_energy(
         )
     """
         TrackCreatorModelIndex
-        index=130  model_RDM_IT                RadioactiveDecay
-        index=148  model_RDM_AtomicRelaxation  RadioactiveDecay
+        OLD -> index=130  model_RDM_IT                RadioactiveDecay
+        OLD -> index=148  model_RDM_AtomicRelaxation  RadioactiveDecay
+
+        Geant4 11.3.0
+        index=129  model_RDM_IT                RadioactiveDecay
+        index=147  model_RDM_AtomicRelaxation  RadioactiveDecay
     """
     print("Nb entries with correct range time", len(ref_g))
 

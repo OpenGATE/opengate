@@ -2,16 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Context: By default, simulation of e+ source does not result in the expected acolin. of
-PET imaging. To enable this, one need to set ionisation of the material where the
-annihilations will occur to 5.0 eV. The test is in two part:
-1) If nothing is done, more annihilations should be colinear
-2) If the mean energy per ion pair is set to 5.0 eV, the amplitude of acolinearity
-should follow a Rayleight distribution with a scale of 0.21 deg., which corresponds to
-the acolin deviation following a 2D Gaussian with a FWHM of 0.5 deg.
+Context: See test079_acollin_ions_geant4_material.py
 
-Here, the material, G4_WATER is already known of Geant4, so one only need to set its
-ionisation correctly.
+Test that show how to access ionisation object once G4 is init (before the run), for
+debug purpose. It should be equivalent to _versionA.
 """
 
 from test079_acollin_helpers import *
@@ -26,7 +20,23 @@ import matplotlib.pyplot as plt
 # imaging
 mean_energy = 5.0 * eV
 # Key added to output to make sure that multi-threading the tests does not backfire
-test_key = "p4"
+test_key = "p2"
+
+
+def set_ionisation(simulation_engine, param):
+    volume = param["volume"]
+    mean_energy = param["mean_energy"]
+    sim = simulation_engine.simulation
+    mat = sim.volume_manager.find_or_build_material(volume.material)
+    ionisation = mat.GetIonisation()
+    if mean_energy is not None:
+        ionisation.SetMeanEnergyPerIonPair(mean_energy)
+    print(
+        f"material {volume.material} mean excitation energy is {ionisation.GetMeanExcitationEnergy() / eV} eV"
+    )
+    print(
+        f"material {volume.material} mean energy per ion pair is {ionisation.GetMeanEnergyPerIonPair() / eV} eV"
+    )
 
 
 #########################################################################################
@@ -41,28 +51,27 @@ if __name__ == "__main__":
     # add a waterbox
     wb = sim.add_volume("Box", "waterbox")
     wb.size = [50 * cm, 50 * cm, 50 * cm]
-    wb.material = "G4_WATER"
-
-    # test mat properties
-    mat = sim.volume_manager.find_or_build_material(wb.material)
-    ionisation = mat.GetIonisation()
-    print(
-        f"material {wb.material} mean excitation energy is {ionisation.GetMeanExcitationEnergy() / eV} eV"
+    elems = ["C", "H", "O"]
+    nbAtoms = [5, 8, 2]
+    sim.volume_manager.material_database.add_material_nb_atoms(
+        "IEC_PLASTIC", elems, nbAtoms, 1.18 * gcm3
     )
-    print(
-        f"material {wb.material} mean energy per ion pair is {ionisation.GetMeanEnergyPerIonPair() / eV} eV"
-    )
+    wb.material = "IEC_PLASTIC"
 
     # set the source
-    source = sim.add_source("GenericSource", "beta+_source")
-    source.particle = "e+"
-    source.energy.type = "F18"
+    source = sim.add_source("GenericSource", "f18")
+    source.particle = "ion 9 18"
+    source.energy.mono = 0
     source.activity = 10000 * Bq
     source.direction.type = "iso"
 
     # add phase actor
     phsp = setup_actor(sim, "phsp", wb.name)
     phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
+
+    # set the hook to print the mean energy
+    sim.user_hook_after_init = set_ionisation
+    sim.user_hook_after_init_arg = {"volume": wb, "mean_energy": None}
 
     # go
     sim.run(start_new_process=True)
@@ -72,8 +81,10 @@ if __name__ == "__main__":
     phsp.output_filename = (
         paths.output / f"annihilation_photons_with_mepip_{test_key}.root"
     )
-    ionisation.SetMeanEnergyPerIonPair(mean_energy)
-    print(f"set MeanEnergyPerIonPair to {ionisation.GetMeanEnergyPerIonPair() / eV} eV")
+
+    # set the hook to print the mean energy
+    sim.user_hook_after_init = set_ionisation
+    sim.user_hook_after_init_arg = {"volume": wb, "mean_energy": mean_energy}
 
     # go
     sim.run()
@@ -88,7 +99,7 @@ if __name__ == "__main__":
     gamma_pairs = read_gamma_pairs(phsp.output_filename)
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
 
-    acolin_scale = plot_acolin_case(mean_energy, acollinearity_angles)
+    acolin_scale = plot_acolin_case_mepip(mean_energy, acollinearity_angles)
 
     f = paths.output / f"acollinearity_angles_{test_key}.png"
     plt.savefig(f)

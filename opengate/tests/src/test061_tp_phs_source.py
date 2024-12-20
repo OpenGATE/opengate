@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import test061_TPPhsSource_helpers as t
+import test061_tp_phs_source_helpers as t
 import opengate as gate
 from opengate.tests import utility
 

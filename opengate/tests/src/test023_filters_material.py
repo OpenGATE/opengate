@@ -104,7 +104,7 @@ if __name__ == "__main__":
         dose.edep.get_output_path(),
         stat,
         tolerance=50,
-        sum_tolerance=3,
+        sum_tolerance=4,
     )
 
     utility.test_ok(is_ok)

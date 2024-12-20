@@ -309,6 +309,11 @@ void GateGenericSource::InitializeBackToBackMode(py::dict &user_info) {
   auto u = py::dict(user_info["direction"]);
   bool accolinearityFlag = DictGetBool(u, "accolinearity_flag");
   ll.fSPS->SetBackToBackMode(true, accolinearityFlag);
+  if (accolinearityFlag == true) {
+    // Change the value if user provided one.
+    double accolinearityFWHM = DictGetDouble(u, "accolinearity_fwhm");
+    ll.fSPS->SetAccolinearityFWHM(accolinearityFWHM);
+  }
   // this is photon
   auto *particle_table = G4ParticleTable::GetParticleTable();
   fParticleDefinition = particle_table->FindParticle("gamma");
