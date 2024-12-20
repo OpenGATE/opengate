@@ -658,71 +658,6 @@ def add_digitizer_proj(sim, crystal, cc):
     return proj
 
 
-def add_digitizer_v2_old(sim, crystal_name, name):
-    # create main chain
-    mm = g4_units.mm
-    digitizer = Digitizer(sim, crystal_name, name)
-
-    # Singles
-    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
-    sc.group_volume = None
-    sc.policy = "EnergyWinnerPosition"
-
-    # detection efficiency
-    ea = digitizer.add_module("DigitizerEfficiencyActor")
-    ea.efficiency = 0.86481
-
-    # energy blurring
-    keV = g4_units.keV
-    MeV = g4_units.MeV
-    eb = digitizer.add_module("DigitizerBlurringActor")
-    eb.blur_attribute = "TotalEnergyDeposit"
-    eb.blur_method = "InverseSquare"
-    eb.blur_resolution = 0.13
-    eb.blur_reference_value = 80 * keV
-    eb.blur_slope = -0.09 * 1 / MeV  # fixme unsure about unit
-
-    # spatial blurring
-    # Source: HE4SPECS - FWHM = 3.9 mm
-    # FWHM = 2.sigma.sqrt(2ln2) -> sigma = 1.656 mm
-    sb = digitizer.add_module("DigitizerSpatialBlurringActor")
-    sb.blur_attribute = "PostPosition"
-    sb.blur_fwhm = 3.9 * mm
-    sb.keep_in_solid_limits = True
-
-    # energy windows (Energy range. 35-588 keV)
-    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
-    keV = g4_units.keV
-    # 112.9498 keV  = 6.20 %
-    # 208.3662 keV  = 10.38 %
-    p1 = 112.9498 * keV
-    p2 = 208.3662 * keV
-    channels = [
-        {"name": "spectrum", "min": 35 * keV, "max": 588 * keV},
-        *energy_windows_peak_scatter("peak113", "scatter1", "scatter2", p1, 0.2, 0.1),
-        *energy_windows_peak_scatter("peak208", "scatter3", "scatter4", p2, 0.2, 0.1),
-    ]
-    cc.channels = channels
-
-    # projection
-    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
-    channel_names = [c["name"] for c in channels]
-    proj.input_digi_collections = channel_names
-    proj.spacing = [4.7951998710632 * mm / 2, 4.7951998710632 * mm / 2]
-    proj.size = [256, 256]
-    # by default, the origin of the images are centered
-    # set to False here to keep compatible with previous version
-    # proj.origin_as_image_center = False
-    # projection plane: it depends on how the spect device is described
-    # here, we need this rotation
-    proj.detector_orientation_matrix = Rotation.from_euler(
-        "yx", (90, 90), degrees=True
-    ).as_matrix()
-
-    # end
-    return digitizer
-
-
 def add_digitizer_lu177(sim, crystal_name, name):
     # create main chain
     mm = g4_units.mm
@@ -919,41 +854,7 @@ def compute_plane_position_and_distance_to_crystal(collimator_type):
     return pos, crystal_distance, psd
 
 
-def add_detection_plane_for_arf_OLD_TO_REMOVE(
-    sim, plane_size, colli_type, radius, gantry_angle_deg=0, det_name=None
-):
-    if det_name is None:
-        det_name = "arf_plane"
-
-    # rotation like the detector (needed), see in digitizer ProjectionActor
-    r = Rotation.from_euler("yx", (90, 90), degrees=True)
-
-    # FIXME
-    mm = g4_units.mm
-    if plane_size is None:
-        plane_size = [533 * mm, 387 * mm]
-
-    # plane
-    nm = g4_units.nm
-    detector_plane = sim.add_volume("Box", det_name)
-    detector_plane.material = "G4_Galactic"
-    detector_plane.color = [1, 0, 0, 1]
-    detector_plane.size = [plane_size[0], plane_size[1], 1 * nm]
-
-    # (fake) initial head rotation
-    head = Box()
-    head.translation = None
-    head.rotation = None
-    ri = set_head_orientation_OLD_TO_REMOVE(head, colli_type, radius, gantry_angle_deg)
-
-    # orientation
-    detector_plane.rotation = (ri * r).as_matrix()
-    detector_plane.translation = ri.apply([radius, 0, 0])
-
-    return detector_plane
-
-
-def add_detection_plane_for_arf(sim, det_name, plane_size=None):
+def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
     # user plane size only for debug purpose
     mm = g4_units.mm
     if plane_size is None:
@@ -966,21 +867,11 @@ def add_detection_plane_for_arf(sim, det_name, plane_size=None):
     detector_plane.color = [1, 0, 0, 1]
     detector_plane.size = [1 * nm, plane_size[0], plane_size[1]]
 
+    # compute the correct position according to the collimator
+    pos, _, _ = compute_plane_position_and_distance_to_crystal(colli_type)
+    detector_plane.translation = [0, pos, 0]
+
     return detector_plane
-
-
-def set_head_orientation_OLD_TO_REMOVE(
-    head, collimator_type, radius, gantry_angle_deg=0
-):
-    # pos is the distance from entrance detection plane and head boundary
-    pos, _, _ = compute_plane_position_and_distance_to_crystal(collimator_type)
-    distance = radius - pos
-    # rotation X180 is to set the detector head-foot
-    # rotation Z90 is the gantry angle
-    r = Rotation.from_euler("xz", (180, 90 + gantry_angle_deg), degrees=True)
-    head.translation = r.apply([distance, 0, 0])
-    head.rotation = r.as_matrix()
-    return r
 
 
 def add_source_for_arf_training_dataset(
@@ -1003,32 +894,6 @@ def add_source_for_arf_training_dataset(
     return source
 
 
-def add_actor_for_arf_training_dataset_OLD_TO_REMOVE(
-    sim, colli_type, ene_win_actor, rr
-):
-    mm = g4_units.mm
-
-    # WARNING head must be in a specific position, because the detector plane
-    # is in a parallel world, not attached to the head
-
-    # detector input plane
-    sim.add_parallel_world("arf_world")
-    detector_plane = add_detection_plane_for_arf_OLD_TO_REMOVE(
-        sim, None, colli_type, radius=0 * mm, gantry_angle_deg=0, det_name="arf_plane"
-    )
-    detector_plane.mother = "arf_world"
-    detector_plane.color = [0, 1, 0, 1]
-
-    # arf actor for building the training dataset
-    arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
-    arf.energy_windows_actor = ene_win_actor.name
-    arf.attached_to = detector_plane.name
-    arf.output_filename = f"arf_training_dataset.root"
-    arf.russian_roulette = rr
-
-    return detector_plane, arf
-
-
 def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
     mm = g4_units.mm
 
@@ -1039,7 +904,7 @@ def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
     sim.add_parallel_world("arf_world")
     # detector_plane = add_detection_plane_for_arf(
     #   sim, "arf_plane", plane_size=[1533, 1387]) # for debug
-    detector_plane = add_detection_plane_for_arf(sim, "arf_plane")
+    detector_plane = add_detection_plane_for_arf(sim, "arf_plane", colli_type)
     detector_plane.color = [0, 1, 0, 1]
     detector_plane.mother = "arf_world"
     rotate_gantry(detector_plane, radius=0, start_angle_deg=0)
@@ -1061,96 +926,12 @@ def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
     return detector_plane, arf
 
 
-def create_simu_for_arf_training_dataset_OLD_TO_REFACTOR(
-    sim, colli_type, max_E, activity, rr, radius=None
-):
-    mm = g4_units.mm
-    Bq = g4_units.Bq
-    keV = g4_units.keV
-    if radius is None:
-        radius = 500 * mm
-
-    # world
-    sim.world.material = "G4_Galactic"
-
-    # spect
-    head, _, crystal = add_spect_head(sim, "spect", colli_type, debug=sim.visu)
-
-    # rotation like default
-    set_head_orientation_OLD_TO_REMOVE(head, colli_type, radius)
-
-    # detector input plane position: 1 nm width, 1 nm before the collimator
-    sim.add_parallel_world("arf_world")
-    plane_size = [533 * mm, 387 * mm]
-    arf_plane = add_detection_plane_for_arf_OLD_TO_REMOVE(
-        sim, plane_size, colli_type, radius
-    )
-    arf_plane.mother = "arf_world"
-
-    # sources
-    s1 = add_source_for_arf_training_dataset(
-        sim, "source", activity / sim.number_of_threads, arf_plane, 3 * keV, max_E
-    )
-    if sim.visu:
-        s1.activity = 5000 * Bq
-
-    # arf actor for building the training dataset
-    arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
-    arf.attached_to = arf_plane.name
-    arf.output_filename = f"arf.root"
-    arf.russian_roulette = rr
-
-    # stats
-    sim.add_actor("SimulationStatisticsActor", "stats")
-
-    return arf
-
-
-def add_arf_detector_OLD_TO_REMOVE(
-    sim, radius, gantry_angle_deg, size, spacing, colli_type, name, i, pth
-):
-    plane_size = [size[0] * spacing[0], size[1] * spacing[1]]
-    det_plane = add_detection_plane_for_arf_OLD_TO_REMOVE(
-        sim,
-        plane_size,
-        colli_type=colli_type,
-        radius=radius,
-        gantry_angle_deg=gantry_angle_deg,
-        det_name=f"{name}_{i}",
-    )
-
-    pos, crystal_distance, psd = compute_plane_position_and_distance_to_crystal(
-        colli_type
-    )
-
-    arf = sim.add_actor("ARFActor", f"{name}_arf_{i}")
-    arf.attached_to = det_plane.name
-    arf.output_filename = f"projection_{i}.mhd"
-    arf.batch_size = 1e5
-    arf.image_size = size
-    arf.image_spacing = spacing
-    arf.verbose_batch = False
-    arf.distance_to_crystal = crystal_distance  # 74.625 * mm
-    arf.pth_filename = pth
-    # arf.flip_plane = True  # because the training was backside
-    arf.flip_plane = False
-    # arf.enable_hit_slice = False
-    arf.gpu_mode = "auto"
-
-    return det_plane, arf
-
-
 def add_arf_detector(sim, name, colli_type, image_size, image_spacing, pth_filename):
     # create the plane
-    det_plane = add_detection_plane_for_arf(sim, name)
+    det_plane = add_detection_plane_for_arf(sim, name, colli_type)
 
-    # compute the correct position according to the collimator
-    pos, crystal_distance, psd = compute_plane_position_and_distance_to_crystal(
-        colli_type
-    )
     # set the position in front of the collimator
-    pos, _, _ = compute_plane_position_and_distance_to_crystal(colli_type)
-    det_plane.translation = [0, pos, 0]
+    _, crystal_distance, _ = compute_plane_position_and_distance_to_crystal(colli_type)
     rotate_gantry(det_plane, radius=0, start_angle_deg=0)
 
     arf = sim.add_actor("ARFActor", f"{name}_arf")
@@ -1167,45 +948,6 @@ def add_arf_detector(sim, name, colli_type, image_size, image_spacing, pth_filen
     arf.gpu_mode = "auto"
 
     return det_plane, arf
-
-
-def rotate_gantry_OLD_TO_REMOVE(
-    head, radius, start_angle_deg, step_angle_deg=1, nb_angle=1, initial_rotation="arf"
-):
-    """
-    This function rotate the gantry both for 1) conventional spect or 2) ARF plane,
-    according to the value of initial_rotation
-    """
-    # compute the nb translation and rotation
-    translations = []
-    rotations = []
-
-    if initial_rotation == "arf" or initial_rotation is None:
-        # for arf plane :
-        initial_rotation = Rotation.from_euler("zx", (180, 90), degrees=True)
-        start_angle_deg += 180
-
-    if initial_rotation == "spect":
-        # for spect head
-        initial_rotation = Rotation.from_euler("xz", (180, 90), degrees=True)
-
-    current_angle_deg = start_angle_deg
-    for r in range(nb_angle):
-        t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
-        rot = Rotation.from_matrix(rot)
-        rot = rot * initial_rotation
-        rot = rot.as_matrix()
-        translations.append(t)
-        rotations.append(rot)
-        current_angle_deg += step_angle_deg
-
-    # set the motion for the SPECT head
-    if nb_angle > 1:
-        head.add_dynamic_parametrisation(translation=translations, rotation=rotations)
-    # we set the initial position in all cases, this allows for check_overlap to be done
-    # with the first position
-    head.translation = translations[0]
-    head.rotation = rotations[0]
 
 
 def rotate_gantry(
