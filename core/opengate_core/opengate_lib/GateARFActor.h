@@ -59,6 +59,7 @@ protected:
   int fBatchSize;
   ARFFunctionType fApply;
   bool fKeepNegativeSide;
+  std::vector<int> fPlaneAxis;
 
   // For MT, all threads local variables are gathered here
   struct threadLocalT {

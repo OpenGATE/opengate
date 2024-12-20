@@ -60,6 +60,12 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
                 "doc": "FIXME",
             },
         ),
+        "plane_axis": (
+            [0, 1, 2],
+            {
+                "doc": "Axe indices for the plane",
+            },
+        ),
         # duplicated because cpp part inherit from HitsCollectionActor
         "keep_zero_edep": (
             False,
@@ -78,7 +84,6 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        # self._add_user_output(ActorOutputRoot, "root_output")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -97,6 +102,7 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.initialize(self)
         self.check_energy_window_actor()
         # initialize C++ side
+        print(self.plane_axis)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
@@ -193,6 +199,12 @@ class ARFActor(ActorBase, g4.GateARFActor):
             False,
             {
                 "doc": "FIXME",
+            },
+        ),
+        "plane_axis": (
+            [0, 1, 2],
+            {
+                "doc": "Axe indices for the plane",
             },
         ),
         "gpu_mode": (

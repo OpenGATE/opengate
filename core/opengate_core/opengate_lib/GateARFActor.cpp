@@ -22,6 +22,7 @@ void GateARFActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
   fBatchSize = DictGetInt(user_info, "batch_size");
   fKeepNegativeSide = DictGetBool(user_info, "flip_plane");
+  fPlaneAxis = DictGetVecInt(user_info, "plane_axis");
 }
 
 void GateARFActor::SetARFFunction(ARFFunctionType &f) { fApply = f; }
@@ -40,9 +41,10 @@ void GateARFActor::EndOfRunAction(const G4Run * /*run*/) {
     l.fEnergy.clear();
     l.fPositionX.clear();
     l.fPositionY.clear();
+    // l.fPositionZ.clear();
     l.fDirectionX.clear();
     l.fDirectionY.clear();
-    l.fDirectionZ.clear();
+    // l.fDirectionZ.clear();
     l.fWeights.clear();
     l.fCurrentNumberOfHits = 0;
   }
@@ -57,14 +59,14 @@ void GateARFActor::SteppingAction(G4Step *step) {
   dir = pre->GetTouchable()->GetHistory()->GetTopTransform().TransformAxis(dir);
 
   // which side of the plane ?
-  if (!fKeepNegativeSide && dir[2] < 0)
+  if (!fKeepNegativeSide && dir[fPlaneAxis[2]] < 0)
     return;
-  if (fKeepNegativeSide && dir[2] > 0)
+  if (fKeepNegativeSide && dir[fPlaneAxis[2]] > 0)
     return;
 
   l.fCurrentNumberOfHits++;
-  l.fDirectionX.push_back(dir[0]);
-  l.fDirectionY.push_back(dir[1]);
+  l.fDirectionX.push_back(dir[fPlaneAxis[0]]);
+  l.fDirectionY.push_back(dir[fPlaneAxis[1]]);
   // l.fDirectionZ.push_back(dir[2]); // not used
   l.fWeights.push_back(pre->GetWeight());
 
@@ -75,8 +77,8 @@ void GateARFActor::SteppingAction(G4Step *step) {
   auto pos =
       pre->GetTouchable()->GetHistory()->GetTopTransform().TransformPoint(
           pre->GetPosition());
-  l.fPositionX.push_back(pos[0]);
-  l.fPositionY.push_back(pos[1]);
+  l.fPositionX.push_back(pos[fPlaneAxis[0]]);
+  l.fPositionY.push_back(pos[fPlaneAxis[1]]);
 
   // trigger the "apply" (ARF) if the number of hits in the batch is reached
   if (l.fCurrentNumberOfHits >= fBatchSize) {
@@ -84,9 +86,10 @@ void GateARFActor::SteppingAction(G4Step *step) {
     l.fEnergy.clear();
     l.fPositionX.clear();
     l.fPositionY.clear();
+    // l.fPositionZ.clear();
     l.fDirectionX.clear();
     l.fDirectionY.clear();
-    l.fDirectionZ.clear();
+    // l.fDirectionZ.clear();
     l.fWeights.clear();
     l.fCurrentNumberOfHits = 0;
   }
