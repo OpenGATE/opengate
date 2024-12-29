@@ -4,7 +4,7 @@ import sys
 import os
 import weakref
 from box import Box
-from anytree import PreOrderIter
+from anytree import LevelOrderGroupIter
 
 import opengate_core as g4
 from .exception import fatal, warning, GateImplementationError
@@ -685,10 +685,11 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
         Override the Construct method from G4VUserParallelWorld
         """
 
-        # Construct all volumes within this world along the tree hierarchy
-        # The world volume of this world is the first item
-        for volume in PreOrderIter(self.parallel_world_volume):
-            volume.construct()
+        # Construct all volumes within this world along the tree hierarchy, 
+        # level per level, starting at the root (world volume of this world).
+        for siblings in LevelOrderGroupIter(self.parallel_world_volume):
+            for i, volume in enumerate(siblings):
+                volume.construct(i)
 
     def ConstructSD(self):
         # FIXME
@@ -767,12 +768,13 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         # # FIXME: should go into initialize method
         # self.simulation_engine.simulation.volume_manager.material_database.initialize()
 
-        # Construct all volumes within the mass world along the tree hierarchy
-        # The world volume is the first item
+        # Construct all volumes within the mass world along the tree hierarchy, 
+        # level per level, starting with the world volume.
 
         self.volume_manager.update_volume_tree()
-        for volume in PreOrderIter(self.volume_manager.world_volume):
-            volume.construct()
+        for siblings in LevelOrderGroupIter(self.volume_manager.world_volume):
+            for i, volume in enumerate(siblings):
+                volume.construct(i)
 
         # return the (main) world physical volume
         self._is_constructed = True

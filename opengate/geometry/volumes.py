@@ -408,14 +408,14 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self._update_node()
         return self.parent
 
-    def construct(self):
+    def construct(self, index):
         if self._is_constructed is False:
             self.construct_material()
             self.construct_solid()
             self.construct_logical_volume()
             # check user info:
             if self.build_physical_volume is True:
-                self.construct_physical_volume()
+                self.construct_physical_volume(index)
             self._is_constructed = True
 
     def construct_material(self):
@@ -442,7 +442,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self.g4_vis_attributes.SetVisibility(bool(self.color[3]))
         self.g4_logical_volume.SetVisAttributes(self.g4_vis_attributes)
 
-    def construct_physical_volume(self):
+    def construct_physical_volume(self, index):
         g4_transform = self.g4_transform
         if len(g4_transform) > 1:
             fatal(
@@ -450,11 +450,11 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 f"You may therefore only provide a single translation and/or rotation vector. "
             )
         self.g4_physical_volumes = [
-            self._make_physical_volume(self.name, g4_transform[0])
+            self._make_physical_volume(self.name, g4_transform[0], copy_index=index)
         ]
 
     @requires_fatal("volume_manager")
-    def _make_physical_volume(self, volume_name, g4_transform, copy_index=0):
+    def _make_physical_volume(self, volume_name, g4_transform, copy_index):
         return g4.G4PVPlacement(
             g4_transform,
             self.g4_logical_volume,  # logical volume
@@ -546,7 +546,7 @@ class RepeatableVolume(VolumeBase):
             suffix = suffix[0]
         return int(suffix.lstrip("rep_"))
 
-    def construct_physical_volume(self):
+    def construct_physical_volume(self, index):
         g4_transform = self.g4_transform
         if len(g4_transform) > 1:
             self.g4_physical_volumes = []  # reset list to empty
@@ -559,7 +559,7 @@ class RepeatableVolume(VolumeBase):
                     ),
                 )
         else:
-            super().construct_physical_volume()
+            super().construct_physical_volume(index)
 
     def add_dynamic_parametrisation(self, repetition_index=0, **params):
         super().add_dynamic_parametrisation(repetition_index=repetition_index, **params)
@@ -967,7 +967,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         ]
 
     @requires_fatal("volume_engine")
-    def construct(self):
+    def construct(self, index):
         self.material_to_label_lut = self.create_material_to_label_lut()
         # make sure the materials are created in Geant4
         for m in self.material_to_label_lut:
@@ -983,10 +983,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.construct_solid()
         self.construct_logical_volume()
         self.g4_voxel_param = self.create_image_parametrisation()
-        self.construct_physical_volume()
+        self.construct_physical_volume(index)
 
-    def construct_physical_volume(self):
-        super().construct_physical_volume()
+    def construct_physical_volume(self, index):
+        super().construct_physical_volume(index)
 
         self.g4_physical_y = g4.G4PVReplica(
             self.name + "_Y",
