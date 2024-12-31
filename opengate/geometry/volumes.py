@@ -546,7 +546,7 @@ class RepeatableVolume(VolumeBase):
             suffix = suffix[0]
         return int(suffix.lstrip("rep_"))
 
-    def construct_physical_volume(self, index):
+    def construct_physical_volume(self, start_index):
         g4_transform = self.g4_transform
         if len(g4_transform) > 1:
             self.g4_physical_volumes = []  # reset list to empty
@@ -555,11 +555,11 @@ class RepeatableVolume(VolumeBase):
                     self._make_physical_volume(
                         self.get_repetition_name_from_index(i),
                         g4t,
-                        copy_index=i,
+                        copy_index=start_index + i,
                     ),
                 )
         else:
-            super().construct_physical_volume(index)
+            super().construct_physical_volume(start_index)
 
     def add_dynamic_parametrisation(self, repetition_index=0, **params):
         super().add_dynamic_parametrisation(repetition_index=repetition_index, **params)
