@@ -1,9 +1,6 @@
-.. sectnum::
-
-.. _attenuation:
-
-Computing attenuation image
-===========================
+**************************
+Details: Attenuation image
+**************************
 
 An attenuation map image can be generated from a voxelized volume and its associated materials using the `AttenuationImageActor`. The example below illustrates how to insert an image as a Geant4 volume and establish a correspondence between pixels and materials. Using this image, the actor creates an attenuation image that matches the dimensions of the `ImageVolume`, where each pixel is replaced by the linear attenuation coefficient of the respective material. This coefficient, referred to as mu, is derived from the NIST or EPDL database for a specified energy.
 
