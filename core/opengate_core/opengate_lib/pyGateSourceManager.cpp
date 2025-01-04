@@ -17,6 +17,7 @@ void init_GateSourceManager(py::module &m) {
       m, "GateSourceManager")
       .def(py::init())
       .def("AddSource", &GateSourceManager::AddSource)
+      .def("RegisterImageBox", &GateSourceManager::RegisterImageBox)
       .def("Initialize", &GateSourceManager::Initialize)
       .def("SetActors", &GateSourceManager::SetActors)
       .def("GetExpectedNumberOfEvents",
