@@ -1,6 +1,68 @@
 import awkward as ak
 from tqdm import tqdm
 from ..exception import fatal
+from .base import ActorBase
+from ..base import process_cls
+
+
+class Coincidences(ActorBase):
+    """
+    The Coincidence Sorter searches, into the singles list, for pairs of coincident singles. Whenever two or more singles are found within a coincidence window, these singles are grouped to form a Coincidence event.  All singles open their own coincidence window, and a logical OR is made between all the individual singels to find coincidences.
+    For the moment Coincidence Sorter can  be used only offline. It means that a user should do the simulation in two steps: 1) create system with needed digitizer chain in order to obtain singles within usual Gate simulation;  2) process the file containg the singles in order to obtain coincidecens.
+    Please, use test072 as an example of use.
+
+    Input: a ROOT File with singles with attributes : "EventID", "TotalEnergyDeposit", "PreStepUniqueVolumeID", "GlobalTime"
+    Output: a ROOT file with initial singles and sorted coincidecens
+
+    The term “good” means that a pair of singles are in coincidence and that the 2 singles are separated by a number of blocks greater than or equal to the minSecDiff parameter of the coincidence sorter.
+
+    Policies:
+    - keepAll: All "good" pairs are keeped
+    - removeMultiples: All multiple coincidences are discard
+
+    """
+
+    user_info_defaults = {
+        "singles_tree": (
+            [],
+            {
+                "doc": "The name of the singles input tree from the provided root file. ",
+            },
+        ),
+        "time_window": (
+            [],
+            {
+                "doc": "Time window where to sort the coincidences (in ns).",
+            },
+        ),
+        "minSecDiff": (
+            [],
+            {
+                "doc": "Option will be added soon.",
+            },
+        ),
+        "policy": (
+            "keepAll",
+            {
+                "doc": "The policy for tratement of multiple coincidences",
+                "allowed_values": (
+                    "keepAll",
+                    "removeMultiples",
+                ),
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(self, *args, **kwargs)
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        if self.policy != "removeMultiples" and self.policy != "keepAll":
+            fatal(
+                f"Error, the policy for the Coincidence Sorter must be removeMultiples or "
+                f"keepAll, while is is '{self.policy}'"
+            )
 
 
 def coincidences_sorter(
@@ -119,3 +181,6 @@ def remove_multiples(coincidences):
     ids = coincidences["EventID1"]
     ids = [i for i in ids if ids.count(i) == 1]
     return ids
+
+
+process_cls(Coincidences)
