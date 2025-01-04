@@ -54,6 +54,7 @@ void GateDigiAdderInVolume::Update(size_t i, double edep,
   if (fPolicy ==
       GateDigitizerAdderActor::AdderPolicy::EnergyWeightedCentroidPosition) {
     fFinalPosition += pos * edep;
+    fFinalIndex = i;
   }
 
   // The final energy is the sum of all edep
