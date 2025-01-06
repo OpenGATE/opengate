@@ -745,11 +745,11 @@ class RepeatParametrisedVolume(VolumeBase):
         return_dict["g4_repeat_parametrisation"] = None
         return return_dict
 
-    def construct(self):
+    def construct(self, index):
         if self._is_constructed is False:
             # construct the repeated volume,
             # it will not construct the phys volume because that was disabled in init()
-            self.repeated_volume.construct()
+            self.repeated_volume.construct(index)
             # construct the physical volume of this repeat parametrised volume
             self.construct_physical_volume()
             self._is_constructed = True
@@ -1267,7 +1267,7 @@ class ParallelWorldVolume(NodeMixin):
         return return_dict
 
     @requires_fatal("parallel_world_engine")
-    def construct(self):
+    def construct(self, index):
         # get the physical volume through the parallel world engine
         # do not construct it
         self.g4_world_phys_vol = self.parallel_world_engine.GetWorld()
