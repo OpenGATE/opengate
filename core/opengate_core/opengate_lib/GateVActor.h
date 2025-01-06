@@ -12,7 +12,6 @@
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
-#include <functional>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

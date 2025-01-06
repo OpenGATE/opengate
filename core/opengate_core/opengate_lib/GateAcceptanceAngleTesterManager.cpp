@@ -15,7 +15,7 @@ GateAcceptanceAngleTesterManager::GateAcceptanceAngleTesterManager() {
   fNotAcceptedEvents = 0;
   fAALastRunId = -1;
   fPolicy = AASkipEvent;
-  fMaxNotAcceptedEvents = 10000;
+  fMaxNotAcceptedEvents = 100000;
 }
 
 void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
