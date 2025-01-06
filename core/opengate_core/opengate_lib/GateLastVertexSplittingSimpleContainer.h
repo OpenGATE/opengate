@@ -42,6 +42,7 @@
 #include "G4VParticleChange.hh"
 #include "G4eeToTwoGammaModel.hh"
 #include "G4eplusAnnihilation.hh"
+#include "G4TouchableHandle.hh"
 #include "G4eplusAnnihilationEntanglementClipBoard.hh"
 #include <iostream>
 
@@ -52,7 +53,7 @@ public:
                   G4ThreeVector position, G4ThreeVector polarization,
                   G4String name, G4double weight, G4int trackStatus,
                   G4int nbSec, G4String flag, G4double length,
-                  G4ThreeVector prePos) {
+                  G4ThreeVector prePos,G4TouchableHandle aTouchable) {
 
     fProcessNameToSplit = processName;
     fEnergyToSplit = energy;
@@ -66,6 +67,7 @@ public:
     fAnnihilProcessFlag = flag;
     fStepLength = length;
     fPrePosition = prePos;
+    *fpTouchable = aTouchable;
   }
 
   SimpleContainer() {}
@@ -126,6 +128,8 @@ public:
 
   G4ThreeVector GetPrePositionToSplit() { return fPrePosition; }
 
+  G4TouchableHandle GetTouchableHandle() {return *fpTouchable;}
+
   void DumpInfoToSplit() {
     std::cout << "Particle name of the particle to split: "
               << fParticleNameToSplit << std::endl;
@@ -138,6 +142,8 @@ public:
     std::cout << "ProcessNameToSplit: " << fProcessNameToSplit << std::endl;
     std::cout << " " << std::endl;
   }
+
+//G4TouchableHandle fpTouchable;
 
 private:
   G4String fParticleNameToSplit = "None";
@@ -152,6 +158,9 @@ private:
   G4String fAnnihilProcessFlag;
   G4double fStepLength;
   G4ThreeVector fPrePosition;
+  G4TouchableHandle*  fpTouchable = new G4TouchableHandle;
+  
+  
 };
 
 #endif
