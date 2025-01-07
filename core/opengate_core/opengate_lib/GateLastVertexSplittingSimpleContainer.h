@@ -36,33 +36,14 @@
 #include "G4PhysicalConstants.hh"
 #include "G4PhysicsModelCatalog.hh"
 #include "G4Positron.hh"
+#include "G4TouchableHandle.hh"
+#include "G4ReferenceCountedHandle.hh"
 #include "G4Track.hh"
 #include "G4VEmProcess.hh"
 #include "G4VEnergyLossProcess.hh"
 #include "G4VParticleChange.hh"
 #include "G4eeToTwoGammaModel.hh"
 #include "G4eplusAnnihilation.hh"
-#include "G4TouchableHandle.hh"
-#include "G4ReferenceCountedHandle.hh"
-#include "G4eplusAnnihilationEntanglementClipBoard.hh"
-#include <iostream>
-#include <memory>
-#include "globals.hh"                 // Include from 'global'
-#include <cmath>                      // Include from 'system'
-#include "G4ThreeVector.hh"           // Include from 'geometry'
-#include "G4LogicalVolume.hh"         // Include from 'geometry'
-#include "G4VPhysicalVolume.hh"       // Include from 'geometry'
-#include "G4Allocator.hh"             // Include from 'particle+matter'
-#include "G4DynamicParticle.hh"       // Include from 'particle+matter'
-#include "G4TrackStatus.hh"           // Include from 'tracking'
-#include "G4TouchableHandle.hh"       // Include from 'geometry'
-#include "G4VUserTrackInformation.hh"
-
-#include "G4Material.hh"
-
-class G4Step;                         // Forward declaration
-class G4MaterialCutsCouple;
-class G4VelocityTable;
 
 class SimpleContainer {
 
@@ -71,7 +52,7 @@ public:
                   G4ThreeVector position, G4ThreeVector polarization,
                   G4String name, G4double weight, G4int trackStatus,
                   G4int nbSec, G4String flag, G4double length,
-                  G4ThreeVector prePos,G4TouchableHandle aTouchable) {
+                  G4ThreeVector prePos, G4TouchableHandle aTouchable) {
 
     fProcessNameToSplit = processName;
     fEnergyToSplit = energy;
@@ -162,7 +143,7 @@ public:
     std::cout << " " << std::endl;
   }
 
-//G4TouchableHandle fpTouchable;
+  // G4TouchableHandle fpTouchable;
 
 private:
   G4String fParticleNameToSplit = "None";
