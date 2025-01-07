@@ -691,10 +691,11 @@ class ParallelWorldEngine(g4.G4VUserParallelWorld, EngineBase):
             start_index = 0
             for volume in siblings:
                 volume.construct(start_index)
-                num_repetitions = (
-                    len(volume.g4_transform) if hasattr(volume, "g4_transform") else 1
+                start_index += (
+                    volume.number_of_repetitions
+                    if hasattr(volume, "number_of_repetitions")
+                    else 1
                 )
-                start_index += num_repetitions
 
     def ConstructSD(self):
         # FIXME
@@ -781,10 +782,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             start_index = 0
             for volume in siblings:
                 volume.construct(start_index)
-                num_repetitions = (
-                    len(volume.g4_transform) if hasattr(volume, "g4_transform") else 1
+                start_index += (
+                    volume.number_of_repetitions
+                    if hasattr(volume, "number_of_repetitions")
+                    else 1
                 )
-                start_index += num_repetitions
 
         # return the (main) world physical volume
         self._is_constructed = True
