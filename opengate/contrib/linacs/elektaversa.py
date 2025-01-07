@@ -39,7 +39,7 @@ def add_empty_linac_box(sim, linac_name, sad=1000):
     linac.material = "G4_AIR"
     linac.size = [1 * m, 1 * m, 0.52 * m]
     translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2 + 3.5 * mm])
-    # Isocenter begin at the end of the target, That's why 3.5 mm is added.
+    # Isocenter start from the end of the target, That's why 3.5 mm is added.
     linac.translation = translation_linac_box
     linac.color = [1, 1, 1, 0]
     return linac

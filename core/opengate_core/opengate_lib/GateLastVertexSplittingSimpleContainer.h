@@ -43,8 +43,26 @@
 #include "G4eeToTwoGammaModel.hh"
 #include "G4eplusAnnihilation.hh"
 #include "G4TouchableHandle.hh"
+#include "G4ReferenceCountedHandle.hh"
 #include "G4eplusAnnihilationEntanglementClipBoard.hh"
 #include <iostream>
+#include <memory>
+#include "globals.hh"                 // Include from 'global'
+#include <cmath>                      // Include from 'system'
+#include "G4ThreeVector.hh"           // Include from 'geometry'
+#include "G4LogicalVolume.hh"         // Include from 'geometry'
+#include "G4VPhysicalVolume.hh"       // Include from 'geometry'
+#include "G4Allocator.hh"             // Include from 'particle+matter'
+#include "G4DynamicParticle.hh"       // Include from 'particle+matter'
+#include "G4TrackStatus.hh"           // Include from 'tracking'
+#include "G4TouchableHandle.hh"       // Include from 'geometry'
+#include "G4VUserTrackInformation.hh"
+
+#include "G4Material.hh"
+
+class G4Step;                         // Forward declaration
+class G4MaterialCutsCouple;
+class G4VelocityTable;
 
 class SimpleContainer {
 
@@ -67,12 +85,13 @@ public:
     fAnnihilProcessFlag = flag;
     fStepLength = length;
     fPrePosition = prePos;
-    *fpTouchable = aTouchable;
+    fpTouchable.push_back(aTouchable);
   }
 
   SimpleContainer() {}
 
-  ~SimpleContainer() {}
+  ~SimpleContainer() {
+  }
 
   void SetProcessNameToSplit(G4String processName) {
     fProcessNameToSplit = processName;
@@ -128,7 +147,7 @@ public:
 
   G4ThreeVector GetPrePositionToSplit() { return fPrePosition; }
 
-  G4TouchableHandle GetTouchableHandle() {return *fpTouchable;}
+  G4TouchableHandle GetTouchableHandle() {return fpTouchable[0];}
 
   void DumpInfoToSplit() {
     std::cout << "Particle name of the particle to split: "
@@ -158,7 +177,7 @@ private:
   G4String fAnnihilProcessFlag;
   G4double fStepLength;
   G4ThreeVector fPrePosition;
-  G4TouchableHandle*  fpTouchable = new G4TouchableHandle;
+  std::vector<G4TouchableHandle> fpTouchable;
   
   
 };
