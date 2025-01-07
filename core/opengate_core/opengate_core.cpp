@@ -288,6 +288,7 @@ void init_GateVActor(py::module &);
 
 void init_GateActorManager(py::module &);
 
+// Gate filters
 void init_GateVFilter(py::module &);
 
 void init_GateParticleFilter(py::module &);
@@ -300,6 +301,7 @@ void init_GateTrackCreatorProcessFilter(py::module &);
 
 void init_GateKineticEnergyFilter(py::module &);
 
+// Gate actors
 void init_GateDoseActor(py::module &m);
 
 void init_GateTLEDoseActor(py::module &m);
@@ -330,24 +332,6 @@ void init_GateImageNestedParameterisation(py::module &);
 
 void init_GateRepeatParameterisation(py::module &);
 
-void init_GateSourceManager(py::module &);
-
-void init_GateGenericSource(py::module &);
-
-void init_GateTreatmentPlanPBSource(py::module &);
-
-void init_GateTemplateSource(py::module &);
-
-void init_GatePencilBeamSource(py::module &m);
-
-void init_GateVoxelSource(py::module &);
-
-void init_GateGANSource(py::module &);
-
-void init_GatePhaseSpaceSource(py::module &);
-
-void init_GateGANPairSource(py::module &);
-
 void init_GateRunAction(py::module &);
 
 void init_GateEventAction(py::module &);
@@ -364,8 +348,11 @@ void init_GateLastVertexInteractionSplittingActor(py::module &m);
 
 void init_GateBOptrBremSplittingActor(py::module &m);
 
+void init_GateOptrFreeFlightActor(py::module &m);
+
 void init_G4VBiasingOperator(py::module &m);
 
+// Gate digit
 void init_GateVDigitizerWithOutputActor(py::module &);
 
 void init_GateHitsCollectionActor(py::module &);
@@ -388,9 +375,36 @@ void init_GateDigiAttributeManager(py::module &m);
 
 void init_GateVDigiAttribute(py::module &m);
 
+void init_GateUniqueVolumeIDManager(py::module &);
+
+void init_GateUniqueVolumeID(py::module &);
+
+void init_GateVolumeDepthID(py::module &m);
+
+// Gate source
 void init_GateVSource(py::module &);
 
 void init_GateLastVertexSource(py::module &);
+
+void init_GateSourceManager(py::module &);
+
+void init_GateGenericSource(py::module &);
+
+void init_GateTreatmentPlanPBSource(py::module &);
+
+void init_GateTemplateSource(py::module &);
+
+void init_GatePencilBeamSource(py::module &m);
+
+void init_GateVoxelSource(py::module &);
+
+void init_GateGANSource(py::module &);
+
+void init_GatePhaseSpaceSource(py::module &);
+
+void init_GateGANPairSource(py::module &);
+
+// Gate misc
 
 void init_GateExceptionHandler(py::module &);
 
@@ -399,12 +413,6 @@ void init_GateNTuple(py::module &);
 void init_GateHelpers(py::module &);
 
 void init_GateVolumeVoxelizer(py::module &);
-
-void init_GateUniqueVolumeIDManager(py::module &);
-
-void init_GateUniqueVolumeID(py::module &);
-
-void init_GateVolumeDepthID(py::module &m);
 
 PYBIND11_MODULE(opengate_core, m) {
 
@@ -594,6 +602,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateBOptrBremSplittingActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateLastVertexInteractionSplittingActor(m);
+  init_GateOptrFreeFlightActor(m);
   init_GateHitsCollectionActor(m);
   init_GateVDigitizerWithOutputActor(m);
   init_GateHitsAdderActor(m);

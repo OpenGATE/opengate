@@ -11,6 +11,19 @@ from ..exception import fatal, warning
 from ..base import process_cls
 from anytree import RenderTree
 
+"""
+    It is feasible to get callback every Run, Event, Track, Step in the python side.
+    However, it is VERY time consuming. For SteppingAction, expect large performance drop.
+    It could be however useful for prototyping or tests.
+
+    it requires "trampoline functions" on the cpp side.
+
+    # it is feasible but very slow !
+    def SteppingAction(self, step, touchable):
+        g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
+        do_something()
+"""
+
 
 def _setter_hook_stats_actor_output_filename(self, output_filename):
     # By default, write_to_disk is False.
@@ -273,20 +286,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.user_output.stats.write_data_if_requested()
 
 
-"""
-    It is feasible to get callback every Run, Event, Track, Step in the python side.
-    However, it is VERY time consuming. For SteppingAction, expect large performance drop.
-    It could be however useful for prototyping or tests.
-
-    it requires "trampoline functions" on the cpp side.
-
-    # it is feasible but very slow !
-    def SteppingAction(self, step, touchable):
-        g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
-        do_something()
-"""
-
-
 class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
@@ -438,7 +437,6 @@ class KillActor(ActorBase, g4.GateKillActor):
 
     def EndSimulationAction(self):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
-
 
 class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
 

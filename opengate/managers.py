@@ -95,9 +95,13 @@ from .actors.miscactors import (
     KillNonInteractingParticleActor,
     KillAccordingParticleNameActor,
     SplittingActorBase,
+    AttenuationImageActor,
+)
+from .actors.biasingactors import (
+    GenericBiasingActorBase,
     ComptSplittingActor,
     BremSplittingActor,
-    AttenuationImageActor,
+    FreeFlightActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -120,14 +124,14 @@ particle_names_Gate_to_G4 = {
 }
 
 actor_types = {
+    # dose related
     "DoseActor": DoseActor,
     "TLEDoseActor": TLEDoseActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
     "FluenceActor": FluenceActor,
-    "DynamicGeometryActor": DynamicGeometryActor,
-    "ARFActor": ARFActor,
-    "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    # misc
+    "AttenuationImageActor": AttenuationImageActor,
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
@@ -135,6 +139,11 @@ actor_types = {
     "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
     "BremSplittingActor": BremSplittingActor,
     "ComptSplittingActor": ComptSplittingActor,
+    "DynamicGeometryActor": DynamicGeometryActor,
+    "ARFActor": ARFActor,
+    "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    # digit
+    "PhaseSpaceActor": PhaseSpaceActor,
     "DigitizerAdderActor": DigitizerAdderActor,
     "DigitizerBlurringActor": DigitizerBlurringActor,
     "DigitizerSpatialBlurringActor": DigitizerSpatialBlurringActor,
@@ -146,6 +155,10 @@ actor_types = {
     "PhaseSpaceActor": PhaseSpaceActor,
     "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
     "AttenuationImageActor": AttenuationImageActor,
+    # biasing
+    "BremSplittingActor": BremSplittingActor,
+    "ComptSplittingActor": ComptSplittingActor,
+    "FreeFlightActor": FreeFlightActor,
 }
 
 
@@ -880,7 +893,7 @@ class PhysicsManager(GateObject):
         particles_processes = dict([(p, set()) for p in all_particles])
 
         for actor in self.simulation.actor_manager.actors.values():
-            if isinstance(actor, SplittingActorBase):
+            if isinstance(actor, GenericBiasingActorBase):
                 particles = set()
                 if "all" in actor.particles:
                     particles.update(all_particles)
@@ -1252,7 +1265,8 @@ def setter_hook_verbose_level(self, verbose_level):
     except ValueError:
         level = getattr(logging, verbose_level)
     global_log.setLevel(level)
-    return verbose_level
+    # return verbose_level
+    return level
 
 
 class Simulation(GateObject):
@@ -1518,6 +1532,9 @@ class Simulation(GateObject):
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
+        # default (INFO level)
+        global_log.setLevel(12)
+
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
         setter_hook_verbose_level(self, "INFO")

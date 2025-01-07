@@ -60,6 +60,12 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
                 "doc": "FIXME",
             },
         ),
+        "plane_axis": (
+            [0, 1, 2],
+            {
+                "doc": "Axe indices for the plane",
+            },
+        ),
         # duplicated because cpp part inherit from HitsCollectionActor
         "keep_zero_edep": (
             False,
@@ -78,7 +84,6 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        # self._add_user_output(ActorOutputRoot, "root_output")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -97,6 +102,7 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.initialize(self)
         self.check_energy_window_actor()
         # initialize C++ side
+        print(self.plane_axis)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
@@ -193,6 +199,12 @@ class ARFActor(ActorBase, g4.GateARFActor):
             False,
             {
                 "doc": "FIXME",
+            },
+        ),
+        "plane_axis": (
+            [0, 1, 2],
+            {
+                "doc": "Axe indices for the plane",
             },
         ),
         "gpu_mode": (
@@ -340,6 +352,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         pos_y = np.array(actor.GetPositionY())
         dir_x = np.array(actor.GetDirectionX())
         dir_y = np.array(actor.GetDirectionY())
+        weights = np.array(actor.GetWeights())
 
         # do nothing if no hits
         if energy.size == 0:
@@ -355,7 +368,10 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.detected_particles += energy.shape[0]
 
         # build the data
-        px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+        if len(weights) == 0:
+            px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+        else:
+            px = np.column_stack((pos_x, pos_y, theta, phi, energy, weights))
         self.debug_nb_hits_before += len(px)
 
         # verbose current batch
