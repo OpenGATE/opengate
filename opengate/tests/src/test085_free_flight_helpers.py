@@ -112,7 +112,7 @@ def create_simulation_test085(sim, paths, ac=1e5, angle_tolerance=None):
     source.image = iec_source_filename
     source.position.translation = [0, 35 * mm, 0]
     source.particle = "gamma"
-    set_source_energy_spectrum(source, "tc99m", "radar") # After particle definition
+    set_source_energy_spectrum(source, "tc99m", "radar")  # After particle definition
     source.direction.acceptance_angle.volumes = [h.name for h in det_planes]
     source.direction.acceptance_angle.skip_policy = "SkipEvents"
     source.direction.acceptance_angle.intersection_flag = True
