@@ -18,7 +18,7 @@ matplotlib
 GitPython
 colorlog
 numpy-stl
-radioactivedecay
+radioactivedecay>=0.6.1
 jsonpickle
 pandas
 requests
