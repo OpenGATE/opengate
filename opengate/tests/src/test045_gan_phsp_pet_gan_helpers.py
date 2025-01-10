@@ -5,7 +5,6 @@ import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 import gatetools as gt
 import itk
-import json
 import opengate.contrib.pet.philipsvereos as pet_vereos
 from opengate.tests import utility
 from box import Box
@@ -105,7 +104,7 @@ def add_voxelized_phantom(sim, param):
     gate_iec.create_material(sim)
     iec.image = param.iec_vox_mhd
     iec.material = "G4_AIR"
-    labels = json.loads(open(param.iec_vox_json).read())
+    labels = utility.read_json_file(param.iec_vox_json)
     # labels are not material, we assign the material belows
     # all spheres are water ; central hole is lung ; shell are plastic
     iec.voxel_materials = []
