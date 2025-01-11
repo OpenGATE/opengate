@@ -50,7 +50,7 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
     }
   }
   fArrayID = ComputeArrayID(touchable);
-  fID = ArrayIDToStr(fArrayID);
+  fID = touchable->GetVolume()->GetName() + "-" + ArrayIDToStr(fArrayID);
 }
 
 GateUniqueVolumeID::IDArrayType
@@ -128,6 +128,7 @@ std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) {
     return fCachedIdDepth[depth];
   }
   std::ostringstream oss;
+  oss << fVolumeDepthID[depth].fVolumeName << "-";
   int i = 0;
   auto id = fArrayID;
   while (i <= depth && id[i] != -1) {
