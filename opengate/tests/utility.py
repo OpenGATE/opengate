@@ -302,8 +302,8 @@ def assert_images_properties(info1, info2):
         is_ok = False
     print_test(is_ok, f"Images with same size/spacing/origin/dir ? {is_ok}")
 
-    print(f"Image1: {info1.size} {info1.spacing} {info1.origin} ")
-    print(f"Image2: {info2.size} {info2.spacing} {info2.origin} ")
+    # print(f"Image1: {info1.size} {info1.spacing} {info1.origin} ")
+    # print(f"Image2: {info2.size} {info2.spacing} {info2.origin} ")
 
     return is_ok
 

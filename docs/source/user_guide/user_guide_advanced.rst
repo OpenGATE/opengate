@@ -169,6 +169,8 @@ Back-to-back source
 -------------------
 
 For a source defined as a `back_to_back` particle, activation of APA is straightforward:
+
+
 .. code-block:: python
 
   # Assuming that 'your_source' is a source defined as a 'back_to_back' particle
@@ -176,6 +178,8 @@ For a source defined as a `back_to_back` particle, activation of APA is straight
 
 By default, the deviation of APA is defined as a 2D Gaussian distribution with a FWHM of 0.5°.
 If the user desire to modify the FWHM of the APA deviation, it can be done with the following:
+
+
 .. code-block:: python
 
   # Assuming that 'your_source' is a source defined as a 'back_to_back' particle

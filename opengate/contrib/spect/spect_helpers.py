@@ -1,4 +1,3 @@
-import numpy as np
 import pathlib
 import SimpleITK as sitk
 import itk

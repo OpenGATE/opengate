@@ -605,3 +605,14 @@ def standard_error_c4_correction(n):
     return (
         np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
     )
+
+
+def get_basename_and_extension(filename):
+    """Return the basename and extension of a filename even if .nii.gz is used."""
+    base = filename
+    extensions = []
+    while os.path.splitext(base)[1]:
+        base, ext = os.path.splitext(base)
+        extensions.append(ext)
+    extensions.reverse()
+    return os.path.basename(base), "".join(extensions)
