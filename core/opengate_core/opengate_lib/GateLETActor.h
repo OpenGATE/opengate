@@ -12,13 +12,14 @@
 #include "G4EmCalculator.hh"
 #include "G4NistManager.hh"
 #include "G4VPrimitiveScorer.hh"
-#include "GateVActor.h"
+#include "GateHelpersImage.h"
+#include "GateWeightedEdepActor.h"
 #include "itkImage.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateLETActor : public GateVActor {
+class GateLETActor : public GateWeightedEdepActor {
 
 public:
   // Constructor
@@ -56,28 +57,8 @@ public:
 
   // Option: indicate if we must compute dose in Gray also
   std::string fPhysicalVolumeName;
+
   std::string fAveragingMethod;
-  std::string fScoreIn;
-  bool fdoseAverage;
-  bool ftrackAverage;
-  bool fLETtoOtherMaterial;
-  std::string fotherMaterial;
-
-  int NbOfEvent = 0;
-
-private:
-  double fVoxelVolume;
-
-  G4ThreeVector fInitialTranslation;
-  std::string fHitType;
-
-  bool fScoreInOtherMaterial = false;
-
-  struct threadLocalT {
-    G4EmCalculator emcalc;
-    G4Material *materialToScoreIn;
-  };
-  G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateLETActor_h
