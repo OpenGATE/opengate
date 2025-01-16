@@ -49,6 +49,35 @@ def test_ok(is_ok=False, exceptions=None):
         sys.exit(-1)
 
 
+def write_stats_txt_gate_style(stats, filepath):
+    output = stats.user_output.stats
+    counts = output.merged_data
+    with open(filepath, "w") as f:
+        f.write(
+            f"""
+# NumberOfRun    = {counts.runs}
+# NumberOfEvents = {counts.events}
+# NumberOfTracks = {counts.tracks}
+# NumberOfSteps  = {counts.steps}
+# NumberOfGeometricalSteps  =
+# NumberOfPhysicalSteps     =
+# ElapsedTime           = {counts.duration}
+# ElapsedTimeWoInit     = {counts.duration}
+# StartDate             =
+# EndDate               =
+# StartSimulationTime        = 0
+# StopSimulationTime         = 1
+# CurrentSimulationTime      = 8.99658e-06
+# VirtualStartSimulationTime = 0
+# VirtualStopSimulationTime  = 1
+# ElapsedSimulationTime      = 8.99658e-06
+# PPS (Primary per sec)      = {output.pps}
+# TPS (Track per sec)        = {output.tps}
+# SPS (Step per sec)         = {output.sps}
+                """
+        )
+
+
 def read_stat_file(filename, encoder=None):
     if encoder == "json":
         return read_stat_file_json(filename)
@@ -255,8 +284,8 @@ def plot_img_axis(ax, img, label, axis="z"):
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 1)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -266,8 +295,8 @@ def plot_img_z(ax, img, label):
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -277,8 +306,8 @@ def plot_img_y(ax, img, label):
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 1)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 1)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
