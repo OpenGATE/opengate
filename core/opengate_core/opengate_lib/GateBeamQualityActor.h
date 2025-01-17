@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateRBEActor_h
-#define GateRBEActor_h
+#ifndef GateBeamQualityActor_h
+#define GateBeamQualityActor_h
 
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
@@ -21,11 +21,11 @@
 
 namespace py = pybind11;
 
-class GateRBEActor : public GateWeightedEdepActor {
+class GateBeamQualityActor : public GateWeightedEdepActor {
 
 public:
   // Constructor
-  GateRBEActor(py::dict &user_info);
+  GateBeamQualityActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
   
@@ -54,4 +54,4 @@ private:
 
 };
 
-#endif // GateRBEActor_h
+#endif // GateBeamQualityActor_h

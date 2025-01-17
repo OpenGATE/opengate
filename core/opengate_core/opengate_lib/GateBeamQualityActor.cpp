@@ -5,7 +5,7 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "GateRBEActor.h"
+#include "GateBeamQualityActor.h"
 #include "G4LinInterpolation.hh"
 #include "G4Navigator.hh"
 #include "G4RandomTools.hh"
@@ -29,11 +29,11 @@
 
 G4Mutex SetRBEPixelMutex = G4MUTEX_INITIALIZER;
 
-GateRBEActor::GateRBEActor(py::dict &user_info) : GateWeightedEdepActor(user_info) {
+GateBeamQualityActor::GateBeamQualityActor(py::dict &user_info) : GateWeightedEdepActor(user_info) {
   
 }
 
-void GateRBEActor::InitializeUserInfo(py::dict &user_info) {
+void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateWeightedEdepActor::InitializeUserInfo(user_info);
 
@@ -50,7 +50,7 @@ void GateRBEActor::InitializeUserInfo(py::dict &user_info) {
   
 }
 
-void GateRBEActor::InitializeCpp(){
+void GateBeamQualityActor::InitializeCpp(){
     GateWeightedEdepActor::InitializeCpp();
     if (fRBEmodel == "LEM1lda"){
         multipleScoring = true;
@@ -58,7 +58,7 @@ void GateRBEActor::InitializeCpp(){
 }
 
 
-double GateRBEActor::ScoringQuantityFn(G4Step *step,  double *secondQuantity){
+double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,  double *secondQuantity){
    auto *current_material = step->GetPreStepPoint()->GetMaterial();
    auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
@@ -111,7 +111,7 @@ double GateRBEActor::ScoringQuantityFn(G4Step *step,  double *secondQuantity){
 
 
 
-void GateRBEActor::CreateLookupTable(py::dict &user_info) {
+void GateBeamQualityActor::CreateLookupTable(py::dict &user_info) {
   // get lookup table
   std::vector<std::vector<double>> lookupTab =
       DictGetVecofVecDouble(user_info, "lookup_table");
@@ -122,7 +122,7 @@ void GateRBEActor::CreateLookupTable(py::dict &user_info) {
   }
 }
 
-double GateRBEActor::GetValue(int Z, float energy) {
+double GateBeamQualityActor::GetValue(int Z, float energy) {
   // std::cout << "GetValue: Z: " << Z << ", energy[MeV/u]: " << energy <<
   // std::endl;
   // initalize value
@@ -161,7 +161,7 @@ double GateRBEActor::GetValue(int Z, float energy) {
   
 }
 
-size_t GateRBEActor::FindLowerBound(G4double x, G4DataVector *values) const {
+size_t GateBeamQualityActor::FindLowerBound(G4double x, G4DataVector *values) const {
   size_t lowerBound = 0;
   size_t upperBound(values->size() - 1);
   if (x < (*values)[0]) {
@@ -182,4 +182,4 @@ size_t GateRBEActor::FindLowerBound(G4double x, G4DataVector *values) const {
   return upperBound;
 }
 
-//void GateRBEActor::EndSimulationAction() {}
+//void GateBeamQualityActor::EndSimulationAction() {}

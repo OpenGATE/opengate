@@ -956,7 +956,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
-class RBEActor(VoxelDepositActor, g4.GateRBEActor):
+class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
     """
     RBEActor:
     Available models:
@@ -1134,7 +1134,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateRBEActor.__init__(self, self.user_info)
+        g4.GateBeamQualityActor.__init__(self, self.user_info)
         self.AddActions(
             {
                 "BeginOfRunActionMasterThread",
@@ -1240,7 +1240,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.push_to_cpp_image(
                 "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image)
 
-        g4.GateRBEActor.BeginOfRunActionMasterThread(self, run_index)
+        g4.GateBeamQualityActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image(
@@ -1269,7 +1269,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         return 0
 
     def EndSimulationAction(self):
-        g4.GateRBEActor.EndSimulationAction(self)
+        g4.GateBeamQualityActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
         self.compute_rbe_weighted_dose()
 
