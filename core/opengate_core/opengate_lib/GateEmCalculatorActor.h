@@ -29,7 +29,7 @@ class GateEmCalculatorActor : public GateVActor
 
   // Called every time a Run starts (all threads)
   void BeginOfRunAction(const G4Run *run);
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   void InitializeCpp() override;
 
