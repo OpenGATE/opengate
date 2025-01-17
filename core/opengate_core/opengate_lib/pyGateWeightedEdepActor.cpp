@@ -36,6 +36,7 @@ void init_GateWeightedEdepActor(py::module &m) {
       .def("EndOfRunActionMasterThread",
            &GateWeightedEdepActor::EndOfRunActionMasterThread)
       .def_readwrite("cpp_numerator_image", &GateWeightedEdepActor::cpp_numerator_image)
+      .def_readwrite("cpp_second_numerator_image", &GateWeightedEdepActor::cpp_second_numerator_image)
       .def_readwrite("cpp_denominator_image",
                      &GateWeightedEdepActor::cpp_denominator_image)
       .def_readwrite("NbOfEvent", &GateWeightedEdepActor::NbOfEvent)

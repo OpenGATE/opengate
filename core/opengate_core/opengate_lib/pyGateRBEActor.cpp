@@ -35,12 +35,12 @@ void init_GateRBEActor(py::module &m) {
            &GateRBEActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
            &GateRBEActor::EndOfRunActionMasterThread)
-      .def_readwrite("cpp_numerator_image", &GateRBEActor::cpp_numerator_image)
-      .def_readwrite("cpp_numerator_beta_image", &GateRBEActor::cpp_numerator_beta_image)
-      .def_readwrite("cpp_dose_image", &GateRBEActor::cpp_dose_image)
+      .def_readwrite("cpp_numerator_alpha_image", &GateRBEActor::cpp_numerator_image)
+      .def_readwrite("cpp_numerator_beta_image", &GateRBEActor::cpp_second_numerator_image)
+     // .def_readwrite("cpp_dose_image", &GateRBEActor::cpp_dose_image)
       .def_readwrite("cpp_denominator_image",
                      &GateRBEActor::cpp_denominator_image)
-      .def_readwrite("cpp_nucleus_dose_image", &GateRBEActor::cpp_nucleus_dose_image)
+     // .def_readwrite("cpp_nucleus_dose_image", &GateRBEActor::cpp_nucleus_dose_image)
       .def_readwrite("NbOfEvent", &GateRBEActor::NbOfEvent)
       .def("GetPhysicalVolumeName", &GateRBEActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateRBEActor::SetPhysicalVolumeName);

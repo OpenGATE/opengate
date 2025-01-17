@@ -27,13 +27,11 @@ public:
   // Constructor
   GateRBEActor(py::dict &user_info);
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
   
   void InitializeCpp() override;
   
-  void BeginOfRunActionMasterThread(int run_id) override;
-  
-  void AddValuesToImages(G4Step *step,itk::Image<double, 3>::IndexType index) override;
+  double ScoringQuantityFn(G4Step *step, double *secondQuantity) override;
 
   std::string fRBEmodel;
   double fAlpha0;
@@ -41,12 +39,10 @@ public:
   double fAreaNucl;
   double fDcut;
   double fSmax;
-  ImageType::SizeType size_edep{};
+  int ZMinTable;
+  int ZMaxTable;
+  Image3DType::SizeType size_edep{};
   
-  ImageType::Pointer cpp_dose_image;
-  // we need an extra image for beta scoring (lemI lda)
-  ImageType::Pointer cpp_numerator_beta_image;
-  ImageType::Pointer cpp_nucleus_dose_image;
   
 private:
   std::vector<G4DataVector *> *table;
