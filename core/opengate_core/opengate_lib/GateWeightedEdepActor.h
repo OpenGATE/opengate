@@ -25,12 +25,13 @@ public:
 
   // Image type is 3D float by default
   // TODO double precision required
-  typedef itk::Image<double, 3> ImageType;
+  typedef itk::Image<double, 3> Image3DType;
+  
 
   // Constructor
   GateWeightedEdepActor(py::dict &user_info);
 
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  virtual void InitializeUserInfo(py::dict &user_info) override;
 
   virtual void InitializeCpp() override;
 
@@ -46,17 +47,30 @@ public:
 
   virtual void EndSimulationAction() override;
   
-  virtual void AddValuesToImages(G4Step *step, ImageType::IndexType index);
+//   virtual void AddValuesToImages(G4Step *step, Image3DType::IndexType index);
 
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
   }
 
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+  
+  void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
+                        Image3DType::IndexType &index) const;
 
+  G4double CalcMeanEnergy(G4Step *step);
+  G4double GetSPROtherMaterial(G4Step *step, G4double energy);
+  
+  virtual double ScoringQuantityFn(G4Step *step, double *secondQuantity);
+  
   // The image is accessible on py side (shared by all threads)
-  ImageType::Pointer cpp_numerator_image;
-  ImageType::Pointer cpp_denominator_image;
+  Image3DType::Pointer cpp_numerator_image;
+  Image3DType::Pointer cpp_denominator_image;
+  // we need an extra image for beta scoring (lemI lda)
+  Image3DType::Pointer cpp_second_numerator_image;
+  
+  bool doTrackAverage = false;  // track vs dose averaging
+  bool multipleScoring = false; // do we want a second weighted image?
 
   // Option: indicate if we must compute dose in Gray also
   std::string fPhysicalVolumeName;
