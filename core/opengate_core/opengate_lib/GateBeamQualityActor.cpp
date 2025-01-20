@@ -13,6 +13,7 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
+#include <itkImageRegionIterator.h>
 
 #include "G4Deuteron.hh"
 #include "G4Electron.hh"
@@ -37,24 +38,22 @@ void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateWeightedEdepActor::InitializeUserInfo(user_info);
 
-  fRBEmodel = DictGetStr(user_info, "rbe_model");
-  fAlpha0 = DictGetDouble(user_info, "alpha_0");
-  fBetaRef = DictGetDouble(user_info, "beta_ref");
-  fAreaNucl =  DictGetDouble(user_info, "A_nucleus") * CLHEP::um * CLHEP::um;
-  fDcut =  DictGetDouble(user_info, "D_cut");
-  fSmax =  DictGetDouble(user_info, "s_max");
+  fRBEmodel = DictGetStr(user_info, "model");
+  if (fRBEmodel == "mMKM"){
+    fAlpha0 = DictGetDouble(user_info, "alpha_0");
+    fBetaRef = DictGetDouble(user_info, "beta_ref");
+  }
+  if (fRBEmodel == "LEM1lda"){
+    fAreaNucl =  DictGetDouble(user_info, "A_nucleus") * CLHEP::um * CLHEP::um;
+    fDcut =  DictGetDouble(user_info, "D_cut");
+    fSmax =  DictGetDouble(user_info, "s_max");
+    multipleScoring = true;
+  }
   ZMinTable = DictGetInt(user_info, "z_min_table");
   ZMaxTable = DictGetInt(user_info, "z_max_table");
   table = new std::vector<G4DataVector *>;
   CreateLookupTable(user_info);
   
-}
-
-void GateBeamQualityActor::InitializeCpp(){
-    GateWeightedEdepActor::InitializeCpp();
-    if (fRBEmodel == "LEM1lda"){
-        multipleScoring = true;
-    }
 }
 
 
@@ -72,13 +71,7 @@ double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,  double *secondQuan
   auto charge = int(p->GetAtomicNumber());
   auto mass = p->GetAtomicMass();
   auto table_value = GetValue(charge, energy / mass); 
-  
-  
-  if (fRBEmodel == "mMKM"){
-    //return table_value;
-    auto alpha_currstep = fAlpha0 + fBetaRef * table_value;
-    return alpha_currstep;
-  }
+
 
   if (fRBEmodel == "LEM1lda"){
     double dedx_cut = DBL_MAX;
@@ -105,8 +98,27 @@ double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,  double *secondQuan
     
     return alpha_currstep;
 
+  }else{
+    return table_value; // for RE and mMKM the scoring quantity is just the table value
   }
     return 1.0;
+}
+
+void GateBeamQualityActor::EndSimulationAction() { 
+  
+  if (fRBEmodel == "mMKM"){
+      // postprocess numerator image to get alpha
+      itk::ImageRegionIterator<Image3DType> iterator3D(
+          cpp_numerator_image, cpp_numerator_image->GetLargestPossibleRegion());
+      for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
+        Image3DType::IndexType index_f = iterator3D.GetIndex();
+        Image3DType::PixelType Q = cpp_numerator_image->GetPixel(index_f);
+        Image3DType::PixelType Edep = cpp_denominator_image->GetPixel(index_f);
+        cpp_numerator_image->SetPixel(index_f, (fBetaRef*Q+fAlpha0*Edep)/Edep);
+      }
+  
+  }
+
 }
 
 

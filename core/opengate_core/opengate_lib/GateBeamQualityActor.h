@@ -29,9 +29,9 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
   
-  void InitializeCpp() override;
-  
   double ScoringQuantityFn(G4Step *step, double *secondQuantity) override;
+  
+  void EndSimulationAction();
 
   std::string fRBEmodel;
   double fAlpha0;
