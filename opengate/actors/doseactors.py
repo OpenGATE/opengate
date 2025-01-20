@@ -1187,6 +1187,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             self.user_output.beta_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
+            self.user_output.beta_mix.merge_data_from_runs()
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
@@ -1361,6 +1362,8 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
         self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
         self.lookup_table, self.z_min_table, self.z_max_table = self.store_lookup_table(self.lookup_table_path)
+        if self.model == 'LEM1lda':
+            self.multiple_scoring = True
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
