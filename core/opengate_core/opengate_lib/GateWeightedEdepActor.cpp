@@ -26,7 +26,7 @@
 
 // Mutex that will be used by thread to write in the edep/dose image
 G4Mutex SetWeightedPixelMutex = G4MUTEX_INITIALIZER;
-
+G4Mutex SetWeightedPixelBetaMutex = G4MUTEX_INITIALIZER;
 G4Mutex SetWeightedNbEventMutex = G4MUTEX_INITIALIZER;
 
 GateWeightedEdepActor::GateWeightedEdepActor(py::dict &user_info) : GateVActor(user_info, true) {
@@ -56,6 +56,7 @@ void GateWeightedEdepActor::InitializeCpp() {
   cpp_numerator_image = Image3DType::New();
   cpp_denominator_image = Image3DType::New();
   if (multipleScoring){
+  std::cout<<"Creating second numerator"<<std::endl;
     cpp_second_numerator_image = Image3DType::New();
   }
 }
@@ -71,6 +72,7 @@ void GateWeightedEdepActor::BeginOfRunActionMasterThread(int run_id) {
                                  fInitialTranslation);
                                  
   if (multipleScoring){
+  std::cout<<"Initializing second numerator"<<std::endl;
     AttachImageToVolume<Image3DType>(cpp_second_numerator_image, fPhysicalVolumeName,
                                        fInitialTranslation);
   }
@@ -188,13 +190,19 @@ void GateWeightedEdepActor::SteppingAction(G4Step *step) {
     auto scoringQuantity = ScoringQuantityFn(step, &secondQuantity);
     
     {
+      std::cout<<"adding value to alpha image"<<std::endl;
       G4AutoLock mutex(&SetWeightedPixelMutex);
       ImageAddValue<Image3DType>(cpp_numerator_image, index, averagingQuantity*scoringQuantity);
       ImageAddValue<Image3DType>(cpp_denominator_image, index, averagingQuantity);
     }
     if (multipleScoring){
-      G4AutoLock mutex(&SetWeightedPixelMutex);
-      ImageAddValue<Image3DType>(cpp_second_numerator_image, index, averagingQuantity*secondQuantity);
+        std::cout<<"adding value to beta image"<<std::endl;
+        std::cout<<"second scoring quantity: "<<secondQuantity<<std::endl;
+        {
+          G4AutoLock mutex(&SetWeightedPixelBetaMutex);
+          ImageAddValue<Image3DType>(cpp_second_numerator_image, index, averagingQuantity*secondQuantity);
+        }
+          std::cout<<"value added to image image"<<std::endl;
     }
   } // else : outside the image
 }

@@ -955,29 +955,25 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         g4.GateLETActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
 
-
-class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
+class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
     """
-    RBEActor:
-    Available models:
-        - mMKM
-        - LEM1
-        - LEM1lda
+    BeamQualityActor:
+    Handles the logic for RE, RBE and potentially other actors
 
     """
 
     user_info_defaults = {
-        "rbe_model": (
-            "mkm",
+        "model": (
+            "RE",
             {
-                "doc": "which RBE model to use?",
-                "allowed_values": ("mMKM", "LEM1", "LEM1lda"),
+                "doc": "which model is used to calculate beam quality.",
+                "allowed_values": ("mMKM", "LEM1lda", "RE"),
             },
         ),
         "score_in": (
             "material",
             {
-                "doc": """The score_in command allows to convert the LET from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the LET to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
+                "doc": """The score_in command allows to convert the scored quantity from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the quantity to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
                 """,
                 "allowed_values": (
                     "material",
@@ -1009,62 +1005,13 @@ class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 "doc": "Maximum atomic number available in the table. Read by the actor",
             },
         ),
-        "alpha_0": (
-            0.172,
+        "multiple_scoring": (
+            False,
             {
-                "doc": "mMKM specific fitted parameter, for the calculation of cellline alpha_z per radiation. Unit: Gy-1",
+                "doc": "True for models that need multiple quatient images to evaluate the beam quality, like the carbon RBE model LEM1lda",
             },
         ),
-        "beta_ref": (
-            None,
-            {
-                "doc": "Cellline specific parameter. Initialized according to cell_type.",
-            },
-        ),
-        "F_clin": (
-            2.41,
-            {
-                "doc": "mMKM specific arbituary parameter, the clinical sclaing factor.",
-            },
-        ),
-        "D_cut": (
-            30.0,
-            {
-                "doc": "LEM specific arbituary parameter, the physical dose threshold between linear quadratic and linear cell survival. Unit: Gy.",
-            },
-        ),
-        "lnS_cut": (
-            None,
-            {
-                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
-            },
-        ),
-        "s_max": (
-            None,
-            {
-                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
-            },
-        ),
-        "r_nucleus": (
-            5,
-            {
-                "doc": "nucleus's radius, in um. Used when rbe_model is LEM",
-            },
-        ),
-        "A_nucleus": (
-            None,
-            {
-                "doc": "nucleus section's area. Calculated from radius by the actor.",
-            },
-        ),
-        "cell_type": (
-            "HSG",
-            {
-                "doc": "To add new cell types, update the self.cells_radiosensitivity"
-                "variable in the init of the actor",
-                "allowed_values": ("HSG", "Chordoma"),
-            },
-        ),
+       
     }
     user_output_config = {
         "alpha_mix": {
@@ -1121,15 +1068,6 @@ class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
     def __init__(self, *args, **kwargs):
         # Init parent
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        # internal variables
-        self.cells_radiosensitivity = {
-            "HSG": {"alpha_ref": 0.764, "beta_ref": 0.0615},
-            "Chordoma": {"alpha_ref": 0.1, "beta_ref": 0.05},
-        }
-        # images calculated from the actor output at postprocessing
-        self.rbe_image = None
-        self.rbe_dose_image = None
         
         self.__initcpp__()
 
@@ -1155,12 +1093,6 @@ class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
         self.check_user_input()
 
         # calculate some internal variables
-        self.A_nucleus = np.pi * self.r_nucleus**2
-        alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
-        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
-        self.beta_ref = beta_ref
-        self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
-        self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
         self.lookup_table, self.z_min_table, self.z_max_table = self.store_lookup_table(self.lookup_table_path)
 
         self.InitializeUserInfo(self.user_info)
@@ -1219,21 +1151,12 @@ class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
         return v_table, z_min, z_max
 
     def BeginOfRunActionMasterThread(self, run_index):
-        """
-        RBE models scoring images:
-            - mMKM:
-                - alpha mix (score separately numerator and denominator)
-            - LEM1lda:
-                - alpha mix (score separately numerator and denominator)
-                - beta mix (score separately numerator and denominator)
-            Note: all will also score edep as denominator image -> retrieve dose
-        """
         
         self.prepare_output_for_run("alpha_mix", run_index)
         self.push_to_cpp_image(
             "alpha_mix", run_index, self.cpp_numerator_alpha_image, self.cpp_denominator_image)
         
-        if self.rbe_model == 'lemIlda':
+        if self.multiple_scoring:
             self.user_output.beta_mix.set_active(True, item='all')
             self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
             self.prepare_output_for_run("beta_mix", run_index)
@@ -1253,7 +1176,7 @@ class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
         self.user_output.alpha_mix.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
-        if self.rbe_model == "LEM1lda":
+        if self.multiple_scoring:
             self.fetch_from_cpp_image(
                 "beta_mix",
                 run_index,
@@ -1271,76 +1194,6 @@ class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
-        self.compute_rbe_weighted_dose()
-
-    def compute_rbe_weighted_dose(self):
-        alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
-        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
-        dose_img = self.compute_dose_from_edep_img()
-        
-
-        if self.rbe_model == "mMKM":
-            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
-            log_survival = alpha_mix_img * dose_img * (
-                -1
-            ) + dose_img * dose_img * beta_ref * (-1)
-            log_survival_arr = log_survival.image_array
-
-        elif self.rbe_model == "LEM1lda":
-            dose_arr = dose_img.image_array
-            arr_mask_linear = dose_arr > self.D_cut
-            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
-            sqrt_beta_mix_img = self.user_output.beta_mix.merged_data.quotient
-
-            log_survival_lq = alpha_mix_img * dose_img * (
-                -1
-            ) + dose_img * dose_img * sqrt_beta_mix_img * sqrt_beta_mix_img * (-1)
-            log_survival_lq_arr = log_survival_lq.image_array
-            log_survival_linear = (
-                alpha_mix_img * self.D_cut * (-1)
-                + sqrt_beta_mix_img * sqrt_beta_mix_img * self.D_cut * self.D_cut * (-1)
-                + (dose_img + self.D_cut * (-1)) * self.s_max * (-1)
-            )
-            log_survival_linear_arr = log_survival_linear.image_array
-
-            log_survival_arr = np.zeros(log_survival_lq.image_array.shape)
-            log_survival_arr[arr_mask_linear] = log_survival_linear_arr[arr_mask_linear]
-            log_survival_arr[~arr_mask_linear] = log_survival_lq_arr[~arr_mask_linear]
-
-        # solve linear quadratic equation to get Dx
-        if self.rbe_model == "mMKM":
-            rbe_dose_arr = (
-                (-alpha_ref + np.sqrt(alpha_ref**2 - 4 * beta_ref * log_survival_arr))
-                / (2 * beta_ref)
-                * self.F_clin
-            )
-        else:
-            arr_mask_linear = log_survival_arr < self.lnS_cut
-            rbe_dose_lq_arr = (
-                -alpha_ref + np.sqrt(alpha_ref**2 - 4 * beta_ref * log_survival_arr)
-            ) / (2 * beta_ref)
-            rbe_dose_linear_arr = (
-                -log_survival_arr + self.lnS_cut
-            ) / self.s_max + self.D_cut
-            rbe_dose_arr = np.zeros(log_survival_arr.shape)
-            rbe_dose_arr[arr_mask_linear] = rbe_dose_linear_arr[arr_mask_linear]
-            rbe_dose_arr[~arr_mask_linear] = rbe_dose_lq_arr[~arr_mask_linear]
-
-        # create new data item for the survival image. Same metadata as the other images, but new image array
-        rbedose_img = itk_image_from_array(rbe_dose_arr)
-        rbe_weighted_dose_image = ItkImageDataItem(data=rbedose_img)
-        rbe_weighted_dose_image.copy_image_properties(dose_img.image)
-
-        rbe_image = rbe_weighted_dose_image / dose_img
-
-        dose_output_path = self.user_output.alpha_mix.get_output_path()
-        base_output_path = str(dose_output_path)[:-13]  # remove the suffix 'alpha_mix.mhd'
-        
-        self.rbe_image = rbe_image
-        self.rbe_dose_image = rbe_weighted_dose_image
-
-        rbe_weighted_dose_image.write(base_output_path + "rbedose.mhd")
-        rbe_image.write(base_output_path + "rbe.mhd")
         
     def compute_dose_from_edep_img(self, overrides=dict()):
         """
@@ -1399,6 +1252,196 @@ class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
         dose_image.copy_image_properties(edep_data_item.image)
             
         return dose_image
+
+class REActor(BeamQualityActor, g4.GateBeamQualityActor):
+    pass
+    
+class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
+    """
+    RBEActor:
+        - mMKM:
+            - alpha mix (score separately numerator and denominator)
+        - LEM1lda:
+            - alpha mix (score separately numerator and denominator)
+            - beta mix (score separately numerator and denominator)
+        Note: all will also score edep as denominator image -> retrieve dose
+    """
+
+    user_info_defaults = {
+        "alpha_0": (
+            0.172,
+            {
+                "doc": "mMKM specific fitted parameter, for the calculation of cellline alpha_z per radiation. Unit: Gy-1",
+            },
+        ),
+        "beta_ref": (
+            None,
+            {
+                "doc": "Cellline specific parameter. Initialized according to cell_type.",
+            },
+        ),
+        "F_clin": (
+            2.41,
+            {
+                "doc": "mMKM specific arbituary parameter, the clinical sclaing factor.",
+            },
+        ),
+        "D_cut": (
+            30.0,
+            {
+                "doc": "LEM specific arbituary parameter, the physical dose threshold between linear quadratic and linear cell survival. Unit: Gy.",
+            },
+        ),
+        "lnS_cut": (
+            None,
+            {
+                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
+            },
+        ),
+        "s_max": (
+            None,
+            {
+                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
+            },
+        ),
+        "r_nucleus": (
+            5,
+            {
+                "doc": "nucleus's radius, in um. Used when rbe_model is LEM",
+            },
+        ),
+        "A_nucleus": (
+            None,
+            {
+                "doc": "nucleus section's area. Calculated from radius by the actor.",
+            },
+        ),
+        "cell_type": (
+            "HSG",
+            {
+                "doc": "To add new cell types, update the self.cells_radiosensitivity"
+                "variable in the init of the actor",
+                "allowed_values": ("HSG", "Chordoma"),
+            },
+        ),
+    }
+   
+
+    def __init__(self, *args, **kwargs):
+        # Init parent
+        BeamQualityActor.__init__(self, *args, **kwargs)
+
+        # internal variables
+        self.cells_radiosensitivity = {
+            "HSG": {"alpha_ref": 0.764, "beta_ref": 0.0615},
+            "Chordoma": {"alpha_ref": 0.1, "beta_ref": 0.05},
+        }
+        # images calculated from the actor output at postprocessing
+        self.rbe_image = None
+        self.rbe_dose_image = None
+        
+        self.__initcpp__()
+
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the attached volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        VoxelDepositActor.initialize(self)
+
+        self.check_user_input()
+
+        # calculate some internal variables
+        self.A_nucleus = np.pi * self.r_nucleus**2
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
+        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
+        self.beta_ref = beta_ref
+        self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
+        self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
+        self.lookup_table, self.z_min_table, self.z_max_table = self.store_lookup_table(self.lookup_table_path)
+
+        self.InitializeUserInfo(self.user_info)
+        # Set the physical volume name on the C++ side
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def EndSimulationAction(self):
+        g4.GateBeamQualityActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
+        self.compute_rbe_weighted_dose()
+
+    def compute_rbe_weighted_dose(self):
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
+        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
+        dose_img = self.compute_dose_from_edep_img()
+        
+
+        if self.model == "mMKM":
+            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            log_survival = alpha_mix_img * dose_img * (
+                -1
+            ) + dose_img * dose_img * beta_ref * (-1)
+            log_survival_arr = log_survival.image_array
+
+        elif self.model == "LEM1lda":
+            dose_arr = dose_img.image_array
+            arr_mask_linear = dose_arr > self.D_cut
+            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            sqrt_beta_mix_img = self.user_output.beta_mix.merged_data.quotient
+
+            log_survival_lq = alpha_mix_img * dose_img * (
+                -1
+            ) + dose_img * dose_img * sqrt_beta_mix_img * sqrt_beta_mix_img * (-1)
+            log_survival_lq_arr = log_survival_lq.image_array
+            log_survival_linear = (
+                alpha_mix_img * self.D_cut * (-1)
+                + sqrt_beta_mix_img * sqrt_beta_mix_img * self.D_cut * self.D_cut * (-1)
+                + (dose_img + self.D_cut * (-1)) * self.s_max * (-1)
+            )
+            log_survival_linear_arr = log_survival_linear.image_array
+
+            log_survival_arr = np.zeros(log_survival_lq.image_array.shape)
+            log_survival_arr[arr_mask_linear] = log_survival_linear_arr[arr_mask_linear]
+            log_survival_arr[~arr_mask_linear] = log_survival_lq_arr[~arr_mask_linear]
+
+        # solve linear quadratic equation to get Dx
+        if self.model == "mMKM":
+            rbe_dose_arr = (
+                (-alpha_ref + np.sqrt(alpha_ref**2 - 4 * beta_ref * log_survival_arr))
+                / (2 * beta_ref)
+                * self.F_clin
+            )
+        else:
+            arr_mask_linear = log_survival_arr < self.lnS_cut
+            rbe_dose_lq_arr = (
+                -alpha_ref + np.sqrt(alpha_ref**2 - 4 * beta_ref * log_survival_arr)
+            ) / (2 * beta_ref)
+            rbe_dose_linear_arr = (
+                -log_survival_arr + self.lnS_cut
+            ) / self.s_max + self.D_cut
+            rbe_dose_arr = np.zeros(log_survival_arr.shape)
+            rbe_dose_arr[arr_mask_linear] = rbe_dose_linear_arr[arr_mask_linear]
+            rbe_dose_arr[~arr_mask_linear] = rbe_dose_lq_arr[~arr_mask_linear]
+
+        # create new data item for the survival image. Same metadata as the other images, but new image array
+        rbedose_img = itk_image_from_array(rbe_dose_arr)
+        rbe_weighted_dose_image = ItkImageDataItem(data=rbedose_img)
+        rbe_weighted_dose_image.copy_image_properties(dose_img.image)
+
+        rbe_image = rbe_weighted_dose_image / dose_img
+
+        dose_output_path = self.user_output.alpha_mix.get_output_path()
+        base_output_path = str(dose_output_path)[:-13]  # remove the suffix 'alpha_mix.mhd'
+        
+        self.rbe_image = rbe_image
+        self.rbe_dose_image = rbe_weighted_dose_image
+
+        rbe_weighted_dose_image.write(base_output_path + "rbedose.mhd")
+        rbe_image.write(base_output_path + "rbe.mhd")
+        
+    
 
 
 class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
@@ -1558,5 +1601,7 @@ process_cls(DoseActor)
 process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(RBEActor)
+process_cls(REActor)
+process_cls(BeamQualityActor)
 process_cls(FluenceActor)
 process_cls(ProductionAndStoppingActor)

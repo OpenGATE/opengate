@@ -71,32 +71,4 @@ double GateLETActor::ScoringQuantityFn(G4Step *step, double *secondQuantity){
    return dedx_currstep;
    }
 
-// void GateLETActor::SteppingAction(G4Step *step) {
-//   // Get the voxel index
-//   G4ThreeVector position;
-//   bool isInside;
-//   Image3DType::IndexType index;
-//   GetVoxelPosition(step, position, isInside, index);
-//   
-//    if (!isInside) {return;}
-//       
-//   auto dedx_currstep = ScoringQuantityFn(step);
-// 
-//   double scor_val_num = 0.;
-//   double scor_val_den = 0.;
-// 
-//   if (fAveragingMethod == "dose_average") {
-//     scor_val_num = edep * dedx_currstep / CLHEP::MeV / CLHEP::MeV * CLHEP::mm;
-//     scor_val_den = edep / CLHEP::MeV;
-//   } else if (fAveragingMethod == "track_average") {
-//     auto steplength = step->GetStepLength() / CLHEP::mm;
-//     scor_val_num = steplength * dedx_currstep * w / CLHEP::MeV;
-//     scor_val_den = steplength * w / CLHEP::mm;
-//   }
-//   // Call ImageAddValue() in a mutexed {}-scope
-//   {
-//     G4AutoLock mutex(&SetLETPixelMutex);
-//     ImageAddValue<Image3DType>(cpp_numerator_image, index, scor_val_num);
-//     ImageAddValue<Image3DType>(cpp_denominator_image, index, scor_val_den);
-//   }
-// } // else : outside the image
+
