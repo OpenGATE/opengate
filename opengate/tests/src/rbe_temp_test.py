@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
     do_debug = False
-    output_path = '/home/yjia/Simulations/01_gate10_sim/output/test_RAM/'
+    output_path = '/home/fava/04_Calculations/rbe_carbon_output'
     # paths = utility.get_default_test_paths(
     #     __file__, "test050_let_actor_letd", "test050"
     # )
@@ -22,10 +22,10 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 1234567891
-    sim.number_of_threads = 8
+    sim.number_of_threads = 3
     sim.output_dir = output_path #paths.output
 
-    numPartSimTest = 1e7 / sim.number_of_threads
+    numPartSimTest = 1e4 / sim.number_of_threads
     numPartSimRef = 1e5
 
     # units
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     RBEActor_IDD_d.score_in = 'G4_WATER'
     RBEActor_IDD_d.hit_type = "random"
     RBEActor_IDD_d.rbe_model = "mMKM"
-    RBEActor_IDD_d.lookup_table_path = '/home/yjia/Simulations/01_gate10_sim/NIRS_MKM_reduced_data.txt'
+    RBEActor_IDD_d.lookup_table_path = '/home/fava/opengate_refactored/opengate/tests/data/NIRS_MKM_reduced_data.txt'
     RBEActor_IDD_d.cell_type = 'HSG'
     RBEActor_IDD_d.r_nucleus = 3.9
     
@@ -152,12 +152,12 @@ if __name__ == "__main__":
     # # analyze RBE dose
     # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     # rbe_dose_img = RBEActor_IDD_d.rbe_dose_image.image
-    # dose_img = doseIDD.dose.merged_data.data[0].image
+    # #dose_img = doseIDD.dose.merged_data.data[0].image
     # alpha_mix_img = RBEActor_IDD_d.alpha_mix.merged_data.quotient.image
     # utility.plot_img_axis(ax,rbe_dose_img,'RBE dose',axis='x')
     
-    # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
-    # utility.plot_img_axis(ax,dose_img,'Dose',axis='x')
+    # # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    # # utility.plot_img_axis(ax,dose_img,'Dose',axis='x')
     
     # fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     # utility.plot_img_axis(ax,alpha_mix_img,'alpha mix',axis='x')

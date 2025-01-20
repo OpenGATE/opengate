@@ -32,9 +32,9 @@ GateEmCalculatorActor::GateEmCalculatorActor(py::dict &user_info) : GateVActor(u
   //CalculateElectronicdEdX();
 }
 
-void GateEmCalculatorActor::InitializeUserInput(py::dict &user_info) {
+void GateEmCalculatorActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
   mPartName = DictGetStr(user_info, "particle_name");
   mIsGenericIon = DictGetBool(user_info, "is_ion");
   mParticleParameters = DictGetStr(user_info, "ion_params");

@@ -19,7 +19,6 @@ if __name__ == "__main__":
 
     sim = gate.Simulation()
     sim_name = f"{nuclide.nuclide}_5_ref"
-    # sim_name = 'andreas'
     create_sim_test053(sim, sim_name)
 
     # sources

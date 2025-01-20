@@ -36,9 +36,9 @@ GateWeightedEdepActor::GateWeightedEdepActor(py::dict &user_info) : GateVActor(u
   fActions.insert("EndSimulationAction");
 }
 
-void GateWeightedEdepActor::InitializeUserInput(py::dict &user_info) {
+void GateWeightedEdepActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
-  GateVActor::InitializeUserInput(user_info);
+  GateVActor::InitializeUserInfo(user_info);
 
   fScoreIn = DictGetStr(user_info, "score_in");
   if (fScoreIn != "material") {
@@ -53,8 +53,11 @@ void GateWeightedEdepActor::InitializeUserInput(py::dict &user_info) {
 void GateWeightedEdepActor::InitializeCpp() {
   // Create the image pointer
   // (the size and allocation will be performed on the py side)
-  cpp_numerator_image = ImageType::New();
-  cpp_denominator_image = ImageType::New();
+  cpp_numerator_image = Image3DType::New();
+  cpp_denominator_image = Image3DType::New();
+  if (multipleScoring){
+    cpp_second_numerator_image = Image3DType::New();
+  }
 }
 
 void GateWeightedEdepActor::BeginOfRunActionMasterThread(int run_id) {
@@ -62,10 +65,15 @@ void GateWeightedEdepActor::BeginOfRunActionMasterThread(int run_id) {
   NbOfEvent = 0;
 
   // Important ! The volume may have moved, so we re-attach each run
-  AttachImageToVolume<ImageType>(cpp_numerator_image, fPhysicalVolumeName,
+  AttachImageToVolume<Image3DType>(cpp_numerator_image, fPhysicalVolumeName,
                                  fInitialTranslation);
-  AttachImageToVolume<ImageType>(cpp_denominator_image, fPhysicalVolumeName,
+  AttachImageToVolume<Image3DType>(cpp_denominator_image, fPhysicalVolumeName,
                                  fInitialTranslation);
+                                 
+  if (multipleScoring){
+    AttachImageToVolume<Image3DType>(cpp_second_numerator_image, fPhysicalVolumeName,
+                                       fInitialTranslation);
+  }
   // compute volume of a dose voxel
   auto sp = cpp_numerator_image->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
@@ -84,16 +92,53 @@ void GateWeightedEdepActor::BeginOfEventAction(const G4Event *event) {
   NbOfEvent++;
 }
 
-void GateWeightedEdepActor::SteppingAction(G4Step *step) {
+G4double GateWeightedEdepActor::CalcMeanEnergy(G4Step *step){
+    // get edep in MeV (take weight into account)
+    auto energy1 = step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
+    auto energy2 = step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
+    G4double energy = (energy1 + energy2) / 2;
+    
+    return energy;
 
+}
+
+G4double GateWeightedEdepActor::GetSPROtherMaterial(G4Step *step, G4double energy){
+    double dedx_cut = DBL_MAX;
+    auto &l = fThreadLocalData.Get();
+    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+     if (p == G4Gamma::Gamma()) {
+       p = G4Electron::Electron();
+     }
+     
+    auto *current_material = step->GetPreStepPoint()->GetMaterial(); 
+    auto dedx_currstep =
+        l.emcalc.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
+        CLHEP::MeV * CLHEP::mm;
+
+    auto dedx_other_material = l.emcalc.ComputeElectronicDEDX(
+                                   energy, p, l.materialToScoreIn, dedx_cut) /
+                               CLHEP::MeV * CLHEP::mm;
+    G4double SPR_otherMaterial = dedx_other_material / dedx_currstep;
+    
+    return SPR_otherMaterial;
+
+}
+
+double GateWeightedEdepActor::ScoringQuantityFn(G4Step *step, double *secondQuantity){
+// the primary scoring quantity is calculated in the function and returned
+// if a second scoring quantity is necessary, one can pass a pointer to a custom variable
+// the variable is then assigned the value for the second scoring quantity
+   return 1.0;
+   }
+   
+void GateWeightedEdepActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
+                                     bool &isInside,
+                                     Image3DType::IndexType &index) const {
   auto preGlobal = step->GetPreStepPoint()->GetPosition();
   auto postGlobal = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
 
-  // FIXME If the volume has multiple copy, touchable->GetCopyNumber(0) ?
-
   // consider random position between pre and post
-  auto position = postGlobal;
   if (fHitType == "pre") {
     position = preGlobal;
   }
@@ -106,29 +151,53 @@ void GateWeightedEdepActor::SteppingAction(G4Step *step) {
     auto direction = postGlobal - preGlobal;
     position = preGlobal + 0.5 * direction;
   }
+
   auto localPosition =
       touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
   // convert G4ThreeVector to itk PointType
-  ImageType::PointType point;
+  Image3DType::PointType point;
   point[0] = localPosition[0];
   point[1] = localPosition[1];
   point[2] = localPosition[2];
 
-  // get pixel index
-  ImageType::IndexType index;
-  bool isInside =
-      cpp_numerator_image->TransformPhysicalPointToIndex(point, index);
+  isInside = cpp_numerator_image->TransformPhysicalPointToIndex(point, index);
+}
 
-  // set value
+void GateWeightedEdepActor::SteppingAction(G4Step *step) {
+
+  // Get the voxel index
+  G4ThreeVector position;
+  bool isInside;
+  Image3DType::IndexType index;
+  GetVoxelPosition(step, position, isInside, index);
+  G4double averagingQuantity;
+  
+  // if inside the voxel, add avereging quantity to the denominator image
+  // and add weighted avereging quantityto the numerator image
   if (isInside) {
-    // With mutex (thread)
-    G4AutoLock mutex(&SetWeightedPixelMutex);
-    // Call the function implemented by the children class
-    AddValuesToImages(step, index);
+    auto w = step->GetTrack()->GetWeight();
+    if (doTrackAverage){
+    averagingQuantity = step->GetStepLength() / CLHEP::mm * w;
+      }
+    else {
+      averagingQuantity = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
+    }
+    
+    double secondQuantity = 1.0;
+    auto scoringQuantity = ScoringQuantityFn(step, &secondQuantity);
+    
+    {
+      G4AutoLock mutex(&SetWeightedPixelMutex);
+      ImageAddValue<Image3DType>(cpp_numerator_image, index, averagingQuantity*scoringQuantity);
+      ImageAddValue<Image3DType>(cpp_denominator_image, index, averagingQuantity);
+    }
+    if (multipleScoring){
+      G4AutoLock mutex(&SetWeightedPixelMutex);
+      ImageAddValue<Image3DType>(cpp_second_numerator_image, index, averagingQuantity*secondQuantity);
+    }
   } // else : outside the image
 }
 
-void GateWeightedEdepActor::AddValuesToImages(G4Step *step,ImageType::IndexType index){}
 
 void GateWeightedEdepActor::EndSimulationAction() {}

@@ -17,8 +17,10 @@ from ..image import (
     resample_itk_image_like,
     itk_image_from_array,
     divide_itk_images,
+    scale_itk_image,
 )
 from ..geometry.utility import get_transform_world_to_local
+from ..geometry.materials import create_density_img
 from ..base import process_cls
 from .actoroutput import (
     ActorOutputSingleImage,
@@ -422,7 +424,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             True,
             {
                 "doc": "This option will provide an additional output image with the squared energy (or dose) deposited per event. This image can be used to calculate the variance of the output variable, as Var(X) = E[X^2] - E[X]^2. This option enables the E[X^2] image.",
-                "deprecated": "Use: my_actor.user_output.square.active=True/False "
+                "deprecated": "Use: my_actor.square.active=True/False "
                 "to request uncertainty scoring of the respective quantity, "
                 "where 'my_actor' should be your actor object. "
                 "Note: activating user_output.edep_uncertainty or user_output.dose_uncertainty "
@@ -433,7 +435,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             True,
             {
                 "doc": "This option will create an additional output image providing the uncertainty of the scored variable (dose or edep).",
-                "deprecated": "Use: my_actor.user_output.dose_uncertainty.active=True/False and"
+                "deprecated": "Use: my_actor.dose_uncertainty.active=True/False and"
                 "my_actor.user_output.edep_uncertainty.active=True/False "
                 "to request uncertainty scoring of the respective quantity, "
                 "where 'my_actor' should be your actor object. ",
@@ -444,7 +446,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
             False,
             {
                 "doc": "This option will enable the calculation of the dose image.",
-                "deprecated": "Use: my_actor.user_output.dose.active=True/False "
+                "deprecated": "Use: my_actor.dose.active=True/False "
                 "to request the actor to score dose, "
                 "where 'my_actor' should be your actor object. "
                 "By default, only the deposited energy is scored. ",
@@ -954,7 +956,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
-class RBEActor(VoxelDepositActor, g4.GateRBEActor):
+class RBEActor(VoxelDepositActor, g4.GateBeamQualityActor):
     """
     RBEActor:
     Available models:
@@ -973,12 +975,14 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             },
         ),
         "score_in": (
-            "G4_WATER",
+            "material",
             {
-                "doc": "In which material should the LET be scored? "
-                "You can provide a valid G4 material name, the term 'water', "
-                "or the term 'material' which means 'the local material where LET is scored. ",
-                "setter_hook": _setter_hook_score_in_let_actor,
+                "doc": """The score_in command allows to convert the LET from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the LET to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
+                """,
+                "allowed_values": (
+                    "material",
+                    "G4_WATER",
+                ),
             },
         ),
         "lookup_table_path": (
@@ -991,6 +995,18 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             "",
             {
                 "doc": "z*_1d or alpha_z table. Read by the actor",
+            },
+        ),
+        "z_min_table": (
+            "",
+            {
+                "doc": "Minimum atomic number available in the table. Read by the actor",
+            },
+        ),
+        "z_max_table": (
+            "",
+            {
+                "doc": "Maximum atomic number available in the table. Read by the actor",
             },
         ),
         "alpha_0": (
@@ -1050,6 +1066,57 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             },
         ),
     }
+    user_output_config = {
+        "alpha_mix": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                "alpha_numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "alpha_denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                "alpha_mix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": True,
+                    #"suffix": None,  # default suffix would be 'alpha_mix', but we prefer no suffix
+                },
+            },
+        },
+        "beta_mix": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                "beta_numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                    "write_to_disk": False,
+                },
+                "beta_denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                    "write_to_disk": False,
+                },
+                "beta_mix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": False,
+                    #"suffix": None,  # default suffix would be 'beta_mix', but we prefer no suffix
+                },
+            },
+        },
+    }
+
 
     def __init__(self, *args, **kwargs):
         # Init parent
@@ -1060,83 +1127,14 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             "HSG": {"alpha_ref": 0.764, "beta_ref": 0.0615},
             "Chordoma": {"alpha_ref": 0.1, "beta_ref": 0.05},
         }
-
-        ## -- all models will need the dose --
-        self._add_user_output(
-            ActorOutputSingleImage, "dose"
-        )  # we need to initialize the image on cpp side
-        self.user_output.dose.set_active(True)
-        self.user_output.dose.set_item_suffix("dose")
-        self.user_output.dose.set_write_to_disk(True)
-
-        ## ------ alpha mix ------
-        self._add_user_output(
-            ActorOutputQuotientMeanImage,
-            "alpha_mix",
-            automatically_generate_interface=False,
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "alpha_mix", "alpha_numerator", item=0
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "alpha_mix", "alpha_denominator", item=1
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "alpha_mix", "alpha_mix", item="quotient"
-        )
-
-        # configure the default item config for the output of the RBE actor,
-        # which is different from the generic quotient image container class:
-
-        # Suffix to be appended in case a common output_filename per actor is assigned
-        self.user_output.alpha_mix.set_item_suffix("alpha", item="quotient")
-        self.user_output.alpha_mix.set_item_suffix("alpha_numerator", item=0)
-        self.user_output.alpha_mix.set_item_suffix("alpha_denominator", item=1)
-
-        # the RBE always needs both components to calculate RBE
-        self.user_output.alpha_mix.set_active(False, item=0)
-        self.user_output.alpha_mix.set_active(False, item=1)
-        self.user_output.alpha_mix.set_active(False, item="quotient")
-
-        ## ------ beta mix ------
-        self._add_user_output(
-            ActorOutputQuotientMeanImage,
-            "beta_mix",
-            automatically_generate_interface=False,
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "beta_mix", "beta_numerator", item=0
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "beta_mix", "beta_denominator", item=1
-        )
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage, "beta_mix", "beta_mix", item="quotient"
-        )
-
-        self.user_output.beta_mix.set_item_suffix("beta", item="quotient")
-        self.user_output.beta_mix.set_item_suffix("beta_numerator", item=0)
-        self.user_output.beta_mix.set_item_suffix("beta_denominator", item=1)
-
-        self.user_output.beta_mix.set_active(False, item=0)
-        self.user_output.beta_mix.set_active(False, item=1)
-        self.user_output.beta_mix.set_active(False, item="quotient")
-
-        ## ------ survival ------
-        self._add_user_output(
-            ActorOutputSingleImage, "nucleus_dose"
-        )  # we need to initialize the image on cpp side
-        self.user_output.nucleus_dose.set_active(False)
-        self.user_output.nucleus_dose.set_item_suffix("nucleusdose")
-
-        self._add_user_output(ActorOutputSingleImage, "survival")
-        self.user_output.survival.set_active(False)
-        self.user_output.survival.set_item_suffix("survival")
-
+        # images calculated from the actor output at postprocessing
+        self.rbe_image = None
+        self.rbe_dose_image = None
+        
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateRBEActor.__init__(self, self.user_info)
+        g4.GateBeamQualityActor.__init__(self, self.user_info)
         self.AddActions(
             {
                 "BeginOfRunActionMasterThread",
@@ -1163,9 +1161,9 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         self.beta_ref = beta_ref
         self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
         self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
-        self.lookup_table = self.store_lookup_table(self.lookup_table_path)
+        self.lookup_table, self.z_min_table, self.z_max_table = self.store_lookup_table(self.lookup_table_path)
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
@@ -1191,7 +1189,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
         lines.append("\n")
         start_table = False
         end_table = True
-        # e_table = []
+        fragments = []
         v_table = []
         for line in lines:
             if "Fragment" in line:
@@ -1200,6 +1198,7 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
                 values = []
                 energy = []
                 v_table.append([Z])
+                fragments.append(Z)
                 start_table = True
                 end_table = False
             elif line.startswith("\n") == False and start_table:
@@ -1213,23 +1212,13 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
                 v_table.append(energy)
                 v_table.append(values)  # we want to do this only once per table
                 end_table = True
-        # check if same energy vector for all fragments
-        # e_ref = e_table[0]
-        # bool_vec = [
-        #     k for k in e_table if k != e_ref
-        # ]  # empty if all energies are the same
-        # if bool_vec:
-        #     raise ValueError(
-        #         "Energy vector should be the same for each fragment in RBE table"
-        #     )
-        # v_table.insert(0, e_ref)
-        return v_table
+        # get max and min atomic numbers available
+        z_min = min(fragments)
+        z_max = max(fragments)
+        
+        return v_table, z_min, z_max
 
     def BeginOfRunActionMasterThread(self, run_index):
-
-        self.prepare_output_for_run("dose", run_index)
-        self.push_to_cpp_image("dose", run_index, self.cpp_dose_image)
-
         """
         RBE models scoring images:
             - mMKM:
@@ -1237,80 +1226,33 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             - LEM1lda:
                 - alpha mix (score separately numerator and denominator)
                 - beta mix (score separately numerator and denominator)
-            - LEM1:
-                - survival
-            Note: all will also score dose
+            Note: all will also score edep as denominator image -> retrieve dose
         """
-
-        if self.rbe_model == "mMKM" or self.rbe_model == "LEM1lda":
-            self.user_output.alpha_mix.set_active(True, item=0)
-            self.user_output.alpha_mix.set_active(True, item=1)
-            self.user_output.alpha_mix.set_active(True, item="quotient")
-
-            # Most users will probably only want the alpha or beta image written to disk,
-            # not the numerator and denominator
-            self.user_output.alpha_mix.set_write_to_disk(False, item=0)
-            self.user_output.alpha_mix.set_write_to_disk(False, item=1)
-            self.user_output.alpha_mix.set_write_to_disk(True, item="quotient")
-
-            self.prepare_output_for_run("alpha_mix", run_index)
-            self.push_to_cpp_image(
-                "alpha_mix",
-                run_index,
-                self.cpp_numerator_image,
-                self.cpp_denominator_image,
-            )
-
-        if self.rbe_model == "LEM1lda":
-            self.user_output.beta_mix.set_active(True, item=0)
-            self.user_output.beta_mix.set_active(True, item=1)
-            self.user_output.beta_mix.set_active(True, item="quotient")
-
-            self.user_output.beta_mix.set_write_to_disk(False, item=0)
-            self.user_output.beta_mix.set_write_to_disk(False, item=1)
+        
+        self.prepare_output_for_run("alpha_mix", run_index)
+        self.push_to_cpp_image(
+            "alpha_mix", run_index, self.cpp_numerator_alpha_image, self.cpp_denominator_image)
+        
+        if self.rbe_model == 'lemIlda':
+            self.user_output.beta_mix.set_active(True, item='all')
             self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
-
             self.prepare_output_for_run("beta_mix", run_index)
             self.push_to_cpp_image(
-                "beta_mix",
-                run_index,
-                self.cpp_numerator_beta_image,
-                self.cpp_denominator_image,
-            )
+                "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image)
 
-        if self.rbe_model == "LEM1":
-            self.user_output.nucleus_dose.set_active(True)
-            self.prepare_output_for_run("nucleus_dose", run_index)
-            self.push_to_cpp_image(
-                "nucleus_dose", run_index, self.cpp_nucleus_dose_image
-            )
-            self.user_output.nucleus_dose.set_write_to_disk(True)
-
-            self.user_output.survival.set_active(True)
-            self.prepare_output_for_run("survival", run_index)
-            self.push_to_cpp_image("survival", run_index, self.cpp_numerator_image)
-            self.user_output.survival.set_write_to_disk(True)
-
-        g4.GateRBEActor.BeginOfRunActionMasterThread(self, run_index)
+        g4.GateBeamQualityActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-        self.fetch_from_cpp_image("dose", run_index, self.cpp_dose_image)
-        self._update_output_coordinate_system("dose", run_index)
-        self.user_output.dose.store_meta_data(
+        self.fetch_from_cpp_image(
+            "alpha_mix",
+            run_index,
+            self.cpp_numerator_image,
+            self.cpp_denominator_image,
+        )
+        self._update_output_coordinate_system("alpha_mix", run_index)
+        self.user_output.alpha_mix.store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
-
-        if self.rbe_model == "mMKM" or self.rbe_model == "LEM1lda":
-            self.fetch_from_cpp_image(
-                "alpha_mix",
-                run_index,
-                self.cpp_numerator_image,
-                self.cpp_denominator_image,
-            )
-            self._update_output_coordinate_system("alpha_mix", run_index)
-            self.user_output.alpha_mix.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
         if self.rbe_model == "LEM1lda":
             self.fetch_from_cpp_image(
                 "beta_mix",
@@ -1322,33 +1264,20 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             self.user_output.beta_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
-        if self.rbe_model == "LEM1":
-            self.fetch_from_cpp_image(
-                "nucleus_dose", run_index, self.cpp_nucleus_dose_image
-            )
-            self._update_output_coordinate_system("nucleus_dose", run_index)
-            self.user_output.nucleus_dose.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
-
-            self.fetch_from_cpp_image("survival", run_index, self.cpp_numerator_image)
-            self._update_output_coordinate_system("survival", run_index)
-            self.user_output.survival.store_meta_data(
-                run_index, number_of_samples=self.NbOfEvent
-            )
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 
     def EndSimulationAction(self):
-        g4.GateRBEActor.EndSimulationAction(self)
+        g4.GateBeamQualityActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
         self.compute_rbe_weighted_dose()
 
     def compute_rbe_weighted_dose(self):
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
         beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
-        dose_img = self.user_output.dose.merged_data.data[0]
+        dose_img = self.compute_dose_from_edep_img()
+        
 
         if self.rbe_model == "mMKM":
             alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
@@ -1378,18 +1307,6 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             log_survival_arr[arr_mask_linear] = log_survival_linear_arr[arr_mask_linear]
             log_survival_arr[~arr_mask_linear] = log_survival_lq_arr[~arr_mask_linear]
 
-        elif self.rbe_model == "LEM1":
-            nucleus_dose_image = self.user_output.nucleus_dose.merged_data.data[0]
-
-            Nlethal_img = self.user_output.survival.merged_data.data[0]
-            log_survival_img = Nlethal_img * (-1)
-            log_survival_arr = log_survival_img.image_array
-            # arr_mask_notrack = (mean_survival_img.image_array == 0)
-            # log_survival_arr = np.log(mean_survival_img.image_array)
-            # log_survival_arr[arr_mask_notrack] = 0
-            # print(np.min(mean_survival_img.image_array),np.max(mean_survival_img.image_array))
-            # print(np.min(log_survival_arr),np.max(log_survival_arr))
-
         # solve linear quadratic equation to get Dx
         if self.rbe_model == "mMKM":
             rbe_dose_arr = (
@@ -1408,29 +1325,80 @@ class RBEActor(VoxelDepositActor, g4.GateRBEActor):
             rbe_dose_arr = np.zeros(log_survival_arr.shape)
             rbe_dose_arr[arr_mask_linear] = rbe_dose_linear_arr[arr_mask_linear]
             rbe_dose_arr[~arr_mask_linear] = rbe_dose_lq_arr[~arr_mask_linear]
-        # rbe_arr = rbe_dose_arr / dose_img.image_array
-        # print(np.min(rbe_dose_arr),np.max(rbe_dose_arr))
 
         # create new data item for the survival image. Same metadata as the other images, but new image array
         rbedose_img = itk_image_from_array(rbe_dose_arr)
         rbe_weighted_dose_image = ItkImageDataItem(data=rbedose_img)
         rbe_weighted_dose_image.copy_image_properties(dose_img.image)
 
-        # img = itk_image_from_array(rbe_arr)
-        # rbe_image = ItkImageDataItem(data=img)
-        # rbe_image.copy_image_properties(dose_img.image)
-        # print(np.min(dose_img.image_array),np.max(dose_img.image_array))
-        if self.rbe_model == "LEM1":
-            rbe_image = rbe_weighted_dose_image / nucleus_dose_image
-        else:
-            rbe_image = rbe_weighted_dose_image / dose_img
-        # print(np.min(rbe_image.image_array),np.max(rbe_image.image_array))
+        rbe_image = rbe_weighted_dose_image / dose_img
 
-        dose_output_path = self.user_output.dose.get_output_path()
-        base_output_path = str(dose_output_path)[:-8]  # remove the suffix 'dose.mhd'
+        dose_output_path = self.user_output.alpha_mix.get_output_path()
+        base_output_path = str(dose_output_path)[:-13]  # remove the suffix 'alpha_mix.mhd'
+        
+        self.rbe_image = rbe_image
+        self.rbe_dose_image = rbe_weighted_dose_image
 
         rbe_weighted_dose_image.write(base_output_path + "rbedose.mhd")
         rbe_image.write(base_output_path + "rbe.mhd")
+        
+    def compute_dose_from_edep_img(self, overrides=dict()):
+        """
+        * cretae mass image:
+            - from ct HU units, if dose actor attached to ImageVolume.
+            - from material density, if standard volume
+        * compute dose as edep_image /  mass_image
+        """
+        vol_name = self.user_info.attached_to
+        vol = self.simulation.volume_manager.get_volume(vol_name)
+        vol_type = vol.volume_type
+        
+        spacing = np.array(self.user_info.spacing)
+        voxel_volume = spacing[0] * spacing[1] * spacing[2]
+        Gy = g4_units.Gy
+        gcm3 = g4_units.g_cm3
+        edep_data_item = self.user_output.alpha_mix.merged_data.data[1]
+        edep_img = edep_data_item.image
+        
+        to_water = self.user_info.score_in == 'G4_WATER'
+
+        if vol_type == "ImageVolume":
+            material_database = (
+                self.simulation.volume_manager.material_database.g4_materials
+            )
+            if to_water:
+                # for dose 2 water, divide by density of water and not density of material
+                density_water = 1.0 * gcm3
+                edep_img = scale_itk_image(
+                    edep_img, 1 / density_water
+                )
+            else:
+                density_img = create_density_img(vol, material_database)
+                edep_img = divide_itk_images(
+                    img1_numerator=edep_img,
+                    img2_denominator=density_img,
+                    filterVal=0,
+                    replaceFilteredVal=0,
+                )
+            # divide by voxel volume and convert unit
+            self.py_edep_image = scale_itk_image(
+                edep_img, 1 / (Gy * voxel_volume)
+            )
+
+        else:
+            if to_water:
+                # for dose 2 water, divide by density of water and not density of material
+                density = 1.0 * gcm3
+            else:
+                density = vol.material.GetDensity()
+            edep_img = scale_itk_image(
+                edep_img, 1 / (voxel_volume * density * Gy)
+            )
+        
+        dose_image = ItkImageDataItem(data=edep_img)
+        dose_image.copy_image_properties(edep_data_item.image)
+            
+        return dose_image
 
 
 class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
