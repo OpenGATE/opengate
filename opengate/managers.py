@@ -84,6 +84,7 @@ from .actors.doseactors import (
     FluenceActor,
     ProductionAndStoppingActor,
     RBEActor,
+    BeamQualityActor,
     EmCalculatorActor,
 )
 
@@ -128,6 +129,7 @@ actor_types = {
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
     "RBEActor": RBEActor,
+    "BeamQualityActor": BeamQualityActor,
     "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
     # misc

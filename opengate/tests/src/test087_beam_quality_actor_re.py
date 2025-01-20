@@ -11,7 +11,7 @@ if __name__ == "__main__":
     print(paths)
     ref_path = paths.output_ref / "test087"
     mkm_lq_fpath = ref_path / "mkm_nirs_LQparameters_SURVIVAL.csv"
-    df = pd.read_csv(mkm_lq_fpath)
+    #    df = pd.read_csv(mkm_lq_fpath)
     # create the simulation
     sim = gate.Simulation()
 
@@ -79,50 +79,48 @@ if __name__ == "__main__":
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
-    doseIDD.output_filename = paths.output / ("test050-" + doseActorName_IDD_d + ".mhd")
-    doseIDD.mother = phantom_off.name
+    doseIDD.output_filename = paths.output / ("test087-" + doseActorName_IDD_d + ".mhd")
+    print(f'actor: {paths.output / ("test087-" + doseActorName_IDD_d + ".mhd")}')
+    doseIDD.attached_to = phantom_off.name
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
-    doseIDD.dose = False
-
-    RBE = "RBE"
-    RBE_act = sim.add_actor("LETActor", RBE)
-    RBE_act.output_filename = paths.output / ("test050-" + RBE + ".mhd")
-    RBE_act.mother = phantom_off.name
-    RBE_act.size = size
-    RBE_act.spacing = spacing
-    RBE_act.hit_type = "random"
-    RBE_act.separate_output = False
-    # both lines do the same thing,
-    RBE_act.dose_average = False
-    RBE_act.enable_rbe = True
-    RBE_act.is_energy_per_nucleon = False
-    RBE_act.fclin = 1.0
-    RBE_act.lookup_table_path = (
-        "/opt/GATE/GateRTion-1.1/install/data/RE_Alanine/RE_Alanine_RBEstyle.txt"
-    )
-    RBE_act.lookup_table_path = (
-        "/home/ideal/0_Data/21_RBE/01_Tables/NIRS_MKM_reduced_data.txt"
-    )
-    RBE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
+    doseIDD.dose.active = False
+    #
+    #    RBE = "RBE"
+    #    RBE_act = sim.add_actor("BeamQualityActor", RBE)
+    #    RBE_act.output_filename = paths.output / ("test087-" + RBE + ".mhd")
+    #    RBE_act.attached_to = phantom_off.name
+    #    RBE_act.size = size
+    #    RBE_act.spacing = spacing
+    #    RBE_act.hit_type = "random"
+    ##    RBE_act.other_material = 'G4_Alanine'
+    #    # both lines do the same thing,
+    ##    RBE_act.dose_average = False
+    ##    RBE_act.enable_rbe = True
+    ##    RBE_act.is_energy_per_nucleon = False
+    ##    RBE_act.fclin = 1.0
+    ##    RBE_act.lookup_table_path = (
+    ##        "/opt/GATE/GateRTion-1.1/install/data/RE_Alanine/RE_Alanine_RBEstyle.txt"
+    ##    )
+    ##    RBE_act.lookup_table_path = (
+    ##        "/home/ideal/0_Data/21_RBE/01_Tables/NIRS_MKM_reduced_data.txt"
+    ##    )
+    #    RBE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
     RE = "RE"
-    RE_act = sim.add_actor("LETActor", RE)
-    RE_act.output_filename = paths.output / ("test050-" + RE + ".mhd")
-    RE_act.mother = phantom_off.name
+    RE_act = sim.add_actor("BeamQualityActor", RE)
+    RE_act.output_filename = paths.output / ("test087-" + RE + ".mhd")
+    RE_act.attached_to = phantom_off.name
     RE_act.size = size
     RE_act.spacing = spacing
     RE_act.hit_type = "random"
-    RE_act.separate_output = False
+    RE_act.model = "RE"
+    RE_act.score_in = "material"
+    #    RE_act.separate_output = False
     # both lines do the same thing,
-    RE_act.dose_average = False
-    RE_act.enable_rbe = True
-    RE_act.is_energy_per_nucleon = False
-    RE_act.fclin = 1.0
-    RE_act.lookup_table_path = (
-        "/opt/GATE/GateRTion-1.1/install/data/RE_Alanine/RE_Alanine_RBEstyle.txt"
-    )
+    #    RE_act.dose_average = False
+    RE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -140,15 +138,13 @@ if __name__ == "__main__":
     # paths.gate_output
 
     # print results at the end
-    stat = sim.output.get_actor("stats")
 
-    print(stat)
+    #    print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
+    print(doseIDD)
 
-    rbe_actor = sim.output.get_actor(RBE)
-
-    fNameIDD = sim.output.get_actor(doseActorName_IDD_d).user_info.output
+    fNameIDD = doseIDD.user_info.output
     """
     is_ok = utility.assert_images(
         ref_path / fNameIDD,
@@ -165,10 +161,11 @@ if __name__ == "__main__":
         ref_path
         / "test087_REalanine__Proton_Energy80spread1MeV_PrimaryProton-relEfficiency-letToG4_ALANINE.mhd"
     )
+    print(f"{doseIDD.dose.get_output_path()=}")
     is_ok = utility.assert_filtered_imagesprofile1D(
-        ref_filter_filename1=ref_path / fNameIDD,
+        ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
-        filename2=paths.output / rbe_actor.user_info.output,
+        filename2=paths.output / RE_act.alpha_mix.get_output_path(),
         tolerance=20,
         plt_ylim=[0, 2],
     )
