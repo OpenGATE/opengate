@@ -306,6 +306,8 @@ void init_GateDoseActor(py::module &m);
 
 void init_GateTLEDoseActor(py::module &m);
 
+void init_GateVoxelizedPromptGammaTLEActor(py::module &m);
+
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
@@ -585,6 +587,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTrackingAction(m);
   init_GateDoseActor(m);
   init_GateTLEDoseActor(m);
+  init_GateVoxelizedPromptGammaTLEActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateProductionAndStoppingActor(m);
