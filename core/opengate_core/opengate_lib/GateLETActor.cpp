@@ -41,34 +41,15 @@ void GateLETActor::InitializeUserInfo(py::dict &user_info) {
   doTrackAverage = (fAveragingMethod == "track_average");
 }
 
-double GateLETActor::ScoringQuantityFn(G4Step *step, double *secondQuantity){
-  // get edep in MeV (take weight into account)
-  auto w = step->GetTrack()->GetWeight();
-  auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
-  double dedx_cut = DBL_MAX;
+double GateLETActor::ScoringQuantityFn(G4Step *step, double *secondQuantity) {
 
-  auto *current_material = step->GetPreStepPoint()->GetMaterial();
-  auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
-  const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-
-  auto energy = CalcMeanEnergy(step);
-
-  if (p == G4Gamma::Gamma()) {
-    p = G4Electron::Electron();
-  }
   auto &l = fThreadLocalData.Get();
-  auto dedx_currstep =
-      l.emcalc.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
-      CLHEP::MeV * CLHEP::mm;
+  auto dedx_currstep = l.dedx_currstep;
 
   if (fScoreInOtherMaterial) {
-    auto SPR_otherMaterial = GetSPROtherMaterial(step, energy);
-    if (!std::isnan(SPR_otherMaterial)) {
-      edep *= SPR_otherMaterial;
-      dedx_currstep *= SPR_otherMaterial;
-    }
+    auto SPR_otherMaterial = GetSPROtherMaterial(step);
+
+    dedx_currstep *= SPR_otherMaterial;
   }
-   return dedx_currstep;
-   }
-
-
+  return dedx_currstep;
+}

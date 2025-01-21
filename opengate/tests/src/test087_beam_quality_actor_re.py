@@ -116,7 +116,7 @@ if __name__ == "__main__":
     RE_act.spacing = spacing
     RE_act.hit_type = "random"
     RE_act.model = "RE"
-    RE_act.score_in = "material"
+    RE_act.score_in = "G4_ALANINE"
     RE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
     # add stat actor

@@ -977,10 +977,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             {
                 "doc": """The score_in command allows to convert the scored quantity from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the quantity to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
                 """,
-                "allowed_values": (
-                    "material",
-                    "G4_WATER",
-                ),
             },
         ),
         "lookup_table_path": (
@@ -1150,10 +1146,10 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 v_table.append(values)  # we want to do this only once per table
                 end_table = True
         return v_table, fragments
-    
+
     def read_lookup_table_csv(self, table_path):
         dataset = pd.read_csv(table_path)
-        particles = dataset['particle'].unique()
+        particles = dataset["particle"].unique()
         fragments = []
         v_table = []
         for p in particles:
@@ -1165,9 +1161,9 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 )
             fragments.append(Z)
             v_table.append([Z])
-            energies_p = dataset.loc[dataset['particle']==p,'meanEnergy']
+            energies_p = dataset.loc[dataset["particle"] == p, "meanEnergy"]
             v_table.append(list(energies_p))
-            values_p = dataset.loc[dataset['particle']==p,'z1D*']
+            values_p = dataset.loc[dataset["particle"] == p, "z1D*"]
             v_table.append(list(values_p))
         return v_table, fragments
 
@@ -1290,7 +1286,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         edep_img = edep_data_item.image
 
         to_water = self.user_info.score_in == "G4_WATER"
-        
+
         material_database = (
             self.simulation.volume_manager.material_database.g4_materials
         )
