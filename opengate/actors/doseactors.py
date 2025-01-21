@@ -1398,6 +1398,18 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             },
         ),
     }
+    
+    BeamQualityActor.user_output_config.update(
+        {'rbe': {
+        "actor_output_class": ActorOutputSingleMeanImage,
+        "active": False,
+        },
+        'rbe_dose': {
+        "actor_output_class": ActorOutputSingleMeanImage,
+        "active": False,
+        }
+        }
+    )
 
     def __init__(self, *args, **kwargs):
         # Init parent
@@ -1506,17 +1518,15 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         rbe_weighted_dose_image.copy_image_properties(dose_img.image)
 
         rbe_image = rbe_weighted_dose_image / dose_img
+        
+        self.user_output.rbe.merged_data = rbe_image
+        rbe_path = self.user_output.rbe.get_output_path()
 
-        dose_output_path = self.user_output.alpha_mix.get_output_path()
-        base_output_path = str(dose_output_path)[
-            :-13
-        ]  # remove the suffix 'alpha_mix.mhd'
+        self.user_output.rbe_dose.merged_dat = rbe_weighted_dose_image
+        rbe_dose_path = self.user_output.rbe_dose.get_output_path()
 
-        self.rbe_image = rbe_image
-        self.rbe_dose_image = rbe_weighted_dose_image
-
-        rbe_weighted_dose_image.write(base_output_path + "rbedose.mhd")
-        rbe_image.write(base_output_path + "rbe.mhd")
+        rbe_weighted_dose_image.write(rbe_dose_path)
+        rbe_image.write(rbe_path)
 
 
 class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
