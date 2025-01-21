@@ -289,7 +289,17 @@ class ItkImageDataItem(DataItem):
             if "origin" in properties and properties["origin"] is not None:
                 self.data.SetOrigin(properties["origin"])
             if "rotation" in properties and properties["rotation"] is not None:
-                self.data.SetDirection(properties["rotation"])
+                r = properties["rotation"]
+                if self.data.GetImageDimension() == 4:
+                    # for 4D image, the rotation is enhanced
+                    r = np.pad(
+                        r,
+                        pad_width=((0, 1), (0, 1)),
+                        mode="constant",
+                        constant_values=0,
+                    )
+                    r[3][3] = 1.0
+                self.data.SetDirection(r)
 
     def get_image_properties(self):
         return get_info_from_image(self.data)

@@ -78,11 +78,11 @@ from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
 from .actors.doseactors import (
     DoseActor,
-    TLEDoseActor,
     LETActor,
     FluenceActor,
     ProductionAndStoppingActor,
 )
+from .actors.tleactors import TLEDoseActor, VoxelizedPromptGammaTLEActor
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -121,6 +121,7 @@ actor_types = {
     # dose related
     "DoseActor": DoseActor,
     "TLEDoseActor": TLEDoseActor,
+    "VoxelizedPromptGammaTLEActor": VoxelizedPromptGammaTLEActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
     "FluenceActor": FluenceActor,

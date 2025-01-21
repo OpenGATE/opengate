@@ -172,7 +172,10 @@ class VoxelDepositActor(ActorBase):
         origin = -size * spacing / 2.0 + spacing / 2.0
 
         translation = np.array(self.translation)
-        origin_local = Rotation.from_matrix(self.rotation).apply(origin) + translation
+        # the slicing "[:3]" is required for 4D images (3D image of histograms)
+        origin_local = (
+            Rotation.from_matrix(self.rotation).apply(origin[:3]) + translation[:3]
+        )
 
         # image centered at (0,0,0), no rotation
         if self.output_coordinate_system is None:
@@ -184,6 +187,9 @@ class VoxelDepositActor(ActorBase):
         # image centered at self.translation and rotated by self.rotation,
         # i.e. in the reference frame of the volume to which the actor is attached.
         elif self.output_coordinate_system in ("local",):
+            if size.shape != origin_local.shape:
+                # special case for 4D images
+                origin_local = np.append(origin_local, [0])
             self.user_output[which_output].set_image_properties(
                 run_index, origin=origin_local.tolist(), rotation=self.rotation
             )
@@ -705,55 +711,6 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
-class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
-    """TLE = Track Length Estimator"""
-
-    energy_min: float
-    energy_max: float
-    database: str
-
-    user_info_defaults = {
-        "energy_min": (
-            0.0,
-            {"doc": "Kill the gamma if below this energy"},
-        ),
-        "energy_max": (
-            1.0 * g4_units.MeV,
-            {
-                "doc": "Above this energy, do not perform TLE (TLE is only relevant for low energy gamma)"
-            },
-        ),
-        "database": (
-            "EPDL",
-            {
-                "doc": "which database to use",
-                "allowed_values": ("EPDL", "NIST"),  # "simulated" does not work
-            },
-        ),
-    }
-
-    def __initcpp__(self):
-        g4.GateTLEDoseActor.__init__(self, self.user_info)
-        self.AddActions(
-            {
-                "BeginOfRunActionMasterThread",
-                "EndOfRunActionMasterThread",
-                "BeginOfRunAction",
-                "EndOfRunAction",
-                "BeginOfEventAction",
-                "SteppingAction",
-                "PreUserTrackingAction",
-            }
-        )
-
-    def initialize(self, *args):
-        if self.score_in != "material":
-            fatal(
-                f"TLEDoseActor cannot score in {self.score_in}, only 'material' is allowed."
-            )
-        super().initialize(args)
-
-
 def _setter_hook_score_in_let_actor(self, value):
     if value.lower() in ("g4_water", "g4water"):
         """Assuming a misspelling of G4_WATER and correcting it to correct spelling; Note that this is rather dangerous operation."""
@@ -1038,7 +995,6 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
-process_cls(TLEDoseActor)
 process_cls(LETActor)
 process_cls(FluenceActor)
 process_cls(ProductionAndStoppingActor)
