@@ -40,7 +40,7 @@ from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
 from .sources.phspsources import PhaseSpaceSource
-from .sources.voxelsources import VoxelSource
+from .sources.voxelsources import VoxelSource, VoxelizedPromptGammaTLESource
 from .sources.gansources import GANSource, GANPairsSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.phidsources import PhotonFromIonDecaySource
@@ -55,6 +55,7 @@ source_types = {
     "IonPencilBeamSource": IonPencilBeamSource,
     "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
     "TreatmentPlanPBSource": TreatmentPlanPBSource,
+    "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
 }
 
 from .geometry.volumes import (
@@ -78,11 +79,11 @@ from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
 from .actors.doseactors import (
     DoseActor,
-    TLEDoseActor,
     LETActor,
     FluenceActor,
     ProductionAndStoppingActor,
 )
+from .actors.tleactors import TLEDoseActor, VoxelizedPromptGammaTLEActor
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -121,6 +122,7 @@ actor_types = {
     # dose related
     "DoseActor": DoseActor,
     "TLEDoseActor": TLEDoseActor,
+    "VoxelizedPromptGammaTLEActor": VoxelizedPromptGammaTLEActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
     "FluenceActor": FluenceActor,

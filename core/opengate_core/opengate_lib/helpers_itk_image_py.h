@@ -52,20 +52,18 @@ inline void set_region(TImagePointer &img,
                            size) {
   using RegionType = typename TImagePointer::ObjectType::RegionType;
   typename RegionType::IndexType itk_index;
-  const auto *data_index =
-      static_cast<int *>(np_array_ptr_after_check_dim_and_shape<int>(index));
-  itk_index[0] = data_index[0];
-  itk_index[1] = data_index[1];
-  itk_index[2] = data_index[2];
+  const auto *data_index = static_cast<int *>(
+      np_array_ptr_after_check_dim_and_shape<int>(index, img->ImageDimension));
+  for (int i = 0; i < img->ImageDimension; i++)
+    itk_index[i] = data_index[i];
   typename RegionType::SizeType itk_size;
-  const auto *data_size =
-      static_cast<int *>(np_array_ptr_after_check_dim_and_shape<int>(size));
+  const auto *data_size = static_cast<int *>(
+      np_array_ptr_after_check_dim_and_shape<int>(size, img->ImageDimension));
   if (data_size[0] < 0 || data_size[1] < 0 || data_size[2] < 0) {
     throw std::runtime_error("In set_regions, input size cannot be negative.");
   }
-  itk_size[0] = data_size[0];
-  itk_size[1] = data_size[1];
-  itk_size[2] = data_size[2];
+  for (int i = 0; i < img->ImageDimension; i++)
+    itk_size[i] = data_size[i];
   RegionType itk_region(itk_index, itk_size);
   img->SetRegions(itk_region);
   img->Allocate();
@@ -95,9 +93,10 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
           [](TImagePointer &img,
              py::array_t<int, py::array::c_style | py::array::forcecast> size) {
             py::array_t<int, py::array::c_style | py::array::forcecast>
-                zero_index(3);
+                zero_index(img->ImageDimension);
             int *raw = static_cast<int *>(zero_index.request().ptr);
-            raw[0] = raw[1] = raw[2] = 0;
+            for (int i = 0; i < img->ImageDimension; i++)
+              raw[i] = 0;
             return set_region(img, zero_index, size);
           })
       .def(
@@ -118,7 +117,8 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
               py::array_t<double, py::array::c_style | py::array::forcecast>
                   spacing) {
              const auto *data = static_cast<double *>(
-                 np_array_ptr_after_check_dim_and_shape<double>(spacing));
+                 np_array_ptr_after_check_dim_and_shape<double>(
+                     spacing, img->ImageDimension));
              img->SetSpacing(data);
            })
       .def("origin",
@@ -131,7 +131,8 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
               py::array_t<double, py::array::c_style | py::array::forcecast>
                   origin) {
              const auto *data = static_cast<double *>(
-                 np_array_ptr_after_check_dim_and_shape<double>(origin));
+                 np_array_ptr_after_check_dim_and_shape<double>(
+                     origin, img->ImageDimension));
              img->SetOrigin(data);
            })
       .def("direction",
@@ -173,13 +174,26 @@ void declare_itk_image_ptr(pybind11::module &m, const std::string &typestr) {
           "to_pyarray",
           [](const TImagePointer &img, const std::string &contiguous) {
             const auto size = img->GetLargestPossibleRegion().GetSize();
-            const auto shape =
-                (contiguous == "F")
-                    ? std::vector<size_t>{size[2], size[1], size[0]}
-                    : std::vector<size_t>{size[0], size[1], size[2]};
-            return py::array(
-                py::dtype::of<typename TImagePointer::ObjectType::PixelType>(),
-                shape, img->GetBufferPointer());
+            if (img->ImageDimension == 3) {
+              const auto shape =
+                  (contiguous == "F")
+                      ? std::vector<size_t>{size[2], size[1], size[0]}
+                      : std::vector<size_t>{size[0], size[1], size[2]};
+              return py::array(
+                  py::dtype::of<
+                      typename TImagePointer::ObjectType::PixelType>(),
+                  shape, img->GetBufferPointer());
+            }
+            if (img->ImageDimension == 4) {
+              const auto shape =
+                  (contiguous == "F")
+                      ? std::vector<size_t>{size[3], size[2], size[1], size[0]}
+                      : std::vector<size_t>{size[0], size[1], size[2], size[3]};
+              return py::array(
+                  py::dtype::of<
+                      typename TImagePointer::ObjectType::PixelType>(),
+                  shape, img->GetBufferPointer());
+            }
           },
           py::arg("contig") = "F")
       // TODO: Create a view (non-copy) of the data
