@@ -955,6 +955,7 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         g4.GateLETActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
 
+
 class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
     """
     BeamQualityActor:
@@ -1011,7 +1012,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 "doc": "True for models that need multiple quatient images to evaluate the beam quality, like the carbon RBE model LEM1lda",
             },
         ),
-       
     }
     user_output_config = {
         "alpha_mix": {
@@ -1034,7 +1034,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                     "item": "quotient",
                     "write_to_disk": True,
                     "active": True,
-                    #"suffix": None,  # default suffix would be 'alpha_mix', but we prefer no suffix
+                    # "suffix": None,  # default suffix would be 'alpha_mix', but we prefer no suffix
                 },
             },
         },
@@ -1058,17 +1058,28 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                     "item": "quotient",
                     "write_to_disk": True,
                     "active": False,
-                    #"suffix": None,  # default suffix would be 'beta_mix', but we prefer no suffix
+                    # "suffix": None,  # default suffix would be 'beta_mix', but we prefer no suffix
                 },
             },
         },
     }
 
-
     def __init__(self, *args, **kwargs):
         # Init parent
         VoxelDepositActor.__init__(self, *args, **kwargs)
-        
+        # calculate some internal variables
+        self.element_to_atomic_number_dict = {
+            "H": 1,
+            "He": 2,
+            "Li": 3,
+            "Be": 4,
+            "B": 5,
+            "C": 6,
+            "N": 7,
+            "O": 8,
+            "F": 9,
+            "Ne": 10,
+        }
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -1092,28 +1103,16 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
         self.check_user_input()
 
-        # calculate some internal variables
-        self.lookup_table, self.z_min_table, self.z_max_table = self.store_lookup_table(self.lookup_table_path)
+        if self.lookup_table_path:
+            self.read_lookup_table(self.lookup_table_path)
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 
-    def store_lookup_table(self, table_path):
+    def read_lookup_table_txt(self, table_path):
         # Element-Z mapping
-        mapping = {
-            "H": 1,
-            "He": 2,
-            "Li": 3,
-            "Be": 4,
-            "B": 5,
-            "C": 6,
-            "N": 7,
-            "O": 8,
-            "F": 9,
-            "Ne": 10,
-        }
 
         with open(table_path, "r") as f:
             lines = f.readlines()
@@ -1126,7 +1125,12 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         for line in lines:
             if "Fragment" in line:
                 element = line.split()[1]
-                Z = mapping[element]
+                if element in self.element_to_atomic_number_dict:
+                    Z = self.element_to_atomic_number_dict[element]
+                else:
+                    raise ValueError(
+                        f"Lookup table inconsistency: cannot convert element name to atomic number: {element}"
+                    )
                 values = []
                 energy = []
                 v_table.append([Z])
@@ -1144,24 +1148,75 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 v_table.append(energy)
                 v_table.append(values)  # we want to do this only once per table
                 end_table = True
+        return v_table, fragments
+
+    def read_lookup_table(self, table_path):
+        p = Path(table_path)
+        print(p.suffix)
+        if p.suffix == ".txt":
+            v_table, fragments = self.read_lookup_table_txt(table_path)
+        elif p.suffix == ".csv":
+            print("todo")
+        else:
+            raise NotImplementedError(
+                "Cannot read lookup table. File type reading not implemented yet."
+            )
+
+        self.set_lookup_table(v_table, fragments)
+
+    def set_lookup_table(self, v_table: list, fragments: list):
+        self.lookup_table = v_table
+        element_map = self.element_to_atomic_number_dict
+        # convert fragments strings to atomic number if they are
+        fragments = [
+            element_map[element] if element in element_map else element
+            for element in fragments
+        ]
+        # Check if all values in `a` are positive
+        if all(isinstance(x, (int, float)) and x > 0 for x in fragments):
+            # Convert all elements in `a` to integers
+            fragments = [
+                int(x) if isinstance(x, (int, float)) else x for x in fragments
+            ]
+        self.check_table(v_table, fragments)
         # get max and min atomic numbers available
-        z_min = min(fragments)
-        z_max = max(fragments)
-        
-        return v_table, z_min, z_max
+        self.z_min_table = min(fragments)
+        self.z_max_table = max(fragments)
+        if len(v_table) != 3 * len(fragments):
+            raise ValueError(
+                f"Error: {len(v_table) = } and {len(fragments) = } are not equal."
+            )
+        self.lookup_table = v_table
+
+    def check_table(self, v_table, fragments):
+        if not fragments:
+            raise ValueError("Fragment table is empty")
+        sorted_fragments = sorted(fragments)
+        if not sorted_fragments == list(
+            range(sorted_fragments[0], sorted_fragments[0] + len(sorted_fragments))
+        ):
+            raise ValueError("Fragment list is missing entries")
 
     def BeginOfRunActionMasterThread(self, run_index):
-        
+
         self.prepare_output_for_run("alpha_mix", run_index)
         self.push_to_cpp_image(
-            "alpha_mix", run_index, self.cpp_numerator_alpha_image, self.cpp_denominator_image)
-        
+            "alpha_mix",
+            run_index,
+            self.cpp_numerator_alpha_image,
+            self.cpp_denominator_image,
+        )
+
         if self.multiple_scoring:
-            self.user_output.beta_mix.set_active(True, item='all')
+            self.user_output.beta_mix.set_active(True, item="all")
             self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
             self.prepare_output_for_run("beta_mix", run_index)
             self.push_to_cpp_image(
-                "beta_mix", run_index, self.cpp_numerator_beta_image, self.cpp_denominator_image)
+                "beta_mix",
+                run_index,
+                self.cpp_numerator_beta_image,
+                self.cpp_denominator_image,
+            )
 
         g4.GateBeamQualityActor.BeginOfRunActionMasterThread(self, run_index)
 
@@ -1187,6 +1242,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             self.user_output.beta_mix.store_meta_data(
                 run_index, number_of_samples=self.NbOfEvent
             )
+            self.user_output.beta_mix.merge_data_from_runs()
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
@@ -1194,7 +1250,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
-        
+
     def compute_dose_from_edep_img(self, overrides=dict()):
         """
         * cretae mass image:
@@ -1205,15 +1261,15 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         vol_name = self.user_info.attached_to
         vol = self.simulation.volume_manager.get_volume(vol_name)
         vol_type = vol.volume_type
-        
+
         spacing = np.array(self.user_info.spacing)
         voxel_volume = spacing[0] * spacing[1] * spacing[2]
         Gy = g4_units.Gy
         gcm3 = g4_units.g_cm3
         edep_data_item = self.user_output.alpha_mix.merged_data.data[1]
         edep_img = edep_data_item.image
-        
-        to_water = self.user_info.score_in == 'G4_WATER'
+
+        to_water = self.user_info.score_in == "G4_WATER"
 
         if vol_type == "ImageVolume":
             material_database = (
@@ -1222,9 +1278,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             if to_water:
                 # for dose 2 water, divide by density of water and not density of material
                 density_water = 1.0 * gcm3
-                edep_img = scale_itk_image(
-                    edep_img, 1 / density_water
-                )
+                edep_img = scale_itk_image(edep_img, 1 / density_water)
             else:
                 density_img = create_density_img(vol, material_database)
                 edep_img = divide_itk_images(
@@ -1234,9 +1288,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                     replaceFilteredVal=0,
                 )
             # divide by voxel volume and convert unit
-            self.py_edep_image = scale_itk_image(
-                edep_img, 1 / (Gy * voxel_volume)
-            )
+            self.py_edep_image = scale_itk_image(edep_img, 1 / (Gy * voxel_volume))
 
         else:
             if to_water:
@@ -1244,18 +1296,18 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 density = 1.0 * gcm3
             else:
                 density = vol.material.GetDensity()
-            edep_img = scale_itk_image(
-                edep_img, 1 / (voxel_volume * density * Gy)
-            )
-        
+            edep_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
+
         dose_image = ItkImageDataItem(data=edep_img)
         dose_image.copy_image_properties(edep_data_item.image)
-            
+
         return dose_image
+
 
 class REActor(BeamQualityActor, g4.GateBeamQualityActor):
     pass
-    
+
+
 class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
     """
     RBEActor:
@@ -1325,7 +1377,6 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             },
         ),
     }
-   
 
     def __init__(self, *args, **kwargs):
         # Init parent
@@ -1339,7 +1390,7 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         # images calculated from the actor output at postprocessing
         self.rbe_image = None
         self.rbe_dose_image = None
-        
+
         self.__initcpp__()
 
     def initialize(self):
@@ -1360,7 +1411,11 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         self.beta_ref = beta_ref
         self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
         self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
-        self.lookup_table, self.z_min_table, self.z_max_table = self.store_lookup_table(self.lookup_table_path)
+        if self.lookup_table_path:
+            self.read_lookup_table(self.lookup_table_path)
+
+        if self.model == "LEM1lda":
+            self.multiple_scoring = True
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
@@ -1376,7 +1431,6 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
         beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
         dose_img = self.compute_dose_from_edep_img()
-        
 
         if self.model == "mMKM":
             alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
@@ -1433,15 +1487,15 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         rbe_image = rbe_weighted_dose_image / dose_img
 
         dose_output_path = self.user_output.alpha_mix.get_output_path()
-        base_output_path = str(dose_output_path)[:-13]  # remove the suffix 'alpha_mix.mhd'
-        
+        base_output_path = str(dose_output_path)[
+            :-13
+        ]  # remove the suffix 'alpha_mix.mhd'
+
         self.rbe_image = rbe_image
         self.rbe_dose_image = rbe_weighted_dose_image
 
         rbe_weighted_dose_image.write(base_output_path + "rbedose.mhd")
         rbe_image.write(base_output_path + "rbe.mhd")
-        
-    
 
 
 class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):

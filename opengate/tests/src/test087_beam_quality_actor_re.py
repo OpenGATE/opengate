@@ -117,29 +117,13 @@ if __name__ == "__main__":
     RE_act.hit_type = "random"
     RE_act.model = "RE"
     RE_act.score_in = "material"
-    #    RE_act.separate_output = False
-    # both lines do the same thing,
-    #    RE_act.dose_average = False
     RE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
-    # s.filters.append(f)
 
-    # print("Filters: ", sim.filter_manager)
-    # # print(sim.filter_manager.dump())
-
-    # help(fe)
-    # start simulation
-    sim.n = 10
     sim.run()
-
-    # paths.gate_output
-
-    # print results at the end
-
-    #    print(stat)
 
     # ----------------------------------------------------------------------------------------------------------------
     print(doseIDD)
