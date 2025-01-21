@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.spatial.transform import Rotation
 from pathlib import Path
 import SimpleITK as sitk
@@ -1149,14 +1150,33 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 v_table.append(values)  # we want to do this only once per table
                 end_table = True
         return v_table, fragments
+    
+    def read_lookup_table_csv(self, table_path):
+        dataset = pd.read_csv(table_path)
+        particles = dataset['particle'].unique()
+        fragments = []
+        v_table = []
+        for p in particles:
+            if p in self.element_to_atomic_number_dict:
+                Z = self.element_to_atomic_number_dict[p]
+            else:
+                raise ValueError(
+                    f"Lookup table inconsistency: cannot convert element name to atomic number: {p}"
+                )
+            fragments.append(Z)
+            v_table.append([Z])
+            energies_p = dataset.loc[dataset['particle']==p,'meanEnergy']
+            v_table.append(list(energies_p))
+            values_p = dataset.loc[dataset['particle']==p,'z1D*']
+            v_table.append(list(values_p))
+        return v_table, fragments
 
     def read_lookup_table(self, table_path):
         p = Path(table_path)
-        print(p.suffix)
         if p.suffix == ".txt":
             v_table, fragments = self.read_lookup_table_txt(table_path)
         elif p.suffix == ".csv":
-            print("todo")
+            v_table, fragments = self.read_lookup_table_csv(table_path)
         else:
             raise NotImplementedError(
                 "Cannot read lookup table. File type reading not implemented yet."
