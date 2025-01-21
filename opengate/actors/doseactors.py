@@ -1290,11 +1290,12 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         edep_img = edep_data_item.image
 
         to_water = self.user_info.score_in == "G4_WATER"
+        
+        material_database = (
+            self.simulation.volume_manager.material_database.g4_materials
+        )
 
         if vol_type == "ImageVolume":
-            material_database = (
-                self.simulation.volume_manager.material_database.g4_materials
-            )
             if to_water:
                 # for dose 2 water, divide by density of water and not density of material
                 density_water = 1.0 * gcm3
@@ -1315,7 +1316,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 # for dose 2 water, divide by density of water and not density of material
                 density = 1.0 * gcm3
             else:
-                density = vol.material.GetDensity()
+                density = material_database[vol.material].GetDensity()
             edep_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
 
         dose_image = ItkImageDataItem(data=edep_img)
