@@ -52,9 +52,10 @@ if __name__ == "__main__":
     sim.physics_manager.global_production_cuts.all = 1 * mm
 
     # add vpgtle source
-    vpg_tle = sim.add_actor("VoxelizedPromptGammaTLESource", "vpgtle")
+    vpg_tle = sim.add_source("VoxelizedPromptGammaTLESource", "vpgtle")
     vpg_tle.attached_to = ct
-    vpg_tle.output_filename = "vpgtle.mhd"
+    vpg_tle.pg_image = paths.output / "vpgtle.nii.gz"
+    vpg_tle.activity = 100 * Bq  # (total in the whole image)
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

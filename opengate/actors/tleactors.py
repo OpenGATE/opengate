@@ -87,7 +87,6 @@ class VoxelizedPromptGammaTLEActor(
 
     user_output_config = {
         "vpg": {
-            # FIXME change to something like ImageOfHisto ?
             "actor_output_class": ActorOutputSingleImageOfHistogram,
             "active": True,
         },
@@ -118,7 +117,7 @@ class VoxelizedPromptGammaTLEActor(
         self.InitializeCpp()
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
-        ## need to override because create image is different for img of histo
+        # need to override because create image is different for img of histo
         self._assert_output_exists(output_name)
         self.user_output[output_name].create_image_of_histograms(
             run_index,

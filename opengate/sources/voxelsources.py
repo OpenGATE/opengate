@@ -1,5 +1,4 @@
 import itk
-
 import opengate_core as g4
 from .generic import GenericSource
 from ..image import (
@@ -86,4 +85,59 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
         GenericSource.initialize(self, run_timing_intervals)
 
 
+class VoxelizedPromptGammaTLESource(VoxelSource, g4.GateVoxelizedPromptGammaTLESource):
+    """
+    todo
+    """
+
+    user_info_defaults = {
+        "pg_image": (
+            None,
+            {
+                "doc": "Filename of the image of the 3D activity distribution "
+                "(will be automatically normalized to sum=1)",
+                "is_input_file": True,
+            },
+        )
+    }
+
+    def __init__(self, *args, **kwargs):
+        self.__initcpp__()
+        super().__init__(self, *args, **kwargs)
+        # the loaded image
+        self.itk_pg_image = None
+        # the image for the 3D distribution sampling : integral of the histogram
+        self.itk_image = None
+
+    def __initcpp__(self):
+        g4.GateVoxelSource.__init__(self)
+        g4.GateVoxelizedPromptGammaTLESource.__init__(self)
+
+    def initialize(self, run_timing_intervals):
+        # read source image
+        print("reading ", self.pg_image)
+        self.itk_pg_image = itk.imread(ensure_filename_is_str(self.pg_image))
+        print(
+            "read image input", self.itk_pg_image.GetLargestPossibleRegion().GetSize()
+        )
+        print("read image spacing", self.itk_pg_image.GetSpacing())
+        print("before origin", self.itk_pg_image.GetOrigin())
+
+        # FIXME todo, compute itk_image with integrated histo for 3D sampling
+
+        # compute position
+        # self.set_transform_from_user_info()
+        # print("after origin", self.itk_image.GetOrigin())
+
+        # create Cumulative Distribution Function
+        # self.cumulative_distribution_functions()
+
+        # initialize standard options (particle energy, etc.)
+        # we temporarily set the position attribute to reuse
+        # the GenericSource verification
+        ## FIXME unsure here -> some options are fixed (particle is always gamma, etc), other maybe variable
+        GenericSource.initialize(self, run_timing_intervals)
+
+
 process_cls(VoxelSource)
+process_cls(VoxelizedPromptGammaTLESource)
