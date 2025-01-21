@@ -6,7 +6,7 @@ import random
 from box import Box
 import textwrap
 import inspect
-import importlib.resources as pkg_resources
+import importlib.resources as resources
 import sys
 from pathlib import Path
 import string
@@ -379,7 +379,7 @@ def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
     resource_package = __name__
-    with pkg_resources.open_text(f"{resource_package}.mac", filename) as f:
+    with resources.open_text(f"{resource_package}.mac", filename) as f:
         c = f.read()
         commands = []
         for s in c.split("\n"):
