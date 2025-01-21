@@ -127,39 +127,6 @@ void GateDoseActor::BeginOfEventAction(const G4Event *event) {
   NbOfEvent++;
 }
 
-void GateDoseActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
-                                     bool &isInside,
-                                     Image3DType::IndexType &index) const {
-  auto preGlobal = step->GetPreStepPoint()->GetPosition();
-  auto postGlobal = step->GetPostStepPoint()->GetPosition();
-  auto touchable = step->GetPreStepPoint()->GetTouchable();
-
-  // consider random position between pre and post
-  if (fHitType == "pre") {
-    position = preGlobal;
-  }
-  if (fHitType == "random") {
-    auto x = G4UniformRand();
-    auto direction = postGlobal - preGlobal;
-    position = preGlobal + x * direction;
-  }
-  if (fHitType == "middle") {
-    auto direction = postGlobal - preGlobal;
-    position = preGlobal + 0.5 * direction;
-  }
-
-  auto localPosition =
-      touchable->GetHistory()->GetTransform(0).TransformPoint(position);
-
-  // convert G4ThreeVector to itk PointType
-  Image3DType::PointType point;
-  point[0] = localPosition[0];
-  point[1] = localPosition[1];
-  point[2] = localPosition[2];
-
-  isInside = cpp_edep_image->TransformPhysicalPointToIndex(point, index);
-}
-
 void GateDoseActor::SteppingAction(G4Step *step) {
   auto event_id =
       G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
@@ -173,7 +140,8 @@ void GateDoseActor::SteppingAction(G4Step *step) {
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
-  GetVoxelPosition(step, position, isInside, index);
+  GetStepVoxelPosition<Image3DType>(step, fHitType, cpp_edep_image, position,
+                                    isInside, index);
 
   if (isInside) {
 

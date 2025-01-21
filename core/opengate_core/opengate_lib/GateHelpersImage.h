@@ -21,8 +21,14 @@ void ImageAddValue(typename ImageType::Pointer image,
 template <class ImageType>
 void AttachImageToVolume(typename ImageType::Pointer image,
                          std::string volumeName,
-                         G4ThreeVector initial_translation = G4ThreeVector(),
-                         G4RotationMatrix img_rotation = G4RotationMatrix());
+                         G4ThreeVector image_offset = G4ThreeVector(),
+                         G4RotationMatrix volume_rotation = G4RotationMatrix());
+
+template <class ImageType>
+void GetStepVoxelPosition(G4Step *step, std::string hitType,
+                          typename ImageType::Pointer cpp_image,
+                          G4ThreeVector &position, bool &isInside,
+                          typename ImageType::IndexType &index);
 
 #include "GateHelpersImage.txx"
 
