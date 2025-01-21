@@ -146,7 +146,7 @@ if __name__ == "__main__":
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal.name}")
     hc.attached_to = crystal.name
     hc.authorize_repeated_volumes = True
-    hc.output_filename = output_path / "output_config3.root"
+    hc.output_filename = output_path / "output_config1.root"
     # hc.output = "output_config1.root"
     hc.attributes = [
         "EventID",

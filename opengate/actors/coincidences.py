@@ -80,12 +80,9 @@ def process_chunk(
 
     print("-----Sorting------")
 
-    # coincidences_filtered = []
-
     coincidences_tmp = {}
     for k in coincidences.keys():
         coincidences_tmp[f"{k}"] = []
-
     # Loop over singles
     for i in tqdm(range(nsingles - 1)):
         time_window_open = singles[i]["GlobalTime"]
@@ -101,6 +98,7 @@ def process_chunk(
                 ):
                     break
 
+                
                 for k in keys:
                     coincidences_tmp[f"{k}1"].append(singles[i][k])
                     coincidences_tmp[f"{k}2"].append(singles[j][k])
@@ -109,31 +107,25 @@ def process_chunk(
                 # filter coincidences in the same window
 
                 # skip if no coincidecnes in this window
-                if len(coincidences_tmp["EventID1"]) == 0:
+                if len(coincidences_tmp["EventID1"])==0 :
                     break
-
                 if policy in policy_functions:
                     coincidences_filtered = policy_functions[policy](
                         coincidences_tmp, minDistanceXY, maxDistanceZ
                     )
-
                 else:
                     fatal(f"Error in Coincidence Sorter: {policy} is unknown")
-
                 # save the filtered coincidences
                 if coincidences_filtered:
                     for key in coincidences:
                         for j in range(len(coincidences_filtered[key])):
                             coincidences[key].append(coincidences_filtered[key][j])
-
-                # clean temp containers
-                if coincidences_filtered:
-                    coincidences_filtered.clear()
-                for key in coincidences_tmp:
+                # clean temp containers            
+                for key in coincidences_tmp.keys():
                     coincidences_tmp[key].clear()
-
+               
                 break  # if the time difference exceeds the time window, break the loop
-
+         
     return coincidences
 
 
@@ -168,27 +160,27 @@ def filter_goods(coincidences, minDistanceXY, maxDistanceZ):
 
 
 def filter_multi(coincidences):
-
-    if len(coincidences["EventID1"]) == 1:
-        return coincidences
+    coincidences_output={}
+    if len(coincidences["EventID1"]) < 2:
+        coincidences_output=coincidences
+        return coincidences_output
     else:
         return {}
 
 
 def filter_max_energy(coincidences):
-
+    
     energy_sums = [
         coincidences["TotalEnergyDeposit1"][i] + coincidences["TotalEnergyDeposit2"][i]
         for i in range(len(coincidences["TotalEnergyDeposit1"]))
     ]
     # Find the index of the maximum energy sum
     max_index = energy_sums.index(max(energy_sums))
-
     # Filter the dictionary to include only the element at the max energy sum index
     coincidences_filtered = {
         key: [value[max_index]] for key, value in coincidences.items()
     }
-
+        
     return coincidences_filtered
 
 
@@ -197,8 +189,7 @@ def remove_multiples(coincidences, minDistanceXY, maxDistanceZ):
     # 1) check if good
     # 2) take only ones where one coincidence in a time window
 
-    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
-    coincidences_output = filter_multi(coincidences_goods)
+    coincidences_output = filter_multi(coincidences)
     return coincidences_output
 
 
@@ -213,7 +204,6 @@ def take_winner_of_goods(coincidences, minDistanceXY, maxDistanceZ):
     # 2) take only one with the highest energy (energy1+energy2)
 
     coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
-
     coincidences_output = filter_max_energy(coincidences_goods)
 
     return coincidences_output
@@ -223,9 +213,10 @@ def take_if_only_one_good(coincidences, minDistanceXY, maxDistanceZ):
     # Take winner if only one good
     # 1) check how many goods
     # 2) if one --> keep
-
+    
     coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
     coincidences_output = filter_multi(coincidences_goods)
+    
     return coincidences_output
 
 

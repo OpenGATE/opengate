@@ -17,8 +17,7 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
 
     # open root file
-    root_filename = paths.output / "output_config3.root"
-    # root_filename = "output_config2.root"
+    root_filename = paths.output / "output_config1.root"
     print(f"Opening {root_filename} ...")
     root_file = uproot.open(root_filename)
 

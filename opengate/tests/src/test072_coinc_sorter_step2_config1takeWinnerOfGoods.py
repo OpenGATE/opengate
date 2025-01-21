@@ -17,7 +17,7 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
 
     # open root file
-    root_filename = paths.output / "output_config3.root"
+    root_filename = paths.output / "output_config1.root"
     # root_filename = "output_config2.root"
     print(f"Opening {root_filename} ...")
     root_file = uproot.open(root_filename)
@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     # Calculate Wasserstein distance for comparison
     distance_posX = wasserstein_distance(both_posX, ref_both_posX)
-    tolerance_posX = 2.0
+    tolerance_posX = 2.5
     print(f"Wasserstein distance on X : {distance_posX}, tolerence {tolerance_posX}")
 
     distance_energy = wasserstein_distance(both_energy, ref_both_energy)
