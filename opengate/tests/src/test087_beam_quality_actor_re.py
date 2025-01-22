@@ -109,7 +109,7 @@ if __name__ == "__main__":
     #    RBE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
     RE = "RE"
-    RE_act = sim.add_actor("BeamQualityActor", RE)
+    RE_act = sim.add_actor("REActor", RE)
     RE_act.output_filename = paths.output / ("test087-" + RE + ".mhd")
     RE_act.attached_to = phantom_off.name
     RE_act.size = size
@@ -149,7 +149,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
-        filename2=paths.output / RE_act.alpha_mix.get_output_path(),
+        filename2=paths.output / RE_act.RE_mix.get_output_path(),
         tolerance=20,
         plt_ylim=[0, 2],
     )

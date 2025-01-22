@@ -104,11 +104,12 @@ if __name__ == "__main__":
     #RBEActor_IDD_d.spacing = spacing
     RBEActor_IDD_d.score_in = 'material'
     RBEActor_IDD_d.hit_type = "random"
-    RBEActor_IDD_d.model = 'mMKM' #mMKM LEM1lda
+    RBEActor_IDD_d.model = 'LEM1lda' #mMKM LEM1lda
     # RBEActor_IDD_d.lookup_table_path = '/home/fava/opengate_refactored/opengate/tests/data/NIRS_MKM_reduced_data.txt'
     RBEActor_IDD_d.lookup_table_path = '/home/fava/opengate_refactored/opengate/tests/data/output_ref/test087/mkm_nirs_LQparameters_SURVIVAL.csv'
     RBEActor_IDD_d.cell_type = 'HSG'
     RBEActor_IDD_d.r_nucleus = 3.9
+
     
     sim.physics_manager.set_max_step_size(phantom_off.name, 0.8)
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)

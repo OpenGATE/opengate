@@ -1010,23 +1010,24 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             },
         ),
     }
+    scored_quantity = 'alpha'
     user_output_config = {
-        "alpha_mix": {
+        f"{scored_quantity}_mix": {
             "actor_output_class": ActorOutputQuotientMeanImage,
             "interfaces": {
-                "alpha_numerator": {
+                f"{scored_quantity}_numerator": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": True,
                     "write_to_disk": False,
                 },
-                "alpha_denominator": {
+                f"{scored_quantity}_denominator": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 1,
                     "active": True,
                     "write_to_disk": False,
                 },
-                "alpha_mix": {
+                f"{scored_quantity}_mix": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": "quotient",
                     "write_to_disk": True,
@@ -1077,6 +1078,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             "F": 9,
             "Ne": 10,
         }
+        self.lookup_table = None
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -1102,7 +1104,9 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
         if self.lookup_table_path:
             self.read_lookup_table(self.lookup_table_path)
-
+            
+        if not self.lookup_table:
+            raise ValueError('Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute.')
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -1215,9 +1219,9 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
     def BeginOfRunActionMasterThread(self, run_index):
 
-        self.prepare_output_for_run("alpha_mix", run_index)
+        self.prepare_output_for_run(f"{self.scored_quantity}_mix", run_index)
         self.push_to_cpp_image(
-            "alpha_mix",
+            f"{self.scored_quantity}_mix",
             run_index,
             self.cpp_numerator_alpha_image,
             self.cpp_denominator_image,
@@ -1238,13 +1242,13 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
     def EndOfRunActionMasterThread(self, run_index):
         self.fetch_from_cpp_image(
-            "alpha_mix",
+            f"{self.scored_quantity}_mix",
             run_index,
             self.cpp_numerator_image,
             self.cpp_denominator_image,
         )
-        self._update_output_coordinate_system("alpha_mix", run_index)
-        self.user_output.alpha_mix.store_meta_data(
+        self._update_output_coordinate_system(f"{self.scored_quantity}_mix", run_index)
+        self.user_output.__getattr__(f"{self.scored_quantity}_mix").store_meta_data(
             run_index, number_of_samples=self.NbOfEvent
         )
         if self.multiple_scoring:
@@ -1281,7 +1285,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         spacing = np.array(self.user_info.spacing)
         voxel_volume = spacing[0] * spacing[1] * spacing[2]
         Gy = g4_units.Gy
-        edep_data_item = self.user_output.alpha_mix.merged_data.data[1]
+        edep_data_item = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.data[1]
         edep_img = edep_data_item.image
 
         score_in_material = self.user_info.score_in 
@@ -1320,7 +1324,33 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
 
 class REActor(BeamQualityActor, g4.GateBeamQualityActor):
-    pass
+    scored_quantity = 'RE'
+    user_output_config = {
+        f"{scored_quantity}_mix": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                f"{scored_quantity}_numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                f"{scored_quantity}_denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                f"{scored_quantity}_mix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": True,
+                    # "suffix": None,  # default suffix would be 'alpha_mix', but we prefer no suffix
+                },
+            },
+        },
+    }
 
 
 class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
@@ -1461,7 +1491,7 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         dose_img = self.compute_dose_from_edep_img()
 
         if self.model == "mMKM":
-            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            alpha_mix_img = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.quotient
             log_survival = alpha_mix_img * dose_img * (
                 -1
             ) + dose_img * dose_img * beta_ref * (-1)
@@ -1470,7 +1500,7 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         elif self.model == "LEM1lda":
             dose_arr = dose_img.image_array
             arr_mask_linear = dose_arr > self.D_cut
-            alpha_mix_img = self.user_output.alpha_mix.merged_data.quotient
+            alpha_mix_img = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.quotient
             sqrt_beta_mix_img = self.user_output.beta_mix.merged_data.quotient
 
             log_survival_lq = alpha_mix_img * dose_img * (
