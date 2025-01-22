@@ -24,7 +24,7 @@ if __name__ == "__main__":
     ui.number_of_threads = 2
 
     numPartSimTest = 40000 / ui.number_of_threads
-    numPartSimRef = 1e5
+    numPartSimRef = 1e4
 
     # units
     m = gate.g4_units.m
@@ -60,10 +60,10 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
-    source.energy.mono = 80 * MeV
+    source.energy.mono = 1424 * MeV
     # source.energy.type = 'gauss'
     # source.energy.sigma_gauss = 1 * MeV
-    source.particle = "proton"
+    source.particle = "ion 6 12"
     source.position.type = "disc"
     source.position.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
     source.position.radius = 4 * mm
@@ -116,9 +116,10 @@ if __name__ == "__main__":
     RBE_act.spacing = spacing
     RBE_act.hit_type = "random"
     RBE_act.model = "mMKM"
-    #    RBE_act.score_in = "material"
-    RBE_act.lookup_table_path = mkm_lq_fpath
+    RBE_act.score_in = "G4_WATER"
 
+    #    RBE_act.lookup_table_path = mkm_lq_fpath
+    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/MKM_Gate10_sparse.txt"
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
-        filename2=paths.output / RBE_act.alpha_mix.get_output_path(),
+        filename2=paths.output / RBE_act.rbe.get_output_path(),
         tolerance=20,
         plt_ylim=[0, 2],
     )

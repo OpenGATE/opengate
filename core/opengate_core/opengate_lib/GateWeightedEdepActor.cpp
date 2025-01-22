@@ -93,7 +93,7 @@ void GateWeightedEdepActor::BeginOfEventAction(const G4Event *event) {
   NbOfEvent++;
 }
 
-G4double GateWeightedEdepActor::CalcMeanEnergy(G4Step *step) {
+G4double GateWeightedEdepActor::GetMeanEnergy(G4Step *step) {
   // get edep in MeV (take weight into account)
   auto energy1 = step->GetPreStepPoint()->GetKineticEnergy() / CLHEP::MeV;
   auto energy2 = step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
@@ -102,8 +102,7 @@ G4double GateWeightedEdepActor::CalcMeanEnergy(G4Step *step) {
   return energy;
 }
 
-G4double GateWeightedEdepActor::GetSPROtherMaterial(G4Step *step,
-                                                    G4double energy) {
+G4double GateWeightedEdepActor::GetCurrentDEDX(G4Step *step) {
   double dedx_cut = DBL_MAX;
   auto &l = fThreadLocalData.Get();
   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
@@ -112,15 +111,31 @@ G4double GateWeightedEdepActor::GetSPROtherMaterial(G4Step *step,
   }
 
   auto *current_material = step->GetPreStepPoint()->GetMaterial();
-  auto dedx_currstep =
-      l.emcalc.ComputeElectronicDEDX(energy, p, current_material, dedx_cut) /
-      CLHEP::MeV * CLHEP::mm;
+  auto dedx_currstep = l.emcalc.ComputeElectronicDEDX(
+                           l.energy_mean, p, current_material, dedx_cut) /
+                       CLHEP::MeV * CLHEP::mm;
+  if (std::isnan(dedx_currstep)) {
+    dedx_currstep = 0.0;
+  }
+  return dedx_currstep;
+}
+
+G4double GateWeightedEdepActor::GetSPROtherMaterial(G4Step *step) {
+  double dedx_cut = DBL_MAX;
+  auto &l = fThreadLocalData.Get();
+  const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+  if (p == G4Gamma::Gamma()) {
+    p = G4Electron::Electron();
+  }
 
   auto dedx_other_material =
-      l.emcalc.ComputeElectronicDEDX(energy, p, l.materialToScoreIn, dedx_cut) /
+      l.emcalc.ComputeElectronicDEDX(l.energy_mean, p, l.materialToScoreIn,
+                                     dedx_cut) /
       CLHEP::MeV * CLHEP::mm;
-  G4double SPR_otherMaterial = dedx_other_material / dedx_currstep;
-
+  G4double SPR_otherMaterial = dedx_other_material / l.dedx_currstep;
+  if (std::isnan(SPR_otherMaterial)) {
+    SPR_otherMaterial = 0.0;
+  }
   return SPR_otherMaterial;
 }
 
@@ -174,6 +189,9 @@ void GateWeightedEdepActor::SteppingAction(G4Step *step) {
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
   G4double averagingQuantity;
+  auto &l = fThreadLocalData.Get();
+  l.energy_mean = GetMeanEnergy(step);
+  l.dedx_currstep = GetCurrentDEDX(step);
 
   // if inside the voxel, add avereging quantity to the denominator image
   // and add weighted avereging quantityto the numerator image
@@ -183,6 +201,9 @@ void GateWeightedEdepActor::SteppingAction(G4Step *step) {
       averagingQuantity = step->GetStepLength() / CLHEP::mm * w;
     } else {
       averagingQuantity = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
+      if (fScoreInOtherMaterial) {
+        averagingQuantity *= GetSPROtherMaterial(step);
+      }
     }
 
     double secondQuantity = 1.0;

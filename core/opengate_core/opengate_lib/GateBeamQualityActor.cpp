@@ -30,98 +30,90 @@
 
 G4Mutex SetRBEPixelMutex = G4MUTEX_INITIALIZER;
 
-GateBeamQualityActor::GateBeamQualityActor(py::dict &user_info) : GateWeightedEdepActor(user_info) {
-  
-}
+GateBeamQualityActor::GateBeamQualityActor(py::dict &user_info)
+    : GateWeightedEdepActor(user_info) {}
 
 void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateWeightedEdepActor::InitializeUserInfo(user_info);
 
   fRBEmodel = DictGetStr(user_info, "model");
-  if (fRBEmodel == "mMKM"){
+  if (fRBEmodel == "mMKM") {
     fAlpha0 = DictGetDouble(user_info, "alpha_0");
     fBetaRef = DictGetDouble(user_info, "beta_ref");
   }
-  if (fRBEmodel == "LEM1lda"){
-    fAreaNucl =  DictGetDouble(user_info, "A_nucleus") * CLHEP::um * CLHEP::um;
-    fDcut =  DictGetDouble(user_info, "D_cut");
-    fSmax =  DictGetDouble(user_info, "s_max");
+  if (fRBEmodel == "LEM1lda") {
+    fAreaNucl = DictGetDouble(user_info, "A_nucleus") * CLHEP::um * CLHEP::um;
+    fDcut = DictGetDouble(user_info, "D_cut");
+    fSmax = DictGetDouble(user_info, "s_max");
     multipleScoring = true;
   }
   ZMinTable = DictGetInt(user_info, "z_min_table");
   ZMaxTable = DictGetInt(user_info, "z_max_table");
   table = new std::vector<G4DataVector *>;
   CreateLookupTable(user_info);
-  
 }
 
+double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
+                                               double *secondQuantity) {
+  auto *current_material = step->GetPreStepPoint()->GetMaterial();
+  auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
+  const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+  auto &l = fThreadLocalData.Get();
+  auto dedx_currstep = l.dedx_currstep;
 
-double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,  double *secondQuantity){
-   auto *current_material = step->GetPreStepPoint()->GetMaterial();
-   auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
-   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-
-   auto energy = CalcMeanEnergy(step);
-
-   if (p == G4Gamma::Gamma()) {
-     p = G4Electron::Electron();
-   }
+  if (p == G4Gamma::Gamma()) {
+    p = G4Electron::Electron();
+  }
 
   auto charge = int(p->GetAtomicNumber());
   auto mass = p->GetAtomicMass();
-  auto table_value = GetValue(charge, energy / mass); 
+  auto table_value = GetValue(charge, l.energy_mean / mass);
 
-
-  if (fRBEmodel == "LEM1lda"){
+  if (fRBEmodel == "LEM1lda") {
     double dedx_cut = DBL_MAX;
     auto alpha_z = table_value;
-    auto beta_z = (fSmax - alpha_z)/(2 * fDcut);
-    
-    auto &l = fThreadLocalData.Get();
-    auto dedx_currstep =
-        l.emcalc.ComputeElectronicDEDX(energy, p, current_material, dedx_cut);
+    auto beta_z = (fSmax - alpha_z) / (2 * fDcut);
+
     double local_d = 0.;
-    if (dedx_currstep){
-        local_d = dedx_currstep/(fAreaNucl * density) / CLHEP::gray;
-        // FIXME: density of local material here?
+    if (dedx_currstep) {
+      local_d = dedx_currstep / (fAreaNucl * density) / CLHEP::gray;
+      // FIXME: density of local material here?
     }
     auto alpha_currstep = 0.;
     auto sqrt_beta_currstep = 0.;
-    if (local_d){
-        alpha_currstep = (1 - exp(-alpha_z * local_d)) / local_d;
+    if (local_d) {
+      alpha_currstep = (1 - exp(-alpha_z * local_d)) / local_d;
     }
-    if (alpha_z){
-        sqrt_beta_currstep = (alpha_currstep / alpha_z) * std::sqrt(beta_z);
+    if (alpha_z) {
+      sqrt_beta_currstep = (alpha_currstep / alpha_z) * std::sqrt(beta_z);
     }
-    *secondQuantity = sqrt_beta_currstep; // dereference pointer to assign value to variable
-    
+    *secondQuantity =
+        sqrt_beta_currstep; // dereference pointer to assign value to variable
+
     return alpha_currstep;
 
-  }else{
-    return table_value; // for RE and mMKM the scoring quantity is just the table value
+  } else {
+    return table_value; // for RE and mMKM the scoring quantity is just the
+                        // table value
   }
-    return 1.0;
 }
 
-void GateBeamQualityActor::EndSimulationAction() { 
-  
-  if (fRBEmodel == "mMKM"){
-      // postprocess numerator image to get alpha
-      itk::ImageRegionIterator<Image3DType> iterator3D(
-          cpp_numerator_image, cpp_numerator_image->GetLargestPossibleRegion());
-      for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
-        Image3DType::IndexType index_f = iterator3D.GetIndex();
-        Image3DType::PixelType Q = cpp_numerator_image->GetPixel(index_f);
-        Image3DType::PixelType Edep = cpp_denominator_image->GetPixel(index_f);
-        cpp_numerator_image->SetPixel(index_f, (fBetaRef*Q+fAlpha0*Edep)/Edep);
-      }
-  
+void GateBeamQualityActor::EndSimulationAction() {
+
+  if (fRBEmodel == "mMKM") {
+    // postprocess numerator image to get alpha
+    itk::ImageRegionIterator<Image3DType> iterator3D(
+        cpp_numerator_image, cpp_numerator_image->GetLargestPossibleRegion());
+    for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
+      Image3DType::IndexType index_f = iterator3D.GetIndex();
+      Image3DType::PixelType Q = cpp_numerator_image->GetPixel(index_f);
+      Image3DType::PixelType Edep = cpp_denominator_image->GetPixel(index_f);
+      cpp_numerator_image->SetPixel(index_f,
+                                    (fBetaRef * Q + fAlpha0 * Edep) / Edep);
+    }
   }
-
 }
-
-
 
 void GateBeamQualityActor::CreateLookupTable(py::dict &user_info) {
   // get lookup table
@@ -140,16 +132,16 @@ double GateBeamQualityActor::GetValue(int Z, float energy) {
   // initalize value
   G4double y = 0;
 
-  if (Z > ZMaxTable){
+  if (Z > ZMaxTable) {
     Z = ZMaxTable;
   }
-  if ((Z >= ZMinTable) & (Z <= ZMaxTable)){
+  if ((Z >= ZMinTable) & (Z <= ZMaxTable)) {
     G4DataVector *Z_vec = new G4DataVector();
     Z_vec->insertAt(0, Z);
     int bin_table = -1;
     G4DataVector *energies;
     G4DataVector *data;
-    
+
     for (int i = 0; i < table->size(); i++) {
       if (*(*table)[i] == *Z_vec) {
         bin_table = i;
@@ -164,16 +156,17 @@ double GateBeamQualityActor::GetValue(int Z, float energy) {
     // get table value for the given energy
     y = linearAlgo.Calculate(energy, bin, *energies, *data);
     // std::cout<<"interpolation output:" << y << std::endl;
-    
+
     delete Z_vec;
     Z_vec = nullptr;
     return y;
-  }else{ return 0;}
-
-  
+  } else {
+    return 0;
+  }
 }
 
-size_t GateBeamQualityActor::FindLowerBound(G4double x, G4DataVector *values) const {
+size_t GateBeamQualityActor::FindLowerBound(G4double x,
+                                            G4DataVector *values) const {
   size_t lowerBound = 0;
   size_t upperBound(values->size() - 1);
   if (x < (*values)[0]) {
@@ -194,4 +187,4 @@ size_t GateBeamQualityActor::FindLowerBound(G4double x, G4DataVector *values) co
   return upperBound;
 }
 
-//void GateBeamQualityActor::EndSimulationAction() {}
+// void GateBeamQualityActor::EndSimulationAction() {}
