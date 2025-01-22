@@ -22,10 +22,10 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.visu = False
     sim.random_seed = 1234567891
-    sim.number_of_threads = 3
+    sim.number_of_threads = 1
     sim.output_dir = output_path #paths.output
 
-    numPartSimTest = 1e4 / sim.number_of_threads
+    numPartSimTest = 1e3 / sim.number_of_threads
     numPartSimRef = 1e5
 
     # units
@@ -51,11 +51,12 @@ if __name__ == "__main__":
     phantom.color = [0, 0, 1, 1]
 
     test_material_name = "G4_WATER"
-    phantom_off = sim.add_volume("Box", "phantom_off")
+    phantom_off = sim.add_volume("Image", "phantom_off")
+    phantom_off.image = '/var/work/IDEAL-1_2ref/fava_1D_IDEAL_HBL_ISD50_RS_163__1_2024_10_07_14_22_20/rungate.0/ct_orig.mhd'
     phantom_off.mother = phantom.name
-    phantom_off.size = [100 * mm, 60 * mm, 60 * mm]
+    # phantom_off.size = [100 * mm, 60 * mm, 60 * mm]
     phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]
-    phantom_off.material = test_material_name
+    # phantom_off.material = test_material_name
     phantom_off.color = [0, 0, 1, 1]
 
     # physics
@@ -94,17 +95,18 @@ if __name__ == "__main__":
 
     size = [50, 6, 6]
     spacing = [2.0 * mm, 10.0 * mm, 10.0 * mm]
-
+    
     RBEActorName_IDD_d = "RBEActorOG_d"
     RBEActor_IDD_d = sim.add_actor("RBEActor", RBEActorName_IDD_d)
     RBEActor_IDD_d.output_filename = "test_rbe-" + RBEActorName_IDD_d + ".mhd"
     RBEActor_IDD_d.attached_to = phantom_off.name
-    RBEActor_IDD_d.size = size
-    RBEActor_IDD_d.spacing = spacing
-    RBEActor_IDD_d.score_in = 'G4_WATER'
+    RBEActor_IDD_d.size = [512, 512, 365]
+    #RBEActor_IDD_d.spacing = spacing
+    RBEActor_IDD_d.score_in = 'material'
     RBEActor_IDD_d.hit_type = "random"
-    RBEActor_IDD_d.rbe_model = "mMKM"
-    RBEActor_IDD_d.lookup_table_path = '/home/fava/opengate_refactored/opengate/tests/data/NIRS_MKM_reduced_data.txt'
+    RBEActor_IDD_d.model = 'mMKM' #mMKM LEM1lda
+    # RBEActor_IDD_d.lookup_table_path = '/home/fava/opengate_refactored/opengate/tests/data/NIRS_MKM_reduced_data.txt'
+    RBEActor_IDD_d.lookup_table_path = '/home/fava/opengate_refactored/opengate/tests/data/output_ref/test087/mkm_nirs_LQparameters_SURVIVAL.csv'
     RBEActor_IDD_d.cell_type = 'HSG'
     RBEActor_IDD_d.r_nucleus = 3.9
     

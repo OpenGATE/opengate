@@ -108,7 +108,7 @@ if __name__ == "__main__":
     ##    )
     #    RBE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
-    RBE = "RE"
+    RBE = "RBE"
     RBE_act = sim.add_actor("RBEActor", "RBE_act")
     RBE_act.output_filename = paths.output / ("test087-" + RBE + ".mhd")
     RBE_act.attached_to = phantom_off.name
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     RBE_act.score_in = "G4_WATER"
 
     #    RBE_act.lookup_table_path = mkm_lq_fpath
-    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/MKM_Gate10_sparse.txt"
+    RBE_act.lookup_table_path = "/home/aresch/Documents/RBE/MKM_Gate10_sparse.txt"
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
