@@ -1393,7 +1393,8 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         ),
     }
     
-    BeamQualityActor.user_output_config.update(
+    user_output_config = BeamQualityActor.user_output_config.copy()
+    user_output_config.update(
         {'rbe': {
         "actor_output_class": ActorOutputSingleMeanImage,
         "active": False,
