@@ -6,7 +6,7 @@ import random
 from box import Box
 import textwrap
 import inspect
-import pkg_resources
+import importlib.resources as resources
 import sys
 from pathlib import Path
 import string
@@ -57,7 +57,7 @@ git = LazyModuleLoader("git")
 
 def assert_equal_dic(d1, d2, name=""):
     for k in d1:
-        if not k in d2:
+        if k not in d2:
             fatal(f"ERROR missing key {k} in {name}")
         if isinstance(d1[k], np.ndarray):
             if np.any(d2[k] != d1[k]):
@@ -66,7 +66,7 @@ def assert_equal_dic(d1, d2, name=""):
             if d2[k] != d1[k]:
                 fatal(f"ERROR value for {k} in {name}")
     for k in d2:
-        if not k in d1:
+        if k not in d1:
             fatal(f"ERROR, additional key {k} in {name}")
 
 
@@ -379,18 +379,17 @@ def make_builders(class_names):
 def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
-    resource_package = __name__
-    resource_path = "/".join(("mac", filename))  # Do not use os.filename.join()
-    template = pkg_resources.resource_string(resource_package, resource_path)
-    c = template.decode("utf-8")
-    commands = []
-    for s in c.split("\n"):
-        if s == "":
-            continue
-        # if s[0] == '#':
-        #    continue
-        commands.append(s)
-    return commands
+    resource_package = __package__
+    with resources.open_text(f"{resource_package}.mac", filename) as f:
+        c = f.read()
+        commands = []
+        for s in c.split("\n"):
+            if s == "":
+                continue
+            # if s[0] == '#':
+            #    continue
+            commands.append(s)
+        return commands
 
 
 def ensure_filename_is_str(filename):
