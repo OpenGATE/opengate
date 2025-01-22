@@ -378,7 +378,7 @@ def make_builders(class_names):
 def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
-    resource_package = __name__
+    resource_package = __package__
     with resources.open_text(f"{resource_package}.mac", filename) as f:
         c = f.read()
         commands = []
