@@ -1314,6 +1314,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 edep_img = scale_itk_image(edep_img, 1 / (Gy * voxel_volume))
     
             else:
+                if vol.material not in material_database:
+                    self.simulation.volume_manager.material_database.FindOrBuildMaterial(vol.material)
                 density = material_database[vol.material].GetDensity()
                 edep_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
 
