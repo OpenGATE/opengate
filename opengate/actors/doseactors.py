@@ -1421,6 +1421,12 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
                 "allowed_values": ("HSG", "Chordoma"),
             },
         ),
+        "write_RBE_dose_image": (
+            True,
+            {
+                "doc": "Do you want to calcu;ate and write to disk RBE and RBE dose images?",
+            },
+        ),
     }
     
     user_output_config = BeamQualityActor.user_output_config.copy()
@@ -1483,7 +1489,8 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
-        self.compute_rbe_weighted_dose()
+        if self.write_RBE_dose_image:
+            self.compute_rbe_weighted_dose()
 
     def compute_rbe_weighted_dose(self):
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
