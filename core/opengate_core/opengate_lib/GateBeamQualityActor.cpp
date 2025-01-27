@@ -68,7 +68,7 @@ double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
 
   auto charge = int(p->GetAtomicNumber());
   auto mass = p->GetAtomicMass();
-  auto table_value = GetValue(charge, l.energy_mean / mass);
+  auto table_value = GetValue(charge, l.energy_mean);
 
   if (fRBEmodel == "LEM1lda") {
     double dedx_cut = DBL_MAX;
@@ -131,11 +131,14 @@ double GateBeamQualityActor::GetValue(int Z, float energy) {
   // std::endl;
   // initalize value
   G4double y = 0;
-
+  // std::cout<< "Particle: "<< Z << std::endl;
+  // std::cout<< "Energy: "<< energy << std::endl;
+  // std::cout<< "Zmin: "<< ZMinTable << "      " << "Zmax: "<< ZMaxTable <<
+  // std::endl;
   if (Z > ZMaxTable) {
     Z = ZMaxTable;
   }
-  if ((Z >= ZMinTable) & (Z <= ZMaxTable)) {
+  if ((Z >= ZMinTable) && (Z <= ZMaxTable)) {
     G4DataVector *Z_vec = new G4DataVector();
     Z_vec->insertAt(0, Z);
     int bin_table = -1;
@@ -156,7 +159,7 @@ double GateBeamQualityActor::GetValue(int Z, float energy) {
     // get table value for the given energy
     y = linearAlgo.Calculate(energy, bin, *energies, *data);
     // std::cout<<"interpolation output:" << y << std::endl;
-
+    // std::cout<<"        "<<std::endl;
     delete Z_vec;
     Z_vec = nullptr;
     return y;

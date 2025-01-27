@@ -5,6 +5,8 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 import pandas as pd
+import itk
+import numpy as np
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "test_087")
@@ -20,11 +22,11 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False
-    ui.random_seed = 12345678910
-    ui.number_of_threads = 16
+    ui.random_seed = 9234567891
+    ui.number_of_threads = 1
 
-    numPartSimTest = 40000 / ui.number_of_threads
-    numPartSimRef = 1e4
+    numPartSimTest = 1e3 / ui.number_of_threads
+    numPartSimRef = 1
 
     # units
     m = gate.g4_units.m
@@ -75,7 +77,7 @@ if __name__ == "__main__":
     # source.activity = 100 * kBq
 
     size = [50, 1, 1]
-    spacing = [2.0 * mm, 60.0 * mm, 60.0 * mm]
+    spacing = [1.0 * mm, 60.0 * mm, 60.0 * mm]
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
@@ -146,11 +148,21 @@ if __name__ == "__main__":
 
     """
     ref_fpath = ref_path / "test087-RBE_rbe.mhd"
+    ref_fpath = "/users/aresch/Data/10_RBE_mMKM_Yihan_120MeVn/idc-CT-IR2HBLc_E120.0_1-B1-b1_HBL_ISD0-IR2HBL_alpha.mhd"
+
+    fName = paths.output / RBE_act.alpha_mix.get_output_path()
+    img1 = itk.imread(fName)
+    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
+    data1 = np.flip(data1)
+    d1 = data1[0]
+    alpha_at_118MeVn = 6.31
+    print(f"{d1 = }")
+
     print(f"{doseIDD.dose.get_output_path()=}")
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
-        filename2=paths.output / RBE_act.rbe.get_output_path(),
+        filename2=paths.output / RBE_act.alpha_mix.get_output_path(),
         tolerance=20,
         eval_quantity="RBE",
         #        plt_ylim=[0, 2],
