@@ -21,7 +21,7 @@ if __name__ == "__main__":
     ui.g4_verbose_level = 1
     ui.visu = False
     ui.random_seed = 12345678910
-    ui.number_of_threads = 2
+    ui.number_of_threads = 16
 
     numPartSimTest = 40000 / ui.number_of_threads
     numPartSimRef = 1e4
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     test_material_name = "G4_WATER"
     phantom_off = sim.add_volume("Box", "phantom_off")
     phantom_off.mother = phantom.name
-    phantom_off.size = [100 * mm, 60 * mm, 60 * mm]
+    phantom_off.size = [100 * mm, 10 * mm, 10 * mm]
     phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]
     phantom_off.material = test_material_name
     phantom_off.color = [0, 0, 1, 1]
@@ -116,10 +116,12 @@ if __name__ == "__main__":
     RBE_act.spacing = spacing
     RBE_act.hit_type = "random"
     RBE_act.model = "mMKM"
-    RBE_act.score_in = "G4_WATER"
+    #    RBE_act.model = "LEM1lda"
+    #    RBE_act.score_in = "G4_WATER"
 
     #    RBE_act.lookup_table_path = mkm_lq_fpath
-    RBE_act.lookup_table_path = "/home/aresch/Documents/RBE/MKM_Gate10_sparse.txt"
+    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
+    #    RBE_act.lookup_table_path = '/users/aresch/Documents/RBE/LEM1_RS.txt'
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
@@ -142,17 +144,15 @@ if __name__ == "__main__":
     )
 
     """
-    ref_fpath = (
-        ref_path
-        / "test087_REalanine__Proton_Energy80spread1MeV_PrimaryProton-relEfficiency-letToG4_ALANINE.mhd"
-    )
+    ref_fpath = ref_path / "test087-RBE_rbe.mhd"
     print(f"{doseIDD.dose.get_output_path()=}")
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
         filename2=paths.output / RBE_act.rbe.get_output_path(),
         tolerance=20,
-        plt_ylim=[0, 2],
+        eval_quantity="RBE",
+        #        plt_ylim=[0, 2],
     )
 
     # )

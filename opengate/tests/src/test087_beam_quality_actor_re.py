@@ -151,7 +151,8 @@ if __name__ == "__main__":
         ref_filename1=ref_fpath,
         filename2=paths.output / RE_act.RE_mix.get_output_path(),
         tolerance=20,
-        plt_ylim=[0, 2],
+        #        plt_ylim=[0, 2],
+        eval_quantity="RE",
     )
 
     # )
