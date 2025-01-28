@@ -12,10 +12,10 @@
 #include "G4EmCalculator.hh"
 #include "G4NistManager.hh"
 #include "G4VPrimitiveScorer.hh"
+#include "GateHelpersImage.h"
 #include "GateWeightedEdepActor.h"
 #include "itkImage.h"
 #include <pybind11/stl.h>
-#include "GateHelpersImage.h"
 
 #include "G4DataVector.hh"
 
@@ -28,10 +28,10 @@ public:
   GateBeamQualityActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
-  
+
   double ScoringQuantityFn(G4Step *step, double *secondQuantity) override;
-  
-  void EndSimulationAction();
+
+  // void EndSimulationAction();
 
   std::string fRBEmodel;
   double fAlpha0;
@@ -42,16 +42,13 @@ public:
   int ZMinTable;
   int ZMaxTable;
   Image3DType::SizeType size_edep{};
-  
-  
+
 private:
   std::vector<G4DataVector *> *table;
-  
+
   void CreateLookupTable(py::dict &user_info);
   double GetValue(int Z, float energy);
   size_t FindLowerBound(G4double x, G4DataVector *values) const;
-
-
 };
 
 #endif // GateBeamQualityActor_h

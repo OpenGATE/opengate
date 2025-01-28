@@ -35,69 +35,6 @@ from .dataitems import (
 )
 
 
-class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
-    user_info_defaults = {
-        "is_ion": (
-            True,
-            {
-                "doc": "",
-            },
-        ),
-        "particle_name": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-        "ion_params": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-        "material": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-        "nominal_energies": (
-            [],
-            {
-                "doc": "",
-            },
-        ),
-        "savefile_path": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-    }
-
-    def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateEmCalculatorActor.__init__(self, self.user_info)
-        self.AddActions(
-            {
-                "BeginOfRunActionMasterThread",
-                "EndOfRunActionMasterThread",
-                "BeginOfRunAction",
-                "EndOfRunAction",
-                "BeginOfEventAction",
-                "SteppingAction",
-            }
-        )
-
-    def initialize(self, *args):
-
-        self.InitializeUserInput(self.user_info)  # C++ side
-        self.InitializeCpp()
-
-
 class VoxelDepositActor(ActorBase):
     """Base class which holds user input parameters common to all actors
     that deposit quantities in a voxel grid, e.g. the DoseActor.
@@ -1205,6 +1142,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             fragments = [
                 int(x) if isinstance(x, (int, float)) else x for x in fragments
             ]
+        else:
+            raise ValueError("Non numeric entries in table")
         self.check_table(v_table, fragments)
         # get max and min atomic numbers available
         self.z_min_table = min(fragments)
@@ -1215,7 +1154,10 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             )
         if self.energy_per_nucleon:
             for i in range(1, len(v_table), 3):
-                v_table[i] = [x * v_table[i - 1][0] for x in v_table[i]]
+                n_nuclei = v_table[i - 1][0] * (1 + float(v_table[i - 1][0] != 1))
+
+                v_table[i] = [x * n_nuclei for x in v_table[i]]
+
         self.lookup_table = v_table
 
     def check_table(self, v_table, fragments):
@@ -1496,9 +1438,11 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         self.InitializeCpp()
 
     def EndSimulationAction(self):
+        print("ok")
         g4.GateBeamQualityActor.EndSimulationAction(self)
-        VoxelDepositActor.EndSimulationAction(self)
+
         self.compute_rbe_weighted_dose()
+        VoxelDepositActor.EndSimulationAction(self)
 
     def compute_rbe_weighted_dose(self):
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
@@ -1506,14 +1450,37 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         dose_img = self.compute_dose_from_edep_img()
 
         if self.model == "mMKM":
+
+            alpha_mix_numerator_img = self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.data[0]
+            print(f"Before {alpha_mix_numerator_img.image_array=}")
+
+            alpha_mix_denominator_img = (
+                self.user_output.__getattr__(
+                    f"{self.scored_quantity}_mix"
+                ).merged_data.data[1]
+                * self.alpha_0
+            )
+            self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.data[0] = (
+                alpha_mix_numerator_img * beta_ref + alpha_mix_denominator_img
+            )
             alpha_mix_img = self.user_output.__getattr__(
                 f"{self.scored_quantity}_mix"
             ).merged_data.quotient
+            #            self.user_output.__getattr__(
+            #                f"{self.scored_quantity}_mix"
+            #            ).merged_data.quotient.write()
             log_survival = alpha_mix_img * dose_img * (
                 -1
             ) + dose_img * dose_img * beta_ref * (-1)
             log_survival_arr = log_survival.image_array
-
+            print(
+                f"After {self.user_output.alpha_mix.merged_data.data[0].image_array=}"
+            )
+            print(f"{alpha_mix_img.image_array=}")
         elif self.model == "LEM1lda":
             dose_arr = dose_img.image_array
             arr_mask_linear = dose_arr > self.D_cut
@@ -1723,6 +1690,69 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def EndSimulationAction(self):
         g4.GateFluenceActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
+
+
+class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
+    user_info_defaults = {
+        "is_ion": (
+            True,
+            {
+                "doc": "",
+            },
+        ),
+        "particle_name": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+        "ion_params": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+        "material": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+        "nominal_energies": (
+            [],
+            {
+                "doc": "",
+            },
+        ),
+        "savefile_path": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateEmCalculatorActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+            }
+        )
+
+    def initialize(self, *args):
+
+        self.InitializeUserInput(self.user_info)  # C++ side
+        self.InitializeCpp()
 
 
 process_cls(VoxelDepositActor)

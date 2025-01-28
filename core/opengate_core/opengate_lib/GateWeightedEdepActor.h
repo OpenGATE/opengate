@@ -45,9 +45,6 @@ public:
 
   virtual void EndSimulationAction() override;
 
-  //   virtual void AddValuesToImages(G4Step *step, Image3DType::IndexType
-  //   index);
-
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
   }
@@ -75,9 +72,6 @@ public:
   // Option: indicate if we must compute dose in Gray also
   std::string fPhysicalVolumeName;
   std::string fScoreIn;
-  //   bool fdoseAverage;
-  //   bool ftrackAverage;
-  //   bool fLETtoOtherMaterial;
   std::string fotherMaterial;
 
   int NbOfEvent = 0;

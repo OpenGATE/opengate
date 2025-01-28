@@ -99,6 +99,9 @@ G4double GateWeightedEdepActor::GetMeanEnergy(G4Step *step) {
   auto energy2 = step->GetPostStepPoint()->GetKineticEnergy() / CLHEP::MeV;
   G4double energy = (energy1 + energy2) / 2;
 
+  // std::cout<<"Energy p: " << energy1 << std::endl;
+  // std::cout<<"Energy m: " << energy << std::endl;
+
   return energy;
 }
 
@@ -188,6 +191,10 @@ void GateWeightedEdepActor::SteppingAction(G4Step *step) {
   bool isInside;
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
+  // std::cout<<"Is inside: " << isInside << std::endl;
+  // std::cout<<"Position : " << position[0]<< " "<< position[1]<<" "<<
+  // position[2] << std::endl; std::cout<<"index : " << index[0] << " "<<
+  // index[1]<< " "<< index[2] << std::endl;
   G4double averagingQuantity;
   auto &l = fThreadLocalData.Get();
   l.energy_mean = GetMeanEnergy(step);
