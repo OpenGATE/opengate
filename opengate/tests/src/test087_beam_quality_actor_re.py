@@ -6,7 +6,9 @@ import opengate as gate
 from opengate.tests import utility
 import pandas as pd
 
-if __name__ == "__main__":
+
+def run_test_re(particle="carbon"):
+
     paths = utility.get_default_test_paths(__file__, "test_087")
     print(paths)
     ref_path = paths.output_ref / "test087"
@@ -22,8 +24,10 @@ if __name__ == "__main__":
     ui.visu = False
     ui.random_seed = 12345678910
     ui.number_of_threads = 2
-
-    numPartSimTest = 40000 / ui.number_of_threads
+    if particle == "proton":
+        numPartSimTest = 40000 / ui.number_of_threads
+    else:
+        numPartSimTest = 4000 / ui.number_of_threads
     numPartSimRef = 1e5
 
     # units
@@ -60,10 +64,15 @@ if __name__ == "__main__":
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
-    source.energy.mono = 80 * MeV
-    # source.energy.type = 'gauss'
-    # source.energy.sigma_gauss = 1 * MeV
-    source.particle = "proton"
+    if particle == "proton":
+        source.energy.mono = 80 * MeV
+        # source.energy.type = 'gauss'
+        # source.energy.sigma_gauss = 1 * MeV
+        source.particle = "proton"
+    else:
+        source.energy.mono = 1424 * MeV
+        source.particle = "ion 6 12"
+
     source.position.type = "disc"
     source.position.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
     source.position.radius = 4 * mm
@@ -77,38 +86,17 @@ if __name__ == "__main__":
     size = [50, 1, 1]
     spacing = [2.0 * mm, 60.0 * mm, 60.0 * mm]
 
-    doseActorName_IDD_d = "IDD_d"
+    doseActorName_IDD_d = f"IDD_d_{particle}"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
     doseIDD.output_filename = paths.output / ("test087-" + doseActorName_IDD_d + ".mhd")
-    print(f'actor: {paths.output / ("test087-" + doseActorName_IDD_d + ".mhd")}')
+    #    print(f'actor: {paths.output / ("test087-" + doseActorName_IDD_d + ".mhd")}')
     doseIDD.attached_to = phantom_off.name
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
     doseIDD.dose.active = False
-    #
-    #    RBE = "RBE"
-    #    RBE_act = sim.add_actor("BeamQualityActor", RBE)
-    #    RBE_act.output_filename = paths.output / ("test087-" + RBE + ".mhd")
-    #    RBE_act.attached_to = phantom_off.name
-    #    RBE_act.size = size
-    #    RBE_act.spacing = spacing
-    #    RBE_act.hit_type = "random"
-    ##    RBE_act.other_material = 'G4_Alanine'
-    #    # both lines do the same thing,
-    ##    RBE_act.dose_average = False
-    ##    RBE_act.enable_rbe = True
-    ##    RBE_act.is_energy_per_nucleon = False
-    ##    RBE_act.fclin = 1.0
-    ##    RBE_act.lookup_table_path = (
-    ##        "/opt/GATE/GateRTion-1.1/install/data/RE_Alanine/RE_Alanine_RBEstyle.txt"
-    ##    )
-    ##    RBE_act.lookup_table_path = (
-    ##        "/home/ideal/0_Data/21_RBE/01_Tables/NIRS_MKM_reduced_data.txt"
-    ##    )
-    #    RBE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
-    RE = "RE"
+    RE = f"RE_{particle}"
     RE_act = sim.add_actor("REActor", RE)
     RE_act.output_filename = paths.output / ("test087-" + RE + ".mhd")
     RE_act.attached_to = phantom_off.name
@@ -122,8 +110,12 @@ if __name__ == "__main__":
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
+    #    fe = sim.add_filter("ParticleFilter", "f")
+    #    fe.particle = "proton"
+    #    fe.policy = "accept"
+    #    LETActor_primaries.filters.append(fe)
 
-    sim.run()
+    sim.run(start_new_process=True)
 
     # ----------------------------------------------------------------------------------------------------------------
     print(doseIDD)
@@ -141,10 +133,17 @@ if __name__ == "__main__":
     )
 
     """
-    ref_fpath = (
-        ref_path
-        / "test087_REalanine__Proton_Energy80spread1MeV_PrimaryProton-relEfficiency-letToG4_ALANINE.mhd"
-    )
+
+    if particle == "proton":
+        ref_fpath = (
+            ref_path
+            / "test087_REalanine__Proton_Energy80spread1MeV_PrimaryProton-relEfficiency-letToG4_ALANINE.mhd"
+        )
+    else:
+        ref_fpath = (
+            ref_path
+            / "test087_REalanine__Carbon_Energy1424spread1MeV_PrimaryCarbon-relEfficiency-letToG4_ALANINE.mhd"
+        )
     print(f"{doseIDD.dose.get_output_path()=}")
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
@@ -154,6 +153,7 @@ if __name__ == "__main__":
         #        plt_ylim=[0, 2],
         eval_quantity="RE",
     )
+    return is_ok
 
     # )
     # is_ok = (
@@ -167,4 +167,12 @@ if __name__ == "__main__":
     #     and is_ok
     # )
 
+
+def main():
+    is_ok = run_test_re("proton")
+    is_ok = is_ok and run_test_re("carbon")
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()
