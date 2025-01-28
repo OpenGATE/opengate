@@ -616,6 +616,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
 
         VoxelDepositActor.initialize(self)
 
+
         # the edep component has to be active in any case
         self.user_output.edep_with_uncertainty.set_active(True, item=0)
 
@@ -1270,7 +1271,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
-
+        
     def compute_dose_from_edep_img(self, overrides=dict()):
         """
         * cretae mass image:
@@ -1285,8 +1286,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         spacing = np.array(self.user_info.spacing)
         voxel_volume = spacing[0] * spacing[1] * spacing[2]
         Gy = g4_units.Gy
-        edep_data_item = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.data[1]
-        edep_img = edep_data_item.image
+        edep_img = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.data[1].image
 
         score_in_material = self.user_info.score_in 
 
@@ -1299,28 +1299,31 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             if score_in_material not in material_database:
                 self.simulation.volume_manager.material_database.FindOrBuildMaterial(score_in_material)
             density = material_database[score_in_material].GetDensity()
-            edep_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
+            dose_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
         else:
             # divide edep image with the original mass image
             if vol_type == "ImageVolume":
-                density_img = create_density_img(vol, material_database)
-                edep_img = divide_itk_images(
+                density_img = vol.create_density_image()
+                edep_density = divide_itk_images(
                     img1_numerator=edep_img,
                     img2_denominator=density_img,
                     filterVal=0,
                     replaceFilteredVal=0,
                 )
-                # divide by voxel volume and convert unit
-                edep_img = scale_itk_image(edep_img, 1 / (Gy * voxel_volume))
+                # divide by voxel volume and convert unit. 
+                dose_img = scale_itk_image(edep_density, g4_units.cm3 / (Gy * voxel_volume * g4_units.g))
     
             else:
+                if vol.material not in material_database:
+                    self.simulation.volume_manager.material_database.FindOrBuildMaterial(vol.material)
                 density = material_database[vol.material].GetDensity()
-                edep_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
+                dose_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
 
-        dose_image = ItkImageDataItem(data=edep_img)
-        dose_image.copy_image_properties(edep_data_item.image)
+        dose_image = ItkImageDataItem(data=dose_img)
+        dose_image.copy_image_properties(edep_img)
 
         return dose_image
+
 
 
 class REActor(BeamQualityActor, g4.GateBeamQualityActor):
