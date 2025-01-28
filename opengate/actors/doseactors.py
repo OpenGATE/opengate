@@ -35,69 +35,6 @@ from .dataitems import (
 )
 
 
-class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
-    user_info_defaults = {
-        "is_ion": (
-            True,
-            {
-                "doc": "",
-            },
-        ),
-        "particle_name": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-        "ion_params": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-        "material": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-        "nominal_energies": (
-            [],
-            {
-                "doc": "",
-            },
-        ),
-        "savefile_path": (
-            "",
-            {
-                "doc": "",
-            },
-        ),
-    }
-
-    def __init__(self, *args, **kwargs):
-        ActorBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateEmCalculatorActor.__init__(self, self.user_info)
-        self.AddActions(
-            {
-                "BeginOfRunActionMasterThread",
-                "EndOfRunActionMasterThread",
-                "BeginOfRunAction",
-                "EndOfRunAction",
-                "BeginOfEventAction",
-                "SteppingAction",
-            }
-        )
-
-    def initialize(self, *args):
-
-        self.InitializeUserInput(self.user_info)  # C++ side
-        self.InitializeCpp()
-
-
 class VoxelDepositActor(ActorBase):
     """Base class which holds user input parameters common to all actors
     that deposit quantities in a voxel grid, e.g. the DoseActor.
@@ -966,6 +903,12 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
     """
 
     user_info_defaults = {
+        "energy_per_nucleon": (
+            True,
+            {
+                "doc": "The kinetic energy in the table is the energy per nucleon MeV/n, else False.",
+            },
+        ),
         "model": (
             "RE",
             {
@@ -1011,7 +954,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             },
         ),
     }
-    scored_quantity = 'alpha'
+    scored_quantity = "alpha"
     user_output_config = {
         f"{scored_quantity}_mix": {
             "actor_output_class": ActorOutputQuotientMeanImage,
@@ -1105,9 +1048,11 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
         if self.lookup_table_path:
             self.read_lookup_table(self.lookup_table_path)
-            
+
         if not self.lookup_table:
-            raise ValueError('Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute.')
+            raise ValueError(
+                "Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute."
+            )
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -1186,7 +1131,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         self.set_lookup_table(v_table, fragments)
 
     def set_lookup_table(self, v_table: list, fragments: list):
-        self.lookup_table = v_table
         element_map = self.element_to_atomic_number_dict
         # convert fragments strings to atomic number if they are
         fragments = [
@@ -1199,6 +1143,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             fragments = [
                 int(x) if isinstance(x, (int, float)) else x for x in fragments
             ]
+        else:
+            raise ValueError("Non numeric entries in table")
         self.check_table(v_table, fragments)
         # get max and min atomic numbers available
         self.z_min_table = min(fragments)
@@ -1207,6 +1153,12 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             raise ValueError(
                 f"Error: {len(v_table) = } and {len(fragments) = } are not equal."
             )
+        if self.energy_per_nucleon:
+            for i in range(1, len(v_table), 3):
+                n_nuclei = v_table[i - 1][0] * (1 + float(v_table[i - 1][0] != 1))
+
+                v_table[i] = [x * n_nuclei for x in v_table[i]]
+
         self.lookup_table = v_table
 
     def check_table(self, v_table, fragments):
@@ -1286,18 +1238,21 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         spacing = np.array(self.user_info.spacing)
         voxel_volume = spacing[0] * spacing[1] * spacing[2]
         Gy = g4_units.Gy
+
         edep_img = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.data[1].image
 
-        score_in_material = self.user_info.score_in 
+        score_in_material = self.user_info.score_in
 
         material_database = (
             self.simulation.volume_manager.material_database.g4_materials
         )
 
-        if score_in_material != 'material':
+        if score_in_material != "material":
             # score in other material
             if score_in_material not in material_database:
-                self.simulation.volume_manager.material_database.FindOrBuildMaterial(score_in_material)
+                self.simulation.volume_manager.material_database.FindOrBuildMaterial(
+                    score_in_material
+                )
             density = material_database[score_in_material].GetDensity()
             dose_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
         else:
@@ -1312,7 +1267,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 )
                 # divide by voxel volume and convert unit. 
                 dose_img = scale_itk_image(edep_density, g4_units.cm3 / (Gy * voxel_volume * g4_units.g))
-    
             else:
                 if vol.material not in material_database:
                     self.simulation.volume_manager.material_database.FindOrBuildMaterial(vol.material)
@@ -1327,7 +1281,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
 
 class REActor(BeamQualityActor, g4.GateBeamQualityActor):
-    scored_quantity = 'RE'
+    scored_quantity = "RE"
     user_output_config = {
         f"{scored_quantity}_mix": {
             "actor_output_class": ActorOutputQuotientMeanImage,
@@ -1431,17 +1385,18 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             },
         ),
     }
-    
+
     user_output_config = BeamQualityActor.user_output_config.copy()
     user_output_config.update(
-        {'rbe': {
-        "actor_output_class": ActorOutputSingleMeanImage,
-        "active": False,
-        },
-        'rbe_dose': {
-        "actor_output_class": ActorOutputSingleMeanImage,
-        "active": False,
-        }
+        {
+            "rbe": {
+                "actor_output_class": ActorOutputSingleMeanImage,
+                "active": False,
+            },
+            "rbe_dose": {
+                "actor_output_class": ActorOutputSingleMeanImage,
+                "active": False,
+            },
         }
     )
 
@@ -1491,9 +1446,10 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
 
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
-        VoxelDepositActor.EndSimulationAction(self)
         if self.write_RBE_dose_image:
             self.compute_rbe_weighted_dose()
+        VoxelDepositActor.EndSimulationAction(self)
+
 
     def compute_rbe_weighted_dose(self):
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
@@ -1501,16 +1457,43 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         dose_img = self.compute_dose_from_edep_img()
 
         if self.model == "mMKM":
-            alpha_mix_img = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.quotient
+
+            alpha_mix_numerator_img = self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.data[0]
+            print(f"Before {alpha_mix_numerator_img.image_array=}")
+
+            alpha_mix_denominator_img = (
+                self.user_output.__getattr__(
+                    f"{self.scored_quantity}_mix"
+                ).merged_data.data[1]
+                * self.alpha_0
+            )
+            self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.data[0] = (
+                alpha_mix_numerator_img * beta_ref + alpha_mix_denominator_img
+            )
+            alpha_mix_img = self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.quotient
+            #            self.user_output.__getattr__(
+            #                f"{self.scored_quantity}_mix"
+            #            ).merged_data.quotient.write()
             log_survival = alpha_mix_img * dose_img * (
                 -1
             ) + dose_img * dose_img * beta_ref * (-1)
             log_survival_arr = log_survival.image_array
-
+            print(
+                f"After {self.user_output.alpha_mix.merged_data.data[0].image_array=}"
+            )
+            print(f"{alpha_mix_img.image_array=}")
         elif self.model == "LEM1lda":
             dose_arr = dose_img.image_array
             arr_mask_linear = dose_arr > self.D_cut
-            alpha_mix_img = self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.quotient
+            alpha_mix_img = self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.quotient
             sqrt_beta_mix_img = self.user_output.beta_mix.merged_data.quotient
 
             log_survival_lq = alpha_mix_img * dose_img * (
@@ -1553,7 +1536,7 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         rbe_weighted_dose_image.copy_image_properties(dose_img.image)
 
         rbe_image = rbe_weighted_dose_image / dose_img
-        
+
         self.user_output.rbe.merged_data = rbe_image
         rbe_path = self.user_output.rbe.get_output_path()
 
@@ -1714,6 +1697,69 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
     def EndSimulationAction(self):
         g4.GateFluenceActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
+
+
+class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
+    user_info_defaults = {
+        "is_ion": (
+            True,
+            {
+                "doc": "",
+            },
+        ),
+        "particle_name": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+        "ion_params": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+        "material": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+        "nominal_energies": (
+            [],
+            {
+                "doc": "",
+            },
+        ),
+        "savefile_path": (
+            "",
+            {
+                "doc": "",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateEmCalculatorActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+            }
+        )
+
+    def initialize(self, *args):
+
+        self.InitializeUserInput(self.user_info)  # C++ side
+        self.InitializeCpp()
 
 
 process_cls(VoxelDepositActor)

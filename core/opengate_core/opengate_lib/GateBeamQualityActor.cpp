@@ -62,13 +62,13 @@ double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
   auto &l = fThreadLocalData.Get();
   auto dedx_currstep = l.dedx_currstep;
 
-  if (p == G4Gamma::Gamma()) {
-    p = G4Electron::Electron();
-  }
+  // if (p == G4Gamma::Gamma()) {
+  // p = G4Electron::Electron();
+  //}
 
   auto charge = int(p->GetAtomicNumber());
-  auto mass = p->GetAtomicMass();
-  auto table_value = GetValue(charge, l.energy_mean / mass);
+  // auto mass = p->GetAtomicMass();
+  auto table_value = GetValue(charge, l.energy_mean);
 
   if (fRBEmodel == "LEM1lda") {
     double dedx_cut = DBL_MAX;
@@ -99,21 +99,31 @@ double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
   }
 }
 
-void GateBeamQualityActor::EndSimulationAction() {
+// void GateBeamQualityActor::EndOfRunActionMasterThread() {
+// std::cout << "RBE model: " << fRBEmodel << std::endl;
 
-  if (fRBEmodel == "mMKM") {
-    // postprocess numerator image to get alpha
-    itk::ImageRegionIterator<Image3DType> iterator3D(
-        cpp_numerator_image, cpp_numerator_image->GetLargestPossibleRegion());
-    for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
-      Image3DType::IndexType index_f = iterator3D.GetIndex();
-      Image3DType::PixelType Q = cpp_numerator_image->GetPixel(index_f);
-      Image3DType::PixelType Edep = cpp_denominator_image->GetPixel(index_f);
-      cpp_numerator_image->SetPixel(index_f,
-                                    (fBetaRef * Q + fAlpha0 * Edep) / Edep);
-    }
-  }
-}
+// std::cout << "Alpha: " << fAlpha0 << std::endl;
+
+// std::cout << "Beta ref: " << fBetaRef << std::endl;
+// if (fRBEmodel == "mMKM") {
+//// postprocess numerator image to get alpha
+// itk::ImageRegionIterator<Image3DType> iterator3D(
+// cpp_numerator_image, cpp_numerator_image->GetLargestPossibleRegion());
+// for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
+
+// Image3DType::IndexType index_f = iterator3D.GetIndex();
+// Image3DType::PixelType Q = cpp_numerator_image->GetPixel(index_f);
+// Image3DType::PixelType Edep = cpp_denominator_image->GetPixel(index_f);
+
+// std::cout << "Pixel val before:" <<
+// cpp_numerator_image->GetPixel(index_f)/Edep << std::endl;
+// cpp_numerator_image->SetPixel(index_f,
+//(fBetaRef * Q + fAlpha0 * Edep) );
+// std::cout << "Pixel val after:" << cpp_numerator_image->GetPixel(index_f) <<
+// std::endl;
+//}
+//}
+//}
 
 void GateBeamQualityActor::CreateLookupTable(py::dict &user_info) {
   // get lookup table
@@ -127,15 +137,18 @@ void GateBeamQualityActor::CreateLookupTable(py::dict &user_info) {
 }
 
 double GateBeamQualityActor::GetValue(int Z, float energy) {
-  // std::cout << "GetValue: Z: " << Z << ", energy[MeV/u]: " << energy <<
+  // std::cout << "GetValue: Z: " << Z << ", energy[MeV]: " << energy <<
   // std::endl;
   // initalize value
   G4double y = 0;
-
+  // std::cout<< "Particle: "<< Z << std::endl;
+  // std::cout<< "Energy: "<< energy << std::endl;
+  // std::cout<< "Zmin: "<< ZMinTable << "      " << "Zmax: "<< ZMaxTable <<
+  // std::endl;
   if (Z > ZMaxTable) {
     Z = ZMaxTable;
   }
-  if ((Z >= ZMinTable) & (Z <= ZMaxTable)) {
+  if ((Z >= ZMinTable) && (Z <= ZMaxTable)) {
     G4DataVector *Z_vec = new G4DataVector();
     Z_vec->insertAt(0, Z);
     int bin_table = -1;
@@ -156,7 +169,7 @@ double GateBeamQualityActor::GetValue(int Z, float energy) {
     // get table value for the given energy
     y = linearAlgo.Calculate(energy, bin, *energies, *data);
     // std::cout<<"interpolation output:" << y << std::endl;
-
+    // std::cout<<"        "<<std::endl;
     delete Z_vec;
     Z_vec = nullptr;
     return y;

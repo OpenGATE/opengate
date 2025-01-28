@@ -5,6 +5,11 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 import pandas as pd
+import itk
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "test_087")
@@ -20,11 +25,11 @@ if __name__ == "__main__":
     ui.g4_verbose = False
     ui.g4_verbose_level = 1
     ui.visu = False
-    ui.random_seed = 12345678910
-    ui.number_of_threads = 2
+    ui.random_seed = 9234567891
+    ui.number_of_threads = 1
 
-    numPartSimTest = 40000 / ui.number_of_threads
-    numPartSimRef = 1e5
+    numPartSimTest = 1e3 / ui.number_of_threads
+    numPartSimRef = 1
 
     # units
     m = gate.g4_units.m
@@ -38,35 +43,27 @@ if __name__ == "__main__":
     #  change world size
     world = sim.world
     world.size = [600 * cm, 500 * cm, 500 * cm]
-    # world.material = "Vacuum"
+    world.material = "G4_AIR"
 
     # waterbox
     phantom = sim.add_volume("Box", "phantom")
-    phantom.size = [10 * cm, 10 * cm, 10 * cm]
-    phantom.translation = [-5 * cm, 0, 0]
+    phantom.size = [50 * mm, 10 * cm, 10 * cm]
+    phantom.translation = [-25 * mm, 0, 0]
     phantom.material = "G4_WATER"
     phantom.color = [0, 0, 1, 1]
-
-    test_material_name = "G4_WATER"
-    phantom_off = sim.add_volume("Box", "phantom_off")
-    phantom_off.mother = phantom.name
-    phantom_off.size = [100 * mm, 60 * mm, 60 * mm]
-    phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]
-    phantom_off.material = test_material_name
-    phantom_off.color = [0, 0, 1, 1]
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
-    source.energy.mono = 80 * MeV
+    source.energy.mono = 1424 * MeV
     # source.energy.type = 'gauss'
     # source.energy.sigma_gauss = 1 * MeV
-    source.particle = "proton"
+    source.particle = "ion 6 12"
     source.position.type = "disc"
     source.position.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
-    source.position.radius = 4 * mm
+    source.position.radius = 1 * mm
     source.position.translation = [0, 0, 0]
     source.direction.type = "momentum"
     source.direction.momentum = [-1, 0, 0]
@@ -75,50 +72,34 @@ if __name__ == "__main__":
     # source.activity = 100 * kBq
 
     size = [50, 1, 1]
-    spacing = [2.0 * mm, 60.0 * mm, 60.0 * mm]
+    spacing = [1.0 * mm, 100.0 * mm, 100.0 * mm]
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
     doseIDD.output_filename = paths.output / ("test087-" + doseActorName_IDD_d + ".mhd")
     print(f'actor: {paths.output / ("test087-" + doseActorName_IDD_d + ".mhd")}')
-    doseIDD.attached_to = phantom_off.name
+    doseIDD.attached_to = phantom.name
     doseIDD.size = size
     doseIDD.spacing = spacing
     doseIDD.hit_type = "random"
     doseIDD.dose.active = False
-    #
-    #    RBE = "RBE"
-    #    RBE_act = sim.add_actor("BeamQualityActor", RBE)
-    #    RBE_act.output_filename = paths.output / ("test087-" + RBE + ".mhd")
-    #    RBE_act.attached_to = phantom_off.name
-    #    RBE_act.size = size
-    #    RBE_act.spacing = spacing
-    #    RBE_act.hit_type = "random"
-    ##    RBE_act.other_material = 'G4_Alanine'
-    #    # both lines do the same thing,
-    ##    RBE_act.dose_average = False
-    ##    RBE_act.enable_rbe = True
-    ##    RBE_act.is_energy_per_nucleon = False
-    ##    RBE_act.fclin = 1.0
-    ##    RBE_act.lookup_table_path = (
-    ##        "/opt/GATE/GateRTion-1.1/install/data/RE_Alanine/RE_Alanine_RBEstyle.txt"
-    ##    )
-    ##    RBE_act.lookup_table_path = (
-    ##        "/home/ideal/0_Data/21_RBE/01_Tables/NIRS_MKM_reduced_data.txt"
-    ##    )
-    #    RBE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
-    RE = "RE"
-    RE_act = sim.add_actor("REActor", RE)
-    RE_act.output_filename = paths.output / ("test087-" + RE + ".mhd")
-    RE_act.attached_to = phantom_off.name
-    RE_act.size = size
-    RE_act.spacing = spacing
-    RE_act.hit_type = "random"
-    RE_act.model = "RE"
-    RE_act.score_in = "G4_ALANINE"
-    RE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
+    RBE = "RBE"
+    RBE_act = sim.add_actor("RBEActor", "RBE_act")
+    RBE_act.output_filename = paths.output / ("test087-" + RBE + ".mhd")
+    RBE_act.attached_to = phantom.name
+    RBE_act.size = size
+    RBE_act.spacing = spacing
+    RBE_act.hit_type = "random"
+    RBE_act.model = "mMKM"
+    RBE_act.r_nucleus = 3.9
+    RBE_act.energy_per_nucleon = False
+    #    RBE_act.model = "LEM1lda"
+    #    RBE_act.score_in = "G4_WATER"
 
+    RBE_act.lookup_table_path = mkm_lq_fpath
+    #    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
+    #    RBE_act.lookup_table_path = '/users/aresch/Documents/RBE/LEM1_RS.txt'
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
@@ -126,7 +107,7 @@ if __name__ == "__main__":
     sim.run()
 
     # ----------------------------------------------------------------------------------------------------------------
-    print(doseIDD)
+    #    print(RBE_act)
 
     fNameIDD = doseIDD.user_info.output
     """
@@ -141,19 +122,62 @@ if __name__ == "__main__":
     )
 
     """
-    ref_fpath = (
-        ref_path
-        / "test087_REalanine__Proton_Energy80spread1MeV_PrimaryProton-relEfficiency-letToG4_ALANINE.mhd"
-    )
+    ref_fpath = ref_path / "test087-RBE_rbe.mhd"
+    ref_fpath = "/users/aresch/Data/10_RBE_mMKM_Yihan_120MeVn/idc-CT-IR2HBLc_E120.0_1-B1-b1_HBL_ISD0-IR2HBL_alpha.mhd"
+    ref_fpath_pkl = ref_path / "bic-alpha.pkl"
+
+    with open(ref_fpath_pkl, "rb") as f:
+        ref_data = pickle.load(f)
+
+    fName = paths.output / RBE_act.alpha_mix.get_output_path()
+    img1 = itk.imread(fName)
+    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
+    alpha_mix_test = np.flip(data1)
+    d1 = alpha_mix_test[0]
+    x_test = np.arange(0, len(alpha_mix_test))
+    alpha_at_118MeVn = 6.31
+    print(f"{d1 = }")
+
     print(f"{doseIDD.dose.get_output_path()=}")
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
-        filename2=paths.output / RE_act.RE_mix.get_output_path(),
+        filename2=paths.output / RBE_act.alpha_mix.get_output_path(),
         tolerance=20,
+        eval_quantity="RBE",
         #        plt_ylim=[0, 2],
-        eval_quantity="RE",
     )
+
+    y_prime = alpha_mix_test
+    x_prime = x_test
+    x = ref_data["x"]
+    y = ref_data["y"]
+    # Interpolate y values of (x, y) along x_prime
+    interpolator = interp1d(x, y, kind="linear", fill_value="extrapolate")
+    y_interpolated = interpolator(x_prime)
+
+    # Calculate residuals
+    residuals = y_prime - y_interpolated
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+
+    # Original and interpolated data
+    plt.plot(x, y, "o-", label="Original (x, y)")
+    plt.plot(x_prime, y_prime, "x-", label="Target (x', y')")
+    plt.plot(x_prime, y_interpolated, "--", label="Interpolated (x', y_interp)")
+
+    # Residuals
+    plt.scatter(x_prime, residuals, color="red", label="Residuals", zorder=5)
+
+    # Formatting
+    plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
+    plt.title("Interpolation and Residuals")
+    plt.xlabel("x or x'")
+    plt.ylabel("y, y' or residuals")
+    plt.legend()
+    plt.grid()
+    plt.show()
 
     # )
     # is_ok = (
