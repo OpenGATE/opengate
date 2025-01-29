@@ -134,7 +134,7 @@ if __name__ == "__main__":
     data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
     alpha_mix_test = np.flip(data1)
     d1 = alpha_mix_test[0]
-    x_test = np.arange(0, len(alpha_mix_test))
+    x_test = np.arange(0, len(alpha_mix_test)) + 0.5
     alpha_at_118MeVn = 6.31
     print(f"{d1 = }")
 
@@ -158,6 +158,8 @@ if __name__ == "__main__":
 
     # Calculate residuals
     residuals = y_prime - y_interpolated
+    print(f"{residuals = }")
+    print(f"{ref_data = }")
 
     # Plotting
     plt.figure(figsize=(10, 6))
@@ -177,7 +179,7 @@ if __name__ == "__main__":
     plt.ylabel("y, y' or residuals")
     plt.legend()
     plt.grid()
-    plt.show()
+    plt.savefig("test.png")
 
     # )
     # is_ok = (

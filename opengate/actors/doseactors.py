@@ -904,7 +904,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
     user_info_defaults = {
         "energy_per_nucleon": (
-            True,
+            False,
             {
                 "doc": "The kinetic energy in the table is the energy per nucleon MeV/n, else False.",
             },
@@ -1461,8 +1461,6 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             alpha_mix_numerator_img = self.user_output.__getattr__(
                 f"{self.scored_quantity}_mix"
             ).merged_data.data[0]
-            print(f"Before {alpha_mix_numerator_img.image_array=}")
-
             alpha_mix_denominator_img = (
                 self.user_output.__getattr__(
                     f"{self.scored_quantity}_mix"
@@ -1477,17 +1475,10 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             alpha_mix_img = self.user_output.__getattr__(
                 f"{self.scored_quantity}_mix"
             ).merged_data.quotient
-            #            self.user_output.__getattr__(
-            #                f"{self.scored_quantity}_mix"
-            #            ).merged_data.quotient.write()
             log_survival = alpha_mix_img * dose_img * (
                 -1
             ) + dose_img * dose_img * beta_ref * (-1)
             log_survival_arr = log_survival.image_array
-            print(
-                f"After {self.user_output.alpha_mix.merged_data.data[0].image_array=}"
-            )
-            print(f"{alpha_mix_img.image_array=}")
         elif self.model == "LEM1lda":
             dose_arr = dose_img.image_array
             arr_mask_linear = dose_arr > self.D_cut

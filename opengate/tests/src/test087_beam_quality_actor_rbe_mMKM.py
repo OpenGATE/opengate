@@ -5,6 +5,11 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 import pandas as pd
+import itk
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "test_087")
@@ -74,8 +79,8 @@ if __name__ == "__main__":
     source.n = numPartSimTest
     # source.activity = 100 * kBq
 
-    size = [50, 1, 1]
-    spacing = [2.0 * mm, 60.0 * mm, 60.0 * mm]
+    size = [100, 1, 1]
+    spacing = [1.0 * mm, 60.0 * mm, 60.0 * mm]
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
@@ -120,17 +125,63 @@ if __name__ == "__main__":
     #    RBE_act.model = "LEM1lda"
     #    RBE_act.score_in = "G4_WATER"
 
-    RBE_act.energy_per_nucleon = False
-    RBE_act.lookup_table_path = mkm_lq_fpath
+    #    RBE_act.energy_per_nucleon = False
+    #    RBE_act.lookup_table_path = mkm_lq_fpath
 
-    #    RBE_act.energy_per_nucleon = True
-    #    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
+    RBE_act.energy_per_nucleon = True
+    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
     #    RBE_act.lookup_table_path = '/users/aresch/Documents/RBE/LEM1_RS.txt'
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
     sim.run()
+    rs_fpath = "/home/aresch/Software/gate10_g4_11_3_0/opengate/tests/data/output_ref/test087/mMKM line dose IDEAL_water_AbsDose_2D_IR2HBLc28Jan2025.csv"
+    rs_fpath_phys = "/home/aresch/Software/gate10_g4_11_3_0/opengate/tests/data/output_ref/test087/mMKM line physical dose IDEAL_water_AbsDose_2D_IR2HBLc 28 Jan 2025.csv"
+    data = np.loadtxt(rs_fpath, delimiter=";", skiprows=12)
+    data_phys = np.loadtxt(rs_fpath_phys, delimiter=";", skiprows=12)
+    # Extract the first and fourth columns
+    x = (data[:-1, 0] - 28.049) * (-10)  # First column
+    y = data[:-1, 3] / data_phys[:, 3]  # Fourth column
+
+    #    fName = paths.output / doseIDD.r.get_output_path()
+    #    img1 = itk.imread(fName)
+    #    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
+    #    y_prime = np.flip(data1)
+
+    fName = paths.output / RBE_act.alpha_mix.get_output_path()
+    img1 = itk.imread(fName)
+    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
+    y_prime = np.flip(data1)
+    x_test = np.arange(0, len(y_prime)) + 0.5
+    x_prime = x_test
+    interpolator = interp1d(x, y, kind="linear", fill_value="extrapolate")
+    y_interpolated = interpolator(x_prime)
+
+    # Calculate residuals
+    residuals = y_prime - y_interpolated
+    print(f"{residuals = }")
+    #    print(f'{ref_data = }')
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+
+    # Original and interpolated data
+    plt.plot(x, y, "o-", label="Original (x, y)")
+    plt.plot(x_prime, y_prime, "x-", label="Target (x', y')")
+    plt.plot(x_prime, y_interpolated, "--", label="Interpolated (x', y_interp)")
+
+    # Residuals
+    plt.scatter(x_prime, residuals, color="red", label="Residuals", zorder=5)
+
+    # Formatting
+    plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
+    plt.title("Interpolation and Residuals")
+    plt.xlabel("x or x'")
+    plt.ylabel("y, y' or residuals")
+    plt.legend()
+    plt.grid()
+    plt.savefig("test.png")
 
     # ----------------------------------------------------------------------------------------------------------------
     print(RBE_act)

@@ -47,7 +47,7 @@ private:
   std::vector<G4DataVector *> *table;
 
   void CreateLookupTable(py::dict &user_info);
-  double GetValue(int Z, float energy);
+  double GetValue(int Z, G4double energy);
   size_t FindLowerBound(G4double x, G4DataVector *values) const;
 };
 
