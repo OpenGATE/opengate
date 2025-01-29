@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import os
 from scipy.spatial.transform import Rotation
 from pathlib import Path
 import SimpleITK as sitk
@@ -894,7 +895,11 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         g4.GateLETActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
 
-
+def _setter_hook_lookup_table_path(self, path):
+    if not os.path.exists(path):
+        raise ValueError(f'Lookup table path {path} does not exist.')
+    return path
+    
 class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
     """
     BeamQualityActor:
@@ -927,10 +932,11 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             "",
             {
                 "doc": "path of the z*_1d or alpha_z table.",
+                "setter_hook": _setter_hook_lookup_table_path,
             },
         ),
         "lookup_table": (
-            "",
+            None,
             {
                 "doc": "z*_1d or alpha_z table. Read by the actor",
             },
@@ -1023,6 +1029,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             "Ne": 10,
         }
         self.lookup_table = None
+        self.max_val_table = None # store normalization value
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -1048,8 +1055,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
         if self.lookup_table_path:
             self.read_lookup_table(self.lookup_table_path)
-
-        if not self.lookup_table:
+        
+        if self.lookup_table is None:
             raise ValueError(
                 "Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute."
             )
@@ -1158,7 +1165,12 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                 n_nuclei = v_table[i - 1][0] * (1 + float(v_table[i - 1][0] != 1))
 
                 v_table[i] = [x * n_nuclei for x in v_table[i]]
-
+                
+        # normalize table values
+        self.max_val_table = max([max(v_table[i]) for i in range(2, len(v_table), 3)])
+        for i in range(2, len(v_table), 3):
+            v_table[i] = [v / self.max_val_table for v in v_table[i]]
+        
         self.lookup_table = v_table
 
     def check_table(self, v_table, fragments):
@@ -1222,6 +1234,13 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
+        # rescale numerator results
+        numerator_img = self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).merged_data.data[0]
+        self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).merged_data.data[0] = numerator_img * self.max_val_table
         VoxelDepositActor.EndSimulationAction(self)
         
     def compute_dose_from_edep_img(self, overrides=dict()):
@@ -1443,6 +1462,13 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
 
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
+        # rescale numerator (normalized input table)
+        alpha_mix_numerator_img = self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).merged_data.data[0]
+        self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).merged_data.data[0] = alpha_mix_numerator_img * self.max_val_table
         if self.model == "mMKM":
             self._postprocess_alpha_numerator_mkm()
         if self.write_RBE_dose_image:
