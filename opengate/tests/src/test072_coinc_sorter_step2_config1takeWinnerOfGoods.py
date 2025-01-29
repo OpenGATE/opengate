@@ -13,6 +13,7 @@ import numpy as np
 from scipy.stats import wasserstein_distance
 import sys
 
+
 def main(dependency="test072_coinc_sorter_step1_config1.py"):
     # test paths
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
