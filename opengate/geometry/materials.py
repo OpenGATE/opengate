@@ -297,8 +297,8 @@ def create_density_img(img_volume, material_database):
     ----------
     img_volume : ImageVolume
         opengate ImageVolume class instance
-    material_database : dict
-        dictionary with keys: material name, values: G4 material obj
+    material_database : MaterialDatabase
+        simulation.volume_manager.material_database
 
     Returns
     -------
@@ -306,11 +306,14 @@ def create_density_img(img_volume, material_database):
         Image of the same size and resolution of the ct. The voxel value is the density of the voxel converted to g/cm3.
 
     """
+    img_volume.load_input_image()
     act = itk.GetArrayFromImage(img_volume.itk_image)
     arho = np.zeros(act.shape, dtype=np.float32)
 
     for hu0, hu1, mat_name in img_volume.voxel_materials:
-        arho[(act >= hu0) * (act < hu1)] = material_database[mat_name].GetDensity()
+        if mat_name not in material_database.g4_materials:
+            material_database.FindOrBuildMaterial(mat_name)
+        arho[(act >= hu0) * (act < hu1)] = material_database.g4_materials[mat_name].GetDensity()
 
     arho *= g4_units.cm3 / g4_units.g
     rho = itk.GetImageFromArray(arho)

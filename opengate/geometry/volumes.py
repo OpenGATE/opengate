@@ -1181,7 +1181,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
 
     def create_density_image(self):
         return create_density_img(
-            self, self.volume_manager.material_database.g4_materials
+            self, self.volume_manager.material_database
         )
 
     def create_changers(self):

@@ -34,8 +34,6 @@ public:
   // void EndSimulationAction();
 
   std::string fRBEmodel;
-  double fAlpha0;
-  double fBetaRef;
   double fAreaNucl;
   double fDcut;
   double fSmax;
