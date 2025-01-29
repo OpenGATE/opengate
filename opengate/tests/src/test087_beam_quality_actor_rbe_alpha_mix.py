@@ -144,7 +144,7 @@ if __name__ == "__main__":
         ref_filename1=ref_fpath,
         filename2=paths.output / RBE_act.alpha_mix.get_output_path(),
         tolerance=20,
-        eval_quantity="RBE",
+        eval_quantity="alpha",
         #        plt_ylim=[0, 2],
     )
 
