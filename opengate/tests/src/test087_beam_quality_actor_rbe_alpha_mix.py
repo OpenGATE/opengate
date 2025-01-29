@@ -26,7 +26,7 @@ if __name__ == "__main__":
     ui.g4_verbose_level = 1
     ui.visu = False
     ui.random_seed = 9234567891
-    ui.number_of_threads = 1
+    ui.number_of_threads = 8
 
     numPartSimTest = 1e3 / ui.number_of_threads
     numPartSimRef = 1
@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     """
     ref_fpath = ref_path / "test087-RBE_rbe.mhd"
-    ref_fpath = "/users/aresch/Data/10_RBE_mMKM_Yihan_120MeVn/idc-CT-IR2HBLc_E120.0_1-B1-b1_HBL_ISD0-IR2HBL_alpha.mhd"
+    ref_fpath = ref_path / "test087-alpha_mix_alpha.mhd"
     ref_fpath_pkl = ref_path / "bic-alpha.pkl"
 
     with open(ref_fpath_pkl, "rb") as f:
@@ -148,38 +148,38 @@ if __name__ == "__main__":
         #        plt_ylim=[0, 2],
     )
 
-    y_prime = alpha_mix_test
-    x_prime = x_test
-    x = ref_data["x"]
-    y = ref_data["y"]
-    # Interpolate y values of (x, y) along x_prime
-    interpolator = interp1d(x, y, kind="linear", fill_value="extrapolate")
-    y_interpolated = interpolator(x_prime)
-
-    # Calculate residuals
-    residuals = y_prime - y_interpolated
-    print(f"{residuals = }")
-    print(f"{ref_data = }")
-
-    # Plotting
-    plt.figure(figsize=(10, 6))
-
-    # Original and interpolated data
-    plt.plot(x, y, "o-", label="Original (x, y)")
-    plt.plot(x_prime, y_prime, "x-", label="Target (x', y')")
-    plt.plot(x_prime, y_interpolated, "--", label="Interpolated (x', y_interp)")
-
-    # Residuals
-    plt.scatter(x_prime, residuals, color="red", label="Residuals", zorder=5)
-
-    # Formatting
-    plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
-    plt.title("Interpolation and Residuals")
-    plt.xlabel("x or x'")
-    plt.ylabel("y, y' or residuals")
-    plt.legend()
-    plt.grid()
-    plt.savefig("test.png")
+    #    y_prime = alpha_mix_test
+    #    x_prime = x_test
+    #    x = ref_data["x"]
+    #    y = ref_data["y"]
+    #    # Interpolate y values of (x, y) along x_prime
+    #    interpolator = interp1d(x, y, kind="linear", fill_value="extrapolate")
+    #    y_interpolated = interpolator(x_prime)
+    #
+    #    # Calculate residuals
+    #    residuals = y_prime - y_interpolated
+    #    print(f"{residuals = }")
+    #    print(f"{ref_data = }")
+    #
+    #    # Plotting
+    #    plt.figure(figsize=(10, 6))
+    #
+    #    # Original and interpolated data
+    #    plt.plot(x, y, "o-", label="Original (x, y)")
+    #    plt.plot(x_prime, y_prime, "x-", label="Target (x', y')")
+    #    plt.plot(x_prime, y_interpolated, "--", label="Interpolated (x', y_interp)")
+    #
+    #    # Residuals
+    #    plt.scatter(x_prime, residuals, color="red", label="Residuals", zorder=5)
+    #
+    #    # Formatting
+    #    plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
+    #    plt.title("Interpolation and Residuals")
+    #    plt.xlabel("x or x'")
+    #    plt.ylabel("y, y' or residuals")
+    #    plt.legend()
+    #    plt.grid()
+    #    plt.savefig("test.png")
 
     # )
     # is_ok = (
