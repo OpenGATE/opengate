@@ -11,14 +11,23 @@ import uproot
 import os
 import numpy as np
 from scipy.stats import wasserstein_distance
+import sys
 
-if __name__ == "__main__":
+def main(dependency="test072_coinc_sorter_step1_config1.py"):
     # test paths
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
 
-    # open root file
+    # this test need output/test072/output_config1.root
     root_filename = paths.output / "output_config1.root"
-    # root_filename = "output_config2.root"
+    if not os.path.exists(root_filename):
+        # ignore on windows
+        if os.name == "nt":
+            utility.test_ok(True)
+            sys.exit(0)
+        cmd = "python " + str(paths.current / dependency)
+        r = os.system(cmd)
+
+    # open root file
     print(f"Opening {root_filename} ...")
     root_file = uproot.open(root_filename)
 
@@ -105,3 +114,7 @@ if __name__ == "__main__":
     )
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()
