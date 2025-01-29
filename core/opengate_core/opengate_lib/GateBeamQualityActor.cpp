@@ -62,9 +62,9 @@ double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
   auto &l = fThreadLocalData.Get();
   auto dedx_currstep = l.dedx_currstep;
 
-  // if (p == G4Gamma::Gamma()) {
-  // p = G4Electron::Electron();
-  //}
+  if (p == G4Gamma::Gamma()) {
+    p = G4Electron::Electron();
+  }
 
   auto charge = int(p->GetAtomicNumber());
   // auto mass = p->GetAtomicMass();
@@ -99,32 +99,6 @@ double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
   }
 }
 
-// void GateBeamQualityActor::EndOfRunActionMasterThread() {
-// std::cout << "RBE model: " << fRBEmodel << std::endl;
-
-// std::cout << "Alpha: " << fAlpha0 << std::endl;
-
-// std::cout << "Beta ref: " << fBetaRef << std::endl;
-// if (fRBEmodel == "mMKM") {
-//// postprocess numerator image to get alpha
-// itk::ImageRegionIterator<Image3DType> iterator3D(
-// cpp_numerator_image, cpp_numerator_image->GetLargestPossibleRegion());
-// for (iterator3D.GoToBegin(); !iterator3D.IsAtEnd(); ++iterator3D) {
-
-// Image3DType::IndexType index_f = iterator3D.GetIndex();
-// Image3DType::PixelType Q = cpp_numerator_image->GetPixel(index_f);
-// Image3DType::PixelType Edep = cpp_denominator_image->GetPixel(index_f);
-
-// std::cout << "Pixel val before:" <<
-// cpp_numerator_image->GetPixel(index_f)/Edep << std::endl;
-// cpp_numerator_image->SetPixel(index_f,
-//(fBetaRef * Q + fAlpha0 * Edep) );
-// std::cout << "Pixel val after:" << cpp_numerator_image->GetPixel(index_f) <<
-// std::endl;
-//}
-//}
-//}
-
 void GateBeamQualityActor::CreateLookupTable(py::dict &user_info) {
   // get lookup table
   std::vector<std::vector<double>> lookupTab =
@@ -136,15 +110,9 @@ void GateBeamQualityActor::CreateLookupTable(py::dict &user_info) {
   }
 }
 
-double GateBeamQualityActor::GetValue(int Z, float energy) {
-  // std::cout << "GetValue: Z: " << Z << ", energy[MeV]: " << energy <<
-  // std::endl;
-  // initalize value
+double GateBeamQualityActor::GetValue(int Z, G4double energy) {
+
   G4double y = 0;
-  // std::cout<< "Particle: "<< Z << std::endl;
-  // std::cout<< "Energy: "<< energy << std::endl;
-  // std::cout<< "Zmin: "<< ZMinTable << "      " << "Zmax: "<< ZMaxTable <<
-  // std::endl;
   if (Z > ZMaxTable) {
     Z = ZMaxTable;
   }
@@ -199,5 +167,3 @@ size_t GateBeamQualityActor::FindLowerBound(G4double x,
   }
   return upperBound;
 }
-
-// void GateBeamQualityActor::EndSimulationAction() {}
