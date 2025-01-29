@@ -1446,32 +1446,35 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
 
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
+        if self.model == "mMKM":
+            self._postprocess_alpha_numerator_mkm()
         if self.write_RBE_dose_image:
             self.compute_rbe_weighted_dose()
         VoxelDepositActor.EndSimulationAction(self)
 
-
+    def _postprocess_alpha_numerator_mkm(self):
+        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
+        alpha_mix_numerator_img = self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).merged_data.data[0]
+        alpha_mix_denominator_img = (
+            self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.data[1]
+            * self.alpha_0
+        )
+        self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).merged_data.data[0] = (
+            alpha_mix_numerator_img * beta_ref + alpha_mix_denominator_img
+        )
+        
     def compute_rbe_weighted_dose(self):
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
         beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
         dose_img = self.compute_dose_from_edep_img()
 
         if self.model == "mMKM":
-
-            alpha_mix_numerator_img = self.user_output.__getattr__(
-                f"{self.scored_quantity}_mix"
-            ).merged_data.data[0]
-            alpha_mix_denominator_img = (
-                self.user_output.__getattr__(
-                    f"{self.scored_quantity}_mix"
-                ).merged_data.data[1]
-                * self.alpha_0
-            )
-            self.user_output.__getattr__(
-                f"{self.scored_quantity}_mix"
-            ).merged_data.data[0] = (
-                alpha_mix_numerator_img * beta_ref + alpha_mix_denominator_img
-            )
             alpha_mix_img = self.user_output.__getattr__(
                 f"{self.scored_quantity}_mix"
             ).merged_data.quotient
