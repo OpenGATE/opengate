@@ -1409,9 +1409,6 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             "HSG": {"alpha_ref": 0.764, "beta_ref": 0.0615},
             "Chordoma": {"alpha_ref": 0.1, "beta_ref": 0.05},
         }
-        # images calculated from the actor output at postprocessing
-        self.rbe_image = None
-        self.rbe_dose_image = None
 
         self.__initcpp__()
 
