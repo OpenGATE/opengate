@@ -38,10 +38,6 @@ void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
   GateWeightedEdepActor::InitializeUserInfo(user_info);
 
   fRBEmodel = DictGetStr(user_info, "model");
-  if (fRBEmodel == "mMKM") {
-    fAlpha0 = DictGetDouble(user_info, "alpha_0");
-    fBetaRef = DictGetDouble(user_info, "beta_ref");
-  }
   if (fRBEmodel == "LEM1lda") {
     fAreaNucl = DictGetDouble(user_info, "A_nucleus") * CLHEP::um * CLHEP::um;
     fDcut = DictGetDouble(user_info, "D_cut");
