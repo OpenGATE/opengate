@@ -46,7 +46,7 @@ void GateEmCalculatorActor::InitializeUserInfo(py::dict &user_info) {
 void GateEmCalculatorActor::InitializeCpp() { emcalc = new G4EmCalculator; }
 
 void GateEmCalculatorActor::BeginOfRunAction(const G4Run *) {
-    std::cout<<"Begin of run!"<<std::endl;
+//     std::cout<<"Begin of run!"<<std::endl;
     CalculateElectronicdEdX();
 }
 
@@ -68,7 +68,7 @@ void GateEmCalculatorActor::CalculateElectronicdEdX()
   
   G4NistManager* manager = G4NistManager::Instance();
   G4Material* mat = manager->FindOrBuildMaterial(mMaterial);
-  std::cout<<"\nMaterial: "<<mMaterial<<std::endl;
+//   std::cout<<"\nMaterial: "<<mMaterial<<std::endl;
   density = mat->GetDensity();
   
   I = mat->GetIonisation()->GetMeanExcitationEnergy();
@@ -95,7 +95,7 @@ void GateEmCalculatorActor::CalculateElectronicdEdX()
 //       CSDArange = emcalc->GetCSDARange(mEnergy, particle_definition, (*matTbl)[k]) / density;
 //       double MuMassCoeficient = 0.;
 
-      std::cout<<"Energy: "<<mEnergy_n<<"  dEdX: "<<EmDEDX<<std::endl;
+//       std::cout<<"Energy: "<<mEnergy_n<<"  dEdX: "<<EmDEDX<<std::endl;
       os << mEnergy_n << "\t\t" << EmDEDX << "\n";
          
   }
@@ -112,15 +112,15 @@ GateEmCalculatorActor::GetIonDefinition()
       // A bit late to do this here and now, but in the messenger the two options may come in in any order,
       // so it is not easy to check there. PencilBeam and TPSPencilBeam have a simlar problem (not by coincidence,
       // because I tried to keep the options in the same style.)
-      std::cout<<"Got ion parameters '" << mParticleParameters << "' but particle name " << mPartName << "!=GenericIon"<<std::endl;
+//       std::cout<<"Got ion parameters '" << mParticleParameters << "' but particle name " << mPartName << "!=GenericIon"<<std::endl;
     }
     int atomic_number = 0;
     int atomic_mass = 0;
     std::istringstream iss((const char*)mParticleParameters);
     iss >> atomic_number >> atomic_mass;
-    std::cout<<"Got atomic number = " << atomic_number << " and atomic mass = " << atomic_mass << std::endl;
+//     std::cout<<"Got atomic number = " << atomic_number << " and atomic mass = " << atomic_mass << std::endl;
     const G4ParticleDefinition* p = G4IonTable::GetIonTable()->GetIon(atomic_number,atomic_mass);
-    std::cout<<"particle name = " << p->GetParticleName()<< std::endl;
+//     std::cout<<"particle name = " << p->GetParticleName()<< std::endl;
 
     return p;
   }
