@@ -25,6 +25,7 @@ class GateSingleParticleSourcePencilBeam : public GateSingleParticleSource {
 
 public:
   GateSingleParticleSourcePencilBeam(std::string motherVolume, std::string);
+  ~GateSingleParticleSourcePencilBeam() override;
 
   void GeneratePrimaryVertex(G4Event *evt) override;
 
