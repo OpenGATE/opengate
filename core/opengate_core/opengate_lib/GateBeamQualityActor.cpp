@@ -126,6 +126,13 @@ double GateBeamQualityActor::GetValue(int Z, G4double energy) {
         data = (*table)[i + 2];
       }
     }
+    // handle the case of particle's energy outside table range
+    G4double Emax = 0;
+    for (int i=0; i< energies->size(); i++){
+      if ((*energies)[i] > Emax){Emax = (*energies)[i];}
+    }
+    if (energy > Emax){energy=Emax;} 
+    
     // find the index of the lower bound energy to the given energy
     size_t bin = FindLowerBound(energy, energies);
     // std::cout << "interpolation bin: " << bin << std::endl;
