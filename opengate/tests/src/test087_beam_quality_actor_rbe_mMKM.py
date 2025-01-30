@@ -129,15 +129,15 @@ if __name__ == "__main__":
     #    RBE_act.lookup_table_path = mkm_lq_fpath
 
     RBE_act.energy_per_nucleon = True
-    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
+    RBE_act.lookup_table_path = "/home/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
     #    RBE_act.lookup_table_path = '/users/aresch/Documents/RBE/LEM1_RS.txt'
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
     sim.run()
-    rs_fpath = "/home/aresch/Software/gate10_g4_11_3_0/opengate/tests/data/output_ref/test087/mMKM line dose IDEAL_water_AbsDose_2D_IR2HBLc28Jan2025.csv"
-    rs_fpath_phys = "/home/aresch/Software/gate10_g4_11_3_0/opengate/tests/data/output_ref/test087/mMKM line physical dose IDEAL_water_AbsDose_2D_IR2HBLc 28 Jan 2025.csv"
+    rs_fpath =  ref_path / "mMKM line dose IDEAL_water_AbsDose_2D_IR2HBLc28Jan2025.csv"
+    rs_fpath_phys =  ref_path / "mMKM line physical dose IDEAL_water_AbsDose_2D_IR2HBLc 28 Jan 2025.csv"
     data = np.loadtxt(rs_fpath, delimiter=";", skiprows=12)
     data_phys = np.loadtxt(rs_fpath_phys, delimiter=";", skiprows=12)
     # Extract the first and fourth columns
