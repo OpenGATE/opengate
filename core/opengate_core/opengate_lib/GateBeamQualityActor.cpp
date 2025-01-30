@@ -28,7 +28,13 @@
 
 #include <cmath>
 
-G4Mutex SetRBEPixelMutex = G4MUTEX_INITIALIZER;
+GateBeamQualityActor::~GateBeamQualityActor() {
+    for (auto *vec : *table) {
+        delete vec;  // Free each dynamically allocated vector
+    }
+    delete table;  // Free the container itself
+   
+}
 
 GateBeamQualityActor::GateBeamQualityActor(py::dict &user_info)
     : GateWeightedEdepActor(user_info) {}
@@ -113,14 +119,14 @@ double GateBeamQualityActor::GetValue(int Z, G4double energy) {
     Z = ZMaxTable;
   }
   if ((Z >= ZMinTable) && (Z <= ZMaxTable)) {
-    G4DataVector *Z_vec = new G4DataVector();
-    Z_vec->insertAt(0, Z);
+    G4DataVector Z_vec;
+    Z_vec.insertAt(0, Z);
     int bin_table = -1;
     G4DataVector *energies;
     G4DataVector *data;
 
     for (int i = 0; i < table->size(); i++) {
-      if (*(*table)[i] == *Z_vec) {
+      if (*(*table)[i] == Z_vec) {
         bin_table = i;
         energies = (*table)[i + 1];
         data = (*table)[i + 2];
@@ -141,8 +147,7 @@ double GateBeamQualityActor::GetValue(int Z, G4double energy) {
     y = linearAlgo.Calculate(energy, bin, *energies, *data);
     // std::cout<<"interpolation output:" << y << std::endl;
     // std::cout<<"        "<<std::endl;
-    delete Z_vec;
-    Z_vec = nullptr;
+
     return y;
   } else {
     return 0;

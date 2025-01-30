@@ -26,6 +26,7 @@ class GateBeamQualityActor : public GateWeightedEdepActor {
 public:
   // Constructor
   GateBeamQualityActor(py::dict &user_info);
+  ~GateBeamQualityActor();
 
   void InitializeUserInfo(py::dict &user_info) override;
 
