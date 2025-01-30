@@ -4,12 +4,6 @@
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
-import pandas as pd
-import itk
-import numpy as np
-import pickle
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "test_087")
@@ -58,8 +52,6 @@ if __name__ == "__main__":
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
     source.energy.mono = 1424 * MeV
-    # source.energy.type = 'gauss'
-    # source.energy.sigma_gauss = 1 * MeV
     source.particle = "ion 6 12"
     source.position.type = "disc"
     source.position.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
@@ -69,7 +61,6 @@ if __name__ == "__main__":
     source.direction.momentum = [-1, 0, 0]
     # print(dir(source.energy))
     source.n = numPartSimTest
-    # source.activity = 100 * kBq
 
     size = [50, 1, 1]
     spacing = [1.0 * mm, 100.0 * mm, 100.0 * mm]
@@ -94,20 +85,13 @@ if __name__ == "__main__":
     RBE_act.model = "mMKM"
     RBE_act.r_nucleus = 3.9
     RBE_act.energy_per_nucleon = False
-    #    RBE_act.model = "LEM1lda"
-    #    RBE_act.score_in = "G4_WATER"
-
     RBE_act.lookup_table_path = mkm_lq_fpath
-    #    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
-    #    RBE_act.lookup_table_path = '/users/aresch/Documents/RBE/LEM1_RS.txt'
-    # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
     sim.run()
 
     # ----------------------------------------------------------------------------------------------------------------
-    #    print(RBE_act)
 
     fNameIDD = doseIDD.user_info.output
     """
@@ -122,21 +106,10 @@ if __name__ == "__main__":
     )
 
     """
-    ref_fpath = ref_path / "test087-RBE_rbe.mhd"
-    ref_fpath = ref_path / "test087-alpha_mix_alpha.mhd"
-    ref_fpath_pkl = ref_path / "bic-alpha.pkl"
 
-    with open(ref_fpath_pkl, "rb") as f:
-        ref_data = pickle.load(f)
+    ref_fpath = ref_path / "test087-alpha_mix_alpha.mhd"
 
     fName = paths.output / RBE_act.alpha_mix.get_output_path()
-    img1 = itk.imread(fName)
-    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
-    alpha_mix_test = np.flip(data1)
-    d1 = alpha_mix_test[0]
-    x_test = np.arange(0, len(alpha_mix_test)) + 0.5
-    alpha_at_118MeVn = 6.31
-    print(f"{d1 = }")
 
     print(f"{doseIDD.dose.get_output_path()=}")
     is_ok = utility.assert_filtered_imagesprofile1D(
@@ -145,52 +118,6 @@ if __name__ == "__main__":
         filename2=paths.output / RBE_act.alpha_mix.get_output_path(),
         tolerance=20,
         eval_quantity="alpha",
-        #        plt_ylim=[0, 2],
     )
-
-    #    y_prime = alpha_mix_test
-    #    x_prime = x_test
-    #    x = ref_data["x"]
-    #    y = ref_data["y"]
-    #    # Interpolate y values of (x, y) along x_prime
-    #    interpolator = interp1d(x, y, kind="linear", fill_value="extrapolate")
-    #    y_interpolated = interpolator(x_prime)
-    #
-    #    # Calculate residuals
-    #    residuals = y_prime - y_interpolated
-    #    print(f"{residuals = }")
-    #    print(f"{ref_data = }")
-    #
-    #    # Plotting
-    #    plt.figure(figsize=(10, 6))
-    #
-    #    # Original and interpolated data
-    #    plt.plot(x, y, "o-", label="Original (x, y)")
-    #    plt.plot(x_prime, y_prime, "x-", label="Target (x', y')")
-    #    plt.plot(x_prime, y_interpolated, "--", label="Interpolated (x', y_interp)")
-    #
-    #    # Residuals
-    #    plt.scatter(x_prime, residuals, color="red", label="Residuals", zorder=5)
-    #
-    #    # Formatting
-    #    plt.axhline(0, color="gray", linestyle="--", linewidth=0.8)
-    #    plt.title("Interpolation and Residuals")
-    #    plt.xlabel("x or x'")
-    #    plt.ylabel("y, y' or residuals")
-    #    plt.legend()
-    #    plt.grid()
-    #    plt.savefig("test.png")
-
-    # )
-    # is_ok = (
-    #     utility.assert_filtered_imagesprofile1D(
-    #         ref_filter_filename1=ref_path / fNameIDD,
-    #         ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
-    #         filename2=paths.output / LETActor_primaries.user_info.output,
-    #         tolerance=8,
-    #         plt_ylim=[0, 25],
-    #     )
-    #     and is_ok
-    # )
 
     utility.test_ok(is_ok)

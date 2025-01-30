@@ -37,10 +37,10 @@ GateWeightedEdepActor::GateWeightedEdepActor(py::dict &user_info)
   fActions.insert("EndSimulationAction");
 }
 
-GateWeightedEdepActor::~GateWeightedEdepActor(){ 
-    G4MUTEXDESTROY(SetWeightedPixelMutex);
-    G4MUTEXDESTROY(SetWeightedPixelBetaMutex);
-    G4MUTEXDESTROY(SetWeightedNbEventMutex);
+GateWeightedEdepActor::~GateWeightedEdepActor() {
+  G4MUTEXDESTROY(SetWeightedPixelMutex);
+  G4MUTEXDESTROY(SetWeightedPixelBetaMutex);
+  G4MUTEXDESTROY(SetWeightedNbEventMutex);
 }
 
 void GateWeightedEdepActor::InitializeUserInfo(py::dict &user_info) {
@@ -136,11 +136,17 @@ G4double GateWeightedEdepActor::GetSPROtherMaterial(G4Step *step) {
   if (p == G4Gamma::Gamma()) {
     p = G4Electron::Electron();
   }
+  // std::cout<< "Part name: " << p->GetParticleName() << std::endl;
+  // std::cout<< "Energy mean: " << l.energy_mean << std::endl;
+  // std::cout<< "l.materialToScoreIn: " << l.materialToScoreIn << std::endl;
 
   auto dedx_other_material =
       l.emcalc.ComputeElectronicDEDX(l.energy_mean, p, l.materialToScoreIn,
                                      dedx_cut) /
       CLHEP::MeV * CLHEP::mm;
+
+  // std::cout<< "dedx_other_material" << dedx_other_material << std::endl;
+  // std::cout<< "l.dedx_currstep" <<  l.dedx_currstep << std::endl;
   G4double SPR_otherMaterial = dedx_other_material / l.dedx_currstep;
   if (std::isnan(SPR_otherMaterial)) {
     SPR_otherMaterial = 0.0;
@@ -191,8 +197,8 @@ void GateWeightedEdepActor::GetVoxelPosition(
 }
 
 void GateWeightedEdepActor::SteppingAction(G4Step *step) {
-
-  // Get the voxel index
+  // std::cout << "Inside stepping action" << std::endl;
+  //  Get the voxel index
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
@@ -209,18 +215,22 @@ void GateWeightedEdepActor::SteppingAction(G4Step *step) {
   // if inside the voxel, add avereging quantity to the denominator image
   // and add weighted avereging quantityto the numerator image
   if (isInside) {
+    // std::cout << "Is inside" << std::endl;
     auto w = step->GetTrack()->GetWeight();
     if (doTrackAverage) {
       averagingQuantity = step->GetStepLength() / CLHEP::mm * w;
     } else {
       averagingQuantity = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
+      // std::cout << "averagingQuantity" << averagingQuantity << std::endl;
       if (fScoreInOtherMaterial) {
         averagingQuantity *= GetSPROtherMaterial(step);
+        // std::cout << "averagingQuantity" << averagingQuantity << std::endl;
       }
     }
 
     double secondQuantity = 1.0;
     auto scoringQuantity = ScoringQuantityFn(step, &secondQuantity);
+    // std::cout << "scoringQuantity" << scoringQuantity << std::endl;
 
     {
       G4AutoLock mutex(&SetWeightedPixelMutex);

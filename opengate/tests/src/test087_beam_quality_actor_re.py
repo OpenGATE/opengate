@@ -4,7 +4,6 @@
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
-import pandas as pd
 
 
 def run_test_re(particle="carbon"):
@@ -12,8 +11,6 @@ def run_test_re(particle="carbon"):
     paths = utility.get_default_test_paths(__file__, "test_087")
     print(paths)
     ref_path = paths.output_ref / "test087"
-    mkm_lq_fpath = ref_path / "mkm_nirs_LQparameters_SURVIVAL.csv"
-    #    df = pd.read_csv(mkm_lq_fpath)
     # create the simulation
     sim = gate.Simulation()
 
@@ -28,7 +25,6 @@ def run_test_re(particle="carbon"):
         numPartSimTest = 40000 / ui.number_of_threads
     else:
         numPartSimTest = 4000 / ui.number_of_threads
-    numPartSimRef = 1e5
 
     # units
     m = gate.g4_units.m
@@ -60,14 +56,12 @@ def run_test_re(particle="carbon"):
     phantom_off.color = [0, 0, 1, 1]
 
     # physics
-    sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
+    sim.physics_manager.physics_list_name = "FTFP_INCLXX_HP_EMZ"
 
     # default source for tests
     source = sim.add_source("GenericSource", "mysource")
     if particle == "proton":
         source.energy.mono = 80 * MeV
-        # source.energy.type = 'gauss'
-        # source.energy.sigma_gauss = 1 * MeV
         source.particle = "proton"
     else:
         source.energy.mono = 1424 * MeV
@@ -104,34 +98,18 @@ def run_test_re(particle="carbon"):
     RE_act.spacing = spacing
     RE_act.hit_type = "random"
     RE_act.model = "RE"
-    RE_act.score_in = "G4_ALANINE"
+    # TODO: note that EMCalculator throws a segfault for O16 at low energies for G4_Alanine; therfore we cannot use it although we should
+    #    RE_act.score_in = "G4_ALANINE"
+    RE_act.score_in = "G4_WATER"
     RE_act.lookup_table_path = ref_path / "RE_Alanine_RBEstyle.txt"
 
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
-    #    fe = sim.add_filter("ParticleFilter", "f")
-    #    fe.particle = "proton"
-    #    fe.policy = "accept"
-    #    LETActor_primaries.filters.append(fe)
 
-    sim.run(start_new_process=False)
+    sim.run(start_new_process=True)
 
     # ----------------------------------------------------------------------------------------------------------------
-    print(doseIDD)
-
-    """
-    is_ok = utility.assert_images(
-        ref_path / fNameIDD,
-        doseIDD.output,
-        stat,
-        tolerance=100,
-        ignore_value=0,
-        axis="x",
-        scaleImageValuesFactor=numPartSimRef / numPartSimTest,
-    )
-
-    """
 
     if particle == "proton":
         ref_fpath = (
@@ -154,22 +132,10 @@ def run_test_re(particle="carbon"):
     )
     return is_ok
 
-    # )
-    # is_ok = (
-    #     utility.assert_filtered_imagesprofile1D(
-    #         ref_filter_filename1=ref_path / fNameIDD,
-    #         ref_filename1=ref_path / "test050_LET1D_Z1__PrimaryProton-doseAveraged.mhd",
-    #         filename2=paths.output / LETActor_primaries.user_info.output,
-    #         tolerance=8,
-    #         plt_ylim=[0, 25],
-    #     )
-    #     and is_ok
-    # )
-
 
 def main():
-    is_ok = run_test_re("carbon")
-    # is_ok = is_ok and run_test_re("carbon")
+    is_ok = run_test_re("proton")
+    is_ok = is_ok and run_test_re("carbon")
     utility.test_ok(is_ok)
 
 
