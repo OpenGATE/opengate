@@ -28,7 +28,7 @@ if __name__ == "__main__":
     ui.random_seed = 12345678910
     ui.number_of_threads = 16
 
-    numPartSimTest = 40000 / ui.number_of_threads
+    numPartSimTest = 1e3 / ui.number_of_threads
     numPartSimRef = 1e4
 
     # units
@@ -47,15 +47,15 @@ if __name__ == "__main__":
 
     # waterbox
     phantom = sim.add_volume("Box", "phantom")
-    phantom.size = [10 * cm, 10 * cm, 10 * cm]
-    phantom.translation = [-5 * cm, 0, 0]
+    phantom.size = [50 * mm, 10 * cm, 10 * cm]
+    phantom.translation = [-25 * cm, 0, 0]
     phantom.material = "G4_WATER"
     phantom.color = [0, 0, 1, 1]
 
     test_material_name = "G4_WATER"
     phantom_off = sim.add_volume("Box", "phantom_off")
     phantom_off.mother = phantom.name
-    phantom_off.size = [100 * mm, 10 * mm, 10 * mm]
+    phantom_off.size = [50 * mm, 10 * mm, 10 * mm]
     phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]
     phantom_off.material = test_material_name
     phantom_off.color = [0, 0, 1, 1]
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     source.n = numPartSimTest
     # source.activity = 100 * kBq
 
-    size = [100, 1, 1]
-    spacing = [1.0 * mm, 60.0 * mm, 60.0 * mm]
+    size = [50, 1, 1]
+    spacing = [1.0 * mm, 100.0 * mm, 100.0 * mm]
 
     doseActorName_IDD_d = "IDD_d"
     doseIDD = sim.add_actor("DoseActor", doseActorName_IDD_d)
@@ -129,15 +129,19 @@ if __name__ == "__main__":
     #    RBE_act.lookup_table_path = mkm_lq_fpath
 
     RBE_act.energy_per_nucleon = True
-    RBE_act.lookup_table_path = "/home/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
+    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
+
     #    RBE_act.lookup_table_path = '/users/aresch/Documents/RBE/LEM1_RS.txt'
     # add stat actor
     s = sim.add_actor("SimulationStatisticsActor", "stats")
     s.track_types_flag = True
 
     sim.run()
-    rs_fpath =  ref_path / "mMKM line dose IDEAL_water_AbsDose_2D_IR2HBLc28Jan2025.csv"
-    rs_fpath_phys =  ref_path / "mMKM line physical dose IDEAL_water_AbsDose_2D_IR2HBLc 28 Jan 2025.csv"
+    rs_fpath = ref_path / "mMKM line dose IDEAL_water_AbsDose_2D_IR2HBLc28Jan2025.csv"
+    rs_fpath_phys = (
+        ref_path
+        / "mMKM line physical dose IDEAL_water_AbsDose_2D_IR2HBLc 28 Jan 2025.csv"
+    )
     data = np.loadtxt(rs_fpath, delimiter=";", skiprows=12)
     data_phys = np.loadtxt(rs_fpath_phys, delimiter=";", skiprows=12)
     # Extract the first and fourth columns

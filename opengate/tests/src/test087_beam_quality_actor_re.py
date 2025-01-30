@@ -23,7 +23,7 @@ def run_test_re(particle="carbon"):
     ui.g4_verbose_level = 1
     ui.visu = False
     ui.random_seed = 12345678910
-    ui.number_of_threads = 2
+    ui.number_of_threads = 20
     if particle == "proton":
         numPartSimTest = 40000 / ui.number_of_threads
     else:
@@ -120,7 +120,6 @@ def run_test_re(particle="carbon"):
     # ----------------------------------------------------------------------------------------------------------------
     print(doseIDD)
 
-    fNameIDD = doseIDD.user_info.output
     """
     is_ok = utility.assert_images(
         ref_path / fNameIDD,
