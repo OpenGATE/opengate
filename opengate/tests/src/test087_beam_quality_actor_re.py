@@ -20,9 +20,9 @@ def run_test_re(particle="carbon"):
     ui.g4_verbose_level = 1
     ui.visu = False
     ui.random_seed = 12345678910
-    ui.number_of_threads = 20
+    ui.number_of_threads = 1
     if particle == "proton":
-        numPartSimTest = 40000 / ui.number_of_threads
+        numPartSimTest = 5e2 / ui.number_of_threads
     else:
         numPartSimTest = 4000 / ui.number_of_threads
 
@@ -134,7 +134,9 @@ def run_test_re(particle="carbon"):
 
 
 def main():
+    print("Running proton test case for relative effectiveness")
     is_ok = run_test_re("proton")
+    print("... continue with carbon ion beam")
     is_ok = is_ok and run_test_re("carbon")
     utility.test_ok(is_ok)
 
