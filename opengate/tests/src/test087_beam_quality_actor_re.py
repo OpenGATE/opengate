@@ -23,7 +23,7 @@ def run_test_re(particle="carbon"):
     ui.g4_verbose_level = 1
     ui.visu = False
     ui.random_seed = 12345678910
-    ui.number_of_threads = 1
+    ui.number_of_threads = 20
     if particle == "proton":
         numPartSimTest = 40000 / ui.number_of_threads
     else:
@@ -115,7 +115,7 @@ def run_test_re(particle="carbon"):
     #    fe.policy = "accept"
     #    LETActor_primaries.filters.append(fe)
 
-    sim.run(start_new_process=False)
+    sim.run(start_new_process=True)
 
     # ----------------------------------------------------------------------------------------------------------------
     print(doseIDD)
@@ -168,8 +168,8 @@ def run_test_re(particle="carbon"):
 
 
 def main():
-    is_ok = run_test_re("carbon")
-    # is_ok = is_ok and run_test_re("carbon")
+    is_ok = run_test_re("proton")
+    is_ok = is_ok and run_test_re("carbon")
     utility.test_ok(is_ok)
 
 
