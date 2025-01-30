@@ -1441,6 +1441,14 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         VoxelDepositActor.initialize(self)
 
         self.check_user_input()
+        
+        if self.lookup_table_path:
+            self.read_lookup_table(self.lookup_table_path)
+        
+        if self.lookup_table is None:
+            raise ValueError(
+                "Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute."
+            )
 
         # calculate some internal variables
         self.A_nucleus = np.pi * self.r_nucleus**2
