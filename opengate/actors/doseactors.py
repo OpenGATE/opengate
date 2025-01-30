@@ -1752,37 +1752,37 @@ class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
         "is_ion": (
             True,
             {
-                "doc": "",
+                "doc": "Wheather the particle we calculate dedx for is an ion",
             },
         ),
         "particle_name": (
             "",
             {
-                "doc": "",
+                "doc": "GenericIon if the particle is ion, else name of the particle",
             },
         ),
         "ion_params": (
             "",
             {
-                "doc": "",
+                "doc": "string indicating atomic number and mass, separated by one space. Example '6 12' for C12",
             },
         ),
         "material": (
             "",
             {
-                "doc": "",
+                "doc": "Material in which to score dedx",
             },
         ),
         "nominal_energies": (
             [],
             {
-                "doc": "",
+                "doc": "List of nominal energies to use to generate the dedx table",
             },
         ),
         "savefile_path": (
             "",
             {
-                "doc": "",
+                "doc": "file path to save the table",
             },
         ),
     }
@@ -1805,7 +1805,8 @@ class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
         )
 
     def initialize(self, *args):
-
+        if self.is_ion:
+            self.particle_name = 'GenericIon'
         self.InitializeUserInfo(self.user_info)  # C++ side
         self.InitializeCpp()
 
