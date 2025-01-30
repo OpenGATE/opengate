@@ -30,6 +30,10 @@
 
 G4Mutex SetRBEPixelMutex = G4MUTEX_INITIALIZER;
 
+GateBeamQualityActor::~GateBeamQualityActor(){
+    delete table;
+}
+
 GateBeamQualityActor::GateBeamQualityActor(py::dict &user_info)
     : GateWeightedEdepActor(user_info) {}
 
