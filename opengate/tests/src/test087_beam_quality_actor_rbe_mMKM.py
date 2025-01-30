@@ -149,7 +149,7 @@ if __name__ == "__main__":
     #    data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
     #    y_prime = np.flip(data1)
 
-    fName = paths.output / RBE_act.alpha_mix.get_output_path()
+    fName = paths.output / RBE_act.rbe.get_output_path()
     img1 = itk.imread(fName)
     data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
     y_prime = np.flip(data1)
@@ -200,6 +200,7 @@ if __name__ == "__main__":
 
     """
     ref_fpath = ref_path / "test087-RBE_rbe.mhd"
+    ref_fpath = ref_path / "test087-alpha_mix_rbe.mhd"
     print(f"{doseIDD.dose.get_output_path()=}")
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
