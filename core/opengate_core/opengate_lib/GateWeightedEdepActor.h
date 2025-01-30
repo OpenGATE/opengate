@@ -28,6 +28,7 @@ public:
 
   // Constructor
   GateWeightedEdepActor(py::dict &user_info);
+  ~GateWeightedEdepActor();
 
   virtual void InitializeUserInfo(py::dict &user_info) override;
 

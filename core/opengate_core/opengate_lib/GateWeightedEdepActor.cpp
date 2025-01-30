@@ -37,6 +37,12 @@ GateWeightedEdepActor::GateWeightedEdepActor(py::dict &user_info)
   fActions.insert("EndSimulationAction");
 }
 
+GateWeightedEdepActor::~GateWeightedEdepActor(){ 
+    G4MUTEXDESTROY(SetWeightedPixelMutex);
+    G4MUTEXDESTROY(SetWeightedPixelBetaMutex);
+    G4MUTEXDESTROY(SetWeightedNbEventMutex);
+}
+
 void GateWeightedEdepActor::InitializeUserInfo(py::dict &user_info) {
   // IMPORTANT: call the base class method
   GateVActor::InitializeUserInfo(user_info);

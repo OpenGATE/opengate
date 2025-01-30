@@ -128,8 +128,8 @@ if __name__ == "__main__":
     #    RBE_act.energy_per_nucleon = False
     #    RBE_act.lookup_table_path = mkm_lq_fpath
 
-    RBE_act.energy_per_nucleon = True
-    RBE_act.lookup_table_path = "/users/aresch/Documents/RBE/NIRS_MKM_reduced_data.txt"
+    RBE_act.energy_per_nucleon = False
+    RBE_act.lookup_table_path = ref_path / "mkm_nirs_LQparameters_SURVIVAL.csv"
 
     #    RBE_act.lookup_table_path = '/users/aresch/Documents/RBE/LEM1_RS.txt'
     # add stat actor
