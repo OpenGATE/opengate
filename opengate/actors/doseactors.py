@@ -1483,8 +1483,7 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
         self.beta_ref = beta_ref
         self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
         self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
-        if self.lookup_table_path:
-            self.read_lookup_table(self.lookup_table_path)
+
 
         if self.model == "LEM1lda":
             self.multiple_scoring = True
@@ -1807,7 +1806,7 @@ class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
 
     def initialize(self, *args):
 
-        self.InitializeUserInput(self.user_info)  # C++ side
+        self.InitializeUserInfo(self.user_info)  # C++ side
         self.InitializeCpp()
 
 
