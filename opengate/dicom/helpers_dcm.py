@@ -433,9 +433,9 @@ def crop_and_pad_image(input_img, from_index, to_index, hu_value_for_padding):
     assert (to_new - from_new > 0).all()
     anew = np.full(new_size[::-1], fill_value=hu_value_for_padding, dtype=atype)
     # "new image array {} contiguous".format("IS" if anew.flags.contiguous else "IS NOT"))
-    anew[
-        from_new[2] : to_new[2], from_new[1] : to_new[1], from_new[0] : to_new[0]
-    ] = aimg[from_old[2] : to_old[2], from_old[1] : to_old[1], from_old[0] : to_old[0]]
+    anew[from_new[2] : to_new[2], from_new[1] : to_new[1], from_new[0] : to_new[0]] = (
+        aimg[from_old[2] : to_old[2], from_old[1] : to_old[1], from_old[0] : to_old[0]]
+    )
     # "new image array with shape {} is now filled".format(aimg.shape))
     new_img = itk.GetImageFromArray(anew)
     # "new image created from array, it has size {}".format(new_img.GetLargestPossibleRegion().GetSize()))

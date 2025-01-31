@@ -11,9 +11,7 @@ import numpy as np
 from opengate.tests import utility
 
 
-paths = utility.get_default_test_paths(
-    __file__, "test050_let_actor_letd", "test050"
-)
+paths = utility.get_default_test_paths(__file__, "test050_let_actor_letd", "test050")
 
 
 sim = gate.Simulation()
@@ -52,11 +50,11 @@ sim.physics_manager.set_production_cut("world", "all", 1000 * km)
 em_calc = sim.add_actor("EmCalculatorActor", "test")
 em_calc.mother = waterbox.name
 em_calc.is_ion = True
-em_calc.particle_name = 'GenericIon'
-em_calc.ion_params = '3 7'
-em_calc.material = 'G4_WATER'
+em_calc.particle_name = "GenericIon"
+em_calc.ion_params = "3 7"
+em_calc.material = "G4_WATER"
 em_calc.nominal_energies = list(np.logspace(np.log10(1e-3), np.log10(1e3), 1000))
-em_calc.savefile_path = '/home/fava/Desktop/dedx_table_3_7.txt'
+em_calc.savefile_path = "/home/fava/Desktop/dedx_table_3_7.txt"
 
 
 stats = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -65,5 +63,3 @@ stats.track_types_flag = True
 sim.run()
 
 print(stats)
-
-
