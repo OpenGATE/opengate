@@ -70,7 +70,7 @@ stats.track_types_flag = True
 sim.run()
 
 # compare against PSTAR table for protons in liquid water for some energies
-pstar_tab_path = paths.data / "test088" / "PSTAR_table_water.txt"
+pstar_tab_path = paths.output_ref / "PSTAR_table_water.txt"
 
 ref_table = read_table(pstar_tab_path, skip_lines=5)
 actor_table = read_table(paths.output / "dedx_table_H.txt", skip_lines=4)
