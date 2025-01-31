@@ -29,11 +29,10 @@
 #include <cmath>
 
 GateBeamQualityActor::~GateBeamQualityActor() {
-    for (auto *vec : *table) {
-        delete vec;  // Free each dynamically allocated vector
-    }
-    delete table;  // Free the container itself
-   
+  for (auto *vec : *table) {
+    delete vec; // Free each dynamically allocated vector
+  }
+  delete table; // Free the container itself
 }
 
 GateBeamQualityActor::GateBeamQualityActor(py::dict &user_info)
@@ -134,11 +133,15 @@ double GateBeamQualityActor::GetValue(int Z, G4double energy) {
     }
     // handle the case of particle's energy outside table range
     G4double Emax = 0;
-    for (int i=0; i< energies->size(); i++){
-      if ((*energies)[i] > Emax){Emax = (*energies)[i];}
+    for (int i = 0; i < energies->size(); i++) {
+      if ((*energies)[i] > Emax) {
+        Emax = (*energies)[i];
+      }
     }
-    if (energy > Emax){energy=Emax;} 
-    
+    if (energy > Emax) {
+      energy = Emax;
+    }
+
     // find the index of the lower bound energy to the given energy
     size_t bin = FindLowerBound(energy, energies);
     // std::cout << "interpolation bin: " << bin << std::endl;
