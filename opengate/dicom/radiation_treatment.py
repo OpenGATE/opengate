@@ -11,6 +11,7 @@ from .helpers_dcm import bounding_box, crop_and_pad_image
 
 logger = logging.getLogger(__name__)
 
+
 class radiation_treatment:
     # NOTE: we assume that all dcm files concerning a specific plan are in the sane folder
     # Dicom consistency is checked when creating the correspondent object
@@ -93,19 +94,17 @@ class radiation_treatment:
 
         return self.preprocessed_ct
 
+
 def get_container_size(itk_img, isocenter):
     ct_bb = bounding_box(img=itk_img)
     rot_box_size = 2.0001 * np.max(
-        np.abs(
-            np.stack(
-                [ct_bb.mincorner - isocenter, ct_bb.maxcorner - isocenter]
-            )
-        ),
+        np.abs(np.stack([ct_bb.mincorner - isocenter, ct_bb.maxcorner - isocenter])),
         axis=0,
     )
 
     return list(rot_box_size)
-    
+
+
 class ct_image_base:
     @property
     def meta_data(self):
@@ -323,7 +322,8 @@ def get_series_filenames(ddir, uid=None):
             # flist = sitk.ImageSeriesReader_GetGDCMSeriesFileNames(ddir,uid)
             flist = dcmseries_reader.GetFileNames(uid)
             return uid, flist
-        
+
+
 class dose_info(object):
     def __init__(self, rd, rdfp):
         self._rd = rd
@@ -538,7 +538,8 @@ def check_file(dcm):
         raise ImportError("DICOM RD file not conform. Missing keys: ", missing_keys)
     else:
         print("\033[92mRD file ok \033[0m")
-        
+
+
 def is_close(x, y, eps=1e-6):
     sumabs = np.abs(x) + np.abs(y)
     absdif = np.abs(x - y)
@@ -1097,7 +1098,7 @@ class BeamsetInfo(object):
             logger.error(msg)
             self._warnings.append(msg)
         logger.debug("checked planfile, looks like all attributes are available...")
-    
+
     @property
     def structure_set_uid(self):
         return self._rp.ReferencedStructureSetSequence[0].ReferencedSOPInstanceUID
@@ -1197,9 +1198,11 @@ class BeamsetInfo(object):
             [
                 (
                     a,
-                    "NA"
-                    if not hasattr(self._rp, a.replace(" ", ""))
-                    else str(getattr(self._rp, a.replace(" ", ""))),
+                    (
+                        "NA"
+                        if not hasattr(self._rp, a.replace(" ", ""))
+                        else str(getattr(self._rp, a.replace(" ", "")))
+                    ),
                 )
                 for a in self.plan_opt_attrs
             ]
@@ -1252,6 +1255,7 @@ class BeamsetInfo(object):
             ["{0:30s}: {1}".format(a, self.bs_info[a]) for a in self.bs_attrs]
         )
         return s
+
 
 class RT_structs:
     def __init__(self, dcm_dir, ss_ref_uid):

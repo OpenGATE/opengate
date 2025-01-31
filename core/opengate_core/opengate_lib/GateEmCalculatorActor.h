@@ -1,25 +1,23 @@
 /*!
   \class GateEmCalculatorActor
   \author loic.grevillot@creatis.insa-lyon.fr
-	  david.sarrut@creatis.insa-lyon.fr
+          david.sarrut@creatis.insa-lyon.fr
  */
 
 #ifndef GateEmCalculatorActor_h
 #define GateEmCalculatorActor_h
+#include "G4EmCalculator.hh"
 #include "GateVActor.h"
 #include <pybind11/stl.h>
-#include "G4EmCalculator.hh"
 
 //-----------------------------------------------------------------------------
 /// \brief Actor displaying stopping powers
 namespace py = pybind11;
-class GateEmCalculatorActor : public GateVActor
-{
- public:
+class GateEmCalculatorActor : public GateVActor {
+public:
   // Constructor
   GateEmCalculatorActor(py::dict &user_info);
   ~GateEmCalculatorActor();
-
 
   //-----------------------------------------------------------------------------
   /// Saves the data collected to the file
@@ -34,7 +32,7 @@ class GateEmCalculatorActor : public GateVActor
   void InitializeCpp() override;
 
 protected:
-  const G4ParticleDefinition* GetIonDefinition();
+  const G4ParticleDefinition *GetIonDefinition();
 
   std::vector<double> mEnergies;
   G4String mPartName;
@@ -43,8 +41,7 @@ protected:
   G4String mFilename;
   bool mIsGenericIon;
 
-  G4EmCalculator * emcalc;
-
+  G4EmCalculator *emcalc;
 };
 
 #endif // GateEmCalculatorActor_h

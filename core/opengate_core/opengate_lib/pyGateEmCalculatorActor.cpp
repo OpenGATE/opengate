@@ -15,5 +15,6 @@ void init_GateEmCalculatorActor(py::module &m) {
 
   py::class_<GateEmCalculatorActor, GateVActor>(m, "GateEmCalculatorActor")
       .def(py::init<py::dict &>())
-      .def("CalculateElectronicdEdX", &GateEmCalculatorActor::CalculateElectronicdEdX);
+      .def("CalculateElectronicdEdX",
+           &GateEmCalculatorActor::CalculateElectronicdEdX);
 }

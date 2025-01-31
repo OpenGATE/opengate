@@ -1180,9 +1180,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         )
 
     def create_density_image(self):
-        return create_density_img(
-            self, self.volume_manager.material_database
-        )
+        return create_density_img(self, self.volume_manager.material_database)
 
     def create_changers(self):
         # get the changers from the mother classes and append those specific to the ImageVolume class

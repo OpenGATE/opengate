@@ -313,7 +313,9 @@ def create_density_img(img_volume, material_database):
     for hu0, hu1, mat_name in img_volume.voxel_materials:
         if mat_name not in material_database.g4_materials:
             material_database.FindOrBuildMaterial(mat_name)
-        arho[(act >= hu0) * (act < hu1)] = material_database.g4_materials[mat_name].GetDensity()
+        arho[(act >= hu0) * (act < hu1)] = material_database.g4_materials[
+            mat_name
+        ].GetDensity()
 
     arho *= g4_units.cm3 / g4_units.g
     rho = itk.GetImageFromArray(arho)
