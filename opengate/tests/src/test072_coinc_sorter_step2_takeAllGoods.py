@@ -17,8 +17,7 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
 
     # open root file
-    root_filename = paths.output / "output_config2.root"
-    # root_filename = "output_config2.root"
+    root_filename = paths.output / "output_singles.root"
     print(f"Opening {root_filename} ...")
     root_file = uproot.open(root_filename)
 
@@ -27,25 +26,24 @@ if __name__ == "__main__":
     n = int(singles_tree.num_entries)
     print(f"There are {n} singles")
 
-    # print(singles_tree.typenames())
-
     # time windows
     ns = gate.g4_units.nanosecond
-    ms = gate.g4_units.millisecond
     time_window = 3 * ns
-    policy = "takeAllGoods"  # keepCoincidenceIfOnlyOneGood" #keepAll"
-
+    policy = "takeAllGoods"
+    
     mm = gate.g4_units.mm
-    minDistanceXY = 226.27417 * mm  # 160 *sqrt(2) * mm
-    maxDistanceZ = 32 * mm  # 32 * mm
+    min_trans_dist = 0 * mm  
+    transaxial_plane="xy" 
+    max_trans_dist = 32 * mm  
     # apply coincidences sorter
     # (chunk size can be much larger, keep a low value to check it is ok)
     coincidences = coincidences_sorter(
         singles_tree,
         time_window,
         policy,
-        minDistanceXY,
-        maxDistanceZ,
+        min_trans_dist,
+        transaxial_plane,
+        max_trans_dist,
         chunk_size=1000000,
     )
     nc = len(coincidences["GlobalTime1"])
@@ -53,15 +51,14 @@ if __name__ == "__main__":
 
     # save to file
     # WARNING root version >= 5.2.2 needed
-    output_file = uproot.recreate(paths.output / f"output_minDistanceXY.root")
+    output_file = uproot.recreate(paths.output / f"output_{policy}.root")
     output_file["coincidences"] = coincidences
     output_file["singles"] = copy_tree_for_dump(singles_tree)
 
     # Compare with reference output
     ref_folder = paths.output_ref
 
-    ref_filename = ref_folder / f"minDistanceXY_Gate9.4.root"
-    # print(ref_filename)
+    ref_filename = ref_folder / f"{policy}_Gate9.4.root"
     ref_file = uproot.open(ref_filename)
     ref_coincidences = ref_file["Coincidences"]
 

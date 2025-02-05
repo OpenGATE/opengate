@@ -17,8 +17,7 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
 
     # open root file
-    root_filename = paths.output / "output_config2.root"
-    # root_filename = "output_config2.root"
+    root_filename = paths.output / "output_singles.root"
     print(f"Opening {root_filename} ...")
     root_file = uproot.open(root_filename)
 
@@ -27,18 +26,16 @@ if __name__ == "__main__":
     n = int(singles_tree.num_entries)
     print(f"There are {n} singles")
 
-    # print(singles_tree.typenames())
-
     # time windows
     ns = gate.g4_units.nanosecond
     ms = gate.g4_units.millisecond
     time_window = 3 * ns
-    # policy = "keepIfOnlyOneGood"
     policy = "takeWinnerIfIsGood"
-
+    transaxial_plane="xy"
+ 
     mm = gate.g4_units.mm
     minDistanceXY = 226.27417 * mm  # 160 *sqrt(2) * mm
-    maxDistanceZ = 32 * mm  # 32 * mm
+    maxDistanceZ = 32 * mm  
     # apply coincidences sorter
     # (chunk size can be much larger, keep a low value to check it is ok)
     coincidences = coincidences_sorter(
@@ -46,6 +43,7 @@ if __name__ == "__main__":
         time_window,
         policy,
         minDistanceXY,
+        transaxial_plane,
         maxDistanceZ,
         chunk_size=1000000,
     )

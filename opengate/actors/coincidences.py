@@ -7,10 +7,10 @@ from tqdm import tqdm
 from ..exception import fatal
 import numpy as np
 from collections import Counter
-
+import sys
 
 def coincidences_sorter(
-    singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=10000
+        singles_tree, time_window, policy, min_transaxial_distance, transaxial_plane, max_axial_distance, chunk_size=10000
 ):
     """
     Consider the singles and sort them according to coincidences
@@ -24,11 +24,28 @@ def coincidences_sorter(
     DEV NOTES:
     1) potential bug while having several chunks: couple of coincidecnes too much
     2) potential acceleration is possible
-    3) TODO : add check that all necessary attibutes are saved for Singles
-    4) TODO: add option allDigiOpenCoincGate=false, so far only for allDigiOpenCoincGate=true
+    3) TODO: add option allDigiOpenCoincGate=false, so far only for allDigiOpenCoincGate=true
+    4) TODO: parallelisation
 
     """
+    # Get the available branch names
+    required_branches = {"EventID",
+                         "GlobalTime",
+                         "PreStepUniqueVolumeID",
+                         "TotalEnergyDeposit",
+                         "PostPosition_X",
+                         "PostPosition_Y",
+                         "PostPosition_Z"}
+    
+    # Find missing branches
+    missing_branches = required_branches - set(singles_tree.keys())
+    
+    # Check if any branches are missing
+    if missing_branches:
+        print(f"Coincidence Sorter Error: Missing required branches: {missing_branches} in Singles Tree")
+        sys.exit(1)  # Immediately stops execution
 
+    
     # prepare the "coincidences" tree (dict)
     # with the same branches as the singles
     # Prepare the "coincidences" tree (dict) with the same branches as the singles
@@ -36,7 +53,8 @@ def coincidences_sorter(
     for k in singles_tree.keys():
         coincidences[f"{k}1"] = []
         coincidences[f"{k}2"] = []
-
+        
+        
     # Iterate over chunks of the ROOT file
     previous_chunk_tail = None
 
@@ -51,8 +69,9 @@ def coincidences_sorter(
             chunk,
             coincidences,
             time_window,
-            minDistanceXY,
-            maxDistanceZ,
+            min_transaxial_distance,
+            transaxial_plane,
+            max_axial_distance,
             policy,
         )
 
@@ -63,7 +82,7 @@ def coincidences_sorter(
 
 
 def process_chunk(
-    keys, chunk, coincidences, time_window, minDistanceXY, maxDistanceZ, policy
+    keys, chunk, coincidences, time_window, min_transaxial_distance, transaxial_plane, max_axial_distance, policy
 ):
     singles = chunk
     nsingles = len(singles)
@@ -96,7 +115,7 @@ def process_chunk(
                     singles[i]["PreStepUniqueVolumeID"]
                     == singles[j]["PreStepUniqueVolumeID"]
                 ):
-                    break
+                    continue
 
                 
                 for k in keys:
@@ -111,7 +130,7 @@ def process_chunk(
                     break
                 if policy in policy_functions:
                     coincidences_filtered = policy_functions[policy](
-                        coincidences_tmp, minDistanceXY, maxDistanceZ
+                        coincidences_tmp, min_transaxial_distance, transaxial_plane, max_axial_distance
                     )
                 else:
                     fatal(f"Error in Coincidence Sorter: {policy} is unknown")
@@ -129,7 +148,7 @@ def process_chunk(
     return coincidences
 
 
-def filter_goods(coincidences, minDistanceXY, maxDistanceZ):
+def filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance):
 
     indices_to_keep = []
 
@@ -146,10 +165,21 @@ def filter_goods(coincidences, minDistanceXY, maxDistanceZ):
             coincidences["PostPosition_Z2"][i],
         )
 
-        XY_diff = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-        Z_diff = abs(z2 - z1)
-
-        if XY_diff > minDistanceXY or Z_diff < maxDistanceZ:
+        if (transaxial_plane == "xy"):
+            trans_diff = np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+            axial_diff = abs(z2 - z1)
+        elif (transaxial_plane == "yz"):
+            trans_diff = np.sqrt((y2 - y1) ** 2 + (z2 - z1) ** 2)
+            axial_diff = abs(x2 - x1)
+        elif (transaxial_plane == "xz"):
+            trans_diff = np.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2)
+            axial_diff = abs(y2 - y1)
+        else:
+            raise ValueError(f"Invalid transaxial_plane: '{transaxial_plane}'. Expected one of 'xy', 'yz' or 'xz'.")
+                
+        #print(trans_diff, " vs. ", min_transaxial_distance, trans_diff > min_transaxial_distance)
+        
+        if trans_diff > min_transaxial_distance and axial_diff < max_axial_distance:
             indices_to_keep.append(i)
 
     coincidences_filtered = {
@@ -175,16 +205,18 @@ def filter_max_energy(coincidences):
         for i in range(len(coincidences["TotalEnergyDeposit1"]))
     ]
     # Find the index of the maximum energy sum
-    max_index = energy_sums.index(max(energy_sums))
-    # Filter the dictionary to include only the element at the max energy sum index
-    coincidences_filtered = {
-        key: [value[max_index]] for key, value in coincidences.items()
-    }
+    if energy_sums:
+        max_index = energy_sums.index(max(energy_sums))
+        # Filter the dictionary to include only the element at the max energy sum index
+        coincidences_filtered = {
+            key: [value[max_index]] for key, value in coincidences.items()
+        }
         
-    return coincidences_filtered
+        return coincidences_filtered
+    else:
+        return {}
 
-
-def remove_multiples(coincidences, minDistanceXY, maxDistanceZ):
+def remove_multiples(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance):
     # Remove all multiple coincidences
     # 1) check if good
     # 2) take only ones where one coincidence in a time window
@@ -193,48 +225,48 @@ def remove_multiples(coincidences, minDistanceXY, maxDistanceZ):
     return coincidences_output
 
 
-def take_all_goods(coincidences, minDistanceXY, maxDistanceZ):
+def take_all_goods(coincidences, min_transaxial_distance,transaxial_plane, max_axial_distance):
     # Return all good coincidences
-    return filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+    return filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance)
 
 
-def take_winner_of_goods(coincidences, minDistanceXY, maxDistanceZ):
+def take_winner_of_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance):
     # Take winner of goods
     # 1) check if good
     # 2) take only one with the highest energy (energy1+energy2)
 
-    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+    coincidences_goods = filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance)
     coincidences_output = filter_max_energy(coincidences_goods)
 
     return coincidences_output
 
 
-def take_if_only_one_good(coincidences, minDistanceXY, maxDistanceZ):
+def take_if_only_one_good(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance):
     # Take winner if only one good
     # 1) check how many goods
     # 2) if one --> keep
     
-    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+    coincidences_goods = filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance)
     coincidences_output = filter_multi(coincidences_goods)
     
     return coincidences_output
 
 
-def take_winner_if_is_good(coincidences, minDistanceXY, maxDistanceZ):
+def take_winner_if_is_good(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance):
     # Take winner if it is good one
     # 1) find the winner with Emax
     # 2) if good --> keep
 
     coincidences_winner = filter_max_energy(coincidences)
-    coincidences_output = filter_goods(coincidences_winner, minDistanceXY, maxDistanceZ)
+    coincidences_output = filter_goods(coincidences_winner, min_transaxial_distance, transaxial_plane, max_axial_distance)
     return coincidences_output
 
 
-def take_winner_if_all_are_goods(coincidences, minDistanceXY, maxDistanceZ):
+def take_winner_if_all_are_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance):
     # Take winner if all are goods
     # 1) check if all are goods, if not -> skip
     # 2) keep winner with Emax
-    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+    coincidences_goods = filter_goods(coincidences, min_transaxial_distance, transaxial_plane,  max_axial_distance)
 
     if len(coincidences_goods["EventID1"]) != len(coincidences["EventID1"]):
         coincidences_output = {}

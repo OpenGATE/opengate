@@ -17,8 +17,7 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
 
     # open root file
-    root_filename = paths.output / "output_config1.root"
-    # root_filename = "output_config2.root"
+    root_filename = paths.output / "output_singles.root"
     print(f"Opening {root_filename} ...")
     root_file = uproot.open(root_filename)
 
@@ -27,17 +26,15 @@ if __name__ == "__main__":
     n = int(singles_tree.num_entries)
     print(f"There are {n} singles")
 
-    # print(singles_tree.typenames())
-
     # time windows
     ns = gate.g4_units.nanosecond
     time_window = 3 * ns
-    policy = "removeMultiples"
-    # policy="takeWinnerOfGoods"
+    transaxial_plane="xy" 
+    policy = "takeWinnerOfGoods"
 
     mm = gate.g4_units.mm
-    minDistanceXY = 0 * mm  # 226.27417 * mm #160 *sqrt(2) * mm
-    maxDistanceZ = 32 * mm  # 32 * mm
+    minDistanceXY = 0 * mm  
+    maxDistanceZ = 32 * mm  
     # apply coincidences sorter
     # (chunk size can be much larger, keep a low value to check it is ok)
     coincidences = coincidences_sorter(
@@ -45,6 +42,7 @@ if __name__ == "__main__":
         time_window,
         policy,
         minDistanceXY,
+        transaxial_plane,
         maxDistanceZ,
         chunk_size=1000000,
     )
@@ -61,7 +59,7 @@ if __name__ == "__main__":
     ref_folder = paths.output_ref
 
     ref_filename = ref_folder / f"{policy}_Gate9.4.root"
-    # print(ref_filename)
+
     ref_file = uproot.open(ref_filename)
     ref_coincidences = ref_file["Coincidences"]
 
@@ -88,7 +86,7 @@ if __name__ == "__main__":
 
     # Calculate Wasserstein distance for comparison
     distance_posX = wasserstein_distance(both_posX, ref_both_posX)
-    tolerance_posX = 6.0
+    tolerance_posX = 2.5
     print(f"Wasserstein distance on X : {distance_posX}, tolerence {tolerance_posX}")
 
     distance_energy = wasserstein_distance(both_energy, ref_both_energy)
