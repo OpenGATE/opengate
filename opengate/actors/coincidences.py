@@ -117,7 +117,6 @@ def process_chunk(
                 ):
                     continue
 
-                
                 for k in keys:
                     coincidences_tmp[f"{k}1"].append(singles[i][k])
                     coincidences_tmp[f"{k}2"].append(singles[j][k])
@@ -126,7 +125,7 @@ def process_chunk(
                 # filter coincidences in the same window
 
                 # skip if no coincidecnes in this window
-                if len(coincidences_tmp["EventID1"])==0 :
+                if len(coincidences_tmp["EventID1"]) == 0:
                     break
                 if policy in policy_functions:
                     coincidences_filtered = policy_functions[policy](
@@ -139,12 +138,12 @@ def process_chunk(
                     for key in coincidences:
                         for j in range(len(coincidences_filtered[key])):
                             coincidences[key].append(coincidences_filtered[key][j])
-                # clean temp containers            
+                # clean temp containers
                 for key in coincidences_tmp.keys():
                     coincidences_tmp[key].clear()
-               
+
                 break  # if the time difference exceeds the time window, break the loop
-         
+
     return coincidences
 
 
@@ -190,21 +189,22 @@ def filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_ax
 
 
 def filter_multi(coincidences):
-    coincidences_output={}
+    coincidences_output = {}
     if len(coincidences["EventID1"]) < 2:
-        coincidences_output=coincidences
+        coincidences_output = coincidences
         return coincidences_output
     else:
         return {}
 
 
 def filter_max_energy(coincidences):
-    
+
     energy_sums = [
         coincidences["TotalEnergyDeposit1"][i] + coincidences["TotalEnergyDeposit2"][i]
         for i in range(len(coincidences["TotalEnergyDeposit1"]))
     ]
     # Find the index of the maximum energy sum
+
     if energy_sums:
         max_index = energy_sums.index(max(energy_sums))
         # Filter the dictionary to include only the element at the max energy sum index
@@ -245,10 +245,15 @@ def take_if_only_one_good(coincidences, min_transaxial_distance, transaxial_plan
     # Take winner if only one good
     # 1) check how many goods
     # 2) if one --> keep
+<<<<<<< HEAD
     
     coincidences_goods = filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance)
+=======
+
+    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
+>>>>>>> origin/CoinSorter_v2
     coincidences_output = filter_multi(coincidences_goods)
-    
+
     return coincidences_output
 
 

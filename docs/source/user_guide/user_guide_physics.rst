@@ -70,7 +70,7 @@ Specific electromagnetic parameters can be turned on or off like this:
 Production cuts
 ---------------
 
-Geant4 allows you to tune the conditions under which it should actually produce anbd track secodnary particles, i.e. particles produced as the results of interactions of an existing particles with the target (or from fragmentation). More specifically, you can set the production cut in terms of range for a given particle. For example, a 10 mm cut applied to electrons means that secondary electrons are only produced if their energy gives them a range of at least 2 mm in the material where they are. As a rule of thumb: the higher the cut value the faster but also the less accurate the simulation.
+Geant4 allows you to tune the conditions under which it should actually produce anbd track secodnary particles, i.e. particles produced as the results of interactions of an existing particles with the target (or from fragmentation). More specifically, you can set the production cut in terms of range for a given particle. For example, a 10 mm cut applied to electrons means that secondary electrons are only produced if their energy gives them a range of at least 10 mm in the material where they are. As a rule of thumb: the higher the cut value the faster but also the less accurate the simulation.
 
 You can set production cuts globally, i.e. apply them to the entire world, either like this:
 

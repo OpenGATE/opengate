@@ -39,6 +39,7 @@ public:
   std::string fInputActorName;
   int fRussianRouletteValue;
   double fRussianRouletteFactor;
+  std::vector<int> fPlaneAxis;
   GateVDigiAttribute *fAtt_E;
   GateVDigiAttribute *fAtt_Theta;
   GateVDigiAttribute *fAtt_Phi;

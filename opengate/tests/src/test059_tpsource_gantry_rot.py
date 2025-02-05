@@ -2,13 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import itk
-import os
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
-import opengate.element
 from opengate.contrib.beamlines.ionbeamline import BeamlineModel
-from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt, TreatmentPlanSource
+from opengate.contrib.tps.ionbeamtherapy import spots_info_from_txt
 
 if __name__ == "__main__":
     # ------ INITIALIZE SIMULATION ENVIRONMENT ----------

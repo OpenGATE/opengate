@@ -502,7 +502,7 @@ jobs:
             pip install torch
           fi
           pip install SimpleITK
-          pip install gaga_phsp==0.7.4
+          pip install "gaga_phsp>=0.7.5"
           pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
           pip install dist/opengate-*.whl
           export GIT_SSL_NO_VERIFY=1

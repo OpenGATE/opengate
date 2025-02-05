@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import opengate as gate
 import uproot
 from opengate.actors.coincidences import coincidences_sorter
@@ -24,6 +27,7 @@ if __name__ == "__main__":
 
     is_ok = True
     exceptions = []
+    paths = utility.get_default_test_paths(__file__, None, output_folder="test086")
 
     for adder_policy in ["EnergyWinnerPosition", "EnergyWeightedCentroidPosition"]:
 
@@ -34,6 +38,7 @@ if __name__ == "__main__":
         sim.random_engine = "MersenneTwister"
         sim.random_seed = 1234
         sim.number_of_threads = 1
+        sim.output_dir = paths.output
         create_materials(sim)
 
         sim.world.size = [200 * mm, 200 * mm, 200 * mm]
@@ -82,7 +87,7 @@ if __name__ == "__main__":
 
         sim.run(start_new_process=True)
 
-        root_file = uproot.open(hc.output_filename)
+        root_file = uproot.open(hc.get_output_path())
         singles_tree = root_file["singles"]
         num_singles = int(singles_tree.num_entries)
 

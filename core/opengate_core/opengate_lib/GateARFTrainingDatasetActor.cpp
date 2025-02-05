@@ -19,7 +19,6 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfEventAction");
   fActions.insert("SteppingAction");
-  // options
 }
 
 void GateARFTrainingDatasetActor::InitializeUserInfo(py::dict &user_info) {
@@ -28,6 +27,7 @@ void GateARFTrainingDatasetActor::InitializeUserInfo(py::dict &user_info) {
   fEnergyWindowsActor = dynamic_cast<GateDigitizerEnergyWindowsActor *>(
       GateActorManager::GetActor(fInputActorName));
   fRussianRouletteValue = DictGetInt(user_info, "russian_roulette");
+  fPlaneAxis = DictGetVecInt(user_info, "plane_axis");
   // init
   fRussianRouletteFactor = 1.0 / fRussianRouletteValue;
 }
@@ -81,8 +81,10 @@ void GateARFTrainingDatasetActor::SteppingAction(G4Step *step) {
   auto dir = pre->GetMomentumDirection();
   dir = theTouchable->GetHistory()->GetTopTransform().TransformAxis(dir);
   dir = dir.unit();
-  l.fTheta = acos(dir.y()) / CLHEP::degree;
-  l.fPhi = acos(dir.x()) / CLHEP::degree;
+  l.fTheta = acos(dir[fPlaneAxis[1]]) / CLHEP::degree;
+  l.fPhi = acos(dir[fPlaneAxis[0]]) / CLHEP::degree;
+  // l.fTheta = acos(dir.y()) / CLHEP::degree;
+  // l.fPhi = acos(dir.x()) / CLHEP::degree;
 }
 
 void GateARFTrainingDatasetActor::EndOfEventAction(const G4Event * /*event*/) {

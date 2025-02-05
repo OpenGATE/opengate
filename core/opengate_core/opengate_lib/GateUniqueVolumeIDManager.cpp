@@ -32,22 +32,22 @@ GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
 
   // https://geant4-forum.web.cern.ch/t/identification-of-unique-physical-volumes-with-ids/2568/3
   // ID
+  auto name = touchable->GetVolume()->GetName();
   auto id = GateUniqueVolumeID::ComputeArrayID(touchable);
   // Search if this touchable has already been associated with a unique volume
   // ID
-  if (fArrayToVolumeID.count(id) == 0) {
+  if (fToVolumeID.count({name, id}) == 0) {
     // It does not exist, so we create it.
     auto uid = GateUniqueVolumeID::New(touchable);
-    fNameToVolumeID[uid->fID] = uid;
-    fArrayToVolumeID[id] = uid;
+    fToVolumeID[{name, id}] = uid;
   }
-  return fArrayToVolumeID[id];
+  return fToVolumeID.at({name, id});
 }
 
 std::vector<GateUniqueVolumeID::Pointer>
 GateUniqueVolumeIDManager::GetAllVolumeIDs() const {
   std::vector<GateUniqueVolumeID::Pointer> l;
-  for (const auto &x : fNameToVolumeID) {
+  for (const auto &x : fToVolumeID) {
     l.push_back(x.second);
   }
   return l; // copy
