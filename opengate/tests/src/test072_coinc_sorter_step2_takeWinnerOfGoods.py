@@ -42,12 +42,12 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # time windows
     ns = gate.g4_units.nanosecond
     time_window = 3 * ns
-    transaxial_plane="xy" 
+    transaxial_plane = "xy"
     policy = "takeWinnerOfGoods"
 
     mm = gate.g4_units.mm
-    minDistanceXY = 0 * mm  
-    maxDistanceZ = 32 * mm  
+    minDistanceXY = 0 * mm
+    maxDistanceZ = 32 * mm
     # apply coincidences sorter
     # (chunk size can be much larger, keep a low value to check it is ok)
     coincidences = coincidences_sorter(

@@ -20,7 +20,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # open root file
     root_filename = paths.output / "output_singles.root"
-    
+
     # this test need output/test072/output_singles.root
     if not os.path.exists(root_filename):
         # ignore on windows
@@ -29,8 +29,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
             sys.exit(0)
         cmd = "python " + str(paths.current / dependency)
         r = os.system(cmd)
-    
-    
+
     print(f"Opening {root_filename} ...")
     root_file = uproot.open(root_filename)
 
@@ -42,12 +41,12 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # time windows
     ns = gate.g4_units.nanosecond
     time_window = 3 * ns
-    transaxial_plane="xy" 
+    transaxial_plane = "xy"
     policy = "removeMultiples"
 
     mm = gate.g4_units.mm
-    minDistanceXY = 0 * mm 
-    maxDistanceZ = 32 * mm 
+    minDistanceXY = 0 * mm
+    maxDistanceZ = 32 * mm
     # apply coincidences sorter
     # (chunk size can be much larger, keep a low value to check it is ok)
     coincidences = coincidences_sorter(

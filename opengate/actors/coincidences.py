@@ -36,16 +36,16 @@ def coincidences_sorter(
                          "PostPosition_X",
                          "PostPosition_Y",
                          "PostPosition_Z"}
-    
+
     # Find missing branches
     missing_branches = required_branches - set(singles_tree.keys())
-    
+
     # Check if any branches are missing
     if missing_branches:
         print(f"Coincidence Sorter Error: Missing required branches: {missing_branches} in Singles Tree")
         sys.exit(1)  # Immediately stops execution
 
-    
+
     # prepare the "coincidences" tree (dict)
     # with the same branches as the singles
     # Prepare the "coincidences" tree (dict) with the same branches as the singles
@@ -53,8 +53,8 @@ def coincidences_sorter(
     for k in singles_tree.keys():
         coincidences[f"{k}1"] = []
         coincidences[f"{k}2"] = []
-        
-        
+
+
     # Iterate over chunks of the ROOT file
     previous_chunk_tail = None
 
@@ -175,9 +175,9 @@ def filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_ax
             axial_diff = abs(y2 - y1)
         else:
             raise ValueError(f"Invalid transaxial_plane: '{transaxial_plane}'. Expected one of 'xy', 'yz' or 'xz'.")
-                
+
         #print(trans_diff, " vs. ", min_transaxial_distance, trans_diff > min_transaxial_distance)
-        
+
         if trans_diff > min_transaxial_distance and axial_diff < max_axial_distance:
             indices_to_keep.append(i)
 
@@ -211,7 +211,7 @@ def filter_max_energy(coincidences):
         coincidences_filtered = {
             key: [value[max_index]] for key, value in coincidences.items()
         }
-        
+
         return coincidences_filtered
     else:
         return {}
@@ -246,7 +246,7 @@ def take_if_only_one_good(coincidences, min_transaxial_distance, transaxial_plan
     # 1) check how many goods
     # 2) if one --> keep
 <<<<<<< HEAD
-    
+
     coincidences_goods = filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance)
 =======
 

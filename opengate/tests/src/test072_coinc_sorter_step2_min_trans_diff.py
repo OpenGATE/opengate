@@ -18,7 +18,6 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # test paths
     paths = utility.get_default_test_paths(__file__, output_folder="test072")
 
-
     # open root file
     root_filename = paths.output / "output_singles.root"
 
@@ -43,12 +42,14 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     ns = gate.g4_units.nanosecond
     ms = gate.g4_units.millisecond
     time_window = 3 * ns
-    transaxial_plane="xy" 
-    policy = "takeAllGoods" 
+    transaxial_plane = "xy"
+    policy = "takeAllGoods"
 
     mm = gate.g4_units.mm
-    minDistanceXY = 208.46 * mm # = sqrt(2)*147.4, where 147.4 is the mean value inside the detector block (from root histo)
-    maxDistanceZ = 32 * mm  
+    minDistanceXY = (
+        208.46 * mm
+    )  # = sqrt(2)*147.4, where 147.4 is the mean value inside the detector block (from root histo)
+    maxDistanceZ = 32 * mm
     # apply coincidences sorter
     # (chunk size can be much larger, keep a low value to check it is ok)
     coincidences = coincidences_sorter(
