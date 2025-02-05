@@ -245,13 +245,9 @@ def take_if_only_one_good(coincidences, min_transaxial_distance, transaxial_plan
     # Take winner if only one good
     # 1) check how many goods
     # 2) if one --> keep
-<<<<<<< HEAD
-
+    
     coincidences_goods = filter_goods(coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance)
-=======
 
-    coincidences_goods = filter_goods(coincidences, minDistanceXY, maxDistanceZ)
->>>>>>> origin/CoinSorter_v2
     coincidences_output = filter_multi(coincidences_goods)
 
     return coincidences_output
