@@ -183,7 +183,12 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
     processes: list
     # user info FIXME
 
-    processes = ("compt", "Rayl", "phot", "conv", "GammaGeneralProc")
+    # processes = ("compt", "Rayl", "phot", "conv", "GammaGeneralProc")
+    # processes = ["phot"]
+    # processes = ("Rayl", "phot", "conv")
+    # processes = ["compt"]
+    processes = ["GammaGeneralProc"]
+    # particles = "gamma"
 
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)
@@ -196,7 +201,6 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
                 "PreUserTrackingAction",
             }
         )
-        # self.AddActions({"PreUserTrackingAction"})
 
     def initialize(self):
         GenericBiasingActorBase.initialize(self)
@@ -207,8 +211,72 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
         g4.GateOptrFreeFlightActor.StartSimulationAction(self)
 
 
+class SplitComptonScatteringActor(
+    SplittingActorBase, g4.GateOptrSplitComptonScatteringActor
+):
+    """
+    FIXME
+    """
+
+    # hints for IDE FIXME
+    processes: list
+    # user info FIXME
+
+    user_info_defaults = {
+        "max_compton_level": (
+            3,
+            {
+                "doc": "FIXME ",
+            },
+        ),
+        "skip_policy": ("SkipEvents", {"doc": "FIXME "}),
+        "volumes": ([], {"doc": "FIXME "}),
+        "intersection_flag": (False, {"doc": "FIXME "}),
+        "normal_flag": (False, {"doc": "FIXME "}),
+        "normal_vector": ([0, 0, 1], {"doc": "FIXME "}),
+        "normal_tolerance": (3 * g4_units.deg, {"doc": "FIXME "}),
+    }
+
+    # processes = ("compt", "Rayl", "phot", "conv", "GammaGeneralProc")
+    # processes = ["compt"]  # , "Rayl", "phot", "conv", "GammaGeneralProc")
+    # processes = ("Rayl", "phot", "conv")
+    processes = ["GammaGeneralProc"]
+
+    def __init__(self, *args, **kwargs):
+        SplittingActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateOptrSplitComptonScatteringActor.__init__(self, {"name": self.name})
+        self.AddActions(
+            {
+                "BeginOfRunAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+            }
+        )
+        print("end init cpp")
+
+    def initialize(self):
+        SplittingActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        g4.GateOptrSplitComptonScatteringActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        g4.GateOptrSplitComptonScatteringActor.EndSimulationAction(self)
+        stat = self.GetSplitStats()
+        c = stat["number_of_splits"] * self.splitting_factor
+        ff = stat["number_of_tracks_with_free_flight"]
+        print("stat", stat)
+        print(f"ratio of ff compton in AA {ff / c*100} %")
+
+
 process_cls(GenericBiasingActorBase)
 process_cls(SplittingActorBase)
 process_cls(ComptSplittingActor)
 process_cls(BremSplittingActor)
 process_cls(FreeFlightActor)
+process_cls(SplitComptonScatteringActor)

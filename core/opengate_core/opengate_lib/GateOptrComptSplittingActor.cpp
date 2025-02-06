@@ -55,7 +55,7 @@ void GateOptrComptSplittingActor::InitializeUserInfo(py::dict &user_info) {
   //    fAttachedToVolumeName = DictGetStr(user_info, "mother");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
   fMinWeightOfParticle = DictGetDouble(user_info, "min_weight_of_particle");
-  // Since the russian roulette uses as a probablity 1/splitting, we need to
+  // Since the russian roulette uses as a probability 1/splitting, we need to
   // have a double, but the splitting factor provided by the user is logically
   // an int, so we need to change the type.
   fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");

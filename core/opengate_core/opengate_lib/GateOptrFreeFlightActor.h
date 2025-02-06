@@ -31,6 +31,7 @@ public:
   void StartTracking(const G4Track *) override;
 
   void PreUserTrackingAction(const G4Track *track) override;
+  void PostUserTrackingAction(const G4Track *track) override;
 
 protected:
   G4VBiasingOperation *
