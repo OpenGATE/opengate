@@ -78,7 +78,7 @@ protected:
   void DigitInitialize(
       const std::vector<std::string> &attributes_not_in_filler) override;
 
-  void AddDigiPerVolume();
+  void AddDigiPerVolume() const;
 
   // During computation (thread local)
   struct threadLocalT {
