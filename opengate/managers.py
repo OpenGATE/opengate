@@ -93,7 +93,6 @@ from .actors.miscactors import (
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
-    ComptSplittingActor,
     BremSplittingActor,
     FreeFlightActor,
     SplitComptonScatteringActor,
@@ -145,7 +144,6 @@ actor_types = {
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     # biasing
     "BremSplittingActor": BremSplittingActor,
-    "ComptSplittingActor": ComptSplittingActor,
     "FreeFlightActor": FreeFlightActor,
     "SplitComptonScatteringActor": SplitComptonScatteringActor,
 }
