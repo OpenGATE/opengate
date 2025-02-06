@@ -9,7 +9,6 @@
 #include "../GateHelpersDict.h"
 #include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
-#include <iostream>
 
 GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
@@ -27,7 +26,7 @@ void GateDigitizerAdderActor::InitializeUserInfo(py::dict &user_info) {
   GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
   // policy
   fPolicy = AdderPolicy::Error;
-  auto policy = DictGetStr(user_info, "policy");
+  const auto policy = DictGetStr(user_info, "policy");
   if (policy == "EnergyWinnerPosition")
     fPolicy = AdderPolicy::EnergyWinnerPosition;
   else if (policy == "EnergyWeightedCentroidPosition")
@@ -127,12 +126,12 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   // create the output hits collection for grouped hits
   auto &l = fThreadLocalData.Get();
   for (auto &h : l.fMapOfDigiInVolume) {
-    auto &hit = h.second;
+    const auto &hit = h.second;
     // terminate the merge
     hit->Terminate();
     // Don't store anything if edep is zero
     if (hit->fFinalEdep > 0) {
-      // (all "Fill" calls are thread local)
+      // all "Fill" calls are thread local
       fOutputEdepAttribute->FillDValue(hit->fFinalEdep);
       fOutputPosAttribute->Fill3Value(hit->fFinalPosition);
       fOutputGlobalTimeAttribute->FillDValue(hit->fFinalTime);
@@ -148,7 +147,7 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   l.fMapOfDigiInVolume.clear();
 }
 
-void GateDigitizerAdderActor::AddDigiPerVolume() {
+void GateDigitizerAdderActor::AddDigiPerVolume() const {
   auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   const auto &i = lr.fInputIter.fIndex;
@@ -156,7 +155,7 @@ void GateDigitizerAdderActor::AddDigiPerVolume() {
     return;
   // uid and fGroupVolumeDepth are only used for repeated volume (such as in
   // PET)
-  auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
+  const auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
   if (l.fMapOfDigiInVolume.count(uid) == 0) {
     // l.fMapOfDigiInVolume[uid] =
     // std::make_shared<GateDigiAdderInVolume>(fPolicy, fTimeDifferenceFlag);
