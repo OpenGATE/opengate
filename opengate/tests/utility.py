@@ -917,9 +917,9 @@ def compare_root3(
         scalings2 = [1] * len(keys2)
 
     if keys1 is None:
-        keys1 = hits1.keys()
+        keys1 = list(hits1.keys())
     if keys2 is None:
-        keys2 = hits2.keys()
+        keys2 = list(hits2.keys())
 
     # keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (

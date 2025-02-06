@@ -29,12 +29,14 @@
 
 #include "GateOptnComptSplitting.h"
 #include "G4BiasingProcessInterface.hh"
+#include "GateHelpers.h"
 
 #include "G4DynamicParticle.hh"
 #include "G4Exception.hh"
 #include "G4Gamma.hh"
 #include "G4ParticleChange.hh"
 #include "G4ParticleChangeForGamma.hh"
+#include "G4RunManager.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4TrackStatus.hh"
 #include <memory>
@@ -43,7 +45,9 @@
 
 GateOptnComptSplitting::GateOptnComptSplitting(G4String name)
     : G4VBiasingOperation(name), fSplittingFactor(1), fRussianRoulette(false),
-      fParticleChange() {}
+      fParticleChange() {
+  DDD("const GateOptnComptSplitting");
+}
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -52,6 +56,11 @@ GateOptnComptSplitting::~GateOptnComptSplitting() {}
 G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
+  DDD("ApplyFinalStateBiasing SPLIT");
+  const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
+  std::cout << event->GetEventID()
+            << " step=" << step->GetTrack()->GetCurrentStepNumber()
+            << std::endl;
 
   // Here we generate for the first the "fake" compton process, given that this
   // function (ApplyFinalStateBiasing) is called when there is a compton
@@ -95,7 +104,6 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
     G4double splittingProbability = G4UniformRand();
     if (splittingProbability <= survivalProbabilitySplitting ||
         survivalProbabilitySplitting == 1) {
-
       // If the number of compton interaction is too high, we simply return the
       // process, instead of generating very low weight particles.
       if (track->GetWeight() <= fMinWeightOfParticle) {
@@ -133,7 +141,9 @@ G4VParticleChange *GateOptnComptSplitting::ApplyFinalStateBiasing(
       return &fParticleChange;
     }
     nCalls++;
+    DDD(nCalls);
   }
+  std::cout << "Final ncall " << nCalls << std::endl;
 
   // Initialisation of the information about the track.
   // We store the first gamma as the departure track, The first gamma is a

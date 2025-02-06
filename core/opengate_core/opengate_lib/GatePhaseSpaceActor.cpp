@@ -135,8 +135,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 
   // Particle exits the volume if the post step is at the volume boundary or at
   // the world boundary if the phsp is attached to the world
-  bool exiting = step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary ||
-                 step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary;
+  bool exiting = IsStepExitVolume(step);
 
   // When this is the first time we see this particle fFirstStepInVolume is true
   // We then set it to false

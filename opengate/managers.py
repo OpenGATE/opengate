@@ -96,6 +96,7 @@ from .actors.biasingactors import (
     ComptSplittingActor,
     BremSplittingActor,
     FreeFlightActor,
+    SplitComptonScatteringActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -146,6 +147,7 @@ actor_types = {
     "BremSplittingActor": BremSplittingActor,
     "ComptSplittingActor": ComptSplittingActor,
     "FreeFlightActor": FreeFlightActor,
+    "SplitComptonScatteringActor": SplitComptonScatteringActor,
 }
 
 
@@ -1278,7 +1280,7 @@ class Simulation(GateObject):
     run_timing_intervals: List[List[float]]
     output_dir: Path
     store_json_archive: bool
-    json_archive_filename: Path
+    json_archive_filename: str
     store_input_files: bool
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
