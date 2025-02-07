@@ -8,21 +8,26 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateVBiasOptrActor_h
 #define GateVBiasOptrActor_h
 
+#include "../GateVActor.h"
 #include "G4VBiasingOperator.hh"
-#include "GateVActor.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
 /*
-    This is a base class (Virtual) to various Operator Actor for biasing.
-    It inherits from GateVActor (this is an actor) and also from
+    This is a base class (Virtual) to various Operator (Optr) Actors for
+   biasing. It inherits from GateVActor (this is an actor) and also from
    G4VBiasingOperator.
+
+    The common operation of all actors that inherit this class is for
+    AttachAllLogicalDaughtersVolumes that propagate the actors to all
+   sub-volumes. (Later: could be an option to not propagate).
+
  */
 
 class GateVBiasOptrActor : public G4VBiasingOperator, public GateVActor {
 public:
-  explicit GateVBiasOptrActor(std::string name, py::dict &user_info,
+  explicit GateVBiasOptrActor(const std::string &name, py::dict &user_info,
                               bool MT_ready = false);
 
   void Configure() override;
