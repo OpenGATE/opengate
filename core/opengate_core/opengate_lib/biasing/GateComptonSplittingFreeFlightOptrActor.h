@@ -23,10 +23,8 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  void BeginOfEventAction(const G4Event *) override;
   void BeginOfRunAction(const G4Run *run) override;
-  void PreUserTrackingAction(const G4Track *track) override;
-  void PostUserTrackingAction(const G4Track *track) override;
+  void BeginOfEventAction(const G4Event *) override;
   void StartTracking(const G4Track *) override;
   void SteppingAction(G4Step *) override;
   void EndOfSimulationWorkerAction(const G4Run *) override;

@@ -14,7 +14,6 @@ GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
     : GateVBiasOptrActor("GammaFreeFlightOperator", user_info, false) {
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation = nullptr;
-  fActions.insert("PreUserTrackingAction");
 }
 
 GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
@@ -29,12 +28,6 @@ void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation =
       new G4BOptnForceFreeFlight("GammaFreeFlightOperator");
-}
-
-void GateGammaFreeFlightOptrActor::PreUserTrackingAction(const G4Track *track) {
-  // This is needed in MT mode (only)
-  if (G4Threading::IsMultithreadedApplication())
-    StartTracking(track);
 }
 
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {

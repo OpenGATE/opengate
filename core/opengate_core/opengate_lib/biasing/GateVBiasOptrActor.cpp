@@ -7,19 +7,18 @@ Copyright (C): OpenGATE Collaboration
 
 #include "GateVBiasOptrActor.h"
 #include "../GateHelpers.h"
-#include "G4BiasingProcessInterface.hh"
 #include "G4LogicalVolumeStore.hh"
-#include "G4ProcessManager.hh"
 #include "G4RunManager.hh"
 
 GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
                                        py::dict &user_info, const bool MT_ready)
-    : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {}
+    : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {
+  // It seems that it is needed in MT (see PreUserTrackingAction)
+  fActions.insert("PreUserTrackingAction");
+}
 
 void GateVBiasOptrActor::Configure() {
-  std::cout << "Configure" << std::endl;
   if (!G4Threading::IsMultithreadedApplication()) {
-    DDD(fAttachedToVolumeName);
     auto *biasedVolume =
         G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
     AttachAllLogicalDaughtersVolumes(biasedVolume);
@@ -27,18 +26,23 @@ void GateVBiasOptrActor::Configure() {
 }
 
 void GateVBiasOptrActor::ConfigureForWorker() {
-  std::cout << "ConfigureForWorker" << std::endl;
-  DDD(fAttachedToVolumeName);
   auto *biasedVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
   AttachAllLogicalDaughtersVolumes(biasedVolume);
 }
 
+void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
+  // This is needed in the MT mode (only), otherwise, StartTracking is not
+  // called
+  if (G4Threading::IsMultithreadedApplication()) {
+    StartTracking(track);
+  }
+}
+
 void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
-  DDD(volume->GetName());
+  // FIXME: set an option to no propagate to daughters
   AttachTo(volume);
-  // FIXME user option
   for (auto i = 0; i < volume->GetNoDaughters(); i++) {
     G4LogicalVolume *logicalDaughtersVolume =
         volume->GetDaughter(i)->GetLogicalVolume();

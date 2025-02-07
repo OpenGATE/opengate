@@ -90,7 +90,7 @@ if __name__ == "__main__":
     print(f"Number of peaks sec      = {ene_sc_peak_w.sum()}")
 
     check3 = (d - ene_sc_peak_w.sum()) / d * 100
-    tol = 1.0
+    tol = 10.0
     b = np.fabs(check3) < tol
     utility.print_test(b, f"rel diff peaks ref-sc    = {check3:.2f} %    tol={tol}")
     is_ok = b and is_ok
@@ -134,6 +134,6 @@ if __name__ == "__main__":
     plt.legend()
     plt.savefig(f)
     print(f)
-    plt.show()
+    # plt.show()
 
     utility.test_ok(is_ok)

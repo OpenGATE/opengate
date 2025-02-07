@@ -22,17 +22,14 @@ GateComptonSplittingFreeFlightOptrActor::
   fSplittingFactor = 1;
   fMaxComptonInteractionCount = 1;
   fSplitStats.clear();
-  fActions.insert("SteppingAction");
-  fActions.insert("BeginOfEventAction");
   fActions.insert("BeginOfRunAction");
+  fActions.insert("BeginOfEventAction");
+  fActions.insert("SteppingAction");
   fActions.insert("EndOfSimulationWorkerAction");
-  fActions.insert("PreUserTrackingAction");
-  fActions.insert("PostUserTrackingAction");
 }
 
 GateComptonSplittingFreeFlightOptrActor::
     ~GateComptonSplittingFreeFlightOptrActor() {
-  DDD("destructor GateOptrSplitComptonScatteringActor");
   threadLocal_t &l = threadLocalData.Get();
   delete l.fFreeFlightOperation;
   delete l.fComptonSplittingOperation;
@@ -51,22 +48,23 @@ void GateComptonSplittingFreeFlightOptrActor::InitializeUserInfo(
   fSplittingFactor = DictGetInt(user_info, "splitting_factor");
   fMaxComptonInteractionCount = DictGetInt(user_info, "max_compton_level");
 
+  // Create the FF operation
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation = new G4BOptnForceFreeFlight("FreeFlightOperation");
-  DDD("First time create FF operation");
 
+  // Create the Compton splitting operation
   l.fComptonSplittingOperation =
       new GateComptonSplittingFreeFlightOptn("ComptonSplittingOperation");
   l.fComptonSplittingOperation->SetSplittingFactor(fSplittingFactor);
+
+  // Initialize the AA (Angular Acceptance) for the Compton operation
   const auto dd = py::dict(user_info["acceptance_angle"]);
   l.fComptonSplittingOperation->InitializeAAManager(dd);
-  DDD("First time create ComptScaSplit operation");
 }
 
 void GateComptonSplittingFreeFlightOptrActor::BeginOfRunAction(
     const G4Run *run) {
   if (run->GetRunID() == 0) {
-    DDD("BeginOfRunAction");
     threadLocal_t &l = threadLocalData.Get();
     l.fSplitStatsPerThread["nb_tracks"] = 0;
     l.fSplitStatsPerThread["nb_tracks_with_free_flight"] = 0;
@@ -83,14 +81,6 @@ void GateComptonSplittingFreeFlightOptrActor::BeginOfEventAction(
   l.fSetOfTrackIDForFreeFlight.clear();
   l.fSetOfTrackIDThatDidCompton.clear();
   l.fComptonInteractionCount = 0;
-}
-
-void GateComptonSplittingFreeFlightOptrActor::PreUserTrackingAction(
-    const G4Track *track) {
-  // This is needed in the MT mode (only)
-  if (G4Threading::IsMultithreadedApplication()) {
-    StartTracking(track);
-  }
 }
 
 void GateComptonSplittingFreeFlightOptrActor::StartTracking(
@@ -136,15 +126,6 @@ void GateComptonSplittingFreeFlightOptrActor::StartTracking(
       }
     }
   }
-}
-
-void GateComptonSplittingFreeFlightOptrActor::PostUserTrackingAction(
-    const G4Track *track) {
-  /*DDD("");
-  DDD("End tracking");
-  DDD(track->GetTrackID());
-  DDD(track->GetWeight());
-  DDD(track->GetDynamicParticle()->GetKineticEnergy());*/
 }
 
 G4VBiasingOperation *

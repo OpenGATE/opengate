@@ -32,6 +32,7 @@ public:
 
   void Configure() override;
   void ConfigureForWorker() override;
+  void PreUserTrackingAction(const G4Track *track) override;
   virtual void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *volume);
 };
 
