@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import subprocess
 from matplotlib import pyplot as plt
-
-from opengate import g4_units
 from opengate.tests import utility
 from test085_free_flight_helpers import *
-import SimpleITK as sitk
 import uproot
+import os
 
 if __name__ == "__main__":
 
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
 
-    #
+    # The test needs the output of the other tests
+    if not os.path.isfile(paths.output / "phsp_1_ref.root"):
+        subprocess.call(
+            ["python", paths.current / "test085_free_flight_phsp_1_ref_mt.py"]
+        )
+    if not os.path.isfile(paths.output / "phsp_1_ff.root"):
+        subprocess.call(
+            ["python", paths.current / "test085_free_flight_phsp_2_ff_mt.py"]
+        )
+    if not os.path.isfile(paths.output / "phsp_1_ff_sc.root"):
+        subprocess.call(
+            ["python", paths.current / "test085_free_flight_phsp_3_scatter_mt.py"]
+        )
+
+    # read root output
     ref_filename = paths.output / "phsp_1_ref.root"
     prim_filename = paths.output / "phsp_1_ff.root"
     sca_filename = paths.output / "phsp_1_ff_sc.root"
@@ -44,8 +57,11 @@ if __name__ == "__main__":
     print(f"Sum of weights p+sec     = {ene_sc_w.sum()+ene_prim_w.sum()}")
 
     check1 = (len(ene_ref) - (ene_sc_w.sum() + ene_prim_w.sum())) / len(ene_ref) * 100
-    is_ok = check1 < 2.0
-    utility.print_test(is_ok, f"diff             p+sec     = {check1:.2f} % ")
+    tol = 2.0
+    is_ok = np.fabs(check1) < tol
+    utility.print_test(
+        is_ok, f"diff             p+sec     = {check1:.2f} %     tol={tol:.2f}"
+    )
     print(
         f"total rel diff ref-prim  = "
         f"{(len(ene_ref) - ene_prim_w.sum())/len(ene_ref)*100:.2f} %"
@@ -62,8 +78,11 @@ if __name__ == "__main__":
     print(f"Number of peaks prim     = {ene_prim_w.sum()}")
     d = len(ene_ref_peak) - ene_prim_w.sum()
     check2 = d / len(ene_ref_peak) * 100
-    b = check2 < 6.0
-    utility.print_test(b, f"rel diff peak ref-prim   = {check2:.2f} %  (d={d})")
+    tol = 6.0
+    b = np.fabs(check2) < tol
+    utility.print_test(
+        b, f"rel diff peak ref-prim   = {check2:.2f} %  (d={d}) tol={tol}"
+    )
     is_ok = b and is_ok
 
     ene_sc_peak = ene_sc[ene_sc > e_threshold]
@@ -71,8 +90,9 @@ if __name__ == "__main__":
     print(f"Number of peaks sec      = {ene_sc_peak_w.sum()}")
 
     check3 = (d - ene_sc_peak_w.sum()) / d * 100
-    b = check3 < 20.0
-    utility.print_test(b, f"rel diff peaks ref-sc    = {check3:.2f} %")
+    tol = 1.0
+    b = np.fabs(check3) < tol
+    utility.print_test(b, f"rel diff peaks ref-sc    = {check3:.2f} %    tol={tol}")
     is_ok = b and is_ok
 
     # Key KineticEnergy min/mean/max: 0.08349965517188826 0.1404070326435755 0.140511

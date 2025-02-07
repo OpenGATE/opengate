@@ -9,8 +9,8 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    # sim.visu = True
     sim.number_of_threads = 4
+    # sim.visu = True
     source, actors = create_simulation_test085(
         sim,
         paths,
@@ -24,10 +24,6 @@ if __name__ == "__main__":
     # AA
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
-
-    # FIXME seems wrong when false
-    s = f"/process/em/UseGeneralProcess true"
-    sim.g4_commands_before_init.append(s)
 
     # free flight actor
     ff = sim.add_actor("FreeFlightActor", "ff")
