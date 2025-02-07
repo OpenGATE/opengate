@@ -65,7 +65,7 @@ class GenericBiasingActorBase(ActorBase):
     }
 
 
-class SplittingActorBase(GenericBiasingActorBase):
+class SplitProcessActorBase(GenericBiasingActorBase):
     """
     This actor  enables non-physics-based particle splitting (e.g., pure geometrical splitting) to introduce biasing
     into simulations. SplittingActorBase serves as a foundational class for particle splitting operations,
@@ -85,11 +85,18 @@ class SplittingActorBase(GenericBiasingActorBase):
     }
 
 
-class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
+class BremsstrahlungSplittingActor(
+    SplitProcessActorBase, g4.GateBremsstrahlungSplittingOptrActor
+):
     """
     This splitting actor enables process-based splitting specifically for bremsstrahlung process. Each time a Brem
     process occurs, its behavior is modified by generating multiple secondary Brem scattering tracks
     (splitting factor) attached to  the initial charged particle.
+
+    This actor is not really needed as Geant4 already propose this with:
+    /process/em/setSecBiasing eBrem my_region 100 50 MeV
+    But we use it as a test/example.
+
     """
 
     # hints for IDE
@@ -107,19 +114,19 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
     processes = ("eBrem",)
 
     def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
+        SplitProcessActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})
+        g4.GateBremsstrahlungSplittingOptrActor.__init__(self, {"name": self.name})
 
     def initialize(self):
-        SplittingActorBase.initialize(self)
+        SplitProcessActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
 
-class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
+class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrActor):
     """
 
     Warning: as a G4VBiasingOperator, the attachTo operation MUST be done
@@ -142,14 +149,9 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateOptrFreeFlightActor.__init__(self, {"name": self.name})
-        self.AddActions(
-            {
-                "PreUserTrackingAction",
-            }
-        )
+        g4.GateGammaFreeFlightOptrActor.__init__(self, {"name": self.name})
         # we need to ensure that the GeneralProcess is used. The 2 next
-        # lines dont work, we used G4 macro.
+        # lines don't work, so we used G4 macro.
         # g4_em_parameters = g4.G4EmParameters.Instance()
         # g4_em_parameters.SetGeneralProcessActive(False)
         s = f"/process/em/UseGeneralProcess true"
@@ -161,11 +163,11 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        g4.GateOptrFreeFlightActor.StartSimulationAction(self)
+        g4.GateGammaFreeFlightOptrActor.StartSimulationAction(self)
 
 
-class SplitComptonScatteringActor(
-    SplittingActorBase, g4.GateOptrSplitComptonScatteringActor
+class ComptonSplittingFreeFlightActor(
+    SplitProcessActorBase, g4.GateComptonSplittingFreeFlightOptrActor
 ):
     """
     FIXME
@@ -202,11 +204,11 @@ class SplitComptonScatteringActor(
     processes = ["GammaGeneralProc"]
 
     def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
+        SplitProcessActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateOptrSplitComptonScatteringActor.__init__(self, {"name": self.name})
+        g4.GateComptonSplittingFreeFlightOptrActor.__init__(self, {"name": self.name})
         self.AddActions(
             {
                 "BeginOfRunAction",
@@ -222,24 +224,24 @@ class SplitComptonScatteringActor(
         self.simulation.g4_commands_before_init.append(s)
 
     def initialize(self):
-        SplittingActorBase.initialize(self)
+        SplitProcessActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
-        g4.GateOptrSplitComptonScatteringActor.StartSimulationAction(self)
+        g4.GateComptonSplittingFreeFlightOptrActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
-        g4.GateOptrSplitComptonScatteringActor.EndSimulationAction(self)
+        g4.GateComptonSplittingFreeFlightOptrActor.EndSimulationAction(self)
         stat = self.GetSplitStats()
-        c = stat["number_of_splits"] * self.splitting_factor
-        ff = stat["number_of_tracks_with_free_flight"]
+        c = stat["nb_splits"] * self.splitting_factor
+        ff = stat["nb_tracks_with_free_flight"]
         print("stat", stat)
         print(f"ratio of ff compton in AA {ff / c*100} %")
 
 
 process_cls(GenericBiasingActorBase)
-process_cls(SplittingActorBase)
-process_cls(BremSplittingActor)
-process_cls(FreeFlightActor)
-process_cls(SplitComptonScatteringActor)
+process_cls(SplitProcessActorBase)
+process_cls(BremsstrahlungSplittingActor)
+process_cls(GammaFreeFlightActor)
+process_cls(ComptonSplittingFreeFlightActor)

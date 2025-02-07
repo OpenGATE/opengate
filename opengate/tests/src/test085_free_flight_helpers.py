@@ -202,41 +202,6 @@ def add_spect_heads(sim, simu_name, radius):
     return projs, heads
 
 
-def add_phsp_old(sim, simu_name, radius, size, spacing, use_parallel_world):
-
-    if use_parallel_world:
-        sim.add_parallel_world("world2")
-
-    plane_size = [spacing[0] * size[0], spacing[1] * size[1]]
-    print(f"plane size = {plane_size}")
-    phsp_plane1 = nm670.add_detection_plane_for_arf(
-        sim, plane_size, "lehr", radius, 0, "spect_1"
-    )
-    phsp_plane2 = nm670.add_detection_plane_for_arf(
-        sim, plane_size, "lehr", radius, 180, "spect_2"
-    )
-    nm670.set_head_orientation(phsp_plane1, "lehr", -radius, 0)
-    nm670.set_head_orientation(phsp_plane2, "lehr", -radius, 180)
-
-    if use_parallel_world:
-        phsp_plane1.mother = "world2"
-        phsp_plane2.mother = "world2"
-
-    phsp1 = sim.add_actor("PhaseSpaceActor", "phsp1")
-    phsp1.attached_to = phsp_plane1
-    phsp1.attributes = ["KineticEnergy", "PrePositionLocal", "Weight"]
-    phsp1.output_filename = f"phsp_1_{simu_name}.root"
-    phsp2 = sim.add_actor("PhaseSpaceActor", "phsp2")
-    phsp2.attached_to = phsp_plane2
-    phsp2.attributes = ["KineticEnergy", "PrePositionLocal", "Weight"]
-    phsp2.output_filename = f"phsp_2_{simu_name}.root"
-
-    phsps = [phsp1, phsp2]
-    planes = [phsp_plane1, phsp_plane2]
-
-    return phsps, planes
-
-
 def add_phsp(sim, simu_name, radius, size, spacing, use_parallel_world):
 
     phsp_sphere = sim.add_volume("Sphere", "phsp_sphere")

@@ -5,19 +5,19 @@ Copyright (C): OpenGATE Collaboration
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateOptrSplitComptonScatteringActor.h"
+#include "GateComptonSplittingFreeFlightOptrActor.h"
+#include "../GateHelpersDict.h"
+#include "../GateHelpersImage.h"
 #include "G4BiasingProcessInterface.hh"
 #include "G4GammaGeneralProcess.hh"
 #include "G4ProcessManager.hh"
 #include "G4RunManager.hh"
-#include "GateHelpersDict.h"
-#include "GateHelpersImage.h"
-#include "GateOptnComptonScatteringSplitting.h"
+#include "GateComptonSplittingFreeFlightOptn.h"
 
 G4Mutex StatMutex = G4MUTEX_INITIALIZER;
 
-GateOptrSplitComptonScatteringActor::GateOptrSplitComptonScatteringActor(
-    py::dict &user_info)
+GateComptonSplittingFreeFlightOptrActor::
+    GateComptonSplittingFreeFlightOptrActor(py::dict &user_info)
     : GateVBiasOptrActor("FreeFlightOperator", user_info, true) {
   fSplittingFactor = 1;
   fMaxComptonInteractionCount = 1;
@@ -30,7 +30,8 @@ GateOptrSplitComptonScatteringActor::GateOptrSplitComptonScatteringActor(
   fActions.insert("PostUserTrackingAction");
 }
 
-GateOptrSplitComptonScatteringActor::~GateOptrSplitComptonScatteringActor() {
+GateComptonSplittingFreeFlightOptrActor::
+    ~GateComptonSplittingFreeFlightOptrActor() {
   DDD("destructor GateOptrSplitComptonScatteringActor");
   threadLocal_t &l = threadLocalData.Get();
   delete l.fFreeFlightOperation;
@@ -38,11 +39,11 @@ GateOptrSplitComptonScatteringActor::~GateOptrSplitComptonScatteringActor() {
 }
 
 std::map<std::string, double>
-GateOptrSplitComptonScatteringActor::GetSplitStats() {
+GateComptonSplittingFreeFlightOptrActor::GetSplitStats() {
   return fSplitStats;
 }
 
-void GateOptrSplitComptonScatteringActor::InitializeUserInfo(
+void GateComptonSplittingFreeFlightOptrActor::InitializeUserInfo(
     py::dict &user_info) {
   std::cout << "GateOptrSplitComptonScatteringActor InitializeUserInfo"
             << std::endl;
@@ -51,37 +52,40 @@ void GateOptrSplitComptonScatteringActor::InitializeUserInfo(
   fMaxComptonInteractionCount = DictGetInt(user_info, "max_compton_level");
 
   threadLocal_t &l = threadLocalData.Get();
-  l.fFreeFlightOperation = new G4BOptnForceFreeFlight("freeFlightOperation");
+  l.fFreeFlightOperation = new G4BOptnForceFreeFlight("FreeFlightOperation");
   DDD("First time create FF operation");
 
   l.fComptonSplittingOperation =
-      new GateOptnComptonScatteringSplitting("comptonSplittingOperation");
+      new GateComptonSplittingFreeFlightOptn("ComptonSplittingOperation");
   l.fComptonSplittingOperation->SetSplittingFactor(fSplittingFactor);
-  l.fComptonSplittingOperation->InitializeAAManager(user_info);
+  const auto dd = py::dict(user_info["acceptance_angle"]);
+  l.fComptonSplittingOperation->InitializeAAManager(dd);
   DDD("First time create ComptScaSplit operation");
 }
 
-void GateOptrSplitComptonScatteringActor::BeginOfRunAction(const G4Run *run) {
+void GateComptonSplittingFreeFlightOptrActor::BeginOfRunAction(
+    const G4Run *run) {
   if (run->GetRunID() == 0) {
     DDD("BeginOfRunAction");
     threadLocal_t &l = threadLocalData.Get();
-    l.fSplitStatsPerThread["number_of_tracks"] = 0;
-    l.fSplitStatsPerThread["number_of_tracks_with_free_flight"] = 0;
-    l.fSplitStatsPerThread["number_of_splits"] = 0;
-    l.fSplitStatsPerThread["number_of_killed_non_gammas"] = 0;
-    l.fSplitStatsPerThread["number_of_killed_gammas"] = 0;
+    l.fSplitStatsPerThread["nb_tracks"] = 0;
+    l.fSplitStatsPerThread["nb_tracks_with_free_flight"] = 0;
+    l.fSplitStatsPerThread["nb_splits"] = 0;
+    l.fSplitStatsPerThread["nb_killed_non_gamma_particles"] = 0;
+    l.fSplitStatsPerThread["nb_killed_gammas_compton_level"] = 0;
+    l.fSplitStatsPerThread["nb_killed_gammas_exiting"] = 0;
   }
 }
 
-void GateOptrSplitComptonScatteringActor::BeginOfEventAction(
+void GateComptonSplittingFreeFlightOptrActor::BeginOfEventAction(
     const G4Event *event) {
   threadLocal_t &l = threadLocalData.Get();
-  l.fSetOfTrackIDforFreeFlight.clear();
+  l.fSetOfTrackIDForFreeFlight.clear();
   l.fSetOfTrackIDThatDidCompton.clear();
   l.fComptonInteractionCount = 0;
 }
 
-void GateOptrSplitComptonScatteringActor::PreUserTrackingAction(
+void GateComptonSplittingFreeFlightOptrActor::PreUserTrackingAction(
     const G4Track *track) {
   // This is needed in the MT mode (only)
   if (G4Threading::IsMultithreadedApplication()) {
@@ -89,50 +93,52 @@ void GateOptrSplitComptonScatteringActor::PreUserTrackingAction(
   }
 }
 
-void GateOptrSplitComptonScatteringActor::StartTracking(const G4Track *track) {
+void GateComptonSplittingFreeFlightOptrActor::StartTracking(
+    const G4Track *track) {
   // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
   l.fComptonInteractionCount = 0;
-  l.fSplitStatsPerThread["number_of_tracks"] += 1;
+  l.fSplitStatsPerThread["nb_tracks"] += 1;
 
   // DDD(track->GetTrackID());
   const auto *creator_process = track->GetCreatorProcess();
   const auto tid = track->GetTrackID();
   if (creator_process != nullptr) {
-    // if the parent id was a Compton (in that volume)
+    // if the parent id was a split Compton (in that volume)
     // Unsure if needed (maybe Compton can be done outside the volume)
     const auto pid = track->GetParentID();
     bool is_free_flight = l.fSetOfTrackIDThatDidCompton.count(pid) == 1;
     if (is_free_flight) {
       // DDD(creator_process->GetProcessName());
-      auto *bp = (G4BiasingProcessInterface *)creator_process;
+      const auto *bp =
+          static_cast<const G4BiasingProcessInterface *>(creator_process);
       // DDD(bp);
-      if (bp != nullptr) {
-        const auto *wrapped_p = bp->GetWrappedProcess();
-        const auto *ggp = (const G4GammaGeneralProcess *)wrapped_p;
-        const auto *proc = ggp->GetSelectedProcess();
-        if (proc != nullptr) {
-          // DDD(proc->GetProcessName());
-          //  and if the process is a Compton
-          if (proc->GetProcessName() == "compt") {
-            // We add this id to track it with free flight
-            l.fSetOfTrackIDforFreeFlight.insert(tid);
-            // we need to start the ff with the correct weight
-            // l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
-            // l.fFreeFlightOperation->ResetInitialTrackWeight(1.0);
-            l.fFreeFlightOperation->ResetInitialTrackWeight(1.0 /
-                                                            fSplittingFactor);
-            l.fSplitStatsPerThread["number_of_tracks_with_free_flight"] += 1;
-            // DDD(track->GetWeight());
-            // DDD(track->GetDynamicParticle()->GetKineticEnergy());
-          }
+      // if (bp != nullptr) {
+      const auto *wrapped_p = bp->GetWrappedProcess();
+      const auto *ggp = static_cast<const G4GammaGeneralProcess *>(wrapped_p);
+      const auto *proc = ggp->GetSelectedProcess();
+      if (proc != nullptr) {
+        // DDD(proc->GetProcessName());
+        //  and if the process is a Compton
+        if (proc->GetProcessName() == "compt") {
+          // We add this id to track it with free flight
+          l.fSetOfTrackIDForFreeFlight.insert(tid);
+          // we need to start the ff with the correct weight
+          // l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
+          // l.fFreeFlightOperation->ResetInitialTrackWeight(1.0);
+          l.fFreeFlightOperation->ResetInitialTrackWeight(1.0 /
+                                                          fSplittingFactor);
+          l.fSplitStatsPerThread["nb_tracks_with_free_flight"] += 1;
+          // DDD(track->GetWeight());
+          // DDD(track->GetDynamicParticle()->GetKineticEnergy());
         }
+        //}
       }
     }
   }
 }
 
-void GateOptrSplitComptonScatteringActor::PostUserTrackingAction(
+void GateComptonSplittingFreeFlightOptrActor::PostUserTrackingAction(
     const G4Track *track) {
   /*DDD("");
   DDD("End tracking");
@@ -142,19 +148,19 @@ void GateOptrSplitComptonScatteringActor::PostUserTrackingAction(
 }
 
 G4VBiasingOperation *
-GateOptrSplitComptonScatteringActor::ProposeNonPhysicsBiasingOperation(
+GateComptonSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
     const G4Track * /* track */,
     const G4BiasingProcessInterface * /* callingProcess */) {
   return nullptr;
 }
 
 G4VBiasingOperation *
-GateOptrSplitComptonScatteringActor::ProposeOccurenceBiasingOperation(
+GateComptonSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   // Should we track the particle with free flight or not ?
   const threadLocal_t &l = threadLocalData.Get();
   const auto tid = track->GetTrackID();
-  bool is_free_flight = l.fSetOfTrackIDforFreeFlight.count(tid) > 0;
+  bool is_free_flight = l.fSetOfTrackIDForFreeFlight.count(tid) > 0;
   if (is_free_flight) {
     // free flight tracking
     // DDD(track->GetWeight());
@@ -166,18 +172,18 @@ GateOptrSplitComptonScatteringActor::ProposeOccurenceBiasingOperation(
 }
 
 G4VBiasingOperation *
-GateOptrSplitComptonScatteringActor::ProposeFinalStateBiasingOperation(
+GateComptonSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
 
   // Check if this is free flight
   threadLocal_t &l = threadLocalData.Get();
 
-  /*for (auto s: l.fSetOfTrackIDforFreeFlight) {
+  /*for (auto s: l.fSetOfTrackIDForFreeFlight) {
       DDD(s);
   }*/
 
   const auto tid = track->GetTrackID();
-  bool is_free_flight = l.fSetOfTrackIDforFreeFlight.count(tid) > 0;
+  bool is_free_flight = l.fSetOfTrackIDForFreeFlight.count(tid) > 0;
   // DDD(is_free_flight);
   if (is_free_flight) {
     // DDD("free flight");
@@ -220,7 +226,7 @@ GateOptrSplitComptonScatteringActor::ProposeFinalStateBiasingOperation(
     l.fComptonInteractionCount++;
     // DDD(l.fComptonInteractionCount);
     if (l.fComptonInteractionCount <= fMaxComptonInteractionCount) {
-      l.fSplitStatsPerThread["number_of_splits"] += 1;
+      l.fSplitStatsPerThread["nb_splits"] += 1;
       return l.fComptonSplittingOperation;
     }
   }
@@ -229,26 +235,26 @@ GateOptrSplitComptonScatteringActor::ProposeFinalStateBiasingOperation(
   return callingProcess->GetCurrentOccurenceBiasingOperation();
 }
 
-void GateOptrSplitComptonScatteringActor::SteppingAction(G4Step *step) {
+void GateComptonSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   threadLocal_t &l = threadLocalData.Get();
   // keep only gamma
   if (step->GetTrack()->GetDefinition()->GetParticleName() != "gamma") {
     // kill it without mercy
     step->GetTrack()->SetTrackStatus(fStopAndKill);
-    l.fSplitStatsPerThread["number_of_killed_non_gammas"] += 1;
+    l.fSplitStatsPerThread["nb_killed_non_gamma_particles"] += 1;
     return;
   }
 
   // if too much Compton, we kill the gamma
   if (l.fComptonInteractionCount > fMaxComptonInteractionCount) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
-    l.fSplitStatsPerThread["number_of_killed_gammas"] += 1;
+    l.fSplitStatsPerThread["nb_killed_gammas_compton_level"] += 1;
     return;
   }
 
   // is free flight ?
   const auto tid = step->GetTrack()->GetTrackID();
-  bool is_free_flight = l.fSetOfTrackIDforFreeFlight.count(tid) > 0;
+  bool is_free_flight = l.fSetOfTrackIDForFreeFlight.count(tid) > 0;
   if (is_free_flight) {
     // DDD("ff");
     return;
@@ -259,10 +265,11 @@ void GateOptrSplitComptonScatteringActor::SteppingAction(G4Step *step) {
   // is in the mother volume.
   if (IsStepExitVolume(step)) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
+    l.fSplitStatsPerThread["nb_killed_gammas_exiting"] += 1;
   }
 }
 
-void GateOptrSplitComptonScatteringActor::EndOfSimulationWorkerAction(
+void GateComptonSplittingFreeFlightOptrActor::EndOfSimulationWorkerAction(
     const G4Run *) {
   DDD("EndOfSimulationWorkerAction");
   G4AutoLock mutex(&StatMutex);

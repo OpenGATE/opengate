@@ -26,7 +26,7 @@ if __name__ == "__main__":
     source.direction.acceptance_angle.normal_flag = False
 
     # free flight actor
-    ff = sim.add_actor("FreeFlightActor", "ff")
+    ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "phantom"
     ff.particles = "gamma"
 

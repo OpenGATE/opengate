@@ -8,14 +8,14 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptnComptonScatteringSplitting_h
 #define GateOptnComptonScatteringSplitting_h 1
 
+#include "../GateAcceptanceAngleTesterManager.h"
+#include "../GateHelpers.h"
 #include "G4ParticleChange.hh"
 #include "G4VBiasingOperation.hh"
-#include "GateAcceptanceAngleTesterManager.h"
-#include "GateHelpers.h"
 
-class GateOptnComptonScatteringSplitting : public G4VBiasingOperation {
+class GateComptonSplittingFreeFlightOptn : public G4VBiasingOperation {
 public:
-  explicit GateOptnComptonScatteringSplitting(G4String name);
+  explicit GateComptonSplittingFreeFlightOptn(const G4String &name);
 
   const G4VBiasingInteractionLaw *
   ProvideOccurenceBiasingInteractionLaw(const G4BiasingProcessInterface *,

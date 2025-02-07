@@ -10,18 +10,16 @@ Copyright (C): OpenGATE Collaboration
 
 #include "G4BOptnForceFreeFlight.hh"
 #include "G4VBiasingOperator.hh"
-#include "GateOptnComptonScatteringSplitting.h"
-#include "GateVActor.h"
+#include "GateComptonSplittingFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
-#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateOptrSplitComptonScatteringActor : public GateVBiasOptrActor {
+class GateComptonSplittingFreeFlightOptrActor : public GateVBiasOptrActor {
 
 public:
-  explicit GateOptrSplitComptonScatteringActor(py::dict &user_info);
-  ~GateOptrSplitComptonScatteringActor() override;
+  explicit GateComptonSplittingFreeFlightOptrActor(py::dict &user_info);
+  ~GateComptonSplittingFreeFlightOptrActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -50,8 +48,8 @@ protected:
 
   struct threadLocal_t {
     G4BOptnForceFreeFlight *fFreeFlightOperation = nullptr;
-    GateOptnComptonScatteringSplitting *fComptonSplittingOperation = nullptr;
-    std::set<int> fSetOfTrackIDforFreeFlight;
+    GateComptonSplittingFreeFlightOptn *fComptonSplittingOperation = nullptr;
+    std::set<int> fSetOfTrackIDForFreeFlight;
     std::set<int> fSetOfTrackIDThatDidCompton;
     int fComptonInteractionCount;
     std::map<std::string, double> fSplitStatsPerThread;

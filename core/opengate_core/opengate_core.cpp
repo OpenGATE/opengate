@@ -339,9 +339,9 @@ void init_GatePhaseSpaceActor(py::module &);
 // biasing
 void init_GateBOptrBremSplittingActor(py::module &m);
 
-void init_GateOptrFreeFlightActor(py::module &m);
+void init_GateGammaFreeFlightOptrActor(py::module &m);
 
-void init_GateOptrSplitComptonScatteringActor(py::module &m);
+void init_GateComptonSplittingFreeFlightOptrActor(py::module &m);
 
 void init_G4VBiasingOperator(py::module &m);
 
@@ -593,8 +593,8 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateSimulationStatisticsActor(m);
 
   init_GateBOptrBremSplittingActor(m);
-  init_GateOptrFreeFlightActor(m);
-  init_GateOptrSplitComptonScatteringActor(m);
+  init_GateGammaFreeFlightOptrActor(m);
+  init_GateComptonSplittingFreeFlightOptrActor(m);
 
   init_GatePhaseSpaceActor(m);
   init_GateHitsCollectionActor(m);
