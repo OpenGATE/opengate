@@ -3,6 +3,7 @@ from .base import ActorBase
 from ..base import process_cls
 from box import Box
 from ..utility import g4_units
+from .actoroutput import ActorOutputBase
 
 
 def generic_source_default_aa():
@@ -166,42 +167,86 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
         g4.GateGammaFreeFlightOptrActor.StartSimulationAction(self)
 
 
+class ActorOutputComptonSplittingFreeFlightActor(ActorOutputBase):
+    """
+    Some output statistics computed during ComptonSplittingFreeFlightActor
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # self.splitting_factor = kwargs.get("belongs_to").user_info.splitting_factor
+
+        # predefine the split_info
+        self.split_info = Box()
+        self.split_info.nb_tracks = 0
+        self.split_info.nb_tracks_with_free_flight = 0
+        self.split_info.nb_splits = 0
+        self.split_info.nb_killed_non_gamma_particles = 0
+        self.split_info.nb_killed_gammas_compton_level = 0
+        self.split_info.nb_killed_gammas_exiting = 0
+        self.split_info.splitting_factor = 1
+
+    def get_processed_output(self, infos, splitting_factor):
+        self.split_info.nb_tracks = infos["nb_tracks"]
+        self.split_info.nb_tracks_with_free_flight = infos["nb_tracks_with_free_flight"]
+        self.split_info.nb_splits = infos["nb_splits"]
+        self.split_info.nb_killed_non_gamma_particles = infos[
+            "nb_killed_non_gamma_particles"
+        ]
+        self.split_info.nb_killed_gammas_compton_level = infos[
+            "nb_killed_gammas_compton_level"
+        ]
+        self.split_info.nb_killed_gammas_exiting = infos["nb_killed_gammas_exiting"]
+        self.split_info.splitting_factor = splitting_factor
+        return self.split_info
+
+    def __str__(self):
+        s = ""
+        for key, value in self.split_info.items():
+            s += f"{key}: {value}\n"
+        f = self.split_info.nb_tracks_with_free_flight / (
+            self.split_info.nb_splits * self.split_info.splitting_factor
+        )
+        s += f"Fraction of ff: {f*100:.2f} %\n"
+        return s
+
+
 class ComptonSplittingFreeFlightActor(
     SplitProcessActorBase, g4.GateComptonSplittingFreeFlightOptrActor
 ):
     """
-    FIXME
+    Split Compton process for gamma. The initial gamma is tracked until it goes out of the volume.
+    Split gammas are tracked with free flight and Angular Acceptance
     """
 
-    # hints for IDE FIXME
+    # hints for IDE
     processes: list
-    # user info FIXME
 
+    # user info
     user_info_defaults = {
         "max_compton_level": (
-            3,
+            10,
             {
-                "doc": "FIXME ",
+                "doc": "Compton are split until this max level is reached (then the initial gamma is killed).",
             },
         ),
         "acceptance_angle": (
             generic_source_default_aa(),
             {
-                "doc": "FIXME ",
+                "doc": "Seegeneric source",
             },
         ),
-        # "skip_policy": ("SkipEvents", {"doc": "FIXME "}),
-        # "volumes": ([], {"doc": "FIXME "}),
-        # "intersection_flag": (False, {"doc": "FIXME "}),
-        # "normal_flag": (False, {"doc": "FIXME "}),
-        # "normal_vector": ([0, 0, 1], {"doc": "FIXME "}),
-        # "normal_tolerance": (3 * g4_units.deg, {"doc": "FIXME "}),
     }
 
-    # processes = ("compt", "Rayl", "phot", "conv", "GammaGeneralProc")
-    # processes = ["compt"]  # , "Rayl", "phot", "conv", "GammaGeneralProc")
-    # processes = ("Rayl", "phot", "conv")
+    # only work for GammaGeneralProc
     processes = ["GammaGeneralProc"]
+
+    user_output_config = {
+        "info": {
+            "actor_output_class": ActorOutputComptonSplittingFreeFlightActor,
+        },
+    }
 
     def __init__(self, *args, **kwargs):
         SplitProcessActorBase.__init__(self, *args, **kwargs)
@@ -209,39 +254,26 @@ class ComptonSplittingFreeFlightActor(
 
     def __initcpp__(self):
         g4.GateComptonSplittingFreeFlightOptrActor.__init__(self, {"name": self.name})
-        self.AddActions(
-            {
-                "BeginOfRunAction",
-                "PreUserTrackingAction",
-                "SteppingAction",
-            }
-        )
-        # we need to ensure that the GeneralProcess is used. The 2 next
-        # lines don't work, we used G4 macro.
-        # g4_em_parameters = g4.G4EmParameters.Instance()
-        # g4_em_parameters.SetGeneralProcessActive(False)
-        s = f"/process/em/UseGeneralProcess true"
-        self.simulation.g4_commands_before_init.append(s)
+
+    def __str__(self):
+        s = self.user_output["info"].__str__()
+        return s
 
     def initialize(self):
         SplitProcessActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
-    def StartSimulationAction(self):
-        g4.GateComptonSplittingFreeFlightOptrActor.StartSimulationAction(self)
-
     def EndSimulationAction(self):
         g4.GateComptonSplittingFreeFlightOptrActor.EndSimulationAction(self)
-        stat = self.GetSplitStats()
-        c = stat["nb_splits"] * self.splitting_factor
-        ff = stat["nb_tracks_with_free_flight"]
-        print("stat", stat)
-        print(f"ratio of ff compton in AA {ff / c*100} %")
+        self.user_output["info"].get_processed_output(
+            self.GetSplitStats(), self.user_info.splitting_factor
+        )
 
 
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
 process_cls(BremsstrahlungSplittingActor)
 process_cls(GammaFreeFlightActor)
+process_cls(ActorOutputComptonSplittingFreeFlightActor)
 process_cls(ComptonSplittingFreeFlightActor)

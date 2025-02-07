@@ -26,9 +26,14 @@ if __name__ == "__main__":
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
+    # GeneralProcess MUST be true, we force it to false
+    # to test if it is revert back to true
+    s = f"/process/em/UseGeneralProcess false"
+    # sim.g4_commands_before_init.append(s)
+
     ff = sim.add_actor("ComptonSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.splitting_factor = 10  # FIXME warning, bias ?
+    ff.splitting_factor = 5  # FIXME warning, bias ?
     ff.max_compton_level = 10  # FIXME why related to the nb ff ?
 
     # no AA in this test (of course, this is inefficient)
@@ -40,9 +45,13 @@ if __name__ == "__main__":
     ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
 
     # go
-    sim.run()
+    sim.run(start_new_process=False)
     stats = sim.get_actor("stats")
     print(stats)
+
+    print()
+    print("Info during splitting")
+    print(ff)
 
     # compare histo
     is_ok = utility.compare_root3(

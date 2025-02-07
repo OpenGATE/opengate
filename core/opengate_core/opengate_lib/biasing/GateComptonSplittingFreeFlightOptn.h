@@ -30,7 +30,7 @@ public:
                                             G4bool &) override;
 
   void SetSplittingFactor(G4int splittingFactor);
-  void InitializeAAManager(py::dict user_info);
+  void InitializeAAManager(const py::dict &user_info);
 
   G4int fSplittingFactor;
   G4ParticleChange fParticleChange;

@@ -8,6 +8,7 @@ Copyright (C): OpenGATE Collaboration
 #include "GateComptonSplittingFreeFlightOptn.h"
 #include "../GateHelpers.h"
 #include "G4BiasingProcessInterface.hh"
+#include "G4EmParameters.hh"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4RunManager.hh"
 
@@ -40,23 +41,23 @@ void GateComptonSplittingFreeFlightOptn::SetSplittingFactor(
 }
 
 void GateComptonSplittingFreeFlightOptn::InitializeAAManager(
-    py::dict user_info) {
+    const py::dict &user_info) {
   fAAManager = new GateAcceptanceAngleTesterManager();
   fAAManager->Initialize(user_info, true);
+
+  if (G4EmParameters::Instance()->GeneralProcessActive() == false) {
+    Fatal("GeneralGammaProcess is not active. This is needed for "
+          "ComptonSplittingFreeFlight");
+  }
 }
 
 G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
-  // const double weight = track->GetWeight() / fSplittingFactor;
-  //  FIXME: no need to set the splitting weight because set by
-  //  SetSecondaryWeightByProcess ?
   const double weight = track->GetWeight() / fSplittingFactor;
   const auto position = step->GetPostStepPoint()->GetPosition();
 
-  // DDD(track->GetWeight());
-
-  // This is the scattered Gamma
+  // This is the initial scattered Gamma
   auto *processFinalStateForGamma =
       callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
   const auto fs_fg =
@@ -69,18 +70,10 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
   // Copied from G4: "inform we take care of secondaries weight (otherwise these
   // secondaries are by default given the primary weight)."
-  fParticleChange.SetSecondaryWeightByProcess(
-      true); // FIXME, important, unclear
-  // fParticleChange.SetSecondaryWeightByProcess(false); // FIXME, important,
-  // unclear
-  fParticleChange.SetParentWeightByProcess(true); // FIXME ??
+  fParticleChange.SetSecondaryWeightByProcess(true);
+  fParticleChange.SetParentWeightByProcess(true);
 
-  // fParticleChange.SetNumberOfSecondaries(fSplittingFactor);
-  // DDD(fParticleChange.GetWeight());
-  // DDD(fParticleChange.GetParentWeight());
-  // fParticleChange.ProposeWeight(); /// FIXME
-
-  // split gammas
+  // Loop to split Compton gammas
   fAAManager->StartAcceptLoop();
   int nb_of_secondaries = 0;
   std::vector<G4Track *> secondary_tracks;
@@ -90,7 +83,7 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     const auto fs = dynamic_cast<G4ParticleChangeForGamma *>(processFinalState);
     auto momentum = fs->GetProposedMomentumDirection();
 
-    // AA ?
+    // Angular Acceptance rejection
     if (!fAAManager->TestIfAccept(position, momentum)) {
       continue;
     }
@@ -109,8 +102,6 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
     // FIXME secondaries electrons ? (ignored for now)
   }
-
-  // fParticleChange->ProposeParentWeight(initialWeight);
 
   // Add secondaries
   fParticleChange.SetNumberOfSecondaries(nb_of_secondaries);
