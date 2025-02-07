@@ -6,15 +6,15 @@
    -------------------------------------------------- */
 
 #include "GateHelpers.h"
-#include <G4Threading.hh>
 #include <stdexcept>
 
 const int LogLevel_RUN = 20;
 const int LogLevel_EVENT = 50;
 
 void Fatal(std::string s) {
-  std::cout << "ERROR in OPENGATE " << s << std::endl;
-  exit(-1);
+  std::ostringstream oss;
+  oss << "OPENGATE-CORE " << s << std::endl;
+  throw std::runtime_error(oss.str());
 }
 
 void FatalKeyError(std::string s) {
