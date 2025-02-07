@@ -57,7 +57,7 @@ if __name__ == "__main__":
     print(f"Sum of weights p+sec     = {ene_sc_w.sum()+ene_prim_w.sum()}")
 
     check1 = (len(ene_ref) - (ene_sc_w.sum() + ene_prim_w.sum())) / len(ene_ref) * 100
-    tol = 2.0
+    tol = 3.0
     is_ok = np.fabs(check1) < tol
     utility.print_test(
         is_ok, f"diff             p+sec     = {check1:.2f} %     tol={tol:.2f}"

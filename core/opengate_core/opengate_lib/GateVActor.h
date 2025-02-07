@@ -132,7 +132,7 @@ public:
 
   void SetSourceManager(GateSourceManager *s);
 
-  void SetMotherAttachedToVolumeName(std::string attachedToVolumeName);
+  void SetMotherAttachedToVolumeName(const std::string &attachedToVolumeName);
 
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side

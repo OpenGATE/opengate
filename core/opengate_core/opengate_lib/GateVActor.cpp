@@ -39,20 +39,18 @@ void GateVActor::InitializeCpp() {
 };
 
 void GateVActor::SetMotherAttachedToVolumeName(
-    std::string attachedToVolumeName) {
+    const std::string &attachedToVolumeName) {
   fAttachedToVolumeMotherName = attachedToVolumeName;
 }
 
 void GateVActor::InitializeUserInfo(py::dict &user_info) {
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
-  // fAttachedToVolumeMotherName = DictGetStr(user_info, "mother_attached_to");
   auto op = DictGetStr(user_info, "filters_boolean_operator");
   if (op == "and") {
     fOperatorIsAnd = true;
   } else {
     fOperatorIsAnd = false;
   }
-  DDD(fAttachedToVolumeMotherName);
 }
 
 void GateVActor::AddActorOutputInfo(const std::string &outputName) {

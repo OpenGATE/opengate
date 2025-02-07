@@ -31,6 +31,9 @@ public:
 
   std::map<std::string, double> GetSplitStats();
 
+  inline bool
+  IsComptonInteraction(const G4BiasingProcessInterface *callingProcess) const;
+
 protected:
   G4VBiasingOperation *
   ProposeNonPhysicsBiasingOperation(const G4Track *,
@@ -47,17 +50,17 @@ protected:
   struct threadLocal_t {
     G4BOptnForceFreeFlight *fFreeFlightOperation = nullptr;
     GateComptonSplittingFreeFlightOptn *fComptonSplittingOperation = nullptr;
-    std::set<int> fSetOfTrackIDForFreeFlight;
     std::set<int> fSetOfTrackIDThatDidCompton;
     int fComptonInteractionCount;
     std::map<std::string, double> fSplitStatsPerThread;
+    bool fCurrentTrackIsFreeFlight;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
   std::map<std::string, double> fSplitStats;
 
   int fSplittingFactor;
-  int fMaxComptonInteractionCount;
+  int fMaxComptonLevel;
 };
 
 #endif
