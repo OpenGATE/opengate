@@ -8,7 +8,6 @@ Copyright (C): OpenGATE Collaboration
 #include "GateBremsstrahlungSplittingOptrActor.h"
 #include "../GateHelpersDict.h"
 #include "../GateHelpersImage.h"
-#include "G4BiasingProcessInterface.hh"
 #include "GateBremsstrahlungSplittingOptn.h"
 
 GateBremsstrahlungSplittingOptrActor::GateBremsstrahlungSplittingOptrActor(
@@ -42,8 +41,6 @@ void GateBremsstrahlungSplittingOptrActor::StartRun() {
   const G4LogicalVolume *biasingVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
   AttachTo(biasingVolume);
-  DDD(biasingVolume->GetName());
-  DDD(fAttachedToVolumeName);
 }
 
 void GateBremsstrahlungSplittingOptrActor::StartTracking(const G4Track *track) {

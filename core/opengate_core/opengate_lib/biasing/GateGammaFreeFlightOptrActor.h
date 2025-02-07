@@ -26,7 +26,6 @@ public:
   void InitializeUserInfo(py::dict &user_info) override;
 
   void StartTracking(const G4Track *) override;
-  void PreUserTrackingAction(const G4Track *track) override;
 
 protected:
   G4VBiasingOperation *
