@@ -26,10 +26,9 @@ if __name__ == "__main__":
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
-    # GeneralProcess MUST be true, we force it to false
-    # to test if it is revert back to true
-    s = f"/process/em/UseGeneralProcess false"
-    # sim.g4_commands_before_init.append(s)
+    # GeneralProcess MUST be true (it is by default)
+    s = f"/process/em/UseGeneralProcess true"
+    sim.g4_commands_before_init.append(s)
 
     ff = sim.add_actor("ComptonSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
@@ -45,7 +44,7 @@ if __name__ == "__main__":
     ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
 
     # go
-    sim.run(start_new_process=False)
+    sim.run(start_new_process=True)
     stats = sim.get_actor("stats")
     print(stats)
 
