@@ -26,15 +26,15 @@ if __name__ == "__main__":
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
-    ff = sim.add_actor("SplitComptonScatteringActor", "ff")
+    ff = sim.add_actor("ComptonSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.splitting_factor = 10
-    ff.max_compton_level = 10
+    ff.splitting_factor = 10  # FIXME warning, bias ?
+    ff.max_compton_level = 10  # FIXME why related to the nb ff ?
 
-    # no AA in this test (of course, it is inefficient)
+    # no AA in this test (of course, this is inefficient)
     ff.acceptance_angle.skip_policy = "SkipEvents"
     ff.acceptance_angle.intersection_flag = False
-    # ff.acceptance_angle.volumes = []  # ["spect_1"]  # , "spect_2"]
+    ff.acceptance_angle.volumes = ["phsp_sphere"]
     ff.acceptance_angle.normal_flag = False
     ff.acceptance_angle.normal_vector = [0, 0, -1]
     ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg

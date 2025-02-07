@@ -93,9 +93,9 @@ from .actors.miscactors import (
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
-    BremSplittingActor,
-    FreeFlightActor,
-    SplitComptonScatteringActor,
+    BremsstrahlungSplittingActor,
+    GammaFreeFlightActor,
+    ComptonSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -143,9 +143,9 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     # biasing
-    "BremSplittingActor": BremSplittingActor,
-    "FreeFlightActor": FreeFlightActor,
-    "SplitComptonScatteringActor": SplitComptonScatteringActor,
+    "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
+    "GammaFreeFlightActor": GammaFreeFlightActor,
+    "ComptonSplittingFreeFlightActor": ComptonSplittingFreeFlightActor,
 }
 
 

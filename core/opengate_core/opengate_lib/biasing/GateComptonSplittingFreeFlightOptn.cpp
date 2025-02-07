@@ -5,52 +5,51 @@ Copyright (C): OpenGATE Collaboration
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateOptnComptonScatteringSplitting.h"
+#include "GateComptonSplittingFreeFlightOptn.h"
+#include "../GateHelpers.h"
 #include "G4BiasingProcessInterface.hh"
-#include "G4ParticleChange.hh"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4RunManager.hh"
-#include "GateHelpers.h"
 
-GateOptnComptonScatteringSplitting::GateOptnComptonScatteringSplitting(
-    G4String name)
+GateComptonSplittingFreeFlightOptn::GateComptonSplittingFreeFlightOptn(
+    const G4String &name)
     : G4VBiasingOperation(name), fSplittingFactor(1) {
   fAAManager = nullptr;
 }
 
 const G4VBiasingInteractionLaw *
-GateOptnComptonScatteringSplitting::ProvideOccurenceBiasingInteractionLaw(
+GateComptonSplittingFreeFlightOptn::ProvideOccurenceBiasingInteractionLaw(
     const G4BiasingProcessInterface *, G4ForceCondition &) {
   return nullptr;
 }
 
-G4double GateOptnComptonScatteringSplitting::DistanceToApplyOperation(
+G4double GateComptonSplittingFreeFlightOptn::DistanceToApplyOperation(
     const G4Track *, G4double, G4ForceCondition *) {
   return DBL_MAX;
 }
 
 G4VParticleChange *
-GateOptnComptonScatteringSplitting::GenerateBiasingFinalState(const G4Track *,
+GateComptonSplittingFreeFlightOptn::GenerateBiasingFinalState(const G4Track *,
                                                               const G4Step *) {
   return nullptr;
 }
 
-void GateOptnComptonScatteringSplitting::SetSplittingFactor(
+void GateComptonSplittingFreeFlightOptn::SetSplittingFactor(
     const G4int splittingFactor) {
   fSplittingFactor = splittingFactor;
 }
 
-void GateOptnComptonScatteringSplitting::InitializeAAManager(
+void GateComptonSplittingFreeFlightOptn::InitializeAAManager(
     py::dict user_info) {
   fAAManager = new GateAcceptanceAngleTesterManager();
   fAAManager->Initialize(user_info, true);
 }
 
-G4VParticleChange *GateOptnComptonScatteringSplitting::ApplyFinalStateBiasing(
+G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
   // const double weight = track->GetWeight() / fSplittingFactor;
-  //  FIXME: no need to set the spliting weight because set by
+  //  FIXME: no need to set the splitting weight because set by
   //  SetSecondaryWeightByProcess ?
   const double weight = track->GetWeight() / fSplittingFactor;
   const auto position = step->GetPostStepPoint()->GetPosition();
