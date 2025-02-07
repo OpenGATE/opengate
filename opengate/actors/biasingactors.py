@@ -1,7 +1,25 @@
 import opengate_core as g4
 from .base import ActorBase
-from ..utility import g4_units
 from ..base import process_cls
+from box import Box
+from ..utility import g4_units
+
+
+def generic_source_default_aa():
+    # aa = Angular Acceptance
+    # this is used to control the direction of events in
+    # the generic source, but is also used in the SplitComptonActor
+    deg = g4_units.deg
+    return Box(
+        {
+            "skip_policy": "SkipEvents",
+            "volumes": [],
+            "intersection_flag": False,
+            "normal_flag": False,
+            "normal_vector": [0, 0, 1],
+            "normal_tolerance": 3 * deg,
+        }
+    )
 
 
 def _setter_hook_particles(self, value):
@@ -103,7 +121,6 @@ class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
 
 class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
     """
-    FIXME
 
     Warning: as a G4VBiasingOperator, the attachTo operation MUST be done
     1) before the StartSimulationAction and 2) for each thread
@@ -111,20 +128,14 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
     that is specifically called in engines.py
     in the register_sensitive_detectors function
 
-    Also PreUserTrackingAction is needed because StartTracking is not used in MT.
-
+    Also, PreUserTrackingAction is needed because StartTracking is not used in MT.
     """
 
-    # hints for IDE FIXME
+    # hints for IDE
     processes: list
-    # user info FIXME
 
-    # processes = ("compt", "Rayl", "phot", "conv", "GammaGeneralProc")
-    # processes = ["phot"]
-    # processes = ("Rayl", "phot", "conv")
-    # processes = ["compt"]
+    # this biased actor works only for GammaGeneralProc
     processes = ["GammaGeneralProc"]
-    # particles = "gamma"
 
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)
@@ -137,6 +148,12 @@ class FreeFlightActor(GenericBiasingActorBase, g4.GateOptrFreeFlightActor):
                 "PreUserTrackingAction",
             }
         )
+        # we need to ensure that the GeneralProcess is used. The 2 next
+        # lines dont work, we used G4 macro.
+        # g4_em_parameters = g4.G4EmParameters.Instance()
+        # g4_em_parameters.SetGeneralProcessActive(False)
+        s = f"/process/em/UseGeneralProcess true"
+        self.simulation.g4_commands_before_init.append(s)
 
     def initialize(self):
         GenericBiasingActorBase.initialize(self)
@@ -165,12 +182,18 @@ class SplitComptonScatteringActor(
                 "doc": "FIXME ",
             },
         ),
-        "skip_policy": ("SkipEvents", {"doc": "FIXME "}),
-        "volumes": ([], {"doc": "FIXME "}),
-        "intersection_flag": (False, {"doc": "FIXME "}),
-        "normal_flag": (False, {"doc": "FIXME "}),
-        "normal_vector": ([0, 0, 1], {"doc": "FIXME "}),
-        "normal_tolerance": (3 * g4_units.deg, {"doc": "FIXME "}),
+        "acceptance_angle": (
+            generic_source_default_aa(),
+            {
+                "doc": "FIXME ",
+            },
+        ),
+        # "skip_policy": ("SkipEvents", {"doc": "FIXME "}),
+        # "volumes": ([], {"doc": "FIXME "}),
+        # "intersection_flag": (False, {"doc": "FIXME "}),
+        # "normal_flag": (False, {"doc": "FIXME "}),
+        # "normal_vector": ([0, 0, 1], {"doc": "FIXME "}),
+        # "normal_tolerance": (3 * g4_units.deg, {"doc": "FIXME "}),
     }
 
     # processes = ("compt", "Rayl", "phot", "conv", "GammaGeneralProc")
@@ -191,7 +214,12 @@ class SplitComptonScatteringActor(
                 "SteppingAction",
             }
         )
-        print("end init cpp")
+        # we need to ensure that the GeneralProcess is used. The 2 next
+        # lines don't work, we used G4 macro.
+        # g4_em_parameters = g4.G4EmParameters.Instance()
+        # g4_em_parameters.SetGeneralProcessActive(False)
+        s = f"/process/em/UseGeneralProcess true"
+        self.simulation.g4_commands_before_init.append(s)
 
     def initialize(self):
         SplittingActorBase.initialize(self)

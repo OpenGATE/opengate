@@ -25,9 +25,6 @@ if __name__ == "__main__":
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
-    s = f"/process/em/UseGeneralProcess true"
-    sim.g4_commands_before_init.append(s)
-
     # go
     sim.run()
     stats = sim.get_actor("stats")
