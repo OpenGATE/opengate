@@ -16,14 +16,24 @@ from ..image import (
 )
 
 
-# base classes
 class DataItem:
+    """This is the base class for all data items.
+    It stores the actual data, e.g. an array, an image, etc. in an attribute 'data'.
+
+    Derived classes can (should) implement merge_with and inplace_merge_with
+    so actor output using this data container with the respective data items can be merged after runs.
+
+    Derived classes should also implement an appropriate write method
+    if data writing is supposed to be handled on the python-side.
+
+    Derived classes can also implement arithmetic operator like __add__, __mul__, etc.
+    """
 
     def __init__(self, *args, data=None, meta_data=None, **kwargs):
         self.data = None
         if data is not None:
             self.set_data(data)
-        self.meta_data = Box()
+        self.meta_data = Box({"number_of_samples": 1})
         if meta_data:
             try:
                 for k, v in meta_data.items():
@@ -81,29 +91,20 @@ class DataItem:
             raise AttributeError(f"No such attribute '{item}'")
 
     def merge_with(self, other):
-        """The base class implements merging as summation.
+        """The base class does not implement merging.
         Specific classes can override this, e.g. to merge mean values.
         """
-        try:
-            return self + other
-        except ValueError as e:
-            raise NotImplementedError(
-                f"method 'merge_with' probably not implemented for data item class {type(self)} "
-                f"because the following ValueError was encountered: \n{e}"
-            )
+        raise NotImplementedError(
+            f"Method 'inplace_merge_with' not implemented for data item class {type(self)} "
+        )
 
     def inplace_merge_with(self, other):
-        """The base class implements merging as summation.
+        """The base class does not implement merging.
         Specific classes can override this, e.g. to merge mean values.
         """
-        try:
-            self += other
-        except ValueError as e:
-            raise NotImplementedError(
-                f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
-                f"because the following ValueError was encountered: \n{e}"
-            )
-        return self
+        raise NotImplementedError(
+            f"Method 'inplace_merge_with' not implemented for data item class {type(self)} "
+        )
 
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
@@ -141,11 +142,15 @@ class MeanValueDataItemMixin:
         return result
 
     def inplace_merge_with(self, other):
-        self *= self.number_of_samples
-        other *= other.number_of_samples
-        self += other
-        self /= self.number_of_samples + other.number_of_samples
-        self.number_of_samples = self.number_of_samples + other.number_of_samples
+        if self.data is None:
+            self.set_data(other.data)
+            self.number_of_samples = other.number_of_samples
+        else:
+            self *= self.number_of_samples
+            other *= other.number_of_samples
+            self += other
+            self /= self.number_of_samples + other.number_of_samples
+            self.number_of_samples = self.number_of_samples + other.number_of_samples
         return self
 
 
@@ -228,6 +233,15 @@ class ItkImageDataItem(DataItem):
     @property
     def image(self):
         return self.data
+
+    def inplace_merge_with(self, other):
+        if self.data is None:
+            self.set_data(other.data)
+            self.number_of_samples = other.number_of_samples
+        else:
+            self.__iadd__(other)
+            self.number_of_samples += other.number_of_samples
+        return self
 
     def __iadd__(self, other):
         self._assert_data_is_not_none()
@@ -312,6 +326,9 @@ class DataContainer:
     def __init__(self, belongs_to, *args, **kwargs):
         self.belongs_to = belongs_to
 
+    def __copy__(self):
+        return type(self)(self.belongs_to)
+
 
 class DataDictionary(DataContainer):
 
@@ -336,6 +353,9 @@ class DataItemContainer(DataContainer):
     # Derived classes must specify this at the class level
     _data_item_classes = ()
 
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ()
+
     def __init__(self, *args, data=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -345,37 +365,16 @@ class DataItemContainer(DataContainer):
         if data is not None:
             self.set_data(*data)
 
+    def __copy__(self):
+        obj = super().__copy__()
+        obj.set_data(*self.data)
+        return obj
+
     @classmethod
-    def get_default_data_item_config(cls):
-        default_data_item_config = None
-        # try to pick up data write config defined in the specific class or base classes
-        for c in cls.mro():
-            try:
-                default_data_item_config = c.__dict__["default_data_item_config"]
-                break
-            except KeyError:
-                continue
-        # If none of the classes in the inheritance chain specifies data item,
-        # we fill up a dictionary with the default configuration
-        if default_data_item_config is None:
-            default_data_item_config = Box(
-                [
-                    (
-                        i,
-                        Box(
-                            {
-                                "output_filename": "auto",
-                                "write_to_disk": True,
-                                "active": True,
-                            }
-                        ),
-                    )
-                    for i in range(len(cls._data_item_classes))
-                ]
-            )
-            if len(default_data_item_config) == 1:
-                list(default_data_item_config.values())[0]["suffix"] = None
-        return default_data_item_config
+    def __get_data_item_names__(cls):
+        data_item_names = [i for i in range(len(cls._data_item_classes))]
+        data_item_names.extend(cls.__extra_data_items__)
+        return data_item_names
 
     # the actual write config needs to be fetched from the actor output instance
     # which handles this data item container
@@ -511,21 +510,14 @@ class DataItemContainer(DataContainer):
     def inplace_merge_with(self, other):
         for i in range(self._tuple_length):
             # can only apply merge of both items exist (and contain data)
-            if (
-                (self.data[i] is not None)
-                and (other.data[i] is not None)
-                and (self.data[i].data is not None)
-                and (other.data[i].data is not None)
-            ):
+            if self.data[i] is not None and other.data[i] is not None:
                 self.data[i].inplace_merge_with(other.data[i])
             else:
                 # the case of both item None is acceptable
                 # because the component not be activated in the actor, e.g. edep uncertainty,
                 # but it should not occur that one item is None and the other is not.
-                if (self.data[i] is None or self.data[i].data is None) is not (
-                    other.data[i] is None or other.data[i].data is None
-                ):
-                    s_not = {True: "", False: "not_"}
+                if (self.data[i] is None) is not (other.data[i] is None):
+                    s_not = {True: "", False: "not"}
                     fatal(
                         "Cannot apply inplace merge data to container "
                         "with unset (None) data items. "
@@ -638,32 +630,31 @@ class SingleItkImageWithVariance(DataItemContainer):
         ItkImageDataItem,
     )
 
-    # Only the linear quantity is active by default
-    # the uncertainty quantity has write_to_disk=True by default so whenever it is activated,
-    # the results will be written to disk (probably the expected default behavior in most cases)
-    default_data_item_config = Box(
-        {
-            0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            1: Box(
-                {"output_filename": "auto", "write_to_disk": False, "active": False}
-            ),
-            "variance": Box(
-                {"output_filename": "auto", "write_to_disk": False, "active": False}
-            ),
-            "std": Box(
-                {"output_filename": "auto", "write_to_disk": False, "active": False}
-            ),
-            "uncertainty": Box(
-                {"output_filename": "auto", "write_to_disk": True, "active": False}
-            ),
-        }
-    )
+    # # Only the linear quantity is active by default
+    # # the uncertainty quantity has write_to_disk=True by default so whenever it is activated,
+    # # the results will be written to disk (probably the expected default behavior in most cases)
+    # default_data_item_config = Box(
+    #     {
+    #         0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+    #         1: Box(
+    #             {"output_filename": "auto", "write_to_disk": False, "active": False}
+    #         ),
+    #         "variance": Box(
+    #             {"output_filename": "auto", "write_to_disk": False, "active": False}
+    #         ),
+    #         "std": Box(
+    #             {"output_filename": "auto", "write_to_disk": False, "active": False}
+    #         ),
+    #         "uncertainty": Box(
+    #             {"output_filename": "auto", "write_to_disk": True, "active": False}
+    #         ),
+    #     }
+    # )
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ("variance", "std", "uncertainty")
 
     def get_variance_or_uncertainty(self, which_quantity):
         try:
-            # if not self.data[0].number_of_samples == self.data[1].number_of_samples:
-            #     fatal(f"Something is wrong in this data item container: "
-            #           f"the two data items contain different numbers of samples. ")
             number_of_samples = self.data[0].number_of_samples
             value_array = np.asarray(self.data[0].data)
             if not number_of_samples > 1:
@@ -675,9 +666,9 @@ class SingleItkImageWithVariance(DataItemContainer):
             elif self.data[1] is None or self.data[1].data is None:
                 warning(
                     "This data item does not contain squared values so no variance can be calculated. "
-                    "The variance will be set to 1 everywhere. "
+                    "The variance will be set to 0 everywhere. "
                 )
-                output_arr = np.ones_like(value_array)
+                output_arr = np.zeros_like(value_array)
             else:
                 squared_value_array = np.asarray(self.data[1].data)
                 output_arr = calculate_variance(
@@ -692,7 +683,7 @@ class SingleItkImageWithVariance(DataItemContainer):
                     output_arr = np.divide(
                         output_arr,
                         value_array / number_of_samples,
-                        out=np.ones_like(output_arr),
+                        out=np.zeros_like(output_arr),
                         where=value_array != 0,
                     )
             output_image = itk.image_view_from_array(output_arr)
@@ -721,17 +712,20 @@ class QuotientItkImage(DataItemContainer):
         ItkImageDataItem,
     )
 
-    # Specify which items should be written to disk and how
-    # Important: define this at the class level, NOT in the __init__ method
-    default_data_item_config = Box(
-        {
-            0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
-            "quotient": Box(
-                {"output_filename": "auto", "write_to_disk": True, "active": True}
-            ),
-        }
-    )
+    # # Specify which items should be written to disk and how
+    # # Important: define this at the class level, NOT in the __init__ method
+    # default_data_item_config = Box(
+    #     {
+    #         0: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+    #         1: Box({"output_filename": "auto", "write_to_disk": True, "active": True}),
+    #         "quotient": Box(
+    #             {"output_filename": "auto", "write_to_disk": True, "active": True}
+    #         ),
+    #     }
+    # )
+
+    # let the class know which properties should be treated as data items
+    __extra_data_items__ = ("quotient",)
 
     @property
     def quotient(self):
@@ -747,7 +741,9 @@ class QuotientMeanItkImage(QuotientItkImage):
 
 
 def merge_data(list_of_data):
-    merged_data = list_of_data[0]
+    merged_data = type(list_of_data[0])(
+        list_of_data[0].belongs_to, data=list_of_data[0].data
+    )
     for d in list_of_data[1:]:
         merged_data.inplace_merge_with(d)
     return merged_data

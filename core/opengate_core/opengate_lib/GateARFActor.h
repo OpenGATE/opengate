@@ -23,13 +23,13 @@ public:
   // Constructor
   explicit GateARFActor(py::dict &user_info);
 
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   // Beginning run callback
-  virtual void BeginOfRunAction(const G4Run * /*run*/) override;
+  void BeginOfRunAction(const G4Run * /*run*/) override;
 
   // End run callback
-  virtual void EndOfRunAction(const G4Run * /*run*/) override;
+  void EndOfRunAction(const G4Run * /*run*/) override;
 
   int GetCurrentNumberOfHits() const;
 
@@ -47,6 +47,8 @@ public:
 
   std::vector<double> GetDirectionZ() const;
 
+  std::vector<double> GetWeights() const;
+
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
@@ -57,6 +59,7 @@ protected:
   int fBatchSize;
   ARFFunctionType fApply;
   bool fKeepNegativeSide;
+  std::vector<int> fPlaneAxis;
 
   // For MT, all threads local variables are gathered here
   struct threadLocalT {
@@ -66,6 +69,7 @@ protected:
     std::vector<double> fDirectionX;
     std::vector<double> fDirectionY;
     std::vector<double> fDirectionZ;
+    std::vector<double> fWeights;
     // number of particle hitting the detector
     int fCurrentNumberOfHits;
     // Current run id (to detect if run has changed)

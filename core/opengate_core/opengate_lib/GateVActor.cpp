@@ -7,19 +7,22 @@
 
 #include "GateVActor.h"
 #include "G4SDManager.hh"
-#include "G4UnitsTable.hh"
 #include "GateActorManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateMultiFunctionalDetector.h"
+#include "GateSourceManager.h"
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
   // register this actor to the global list of actors
   fMultiThreadReady = MT_ready;
+  fOperatorIsAnd = true;
+  fSourceManager = nullptr;
+  fWriteToDisk = false;
 }
 
-GateVActor::~GateVActor() {}
+GateVActor::~GateVActor() = default;
 
 void GateVActor::InitializeCpp() {
   GateActorManager::AddActor(this);
@@ -32,8 +35,8 @@ void GateVActor::InitializeCpp() {
   }
 };
 
-void GateVActor::InitializeUserInput(py::dict &user_info) {
-  fMotherVolumeName = DictGetStr(user_info, "attached_to");
+void GateVActor::InitializeUserInfo(py::dict &user_info) {
+  fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
   auto op = DictGetStr(user_info, "filters_boolean_operator");
   if (op == "and") {
     fOperatorIsAnd = true;
@@ -60,8 +63,7 @@ std::string GateVActor::GetOutputPath(std::string outputName) {
   } catch (std::out_of_range &e) {
     std::ostringstream msg;
     msg << "(GetOutputPath) No actor output with the name " << outputName
-        << " exists.";
-    msg << fMotherVolumeName << " " << GetName();
+        << " exists, attached to " << fAttachedToVolumeName << " " << GetName();
     Fatal(msg.str());
   }
   return ""; // to avoid warning
@@ -79,8 +81,8 @@ bool GateVActor::GetWriteToDisk(std::string outputName) {
   } catch (std::out_of_range &e) {
     std::ostringstream msg;
     msg << "(GetWriteToDisk) No actor output with the name " << outputName
-        << " exists.";
-    msg << fMotherVolumeName << " " << GetName();
+        << " exists exists in actor " << GetName() << " attached to "
+        << fAttachedToVolumeName << ".";
     Fatal(msg.str());
   }
   return ""; // to avoid warning
@@ -204,3 +206,5 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
 //   string::path path = func(output_type, run_index);
 //   return path
 // }
+
+void GateVActor::SetSourceManager(GateSourceManager *s) { fSourceManager = s; }

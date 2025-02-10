@@ -2,7 +2,7 @@ import sys
 from typing import Optional
 
 import opengate_core as g4
-from ..base import GateObject
+from ..base import GateObject, process_cls
 from ..exception import fatal
 
 
@@ -24,14 +24,14 @@ class FilterBase(GateObject):
         ),
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
 
     def initialize(self):
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
 
     def __setstate__(self, state):
         self.__dict__ = state
@@ -185,3 +185,11 @@ def get_filter_class(f):
         fatal(
             f"Unknown filter '{f}'. Known filters are: {list(filter_classes.keys())}."
         )
+
+
+process_cls(FilterBase)
+process_cls(ParticleFilter)
+process_cls(KineticEnergyFilter)
+process_cls(TrackCreatorProcessFilter)
+process_cls(ThresholdAttributeFilter)
+process_cls(UnscatteredPrimaryFilter)

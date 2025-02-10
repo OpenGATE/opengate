@@ -72,7 +72,7 @@ def add_necr_source(sim, necr_phantom):
     v = sim.volume_manager.volumes[f"{necr_phantom.name}_linear_source_in"]
 
     src = sim.add_source("GenericSource", f"{necr_phantom.name}_source")
-    src.mother = v.name
+    src.attached_to = v.name
     src.particle = "e+"
     src.energy.type = "F18"
     src.position.type = "cylinder"

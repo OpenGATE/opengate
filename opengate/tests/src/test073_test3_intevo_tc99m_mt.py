@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # add a channel 'spectrum' (which is not by default because not compatible with ARF)
     keV = gate.g4_units.keV
     c = {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV}
-    ew = digit.find_first_module("energy_window")
+    ew = digit.find_module("energy_window")
     ew.output_filename = "output_tc99m.root"
     ew.root_output.write_to_disk = True
     ew.channels.append(c)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # source
     Bq = gate.g4_units.Bq
-    set_source_rad_energy_spectrum(source, "tc99m")
+    set_source_rad_energy_spectrum(source, "Tc99m")
     source.activity = 2e7 * Bq / sim.number_of_threads
 
     # start simulation

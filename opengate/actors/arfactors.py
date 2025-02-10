@@ -60,6 +60,12 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
                 "doc": "FIXME",
             },
         ),
+        "plane_axis": (
+            [0, 1, 2],
+            {
+                "doc": "Axe indices for the plane",
+            },
+        ),
         # duplicated because cpp part inherit from HitsCollectionActor
         "keep_zero_edep": (
             False,
@@ -70,9 +76,14 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         "russian_roulette": (1, {"doc": "Russian roulette factor. "}),
     }
 
+    user_output_config = {
+        "root_output": {
+            "actor_output_class": ActorOutputRoot,
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(ActorOutputRoot, "root_output")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -91,7 +102,8 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.initialize(self)
         self.check_energy_window_actor()
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        print(self.plane_axis)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
     def StartSimulationAction(self):
@@ -189,10 +201,22 @@ class ARFActor(ActorBase, g4.GateARFActor):
                 "doc": "FIXME",
             },
         ),
+        "plane_axis": (
+            [0, 1, 2],
+            {
+                "doc": "Axe indices for the plane",
+            },
+        ),
         "gpu_mode": (
             "auto",
             {"doc": "FIXME", "allowed_values": ("cpu", "gpu", "auto")},
         ),
+    }
+
+    user_output_config = {
+        "arf_projection": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
     }
 
     def __init__(self, *args, **kwargs):
@@ -207,7 +231,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.batch_nb = 0
         self.detected_particles = 0
         # need a lock when the ARF is applied
-        self.lock = threading.Lock()
+        self.lock = None
         # local variables
         self.image_plane_spacing = None
         self.image_plane_size_pixel = None
@@ -217,7 +241,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_size = None
         self.nb_ene = None
 
-        self._add_user_output(ActorOutputSingleImage, "arf_projection")
+        # self._add_user_output(ActorOutputSingleImage, "arf_projection")
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -243,6 +267,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
     def initialize(self):
         # call the initialize() method from the super class (python-side)
         ActorBase.initialize(self)
+        self.lock = threading.Lock()
 
         self.debug_nb_hits_before = 0
         self.debug_nb_hits = 0
@@ -254,7 +279,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.output_array = np.zeros(self.output_size, dtype=np.float64)
 
         # initialize C++ side
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
         self.SetARFFunction(self.apply)
 
@@ -292,6 +317,10 @@ class ARFActor(ActorBase, g4.GateARFActor):
         # output image: nb of energy windows times nb of runs (for rotation)
         self.nb_ene = self.model_data["n_ene_win"]
         nb_runs = len(self.simulation.run_timing_intervals)
+
+        if not self.enable_hit_slice:
+            self.nb_ene -= 1
+
         # size and spacing in 3D
         self.output_image = np.array(
             [
@@ -323,6 +352,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         pos_y = np.array(actor.GetPositionY())
         dir_x = np.array(actor.GetDirectionX())
         dir_y = np.array(actor.GetDirectionY())
+        weights = np.array(actor.GetWeights())
 
         # do nothing if no hits
         if energy.size == 0:
@@ -338,7 +368,10 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.detected_particles += energy.shape[0]
 
         # build the data
-        px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+        if len(weights) == 0:
+            px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+        else:
+            px = np.column_stack((pos_x, pos_y, theta, phi, energy, weights))
         self.debug_nb_hits_before += len(px)
 
         # verbose current batch
@@ -363,16 +396,13 @@ class ARFActor(ActorBase, g4.GateARFActor):
             run_id = actor.GetCurrentRunId()
             s = self.nb_ene * run_id
             img = self.output_array[s : s + self.nb_ene]
-            garf.image_from_coordinates_add_numpy(img, u, v, w_pred)
+            garf.image_from_coordinates_add_numpy(
+                img, u, v, w_pred, self.enable_hit_slice
+            )
             self.debug_nb_hits += u.shape[0]
 
     def EndOfRunActionMasterThread(self, run_index):
-        # Should we keep the first slice (with all hits) ?
         nb_slice = self.nb_ene
-        if not self.enable_hit_slice:
-            self.output_array = self.output_array[1:, :, :]
-            # self.param.image_size[0] = self.param.image_size[0] - 1
-            nb_slice = nb_slice - 1
 
         # convert to itk image
         # FIXME: this should probably go into EndOfRunAction
@@ -398,7 +428,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
         self.user_output["arf_projection"].store_data("merged", output_image)
-        # ensure why return 0 ?
+        # unsure why return 0 ?
         return 0
 
     def EndSimulationAction(self):

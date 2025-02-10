@@ -12,10 +12,11 @@
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
-#include <functional>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
+
+class GateSourceManager;
 
 class GateVActor : public G4VPrimitiveScorer {
 
@@ -30,7 +31,7 @@ public:
   virtual void InitializeCpp();
 
   // get user input parameters from python side
-  virtual void InitializeUserInput(py::dict &user_info);
+  virtual void InitializeUserInfo(py::dict &user_info);
 
   // Used to add a callback to a given volume.
   // Every step in this volume will trigger a SteppingAction
@@ -132,12 +133,14 @@ public:
 
   std::map<std::string, ActorOutputInfo_t> fActorOutputInfos;
 
+  void SetSourceManager(GateSourceManager *s);
+
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
   std::set<std::string> fActions;
 
   // Name of the mother volume (logical volume)
-  std::string fMotherVolumeName;
+  std::string fAttachedToVolumeName;
 
   // List of active filters
   std::vector<GateVFilter *> fFilters;
@@ -149,7 +152,10 @@ public:
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
   bool fOperatorIsAnd;
+
   bool fWriteToDisk;
+
+  GateSourceManager *fSourceManager;
 };
 
 #endif // GateVActor_h

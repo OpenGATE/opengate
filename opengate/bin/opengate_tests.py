@@ -13,19 +13,14 @@ from pathlib import Path
 import subprocess
 from multiprocessing import Pool
 import yaml
-from re import findall
-
-# from functools import partial
 from box import Box
 import ast
-import importlib.util
-
-# import os
 
 from opengate.exception import fatal, colored, color_ok, color_error, color_warning
 from opengate_core.testsDataSetup import check_tests_data_folder
 from opengate.bin.opengate_library_path import return_tests_path
 from opengate_core import GateInfo
+from opengate.exception import warning
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -69,7 +64,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.2.1",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.0",
 )
 def go(
     start_id,
@@ -89,10 +84,10 @@ def go(
         try:
             g4_version = get_required_g4_version(path_tests_src)
         except:
-            g4_version = "v11.2.1"
+            g4_version = "v11.3.0"
     if not check_g4_version(g4_version):
-        print(False)
-        return 0
+        warning(f'The geant4 version "{g4_version}" is not the expected version.')
+        # return 0
 
     path_output_dashboard = test_dir_path / "output_dashboard"
     fpath_dashboard_output = path_output_dashboard / (
@@ -181,6 +176,10 @@ def get_files_to_run():
         "test043_garf_mt.py",
         "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
+        "test081_simulation_optigan_with_random_seed.py",
+        "test085_free_flight_mt.py",
+        "test085_free_flight_ref_mt.py",
+        "test085_free_flight_rotation.py",
     ]
     try:
         import torch
@@ -260,16 +259,22 @@ def check_g4_version(g4_version: str):
     g4_should = decompose_g4_versioning(g4_version)
     g4_is = decompose_g4_versioning(v)
     if g4_should == g4_is:
-        print(colored.stylize(" OK", color_ok), end="\n")
+        print(colored.stylize("Geant4 version is OK", color_ok), end="\n")
         return True
     else:
         print(f'{" ".join(map(str,g4_should))}')
         print(f'{" ".join(map(str,g4_is))}')
+        print(colored.stylize("Geant4 version is not ok", color_error), end="\n")
         return False
 
 
 def decompose_g4_versioning(g4str):
-    g4str = g4str.lower().replace("-patch", "")
+    # Check if patch is present:
+    patchedVersion = False
+    g4str = g4str.lower()
+    if "-patch" in g4str:
+        patchedVersion = True
+        g4str = g4str.replace("-patch", "")
     # Regular expression pattern to match integers separated by . - _ or p
     pattern = r"\d+(?=[._\-p ])|\d+$"
 
@@ -279,6 +284,8 @@ def decompose_g4_versioning(g4str):
     # removing 4 from "geant4"
     if g4_version and g4_version[0] == int(4):
         g4_version.pop(0)
+    if not patchedVersion and len(g4_version) < 3:
+        g4_version.append(0)
     return g4_version
 
 
@@ -295,7 +302,10 @@ def select_files(files_to_run, test_id, end_id, random_tests):
             if f_test_id >= test_id and f_test_id <= end_id:
                 files_new.append(f)
             else:
-                print(f"Ignoring: {f:<40} (< {test_id}) ")
+                if f_test_id < test_id:
+                    print(f"Ignoring: {f:<40} (< {test_id}) ")
+                else:
+                    print(f"Ignoring: {f:<40} (> {end_id}) ")
         files_to_run = files_new
     elif random_tests:
         files_new = files_to_run[-10:]
@@ -420,16 +430,16 @@ def run_one_test_case_mp(f):
     shell_output.log_fpath = log
     r = shell_output.returncode
     if r == 0:
-        print(colored.stylize(" OK", color_ok), end="\n")
+        print(colored.stylize(" OK", color_ok), end="")
     else:
         if r == 2:
             # this is probably a Ctrl+C, so we stop
             fatal("Stopped by user")
         else:
-            print(colored.stylize(" FAILED !", color_error), end="\n")
+            print(colored.stylize(" FAILED !", color_error), end="")
     end = time.time()
     shell_output.run_time = start - end
-    print(f"Runtime:   {end - start:5.1f} s     {Path(log).name}")
+    print(f"\t {end - start:5.1f} s     {Path(log).name}")
     return shell_output
 
 
@@ -444,9 +454,9 @@ def run_test_cases(
     start = time.time()
     if processes_run in ["legacy"]:
         run_single_case = lambda k: run_one_test_case(k, processes_run, path_tests_src)
-        runs_status_info = list(map(run_single_case, files))
+        runs_status_info = [run_single_case(file) for file in files]
     elif processes_run in ["sp"]:
-        runs_status_info = list(map(run_one_test_case_mp, files))
+        runs_status_info = [run_one_test_case_mp(file) for file in files]
     else:
         num_processes = int(float(num_processes)) if num_processes != "all" else None
         with Pool(processes=num_processes) as pool:
@@ -466,7 +476,9 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
     }
 
     tests_passed = [f for f in files if dashboard_dict[f][0]]
+    tests_passed.sort()
     tests_failed = [f for f in files if not dashboard_dict[f][0]]
+    tests_failed.sort()
 
     n_passed = sum([k[0] for k in dashboard_dict.values()])
     n_failed = sum([not k[0] for k in dashboard_dict.values()])
@@ -479,7 +491,10 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
                 colored.stylize(": failed", color_error),
                 end="\n",
             )
-            os.system("cat " + shell_output_k.log_fpath)
+            if os.name == "nt":
+                os.system("type " + shell_output_k.log_fpath)
+            else:
+                os.system("cat " + shell_output_k.log_fpath)
 
     print(f"Summary pass: {n_passed}/{len(files)} passed the tests:")
     for k in tests_passed:

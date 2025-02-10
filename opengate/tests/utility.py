@@ -28,7 +28,7 @@ from ..actors.miscactors import SimulationStatisticsActor
 plt = LazyModuleLoader("matplotlib.pyplot")
 
 
-def test_ok(is_ok=False):
+def test_ok(is_ok=False, exceptions=None):
     if is_ok:
         s = "Great, tests are ok."
         s = "\n" + colored.stylize(s, color_ok)
@@ -36,6 +36,14 @@ def test_ok(is_ok=False):
         # sys.exit(0)
     else:
         s = "Error during the tests !"
+        if exceptions is not None:
+            if isinstance(exceptions, str):
+                exceptions = [exceptions]
+            s += "\nThe following exception"
+            if len(exceptions) > 1:
+                s += "s"
+            s += " occurred:\n"
+            s += "\n".join([f"- {str(e)}" for e in exceptions])
         s = "\n" + colored.stylize(s, color_error)
         print(s)
         sys.exit(-1)
@@ -49,7 +57,7 @@ def read_stat_file(filename, encoder=None):
     # guess if it is json or not
     try:
         return read_stat_file_json(filename)
-    except (json.JSONDecodeError, ValueError):
+    except ValueError:
         pass
     return read_stat_file_legacy(filename)
 
@@ -98,7 +106,7 @@ def read_stat_file_legacy(filename):
         if "Date" in line:
             counts.start_time = line[len("# Date                       =") :]
         if "Threads" in line:
-            a = line[len(f"# Threads                    =") :]
+            a = line[len("# Threads                    =") :]
             try:
                 counts.nb_threads = int(a)
             except:
@@ -305,12 +313,16 @@ def assert_images(
     filename2,
     stats=None,
     tolerance=0,
-    ignore_value=0,
+    ignore_value_data1=None,
+    ignore_value_data2=None,
+    apply_ignore_mask_to_sum_check=True,
     axis="z",
     fig_name=None,
     sum_tolerance=5,
     scaleImageValuesFactor=None,
     sad_profile_tolerance=None,
+    img_threshold=0,
+    test_sad=True,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -329,22 +341,37 @@ def assert_images(
     if scaleImageValuesFactor:
         data2 *= scaleImageValuesFactor
 
-    s1 = np.sum(data1)
-    s2 = np.sum(data2)
-    if s1 == 0 and s2 == 0:
-        t = 0
+    # do not consider pixels with a certain value
+    if ignore_value_data1 is None and ignore_value_data2 is None:
+        d1 = data1
+        d2 = data2
     else:
-        t = np.fabs((s1 - s2) / s1) * 100
-    b = t < sum_tolerance
-    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+        if ignore_value_data1 is not None and ignore_value_data2 is not None:
+            mask = np.logical_or(
+                data1 != ignore_value_data1, data2 != ignore_value_data2
+            )
+        elif ignore_value_data1 is not None:
+            mask = data1 != ignore_value_data1
+        else:
+            mask = data2 != ignore_value_data2
+        d1 = data1[mask]
+        d2 = data2[mask]
+
+    # this is a patch to make the function back-compatible
+    # because the ignore value was previously applied only after
+    # taking the sum and some tests fail after that change
+    # apply_ignore_mask_to_sum_check = False recreates the old behavior
+    if apply_ignore_mask_to_sum_check is True:
+        s1 = np.sum(d1)
+        s2 = np.sum(d2)
+    else:
+        s1 = np.sum(data1)
+        s2 = np.sum(data2)
+    b = assert_img_sum_logic(s1, s2, sum_tolerance, threshold=img_threshold)
     is_ok = is_ok and b
 
     print(f"Image1: {info1.size} {info1.spacing} {info1.origin} {ref_filename1}")
     print(f"Image2: {info2.size} {info2.spacing} {info2.origin} {filename2}")
-
-    # do not consider pixels with a value of zero (data2 is the reference)
-    d1 = data1[data2 != ignore_value]
-    d2 = data2[data2 != ignore_value]
 
     # normalise by event
     if stats is not None:
@@ -355,20 +382,20 @@ def assert_images(
     s = np.sum(d2)
     d1 = d1 / s
     d2 = d2 / s
-
-    # sum of absolute difference (in %)
-    sad = np.fabs(d1 - d2).sum() * 100
-    b = sad < tolerance
-    print_test(
-        b,
-        f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
-        f"SAD (per event/total): {sad:.2f} % "
-        f" (tolerance is {tolerance :.2f} %)",
-    )
-    is_ok = is_ok and b
+    if test_sad:
+        # sum of absolute difference (in %)
+        sad = np.fabs(d1 - d2).sum() * 100
+        b = sad < tolerance
+        print_test(
+            b,
+            f"Image diff computed on {len(data2[data2 != 0])}/{len(data2.ravel())} \n"
+            f"SAD (per event/total): {sad:.2f} % "
+            f" (tolerance is {tolerance :.2f} %)",
+        )
+        is_ok = is_ok and b
 
     # plot
-    fig, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
+    _, ax = plt.subplots(ncols=1, nrows=1, figsize=(25, 10))
     p1 = plot_img_axis(ax, img1, "reference", axis)
     p2 = plot_img_axis(ax, img2, "test", axis)
     if sad_profile_tolerance is not None:
@@ -438,11 +465,9 @@ def assert_filtered_imagesprofile1D(
     filter_data = np.squeeze(itk.GetArrayViewFromImage(filter_img1).ravel())
     data1 = np.squeeze(itk.GetArrayViewFromImage(img1).ravel())
     data2 = np.squeeze(itk.GetArrayViewFromImage(img2).ravel())
-    flipflag = True
-    if flipflag:
-        filter_data = np.flip(filter_data)
-        data1 = np.flip(data1)
-        data2 = np.flip(data2)
+    filter_data = np.flip(filter_data)
+    data1 = np.flip(data1)
+    data2 = np.flip(data2)
     max_ind = np.argmax(filter_data)
     L_filter = range(max_ind)
     d1 = data1[L_filter]
@@ -468,7 +493,7 @@ def assert_filtered_imagesprofile1D(
 
     filter_data_norm_au = filter_data / np.amax(filter_data) * np.amax(d2) * 0.7
     # plot
-    fig, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
+    _, ax = plt.subplots(ncols=1, nrows=2, figsize=(15, 15))
     xV = np.arange(len(data1)) * info1.spacing[0]
     x_max = np.ceil(xV[max_ind] * 1.05 + 2)
     plot_profile(ax[0], filter_data_norm_au, info1.spacing[0], "filter")
@@ -515,7 +540,7 @@ def fit_exponential_decay(data, start, end):
     bin_widths = np.diff(bin_borders)
     bin_centers = bin_borders[:-1] + bin_widths / 2
 
-    popt, pcov = scipy.optimize.curve_fit(exponential_func, bin_centers, bin_heights)
+    popt, _ = scipy.optimize.curve_fit(exponential_func, bin_centers, bin_heights)
     xx = np.linspace(start, end, 100)
     yy = exponential_func(xx, *popt)
     hl = np.log(2) / popt[1]
@@ -674,7 +699,6 @@ def compare_branches_values(b1, b2, key1, key2, tol=0.8, ax=False, nb_bins=200):
     print_test(ok, s)
     # figure ?
     if ax:
-        nb_bins = nb_bins
         label = f" {key1} $\mu$={m1:.2f}"
         ax.hist(
             b1, nb_bins, density=True, histtype="stepfilled", alpha=0.5, label=label
@@ -704,7 +728,7 @@ def compare_trees(
     if fig:
         nb_fig = len(keys1)
         nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
-        f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
+        _, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
@@ -1014,12 +1038,20 @@ def write_gauss_param_to_file(output_file_pathV, planePositionsV, saveFig=False)
         # Figure output is saved only if fig names are provided
         fig_name = None
         if saveFig:
+            print(f"plane pos: {i}")
             fig_name = str(filepath) + "_profile"
+            plt.imshow(np.squeeze(data))
+            plt.savefig(str(filepath) + "2d.png")
 
         # Get relevant gauss param
         sigma_x, mu_x, sigma_y, mu_y = get_gauss_param_xy(
             data, spacing, shape, filepath=fig_name, saveFig=saveFig
         )
+        if saveFig:
+
+            print(f"{sigma_x=:.2f} {mu_x=:.2f}")
+            print(f"{sigma_y=:.2f} {mu_y=:.2f}")
+            print(" ")
         sigma_values.append([i, sigma_x, sigma_y])
         mu_values.append([i, mu_x, mu_y])
 
@@ -1052,7 +1084,7 @@ def get_gauss_param_xy(data, spacing, shape, filepath=None, saveFig=False):
     mu_y = parameters_y[1]
 
     # Save plots
-    if filepath is not None:
+    if saveFig and filepath is not None and img_x is not None and img_y is not None:
         img_x.savefig(filepath + "_x.png")
         img_y.savefig(filepath + "_y.png")
         plt.close(img_x)
@@ -1104,10 +1136,15 @@ def gaussian_fit(positionVec, dose):
     # Fit data with Gaussian func
     mean = sum(positionVec * dose) / sum(dose)
     sigma = np.sqrt(sum(dose * (positionVec - mean) ** 2) / sum(dose))
+    try:
+        parameters, _ = scipy.optimize.curve_fit(
+            gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
+        )
+    except RuntimeError as e:
+        print(f"Scipy curve fit probably failed : {e}")
+        parameters = np.empty(3)
+        parameters[:] = np.nan
 
-    parameters, covariance = scipy.optimize.curve_fit(
-        gauss_func, positionVec, dose, p0=[max(dose), mean, sigma]
-    )
     fit = gauss_func(positionVec, parameters[0], parameters[1], parameters[2])
 
     return parameters, fit
@@ -1182,12 +1219,12 @@ def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
 
         if verb:
             print(
-                "Plane {0}: value x is {1}mm, value x ref is {2}mm ".format(
+                "Plane {0}: value x is {1} mm, value x ref is {2} mm ".format(
                     plane, round(sig_x, 2), round(sig_x_r, 2)
                 )
             )
             print(
-                "Plane {0}: value y is {1}mm, value y ref is {2}mm ".format(
+                "Plane {0}: value y is {1} mm, value y ref is {2} mm ".format(
                     plane, round(sig_y, 2), round(sig_y_r, 2)
                 )
             )
@@ -1199,7 +1236,7 @@ def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
                 )
             )
             print(
-                "\033[91m Plane {0}:  abs difference along x is {1}mm, threshold is {2}mm \033[0m".format(
+                "\033[91m Plane {0}:  abs difference along x is {1} mm, threshold is {2} mm \033[0m".format(
                     plane, round(diff_x, 2), round(abs_tol, 2)
                 )
             )
@@ -1214,7 +1251,7 @@ def compareGaussParamFromFile(sigma, ref, rel_tol=0, abs_tol=0, verb=False):
                 )
             )
             print(
-                "\033[91m Plane {0}:  abs difference along y is {1}mm, threshold is {2}mm \033[0m".format(
+                "\033[91m Plane {0}:  abs difference along y is {1} mm, threshold is {2} mm \033[0m".format(
                     plane, round(diff_y, 2), round(abs_tol, 2)
                 )
             )
@@ -1474,7 +1511,7 @@ def compareRange(
     diff = abs(r2 - r1)
 
     if diff > thresh:
-        print(f"\033[91mRange difference is {diff}mm, threshold is {thresh}mm \033[0m")
+        print(f"Range difference is {diff}mm, threshold is {thresh}mm")
         ok = False
 
     return ok
@@ -1517,11 +1554,11 @@ def compare_dose_at_points(
 
     for p in pointsV:
         # get dose at the position p [mm]
-        cp1 = min(x1, key=lambda x: abs(x - p))
-        d1_p = doseV1[np.where(x1 == cp1)]
+        cp1 = min(x1, key=lambda x, p=p: abs(x - p))
+        d1_p = doseV1[np.nonzero(x1 == cp1)]
 
-        cp2 = min(x2, key=lambda x: abs(x - p))
-        d2_p = doseV2[np.where(x2 == cp2)]
+        cp2 = min(x2, key=lambda x, p=p: abs(x - p))
+        d2_p = doseV2[np.nonzero(x2 == cp2)]
 
         s1 += d1_p
         s2 += d2_p
@@ -1530,23 +1567,50 @@ def compare_dose_at_points(
 
     # print(f"Dose difference at {p} mm is {diff_pc}%")
     if abs(s1 - s2) / s2 > rel_tol:
-        print(f"\033[91mDose difference above threshold \033[0m")
+        print("Dose difference above threshold. ")
         ok = False
     return ok
 
 
-def assert_img_sum(img1, img2, sum_tolerance=5):
+def assert_img_sum(img1, img2, sum_tolerance=5, threshold=0):
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
+    b = assert_img_sum_logic(
+        data1, data2, sum_tolerance=sum_tolerance, threshold=threshold
+    )
+    return b
 
+
+def calc_rel_dev(s1, s2):
+    return np.fabs((s1 - s2) / s1) * 100
+
+
+def calc_sad_dev(s1, s2):
+    return np.fabs(s1 - s2).sum() * 100
+
+
+def assert_img_sum_logic(
+    data1,
+    data2,
+    sum_tolerance=5,
+    threshold=0,
+    quantity_descr="Image sums: ",
+    eval_fun=None,
+):
     s1 = np.sum(data1)
     s2 = np.sum(data2)
+    if eval_fun is None:
+        eval_fun = calc_rel_dev
     if s1 == 0 and s2 == 0:
         t = 0
+    elif s1 <= threshold or s2 <= threshold:
+        t = 0
     else:
-        t = np.fabs((s1 - s2) / s1) * 100
+        t = eval_fun(s1, s2)
     b = t < sum_tolerance
-    print_test(b, f"Img sums {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)")
+    print_test(
+        b, f"{quantity_descr} {s1} vs {s2} : {t:.2f} %  (tol {sum_tolerance:.2f} %)"
+    )
     return b
 
 
@@ -1597,7 +1661,7 @@ def assert_images_ratio_per_voxel(
     ratio = np.divide(data1, data2, out=np.zeros_like(data1), where=data2 != 0)
     within_tolerance_M = abs(ratio - expected_ratio) < abs_tolerance
     N_within_tolerance = np.sum(within_tolerance_M)
-    fraction_within_tolerance = N_within_tolerance / np.array(data1).size
+    # fraction_within_tolerance = N_within_tolerance / np.array(data1).size # FIXME
     fraction_within_tolerance = N_within_tolerance / np.sum(data2 != 0)
 
     mean = np.mean(ratio)
@@ -1713,7 +1777,7 @@ def compare_trees4(p1, p2, param):
     if param.fig:
         nb_fig = len(p1.the_keys)
         nrow, ncol = gatetools.phsp.fig_get_nb_row_col(nb_fig)
-        f, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
+        _, ax = plt.subplots(nrow, ncol, figsize=(25, 10))
     is_ok = True
     n = 0
     print("Compare branches with Wasserstein distance")
@@ -1808,8 +1872,7 @@ def np_plot_slice(
     img, crop_coord = np_img_crop(img, crop_center, crop_width)
 
     # slice
-    slice = img[num_slice, :, :]
-    im = ax.imshow(slice, cmap="gray")
+    im = ax.imshow(img[num_slice, :, :], cmap="gray")
 
     # prepare ticks
     nticks = 6
@@ -1998,8 +2061,19 @@ def plot_compare_profile(ref_names, test_names, options):
     return plt
 
 
-class RootComparison:
-
-    def __init__(self, ref_filename, filename):
-        self.root_ref = uproot.open(ref_filename)
-        self.root_cmp = uproot.open(filename)
+def get_image_1d_profile(filename, axis, offset=(0, 0)):
+    img = itk.imread(filename)
+    spacing = img.GetSpacing()
+    img_arr = itk.GetArrayFromImage(img)
+    s = img_arr.shape
+    pdd_x = pdd_y = None
+    if axis == "z":
+        pdd_y = img_arr[:, int(s[1] / 2) + offset[0], int(s[2] / 2) + offset[1]]
+        pdd_x = np.arange(0, s[0] * spacing[2], spacing[2])
+    if axis == "y":
+        pdd_y = img_arr[int(s[0] / 2) + offset[0], :, int(s[2] / 2) + offset[1]]
+        pdd_x = np.arange(0, s[1] * spacing[1], spacing[1])
+    if axis == "x":
+        pdd_y = img_arr[int(s[0] / 2) + offset[0], int(s[1] / 2) + offset[1], :]
+        pdd_x = np.arange(0, s[2] * spacing[0], spacing[0])
+    return pdd_x, pdd_y

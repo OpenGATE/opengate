@@ -105,8 +105,10 @@ if __name__ == "__main__":
             paths.output_ref / "test017-edep-ref.mhd",
             dose.edep.get_output_path(),
             stats,
-            sum_tolerance=6,
             tolerance=70,
+            sum_tolerance=6,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False,  # force legacy behavior
         )
         and is_ok
     )

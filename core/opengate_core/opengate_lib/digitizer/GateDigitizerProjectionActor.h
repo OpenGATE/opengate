@@ -29,12 +29,15 @@ public:
 
   ~GateDigitizerProjectionActor() override;
 
-  void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   void InitializeCpp() override;
 
   // Called when the simulation start (master thread only)
   void StartSimulationAction() override;
+
+  // Called every time a Run starts (master thread)
+  void BeginOfRunActionMasterThread(int run_id) override;
 
   // Called every time a Run starts (all threads)
   void BeginOfRunAction(const G4Run *run) override;

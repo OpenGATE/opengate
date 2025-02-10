@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     # source
     source = sim.add_source("GenericSource", "mysource")
-    source.mother = gantry.name
+    source.attached_to = gantry.name
     source.particle = "gamma"
     source.energy.mono = 60 * keV
     source.position.type = "box"
@@ -93,11 +93,7 @@ if __name__ == "__main__":
 
     # check images
     is_ok = utility.assert_images(
-        paths.gate_output / "detector.mhd",
-        out_path,
-        stats,
-        tolerance=44,
-        axis="y",
+        paths.gate_output / "detector.mhd", out_path, stats, tolerance=44, axis="y"
     )
 
     utility.test_ok(is_ok)

@@ -22,7 +22,7 @@ public:
   // Constructor
   explicit GateARFTrainingDatasetActor(py::dict &user_info);
 
-  virtual void InitializeUserInput(py::dict &user_info) override;
+  void InitializeUserInfo(py::dict &user_info) override;
 
   // Main function called every step in attached volume
   void StartSimulationAction() override;
@@ -39,6 +39,7 @@ public:
   std::string fInputActorName;
   int fRussianRouletteValue;
   double fRussianRouletteFactor;
+  std::vector<int> fPlaneAxis;
   GateVDigiAttribute *fAtt_E;
   GateVDigiAttribute *fAtt_Theta;
   GateVDigiAttribute *fAtt_Phi;

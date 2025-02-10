@@ -94,7 +94,7 @@ def create_simu(nb_threads, paths):
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     sc.clear_every = 333
-    sc.output_filename = "test039_singles.root"
+    sc.output_filename = f"test039_singles_{sim.number_of_threads}.root"
 
     cc = sim.add_actor("DigitizerEnergyWindowsActor", "EnergyWindows")
     cc.attached_to = crystal.name

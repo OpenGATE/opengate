@@ -17,6 +17,7 @@ GateAcceptanceAngleTester::GateAcceptanceAngleTester(
   fAcceptanceAngleVolumeName = volume;
   fAASolid = nullptr;
   fAANavigator = nullptr;
+  fAARotation = nullptr;
 
   // Retrieve the solid
   auto lvs = G4LogicalVolumeStore::GetInstance();

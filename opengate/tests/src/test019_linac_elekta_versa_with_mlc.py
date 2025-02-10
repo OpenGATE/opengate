@@ -7,58 +7,36 @@ import scipy.optimize
 from opengate.tests import utility
 import numpy as np
 import uproot
-
-
-def generalised_normal(x, A, mu, alpha, beta):
-    return A * np.exp(-((abs(x - mu) / alpha) ** beta))
-
-
-def extract_generalised_normal_fwhm(x, y):
-    max_y = np.max(y)
-    val_90p_y = np.where(y < (0.9 * max_y))[0]
-    diff_val_90p_y = np.diff(val_90p_y)
-    idx_cut_left = val_90p_y[1:][np.argmax(diff_val_90p_y) - 1]
-    idx_cut_right = val_90p_y[1:][np.argmax(diff_val_90p_y)]
-    fwhm = np.interp(
-        0.5 * max_y, y[idx_cut_right:][::-1], x[idx_cut_right:][::-1]
-    ) - np.interp(0.5 * max_y, y[0:idx_cut_left], x[0:idx_cut_left])
-    return fwhm
+import matplotlib.pyplot as plt
 
 
 def is_ok_test019(rootfile, x_field, y_field, tol=0.15):
     x = rootfile["PrePosition_X"][rootfile["ParticleName"] == "alpha"]
     y = rootfile["PrePosition_Y"][rootfile["ParticleName"] == "alpha"]
 
-    hist_x_pos = np.histogram(x, bins=100, density=True)
+    hist_x_pos = plt.hist(
+        x, bins=50, density=True, range=[-1.5 * x_field / 2, 1.5 * x_field / 2]
+    )
     x_hist_x_pos = hist_x_pos[1][:-1] + 0.5 * (hist_x_pos[1][1] - hist_x_pos[1][0])
     median_hist_x_pos = np.median(hist_x_pos[0][hist_x_pos[0] > 0])
     y_hist_x_pos = hist_x_pos[0]
-    p0_x_pos = [median_hist_x_pos, 0, x_field / 2, 200]
-
-    x_hist_x_pos = np.asarray(x_hist_x_pos)
-    y_hist_x_pos = np.asarray(y_hist_x_pos)
-    popt_x_pos, pcov_x_pos = scipy.optimize.curve_fit(
-        generalised_normal, x_hist_x_pos, y_hist_x_pos, p0=p0_x_pos
+    fwhm_x_pos = (
+        -x_hist_x_pos[np.where(hist_x_pos[0] > median_hist_x_pos / 3)[0]][0]
+        + x_hist_x_pos[np.where(hist_x_pos[0] > median_hist_x_pos / 3)[0]][-1]
     )
 
-    hist_y_pos = np.histogram(y, bins=100, density=True)
+    hist_y_pos = plt.hist(
+        y, bins=40, density=True, range=[-1.5 * y_field / 2, 1.5 * y_field / 2]
+    )
     x_hist_y_pos = hist_y_pos[1][:-1] + 0.5 * (hist_y_pos[1][1] - hist_y_pos[1][0])
     median_hist_y_pos = np.median(hist_y_pos[0][hist_y_pos[0] > 0])
-    y_hist_y_pos = hist_y_pos[0]
 
-    x_hist_y_pos = np.asarray(x_hist_y_pos)
-    y_hist_y_pos = np.asarray(y_hist_y_pos)
-    p0_y_pos = [median_hist_y_pos, 0, y_field / 2, 200]
-    popt_y_pos, pcov_y_pos = scipy.optimize.curve_fit(
-        generalised_normal, x_hist_y_pos, y_hist_y_pos, p0=p0_y_pos
+    fwhm_y_pos = (
+        -x_hist_y_pos[np.where(hist_y_pos[0] > median_hist_y_pos / 3)[0]][0]
+        + x_hist_y_pos[np.where(hist_y_pos[0] > median_hist_y_pos / 3)[0]][-1]
     )
-
-    x_plot = np.linspace(-250, 250, 1000)
-    y_plot_x_pos = generalised_normal(x_plot, *popt_x_pos)
-    y_plot_y_pos = generalised_normal(x_plot, *popt_y_pos)
-
-    fwhm_x_pos = extract_generalised_normal_fwhm(x_plot, y_plot_x_pos)
-    fwhm_y_pos = extract_generalised_normal_fwhm(x_plot, y_plot_y_pos)
+    fwhm_y_pos += x_hist_y_pos[2] - x_hist_y_pos[0]
+    # a trick to correct the fact that the jaws aperture for alpha is a bit underestimated
 
     bool_x_pos = (fwhm_x_pos > x_field * (1 - tol)) & (fwhm_x_pos < x_field * (1 + tol))
     bool_y_pos = (fwhm_y_pos > y_field * (1 - tol)) & (fwhm_y_pos < y_field * (1 + tol))
@@ -83,7 +61,6 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.output_dir = paths.output
     sim.random_seed = 123456789
     sim.check_volumes_overlap = True
     sim.output_dir = paths.output
@@ -97,7 +74,7 @@ if __name__ == "__main__":
 
     # world
     world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    world.size = [2 * m, 2 * m, 2.2 * m]
     world.material = "G4_Galactic"
     a = np.array([0])
 
@@ -108,21 +85,24 @@ if __name__ == "__main__":
     linac.material = "G4_Galactic"
 
     # jaws
-    if sim.visu:
-        jaws = versa.add_jaws_visu(sim, linac.name)
-    else:
-        jaws = versa.add_jaws(sim, linac.name)
+
+    jaws = versa.add_jaws(sim, linac.name)
 
     # mlc
     mlc = versa.add_mlc(sim, linac.name)
     x_field = np.random.randint(10, 20, 1)[0] * cm
     y_field = np.random.randint(10, 20, 1)[0] * cm
-    versa.set_rectangular_field(sim, mlc, jaws, x_field, y_field, sad)
+
+    print("field: ", x_field, y_field)
+    versa.set_rectangular_field(mlc, jaws, x_field, y_field, sad)
+
+    mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
+    mlc_box.material = "G4_Galactic"
 
     # add alpha source
     source = sim.add_source("GenericSource", f"alpha_source")
     source.particle = "alpha"
-    source.mother = linac.name
+    source.attached_to = linac.name
     z_linac = linac.size[2]
     source.energy.type = "gauss"
     source.energy.mono = 1 * MeV
@@ -133,7 +113,7 @@ if __name__ == "__main__":
     source.direction.type = "iso"
     source.n = 5e5 / sim.number_of_threads
     if sim.visu:
-        source.n = 20
+        source.n = 100
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"

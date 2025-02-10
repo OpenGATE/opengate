@@ -17,10 +17,12 @@ public:
 
   typedef itk::Image<unsigned char, 3> ImageType;
   typename ImageType::Pointer fImage;
+  typedef itk::ContinuousIndex<float, 3> ContinuousIndexType;
 
   void Voxelize();
 
   std::map<std::string, unsigned char> fLabels;
+  ContinuousIndexType fIndexIsoCenter;
 };
 
 #endif // GateVolumeVoxelizer_h

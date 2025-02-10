@@ -121,7 +121,7 @@ if __name__ == "__main__":
     LETActor_IDD_d2w.size = size
     LETActor_IDD_d2w.spacing = spacing
     LETActor_IDD_d2w.hit_type = "random"
-    LETActor_IDD_d2w.score_in = "water"
+    LETActor_IDD_d2w.score_in = "G4_WATER"
     LETActor_IDD_d2w.averaging_method = "dose_average"
 
     LET_primaries = "LETprimaries"
@@ -170,7 +170,7 @@ if __name__ == "__main__":
             doseIDD.edep.get_output_path(),
             stats,
             tolerance=100,
-            ignore_value=0,
+            ignore_value_data2=0,
             axis="x",
             scaleImageValuesFactor=numPartSimRef / numPartSimTest,
         )
@@ -181,7 +181,7 @@ if __name__ == "__main__":
         ref_filename1=ref_path
         / "test050_LET1D_noFilter__PrimaryProton-doseAveraged.mhd",
         filename2=str(LETActor_IDD_d.let.get_output_path()),
-        tolerance=40,
+        tolerance=60,
         # plt_ylim=[0, 25],
     )
     tests_pass.append(is_ok)

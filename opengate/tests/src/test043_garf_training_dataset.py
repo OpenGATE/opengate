@@ -97,7 +97,7 @@ if __name__ == "__main__":
     print(stats)
 
     # FIXME: will work once the source_manager will be refactored.
-    skip = gate.sources.generic.get_source_skipped_events(sim, "s1")
+    skip = sim.source_manager.get_source("s1").total_skipped_events
     ref_skip = 615782
     is_ok = True
     if abs(skip - ref_skip) / ref_skip > 0.01:
