@@ -17,9 +17,7 @@ gray = [0.5, 0.5, 0.5, 1]
 white = [1, 1, 1, 0.8]
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__, "gate_test072", "test072"
-    )
+    paths = utility.get_default_test_paths(__file__, "gate_test072", "test072")
 
     sim = gate.Simulation()
 
