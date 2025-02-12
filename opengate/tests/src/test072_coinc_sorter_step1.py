@@ -6,6 +6,7 @@
 import opengate as gate
 from pathlib import Path
 import os
+from opengate.tests import utility
 
 # colors (similar to the ones of Gate)
 red = [1, 0, 0, 1]
@@ -16,6 +17,10 @@ gray = [0.5, 0.5, 0.5, 1]
 white = [1, 1, 1, 0.8]
 
 if __name__ == "__main__":
+    paths = utility.get_default_test_paths(
+        __file__, "gate_test072", "test072"
+    )
+
     sim = gate.Simulation()
 
     # options
@@ -37,8 +42,8 @@ if __name__ == "__main__":
     deg = gate.g4_units.deg
 
     # folders
-    data_path = Path("data")
-    output_path = Path("../output/test072")
+    data_path = paths.data
+    output_path = paths.output
 
     # world
     world = sim.world
