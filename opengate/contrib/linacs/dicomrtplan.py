@@ -17,7 +17,7 @@ def list_of_beam_sequence_ID(file):
             patient_info.value[0],
             [[("0x300C", "0x0004"), i], [("0x300A", "0x0086"), None]],
         )
-        if number_of_mu != None:
+        if number_of_mu is not None:
             id_of_beam_sequence.append(i)
     return id_of_beam_sequence
 
@@ -41,7 +41,7 @@ def read(file, cp_id="all_cp", arc_id=None):
     dose_weight_array = []
     collimation_angle_array = []
     leaf_array = []
-    if arc_id == None:
+    if arc_id is None:
         id_of_beam_sequence = list_of_beam_sequence_ID(file)
     else:
         arc_id = int(arc_id)
@@ -81,7 +81,7 @@ def read(file, cp_id="all_cp", arc_id=None):
             l_cp_id = np.arange(0, nb_cp_id, 1)
         for id in l_cp_id:
             for i, key in enumerate(key_list):
-                if data_set[i][key][id] != None:
+                if data_set[i][key][id] is not None:
                     if key == "isocenter":
                         l_parameters[i].append(np.array(data_set[i][key][id]) * mm)
                     elif (
@@ -94,8 +94,8 @@ def read(file, cp_id="all_cp", arc_id=None):
                         l_parameters[i].append(data_set[i][key][id])
                 else:
                     if id != 0:
-                        if data_set[i][key][id] == None:
-                            if l_parameters[i][id - 1] != None:
+                        if data_set[i][key][id] is None:
+                            if l_parameters[i][id - 1] is not None:
                                 l_parameters[i].append(l_parameters[i][id - 1])
                         else:
                             l_parameters[i].append(data_set[i][key][id])
@@ -120,13 +120,13 @@ def read(file, cp_id="all_cp", arc_id=None):
             leaf_blocks = [leaf_block_1, leaf_block_2]
             for i in range(len(data_set[leaves][0])):
                 for side_ID in range(2):
-                    if data_set[leaves][0][i]["leaves"][id] != None:
+                    if data_set[leaves][0][i]["leaves"][id] is not None:
                         leaf_blocks[side_ID].append(
                             data_set[leaves][side_ID][i]["leaves"][id]
                         )
                     else:
                         if id != 0:
-                            if data_set[leaves][0][i]["leaves"][id - 1] != None:
+                            if data_set[leaves][0][i]["leaves"][id - 1] is not None:
                                 leaf_blocks[side_ID].append(
                                     data_set[leaves][side_ID][i]["leaves"][id - 1]
                                 )
@@ -217,7 +217,7 @@ file = "/home/mjacquet/Documents/Simulation_RT_plan/patient_data/IGR/AGORL_CLB_P
 
 def retrieve_value_in_DICOM_RTPlan(cp, list):
     if list[0][0] in cp:
-        if list[0][1] != None:
+        if list[0][1] is not None:
             value = cp[list[0][0]].value[list[0][1]]
         else:
             value = cp[list[0][0]].value
@@ -254,7 +254,7 @@ def extract_dataset(file, beam_sequence_ID):
     data_set[dir_angle] = {"dir_angle": []}
     data_set[isocenter] = {"isocenter": []}
     data_set[dose_weights] = {"cumulative weight": []}
-    data_set[leaves] = [[{"leaves": []} for i in range(nb_leaf)] for j in range(2)]
+    data_set[leaves] = [[{"leaves": []} for _ in range(nb_leaf)] for _ in range(2)]
     data_set[MU_number] = {"MU number": 0}
     data_set[limiting_device_angle] = {"collimation angle": []}
     count = 0

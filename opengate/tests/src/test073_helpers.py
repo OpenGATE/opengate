@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.sources.base import set_source_rad_energy_spectrum
+from opengate.sources.utility import set_source_energy_spectrum
 from opengate.exception import warning
 from opengate.tests import utility
 import opengate.contrib.spect.siemens_intevo as intevo
@@ -33,7 +33,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     world.material = "G4_AIR"
 
     # spect head
-    head, colli, crystal = intevo.add_spect_head(
+    head, _, crystal = intevo.add_spect_head(
         sim, "spect", collimator_type="melp", debug=debug
     )
     head.translation = [0, 0, -280 * mm]
@@ -58,7 +58,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     s1.position.type = "sphere"
     s1.position.radius = 30 * mm
     s1.position.translation = [0, 0, 0]
-    set_source_rad_energy_spectrum(s1, "Lu177")
+    set_source_energy_spectrum(s1, "Lu177", "radar")
     s1.direction.type = "iso"
     s1.activity = activity
 
@@ -67,7 +67,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     s2.position.type = "sphere"
     s2.position.radius = 60 * mm
     s2.position.translation = [0, 200 * mm, 0]
-    set_source_rad_energy_spectrum(s2, "Lu177")
+    set_source_energy_spectrum(s2, "Lu177", "radar")
     s2.direction.type = "iso"
     s2.activity = activity
 
@@ -76,7 +76,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     s3.position.type = "sphere"
     s3.position.radius = 25 * mm
     s3.position.translation = [100, 0, 0 * mm]
-    set_source_rad_energy_spectrum(s3, "Lu177")
+    set_source_energy_spectrum(s3, "Lu177", "radar")
     s3.direction.type = "iso"
     s3.activity = activity
 
@@ -204,13 +204,13 @@ def test073_setup_sim(sim, spect_type, collimator_type):
 
     # spect ?
     if spect_type == "intevo":
-        head, colli, crystal = intevo.add_spect_head(
+        head, _, _ = intevo.add_spect_head(
             sim, "spect", collimator_type=collimator_type, debug=sim.visu
         )
         head.translation = [0, 0, -280 * mm]
         head.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
     if spect_type == "discovery":
-        head, colli, crystal = discovery.add_spect_head(
+        head, _, _ = discovery.add_spect_head(
             sim, "spect", collimator_type=collimator_type, debug=sim.visu
         )
         head.translation = [0, 0, -280 * mm]

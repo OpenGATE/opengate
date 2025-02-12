@@ -5,7 +5,7 @@ import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
-from opengate.sources.base import set_source_rad_energy_spectrum
+from opengate.sources.utility import set_source_energy_spectrum
 from pathlib import Path
 import numpy as np
 import opengate_core as g4
@@ -111,8 +111,8 @@ def create_simulation_test085(sim, paths, ac=1e5, angle_tolerance=None):
     source = sim.add_source("VoxelSource", "src")
     source.image = iec_source_filename
     source.position.translation = [0, 35 * mm, 0]
-    set_source_rad_energy_spectrum(source, "tc99m")
     source.particle = "gamma"
+    set_source_energy_spectrum(source, "tc99m", "radar")  # After particle definition
     source.direction.acceptance_angle.volumes = [h.name for h in det_planes]
     source.direction.acceptance_angle.skip_policy = "SkipEvents"
     source.direction.acceptance_angle.intersection_flag = True
@@ -125,7 +125,7 @@ def create_simulation_test085(sim, paths, ac=1e5, angle_tolerance=None):
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
-    stats.output_filename = f"stats.txt"
+    stats.output_filename = "stats.txt"
 
     # set the gantry orientation
     nm670.rotate_gantry(det_plane1, radius, 0, 0, 1)

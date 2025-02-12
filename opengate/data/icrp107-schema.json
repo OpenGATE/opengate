@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "ICRP 107",
+  "description": "ICRP 107 database schema",
+  "type": "object",
+  "properties": {
+    "emissions": {
+      "type": "object",
+      "properties": {
+        "alpha": {
+          "type": "array"
+        },
+        "alpha recoil": {
+          "type": "array"
+        },
+        "Annihilation": {
+          "type": "array"
+        },
+        "Auger": {
+          "type": "array"
+        },
+        "beta-": {
+          "type": "array"
+        },
+        "beta+": {
+          "type": "array"
+        },
+        "betaD": {
+          "type": "array"
+        },
+        "b-spectra": {
+          "type": "array"
+        },
+        "fission": {
+          "type": "array"
+        },
+        "IE": {
+          "type": "array"
+        },
+        "X": {
+          "type": "array"
+        },
+        "gamma": {
+          "type": "array"
+        },
+        "neutron": {
+          "type": "array"
+        }
+      }
+    },
+    "name": {
+      "type": "string"
+    },
+    "half_life": {
+      "type": "number"
+    },
+    "time_unit": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "emissions",
+    "name",
+    "half_life",
+    "time_unit"
+  ]
+}
