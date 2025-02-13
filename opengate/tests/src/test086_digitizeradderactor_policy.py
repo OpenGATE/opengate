@@ -94,8 +94,10 @@ if __name__ == "__main__":
         coincidences = coincidences_sorter(
             singles_tree,
             time_window=2 * ns,
-            minSecDiff=1,
-            policy="keepAll",
+            min_transaxial_distance=0 * mm,
+            transaxial_plane="xy",
+            max_axial_distance=60 * mm,
+            policy="takeAllGoods",
             chunk_size=100000,
         )
         num_coincidences = len(coincidences["GlobalTime1"])
