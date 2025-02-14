@@ -3,6 +3,7 @@ import pathlib
 import numpy as np
 import json
 import re
+import icrp107_database
 
 from ..utility import g4_units
 from ..exception import fatal
@@ -262,34 +263,20 @@ def __get_icrp107_spectrum(rad_name: str, spectrum_type=DEFAULT_SPECTRUM_TYPE) -
         If the radionuclide or spectrum type is not valid.
     """
     rad = __gate_radname_to_icrp107(rad_name)
-    path = gate_source_path.parent / "data" / "icrp107" / f"{rad}.json"
+    icrp107_data = icrp107_database.get_icrp107_spectrum(rad, spectrum_type)
 
-    if not path.exists():
-        fatal(f"get_icrp107_spectrum: {rad} is not contained in the icrp 107 database")
-
-    if spectrum_type not in icrp107_emissions:  # Convert particle name to spectrum type
-        spectrum_type = (
-            spectrum_type.lower().replace("e-", "beta-").replace("e+", "beta+")
-        )
-
-    if spectrum_type not in icrp107_emissions:
-        fatal(f"get_icrp107_spectrum: {spectrum_type} is not valid")
-
-    with open(path, "rb") as f:
-        data = json.loads(json.load(f))
-
-        # convert to Box
-        gate_data = {}
-        gate_data["energies"] = np.array(
-            [v[0] * g4_units.MeV for v in data["emissions"][spectrum_type]]
-        )
-        gate_data["weights"] = np.array(
-            [v[1] for v in data["emissions"][spectrum_type]]
-        )
-        gate_data["half_life"] = data["half_life"] * __convert_icrp107_time_unit(
-            data["time_unit"]
-        )
-        return Box(gate_data)
+    # convert to Box with unit
+    gate_data = {}
+    gate_data["energies"] = np.array(
+        [v * g4_units.MeV for v in icrp107_data["energies"]]
+    )
+    gate_data["weights"] = np.array(
+        [v for v in icrp107_data["weights"]]
+    )
+    gate_data["half_life"] = icrp107_data["half_life"] * __convert_icrp107_time_unit(
+        icrp107_data["time_unit"]
+    )
+    return Box(gate_data)
 
 
 def __get_rad_gamma_spectrum(rad):
