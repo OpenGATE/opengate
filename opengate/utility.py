@@ -390,6 +390,16 @@ def read_mac_file_to_commands(filename):
             #    continue
             commands.append(s)
         return commands
+        
+def read_mac_file_to_doc(filename):
+    # read a file located into the 'mac' folder of the source code
+    # return a string for doc
+    resource_package = __package__
+    with resources.open_text(f"{resource_package}.mac", filename) as f:
+        commands = ""
+        for line in f:
+            commands+= f"{line}"
+        return commands
 
 
 def ensure_filename_is_str(filename):
