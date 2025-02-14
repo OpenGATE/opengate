@@ -270,9 +270,7 @@ def __get_icrp107_spectrum(rad_name: str, spectrum_type=DEFAULT_SPECTRUM_TYPE) -
     gate_data["energies"] = np.array(
         [v * g4_units.MeV for v in icrp107_data["energies"]]
     )
-    gate_data["weights"] = np.array(
-        [v for v in icrp107_data["weights"]]
-    )
+    gate_data["weights"] = np.array([v for v in icrp107_data["weights"]])
     gate_data["half_life"] = icrp107_data["half_life"] * __convert_icrp107_time_unit(
         icrp107_data["time_unit"]
     )
