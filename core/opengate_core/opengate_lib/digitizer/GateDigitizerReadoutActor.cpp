@@ -18,11 +18,12 @@ G4Mutex SetIgnoredHitsMutex = G4MUTEX_INITIALIZER;
 GateDigitizerReadoutActor::GateDigitizerReadoutActor(py::dict &user_info)
     : GateDigitizerAdderActor(user_info) {
   fDiscretizeVolumeDepth = -1;
+  fIgnoredHitsCount = 0;
 }
 
 GateDigitizerReadoutActor::~GateDigitizerReadoutActor() = default;
 
-void GateDigitizerReadoutActor::SetDiscretizeVolumeDepth(int depth) {
+void GateDigitizerReadoutActor::SetDiscretizeVolumeDepth(const int depth) {
   fDiscretizeVolumeDepth = depth;
 }
 

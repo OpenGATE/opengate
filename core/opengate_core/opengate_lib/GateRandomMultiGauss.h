@@ -15,7 +15,8 @@ using namespace std;
 class GateRandomMultiGauss {
 
 public:
-  GateRandomMultiGauss(vector<double> muVin, vector<double> sigmaMin);
+  GateRandomMultiGauss(const vector<double> &muVin,
+                       const vector<double> &sigmaMin);
 
   ~GateRandomMultiGauss();
 
@@ -30,9 +31,9 @@ protected:
   vector<double> eigVec2;
 
   void eigenVal();
-  vector<double> eigenVector(double eigenValue);
+  vector<double> eigenVector(double eigenValue) const;
   void eigenVectors();
-  vector<double> SigmaIndex(double x1_o, double x2_o);
+  vector<double> SigmaIndex(double x1_o, double x2_o) const;
 };
 
 #endif

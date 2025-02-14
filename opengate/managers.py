@@ -93,9 +93,9 @@ from .actors.miscactors import (
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
-    ComptSplittingActor,
-    BremSplittingActor,
-    FreeFlightActor,
+    BremsstrahlungSplittingActor,
+    GammaFreeFlightActor,
+    ComptonSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -143,9 +143,9 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     # biasing
-    "BremSplittingActor": BremSplittingActor,
-    "ComptSplittingActor": ComptSplittingActor,
-    "FreeFlightActor": FreeFlightActor,
+    "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
+    "GammaFreeFlightActor": GammaFreeFlightActor,
+    "ComptonSplittingFreeFlightActor": ComptonSplittingFreeFlightActor,
 }
 
 
@@ -1278,7 +1278,7 @@ class Simulation(GateObject):
     run_timing_intervals: List[List[float]]
     output_dir: Path
     store_json_archive: bool
-    json_archive_filename: Path
+    json_archive_filename: str
     store_input_files: bool
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]

@@ -13,13 +13,13 @@
 #include "GateDigiCollection.h"
 #include "GateHelpersDigitizer.h"
 #include "itkImage.h"
-#include <pybind11/stl.h>
-
-namespace py = pybind11;
 
 /*
  * Actor that create some projections (2D images) from several Digi Collections
  * in the same volume.
+ *
+ * WARNING: takes particle's weight into account only if "Weight" is included in
+ * the attribute list.
  */
 
 class GateDigitizerProjectionActor : public GateVActor {
@@ -57,7 +57,7 @@ protected:
   std::vector<GateDigiCollection *> fInputDigiCollections;
   G4RotationMatrix fDetectorOrientationMatrix;
 
-  void ProcessSlice(long slice, size_t channel);
+  void ProcessSlice(long slice, size_t channel) const;
 
   G4ThreeVector fPreviousTranslation;
   G4RotationMatrix fPreviousRotation;
@@ -65,6 +65,7 @@ protected:
   // During computation
   struct threadLocalT {
     std::vector<std::vector<G4ThreeVector> *> fInputPos;
+    std::vector<std::vector<double> *> fInputWeights;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

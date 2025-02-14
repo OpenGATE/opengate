@@ -4,24 +4,31 @@
 from opengate.tests import utility
 from test085_free_flight_helpers import *
 
-
 if __name__ == "__main__":
-
-    paths = utility.get_default_test_paths(__file__, None, output_folder="test085")
+    paths = utility.get_default_test_paths(
+        __file__, None, output_folder="test085_spect"
+    )
 
     # create the simulation
     sim = gate.Simulation()
+    # sim.visu = True
     sim.number_of_threads = 4
-    create_simulation_test085(sim, paths, ac=5e5)
+    source, actors = create_simulation_test085(
+        sim,
+        paths,
+        simu_name="ff",
+        ac=5e5,
+        use_spect_head=True,
+        use_spect_arf=False,
+        use_phsp=False,
+    )
 
-    arf1 = sim.get_actor("detector_arf_1")
-    arf2 = sim.get_actor("detector_arf_2")
-    arf1.output_filename = f"projection_ff_1.mhd"
-    arf2.output_filename = f"projection_ff_2.mhd"
+    # AA
+    source.direction.acceptance_angle.intersection_flag = True
+    source.direction.acceptance_angle.normal_flag = True
 
-    stats = sim.get_actor("stats")
-    stats.output_filename = "stats_ff.txt"
-    sim.json_archive_filename = "simu_ff.json"
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
 
     # free flight actor
     ff = sim.add_actor("FreeFlightActor", "ff")
@@ -70,6 +77,7 @@ if __name__ == "__main__":
             ignore_value_data1=0,
             sum_tolerance=3,
             axis="x",
+            fig_name=paths.output / "projection_ff_check_1",
         )
         and is_ok
     )
@@ -83,6 +91,7 @@ if __name__ == "__main__":
             ignore_value_data1=0,
             sum_tolerance=3,
             axis="x",
+            fig_name=paths.output / "projection_ff_check_2",
         )
         and is_ok
     )

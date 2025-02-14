@@ -77,6 +77,7 @@ bool GateAcceptanceAngleTesterManager::TestIfAccept(
     const G4ThreeVector &position, const G4ThreeVector &momentum_direction) {
   if (!fEnabledFlag)
     return true;
+
   // Loop on all volume to check if it at least one volume is accepted
   for (auto *tester : fAATesters) {
     bool accept = tester->TestIfAccept(position, momentum_direction);
