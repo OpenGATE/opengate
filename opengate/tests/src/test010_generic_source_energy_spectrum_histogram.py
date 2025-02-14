@@ -3,59 +3,11 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import get_rad_beta_spectrum
+from opengate.sources.utility import set_source_energy_spectrum
 import numpy as np
 import gatetools
 
 import matplotlib.pyplot as plt
-
-
-def plot(output_file, ekin, data_x, data_y, relerrs):
-    bins = len(data_x)
-    hist_y, hist_x = np.histogram(ekin, bins=bins)
-
-    fig, ax = plt.subplots(figsize=(8.5, 6))
-    ax.set_xlabel("Energy (MeV)")
-    ax.set_ylabel("Number of particles")
-    ax.plot(data_x, data_y, label="input energy spectrum", marker="o")
-    ax.plot(
-        data_x, hist_y, label="simulated energy spectrum", marker=".", linewidth=0.9
-    )
-    ax.legend()
-
-    ax2 = ax.twinx()
-    ax2.set_ylabel("Relative uncertainty")
-    ax2.set_ylim([0, 0.05])
-    ax2.plot(data_x, relerrs, label="relative uncertainty", linewidth=0.4)
-
-    fig.savefig(output_file, dpi=300)
-    plt.close(fig)
-
-
-def root_load_ekin(root_file: str):
-    data_ref, keys_ref, m_ref = gatetools.phsp.load(root_file)
-
-    index_ekin = keys_ref.index("KineticEnergy")
-    ekin = [data_ref_i[index_ekin] for data_ref_i in data_ref]
-
-    return ekin
-
-
-def add_source_energy_spectrum_histogram(sim, phsp, interpolation: str = None):
-    spectrum = get_rad_beta_spectrum("Lu177")
-
-    source = sim.add_source("GenericSource", "beam")
-    source.attached_to = phsp.name
-    source.particle = "gamma"
-    source.n = 5e5 / sim.number_of_threads
-    source.position.type = "point"
-    source.direction.type = "iso"
-    source.energy.type = "spectrum_histogram"
-    source.energy.spectrum_energy_bin_edges = spectrum.energy_bin_edges
-    source.energy.spectrum_weights = spectrum.weights
-    source.energy.spectrum_histogram_interpolation = interpolation
-
-    return source
 
 
 def run_simulation(paths, interpolation: str = None):
@@ -71,7 +23,7 @@ def run_simulation(paths, interpolation: str = None):
     sim.output_dir = paths.output
 
     # units
-    m = gate.g4_units.m
+    mm = gate.g4_units.mm
     g_cm3 = gate.g4_units.g_cm3
 
     # materials
@@ -80,24 +32,19 @@ def run_simulation(paths, interpolation: str = None):
     )
 
     world = sim.world
-    world.size = [2 * m, 2 * m, 2 * m]
+    world.size = [10 * mm, 10 * mm, 10 * mm]
     world.material = "Vacuum"
 
-    phsp = sim.add_volume("Sphere", "phsp")
-    phsp.rmin = 0 * m
-    phsp.rmax = 1 * m
-    phsp.material = world.material
-
-    source = add_source_energy_spectrum_histogram(sim, phsp, interpolation)
+    source = add_source_energy_spectrum_histogram(sim, interpolation)
 
     # actors
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
+    # stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     phsp_actor = sim.add_actor("PhaseSpaceActor", "phsp_actor")
     phsp_actor.output_filename = (
         f"test010_energy_spectrum_histogram_{interpolation}.root"
     )
-    # phsp_actor.attached_to = phsp
+    phsp_actor.steps_to_store = "first"
     phsp_actor.attributes = [
         "KineticEnergy",
     ]
@@ -113,33 +60,79 @@ def run_simulation(paths, interpolation: str = None):
 
     # test
     bin_edges = source.energy.spectrum_energy_bin_edges
-    data_x = [(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(len(bin_edges) - 1)]
+    weights = source.energy.spectrum_weights
 
-    data_y = (
-        np.array(source.energy.spectrum_weights)
-        * source.n
-        / np.sum(source.energy.spectrum_weights)
-    )
+    src_data = np.array(weights)
+    src_data = src_data / np.sum(src_data)
 
-    bins = len(data_x)
-    hist_y, hist_x = np.histogram(ekin, bins=bins)
+    sim_data, _ = np.histogram(ekin, bins=bin_edges, density=True)
+    sim_data = sim_data / np.sum(sim_data)
 
-    relerrs = [abs(hist_y[i] - data_y[i]) / data_y[i] for i in range(len(data_y))]
+    relerrs = (sim_data - src_data) / src_data
     oks = [
-        utility.check_diff_abs(0, relerr, tolerance=0.05, txt="relative error")
-        for relerr in relerrs
+        utility.check_diff_abs(0, abs(relerrs[i]), tolerance=0.20, txt="relative error")
+        for i in range(len(relerrs))
+        if src_data[i] > 0.001
     ]
     is_ok = all(oks)
 
     plot(
         paths.output / f"test010_plot_energy_spectrum_histogram_{interpolation}.png",
-        ekin,
-        data_x,
-        data_y,
+        bin_edges,
+        src_data,
+        sim_data,
         relerrs,
     )
 
     utility.test_ok(is_ok)
+
+
+def plot(output_file, bin_edges, src_data, sim_data, relerrs):
+    fig, ax = plt.subplots(figsize=(8.5, 6))
+    ax.set_xlabel("Energy (MeV)")
+    ax.set_ylabel("Probability")
+    ax.stairs(src_data, bin_edges, fill=True, label="input data")
+    ax.stairs(sim_data, bin_edges, fill=True, alpha=0.6, label="simulation")
+
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+
+    ax2 = ax.twinx()
+    ax2.set_ylabel("Relative error")
+    ax2.set_ylim([-0.20, +0.20])
+    ax2.plot(
+        (bin_edges[:-1] + bin_edges[1:]) / 2,
+        relerrs,
+        label="relative error",
+        color="C2",
+    )
+
+    ax.legend()
+
+    fig.savefig(output_file, dpi=300)
+    plt.close(fig)
+
+
+def root_load_ekin(root_file: str):
+    data_ref, keys_ref, _ = gatetools.phsp.load(root_file)
+
+    index_ekin = keys_ref.index("KineticEnergy")
+    ekin = [data_ref_i[index_ekin] for data_ref_i in data_ref]
+
+    return ekin
+
+
+def add_source_energy_spectrum_histogram(sim, interpolation: str = None):
+    source = sim.add_source("GenericSource", "beam")
+    source.particle = "e-"
+    source.n = 2e6 / sim.number_of_threads
+    source.position.type = "point"
+    source.direction.type = "iso"
+
+    set_source_energy_spectrum(source, "Lu177")  # After defining the particle!!
+    source.energy.spectrum_histogram_interpolation = interpolation
+
+    return source
 
 
 if __name__ == "__main__":

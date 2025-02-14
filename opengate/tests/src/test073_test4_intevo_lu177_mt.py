@@ -3,7 +3,7 @@
 
 from test073_helpers import *
 from opengate.tests import utility
-from opengate.sources.base import set_source_rad_energy_spectrum
+from opengate.sources.utility import set_source_energy_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     # source
     Bq = gate.g4_units.Bq
-    set_source_rad_energy_spectrum(source, "Lu177")
+    set_source_energy_spectrum(source, "Lu177", "radar")
     source.activity = 2e8 * Bq / sim.number_of_threads
 
     # start simulation
