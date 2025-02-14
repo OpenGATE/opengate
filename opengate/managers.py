@@ -24,6 +24,7 @@ from .utility import (
     g4_units,
     indent,
     read_mac_file_to_commands,
+    read_mac_file_to_doc,
     ensure_directory_exists,
     insert_suffix_before_extension,
 )
@@ -1373,7 +1374,7 @@ class Simulation(GateObject):
             },
         ),
         "visu_commands": (
-            read_mac_file_to_commands("default_visu_commands_qt.mac"),
+            read_mac_file_to_doc("default_visu_commands_qt.mac"),
             {
                 "doc": "Geant4 commands needed to handle the visualization. "
                 "By default, the Geant4 visualisation commands are the ones "
