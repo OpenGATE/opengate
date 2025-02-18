@@ -95,7 +95,7 @@ Particle initial position
 -------------------------
 
 The positions from were the particles will be generated are defined by a shape
-(e.g. "point", "box", "sphere", "disc"), defined by several parameters ("size", "radius")
+(e.g. "point", "box", "sphere", "disc", "cylinder"), defined by several parameters ("size", "radius")
 and orientation ("rotation", "center").
 A translation relative to the ``attached_to`` volume can also be set.
 
@@ -125,6 +125,13 @@ Here are some examples (mostly from ``test010_generic_source.py``):
 
     source.position.type = "box"
     source.position.size = [4 * cm, 4 * cm, 4 * cm]
+    source.position.translation = [8 * cm, 8 * cm, 30 * cm]
+
+.. code:: python
+
+    source.position.type = "cylinder"
+    source.position.radius = 5 * mm
+    source.position.dz = 300 * mm / 2.0
     source.position.translation = [8 * cm, 8 * cm, 30 * cm]
 
 
