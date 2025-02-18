@@ -99,28 +99,10 @@ if __name__ == "__main__":
     s.track_types_flag = True
 
     sim.run()
-    rs_fpath = ref_path / "mMKM line dose IDEAL_water_AbsDose_2D_IR2HBLc28Jan2025.csv"
-    rs_fpath_phys = (
-        ref_path
-        / "mMKM line physical dose IDEAL_water_AbsDose_2D_IR2HBLc 28 Jan 2025.csv"
-    )
 
-    fNameIDD = doseIDD.user_info.output
-    """
-    is_ok = utility.assert_images(
-        ref_path / fNameIDD,
-        doseIDD.output,
-        stat,
-        tolerance=100,
-        ignore_value=0,
-        axis="x",
-        scaleImageValuesFactor=numPartSimRef / numPartSimTest,
-    )
-
-    """
-    ref_fpath = ref_path / "test087-RBE_rbe.mhd"
     ref_fpath = ref_path / "test087-alpha_mix_rbe.mhd"
     #    print(f"{doseIDD.dose.get_output_path()=}")
+    
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
