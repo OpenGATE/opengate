@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     sim.run()
 
-    ref_fpath = ref_path / "test087-alpha_mix_rbe.mhd"
+    ref_fpath = ref_path / "test087-ref_rbe.mhd"
     #    print(f"{doseIDD.dose.get_output_path()=}")
     
     is_ok = utility.assert_filtered_imagesprofile1D(
@@ -112,7 +112,7 @@ if __name__ == "__main__":
         #        plt_ylim=[0, 2],
     )
 
-    ref_fpath = ref_path / "test087-alpha_mix_alpha.mhd"
+    ref_fpath = ref_path / "test087-ref_alpha_mix.mhd"
 
     fName = paths.output / RBE_act.alpha_mix.get_output_path()
 
