@@ -13,6 +13,7 @@ from ..image import (
     create_3d_image,
     write_itk_image,
     get_info_from_image,
+    itk_image_from_array,
 )
 
 
@@ -686,7 +687,7 @@ class SingleItkImageWithVariance(DataItemContainer):
                         out=np.zeros_like(output_arr),
                         where=value_array != 0,
                     )
-            output_image = itk.image_view_from_array(output_arr)
+            output_image = itk_image_from_array(output_arr)
             output_image.CopyInformation(self.data[0].data)
         except AttributeError as e:
             fatal(str(e))
