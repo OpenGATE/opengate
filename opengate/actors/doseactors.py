@@ -1030,16 +1030,16 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             "Ne": 10,
         }
         self.atomic_number_to_mass_dict = {
-            1:1,
-            2:4,
-            3:6.9,
-            4:9,
-            5:10.8,
-            6:12,
-            7:14,
-            8:16,
-            9:19,
-            10:20.2,
+            1: 1,
+            2: 4,
+            3: 6.9,
+            4: 9,
+            5: 10.8,
+            6: 12,
+            7: 14,
+            8: 16,
+            9: 19,
+            10: 20.2,
         }
         self.lookup_table = None
         self._extend_table_to_zero_and_inft = True
@@ -1182,7 +1182,9 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             )
         if self.energy_per_nucleon:
             for i in range(1, len(v_table), 3):
-                n_nuclei = self.atomic_number_to_mass_dict[v_table[i - 1][0]]  #v_table[i - 1][0] * (1 + float(v_table[i - 1][0] != 1))
+                n_nuclei = self.atomic_number_to_mass_dict[
+                    v_table[i - 1][0]
+                ]  # v_table[i - 1][0] * (1 + float(v_table[i - 1][0] != 1))
                 v_table[i] = [x * n_nuclei for x in v_table[i]]
         if self._extend_table_to_zero_and_inft:
             for i in range(1, len(v_table), 3):

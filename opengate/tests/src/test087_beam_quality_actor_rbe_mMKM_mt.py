@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     ref_fpath = ref_path / "test087-ref_rbe.mhd"
     #    print(f"{doseIDD.dose.get_output_path()=}")
-    
+
     is_ok = utility.assert_filtered_imagesprofile1D(
         ref_filter_filename1=doseIDD.edep.get_output_path(),
         ref_filename1=ref_fpath,
