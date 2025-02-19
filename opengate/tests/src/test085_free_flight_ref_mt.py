@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from test085_free_flight_helpers import *
+import opengate as gate
+from test085_free_flight_helpers import create_simulation_test085
 from opengate.tests import utility
 
 

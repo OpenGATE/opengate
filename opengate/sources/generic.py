@@ -2,10 +2,10 @@ from box import Box
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
-from .base import (
-    SourceBase,
+from .base import SourceBase
+from .utility import (
     all_beta_plus_radionuclides,
-    read_beta_plus_spectra,
+    get_spectrum,
     compute_cdf_and_total_yield,
 )
 from ..base import process_cls
@@ -228,7 +228,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
-        if not self.energy.type in l:
+        if self.energy.type not in l:
             fatal(
                 f"Cannot find the energy type {self.energy.type} for the source {self.name}.\n"
                 f"Available types are {l}"
@@ -251,10 +251,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # FIXME put this elsewhere
         if self.particle == "e+":
             if self.energy.type in all_beta_plus_radionuclides:
-                data = read_beta_plus_spectra(self.user_info.energy.type)
+                data = get_spectrum(self.user_info.energy.type, "e+", "radar")
                 ene = data[:, 0] / 1000  # convert from KeV to MeV
                 proba = data[:, 1]
-                cdf, total = compute_cdf_and_total_yield(proba, ene)
+                cdf, _ = compute_cdf_and_total_yield(proba, ene)
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
                 self.energy.is_cdf = True
@@ -274,7 +274,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
         # check direction type
         l = ["iso", "histogram", "momentum", "focused", "beam2d"]
-        if not self.direction.type in l:
+        if self.direction.type not in l:
             fatal(
                 f"Cannot find the direction type {self.direction.type} for the source {self.name}.\n"
                 f"Available types are {l}"
