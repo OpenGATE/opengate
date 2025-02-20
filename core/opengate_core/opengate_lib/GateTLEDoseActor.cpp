@@ -148,7 +148,8 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
-  GetVoxelPosition(step, position, isInside, index);
+  GetStepVoxelPosition<Image3DType>(step, fHitType, cpp_edep_image, position,
+                                    isInside, index);
   auto event_id =
       G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   if (isInside) {
