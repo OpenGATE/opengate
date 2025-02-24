@@ -44,13 +44,12 @@ void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
 
   fRBEmodel = DictGetStr(user_info, "model");
   if (fRBEmodel == "LEM1lda") {
-    fAreaNucl = DictGetDouble(user_info, "A_nucleus") * CLHEP::um * CLHEP::um;
+    //     fAreaNucl = DictGetDouble(user_info, "A_nucleus") * CLHEP::um *
+    //     CLHEP::um;
     fDcut = DictGetDouble(user_info, "D_cut");
-    fSmax = DictGetDouble(user_info, "s_max");
     multipleScoring = true;
   }
-  ZMinTable = DictGetInt(user_info, "z_min_table");
-  ZMaxTable = DictGetInt(user_info, "z_max_table");
+
   table = new std::vector<G4DataVector *>;
   CreateLookupTable(user_info);
 }

@@ -47,6 +47,10 @@ void init_GateBeamQualityActor(py::module &m) {
       // .def_readwrite("cpp_nucleus_dose_image",
       // &GateBeamQualityActor::cpp_nucleus_dose_image)
       .def_readwrite("NbOfEvent", &GateBeamQualityActor::NbOfEvent)
+      .def_readwrite("ZMinTable", &GateBeamQualityActor::ZMinTable)
+      .def_readwrite("ZMaxTable", &GateBeamQualityActor::ZMaxTable)
+      .def_readwrite("fSmax", &GateBeamQualityActor::fSmax)
+      .def_readwrite("fAreaNucl", &GateBeamQualityActor::fAreaNucl)
       .def("GetPhysicalVolumeName",
            &GateBeamQualityActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName",

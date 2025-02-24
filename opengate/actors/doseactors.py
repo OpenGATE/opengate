@@ -939,25 +939,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         "lookup_table": (
             None,
             {
-                "doc": "z*_1d or alpha_z table. Read by the actor",
-            },
-        ),
-        "z_min_table": (
-            "",
-            {
-                "doc": "Minimum atomic number available in the table. Read by the actor",
-            },
-        ),
-        "z_max_table": (
-            "",
-            {
-                "doc": "Maximum atomic number available in the table. Read by the actor",
-            },
-        ),
-        "multiple_scoring": (
-            False,
-            {
-                "doc": "True for models that need multiple quatient images to evaluate the beam quality, like the carbon RBE model LEM1lda",
+                "doc": "z*_1d or alpha_z table. Read by the actor.",
             },
         ),
     }
@@ -1044,6 +1026,7 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         self.lookup_table = None
         self._extend_table_to_zero_and_inft = True
         self.max_val_table = None  # store normalization value
+        self.multiple_scoring = False
         self.__initcpp__()
 
     def __initcpp__(self):
@@ -1080,6 +1063,11 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             raise ValueError(
                 "Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute."
             )
+
+        if self.multiple_scoring:
+            self.user_output.beta_mix.set_active(True, item="all")
+            self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
+
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
@@ -1174,8 +1162,8 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
             raise ValueError("Non numeric entries in table")
         self.check_table(v_table, fragments)
         # get max and min atomic numbers available
-        self.z_min_table = min(fragments)
-        self.z_max_table = max(fragments)
+        self.ZMinTable = min(fragments)
+        self.ZMaxTable = max(fragments)
         if len(v_table) != 3 * len(fragments):
             raise ValueError(
                 f"Error: {len(v_table) = } and {len(fragments) = } are not equal."
@@ -1225,8 +1213,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         )
 
         if self.multiple_scoring:
-            self.user_output.beta_mix.set_active(True, item="all")
-            self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
             self.prepare_output_for_run("beta_mix", run_index)
             self.push_to_cpp_image(
                 "beta_mix",
@@ -1404,28 +1390,10 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
                 "doc": "LEM specific arbituary parameter, the physical dose threshold between linear quadratic and linear cell survival. Unit: Gy.",
             },
         ),
-        "lnS_cut": (
-            None,
-            {
-                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
-            },
-        ),
-        "s_max": (
-            None,
-            {
-                "doc": "LEM specific dependent parameter, calculated with alpha_ref, beta_ref and D_cut by the actor.",
-            },
-        ),
         "r_nucleus": (
             5,
             {
                 "doc": "nucleus's radius, in um. Used when rbe_model is LEM",
-            },
-        ),
-        "A_nucleus": (
-            None,
-            {
-                "doc": "nucleus section's area. Calculated from radius by the actor.",
             },
         ),
         "cell_type": (
@@ -1468,6 +1436,9 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             "Chordoma": {"alpha_ref": 0.1, "beta_ref": 0.05},
         }
 
+        self.s_max = None
+        self.lnS_cut = None
+
         self.__initcpp__()
 
     def initialize(self):
@@ -1490,15 +1461,18 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             )
 
         # calculate some internal variables
-        self.A_nucleus = np.pi * self.r_nucleus**2
+        self.fAreaNucl = np.pi * self.r_nucleus**2
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
         beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
         self.beta_ref = beta_ref
         self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
+        self.fSmax = self.s_max  # set also to cpp
         self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
 
         if self.model == "LEM1lda":
             self.multiple_scoring = True
+            self.user_output.beta_mix.set_active(True, item="all")
+            self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
 
         self.InitializeUserInfo(self.user_info)
         # Set the physical volume name on the C++ side
