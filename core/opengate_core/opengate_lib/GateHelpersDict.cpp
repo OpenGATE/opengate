@@ -17,6 +17,14 @@ void DictCheckKey(py::dict &user_info, const std::string &key) {
   FatalKeyError("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
+G4DataVector *VectorToG4DataVector(std::vector<double> data) {
+  G4DataVector *vec = new G4DataVector(); // data.size()
+  for (int i = 0; i < data.size(); i++) {
+    vec->insertAt(i, data[i]);
+  }
+  return vec;
+}
+
 std::vector<std::vector<double>> DictGetVecofVecDouble(py::dict &user_info,
                                                        const std::string &key) {
   DictCheckKey(user_info, key);
