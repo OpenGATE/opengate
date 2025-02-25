@@ -44,8 +44,6 @@ void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
 
   fRBEmodel = DictGetStr(user_info, "model");
   if (fRBEmodel == "LEM1lda") {
-    //     fAreaNucl = DictGetDouble(user_info, "A_nucleus") * CLHEP::um *
-    //     CLHEP::um;
     fDcut = DictGetDouble(user_info, "D_cut");
     multipleScoring = true;
   }

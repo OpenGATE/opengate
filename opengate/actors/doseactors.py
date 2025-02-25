@@ -1461,7 +1461,7 @@ class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
             )
 
         # calculate some internal variables
-        self.fAreaNucl = np.pi * self.r_nucleus**2
+        self.fAreaNucl = (np.pi * self.r_nucleus**2) * g4_units.um * g4_units.um
         alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
         beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
         self.beta_ref = beta_ref
