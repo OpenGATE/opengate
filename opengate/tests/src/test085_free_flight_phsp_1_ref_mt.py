@@ -15,7 +15,7 @@ if __name__ == "__main__":
         sim,
         paths,
         simu_name="ref",
-        ac=5e3,
+        ac=2e4,
         use_spect_head=False,
         use_spect_arf=False,
         use_phsp=True,

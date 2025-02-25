@@ -86,6 +86,8 @@ void GateComptonSplittingFreeFlightOptrActor::BeginOfEventAction(
   threadLocal_t &l = threadLocalData.Get();
   l.fSetOfTrackIDThatDidCompton.clear();
   l.fComptonInteractionCount = 0;
+  l.fCurrentTrackIsFreeFlight = false;
+  // DDD(event->GetEventID());
 }
 
 void GateComptonSplittingFreeFlightOptrActor::StartTracking(
@@ -95,13 +97,15 @@ void GateComptonSplittingFreeFlightOptrActor::StartTracking(
   l.fComptonInteractionCount = 0;
   l.fCurrentTrackIsFreeFlight = false;
   l.fSplitStatsPerThread["nb_tracks"] += 1;
+  // DDD("StartTracking");
+  // DDD(track->GetTrackID());
 
   // It maybe either (1) conventional gamma that we track for Compton
   // or (2) a previous split Compton scatter that we track with free flight
 
   // If no creator process (this is a source event), this is case (1)
   const auto *creator_process = track->GetCreatorProcess();
-  const auto tid = track->GetTrackID();
+  // const auto tid = track->GetTrackID();
   if (creator_process == nullptr)
     return;
 
@@ -110,26 +114,36 @@ void GateComptonSplittingFreeFlightOptrActor::StartTracking(
   bool parent_is_compton = l.fSetOfTrackIDThatDidCompton.find(pid) !=
                            l.fSetOfTrackIDThatDidCompton.end();
 
+  // DDD(parent_is_compton);
   // If this is not a previous split Compton, this is case (1), no free flight
   if (!parent_is_compton)
     return;
 
   // Checking if the process that "create" the gamma was Compton
-  const auto *bp =
-      static_cast<const G4BiasingProcessInterface *>(creator_process);
-  if (IsComptonInteraction(bp)) {
-    // This track is free flight
-    l.fCurrentTrackIsFreeFlight = true;
-    // we need to start the ff with the correct weight
-    l.fFreeFlightOperation->ResetInitialTrackWeight(1.0 / fSplittingFactor);
-    l.fSplitStatsPerThread["nb_tracks_with_free_flight"] += 1;
-  }
+  // const auto *bp =
+  //    dynamic_cast<const G4BiasingProcessInterface *>(creator_process);
+  //// DDD(IsComptonInteraction(bp));
+  /*if (IsComptonInteraction(bp)) {*/
+  // This track is free flight
+  l.fCurrentTrackIsFreeFlight = true;
+  // we need to start the ff with the correct weight
+  // FIXME MUST BE 1 ???
+  // DDD(track->GetWeight());
+  /*if (track->GetWeight() != 1.0 / fSplittingFactor)
+  {
+      DDD(track->GetWeight());
+      DDD(pid);
+  }*/
+  l.fFreeFlightOperation->ResetInitialTrackWeight(1.0 / fSplittingFactor);
+  l.fSplitStatsPerThread["nb_tracks_with_free_flight"] += 1;
+  //}
 }
 
 G4VBiasingOperation *
 GateComptonSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
     const G4Track * /* track */,
     const G4BiasingProcessInterface * /* callingProcess */) {
+  // DDD("ProposeNonPhysicsBiasingOperation");
   return nullptr;
 }
 
@@ -138,6 +152,7 @@ GateComptonSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   // Should we track the particle with free flight or not ?
   const threadLocal_t &l = threadLocalData.Get();
+  // DDD(l.fCurrentTrackIsFreeFlight);
   if (l.fCurrentTrackIsFreeFlight)
     return l.fFreeFlightOperation;
 
@@ -148,6 +163,8 @@ GateComptonSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateComptonSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+  // Go in this function every interaction (not Transportation)
+
   // Check if this is free flight
   threadLocal_t &l = threadLocalData.Get();
   if (l.fCurrentTrackIsFreeFlight)
@@ -155,11 +172,14 @@ GateComptonSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
 
   // Check if this is a Compton
   const auto tid = track->GetTrackID();
+  // DDD(track->GetPosition());
+  // DDD(IsComptonInteraction(callingProcess));
   if (IsComptonInteraction(callingProcess)) {
     // There is a new Compton, split it
-    l.fSetOfTrackIDThatDidCompton.insert(tid);
     l.fComptonInteractionCount++;
+    // DDD(l.fComptonInteractionCount);
     if (l.fComptonInteractionCount <= fMaxComptonLevel) {
+      l.fSetOfTrackIDThatDidCompton.insert(tid); // FIXME check set unique ?
       l.fSplitStatsPerThread["nb_splits"] += 1;
       return l.fComptonSplittingOperation;
     }
@@ -170,9 +190,15 @@ GateComptonSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
 }
 
 void GateComptonSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
+  // Go in this function every step, even Transportation
+
   threadLocal_t &l = threadLocalData.Get();
-  if (l.fCurrentTrackIsFreeFlight)
+  if (l.fCurrentTrackIsFreeFlight) {
+    // DDD(step->GetTrack()->GetWeight());
     return;
+  }
+
+  // DDD(DebugStep(step));
 
   // if not free flight, we kill the gamma if it exits the volume
   // Exiting the volume is tricky : need to check the post point
@@ -224,8 +250,35 @@ bool GateComptonSplittingFreeFlightOptrActor::IsComptonInteraction(
   // We "know" this is a GammaGeneralProcess
   const auto *ggp = static_cast<const G4GammaGeneralProcess *>(wrapped_p);
 
+  /*
+  GetSubProcessName() = compt  GetSubProcessSubType() = 13
+  GetSubProcessName() = Rayl   GetSubProcessSubType() = 11
+  GetSubProcessName() = phot   GetSubProcessSubType() = 12
+
+  Unsure what it is:
+  GetSubProcessName() = GammaGeneralProc  GetSubProcessSubType() = 16
+  */
+
+  // || ggp->GetSubProcessSubType() == 16) ? unsure ? // FIXME ?????????
+  if (ggp->GetSubProcessSubType() == 13 || ggp->GetSubProcessSubType() == 16)
+    return true;
+  return false;
+
+  // DDD(ggp->GetProcessName());
+  // ggp->ProcessDescription(std::cout);
+  // DDD(ggp->GetSubProcessName());
+  // DDD(ggp->GetSubProcessSubType());
+
+  const auto *cp = ggp->GetCreatorProcess();
+  if (cp != nullptr) {
+    // DDD(cp->GetProcessName());
+  }
+
   // We extract the real sub (selected) process
   const auto *proc = ggp->GetSelectedProcess();
+  if (proc != nullptr) {
+    // DDD(proc->GetProcessName());
+  }
   if (proc != nullptr && proc->GetProcessName() == "compt")
     return true;
   return false;

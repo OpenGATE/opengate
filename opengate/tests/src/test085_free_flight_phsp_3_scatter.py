@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from opengate import g4_units
+
 from opengate.tests import utility
 from test085_free_flight_helpers import *
 
@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.number_of_threads = 1
+    sim.number_of_threads = 4
     # sim.visu = True
     ac = 1e3
     source, actors = create_simulation_test085(
@@ -30,18 +30,15 @@ if __name__ == "__main__":
     s = f"/process/em/UseGeneralProcess true"
     sim.g4_commands_before_init.append(s)
 
+    # ff scatter: for this test, this is very inefficient
+    # we only check the potential bias
     ff = sim.add_actor("ComptonSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.splitting_factor = 5  # FIXME warning, bias ?
-    ff.max_compton_level = 10  # FIXME why related to the nb ff ?
-
+    ff.splitting_factor = 5  # FIXME (must have no effect)
+    ff.max_compton_level = 20
     # no AA in this test (of course, this is inefficient)
-    ff.acceptance_angle.skip_policy = "SkipEvents"
     ff.acceptance_angle.intersection_flag = False
-    ff.acceptance_angle.volumes = ["phsp_sphere"]
     ff.acceptance_angle.normal_flag = False
-    ff.acceptance_angle.normal_vector = [0, 0, -1]
-    ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
 
     # go
     sim.run(start_new_process=True)

@@ -29,10 +29,11 @@ if __name__ == "__main__":
     ref_filename = paths.output / "phsp_1_ref.root"
     prim_filename = paths.output / "phsp_1_ff.root"
     sca_filename = paths.output / "phsp_1_ff_sc.root"
-    ref_n = 5e3
-    prim_n = 5e3
+    ref_n = 2e4
+    prim_n = 1e4
     sca_n = 1e3
-    scaling_sc = prim_n / sca_n
+    scaling_sc = ref_n / sca_n
+    scaling_prim = ref_n / prim_n
 
     # energy histo
     branch = "phsp1"
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     ene_ref = ene_ref.arrays(library="numpy")[k]
 
     ene_prim = uproot.open(paths.output / prim_filename)[branch]
-    ene_prim_w = ene_prim.arrays(library="numpy")["Weight"]
+    ene_prim_w = ene_prim.arrays(library="numpy")["Weight"] * scaling_prim
     ene_prim = ene_prim.arrays(library="numpy")[k]
 
     ene_sc = uproot.open(paths.output / sca_filename)[branch]
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     print(f"Number of events, ref    = {len(ene_ref)}")
     print(f"Number of events, prim   = {len(ene_prim)}")
     print(f"Number of events, sc     = {len(ene_sc)}")
+    print(f"scaling_prim             = {scaling_prim}")
     print(f"scaling_sc               = {scaling_sc}")
     print(f"Sum of weights, prim     = {ene_prim_w.sum()}")
     print(f"Sum of weights, sec      = {ene_sc_w.sum()}")
@@ -60,7 +62,7 @@ if __name__ == "__main__":
     tol = 3.0
     is_ok = np.fabs(check1) < tol
     utility.print_test(
-        is_ok, f"diff             p+sec     = {check1:.2f} %     tol={tol:.2f}"
+        is_ok, f"diff p+sec            = {check1:.2f} %     tol={tol:.2f}"
     )
     print(
         f"total rel diff ref-prim  = "
@@ -72,8 +74,8 @@ if __name__ == "__main__":
     )
 
     print()
-    e_threshold = 0.140
-    ene_ref_peak = ene_ref[ene_ref > e_threshold]
+    e_threshold = 0.14051  # 0.140511
+    ene_ref_peak = ene_ref[ene_ref >= e_threshold]
     print(f"Number of peaks ref      = {len(ene_ref_peak)}")
     print(f"Number of peaks prim     = {ene_prim_w.sum()}")
     d = len(ene_ref_peak) - ene_prim_w.sum()

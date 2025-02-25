@@ -21,7 +21,7 @@ def check_process_user_hook(simulation_engine):
     process_list = pm.GetProcessList()
     for i in range(process_list.size()):
         processName = str(process_list[i].GetProcessName())
-        print(processName)
+        print("Checking proces", processName)
 
 
 def create_simulation_test085(
@@ -35,7 +35,6 @@ def create_simulation_test085(
     use_phsp=False,
 ):
     # main options
-    # sim.visu = True  # uncomment to enable visualisation
     sim.visu_type = "qt"
     # sim.visu_type = "vrml"
     sim.random_seed = "auto"
@@ -116,12 +115,8 @@ def create_simulation_test085(
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.set_production_cut("world", "all", 100 * mm)
     sim.physics_manager.set_production_cut("phantom", "all", 1 * mm)
+    # sim.physics_manager.set_production_cut("phantom", "gamma", 0.01 * mm)
     sim.user_hook_after_init = check_process_user_hook
-
-    # Mandatory for this actor ? since gamma processes are encompassed in GammaGeneralProc without.
-    # FIXME no ?
-    # s = f"/process/em/UseGeneralProcess false"
-    # sim.g4_commands_before_init.append(s)
 
     if angle_tolerance is None:
         angle_tolerance = 20 * deg

@@ -145,18 +145,14 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
     # this biased actor works only for GammaGeneralProc
     processes = ["GammaGeneralProc"]
 
+    particles = ["gamma"]
+
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
         g4.GateGammaFreeFlightOptrActor.__init__(self, {"name": self.name})
-        # we need to ensure that the GeneralProcess is used. The 2 next
-        # lines don't work, so we used G4 macro.
-        # g4_em_parameters = g4.G4EmParameters.Instance()
-        # g4_em_parameters.SetGeneralProcessActive(False)
-        s = f"/process/em/UseGeneralProcess true"
-        self.simulation.g4_commands_before_init.append(s)
 
     def initialize(self):
         GenericBiasingActorBase.initialize(self)

@@ -15,24 +15,19 @@ if __name__ == "__main__":
         sim,
         paths,
         simu_name="ff",
-        ac=5e3,
+        ac=1e4,
         use_spect_head=False,
         use_spect_arf=False,
         use_phsp=True,
     )
 
-    # AA
+    # AA, disabled here for the test
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
-
-    # GeneralProcess MUST be true (it is by default)
-    s = f"/process/em/UseGeneralProcess true"
-    # sim.g4_commands_before_init.append(s)
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.particles = "gamma"
 
     # go
     sim.run()

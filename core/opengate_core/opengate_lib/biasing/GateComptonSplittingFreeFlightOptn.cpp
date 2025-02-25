@@ -9,6 +9,7 @@ Copyright (C): OpenGATE Collaboration
 #include "../GateHelpers.h"
 #include "G4BiasingProcessInterface.hh"
 #include "G4EmParameters.hh"
+#include "G4GammaGeneralProcess.hh"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4RunManager.hh"
 
@@ -54,8 +55,19 @@ void GateComptonSplittingFreeFlightOptn::InitializeAAManager(
 G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
+  // DDD("ApplyFinalStateBiasing");
+  // DDD(track->GetWeight());
   const double weight = track->GetWeight() / fSplittingFactor;
   const auto position = step->GetPostStepPoint()->GetPosition();
+  // DDD(position);
+
+  // debug
+  const auto *wrapped_p = callingProcess->GetWrappedProcess();
+  const auto *ggp = static_cast<const G4GammaGeneralProcess *>(wrapped_p);
+  const auto *proc = ggp->GetSelectedProcess();
+  if (proc != nullptr) {
+    // DDD(proc->GetProcessName());
+  }
 
   // This is the initial scattered Gamma
   auto *processFinalStateForGamma =
@@ -67,6 +79,7 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   fParticleChange.ProposeEnergy(fs_fg->GetProposedKineticEnergy());
   fParticleChange.ProposeMomentumDirection(
       fs_fg->GetProposedMomentumDirection());
+  // DDD(fs_fg->GetProposedKineticEnergy());
 
   // Copied from G4: "inform we take care of secondaries weight (otherwise these
   // secondaries are by default given the primary weight)."
@@ -75,7 +88,6 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
   // Loop to split Compton gammas
   fAAManager->StartAcceptLoop();
-  int nb_of_secondaries = 0;
   std::vector<G4Track *> secondary_tracks;
   for (auto i = 0; i < fSplittingFactor; i++) {
     auto *processFinalState =
@@ -91,20 +103,20 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     // Create a new track with another gamma
     const auto energy = fs->GetProposedKineticEnergy();
     auto gammaTrack = new G4Track(*track);
+    // DDD(weight);
     gammaTrack->SetWeight(weight);
     gammaTrack->SetKineticEnergy(energy);
     gammaTrack->SetMomentumDirection(momentum);
     gammaTrack->SetPosition(position);
 
     // consider this gamma as a secondary
-    nb_of_secondaries++;
     secondary_tracks.push_back(gammaTrack);
 
     // FIXME secondaries electrons ? (ignored for now)
   }
 
   // Add secondaries
-  fParticleChange.SetNumberOfSecondaries(nb_of_secondaries);
+  fParticleChange.SetNumberOfSecondaries(secondary_tracks.size());
   for (const auto gammaTrack : secondary_tracks)
     fParticleChange.AddSecondary(gammaTrack);
 
