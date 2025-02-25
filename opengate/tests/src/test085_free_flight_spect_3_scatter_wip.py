@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4  # FIXME
-    ac = 5e4
+    ac = 1e4
     # sim.visu = True
     source, actors = create_simulation_test085(
         sim,
@@ -24,32 +24,41 @@ if __name__ == "__main__":
         use_phsp=False,
     )
 
-    # no AA
+    # no AA for the source
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
     # free flight actor
-    # need to NOT use generalProcess to enable only for Compton ? FIXME NO !
-    # FIXME to change? to automatize ?
-    s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
-
-    ff = sim.add_actor("SplitComptonScatteringActor", "ff")
+    ff = sim.add_actor("ComptonSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
     ff.splitting_factor = 50
     ff.max_compton_level = 10
+    ff.acceptance_angle.skip_policy = "SkipEvents"
+    ff.acceptance_angle.intersection_flag = True
+    ff.acceptance_angle.volumes = [
+        "spect_1"
+    ]  # , "spect_2"]  # FIXME we dont use spect2 ftm
+    ff.acceptance_angle.normal_flag = True
+    ff.acceptance_angle.normal_vector = [0, 0, -1]
+    ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
 
-    ff.skip_policy = "SkipEvents"
-    ff.intersection_flag = True
-    ff.volumes = ["spect_1"]  # , "spect_2"] # FIXME dont use spect2 ftm
-    ff.normal_flag = True
-    ff.normal_vector = [0, 0, -1]
-    ff.normal_tolerance = 10 * g4_units.deg
+    # free flight actor
+    """ff = sim.add_actor("GammaFreeFlightActor", "ffc")
+    ff.attached_to = "spect_1_collimator_trd"
+    """
 
     # go
+    sim.number_of_threads = 1
+    """sim.g4_verbose = True
+    sim.g4_verbose_level = 1
+    sim.g4_commands_after_init.append("/tracking/verbose 2")"""
+
     sim.run()
     stats = sim.get_actor("stats")
     print(stats)
+
+    print()
+    print(ff)
 
     # compare to noFF
     is_ok = True

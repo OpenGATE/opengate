@@ -17,23 +17,29 @@ if __name__ == "__main__":
         sim,
         paths,
         simu_name="ff",
-        ac=5e5,
+        ac=1e6,
         use_spect_head=True,
         use_spect_arf=False,
         use_phsp=False,
     )
 
-    # AA
+    # AA with acceptance angle
     source.direction.acceptance_angle.intersection_flag = True
     source.direction.acceptance_angle.normal_flag = True
 
-    s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
-
     # free flight actor
-    ff = sim.add_actor("FreeFlightActor", "ff")
+    ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.particles = "gamma"
+    # ff.attached_to = "world" # FIXME WRONG ????!!!!
+
+    # FIXME
+    # ff = sim.add_actor("GammaFreeFlightActor", "ffc")
+    # ff.attached_to = "spect_1_collimator_trd"
+
+    """sim.number_of_threads = 1
+    sim.g4_verbose = True
+    sim.g4_verbose_level = 1
+    sim.g4_commands_after_init.append("/tracking/verbose 3")"""
 
     # go
     sim.run()
