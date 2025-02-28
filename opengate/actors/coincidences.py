@@ -229,7 +229,7 @@ def run_coincidence_detection_in_chunk(chunk, time_window):
     # Combine indices1 and indices2 in a two-column NumPy array.
     indices12 = np.vstack((indices1, indices2)).T
     # Sort rows such that index1 is increasing, and for rows with the same
-    # index1 value, index2 is increasing. 
+    # index1 value, index2 is increasing.
     indices12 = indices12[np.lexsort((indices12[:, 1], indices12[:, 0]))]
     # Create dictionaries to create the names of the columns in the coincidences pandas DataFrame.
     rename_dict1 = {name: name + "1" for name in chunk.columns.tolist()}
