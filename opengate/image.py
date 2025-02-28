@@ -299,7 +299,7 @@ def compute_image_3D_CDF(image):
 
 
 def scale_itk_image(img, scale):
-    imgarr = itk.array_view_from_image(img).copy()
+    imgarr = itk.array_from_image(img)
     imgarr = imgarr * scale
     # this is important to use the corrected function to deal with 1D images
     # img2 = itk.image_from_array(imgarr)
