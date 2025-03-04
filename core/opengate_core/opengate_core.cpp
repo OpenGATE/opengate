@@ -364,6 +364,8 @@ void init_GateHitsCollectionActor(py::module &);
 
 void init_GateHitsAdderActor(py::module &);
 
+void init_GateDigitizerPileupActor(py::module &);
+
 void init_GateDigitizerReadoutActor(py::module &m);
 
 void init_GateDigitizerBlurringActor(py::module &m);
@@ -621,6 +623,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDigiAttributeManager(m);
   init_GateVDigiAttribute(m);
   init_GateHitsAdderActor(m);
+  init_GateDigitizerPileupActor(m);
   init_GateDigitizerReadoutActor(m);
   init_GateDigitizerBlurringActor(m);
   init_GateDigitizerEfficiencyActor(m);
