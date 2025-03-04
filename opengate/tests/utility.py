@@ -65,6 +65,35 @@ def read_json_file(filename: Path) -> dict:
         return json.load(f)
 
 
+def write_stats_txt_gate_style(stats, filepath):
+    output = stats.user_output.stats
+    counts = output.merged_data
+    with open(filepath, "w") as f:
+        f.write(
+            f"""
+# NumberOfRun    = {counts.runs}
+# NumberOfEvents = {counts.events}
+# NumberOfTracks = {counts.tracks}
+# NumberOfSteps  = {counts.steps}
+# NumberOfGeometricalSteps  =
+# NumberOfPhysicalSteps     =
+# ElapsedTime           = {counts.duration}
+# ElapsedTimeWoInit     = {counts.duration}
+# StartDate             =
+# EndDate               =
+# StartSimulationTime        = 0
+# StopSimulationTime         = 1
+# CurrentSimulationTime      = 8.99658e-06
+# VirtualStartSimulationTime = 0
+# VirtualStopSimulationTime  = 1
+# ElapsedSimulationTime      = 8.99658e-06
+# PPS (Primary per sec)      = {output.pps}
+# TPS (Track per sec)        = {output.tps}
+# SPS (Step per sec)         = {output.sps}
+                """
+        )
+
+
 def read_stat_file(filename, encoder=None):
     if encoder == "json":
         return read_stat_file_json(filename)
@@ -271,8 +300,8 @@ def plot_img_axis(ax, img, label, axis="z"):
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 1)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -282,8 +311,8 @@ def plot_img_z(ax, img, label):
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -293,8 +322,8 @@ def plot_img_y(ax, img, label):
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 1)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 1)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -463,6 +492,7 @@ def assert_filtered_imagesprofile1D(
     fig_name=None,
     sum_tolerance=5,
     plt_ylim=None,
+    eval_quantity="",
 ):
     # read image and info (size, spacing etc)
     ref_filter_filename1 = ensure_filename_is_str(ref_filter_filename1)
@@ -488,6 +518,7 @@ def assert_filtered_imagesprofile1D(
     L_filter = range(max_ind)
     d1 = data1[L_filter]
     d2 = data2[L_filter]
+    print(d2)
 
     # normalise by event
     if stats is not None:
@@ -519,7 +550,7 @@ def assert_filtered_imagesprofile1D(
     ax[1].plot(xV[:max_ind], (d2 / d1 - 1) * 100, "o", label="test/ref")
     ax[0].set_xlabel("x [mm]")
     ax[1].set_xlabel("x [mm]")
-    ax[0].set_ylabel("LET")
+    ax[0].set_ylabel(f"{eval_quantity}")
     ax[0].set_ylim(
         [np.amin([np.amin(d2), 0]), np.ceil(np.amax([np.amax(d1), np.amax(d2)]) * 1.1)]
     )
