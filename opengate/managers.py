@@ -112,6 +112,7 @@ from .actors.digitizers import (
     DigitizerProjectionActor,
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
+    DigitizerPileupActor,
     PhaseSpaceActor,
 )
 
@@ -152,6 +153,7 @@ actor_types = {
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "DigitizerPileupActor": DigitizerPileupActor,
     # biasing
     "BremSplittingActor": BremSplittingActor,
     "ComptSplittingActor": ComptSplittingActor,
