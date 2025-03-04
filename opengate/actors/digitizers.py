@@ -534,6 +534,59 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
         g4.GateDigitizerBlurringActor.EndSimulationAction(self)
 
 
+class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor):
+    """
+    TODO documentation
+    """
+
+    user_info_defaults = {
+        "attributes": (
+            [],
+            {
+                "doc": "Attributes to be considered. ",
+            },
+        ),
+        "input_digi_collection": (
+            "Singles",
+            {
+                "doc": "Digi collection to be used as input. ",
+            },
+        ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "FIXME",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        DigitizerBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigitizerPileupActor.__init__(self, self.user_info)
+        self.AddActions({"StartSimulationAction", "EndSimulationAction"})
+
+    def initialize(self):
+        DigitizerBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        DigitizerBase.StartSimulationAction(self)
+        g4.GateDigitizerPileupActor.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        g4.GateDigitizerPileupActor.EndSimulationAction(self)
+
+
 class DigitizerSpatialBlurringActor(
     DigitizerWithRootOutput, g4.GateDigitizerSpatialBlurringActor
 ):
@@ -1276,6 +1329,7 @@ process_cls(DigitizerBase)
 process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
 process_cls(DigitizerBlurringActor)
+process_cls(DigitizerPileupActor)
 process_cls(DigitizerSpatialBlurringActor)
 process_cls(DigitizerEfficiencyActor)
 process_cls(DigitizerEnergyWindowsActor)
