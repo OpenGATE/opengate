@@ -9,16 +9,16 @@
 namespace py = pybind11;
 #include "../GateVActor.h"
 #include "G4VBiasingOperator.hh"
-#include "GateComptonSplittingFreeFlightOptrActor.h"
+#include "GateScatterSplittingFreeFlightOptrActor.h"
 
-void init_GateComptonSplittingFreeFlightOptrActor(py::module &m) {
+void init_GateScatterSplittingFreeFlightOptrActor(py::module &m) {
   py::class_<
-      GateComptonSplittingFreeFlightOptrActor, G4VBiasingOperator, GateVActor,
-      std::unique_ptr<GateComptonSplittingFreeFlightOptrActor, py::nodelete>>(
-      m, "GateComptonSplittingFreeFlightOptrActor")
+      GateScatterSplittingFreeFlightOptrActor, G4VBiasingOperator, GateVActor,
+      std::unique_ptr<GateScatterSplittingFreeFlightOptrActor, py::nodelete>>(
+      m, "GateScatterSplittingFreeFlightOptrActor")
       .def(py::init<py::dict &>())
       .def("ConfigureForWorker",
-           &GateComptonSplittingFreeFlightOptrActor::ConfigureForWorker)
+           &GateScatterSplittingFreeFlightOptrActor::ConfigureForWorker)
       .def("GetSplitStats",
-           &GateComptonSplittingFreeFlightOptrActor::GetSplitStats);
+           &GateScatterSplittingFreeFlightOptrActor::GetSplitStats);
 }

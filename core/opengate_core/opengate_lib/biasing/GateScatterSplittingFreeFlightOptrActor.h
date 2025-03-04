@@ -8,18 +8,19 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptrSplitComptonScatteringActor_h
 #define GateOptrSplitComptonScatteringActor_h
 
-#include "G4BOptnForceFreeFlight.hh"
+#include "G4ExceptionHandler.hh"
 #include "G4VBiasingOperator.hh"
-#include "GateComptonSplittingFreeFlightOptn.h"
+#include "GateGammaFreeFlightOptn.h"
+#include "GateScatterSplittingFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
 
 namespace py = pybind11;
 
-class GateComptonSplittingFreeFlightOptrActor : public GateVBiasOptrActor {
+class GateScatterSplittingFreeFlightOptrActor : public GateVBiasOptrActor {
 
 public:
-  explicit GateComptonSplittingFreeFlightOptrActor(py::dict &user_info);
-  ~GateComptonSplittingFreeFlightOptrActor() override;
+  explicit GateScatterSplittingFreeFlightOptrActor(py::dict &user_info);
+  ~GateScatterSplittingFreeFlightOptrActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -31,8 +32,8 @@ public:
 
   std::map<std::string, double> GetSplitStats();
 
-  inline bool
-  IsComptonInteraction(const G4BiasingProcessInterface *callingProcess) const;
+  inline int
+  IsScatterInteraction(const G4BiasingProcessInterface *callingProcess) const;
 
 protected:
   G4VBiasingOperation *
@@ -48,9 +49,9 @@ protected:
       const G4BiasingProcessInterface *callingProcess) override;
 
   struct threadLocal_t {
-    G4BOptnForceFreeFlight *fFreeFlightOperation = nullptr;
-    GateComptonSplittingFreeFlightOptn *fComptonSplittingOperation = nullptr;
-    std::set<int> fSetOfTrackIDThatDidCompton;
+    GateGammaFreeFlightOptn *fFreeFlightOperation = nullptr;
+    GateScatterSplittingFreeFlightOptn *fComptonSplittingOperation = nullptr;
+    GateScatterSplittingFreeFlightOptn *fRayleighSplittingOperation = nullptr;
     int fComptonInteractionCount;
     std::map<std::string, double> fSplitStatsPerThread;
     bool fCurrentTrackIsFreeFlight;
@@ -59,7 +60,8 @@ protected:
 
   std::map<std::string, double> fSplitStats;
 
-  int fSplittingFactor;
+  int fComptonSplittingFactor;
+  int fRayleighSplittingFactor;
   int fMaxComptonLevel;
 };
 

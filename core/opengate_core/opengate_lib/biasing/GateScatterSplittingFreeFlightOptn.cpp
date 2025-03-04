@@ -5,7 +5,7 @@ Copyright (C): OpenGATE Collaboration
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateComptonSplittingFreeFlightOptn.h"
+#include "GateScatterSplittingFreeFlightOptn.h"
 #include "../GateHelpers.h"
 #include "G4BiasingProcessInterface.hh"
 #include "G4EmParameters.hh"
@@ -13,61 +13,51 @@ Copyright (C): OpenGATE Collaboration
 #include "G4ParticleChangeForGamma.hh"
 #include "G4RunManager.hh"
 
-GateComptonSplittingFreeFlightOptn::GateComptonSplittingFreeFlightOptn(
+GateScatterSplittingFreeFlightOptn::GateScatterSplittingFreeFlightOptn(
     const G4String &name)
     : G4VBiasingOperation(name), fSplittingFactor(1) {
   fAAManager = nullptr;
 }
 
 const G4VBiasingInteractionLaw *
-GateComptonSplittingFreeFlightOptn::ProvideOccurenceBiasingInteractionLaw(
+GateScatterSplittingFreeFlightOptn::ProvideOccurenceBiasingInteractionLaw(
     const G4BiasingProcessInterface *, G4ForceCondition &) {
   return nullptr;
 }
 
-G4double GateComptonSplittingFreeFlightOptn::DistanceToApplyOperation(
+G4double GateScatterSplittingFreeFlightOptn::DistanceToApplyOperation(
     const G4Track *, G4double, G4ForceCondition *) {
   return DBL_MAX;
 }
 
 G4VParticleChange *
-GateComptonSplittingFreeFlightOptn::GenerateBiasingFinalState(const G4Track *,
+GateScatterSplittingFreeFlightOptn::GenerateBiasingFinalState(const G4Track *,
                                                               const G4Step *) {
   return nullptr;
 }
 
-void GateComptonSplittingFreeFlightOptn::SetSplittingFactor(
+void GateScatterSplittingFreeFlightOptn::SetSplittingFactor(
     const G4int splittingFactor) {
   fSplittingFactor = splittingFactor;
 }
 
-void GateComptonSplittingFreeFlightOptn::InitializeAAManager(
+void GateScatterSplittingFreeFlightOptn::InitializeAAManager(
     const py::dict &user_info) {
   fAAManager = new GateAcceptanceAngleTesterManager();
   fAAManager->Initialize(user_info, true);
 
   if (G4EmParameters::Instance()->GeneralProcessActive() == false) {
     Fatal("GeneralGammaProcess is not active. This is needed for "
-          "ComptonSplittingFreeFlight");
+          "ScatterSplittingFreeFlight");
   }
 }
 
-G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
+G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
-  // DDD("ApplyFinalStateBiasing");
-  // DDD(track->GetWeight());
+
   const double weight = track->GetWeight() / fSplittingFactor;
   const auto position = step->GetPostStepPoint()->GetPosition();
-  // DDD(position);
-
-  // debug
-  const auto *wrapped_p = callingProcess->GetWrappedProcess();
-  const auto *ggp = static_cast<const G4GammaGeneralProcess *>(wrapped_p);
-  const auto *proc = ggp->GetSelectedProcess();
-  if (proc != nullptr) {
-    // DDD(proc->GetProcessName());
-  }
 
   // This is the initial scattered Gamma
   auto *processFinalStateForGamma =
@@ -79,10 +69,10 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   fParticleChange.ProposeEnergy(fs_fg->GetProposedKineticEnergy());
   fParticleChange.ProposeMomentumDirection(
       fs_fg->GetProposedMomentumDirection());
-  // DDD(fs_fg->GetProposedKineticEnergy());
 
   // Copied from G4: "inform we take care of secondaries weight (otherwise these
   // secondaries are by default given the primary weight)."
+  // (However, does not seem to change anything here ?)
   fParticleChange.SetSecondaryWeightByProcess(true);
   fParticleChange.SetParentWeightByProcess(true);
 
@@ -103,7 +93,6 @@ G4VParticleChange *GateComptonSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     // Create a new track with another gamma
     const auto energy = fs->GetProposedKineticEnergy();
     auto gammaTrack = new G4Track(*track);
-    // DDD(weight);
     gammaTrack->SetWeight(weight);
     gammaTrack->SetKineticEnergy(energy);
     gammaTrack->SetMomentumDirection(momentum);
