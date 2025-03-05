@@ -23,7 +23,8 @@ import torch
 import SimpleITK as sitk
 import numpy as np
 
-def rotation_image_to_pytomo_coordinate(np_image, spacing = None, size = None):
+
+def rotation_image_to_pytomo_coordinate(np_image, spacing=None, size=None):
     """
     Rotate image from ITK coordinate system to pytomography coordinate system (z,x,y) -> (x,y,z)
 
@@ -40,7 +41,7 @@ def rotation_image_to_pytomo_coordinate(np_image, spacing = None, size = None):
         The rotated spacing in the format [spacing_x, spacing_y, spacing_z].
     """
     if spacing is not None and size is not None:
-        rotated_image = np.transpose(np_image,axes=(1, 2, 0))
+        rotated_image = np.transpose(np_image, axes=(1, 2, 0))
         rotated_spacing = np.array([spacing[1], spacing[2], spacing[0]])
         rotated_size = np.array([size[1], size[2], size[0]])
         return rotated_image, rotated_spacing, rotated_size
@@ -48,7 +49,8 @@ def rotation_image_to_pytomo_coordinate(np_image, spacing = None, size = None):
         rotated_image = np.transpose(np_image, axes=(1, 2, 0))
         return rotated_image
 
-def rotation_pytomo_to_image_coordinate(np_image, spacing = None, size = None):
+
+def rotation_pytomo_to_image_coordinate(np_image, spacing=None, size=None):
     """
     Rotate image from pytomography coordinate system to ITK coordinate system (x,y,z) -> (z,x,y)
 
@@ -57,7 +59,7 @@ def rotation_pytomo_to_image_coordinate(np_image, spacing = None, size = None):
         Input image in numpy array format.
     spacing : np.array default=None
         Spacing of the image in the format [spacing_x, spacing_y, spacing_z].
-    
+
     Returns:
     np.array
         The rotated image in numpy array format.
@@ -65,15 +67,16 @@ def rotation_pytomo_to_image_coordinate(np_image, spacing = None, size = None):
         The rotated spacing in the format [spacing_z, spacing_x, spacing_y].
     """
     if spacing is not None and size is not None:
-        rotated_image = np.transpose(np_image, axes=(2,0,1))
+        rotated_image = np.transpose(np_image, axes=(2, 0, 1))
         rotated_spacing = np.array([spacing[2], spacing[0], spacing[1]])
         rotated_size = np.array([size[2], size[0], size[1]])
         return rotated_image, rotated_spacing, rotated_size
     else:
-        rotated_image = np.transpose(np_image, axes=(2,0,1))
+        rotated_image = np.transpose(np_image, axes=(2, 0, 1))
         return rotated_image
 
-def rotation_sinogram_to_pytomo_coordinate(np_sinogram, spacing = None, size = None):
+
+def rotation_sinogram_to_pytomo_coordinate(np_sinogram, spacing=None, size=None):
     """
     Rotate sinogram from ITK coordinate system to pytomography coordinate system (angles,z,x) -> (angles,x,z)
 
@@ -98,7 +101,8 @@ def rotation_sinogram_to_pytomo_coordinate(np_sinogram, spacing = None, size = N
         rotated_sinogram = np.transpose(np_sinogram, axes=(0, 2, 1))
         return rotated_sinogram
 
-def rotation_pytomo_to_sinogram_coordinate(np_sinogram, spacing = None, size = None):
+
+def rotation_pytomo_to_sinogram_coordinate(np_sinogram, spacing=None, size=None):
     """
     Rotate sinogram from pytomography coordinate system to ITK coordinate system (angles,x,z) -> (angles,z,x)
 
@@ -107,7 +111,7 @@ def rotation_pytomo_to_sinogram_coordinate(np_sinogram, spacing = None, size = N
         Input sinogram in numpy array format.
     spacing : np.array default=None
         Spacing of the sinogram in the format [spacing_x, spacing_z].
-    
+
     Returns:
     np.array
         The rotated sinogram in numpy array format.
@@ -166,10 +170,14 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
 
     # convert sinogram to torch
     arr = sitk.GetArrayFromImage(sinogram)
-    arr, proj_spacing, proj_size = rotation_sinogram_to_pytomo_coordinate(arr, proj_spacing_itk, proj_size_itk)
+    arr, proj_spacing, proj_size = rotation_sinogram_to_pytomo_coordinate(
+        arr, proj_spacing_itk, proj_size_itk
+    )
     projections = torch.tensor(arr).to(pytomography.device)
 
-    _, spacing, size = rotation_image_to_pytomo_coordinate(np.zeros(size_itk), spacing=spacing_itk, size=size_itk)
+    _, spacing, size = rotation_image_to_pytomo_coordinate(
+        np.zeros(size_itk), spacing=spacing_itk, size=size_itk
+    )
 
     # set pytomography metadata
     object_meta = SPECTObjectMeta(list(spacing), list(size))
@@ -199,7 +207,7 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
             else:
                 img = att_filename
             arr = (
-                sitk.GetArrayFromImage(img).astype(np.float32)/10
+                sitk.GetArrayFromImage(img).astype(np.float32) / 10
             )  # need cm-1 -> ???? FIXME
 
             arr = rotation_image_to_pytomo_coordinate(arr)
@@ -239,7 +247,9 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
 
     # build the final sitk image
     reconstructed_object_arr = reconstructed_object.cpu().numpy()
-    reconstructed_object_arr = rotation_pytomo_to_image_coordinate(reconstructed_object_arr)
+    reconstructed_object_arr = rotation_pytomo_to_image_coordinate(
+        reconstructed_object_arr
+    )
     reconstructed_object_sitk = sitk.GetImageFromArray(reconstructed_object_arr)
     reconstructed_object_sitk.SetSpacing(spacing_itk)
     origin = -(size * spacing_itk) / 2.0 + spacing_itk / 2.0
