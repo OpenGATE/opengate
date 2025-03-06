@@ -10,7 +10,7 @@ from opengate.tests import utility
 import uproot
 from opengate.actors.coincidences import (
     coincidences_sorter,
-    #copy_tree_for_dump,
+    # copy_tree_for_dump,
 )
 
 # colors (similar to the ones of Gate)
@@ -28,13 +28,13 @@ if __name__ == "__main__":
 
     # options
     # warning the visualisation is slow !
-    sim.visu = False #True
+    sim.visu = False  # True
     sim.visu_type = "vrml"
     sim.random_seed = "auto"
     sim.number_of_threads = 1
-    
+
     sim.store_json_archive = True
-    sim.json_archive_filename = paths.output /"simulation_test0XX_castor.json"
+    sim.json_archive_filename = paths.output / "simulation_test0XX_castor.json"
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # if create_mat:
     #    create_material(sim)
 
-    # create the material 
+    # create the material
     sim.volume_manager.material_database.add_material_weights(
         "LYSO",
         ["Lu", "Y", "Si", "O"],
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     pet = sim.add_volume("Tubs", "pet")
     pet.rmax = 95 * mm
     pet.rmin = 65 * mm
-    pet.dz = 20 * mm 
+    pet.dz = 20 * mm
     pet.color = gray
     pet.material = "G4_AIR"
 
@@ -88,41 +88,43 @@ if __name__ == "__main__":
 
     block.material = "G4_AIR"
     block.color = white
-    
+
     # Unit
     unit = sim.add_volume("Box", "unit")
     unit.mother = block.name
     unit.size = [20 * mm, 10 * mm, 10 * mm]
     unit.material = "G4_AIR"
     # 2x2 crystals
-    unit.translation = gate.geometry.utility.get_grid_repetition([1, 1, 4], [0 * mm ,0 * mm, 10 * mm]) 
+    unit.translation = gate.geometry.utility.get_grid_repetition(
+        [1, 1, 4], [0 * mm, 0 * mm, 10 * mm]
+    )
     unit.color = blue
 
-    
-    #Crystal
+    # Crystal
     crystal = sim.add_volume("Box", "crystal")
     crystal.mother = unit.name
     crystal.size = [20 * mm, 5 * mm, 5 * mm]
     crystal.material = "LYSO"
-    # 4rings 
-    crystal.translation = gate.geometry.utility.get_grid_repetition([1, 2, 2], [0 * mm ,5 * mm, 5 * mm]) 
+    # 4rings
+    crystal.translation = gate.geometry.utility.get_grid_repetition(
+        [1, 2, 2], [0 * mm, 5 * mm, 5 * mm]
+    )
     crystal.color = red
-    
 
     source = sim.add_source("GenericSource", "b2b")
     source.particle = "back_to_back"
-    source.activity =  200000000 * Bq  # 2000000 * Bq
+    source.activity = 200000000 * Bq  # 2000000 * Bq
     source.position.type = "cylinder"
     source.position.radius = 60 * mm
-    source.position.dz = 40 * mm /2
+    source.position.dz = 40 * mm / 2
     source.position.translation = [0 * cm, 0 * cm, 0 * cm]
     # source.direction.type = "iso"
     # source.direction.accolinearity_flag = False
     source.energy.mono = 511 * keV
     source.direction.theta = [80 * deg, 110 * deg]
     source.direction.phi = [0, 360 * deg]
-    #source.color = red
- 
+    # source.color = red
+
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     # sim.physics_manager.enable_decay = True
@@ -158,10 +160,9 @@ if __name__ == "__main__":
     # go
     sim.run()
 
-
     # open root file
     root_filename = sc.output_filename
-    
+
     # this test need output/test072/output_singles.root
     if not os.path.exists(root_filename):
         # ignore on windows
@@ -207,8 +208,7 @@ if __name__ == "__main__":
     # WARNING root version >= 5.2.2 needed
     output_file = uproot.recreate(paths.output / f"output_coincidences.root")
     output_file["coincidences"] = coincidences
-    #output_file["singles"] = copy_tree_for_dump(singles_tree)
-    
+    # output_file["singles"] = copy_tree_for_dump(singles_tree)
 
     # end
     """print(f"Output statistics are in {stats.output}")
@@ -216,9 +216,9 @@ if __name__ == "__main__":
     print(f"vv {ct.image} --fusion {dose.output}")
     stats = sim.output.get_actor("Stats")
     print(stats)"""
-    
-    is_ok = True #(
-    # test here 
-    #)
+
+    is_ok = True  # (
+    # test here
+    # )
 
     utility.test_ok(is_ok)
