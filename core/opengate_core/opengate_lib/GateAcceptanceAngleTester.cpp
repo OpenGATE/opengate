@@ -52,9 +52,9 @@ void GateAcceptanceAngleTester::UpdateTransform() {
 bool GateAcceptanceAngleTester::TestIfAccept(
     const G4ThreeVector &position,
     const G4ThreeVector &momentum_direction) const {
-  const auto localPosition = fAATransform.TransformPoint(position);
   const auto localDirection = (*fAARotation) * (momentum_direction);
   if (fIntersectionFlag) {
+    const auto localPosition = fAATransform.TransformPoint(position);
     auto dist = fAASolid->DistanceToIn(localPosition, localDirection);
     if (dist == kInfinity)
       return false;
