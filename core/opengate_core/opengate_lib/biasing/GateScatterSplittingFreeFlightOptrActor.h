@@ -8,9 +8,8 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptrSplitComptonScatteringActor_h
 #define GateOptrSplitComptonScatteringActor_h
 
-#include "G4ExceptionHandler.hh"
+#include "G4BOptnForceFreeFlight.hh"
 #include "G4VBiasingOperator.hh"
-#include "GateGammaFreeFlightOptn.h"
 #include "GateScatterSplittingFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
 
@@ -26,11 +25,15 @@ public:
 
   void BeginOfRunAction(const G4Run *run) override;
   void BeginOfEventAction(const G4Event *) override;
+
   void StartTracking(const G4Track *) override;
   void SteppingAction(G4Step *) override;
   void EndOfSimulationWorkerAction(const G4Run *) override;
 
-  std::map<std::string, double> GetSplitStats();
+  std::map<std::string, double> GetBiasInformation();
+
+  inline int IsScatterInteractionGeneralProcess(
+      const G4BiasingProcessInterface *callingProcess) const;
 
   inline int
   IsScatterInteraction(const G4BiasingProcessInterface *callingProcess) const;
@@ -49,16 +52,17 @@ protected:
       const G4BiasingProcessInterface *callingProcess) override;
 
   struct threadLocal_t {
-    GateGammaFreeFlightOptn *fFreeFlightOperation = nullptr;
+    G4BOptnForceFreeFlight *fFreeFlightOperation = nullptr;
     GateScatterSplittingFreeFlightOptn *fComptonSplittingOperation = nullptr;
     GateScatterSplittingFreeFlightOptn *fRayleighSplittingOperation = nullptr;
     int fComptonInteractionCount;
-    std::map<std::string, double> fSplitStatsPerThread;
+    std::map<std::string, double> fBiasInformationPerThread;
     bool fCurrentTrackIsFreeFlight;
+    bool fAlreadyExit;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
-  std::map<std::string, double> fSplitStats;
+  std::map<std::string, double> fBiasInformation;
 
   int fComptonSplittingFactor;
   int fRayleighSplittingFactor;

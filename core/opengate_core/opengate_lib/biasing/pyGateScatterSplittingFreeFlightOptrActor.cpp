@@ -19,6 +19,6 @@ void init_GateScatterSplittingFreeFlightOptrActor(py::module &m) {
       .def(py::init<py::dict &>())
       .def("ConfigureForWorker",
            &GateScatterSplittingFreeFlightOptrActor::ConfigureForWorker)
-      .def("GetSplitStats",
-           &GateScatterSplittingFreeFlightOptrActor::GetSplitStats);
+      .def("GetBiasInformation",
+           &GateScatterSplittingFreeFlightOptrActor::GetBiasInformation);
 }

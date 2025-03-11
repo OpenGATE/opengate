@@ -25,7 +25,6 @@ public:
   void InitializeCpp() override;
   void InitializeUserInfo(py::dict &user_info) override;
   void StartTracking(const G4Track *) override;
-  void SteppingAction(G4Step *step) override;
 
 protected:
   G4VBiasingOperation *
@@ -42,6 +41,7 @@ protected:
 
   struct threadLocal_t {
     G4BOptnForceFreeFlight *fFreeFlightOperation;
+
     bool fIsFirstTime;
   };
   G4Cache<threadLocal_t> threadLocalData;

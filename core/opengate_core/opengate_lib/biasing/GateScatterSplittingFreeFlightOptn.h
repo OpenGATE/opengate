@@ -10,13 +10,14 @@ Copyright (C): OpenGATE Collaboration
 
 #include "../GateAcceptanceAngleTesterManager.h"
 #include "../GateHelpers.h"
-#include "G4BiasingAppliedCase.hh"
+#include "../GateUserTrackInformation.h"
 #include "G4ParticleChange.hh"
 #include "G4VBiasingOperation.hh"
 
 class GateScatterSplittingFreeFlightOptn : public G4VBiasingOperation {
 public:
-  explicit GateScatterSplittingFreeFlightOptn(const G4String &name);
+  explicit GateScatterSplittingFreeFlightOptn(const G4String &name,
+                                              double *nbTracks);
 
   const G4VBiasingInteractionLaw *
   ProvideOccurenceBiasingInteractionLaw(const G4BiasingProcessInterface *,
@@ -36,6 +37,9 @@ public:
   G4int fSplittingFactor;
   G4ParticleChange fParticleChange;
   GateAcceptanceAngleTesterManager *fAAManager;
+  double *fNbTracks;
+  static constexpr int cScatterSplittingFreeFlightType = 666;
+  GateUserTrackInformation *fUserTrackInformation;
 };
 
 #endif
