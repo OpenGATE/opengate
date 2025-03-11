@@ -388,6 +388,120 @@ def create_mass_img(ct_itk, hu_density_file, overrides=dict()):
     return mass
 
 
+class IsotopeBuilder:
+    """
+    A description of a G4Isotope that can be build.
+    """
+
+    def __init__(self, material_database):
+        self.type = "isotope"
+        self.name = None
+        self.Z = None
+        self.N = None
+        self.A = None
+        self.material_database = material_database
+
+    def __repr__(self):
+        u = g4_units.g_mole
+        s = f"({self.type}) {self.name} Z={self.Z} N={self.N} A={self.A / u} g/mole"
+        return s
+
+    def read(self, line):
+        self.type = "element"
+        s = line.split(":")
+        # name
+        self.name = s[0]
+        s = s[1].strip()
+        s = s.split(";")
+        # Z
+        self.Z = int(read_tag(s[0], "Z"))
+        # N
+        self.N = int(read_tag(s[1], "N"))
+        # A with units
+        self.A = read_tag_with_unit(s[2], "A")
+
+    def build(self):
+        m = g4.G4Isotope(self.name, self.Z, self.N, self.A)
+        return m
+
+
+class IsotopicElementBuilder:
+    """
+    A description of an element created from isotopes, that will can be built on demand.
+    An element is described by a list of components that can be isotopes or sub-elements.
+    """
+
+    def __init__(self, material_database):
+        self.type = "element"
+        self.name = None
+        self.symbol = None
+        self.n = None
+        self.components = {}
+        self.material_database = material_database
+
+    def __repr__(self):
+        s = f"({self.type}) {self.name} {self.n} {self.components}"
+        return s
+
+    def read(self, f, line):
+        # read the name
+        s = line.split(":")
+        if len(s) != 2:
+            fatal(
+                f"Error line {line}, expecting an element name follow by a colon ':'."
+            )
+        name = s[0]
+        self.name = name
+
+        # reading n and symbol
+        s = s[1].split(";")
+        if len(s) != 2:
+            fatal(f"Error while parsing element {self.name}, line {line}")
+
+        # nb of components
+        self.n = int(read_tag(s[0], "n"))
+
+        # symbol
+        self.symbol = read_tag(s[1], "S")
+
+        # elements
+        for e in range(self.n):
+            line = read_next_line(f)
+            if line.startswith("+iso"):
+                e = self.read_one_isotope(line)
+                self.components[e.name] = e
+
+    def read_one_isotope(self, line):
+        # skip the initial +iso
+        s = line.split("+iso:")
+        s = re.split("[;,]", s[1])
+        if len(s) != 2:
+            fatal(f"Error while reading the line: {line} \n" f'Expected "name=" ; "f="')
+        # read the name
+        elname = read_tag(s[0], "name")
+        if elname == "auto":
+            elname = self.name
+        if not elname:
+            fatal(
+                f"Error reading line {line} \n during the elements of material {self.name}"
+            )
+        # read f or n, put the other one to 'None'
+        f = float(read_tag(s[1], "f"))
+        e = Box({"name": elname, "f": f, "type": "isotope"})
+        return e
+
+    def build(self):
+        m = g4.G4Element(self.name, self.symbol, self.n)
+        # add all components
+        for iso in self.components.values():
+            self.add_iso_to_element(m, iso)
+        return m
+
+    def add_iso_to_element(self, elem, iso):
+        b = self.material_database.FindOrBuildIsotope(iso.name)
+        elem.AddIsotope(b, iso.f)
+
+
 class ElementBuilder:
     """
     A description of a G4Element that can be build.
@@ -422,7 +536,6 @@ class ElementBuilder:
 
     def build(self):
         m = g4.G4Element(self.name, self.symbol, self.Zeff, self.Aeff)
-        # FIXME alternative with Build an element from isotopes via AddIsotope ?
         return m
 
 
@@ -670,6 +783,9 @@ class MaterialDatabase:
             return
         # check if the current section change
         w = line.split()[0]
+        if w == "[Isotopes]":
+            self.current_section = "isotope"
+            return
         if w == "[Elements]":
             self.current_section = "element"
             return
@@ -680,11 +796,21 @@ class MaterialDatabase:
             fatal(
                 f"Error while reading the file {self.current_filename}, "
                 f"current section is {self.current_section}. "
-                f"File must start with [Elements] or [Materials]"
+                f"File must start with [Isotopes], [Elements] or [Materials]"
             )
-        if self.current_section == "element":
-            b = ElementBuilder(self)
+        if self.current_section == "isotope":
+            b = IsotopeBuilder(self)
             b.read(line)
+            self.isotope_builders[b.name] = b
+            self.isotope_builders_by_filename[self.current_filename][b.name] = b
+        if self.current_section == "element":
+            b = None
+            if "Z=" in line:
+                b = ElementBuilder(self)
+                b.read(line)
+            if "n=" in line:
+                b = IsotopicElementBuilder(self)
+                b.read(f, line)
             self.element_builders[b.name] = b
             self.element_builders_by_filename[self.current_filename][b.name] = b
         if self.current_section == "material":
