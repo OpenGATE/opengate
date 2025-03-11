@@ -41,6 +41,15 @@ namespace py = pybind11;
 #include "G4EmStandardPhysics_option4.hh"
 
 #include "G4EmDNAPhysics.hh"
+#include "G4EmDNAPhysics_option1.hh"
+#include "G4EmDNAPhysics_option2.hh"
+#include "G4EmDNAPhysics_option3.hh"
+#include "G4EmDNAPhysics_option4.hh"
+#include "G4EmDNAPhysics_option5.hh"
+#include "G4EmDNAPhysics_option6.hh"
+#include "G4EmDNAPhysics_option7.hh"
+#include "G4EmDNAPhysics_option8.hh"
+
 #include "G4EmLivermorePhysics.hh"
 #include "G4EmLivermorePolarizedPhysics.hh"
 #include "G4EmLowEPPhysics.hh"
@@ -166,8 +175,17 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmLivermorePolarizedPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4EmPenelopePhysics)
-  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4OpticalPhysics)
+
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option1)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option2)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option3)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option4)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option5)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option6)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option7)
+  ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option8)
 
   ADD_PHYSICS_CONSTRUCTOR(G4DecayPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4RadioactiveDecayPhysics)
