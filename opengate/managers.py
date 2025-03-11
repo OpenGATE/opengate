@@ -489,6 +489,7 @@ class PhysicsListManager(GateObject):
         "G4EmLivermorePolarizedPhysics",
         "G4EmPenelopePhysics",
         "G4EmDNAPhysics",
+        *[f"G4EmDNAPhysics_option{i}" for i in range(1, 8)],
         "G4OpticalPhysics",
     ]
 
@@ -499,6 +500,30 @@ class PhysicsListManager(GateObject):
     )
     special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
     special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
+    special_physics_constructor_classes["G4EmDNAPhysics_option1"] = (
+        g4.G4EmDNAPhysics_option1
+    )
+    special_physics_constructor_classes["G4EmDNAPhysics_option2"] = (
+        g4.G4EmDNAPhysics_option2
+    )
+    special_physics_constructor_classes["G4EmDNAPhysics_option3"] = (
+        g4.G4EmDNAPhysics_option3
+    )
+    special_physics_constructor_classes["G4EmDNAPhysics_option4"] = (
+        g4.G4EmDNAPhysics_option4
+    )
+    special_physics_constructor_classes["G4EmDNAPhysics_option5"] = (
+        g4.G4EmDNAPhysics_option5
+    )
+    special_physics_constructor_classes["G4EmDNAPhysics_option6"] = (
+        g4.G4EmDNAPhysics_option6
+    )
+    special_physics_constructor_classes["G4EmDNAPhysics_option7"] = (
+        g4.G4EmDNAPhysics_option7
+    )
+    special_physics_constructor_classes["G4EmDNAPhysics_option8"] = (
+        g4.G4EmDNAPhysics_option8
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
