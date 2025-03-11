@@ -11,7 +11,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     sim.number_of_threads = 4
     # sim.visu = True
-    ac = 1e3
+    ac = 2e3
     source, actors = create_simulation_test085(
         sim,
         paths,
@@ -30,13 +30,18 @@ if __name__ == "__main__":
     s = f"/process/em/UseGeneralProcess true"
     sim.g4_commands_before_init.append(s)
 
+    # GeneralProcess must *NOT* be true (it is by default)
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
+
     # ff scatter: for this test, this is very inefficient
     # we only check the potential bias
-    ff = sim.add_actor("ComptonSplittingFreeFlightActor", "ff")
+    ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.splitting_factor = 5  # FIXME (must have no effect)
-    ff.max_compton_level = 20
-    # no AA in this test (of course, this is inefficient)
+    ff.compton_splitting_factor = 4  # the value must have no effect
+    ff.rayleigh_splitting_factor = 4  # the value must have no effect
+    ff.max_compton_level = 1000  # count everything
+    # no AA in this test (no need because the phsp covers 4 pi)
     ff.acceptance_angle.intersection_flag = False
     ff.acceptance_angle.normal_flag = False
 

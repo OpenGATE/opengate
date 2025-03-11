@@ -15,11 +15,15 @@ if __name__ == "__main__":
         sim,
         paths,
         simu_name="ref",
-        ac=2e4,
+        ac=5e4,
         use_spect_head=False,
         use_spect_arf=False,
         use_phsp=True,
     )
+
+    # GeneralProcess must *NOT* be true (it is by default)
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
 
     # no AA for reference
     source.direction.acceptance_angle.intersection_flag = False

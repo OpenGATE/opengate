@@ -21,7 +21,11 @@ if __name__ == "__main__":
         use_phsp=True,
     )
 
-    # AA, disabled here for the test
+    # GeneralProcess must *NOT* be true (it is by default)
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
+
+    # AA, disabled here for the test (no need because the phsp covers 4 pi)
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 

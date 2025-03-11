@@ -21,7 +21,7 @@ def check_process_user_hook(simulation_engine):
     process_list = pm.GetProcessList()
     for i in range(process_list.size()):
         processName = str(process_list[i].GetProcessName())
-        print("Checking proces", processName)
+        print("Checking process", processName)
 
 
 def create_simulation_test085(
@@ -43,7 +43,7 @@ def create_simulation_test085(
     sim.store_json_archive = True
     sim.store_input_files = False
     sim.json_archive_filename = f"simu_{simu_name}.json"
-    sim.random_seed = "auto"  # 321654789
+    sim.random_seed = "auto"
     data_folder = Path(paths.data) / "test085"
 
     # units
@@ -63,12 +63,11 @@ def create_simulation_test085(
     if sim.visu:
         sim.number_of_threads = 1
         activity = 1000 * BqmL / sim.number_of_threads
-        activity = 200 * BqmL / sim.number_of_threads
+        activity = 0.2 * BqmL / sim.number_of_threads
 
     # world
     world = sim.world
     world.size = [2 * m, 2 * m, 2 * m]
-    # world.material = "G4_AIR"
     world.material = "G4_Galactic"
 
     # check option
@@ -92,11 +91,10 @@ def create_simulation_test085(
         actors, heads = add_phsp(
             sim, simu_name, radius, size, spacing, use_parallel_world=use_spect_head
         )
-
-    # IEC voxelization
-    # voxelize_iec_phantom -o data/iec_1mm.mhd --spacing 1 --output_source data/iec_1mm_activity.mhd -a 1 1 1 1 1 1
-    # voxelize_iec_phantom -o data/iec_4.42mm.mhd --spacing 4.42 --output_source data/iec_4.42mm_activity.mhd -a 1 1 1 1 1 1
-    # voxelize_iec_phantom -o data/iec_4mm.mhd --spacing 4 --output_source data/iec_4mm_activity.mhd -a 1 1 1 1 1 1
+        # IEC voxelization
+        # voxelize_iec_phantom -o data/iec_1mm.mhd --spacing 1 --output_source data/iec_1mm_activity.mhd -a 1 1 1 1 1 1
+        # voxelize_iec_phantom -o data/iec_4.42mm.mhd --spacing 4.42 --output_source data/iec_4.42mm_activity.mhd -a 1 1 1 1 1 1
+        # voxelize_iec_phantom -o data/iec_4mm.mhd --spacing 4 --output_source data/iec_4mm_activity.mhd -a 1 1 1 1 1 1
 
     # phantom
     if not sim.visu:
@@ -113,7 +111,7 @@ def create_simulation_test085(
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
-    sim.physics_manager.set_production_cut("world", "all", 100 * mm)
+    sim.physics_manager.set_production_cut("world", "all", 100 * m)
     sim.physics_manager.set_production_cut("phantom", "all", 1 * mm)
     # sim.physics_manager.set_production_cut("phantom", "gamma", 0.01 * mm)
     sim.user_hook_after_init = check_process_user_hook
@@ -128,7 +126,6 @@ def create_simulation_test085(
     source.position.translation = [0, 35 * mm, 0]
     set_source_energy_spectrum(source, "tc99m", "radar")
     source.particle = "gamma"
-    # source.direction.acceptance_angle.volumes = [h.name for h in det_planes]
     if len(heads) == 2:
         source.direction.acceptance_angle.volumes = [h.name for h in heads]
         source.direction.acceptance_angle.skip_policy = "SkipEvents"
@@ -142,6 +139,7 @@ def create_simulation_test085(
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
+    stats.track_types_flag = True
     stats.output_filename = f"stats_{simu_name}.txt"
 
     # set the gantry orientation
@@ -180,10 +178,14 @@ def add_spect_heads(sim, simu_name, radius):
         sim, crystals[1].name, "digit2", spectrum_channel=False
     )
 
+    # we need the weights for the digitizer
     hits1 = digit1.find_module("hits")
     hits1.attributes.append("Weight")
+    hits1.attributes.append("TrackID")
+
     hits2 = digit2.find_module("hits")
     hits2.attributes.append("Weight")
+    hits2.attributes.append("TrackID")
 
     proj1 = digit1.find_module("projection")
     proj1.output_filename = f"projection_1_{simu_name}.mhd"
@@ -191,23 +193,34 @@ def add_spect_heads(sim, simu_name, radius):
     proj2.output_filename = f"projection_2_{simu_name}.mhd"
     projs = [proj1, proj2]
 
-    sim.physics_manager.set_production_cut(crystals[0].name, "all", 2 * mm)
-    sim.physics_manager.set_production_cut(crystals[1].name, "all", 2 * mm)
+    # sim.physics_manager.set_production_cut(crystals[0].name, "all", 2 * mm)
+    # sim.physics_manager.set_production_cut(crystals[1].name, "all", 2 * mm)
+    sim.physics_manager.set_production_cut("spect_1", "all", 2 * mm)
+    sim.physics_manager.set_production_cut("spect_2", "all", 2 * mm)
 
     return projs, heads
 
 
-def add_phsp(sim, simu_name, radius, size, spacing, use_parallel_world):
+def add_phsp(sim, simu_name, radius, size, spacing, use_parallel_world, sph_rad=None):
 
     phsp_sphere = sim.add_volume("Sphere", "phsp_sphere")
-    phsp_sphere.rmax = 30 * gate.g4_units.cm
+    if sph_rad is None:
+        phsp_sphere.rmax = 30 * gate.g4_units.cm
+    else:
+        phsp_sphere.rmax = sph_rad
     phsp_sphere.rmin = phsp_sphere.rmax - 2 * gate.g4_units.mm
     phsp_sphere.color = [1, 0, 0, 1]
 
-    phsp1 = sim.add_actor("PhaseSpaceActor", "phsp1")
+    phsp1 = sim.add_actor("PhaseSpaceActor", "phsp_sphere")
     phsp1.attached_to = phsp_sphere
     phsp1.attributes = ["KineticEnergy", "PrePositionLocal", "Weight"]
-    phsp1.output_filename = f"phsp_1_{simu_name}.root"
+    phsp1.output_filename = f"phsp_sphere_{simu_name}.root"
+
+    # gamma only
+    fe = sim.add_filter("ParticleFilter", "fe")
+    fe.particle = "gamma"
+    fe.policy = "accept"
+    phsp1.filters.append(fe)
 
     phsps = [phsp1]
     planes = [phsp_sphere]
