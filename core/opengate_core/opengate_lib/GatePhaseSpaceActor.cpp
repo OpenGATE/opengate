@@ -108,7 +108,7 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << "New track "
               << track->GetParticleDefinition()->GetParticleName()
-              << " eid=" << id << std::endl;
+              << track->GetTrackID() << " eid=" << id << std::endl;
   }
 }
 
@@ -143,7 +143,8 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   l.fFirstStepInVolume = false;
 
   // Keep or ignore ?
-  bool ok = entering && fStoreEnteringStep;
+  bool ok = fStoreAllSteps;
+  ok = ok || entering && fStoreEnteringStep;
   ok = ok || (exiting && fStoreExitingStep);
   ok = ok || (first_step_in_volume && fStoreFirstStepInVolume);
   if (!ok)
@@ -169,7 +170,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
       pname = p->GetProcessName();
     std::cout << GetName() << " "
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
-              << " hits=" << fHits->GetSize() << " [" << entering << " "
+              << /*" hits=" << fHits->GetSize() <<*/ " [" << entering << " "
               << exiting << " " << first_step_in_volume << "]"
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name
