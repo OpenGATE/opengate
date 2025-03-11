@@ -339,6 +339,7 @@ def assert_images(
     sad_profile_tolerance=None,
     img_threshold=0,
     test_sad=True,
+    slice_id=None,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -351,6 +352,17 @@ def assert_images(
     is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
+    if slice_id is not None:
+        print(slice_id, itk.GetArrayViewFromImage(img1).shape)
+        data1 = itk.GetArrayFromImage(img1)[slice_id]
+        data2 = itk.GetArrayFromImage(img2)[slice_id]
+        data1 = np.expand_dims(data1, axis=0)
+        data2 = np.expand_dims(data2, axis=0)
+        print(slice_id, data1.shape)
+        img1 = itk.GetImageFromArray(data1)
+        img2 = itk.GetImageFromArray(data2)
+        print(slice_id, itk.GetArrayViewFromImage(img1).shape)
+
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
