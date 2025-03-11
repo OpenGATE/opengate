@@ -94,7 +94,9 @@ void GateDigitizerHitsCollectionActor::SteppingAction(G4Step *step) {
         G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     const std::string x =
         step->GetTotalEnergyDeposit() > 0 ? "" : " (not stored edep=0) ";
-    std::cout << GetName() << " " << id << x << " " << s << std::endl;
+    std::cout << GetName() << " ev=" << id
+              << " track=" << step->GetTrack()->GetTrackID() << " " << x << " "
+              << s << std::endl;
     // nb transportation
     auto post = step->GetPostStepPoint();
     auto process = post->GetProcessDefinedStep();

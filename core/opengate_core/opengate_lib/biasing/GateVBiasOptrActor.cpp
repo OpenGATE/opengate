@@ -32,8 +32,8 @@ void GateVBiasOptrActor::ConfigureForWorker() {
 }
 
 void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
-  // This is needed in the MT mode (only), otherwise, StartTracking is not
-  // called
+  // WARNING this is needed in the MT mode (only),
+  // otherwise, StartTracking is not called
   if (G4Threading::IsMultithreadedApplication()) {
     StartTracking(track);
   }
