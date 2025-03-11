@@ -490,6 +490,8 @@ class PhysicsListManager(GateObject):
         "G4EmPenelopePhysics",
         "G4EmDNAPhysics",
         *[f"G4EmDNAPhysics_option{i}" for i in range(1, 8)],
+        "G4EmDNAChemistry",
+        *[f"G4EmDNAChemistry_option{i}" for i in range(1, 3)],
         "G4OpticalPhysics",
     ]
 
@@ -523,6 +525,17 @@ class PhysicsListManager(GateObject):
     )
     special_physics_constructor_classes["G4EmDNAPhysics_option8"] = (
         g4.G4EmDNAPhysics_option8
+    )
+
+    special_physics_constructor_classes["G4EmDNAChemistry"] = g4.G4EmDNAChemistry
+    special_physics_constructor_classes["G4EmDNAChemistry_option1"] = (
+        g4.G4EmDNAChemistry_option1
+    )
+    special_physics_constructor_classes["G4EmDNAChemistry_option2"] = (
+        g4.G4EmDNAChemistry_option2
+    )
+    special_physics_constructor_classes["G4EmDNAChemistry_option3"] = (
+        g4.G4EmDNAChemistry_option3
     )
 
     def __init__(self, *args, **kwargs):

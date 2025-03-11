@@ -50,6 +50,11 @@ namespace py = pybind11;
 #include "G4EmDNAPhysics_option7.hh"
 #include "G4EmDNAPhysics_option8.hh"
 
+#include "G4EmDNAChemistry.hh"
+#include "G4EmDNAChemistry_option1.hh"
+#include "G4EmDNAChemistry_option2.hh"
+#include "G4EmDNAChemistry_option3.hh"
+
 #include "G4EmLivermorePhysics.hh"
 #include "G4EmLivermorePolarizedPhysics.hh"
 #include "G4EmLowEPPhysics.hh"
@@ -64,6 +69,8 @@ namespace py = pybind11;
 #include "G4VModularPhysicsList.hh"
 #include "G4VPhysicsConstructor.hh"
 #include "G4VUserPhysicsList.hh"
+
+#include "chemistryadaptator.h"
 
 // macro for adding physics lists: no parameter
 // #define ADD_PHYSICS_LIST0(m, plname) \
@@ -87,6 +94,13 @@ namespace py = pybind11;
 #define ADD_PHYSICS_CONSTRUCTOR(plname)                                        \
   py::class_<plname, G4VPhysicsConstructor,                                    \
              std::unique_ptr<plname, py::nodelete>>(m, #plname)                \
+      .def(py::init<G4int>());
+
+// copied from ADD_PHYSICS_CONSTRUCTOR, adapted to chemistry
+#define ADD_CHEMISTRY_CONSTRUCTOR(clname)                                      \
+  py::class_<ChemistryAdaptator<clname>, G4VPhysicsConstructor,                \
+             std::unique_ptr<ChemistryAdaptator<clname>, py::nodelete>>(       \
+      m, #clname)                                                              \
       .def(py::init<G4int>());
 
 // FIXME ? A bit different for the biasing classe which do not take as argument
@@ -186,6 +200,11 @@ void init_G4PhysicsLists(py::module &m) {
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option6)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option7)
   ADD_PHYSICS_CONSTRUCTOR(G4EmDNAPhysics_option8)
+
+  ADD_CHEMISTRY_CONSTRUCTOR(G4EmDNAChemistry)
+  ADD_CHEMISTRY_CONSTRUCTOR(G4EmDNAChemistry_option1)
+  ADD_CHEMISTRY_CONSTRUCTOR(G4EmDNAChemistry_option2)
+  ADD_CHEMISTRY_CONSTRUCTOR(G4EmDNAChemistry_option3)
 
   ADD_PHYSICS_CONSTRUCTOR(G4DecayPhysics)
   ADD_PHYSICS_CONSTRUCTOR(G4RadioactiveDecayPhysics)
