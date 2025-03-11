@@ -95,7 +95,7 @@ from .actors.biasingactors import (
     GenericBiasingActorBase,
     BremsstrahlungSplittingActor,
     GammaFreeFlightActor,
-    ComptonSplittingFreeFlightActor,
+    ScatterSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -145,7 +145,7 @@ actor_types = {
     # biasing
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,
-    "ComptonSplittingFreeFlightActor": ComptonSplittingFreeFlightActor,
+    "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
 }
 
 
