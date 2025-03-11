@@ -89,6 +89,9 @@ protected:
     G4ThreeVector *pos;
     GateUniqueVolumeID::Pointer *volID;
     double *time;
+    // FIXME
+    double *weight;
+    int *track_id;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

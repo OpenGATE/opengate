@@ -17,11 +17,16 @@ if __name__ == "__main__":
         sim,
         paths,
         simu_name="ff",
-        ac=1e6,
+        ac=5e5,
         use_spect_head=True,
         use_spect_arf=False,
         use_phsp=False,
+        angle_tolerance=20 * gate.g4_units.deg,
     )
+
+    # GeneralProcess must *NOT* be true (it is by default)
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
 
     # AA with acceptance angle
     source.direction.acceptance_angle.intersection_flag = True
@@ -30,7 +35,6 @@ if __name__ == "__main__":
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    # ff.attached_to = "world" # FIXME WRONG ????!!!!
 
     # FIXME
     # ff = sim.add_actor("GammaFreeFlightActor", "ffc")

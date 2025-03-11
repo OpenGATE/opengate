@@ -11,17 +11,21 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.number_of_threads = 4
-    # sim.visu = True
+    sim.number_of_threads = 8
+    # im.visu = True
     source, actors = create_simulation_test085(
         sim,
         paths,
         simu_name="ref",
-        ac=5e6,
+        ac=2e6,
         use_spect_head=True,
         use_spect_arf=False,
         use_phsp=False,
     )
+
+    # GeneralProcess must *NOT* be true (it is by default)
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
 
     # no AA for reference
     source.direction.acceptance_angle.intersection_flag = False

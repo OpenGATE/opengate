@@ -11,8 +11,8 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.number_of_threads = 4  # FIXME
-    ac = 1e4
+    sim.number_of_threads = 8  # FIXME
+    ac = 5e4
     # sim.visu = True
     source, actors = create_simulation_test085(
         sim,
@@ -28,32 +28,41 @@ if __name__ == "__main__":
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
+    # GeneralProcess must *NOT* be true (it is by default)
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
+
     # free flight actor
-    ff = sim.add_actor("ComptonSplittingFreeFlightActor", "ff")
+    ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.splitting_factor = 50
-    ff.max_compton_level = 10
-    ff.acceptance_angle.skip_policy = "SkipEvents"
+    ff.compton_splitting_factor = 20
+    ff.rayleigh_splitting_factor = 0
+    ff.max_compton_level = 10000
+    ff.acceptance_angle.skip_policy = "SkipEvents"  # FIXME, unused
+    # FIXME  not really useful because of normal
     ff.acceptance_angle.intersection_flag = True
+    # FIXME we dont use spect2 ftm
     ff.acceptance_angle.volumes = [
         "spect_1"
-    ]  # , "spect_2"]  # FIXME we dont use spect2 ftm
+    ]  # , "spect_2"] # FIXME check volume exists before
     ff.acceptance_angle.normal_flag = True
     ff.acceptance_angle.normal_vector = [0, 0, -1]
-    ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
+    ff.acceptance_angle.normal_tolerance = 20 * g4_units.deg
 
     # free flight actor
-    """ff = sim.add_actor("GammaFreeFlightActor", "ffc")
-    ff.attached_to = "spect_1_collimator_trd"
-    """
+    # ffc = sim.add_actor("GammaFreeFlightActor", "ffc")
+    # ffc.attached_to = "spect_1_collimator_trd"
+    # ffc.attached_to = "spect_1"
+    # """
 
     # go
-    sim.number_of_threads = 1
-    """sim.g4_verbose = True
+    #
+    """sim.number_of_threads = 1
+    sim.g4_verbose = True
     sim.g4_verbose_level = 1
     sim.g4_commands_after_init.append("/tracking/verbose 2")"""
 
-    sim.run()
+    sim.run()  # start_new_process=True)  # FIXME seg fault ifFalse ?
     stats = sim.get_actor("stats")
     print(stats)
 

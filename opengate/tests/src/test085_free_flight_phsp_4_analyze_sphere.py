@@ -22,7 +22,7 @@ if __name__ == "__main__":
         )
     if not os.path.isfile(paths.output / "phsp_sphere_ff_sc.root"):
         subprocess.call(
-            ["python", paths.current / "test085_free_flight_phsp_3_scatter.py"]
+            ["python", paths.current / "test085_free_flight_phsp_3_scatter_mt.py"]
         )
 
     # read root output
