@@ -1025,7 +1025,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
         }
         self.lookup_table = None
         self._extend_table_to_zero_and_inft = True
-        # self.max_val_table = None  # store normalization value
         self.multiple_scoring = False
         self.__initcpp__()
 
@@ -1186,11 +1185,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
                     v_table[i].append(np.finfo(np.float32).max)
                     v_table[i + 1].append(v_table[i + 1][-1])
 
-        # # normalize table values
-        # self.max_val_table = max([max(v_table[i]) for i in range(2, len(v_table), 3)])
-        # for i in range(2, len(v_table), 3):
-        #     v_table[i] = [v / self.max_val_table for v in v_table[i]]
-
         self.lookup_table = v_table
 
     def check_table(self, v_table, fragments):
@@ -1251,7 +1245,6 @@ class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
 
     def EndSimulationAction(self):
         g4.GateBeamQualityActor.EndSimulationAction(self)
-
         VoxelDepositActor.EndSimulationAction(self)
 
     def compute_dose_from_edep_img(self, overrides=dict()):
