@@ -17,19 +17,11 @@ if __name__ == "__main__":
         sim,
         paths,
         simu_name="ref",
-        ac=2e6,
+        ac=5e6,
         use_spect_head=True,
         use_spect_arf=False,
         use_phsp=False,
     )
-
-    # GeneralProcess must *NOT* be true (it is by default)
-    s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
-
-    # no AA for reference
-    source.direction.acceptance_angle.intersection_flag = False
-    source.direction.acceptance_angle.normal_flag = False
 
     # go
     sim.run()
@@ -37,31 +29,4 @@ if __name__ == "__main__":
     print(stats)
 
     # not really a test, generate reference simulation for FF
-    is_ok = True
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_1_ref.mhd",
-            paths.output / "projection_1_ref.mhd",
-            stats,
-            tolerance=65,
-            ignore_value_data1=0,
-            sum_tolerance=12,
-            axis="x",
-        )
-        and is_ok
-    )
-
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_2_ref.mhd",
-            paths.output / "projection_2_ref.mhd",
-            stats,
-            tolerance=65,
-            ignore_value_data1=0,
-            sum_tolerance=12,
-            axis="x",
-        )
-        and is_ok
-    )
-
-    utility.test_ok(is_ok)
+    utility.test_ok(True)

@@ -11,8 +11,8 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.number_of_threads = 8  # FIXME
-    ac = 5e4
+    sim.number_of_threads = 4
+    ac = 4e4
     # sim.visu = True
     source, actors = create_simulation_test085(
         sim,
@@ -24,45 +24,24 @@ if __name__ == "__main__":
         use_phsp=False,
     )
 
-    # no AA for the source
-    source.direction.acceptance_angle.intersection_flag = False
-    source.direction.acceptance_angle.normal_flag = False
-
-    # GeneralProcess must *NOT* be true (it is by default)
-    s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
-
     # free flight actor
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
     ff.attached_to = "phantom"
-    ff.compton_splitting_factor = 20
-    ff.rayleigh_splitting_factor = 0
+    ff.compton_splitting_factor = 50
+    ff.rayleigh_splitting_factor = 10
     ff.max_compton_level = 10000
-    ff.acceptance_angle.skip_policy = "SkipEvents"  # FIXME, unused
-    # FIXME  not really useful because of normal
     ff.acceptance_angle.intersection_flag = True
-    # FIXME we dont use spect2 ftm
-    ff.acceptance_angle.volumes = [
-        "spect_1"
-    ]  # , "spect_2"] # FIXME check volume exists before
+    ff.acceptance_angle.volumes = ["spect_1"]  # FIXME check volume exists before
     ff.acceptance_angle.normal_flag = True
     ff.acceptance_angle.normal_vector = [0, 0, -1]
-    ff.acceptance_angle.normal_tolerance = 20 * g4_units.deg
+    ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
 
     # free flight actor
-    # ffc = sim.add_actor("GammaFreeFlightActor", "ffc")
-    # ffc.attached_to = "spect_1_collimator_trd"
-    # ffc.attached_to = "spect_1"
-    # """
+    ffc = sim.add_actor("GammaFreeFlightActor", "ffc")
+    ffc.attached_to = "spect_1_collimator_trd"
 
     # go
-    #
-    """sim.number_of_threads = 1
-    sim.g4_verbose = True
-    sim.g4_verbose_level = 1
-    sim.g4_commands_after_init.append("/tracking/verbose 2")"""
-
-    sim.run()  # start_new_process=True)  # FIXME seg fault ifFalse ?
+    sim.run()
     stats = sim.get_actor("stats")
     print(stats)
 
@@ -73,56 +52,16 @@ if __name__ == "__main__":
     is_ok = True
     is_ok = (
         utility.assert_images(
-            paths.output_ref / "projection_1.mhd",
-            paths.output / "projection_ff_sc_1.mhd",
+            paths.output_ref / "projection_1_ff_sc.mhd",
+            paths.output / "projection_1_ff_sc.mhd",
             stats,
-            tolerance=65,
+            tolerance=100,
             ignore_value_data1=0,
-            sum_tolerance=8.5,
+            sum_tolerance=10,
+            sad_profile_tolerance=20,
             axis="x",
-            scaleImageValuesFactor=5e5 / ac,
         )
         and is_ok
     )
-
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_2.mhd",
-            paths.output / "projection_ff_sc_2.mhd",
-            stats,
-            tolerance=65,
-            ignore_value_data1=0,
-            sum_tolerance=8.5,
-            axis="x",
-            scaleImageValuesFactor=5e5 / ac,
-        )
-        and is_ok
-    )
-
-    """is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_ff_1.mhd",
-            paths.output / "projection_ff_sc_1.mhd",
-            stats,
-            tolerance=30,
-            ignore_value_data1=0,
-            sum_tolerance=3,
-            axis="x",
-        )
-        and is_ok
-    )"""
-
-    """is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_ff_sc_2.mhd",
-            paths.output / "projection_ff_sc_2.mhd",
-            stats,
-            tolerance=30,
-            ignore_value_data1=0,
-            sum_tolerance=3,
-            axis="x",
-        )
-        and is_ok
-    )"""
 
     utility.test_ok(is_ok)

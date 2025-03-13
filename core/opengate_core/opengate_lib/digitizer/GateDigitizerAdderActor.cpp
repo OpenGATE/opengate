@@ -18,6 +18,7 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
   fPolicy = AdderPolicy::EnergyWinnerPosition;
   fTimeDifferenceFlag = false;
   fNumberOfHitsFlag = false;
+  fWeightsAreUsedFlag = false;
 }
 
 GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;
@@ -112,9 +113,13 @@ void GateDigitizerAdderActor::DigitInitialize(
   lr.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
   lr.fInputIter.TrackAttribute("GlobalTime", &l.time);
 
-  // FIXME => check it exists !
-  lr.fInputIter.TrackAttribute("Weight", &l.weight);
-  lr.fInputIter.TrackAttribute("TrackID", &l.track_id);
+  // Weights ? In that case, we consider to group for tracks with the exact same
+  // weights
+  if (fInputDigiCollection->IsDigiAttributeExists("Weight")) {
+    lr.fInputIter.TrackAttribute("Weight", &l.weight);
+    fWeightsAreUsedFlag = true;
+  }
+  DDD(fWeightsAreUsedFlag);
 }
 
 void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
@@ -122,37 +127,13 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
   iter.GoToBegin();
-
-  // debug
-  int i = 0;
-  std::vector<double> weights;
-  std::vector<int> tracks;
-  auto &l = fThreadLocalData.Get();
-
   while (!iter.IsAtEnd()) {
     AddDigiPerVolume();
-    // FIXME AddDigiPerVolumeAndWeight ?
-    // weights.push_back(*l.weight);
-    // tracks.push_back(*l.track_id);// fixme seg fault ???
     iter++;
-    i++;
-  }
-  if (i > 100) {
-    // FIXME DEBUG
-    DDD(event->GetEventID());
-    DDD(i);
-    DDDV(weights);
-    DDDV(tracks);
   }
 
   // create the output hits collection for grouped hits
-  // auto &l = fThreadLocalData.Get();
-  // FIXME DEBUG
-  if (l.fMapOfDigiInVolume.size() > 1) {
-    for (auto &h : l.fMapOfDigiInVolume) {
-      DDD(h.first);
-    }
-  }
+  auto &l = fThreadLocalData.Get();
   for (auto &h : l.fMapOfDigiInVolume) {
     const auto &hit = h.second;
     // terminate the merge
@@ -182,11 +163,14 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
   if (*l.edep == 0)
     return;
   // uid is only used for repeated volume (such as in PET)
-  // FIXME
-  // weight: if it is not the same, come from 2 different tracks with VRT
+  // weight: if it is not the same, it means the hits come from 2 different
+  // tracks with VRT, so we separate them.
   const auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
-  const auto wid = uid + std::to_string(*l.weight);
-  // DDD(wid);
+  std::string wid;
+  if (fWeightsAreUsedFlag)
+    wid = uid + std::to_string(*l.weight);
+  else
+    wid = uid;
   if (l.fMapOfDigiInVolume.count(wid) == 0) {
     l.fMapOfDigiInVolume[wid] = new GateDigiAdderInVolume(
         fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);

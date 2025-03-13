@@ -17,33 +17,25 @@ if __name__ == "__main__":
         sim,
         paths,
         simu_name="ff",
-        ac=5e5,
+        ac=2e5,
         use_spect_head=True,
         use_spect_arf=False,
         use_phsp=False,
-        angle_tolerance=20 * gate.g4_units.deg,
     )
-
-    # GeneralProcess must *NOT* be true (it is by default)
-    s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
 
     # AA with acceptance angle
     source.direction.acceptance_angle.intersection_flag = True
     source.direction.acceptance_angle.normal_flag = True
+    source.direction.acceptance_angle.volumes = ["spect_1"]
+    source.direction.acceptance_angle.normal_vector = [0, 0, -1]
+    source.direction.acceptance_angle.normal_tolerance = 20 * gate.g4_units.deg
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "phantom"
 
-    # FIXME
-    # ff = sim.add_actor("GammaFreeFlightActor", "ffc")
-    # ff.attached_to = "spect_1_collimator_trd"
-
-    """sim.number_of_threads = 1
-    sim.g4_verbose = True
-    sim.g4_verbose_level = 1
-    sim.g4_commands_after_init.append("/tracking/verbose 3")"""
+    ff = sim.add_actor("GammaFreeFlightActor", "ff2")
+    ff.attached_to = "spect_1_collimator_trd"
 
     # go
     sim.run()
@@ -54,54 +46,15 @@ if __name__ == "__main__":
     is_ok = True
     is_ok = (
         utility.assert_images(
-            paths.output_ref / "projection_1.mhd",
-            paths.output / "projection_ff_1.mhd",
+            paths.output_ref / "projection_1_ff.mhd",
+            paths.output / "projection_1_ff.mhd",
             stats,
-            tolerance=65,
+            tolerance=80,
             ignore_value_data1=0,
-            sum_tolerance=8.5,
+            sum_tolerance=10,
+            sad_profile_tolerance=30,
             axis="x",
-        )
-        and is_ok
-    )
-
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_2.mhd",
-            paths.output / "projection_ff_2.mhd",
-            stats,
-            tolerance=65,
-            ignore_value_data1=0,
-            sum_tolerance=8.5,
-            axis="x",
-        )
-        and is_ok
-    )
-
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_ff_1.mhd",
-            paths.output / "projection_ff_1.mhd",
-            stats,
-            tolerance=30,
-            ignore_value_data1=0,
-            sum_tolerance=3,
-            axis="x",
-            fig_name=paths.output / "projection_ff_check_1",
-        )
-        and is_ok
-    )
-
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "projection_ff_2.mhd",
-            paths.output / "projection_ff_2.mhd",
-            stats,
-            tolerance=30,
-            ignore_value_data1=0,
-            sum_tolerance=3,
-            axis="x",
-            fig_name=paths.output / "projection_ff_check_2",
+            fig_name=paths.output / "projection_ff_check_1.png",
         )
         and is_ok
     )

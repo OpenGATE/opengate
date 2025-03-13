@@ -68,6 +68,7 @@ protected:
   AdderPolicy fPolicy;
   bool fTimeDifferenceFlag;
   bool fNumberOfHitsFlag;
+  bool fWeightsAreUsedFlag;
 
   GateVDigiAttribute *fOutputEdepAttribute{};
   GateVDigiAttribute *fOutputPosAttribute{};
