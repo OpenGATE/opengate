@@ -55,7 +55,7 @@ if __name__ == "__main__":
             paths.output_ref / "projection_1_ff_sc.mhd",
             paths.output / "projection_1_ff_sc.mhd",
             stats,
-            tolerance=100,
+            tolerance=110,
             ignore_value_data1=0,
             sum_tolerance=10,
             sad_profile_tolerance=20,

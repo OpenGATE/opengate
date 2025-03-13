@@ -119,7 +119,6 @@ void GateDigitizerAdderActor::DigitInitialize(
     lr.fInputIter.TrackAttribute("Weight", &l.weight);
     fWeightsAreUsedFlag = true;
   }
-  DDD(fWeightsAreUsedFlag);
 }
 
 void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {

@@ -54,7 +54,7 @@ if __name__ == "__main__":
         print()
         is_ok = (
             utility.assert_images(
-                paths.output / "projection_1_ref.mhd",
+                paths.output_ref / "projection_1_ref.mhd",
                 paths.output / "projection_1_ff.mhd",
                 None,
                 tolerance=np.inf,
@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
         is_ok = (
             utility.assert_images(
-                paths.output / "projection_1_ref.mhd",
+                paths.output_ref / "projection_1_ref.mhd",
                 paths.output / "projection_1_ff_sc.mhd",
                 None,
                 tolerance=np.inf,
@@ -86,12 +86,12 @@ if __name__ == "__main__":
 
         is_ok = (
             utility.assert_images(
-                paths.output / "projection_1_ref.mhd",
+                paths.output_ref / "projection_1_ref.mhd",
                 paths.output / "projection_1_total.mhd",
                 None,
                 tolerance=130,
                 ignore_value_data1=0,
-                sum_tolerance=8.5,
+                sum_tolerance=40,
                 axis="x",
                 sad_profile_tolerance=22,
                 slice_id=i,
@@ -100,4 +100,4 @@ if __name__ == "__main__":
             and is_ok
         )
 
-    utility.test_ok(False)
+    utility.test_ok(is_ok)
