@@ -21,14 +21,6 @@ if __name__ == "__main__":
         use_phsp=True,
     )
 
-    # GeneralProcess must *NOT* be true (it is by default)
-    s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
-
-    # AA, disabled here for the test (no need because the phsp covers 4 pi)
-    source.direction.acceptance_angle.intersection_flag = False
-    source.direction.acceptance_angle.normal_flag = False
-
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "phantom"
@@ -40,10 +32,10 @@ if __name__ == "__main__":
 
     # compare histo
     is_ok = utility.compare_root3(
-        paths.output_ref / "phsp_1_ff.root",
-        paths.output / "phsp_1_ff.root",
-        "phsp1",
-        "phsp1",
+        paths.output_ref / "phsp_sphere_ff.root",
+        paths.output / "phsp_sphere_ff.root",
+        "phsp_sphere",
+        "phsp_sphere",
         keys1=None,
         keys2=None,
         tols=[0.01, 0.7, 1.4, 1.4, 0.01],

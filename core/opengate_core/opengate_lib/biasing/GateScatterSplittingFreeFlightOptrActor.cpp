@@ -8,12 +8,11 @@ Copyright (C): OpenGATE Collaboration
 #include "GateScatterSplittingFreeFlightOptrActor.h"
 #include "../GateHelpersDict.h"
 #include "../GateHelpersImage.h"
-#include "GateScatterSplittingFreeFlightOptn.h"
-
 #include "G4BiasingProcessInterface.hh"
 #include "G4GammaGeneralProcess.hh"
 #include "G4ProcessManager.hh"
 #include "G4RunManager.hh"
+#include "GateScatterSplittingFreeFlightOptn.h"
 
 G4Mutex StatMutex = G4MUTEX_INITIALIZER;
 
@@ -54,7 +53,7 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
 
   // Create the FF operation
   threadLocal_t &l = threadLocalData.Get();
-  l.fFreeFlightOperation = new G4BOptnForceFreeFlight("FreeFlightOperation");
+  l.fFreeFlightOperation = new GateGammaFreeFlightOptn("FreeFlightOperation");
 
   // Create the Compton splitting operation
   l.fComptonSplittingOperation = new GateScatterSplittingFreeFlightOptn(
@@ -109,7 +108,6 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
   l.fComptonInteractionCount = 0;
   l.fCurrentTrackIsFreeFlight = false;
   l.fBiasInformationPerThread["nb_tracks"] += 1;
-  l.fAlreadyExit = false;
 
   // test if this track was created with GateScatterSplittingFreeFlightOptn
   // If no userinfo, this is not the case
@@ -170,9 +168,8 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   // FIXME check energy ?
   const int sc = IsScatterInteraction(callingProcess);
   // This is a Compton, we split it
-  if (sc == 13 &&
-      fComptonSplittingFactor >
-          0) { // fixme check compton in Operation to set track status
+  if (sc == 13 && fComptonSplittingFactor > 0) {
+    // Fixme check compton in Operation to set track status
     l.fComptonInteractionCount++;
     if (l.fComptonInteractionCount <= fMaxComptonLevel) {
       l.fBiasInformationPerThread["nb_compt_splits"] += 1;
@@ -186,10 +183,7 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   }
 
   // This is not a Compton nor Rayl
-  // return nullptr;// FIXME ????
   return callingProcess->GetCurrentFinalStateBiasingOperation();
-  // return callingProcess->GetCurrentOccurenceBiasingOperation(); //FIXME this
-  // is important ? NO
 }
 
 void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
@@ -198,8 +192,6 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
 
   // Check if this is free flight
   if (l.fCurrentTrackIsFreeFlight) {
-    // if (IsStepExitVolume(step))
-    //   l.fCurrentTrackIsFreeFlight = false;
     return;
   }
 
@@ -216,8 +208,8 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   // (cannot be done during ProposeFinalStateBiasingOperation)
   if (l.fComptonInteractionCount > fMaxComptonLevel) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
-    l.fBiasInformationPerThread["nb_killed_gammas_compton_level"] +=
-        1; // FIXME Rayl after Compt ?
+    l.fBiasInformationPerThread["nb_killed_gammas_compton_level"] += 1;
+    // FIXME Rayl after Compt ?
     return;
   }
 
@@ -270,8 +262,7 @@ int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
   GetSubProcessName() = GammaGeneralProc  GetSubProcessSubType() = 16
   */
 
-  if (ggp->GetSubProcessSubType() == 13 || ggp->GetSubProcessSubType() == 11 ||
-      ggp->GetSubProcessSubType() == 16)
+  if (ggp->GetSubProcessSubType() == 13 || ggp->GetSubProcessSubType() == 11)
     return ggp->GetSubProcessSubType();
   return 0;
 }

@@ -70,6 +70,10 @@ def create_simulation_test085(
     world.size = [2 * m, 2 * m, 2 * m]
     world.material = "G4_Galactic"
 
+    # GeneralProcess must *NOT* be true (it is by default)
+    s = f"/process/em/UseGeneralProcess false"
+    sim.g4_commands_before_init.append(s)
+
     # check option
     if use_spect_head and use_spect_arf:
         raise Exception("Cannot use both spect heads and ARFs.")
@@ -126,13 +130,6 @@ def create_simulation_test085(
     source.position.translation = [0, 35 * mm, 0]
     set_source_energy_spectrum(source, "tc99m", "radar")
     source.particle = "gamma"
-    if len(heads) == 2:
-        source.direction.acceptance_angle.volumes = [h.name for h in heads]
-        source.direction.acceptance_angle.skip_policy = "SkipEvents"
-        source.direction.acceptance_angle.intersection_flag = True
-        source.direction.acceptance_angle.normal_flag = True
-        source.direction.acceptance_angle.normal_vector = [0, 0, -1]
-        source.direction.acceptance_angle.normal_tolerance = angle_tolerance
     _, volumes = nemaiec.get_default_sphere_centers_and_volumes()
     source.activity = activity * np.array(volumes).sum()
     print(f"Total activity is {source.activity / Bq}")

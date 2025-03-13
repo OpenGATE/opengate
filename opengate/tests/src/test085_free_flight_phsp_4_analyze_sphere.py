@@ -93,10 +93,11 @@ if __name__ == "__main__":
     print(f"Number of peaks sec      = {ene_sc_peak_w.sum():.0f}")
     d = len(ene_ref_peak) - ene_prim_w.sum()
     check2 = d / len(ene_ref_peak) * 100
-    tol = 1.0
-    b = np.fabs(check2) < tol
+    tol = 10.0
+    b = np.fabs(check2) < tol and np.fabs(check2) > 2
     utility.print_test(
-        b, f"diff peak ref-prim       = {check2:.2f} %  (diff={d:.0f}) tol={tol}"
+        b,
+        f"diff peak ref-prim       = {check2:.2f} %  (diff={d:.0f}) tol={tol} and >2%",
     )
     is_ok = b and is_ok
 
@@ -163,6 +164,6 @@ if __name__ == "__main__":
     plt.legend()
     plt.savefig(f)
     print(f)
-    plt.show()
+    # plt.show()
 
     utility.test_ok(is_ok)

@@ -353,15 +353,12 @@ def assert_images(
 
     # check pixels contents, global stats
     if slice_id is not None:
-        print(slice_id, itk.GetArrayViewFromImage(img1).shape)
         data1 = itk.GetArrayFromImage(img1)[slice_id]
         data2 = itk.GetArrayFromImage(img2)[slice_id]
         data1 = np.expand_dims(data1, axis=0)
         data2 = np.expand_dims(data2, axis=0)
-        print(slice_id, data1.shape)
         img1 = itk.GetImageFromArray(data1)
         img2 = itk.GetImageFromArray(data2)
-        print(slice_id, itk.GetArrayViewFromImage(img1).shape)
 
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()

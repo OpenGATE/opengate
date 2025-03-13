@@ -27,12 +27,19 @@ void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation =
-      new G4BOptnForceFreeFlight("GammaFreeFlightOperator");
+      new GateGammaFreeFlightOptn("GammaFreeFlightOperator");
 }
 
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {
   threadLocal_t &l = threadLocalData.Get();
   l.fIsFirstTime = true;
+  l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
+  /* WARNING:
+   the weight is reset to the initial particle weight when we start tracking.
+   However, the weight of the particle can change between the "StartTracking"
+   and the first time we see the particle in the tracked volume.
+   The bool "fIsFirstTime" is used to reset the weight of the FF operation.
+   */
 }
 
 G4VBiasingOperation *

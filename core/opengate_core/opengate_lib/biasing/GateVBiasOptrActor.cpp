@@ -41,7 +41,7 @@ void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
 
 void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
-  // FIXME: set an option to no propagate to daughters
+  // FIXME: set an option to not propagate to daughters
   AttachTo(volume);
   for (auto i = 0; i < volume->GetNoDaughters(); i++) {
     G4LogicalVolume *logicalDaughtersVolume =

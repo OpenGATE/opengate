@@ -8,8 +8,8 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptrSplitComptonScatteringActor_h
 #define GateOptrSplitComptonScatteringActor_h
 
-#include "G4BOptnForceFreeFlight.hh"
 #include "G4VBiasingOperator.hh"
+#include "GateGammaFreeFlightOptn.h"
 #include "GateScatterSplittingFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
 
@@ -52,18 +52,16 @@ protected:
       const G4BiasingProcessInterface *callingProcess) override;
 
   struct threadLocal_t {
-    G4BOptnForceFreeFlight *fFreeFlightOperation = nullptr;
+    GateGammaFreeFlightOptn *fFreeFlightOperation = nullptr;
     GateScatterSplittingFreeFlightOptn *fComptonSplittingOperation = nullptr;
     GateScatterSplittingFreeFlightOptn *fRayleighSplittingOperation = nullptr;
     int fComptonInteractionCount;
     std::map<std::string, double> fBiasInformationPerThread;
     bool fCurrentTrackIsFreeFlight;
-    bool fAlreadyExit;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
   std::map<std::string, double> fBiasInformation;
-
   int fComptonSplittingFactor;
   int fRayleighSplittingFactor;
   int fMaxComptonLevel;

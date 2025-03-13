@@ -8,11 +8,9 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptrFreeFlightActor_h
 #define GateOptrFreeFlightActor_h
 
-#include "../GateVActor.h"
-#include "G4BOptnForceFreeFlight.hh"
 #include "G4VBiasingOperator.hh"
+#include "GateGammaFreeFlightOptn.h"
 #include "GateVBiasOptrActor.h"
-#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -40,7 +38,7 @@ protected:
       const G4BiasingProcessInterface *callingProcess) override;
 
   struct threadLocal_t {
-    G4BOptnForceFreeFlight *fFreeFlightOperation;
+    GateGammaFreeFlightOptn *fFreeFlightOperation;
 
     bool fIsFirstTime;
   };

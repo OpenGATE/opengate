@@ -143,8 +143,7 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
     processes: list
 
     # this biased actor DO NOT work for GammaGeneralProc
-    processes = ["compt"]
-
+    processes = ["compt", "phot", "conv", "Rayl"]
     particles = ["gamma"]
 
     def __init__(self, *args, **kwargs):
@@ -262,8 +261,8 @@ class ScatterSplittingFreeFlightActor(
         ),
     }
 
-    # DO NOT work with GammaGeneralProc
-    processes = ["compt"]
+    # Do NOT work with GammaGeneralProc
+    processes = ["compt", "Rayl"]
 
     user_output_config = {
         "info": {

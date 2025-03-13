@@ -21,14 +21,6 @@ if __name__ == "__main__":
         use_phsp=True,
     )
 
-    # GeneralProcess must *NOT* be true (it is by default)
-    s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
-
-    # no AA for reference
-    source.direction.acceptance_angle.intersection_flag = False
-    source.direction.acceptance_angle.normal_flag = False
-
     # go
     sim.run()
     stats = sim.get_actor("stats")
@@ -36,10 +28,10 @@ if __name__ == "__main__":
 
     # compare histo
     is_ok = utility.compare_root3(
-        paths.output_ref / "phsp_1_ref.root",
-        paths.output / "phsp_1_ref.root",
-        "phsp1",
-        "phsp1",
+        paths.output_ref / "phsp_sphere_ref.root",
+        paths.output / "phsp_sphere_ref.root",
+        "phsp_sphere",
+        "phsp_sphere",
         keys1=None,
         keys2=None,
         tols=[0.01, 0.7, 1.4, 1.4, 0.01],
