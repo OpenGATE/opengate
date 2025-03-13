@@ -5,11 +5,15 @@ from matplotlib import pyplot as plt
 from opengate.tests import utility
 from test085_free_flight_helpers import *
 import uproot
-import os
+import os, sys
 
 if __name__ == "__main__":
 
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
+
+    # not on windows
+    if os.name == "nt":
+        sys.exit(0)
 
     # The test needs the output of the other tests
     if not os.path.isfile(paths.output / "phsp_sphere_ref.root"):
