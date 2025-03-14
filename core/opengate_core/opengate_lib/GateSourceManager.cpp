@@ -213,7 +213,7 @@ long int GateSourceManager::GetExpectedNumberOfEvents() const {
   return fExpectedNumberOfEvents;
 }
 
-void GateSourceManager::PrepareRunToStart(int run_id) {
+void GateSourceManager::PrepareRunToStart(int run_id) const {
   /*
    In MT mode, this function (PrepareRunToStart) is called
    by Master thread AND by workers
@@ -241,7 +241,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
           : std::to_string(G4Threading::G4GetThreadId()));
 }
 
-void GateSourceManager::PrepareNextSource() {
+void GateSourceManager::PrepareNextSource() const {
   auto &l = fThreadLocalData.Get();
   l.fNextActiveSource = nullptr;
   double min_time = l.fCurrentTimeInterval.first;
@@ -258,7 +258,7 @@ void GateSourceManager::PrepareNextSource() {
   // If no next time in the current interval, active source is NULL
 }
 
-void GateSourceManager::CheckForNextRun() {
+void GateSourceManager::CheckForNextRun() const {
   auto &l = fThreadLocalData.Get();
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
@@ -303,7 +303,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     l.fNextActiveSource->GeneratePrimaries(event, l.fCurrentSimulationTime);
     // log (after particle creation)
     if (LogLevel_EVENT <= GateSourceManager::fVerboseLevel) {
-      auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
+      const auto *prim = event->GetPrimaryVertex(0)->GetPrimary(0);
       std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
       std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
       std::string s = l.fNextActiveSource->fName;

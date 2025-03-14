@@ -120,7 +120,7 @@ void GateGANPairSource::GeneratePrimariesPair(G4Event *event,
     else
       time = fTime2[fCurrentIndex];
     // consider the earliest one
-    ll.fEffectiveEventTime = min(time, ll.fEffectiveEventTime);
+    ll.fEffectiveEventTime = std::min(time, ll.fEffectiveEventTime);
   } else {
     ll.fEffectiveEventTime = current_simulation_time;
   }

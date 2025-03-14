@@ -8,13 +8,10 @@
 #ifndef GateSingleParticleSource_h
 #define GateSingleParticleSource_h
 
-#include "G4AffineTransform.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4VPrimaryGenerator.hh"
-#include "GateAcceptanceAngleTester.h"
 #include "GateAcceptanceAngleTesterManager.h"
 #include "GateHelpers.h"
-#include "GateRandomMultiGauss.h"
 #include "GateSPSAngDistribution.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
@@ -34,11 +31,11 @@ public:
 
   ~GateSingleParticleSource() override;
 
-  GateSPSPosDistribution *GetPosDist() { return fPositionGenerator; }
+  GateSPSPosDistribution *GetPosDist() const { return fPositionGenerator; }
 
-  GateSPSAngDistribution *GetAngDist() { return fDirectionGenerator; }
+  GateSPSAngDistribution *GetAngDist() const { return fDirectionGenerator; }
 
-  GateSPSEneDistribution *GetEneDist() { return fEnergyGenerator; }
+  GateSPSEneDistribution *GetEneDist() const { return fEnergyGenerator; }
 
   virtual void SetPosGenerator(GateSPSPosDistribution *pg);
 
@@ -46,13 +43,14 @@ public:
 
   void SetAAManager(GateAcceptanceAngleTesterManager *aa_manager);
 
-  void GeneratePrimaryVertex(G4Event *evt) override;
+  void GeneratePrimaryVertex(G4Event *event) override;
 
   G4ThreeVector GenerateDirectionWithAA(const G4ThreeVector &position,
-                                        bool &accept);
+                                        bool &zero_energy_flag) const;
 
-  void GeneratePrimaryVertexBackToBack(G4Event *event, G4ThreeVector &position,
-                                       G4ThreeVector &direction, double energy);
+  void GeneratePrimaryVertexBackToBack(G4Event *event, G4ThreeVector position,
+                                       G4ThreeVector direction,
+                                       double energy) const;
 
   void SetBackToBackMode(bool flag, bool accolinearityFlag);
 

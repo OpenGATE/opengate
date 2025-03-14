@@ -69,16 +69,16 @@ public:
   void StartMasterThread();
 
   // Initialize a new Run
-  void PrepareRunToStart(int run_id);
+  void PrepareRunToStart(int run_id) const;
 
   // Called by G4 fEngine
-  void GeneratePrimaries(G4Event *anEvent) override;
+  void GeneratePrimaries(G4Event *event) override;
 
   // After an event, prepare for the next
-  void PrepareNextSource();
+  void PrepareNextSource() const;
 
   // Check if the current run is terminated
-  void CheckForNextRun();
+  void CheckForNextRun() const;
 
   void InitializeVisualization();
 
