@@ -89,6 +89,10 @@ from .actors.doseactors import (
     EmCalculatorActor,
 )
 
+from .actors.chemistryactors import (
+    ChemistryActor,
+)
+
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -134,6 +138,8 @@ actor_types = {
     "BeamQualityActor": BeamQualityActor,
     "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
+    # chemistry related
+    "ChemistryActor": ChemistryActor,
     # misc
     "AttenuationImageActor": AttenuationImageActor,
     "SimulationStatisticsActor": SimulationStatisticsActor,

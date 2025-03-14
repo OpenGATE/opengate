@@ -357,6 +357,8 @@ void init_G4VBiasingOperator(py::module &m);
 
 void init_GateTLEDoseActor(py::module &m);
 
+void init_GateChemistryActor(py::module &m);
+
 // Gate digit
 void init_GateVDigitizerWithOutputActor(py::module &);
 
@@ -636,4 +638,5 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateUniqueVolumeIDManager(m);
   init_GateUniqueVolumeID(m);
   init_GateVolumeDepthID(m);
+  init_GateChemistryActor(m);
 }
