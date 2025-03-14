@@ -30,8 +30,9 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fStoreExitingStep = false;
   fStoreEnteringStep = false;
   fStoreFirstStepInVolume = false;
-  fDebug = false;
   fStoreAbsorbedEvent = false;
+  fStoreAllSteps = false;
+  fDebug = false;
 }
 
 GatePhaseSpaceActor::~GatePhaseSpaceActor() {
