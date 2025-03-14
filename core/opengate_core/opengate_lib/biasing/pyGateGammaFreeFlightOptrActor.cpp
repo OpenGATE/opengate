@@ -8,13 +8,14 @@
 
 namespace py = pybind11;
 #include "G4VBiasingOperator.hh"
-#include "GateOptrFreeFlightActor.h"
+#include "GateGammaFreeFlightOptrActor.h"
 
-void init_GateOptrFreeFlightActor(py::module &m) {
+void init_GateGammaFreeFlightOptrActor(py::module &m) {
 
-  py::class_<GateOptrFreeFlightActor, G4VBiasingOperator, GateVActor,
-             std::unique_ptr<GateOptrFreeFlightActor, py::nodelete>>(
-      m, "GateOptrFreeFlightActor")
+  py::class_<GateGammaFreeFlightOptrActor, G4VBiasingOperator, GateVActor,
+             std::unique_ptr<GateGammaFreeFlightOptrActor, py::nodelete>>(
+      m, "GateGammaFreeFlightOptrActor")
       .def(py::init<py::dict &>())
-      .def("ConfigureForWorker", &GateOptrFreeFlightActor::ConfigureForWorker);
+      .def("ConfigureForWorker",
+           &GateGammaFreeFlightOptrActor::ConfigureForWorker);
 }

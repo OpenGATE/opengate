@@ -368,6 +368,7 @@ def assert_images(
     sad_profile_tolerance=None,
     img_threshold=0,
     test_sad=True,
+    slice_id=None,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -380,6 +381,14 @@ def assert_images(
     is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
+    if slice_id is not None:
+        data1 = itk.GetArrayFromImage(img1)[slice_id]
+        data2 = itk.GetArrayFromImage(img2)[slice_id]
+        data1 = np.expand_dims(data1, axis=0)
+        data2 = np.expand_dims(data2, axis=0)
+        img1 = itk.GetImageFromArray(data1)
+        img2 = itk.GetImageFromArray(data2)
+
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
@@ -928,6 +937,14 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     return is_ok
 
 
+def file_size_str(file_size):
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if file_size < 1024.0:
+            return f"{file_size:.2f} {unit}"
+            break
+        file_size /= 1024.0
+
+
 def compare_root3(
     root1,
     root2,
@@ -942,6 +959,10 @@ def compare_root3(
     hits_tol=6,
     nb_bins=200,
 ):
+
+    s1 = root1_size = os.path.getsize(root1)
+    s2 = root1_size = os.path.getsize(root2)
+
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
@@ -950,8 +971,12 @@ def compare_root3(
     hits2_n = hits2.num_entries
     hits2 = hits2.arrays(library="numpy")
 
-    print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
-    print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
+    print(
+        f"Reference tree: {os.path.basename(root1)} n={hits1_n}  {file_size_str(s1)} {root1} "
+    )
+    print(
+        f"Current tree:   {os.path.basename(root2)} n={hits2_n}  {file_size_str(s2)} {root2} "
+    )
     diff = rel_diff(float(hits1_n), float(hits2_n))
     b = np.fabs(diff) < hits_tol
     is_ok = print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
@@ -964,9 +989,9 @@ def compare_root3(
         scalings2 = [1] * len(keys2)
 
     if keys1 is None:
-        keys1 = hits1.keys()
+        keys1 = list(hits1.keys())
     if keys2 is None:
-        keys2 = hits2.keys()
+        keys2 = list(hits2.keys())
 
     # keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (
