@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import opengate as gate
 import opengate.logger
+import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate import g4_units
 from opengate.tests import utility
-from test085_free_flight_helpers import *
+from test085_free_flight_helpers import create_simulation_test085
 
 
 if __name__ == "__main__":
@@ -19,8 +21,8 @@ if __name__ == "__main__":
 
     arf1 = sim.get_actor("detector_arf_1")
     arf2 = sim.get_actor("detector_arf_2")
-    arf1.output_filename = f"projection_ff_1.mhd"
-    arf2.output_filename = f"projection_ff_2.mhd"
+    arf1.output_filename = "projection_ff_1.mhd"
+    arf2.output_filename = "projection_ff_2.mhd"
 
     stats = sim.get_actor("stats")
     stats.output_filename = "stats_ff.txt"
