@@ -37,7 +37,8 @@ if __name__ == "__main__":
 
     # add a volume that englobe the two objets for the actor
     wb0 = sim.add_volume("Box", "both_obj")
-    wb0.size = [50 * cm, 100 * cm, 50 * cm]
+    e = 0.01 * cm
+    wb0.size = [e + 50 * cm, e + 100 * cm, e + 50 * cm]
     wb0.material = "G4_AIR"
 
     # add a bodybox
