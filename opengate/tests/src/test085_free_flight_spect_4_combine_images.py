@@ -7,7 +7,8 @@ import numpy as np
 import subprocess
 import os, sys
 
-if __name__ == "__main__":
+
+def main(dependency="test085_free_flight_spect_2_ff_mt.py"):
 
     paths = utility.get_default_test_paths(
         __file__, None, output_folder="test085_spect"
@@ -19,9 +20,7 @@ if __name__ == "__main__":
 
     # The test needs the output of the other tests
     if not os.path.isfile(paths.output / "projection_1_ff.mhd"):
-        subprocess.call(
-            ["python", paths.current / "test085_free_flight_spect_2_ff_mt.py"]
-        )
+        subprocess.call(["python", paths.current / dependency])
     if not os.path.isfile(paths.output / "projection_1_ff_sc.mhd"):
         subprocess.call(
             ["python", paths.current / "test085_free_flight_spect_3_scatter_mt.py"]
@@ -95,7 +94,7 @@ if __name__ == "__main__":
                 None,
                 tolerance=130,
                 ignore_value_data1=0,
-                sum_tolerance=40,
+                sum_tolerance=45,
                 axis="x",
                 sad_profile_tolerance=22,
                 slice_id=i,

@@ -7,7 +7,8 @@ from test085_free_flight_helpers import *
 import uproot
 import os, sys
 
-if __name__ == "__main__":
+
+def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
 
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
 
@@ -17,9 +18,7 @@ if __name__ == "__main__":
 
     # The test needs the output of the other tests
     if not os.path.isfile(paths.output / "phsp_sphere_ref.root"):
-        subprocess.call(
-            ["python", paths.current / "test085_free_flight_phsp_1_ref_mt.py"]
-        )
+        subprocess.call(["python", paths.current / dependency])
     if not os.path.isfile(paths.output / "phsp_sphere_ff.root"):
         subprocess.call(
             ["python", paths.current / "test085_free_flight_phsp_2_ff_mt.py"]

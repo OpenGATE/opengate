@@ -937,6 +937,14 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     return is_ok
 
 
+def file_size_str(file_size):
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if file_size < 1024.0:
+            return f"{file_size:.2f} {unit}"
+            break
+        file_size /= 1024.0
+
+
 def compare_root3(
     root1,
     root2,
@@ -951,6 +959,10 @@ def compare_root3(
     hits_tol=6,
     nb_bins=200,
 ):
+
+    s1 = root1_size = os.path.getsize(root1)
+    s2 = root1_size = os.path.getsize(root2)
+
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
@@ -959,8 +971,12 @@ def compare_root3(
     hits2_n = hits2.num_entries
     hits2 = hits2.arrays(library="numpy")
 
-    print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
-    print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
+    print(
+        f"Reference tree: {os.path.basename(root1)} n={hits1_n}  {file_size_str(s1)} {root1} "
+    )
+    print(
+        f"Current tree:   {os.path.basename(root2)} n={hits2_n}  {file_size_str(s2)} {root2} "
+    )
     diff = rel_diff(float(hits1_n), float(hits2_n))
     b = np.fabs(diff) < hits_tol
     is_ok = print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")

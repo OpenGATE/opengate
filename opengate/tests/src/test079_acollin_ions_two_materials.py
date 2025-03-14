@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # go
     sim.run()
 
-    # test: no mean energy, should be mostly colinear
+    # test: no mean energy, should be mostly collinear
     gamma_pairs = read_gamma_pairs(root_filename1, "phsp")
     acollinearity_angles = compute_acollinearity_angles(gamma_pairs)
 
