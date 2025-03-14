@@ -486,6 +486,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def close(self):
         if self.verbose_close:
@@ -499,11 +500,13 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
         self.register_event_actions(actor)
         self.register_tracking_actions(actor)
+        self.register_stacking_actions(actor)
 
     def register_run_actions(self, actor):
         for ra in self.g4_RunAction:
@@ -516,6 +519,10 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def register_stacking_actions(self, actor):
+        for sa in self.g4_StackingAction:
+            sa.RegisterActor(actor)
 
     def BuildForMaster(self):
         # This function is called only in MT mode, for the master thread
@@ -557,6 +564,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         )
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
+
+        # set the actions for Track
+        sa = g4.GateStackingAction()
+        self.SetUserAction(sa)
+        self.g4_StackingAction.append(sa)
 
 
 def register_sensitive_detector_to_children(actor, lv):

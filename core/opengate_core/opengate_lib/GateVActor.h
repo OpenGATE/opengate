@@ -105,6 +105,8 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
+  virtual void NewStage() {}
+
   void SetOutputPath(const std::string &outputName,
                      const std::string &outputPath);
 
