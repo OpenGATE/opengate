@@ -23,10 +23,10 @@ public:
   /// Saves the data collected to the file
   void CalculateElectronicdEdX();
   // Main function called every step in attached volume
-  void SteppingAction(G4Step *);
+  void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
-  void BeginOfRunAction(const G4Run *run);
+  void BeginOfRunAction(const G4Run *run) override;
   void InitializeUserInfo(py::dict &user_info) override;
 
   void InitializeCpp() override;
