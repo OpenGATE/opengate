@@ -49,6 +49,51 @@ def test_ok(is_ok=False, exceptions=None):
         sys.exit(-1)
 
 
+def read_json_file(filename: Path) -> dict:
+    """
+    Read a JSON file into a Python dictionary.
+
+    :param filename: Path object
+        The filename of the JSON file to read.
+    :return: dict
+        The data from the JSON file.
+    """
+    if not filename.is_file():
+        fatal(f"File {filename} does not exist.")
+
+    with open(filename, "rb") as f:
+        return json.load(f)
+
+
+def write_stats_txt_gate_style(stats, filepath):
+    output = stats.user_output.stats
+    counts = output.merged_data
+    with open(filepath, "w") as f:
+        f.write(
+            f"""
+# NumberOfRun    = {counts.runs}
+# NumberOfEvents = {counts.events}
+# NumberOfTracks = {counts.tracks}
+# NumberOfSteps  = {counts.steps}
+# NumberOfGeometricalSteps  =
+# NumberOfPhysicalSteps     =
+# ElapsedTime           = {counts.duration}
+# ElapsedTimeWoInit     = {counts.duration}
+# StartDate             =
+# EndDate               =
+# StartSimulationTime        = 0
+# StopSimulationTime         = 1
+# CurrentSimulationTime      = 8.99658e-06
+# VirtualStartSimulationTime = 0
+# VirtualStopSimulationTime  = 1
+# ElapsedSimulationTime      = 8.99658e-06
+# PPS (Primary per sec)      = {output.pps}
+# TPS (Track per sec)        = {output.tps}
+# SPS (Step per sec)         = {output.sps}
+                """
+        )
+
+
 def read_stat_file(filename, encoder=None):
     if encoder == "json":
         return read_stat_file_json(filename)
@@ -255,8 +300,8 @@ def plot_img_axis(ax, img, label, axis="z"):
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 1)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -266,8 +311,8 @@ def plot_img_z(ax, img, label):
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -277,8 +322,8 @@ def plot_img_y(ax, img, label):
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 1)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 1)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -323,6 +368,7 @@ def assert_images(
     sad_profile_tolerance=None,
     img_threshold=0,
     test_sad=True,
+    slice_id=None,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -335,6 +381,14 @@ def assert_images(
     is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
+    if slice_id is not None:
+        data1 = itk.GetArrayFromImage(img1)[slice_id]
+        data2 = itk.GetArrayFromImage(img2)[slice_id]
+        data1 = np.expand_dims(data1, axis=0)
+        data2 = np.expand_dims(data2, axis=0)
+        img1 = itk.GetImageFromArray(data1)
+        img2 = itk.GetImageFromArray(data2)
+
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
@@ -447,6 +501,7 @@ def assert_filtered_imagesprofile1D(
     fig_name=None,
     sum_tolerance=5,
     plt_ylim=None,
+    eval_quantity="",
 ):
     # read image and info (size, spacing etc)
     ref_filter_filename1 = ensure_filename_is_str(ref_filter_filename1)
@@ -472,6 +527,7 @@ def assert_filtered_imagesprofile1D(
     L_filter = range(max_ind)
     d1 = data1[L_filter]
     d2 = data2[L_filter]
+    print(d2)
 
     # normalise by event
     if stats is not None:
@@ -503,7 +559,7 @@ def assert_filtered_imagesprofile1D(
     ax[1].plot(xV[:max_ind], (d2 / d1 - 1) * 100, "o", label="test/ref")
     ax[0].set_xlabel("x [mm]")
     ax[1].set_xlabel("x [mm]")
-    ax[0].set_ylabel("LET")
+    ax[0].set_ylabel(f"{eval_quantity}")
     ax[0].set_ylim(
         [np.amin([np.amin(d2), 0]), np.ceil(np.amax([np.amax(d1), np.amax(d2)]) * 1.1)]
     )
@@ -881,6 +937,14 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     return is_ok
 
 
+def file_size_str(file_size):
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if file_size < 1024.0:
+            return f"{file_size:.2f} {unit}"
+            break
+        file_size /= 1024.0
+
+
 def compare_root3(
     root1,
     root2,
@@ -895,6 +959,10 @@ def compare_root3(
     hits_tol=6,
     nb_bins=200,
 ):
+
+    s1 = root1_size = os.path.getsize(root1)
+    s2 = root1_size = os.path.getsize(root2)
+
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
@@ -903,8 +971,12 @@ def compare_root3(
     hits2_n = hits2.num_entries
     hits2 = hits2.arrays(library="numpy")
 
-    print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
-    print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
+    print(
+        f"Reference tree: {os.path.basename(root1)} n={hits1_n}  {file_size_str(s1)} {root1} "
+    )
+    print(
+        f"Current tree:   {os.path.basename(root2)} n={hits2_n}  {file_size_str(s2)} {root2} "
+    )
     diff = rel_diff(float(hits1_n), float(hits2_n))
     b = np.fabs(diff) < hits_tol
     is_ok = print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
@@ -917,9 +989,9 @@ def compare_root3(
         scalings2 = [1] * len(keys2)
 
     if keys1 is None:
-        keys1 = hits1.keys()
+        keys1 = list(hits1.keys())
     if keys2 is None:
-        keys2 = hits2.keys()
+        keys2 = list(hits2.keys())
 
     # keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (

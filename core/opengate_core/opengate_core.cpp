@@ -286,6 +286,8 @@ void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
 
+void init_GateWeightedEdepActor(py::module &);
+
 void init_GateActorManager(py::module &);
 
 // Gate filters
@@ -304,13 +306,15 @@ void init_GateKineticEnergyFilter(py::module &);
 // Gate actors
 void init_GateDoseActor(py::module &m);
 
-void init_GateTLEDoseActor(py::module &m);
-
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
 
 void init_GateProductionAndStoppingActor(py::module &m);
+
+void init_GateBeamQualityActor(py::module &m);
+
+void init_GateEmCalculatorActor(py::module &m);
 
 void init_GateARFActor(py::module &m);
 
@@ -342,15 +346,21 @@ void init_GateSimulationStatisticsActor(py::module &);
 
 void init_GatePhaseSpaceActor(py::module &);
 
+
+// biasing
+void init_GateBOptrBremSplittingActor(py::module &m);
+
+void init_GateGammaFreeFlightOptrActor(py::module &m);
+
+void init_GateScatterSplittingFreeFlightOptrActor(py::module &m);
+
+void init_G4VBiasingOperator(py::module &m);
+
+void init_GateTLEDoseActor(py::module &m);
+
 void init_GateOptrComptSplittingActor(py::module &m);
 
 void init_GateLastVertexInteractionSplittingActor(py::module &m);
-
-void init_GateBOptrBremSplittingActor(py::module &m);
-
-void init_GateOptrFreeFlightActor(py::module &m);
-
-void init_G4VBiasingOperator(py::module &m);
 
 // Gate digit
 void init_GateVDigitizerWithOutputActor(py::module &);
@@ -566,6 +576,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateCheckDeex(m);
   init_GateInfo(m);
   init_GateVActor(m);
+  init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
   init_GateParticleFilter(m);
@@ -592,19 +603,28 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateRunAction(m);
   init_GateEventAction(m);
   init_GateTrackingAction(m);
+
   init_GateDoseActor(m);
   init_GateTLEDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateProductionAndStoppingActor(m);
+  init_GateBeamQualityActor(m);
+  init_GateEmCalculatorActor(m);
   init_GateSimulationStatisticsActor(m);
-  init_GatePhaseSpaceActor(m);
+
   init_GateBOptrBremSplittingActor(m);
   init_GateOptrComptSplittingActor(m);
   init_GateLastVertexInteractionSplittingActor(m);
   init_GateOptrFreeFlightActor(m);
+  init_GateGammaFreeFlightOptrActor(m);
+  init_GateScatterSplittingFreeFlightOptrActor(m);
+
+  init_GatePhaseSpaceActor(m);
   init_GateHitsCollectionActor(m);
   init_GateVDigitizerWithOutputActor(m);
+  init_GateDigiAttributeManager(m);
+  init_GateVDigiAttribute(m);
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
   init_GateDigitizerBlurringActor(m);
@@ -612,6 +632,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDigitizerSpatialBlurringActor(m);
   init_GateDigitizerEnergyWindowsActor(m);
   init_GateDigitizerProjectionActor(m);
+
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
@@ -619,8 +640,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateKillNonInteractingParticleActor(m);
   init_GateKillAccordingParticleNameActor(m);
   init_GateAttenuationImageActor(m);
-  init_GateDigiAttributeManager(m);
-  init_GateVDigiAttribute(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
   init_GateHelpers(m);

@@ -9,7 +9,6 @@
 #include "../GateHelpersDict.h"
 #include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
-#include <iostream>
 
 GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
@@ -19,6 +18,7 @@ GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
   fPolicy = AdderPolicy::EnergyWinnerPosition;
   fTimeDifferenceFlag = false;
   fNumberOfHitsFlag = false;
+  fWeightsAreUsedFlag = false;
 }
 
 GateDigitizerAdderActor::~GateDigitizerAdderActor() = default;
@@ -27,7 +27,7 @@ void GateDigitizerAdderActor::InitializeUserInfo(py::dict &user_info) {
   GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
   // policy
   fPolicy = AdderPolicy::Error;
-  auto policy = DictGetStr(user_info, "policy");
+  const auto policy = DictGetStr(user_info, "policy");
   if (policy == "EnergyWinnerPosition")
     fPolicy = AdderPolicy::EnergyWinnerPosition;
   else if (policy == "EnergyWeightedCentroidPosition")
@@ -53,12 +53,12 @@ void GateDigitizerAdderActor::SetGroupVolumeDepth(int depth) {
 }
 
 void GateDigitizerAdderActor::StartSimulationAction() {
-  // Init output (do not initialize root because we may add some options
+  // Init output (do not initialize root because we may add some options)
   fInitializeRootTupleForMasterFlag = false;
   GateVDigitizerWithOutputActor::StartSimulationAction();
   fInitializeRootTupleForMasterFlag = true;
 
-  // add the optional attribute if needed
+  // add the optional attributes if needed
   if (fTimeDifferenceFlag) {
     auto *att = new GateTDigiAttribute<double>("TimeDifference");
     fOutputDigiCollection->InitDigiAttribute(att);
@@ -78,7 +78,7 @@ void GateDigitizerAdderActor::StartSimulationAction() {
 
 void GateDigitizerAdderActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
-  // remote the attributes that will be computed here
+  // remove the attributes that will be computed here
   std::vector<std::string> att = attributes_not_in_filler;
   att.emplace_back("TotalEnergyDeposit");
   att.emplace_back("PostPosition");
@@ -112,9 +112,16 @@ void GateDigitizerAdderActor::DigitInitialize(
   lr.fInputIter.TrackAttribute("PostPosition", &l.pos);
   lr.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
   lr.fInputIter.TrackAttribute("GlobalTime", &l.time);
+
+  // Weights ? In that case, we consider to group for tracks with the exact same
+  // weights
+  if (fInputDigiCollection->IsDigiAttributeExists("Weight")) {
+    lr.fInputIter.TrackAttribute("Weight", &l.weight);
+    fWeightsAreUsedFlag = true;
+  }
 }
 
-void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
+void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
   // loop on all hits to group per volume ID
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
@@ -127,12 +134,12 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   // create the output hits collection for grouped hits
   auto &l = fThreadLocalData.Get();
   for (auto &h : l.fMapOfDigiInVolume) {
-    auto &hit = h.second;
+    const auto &hit = h.second;
     // terminate the merge
     hit->Terminate();
     // Don't store anything if edep is zero
     if (hit->fFinalEdep > 0) {
-      // (all "Fill" calls are thread local)
+      // all "Fill" calls are thread local
       fOutputEdepAttribute->FillDValue(hit->fFinalEdep);
       fOutputPosAttribute->Fill3Value(hit->fFinalPosition);
       fOutputGlobalTimeAttribute->FillDValue(hit->fFinalTime);
@@ -148,20 +155,24 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event * /*unused*/) {
   l.fMapOfDigiInVolume.clear();
 }
 
-void GateDigitizerAdderActor::AddDigiPerVolume() {
+void GateDigitizerAdderActor::AddDigiPerVolume() const {
   auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   const auto &i = lr.fInputIter.fIndex;
   if (*l.edep == 0)
     return;
-  // uid and fGroupVolumeDepth are only used for repeated volume (such as in
-  // PET)
-  auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
-  if (l.fMapOfDigiInVolume.count(uid) == 0) {
-    // l.fMapOfDigiInVolume[uid] =
-    // std::make_shared<GateDigiAdderInVolume>(fPolicy, fTimeDifferenceFlag);
-    l.fMapOfDigiInVolume[uid] = new GateDigiAdderInVolume(
+  // uid is only used for repeated volume (such as in PET)
+  // weight: if it is not the same, it means the hits come from 2 different
+  // tracks with VRT, so we separate them.
+  const auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
+  std::string wid;
+  if (fWeightsAreUsedFlag)
+    wid = uid + std::to_string(*l.weight);
+  else
+    wid = uid;
+  if (l.fMapOfDigiInVolume.count(wid) == 0) {
+    l.fMapOfDigiInVolume[wid] = new GateDigiAdderInVolume(
         fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);
   }
-  l.fMapOfDigiInVolume[uid]->Update(i, *l.edep, *l.pos, *l.time);
+  l.fMapOfDigiInVolume[wid]->Update(i, *l.edep, *l.pos, *l.time);
 }

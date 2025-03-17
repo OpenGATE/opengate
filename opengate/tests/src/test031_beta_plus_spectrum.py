@@ -7,7 +7,7 @@ import uproot
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import compute_bins_density, get_rad_yield
+from opengate.sources.utility import compute_bins_density, get_rad_yield, get_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test031")
@@ -40,7 +40,7 @@ if __name__ == "__main__":
         i += 1
 
     for rad in l:
-        data = gate.sources.generic.read_beta_plus_spectra(rad)
+        data = get_spectrum(rad, "e+", "radar")
         x = data[:, 0]  # energy E(keV)
         y = data[:, 1]  # proba  dNtot/dE b+
         # normalize taking into account the bins density

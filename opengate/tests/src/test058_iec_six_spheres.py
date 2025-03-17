@@ -142,7 +142,7 @@ if __name__ == "__main__":
         "phsp_bg",
         k,
         k,
-        [0.26] * len(k),
+        [0.27] * len(k),
         [1] * len(k),
         [1] * len(k),
         paths.output / "test058_bg.png",
