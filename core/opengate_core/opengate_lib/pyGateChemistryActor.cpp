@@ -18,5 +18,6 @@ void init_GateChemistryActor(py::module &m) {
       m, "GateChemistryActor")
       .def(py::init<py::dict &>())
       .def("get_times", &GateChemistryActor::getTimes)
-      .def("get_data_v", &GateChemistryActor::getData);
+      .def("get_data_v", &GateChemistryActor::getData)
+      .def("get_reactions", &GateChemistryActor::getReactions);
 }

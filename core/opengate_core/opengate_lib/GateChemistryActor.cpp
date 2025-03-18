@@ -16,31 +16,47 @@
 #include <G4EmParameters.hh>
 #include <G4EventManager.hh>
 #include <G4H2O.hh>
+#include <G4IT.hh>
 #include <G4MoleculeCounter.hh>
 #include <G4RunManager.hh>
 #include <G4Scheduler.hh>
 #include <G4StateManager.hh>
 #include <G4THitsMap.hh>
+#include <G4Track.hh>
 #include <G4UnitsTable.hh>
 #include <G4ios.hh>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
+#include <templates.hh>
 
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 #include "../g4_bindings/chemistryadaptator.h"
 #include "GateVActor.h"
+#include "pybind11/tests/pybind11_tests.h"
+
+void TimeStepAction::UserReactionAction(
+    const G4Track &a, const G4Track &b,
+    const std::vector<G4Track *> *products) {
+  GateChemistryActor::Tracks noProducts;
+  auto &rProducts = (products ? *products : noProducts);
+  for (auto &actors : _chemistryActors)
+    actors->UserReactionAction(a, b, rProducts);
+}
 
 /*
  * constructors are run in G4 PreInit state
  * particle definitions must be done there
  * TODO too early
  */
-GateChemistryActor::GateChemistryActor(pybind11::dict &user_info)
-    : GateVActor(user_info, true) {}
+GateChemistryActor::GateChemistryActor(py::dict &user_info)
+    : GateVChemistryActor(user_info, false) {
+  G4Scheduler::Instance()->SetUserAction(&_timeStepAction);
+  _timeStepAction.addChemistryActor(*this);
+}
 
-void GateChemistryActor::InitializeUserInfo(pybind11::dict &user_info) {
+void GateChemistryActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
 
   _timeStepModelStr = DictGetStr(user_info, "timestep_model");
@@ -111,7 +127,8 @@ void GateChemistryActor::EndOfEventAction(G4Event const *) {
     auto species = moleculeCounter->GetRecordedMolecules();
     if (species && !species->empty()) {
       for (auto const *molecule : *species) {
-        auto &speciesInfo = _speciesInfoPerTime[molecule];
+        auto speciesName = molecule->GetName();
+        auto &speciesInfo = _speciesInfoPerTime[speciesName];
 
         for (auto time : _timesToRecord) {
           auto nbMol = moleculeCounter->GetNMoleculesAtTime(molecule, time);
@@ -156,6 +173,25 @@ void GateChemistryActor::NewStage() {
   }
 }
 
+void GateChemistryActor::UserReactionAction(G4Track const &a, G4Track const &b,
+                                            Tracks const &rs) {
+  auto globalTime = G4Scheduler::Instance()->GetGlobalTime();
+
+  static auto nameFromTrack = [](G4Track const *track) {
+    auto *it = GetIT(*track);
+    return it->GetName();
+  };
+
+  auto nameA = nameFromTrack(&a);
+  auto nameB = nameFromTrack(&b);
+
+  Products products(rs.size());
+  std::transform(std::begin(rs), std::end(rs), std::begin(products),
+                 nameFromTrack);
+
+  _reactionsPerTime[globalTime].emplace_back(nameA, nameB, products);
+}
+
 void GateChemistryActor::setTimeBinsCount(int n) {
   double timeMin = 1 * CLHEP::ps;
   double timeMax = G4Scheduler::Instance()->GetEndTime() - 1 * CLHEP::ps;
@@ -168,25 +204,25 @@ void GateChemistryActor::setTimeBinsCount(int n) {
     _timesToRecord.insert(std::pow(10, timeMinLog + i * timeStepLog));
 }
 
-pybind11::list GateChemistryActor::getTimes() const {
-  pybind11::list o;
+py::list GateChemistryActor::getTimes() const {
+  py::list o;
   std::for_each(std::begin(_timesToRecord), std::end(_timesToRecord),
                 [&o](auto const &v) { o.append(v); });
   return o;
 }
 
-pybind11::dict GateChemistryActor::getData() const {
-  pybind11::dict o;
+py::dict GateChemistryActor::getData() const {
+  py::dict o;
   for (auto const &[molecule, map] : _speciesInfoPerTime) {
-    pybind11::dict dMolecule;
-    auto const *name = molecule->GetName().c_str();
+    py::dict dMolecule;
+    auto const *name = molecule.c_str();
 
     py::list count;
     py::list g;
     py::list sqG;
 
-    for (auto const &[time, data] :
-         map) { // time order is guaranteed by std::map
+    // time order is guaranteed by std::map
+    for (auto const &[time, data] : map) {
       count.append(data.count);
       g.append(data.g);
       sqG.append(data.sqG);
@@ -204,8 +240,32 @@ pybind11::dict GateChemistryActor::getData() const {
   return o;
 }
 
+py::dict GateChemistryActor::getReactions() const {
+  py::dict o;
+  for (auto const &[time, reactions] : _reactionsPerTime) {
+    py::list lReactions;
+
+    for (auto const &[a, b, products] : reactions) {
+      py::dict dReaction;
+      py::list reactants;
+
+      reactants.append(a);
+      reactants.append(b);
+
+      dReaction["reactants"] = reactants;
+      dReaction["products"] = products;
+
+      lReactions.append(dReaction);
+    }
+
+    o[py::float_{time}] = lReactions;
+  }
+
+  return o;
+}
+
 GateChemistryActor::ReactionInputs
-GateChemistryActor::getReactionInputs(pybind11::dict &user_info,
+GateChemistryActor::getReactionInputs(py::dict &user_info,
                                       std::string const &key) {
   ReactionInputs reactionInputs;
 
