@@ -9,6 +9,9 @@
 #define GateChemistryActor_h
 
 #include <G4MolecularConfiguration.hh>
+#include <G4Scheduler.hh>
+#include <G4Track.hh>
+#include <G4UserTimeStepAction.hh>
 #include <pybind11/detail/common.h>
 #include <set>
 #include <vector>
@@ -19,7 +22,31 @@ class G4EmCalculator;
 class G4HCofThisEvent;
 class G4H2O;
 
-class GateChemistryActor : public GateVActor {
+class GateVChemistryActor : public GateVActor {
+public:
+  using Tracks = std::vector<G4Track *>;
+
+public:
+  using GateVActor::GateVActor;
+
+  virtual void UserReactionAction(G4Track const &, G4Track const &,
+                                  Tracks const &) = 0;
+};
+
+class TimeStepAction : public G4UserTimeStepAction {
+public:
+  void UserReactionAction(const G4Track &, const G4Track &,
+                          const std::vector<G4Track *> *) override;
+
+  void addChemistryActor(GateVChemistryActor &actor) {
+    _chemistryActors.push_back(&actor);
+  }
+
+private:
+  std::vector<GateVChemistryActor *> _chemistryActors;
+};
+
+class GateChemistryActor : public GateVChemistryActor {
 public:
   // Constructor
   GateChemistryActor(pybind11::dict &user_info);
@@ -36,10 +63,14 @@ public:
   void SteppingAction(G4Step *step) override;
   void NewStage() override;
 
+  void UserReactionAction(G4Track const &, G4Track const &,
+                          Tracks const &) override;
+
   void setTimeBinsCount(int);
 
   [[nodiscard]] pybind11::list getTimes() const;
   [[nodiscard]] pybind11::dict getData() const;
+  [[nodiscard]] pybind11::dict getReactions() const;
 
 public:
   struct ReactionInput {
@@ -58,9 +89,14 @@ public:
     double sqG = 0.;
   };
 
-  using SpeciesPtr = G4MolecularConfiguration const *;
+  using SpeciesName = std::string;
   using InnerSpeciesMap = std::map<double, SpeciesInfo>;
-  using SpeciesMap = std::map<SpeciesPtr, InnerSpeciesMap>;
+  using SpeciesMap = std::map<SpeciesName, InnerSpeciesMap>;
+
+  using Products = std::vector<std::string>;
+  using Reaction = std::tuple<std::string, std::string, Products>;
+  using Reactions = std::vector<Reaction>;
+  using ReactionsMap = std::map<double, Reactions>;
 
 protected:
   static ReactionInputs getReactionInputs(pybind11::dict &user_info,
@@ -69,8 +105,10 @@ protected:
 
 private:
   G4H2O *_g4H2O;
+  TimeStepAction _timeStepAction;
 
   SpeciesMap _speciesInfoPerTime;
+  ReactionsMap _reactionsPerTime;
 
   double _edepSum = 0;
   double _edepSumRun = 0;
