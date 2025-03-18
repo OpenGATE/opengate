@@ -3,7 +3,7 @@
 
 import os
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 import click
 import random
 import sys
@@ -380,7 +380,7 @@ def filter_files_with_dependencies(files_to_run, path_tests_src):
 
 def run_one_test_case(f, processes_run, path_tests_src):
     """
-    This function is obsolete if we don't neeed os.system(run_cmd)
+    This function is obsolete if we don't need os.system(run_cmd)
     """
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
@@ -424,8 +424,15 @@ def run_one_test_case_mp(f):
     cmd = "python " + str(path_tests_src / f)
     log = str(path_tests_src.parent / "log" / Path(f).stem) + ".log"
 
+    # Write the command as the first line in the log file
+    start = time.time()
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(log, "w") as log_file:
+        log_file.write(f"\n\nDate/Time: {current_time}\n")
+        log_file.write(f"Command: {cmd}\n\n")
+
     shell_output = subprocess.run(
-        f"{cmd} > {log} 2>&1", shell=True, check=False, capture_output=True, text=True
+        f"{cmd} >> {log} 2>&1", shell=True, check=False, capture_output=True, text=True
     )
     shell_output.log_fpath = log
     r = shell_output.returncode

@@ -1144,6 +1144,8 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
             self.SetStoreExitingStepFlag(True)
         if "first" in self.steps_to_store:
             self.SetStoreFirstStepInVolumeFlag(True)
+        if "all" in self.steps_to_store:
+            self.SetStoreAllStepsFlag(True)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 

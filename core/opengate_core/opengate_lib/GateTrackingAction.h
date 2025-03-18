@@ -21,9 +21,9 @@ public:
 
   void RegisterActor(GateVActor *actor);
 
-  virtual void PreUserTrackingAction(const G4Track *Track);
+  virtual void PreUserTrackingAction(const G4Track *track);
 
-  virtual void PostUserTrackingAction(const G4Track *Track);
+  virtual void PostUserTrackingAction(const G4Track *track);
 
   bool fUserEventInformationFlag;
 

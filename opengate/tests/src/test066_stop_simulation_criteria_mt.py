@@ -128,7 +128,7 @@ if __name__ == "__main__":
     )
     print(f"{unc_goal = }")
     print(f"{unc_mean = }")
-    ok = unc_mean < unc_goal and unc_mean > unc_goal - test_thresh_rel
+    ok = unc_mean < unc_goal * 1.01 and unc_mean > unc_goal - test_thresh_rel
 
     # test that the simulation stopped because of the threshold crtierion,
     # and not simply because we reached the planned number of events

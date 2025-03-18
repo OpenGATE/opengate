@@ -84,6 +84,8 @@ void init_GateVActor(py::module &m) {
       .def("AddActions", &GateVActor::AddActions)
       .def("IsSensitiveDetector", &GateVActor::IsSensitiveDetector)
       .def("HasAction", &GateVActor::HasAction)
+      .def("SetMotherAttachedToVolumeName",
+           &GateVActor::SetMotherAttachedToVolumeName)
       .def("StartSimulationAction", &GateVActor::StartSimulationAction)
       .def("EndSimulationAction", &GateVActor::EndSimulationAction)
       .def("BeginOfRunAction", &GateVActor::BeginOfRunAction)
