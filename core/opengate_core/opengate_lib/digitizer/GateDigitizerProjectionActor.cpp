@@ -62,21 +62,10 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   if (run->GetRunID() == 0) {
     // The first time here we need to initialize the input position
     l.fInputPos.resize(fInputDigiCollectionNames.size());
-    l.fInputWeights.resize(fInputDigiCollectionNames.size());
     for (size_t slice = 0; slice < fInputDigiCollections.size(); slice++) {
       auto *att_pos =
           fInputDigiCollections[slice]->GetDigiAttribute("PostPosition");
       l.fInputPos[slice] = &att_pos->Get3Values();
-
-      // weight ?
-      try {
-        auto *att_w = fInputDigiCollections[slice]->GetDigiAttribute("Weight");
-        l.fInputWeights[slice] = &att_w->GetDValues();
-      } catch (std::runtime_error &) {
-        // No weights attribute
-        l.fInputWeights[slice] = new std::vector<double>;
-        l.fInputWeights[slice]->clear();
-      }
     }
   }
 }
@@ -90,11 +79,10 @@ void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
   }
 }
 
-void GateDigitizerProjectionActor::ProcessSlice(const long slice,
-                                                const size_t channel) const {
+void GateDigitizerProjectionActor::ProcessSlice(long slice, size_t channel) {
   auto &l = fThreadLocalData.Get();
-  const auto *hc = fInputDigiCollections[channel];
-  const auto index = hc->GetBeginOfEventIndex();
+  auto *hc = fInputDigiCollections[channel];
+  auto index = hc->GetBeginOfEventIndex();
   auto n = hc->GetSize() - index;
   // If no new hits, do nothing
   if (n <= 0)
@@ -102,7 +90,6 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
 
   // FIXME store other attributes somewhere ?
   const auto &pos = *l.fInputPos[channel];
-  const auto &weights = *l.fInputWeights[channel];
   ImageType::PointType point;
   ImageType::IndexType pindex;
 
@@ -116,13 +103,7 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
     if (isInside) {
       // force the slice according to the channel
       pindex[2] = slice;
-
-      // Take particle weight into account (if in the attribute list)
-      if (!weights.empty())
-        ImageAddValue<ImageType>(fImage, pindex,
-                                 static_cast<float>(weights[i]));
-      else
-        ImageAddValue<ImageType>(fImage, pindex, 1.0);
+      ImageAddValue<ImageType>(fImage, pindex, 1);
     } else {
       // Should never be here (?)
       /*DDDV(pos);

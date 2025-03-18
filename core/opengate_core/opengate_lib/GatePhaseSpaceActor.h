@@ -65,8 +65,6 @@ public:
 
   void SetStoreFirstStepInVolumeFlag(bool b) { fStoreFirstStepInVolume = true; }
 
-  void SetStoreAllStepsFlag(bool b) { fStoreAllSteps = true; }
-
 protected:
   // Local data for the threads (each one has a copy)
   struct threadLocalT {
@@ -83,7 +81,6 @@ protected:
   bool fStoreEnteringStep;
   bool fStoreExitingStep;
   bool fStoreFirstStepInVolume;
-  bool fStoreAllSteps;
 
   int fNumberOfAbsorbedEvents;
   int fTotalNumberOfEntries;

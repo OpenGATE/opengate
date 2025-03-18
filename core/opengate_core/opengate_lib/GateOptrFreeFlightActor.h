@@ -8,27 +8,36 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptrFreeFlightActor_h
 #define GateOptrFreeFlightActor_h
 
+#include "G4BOptnForceFreeFlight.hh"
+#include "G4EmCalculator.hh"
 #include "G4VBiasingOperator.hh"
-#include "GateGammaFreeFlightOptn.h"
-#include "GateVBiasOptrActor.h"
-
+#include "GateVActor.h"
+#include <iostream>
+#include <pybind11/stl.h>
 namespace py = pybind11;
 
-class GateGammaFreeFlightOptrActor : public GateVBiasOptrActor {
+class GateOptrFreeFlightActor : public G4VBiasingOperator, public GateVActor {
 
 public:
-  explicit GateGammaFreeFlightOptrActor(py::dict &user_info);
-  ~GateGammaFreeFlightOptrActor() override;
+  explicit GateOptrFreeFlightActor(py::dict &user_info);
+  ~GateOptrFreeFlightActor() override;
 
   void InitializeCpp() override;
   void InitializeUserInfo(py::dict &user_info) override;
+  void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *volume);
+
+  void Configure() override;
+  void ConfigureForWorker() override;
   void StartTracking(const G4Track *) override;
+
+  void PreUserTrackingAction(const G4Track *track) override;
 
 protected:
   G4VBiasingOperation *
   ProposeNonPhysicsBiasingOperation(const G4Track *,
                                     const G4BiasingProcessInterface *) override;
 
+  // -- Used:
   G4VBiasingOperation *
   ProposeOccurenceBiasingOperation(const G4Track *,
                                    const G4BiasingProcessInterface *) override;
@@ -38,9 +47,7 @@ protected:
       const G4BiasingProcessInterface *callingProcess) override;
 
   struct threadLocal_t {
-    GateGammaFreeFlightOptn *fFreeFlightOperation;
-
-    bool fIsFirstTime;
+    G4BOptnForceFreeFlight *fFreeFlightOperation;
   };
   G4Cache<threadLocal_t> threadLocalData;
 };

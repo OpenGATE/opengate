@@ -116,9 +116,7 @@ if __name__ == "__main__":
 
     ######## BremSplitting ACTOR #########
     nb_split = 100
-    brem_splitting_actor = sim.add_actor(
-        "BremsstrahlungSplittingActor", "eBremSplittingW"
-    )
+    brem_splitting_actor = sim.add_actor("BremSplittingActor", "eBremSplittingW")
     brem_splitting_actor.attached_to = W_tubs.name
     brem_splitting_actor.splitting_factor = nb_split
     brem_splitting_actor.particles = "e-", "e+"

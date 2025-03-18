@@ -13,13 +13,13 @@
 
 class GateAcceptanceAngleTester {
 public:
-  GateAcceptanceAngleTester(const std::string &volume,
+  GateAcceptanceAngleTester(std::string volume,
                             std::map<std::string, std::string> &param);
 
   ~GateAcceptanceAngleTester();
 
   bool TestIfAccept(const G4ThreeVector &position,
-                    const G4ThreeVector &momentum_direction) const;
+                    const G4ThreeVector &momentum_direction);
 
   void UpdateTransform();
 

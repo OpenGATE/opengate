@@ -8,6 +8,7 @@
 #ifndef GateAcceptanceAngleTesterManager_h
 #define GateAcceptanceAngleTesterManager_h
 
+#include "G4AffineTransform.hh"
 #include "GateAcceptanceAngleTester.h"
 #include "GateHelpers.h"
 
@@ -32,6 +33,7 @@ public:
 
   AAPolicyType GetPolicy() const { return fPolicy; }
 
+protected:
   AAPolicyType fPolicy;
   std::map<std::string, std::string> fAcceptanceAngleParam;
   std::vector<GateAcceptanceAngleTester *> fAATesters{};

@@ -13,9 +13,10 @@
 class GateExceptionHandler : public G4VExceptionHandler {
 public:
   GateExceptionHandler();
-  ~GateExceptionHandler() override;
-  G4bool Notify(const char *originOfException, const char *exceptionCode,
-                G4ExceptionSeverity severity, const char *description) override;
+  virtual ~GateExceptionHandler();
+  virtual G4bool Notify(const char *originOfException,
+                        const char *exceptionCode, G4ExceptionSeverity severity,
+                        const char *description);
 };
 
 #endif // GateExceptionHandler_h

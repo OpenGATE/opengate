@@ -85,13 +85,7 @@ def calculate_angle(dir1, dir2):
     magnitude2 = np.linalg.norm(dir2)
 
     # Calculate the angle between the directions
-    # cos_theta = dot_product / (magnitude1 * magnitude2)
-    cos_theta = np.divide(
-        dot_product,
-        (magnitude1 * magnitude2),
-        out=np.zeros_like(dot_product),
-        where=(magnitude1 * magnitude2) != 0,
-    )
+    cos_theta = dot_product / (magnitude1 * magnitude2)
     return np.arccos(np.clip(cos_theta, -1.0, 1.0))  # Clip to avoid numerical errors
 
 

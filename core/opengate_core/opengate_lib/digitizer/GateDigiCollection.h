@@ -108,9 +108,9 @@ public:
 
   size_t GetBeginOfEventIndex() const;
 
-  void SetBeginOfEventIndex(size_t index) const;
+  void SetBeginOfEventIndex(size_t index);
 
-  void SetBeginOfEventIndex() const;
+  void SetBeginOfEventIndex();
 
 protected:
   // Can only be created by GateDigiCollectionManager

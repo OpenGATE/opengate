@@ -13,20 +13,20 @@
 #include "GateHelpersImage.h"
 
 GateAcceptanceAngleTester::GateAcceptanceAngleTester(
-    const std::string &volume, std::map<std::string, std::string> &param) {
+    std::string volume, std::map<std::string, std::string> &param) {
   fAcceptanceAngleVolumeName = volume;
   fAASolid = nullptr;
   fAANavigator = nullptr;
   fAARotation = nullptr;
 
   // Retrieve the solid
-  const auto lvs = G4LogicalVolumeStore::GetInstance();
-  const auto lv = lvs->GetVolume(fAcceptanceAngleVolumeName);
+  auto lvs = G4LogicalVolumeStore::GetInstance();
+  auto lv = lvs->GetVolume(fAcceptanceAngleVolumeName);
   fAASolid = lv->GetSolid();
 
   // Init a navigator that will be used to find the transform
-  const auto pvs = G4PhysicalVolumeStore::GetInstance();
-  const auto world = pvs->GetVolume("world");
+  auto pvs = G4PhysicalVolumeStore::GetInstance();
+  auto world = pvs->GetVolume("world");
   fAANavigator = new G4Navigator();
   fAANavigator->SetWorldVolume(world);
 
@@ -50,11 +50,10 @@ void GateAcceptanceAngleTester::UpdateTransform() {
 }
 
 bool GateAcceptanceAngleTester::TestIfAccept(
-    const G4ThreeVector &position,
-    const G4ThreeVector &momentum_direction) const {
-  const auto localDirection = (*fAARotation) * (momentum_direction);
+    const G4ThreeVector &position, const G4ThreeVector &momentum_direction) {
+  auto localPosition = fAATransform.TransformPoint(position);
+  auto localDirection = (*fAARotation) * (momentum_direction);
   if (fIntersectionFlag) {
-    const auto localPosition = fAATransform.TransformPoint(position);
     auto dist = fAASolid->DistanceToIn(localPosition, localDirection);
     if (dist == kInfinity)
       return false;

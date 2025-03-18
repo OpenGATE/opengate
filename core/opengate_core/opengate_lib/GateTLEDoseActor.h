@@ -14,6 +14,7 @@
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
 #include "G4NistManager.hh"
+#include "G4VPrimitiveScorer.hh"
 
 #include <pybind11/stl.h>
 

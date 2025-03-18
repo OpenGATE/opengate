@@ -9,10 +9,15 @@
 #define GateDoseActor_h
 
 #include "G4Cache.hh"
-#include "G4EmCalculator.hh"
 #include "G4VPrimitiveScorer.hh"
 #include "GateVActor.h"
 #include "itkImage.h"
+#include <G4Threading.hh>
+#include <iostream>
+#include <pybind11/stl.h>
+
+#include "G4EmCalculator.hh"
+#include "G4NistManager.hh"
 
 namespace py = pybind11;
 
@@ -20,7 +25,7 @@ class GateDoseActor : public GateVActor {
 
 public:
   // Constructor
-  explicit GateDoseActor(py::dict &user_info);
+  GateDoseActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -43,37 +48,39 @@ public:
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
 
-  bool GetToWaterFlag() const { return fToWaterFlag; }
+  inline bool GetToWaterFlag() const { return fToWaterFlag; }
 
-  void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
+  inline void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
 
-  bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
+  inline bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
 
-  void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
+  inline void SetEdepSquaredFlag(const bool b) { fEdepSquaredFlag = b; }
 
-  void SetDoseFlag(const bool b) { fDoseFlag = b; }
+  inline void SetDoseFlag(const bool b) { fDoseFlag = b; }
 
-  bool GetDoseFlag() const { return fDoseFlag; }
+  inline bool GetDoseFlag() const { return fDoseFlag; }
 
-  void SetDoseSquaredFlag(const bool b) { fDoseSquaredFlag = b; }
+  inline void SetDoseSquaredFlag(const bool b) { fDoseSquaredFlag = b; }
 
-  bool GetDoseSquaredFlag() const { return fDoseSquaredFlag; }
+  inline bool GetDoseSquaredFlag() const { return fDoseSquaredFlag; }
 
-  void SetCountsFlag(const bool b) { fCountsFlag = b; }
+  inline void SetCountsFlag(const bool b) { fCountsFlag = b; }
 
-  bool GetCountsFlag() const { return fCountsFlag; }
+  inline bool GetCountsFlag() const { return fCountsFlag; }
 
-  void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
+  inline void SetUncertaintyGoal(const double b) { fUncertaintyGoal = b; }
 
-  void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
+  inline void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
 
-  void SetOvershoot(const double b) { Overshoot = b; }
+  inline void SetOvershoot(const double b) { Overshoot = b; }
 
-  void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
+  inline void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
 
-  std::string GetPhysicalVolumeName() const { return fPhysicalVolumeName; }
+  inline std::string GetPhysicalVolumeName() const {
+    return fPhysicalVolumeName;
+  }
 
-  void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
   // Image type needs to be 3D double by default
   typedef itk::Image<double, 3> Image3DType;

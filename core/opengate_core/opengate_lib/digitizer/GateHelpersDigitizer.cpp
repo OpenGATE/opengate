@@ -27,7 +27,7 @@ GateDigiAttributesFiller::GateDigiAttributesFiller(
   }
 }
 
-void GateDigiAttributesFiller::Fill(const size_t index) const {
+void GateDigiAttributesFiller::Fill(size_t index) {
   for (size_t i = 0; i < fInputDigiAttributes.size(); i++) {
     fOutputDigiAttributes[i]->Fill(fInputDigiAttributes[i], index);
   }

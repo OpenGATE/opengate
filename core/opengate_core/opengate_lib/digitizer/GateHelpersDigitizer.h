@@ -22,7 +22,7 @@ public:
                            GateDigiCollection *output,
                            const std::set<std::string> &names);
 
-  void Fill(size_t index) const;
+  void Fill(size_t index);
 
   std::vector<GateVDigiAttribute *> fInputDigiAttributes;
   std::vector<GateVDigiAttribute *> fOutputDigiAttributes;

@@ -1,47 +1,50 @@
-/* --------------------------------------------------
-Copyright (C): OpenGATE Collaboration
-   This software is distributed under the terms
-   of the GNU Lesser General  Public Licence (LGPL)
-   See LICENSE.md for further details
-   -------------------------------------------------- */
+//
+// ********************************************************************
+// * License and Disclaimer                                           *
+// *                                                                  *
+// * The  Geant4 software  is  copyright of the Copyright Holders  of *
+// * the Geant4 Collaboration.  It is provided  under  the terms  and *
+// * conditions of the Geant4 Software License,  included in the file *
+// * LICENSE and available at  http://cern.ch/geant4/license .  These *
+// * include a list of copyright holders.                             *
+// *                                                                  *
+// * Neither the authors of this software system, nor their employing *
+// * institutes,nor the agencies providing financial support for this *
+// * work  make  any representation or  warranty, express or implied, *
+// * regarding  this  software system or assume any liability for its *
+// * use.  Please see the license in the file  LICENSE  and URL above *
+// * for the full disclaimer and the limitation of liability.         *
+// *                                                                  *
+// * This  code  implementation is the result of  the  scientific and *
+// * technical work of the GEANT4 collaboration.                      *
+// * By using,  copying,  modifying or  distributing the software (or *
+// * any work based  on the software)  you  agree  to acknowledge its *
+// * use  in  resulting  scientific  publications,  and indicate your *
+// * acceptance of all terms of the Geant4 Software license.          *
+// ********************************************************************
+//
+//
+/// \file GateBOptnBremSplitting.cc
+/// \brief Implementation of the GateBOptnBremSplitting class
 
-#include "GateBremsstrahlungSplittingOptn.h"
+#include "GateBOptnBremSplitting.h"
 #include "G4BiasingProcessInterface.hh"
+
 #include "G4ParticleChangeForLoss.hh"
 
-GateBremsstrahlungSplittingOptn::GateBremsstrahlungSplittingOptn(
-    const G4String &name)
-    : G4VBiasingOperation(name), fSplittingFactor(1) {}
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-const G4VBiasingInteractionLaw *
-GateBremsstrahlungSplittingOptn::ProvideOccurenceBiasingInteractionLaw(
-    const G4BiasingProcessInterface *, G4ForceCondition &) {
-  return nullptr;
-}
+GateBOptnBremSplitting::GateBOptnBremSplitting(G4String name)
+    : G4VBiasingOperation(name), fSplittingFactor(1), fParticleChange() {}
 
-void GateBremsstrahlungSplittingOptn::SetSplittingFactor(
-    G4int splittingFactor) {
-  fSplittingFactor = splittingFactor;
-}
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-G4int GateBremsstrahlungSplittingOptn::GetSplittingFactor() const {
-  return fSplittingFactor;
-}
+GateBOptnBremSplitting::~GateBOptnBremSplitting() {}
 
-G4double GateBremsstrahlungSplittingOptn::DistanceToApplyOperation(
-    const G4Track *, G4double, G4ForceCondition *) {
-  return DBL_MAX;
-}
-
-G4VParticleChange *
-GateBremsstrahlungSplittingOptn::GenerateBiasingFinalState(const G4Track *,
-                                                           const G4Step *) {
-  return 0;
-}
-
-G4VParticleChange *GateBremsstrahlungSplittingOptn::ApplyFinalStateBiasing(
+G4VParticleChange *GateBOptnBremSplitting::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
+
   // -- Collect brem. process (wrapped process) final state:
   G4VParticleChange *processFinalState =
       callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
@@ -67,10 +70,10 @@ G4VParticleChange *GateBremsstrahlungSplittingOptn::ApplyFinalStateBiasing(
   // --     process, hence the one stored in above processFinalState particle
   // change.
   // --     This state will be stored in our fParticleChange object.
-  // --   - the photon accompanying the electron will be stored also this way.
+  // --   - the photon accompagnying the electron will be stored also this way.
   // --   - we will then do fSplittingFactor - 1 call to the brem. process to
   // collect
-  // --     fSplittingFactor - 1 additional gammas. All these will be stored in
+  // --     fSplittingFactor - 1 additionnal gammas. All these will be stored in
   // our
   // --     fParticleChange object.
 
@@ -79,8 +82,8 @@ G4VParticleChange *GateBremsstrahlungSplittingOptn::ApplyFinalStateBiasing(
   // -- a "G4ParticleChangeForLoss" object. We cast this particle change to
   // access
   // -- methods of the concrete G4ParticleChangeForLoss type:
-  auto *actualParticleChange =
-      dynamic_cast<G4ParticleChangeForLoss *>(processFinalState);
+  G4ParticleChangeForLoss *actualParticleChange =
+      (G4ParticleChangeForLoss *)processFinalState;
 
   fParticleChange.Initialize(*track);
 
@@ -136,3 +139,5 @@ G4VParticleChange *GateBremsstrahlungSplittingOptn::ApplyFinalStateBiasing(
   // -- we are done:
   return &fParticleChange;
 }
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

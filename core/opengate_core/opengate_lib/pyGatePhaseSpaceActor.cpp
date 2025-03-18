@@ -20,7 +20,6 @@ void init_GatePhaseSpaceActor(py::module &m) {
            &GatePhaseSpaceActor::SetStoreEnteringStepFlag)
       .def("SetStoreExitingStepFlag",
            &GatePhaseSpaceActor::SetStoreExitingStepFlag)
-      .def("SetStoreAllStepsFlag", &GatePhaseSpaceActor::SetStoreAllStepsFlag)
       .def("SetStoreFirstStepInVolumeFlag",
            &GatePhaseSpaceActor::SetStoreFirstStepInVolumeFlag);
 }

@@ -37,9 +37,9 @@ public:
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
 
-  bool HasAction(const std::string &);
+  const bool HasAction(std::string);
 
-  bool IsSensitiveDetector();
+  const bool IsSensitiveDetector();
 
   // Called when the simulation start (master thread only)
   virtual void StartSimulationAction() {}
@@ -105,25 +105,28 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
-  void SetOutputPath(const std::string &outputName,
-                     const std::string &outputPath);
+  void SetOutputPath(std::string outputName, std::string outputPath);
 
-  std::string GetOutputPath(std::string outputName) const;
+  std::string GetOutputPath(std::string outputName);
 
-  void SetWriteToDisk(const std::string &outputName, bool writeToDisk);
+  void SetWriteToDisk(std::string outputName, bool writeToDisk);
 
-  bool GetWriteToDisk(std::string outputName) const;
+  bool GetWriteToDisk(std::string outputName);
 
-  void AddActorOutputInfo(const std::string &outputName);
+  void AddActorOutputInfo(std::string outputName);
 
-  bool IsStepExitVolume(const G4Step *step) const;
+  //  void RegisterCallBack(std::string, std::function);
+
+  // convenience function to get the output path of this actor via the callback
+  // function
+  //  std::string GetOutputPathString(std::string output_type, int run_index);
 
   inline static std::string fOutputNameRoot = "root_output";
 
   struct ActorOutputInfo {
-    std::string outputName = "";
-    std::string outputPath = "";
-    bool writeToDisk = false;
+    std::string outputName;
+    std::string outputPath;
+    bool writeToDisk;
   };
 
   typedef ActorOutputInfo ActorOutputInfo_t;
@@ -132,26 +135,24 @@ public:
 
   void SetSourceManager(GateSourceManager *s);
 
-  void SetMotherAttachedToVolumeName(const std::string &attachedToVolumeName);
-
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
   std::set<std::string> fActions;
 
   // Name of the mother volume (logical volume)
   std::string fAttachedToVolumeName;
-  std::string fAttachedToVolumeMotherName;
 
   // List of active filters
   std::vector<GateVFilter *> fFilters;
 
+  // callback functions
+  //  typedef CallbackMap std::map<std::string, std::function>;
+  //  CallbackMap fcallBacks;
+
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
-
-  // Is the boolean operator between filters an 'and' ?
   bool fOperatorIsAnd;
 
-  // Should this actor write to disk ?
   bool fWriteToDisk;
 
   GateSourceManager *fSourceManager;

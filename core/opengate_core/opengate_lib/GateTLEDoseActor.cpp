@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <itkAddImageFilter.h>
+#include <itkImageRegionIterator.h>
 #include <vector>
 
 G4Mutex SetPixelTLEMutex = G4MUTEX_INITIALIZER;
@@ -26,8 +27,6 @@ G4Mutex SetPixelTLEMutex = G4MUTEX_INITIALIZER;
 GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
     : GateDoseActor(user_info) {
   fMultiThreadReady = true;
-  fEnergyMax = 0;
-  fEnergyMin = 0;
 }
 
 void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
@@ -72,8 +71,10 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
 
   else {
     auto parent_id = track->GetParentID();
+    // std::cout<<"begin"<<std::endl;
     for (auto it = l.fSecNbWhichDeposit.begin();
          it != l.fSecNbWhichDeposit.end(); ++it) {
+      // std::cout <<it->first<<"  "<<it->second<<std::endl;
       if (parent_id == it->first) {
         if (it->second > 0) {
           l.fIsTLESecondary = true;
@@ -86,15 +87,17 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
         it->second--;
       }
     }
+    // std::cout<<"end"<<std::endl;
   }
 }
 
 void GateTLEDoseActor::SteppingAction(G4Step *step) {
   auto &l = fThreadLocalData.Get();
 
-  const auto pre_step = step->GetPreStepPoint();
+  auto pre_step = step->GetPreStepPoint();
   double energy = 0;
-  energy = pre_step->GetKineticEnergy();
+  if (pre_step != 0)
+    energy = pre_step->GetKineticEnergy();
   if (step->GetTrack()->GetDefinition()->GetParticleName() == "gamma") {
 
     // For too high energy, no TLE
@@ -139,14 +142,14 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
     edep = energy;
     step->GetTrack()->SetTrackStatus(fStopAndKill);
   }
-  const double dose = edep / density;
+  double dose = edep / density;
 
   // Get the voxel index and check if the step was within the 3D image
   G4ThreeVector position;
   bool isInside;
   Image3DType::IndexType index;
   GetVoxelPosition(step, position, isInside, index);
-  const auto event_id =
+  auto event_id =
       G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   if (isInside) {
     G4AutoLock mutex(&SetPixelTLEMutex); // mutex is bound to the if-scope

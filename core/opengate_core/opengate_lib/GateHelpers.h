@@ -62,8 +62,6 @@ extern const int LogLevel_EVENT;
 static const double sigma_to_fwhm = 2.0 * sqrt(2.0 * log(2.0));
 static const double fwhm_to_sigma = 1.0 / sigma_to_fwhm;
 
-std::string DebugStep(const G4Step *step);
-
 #include "GateHelpers.txx"
 
 #endif // GateHelpers_h

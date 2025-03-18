@@ -25,8 +25,6 @@ public:
 
   void TrackAttribute(const std::string &name, double **value);
 
-  void TrackAttribute(const std::string &name, int **value);
-
   void TrackAttribute(const std::string &name, G4ThreeVector **value);
 
   void TrackAttribute(const std::string &name,
@@ -36,7 +34,7 @@ public:
 
   void GoToBegin();
 
-  void GoTo(size_t index) const;
+  void GoTo(size_t i);
 
   void Reset();
 
@@ -47,9 +45,6 @@ public:
 
   std::vector<double **> fDAttributes;
   std::vector<std::vector<double> *> fDAttributesVector;
-
-  std::vector<int **> fIAttributes;
-  std::vector<std::vector<int> *> fIAttributesVector;
 
   std::vector<G4ThreeVector **> f3Attributes;
   std::vector<std::vector<G4ThreeVector> *> f3AttributesVector;

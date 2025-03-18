@@ -7,15 +7,13 @@
 #include <pybind11/pybind11.h>
 
 namespace py = pybind11;
-#include "../GateVActor.h"
 #include "G4VBiasingOperator.hh"
-#include "GateBremsstrahlungSplittingOptrActor.h"
+#include "GateOptrComptSplittingActor.h"
 
-void init_GateBOptrBremSplittingActor(py::module &m) {
+void init_GateOptrComptSplittingActor(py::module &m) {
 
-  py::class_<
-      GateBremsstrahlungSplittingOptrActor, G4VBiasingOperator, GateVActor,
-      std::unique_ptr<GateBremsstrahlungSplittingOptrActor, py::nodelete>>(
-      m, "GateBremsstrahlungSplittingOptrActor")
+  py::class_<GateOptrComptSplittingActor, G4VBiasingOperator, GateVActor,
+             std::unique_ptr<GateOptrComptSplittingActor, py::nodelete>>(
+      m, "GateOptrComptSplittingActor")
       .def(py::init<py::dict &>());
 }
