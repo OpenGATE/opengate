@@ -10,6 +10,8 @@
 
 #include "G4VTouchable.hh"
 #include "GateUniqueVolumeID.h"
+#include <string>
+#include <utility>
 
 /*
     Global singleton class that manage a correspondence between touchable
@@ -29,13 +31,11 @@ protected:
 
   static GateUniqueVolumeIDManager *fInstance;
 
-  // Index of ID array to VolumeID to speed up test
+  // Index of name + ID array to VolumeID
   // This map is created on the fly in GetVolumeID
-  std::map<GateUniqueVolumeID::IDArrayType, GateUniqueVolumeID::Pointer>
-      fArrayToVolumeID;
-
-  // Convenient helpers map from name to VolumeID
-  std::map<std::string, GateUniqueVolumeID::Pointer> fNameToVolumeID;
+  std::map<std::pair<std::string, GateUniqueVolumeID::IDArrayType>,
+           GateUniqueVolumeID::Pointer>
+      fToVolumeID;
 };
 
 #endif // GateUniqueVolumeIDManager_h

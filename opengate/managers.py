@@ -78,13 +78,19 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
+
 from .actors.doseactors import (
     DoseActor,
     TLEDoseActor,
     LETActor,
     FluenceActor,
     ProductionAndStoppingActor,
+    RBEActor,
+    REActor,
+    BeamQualityActor,
+    EmCalculatorActor,
 )
+
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -99,9 +105,9 @@ from .actors.miscactors import (
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
-    ComptSplittingActor,
-    BremSplittingActor,
-    FreeFlightActor,
+    BremsstrahlungSplittingActor,
+    GammaFreeFlightActor,
+    ScatterSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -129,6 +135,10 @@ actor_types = {
     "TLEDoseActor": TLEDoseActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
+    "RBEActor": RBEActor,
+    "REActor": REActor,
+    "BeamQualityActor": BeamQualityActor,
+    "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
     # misc
     "AttenuationImageActor": AttenuationImageActor,
@@ -156,9 +166,9 @@ actor_types = {
     "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
     "AttenuationImageActor": AttenuationImageActor,
     # biasing
-    "BremSplittingActor": BremSplittingActor,
-    "ComptSplittingActor": ComptSplittingActor,
-    "FreeFlightActor": FreeFlightActor,
+    "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
+    "GammaFreeFlightActor": GammaFreeFlightActor,
+    "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
 }
 
 
@@ -1303,7 +1313,7 @@ class Simulation(GateObject):
     run_timing_intervals: List[List[float]]
     output_dir: Path
     store_json_archive: bool
-    json_archive_filename: Path
+    json_archive_filename: str
     store_input_files: bool
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]

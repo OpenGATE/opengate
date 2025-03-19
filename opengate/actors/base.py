@@ -305,14 +305,15 @@ class ActorBase(GateObject):
         docstring += "\n"
         return docstring
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         GateObject.__init__(self, *args, **kwargs)
-        self.actor_engine = (
-            None  # this is set by the actor engine during initialization
-        )
+        # the actor engine is set by the actor engine during initialization
+        self.actor_engine = None
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
         self._init_user_output_instance()
+        # the mother of the volume the actor is attached to will be automatically set
+        self.mother_attached_to = None
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -452,6 +453,19 @@ class ActorBase(GateObject):
 
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
+
+        # set the mother of the attached_to volume to the actor
+        # but only if attached to a single volume.
+        if isinstance(self.attached_to, str):
+            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            self.mother_attached_to = vol.mother
+            if vol.mother is None:
+                # the mother of the world is the world (sic)
+                self.mother_attached_to = __world_name__
+        else:
+            self.mother_attached_to = "None"
+        # set the name of the attached_to mother volume to cpp
+        self.SetMotherAttachedToVolumeName(self.mother_attached_to)
 
         any_active = False
         for p in self._existing_properties_to_interfaces:

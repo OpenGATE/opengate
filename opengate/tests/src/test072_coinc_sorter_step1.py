@@ -1,11 +1,32 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# config 1 is used for tests of "keepAll", "keepHighestEnergyPair", "removeAll" and "keepCoincidenceIfOnlyOneGood" policies
+
 import opengate as gate
+from pathlib import Path
+import os
 from opengate.tests import utility
 
+# colors (similar to the ones of Gate)
+red = [1, 0, 0, 1]
+blue = [0, 0, 1, 1]
+green = [0, 1, 0, 1]
+yellow = [0.9, 0.9, 0.3, 1]
+gray = [0.5, 0.5, 0.5, 1]
+white = [1, 1, 1, 0.8]
+
 if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "gate_test072", "test072")
+
     sim = gate.Simulation()
+
+    # options
+    # warning the visualisation is slow !
+    sim.visu = False
+    sim.visu_type = "vrml"
+    sim.random_seed = "auto"
+    sim.number_of_threads = 1
 
     # units
     m = gate.g4_units.m
@@ -18,36 +39,26 @@ if __name__ == "__main__":
     gcm3 = gate.g4_units.g_cm3
     deg = gate.g4_units.deg
 
-    # colors (similar to the ones of Gate)
-    red = [1, 0, 0, 1]
-    blue = [0, 0, 1, 1]
-    green = [0, 1, 0, 1]
-    yellow = [0.9, 0.9, 0.3, 1]
-    gray = [0.5, 0.5, 0.5, 1]
-    white = [1, 1, 1, 0.8]
-
     # folders
-    paths = utility.get_default_test_paths(
-        __file__, output_folder="test072_coinc_sorter"
-    )
-
-    # options
-    # warning the visualisation is slow !
-    # sim.visu = True
-    sim.visu_type = "vrml"
-    sim.random_seed = 123456
-    sim.number_of_threads = 1
-    sim.output_dir = paths.output
-    sim.store_json_archive = True
-    sim.json_archive_filename = "simulation.json"
+    data_path = paths.data
+    output_path = paths.output
 
     # world
-    sim.world.size = [450 * mm, 450 * mm, 70 * mm]
-    sim.world.material = "G4_AIR"
+    world = sim.world
+    world.size = [450 * mm, 450 * mm, 70 * mm]
+    world.material = "G4_AIR"
 
-    # create the materials
+    # add the Philips Vereos PET
+    # pet = pet_vereos.add_pet(sim, "pet")
+    # if create_mat:
+    #    create_material(sim)
+
+    # create the material lead
     sim.volume_manager.material_database.add_material_nb_atoms(
         "Lead", ["Pb"], [1], 11.4 * gcm3
+    )
+    sim.volume_manager.material_database.add_material_nb_atoms(
+        "Uranium", ["U"], [1], 18.9 * gcm3
     )
     sim.volume_manager.material_database.add_material_nb_atoms(
         "BGO", ["Bi", "Ge", "O"], [4, 3, 12], 7.13 * gcm3
@@ -72,51 +83,74 @@ if __name__ == "__main__":
     pet = sim.add_volume("Tubs", "pet")
     pet.rmax = 200 * mm
     pet.rmin = 127 * mm
-    pet.dz = 32 * mm
+    pet.dz = 32 * mm  # 340 * mm / 2.0
     pet.color = gray
     pet.material = "G4_AIR"
 
     # block
     block = sim.add_volume("Box", "block")
-    block.mother = pet
+    block.mother = pet.name
     block.size = [60 * mm, 10 * mm, 10 * mm]
+    # block.size = [1 * mm, 10 * mm, 10  * mm]
+    # block.translation = [0 * mm, 324.3 * mm , 0 * mm]
     translations_ring, rotations_ring = gate.geometry.utility.get_circular_repetition(
         80, [160 * mm, 0.0 * mm, 0], start_angle_deg=180, axis=[0, 0, 1]
     )
     block.translation = translations_ring
     block.rotation = rotations_ring
+
     block.material = "G4_AIR"
+    # block.translation = get_grid_repetition([1, 1, 4], [0, 0 * mm, 38.8 * mm])
     block.color = white
 
     # Crystal
     crystal = sim.add_volume("Box", "crystal")
-    crystal.mother = block
+    crystal.mother = block.name
+    # crystal.size = [1 * mm, 10 * mm, 10 * mm]
+    # crystal.material = "Uranium"
     crystal.size = [60 * mm, 10 * mm, 10 * mm]
     crystal.material = "LYSO"
+    # crystal.translation = gate.geometry.utility.get_grid_repetition([1, 1, 1], [3.9833 * mm ,0 * mm, 5.3 * mm])
     crystal.color = green
 
-    # source
+    """
+    # If visu is enabled, we simplified the PET system, otherwise it is too slow
+    if sim.visu:
+        module = sim.volume_manager.get_volume("module")
+        # only 2 repetition instead of 18
+        translations_ring, rotations_ring = get_circular_repetition(
+        72, [427 * mm, 0, 0], start_angle_deg=190, axis=[0, 0, 1]
+        )
+        module.translation = translations_ring
+        module.rotation = rotations_ring
+    """
+
     source = sim.add_source("GenericSource", "b2b")
     source.particle = "back_to_back"
-    source.activity = 20 * Bq
+    source.activity = 200000000 * Bq  # 2000000 * Bq
+    # source.n = 1000
     source.position.type = "sphere"
     source.position.radius = 0.0000000000000005 * mm
+    # source.direction.type = "iso"
+    # source.direction.accolinearity_flag = False
     source.energy.mono = 511 * keV
     source.direction.theta = [90 * deg, 90 * deg]
     source.direction.phi = [0, 360 * deg]
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
+    # sim.physics_manager.enable_decay = True
+    # sim.physics_manager.set_production_cut("world", "all", 1 * m)
+    # sim.physics_manager.set_production_cut("waterbox", "all", 1 * mm)
 
-    # actors
-    stats = sim.add_actor("SimulationStatisticsActor", "Stats")
-    stats.output_filename = "stats.txt"
+    # add the PET digitizer
 
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal.name}")
-    hc.attached_to = crystal
+    hc.attached_to = crystal.name
     hc.authorize_repeated_volumes = True
-    hc.output_filename = "test72_output_1.root"
+    hc.output_filename = output_path / "output_singles.root"
+    # hc.output = "output_config1.root"
     hc.attributes = [
         "EventID",
         "PostPosition",
@@ -134,17 +168,14 @@ if __name__ == "__main__":
     sc.output_filename = hc.output_filename
 
     # timing
-    sim.run_timing_intervals = [[0, 200 * sec]]
-
+    sim.run_timing_intervals = [[0, 0.0002 * sec]]
+    # sim.run_timing_intervals = [[0, 0.01 * sec]]
     # go
     sim.run()
 
     # end
-    print(stats)
-
-    # This test produces the data for the other 072_coinc_sorter tests
-    stats_ref = paths.output_ref / "stats.txt"
-    stats_ref = utility.read_stat_file(stats_ref)
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.04)
-
-    utility.test_ok(is_ok)
+    """print(f"Output statistics are in {stats.output}")
+    print(f"Output edep map is in {dose.output}")
+    print(f"vv {ct.image} --fusion {dose.output}")
+    stats = sim.output.get_actor("Stats")
+    print(stats)"""
