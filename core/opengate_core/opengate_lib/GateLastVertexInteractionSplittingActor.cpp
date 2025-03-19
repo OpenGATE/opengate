@@ -47,7 +47,6 @@
 #include "GateLastVertexInteractionSplittingActor.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingPostStepDoIt.h"
-#include "GateOptnComptSplitting.h"
 #include <cmath>
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

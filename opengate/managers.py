@@ -147,8 +147,6 @@ actor_types = {
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
     "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
-    "BremSplittingActor": BremSplittingActor,
-    "ComptSplittingActor": ComptSplittingActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
