@@ -311,8 +311,9 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
       G4ThreeVector momentum = newTrack->GetMomentumDirection();
 
       if (!(isnan(momentum[0]))) {
-        if ((fAngularKill) && (DoesParticleEmittedInSolidAngle(
-                                   momentum, fCurrentVectorDirector) == false)) {
+        if ((fAngularKill) &&
+            (DoesParticleEmittedInSolidAngle(
+                 momentum, fCurrentVectorDirector) == false)) {
           delete newTrack;
         } else if (IsPushBack == true) {
           delete newTrack;
@@ -610,8 +611,8 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
       if ((fAngularKill == false) ||
           ((fAngularKill == true) &&
            (DoesParticleEmittedInSolidAngle(
-                step->GetTrack()->GetMomentumDirection(), fCurrentVectorDirector) ==
-            true))) {
+                step->GetTrack()->GetMomentumDirection(),
+                fCurrentVectorDirector) == true))) {
         if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() !=
             "None") {
           fListOfContainer.push_back((*fIterator));
