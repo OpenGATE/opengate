@@ -3,7 +3,7 @@
 
 import click
 import os
-
+import opengate_core as g4
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -12,7 +12,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.option("--input", "-i", default="", help="Input visualization file")
 @click.option("--vrml", "-v", is_flag=True, help="VRML file")
 @click.option("--gdml", "-g", is_flag=True, help="GDML file")
-def go(input, vrml, gdml):
+@click.option("--qt", "-q", is_flag=True, help="Test Qt window")
+def go(input, vrml, gdml, qt):
+
+    if qt:
+        g4.createTestQtWindow()
+        return ()
+
     if not os.path.isfile(input):
         print("The file " + input + " does not exist")
         return ()
