@@ -438,6 +438,7 @@ class KillActor(ActorBase, g4.GateKillActor):
     def EndSimulationAction(self):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
+
 class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):

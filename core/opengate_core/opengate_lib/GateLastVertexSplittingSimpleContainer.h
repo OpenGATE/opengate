@@ -36,8 +36,8 @@
 #include "G4PhysicalConstants.hh"
 #include "G4PhysicsModelCatalog.hh"
 #include "G4Positron.hh"
-#include "G4TouchableHandle.hh"
 #include "G4ReferenceCountedHandle.hh"
+#include "G4TouchableHandle.hh"
 #include "G4Track.hh"
 #include "G4VEmProcess.hh"
 #include "G4VEnergyLossProcess.hh"
@@ -71,8 +71,7 @@ public:
 
   SimpleContainer() {}
 
-  ~SimpleContainer() {
-  }
+  ~SimpleContainer() {}
 
   void SetProcessNameToSplit(G4String processName) {
     fProcessNameToSplit = processName;
@@ -128,7 +127,7 @@ public:
 
   G4ThreeVector GetPrePositionToSplit() { return fPrePosition; }
 
-  G4TouchableHandle GetTouchableHandle() {return fpTouchable[0];}
+  G4TouchableHandle GetTouchableHandle() { return fpTouchable[0]; }
 
   void DumpInfoToSplit() {
     std::cout << "Particle name of the particle to split: "
@@ -159,8 +158,6 @@ private:
   G4double fStepLength;
   G4ThreeVector fPrePosition;
   std::vector<G4TouchableHandle> fpTouchable;
-  
-  
 };
 
 #endif
