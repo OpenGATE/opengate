@@ -4,6 +4,7 @@ from ..base import process_cls
 from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
+from anytree import RenderTree
 
 
 def generic_source_default_aa():
@@ -299,9 +300,86 @@ class ScatterSplittingFreeFlightActor(
         )
 
 
+class LastVertexInteractionSplittingActor( ActorBase, g4.GateLastVertexInteractionSplittingActor):
+    """Specific VRT which do not use the generic biaising. This splitting actor proposes an interaction splitting at the last particle vertex before the exit
+     of the biased volume.  This actor can be usefull for application where collimation are important,
+    such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
+    """
+
+    # hints for IDE
+    splitting_factor: int
+    batch_size: int
+    nb_of_max_batch_per_event: int
+
+    user_info_defaults = {
+        "splitting_factor": (
+            1,
+            {
+                "doc": "Defines the number of particles exiting at each split process. Unlike other split actors, this splitting factor counts particles that actually exit, not just those generated.",
+            },
+        ),
+        "batch_size": (
+            1,
+            {
+                "doc": "Defines a batch of number of processes to regenerate. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+            },
+        ),
+        "nb_of_max_batch_per_event": (
+            500,
+            {
+                "doc": "Defines a maximum number of attempt to enable the particles to exit. Useful to avoid an important loss of time for extremely rare events",
+            },
+        ),
+        "acceptance_angle": (
+            generic_source_default_aa(),
+            {
+                "doc": "See generic source",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateLastVertexInteractionSplittingActor.__init__(self, {"name": self.name})
+        self.AddActions(
+            {
+                "BeginOfRunAction",
+                "BeginOfEventAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "PostUserTrackingAction",
+                "EndOfEventAction",
+                "EndSimulationAction",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
+        print("Number of killed particle:", self.GetNumberOfKilledParticles())
+
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
 process_cls(BremsstrahlungSplittingActor)
 process_cls(GammaFreeFlightActor)
 process_cls(ActorOutputScatterSplittingFreeFlightActor)
 process_cls(ScatterSplittingFreeFlightActor)
+process_cls(LastVertexInteractionSplittingActor)

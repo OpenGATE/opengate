@@ -97,10 +97,8 @@ from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
     KillAccordingProcessesActor,
-    LastVertexInteractionSplittingActor,
     KillNonInteractingParticleActor,
     KillAccordingParticleNameActor,
-    SplittingActorBase,
     AttenuationImageActor,
 )
 from .actors.biasingactors import (
@@ -108,6 +106,7 @@ from .actors.biasingactors import (
     BremsstrahlungSplittingActor,
     GammaFreeFlightActor,
     ScatterSplittingFreeFlightActor,
+    LastVertexInteractionSplittingActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -147,8 +146,6 @@ actor_types = {
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
     "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
     "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
-    "BremSplittingActor": BremSplittingActor,
-    "ComptSplittingActor": ComptSplittingActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
@@ -163,12 +160,12 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "PhaseSpaceActor": PhaseSpaceActor,
-    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
     "AttenuationImageActor": AttenuationImageActor,
     # biasing
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,
     "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
+    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
 }
 
 

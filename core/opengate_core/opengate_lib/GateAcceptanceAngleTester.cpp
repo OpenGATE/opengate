@@ -56,6 +56,8 @@ bool GateAcceptanceAngleTester::TestIfAccept(
   if (fIntersectionFlag) {
     const auto localPosition = fAATransform.TransformPoint(position);
     auto dist = fAASolid->DistanceToIn(localPosition, localDirection);
+    std::cout<<"local  "<<localPosition<<"   "<<localDirection<<std::endl;
+    std::cout<<"global  "<<position<<"   "<<momentum_direction<<std::endl;
     if (dist == kInfinity)
       return false;
   }

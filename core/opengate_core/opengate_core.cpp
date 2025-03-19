@@ -358,8 +358,6 @@ void init_G4VBiasingOperator(py::module &m);
 
 void init_GateTLEDoseActor(py::module &m);
 
-void init_GateOptrComptSplittingActor(py::module &m);
-
 void init_GateLastVertexInteractionSplittingActor(py::module &m);
 
 // Gate digit
@@ -614,9 +612,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateSimulationStatisticsActor(m);
 
   init_GateBOptrBremSplittingActor(m);
-  init_GateOptrComptSplittingActor(m);
   init_GateLastVertexInteractionSplittingActor(m);
-  init_GateOptrFreeFlightActor(m);
   init_GateGammaFreeFlightOptrActor(m);
   init_GateScatterSplittingFreeFlightOptrActor(m);
 

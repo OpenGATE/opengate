@@ -30,6 +30,8 @@
 #define GateLastVertexInteractionSplittingActor_h 1
 
 #include "CLHEP/Vector/ThreeVector.h"
+#include "GateAcceptanceAngleTesterManager.h"
+#include "GateAcceptanceAngleTester.h"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4StackManager.hh"
 #include "G4VEnergyLossProcess.hh"
@@ -50,10 +52,8 @@ public:
   virtual ~GateLastVertexInteractionSplittingActor() {}
 
   G4double fSplittingFactor;
-  G4bool fAngularKill;
-  G4bool fRotationVectorDirector;
-  G4ThreeVector fVectorDirector;
-  G4double fMaxTheta;
+  GateAcceptanceAngleTesterManager* fAAManager;
+  G4int fNumberOfTargetedVolume = 0;
   G4double fCosMaxTheta;
   G4int fTrackIDOfSplittedTrack = 0;
   G4int fParentID = -1;
@@ -88,7 +88,7 @@ public:
   G4int fNbOfMaxBatchPerEvent;
   G4int fRemovedParticle = 0;
   G4int fNumberOfReplayedParticle = 0;
-
+  G4ThreeVector fCurrentVectorDirector;
   G4Track *fTrackToSplit = nullptr;
   G4Step *fCopyInitStep = nullptr;
   G4String fProcessNameToSplit;
@@ -113,6 +113,7 @@ public:
   virtual void PreUserTrackingAction(const G4Track *track) override;
 
   // Pure splitting functions
+  void InitializeAAManager(const py::dict &user_info);
   G4bool DoesParticleEmittedInSolidAngle(G4ThreeVector dir,
                                          G4ThreeVector vectorDirector);
   G4Track *CreateComptonTrack(G4ParticleChangeForGamma *, G4Track, G4double);

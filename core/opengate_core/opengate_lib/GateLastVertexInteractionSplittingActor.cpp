@@ -47,7 +47,6 @@
 #include "GateLastVertexInteractionSplittingActor.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingPostStepDoIt.h"
-#include "GateOptnComptSplitting.h"
 #include <cmath>
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -61,12 +60,11 @@ void GateLastVertexInteractionSplittingActor::InitializeUserInfo(
   GateVActor::InitializeUserInfo(user_info);
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
   fSplittingFactor = DictGetDouble(user_info, "splitting_factor");
-  fRotationVectorDirector = DictGetBool(user_info, "rotation_vector_director");
-  fAngularKill = DictGetBool(user_info, "angular_kill");
-  fVectorDirector = DictGetG4ThreeVector(user_info, "vector_director");
-  fMaxTheta = DictGetDouble(user_info, "max_theta");
+  fAAManager = nullptr;
   fBatchSize = DictGetDouble(user_info, "batch_size");
   fNbOfMaxBatchPerEvent = DictGetInt(user_info, "nb_of_max_batch_per_event");
+  const auto dd = py::dict(user_info["acceptance_angle"]);
+  InitializeAAManager(dd);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -88,13 +86,18 @@ void GateLastVertexInteractionSplittingActor::print_tree(
   std::cout << "-----" << std::endl;
 }
 
-G4bool GateLastVertexInteractionSplittingActor::DoesParticleEmittedInSolidAngle(
-    G4ThreeVector dir, G4ThreeVector vectorDirector) {
-  G4double cosTheta = vectorDirector * dir;
-  if (cosTheta < fCosMaxTheta)
-    return false;
-  return true;
+void GateLastVertexInteractionSplittingActor::InitializeAAManager(
+    const py::dict &user_info) {
+  fAAManager = new GateAcceptanceAngleTesterManager();
+  fAAManager->Initialize(user_info, true);
+
+
+  if (G4EmParameters::Instance()->GeneralProcessActive() == true) {
+    Fatal("GeneralGammaProcess is not active. . This do *not* work for "
+          "ScatterSplittingFreeFlight");
+  }
 }
+
 
 G4VProcess *GateLastVertexInteractionSplittingActor::GetProcessFromProcessName(
     G4String particleName, G4String pName) {
@@ -188,11 +191,16 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
     G4Track *newTrack =
         CreateComptonTrack(gammaProcessFinalState, *fTrackToSplit, fWeight);
 
-    if ((fAngularKill) &&
-        (DoesParticleEmittedInSolidAngle(newTrack->GetMomentumDirection(),
-                                         fVectorDirector) == false)) {
-      delete newTrack;
-    } else {
+
+    if (fAAManager !=0){
+      if (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection()))){
+        std::cout<<newTrack->GetPosition()<<"   "<<newTrack->GetMomentumDirection()<<std::endl;
+        std::cout<<"to not split"<<std::endl;
+        delete newTrack;
+      }
+    }
+    else {
+      std::cout<<"gogogo"<<std::endl;
       fStackManager->PushOneTrack(newTrack);
     }
 
@@ -312,10 +320,12 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
       G4ThreeVector momentum = newTrack->GetMomentumDirection();
 
       if (!(isnan(momentum[0]))) {
-        if ((fAngularKill) && (DoesParticleEmittedInSolidAngle(
-                                   momentum, fVectorDirector) == false)) {
-          delete newTrack;
-        } else if (IsPushBack == true) {
+         if (fAAManager !=0){
+          if (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection()))){
+            delete newTrack;
+          }
+         }
+        else if (IsPushBack == true) {
           delete newTrack;
         } else {
           newTrack->SetWeight(fWeight);
@@ -538,7 +548,7 @@ G4bool GateLastVertexInteractionSplittingActor::
 
 void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
     const G4Run *run) {
-
+      //fAAManager->StartAcceptLoop();
   fListOfProcessesAccordingParticles["gamma"] = {"compt", "phot", "conv"};
   fListOfProcessesAccordingParticles["e-"] = {"eBrem", "eIoni", "msc"};
   fListOfProcessesAccordingParticles["e+"] = {"eBrem", "eIoni", "msc",
@@ -551,16 +561,8 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
 
   auto *source = fSourceManager->FindSourceByName("source_vertex");
   fVertexSource = (GateLastVertexSource *)source;
-
-  fCosMaxTheta = std::cos(fMaxTheta);
   fStackManager = G4EventManager::GetEventManager()->GetStackManager();
 
-  if (fRotationVectorDirector) {
-    G4VPhysicalVolume *physBiasingVolume =
-        G4PhysicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
-    auto rot = physBiasingVolume->GetObjectRotationValue();
-    fVectorDirector = rot * fVectorDirector;
-  }
 }
 
 void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
@@ -603,23 +605,20 @@ void GateLastVertexInteractionSplittingActor::PreUserTrackingAction(
 }
 
 void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
+  fAAManager->StartAcceptLoop();
 
   if (fActiveSource != "source_vertex") {
     FillOfDataTree(step);
 
     if (IsParticleExitTheBiasedVolume(step)) {
-      if ((fAngularKill == false) ||
-          ((fAngularKill == true) &&
-           (DoesParticleEmittedInSolidAngle(
-                step->GetTrack()->GetMomentumDirection(), fVectorDirector) ==
-            true))) {
-        if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() !=
-            "None") {
+      if (fAAManager != 0){
+        if (fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())){
+          if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() != "None") {
           fListOfContainer.push_back((*fIterator));
           fNumberOfReplayedParticle++;
+          }
         }
       }
-
       step->GetTrack()->SetTrackStatus(fStopAndKill);
     }
   }
