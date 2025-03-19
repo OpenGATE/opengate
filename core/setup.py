@@ -156,11 +156,10 @@ if platform.system() == "Darwin":
     package_data = {
         "opengate_core": ["plugins/platforms/*.dylib"]
         + ["plugins/imageformats/*.dylib"]
-        + ["plugins/miniconda/libQt5Svg.5.9.7.dylib"]
     }
     # package_data = {}
 else:
-    package_data = {"opengate_core": ["plugins/*/*.so"]}
+    package_data = {"opengate_core": ["plugins/*/*.so"] + ["plugins/*.so"]}
 
 setuptools.setup(
     name="opengate-core",
