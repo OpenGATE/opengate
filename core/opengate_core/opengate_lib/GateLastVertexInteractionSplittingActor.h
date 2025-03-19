@@ -53,6 +53,7 @@ public:
   G4bool fAngularKill;
   G4bool fRotationVectorDirector;
   G4ThreeVector fVectorDirector;
+  G4ThreeVector fCurrentVectorDirector;
   G4double fMaxTheta;
   G4double fCosMaxTheta;
   G4int fTrackIDOfSplittedTrack = 0;

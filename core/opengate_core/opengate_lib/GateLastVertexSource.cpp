@@ -18,6 +18,11 @@ void GateLastVertexSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   // get user info about activity or nb of events
   fN = DictGetInt(user_info, "n");
+  fActivity = DictGetDouble(user_info, "activity");
+
+  if (fActivity != 0){
+    fN = int(fActivity/ CLHEP::Bq);
+  }
 }
 
 double GateLastVertexSource::PrepareNextTime(double current_simulation_time) {
@@ -38,6 +43,7 @@ double GateLastVertexSource::PrepareNextTime(double current_simulation_time) {
   std::cout << "LV: "<< fStartTime<<"  "<<fNumberOfGeneratedEvents <<"  "<<
   fN<<std::endl; return fStartTime;
   */
+
   if (fNumberOfGeneratedEvents >= fN)
     return -1;
 

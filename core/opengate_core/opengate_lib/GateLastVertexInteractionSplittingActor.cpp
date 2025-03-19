@@ -190,7 +190,7 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
 
     if ((fAngularKill) &&
         (DoesParticleEmittedInSolidAngle(newTrack->GetMomentumDirection(),
-                                         fVectorDirector) == false)) {
+                                         fCurrentVectorDirector) == false)) {
       delete newTrack;
     } else {
       fStackManager->PushOneTrack(newTrack);
@@ -313,7 +313,7 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
 
       if (!(isnan(momentum[0]))) {
         if ((fAngularKill) && (DoesParticleEmittedInSolidAngle(
-                                   momentum, fVectorDirector) == false)) {
+                                   momentum, fCurrentVectorDirector) == false)) {
           delete newTrack;
         } else if (IsPushBack == true) {
           delete newTrack;
@@ -554,12 +554,12 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
 
   fCosMaxTheta = std::cos(fMaxTheta);
   fStackManager = G4EventManager::GetEventManager()->GetStackManager();
-
+  fCurrentVectorDirector = fVectorDirector;
   if (fRotationVectorDirector) {
     G4VPhysicalVolume *physBiasingVolume =
-        G4PhysicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
+        G4PhysicalVolumeStore::GetInstance()->GetVolume("linac_box");
     auto rot = physBiasingVolume->GetObjectRotationValue();
-    fVectorDirector = rot * fVectorDirector;
+    fCurrentVectorDirector = rot * fVectorDirector;
   }
 }
 
@@ -611,7 +611,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
       if ((fAngularKill == false) ||
           ((fAngularKill == true) &&
            (DoesParticleEmittedInSolidAngle(
-                step->GetTrack()->GetMomentumDirection(), fVectorDirector) ==
+                step->GetTrack()->GetMomentumDirection(), fCurrentVectorDirector) ==
             true))) {
         if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() !=
             "None") {
