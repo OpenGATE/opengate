@@ -44,10 +44,10 @@ double GateLastVertexSource::PrepareNextTime(double current_simulation_time) {
   fN<<std::endl; return fStartTime;
   */
 
-  if (fNumberOfGeneratedEvents >= fN)
-    return -1;
+  //if (fNumberOfGeneratedEvents >= fN)
+   return -1;
 
-  return fStartTime + 1;
+  //return fStartTime + 1;
 }
 
 void GateLastVertexSource::PrepareNextRun() {
@@ -66,6 +66,7 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
                                               double current_simulation_time,
                                               G4int idx) {
 
+                                    
   if (fNumberOfGeneratedEvents >= fN) {
     auto *particle_table = G4ParticleTable::GetParticleTable();
     auto *fParticleDefinition = particle_table->FindParticle("geantino");
@@ -78,8 +79,7 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
     event->AddPrimaryVertex(vertex);
   } else {
 
-    SimpleContainer containerToSplit =
-        fListOfContainer[idx].GetContainerToSplit();
+    SimpleContainer containerToSplit = fListOfContainer[idx].GetContainerToSplit();
     G4double energy = containerToSplit.GetEnergy();
     if (energy < 0) {
       energy = 0;
@@ -90,7 +90,6 @@ void GateLastVertexSource::GenerateOnePrimary(G4Event *event,
     G4String particleName = containerToSplit.GetParticleNameToSplit();
     G4double weight = containerToSplit.GetWeight();
     fProcessToSplit = containerToSplit.GetProcessNameToSplit();
-
     auto &l = fThreadLocalData.Get();
     auto *particle_table = G4ParticleTable::GetParticleTable();
     auto *fParticleDefinition = particle_table->FindParticle(particleName);
