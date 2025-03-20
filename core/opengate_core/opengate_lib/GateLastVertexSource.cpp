@@ -20,8 +20,8 @@ void GateLastVertexSource::InitializeUserInfo(py::dict &user_info) {
   fN = DictGetInt(user_info, "n");
   fActivity = DictGetDouble(user_info, "activity");
 
-  if (fActivity != 0){
-    fN = int(fActivity/ CLHEP::Bq);
+  if (fActivity != 0) {
+    fN = int(fActivity / CLHEP::Bq);
   }
 }
 

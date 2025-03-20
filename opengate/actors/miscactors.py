@@ -565,9 +565,6 @@ class SplittingActorBase(ActorBase):
     }
 
 
-
-
-
 class LastVertexInteractionSplittingActor(
     ActorBase, g4.GateLastVertexInteractionSplittingActor
 ):
