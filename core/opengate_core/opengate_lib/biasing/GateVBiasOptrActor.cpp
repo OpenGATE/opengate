@@ -17,6 +17,8 @@ GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
   fActions.insert("PreUserTrackingAction");
 }
 
+GateVBiasOptrActor::~GateVBiasOptrActor() {}
+
 void GateVBiasOptrActor::Configure() {
   if (!G4Threading::IsMultithreadedApplication()) {
     auto *biasedVolume =

@@ -9,7 +9,9 @@ Copyright (C): OpenGATE Collaboration
 #define GateVBiasOptrActor_h
 
 #include "../GateVActor.h"
+#define private public
 #include "G4VBiasingOperator.hh"
+#undef private
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -29,6 +31,8 @@ class GateVBiasOptrActor : public G4VBiasingOperator, public GateVActor {
 public:
   explicit GateVBiasOptrActor(const std::string &name, py::dict &user_info,
                               bool MT_ready = false);
+
+  ~GateVBiasOptrActor() override;
 
   void Configure() override;
   void ConfigureForWorker() override;

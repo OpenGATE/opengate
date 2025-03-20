@@ -51,6 +51,7 @@ void GateVActor::InitializeUserInfo(py::dict &user_info) {
   } else {
     fOperatorIsAnd = false;
   }
+  fActorName = DictGetStr(user_info, "name");
 }
 
 void GateVActor::AddActorOutputInfo(const std::string &outputName) {

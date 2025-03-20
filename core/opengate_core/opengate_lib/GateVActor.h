@@ -148,6 +148,9 @@ public:
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
 
+  // Name of the actor
+  std::string fActorName;
+
   // Is the boolean operator between filters an 'and' ?
   bool fOperatorIsAnd;
 

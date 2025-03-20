@@ -154,6 +154,7 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
         g4.GateGammaFreeFlightOptrActor.__init__(self, {"name": self.name})
 
     def initialize(self):
+        # g4.GateGammaFreeFlightOptrActor.__init__(self, {"name": self.name}) # FIXME ???
         GenericBiasingActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()

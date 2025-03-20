@@ -18,7 +18,8 @@ G4Mutex StatMutex = G4MUTEX_INITIALIZER;
 
 GateScatterSplittingFreeFlightOptrActor::
     GateScatterSplittingFreeFlightOptrActor(py::dict &user_info)
-    : GateVBiasOptrActor("FreeFlightOperator", user_info, true) {
+    : GateVBiasOptrActor("ScatterSplittingFreeFlightOperator", user_info,
+                         true) {
   fComptonSplittingFactor = 1;
   fRayleighSplittingFactor = 1;
   fMaxComptonLevel = 1;

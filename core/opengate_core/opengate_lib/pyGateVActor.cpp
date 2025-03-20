@@ -71,9 +71,11 @@ public:
 
 void init_GateVActor(py::module &m) {
 
-  py::class_<GateVActor, PyGateVActor, // do not inherit from trampoline for
-                                       // the moment (not needed)
-             std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
+  py::class_<GateVActor, PyGateVActor>(
+      m, "GateVActor") // do not inherit from trampoline for
+                       // the moment (not needed)
+      //,std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
+      //>(m, "GateVActor")
       .def(py::init<py::dict &>())
       .def("RegisterSD", &GateVActor::RegisterSD)
       //      .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
