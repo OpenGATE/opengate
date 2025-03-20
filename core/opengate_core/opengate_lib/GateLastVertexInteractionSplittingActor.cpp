@@ -550,7 +550,7 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
   CreateListOfbiasedVolume(biasingVolume);
 
   auto *source = fSourceManager->FindSourceByName("source_vertex");
-  
+
   fVertexSource = (GateLastVertexSource *)source;
   fCosMaxTheta = std::cos(fMaxTheta);
   fStackManager = G4EventManager::GetEventManager()->GetStackManager();
