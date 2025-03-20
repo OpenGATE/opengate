@@ -104,6 +104,8 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfEventAction(
 
 void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
+  if (!fIsActive)
+    return;
   // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
   l.fComptonInteractionCount = 0;
@@ -144,13 +146,13 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+  if (!fIsActive)
+    return nullptr;
   // Should we track the particle with free flight or not ?
   threadLocal_t &l = threadLocalData.Get();
-
   if (l.fCurrentTrackIsFreeFlight) {
     return l.fFreeFlightOperation;
   }
-
   // Conventional tracking (the occurrence of compt is not modified)
   return nullptr;
 }
@@ -158,6 +160,9 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+  if (!fIsActive)
+    return callingProcess->GetCurrentFinalStateBiasingOperation();
+
   // This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
 

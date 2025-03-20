@@ -15,11 +15,16 @@ GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
     : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {
   // It seems that it is needed in MT (see PreUserTrackingAction)
   fActions.insert("PreUserTrackingAction");
+  fIsActive = true;
 }
 
 GateVBiasOptrActor::~GateVBiasOptrActor() {}
 
 void GateVBiasOptrActor::Configure() {
+  if (fAttachedToVolumeName.empty()) {
+    fIsActive = false;
+    return;
+  }
   if (!G4Threading::IsMultithreadedApplication()) {
     auto *biasedVolume =
         G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
@@ -28,6 +33,10 @@ void GateVBiasOptrActor::Configure() {
 }
 
 void GateVBiasOptrActor::ConfigureForWorker() {
+  if (fAttachedToVolumeName.empty()) {
+    fIsActive = false;
+    return;
+  }
   auto *biasedVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
   AttachAllLogicalDaughtersVolumes(biasedVolume);

@@ -32,7 +32,8 @@ void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {
-  // if (fAttachedToVolumeName.empty()) return;
+  if (!fIsActive)
+    return;
   threadLocal_t &l = threadLocalData.Get();
   l.fIsFirstTime = true;
   l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
@@ -54,6 +55,8 @@ GateGammaFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateGammaFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+  if (!fIsActive)
+    return nullptr;
   threadLocal_t &l = threadLocalData.Get();
   if (l.fIsFirstTime) {
     l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
@@ -65,6 +68,8 @@ GateGammaFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateGammaFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+  if (!fIsActive)
+    return callingProcess->GetCurrentFinalStateBiasingOperation();
   threadLocal_t &l = threadLocalData.Get();
   return l.fFreeFlightOperation;
 }

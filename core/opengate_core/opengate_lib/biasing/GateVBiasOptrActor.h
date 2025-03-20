@@ -9,9 +9,7 @@ Copyright (C): OpenGATE Collaboration
 #define GateVBiasOptrActor_h
 
 #include "../GateVActor.h"
-#define private public
 #include "G4VBiasingOperator.hh"
-#undef private
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -38,6 +36,17 @@ public:
   void ConfigureForWorker() override;
   void PreUserTrackingAction(const G4Track *track) override;
   virtual void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *volume);
+
+  /*
+   This is a workaround: when running multiple simulations within the same
+   process (e.g., using `sim.run(start_new_process=True)`), the
+   `GateVBiasOptrActor` instances remain in memory from one run to the next. The
+   reason for this behavior is unclear. Checking `fAttachedToVolumeName` acts as
+   a "trick" to detect these zombie actors, allowing us to flag them as
+   inactive. This flag must be checked in callbacks, as demonstrated in
+   `GateGammaFreeFlightOptrActor`.
+   */
+  bool fIsActive;
 };
 
 #endif
