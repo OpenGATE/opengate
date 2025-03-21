@@ -14,7 +14,7 @@ public:
 public:
   ChemistryAdaptator(int verbosity) {
     C::SetVerboseLevel(verbosity);
-    _chemistryLists.push_back(this);
+    _chemistryList = this;
   }
 
   void
@@ -31,12 +31,11 @@ public:
   }
 
   static C *getChemistryList() {
-    for (auto *chemistryList : _chemistryLists) {
-      auto *ptr = dynamic_cast<C *>(chemistryList);
-      if (ptr != nullptr)
-        return ptr;
-    }
-    return nullptr;
+    // https://stackoverflow.com/questions/14243854/c-dynamic-cast-causes-a-segfault-even-when-the-object-that-is-casted-is-not-n
+    // avoid dynamic_cast here because RTTI information comes from a linked
+    // library static_cast is safe (this inherits C*)
+    auto *ptr = static_cast<C *>(_chemistryList);
+    return ptr;
   }
 
   template <typename T> static void setConstructReactionTableHook(T fn) {
@@ -45,7 +44,7 @@ public:
 
 private:
   inline static ConstructReactionTableHook _constructReactionTableHook;
-  inline static std::vector<G4VUserChemistryList *> _chemistryLists;
+  inline static G4VUserChemistryList *_chemistryList = nullptr;
 };
 
 #endif
