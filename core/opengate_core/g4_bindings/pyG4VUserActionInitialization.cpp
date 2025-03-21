@@ -131,12 +131,12 @@ void init_G4VUserActionInitialization(py::module &m) {
                    *))&PyG4VUserActionInitialization::SetUserAction)
 
       .def("SetUserAction",
-           (void(G4VUserActionInitialization::*)(
+           (void (G4VUserActionInitialization::*)(
                G4UserStackingAction
                    *))&PyG4VUserActionInitialization::SetUserAction)
 
       .def("SetUserAction",
-           (void(G4VUserActionInitialization::*)(
+           (void (G4VUserActionInitialization::*)(
                G4UserSteppingAction
                    *))&PyG4VUserActionInitialization::SetUserAction);
 }
