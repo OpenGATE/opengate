@@ -106,7 +106,7 @@ protected:
   void setupConstructReactionTableHook();
 
 private:
-  G4H2O *_g4H2O;
+  G4H2O *_g4H2O = nullptr;
   TimeStepAction _timeStepAction;
 
   SpeciesMap _speciesInfoPerTime;

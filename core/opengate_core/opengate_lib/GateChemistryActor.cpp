@@ -68,12 +68,16 @@ void GateChemistryActor::InitializeUserInfo(py::dict &user_info) {
   setTimeBinsCount(DictGetInt(user_info, "time_bins_count"));
 }
 
+void GateChemistryActor::InitializeG4PreInitState() {
+  _g4H2O = G4H2O::Definition();
+}
+
 void GateChemistryActor::InitializeCpp() {
   GateVActor::InitializeCpp();
 
   G4MoleculeCounter::Instance()->SetVerbose(_moleculeCounterVerbose);
   G4MoleculeCounter::Instance()->Use();
-  // G4MoleculeCounter::Instance()->DontRegister(_g4H2O);
+  G4MoleculeCounter::Instance()->DontRegister(_g4H2O);
   G4MolecularConfiguration::PrintAll();
   G4MoleculeCounter::Instance()->CheckTimeForConsistency(false);
 
