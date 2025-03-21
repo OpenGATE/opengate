@@ -742,6 +742,7 @@ def phid_build_one_sub_source(stype, source, daughter, ene, w, first_nuclide):
     s.sub_sources = []
     s.position = copy.deepcopy(source.position)
     s.direction = copy.deepcopy(source.direction)
+    s.attached_to = copy.deepcopy(source.attached_to)
     s.energy = copy.deepcopy(source.energy)
     s.verbose = source.verbose
     s.particle = "gamma"
