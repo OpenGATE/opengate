@@ -27,6 +27,9 @@ public:
 
   virtual void AddActions(std::set<std::string> &actions);
 
+  // Called at initialisation in late G4 PreInit state
+  virtual void InitializeG4PreInitState() {}
+
   // Called at initialisation
   virtual void InitializeCpp();
 
