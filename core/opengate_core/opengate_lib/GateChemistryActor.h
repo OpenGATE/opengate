@@ -53,6 +53,8 @@ public:
 
   void InitializeUserInfo(pybind11::dict &user_info) override;
 
+  void InitializeG4PreInitState() override;
+
   void InitializeCpp() override;
 
   void Initialize(G4HCofThisEvent *hce) override;

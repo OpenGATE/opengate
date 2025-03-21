@@ -603,6 +603,13 @@ class ActorEngine(EngineBase):
             actor.close()
         super().close()
 
+    def initialize_preinit(self):
+        for actor in self.actor_manager.sorted_actors:
+            global_log.debug(
+                f"Actor: initialize_preinit [{actor.type_name}] {actor.name}"
+            )
+            actor.InitializeG4PreInitState()
+
     def initialize(self):
         for actor in self.actor_manager.sorted_actors:
             global_log.debug(f"Actor: initialize [{actor.type_name}] {actor.name}")
@@ -1290,6 +1297,9 @@ class SimulationEngine(GateSingletonFatal):
         """
         Build the main geant4 objects and initialize them.
         """
+
+        # From this line, G4 is in G4State_PreInit state
+
         # get log
         log = global_log
 
@@ -1358,6 +1368,9 @@ class SimulationEngine(GateSingletonFatal):
             self.action_engine
         )  # G4 internally calls action_engine.Build()
 
+        # late-G4 PreInit state actor initialisation phase
+        self.actor_engine.initialize_preinit()
+
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
         # which happens in the InitializeGeometry() method of the
@@ -1371,6 +1384,8 @@ class SimulationEngine(GateSingletonFatal):
             self.g4_RunManager.InitializeWithoutFakeRun()
         else:
             self.g4_RunManager.Initialize()
+
+        # From this line, G4 is in G4State_Idle state
 
         log.info("Simulation: initialize PhysicsEngine after RunManager initialization")
         self.physics_engine.initialize_after_runmanager()
