@@ -19,6 +19,7 @@ nm = gate.g4_units.nm
 Bq = gate.g4_units.Bq
 MeV = gate.g4_units.MeV
 
+
 class EllipSolid(solids.SolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -34,11 +35,20 @@ class EllipSolid(solids.SolidBase):
     }
 
     def build_solid(self):
-        return g4.G4Ellipsoid(self.name, self.xSemiAxis, self.ySemiAxis, self.zSemiAxis, self.zBottomCut, self.zTopCut)
+        return g4.G4Ellipsoid(
+            self.name,
+            self.xSemiAxis,
+            self.ySemiAxis,
+            self.zSemiAxis,
+            self.zBottomCut,
+            self.zTopCut,
+        )
+
 
 class EllipVolume(volumes.RepeatableVolume, EllipSolid):
-    ""
-    
+    """"""
+
+
 managers.VolumeManager.volume_types["EllipVolume"] = EllipVolume
 
 
@@ -46,7 +56,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    
+
     # main options
     sim.g4_verbose = False
     sim.visu = True
@@ -56,7 +66,6 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.random_seed = "auto"
     sim.progress_bar = True
-
 
     # units
     m = gate.g4_units.m
@@ -77,8 +86,8 @@ if __name__ == "__main__":
     EllipVolume1.zSemiAxis = 5.0 * cm
     EllipVolume1.zBottomCut = 0 * cm
     EllipVolume1.zTopCut = 0 * cm
-    
-    EllipVolume1.translation = [0, 0, 1.0 * cm] 
+
+    EllipVolume1.translation = [0, 0, 1.0 * cm]
     EllipVolume1.material = "G4_WATER"
     EllipVolume1.color = [1, 0, 0, 0.1]
     print(EllipVolume1)
@@ -99,4 +108,3 @@ if __name__ == "__main__":
 
     # print results at the end
     print(stats)
-
