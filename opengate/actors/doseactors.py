@@ -285,44 +285,6 @@ class VoxelDepositActor(ActorBase):
                 u.end_of_simulation()
 
 
-def compute_std_from_sample(
-    number_of_samples, value_array, squared_value_array, correct_bias=False
-):
-    unc = np.ones_like(value_array)
-    if number_of_samples > 1:
-        # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
-        unc = np.sqrt(
-            np.clip(
-                (
-                    squared_value_array / number_of_samples
-                    - np.power(value_array / number_of_samples, 2)
-                )
-                / (number_of_samples - 1),
-                0,
-                None,
-            )
-        )
-        if correct_bias:
-            # Standard error is biased (to underestimate the error);
-            # this option allows to correct for the bias - assuming normal distribution.
-            # For few N this in is huge, but for N>8 the difference is minimal
-            unc /= standard_error_c4_correction(number_of_samples)
-        unc = np.divide(
-            unc,
-            value_array / number_of_samples,
-            out=np.ones_like(unc),
-            where=value_array != 0,
-        )
-
-    else:
-        # unc += 1 # we init with 1.
-        warning(
-            "You try to compute statistical errors with only one or zero event! "
-            "The uncertainty value for all voxels has been fixed at 1"
-        )
-    return unc
-
-
 def _setter_hook_ste_of_mean_unbiased(self, value):
     if value is True:
         self.ste_of_mean = True
