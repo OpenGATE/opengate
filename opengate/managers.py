@@ -502,10 +502,13 @@ class PhysicsListManager(GateObject):
         "G4EmLivermorePolarizedPhysics",
         "G4EmPenelopePhysics",
         "G4EmDNAPhysics",
-        *[f"G4EmDNAPhysics_option{i}" for i in range(1, 8)],
-        "G4EmDNAChemistry",
-        *[f"G4EmDNAChemistry_option{i}" for i in range(1, 3)],
+        *[f"G4EmDNAPhysics_option{i+1}" for i in range(8)],
         "G4OpticalPhysics",
+    ]
+
+    available_g4_chemistry_constructors = [
+        "G4EmDNAChemistry",
+        *[f"G4EmDNAChemistry_option{i+1}" for i in range(3)],
     ]
 
     special_physics_constructor_classes = {}
@@ -887,6 +890,41 @@ class PhysicsManager(GateObject):
     def enable_decay(self, value):
         self.special_physics_constructors["G4DecayPhysics"] = value
         self.special_physics_constructors["G4RadioactiveDecayPhysics"] = value
+
+    @property
+    def chemistry_list_name(self):
+        """Property to enable chemistry with selected chemistry list"""
+
+        dnachemistry_lists = (
+            self.physics_list_manager.available_g4_chemistry_constructors
+        )
+        switches = [self.special_physics_constructors[k] for k in dnachemistry_lists]
+        chemistry_list = any(switches)
+        chemistry_enabled = (
+            self.simulation.actor_manager.internal_actions.GetChemistryEnabled()
+        )
+        if chemistry_list != chemistry_enabled:
+            fatal(
+                f"Inconsistency: G4EmDNAChemistry? = {chemistry_list}; enable_chemistry = {chemistry_enabled}"
+            )
+        return [
+            list_name
+            for list_name in dnachemistr_lists
+            if self.special_physics_constructors[list_name]
+        ][0]
+
+    @chemistry_list_name.setter
+    def chemistry_list_name(self, list_name):
+        dnachemistry_lists = (
+            self.physics_list_manager.available_g4_chemistry_constructors
+        )
+        if list_name not in dnachemistry_lists:
+            fatal(
+                f"{list_name} is not a valid chemistry list (possible values are: {dnachemistry_lists})"
+            )
+
+        self.special_physics_constructors[list_name] = True
+        self.simulation.actor_manager.internal_actions.SetChemistryEnabled(True)
 
     def add_optical_surface(self, volume_from, volume_to, g4_surface_name):
         """

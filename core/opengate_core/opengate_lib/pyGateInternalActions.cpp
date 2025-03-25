@@ -16,5 +16,7 @@ void init_GateInternalActions(py::module &m) {
   py::class_<GateInternalActions,
              std::unique_ptr<GateInternalActions, py::nodelete>, GateVActor>(
       m, "GateInternalActions")
-      .def(py::init<py::dict &>());
+      .def(py::init<py::dict &>())
+      .def("SetChemistryEnabled", &GateInternalActions::SetChemistryEnabled)
+      .def("GetChemistryEnabled", &GateInternalActions::GetChemistryEnabled);
 }

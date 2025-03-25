@@ -13,6 +13,15 @@
 class GateInternalActions : public GateVActor {
 public:
   using GateVActor::GateVActor;
+
+  void NewStage() override;
+
+public:
+  void SetChemistryEnabled(bool f) { fChemistryEnabled = f; }
+  [[nodiscard]] bool GetChemistryEnabled() const { return fChemistryEnabled; }
+
+private:
+  bool fChemistryEnabled = false;
 };
 
 #endif

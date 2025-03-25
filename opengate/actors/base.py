@@ -621,6 +621,11 @@ class InternalActions(ActorBase, g4.GateInternalActions):
 
     def __initcpp__(self):
         g4.GateInternalActions.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "NewStage",
+            }
+        )
 
     def initialize(self):
         ActorBase.initialize(self)
