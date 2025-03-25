@@ -75,7 +75,7 @@ from .geometry.volumes import (
     VolumeTreeRoot,
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
-from .actors.base import ActorBase
+from .actors.base import ActorBase, InternalActions
 
 from .actors.doseactors import (
     DoseActor,
@@ -369,6 +369,8 @@ class ActorManager(GateObject):
         # dictionary of actor objects. Do not fill manually. Use add_actor() method.
         self.actors = {}
 
+        self._add_internal_actions()
+
     def __str__(self):
         s = "The actor manager contains the following actors: \n"
         s += self.dump_actors()
@@ -473,6 +475,11 @@ class ActorManager(GateObject):
                 f"{self.dump_actor_types()}."
             )
         return cls(name=name, simulation=self.simulation)
+
+    def _add_internal_actions(self):
+        name = "_gate_internal_actions"
+        self.internal_actions = InternalActions(name=name, simulation=self.simulation)
+        self.add_actor(self.internal_actions, name)
 
 
 class PhysicsListManager(GateObject):
