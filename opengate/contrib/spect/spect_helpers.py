@@ -242,3 +242,92 @@ def read_projections_as_sinograms(
         img.SetDirection(img.GetDirection())
         sinograms.append(img)
     return sinograms
+
+
+def image_poisson_relative_uncertainty(input_filename, output_rel_uncert=None):
+    """
+    Uncertainty for Poisson counts is sqrt(counts) = standard deviation
+    Relative uncertainty is sqrt(counts)/counts
+    """
+    img = sitk.ReadImage(input_filename)
+    relative_uncertainty = sitk.GetArrayFromImage(img)
+    uncertainty = np.sqrt(relative_uncertainty)
+    relative_uncertainty = np.divide(
+        uncertainty,
+        relative_uncertainty,
+        out=np.zeros_like(relative_uncertainty),
+        where=relative_uncertainty != 0,
+    )
+    if output_rel_uncert is not None:
+        uncert = sitk.GetImageFromArray(relative_uncertainty)
+        uncert.CopyInformation(img)
+        sitk.WriteImage(uncert, output_rel_uncert)
+    return relative_uncertainty
+
+
+def image_batch_relative_uncertainty(
+    projection_filenames,
+    mean_filename=None,
+    rel_uncert_filename=None,
+):
+    """
+    batch method : walters2002
+    - uncertainty is sX = sqrt( sum(X-Xmean)^2 / (N(N-1)) )
+    - relative uncertainty Sx/Xmean
+    With N the number of batches
+    (history by history method : chetty2006)
+    """
+
+    np_mean = None
+    nb_batch = len(projection_filenames)
+    img_prim = None
+    # compute mean counts
+    for f in projection_filenames:
+        img_prim = sitk.ReadImage(f)
+        m = sitk.GetArrayFromImage(img_prim)
+        if np_mean is None:
+            np_mean = m
+        else:
+            np_mean += m
+        np_mean += m
+    np_mean /= nb_batch
+
+    # compute std
+    np_s = None
+    for f in projection_filenames:
+        m = sitk.GetArrayViewFromImage(sitk.ReadImage(f))
+        if np_s is None:
+            np_s = np.power(m - np_mean, 2)
+        else:
+            np_s += np.power(m - np_mean, 2)
+
+    # compute mean and std dev
+    np_uncertainty = np.sqrt(np.divide(np_s, nb_batch * (nb_batch - 1)))
+
+    # relative uncertainty in %
+    np_rel_uncertainty = np.divide(
+        np_uncertainty, np_mean, out=np.zeros_like(np_mean), where=np_mean != 0
+    )
+
+    # write
+    if mean_filename is not None:
+        img = sitk.GetImageFromArray(np_mean)
+        img.CopyInformation(img_prim)
+        sitk.WriteImage(img, mean_filename)
+    if rel_uncert_filename is not None:
+        img = sitk.GetImageFromArray(np_rel_uncertainty)
+        img.CopyInformation(img_prim)
+        sitk.WriteImage(img, rel_uncert_filename)
+
+    return np_mean, np_rel_uncertainty
+
+
+def projection_efficiency(np_uncert, duration):
+    ones = np.ones_like(np_uncert)
+    eff = np.divide(
+        ones,
+        np.power(np_uncert, 2) * duration,
+        out=np.zeros_like(np_uncert),
+        where=np_uncert != 0,
+    )
+    return eff
