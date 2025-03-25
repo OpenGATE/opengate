@@ -407,7 +407,7 @@ class IsotopeBuilder:
         return s
 
     def read(self, line):
-        self.type = "element"
+        self.type = "isotope"
         s = line.split(":")
         # name
         self.name = s[0]
@@ -432,7 +432,7 @@ class IsotopicElementBuilder:
     """
 
     def __init__(self, material_database):
-        self.type = "element"
+        self.type = "isotope"
         self.name = None
         self.symbol = None
         self.n = None
@@ -731,6 +731,9 @@ class MaterialDatabase:
         # list of all read element (not build)
         self.element_builders = {}
         self.element_builders_by_filename = {}
+        # list of all read isotope (not build)
+        self.isotope_builders = {}
+        self.isotope_builders_by_filename = {}
         # additional manually added materials
         self.new_materials_nb_atoms = {}
         self.new_materials_weights = {}
@@ -738,6 +741,8 @@ class MaterialDatabase:
         self.g4_materials = {}
         # built elements
         self.g4_elements = {}
+        # built isotopes
+        self.g4_isotopes = {}
         # internal state when reading
         self.current_section = None
         self.current_filename = None
@@ -767,6 +772,7 @@ class MaterialDatabase:
         self.current_filename = filename
         self.element_builders_by_filename[self.current_filename] = {}
         self.material_builders_by_filename[self.current_filename] = {}
+        self.isotope_builders_by_filename[self.current_filename] = {}
         with open(filename, "r") as f:
             line = f.readline()
             while line:
@@ -871,6 +877,17 @@ class MaterialDatabase:
                 fatal(f"Cannot construct the material (weights): {mat_info}")
             self.g4_materials[mat_name] = mat
         self.new_materials_weights = []
+
+    def FindOrBuildIsotope(self, isotope_name):
+        # try to build the isotope if it does not yet exist
+        if isotope_name not in self.g4_materials:
+            if isotope_name in self.isotope_builders:
+                self.g4_isotopes[isotope_name] = self.isotope_builders[
+                    isotope_name
+                ].build()
+            else:
+                fatal(f'Cannot find nor build isotope named "{isotope_name}"')
+        return self.g4_isotopes[isotope_name]
 
     def FindOrBuildMaterial(self, material_name):
         self.init_NIST()
