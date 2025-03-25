@@ -64,7 +64,6 @@ class ChemistryActor(ActorBase, g4.GateChemistryActor):
         g4.GateChemistryActor.__init__(self, self.user_info)
         self.AddActions(
             {
-                "NewStage",
                 "EndOfRunAction",
                 "EndOfEventAction",
                 "SteppingAction",

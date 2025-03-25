@@ -28,13 +28,13 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <templates.hh>
+#include <tools/wroot/ifile>
 
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 #include "../g4_bindings/chemistryadaptator.h"
 #include "GateVActor.h"
-#include "pybind11/tests/pybind11_tests.h"
 
 void TimeStepAction::UserReactionAction(
     const G4Track &a, const G4Track &b,
@@ -45,11 +45,6 @@ void TimeStepAction::UserReactionAction(
     actors->UserReactionAction(a, b, rProducts);
 }
 
-/*
- * constructors are run in G4 PreInit state
- * particle definitions must be done there
- * TODO too early
- */
 GateChemistryActor::GateChemistryActor(py::dict &user_info)
     : GateVChemistryActor(user_info, false) {
   G4Scheduler::Instance()->SetUserAction(&_timeStepAction);
@@ -124,10 +119,10 @@ void GateChemistryActor::EndOfRunAction(G4Run const *) {
 
 void GateChemistryActor::EndOfEventAction(G4Event const *) {
   auto *moleculeCounter = G4MoleculeCounter::Instance();
+  auto *currentEvent =
+      G4EventManager::GetEventManager()->GetConstCurrentEvent();
 
-  if (not G4EventManager::GetEventManager()
-              ->GetConstCurrentEvent()
-              ->IsAborted()) {
+  if (!currentEvent->IsAborted()) {
     auto species = moleculeCounter->GetRecordedMolecules();
     if (species && !species->empty()) {
       for (auto const *molecule : *species) {
@@ -168,13 +163,6 @@ void GateChemistryActor::SteppingAction(G4Step *step) {
 
   edep *= step->GetPreStepPoint()->GetWeight();
   _edepSum += edep;
-}
-
-void GateChemistryActor::NewStage() {
-  auto *stackManager = G4EventManager::GetEventManager()->GetStackManager();
-  if (stackManager != nullptr && stackManager->GetNTotalTrack() == 0) {
-    G4DNAChemistryManager::Instance()->Run();
-  }
 }
 
 void GateChemistryActor::UserReactionAction(G4Track const &a, G4Track const &b,

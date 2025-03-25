@@ -63,7 +63,6 @@ public:
   void EndOfRunAction(const G4Run *event) override;
   void EndOfEventAction(const G4Event *event) override;
   void SteppingAction(G4Step *step) override;
-  void NewStage() override;
 
   void UserReactionAction(G4Track const &, G4Track const &,
                           Tracks const &) override;
