@@ -1,8 +1,14 @@
 import itk
 import opengate_core as g4
 from .generic import GenericSource
-from .phidsources import PhotonFromIonDecaySource, get_tac_from_decay, \
-    update_sub_source_tac_activity, get_nuclide_progeny, isomeric_transition_load, atomic_relaxation_load
+from .phidsources import (
+    PhotonFromIonDecaySource,
+    get_tac_from_decay,
+    update_sub_source_tac_activity,
+    get_nuclide_progeny,
+    isomeric_transition_load,
+    atomic_relaxation_load,
+)
 from .voxelsources import VoxelSource
 from ..image import read_image_info, update_image_py_to_cpp, compute_image_3D_CDF
 from ..utility import ensure_filename_is_str, g4_units, LazyModuleLoader
@@ -23,11 +29,11 @@ class VoxelPhidSource(VoxelSource, PhotonFromIonDecaySource):
     - Sub-sources inherit the voxel-based position distribution from the mother source.
     """
 
-    #user_info_defaults = dict(VoxelSource.user_info_defaults)
-    #user_info_defaults.update(
+    # user_info_defaults = dict(VoxelSource.user_info_defaults)
+    # user_info_defaults.update(
     #    {k: v for k, v in PhotonFromIonDecaySource.user_info_defaults.items() if
     #     k not in VoxelSource.user_info_defaults}
-    #)
+    # )
 
     def __init__(self, *args, **kwargs):
         self.__initcpp__()
@@ -50,9 +56,9 @@ class VoxelPhidSource(VoxelSource, PhotonFromIonDecaySource):
         update_image_py_to_cpp(self.itk_image, pg.cpp_edep_image, False)
         pg.cpp_edep_image.set_spacing(src_info.spacing)
         c = (
-                -src_info.size / 2.0 * src_info.spacing
-                + self.position.translation
-                + src_info.spacing / 2.0
+            -src_info.size / 2.0 * src_info.spacing
+            + self.position.translation
+            + src_info.spacing / 2.0
         )
         pg.cpp_edep_image.set_origin(c)
 
@@ -63,7 +69,9 @@ class VoxelPhidSource(VoxelSource, PhotonFromIonDecaySource):
 
     def initialize(self, run_timing_intervals):
         if not self.user_info.image:
-            raise ValueError(f"Image file path is not set for source '{self.name}'. Please specify 'source.image'.")
+            raise ValueError(
+                f"Image file path is not set for source '{self.name}'. Please specify 'source.image'."
+            )
         image_path = ensure_filename_is_str(self.user_info.image)
         try:
             if not self.is_a_sub_source:
@@ -76,7 +84,7 @@ class VoxelPhidSource(VoxelSource, PhotonFromIonDecaySource):
 
         if not self.is_a_sub_source:
             if (g4.IsMultithreadedApplication() and g4.G4GetThreadId() == -1) or (
-                    not g4.IsMultithreadedApplication()
+                not g4.IsMultithreadedApplication()
             ):
                 self.build_all_sub_sources()
 
@@ -84,7 +92,9 @@ class VoxelPhidSource(VoxelSource, PhotonFromIonDecaySource):
         print(run_timing_intervals)
 
         self.initialize_start_end_time(run_timing_intervals)
-        self.log += f"Simulation time range: {self.start_time} to {self.end_time} seconds\n"
+        self.log += (
+            f"Simulation time range: {self.start_time} to {self.end_time} seconds\n"
+        )
 
         for sub_source in self.sub_sources:
             sub_source.itk_image = self.itk_image
@@ -140,7 +150,9 @@ class VoxelPhidSource(VoxelSource, PhotonFromIonDecaySource):
     def build_sub_sources_isomeric_transition(self, first_nuclide):
         for daughter in self.daughters:
             ene, w = isomeric_transition_load(daughter.nuclide)
-            s = self.build_one_sub_source("isomeric_transition", daughter, ene, w, first_nuclide)
+            s = self.build_one_sub_source(
+                "isomeric_transition", daughter, ene, w, first_nuclide
+            )
             if s:
                 self.sub_sources.append(s)
 
@@ -148,7 +160,9 @@ class VoxelPhidSource(VoxelSource, PhotonFromIonDecaySource):
         for daughter in self.daughters:
             ene, w = atomic_relaxation_load(daughter.nuclide)
             if len(ene) > 0:
-                s = self.build_one_sub_source("atomic_relaxation", daughter, ene, w, first_nuclide)
+                s = self.build_one_sub_source(
+                    "atomic_relaxation", daughter, ene, w, first_nuclide
+                )
                 if s:
                     self.sub_sources.append(s)
 
