@@ -45,7 +45,7 @@ GateScatterSplittingFreeFlightOptrActor::GetBiasInformation() {
 
 void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
     py::dict &user_info) {
-  GateVActor::InitializeUserInfo(user_info);
+  GateVBiasOptrActor::InitializeUserInfo(user_info);
 
   // Get user parameters
   fComptonSplittingFactor = DictGetInt(user_info, "compton_splitting_factor");
@@ -202,9 +202,14 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   }
 
   // if not free flight, we kill the gamma when it exits the volume
-  // Exiting the volume is tricky : need to check the post point
-  // is in the mother volume.
-  if (IsStepExitVolume(step)) {
+  if (IsStepExitingAttachedVolume(step)) {
+    step->GetTrack()->SetTrackStatus(fStopAndKill);
+    l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
+    return;
+  }
+
+  // if not free flight, we kill the gamma when it enters an ignored volume
+  if (IsStepEnteringVolume(step, fIgnoredVolumes)) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
     return;

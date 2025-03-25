@@ -459,6 +459,19 @@ class ActorManager(GateObject):
         if new_actor is not actor:
             return new_actor
 
+    def find_actors(self, sub_str, case_sensitive=False):
+        # find all actors that contains this substring
+        actors = []
+        if not case_sensitive:
+            sub_str = sub_str.lower()
+        for actor in self.actors.values():
+            name = actor.name
+            if not case_sensitive:
+                name = name.lower()
+            if sub_str in name:
+                actors.append(actor)
+        return actors
+
     def remove_actor(self, name):
         self.actors.pop(name)
 
@@ -1127,6 +1140,19 @@ class VolumeManager(GateObject):
                     f"Volumes included in this simulation are: {self.volumes.keys()}"
                 )
 
+    def find_volumes(self, sub_str, case_sensitive=False):
+        # find all volumes that contains this substring
+        volumes = []
+        if not case_sensitive:
+            sub_str = sub_str.lower()
+        for actor in self.volumes.values():
+            name = actor.name
+            if not case_sensitive:
+                name = name.lower()
+            if sub_str in name:
+                volumes.append(actor)
+        return volumes
+
     def update_volume_tree_if_needed(self):
         if self._need_tree_update is True:
             self.update_volume_tree()
@@ -1603,19 +1629,11 @@ class Simulation(GateObject):
         self.actor_manager.from_dictionary(d["actor_manager"])
 
     def to_json_string(self):
-        warning(
-            "******************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            "******************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be dumped as JSON")
         return dumps_json(self.to_dictionary())
 
     def to_json_file(self, directory=None, filename=None):
-        warning(
-            "******************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            "******************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be dumped as JSON.")
         d = self.to_dictionary()
         if filename is None:
             filename = self.json_archive_filename
@@ -1627,19 +1645,11 @@ class Simulation(GateObject):
             self.copy_input_files(directory, dct=d)
 
     def from_json_string(self, json_string):
-        warning(
-            "**********************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            "**********************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be reloaded from JSON.")
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
-        warning(
-            "**********************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            "**********************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be reloaded from JSON.")
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 

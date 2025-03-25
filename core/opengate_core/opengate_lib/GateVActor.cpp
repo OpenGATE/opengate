@@ -188,10 +188,30 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
 
 void GateVActor::SetSourceManager(GateSourceManager *s) { fSourceManager = s; }
 
-bool GateVActor::IsStepExitVolume(const G4Step *step) const {
-  // Checking if the particle is exiting the volume is tricky.
-  // We need to check if the post point is in the mother volume and if
-  // it is at a boundary (or in the world)
+bool GateVActor::IsStepEnteringVolume(const G4Step *step,
+                                      const std::vector<std::string> &volumes) {
+  // empty list ? do nothing
+  if (volumes.size() == 0)
+    return false;
+
+  // If the pre step is not on a boundary: not entering
+  if (step->GetPreStepPoint()->GetStepStatus() != fGeomBoundary)
+    return false;
+
+  // if the pre step is at boundary AND if it is in one of the volumes: entering
+  const auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
+  const auto vol_name = vol->GetName();
+  auto i = std::find(volumes.begin(), volumes.end(), vol_name);
+  if (i != volumes.end())
+    return true;
+  return false;
+}
+
+bool GateVActor::IsStepExitingAttachedVolume(const G4Step *step) const {
+  if (fAttachedToVolumeMotherName == "None") {
+    Fatal("Cannot use IsStepExitingAttachedVolume when "
+          "fAttachedToVolumeMotherName is 'None'");
+  }
 
   // If the post step is world boundary: exiting
   if (step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary)
@@ -201,16 +221,13 @@ bool GateVActor::IsStepExitVolume(const G4Step *step) const {
   if (step->GetPostStepPoint()->GetStepStatus() != fGeomBoundary)
     return false;
 
-  // step->IsLastStepInVolume() cannot be used here, because we dont know if the
-  // volume we are exiting is the fAttachedToVolume. When daughters boundaries
-  // overlap fAttachedToVolume boundaries, post step gives the daughter.
+  // step->IsLastStepInVolume() cannot be used here, because we don't know if
+  // the volume we are exiting is the fAttachedToVolume. When daughters
+  // boundaries overlap fAttachedToVolume boundaries, post step gives the
+  // daughter.
 
   // if the post step is at boundary AND if it is in the mother volume: exiting
-  auto *vol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
-  auto vol_name = vol->GetName();
-  if (fAttachedToVolumeMotherName == "None") {
-    Fatal("Cannot use IsStepExitVolume when fAttachedToVolumeMotherName is "
-          "empty");
-  }
+  const auto *vol = step->GetPostStepPoint()->GetTouchable()->GetVolume();
+  const auto vol_name = vol->GetName();
   return vol_name == fAttachedToVolumeMotherName;
 }

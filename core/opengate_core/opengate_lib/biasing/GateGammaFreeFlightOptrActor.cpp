@@ -7,7 +7,6 @@ Copyright (C): OpenGATE Collaboration
 
 #include "GateGammaFreeFlightOptrActor.h"
 #include "../GateHelpersDict.h"
-#include "../GateHelpersImage.h"
 #include "G4BiasingProcessInterface.hh"
 
 GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
@@ -24,7 +23,6 @@ GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
 void GateGammaFreeFlightOptrActor::InitializeCpp() {}
 
 void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
-  GateVActor::InitializeUserInfo(user_info);
   GateVBiasOptrActor::InitializeUserInfo(user_info);
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation =

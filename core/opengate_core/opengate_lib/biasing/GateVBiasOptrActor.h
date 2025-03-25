@@ -30,8 +30,9 @@ public:
   explicit GateVBiasOptrActor(const std::string &name, py::dict &user_info,
                               bool MT_ready = false);
 
-  ~GateVBiasOptrActor() override;
+  ~GateVBiasOptrActor() override = default;
 
+  void InitializeUserInfo(py::dict &user_info) override;
   void Configure() override;
   void ConfigureForWorker() override;
   void PreUserTrackingAction(const G4Track *track) override;
@@ -47,6 +48,7 @@ public:
    `GateGammaFreeFlightOptrActor`.
    */
   bool fIsActive;
+  std::vector<std::string> fIgnoredVolumes;
 };
 
 #endif

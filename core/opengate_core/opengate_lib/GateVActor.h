@@ -116,7 +116,9 @@ public:
 
   void AddActorOutputInfo(const std::string &outputName);
 
-  bool IsStepExitVolume(const G4Step *step) const;
+  static bool IsStepEnteringVolume(const G4Step *step,
+                                   const std::vector<std::string> &volumes);
+  bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
   inline static std::string fOutputNameRoot = "root_output";
 
