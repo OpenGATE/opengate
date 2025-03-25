@@ -44,6 +44,7 @@ from .sources.voxelsources import VoxelSource
 from .sources.gansources import GANSource, GANPairsSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.phidsources import PhotonFromIonDecaySource
+from .sources.voxelphidsource import VoxelPhidSource
 from .voxelize import voxelize_geometry
 
 source_types = {
@@ -55,6 +56,7 @@ source_types = {
     "IonPencilBeamSource": IonPencilBeamSource,
     "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
     "TreatmentPlanPBSource": TreatmentPlanPBSource,
+    "VoxelPhidSource": VoxelPhidSource,
 }
 
 from .geometry.volumes import (
@@ -76,19 +78,13 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
-
 from .actors.doseactors import (
     DoseActor,
     TLEDoseActor,
     LETActor,
     FluenceActor,
     ProductionAndStoppingActor,
-    RBEActor,
-    REActor,
-    BeamQualityActor,
-    EmCalculatorActor,
 )
-
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -99,9 +95,9 @@ from .actors.miscactors import (
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
-    BremsstrahlungSplittingActor,
-    GammaFreeFlightActor,
-    ScatterSplittingFreeFlightActor,
+    ComptSplittingActor,
+    BremSplittingActor,
+    FreeFlightActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -129,10 +125,6 @@ actor_types = {
     "TLEDoseActor": TLEDoseActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
-    "RBEActor": RBEActor,
-    "REActor": REActor,
-    "BeamQualityActor": BeamQualityActor,
-    "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
     # misc
     "AttenuationImageActor": AttenuationImageActor,
@@ -153,9 +145,9 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     # biasing
-    "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
-    "GammaFreeFlightActor": GammaFreeFlightActor,
-    "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
+    "BremSplittingActor": BremSplittingActor,
+    "ComptSplittingActor": ComptSplittingActor,
+    "FreeFlightActor": FreeFlightActor,
 }
 
 
@@ -1288,7 +1280,7 @@ class Simulation(GateObject):
     run_timing_intervals: List[List[float]]
     output_dir: Path
     store_json_archive: bool
-    json_archive_filename: str
+    json_archive_filename: Path
     store_input_files: bool
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
