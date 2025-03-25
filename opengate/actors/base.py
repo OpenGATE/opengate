@@ -1,6 +1,7 @@
 from box import Box
 from functools import wraps
 
+import opengate_core as g4
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
 from ..base import GateObject, process_cls
@@ -611,4 +612,32 @@ class ActorBase(GateObject):
         pass
 
 
+class InternalActions(ActorBase, g4.GateInternalActions):
+    """ """
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateInternalActions.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "NewStage",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        g4.GateInternalActions.StartSimulationAction(self)
+
+    def EndSimulationAction(self):
+        g4.GateInternalActions.EndSimulationAction(self)
+
+
 process_cls(ActorBase)
+process_cls(InternalActions)

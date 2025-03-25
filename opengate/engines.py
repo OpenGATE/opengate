@@ -486,6 +486,7 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def close(self):
         if self.verbose_close:
@@ -499,11 +500,13 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.g4_RunAction = []
         self.g4_EventAction = []
         self.g4_TrackingAction = []
+        self.g4_StackingAction = []
 
     def register_all_actions(self, actor):
         self.register_run_actions(actor)
         self.register_event_actions(actor)
         self.register_tracking_actions(actor)
+        self.register_stacking_actions(actor)
 
     def register_run_actions(self, actor):
         for ra in self.g4_RunAction:
@@ -516,6 +519,10 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     def register_tracking_actions(self, actor):
         for ta in self.g4_TrackingAction:
             ta.RegisterActor(actor)
+
+    def register_stacking_actions(self, actor):
+        for sa in self.g4_StackingAction:
+            sa.RegisterActor(actor)
 
     def BuildForMaster(self):
         # This function is called only in MT mode, for the master thread
@@ -558,6 +565,11 @@ class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
         self.SetUserAction(ta)
         self.g4_TrackingAction.append(ta)
 
+        # set the actions for Track
+        sa = g4.GateStackingAction()
+        self.SetUserAction(sa)
+        self.g4_StackingAction.append(sa)
+
 
 def register_sensitive_detector_to_children(actor, lv):
     global_log.debug(
@@ -590,6 +602,13 @@ class ActorEngine(EngineBase):
         for actor in self.actor_manager.actors.values():
             actor.close()
         super().close()
+
+    def initialize_preinit(self):
+        for actor in self.actor_manager.sorted_actors:
+            global_log.debug(
+                f"Actor: initialize_preinit [{actor.type_name}] {actor.name}"
+            )
+            actor.InitializeG4PreInitState()
 
     def initialize(self):
         for actor in self.actor_manager.sorted_actors:
@@ -1278,6 +1297,9 @@ class SimulationEngine(GateSingletonFatal):
         """
         Build the main geant4 objects and initialize them.
         """
+
+        # From this line, G4 is in G4State_PreInit state
+
         # get log
         log = global_log
 
@@ -1346,6 +1368,9 @@ class SimulationEngine(GateSingletonFatal):
             self.action_engine
         )  # G4 internally calls action_engine.Build()
 
+        # late-G4 PreInit state actor initialisation phase
+        self.actor_engine.initialize_preinit()
+
         # Important: The volumes are constructed
         # when the G4RunManager calls the Construct method of the VolumeEngine,
         # which happens in the InitializeGeometry() method of the
@@ -1359,6 +1384,8 @@ class SimulationEngine(GateSingletonFatal):
             self.g4_RunManager.InitializeWithoutFakeRun()
         else:
             self.g4_RunManager.Initialize()
+
+        # From this line, G4 is in G4State_Idle state
 
         log.info("Simulation: initialize PhysicsEngine after RunManager initialization")
         self.physics_engine.initialize_after_runmanager()

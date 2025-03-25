@@ -27,6 +27,9 @@ public:
 
   virtual void AddActions(std::set<std::string> &actions);
 
+  // Called at initialisation in late G4 PreInit state
+  virtual void InitializeG4PreInitState() {}
+
   // Called at initialisation
   virtual void InitializeCpp();
 
@@ -104,6 +107,8 @@ public:
 
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
+
+  virtual void NewStage() {}
 
   void SetOutputPath(const std::string &outputName,
                      const std::string &outputPath);
