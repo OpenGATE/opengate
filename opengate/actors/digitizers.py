@@ -884,6 +884,9 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         "projection": {
             "actor_output_class": ActorOutputSingleImage,
         },
+        "squared_projection": {
+            "actor_output_class": ActorOutputSingleImage,
+        },
     }
 
     def __init__(self, *args, **kwargs):
@@ -1017,7 +1020,23 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         update_image_py_to_cpp(
             self.user_output.projection.data_per_run[0].image, self.fImage, True
         )
-        # keep initial origin
+
+        # uncertainty ?
+        if self.user_output.squared_projection.get_active():
+            print("init squared projection")
+            self.user_output.squared_projection.create_empty_image(0, size, spacing)
+            align_image_with_physical_volume(
+                self.attached_to_volume,
+                self.user_output.squared_projection.data_per_run[0].image,
+            )
+            update_image_py_to_cpp(
+                self.user_output.squared_projection.data_per_run[0].image,
+                self.fSquaredImage,
+                True,
+            )
+            self.EnableSquaredImage(True)
+
+            # keep initial origin
         self.start_output_origin = list(
             self.user_output.projection.data_per_run[0].get_image_properties()[0].origin
         )
@@ -1043,11 +1062,26 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         self.user_output.projection.merged_data.SetSpacing(list(spacing))
         self.user_output.projection.merged_data.SetOrigin(list(origin))
 
-        self.user_output.projection.data_per_run.pop(
-            0
-        )  # remove the image for run 0 as result is in merged_data
+        # remove the image for run 0 as result is in merged_data
+        self.user_output.projection.data_per_run.pop(0)
 
         self.user_output.projection.write_data_if_requested(which="merged")
+
+        # squared ?
+        if self.user_output.squared_projection.get_active():
+            print("retrieve squared projection")
+            self.user_output.squared_projection.store_data(
+                "merged", get_py_image_from_cpp_image(self.fSquaredImage)
+            )
+            self.user_output.squared_projection.merged_data.SetSpacing(list(spacing))
+            self.user_output.squared_projection.merged_data.SetOrigin(list(origin))
+            self.user_output.squared_projection.data_per_run.pop(0)
+            self.user_output.squared_projection.write_data_if_requested(which="merged")
+
+        # uncertainty
+        """if self.user_output.uncertainty.get_active():
+            m = get_py_image_from_cpp_image(self.fImage)
+            sq = get_py_image_from_cpp_image(self.fSquaredImage)"""
 
 
 class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):

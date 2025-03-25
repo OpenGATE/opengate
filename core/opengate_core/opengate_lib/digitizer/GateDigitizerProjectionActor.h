@@ -45,12 +45,16 @@ public:
   // Called every time an Event ends (all threads)
   void EndOfEventAction(const G4Event *event) override;
 
-  void SetPhysicalVolumeName(std::string name);
+  void SetPhysicalVolumeName(const std::string &name);
+
+  void EnableSquaredImage(bool b);
 
   // Image type is 3D float by default
   typedef itk::Image<float, 3> ImageType;
   ImageType::Pointer fImage;
+  ImageType::Pointer fSquaredImage;
   std::string fPhysicalVolumeName;
+  bool fEnableSquaredImage;
 
 protected:
   std::vector<std::string> fInputDigiCollectionNames;
