@@ -798,13 +798,10 @@ class BioDoseImage(DataItemContainer):
         sqrtbetamix_image = self.data[3].data
         hiteventcount_image = self.data[4].data
 
-        edep_array = np.asarray(self.data[0].data)
-
-        # TODO probably a better way to create images
-        biodose_image = itk.image_view_from_array(np.zeros_like(edep_array))
-        biodose_image.CopyInformation(self.data[0].data)
-        rbe_image = itk.image_view_from_array(np.zeros_like(edep_array))
-        rbe_image.CopyInformation(self.data[0].data)
+        biodose_image = itk.image_duplicator(self.data[0].data)
+        biodose_image.FillBuffer(0)
+        rbe_image = itk.image_duplicator(self.data[0].data)
+        rbe_image.FillBuffer(0)
 
         for index in voxel_indices:
             hit_event_count = hiteventcount_image.GetPixel(index)
@@ -836,6 +833,7 @@ class BioDoseImage(DataItemContainer):
             if scaled_dose > 0:
                 rbe = biodose / scaled_dose
 
+            # print(index)
             biodose_image.SetPixel(index, biodose)
             rbe_image.SetPixel(index, rbe)
 

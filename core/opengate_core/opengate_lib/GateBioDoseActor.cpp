@@ -17,6 +17,7 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateVActor.h"
+#include "fmt/color.h"
 
 GateBioDoseActor::GateBioDoseActor(py::dict &user_info):
   GateVActor(user_info, false)
@@ -96,11 +97,16 @@ void GateBioDoseActor::BeginOfEventAction(const G4Event *event) {
 }
 
 void GateBioDoseActor::EndOfEventAction(const G4Event *) {
+  double totalEventEdep = 0;
+  double totalEventDose = 0;
   for(auto const& index: fEventVoxelIndices) {
     auto const eventEdep = fEventEdepImage->GetPixel(index);
     auto const eventDose = fEventDoseImage->GetPixel(index);
     auto const eventAlphaMix = fEventAlphaImage->GetPixel(index) / eventEdep;
     auto const eventSqrtBetaMix = fEventSqrtBetaImage->GetPixel(index) / eventEdep;
+
+    totalEventEdep += eventEdep;
+    totalEventDose += eventDose;
 
     fVoxelIndices.insert(arrayFromItkIndex(index));
     ImageAddValue<Image>(fHitEventCountImage, index, 1);
@@ -110,6 +116,8 @@ void GateBioDoseActor::EndOfEventAction(const G4Event *) {
     ImageAddValue<Image>(fAlphaMixImage, index, eventAlphaMix);
     ImageAddValue<Image>(fSqrtBetaMixImage, index, eventSqrtBetaMix);
   }
+  fmt::print("total event edep: {}\n", totalEventEdep);
+  fmt::print("total event dose: {}\n", totalEventDose);
 }
 
 void GateBioDoseActor::SteppingAction(G4Step *step) {
@@ -159,16 +167,15 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
   ImageAddValue<Image>(fEventEdepImage, index, energyDep);
   ImageAddValue<Image>(fEventDoseImage, index, dose);
 
-  // // TODO check performances effect of duplicating this
-  // // to handle specifically known ions cases
-  // fEventVoxelIndices.insert(index);
+  // TODO check performances effect of duplicating this
+  // to handle specifically known ions cases
+  ++fStepCount;
+  fEventVoxelIndices.insert(index);
 
   // Get information from step
   // Particle
   G4int nZ = step->GetTrack()->GetDefinition()->GetAtomicNumber();
   double kineticEnergyPerNucleon = (step->GetPreStepPoint()->GetKineticEnergy()) / (step->GetTrack()->GetDefinition()->GetAtomicMass());
-
-  ++fStepCount;
 
   // Accumulation of alpha/beta if ion type if known
   // -> check if the ion type is known
@@ -198,14 +205,11 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
     // Accumulate alpha/beta
     ImageAddValue<Image>(fEventAlphaImage, index, alpha);
     ImageAddValue<Image>(fEventSqrtBetaImage, index, sqrtBeta);
-
-    // TODO check performances effect of duplicating this
-    // to handle specifically known ions cases
-    fEventVoxelIndices.insert(index);
   }
 }
 
 void GateBioDoseActor::EndSimulationAction() {
+  fmt::print("{} / {} = {}%\n", fStepWithKnownIonCount, fStepCount, 100. * fStepWithKnownIonCount / fStepCount);
 }
 
 void GateBioDoseActor::updateData() {
