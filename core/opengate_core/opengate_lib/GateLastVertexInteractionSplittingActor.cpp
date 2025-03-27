@@ -192,15 +192,10 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
         CreateComptonTrack(gammaProcessFinalState, *fTrackToSplit, fWeight);
 
 
-    if (fAAManager !=0){
-      if (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection()))){
-        std::cout<<newTrack->GetPosition()<<"   "<<newTrack->GetMomentumDirection()<<std::endl;
-        std::cout<<"to not split"<<std::endl;
+    if ((fAAManager !=0) && (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))){
         delete newTrack;
       }
-    }
-    else {
-      std::cout<<"gogogo"<<std::endl;
+    else{
       fStackManager->PushOneTrack(newTrack);
     }
 
@@ -320,17 +315,17 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
       G4ThreeVector momentum = newTrack->GetMomentumDirection();
 
       if (!(isnan(momentum[0]))) {
-         if (fAAManager !=0){
-          if (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection()))){
+         if ((fAAManager !=0) && (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))){
             delete newTrack;
           }
-         }
         else if (IsPushBack == true) {
           delete newTrack;
-        } else {
+        } 
+        else {
           newTrack->SetWeight(fWeight);
           newTrack->SetCreatorProcess(process);
           // trackVector->emplace_back(newTrack);
+
           fStackManager->PushOneTrack(newTrack);
           // delete newTrack;
           IsPushBack = true;
@@ -612,6 +607,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
 
     if (IsParticleExitTheBiasedVolume(step)) {
       if (fAAManager != 0){
+        std::cout<<"conven tracking moment"<<"    "<<fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())<<std::endl;
         if (fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())){
           if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() != "None") {
           fListOfContainer.push_back((*fIterator));
