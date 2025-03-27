@@ -139,7 +139,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     # sc.policy = 'EnergyWeightedCentroidPosition'
-    sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep", "KineticEnergy"]
+    sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep"]
     sc.output_filename = hc.output_filename
 
     # EnergyWindows
@@ -164,7 +164,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
         3. EnergyWindows
     """
 
-    # sec = gate.g4_units('second')
+    # sec = gate.g4_units.second
     # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
     # user hook function
