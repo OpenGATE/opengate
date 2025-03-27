@@ -1795,62 +1795,46 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
         ),
     }
 
+    user_output_config = {
+        "biodose": {
+            "actor_output_class": ActorOutputBioDoseImage,
+            "interfaces": {
+                "edep": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                },
+                "dose": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                },
+                "alphamix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 2,
+                    "active": True,
+                },
+                "sqrtbetamix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 3,
+                    "active": True,
+                },
+                "hiteventcount": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 4,
+                    "active": True,
+                },
+                "biodose": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "biodose",
+                    "active": True,
+                },
+            },
+        },
+    }
+
     def __init__(self, *args, **kwargs):
         VoxelDepositActor.__init__(self, *args, **kwargs)
-
-        self._add_user_output(
-            ActorOutputBioDoseImage,
-            "biodose",
-            automatically_generate_interface=False
-        )
-
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "biodose",
-            "edep",
-            item=0,
-        )
-        self.user_output.biodose.set_item_suffix("edep", item=0)
-
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "biodose",
-            "dose",
-            item=1,
-        )
-        self.user_output.biodose.set_item_suffix("dose", item=1)
-
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "biodose",
-            "alphamix",
-            item=2,
-        )
-        self.user_output.biodose.set_item_suffix("alphamix", item=2)
-
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "biodose",
-            "sqrtbetamix",
-            item=3,
-        )
-        self.user_output.biodose.set_item_suffix("sqrtbetamix", item=3)
-
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "biodose",
-            "hiteventcount",
-            item=4,
-        )
-        self.user_output.biodose.set_item_suffix("hiteventcount", item=4)
-
-        self._add_interface_to_user_output(
-            UserInterfaceToActorOutputImage,
-            "biodose",
-            "biodose",
-            item="biodose",
-        )
-        self.user_output.biodose.set_item_suffix("biodose", item="biodose")
 
         self.__initcpp__()
         self.__finalize_init__()
@@ -1881,7 +1865,7 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
 
         self.check_user_input()
 
-        self.InitializeUserInput(self.user_info)
+        self.InitializeUserInfo(self.user_info)
         self.SetPhysicalVolumeName(self.get_physical_volume_name())
         self.InitializeCpp()
 

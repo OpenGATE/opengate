@@ -767,6 +767,8 @@ class BioDoseImage(DataItemContainer):
         ItkImageDataItem,
     )
 
+    __extra_data_items__ = ("biodose",)
+
     biodose_image = None
     rbe_image = None
 
@@ -784,6 +786,10 @@ class BioDoseImage(DataItemContainer):
             ),
         }
     )
+
+    def __init__(self, *args, **kwargs):
+        # specify the data item classes
+        super().__init__(*args, **kwargs)
 
     def calculate_biodose(self):
         alpha_ref = self.data[0].meta_data.alpha_ref
