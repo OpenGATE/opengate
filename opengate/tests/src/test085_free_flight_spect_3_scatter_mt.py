@@ -26,7 +26,8 @@ if __name__ == "__main__":
 
     # free flight actor
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
-    ff.attached_to = "phantom"
+    ff.attached_to = "world"
+    ff.ignored_volumes = ["spect_1_crystal", "spect_2_crystal"]
     ff.compton_splitting_factor = 50
     ff.rayleigh_splitting_factor = 10
     ff.max_compton_level = 10000
@@ -35,10 +36,6 @@ if __name__ == "__main__":
     ff.acceptance_angle.normal_flag = True
     ff.acceptance_angle.normal_vector = [0, 0, -1]
     ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
-
-    # free flight actor
-    ffc = sim.add_actor("GammaFreeFlightActor", "ffc")
-    ffc.attached_to = "spect_1_collimator_trd"
 
     # go
     sim.run()

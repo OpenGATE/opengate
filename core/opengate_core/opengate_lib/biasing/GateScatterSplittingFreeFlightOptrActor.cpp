@@ -18,7 +18,8 @@ G4Mutex StatMutex = G4MUTEX_INITIALIZER;
 
 GateScatterSplittingFreeFlightOptrActor::
     GateScatterSplittingFreeFlightOptrActor(py::dict &user_info)
-    : GateVBiasOptrActor("FreeFlightOperator", user_info, true) {
+    : GateVBiasOptrActor("ScatterSplittingFreeFlightOperator", user_info,
+                         true) {
   fComptonSplittingFactor = 1;
   fRayleighSplittingFactor = 1;
   fMaxComptonLevel = 1;
@@ -44,7 +45,7 @@ GateScatterSplittingFreeFlightOptrActor::GetBiasInformation() {
 
 void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
     py::dict &user_info) {
-  GateVActor::InitializeUserInfo(user_info);
+  GateVBiasOptrActor::InitializeUserInfo(user_info);
 
   // Get user parameters
   fComptonSplittingFactor = DictGetInt(user_info, "compton_splitting_factor");
@@ -60,6 +61,8 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
       "ComptonSplittingOperation",
       &l.fBiasInformationPerThread["nb_compt_tracks"]);
   l.fComptonSplittingOperation->SetSplittingFactor(fComptonSplittingFactor);
+
+  // Create the Rayleigh splitting operation
   l.fRayleighSplittingOperation = new GateScatterSplittingFreeFlightOptn(
       "RayleighSplittingOperation",
       &l.fBiasInformationPerThread["nb_rayl_tracks"]);
@@ -116,7 +119,7 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
   }
 
   // If there is a user info, check if the type is ok
-  auto *info =
+  const auto *info =
       dynamic_cast<GateUserTrackInformation *>(track->GetUserInformation());
   // if not, just track as usual
   if (info->fInfoType !=
@@ -145,11 +148,9 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   // Should we track the particle with free flight or not ?
   threadLocal_t &l = threadLocalData.Get();
-
   if (l.fCurrentTrackIsFreeFlight) {
     return l.fFreeFlightOperation;
   }
-
   // Conventional tracking (the occurrence of compt is not modified)
   return nullptr;
 }
@@ -157,6 +158,7 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
+
   // This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
 
@@ -196,9 +198,14 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   }
 
   // if not free flight, we kill the gamma when it exits the volume
-  // Exiting the volume is tricky : need to check the post point
-  // is in the mother volume.
-  if (IsStepExitVolume(step)) {
+  if (IsStepExitingAttachedVolume(step)) {
+    step->GetTrack()->SetTrackStatus(fStopAndKill);
+    l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
+    return;
+  }
+
+  // if not free flight, we kill the gamma when it enters an ignored volume
+  if (IsStepEnteringVolume(step, fIgnoredVolumes)) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
     return;
@@ -233,7 +240,7 @@ void GateScatterSplittingFreeFlightOptrActor::EndOfSimulationWorkerAction(
 }
 
 int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
-    const G4BiasingProcessInterface *callingProcess) const {
+    const G4BiasingProcessInterface *callingProcess) {
   // If GammaGeneralProc is used, we need to retrieve the real process within
   // GetSelectedProcess (with SelectedProcess)
 
@@ -268,7 +275,7 @@ int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
 }
 
 int GateScatterSplittingFreeFlightOptrActor::IsScatterInteraction(
-    const G4BiasingProcessInterface *callingProcess) const {
+    const G4BiasingProcessInterface *callingProcess) {
   // If GammaGeneralProc is used, we need to retrieve the real process within
   // GetSelectedProcess (with SelectedProcess)
 

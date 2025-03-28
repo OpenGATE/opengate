@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # check image
     is_ok = utility.assert_images(
         paths.output_ref / "projections.mha",
-        proj.get_output_path(),
+        proj.get_output_path("projection"),
         stats=stats,
         tolerance=40,
         axis="x",

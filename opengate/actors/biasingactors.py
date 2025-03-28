@@ -63,6 +63,12 @@ class GenericBiasingActorBase(ActorBase):
                 "setter_hook": _setter_hook_particles,
             },
         ),
+        "ignored_volumes": (
+            [],
+            {
+                "doc": "FIXME ",
+            },
+        ),
     }
 
 
@@ -210,14 +216,22 @@ class ActorOutputScatterSplittingFreeFlightActor(ActorOutputBase):
         s = ""
         for key, value in self.split_info.items():
             s += f"{key}: {value}\n"
-        f = self.split_info.nb_tracks_with_free_flight / (
-            self.split_info.nb_compt_splits * self.split_info.compton_splitting_factor
-            + self.split_info.nb_rayl_splits * self.split_info.rayleigh_splitting_factor
-        )
-        s += f"Fraction of ff:4" f" {f*100:.2f} %\n"
-        f = self.split_info.nb_tracks_with_free_flight / (
-            self.split_info.nb_compt_tracks + self.split_info.nb_rayl_tracks
-        )
+        if self.split_info.nb_compt_splits < 1 and self.split_info.nb_rayl_splits < 1:
+            f = 0
+        else:
+            f = self.split_info.nb_tracks_with_free_flight / (
+                self.split_info.nb_compt_splits
+                * self.split_info.compton_splitting_factor
+                + self.split_info.nb_rayl_splits
+                * self.split_info.rayleigh_splitting_factor
+            )
+        s += f"Fraction of ff: {f*100:.2f} %\n"
+        if self.split_info.nb_compt_tracks < 1 and self.split_info.nb_rayl_tracks < 1:
+            f = 0
+        else:
+            f = self.split_info.nb_tracks_with_free_flight / (
+                self.split_info.nb_compt_tracks + self.split_info.nb_rayl_tracks
+            )
         s += f"Check split/ff: {f*100:.2f} %\n"
         return s
 

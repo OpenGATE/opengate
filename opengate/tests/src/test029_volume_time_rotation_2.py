@@ -49,7 +49,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj029_scaled.mhd",
-            proj_actor.get_output_path(),
+            proj_actor.get_output_path("projection"),
             stats,
             tolerance=60,
             ignore_value_data2=0,

@@ -47,7 +47,7 @@ if __name__ == "__main__":
     stats = sim.get_actor("Stats")
     is_ok = utility.assert_images(
         paths.output_ref / fname,
-        proj.get_output_path(),
+        proj.get_output_path("projection"),
         stats,
         tolerance=38,
         ignore_value_data2=0,
