@@ -6,7 +6,7 @@ from .actoroutput import (
     ActorOutputSingleImageOfHistogram,
     ActorOutputImage,
     ActorOutputSingleImage,
-    UserInterfaceToActorOutputImage
+    UserInterfaceToActorOutputImage,
 )
 
 from ..image import (
@@ -98,11 +98,11 @@ class VoxelizedPromptGammaTLEActor(
                 "doc": "Number of energy bins",
             },
         ),
-        "output_name":(
+        "output_name": (
             "output/defaults-TOF.mhd",
             {
                 "doc": "output_name",
-            }
+            },
         ),
     }
 
@@ -130,7 +130,6 @@ class VoxelizedPromptGammaTLEActor(
             }
         )
 
-
     def initialize(self):
         self.check_user_input()
         VoxelDepositActor.initialize(self)
@@ -139,7 +138,6 @@ class VoxelizedPromptGammaTLEActor(
         self.InitializeCpp()
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
 
-
     def BeginOfRunActionMasterThread(self, run_index):
         g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(
             self, run_index
@@ -147,10 +145,10 @@ class VoxelizedPromptGammaTLEActor(
 
     def EndOfRunActionMasterThread(self, run_index):
 
-        # Save the image 
+        # Save the image
         filename = g4.GateVoxelizedPromptGammaTLEActor.GetOutputImage(self)
         itk_image = itk.imread(filename)
-        itk.imwrite(itk_image, self.user_info['output_name'])
+        itk.imwrite(itk_image, self.user_info["output_name"])
         self.user_output.correl.store_data(run_index, itk_image)
 
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)

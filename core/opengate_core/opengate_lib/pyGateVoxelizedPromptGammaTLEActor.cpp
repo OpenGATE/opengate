@@ -41,8 +41,11 @@ void init_GateVoxelizedPromptGammaTLEActor(py::module &m) {
            &GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
            &GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread)
-      .def("SetPhysicalVolumeName", &GateVoxelizedPromptGammaTLEActor::SetPhysicalVolumeName)
-      .def("GetPhysicalVolumeName", &GateVoxelizedPromptGammaTLEActor::GetPhysicalVolumeName)
+      .def("SetPhysicalVolumeName",
+           &GateVoxelizedPromptGammaTLEActor::SetPhysicalVolumeName)
+      .def("GetPhysicalVolumeName",
+           &GateVoxelizedPromptGammaTLEActor::GetPhysicalVolumeName)
       .def("GetOutputImage", &GateVoxelizedPromptGammaTLEActor::GetOutputImage)
-      .def_readwrite("fPhysicalVolumeName",&GateVoxelizedPromptGammaTLEActor::fPhysicalVolumeName);
+      .def_readwrite("fPhysicalVolumeName",
+                     &GateVoxelizedPromptGammaTLEActor::fPhysicalVolumeName);
 }
