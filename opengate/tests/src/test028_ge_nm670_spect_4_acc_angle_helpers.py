@@ -177,8 +177,7 @@ def create_spect_simu(
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet
     proj.output_filename = f"proj028_colli{version}.mhd"
-    print("proj filename", proj.output_filename)
-    print("proj output path", proj.get_output_path())
+    print("proj output path", proj.get_output_path("projection"))
 
     # rotate spect
     cm = gate.g4_units.cm
