@@ -6,7 +6,17 @@ from .actoroutput import (
     ActorOutputSingleImageOfHistogram,
     ActorOutputImage,
     ActorOutputSingleImage,
+    UserInterfaceToActorOutputImage
 )
+
+from ..image import (
+    update_image_py_to_cpp,
+    get_py_image_from_cpp_image,
+    images_have_same_domain,
+    resample_itk_image_like,
+)
+
+import itk
 from .doseactors import DoseActor, VoxelDepositActor
 
 
@@ -72,24 +82,35 @@ class VoxelizedPromptGammaTLEActor(
     VoxelDepositActor, g4.GateVoxelizedPromptGammaTLEActor
 ):
     """
-    FIXME doc todo
+    plot the time of flight of the neutron against the energy of the PGs emitted in monomode
     """
 
     user_info_defaults = {
-        "stage_0_database": (
-            None,
+        "timebins": (
+            100,
             {
-                "doc": "TODO",
+                "doc": "Number of time bins",
             },
         ),
-        "bins": (100, {"doc": "TODO"}),
+        "energybins": (
+            100,
+            {
+                "doc": "Number of energy bins",
+            },
+        ),
+        "output_name":(
+            "output/defaults-TOF.mhd",
+            {
+                "doc": "output_name",
+            }
+        ),
     }
 
     user_output_config = {
-        "vpg": {
-            "actor_output_class": ActorOutputSingleImageOfHistogram,
+        "correl": {
+            "actor_output_class": ActorOutputSingleImage,
             "active": True,
-        },
+        }
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -101,44 +122,37 @@ class VoxelizedPromptGammaTLEActor(
         self.AddActions(
             {
                 "BeginOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
-                "PreUserTrackingAction",
                 "EndOfRunActionMasterThread",
             }
         )
 
-    def initialize(self, *args):
+
+    def initialize(self):
         self.check_user_input()
         VoxelDepositActor.initialize(self)
-
-        # C++ side
+        self.user_output.correl.set_active(True)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+        self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
 
-    def prepare_output_for_run(self, output_name, run_index, **kwargs):
-        # need to override because create image is different for img of histo
-        self._assert_output_exists(output_name)
-        self.user_output[output_name].create_image_of_histograms(
-            run_index,
-            self.size,
-            self.spacing,
-            self.bins,
-            origin=self.translation,
-            **kwargs,
-        )
 
     def BeginOfRunActionMasterThread(self, run_index):
-        self.prepare_output_for_run("vpg", run_index)
-        self.push_to_cpp_image("vpg", run_index, self.cpp_image)
         g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(
             self, run_index
         )
 
     def EndOfRunActionMasterThread(self, run_index):
-        print("end of run action master thread", run_index)
-        self.fetch_from_cpp_image("vpg", run_index, self.cpp_image)
-        self._update_output_coordinate_system("vpg", run_index)
+
+        # Save the image 
+        filename = g4.GateVoxelizedPromptGammaTLEActor.GetOutputImage(self)
+        itk_image = itk.imread(filename)
+        itk.imwrite(itk_image, self.user_info['output_name'])
+        self.user_output.correl.store_data(run_index, itk_image)
+
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 
