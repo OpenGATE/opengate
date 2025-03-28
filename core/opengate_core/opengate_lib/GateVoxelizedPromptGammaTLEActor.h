@@ -23,8 +23,8 @@
 #include "itkImage.h"
 #include <G4Threading.hh>
 
-#include <itkImageFileWriter.h>
 #include <itkCastImageFilter.h>
+#include <itkImageFileWriter.h>
 
 namespace py = pybind11;
 
@@ -47,7 +47,7 @@ public:
   void BeginOfEventAction(const G4Event *event) override;
 
   int EndOfRunActionMasterThread(int run_id) override;
-  
+
   std::string GetOutputImage();
 
   // Main function called every step in attached volume
@@ -61,14 +61,13 @@ public:
 
   std::string fPhysicalVolumeName;
 
-
   typedef itk::Image<double, 3> Image3DType;
   Image3DType::Pointer Volume;
 
   typedef itk::Image<double, 2> Image2DType;
   Image2DType::Pointer output_image;
 
-private: 
+private:
   G4int incidentParticles;
   G4int Nbbinstime;
   G4int Nbbinsenergy;

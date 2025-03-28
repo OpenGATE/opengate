@@ -65,7 +65,6 @@ if __name__ == "__main__":
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 
-
     # add vpgtle actor
     vpg_tle = sim.add_actor("VoxelizedPromptGammaTLEActor", "vpgtle")
     vpg_tle.attached_to = ct
@@ -73,10 +72,10 @@ if __name__ == "__main__":
     vpg_tle.size = [100, 100, 100]
     vpg_tle.bins = 50
     vpg_tle.spacing = [2 * mm, 2 * mm, 2 * mm]
-    vpg_tle.activity = 1000* Bq
+    vpg_tle.activity = 1000 * Bq
     # FIXME to put elsewhere ? change the name ?
-   # vpg_tle.stage_0_database = paths.data / "vpgtle_stage0.db"
-    
+    # vpg_tle.stage_0_database = paths.data / "vpgtle_stage0.db"
+
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
