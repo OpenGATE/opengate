@@ -63,6 +63,12 @@ class GenericBiasingActorBase(ActorBase):
                 "setter_hook": _setter_hook_particles,
             },
         ),
+        "ignored_volumes": (
+            [],
+            {
+                "doc": "FIXME ",
+            },
+        ),
     }
 
 
@@ -145,15 +151,6 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
     # this biased actor DO NOT work for GammaGeneralProc
     processes = ["compt", "phot", "conv", "Rayl"]
     particles = ["gamma"]
-
-    user_info_defaults = {
-        "ignored_volumes": (
-            [],
-            {
-                "doc": "FIXME ",
-            },
-        )
-    }
 
     def __init__(self, *args, **kwargs):
         GenericBiasingActorBase.__init__(self, *args, **kwargs)
@@ -274,12 +271,6 @@ class ScatterSplittingFreeFlightActor(
             generic_source_default_aa(),
             {
                 "doc": "See generic source",
-            },
-        ),
-        "ignored_volumes": (
-            [],
-            {
-                "doc": "FIXME ",
             },
         ),
     }
