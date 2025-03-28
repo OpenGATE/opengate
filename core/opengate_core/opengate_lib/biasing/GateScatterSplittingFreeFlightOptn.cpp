@@ -80,7 +80,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
   // delete secondaries to avoid memory leak
   for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
-    auto *sec = final_state->GetSecondary(j);
+    const auto *sec = final_state->GetSecondary(j);
     delete sec;
   }
   particle_change->Clear(); // FIXME useful ? like in brem ?
@@ -95,7 +95,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
     // delete secondaries to avoid memory leak
     for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
-      auto *sec = final_state->GetSecondary(j);
+      const auto *sec = final_state->GetSecondary(j);
       delete sec;
     }
 
@@ -108,7 +108,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     energy = particle_change->GetProposedKineticEnergy();
     if (energy > 0) {
       // Create a new track with another gamma (free by G4)
-      auto gammaTrack = new G4Track(*track);
+      const auto gammaTrack = new G4Track(*track);
       gammaTrack->SetWeight(weight);
       gammaTrack->SetMomentumDirection(momentum);
       gammaTrack->SetKineticEnergy(energy);

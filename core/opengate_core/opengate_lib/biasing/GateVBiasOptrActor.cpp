@@ -17,13 +17,24 @@ GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
     : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {
   // It seems that it is needed in MT (see PreUserTrackingAction)
   fActions.insert("PreUserTrackingAction");
-  fIsActive = true;
+}
+
+std::vector<G4VBiasingOperator *> &
+GateVBiasOptrActor::GetNonConstBiasingOperators() {
+  // WARNING PEGI 18: Don't look at it if you are sensitive and have a pure
+  // heart.
+  auto &operators = const_cast<std::vector<G4VBiasingOperator *> &>(
+      G4VBiasingOperator::GetBiasingOperators());
+  return operators;
+}
+
+void GateVBiasOptrActor::ClearOperators() {
+  GetNonConstBiasingOperators().clear();
 }
 
 void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
   fIgnoredVolumes = DictGetVecStr(user_info, "ignored_volumes");
-  DDDV(fIgnoredVolumes);
 
   // check ignored volumes
   for (auto &name : fIgnoredVolumes) {
@@ -36,26 +47,11 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
 }
 
 void GateVBiasOptrActor::Configure() {
-  if (fAttachedToVolumeName.empty()) {
-    fIsActive = false;
-    return;
-  }
-  if (!G4Threading::IsMultithreadedApplication()) {
-    auto *biasedVolume =
-        G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
-    if (biasedVolume == nullptr) {
-      Fatal("Cannot find biased volume: " + fAttachedToVolumeName +
-            " in actor" + fActorName);
-    }
-    AttachAllLogicalDaughtersVolumes(biasedVolume);
-  }
+  if (!G4Threading::IsMultithreadedApplication())
+    ConfigureForWorker();
 }
 
 void GateVBiasOptrActor::ConfigureForWorker() {
-  if (fAttachedToVolumeName.empty()) {
-    fIsActive = false;
-    return;
-  }
   auto *biasedVolume =
       G4LogicalVolumeStore::GetInstance()->GetVolume(fAttachedToVolumeName);
   if (biasedVolume == nullptr) {
@@ -75,16 +71,17 @@ void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
 
 void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
-  // FIXME: set an option to not propagate to daughters ?
-
   // Do not attach to ignored volumes
   const auto iter = std::find(fIgnoredVolumes.begin(), fIgnoredVolumes.end(),
                               volume->GetName());
   if (iter != fIgnoredVolumes.end())
     return;
-  DDD(volume->GetName());
 
+  // Attach to the volume
   AttachTo(volume);
+
+  // Propagate to daughters
+  // FIXME: set an option to not propagate to daughters ?
   for (auto i = 0; i < volume->GetNoDaughters(); i++) {
     G4LogicalVolume *logicalDaughtersVolume =
         volume->GetDaughter(i)->GetLogicalVolume();

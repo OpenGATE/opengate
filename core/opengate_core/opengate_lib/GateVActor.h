@@ -47,12 +47,14 @@ public:
   // Called when the simulation end (master thread only)
   virtual void EndSimulationAction() {}
 
+  // Call when the python actor is closed
+  virtual void Close() {}
+
   // Called by Geant4 every hit. Call SteppingAction and return True
   // Take care about the filters
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
   /*
-
    ************ WARNING ************
 
    * In multi-thread mode, there is (for the moment) a single actor object

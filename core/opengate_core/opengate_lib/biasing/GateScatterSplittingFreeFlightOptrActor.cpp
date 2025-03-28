@@ -61,6 +61,8 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
       "ComptonSplittingOperation",
       &l.fBiasInformationPerThread["nb_compt_tracks"]);
   l.fComptonSplittingOperation->SetSplittingFactor(fComptonSplittingFactor);
+
+  // Create the Rayleigh splitting operation
   l.fRayleighSplittingOperation = new GateScatterSplittingFreeFlightOptn(
       "RayleighSplittingOperation",
       &l.fBiasInformationPerThread["nb_rayl_tracks"]);
@@ -104,8 +106,6 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfEventAction(
 
 void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
-  if (!fIsActive)
-    return;
   // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
   l.fComptonInteractionCount = 0;
@@ -119,7 +119,7 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
   }
 
   // If there is a user info, check if the type is ok
-  auto *info =
+  const auto *info =
       dynamic_cast<GateUserTrackInformation *>(track->GetUserInformation());
   // if not, just track as usual
   if (info->fInfoType !=
@@ -146,8 +146,6 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  if (!fIsActive)
-    return nullptr;
   // Should we track the particle with free flight or not ?
   threadLocal_t &l = threadLocalData.Get();
   if (l.fCurrentTrackIsFreeFlight) {
@@ -160,8 +158,6 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  if (!fIsActive)
-    return callingProcess->GetCurrentFinalStateBiasingOperation();
 
   // This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
@@ -244,7 +240,7 @@ void GateScatterSplittingFreeFlightOptrActor::EndOfSimulationWorkerAction(
 }
 
 int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
-    const G4BiasingProcessInterface *callingProcess) const {
+    const G4BiasingProcessInterface *callingProcess) {
   // If GammaGeneralProc is used, we need to retrieve the real process within
   // GetSelectedProcess (with SelectedProcess)
 
@@ -279,7 +275,7 @@ int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
 }
 
 int GateScatterSplittingFreeFlightOptrActor::IsScatterInteraction(
-    const G4BiasingProcessInterface *callingProcess) const {
+    const G4BiasingProcessInterface *callingProcess) {
   // If GammaGeneralProc is used, we need to retrieve the real process within
   // GetSelectedProcess (with SelectedProcess)
 

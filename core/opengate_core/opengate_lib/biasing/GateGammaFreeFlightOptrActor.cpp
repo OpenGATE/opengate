@@ -6,6 +6,7 @@ Copyright (C): OpenGATE Collaboration
    -------------------------------------------------- */
 
 #include "GateGammaFreeFlightOptrActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include "G4BiasingProcessInterface.hh"
 
@@ -13,6 +14,7 @@ GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
     : GateVBiasOptrActor("GammaFreeFlightOperator", user_info, true) {
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation = nullptr;
+  l.fIsFirstTime = true;
 }
 
 GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
@@ -27,11 +29,10 @@ void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation =
       new GateGammaFreeFlightOptn("GammaFreeFlightOperation");
+  l.fIsFirstTime = true;
 }
 
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {
-  if (!fIsActive)
-    return;
   threadLocal_t &l = threadLocalData.Get();
   l.fIsFirstTime = true;
   l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
@@ -53,8 +54,6 @@ GateGammaFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateGammaFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  if (!fIsActive)
-    return nullptr;
   threadLocal_t &l = threadLocalData.Get();
   if (l.fIsFirstTime) {
     l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
@@ -66,8 +65,6 @@ GateGammaFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateGammaFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  if (!fIsActive)
-    return callingProcess->GetCurrentFinalStateBiasingOperation();
   threadLocal_t &l = threadLocalData.Get();
   return l.fFreeFlightOperation;
 }

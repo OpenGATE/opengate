@@ -23,6 +23,17 @@ namespace py = pybind11;
     AttachAllLogicalDaughtersVolumes that propagate the actors to all
    sub-volumes. (Later: could be an option to not propagate).
 
+   WARNING.
+   There is a global static variable in G4VBiasingOperator that
+   contains a vector of operators. This variable must be cleared
+   once the simulation is done to allow another simulation to be run.
+   This cannot be properly done via Geant4 interface (or at least I don't know
+   how to do), but we proudly provide an awful trick to do the job, via
+   the ClearOperators and GetNonConstBiasingOperators functions
+
+   - GetNonConstBiasingOperators get non const access to the cached static var
+   - ClearOperators clear the vector, should be called once everything is done.
+
  */
 
 class GateVBiasOptrActor : public G4VBiasingOperator, public GateVActor {
@@ -38,16 +49,9 @@ public:
   void PreUserTrackingAction(const G4Track *track) override;
   virtual void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *volume);
 
-  /*
-   This is a workaround: when running multiple simulations within the same
-   process (e.g., using `sim.run(start_new_process=True)`), the
-   `GateVBiasOptrActor` instances remain in memory from one run to the next. The
-   reason for this behavior is unclear. Checking `fAttachedToVolumeName` acts as
-   a "trick" to detect these zombie actors, allowing us to flag them as
-   inactive. This flag must be checked in callbacks, as demonstrated in
-   `GateGammaFreeFlightOptrActor`.
-   */
-  bool fIsActive;
+  static void ClearOperators();
+  static std::vector<G4VBiasingOperator *> &GetNonConstBiasingOperators();
+
   std::vector<std::string> fIgnoredVolumes;
 };
 
