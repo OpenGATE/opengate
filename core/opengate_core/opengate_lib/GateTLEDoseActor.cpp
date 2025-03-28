@@ -10,12 +10,13 @@
 #include "G4RandomTools.hh"
 #include "G4RunManager.hh"
 #include "G4Threading.hh"
-
+#include "G4Electron.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateMaterialMuHandler.h"
 #include "GateTLEDoseActor.h"
+#include "GateTLEUserTrackInformation.h"
 
 #include <iostream>
 #include <itkAddImageFilter.h>
@@ -38,13 +39,19 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
   fMaterialMuHandler = GateMaterialMuHandler::GetInstance(database, fEnergyMax);
 }
 
+
+
 void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
+  if (fEmCalc ==0){
+    fEmCalc = new G4EmCalculator();
+  }
   auto &l = fThreadLocalData.Get();
   l.fIsTLESecondary = false;
-  l.fSecNbWhichDeposit.clear();
+  l.fSecWhichDeposit.clear();
   GateDoseActor::BeginOfEventAction(event);
 }
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
+  G4Event* event = G4EventManager::GetEventManager()->GetNonconstCurrentEvent();
   auto &l = fThreadLocalData.Get();
 
   // if the particle is a gamma, we associate a map which will associate the
@@ -54,7 +61,6 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
   if (track->GetDefinition()->GetParticleName() == "gamma") {
     l.fIsTLEGamma = false;
     l.fIsTLESecondary = false;
-    l.fSecNbWhichDeposit[track->GetTrackID()] = 0;
   }
 
   // if the particle is not a gamma, we want to associate a secondary boolean to
@@ -71,50 +77,73 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
   //  gamma, the boolean is set to False at the beginning of the event
 
   else {
-    auto parent_id = track->GetParentID();
-    for (auto it = l.fSecNbWhichDeposit.begin();
-         it != l.fSecNbWhichDeposit.end(); ++it) {
+    if (track->GetUserInformation() != 0){
+     GateTLEUserTrackInformation* tleInfo  = dynamic_cast<GateTLEUserTrackInformation*>(track->GetUserInformation());
+     std::cout<<tleInfo->GetTLEDoseBool()<<std::endl;
+      l.fIsTLESecondary = tleInfo->GetTLEDoseBool();
+    }
+
+
+    //l.fIsTLESecondary = AUserInfo->GetTLEDoseBool();
+    //std::cout<<AUserInfo->GetTLEDoseBool()<<std::endl;
+   /* auto parent_id = track->GetParentID();
+    for (auto it = l.fSecWhichDeposit.begin(); it != l.fSecWhichDeposit.end(); ++it) {
       if (parent_id == it->first) {
-        if (it->second > 0) {
-          l.fIsTLESecondary = true;
+        std::vector<G4bool> toTleList = it->second;
+        std::cout<<it->second.size()<<std::endl;
+        l.fIsTLESecondary = toTleList.back();
+        it->second.pop_back();
+        if (it->second.size() == 0){
+          l.fSecWhichDeposit.erase(parent_id);
+          }
         }
-        if (it->second == 0) {
-          l.fSecNbWhichDeposit.erase(it);
-          l.fIsTLESecondary = false;
-          break;
-        }
-        it->second--;
       }
+      */
     }
   }
-}
 
 void GateTLEDoseActor::SteppingAction(G4Step *step) {
   auto &l = fThreadLocalData.Get();
-
+  G4double range_lim = 2 * CLHEP::mm;
   const auto pre_step = step->GetPreStepPoint();
+
   double energy = 0;
   energy = pre_step->GetKineticEnergy();
+  const G4Material* currentMat = pre_step->GetMaterial();
+  auto nbSec = step->GetSecondaryInCurrentStep()->size();
   if (step->GetTrack()->GetDefinition()->GetParticleName() == "gamma") {
-
+    
+    G4double csda = fEmCalc->GetCSDARange(energy,G4Electron::Definition(),currentMat);
     // For too high energy, no TLE
-    if (energy > fEnergyMax) {
+    if (csda > range_lim) {
+      //std::cout<<nbSec<<"   1"<<std::endl;
       l.fIsTLEGamma = false;
-      l.fIsTLESecondary = false;
-      return GateDoseActor::SteppingAction(step);
-    } else {
-      l.fIsTLEGamma = true;
-    }
-    // Update the number of secondaries if there is secondary in the current non
-    // TLE particle
-    if (l.fIsTLEGamma == true) {
-      auto nbSec = step->GetSecondaryInCurrentStep()->size();
       if (nbSec > 0) {
-        l.fIsTLESecondary = true;
-        l.fSecNbWhichDeposit[step->GetTrack()->GetTrackID()] += nbSec;
+        for (auto i=0; i< nbSec; i++){
+            GateTLEUserTrackInformation* userInfo =new GateTLEUserTrackInformation();
+            userInfo->SetTLEDoseBool(false);
+            auto* secs = step->GetfSecondary();
+            auto* sec = (*secs)[secs->size() -i -1];
+            sec->SetUserInformation(userInfo);
+          }
+        }
+      return GateDoseActor::SteppingAction(step);
+    } 
+    else {
+      //std::cout<<nbSec<<"   2"<<std::endl;
+      l.fIsTLEGamma = true;
+       if (nbSec > 0) {
+        for (auto i=0; i< nbSec; i++){
+          GateTLEUserTrackInformation* userInfo=new GateTLEUserTrackInformation();
+          userInfo->SetTLEDoseBool(true);
+          auto* secs = step->GetfSecondary();
+          auto* sec = (*secs)[secs->size() -i -1];
+          sec->SetUserInformation(userInfo);
+        }
+        
       }
-      // l.fLastTrackId += step->GetSecondaryInCurrentStep()->size();
     }
+  
   }
 
   // For non-gamma particle, no TLE

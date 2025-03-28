@@ -40,11 +40,13 @@ public:
   // Conventional DoseActor if above this energy
   double fEnergyMax;
 
+  G4EmCalculator* fEmCalc = nullptr;
+
   struct threadLocalT {
     // Bool if current track is a TLE gamma or not
     bool fIsTLEGamma;
     bool fIsTLESecondary;
-    std::map<G4int, G4int> fSecNbWhichDeposit;
+    std::map<G4int,std::vector<G4bool>> fSecWhichDeposit; 
   };
   G4Cache<threadLocalT> fThreadLocalData;
 
