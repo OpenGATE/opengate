@@ -1079,6 +1079,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             self.user_output.squared_projection.write_data_if_requested(which="merged")
 
         # uncertainty
+        print("TODO : compute uncertainty")
         """if self.user_output.uncertainty.get_active():
             m = get_py_image_from_cpp_image(self.fImage)
             sq = get_py_image_from_cpp_image(self.fSquaredImage)"""
