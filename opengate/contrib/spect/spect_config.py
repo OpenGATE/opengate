@@ -7,7 +7,6 @@ import opengate.contrib.spect.siemens_intevo as intevo
 from opengate.image import read_image_info
 from opengate.utility import get_basename_and_extension
 from opengate.sources.utility import set_source_energy_spectrum
-import SimpleITK as sitk
 
 
 class SPECTConfig:
@@ -437,17 +436,16 @@ class AcquisitionConfig:
             i += 1
 
 
-def spect_freeflight_run(sim, sc, options, fake=False):
-    # get some information from spect config
-    source = sc.source_config.source
+def spect_freeflight_run(sc, options, fake=False):
 
     # prepare output dict
     output = Box()
     output.nb_detectors = len(sc.detector_config.detectors)
-    output_dir = sim.output_dir
 
     # run 1 = primary
-    sim.output_dir = f"{output_dir}/freeflight_primary"
+    sim = sc.create_simulation(number_of_threads=options.number_of_threads, visu=False)
+    source = sc.source_config.source
+    sim.output_dir = f"{sim.output_dir}/freeflight_primary"
     ff = spect_freeflight_configure_primary(sim, sc, options)
     if not fake:
         sim.run(start_new_process=True)
@@ -458,13 +456,13 @@ def spect_freeflight_run(sim, sc, options, fake=False):
         str(d.get_output_path("projection")) for d in sc.detector_config.digitizers
     ]
 
-    # remove initial ff and AA for the source
-    sim.actor_manager.remove_actor(ff.name)
-    source.direction.acceptance_angle.intersection_flag = False
-    source.direction.acceptance_angle.normal_flag = False
-
     # run 2 = scatter
-    sim.output_dir = f"{output_dir}/freeflight_scatter"
+    print()
+    print()
+    print()
+    sim = sc.create_simulation(number_of_threads=options.number_of_threads, visu=False)
+    source = sc.source_config.source
+    sim.output_dir = f"{sim.output_dir}/freeflight_scatter"
     ff = spect_freeflight_configure_scatter(sim, sc, options)
     if not fake:
         sim.run(start_new_process=True)
@@ -549,34 +547,3 @@ def spect_freeflight_configure_scatter(sim, sc, options):
     source.activity = options.scatter_activity
 
     return ff
-
-
-def spect_freeflight_combine_and_scale(output_data, n, write_folder=None):
-    output_data = Box(output_data)
-    n_prim = output_data.prim.activity
-    n_scatter = output_data.scatter.activity
-    # print(f"n = {n} Bq, n_prim = {n_prim} Bq, n_scatter = {n_scatter} Bq")
-    combined_images = []
-    for i in range(output_data.nb_detectors):
-        # read primary projection
-        prim_filename = output_data.prim.proj_paths[i]
-        prim_img = sitk.ReadImage(prim_filename)
-        prim_np = sitk.GetArrayFromImage(prim_img)
-
-        # read scatter projection
-        scatter_filename = output_data.scatter.proj_paths[i]
-        scatter_img = sitk.ReadImage(scatter_filename)
-        scatter_np = sitk.GetArrayFromImage(scatter_img)
-
-        # combine
-        combined_np = prim_np * (n / n_prim) + scatter_np * (n / n_scatter)
-
-        # write
-        combined_img = sitk.GetImageFromArray(combined_np)
-        combined_img.CopyInformation(prim_img)
-        combined_images.append(combined_img)
-        if write_folder is not None:
-            fn = write_folder / f"combined_{i}.mhd"
-            sitk.WriteImage(combined_img, fn)
-
-    return combined_images
