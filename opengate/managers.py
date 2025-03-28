@@ -1836,6 +1836,13 @@ class Simulation(GateObject):
                 print()
             print("*" * 20)
 
+        # For all biasing operators inheriting from G4VBiasingOperator,
+        # we need to clean the global static variable "fOperators" once everything is done
+        # in order to be able to start another simulation. This should be only once
+        # and for any one of the operators, we choose GateGammaFreeFlightOptrActor
+        # but this clean for all. Trust me.
+        g4.GateGammaFreeFlightOptrActor.ClearOperators()
+
     def voxelize_geometry(
         self,
         extent="auto",
