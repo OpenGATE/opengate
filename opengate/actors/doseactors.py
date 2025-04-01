@@ -1,4 +1,5 @@
 from box import Box
+import math
 import numpy as np
 import pandas as pd
 import os
@@ -1796,40 +1797,57 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
     }
 
     user_output_config = {
+        "hit_event_count": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+        "edep": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+        "dose": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+        "alphamix": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+        "sqrtbetamix": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+        "alphamix_dose": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+        "sqrtbetamix_dose": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+        },
+        "sum_alphamix": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+            "write_to_disk": False,
+        },
+        "sum_sqrtbetamix": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+            "write_to_disk": False,
+        },
+        "sum_alphamix_dose": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+            "write_to_disk": False,
+        },
+        "sum_sqrtbetamix_dose": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+            "write_to_disk": False,
+        },
         "biodose": {
-            "actor_output_class": ActorOutputBioDoseImage,
-            "interfaces": {
-                "edep": {
-                    "interface_class": UserInterfaceToActorOutputImage,
-                    "item": 0,
-                    "active": True,
-                },
-                "dose": {
-                    "interface_class": UserInterfaceToActorOutputImage,
-                    "item": 1,
-                    "active": True,
-                },
-                "alphamix": {
-                    "interface_class": UserInterfaceToActorOutputImage,
-                    "item": 2,
-                    "active": True,
-                },
-                "sqrtbetamix": {
-                    "interface_class": UserInterfaceToActorOutputImage,
-                    "item": 3,
-                    "active": True,
-                },
-                "hiteventcount": {
-                    "interface_class": UserInterfaceToActorOutputImage,
-                    "item": 4,
-                    "active": True,
-                },
-                "biodose": {
-                    "interface_class": UserInterfaceToActorOutputImage,
-                    "item": "biodose",
-                    "active": True,
-                },
-            },
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
         },
     }
 
@@ -1863,6 +1881,11 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
 
         VoxelDepositActor.initialize(self)
 
+        for item in ["sum_alphamix", "sum_sqrtbetamix", "sum_alphamix_dose", "sum_sqrtbetamix_dose"]:
+          if not self.user_output[item].get_active():
+            self.user_output[item].set_active(True)
+            self.user_output[item].set_write_to_disk(False)
+
         self.check_user_input()
 
         self.InitializeUserInfo(self.user_info)
@@ -1870,45 +1893,107 @@ class BioDoseActor(VoxelDepositActor, g4.GateBioDoseActor):
         self.InitializeCpp()
 
     def BeginOfRunActionMasterThread(self, run_index):
+        def _init_image(name, image, run_index):
+            self.prepare_output_for_run(name, run_index)
+            self.push_to_cpp_image( name, run_index, image)
+
+
+        _init_image("hit_event_count", self.cpp_hit_event_count_image, run_index)
+        _init_image("edep", self.cpp_edep_image, run_index)
+        _init_image("dose", self.cpp_dose_image, run_index)
+        _init_image("alphamix", self.cpp_alphamix_image, run_index)
+        _init_image("sqrtbetamix", self.cpp_sqrtbetamix_image, run_index)
+        _init_image("alphamix_dose", self.cpp_alphamix_dose_image, run_index)
+        _init_image("sqrtbetamix_dose", self.cpp_sqrtbetamix_dose_image, run_index)
+        _init_image("sum_alphamix", self.cpp_sum_alphamix_image, run_index)
+        _init_image("sum_sqrtbetamix", self.cpp_sum_sqrtbetamix_image, run_index)
+        _init_image("sum_alphamix_dose", self.cpp_sum_alphamix_dose_image, run_index)
+        _init_image("sum_sqrtbetamix_dose", self.cpp_sum_sqrtbetamix_dose_image, run_index)
+
         self.prepare_output_for_run("biodose", run_index)
-        self.push_to_cpp_image(
-            "biodose",
-            run_index,
-            self.cpp_edep_image,
-            self.cpp_dose_image,
-            self.cpp_alphamix_image,
-            self.cpp_sqrtbetamix_image,
-            self.cpp_hiteventcount_image,
-        )
 
         g4.GateBioDoseActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-        self.fetch_from_cpp_image(
-            "biodose",
-            run_index,
-            self.cpp_edep_image,
-            self.cpp_dose_image,
-            self.cpp_alphamix_image,
-            self.cpp_sqrtbetamix_image,
-            self.cpp_hiteventcount_image,
-        )
-        self._update_output_coordinate_system("biodose", run_index)
-        self.user_output.biodose.store_meta_data(
-            run_index, alpha_ref=self.alpha_ref
-        )
-        self.user_output.biodose.store_meta_data(
-            run_index, beta_ref=self.beta_ref
-        )
-        self.user_output.biodose.store_meta_data(
-            run_index, voxel_indices=self.GetVoxelIndicesAsVector()
-        )
+        def _fetch_image(name, image, run_index):
+            self.fetch_from_cpp_image(name, run_index, image)
+            self._update_output_coordinate_system(name, run_index)
+
+        _fetch_image("hit_event_count", self.cpp_hit_event_count_image, run_index)
+        _fetch_image("edep", self.cpp_edep_image, run_index)
+        _fetch_image("dose", self.cpp_dose_image, run_index)
+        _fetch_image("alphamix", self.cpp_alphamix_image, run_index)
+        _fetch_image("sqrtbetamix", self.cpp_sqrtbetamix_image, run_index)
+        _fetch_image("alphamix_dose", self.cpp_alphamix_dose_image, run_index)
+        _fetch_image("sqrtbetamix_dose", self.cpp_sqrtbetamix_dose_image, run_index)
+        _fetch_image("sum_alphamix", self.cpp_sum_alphamix_image, run_index)
+        _fetch_image("sum_sqrtbetamix", self.cpp_sum_sqrtbetamix_image, run_index)
+        _fetch_image("sum_alphamix_dose", self.cpp_sum_alphamix_dose_image, run_index)
+        _fetch_image("sum_sqrtbetamix_dose", self.cpp_sum_sqrtbetamix_dose_image, run_index)
 
         return VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
 
     def EndSimulationAction(self):
         g4.GateBioDoseActor.EndSimulationAction(self)
+        self._update_data()
         VoxelDepositActor.EndSimulationAction(self)
+
+    def _update_data(self):
+        alpha_ref = self.alpha_ref
+        beta_ref = self.beta_ref
+        sq_alpha_ref = alpha_ref * alpha_ref
+        # n = self.NbOfEvent
+        voxel_indices = self.GetVoxelIndicesAsVector()
+
+        edep_item = self.user_output.edep.merged_data.data[0]
+        dose_item = self.user_output.dose.merged_data.data[0]
+        alphamix_item = self.user_output.alphamix.merged_data.data[0]
+        sqrtbetamix_item = self.user_output.sqrtbetamix.merged_data.data[0]
+        alphamix_dose_item = self.user_output.alphamix_dose.merged_data.data[0]
+        sqrtbetamix_dose_item = self.user_output.sqrtbetamix_dose.merged_data.data[0]
+        sum_alphamix_item = self.user_output.sum_alphamix.merged_data.data[0]
+        sum_sqrtbetamix_item = self.user_output.sum_sqrtbetamix.merged_data.data[0]
+        sum_alphamix_dose_item = self.user_output.sum_alphamix_dose.merged_data.data[0]
+        sum_sqrtbetamix_dose_item = self.user_output.sum_sqrtbetamix_dose.merged_data.data[0]
+
+        zeroes = np.zeros(edep_item.image_array.shape)
+        biodose_image = ItkImageDataItem(data=itk_image_from_array(zeroes))
+        biodose_image.copy_image_properties(edep_item.image)
+
+        for index in voxel_indices:
+            edep = edep_item.image.GetPixel(index)
+
+            alphamix = sum_alphamix_item.image.GetPixel(index) / edep
+            sqrtbetamix = sum_sqrtbetamix_item.image.GetPixel(index) / edep
+
+            alphamix_dose = sum_alphamix_dose_item.image.GetPixel(index)
+            sqrtbetamix_dose = sum_sqrtbetamix_dose_item.image.GetPixel(index)
+
+            dose = dose_item.image.GetPixel(index)
+            delta = sq_alpha_ref + 4 * beta_ref * (alphamix_dose + sqrtbetamix_dose ** 2)
+
+            sqrt_delta = 0
+            if delta > 0:
+                sqrt_delta = math.sqrt(delta)
+
+            biodose = 0
+            rbe = 0
+
+            biodose = (-alpha_ref + sqrt_delta) / (2 * beta_ref)
+
+            # print(f"alphamix_mean: {alphamix_mean}, sqrtbetamix_mean: {sqrtbetamix_mean}, hiteventcount: {hit_event_count}")
+            # print(f"alpha_ref: {alpha_ref}, beta_ref: {beta_ref}, sqrt_delta: {sqrt_delta}")
+            print(f"[calculate_biodose] dose: {dose}, biodose: {biodose}, OK: {dose <= biodose}")
+
+            if dose > 0:
+                rbe = biodose / dose
+
+            # print(index)
+
+            biodose_image.SetPixel(index, biodose)
+            # rbe_image.SetPixel(index, rbe)
+
+        self.user_output.biodose.merged_data.data[0] = biodose_image
 
 
 process_cls(VoxelDepositActor)

@@ -112,17 +112,24 @@ private:
   VoxelIndices fVoxelIndices;
 
   // from Python
+  Image::Pointer fHitEventCountImage;
   Image::Pointer fEdepImage;
   Image::Pointer fDoseImage;
   Image::Pointer fAlphaMixImage;
   Image::Pointer fSqrtBetaMixImage;
-  Image::Pointer fHitEventCountImage;
+  Image::Pointer fAlphaMixDoseImage;
+  Image::Pointer fSqrtBetaMixDoseImage;
+
+  Image::Pointer fSumAlphaMixImage;
+  Image::Pointer fSumSqrtBetaMixImage;
+  Image::Pointer fSumAlphaMixDoseImage;
+  Image::Pointer fSumSqrtBetaMixDoseImage;
 
   // only C++-side
   Image::Pointer fEventEdepImage;
   Image::Pointer fEventDoseImage;
-  Image::Pointer fEventAlphaImage;
-  Image::Pointer fEventSqrtBetaImage;
+  Image::Pointer fEventSumAlphaMixDoseImage;
+  Image::Pointer fEventSumSqrtBetaMixDoseImage;
 
   // metadata
   double fVoxelVolume = 0;

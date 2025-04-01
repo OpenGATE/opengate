@@ -40,11 +40,17 @@ void init_GateBioDoseActor(py::module &m) {
       .def("GetPhysicalVolumeName", &GateBioDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateBioDoseActor::SetPhysicalVolumeName)
       .def("GetVoxelIndicesAsVector", &GateBioDoseActor::GetVoxelIndicesAsVector)
+      .def_readwrite("cpp_hit_event_count_image", &GateBioDoseActor::fHitEventCountImage)
       .def_readwrite("cpp_edep_image", &GateBioDoseActor::fEdepImage)
       .def_readwrite("cpp_dose_image", &GateBioDoseActor::fDoseImage)
       .def_readwrite("cpp_alphamix_image", &GateBioDoseActor::fAlphaMixImage)
       .def_readwrite("cpp_sqrtbetamix_image", &GateBioDoseActor::fSqrtBetaMixImage)
-      .def_readwrite("cpp_hiteventcount_image", &GateBioDoseActor::fHitEventCountImage)
+      .def_readwrite("cpp_alphamix_dose_image", &GateBioDoseActor::fAlphaMixDoseImage)
+      .def_readwrite("cpp_sqrtbetamix_dose_image", &GateBioDoseActor::fSqrtBetaMixDoseImage)
+      .def_readwrite("cpp_sum_alphamix_image", &GateBioDoseActor::fSumAlphaMixImage)
+      .def_readwrite("cpp_sum_sqrtbetamix_image", &GateBioDoseActor::fSumSqrtBetaMixImage)
+      .def_readwrite("cpp_sum_alphamix_dose_image", &GateBioDoseActor::fSumAlphaMixDoseImage)
+      .def_readwrite("cpp_sum_sqrtbetamix_dose_image", &GateBioDoseActor::fSumSqrtBetaMixDoseImage)
       .def_readwrite("NbOfEvent", &GateBioDoseActor::fNbOfEvent)
       ;
 }

@@ -17,7 +17,6 @@
 #include "GateHelpersDict.h"
 #include "GateHelpersImage.h"
 #include "GateVActor.h"
-#include "fmt/color.h"
 
 GateBioDoseActor::GateBioDoseActor(py::dict &user_info):
   GateVActor(user_info, false)
@@ -33,24 +32,31 @@ void GateBioDoseActor::InitializeUserInfo(py::dict &user_info) {
 
   std::string const cellLine = DictGetStr(user_info, "cell_line");
   std::string const bioPhysicalModel = DictGetStr(user_info, "biophysical_model");
-  std::string biophysicalModelPath = "data/" + cellLine + "_" + bioPhysicalModel + ".db";
+  std::string const biophysicalModelPath = "data/" + cellLine + "_" + bioPhysicalModel + ".db";
   loadBiophysicalModel(biophysicalModelPath);
 }
 
 void GateBioDoseActor::InitializeCpp() {
   GateVActor::InitializeCpp();
 
+  fHitEventCountImage = Image::New();
   fEdepImage = Image::New();
   fDoseImage = Image::New();
   fAlphaMixImage = Image::New();
   fSqrtBetaMixImage = Image::New();
-  fHitEventCountImage = Image::New();
+  fAlphaMixDoseImage = Image::New();
+  fSqrtBetaMixDoseImage = Image::New();
+
+  fSumAlphaMixImage = Image::New();
+  fSumSqrtBetaMixImage = Image::New();
+  fSumAlphaMixDoseImage = Image::New();
+  fSumSqrtBetaMixDoseImage = Image::New();
 
   // C++-side images
   fEventEdepImage = Image::New();
   fEventDoseImage = Image::New();
-  fEventAlphaImage = Image::New();
-  fEventSqrtBetaImage = Image::New();
+  fEventSumAlphaMixDoseImage = Image::New();
+  fEventSumSqrtBetaMixDoseImage = Image::New();
 }
 
 void GateBioDoseActor::BeginOfRunActionMasterThread(int run_id) {
@@ -58,21 +64,29 @@ void GateBioDoseActor::BeginOfRunActionMasterThread(int run_id) {
 
   fNbOfEvent = 0;
 
+  AttachImageToVolume<Image>(fHitEventCountImage, fPhysicalVolumeName, fTranslation);
   AttachImageToVolume<Image>(fEdepImage, fPhysicalVolumeName, fTranslation);
   AttachImageToVolume<Image>(fDoseImage, fPhysicalVolumeName, fTranslation);
   AttachImageToVolume<Image>(fAlphaMixImage, fPhysicalVolumeName, fTranslation);
   AttachImageToVolume<Image>(fSqrtBetaMixImage, fPhysicalVolumeName, fTranslation);
-  AttachImageToVolume<Image>(fHitEventCountImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fAlphaMixDoseImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fSqrtBetaMixDoseImage, fPhysicalVolumeName, fTranslation);
+
+  AttachImageToVolume<Image>(fSumAlphaMixImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fSumSqrtBetaMixImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fSumAlphaMixDoseImage, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image>(fSumSqrtBetaMixDoseImage, fPhysicalVolumeName, fTranslation);
 
   // C++-side images
-  fEventEdepImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
-  fEventEdepImage->Allocate();
-  fEventDoseImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
-  fEventDoseImage->Allocate();
-  fEventAlphaImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
-  fEventAlphaImage->Allocate();
-  fEventSqrtBetaImage->SetRegions(fEdepImage->GetLargestPossibleRegion());
-  fEventSqrtBetaImage->Allocate();
+  auto initCppImage = [this](Image::Pointer image) {
+    image->SetRegions(fEdepImage->GetLargestPossibleRegion());
+    image->Allocate();
+  };
+
+  initCppImage(fEventEdepImage);
+  initCppImage(fEventDoseImage);
+  initCppImage(fEventSumAlphaMixDoseImage);
+  initCppImage(fEventSumSqrtBetaMixDoseImage);
 
   auto const& sp = fEdepImage->GetSpacing();
   fVoxelVolume = sp[0] * sp[1] * sp[2];
@@ -82,28 +96,33 @@ int GateBioDoseActor::EndOfRunActionMasterThread(int run_id) {
   return GateVActor::EndOfRunActionMasterThread(run_id);
 }
 
-void GateBioDoseActor::BeginOfRunAction(const G4Run *) {
+void GateBioDoseActor::BeginOfRunAction(const G4Run *run) {
+  GateVActor::BeginOfRunAction(run);
 }
 
 void GateBioDoseActor::BeginOfEventAction(const G4Event *event) {
+  GateVActor::BeginOfEventAction(event);
+
   ++fNbOfEvent;
 
   fEventVoxelIndices.clear();
 
   fEventEdepImage->FillBuffer(0);
   fEventDoseImage->FillBuffer(0);
-  fEventAlphaImage->FillBuffer(0);
-  fEventSqrtBetaImage->FillBuffer(0);
+  fEventSumAlphaMixDoseImage->FillBuffer(0);
+  fEventSumSqrtBetaMixDoseImage->FillBuffer(0);
 }
 
-void GateBioDoseActor::EndOfEventAction(const G4Event *) {
+void GateBioDoseActor::EndOfEventAction(const G4Event *event) {
+  GateVActor::EndOfEventAction(event);
+
   double totalEventEdep = 0;
   double totalEventDose = 0;
   for(auto const& index: fEventVoxelIndices) {
     auto const eventEdep = fEventEdepImage->GetPixel(index);
     auto const eventDose = fEventDoseImage->GetPixel(index);
-    auto const eventAlphaMix = fEventAlphaImage->GetPixel(index) / eventEdep;
-    auto const eventSqrtBetaMix = fEventSqrtBetaImage->GetPixel(index) / eventEdep;
+    auto const eventSumAlphaMixDose = fEventSumAlphaMixDoseImage->GetPixel(index);
+    auto const eventSumSqrtBetaMixDose = fEventSumSqrtBetaMixDoseImage->GetPixel(index);
 
     totalEventEdep += eventEdep;
     totalEventDose += eventDose;
@@ -113,9 +132,10 @@ void GateBioDoseActor::EndOfEventAction(const G4Event *) {
 
     ImageAddValue<Image>(fEdepImage, index, eventEdep);
     ImageAddValue<Image>(fDoseImage, index, eventDose);
-    ImageAddValue<Image>(fAlphaMixImage, index, eventAlphaMix);
-    ImageAddValue<Image>(fSqrtBetaMixImage, index, eventSqrtBetaMix);
+    ImageAddValue<Image>(fSumAlphaMixDoseImage, index, eventSumAlphaMixDose);
+    ImageAddValue<Image>(fSumSqrtBetaMixDoseImage, index, eventSumSqrtBetaMixDose);
   }
+
   fmt::print("total event edep: {}\n", totalEventEdep);
   fmt::print("total event dose: {}\n", totalEventDose);
 }
@@ -154,9 +174,11 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
   if (!isInside) return;
 
   double const weight     = step->GetTrack()->GetWeight();
-  double const energyDep  = step->GetTotalEnergyDeposit() / CLHEP::MeV * weight;
+  double const energyDep  = step->GetTotalEnergyDeposit() * weight;
 
   if (energyDep <= 0) return;
+
+  ImageAddValue<Image>(fEventEdepImage, index, energyDep);
 
   // compute event values
   auto const* currentMaterial = step->GetPreStepPoint()->GetMaterial();
@@ -164,18 +186,16 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
   double const mass = fVoxelVolume * density;
   double const dose = energyDep / mass / CLHEP::gray;
 
-  ImageAddValue<Image>(fEventEdepImage, index, energyDep);
   ImageAddValue<Image>(fEventDoseImage, index, dose);
-
-  // TODO check performances effect of duplicating this
-  // to handle specifically known ions cases
-  ++fStepCount;
-  fEventVoxelIndices.insert(index);
 
   // Get information from step
   // Particle
   G4int nZ = step->GetTrack()->GetDefinition()->GetAtomicNumber();
   double kineticEnergyPerNucleon = (step->GetPreStepPoint()->GetKineticEnergy()) / (step->GetTrack()->GetDefinition()->GetAtomicMass());
+
+  // TODO check performances effect of duplicating this
+  // to handle specifically known ions cases
+  ++fStepCount;
 
   // Accumulation of alpha/beta if ion type if known
   // -> check if the ion type is known
@@ -196,15 +216,20 @@ void GateBioDoseActor::SteppingAction(G4Step *step) {
     // Calculation of alphaDep and betaDep (K = (a*Z+b)*E)
     auto const& interpol = (*itInterpol).second;
 
-    double alpha = (interpol.alpha.a * kineticEnergyPerNucleon + interpol.alpha.b) * energyDep;
-    double sqrtBeta = (interpol.sqrtBeta.a * kineticEnergyPerNucleon + interpol.sqrtBeta.b) * energyDep;
+    double alpha = interpol.alpha.a * kineticEnergyPerNucleon + interpol.alpha.b;
+    double sqrtBeta = interpol.sqrtBeta.a * kineticEnergyPerNucleon + interpol.sqrtBeta.b;
 
     if(alpha < 0) alpha = 0;
     if(sqrtBeta < 0) sqrtBeta = 0;
 
-    // Accumulate alpha/beta
-    ImageAddValue<Image>(fEventAlphaImage, index, alpha);
-    ImageAddValue<Image>(fEventSqrtBetaImage, index, sqrtBeta);
+		ImageAddValue<Image>(fSumAlphaMixImage, index, alpha * energyDep);
+		ImageAddValue<Image>(fSumSqrtBetaMixImage, index, sqrtBeta * energyDep);
+
+		// Accumulate weighted alpha/sqrt(beta)
+		ImageAddValue<Image>(fEventSumAlphaMixDoseImage, index, alpha * dose);
+		ImageAddValue<Image>(fEventSumSqrtBetaMixDoseImage, index, sqrtBeta * dose);
+
+		fEventVoxelIndices.insert(index);
   }
 }
 
