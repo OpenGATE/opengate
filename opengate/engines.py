@@ -471,7 +471,7 @@ class PhysicsEngine(EngineBase):
         for (
             material_name,
             val,
-        ) in self.physics_manager.material_ionization_potential.items():
+        ) in self.physics_manager.material_ionisation_potential.items():
             mat = (
                 self.simulation_engine.simulation.volume_manager.find_or_build_material(
                     material_name

@@ -5,12 +5,14 @@ Created on Wed Apr  2 09:48:30 2025
 
 @author: fava
 """
-
-
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.utility import g4_units
 import opengate.tests.utility as utility
 import opengate_core as g4
+
 
 if __name__ == "__main__":
     # units
@@ -34,10 +36,10 @@ if __name__ == "__main__":
     ionisation = mat.GetIonisation().GetMeanExcitationEnergy()
     print(f"Default ionisation potential of {test_material}: {ionisation} eV")
 
-    # set to physics manager
-    sim.physics_manager.material_ionization_potential = materials_Ival_dict
+    sim.physics_manager.material_ionisation_potential = materials_Ival_dict
 
-    sim.run()
+    # run simulation with new value
+    sim.run(True)
 
     # dump ionisation value after modification
     mat = sim.volume_manager.find_or_build_material(test_material)

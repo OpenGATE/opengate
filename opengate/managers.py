@@ -686,10 +686,10 @@ class PhysicsManager(GateObject):
                 "Mostly used for using acolinearity during annihilation in some materials"
             },
         ),
-        "material_ionization_potential": (
+        "material_ionisation_potential": (
             Box(),
             {
-                "doc": "Dict of material_name:energy_value, such that: sim.physics_manager.material_ionization_potential['IEC_PLASTIC'] = 5.0 * eV. "
+                "doc": "Dict of material_name:energy_value, such that: sim.physics_manager.material_ionisation_potential['IEC_PLASTIC'] = 5.0 * eV. "
             },
         ),
         # "processes_to_bias": (
