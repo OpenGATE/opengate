@@ -182,7 +182,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test033_proj_1.mhd",
-            paths.output / "test033_proj_1.mhd",
+            paths.output / "test033_proj_1_counts.mhd",
             stats,
             tolerance=68,
             axis="x",
@@ -195,7 +195,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test033_proj_2.mhd",
-            paths.output / "test033_proj_2.mhd",
+            paths.output / "test033_proj_2_counts.mhd",
             stats,
             tolerance=75,
             axis="x",

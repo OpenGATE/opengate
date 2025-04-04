@@ -65,7 +65,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test038_gan_aa_proj.mhd",
-            paths.output / "test038_gan_aa_proj.mhd",
+            paths.output / "test038_gan_aa_proj_counts.mhd",
             tolerance=70,
             axis="x",
             sum_tolerance=2.75,

@@ -625,7 +625,9 @@ class ActorEngine(EngineBase):
                         register_sensitive_detector_to_children(
                             actor, volume.g4_logical_volume
                         )
+
             # this is specific for BiasingOperator/Actor
+            # this is needed for MultiThread run
             if hasattr(actor, "ConfigureForWorker"):
                 actor.InitializeUserInfo(actor.user_info)
                 actor.ConfigureForWorker()

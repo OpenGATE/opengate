@@ -32,10 +32,8 @@ if __name__ == "__main__":
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
-    ff.attached_to = "phantom"
-
-    ff = sim.add_actor("GammaFreeFlightActor", "ff2")
-    ff.attached_to = "spect_1_collimator_trd"
+    ff.attached_to = "world"
+    ff.ignored_volumes = ["spect_1_crystal", "spect_2_crystal"]
 
     # go
     sim.run()
@@ -47,7 +45,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "projection_1_ff.mhd",
-            paths.output / "projection_1_ff.mhd",
+            paths.output / "projection_1_ff_counts.mhd",
             stats,
             tolerance=80,
             ignore_value_data1=0,

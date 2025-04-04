@@ -32,11 +32,11 @@ public:
 
   std::map<std::string, double> GetBiasInformation();
 
-  inline int IsScatterInteractionGeneralProcess(
-      const G4BiasingProcessInterface *callingProcess) const;
+  static int IsScatterInteractionGeneralProcess(
+      const G4BiasingProcessInterface *callingProcess);
 
-  inline int
-  IsScatterInteraction(const G4BiasingProcessInterface *callingProcess) const;
+  static int
+  IsScatterInteraction(const G4BiasingProcessInterface *callingProcess);
 
 protected:
   G4VBiasingOperation *
