@@ -25,7 +25,7 @@ void GateGANPairSource::InitializeUserInfo(py::dict &user_info) {
     Fatal(oss.str());
   }
 
-  if (fSkipEnergyPolicy == GateAcceptanceAngleTesterManager::AASkipEvent) {
+  if (fSkipEnergyPolicy == GateAcceptanceAngleManager::AASkipEvent) {
     std::ostringstream oss;
     oss << "Error, cannot use SkipEvent mode with GAN pairs (yet), for the "
            "source '"

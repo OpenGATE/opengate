@@ -17,6 +17,7 @@ GateSingleParticleSource::GateSingleParticleSource(
   fPositionGenerator = new GateSPSPosDistribution();
   fDirectionGenerator = new GateSPSAngDistribution();
   fEnergyGenerator = new GateSPSEneDistribution();
+  fAAManager = nullptr;
 
   // needed
   fBiasRndm = new G4SPSRandomGenerator();
@@ -38,6 +39,7 @@ GateSingleParticleSource::~GateSingleParticleSource() {
   delete fPositionGenerator;
   delete fDirectionGenerator;
   delete fEnergyGenerator;
+  delete fAAManager;
 }
 
 void GateSingleParticleSource::SetPosGenerator(GateSPSPosDistribution *pg) {
@@ -53,9 +55,8 @@ void GateSingleParticleSource::SetParticleDefinition(
   fMass = fParticleDefinition->GetPDGMass();
 }
 
-G4ThreeVector
-GateSingleParticleSource::GenerateDirectionWithAA(const G4ThreeVector &position,
-                                                  bool &zero_energy_flag) {
+G4ThreeVector GateSingleParticleSource::GenerateDirectionWithAA(
+    const G4ThreeVector &position, bool &zero_energy_flag) const {
   // Rejection method : generate direction until angle is ok
   // bool debug = false;
   bool accept_angle = false;
@@ -68,8 +69,8 @@ GateSingleParticleSource::GenerateDirectionWithAA(const G4ThreeVector &position,
 
     // accept ?
     accept_angle = fAAManager->TestIfAccept(position, direction);
-    if (!accept_angle && fAAManager->GetPolicy() ==
-                             GateAcceptanceAngleTesterManager::AAZeroEnergy) {
+    if (!accept_angle &&
+        fAAManager->GetPolicy() == GateAcceptanceAngleManager::AAZeroEnergy) {
       zero_energy_flag = true;
       accept_angle = true;
     }
@@ -157,6 +158,6 @@ void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
 }
 
 void GateSingleParticleSource::SetAAManager(
-    GateAcceptanceAngleTesterManager *aa_manager) {
+    GateAcceptanceAngleManager *aa_manager) {
   fAAManager = aa_manager;
 }

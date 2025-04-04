@@ -45,7 +45,7 @@ void GateScatterSplittingFreeFlightOptn::SetSplittingFactor(
 
 void GateScatterSplittingFreeFlightOptn::InitializeAAManager(
     const py::dict &user_info) {
-  fAAManager = new GateAcceptanceAngleTesterManager();
+  fAAManager = new GateAcceptanceAngleManager();
   fAAManager->Initialize(user_info, true);
 
   if (G4EmParameters::Instance()->GeneralProcessActive() == true) {

@@ -1,5 +1,6 @@
 import sys
 import logging
+import copy
 from typing import Optional, List, Union
 from box import Box
 from anytree import RenderTree, LoopError
@@ -337,6 +338,18 @@ class SourceManager(GateObject):
         # return the volume if it has not been passed as input, i.e. it was created here
         if new_source is not source:
             return new_source
+
+    def add_source_copy(self, origin_source_name, copied_source_name):
+        # get the source to copy
+        orig = self.get_source(origin_source_name)
+        # get its type name
+        cls_name = type(orig).__name__
+        # create the new source
+        new_source = self.add_source(cls_name, copied_source_name)
+        # copy all elements except its name
+        new_source.user_info = copy.deepcopy(orig.user_info)
+        new_source.user_info.name = copied_source_name
+        return new_source
 
     def remove_source(self, source_name):
         if not source_name in self.sources:

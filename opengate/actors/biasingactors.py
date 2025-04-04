@@ -4,6 +4,7 @@ from ..base import process_cls
 from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
+import numpy as np
 
 
 def generic_source_default_aa():
@@ -19,8 +20,20 @@ def generic_source_default_aa():
             "normal_flag": False,
             "normal_vector": [0, 0, 1],
             "normal_tolerance": 3 * deg,
+            "distance_dependent_normal_tolerance": False,
+            "angle1": 90 * g4_units.degree,
+            "distance1": 0 * g4_units.cm,
+            "angle2": 20 * g4_units.degree,
+            "distance2": 50 * g4_units.cm,
         }
     )
+
+
+def distance_dependent_angle_tolerance(a1, a2, d1, d2, dist):
+    a = (1 / np.tan(a1) - 1 / np.tan(a2)) / (d1 - d2)
+    b = 1 / np.tan(a1) - a * d1
+    tol = np.arctan(1.0 / (a * dist + b))
+    return tol
 
 
 def _setter_hook_particles(self, value):

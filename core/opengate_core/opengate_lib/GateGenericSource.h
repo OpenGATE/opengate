@@ -8,7 +8,7 @@
 #ifndef GateGenericSource_h
 #define GateGenericSource_h
 
-#include "GateAcceptanceAngleTesterManager.h"
+#include "GateAcceptanceAngleManager.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
@@ -30,7 +30,8 @@ public:
 
   void PrepareNextRun() override;
 
-  void GeneratePrimaries(G4Event *event, double time) override;
+  void GeneratePrimaries(G4Event *event,
+                         double current_simulation_time) override;
 
   void SetEnergyCDF(const std::vector<double> &cdf);
 
@@ -78,7 +79,7 @@ protected:
   // thread local structure
   struct threadLocalGenericSource {
     GateSingleParticleSource *fSPS = nullptr;
-    GateAcceptanceAngleTesterManager *fAAManager = nullptr;
+    GateAcceptanceAngleManager *fAAManager = nullptr;
     bool fInitConfine = false;
     bool fInitGenericIon = false;
     double fEffectiveEventTime = -1;
@@ -91,7 +92,7 @@ protected:
   unsigned long fTotalSkippedEvents = 0;
   unsigned long fTotalZeroEvents = 0;
 
-  threadLocalGenericSource &GetThreadLocalDataGenericSource();
+  threadLocalGenericSource &GetThreadLocalDataGenericSource() const;
 
   // if confine is used, must be defined after the initialization
   // bool fInitConfine;
@@ -118,7 +119,7 @@ protected:
   void UpdateActivity(double time) override;
 
   void UpdateEffectiveEventTime(double current_simulation_time,
-                                unsigned long skipped_particle);
+                                unsigned long skipped_particle) const;
 };
 
 #endif // GateGenericSource_h

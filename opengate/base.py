@@ -503,8 +503,7 @@ class GateObject:
 
     def __str__(self):
         ret_string = (
-            f"***\n"
-            f"{type(self).__name__} named {self.name} "
+            f"GateObject {type(self).__name__} named {self.name} "
             f"with the following parameters:\n"
         )
         for k, v in self.user_info.items():

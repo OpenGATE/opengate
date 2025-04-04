@@ -5,29 +5,38 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateAcceptanceAngleTester_h
-#define GateAcceptanceAngleTester_h
+#ifndef GateAcceptanceAngleSingleVolume_h
+#define GateAcceptanceAngleSingleVolume_h
 
 #include "G4AffineTransform.hh"
 #include "GateHelpers.h"
 
-class GateAcceptanceAngleTester {
+class GateAcceptanceAngleSingleVolume {
 public:
-  GateAcceptanceAngleTester(const std::string &volume,
-                            std::map<std::string, std::string> &param);
+  GateAcceptanceAngleSingleVolume(
+      const std::string &volume,
+      const std::map<std::string, std::string> &param);
 
-  ~GateAcceptanceAngleTester();
+  ~GateAcceptanceAngleSingleVolume();
 
   bool TestIfAccept(const G4ThreeVector &position,
                     const G4ThreeVector &momentum_direction) const;
 
   void UpdateTransform();
+  bool DistanceDependentToleranceTest(double angle, double dist) const;
 
 protected:
   std::string fAcceptanceAngleVolumeName;
   bool fIntersectionFlag;
   bool fNormalFlag;
   double fNormalAngleTolerance;
+  bool fDistanceDependentAngleTolerance;
+  double fAngle1;
+  double fAngle2;
+  double fDistance1;
+  double fDistance2;
+  double a;
+  double b;
   G4ThreeVector fNormalVector;
   G4AffineTransform fAATransform;
   G4RotationMatrix *fAARotation;
@@ -35,4 +44,4 @@ protected:
   G4Navigator *fAANavigator;
 };
 
-#endif // GateAcceptanceAngleTester_h
+#endif // GateAcceptanceAngleSingleVolume_h
