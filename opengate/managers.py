@@ -338,6 +338,13 @@ class SourceManager(GateObject):
         if new_source is not source:
             return new_source
 
+    def remove_source(self, source_name):
+        if not source_name in self.sources:
+            fatal(
+                f"In 'remove_source', the source {source_name} is not in the list of sources: {self.sources}"
+            )
+        self.sources.pop(source_name)
+
     def _create_source(self, source_type, name):
         cls = None
         try:
