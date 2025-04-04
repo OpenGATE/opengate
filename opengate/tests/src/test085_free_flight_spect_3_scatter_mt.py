@@ -50,7 +50,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "projection_1_ff_sc.mhd",
-            paths.output / "projection_1_ff_sc.mhd",
+            paths.output / "projection_1_ff_sc_counts.mhd",
             stats,
             tolerance=110,
             ignore_value_data1=0,

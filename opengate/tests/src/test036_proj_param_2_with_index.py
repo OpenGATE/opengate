@@ -33,7 +33,7 @@ if __name__ == "__main__":
     stats = sim.get_actor("Stats")
     is_ok = utility.assert_images(
         paths.output_ref / "proj1.mha",
-        proj.get_output_path("projection"),
+        proj.get_output_path("counts"),
         stats,
         tolerance=38,
         ignore_value_data2=0,

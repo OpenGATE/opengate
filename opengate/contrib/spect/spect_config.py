@@ -453,7 +453,7 @@ def spect_freeflight_run(sc, options, fake=False):
     output.prim.stats = sc.stats.stats.merged_data
     output.prim.activity = source.activity / g4_units.Bq * sim.number_of_threads
     output.prim.proj_paths = [
-        str(d.get_output_path("projection")) for d in sc.detector_config.digitizers
+        str(d.get_output_path("counts")) for d in sc.detector_config.digitizers
     ]
 
     # run 2 = scatter
@@ -470,7 +470,7 @@ def spect_freeflight_run(sc, options, fake=False):
     output.scatter.stats = sc.stats.stats.merged_data
     output.scatter.activity = source.activity / g4_units.Bq * sim.number_of_threads
     output.scatter.proj_paths = [
-        str(d.get_output_path("projection")) for d in sc.detector_config.digitizers
+        str(d.get_output_path("counts")) for d in sc.detector_config.digitizers
     ]
     print(ff)
 

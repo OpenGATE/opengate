@@ -177,7 +177,7 @@ def create_spect_simu(
     proj.size = [128, 128]
     # proj.plane = 'XY' # not implemented yet
     proj.output_filename = f"proj028_colli{version}.mhd"
-    print("proj output path", proj.get_output_path("projection"))
+    print("proj output path", proj.get_output_path("counts"))
 
     # rotate spect
     cm = gate.g4_units.cm
@@ -261,7 +261,7 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
 
     # read image and force change the offset to be similar to old Gate
     gate.exception.warning("Compare projection image")
-    img = itk.imread(str(paths.output / f"proj028_colli{version}.mhd"))
+    img = itk.imread(str(paths.output / f"proj028_colli{version}_counts.mhd"))
     spacing = np.array([proj.spacing[0], proj.spacing[1], 1])
     print("spacing", spacing)
     origin = spacing / 2.0

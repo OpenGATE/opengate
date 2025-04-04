@@ -881,10 +881,10 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     }
 
     user_output_config = {
-        "projection": {
+        "counts": {
             "actor_output_class": ActorOutputSingleImage,
         },
-        "squared_projection": {
+        "squared_counts": {
             "actor_output_class": ActorOutputSingleImage,
         },
     }
@@ -986,7 +986,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         # we use the image associated with run 0 for the entire simulation
         # in the future, this actor should implement a BeginOfRunActionMasterThread
         # to be able to work on a per-run basis
-        self.user_output.projection.create_empty_image(0, size, spacing)
+        self.user_output.counts.create_empty_image(0, size, spacing)
 
         # check physical_volume_index and number of repeating
         n = len(self.attached_to_volume.g4_physical_volumes)
@@ -1012,25 +1012,24 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             )
             pv = None  # avoid warning from IDE
         align_image_with_physical_volume(
-            self.attached_to_volume, self.user_output.projection.data_per_run[0].image
+            self.attached_to_volume, self.user_output.counts.data_per_run[0].image
         )
         self.SetPhysicalVolumeName(str(pv.GetName()))
 
         # update the cpp image and start
         update_image_py_to_cpp(
-            self.user_output.projection.data_per_run[0].image, self.fImage, True
+            self.user_output.counts.data_per_run[0].image, self.fImage, True
         )
 
         # uncertainty ?
-        if self.user_output.squared_projection.get_active():
-            print("init squared projection")
-            self.user_output.squared_projection.create_empty_image(0, size, spacing)
+        if self.user_output.squared_counts.get_active():
+            self.user_output.squared_counts.create_empty_image(0, size, spacing)
             align_image_with_physical_volume(
                 self.attached_to_volume,
-                self.user_output.squared_projection.data_per_run[0].image,
+                self.user_output.squared_counts.data_per_run[0].image,
             )
             update_image_py_to_cpp(
-                self.user_output.squared_projection.data_per_run[0].image,
+                self.user_output.squared_counts.data_per_run[0].image,
                 self.fSquaredImage,
                 True,
             )
@@ -1038,7 +1037,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
             # keep initial origin
         self.start_output_origin = list(
-            self.user_output.projection.data_per_run[0].get_image_properties()[0].origin
+            self.user_output.counts.data_per_run[0].get_image_properties()[0].origin
         )
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
@@ -1046,12 +1045,12 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
 
         # retrieve the image
-        self.user_output.projection.store_data(
+        self.user_output.counts.store_data(
             "merged", get_py_image_from_cpp_image(self.fImage)
         )
 
         # set its properties
-        info = self.user_output.projection.data_per_run[0].get_image_properties()[0]
+        info = self.user_output.counts.data_per_run[0].get_image_properties()[0]
         spacing = info.spacing
         if self.origin_as_image_center:
             origin = -info.size * spacing / 2.0 + spacing / 2.0
@@ -1059,24 +1058,23 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             origin = self.start_output_origin
         origin[2] = 0
         spacing[2] = 1
-        self.user_output.projection.merged_data.SetSpacing(list(spacing))
-        self.user_output.projection.merged_data.SetOrigin(list(origin))
+        self.user_output.counts.merged_data.SetSpacing(list(spacing))
+        self.user_output.counts.merged_data.SetOrigin(list(origin))
 
         # remove the image for run 0 as result is in merged_data
-        self.user_output.projection.data_per_run.pop(0)
+        self.user_output.counts.data_per_run.pop(0)
 
-        self.user_output.projection.write_data_if_requested(which="merged")
+        self.user_output.counts.write_data_if_requested(which="merged")
 
         # squared ?
-        if self.user_output.squared_projection.get_active():
-            print("retrieve squared projection")
-            self.user_output.squared_projection.store_data(
+        if self.user_output.squared_counts.get_active():
+            self.user_output.squared_counts.store_data(
                 "merged", get_py_image_from_cpp_image(self.fSquaredImage)
             )
-            self.user_output.squared_projection.merged_data.SetSpacing(list(spacing))
-            self.user_output.squared_projection.merged_data.SetOrigin(list(origin))
-            self.user_output.squared_projection.data_per_run.pop(0)
-            self.user_output.squared_projection.write_data_if_requested(which="merged")
+            self.user_output.squared_counts.merged_data.SetSpacing(list(spacing))
+            self.user_output.squared_counts.merged_data.SetOrigin(list(origin))
+            self.user_output.squared_counts.data_per_run.pop(0)
+            self.user_output.squared_counts.write_data_if_requested(which="merged")
 
         # uncertainty
         print("TODO : compute uncertainty")
