@@ -886,6 +886,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         },
         "squared_counts": {
             "actor_output_class": ActorOutputSingleImage,
+            "active": False,
         },
     }
 

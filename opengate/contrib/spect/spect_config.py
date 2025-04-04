@@ -511,7 +511,7 @@ def spect_freeflight_configure_primary(sim, sc, options):
     source.direction.acceptance_angle.normal_vector = [1, 0, 0]
     source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
     for d in digitizers:
-        d.squared_projection.active = True
+        d.squared_counts.active = True
     source.activity = options.primary_activity
 
     return ff
@@ -543,7 +543,7 @@ def spect_freeflight_configure_scatter(sim, sc, options):
     ff.acceptance_angle.normal_vector = [1, 0, 0]
     ff.acceptance_angle.normal_tolerance = options.angle_tolerance
     for d in digitizers:
-        d.squared_projection.active = True
+        d.squared_counts.active = True
     source.activity = options.scatter_activity
 
     return ff
