@@ -112,7 +112,6 @@ if __name__ == "__main__":
     sim.run(True)
 
     # dump ionisation value after modification
-    mat = sim.volume_manager.find_or_build_material(test_material)
     ionisation = mat.GetIonisation().GetMeanExcitationEnergy()
     print(f"New ionisation potential of {test_material}: {ionisation} eV")
 
