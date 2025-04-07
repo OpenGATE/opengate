@@ -104,7 +104,7 @@ Geant4 physics units are collected in `opengate.g4_units` and you can assign the
    energy = 150 * MeV
    print(f'The energy is {energy/eV} eV')
 
-The units behave like in the Geant4 `system of units <https://geant4.web.cern.ch/sites/default/files/geant4/collaboration/working_groups/electromagnetic/gallery/units/SystemOfUnits.html>`_.
+The units behave like in the Geant4 `system of units <https://geant4.web.cern.ch/documentation/dev/bfad_html/ForApplicationDevelopers/Fundamentals/unitSystem.html>`_.
 
 
 References
