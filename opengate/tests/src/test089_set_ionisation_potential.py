@@ -14,7 +14,7 @@ import opengate.tests.utility as utility
 import opengate_core as g4
 
 
-def simuation_IDD():
+def simuation_IDD(test_material):
     paths = utility.get_default_test_paths(__file__, "gate_test044_pbs")
 
     # units
@@ -25,6 +25,7 @@ def simuation_IDD():
 
     # create simulation object
     sim = gate.Simulation()
+    sim.number_of_threads = 4
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     # waterbox
@@ -34,12 +35,11 @@ def simuation_IDD():
     phantom.material = "G4_WATER"
     phantom.color = [0, 0, 1, 1]
 
-    test_material_name = "Water"
     phantom_off = sim.add_volume("Box", "phantom_off")
     phantom_off.mother = phantom.name
     phantom_off.size = [100 * mm, 60 * mm, 60 * mm]
     phantom_off.translation = [0 * mm, 0 * mm, 0 * mm]
-    phantom_off.material = test_material_name
+    phantom_off.material = test_material
     phantom_off.color = [0, 0, 1, 1]
 
     # physics
@@ -83,9 +83,9 @@ if __name__ == "__main__":
 
     # overrides for material ionisation potential
     test_material = "Water"
-    materials_Ival_dict = {test_material: 60 * eV}
+    materials_Ival_dict = {test_material: 30 * eV}
 
-    sim, dose = simuation_IDD()
+    sim, dose = simuation_IDD(test_material)
 
     # dump ionisation value before modification
     mat = sim.volume_manager.find_or_build_material(test_material)
@@ -102,10 +102,10 @@ if __name__ == "__main__":
     )
     r80_pre, _ = utility.getRange(x1, d1_pre)
     plt.plot(x1, d1_pre)
-    print(f"Range in water: {r80_pre}")
+    print(f"Range in water: {r80_pre} mm")
 
     # run simulation again, but with modified ionisation potential
-    sim, dose = simuation_IDD()
+    sim, dose = simuation_IDD(test_material)
     sim.physics_manager.material_ionisation_potential = materials_Ival_dict
 
     # run simulation with new value
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     )
     r80_after, _ = utility.getRange(x1, d1_after)
     plt.plot(x1, d1_after)
-    print(f"Range in water: {r80_after}")
+    print(f"Range in water: {r80_after} mm")
 
     ok = (r80_pre - r80_after) > dose.spacing[0]
     utility.test_ok(ok)
