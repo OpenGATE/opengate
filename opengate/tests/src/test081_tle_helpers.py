@@ -74,6 +74,27 @@ def add_source(
         source.n = 10
     return source
 
+def add_iso_source(
+    sim,
+    n=1e5,
+    energy=2 * g4_units.MeV,
+    sigma=0.6 * g4_units.MeV,
+):
+    cm = gate.g4_units.cm
+    source = sim.add_source("GenericSource", "source")
+    source.energy.mono = energy
+    source.energy.type = "gauss"
+    source.energy.sigma_gauss = sigma
+    source.particle = "gamma"
+    source.position.type = "sphere"
+    source.position.radius = 10**(-7) * cm
+    source.position.translation = [0, 0, 0]
+    source.direction.type = "iso"
+    source.n = n / sim.number_of_threads
+    if sim.visu:
+        source.n = 100
+    return source
+
 
 def voxelize_waterbox(sim, output_folder):
     mm = gate.g4_units.mm

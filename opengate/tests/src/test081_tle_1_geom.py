@@ -47,6 +47,9 @@ def main(argv):
     sim.physics_manager.set_max_step_size("waterbox", 1 * mm)
     sim.physics_manager.set_user_limits_particles("gamma")
 
+    s = f"/process/eLoss/CSDARange true"
+    sim.g4_commands_before_init.append(s)
+
     # default source for tests
     source = add_source(sim, n=2e5)
 
@@ -57,6 +60,7 @@ def main(argv):
     tle_dose_actor.dose.active = True
     tle_dose_actor.size = [200, 200, 200]
     tle_dose_actor.spacing = [x / y for x, y in zip(waterbox.size, tle_dose_actor.size)]
+    #tle_dose_actor.max_range = 1*mm
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox.size} mm")
@@ -86,6 +90,8 @@ def main(argv):
     f1 = dose_actor.edep.get_output_path()
     f2 = tle_dose_actor.edep.get_output_path()
     is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[0], tol=0.2)
+
+
 
     print()
     f1 = dose_actor.dose.get_output_path()
