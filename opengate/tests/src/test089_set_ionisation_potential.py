@@ -25,7 +25,7 @@ def simuation_IDD(test_material):
 
     # create simulation object
     sim = gate.Simulation()
-    sim.number_of_threads = 4
+    # sim.number_of_threads = 4
     sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
 
     # waterbox
