@@ -75,6 +75,18 @@ G4double GateTLEDoseActor::FindEkinMaxForTLE(){
   return ekinMax;
 }
 
+
+void GateTLEDoseActor::InitializeCSDAForNewGamma(G4bool isFirstStep,G4Step* step){
+  if((isFirstStep)&& (step->GetTrack()->GetDefinition()->GetParticleName() == "gamma")){
+    auto &l = fThreadLocalData.Get();
+    G4StepPoint* pre_step = step->GetPreStepPoint();
+    G4double energy = pre_step->GetKineticEnergy();
+    const G4Material* currentMat = pre_step->GetMaterial();
+    l.fCsda = fEmCalc->GetCSDARange(energy,G4Electron::Definition(),currentMat);
+    l.fPreviousMatName = currentMat->GetName();
+  }
+}
+
 void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
   //EM calc does not work at the beginning of the simulation
   {
@@ -100,7 +112,7 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
 void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
   G4Event* event = G4EventManager::GetEventManager()->GetNonconstCurrentEvent();
   auto &l = fThreadLocalData.Get();
-
+  l.fIsFirstStep = true;
   //If the particle is a gamma, the TLE is initiated as false. The TLE application
   //will be decided in the stepping action depending on the secondary csda range with the gamma energy
   //within the current volume.
@@ -136,16 +148,25 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   const G4Material* currentMat = pre_step->GetMaterial();
   auto nbSec = step->GetSecondaryInCurrentStep()->size();
 
+  InitializeCSDAForNewGamma(l.fIsFirstStep,step);
+  
+
 
   //At the secondary creation, the TLE status is by default defined as the TLE status of the mother particle
-  //Then, if the TLE status has to be changed, it will be modified afterward accroding to he CSDA range.
+  //Then, if the TLE status has to be changed, it will be modified afterward according to the CSDA range condition.
   
   SetTLETrackInformationOnSecondaries(step,l.fIsTLESecondary,nbSec);
   
   if (step->GetTrack()->GetDefinition()->GetParticleName() == "gamma") {
     if (fMaxRange != std::numeric_limits<double>::infinity()){
-      G4double csda = fEmCalc->GetCSDARange(energy,G4Electron::Definition(),currentMat);
-      if (csda/CLHEP::mm > fMaxRange) {
+      if (pre_step->GetStepStatus() == 1){
+        if (currentMat->GetName() != l.fPreviousMatName){ 
+          l.fCsda = fEmCalc->GetCSDARange(energy,G4Electron::Definition(),currentMat);
+          l.fPreviousMatName = currentMat->GetName();
+        }
+      }
+
+      if (l.fCsda/CLHEP::mm > fMaxRange) {
         l.fIsTLEGamma = false;
         SetTLETrackInformationOnSecondaries(step,false,nbSec);
         return GateDoseActor::SteppingAction(step);
@@ -211,5 +232,6 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
       }
     }
   }
+  l.fIsFirstStep = false;
 }
 
