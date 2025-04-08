@@ -32,6 +32,10 @@ public:
 
   std::map<std::string, double> GetBiasInformation();
 
+  void SetInvolvedBiasActor(GateVBiasOptrActor* actor){
+    fActor = actor;
+  }
+
   inline int IsScatterInteractionGeneralProcess(
       const G4BiasingProcessInterface *callingProcess) const;
 
@@ -65,6 +69,7 @@ protected:
   int fComptonSplittingFactor;
   int fRayleighSplittingFactor;
   int fMaxComptonLevel;
+  GateVBiasOptrActor* fActor = nullptr;
 };
 
 #endif

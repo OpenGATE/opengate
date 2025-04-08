@@ -22,7 +22,6 @@ public:
     G4bool GetGateTrackInformation(GateVActor* myActor){
         return fMapOfTrackInformation[myActor];
     }
-int fInfoType;
 private :
   std::map<GateVActor*,G4bool> fMapOfTrackInformation;
 
