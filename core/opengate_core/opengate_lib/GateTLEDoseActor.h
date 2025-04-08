@@ -31,6 +31,11 @@ public:
 
   void PreUserTrackingAction(const G4Track *track) override;
 
+  void SetTLETrackInformationOnSecondaries(G4Step* step, G4bool info,G4int nbSec);
+
+  G4double FindEkinMaxForTLE();
+
+
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
 
@@ -38,14 +43,16 @@ public:
   double fEnergyMin;
 
   // Conventional DoseActor if above this energy
-  double fEnergyMax;
+  double fMaxRange;
 
-  G4EmCalculator* fEmCalc = nullptr;
+  std::string fDatabase;
+
+  G4EmCalculator* fEmCalc = nullptr; 
 
   struct threadLocalT {
     // Bool if current track is a TLE gamma or not
-    bool fIsTLEGamma;
-    bool fIsTLESecondary;
+    bool fIsTLEGamma =false ;
+    bool fIsTLESecondary  = false;
     std::map<G4int,std::vector<G4bool>> fSecWhichDeposit; 
   };
   G4Cache<threadLocalT> fThreadLocalData;
