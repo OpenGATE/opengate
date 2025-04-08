@@ -6,11 +6,25 @@
    -------------------------------------------------- */
 
 #include <G4VUserTrackInformation.hh>
+#include "GateVActor.h"
 
 class GateUserTrackInformation : public G4VUserTrackInformation {
 public:
   GateUserTrackInformation() = default;
   ~GateUserTrackInformation() override = default;
 
-  int fInfoType;
+   void SetGateTrackInformation(GateVActor* myActor,G4bool boolInformation){
+    if (fMapOfTrackInformation.find(myActor) != fMapOfTrackInformation.end())
+      fMapOfTrackInformation.erase(myActor);
+    fMapOfTrackInformation[myActor] = boolInformation;
+    }
+
+    G4bool GetGateTrackInformation(GateVActor* myActor){
+        return fMapOfTrackInformation[myActor];
+    }
+int fInfoType;
+private :
+  std::map<GateVActor*,G4bool> fMapOfTrackInformation;
+
+  
 };
