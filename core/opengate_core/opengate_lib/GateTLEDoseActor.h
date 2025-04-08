@@ -49,7 +49,9 @@ public:
 
   std::string fDatabase;
 
-  G4EmCalculator* fEmCalc = nullptr; 
+  G4EmCalculator* fEmCalc = nullptr;
+  G4String fStrRangeType;
+  G4int fRangeType; 
 
   struct threadLocalT {
     // Bool if current track is a TLE gamma or not

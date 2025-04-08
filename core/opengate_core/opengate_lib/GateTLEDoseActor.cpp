@@ -35,8 +35,15 @@ GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
 void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
   GateDoseActor::InitializeUserInfo(user_info);
   fMaxRange = py::cast<double>(user_info["max_range"]);
+  fStrRangeType = py::cast<std::string>(user_info["range_type"]);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
   fDatabase = py::cast<std::string>(user_info["database"]);
+  if (fStrRangeType == "max"){
+    fRangeType = 0;
+  }
+  else if (fStrRangeType == "average"){
+    fRangeType = 1;
+  }
 }
 
 
@@ -149,7 +156,9 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   auto nbSec = step->GetSecondaryInCurrentStep()->size();
 
   InitializeCSDAForNewGamma(l.fIsFirstStep,step);
-  
+
+  G4double mu_en_over_rho;
+  G4double mu_over_rho;
 
 
   //At the secondary creation, the TLE status is by default defined as the TLE status of the mother particle
@@ -159,9 +168,16 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   
   if (step->GetTrack()->GetDefinition()->GetParticleName() == "gamma") {
     if (fMaxRange != std::numeric_limits<double>::infinity()){
+      auto sec_ekin = energy;
+      if (fRangeType == 1){
+          mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(pre_step->GetMaterialCutsCouple(), energy);
+          mu_over_rho = fMaterialMuHandler->GetMuOverRho(pre_step->GetMaterialCutsCouple(), energy);
+          sec_ekin = energy*mu_en_over_rho/mu_over_rho;
+      }
+        //std::cout<<energy<<"    "<<sec_ekin<<std::endl;
       if (pre_step->GetStepStatus() == 1){
         if (currentMat->GetName() != l.fPreviousMatName){ 
-          l.fCsda = fEmCalc->GetCSDARange(energy,G4Electron::Definition(),currentMat);
+          l.fCsda = fEmCalc->GetCSDARange(sec_ekin,G4Electron::Definition(),currentMat);
           l.fPreviousMatName = currentMat->GetName();
         }
       }
@@ -194,9 +210,11 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   auto weight = step->GetTrack()->GetWeight();
   auto step_length = step->GetStepLength();
   auto density = pre_step->GetMaterial()->GetDensity();
-  auto mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
-      pre_step->GetMaterialCutsCouple(), energy);
+  if (fRangeType == 0){
+    mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(pre_step->GetMaterialCutsCouple(), energy);
+  }
   // (0.1 because length is in mm -> cm)
+  
   auto edep = weight * 0.1 * energy * mu_en_over_rho * step_length * density /
               (CLHEP::g / CLHEP::cm3);
 

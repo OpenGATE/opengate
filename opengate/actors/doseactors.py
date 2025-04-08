@@ -682,6 +682,7 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     """TLE = Track Length Estimator"""
 
     energy_min: float
+    range_type: str
     max_range: float
     database: str
 
@@ -695,6 +696,12 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
             {
                 "doc": "Define a range criterium to enable TLE or not"
             },
+        ),
+        "range_type":(
+            "max",
+            {
+                "doc": "Define the type of range lim provided to hTLE, the maximum photon energy (max) or the average electron energy (average)"
+            }
         ),
         "database": (
             "EPDL",
