@@ -111,7 +111,6 @@ def main(argv):
     s = f"/process/eLoss/CSDARange true"
     sim.g4_commands_before_init.append(s)
 
-
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
     dose_actor.output_filename = "test081_6_brem_split.mhd"

@@ -121,7 +121,8 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
   auto *info =
       dynamic_cast<GateUserTrackInformation *>(track->GetUserInformation());
   // if not, just track as usual
-  if (info->GetGateTrackInformation(this) != GateScatterSplittingFreeFlightOptn::cScatterSplittingFreeFlightType) {
+  if (info->GetGateTrackInformation(this) !=
+      GateScatterSplittingFreeFlightOptn::cScatterSplittingFreeFlightType) {
     return;
   }
 
