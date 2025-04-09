@@ -17,6 +17,6 @@ void init_G4Ellipsoid(py::module &m) {
       // add function
       .def(py::init<const G4String &, G4double, G4double, G4double, G4double,
                     G4double>(),
-           py::arg("pName"), py::arg("pXSemiAxis"), py::arg("pYSemiAxis"),
-           py::arg("pZSemiAxis"), py::arg("pZCut1"), py::arg("pZCut2"));
+           py::arg("pName"), py::arg("xSemiAxis"), py::arg("ySemiAxis"),
+           py::arg("zSemiAxis"), py::arg("zBottomCut"), py::arg("zTopCut"));
 }

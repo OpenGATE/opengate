@@ -19,39 +19,6 @@ nm = gate.g4_units.nm
 Bq = gate.g4_units.Bq
 MeV = gate.g4_units.MeV
 
-
-class EllipSolid(solids.SolidBase):
-    """
-    http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
-
-    """
-
-    user_info_defaults = {
-        "xSemiAxis": (6.0 * mm, {"xSemiAxis": "Semiaxis in X"}),
-        "ySemiAxis": (9.0 * mm, {"ySemiAxis": "Semiaxis in Y"}),
-        "zSemiAxis": (5.0 * mm, {"zSemiAxis": "Semiaxis in Z"}),
-        "zBottomCut": (0 * mm, {"zBottomCut": "lower cut plane level, Z"}),
-        "zTopCut": (0 * mm, {"zTopCut": "upper cut plane level, Z"}),
-    }
-
-    def build_solid(self):
-        return g4.G4Ellipsoid(
-            self.name,
-            self.xSemiAxis,
-            self.ySemiAxis,
-            self.zSemiAxis,
-            self.zBottomCut,
-            self.zTopCut,
-        )
-
-
-class EllipVolume(volumes.RepeatableVolume, EllipSolid):
-    """"""
-
-
-managers.VolumeManager.volume_types["EllipVolume"] = EllipVolume
-
-
 if __name__ == "__main__":
 
     # create the simulation
@@ -80,7 +47,7 @@ if __name__ == "__main__":
     world.color = [1, 1, 1, 0.1]
     print(world)
 
-    EllipVolume1 = sim.add_volume("EllipVolume", "Brain")
+    EllipVolume1 = sim.add_volume("EllipsoidVolume", "Brain")
     EllipVolume1.xSemiAxis = 6.0 * cm
     EllipVolume1.ySemiAxis = 9.0 * cm
     EllipVolume1.zSemiAxis = 5.0 * cm
