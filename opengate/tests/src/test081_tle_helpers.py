@@ -74,6 +74,7 @@ def add_source(
         source.n = 10
     return source
 
+
 def add_iso_source(
     sim,
     n=1e5,
@@ -87,7 +88,7 @@ def add_iso_source(
     source.energy.sigma_gauss = sigma
     source.particle = "gamma"
     source.position.type = "sphere"
-    source.position.radius = 10**(-7) * cm
+    source.position.radius = 10 ** (-7) * cm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
     source.n = n / sim.number_of_threads

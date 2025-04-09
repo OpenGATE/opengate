@@ -31,12 +31,12 @@ public:
 
   void PreUserTrackingAction(const G4Track *track) override;
 
-  void SetTLETrackInformationOnSecondaries(G4Step* step, G4bool info,G4int nbSec);
+  void SetTLETrackInformationOnSecondaries(G4Step *step, G4bool info,
+                                           G4int nbSec);
 
-  void InitializeCSDAForNewGamma(G4bool isFirstStep,G4Step* step);
+  void InitializeCSDAForNewGamma(G4bool isFirstStep, G4Step *step);
 
   G4double FindEkinMaxForTLE();
-
 
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
@@ -49,18 +49,18 @@ public:
 
   std::string fDatabase;
 
-  G4EmCalculator* fEmCalc = nullptr;
+  G4EmCalculator *fEmCalc = nullptr;
   G4String fStrRangeType;
-  G4int fRangeType; 
+  G4int fRangeType;
 
   struct threadLocalT {
     // Bool if current track is a TLE gamma or not
-    bool fIsTLEGamma =false ;
-    bool fIsTLESecondary  = false;
+    bool fIsTLEGamma = false;
+    bool fIsTLESecondary = false;
     bool fIsFirstStep = false;
-    G4double fCsda = 0 ;
+    G4double fCsda = 0;
     G4String fPreviousMatName;
-    std::map<G4int,std::vector<G4bool>> fSecWhichDeposit; 
+    std::map<G4int, std::vector<G4bool>> fSecWhichDeposit;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

@@ -51,7 +51,6 @@ if __name__ == "__main__":
     s = f"/process/eLoss/CSDARange true"
     sim.g4_commands_before_init.append(s)
 
-
     # default source for tests
     source = add_source(sim, n=2e4, energy=1.2 * MeV, sigma=1 * MeV, radius=1 * mm)
 
@@ -67,6 +66,7 @@ if __name__ == "__main__":
     # resulting dose will be biased. The energy threshold depends on the voxels size of the
     # dose actor. Here the bias is clearly visible if TLE is used above 1.2 MeV.
     # With the threshold enabled, no acceleration for high enery gamma, but no bias.
+
     tle_dose_actor.max_range = 3*mm
     tle_dose_actor.range_type ="average"
     tle_dose_actor.database = "EPDL"

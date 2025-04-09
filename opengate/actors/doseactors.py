@@ -693,15 +693,13 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
         ),
         "max_range": (
             np.inf,
-            {
-                "doc": "Define a range criterium to enable TLE or not"
-            },
+            {"doc": "Define a range criterium to enable TLE or not"},
         ),
-        "range_type":(
+        "range_type": (
             "max",
             {
                 "doc": "Define the type of range lim provided to hTLE, the maximum photon energy (max) or the average electron energy (average)"
-            }
+            },
         ),
         "database": (
             "EPDL",
@@ -715,7 +713,8 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     def __initcpp__(self):
         g4.GateTLEDoseActor.__init__(self, self.user_info)
         self.AddActions(
-            {   "BeginOfRunAction",
+            {
+                "BeginOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
                 "PreUserTrackingAction",
@@ -729,13 +728,13 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
             )
         super().initialize(args)
 
+
 def _setter_hook_score_in_let_actor(self, value):
     if value.lower() in ("g4_water", "g4water"):
         """Assuming a misspelling of G4_WATER and correcting it to correct spelling; Note that this is rather dangerous operation."""
         return "G4_WATER"
     else:
         return value
-
 
 
 class LETActor(VoxelDepositActor, g4.GateLETActor):

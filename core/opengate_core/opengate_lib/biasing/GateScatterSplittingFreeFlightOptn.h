@@ -34,9 +34,7 @@ public:
 
   void SetSplittingFactor(G4int splittingFactor);
   void InitializeAAManager(const py::dict &user_info);
-  void SetInvolvedBiasActor(GateVBiasOptrActor* actor){
-    fActor = actor;
-  }
+  void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
   G4int fSplittingFactor;
   G4ParticleChange fParticleChange;
@@ -44,7 +42,7 @@ public:
   double *fNbTracks;
   static constexpr bool cScatterSplittingFreeFlightType = true;
   GateUserTrackInformation *fUserTrackInformation;
-  GateVBiasOptrActor* fActor = nullptr;
+  GateVBiasOptrActor *fActor = nullptr;
 };
 
 #endif

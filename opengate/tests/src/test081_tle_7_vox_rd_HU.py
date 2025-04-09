@@ -29,7 +29,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
 
     # units
-    gcm3 = gate.g4_units.g/gate.g4_units.cm3
+    gcm3 = gate.g4_units.g / gate.g4_units.cm3
     m = gate.g4_units.m
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
@@ -46,12 +46,14 @@ if __name__ == "__main__":
     box.image = f"{fn}/random_HU_img.mhd"
     box.mother = "world"
     box.material = "G4_AIR"  # material used by default
-    f1 =  paths.data / "Schneider2000MaterialsTable.txt"
+    f1 = paths.data / "Schneider2000MaterialsTable.txt"
     f2 = paths.data / "Schneider2000DensitiesTable.txt"
     tol = 0.05 * gcm3
-    box.voxel_materials, materials = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
+    box.voxel_materials, materials = gate.geometry.materials.HounsfieldUnit_to_material(
+        sim, tol, f1, f2
+    )
     box.color = [1, 0, 1, 1]
-    box_size = [180,180,180]
+    box_size = [180, 180, 180]
     # waterbox_size = [30 * cm, 30 * cm, 20 * cm]
 
     # physics
@@ -69,10 +71,10 @@ if __name__ == "__main__":
     tle_dose_actor.attached_to = box
     tle_dose_actor.dose_uncertainty.active = True
     tle_dose_actor.dose.active = True
-    tle_dose_actor.size = [20,20,20]
+    tle_dose_actor.size = [20, 20, 20]
     tle_dose_actor.spacing = [x / y for x, y in zip(box_size, tle_dose_actor.size)]
     tle_dose_actor.density.active = True
-    tle_dose_actor.max_range= 3*mm
+    tle_dose_actor.max_range = 3 * mm
     tle_dose_actor.score_in = "material"  # only 'material' is allowed
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
@@ -84,7 +86,7 @@ if __name__ == "__main__":
     dose_actor.attached_to = box
     dose_actor.dose_uncertainty.active = True
     dose_actor.dose.active = True
-    dose_actor.size = [20,20,20]
+    dose_actor.size = [20, 20, 20]
     dose_actor.spacing = [x / y for x, y in zip(box_size, dose_actor.size)]
     dose_actor.density.active = True
     print(f"Dose actor pixels : {dose_actor.size}")
