@@ -134,10 +134,10 @@ void GateTLEDoseActor::PreUserTrackingAction(const G4Track *track) {
     // if the particle is not a gamma, we want to associate a secondary boolean
     // to allow or not the energy deposition.
     //- If it's a direct secondary, the boolean will be applied according to the
-    //tracking information
+    // tracking information
     // defined in the stepping action according to the csda conditions.
     //- If it's a secondary of a secondary (but not a gamma or not from a gamma
-    //secondary), we do nothing,
+    // secondary), we do nothing,
     // since we already fixed the wyto deposited dose for the mother secondary
     // (electrons or positron).
 

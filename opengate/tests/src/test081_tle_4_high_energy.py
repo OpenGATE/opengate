@@ -67,8 +67,8 @@ if __name__ == "__main__":
     # dose actor. Here the bias is clearly visible if TLE is used above 1.2 MeV.
     # With the threshold enabled, no acceleration for high enery gamma, but no bias.
 
-    tle_dose_actor.max_range = 3*mm
-    tle_dose_actor.range_type ="average"
+    tle_dose_actor.max_range = 3 * mm
+    tle_dose_actor.range_type = "average"
     tle_dose_actor.database = "EPDL"
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
