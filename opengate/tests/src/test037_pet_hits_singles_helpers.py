@@ -6,7 +6,7 @@ import opengate.contrib.pet.philipsvereos as pet_vereos
 import opengate.contrib.phantoms.necr as phantom_necr
 from opengate.tests import utility
 from opengate.userhooks import check_production_cuts
-from opengate.sources.base import get_rad_yield
+from opengate.sources.utility import get_rad_yield
 
 
 def create_pet_simulation(sim, paths, debug=False, create_mat=False):

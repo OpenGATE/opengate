@@ -1,5 +1,9 @@
 import numpy as np
+import pandas as pd
+import os
 from scipy.spatial.transform import Rotation
+from pathlib import Path
+import SimpleITK as sitk
 
 import opengate_core as g4
 from .base import ActorBase
@@ -13,8 +17,12 @@ from ..image import (
     get_py_image_from_cpp_image,
     images_have_same_domain,
     resample_itk_image_like,
+    itk_image_from_array,
+    divide_itk_images,
+    scale_itk_image,
 )
 from ..geometry.utility import get_transform_world_to_local
+from ..geometry.materials import create_density_img
 from ..base import process_cls
 from .actoroutput import (
     ActorOutputSingleImage,
@@ -22,6 +30,9 @@ from .actoroutput import (
     ActorOutputQuotientMeanImage,
     ActorOutputSingleImageWithVariance,
     UserInterfaceToActorOutputImage,
+)
+from .dataitems import (
+    ItkImageDataItem,
 )
 
 
@@ -272,44 +283,6 @@ class VoxelDepositActor(ActorBase):
         for u in self.user_output.values():
             if u.get_active(item="any"):
                 u.end_of_simulation()
-
-
-def compute_std_from_sample(
-    number_of_samples, value_array, squared_value_array, correct_bias=False
-):
-    unc = np.ones_like(value_array)
-    if number_of_samples > 1:
-        # unc = np.sqrt(1 / (N - 1) * (square / N - np.power(edep / N, 2)))
-        unc = np.sqrt(
-            np.clip(
-                (
-                    squared_value_array / number_of_samples
-                    - np.power(value_array / number_of_samples, 2)
-                )
-                / (number_of_samples - 1),
-                0,
-                None,
-            )
-        )
-        if correct_bias:
-            # Standard error is biased (to underestimate the error);
-            # this option allows to correct for the bias - assuming normal distribution.
-            # For few N this in is huge, but for N>8 the difference is minimal
-            unc /= standard_error_c4_correction(number_of_samples)
-        unc = np.divide(
-            unc,
-            value_array / number_of_samples,
-            out=np.ones_like(unc),
-            where=value_array != 0,
-        )
-
-    else:
-        # unc += 1 # we init with 1.
-        warning(
-            "You try to compute statistical errors with only one or zero event! "
-            "The uncertainty value for all voxels has been fixed at 1"
-        )
-    return unc
 
 
 def _setter_hook_ste_of_mean_unbiased(self, value):
@@ -884,6 +857,671 @@ class LETActor(VoxelDepositActor, g4.GateLETActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+def _setter_hook_lookup_table_path(self, path):
+    if not os.path.exists(path):
+        raise ValueError(f"Lookup table path {path} does not exist.")
+    return path
+
+
+class BeamQualityActor(VoxelDepositActor, g4.GateBeamQualityActor):
+    """
+    BeamQualityActor:
+    Handles the logic for RE, RBE and potentially other actors
+
+    """
+
+    user_info_defaults = {
+        "energy_per_nucleon": (
+            False,
+            {
+                "doc": "The kinetic energy in the table is the energy per nucleon MeV/n, else False.",
+            },
+        ),
+        "model": (
+            "RE",
+            {
+                "doc": "which model is used to calculate beam quality.",
+                "allowed_values": ("mMKM", "LEM1lda", "RE"),
+            },
+        ),
+        "score_in": (
+            "material",
+            {
+                "doc": """The score_in command allows to convert the scored quantity from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the quantity to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
+                """,
+            },
+        ),
+        "lookup_table_path": (
+            "",
+            {
+                "doc": "path of the z*_1d or alpha_z table.",
+                "setter_hook": _setter_hook_lookup_table_path,
+            },
+        ),
+        "lookup_table": (
+            None,
+            {
+                "doc": "z*_1d or alpha_z table. Read by the actor.",
+            },
+        ),
+    }
+    scored_quantity = "alpha"
+    user_output_config = {
+        f"{scored_quantity}_mix": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                f"{scored_quantity}_numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                f"{scored_quantity}_denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                f"{scored_quantity}_mix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": True,
+                    # "suffix": None,  # default suffix would be 'alpha_mix', but we prefer no suffix
+                },
+            },
+        },
+        "beta_mix": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                "beta_numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": False,
+                    "write_to_disk": False,
+                },
+                "beta_denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": False,
+                    "write_to_disk": False,
+                },
+                "beta_mix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": False,
+                    # "suffix": None,  # default suffix would be 'beta_mix', but we prefer no suffix
+                },
+            },
+        },
+    }
+
+    def __init__(self, *args, **kwargs):
+        # Init parent
+        VoxelDepositActor.__init__(self, *args, **kwargs)
+        # calculate some internal variables
+        self.element_to_atomic_number_dict = {
+            "H": 1,
+            "He": 2,
+            "Li": 3,
+            "Be": 4,
+            "B": 5,
+            "C": 6,
+            "N": 7,
+            "O": 8,
+            "F": 9,
+            "Ne": 10,
+        }
+        self.atomic_number_to_mass_dict = {
+            1: 1,
+            2: 4,
+            3: 6.9,
+            4: 9,
+            5: 10.8,
+            6: 12,
+            7: 14,
+            8: 16,
+            9: 19,
+            10: 20.2,
+        }
+        self.lookup_table = None
+        self._extend_table_to_zero_and_inft = True
+        self.multiple_scoring = False
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateBeamQualityActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfEventAction",
+            }
+        )
+
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the attached volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+
+        VoxelDepositActor.initialize(self)
+
+        self.check_user_input()
+
+        if self.lookup_table_path:
+            if not Path(self.lookup_table_path).is_file():
+                raise ValueError(
+                    f"Lookuptable path does not exist or is no file: {self.lookup_table_path}"
+                )
+
+            self.read_lookup_table(self.lookup_table_path)
+
+        if self.lookup_table is None:
+            raise ValueError(
+                "Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute."
+            )
+
+        if self.multiple_scoring:
+            self.user_output.beta_mix.set_active(True, item="all")
+            self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
+
+        self.InitializeUserInfo(self.user_info)
+        # Set the physical volume name on the C++ side
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def read_lookup_table_txt(self, table_path):
+        # Element-Z mapping
+
+        with open(table_path, "r") as f:
+            lines = f.readlines()
+        # add extra line to sign end of file
+        lines.append("\n")
+        start_table = False
+        end_table = True
+        fragments = []
+        v_table = []
+        for line in lines:
+            if "Fragment" in line:
+                element = line.split()[1]
+                if element in self.element_to_atomic_number_dict:
+                    Z = self.element_to_atomic_number_dict[element]
+                else:
+                    raise ValueError(
+                        f"Lookup table inconsistency: cannot convert element name to atomic number: {element}"
+                    )
+                values = []
+                energy = []
+                v_table.append([Z])
+                fragments.append(Z)
+                start_table = True
+                end_table = False
+            elif line.startswith("\n") == False and start_table:
+                # if count == 1:  # energy vector is the same for all Z
+                energy.append(float(line.split()[0]))
+                values.append(float(line.split()[1]))
+            elif not end_table:
+                start_table = False
+                # if count == 1:
+                # e_table.append(energy)
+                v_table.append(energy)
+                v_table.append(values)  # we want to do this only once per table
+                end_table = True
+        return v_table, fragments
+
+    def read_lookup_table_csv(self, table_path):
+        dataset = pd.read_csv(table_path)
+        particles = dataset["particle"].unique()
+        fragments = []
+        v_table = []
+        for p in particles:
+            if p in self.element_to_atomic_number_dict:
+                Z = self.element_to_atomic_number_dict[p]
+            else:
+                raise ValueError(
+                    f"Lookup table inconsistency: cannot convert element name to atomic number: {p}"
+                )
+            fragments.append(Z)
+            v_table.append([Z])
+            energies_p = dataset.loc[dataset["particle"] == p, "meanEnergy"]
+            v_table.append(list(energies_p))
+            values_p = dataset.loc[dataset["particle"] == p, "z1D*"]
+            v_table.append(list(values_p))
+        return v_table, fragments
+
+    def read_lookup_table(self, table_path):
+        p = Path(table_path)
+        if p.suffix == ".txt":
+            v_table, fragments = self.read_lookup_table_txt(table_path)
+        elif p.suffix == ".csv":
+            v_table, fragments = self.read_lookup_table_csv(table_path)
+        else:
+            raise NotImplementedError(
+                "Cannot read lookup table. File type reading not implemented yet."
+            )
+
+        self.set_lookup_table(v_table, fragments)
+
+    def set_lookup_table(self, v_table: list, fragments: list):
+        element_map = self.element_to_atomic_number_dict
+        # convert fragments strings to atomic number if they are
+        fragments = [
+            element_map[element] if element in element_map else element
+            for element in fragments
+        ]
+        # Check if all values in `a` are positive
+        if all(isinstance(x, (int, float)) and x > 0 for x in fragments):
+            # Convert all elements in `a` to integers
+            fragments = [
+                int(x) if isinstance(x, (int, float)) else x for x in fragments
+            ]
+        else:
+            raise ValueError("Non numeric entries in table")
+        self.check_table(v_table, fragments)
+        # get max and min atomic numbers available
+        self.ZMinTable = min(fragments)
+        self.ZMaxTable = max(fragments)
+        if len(v_table) != 3 * len(fragments):
+            raise ValueError(
+                f"Error: {len(v_table) = } and {len(fragments) = } are not equal."
+            )
+        if self.energy_per_nucleon:
+            for i in range(1, len(v_table), 3):
+                n_nuclei = self.atomic_number_to_mass_dict[
+                    v_table[i - 1][0]
+                ]  # v_table[i - 1][0] * (1 + float(v_table[i - 1][0] != 1))
+                v_table[i] = [x * n_nuclei for x in v_table[i]]
+        if self._extend_table_to_zero_and_inft:
+            for i in range(1, len(v_table), 3):
+                energy_0 = v_table[i][0]
+                energy_max = v_table[i][-1]
+                if energy_0 > 0:
+                    v_table[i].insert(0, 0.0)
+                    v_table[i + 1].insert(0, v_table[i + 1][0])
+                if energy_max < np.finfo(np.float32).max:
+                    # we use a single precision float here to enable on the cpp side the table to be a float instead of a double for more efficient cache use --> future improvmement
+                    v_table[i].append(np.finfo(np.float32).max)
+                    v_table[i + 1].append(v_table[i + 1][-1])
+
+        self.lookup_table = v_table
+
+    def check_table(self, v_table, fragments):
+        if not fragments:
+            raise ValueError("Fragment table is empty")
+        sorted_fragments = sorted(fragments)
+        if not sorted_fragments == list(
+            range(sorted_fragments[0], sorted_fragments[0] + len(sorted_fragments))
+        ):
+            raise ValueError("Fragment list is missing entries")
+
+    def BeginOfRunActionMasterThread(self, run_index):
+
+        self.prepare_output_for_run(f"{self.scored_quantity}_mix", run_index)
+        self.push_to_cpp_image(
+            f"{self.scored_quantity}_mix",
+            run_index,
+            self.cpp_numerator_alpha_image,
+            self.cpp_denominator_image,
+        )
+
+        if self.multiple_scoring:
+            self.prepare_output_for_run("beta_mix", run_index)
+            self.push_to_cpp_image(
+                "beta_mix",
+                run_index,
+                self.cpp_numerator_beta_image,
+                self.cpp_denominator_image,
+            )
+
+        g4.GateBeamQualityActor.BeginOfRunActionMasterThread(self, run_index)
+
+    def EndOfRunActionMasterThread(self, run_index):
+        self.fetch_from_cpp_image(
+            f"{self.scored_quantity}_mix",
+            run_index,
+            self.cpp_numerator_image,
+            self.cpp_denominator_image,
+        )
+        self._update_output_coordinate_system(f"{self.scored_quantity}_mix", run_index)
+        self.user_output.__getattr__(f"{self.scored_quantity}_mix").store_meta_data(
+            run_index, number_of_samples=self.NbOfEvent
+        )
+        if self.multiple_scoring:
+            self.fetch_from_cpp_image(
+                "beta_mix",
+                run_index,
+                self.cpp_numerator_beta_image,
+                self.cpp_denominator_image,
+            )
+            self._update_output_coordinate_system("beta_mix", run_index)
+            self.user_output.beta_mix.store_meta_data(
+                run_index, number_of_samples=self.NbOfEvent
+            )
+
+        VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
+        return 0
+
+    def EndSimulationAction(self):
+        g4.GateBeamQualityActor.EndSimulationAction(self)
+        VoxelDepositActor.EndSimulationAction(self)
+
+    def compute_dose_from_edep_img(self, overrides=dict()):
+        """
+        * cretae mass image:
+            - from ct HU units, if dose actor attached to ImageVolume.
+            - from material density, if standard volume
+        * compute dose as edep_image /  mass_image
+        """
+        vol_name = self.user_info.attached_to
+        vol = self.simulation.volume_manager.get_volume(vol_name)
+        vol_type = vol.volume_type
+
+        spacing = np.array(self.user_info.spacing)
+        voxel_volume = spacing[0] * spacing[1] * spacing[2]
+        Gy = g4_units.Gy
+
+        edep_img = (
+            self.user_output.__getattr__(f"{self.scored_quantity}_mix")
+            .merged_data.data[1]
+            .image
+        )
+
+        score_in_material = self.user_info.score_in
+
+        material_database = (
+            self.simulation.volume_manager.material_database.g4_materials
+        )
+
+        if score_in_material != "material":
+            # score in other material
+            if score_in_material not in material_database:
+                self.simulation.volume_manager.material_database.FindOrBuildMaterial(
+                    score_in_material
+                )
+            density = material_database[score_in_material].GetDensity()
+            dose_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
+        else:
+            # divide edep image with the original mass image
+            if vol_type == "ImageVolume":
+                density_img = vol.create_density_image()
+                edep_density = divide_itk_images(
+                    img1_numerator=edep_img,
+                    img2_denominator=density_img,
+                    filterVal=0,
+                    replaceFilteredVal=0,
+                )
+                # divide by voxel volume and convert unit.
+                dose_img = scale_itk_image(
+                    edep_density, g4_units.cm3 / (Gy * voxel_volume * g4_units.g)
+                )
+            else:
+                if vol.material not in material_database:
+                    self.simulation.volume_manager.material_database.FindOrBuildMaterial(
+                        vol.material
+                    )
+                density = material_database[vol.material].GetDensity()
+                dose_img = scale_itk_image(edep_img, 1 / (voxel_volume * density * Gy))
+
+        dose_image = ItkImageDataItem(data=dose_img)
+        dose_image.copy_image_properties(edep_img)
+
+        return dose_image
+
+
+class REActor(BeamQualityActor, g4.GateBeamQualityActor):
+    scored_quantity = "RE"
+    user_output_config = {
+        f"{scored_quantity}_mix": {
+            "actor_output_class": ActorOutputQuotientMeanImage,
+            "interfaces": {
+                f"{scored_quantity}_numerator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 0,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                f"{scored_quantity}_denominator": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": 1,
+                    "active": True,
+                    "write_to_disk": False,
+                },
+                f"{scored_quantity}_mix": {
+                    "interface_class": UserInterfaceToActorOutputImage,
+                    "item": "quotient",
+                    "write_to_disk": True,
+                    "active": True,
+                    # "suffix": None,  # default suffix would be 'alpha_mix', but we prefer no suffix
+                },
+            },
+        },
+    }
+
+
+class RBEActor(BeamQualityActor, g4.GateBeamQualityActor):
+    """
+    RBEActor:
+        - mMKM:
+            - alpha mix (score separately numerator and denominator)
+        - LEM1lda:
+            - alpha mix (score separately numerator and denominator)
+            - beta mix (score separately numerator and denominator)
+        Note: all will also score edep as denominator image -> retrieve dose
+    """
+
+    user_info_defaults = {
+        "alpha_0": (
+            0.172,
+            {
+                "doc": "mMKM specific fitted parameter, for the calculation of cellline alpha_z per radiation. Unit: Gy-1",
+            },
+        ),
+        "beta_ref": (
+            None,
+            {
+                "doc": "Cellline specific parameter. Initialized according to cell_type.",
+            },
+        ),
+        "F_clin": (
+            2.41,
+            {
+                "doc": "mMKM specific arbituary parameter, the clinical sclaing factor.",
+            },
+        ),
+        "D_cut": (
+            30.0,
+            {
+                "doc": "LEM specific arbituary parameter, the physical dose threshold between linear quadratic and linear cell survival. Unit: Gy.",
+            },
+        ),
+        "r_nucleus": (
+            5,
+            {
+                "doc": "nucleus's radius, in um. Used when rbe_model is LEM",
+            },
+        ),
+        "cell_type": (
+            "HSG",
+            {
+                "doc": "To add new cell types, update the self.cells_radiosensitivity"
+                "variable in the init of the actor",
+                "allowed_values": ("HSG", "Chordoma"),
+            },
+        ),
+        "write_RBE_dose_image": (
+            True,
+            {
+                "doc": "Do you want to calcu;ate and write to disk RBE and RBE dose images?",
+            },
+        ),
+    }
+
+    user_output_config = BeamQualityActor.user_output_config.copy()
+    user_output_config.update(
+        {
+            "rbe": {
+                "actor_output_class": ActorOutputSingleMeanImage,
+                "active": False,
+            },
+            "rbe_dose": {
+                "actor_output_class": ActorOutputSingleMeanImage,
+                "active": False,
+            },
+        }
+    )
+
+    def __init__(self, *args, **kwargs):
+        # Init parent
+        BeamQualityActor.__init__(self, *args, **kwargs)
+
+        # internal variables
+        self.cells_radiosensitivity = {
+            "HSG": {"alpha_ref": 0.764, "beta_ref": 0.0615},
+            "Chordoma": {"alpha_ref": 0.1, "beta_ref": 0.05},
+        }
+
+        self.s_max = None
+        self.lnS_cut = None
+
+        self.__initcpp__()
+
+    def initialize(self):
+        """
+        At the start of the run, the image is centered according to the coordinate system of
+        the attached volume. This function computes the correct origin = center + translation.
+        Note that there is a half-pixel shift to align according to the center of the pixel,
+        like in ITK.
+        """
+        VoxelDepositActor.initialize(self)
+
+        self.check_user_input()
+
+        if self.lookup_table_path:
+            self.read_lookup_table(self.lookup_table_path)
+
+        if self.lookup_table is None:
+            raise ValueError(
+                "Missing lookup table. Set it manually with the lookup_table attribute or provide a table path to the lookup_table_path attribute."
+            )
+
+        # calculate some internal variables
+        self.fAreaNucl = (np.pi * self.r_nucleus**2) * g4_units.um * g4_units.um
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
+        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
+        self.beta_ref = beta_ref
+        self.s_max = alpha_ref + 2 * beta_ref * self.D_cut
+        self.fSmax = self.s_max  # set also to cpp
+        self.lnS_cut = -beta_ref * self.D_cut**2 - alpha_ref * self.D_cut
+
+        if self.model == "LEM1lda":
+            self.multiple_scoring = True
+            self.user_output.beta_mix.set_active(True, item="all")
+            self.user_output.beta_mix.set_write_to_disk(True, item="quotient")
+
+        self.InitializeUserInfo(self.user_info)
+        # Set the physical volume name on the C++ side
+        self.SetPhysicalVolumeName(self.get_physical_volume_name())
+        self.InitializeCpp()
+
+    def EndSimulationAction(self):
+        g4.GateBeamQualityActor.EndSimulationAction(self)
+        if self.model == "mMKM":
+            self._postprocess_alpha_numerator_mkm()
+        if self.write_RBE_dose_image:
+            self.compute_rbe_weighted_dose()
+        VoxelDepositActor.EndSimulationAction(self)
+
+    def _postprocess_alpha_numerator_mkm(self):
+        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
+        alpha_mix_numerator_img = self.user_output.__getattr__(
+            f"{self.scored_quantity}_mix"
+        ).merged_data.data[0]
+        alpha_mix_denominator_img = (
+            self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.data[1]
+            * self.alpha_0
+        )
+        self.user_output.__getattr__(f"{self.scored_quantity}_mix").merged_data.data[
+            0
+        ] = (alpha_mix_numerator_img * beta_ref + alpha_mix_denominator_img)
+
+    def compute_rbe_weighted_dose(self):
+        alpha_ref = self.cells_radiosensitivity[self.cell_type]["alpha_ref"]
+        beta_ref = self.cells_radiosensitivity[self.cell_type]["beta_ref"]
+        dose_img = self.compute_dose_from_edep_img()
+
+        if self.model == "mMKM":
+            alpha_mix_img = self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.quotient
+            log_survival = alpha_mix_img * dose_img * (
+                -1
+            ) + dose_img * dose_img * beta_ref * (-1)
+            log_survival_arr = log_survival.image_array
+        elif self.model == "LEM1lda":
+            dose_arr = dose_img.image_array
+            arr_mask_linear = dose_arr > self.D_cut
+            alpha_mix_img = self.user_output.__getattr__(
+                f"{self.scored_quantity}_mix"
+            ).merged_data.quotient
+            sqrt_beta_mix_img = self.user_output.beta_mix.merged_data.quotient
+
+            log_survival_lq = alpha_mix_img * dose_img * (
+                -1
+            ) + dose_img * dose_img * sqrt_beta_mix_img * sqrt_beta_mix_img * (-1)
+            log_survival_lq_arr = log_survival_lq.image_array
+            log_survival_linear = (
+                alpha_mix_img * self.D_cut * (-1)
+                + sqrt_beta_mix_img * sqrt_beta_mix_img * self.D_cut * self.D_cut * (-1)
+                + (dose_img + self.D_cut * (-1)) * self.s_max * (-1)
+            )
+            log_survival_linear_arr = log_survival_linear.image_array
+
+            log_survival_arr = np.zeros(log_survival_lq.image_array.shape)
+            log_survival_arr[arr_mask_linear] = log_survival_linear_arr[arr_mask_linear]
+            log_survival_arr[~arr_mask_linear] = log_survival_lq_arr[~arr_mask_linear]
+
+        # solve linear quadratic equation to get Dx
+        if self.model == "mMKM":
+            rbe_dose_arr = (
+                (-alpha_ref + np.sqrt(alpha_ref**2 - 4 * beta_ref * log_survival_arr))
+                / (2 * beta_ref)
+                * self.F_clin
+            )
+        else:
+            arr_mask_linear = log_survival_arr < self.lnS_cut
+            rbe_dose_lq_arr = (
+                -alpha_ref + np.sqrt(alpha_ref**2 - 4 * beta_ref * log_survival_arr)
+            ) / (2 * beta_ref)
+            rbe_dose_linear_arr = (
+                -log_survival_arr + self.lnS_cut
+            ) / self.s_max + self.D_cut
+            rbe_dose_arr = np.zeros(log_survival_arr.shape)
+            rbe_dose_arr[arr_mask_linear] = rbe_dose_linear_arr[arr_mask_linear]
+            rbe_dose_arr[~arr_mask_linear] = rbe_dose_lq_arr[~arr_mask_linear]
+
+        # create new data item for the survival image. Same metadata as the other images, but new image array
+        rbedose_img = itk_image_from_array(rbe_dose_arr)
+        rbe_weighted_dose_image = ItkImageDataItem(data=rbedose_img)
+        rbe_weighted_dose_image.copy_image_properties(dose_img.image)
+
+        rbe_image = rbe_weighted_dose_image / dose_img
+
+        self.user_output.rbe.merged_data = rbe_image
+        rbe_path = self.user_output.rbe.get_output_path()
+
+        self.user_output.rbe_dose.merged_data = rbe_weighted_dose_image
+        rbe_dose_path = self.user_output.rbe_dose.get_output_path()
+
+        rbe_weighted_dose_image.write(rbe_dose_path)
+        rbe_image.write(rbe_path)
+
+
 class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStoppingActor):
     """This actor scores the number of particles stopping or starting in a voxel grid in the volume to which the actor is attached to."""
 
@@ -1036,9 +1674,77 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         VoxelDepositActor.EndSimulationAction(self)
 
 
+class EmCalculatorActor(ActorBase, g4.GateEmCalculatorActor):
+    user_info_defaults = {
+        "is_ion": (
+            True,
+            {
+                "doc": "Wheather the particle we calculate dedx for is an ion",
+            },
+        ),
+        "particle_name": (
+            "",
+            {
+                "doc": "GenericIon if the particle is ion, else name of the particle",
+            },
+        ),
+        "ion_params": (
+            "",
+            {
+                "doc": "string indicating atomic number and mass, separated by one space. Example '6 12' for C12",
+            },
+        ),
+        "material": (
+            "",
+            {
+                "doc": "Material in which to score dedx",
+            },
+        ),
+        "nominal_energies": (
+            [],
+            {
+                "doc": "List of nominal energies to use to generate the dedx table",
+            },
+        ),
+        "savefile_path": (
+            "",
+            {
+                "doc": "file path to save the table",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateEmCalculatorActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "BeginOfRunActionMasterThread",
+                "EndOfRunActionMasterThread",
+                "BeginOfRunAction",
+                "EndOfRunAction",
+                "BeginOfEventAction",
+                "SteppingAction",
+            }
+        )
+
+    def initialize(self, *args):
+        if self.is_ion:
+            self.particle_name = "GenericIon"
+        self.InitializeUserInfo(self.user_info)  # C++ side
+        self.InitializeCpp()
+
+
 process_cls(VoxelDepositActor)
 process_cls(DoseActor)
 process_cls(TLEDoseActor)
 process_cls(LETActor)
+process_cls(RBEActor)
+process_cls(REActor)
+process_cls(BeamQualityActor)
 process_cls(FluenceActor)
 process_cls(ProductionAndStoppingActor)
+process_cls(EmCalculatorActor)

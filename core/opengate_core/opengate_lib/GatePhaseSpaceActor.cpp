@@ -30,8 +30,9 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fStoreExitingStep = false;
   fStoreEnteringStep = false;
   fStoreFirstStepInVolume = false;
-  fDebug = false;
   fStoreAbsorbedEvent = false;
+  fStoreAllSteps = false;
+  fDebug = false;
 }
 
 GatePhaseSpaceActor::~GatePhaseSpaceActor() {
@@ -108,7 +109,7 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
     auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << "New track "
               << track->GetParticleDefinition()->GetParticleName()
-              << " eid=" << id << std::endl;
+              << track->GetTrackID() << " eid=" << id << std::endl;
   }
 }
 
@@ -135,8 +136,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 
   // Particle exits the volume if the post step is at the volume boundary or at
   // the world boundary if the phsp is attached to the world
-  bool exiting = step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary ||
-                 step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary;
+  bool exiting = IsStepExitVolume(step);
 
   // When this is the first time we see this particle fFirstStepInVolume is true
   // We then set it to false
@@ -144,7 +144,8 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   l.fFirstStepInVolume = false;
 
   // Keep or ignore ?
-  bool ok = entering && fStoreEnteringStep;
+  bool ok = fStoreAllSteps;
+  ok = ok || entering && fStoreEnteringStep;
   ok = ok || (exiting && fStoreExitingStep);
   ok = ok || (first_step_in_volume && fStoreFirstStepInVolume);
   if (!ok)
@@ -170,7 +171,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
       pname = p->GetProcessName();
     std::cout << GetName() << " "
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
-              << " hits=" << fHits->GetSize() << " [" << entering << " "
+              << /*" hits=" << fHits->GetSize() <<*/ " [" << entering << " "
               << exiting << " " << first_step_in_volume << "]"
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name

@@ -32,6 +32,7 @@ setup(
         "PyYAML",
         "SimpleITK",
         "spekpy",
+        "icrp107-database",
     ]
     + install_requires_windows,
 )

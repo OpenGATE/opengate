@@ -74,8 +74,7 @@ def add_spect_head(
     add_materials(sim)
 
     # check overlap
-    sim.check_volumes_overlap = False  # set to True for debug
-    sim.check_volumes_overlap = True
+    # sim.check_volumes_overlap = False  # set to True for debug
 
     # spect head
     head, lead_cover = add_spect_box(sim, name, crystal_size)

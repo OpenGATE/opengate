@@ -26,15 +26,17 @@ size_t GateDigiCollection::GetBeginOfEventIndex() const {
   return threadLocalData.Get().fBeginOfEventIndex;
 }
 
-void GateDigiCollection::SetBeginOfEventIndex(size_t index) {
+void GateDigiCollection::SetBeginOfEventIndex(size_t index) const {
   threadLocalData.Get().fBeginOfEventIndex = index;
 }
 
-void GateDigiCollection::SetBeginOfEventIndex() {
+void GateDigiCollection::SetBeginOfEventIndex() const {
   SetBeginOfEventIndex(GetSize());
 }
 
-void GateDigiCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
+void GateDigiCollection::SetWriteToRootFlag(const bool f) {
+  fWriteToRootFlag = f;
+}
 
 void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
   fFilename = filename;

@@ -68,6 +68,7 @@ protected:
   AdderPolicy fPolicy;
   bool fTimeDifferenceFlag;
   bool fNumberOfHitsFlag;
+  bool fWeightsAreUsedFlag;
 
   GateVDigiAttribute *fOutputEdepAttribute{};
   GateVDigiAttribute *fOutputPosAttribute{};
@@ -78,7 +79,7 @@ protected:
   void DigitInitialize(
       const std::vector<std::string> &attributes_not_in_filler) override;
 
-  void AddDigiPerVolume();
+  void AddDigiPerVolume() const;
 
   // During computation (thread local)
   struct threadLocalT {
@@ -89,6 +90,9 @@ protected:
     G4ThreeVector *pos;
     GateUniqueVolumeID::Pointer *volID;
     double *time;
+    // FIXME
+    double *weight;
+    int *track_id;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

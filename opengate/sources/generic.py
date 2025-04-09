@@ -2,12 +2,13 @@ from box import Box
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
-from .base import (
-    SourceBase,
+from .base import SourceBase
+from .utility import (
     all_beta_plus_radionuclides,
-    read_beta_plus_spectra,
+    get_spectrum,
     compute_cdf_and_total_yield,
 )
+from ..actors.biasingactors import generic_source_default_aa
 from ..base import process_cls
 from ..utility import g4_units
 from ..exception import fatal, warning
@@ -37,27 +38,13 @@ def _generic_source_default_direction():
             "momentum": [0, 0, 1],
             "focus_point": [0, 0, 0],
             "sigma": [0, 0],
-            "acceptance_angle": _generic_source_default_aa(),
+            "acceptance_angle": generic_source_default_aa(),
             "accolinearity_flag": False,
             "accolinearity_fwhm": 0.5 * g4_units.deg,
             "histogram_theta_weights": [],
             "histogram_theta_angles": [],
             "histogram_phi_weights": [],
             "histogram_phi_angles": [],
-        }
-    )
-
-
-def _generic_source_default_aa():
-    deg = g4_units.deg
-    return Box(
-        {
-            "skip_policy": "SkipEvents",
-            "volumes": [],
-            "intersection_flag": False,
-            "normal_flag": False,
-            "normal_vector": [0, 0, 1],
-            "normal_tolerance": 3 * deg,
         }
     )
 
@@ -228,7 +215,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             "range",
         ]
         l.extend(all_beta_plus_radionuclides)
-        if not self.energy.type in l:
+        if self.energy.type not in l:
             fatal(
                 f"Cannot find the energy type {self.energy.type} for the source {self.name}.\n"
                 f"Available types are {l}"
@@ -251,10 +238,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         # FIXME put this elsewhere
         if self.particle == "e+":
             if self.energy.type in all_beta_plus_radionuclides:
-                data = read_beta_plus_spectra(self.user_info.energy.type)
+                data = get_spectrum(self.user_info.energy.type, "e+", "radar")
                 ene = data[:, 0] / 1000  # convert from KeV to MeV
                 proba = data[:, 1]
-                cdf, total = compute_cdf_and_total_yield(proba, ene)
+                cdf, _ = compute_cdf_and_total_yield(proba, ene)
                 # total = total * 1000  # (because was in MeV)
                 # self.user_info.activity *= total
                 self.energy.is_cdf = True
@@ -274,7 +261,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
         # check direction type
         l = ["iso", "histogram", "momentum", "focused", "beam2d"]
-        if not self.direction.type in l:
+        if self.direction.type not in l:
             fatal(
                 f"Cannot find the direction type {self.direction.type} for the source {self.name}.\n"
                 f"Available types are {l}"
