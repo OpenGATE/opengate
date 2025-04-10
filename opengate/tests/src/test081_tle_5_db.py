@@ -60,9 +60,14 @@ if __name__ == "__main__":
     tle_dose_actor.size = [200, 200, 200]
     tle_dose_actor.spacing = [x / y for x, y in zip(waterbox_size, tle_dose_actor.size)]
     tle_dose_actor.database = "EPDL"
+    tle_dose_actor.tle_threshold_type = "energy"
+    tle_dose_actor.tle_threshold = 1*MeV
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox_size} mm")
+
+    s = f"/process/eLoss/CSDARange true"
+    sim.g4_commands_before_init.append(s)
 
     # add conventional dose actor
     dose_actor = sim.add_actor("TLEDoseActor", "dose_actor")
@@ -72,6 +77,8 @@ if __name__ == "__main__":
     dose_actor.dose.active = True
     dose_actor.size = [200, 200, 200]
     dose_actor.database = "NIST"
+    tle_dose_actor.tle_threshold_type = "energy"
+    tle_dose_actor.tle_threshold = 1 * MeV
     dose_actor.spacing = [x / y for x, y in zip(waterbox_size, dose_actor.size)]
     print(f"Dose actor pixels : {dose_actor.size}")
     print(f"Dose actor spacing : {dose_actor.spacing} mm")

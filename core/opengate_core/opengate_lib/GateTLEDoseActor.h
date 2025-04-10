@@ -43,15 +43,16 @@ public:
 
   // Kill the gamma if below this energy
   double fEnergyMin;
+  double fEnergyMax;
 
   // Conventional DoseActor if above this energy
-  double fMaxRange;
+  double fTLEThreshold;
 
   std::string fDatabase;
 
   G4EmCalculator *fEmCalc = nullptr;
-  G4String fStrRangeType;
-  G4int fRangeType;
+  G4String fStrTLEThresholdType;
+  G4int fTLEThresholdType;
 
   struct threadLocalT {
     // Bool if current track is a TLE gamma or not
@@ -60,6 +61,7 @@ public:
     bool fIsFirstStep = false;
     G4double fCsda = 0;
     G4String fPreviousMatName;
+    G4double fPreviousEnergy;
     std::map<G4int, std::vector<G4bool>> fSecWhichDeposit;
   };
   G4Cache<threadLocalT> fThreadLocalData;

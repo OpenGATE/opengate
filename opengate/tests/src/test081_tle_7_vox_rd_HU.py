@@ -34,6 +34,7 @@ if __name__ == "__main__":
     cm = gate.g4_units.cm
     mm = gate.g4_units.mm
     keV = gate.g4_units.keV
+    MeV = gate.g4_units.MeV
     Bq = gate.g4_units.Bq
 
     #  change world size
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     sim.g4_commands_before_init.append(s)
 
     # default source for tests
-    source = add_iso_source(sim, n=2e5)
+    source = add_iso_source(sim, n=4e5)
 
     # add tle dose actor
     tle_dose_actor = sim.add_actor("TLEDoseActor", "tle_dose_actor")
@@ -74,7 +75,10 @@ if __name__ == "__main__":
     tle_dose_actor.size = [20, 20, 20]
     tle_dose_actor.spacing = [x / y for x, y in zip(box_size, tle_dose_actor.size)]
     tle_dose_actor.density.active = True
-    tle_dose_actor.max_range = 3 * mm
+    tle_dose_actor.tle_threshold_type = "average range"
+    tle_dose_actor.tle_threshold = 3 * mm
+    # tle_dose_actor.tle_threshold_type = "energy"
+    # tle_dose_actor.tle_threshold = 1*MeV
     tle_dose_actor.score_in = "material"  # only 'material' is allowed
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")

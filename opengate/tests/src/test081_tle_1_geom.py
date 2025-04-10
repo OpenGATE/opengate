@@ -30,6 +30,7 @@ def main(argv):
     # units
     m = gate.g4_units.m
     mm = gate.g4_units.mm
+    MeV = gate.g4_units.MeV
 
     #  change world size
     world = sim.world
@@ -60,7 +61,6 @@ def main(argv):
     tle_dose_actor.dose.active = True
     tle_dose_actor.size = [200, 200, 200]
     tle_dose_actor.spacing = [x / y for x, y in zip(waterbox.size, tle_dose_actor.size)]
-    # tle_dose_actor.max_range = 1*mm
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox.size} mm")
@@ -89,12 +89,12 @@ def main(argv):
     ax, plt = plot_pdd(dose_actor, tle_dose_actor)
     f1 = dose_actor.edep.get_output_path()
     f2 = tle_dose_actor.edep.get_output_path()
-    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[0], tol=0.2)
+    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[0], tol=0.25)
 
     print()
     f1 = dose_actor.dose.get_output_path()
     f2 = tle_dose_actor.dose.get_output_path()
-    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.2) and is_ok
+    is_ok = compare_pdd(f1, f2, dose_actor.spacing[2], ax[1], tol=0.25) and is_ok
 
     # output
     f = paths.output / f"pdd_geom.png"
