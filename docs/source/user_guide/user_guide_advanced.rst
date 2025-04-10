@@ -186,3 +186,19 @@ If the user desire to modify the FWHM of the APA deviation, it can be done with 
 **WARNING:** The implementation of APA for `back_to_back` sources is based on assuming that its deviation follows a 2D Gaussian distribution.
 This is a simplification of the true physical process.
 
+Material Ionisation Potential
+===========================================
+The ionisation potential is the energy required to remove an electron to an atom or a molecule. By default, the ionization potential is calculated thanks to the Bragg’s additivity rule.
+Users can modify the `MeanExcitationEnergy` of a material, and therefore the material's ionisation potential, similarly to how described for the `MeanEnergyPerIonPair`.
+**WARNING:** changing this value for G4_WATER will not affect the simulation, as the default value will be used.
+
+.. code-block:: python
+
+    # Provide the location of GateMaterials.db to the volume manager.
+    sim.volume_manager.add_material_database(path_to_gate_materials_db)
+
+    # Set the MeanExcitationEnergy of the material in the physics manager
+    # material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
+    sim.physics_manager.material_ionisation_potential[material_of_interest] =  75.0 * eV
+
+
