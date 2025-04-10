@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #ifndef GateVoxelizedPromptGammaTLEActor_h
+
 #define GateVoxelizedPromptGammaTLEActor_h
 
 #include "GateDoseActor.h"
@@ -69,6 +70,7 @@ public:
 
 private:
   G4int incidentParticles;
+  G4int norm;
   G4int Nbbinstime;
   G4int Nbbinsenergy;
   G4double creationtime;

@@ -96,7 +96,7 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
 
   // Initialisation of the incident particle scorer
   incidentParticles = 0;
-  creationtime = 0;
+  norm = 0;
 }
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
@@ -109,19 +109,17 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(const G4Run *run) {}
 void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
     const G4Event *event) {
   incidentParticles++;
+  creationtime = event->GetPrimaryVertex()->GetT0(); 
 }
 
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   // If the particule treated is not a neutron, no stepping action
-  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
-      "neutron") {
+  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() != "neutron") {
     return;
   }
-  // Sampling the creation time of the particule ~ time a the first pre-step of
-  // the track
-  if ((step->GetTrack()->GetCurrentStepNumber() == 1) &&
-      (step->GetTrack()->GetTrackID() != 1)) {
-    creationtime = step->GetPreStepPoint()->GetGlobalTime();
+
+  if (!step->GetTrack() || !step->GetSecondary()) {
+    return; // Éviter les accès à des pointeurs nuls
   }
 
   // sampling the secondaries
@@ -134,9 +132,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
     // verifying if it's a gamma and that it's created by neutron inelastic
     // interaction
-    if ((secondary_def != G4Gamma::Gamma()) ||
-        (secondary->GetCreatorProcess()->GetProcessName() !=
-         "neutronInelastic")) {
+    if ((secondary_def != G4Gamma::Gamma()) || (secondary->GetCreatorProcess()->GetProcessName() != "neutronInelastic")) {
       continue;
     }
 
@@ -156,7 +152,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     Image3DType::IndexType index;
     G4bool isInside = Volume->TransformPhysicalPointToIndex(point, index);
     if (!isInside) {
-      return;
+      continue;
     }
 
     Image2DType::IndexType ind;
@@ -165,18 +161,15 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     auto energyPG = secondary->GetKineticEnergy();
 
     // defining the range and the width
-    G4double energy_range_EP = 10.0 * CLHEP::MeV;
-    G4double widthenergy = (energy_range_EP / Nbbinsenergy);
-
-    // negative case
-    if (energyPG < 0)
-      energyPG = 0;
-
-    // rough method to attribute an index to the energy
-    ind[0] = static_cast<int>(energyPG / widthenergy);
-    if (ind[0] >= Nbbinsenergy) {
-      ind[0] = Nbbinsenergy - 1;
+    G4double energy_range = 10.0 * CLHEP::MeV;
+    G4double widthenergy = (energy_range / Nbbinsenergy);
+    
+    // Calculate the bin index directly
+    int bin0 = static_cast<int>(energyPG / widthenergy);
+    if (bin0 >= Nbbinsenergy) {
+      bin0 = Nbbinsenergy - 1;
     }
+    ind[0] = bin0;
 
     // Sampling the time of the gamma emission
     G4double currenttime = step->GetPostStepPoint()->GetGlobalTime(); // ns
@@ -186,23 +179,24 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     std::cout << "Creation time : " << creationtime << std::endl;
     std::cout << "Time of flight : " << time << std::endl;
 
-    // defining the range and the width
-    G4double timerange = 15; // ns
-    G4double timewidth = timerange / Nbbinstime;
-
     // negative case
     if (time < 0) {
       std::cerr << "Warning: Negative time detected." << std::endl;
-      time = 0;
       continue;
     }
 
-    // rough method to attribute an index to the time
-    ind[1] = static_cast<int>(time / timewidth);
-    if (ind[1] >= Nbbinstime) {
-      ind[1] = Nbbinstime - 1;
-    }
+    // defining the range and the width
+    G4double timerange = 2; // ns
+    G4double timewidth = timerange / Nbbinstime;
 
+    // Calculate the bin index directly
+    int bin1 = static_cast<int>(time / timewidth);
+    if (bin1 >= Nbbinstime) {
+      bin1 = Nbbinstime - 1;
+    }
+    ind[1] = bin1;
+
+    norm = norm + 1;
     // adding the value to the 2D histogram (ITKimage)
     std::cout << "Voxel index: " << ind[0] << ", " << ind[1] << std::endl;
     ImageAddValue<Image2DType>(output_image, ind, 1);
@@ -216,6 +210,8 @@ void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
   for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
     it.Set(it.Get() / incidentParticles);
   }
+  std::cout<<"incident proton : "<<incidentParticles<<std::endl;
+  std::cout<<"inelastic collision of neutron"<<norm<<std::endl;
 }
 
 std::string GateVoxelizedPromptGammaTLEActor::GetOutputImage() {
