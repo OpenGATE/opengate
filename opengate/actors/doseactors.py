@@ -691,14 +691,15 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
             0.0,
             {"doc": "Kill the gamma if below this energy"},
         ),
-        "max_range": (
+
+        "tle_threshold": (
             np.inf,
-            {"doc": "Define a range criterium to enable TLE or not"},
+            {"doc": "Define a criterium to enable TLE or not. It can be in terms of gamma energy or in secondary particle range depending on the provided tle_threshold_type"},
         ),
-        "range_type": (
-            "max",
+        "tle_threshold_type": (
+            "None",
             {
-                "doc": "Define the type of range lim provided to hTLE, the maximum photon energy (max) or the average electron energy (average)"
+                "doc": "Define the type of range lim provided to hTLE. It could be applied without threshold (None), by energy (energy), or by the range of an electron with the full gamma energy (max range) or the average transfered energy (average range)."
             },
         ),
         "database": (
