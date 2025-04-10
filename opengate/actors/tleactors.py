@@ -147,7 +147,7 @@ class VoxelizedPromptGammaTLEActor(
         # Save the image
         filename = g4.GateVoxelizedPromptGammaTLEActor.GetOutputImage(self)
         itk_image = itk.imread(filename)
-        itk.imwrite(itk_image, self.user_info['output_name'])
+        itk.imwrite(itk_image, self.user_info["output_name"])
         self.user_output.correl.store_data(run_index, itk_image)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
@@ -157,9 +157,9 @@ class VoxelizedPromptGammaTLEActor(
         VoxelDepositActor.EndSimulationAction(self)
 
 
-
 class VoxelizedPromptGammaTLE4DActor(
-    VoxelDepositActor, g4.GateVoxelizedPromptGammaTLE4DActor):
+    VoxelDepositActor, g4.GateVoxelizedPromptGammaTLE4DActor
+):
     """
     FIXME doc todo
     """
@@ -172,10 +172,8 @@ class VoxelizedPromptGammaTLE4DActor(
             },
         ),
         "bins": (
-            100, 
-            {
-                "doc": "Number of bins"
-            },
+            100,
+            {"doc": "Number of bins"},
         ),
         "output_name": (
             None,
@@ -187,7 +185,7 @@ class VoxelizedPromptGammaTLE4DActor(
 
     user_output_config = {
         "vpg": {
-            "actor_output_class":  ActorOutputSingleImageOfHistogram,
+            "actor_output_class": ActorOutputSingleImageOfHistogram,
             "active": True,
         }
     }
@@ -218,19 +216,20 @@ class VoxelizedPromptGammaTLE4DActor(
         self.InitializeCpp()
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
 
-    
     def BeginOfRunActionMasterThread(self, run_index):
-        
-        g4.GateVoxelizedPromptGammaTLE4DActor.BeginOfRunActionMasterThread(self, run_index)
+
+        g4.GateVoxelizedPromptGammaTLE4DActor.BeginOfRunActionMasterThread(
+            self, run_index
+        )
 
     def EndOfRunActionMasterThread(self, run_index):
         print("end of run action master thread", run_index)
-                # Save the image using ITK 
+        # Save the image using ITK
         filename = g4.GateVoxelizedPromptGammaTLE4DActor.GetOutputImage(self)
         print("GETOUT-BON", run_index)
         itk_image = itk.imread(filename)
         print("READ-BON", run_index)
-        itk.imwrite(itk_image, self.user_info['output_name'])
+        itk.imwrite(itk_image, self.user_info["output_name"])
         print("WRITE-BON", run_index)
         self.user_output.vpg.store_data(run_index, itk_image)
         print("STOREDATA-BON", run_index)

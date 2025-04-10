@@ -109,12 +109,13 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(const G4Run *run) {}
 void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
     const G4Event *event) {
   incidentParticles++;
-  creationtime = event->GetPrimaryVertex()->GetT0(); 
+  creationtime = event->GetPrimaryVertex()->GetT0();
 }
 
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   // If the particule treated is not a neutron, no stepping action
-  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() != "neutron") {
+  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
+      "neutron") {
     return;
   }
 
@@ -132,7 +133,9 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
     // verifying if it's a gamma and that it's created by neutron inelastic
     // interaction
-    if ((secondary_def != G4Gamma::Gamma()) || (secondary->GetCreatorProcess()->GetProcessName() != "neutronInelastic")) {
+    if ((secondary_def != G4Gamma::Gamma()) ||
+        (secondary->GetCreatorProcess()->GetProcessName() !=
+         "neutronInelastic")) {
       continue;
     }
 
@@ -163,7 +166,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     // defining the range and the width
     G4double energy_range = 10.0 * CLHEP::MeV;
     G4double widthenergy = (energy_range / Nbbinsenergy);
-    
+
     // Calculate the bin index directly
     int bin0 = static_cast<int>(energyPG / widthenergy);
     if (bin0 >= Nbbinsenergy) {
@@ -210,8 +213,8 @@ void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
   for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
     it.Set(it.Get() / incidentParticles);
   }
-  std::cout<<"incident proton : "<<incidentParticles<<std::endl;
-  std::cout<<"inelastic collision of neutron"<<norm<<std::endl;
+  std::cout << "incident proton : " << incidentParticles << std::endl;
+  std::cout << "inelastic collision of neutron" << norm << std::endl;
 }
 
 std::string GateVoxelizedPromptGammaTLEActor::GetOutputImage() {
