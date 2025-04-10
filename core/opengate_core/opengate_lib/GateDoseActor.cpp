@@ -296,7 +296,7 @@ double GateDoseActor::ComputeMeanUncertainty() {
 
     if (val > max_edep * fThreshEdepPerc) {
       val /= n;
-      n_voxel_unc++;
+
       double val_squared_mean = cpp_edep_squared_image->GetPixel(index_f) / n;
 
       double unc_i = (1.0 / (n - 1.0)) * (val_squared_mean - pow(val, 2));
@@ -304,6 +304,10 @@ double GateDoseActor::ComputeMeanUncertainty() {
         std::cout << "unc_i: " << unc_i << std::endl;
         std::cout << "edep: " << val << std::endl;
         std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+        std::cout << "unc_i < 0 for this voxel. Value will not be included in "
+                     "the mean unc calculation"
+                  << std::endl;
+        continue;
       }
 
       unc_i = sqrt(unc_i) / (val);
@@ -312,7 +316,12 @@ double GateDoseActor::ComputeMeanUncertainty() {
         std::cout << "unc_i: " << unc_i << std::endl;
         std::cout << "edep: " << val << std::endl;
         std::cout << "edep_squared_mean: " << val_squared_mean << std::endl;
+        std::cout << "unc_i > 1 for this voxel. Value will not be included in "
+                     "the mean unc calculation"
+                  << std::endl;
+        continue;
       }
+      n_voxel_unc++;
       mean_unc += unc_i;
     }
   };
