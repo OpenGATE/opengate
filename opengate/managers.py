@@ -61,6 +61,7 @@ from .geometry.volumes import (
     VolumeBase,
     BoxVolume,
     SphereVolume,
+    EllipsoidVolume,
     TrapVolume,
     ImageVolume,
     TubsVolume,
@@ -1011,6 +1012,7 @@ class VolumeManager(GateObject):
     volume_types = {
         "BoxVolume": BoxVolume,
         "SphereVolume": SphereVolume,
+        "EllipsoidVolume": EllipsoidVolume,
         "TrapVolume": TrapVolume,
         "ImageVolume": ImageVolume,
         "TubsVolume": TubsVolume,
