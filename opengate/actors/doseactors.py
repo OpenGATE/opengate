@@ -682,7 +682,8 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     """TLE = Track Length Estimator"""
 
     energy_min: float
-    energy_max: float
+    range_type: str
+    max_range: float
     database: str
 
     user_info_defaults = {
@@ -690,10 +691,16 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
             0.0,
             {"doc": "Kill the gamma if below this energy"},
         ),
-        "energy_max": (
-            1.0 * g4_units.MeV,
+        "tle_threshold": (
+            np.inf,
             {
-                "doc": "Above this energy, do not perform TLE (TLE is only relevant for low energy gamma)"
+                "doc": "Define a criterium to enable TLE or not. It can be in terms of gamma energy or in secondary particle range depending on the provided tle_threshold_type"
+            },
+        ),
+        "tle_threshold_type": (
+            "None",
+            {
+                "doc": "Define the type of range lim provided to hTLE. It could be applied without threshold (None), by energy (energy), or by the range of an electron with the full gamma energy (max range) or the average transfered energy (average range)."
             },
         ),
         "database": (
@@ -709,10 +716,7 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
         g4.GateTLEDoseActor.__init__(self, self.user_info)
         self.AddActions(
             {
-                "BeginOfRunActionMasterThread",
-                "EndOfRunActionMasterThread",
                 "BeginOfRunAction",
-                "EndOfRunAction",
                 "BeginOfEventAction",
                 "SteppingAction",
                 "PreUserTrackingAction",

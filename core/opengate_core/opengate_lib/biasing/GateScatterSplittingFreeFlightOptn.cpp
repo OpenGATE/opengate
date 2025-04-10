@@ -118,7 +118,8 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
       // Seems that this pointer is free by G4
       fUserTrackInformation = new GateUserTrackInformation();
-      fUserTrackInformation->fInfoType = cScatterSplittingFreeFlightType;
+      fUserTrackInformation->SetGateTrackInformation(
+          fActor, cScatterSplittingFreeFlightType);
       gammaTrack->SetUserInformation(fUserTrackInformation);
 
       // Add the track in the stack
