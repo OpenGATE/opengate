@@ -691,10 +691,11 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
             0.0,
             {"doc": "Kill the gamma if below this energy"},
         ),
-
         "tle_threshold": (
             np.inf,
-            {"doc": "Define a criterium to enable TLE or not. It can be in terms of gamma energy or in secondary particle range depending on the provided tle_threshold_type"},
+            {
+                "doc": "Define a criterium to enable TLE or not. It can be in terms of gamma energy or in secondary particle range depending on the provided tle_threshold_type"
+            },
         ),
         "tle_threshold_type": (
             "None",

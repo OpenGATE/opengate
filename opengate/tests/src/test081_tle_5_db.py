@@ -61,7 +61,7 @@ if __name__ == "__main__":
     tle_dose_actor.spacing = [x / y for x, y in zip(waterbox_size, tle_dose_actor.size)]
     tle_dose_actor.database = "EPDL"
     tle_dose_actor.tle_threshold_type = "energy"
-    tle_dose_actor.tle_threshold = 1*MeV
+    tle_dose_actor.tle_threshold = 1 * MeV
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
     print(f"TLE Dose actor size : {waterbox_size} mm")

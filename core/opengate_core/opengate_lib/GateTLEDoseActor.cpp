@@ -8,6 +8,7 @@
 #include "GateTLEDoseActor.h"
 #include "G4Electron.hh"
 #include "G4EmCalculator.hh"
+#include "G4Exception.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4RandomTools.hh"
 #include "G4RunManager.hh"
@@ -17,7 +18,6 @@
 #include "GateHelpersImage.h"
 #include "GateMaterialMuHandler.h"
 #include "GateUserTrackInformation.h"
-#include "G4Exception.hh"
 
 #include <iostream>
 #include <itkAddImageFilter.h>
@@ -35,7 +35,7 @@ GateTLEDoseActor::GateTLEDoseActor(py::dict &user_info)
 
 void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
   GateDoseActor::InitializeUserInfo(user_info);
-  fStrTLEThresholdType= py::cast<std::string>(user_info["tle_threshold_type"]);
+  fStrTLEThresholdType = py::cast<std::string>(user_info["tle_threshold_type"]);
   fTLEThreshold = py::cast<double>(user_info["tle_threshold"]);
   fEnergyMin = py::cast<double>(user_info["energy_min"]);
   fDatabase = py::cast<std::string>(user_info["database"]);
@@ -43,19 +43,15 @@ void GateTLEDoseActor::InitializeUserInfo(py::dict &user_info) {
     fTLEThresholdType = 0;
   } else if (fStrTLEThresholdType == "average range") {
     fTLEThresholdType = 1;
-  }
-  else if (fStrTLEThresholdType == "energy"){
+  } else if (fStrTLEThresholdType == "energy") {
     fTLEThresholdType = 2;
-  }
-  else if (fStrTLEThresholdType == "None"){
+  } else if (fStrTLEThresholdType == "None") {
     fTLEThresholdType = 3;
-  }
-  else{
-     G4ExceptionDescription ed;
-      ed <<"You did not define a correct threshold type"<< G4endl;
-      G4Exception(
-          "GateTLEDoseActor::InitializeUserInfo",
-            "TLE.LV1", FatalException , ed);
+  } else {
+    G4ExceptionDescription ed;
+    ed << "You did not define a correct threshold type" << G4endl;
+    G4Exception("GateTLEDoseActor::InitializeUserInfo", "TLE.LV1",
+                FatalException, ed);
   }
 }
 
@@ -73,7 +69,7 @@ void GateTLEDoseActor::SetTLETrackInformationOnSecondaries(G4Step *step,
         trackInfo =
             dynamic_cast<GateUserTrackInformation *>(sec->GetUserInformation());
       }
-      trackInfo->SetGateTrackInformation(this,info);
+      trackInfo->SetGateTrackInformation(this, info);
       sec->SetUserInformation(trackInfo);
     }
   }
@@ -85,8 +81,8 @@ G4double GateTLEDoseActor::FindEkinMaxForTLE() {
   G4double ekinMax = 0;
   for (G4int i = 0; i < nbOfMaterials; i++) {
     G4Material *currentMat = (*matTable)[i];
-    G4double ekin =
-        fEmCalc->GetKinEnergy(fTLEThreshold, G4Electron::Definition(), currentMat);
+    G4double ekin = fEmCalc->GetKinEnergy(fTLEThreshold,
+                                          G4Electron::Definition(), currentMat);
     if (i == 0) {
       ekinMax = ekin;
     }
@@ -118,20 +114,21 @@ void GateTLEDoseActor::BeginOfEventAction(const G4Event *event) {
     if (fEmCalc == 0) {
       G4double ekinMax = 0;
       fEmCalc = new G4EmCalculator;
-      if ((fTLEThresholdType == 0) || (fTLEThresholdType == 1)){
+      if ((fTLEThresholdType == 0) || (fTLEThresholdType == 1)) {
         if (fTLEThreshold != std::numeric_limits<double>::infinity()) {
           ekinMax = FindEkinMaxForTLE();
         } else {
           ekinMax = 50 * CLHEP::MeV;
         }
-      }
-      else if (fTLEThresholdType == 2){
+      } else if (fTLEThresholdType == 2) {
         ekinMax = fTLEThreshold;
       }
       if (fTLEThresholdType <= 2)
-        fMaterialMuHandler = GateMaterialMuHandler::GetInstance(fDatabase, ekinMax);
-      else{
-        fMaterialMuHandler = GateMaterialMuHandler::GetInstance(fDatabase, 5* CLHEP::MeV);
+        fMaterialMuHandler =
+            GateMaterialMuHandler::GetInstance(fDatabase, ekinMax);
+      else {
+        fMaterialMuHandler =
+            GateMaterialMuHandler::GetInstance(fDatabase, 5 * CLHEP::MeV);
       }
     }
   }
@@ -197,44 +194,47 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
   if (step->GetTrack()->GetDefinition()->GetParticleName() == "gamma") {
     G4bool tleCondition = false;
     if ((fTLEThresholdType <= 2)) {
-      if ((fTLEThresholdType == 0) || (fTLEThresholdType == 1)){
+      if ((fTLEThresholdType == 0) || (fTLEThresholdType == 1)) {
         auto sec_ekin = energy;
         if (fTLEThresholdType == 1) {
-          mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(pre_step->GetMaterialCutsCouple(), energy);
+          mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
+              pre_step->GetMaterialCutsCouple(), energy);
         }
 
-        if((energy != l.fPreviousEnergy) || ((pre_step->GetStepStatus() == 1) && (currentMat->GetName() != l.fPreviousMatName))) {
-            if (fTLEThresholdType == 1) {
-              mu_over_rho = fMaterialMuHandler->GetMuOverRho(pre_step->GetMaterialCutsCouple(), energy);
-              sec_ekin = energy * mu_en_over_rho / mu_over_rho;
-            }
-            l.fCsda = fEmCalc->GetCSDARange(sec_ekin, G4Electron::Definition(),currentMat);
-            l.fPreviousMatName = currentMat->GetName();
-            l.fPreviousEnergy = energy;
+        if ((energy != l.fPreviousEnergy) ||
+            ((pre_step->GetStepStatus() == 1) &&
+             (currentMat->GetName() != l.fPreviousMatName))) {
+          if (fTLEThresholdType == 1) {
+            mu_over_rho = fMaterialMuHandler->GetMuOverRho(
+                pre_step->GetMaterialCutsCouple(), energy);
+            sec_ekin = energy * mu_en_over_rho / mu_over_rho;
           }
+          l.fCsda = fEmCalc->GetCSDARange(sec_ekin, G4Electron::Definition(),
+                                          currentMat);
+          l.fPreviousMatName = currentMat->GetName();
+          l.fPreviousEnergy = energy;
+        }
         tleCondition = l.fCsda / CLHEP::mm <= fTLEThreshold;
       }
-    
-      else if (fTLEThresholdType == 2){
-        tleCondition = energy/ CLHEP::MeV <= fTLEThreshold/ CLHEP::MeV;
 
+      else if (fTLEThresholdType == 2) {
+        tleCondition = energy / CLHEP::MeV <= fTLEThreshold / CLHEP::MeV;
       }
-    //std::cout<<energy<<"   "<<fEnergyMax<<"   "<<tleCondition<<std::endl;
-    //std::cout <<tleCondition<<"    "<<energy/ CLHEP::MeV<<"    "<<fTLEThreshold/ CLHEP::MeV<<std::endl;
-    if (tleCondition) {
+      // std::cout<<energy<<"   "<<fEnergyMax<<"   "<<tleCondition<<std::endl;
+      // std::cout <<tleCondition<<"    "<<energy/ CLHEP::MeV<<"
+      // "<<fTLEThreshold/ CLHEP::MeV<<std::endl;
+      if (tleCondition) {
+        l.fIsTLEGamma = true;
+        SetTLETrackInformationOnSecondaries(step, true, nbSec);
+      } else {
+        l.fIsTLEGamma = false;
+        SetTLETrackInformationOnSecondaries(step, false, nbSec);
+        return GateDoseActor::SteppingAction(step);
+      }
+    } else {
       l.fIsTLEGamma = true;
-      SetTLETrackInformationOnSecondaries(step, true, nbSec);
-    } 
-    else {
-      l.fIsTLEGamma = false;
-      SetTLETrackInformationOnSecondaries(step, false, nbSec);
-      return GateDoseActor::SteppingAction(step);
+      l.fIsTLESecondary = true;
     }
-  }
-  else {
-    l.fIsTLEGamma = true;
-    l.fIsTLESecondary = true;
-  }
   }
 
   // For non-gamma particle, no TLE
@@ -244,11 +244,11 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
     }
     return GateDoseActor::SteppingAction(step);
   }
-  //std::cout<<"TLE"<<std::endl;
+  // std::cout<<"TLE"<<std::endl;
   auto weight = step->GetTrack()->GetWeight();
   auto step_length = step->GetStepLength();
   auto density = pre_step->GetMaterial()->GetDensity();
-  if (fTLEThresholdType != 1){
+  if (fTLEThresholdType != 1) {
     mu_en_over_rho = fMaterialMuHandler->GetMuEnOverRho(
         pre_step->GetMaterialCutsCouple(), energy);
   }
@@ -259,7 +259,7 @@ void GateTLEDoseActor::SteppingAction(G4Step *step) {
 
   // Kill photon below a given energy
   if (energy <= fEnergyMin) {
-    edep = weight*energy;
+    edep = weight * energy;
     step->GetTrack()->SetTrackStatus(fStopAndKill);
   }
   const double dose = edep / density;
