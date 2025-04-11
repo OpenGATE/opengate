@@ -156,5 +156,6 @@ class VoxelizedPromptGammaTLEActor(
         g4.GateVoxelizedPromptGammaTLEActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
 
+
 process_cls(TLEDoseActor)
 process_cls(VoxelizedPromptGammaTLEActor)
