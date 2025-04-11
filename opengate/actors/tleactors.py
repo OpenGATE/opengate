@@ -147,7 +147,7 @@ class VoxelizedPromptGammaTLEActor(
         # Save the image
         filename = g4.GateVoxelizedPromptGammaTLEActor.GetOutputImage(self)
         itk_image = itk.imread(filename)
-        itk.imwrite(itk_image, self.user_info['output_name'])
+        itk.imwrite(itk_image, self.user_info["output_name"])
         self.user_output.correl.store_data(run_index, itk_image)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
