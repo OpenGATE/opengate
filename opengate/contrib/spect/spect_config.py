@@ -1,4 +1,6 @@
 import opengate as gate
+from opengate.contrib.spect.spect_helpers import *
+from opengate.actors.biasingactors import distance_dependent_angle_tolerance
 from opengate.exception import fatal
 from opengate import Simulation, g4_units
 from box import Box
@@ -7,6 +9,8 @@ import opengate.contrib.spect.siemens_intevo as intevo
 from opengate.image import read_image_info
 from opengate.utility import get_basename_and_extension
 from opengate.sources.utility import set_source_energy_spectrum
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class SPECTConfig:
@@ -216,6 +220,13 @@ class DetectorConfig:
         # FIXME veriton
         return m
 
+    def get_detector_normal(self):
+        if self.model == "nm670":
+            return [0, 0, -1]
+        if self.model == "intevo":
+            return [1, 0, 0]
+        fatal(f"Unknown detector model: {self.model}")
+
     def get_proj_filename(self, i):
         filename, ext = get_basename_and_extension(self.spect_config.output_basename)
         f = f"{filename}_{i}{ext}"
@@ -228,6 +239,9 @@ class DetectorConfig:
                 f"Known models are: {self.available_models}"
             )
 
+        self.detectors = []
+        self.crystals = []
+        self.digitizers = []
         m = self.get_model_module()
         sim = self.spect_config.sim
 
@@ -436,25 +450,34 @@ class AcquisitionConfig:
             i += 1
 
 
-def spect_freeflight_run(sc, options, fake=False):
+def spect_freeflight_run(sc, options):
 
     # prepare output dict
     output = Box()
-    output.nb_detectors = len(sc.detector_config.detectors)
+    out = sc.output_folder.resolve()
+    output.options = options
 
     # run 1 = primary
     sim = sc.create_simulation(number_of_threads=options.number_of_threads, visu=False)
     source = sc.source_config.source
     sim.output_dir = f"{sim.output_dir}/freeflight_primary"
-    ff = spect_freeflight_configure_primary(sim, sc, options)
-    if not fake:
-        sim.run(start_new_process=True)
+    spect_freeflight_initialize_primary(sim, sc, options)
+    sim.run(start_new_process=True)
+
+    # store some output information
+    output.nb_detectors = len(sc.detector_config.detectors)
     output.prim = Box()
     output.prim.stats = sc.stats.stats.merged_data
     output.prim.activity = source.activity / g4_units.Bq * sim.number_of_threads
     output.prim.proj_paths = [
-        str(d.get_output_path("counts")) for d in sc.detector_config.digitizers
+        str(d.get_output_path("counts").relative_to(out))
+        for d in sc.detector_config.digitizers
     ]
+    output.prim.squared_proj_paths = [
+        str(d.get_output_path("squared_counts").relative_to(out))
+        for d in sc.detector_config.digitizers
+    ]
+    print(sc.stats)
 
     # run 2 = scatter
     print()
@@ -463,21 +486,28 @@ def spect_freeflight_run(sc, options, fake=False):
     sim = sc.create_simulation(number_of_threads=options.number_of_threads, visu=False)
     source = sc.source_config.source
     sim.output_dir = f"{sim.output_dir}/freeflight_scatter"
-    ff = spect_freeflight_configure_scatter(sim, sc, options)
-    if not fake:
-        sim.run(start_new_process=True)
+    ff = spect_freeflight_initialize_scatter(sim, sc, options)
+    sim.run(start_new_process=True)
+
+    # store some output information
     output.scatter = Box()
     output.scatter.stats = sc.stats.stats.merged_data
     output.scatter.activity = source.activity / g4_units.Bq * sim.number_of_threads
     output.scatter.proj_paths = [
-        str(d.get_output_path("counts")) for d in sc.detector_config.digitizers
+        str(d.get_output_path("counts").relative_to(out))
+        for d in sc.detector_config.digitizers
     ]
+    output.scatter.squared_proj_paths = [
+        str(d.get_output_path("squared_counts").relative_to(out))
+        for d in sc.detector_config.digitizers
+    ]
+    print(sc.stats)
     print(ff)
 
     return output
 
 
-def spect_freeflight_configure(sim):
+def spect_freeflight_initialize(sim):
     # Weights MUST be in the digitizer
     hits_actors = sim.actor_manager.find_actors("hits")
     for ha in hits_actors:
@@ -489,27 +519,30 @@ def spect_freeflight_configure(sim):
     sim.g4_commands_before_init.append(s)
 
 
-def spect_freeflight_configure_primary(sim, sc, options):
-    spect_freeflight_configure(sim)
+def spect_freeflight_initialize_primary(sim, sc, options):
+    spect_freeflight_initialize(sim)
     options = Box(options)
 
     # get some information from spect config
     source = sc.source_config.source
-    phantom = sc.phantom_config.phantom
-    detector_names = [d.name for d in sc.detector_config.detectors]
     digitizers = sc.detector_config.digitizers
+    crystal_names = [c.name for c in sc.detector_config.crystals]
 
-    # run 1 = primary
+    # add the ff actor
+    n = sc.detector_config.get_detector_normal()
     ff = sim.add_actor("GammaFreeFlightActor", f"{sc.simu_name}_ff")
     ff.attached_to = "world"
-    for vol in sc.detector_config.crystals:
-        ff.ignored_volumes.append(vol.name)
+    ff.ignored_volumes = crystal_names
     source.direction.acceptance_angle.intersection_flag = True
+    source.direction.acceptance_angle.volumes = crystal_names
     source.direction.acceptance_angle.normal_flag = True
-    source.direction.acceptance_angle.volumes = detector_names
-    # FIXME warning the normal vector depends on the spect system !
-    source.direction.acceptance_angle.normal_vector = [1, 0, 0]
+    source.direction.acceptance_angle.normal_vector = n
     source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
+    source.direction.acceptance_angle.distance_dependent_normal_tolerance = False
+    source.direction.acceptance_angle.normal_tolerance_min_distance = (
+        options.angle_tolerance_min_distance
+    )
+
     for d in digitizers:
         d.squared_counts.active = True
     source.activity = options.primary_activity
@@ -517,33 +550,116 @@ def spect_freeflight_configure_primary(sim, sc, options):
     return ff
 
 
-def spect_freeflight_configure_scatter(sim, sc, options):
-    spect_freeflight_configure(sim)
+def spect_freeflight_initialize_scatter(sim, sc, options):
+    spect_freeflight_initialize(sim)
     options = Box(options)
 
     # get some information from spect config
     source = sc.source_config.source
-    detector_names = [d.name for d in sc.detector_config.detectors]
     digitizers = sc.detector_config.digitizers
+    crystal_names = [c.name for c in sc.detector_config.crystals]
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
     # run 1 = primary
+    n = sc.detector_config.get_detector_normal()
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", f"{sc.simu_name}_ff")
     ff.attached_to = "world"
-    for vol in sc.detector_config.crystals:
-        ff.ignored_volumes.append(vol.name)
+    ff.ignored_volumes = crystal_names
     ff.compton_splitting_factor = options.compton_splitting_factor
     ff.rayleigh_splitting_factor = options.rayleigh_splitting_factor
     ff.max_compton_level = options.max_compton_level
     ff.acceptance_angle.intersection_flag = True
-    ff.acceptance_angle.volumes = detector_names
+    ff.acceptance_angle.volumes = crystal_names
     ff.acceptance_angle.normal_flag = True
-    # FIXME warning the normal vector depends on the spect system !
-    ff.acceptance_angle.normal_vector = [1, 0, 0]
-    ff.acceptance_angle.normal_tolerance = options.angle_tolerance
+    ff.acceptance_angle.normal_vector = n
+    source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
+    source.direction.acceptance_angle.normal_tolerance_min_distance = (
+        options.angle_tolerance_min_distance
+    )
+    """ REMOVED because too slow
+    ff.acceptance_angle.distance_dependent_normal_tolerance = True
+    tol = options.scatter_angle_tolerance
+    ff.acceptance_angle.distance1 = tol[0]
+    ff.acceptance_angle.angle1 = tol[1]
+    ff.acceptance_angle.distance2 = tol[2]
+    ff.acceptance_angle.angle2 = tol[3]
+    """
+
     for d in digitizers:
         d.squared_counts.active = True
     source.activity = options.scatter_activity
 
     return ff
+
+
+def spect_freeflight_merge(output_data, output_folder, n_target):
+    output_data = Box(output_data)
+    nd = output_data.nb_detectors
+    n_prim = output_data.prim.activity
+    n_scatter = output_data.scatter.activity
+
+    for i in range(nd):
+        # primary
+        img = output_folder / output_data["prim"]["proj_paths"][i]
+        sq_img = output_folder / output_data["prim"]["squared_proj_paths"][i]
+        out = img.parent / f"relative_uncertainty_primary_{i}.mhd"
+        print(img, out)
+        _, prim, prim_squared = history_rel_uncertainty_from_files(
+            img, sq_img, n_prim, out
+        )
+        # scatter
+        img = output_folder / output_data["scatter"]["proj_paths"][i]
+        sq_img = output_folder / output_data["scatter"]["squared_proj_paths"][i]
+        out = img.parent / f"relative_uncertainty_scatter_{i}.mhd"
+        print(img, out)
+        _, scatter, scatter_squared = history_rel_uncertainty_from_files(
+            img, sq_img, n_scatter, out
+        )
+        # combined
+        uncert, mean = history_ff_combined_rel_uncertainty(
+            prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
+        )
+        scaling = n_target / n_prim
+        mean = mean * scaling
+        print(f"Primary n = {n_prim}  Scatter n = {n_scatter}  Target n = {n_target}")
+        print(f"Primary to scatter ratio = {n_prim / n_scatter:.01f}")
+        print(f"Scaling to target        = {scaling:.01f}")
+
+        # write combined image
+        prim_img = sitk.ReadImage(img)
+        img = sitk.GetImageFromArray(mean)
+        img.CopyInformation(prim_img)
+        fn = output_folder / f"mean_{i}.mhd"
+        sitk.WriteImage(img, fn)
+        print(fn)
+
+        # write combined relative uncertainty
+        img = sitk.GetImageFromArray(uncert)
+        img.CopyInformation(prim_img)
+        fn = output_folder / f"relative_uncertainty_{i}.mhd"
+        sitk.WriteImage(img, fn)
+        print(fn)
+
+
+def plot_ddaa(acceptance_angle, output_filename=None):
+    # plot dd
+    a1 = acceptance_angle.angle1
+    a2 = acceptance_angle.angle2
+    d1 = acceptance_angle.distance1
+    d2 = acceptance_angle.distance2
+    distances = np.linspace(d1 / 2, d2 * 2, 200)
+    angles = [distance_dependent_angle_tolerance(a1, a2, d1, d2, d) for d in distances]
+
+    cm = g4_units.cm
+    plt.figure(figsize=(8, 6))
+    plt.plot(distances / cm, np.degrees(angles), label="Distance vs Angle")
+    plt.xlabel("Distance (cm)")
+    plt.ylabel("Angle (degrees)")
+    plt.title("Distance vs Angle Tolerance")
+    plt.grid()
+    plt.legend()
+    # plt.show()
+    if output_filename is not None:
+        plt.savefig(output_filename)
+    return plt

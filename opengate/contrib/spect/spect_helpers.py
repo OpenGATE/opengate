@@ -341,11 +341,17 @@ def batch_rel_uncertainty_from_files(
     return mean, uncert
 
 
+def compute_efficiency_from_files(filename, duration):
+    img_ref = sitk.ReadImage(str(filename))
+    np_uncert = sitk.GetArrayFromImage(img_ref)
+    return compute_efficiency(np_uncert, duration)
+
+
 def compute_efficiency(np_uncert, duration):
     ones = np.ones_like(np_uncert)
     eff = np.divide(
         ones,
-        np.power(np_uncert, 2) * duration,
+        (np_uncert * np_uncert) * duration,
         out=np.zeros_like(np_uncert),
         where=np_uncert != 0,
     )
@@ -389,22 +395,22 @@ def history_rel_uncertainty_from_files(
 
 
 def history_ff_combined_rel_uncertainty(
-    prim_mean, prim_squared, scatter_mean, scatter_squared, n_prim, n_scatter
+    vprim, vprim_squared, vscatter, vscatter_squared, n_prim, n_scatter
 ):
-    # means
-    prim_mean = prim_mean / n_prim
-    prim_squared = prim_squared / n_prim
-    scatter_mean = scatter_mean / n_scatter
-    scatter_squared = scatter_squared / n_scatter
+
+    # means for one event
+    prim = vprim / n_prim
+    prim_squared = vprim_squared / n_prim
+    scatter = vscatter / n_scatter
+    scatter_squared = vscatter_squared / n_scatter
 
     # variances
-    prim_var = (prim_squared - np.power(prim_mean, 2)) / (n_prim - 1)
-    scatter_var = (scatter_squared - np.power(scatter_mean, 2)) / (n_scatter - 1)
+    prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
+    scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
 
     # combine uncertainty
-    r = n_prim / n_scatter
-    mean = prim_mean + scatter_mean * r
-    variance = prim_var + scatter_var * np.power(r, 2)
+    mean = prim + scatter
+    variance = prim_var + scatter_var
     uncert = np.divide(
         np.sqrt(variance),
         mean,

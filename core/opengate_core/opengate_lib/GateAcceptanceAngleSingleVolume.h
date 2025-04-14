@@ -30,7 +30,8 @@ protected:
   bool fIntersectionFlag;
   bool fNormalFlag;
   double fNormalAngleTolerance;
-  bool fDistanceDependentAngleTolerance;
+  bool fDistanceDependentAngleToleranceFlag;
+  double fMinDistanceNormalAngleTolerance;
   double fAngle1;
   double fAngle2;
   double fDistance1;

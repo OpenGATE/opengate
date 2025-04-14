@@ -45,8 +45,7 @@ void GateDigitizerProjectionActor::SetPhysicalVolumeName(
 
 void GateDigitizerProjectionActor::EnableSquaredImage(const bool b) {
   fEnableSquaredImage = b;
-
-  // FIXME check weight exist ?
+  // FIXME check if weight exists ?
 }
 
 // Called when the simulation start

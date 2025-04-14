@@ -1036,7 +1036,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             )
             self.EnableSquaredImage(True)
 
-            # keep initial origin
+        # keep initial origin
         self.start_output_origin = list(
             self.user_output.counts.data_per_run[0].get_image_properties()[0].origin
         )
@@ -1076,12 +1076,6 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             self.user_output.squared_counts.merged_data.SetOrigin(list(origin))
             self.user_output.squared_counts.data_per_run.pop(0)
             self.user_output.squared_counts.write_data_if_requested(which="merged")
-
-        # uncertainty
-        print("TODO : compute uncertainty")
-        """if self.user_output.uncertainty.get_active():
-            m = get_py_image_from_cpp_image(self.fImage)
-            sq = get_py_image_from_cpp_image(self.fSquaredImage)"""
 
 
 class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):

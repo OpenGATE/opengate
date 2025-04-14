@@ -11,7 +11,6 @@ def generic_source_default_aa():
     # aa = Angular Acceptance
     # this is used to control the direction of events in
     # the generic source, but is also used in the SplitComptonActor
-    deg = g4_units.deg
     return Box(
         {
             "skip_policy": "SkipEvents",
@@ -19,7 +18,8 @@ def generic_source_default_aa():
             "intersection_flag": False,
             "normal_flag": False,
             "normal_vector": [0, 0, 1],
-            "normal_tolerance": 3 * deg,
+            "normal_tolerance": 3 * g4_units.deg,
+            "normal_tolerance_min_distance": 6 * g4_units.cm,
             "distance_dependent_normal_tolerance": False,
             "angle1": 90 * g4_units.degree,
             "distance1": 0 * g4_units.cm,
@@ -33,6 +33,8 @@ def distance_dependent_angle_tolerance(a1, a2, d1, d2, dist):
     a = (1 / np.tan(a1) - 1 / np.tan(a2)) / (d1 - d2)
     b = 1 / np.tan(a1) - a * d1
     tol = np.arctan(1.0 / (a * dist + b))
+    if tol < 0:
+        tol = 90 * g4_units.deg
     return tol
 
 
@@ -238,14 +240,14 @@ class ActorOutputScatterSplittingFreeFlightActor(ActorOutputBase):
                 + self.split_info.nb_rayl_splits
                 * self.split_info.rayleigh_splitting_factor
             )
-        s += f"Fraction of ff: {f*100:.2f} %\n"
+        s += f"Fraction of AA: {f*100:.2f} %\n"
         if self.split_info.nb_compt_tracks < 1 and self.split_info.nb_rayl_tracks < 1:
             f = 0
         else:
             f = self.split_info.nb_tracks_with_free_flight / (
                 self.split_info.nb_compt_tracks + self.split_info.nb_rayl_tracks
             )
-        s += f"Check split/ff: {f*100:.2f} %\n"
+        s += f"Check split vs ff (should be 100): {f*100:.2f} %\n"
         return s
 
 
