@@ -102,7 +102,6 @@ class ARFTrainingDatasetActor(ActorBase, g4.GateARFTrainingDatasetActor):
         ActorBase.initialize(self)
         self.check_energy_window_actor()
         # initialize C++ side
-        print(self.plane_axis)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 

@@ -342,11 +342,11 @@ def test_spect_proj(sim, paths, proj, version="3"):
     print()
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
-    fname = sim.get_actor("Projection").get_output_path()
+    fname = sim.get_actor("Projection").get_output_path("counts")
     fname_stem = Path(fname).stem
     fname_offset = fname_stem + "_offset.mhd"
     img = itk.imread(str(paths.output / fname))
-    spacing = np.array(proj.projection.image.GetSpacing())  # user_info.spacing)
+    spacing = np.array(proj.counts.image.GetSpacing())  # user_info.spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

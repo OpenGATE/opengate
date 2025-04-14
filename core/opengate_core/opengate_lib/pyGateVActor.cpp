@@ -25,7 +25,7 @@ namespace py = pybind11;
  * (but it will be slower, especially for steps)
  */
 
-// for the moment, we dont need that. So it is commented
+// for the moment, we don't need that. So it is commented
 
 class PyGateVActor : public GateVActor {
 public:
@@ -71,14 +71,17 @@ public:
 
 void init_GateVActor(py::module &m) {
 
-  py::class_<GateVActor, PyGateVActor, // do not inherit from trampoline for
-                                       // the moment (not needed)
-             std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
+  // do not inherit from trampoline for the moment (not needed)
+  py::class_<GateVActor, PyGateVActor //>(
+             >(m, "GateVActor")
+      //,std::unique_ptr<GateVActor, py::nodelete>>(m, "GateVActor")
+      //>(m, "GateVActor")
       .def(py::init<py::dict &>())
       .def("RegisterSD", &GateVActor::RegisterSD)
       //      .def_readonly("fActions", &GateVActor::fActions) // avoid wrapping
       //      this -> problems with pickle
       .def_readwrite("fFilters", &GateVActor::fFilters)
+      .def("Close", &GateVActor::Close)
       .def("InitializeCpp", &GateVActor::InitializeCpp)
       .def("InitializeUserInfo", &GateVActor::InitializeUserInfo)
       .def("AddActions", &GateVActor::AddActions)

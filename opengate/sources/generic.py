@@ -15,6 +15,9 @@ from ..exception import fatal, warning
 
 
 def _generic_source_default_position():
+    """
+    types {"sphere", "point", "box", "disc", "cylinder"};
+    """
     return Box(
         {
             "type": "point",

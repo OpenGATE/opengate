@@ -443,12 +443,17 @@ class ActorBase(GateObject):
         return self.simulation.volume_manager.get_volume(self.attached_to)
 
     def close(self):
+        # first, Close the cpp part of the actor
+        self.Close()
+        # close all outputs
         for uo in self.user_output.values():
             uo.close()
+        # remove the g4 objects and the actor engine pointer
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
         self.actor_engine = None
+        # close the base GateObject
         super().close()
 
     def initialize(self):

@@ -47,12 +47,14 @@ public:
   // Called when the simulation end (master thread only)
   virtual void EndSimulationAction() {}
 
+  // Call when the python actor is closed
+  virtual void Close() {}
+
   // Called by Geant4 every hit. Call SteppingAction and return True
   // Take care about the filters
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
   /*
-
    ************ WARNING ************
 
    * In multi-thread mode, there is (for the moment) a single actor object
@@ -116,7 +118,9 @@ public:
 
   void AddActorOutputInfo(const std::string &outputName);
 
-  bool IsStepExitVolume(const G4Step *step) const;
+  static bool IsStepEnteringVolume(const G4Step *step,
+                                   const std::vector<std::string> &volumes);
+  bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
   inline static std::string fOutputNameRoot = "root_output";
 
@@ -147,6 +151,9 @@ public:
 
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
+
+  // Name of the actor
+  std::string fActorName;
 
   // Is the boolean operator between filters an 'and' ?
   bool fOperatorIsAnd;

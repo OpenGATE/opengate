@@ -132,15 +132,16 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   auto &l = fThreadLocalData.Get();
 
   // Particle enters the volume if the pre step is at the volume boundary
-  bool entering = step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
+  const bool entering =
+      step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
 
   // Particle exits the volume if the post step is at the volume boundary or at
   // the world boundary if the phsp is attached to the world
-  bool exiting = IsStepExitVolume(step);
+  const bool exiting = IsStepExitingAttachedVolume(step);
 
   // When this is the first time we see this particle fFirstStepInVolume is true
   // We then set it to false
-  bool first_step_in_volume = l.fFirstStepInVolume;
+  const bool first_step_in_volume = l.fFirstStepInVolume;
   l.fFirstStepInVolume = false;
 
   // Keep or ignore ?
@@ -161,11 +162,12 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 
   // debug
   if (fDebug) {
-    auto s = fHits->DumpLastDigi();
-    auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    const auto s = fHits->DumpLastDigi();
+    const auto id =
+        G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
-    auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
-    auto vol_name = vol->GetName();
+    const auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
+    const auto vol_name = vol->GetName();
     std::string pname = "noproc";
     if (p != nullptr)
       pname = p->GetProcessName();
@@ -196,7 +198,7 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 
     // Except EventPosition
     auto *att = fHits->GetDigiAttribute("EventPosition");
-    auto p = event->GetPrimaryVertex(0)->GetPosition();
+    const auto p = event->GetPrimaryVertex(0)->GetPosition();
     auto &values = att->Get3Values();
     values.back() = p;
 
@@ -208,13 +210,15 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     // Except EventDirection
     att = fHits->GetDigiAttribute("EventDirection");
     auto &values_dir = att->Get3Values();
-    auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
+    const auto d =
+        event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
     values_dir.back() = d;
 
     // Except EventKineticEnergy
     att = fHits->GetDigiAttribute("EventKineticEnergy");
     auto &values_en = att->GetDValues();
-    auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+    const auto e =
+        event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
     values_en.back() = e;
 
     // increase the nb of absorbed events
