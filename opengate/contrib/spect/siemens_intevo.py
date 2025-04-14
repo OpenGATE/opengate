@@ -248,12 +248,12 @@ def add_collimator_lehr(sim, head, debug):
     """
     #########################################################################
     #
-    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # 	Type	|	Diameter	|	Septal thickness	|	No. of holes
     # -----------------------------------------------------------------------
     # 	hex		|	1.11 mm		|	0.16 mm 			|	148000
     #
-    #	y spacing	= diameter + septial = 1.27 mm
-    #	z spacing	= 2 * (diameter + septial) * sin(60) = 2.19970453 mm
+    #	y spacing	= diameter + septal = 1.27 mm
+    #	z spacing	= 2 * (diameter + septal) * sin(60) = 2.19970453 mm
     #
     #	y translation	= y spacing / 2 = 0.635 mm
     #	z translation	= z spacing / 2 = 1.09985 mm
@@ -299,7 +299,7 @@ def add_collimator_melp(sim, head, debug):
     """
     #########################################################################
     #
-    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # 	Type	|	Diameter	|	Septal thickness	|	No. of holes
     # -----------------------------------------------------------------------
     # 	hex		|	2.94 mm		|	1.14 mm 			|	14000
     #
@@ -369,12 +369,12 @@ def add_collimator_he(sim, head, debug):
     """
     #########################################################################
     #
-    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # 	Type	|	Diameter	|	Septal thickness	|	No. of holes
     # -----------------------------------------------------------------------
     # 	hex		|	4.0 mm		|	2.0 mm 				|	8000
     #
-    #	y spacing	= diameter + septial = 6.0 mm
-    #	z spacing	= 2 * (diameter + septial) * sin(60) = 10.39230485 mm
+    #	y spacing	= diameter + Septal = 6.0 mm
+    #	z spacing	= 2 * (diameter + Septal) * sin(60) = 10.39230485 mm
     #
     #	y translation	= y spacing / 2 = 3.0 mm
     #	z translation	= z spacing / 2 = 5.196152423 mm
@@ -1036,6 +1036,7 @@ def add_intevo_digitizer_v3(sim, crystal_name, name):
         "PreStepUniqueVolumeID",
         "PostStepUniqueVolumeID",
         "GlobalTime",
+        "Weight",  # required when using VRT techniques such as Free Flight
     ]
 
     # singles
