@@ -676,6 +676,12 @@ class SphereVolume(RepeatableVolume, solids.SphereSolid):
     """
 
 
+class EllipsoidVolume(RepeatableVolume, solids.EllipsoidSolid):
+    """
+    Volume with an ellipsoid shape.
+    """
+
+
 class TrapVolume(RepeatableVolume, solids.TrapSolid):
     """
     Volume with a generic trapezoidal shape.
@@ -1306,6 +1312,7 @@ process_cls(HexagonVolume)
 process_cls(ConsVolume)
 process_cls(PolyhedraVolume)
 process_cls(SphereVolume)
+process_cls(EllipsoidVolume)
 process_cls(TrapVolume)
 process_cls(TrdVolume)
 process_cls(TubsVolume)

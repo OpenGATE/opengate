@@ -174,6 +174,8 @@ void init_G4RegionStore(py::module &);
 // geometry/solids
 void init_G4Box(py::module &);
 
+void init_G4Ellipsoid(py::module &);
+
 void init_G4Polyhedra(py::module &);
 
 void init_G4Sphere(py::module &);
@@ -486,6 +488,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4RegionStore(m);
 
   init_G4Box(m);
+  init_G4Ellipsoid(m);
   init_G4Polyhedra(m);
   init_G4Sphere(m);
   init_G4Trap(m);
