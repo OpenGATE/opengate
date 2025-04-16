@@ -278,7 +278,7 @@ Half-life
 ---------
 
 You can instruct GATE to decrease the activity according to an exponential
-decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Exmaple:
+decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Example:
 
 .. code-block:: python
 

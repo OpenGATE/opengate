@@ -670,7 +670,7 @@ void GateGenericSource::InitializeEnergy(py::dict puser_info) {
 }
 
 void GateGenericSource::SetLifeTime(G4ParticleDefinition *p) {
-  // Do nothing it the given life-time is negative (default)
+  // Do nothing if the given life-time is negative (default)
   if (fUserParticleLifeTime < 0)
     return;
   // We set the LifeTime as proposed by the user
