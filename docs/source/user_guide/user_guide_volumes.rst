@@ -179,6 +179,7 @@ Note that the above properties are read-only - you cannot set their
 values.
 
 .. _user_guide_materials:
+
 Materials
 ---------
 
