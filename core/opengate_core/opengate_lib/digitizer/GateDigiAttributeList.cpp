@@ -292,6 +292,12 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       });
 
   // -----------------------------------------------------
+  // Polarization
+  DefineDigiAttribute(
+      "Polarization", '3',
+      FILLF { att->Fill3Value(step->GetTrack()->GetPolarization()); });
+
+  // -----------------------------------------------------
   // Length
   DefineDigiAttribute(
       "StepLength", 'D', FILLF { att->FillDValue(step->GetStepLength()); });
