@@ -99,7 +99,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
       delete sec;
     }
 
-    // Angular Acceptance rejection
+    // Angular Acceptance rejection, we ignore the secondary if not ok
     const auto momentum = particle_change->GetProposedMomentumDirection();
     if (!fAAManager->TestIfAccept(position, momentum)) {
       continue;

@@ -8,16 +8,14 @@
 #ifndef GateSingleParticleSource_h
 #define GateSingleParticleSource_h
 
-#include "G4AffineTransform.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4VPrimaryGenerator.hh"
 #include "GateAcceptanceAngleManager.h"
-#include "GateAcceptanceAngleSingleVolume.h"
 #include "GateHelpers.h"
-#include "GateRandomMultiGauss.h"
 #include "GateSPSAngDistribution.h"
 #include "GateSPSEneDistribution.h"
 #include "GateSPSPosDistribution.h"
+#include "biasing/GateForcedDirectionManager.h"
 
 /*
     Single Particle Source generator.
@@ -45,6 +43,8 @@ public:
   void SetParticleDefinition(G4ParticleDefinition *def);
 
   void SetAAManager(GateAcceptanceAngleManager *aa_manager);
+
+  void SetFDManager(GateForcedDirectionManager *fd_manager);
 
   void GeneratePrimaryVertex(G4Event *evt) override;
 
@@ -74,6 +74,7 @@ protected:
 
   // for acceptance angle
   GateAcceptanceAngleManager *fAAManager;
+  GateForcedDirectionManager *fFDManager;
 };
 
 #endif // GateSingleParticleSource_h

@@ -13,6 +13,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
+## FIXME -> separate classes for analog/normal/FF etc ?
+
+
 class SPECTConfig:
     """
     Represents the configuration object for a SPECT simulation.
@@ -381,7 +384,7 @@ class SourceConfig:
         source.particle = "gamma"
         source.activity = self.total_activity
         if sim.visu is True:
-            source.activity = 10 * gate.g4_units.Bq
+            source.activity = 100 * gate.g4_units.Bq
 
         self.source = source
         return source
@@ -439,7 +442,7 @@ class AcquisitionConfig:
         ]
 
         # compute the gantry rotations
-        step_angle = head_angles[1] / self.number_of_angles
+        step_angle = 360.0 / len(head_angles) / self.number_of_angles
         d = self.spect_config.detector_config
         m = d.get_model_module()
         i = 0
@@ -530,18 +533,32 @@ def spect_freeflight_initialize_primary(sim, sc, options):
 
     # add the ff actor
     n = sc.detector_config.get_detector_normal()
-    ff = sim.add_actor("GammaFreeFlightActor", f"{sc.simu_name}_ff")
-    ff.attached_to = "world"
-    ff.ignored_volumes = crystal_names
+    ff_name = f"{sc.simu_name}_ff"
+    if not ff_name in sim.actor_manager.actors:
+        # (only one ff actor, but can have several sources)
+        ff = sim.add_actor("GammaFreeFlightActor", ff_name)
+        ff.attached_to = "world"
+        ff.ignored_volumes = crystal_names
+    else:
+        ff = sim.actor_manager.actors[ff_name]
+    # source.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+    source.direction.acceptance_angle.skip_policy = "SkipEvents"
+    source.direction.acceptance_angle.max_rejection = 1000
     source.direction.acceptance_angle.intersection_flag = True
     source.direction.acceptance_angle.volumes = crystal_names
     source.direction.acceptance_angle.normal_flag = True
     source.direction.acceptance_angle.normal_vector = n
     source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
     source.direction.acceptance_angle.distance_dependent_normal_tolerance = False
-    source.direction.acceptance_angle.normal_tolerance_min_distance = (
-        options.angle_tolerance_min_distance
-    )
+    if "angle_tolerance_min_distance" in options:
+        source.direction.acceptance_angle.normal_tolerance_min_distance = (
+            options.angle_tolerance_min_distance
+        )
+    if "forced_direction_flag" in options:
+        if options.forced_direction_flag:
+            source.direction.acceptance_angle.normal_flag = False
+            source.direction.acceptance_angle.intersection_flag = False
+            source.direction.acceptance_angle.forced_direction_flag = True
 
     for d in digitizers:
         d.squared_counts.active = True
@@ -558,6 +575,8 @@ def spect_freeflight_initialize_scatter(sim, sc, options):
     source = sc.source_config.source
     digitizers = sc.detector_config.digitizers
     crystal_names = [c.name for c in sc.detector_config.crystals]
+
+    # reset the source AA if it was changed by "primary"
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
 
@@ -573,10 +592,13 @@ def spect_freeflight_initialize_scatter(sim, sc, options):
     ff.acceptance_angle.volumes = crystal_names
     ff.acceptance_angle.normal_flag = True
     ff.acceptance_angle.normal_vector = n
-    source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
-    source.direction.acceptance_angle.normal_tolerance_min_distance = (
-        options.angle_tolerance_min_distance
-    )
+    ff.acceptance_angle.normal_tolerance = options.angle_tolerance
+    if "angle_tolerance_min_distance" in options:
+        ff.acceptance_angle.normal_tolerance_min_distance = (
+            options.angle_tolerance_min_distance
+        )
+    ff.acceptance_angle.distance_dependent_normal_tolerance = False
+
     """ REMOVED because too slow
     ff.acceptance_angle.distance_dependent_normal_tolerance = True
     tol = options.scatter_angle_tolerance

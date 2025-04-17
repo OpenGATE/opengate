@@ -967,7 +967,6 @@ def rotate_gantry(
     for r in range(nb_angle):
         tr = head.translation.copy()
         tr[1] += radius
-        # t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
         t, rot = get_transform_orbiting(tr, "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
         rot = rot * initial_rotation
@@ -998,6 +997,26 @@ def add_intevo_digitizer_lu177_v3(sim, crystal_name, name, spectrum_channel=Fals
         {"name": f"scatter3_{name}", "min": 176.46 * keV, "max": 191.36 * keV},
         {"name": f"peak208_{name}", "min": 192.4 * keV, "max": 223.6 * keV},
         {"name": f"scatter4_{name}", "min": 224.64 * keV, "max": 243.3 * keV},
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    singles_ene_windows.channels = channels
+    proj.input_digi_collections = [x["name"] for x in channels]
+
+    return proj
+
+
+def add_intevo_digitizer_lu177_v4(sim, crystal_name, name, spectrum_channel=False):
+
+    keV = g4_units.keV
+    proj, singles_ene_windows = add_intevo_digitizer_v3(sim, crystal_name, name)
+    channels = [
+        {"name": f"scatter1_{name}", "min": 84.75 * keV, "max": 101.7 * keV},
+        {"name": f"peak113_{name}", "min": 101.7 * keV, "max": 124.3 * keV},
+        {"name": f"scatter2_{name}", "min": 124.3 * keV, "max": 141.25 * keV},
+        {"name": f"scatter3_{name}", "min": 145.6 * keV, "max": 187.2 * keV},
+        {"name": f"peak208_{name}", "min": 187.2 * keV, "max": 228.8 * keV},
+        {"name": f"scatter4_{name}", "min": 228.8 * keV, "max": 270.4 * keV},
     ]
     if not spectrum_channel:
         channels.pop(0)

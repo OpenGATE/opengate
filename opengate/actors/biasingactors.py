@@ -14,12 +14,14 @@ def generic_source_default_aa():
     return Box(
         {
             "skip_policy": "SkipEvents",
+            "max_rejection": 1000,
             "volumes": [],
             "intersection_flag": False,
             "normal_flag": False,
+            "forced_direction_flag": False,
             "normal_vector": [0, 0, 1],
             "normal_tolerance": 3 * g4_units.deg,
-            "normal_tolerance_min_distance": 6 * g4_units.cm,
+            "normal_tolerance_min_distance": 0 * g4_units.cm,
             "distance_dependent_normal_tolerance": False,
             "angle1": 90 * g4_units.degree,
             "distance1": 0 * g4_units.cm,
@@ -231,16 +233,27 @@ class ActorOutputScatterSplittingFreeFlightActor(ActorOutputBase):
         s = ""
         for key, value in self.split_info.items():
             s += f"{key}: {value}\n"
-        if self.split_info.nb_compt_splits < 1 and self.split_info.nb_rayl_splits < 1:
-            f = 0
-        else:
-            f = self.split_info.nb_tracks_with_free_flight / (
+
+        if (
+            self.split_info.compton_splitting_factor > 0
+            and self.split_info.nb_compt_splits > 0
+        ):
+            f = self.split_info.nb_compt_tracks / (
                 self.split_info.nb_compt_splits
                 * self.split_info.compton_splitting_factor
-                + self.split_info.nb_rayl_splits
+            )
+            s += f"Fraction of FF compton: {f*100:.2f} %\n"
+
+        if (
+            self.split_info.rayleigh_splitting_factor > 0
+            and self.split_info.nb_rayl_splits > 0
+        ):
+            f = self.split_info.nb_rayl_tracks / (
+                self.split_info.nb_rayl_splits
                 * self.split_info.rayleigh_splitting_factor
             )
-        s += f"Fraction of AA: {f*100:.2f} %\n"
+            s += f"Fraction of FF rayleigh: {f*100:.2f} %\n"
+
         if self.split_info.nb_compt_tracks < 1 and self.split_info.nb_rayl_tracks < 1:
             f = 0
         else:

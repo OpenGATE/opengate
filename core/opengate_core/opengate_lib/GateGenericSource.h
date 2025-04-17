@@ -11,6 +11,7 @@
 #include "GateAcceptanceAngleManager.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
+#include "biasing/GateForcedDirectionManager.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -80,6 +81,7 @@ protected:
   struct threadLocalGenericSource {
     GateSingleParticleSource *fSPS = nullptr;
     GateAcceptanceAngleManager *fAAManager = nullptr;
+    GateForcedDirectionManager *fFDManager = nullptr;
     bool fInitConfine = false;
     bool fInitGenericIon = false;
     double fEffectiveEventTime = -1;

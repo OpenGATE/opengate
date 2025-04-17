@@ -45,7 +45,7 @@ public:
   G4VParticleChange *GenerateBiasingFinalState(const G4Track *,
                                                const G4Step *) override;
 
-  G4ILawForceFreeFlight *GetForceFreeFlightLaw();
+  G4ILawForceFreeFlight *GetForceFreeFlightLaw() const;
 
   void ResetInitialTrackWeight(G4double w);
 

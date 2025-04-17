@@ -22,13 +22,23 @@ GateAcceptanceAngleManager::~GateAcceptanceAngleManager() {}
 
 void GateAcceptanceAngleManager::Initialize(py::dict user_info,
                                             bool is_valid_type) {
+  // AA is enabled if volumes is not empty and one of the flags is True
+  // intersection_flag or normal_flag
   fAcceptanceAngleVolumeNames = DictGetVecStr(user_info, "volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
+
+  bool b2 = DictGetBool(user_info, "intersection_flag");
+  bool b3 = DictGetBool(user_info, "normal_flag");
+
+  fEnabledFlag = fEnabledFlag && (b2 || b3);
+
   if (!fEnabledFlag)
     return;
   // (we cannot use py::dict here as it is lost at the end of the function)
   fAcceptanceAngleParam = DictToMap(user_info);
   auto s = DictGetStr(user_info, "skip_policy");
+  fMaxNotAcceptedEvents = DictGetInt(user_info, "max_rejection");
+  DDD(fMaxNotAcceptedEvents);
   fPolicy = AAUndefined;
   if (s == "ZeroEnergy")
     fPolicy = AAZeroEnergy;

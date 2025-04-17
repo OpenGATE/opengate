@@ -64,7 +64,7 @@ def create_simulation_test085(
     if sim.visu:
         sim.number_of_threads = 1
         activity = 1000 * BqmL / sim.number_of_threads
-        activity = 0.2 * BqmL / sim.number_of_threads
+        activity = 50 * BqmL / sim.number_of_threads
 
     # world
     world = sim.world
@@ -189,6 +189,8 @@ def add_spect_heads(sim, simu_name, radius):
     proj1.output_filename = f"projection_1_{simu_name}.mhd"
     proj2 = digit2.find_module("projection")
     proj2.output_filename = f"projection_2_{simu_name}.mhd"
+    proj1.squared_counts.active = True
+    proj2.squared_counts.active = True
     projs = [proj1, proj2]
 
     # sim.physics_manager.set_production_cut(crystals[0].name, "all", 2 * mm)

@@ -41,7 +41,7 @@ GateGammaFreeFlightOptn::GenerateBiasingFinalState(const G4Track *,
   return nullptr;
 }
 
-G4ILawForceFreeFlight *GateGammaFreeFlightOptn::GetForceFreeFlightLaw() {
+G4ILawForceFreeFlight *GateGammaFreeFlightOptn::GetForceFreeFlightLaw() const {
   return fForceFreeFlightInteractionLaw;
 }
 

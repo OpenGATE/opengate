@@ -11,6 +11,7 @@
 #include "G4RunManager.hh"
 #include "GateHelpers.h"
 #include "GateRandomMultiGauss.h"
+#include "biasing/GateForcedDirectionManager.h"
 
 GateSingleParticleSource::GateSingleParticleSource(
     std::string /*mother_volume*/) {
@@ -18,6 +19,7 @@ GateSingleParticleSource::GateSingleParticleSource(
   fDirectionGenerator = new GateSPSAngDistribution();
   fEnergyGenerator = new GateSPSEneDistribution();
   fAAManager = nullptr;
+  fFDManager = nullptr;
 
   // needed
   fBiasRndm = new G4SPSRandomGenerator();
@@ -40,6 +42,8 @@ GateSingleParticleSource::~GateSingleParticleSource() {
   delete fDirectionGenerator;
   delete fEnergyGenerator;
   delete fAAManager;
+  delete fFDManager;
+  delete fBiasRndm;
 }
 
 void GateSingleParticleSource::SetPosGenerator(GateSPSPosDistribution *pg) {
@@ -84,9 +88,20 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
   // Generate position
   auto position = fPositionGenerator->VGenerateOne();
 
-  // Generate direction (until angle is ok)
-  bool zero_energy_flag;
-  auto direction = GenerateDirectionWithAA(position, zero_energy_flag);
+  G4ThreeVector direction;
+  double weight = 1.0;
+  bool zero_energy_flag = false;
+  if (fAAManager->IsEnabled()) {
+    // Generate direction (until angle is ok or too much trials)
+    direction = GenerateDirectionWithAA(position, zero_energy_flag);
+  } else {
+    if (fFDManager->IsEnabled()) {
+      direction = fFDManager->GenerateForcedDirection(position,
+                                                      zero_energy_flag, weight);
+    } else {
+      direction = fDirectionGenerator->VGenerateOne();
+    }
+  }
 
   // energy
   double energy = zero_energy_flag
@@ -106,6 +121,7 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
   particle->SetMass(fMass);
   particle->SetMomentumDirection(direction);
   particle->SetCharge(fCharge);
+  particle->SetWeight(weight);
 
   // FIXME polarization
   // FIXME weight from eneGenerator + bias ? (should not be useful yet ?)
@@ -160,4 +176,9 @@ void GateSingleParticleSource::GeneratePrimaryVertexBackToBack(
 void GateSingleParticleSource::SetAAManager(
     GateAcceptanceAngleManager *aa_manager) {
   fAAManager = aa_manager;
+}
+
+void GateSingleParticleSource::SetFDManager(
+    GateForcedDirectionManager *fd_manager) {
+  fFDManager = fd_manager;
 }

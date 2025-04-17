@@ -75,6 +75,10 @@ GateAcceptanceAngleSingleVolume::~GateAcceptanceAngleSingleVolume() {
 }
 
 void GateAcceptanceAngleSingleVolume::UpdateTransform() {
+
+  if (fAARotation != nullptr)
+    delete fAARotation;
+
   // Get the transformation
   G4ThreeVector tr;
   fAARotation = new G4RotationMatrix; // FIXME to delete each run ?

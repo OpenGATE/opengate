@@ -208,7 +208,7 @@ void GateGenericSource::UpdateEffectiveEventTime(
   auto &ll = GetThreadLocalDataGenericSource();
   unsigned long n = 0;
   ll.fEffectiveEventTime = current_simulation_time;
-  while (n < skipped_particle) {
+  while (n < skipped_particle && ll.fEffectiveEventTime < fEndTime) {
     ll.fEffectiveEventTime =
         ll.fEffectiveEventTime - log(G4UniformRand()) * (1.0 / fActivity);
     n++;
@@ -484,6 +484,11 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
   ll.fAAManager = new GateAcceptanceAngleManager;
   ll.fAAManager->Initialize(dd, is_valid_type);
   ll.fSPS->SetAAManager(ll.fAAManager);
+
+  // set Forced Direction
+  ll.fFDManager = new GateForcedDirectionManager;
+  ll.fFDManager->Initialize(dd, ang->GetDistType() == "iso");
+  ll.fSPS->SetFDManager(ll.fFDManager);
 }
 
 void GateGenericSource::InitializeEnergy(py::dict puser_info) {
