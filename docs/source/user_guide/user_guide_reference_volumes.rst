@@ -21,7 +21,7 @@ Common parameters are:
    to the reference frame of the mother volume and therefore moves with
    the mother volume.
 -  ``material``: the name of the material that composes the volume,
-   e.g. ``G4_WATER``. See section See section :ref:`user_guide_materials`
+   e.g. ``G4_WATER``. See section See section :ref:`Materials <materials_section>`
 -  ``translation``: list of 3 numerical values,
    e.g. ``[0, 2*cm, 3*mm]``. It defines the translation of the volume
    with respect to the reference frame of the mother volume. Note: the
