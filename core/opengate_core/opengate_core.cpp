@@ -38,6 +38,8 @@ void init_G4MaterialCutsCouple(py::module &);
 
 void init_G4Element(py::module &);
 
+void init_G4Isotope(py::module &);
+
 void init_G4IonisParamMat(py::module &);
 
 void init_G4MaterialPropertiesTable(py::module &);
@@ -431,6 +433,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Material(m);
   init_G4MaterialCutsCouple(m);
   init_G4Element(m);
+  init_G4Isotope(m);
   init_G4IonisParamMat(m);
   init_G4MaterialPropertiesTable(m);
   init_GateMaterialMuHandler(m);
