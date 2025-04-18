@@ -46,34 +46,10 @@ void GateVoxelizedPromptGammaTLEActor::InitializeUserInfo(py::dict &user_info) {
 void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
   GateVActor::InitializeCpp();
 
-  // Initialisation of the cpp images
+    // Initialisation of the cpp images
   // spatial volume
-  Volume = Image3DType::New();
-  Image3DType::RegionType region3;
-  Image3DType::SpacingType spacing3;
-  Image3DType::SizeType size3;
-  Image3DType::PointType origin;
-
-  size3[0] = fsize[0];
-  size3[1] = fsize[1];
-  size3[2] = fsize[2];
-
-  region3.SetSize(size3);
-
-  spacing3[0] = fspacing[0];
-  spacing3[1] = fspacing[1];
-  spacing3[2] = fspacing[2];
-
-  origin[0] = fTranslation[0];
-  origin[1] = fTranslation[1];
-  origin[2] = fTranslation[2];
-
-  Volume->SetRegions(region3);
-  Volume->SetSpacing(spacing3);
-  Volume->SetOrigin(origin);
-  Volume->Allocate();
-  Volume->FillBuffer(0);
-
+  fVolume = Image3DType::New();
+ 
   // output image
   output_image = Image2DType::New();
 
@@ -101,7 +77,83 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
     int run_id) {
-  AttachImageToVolume<Image3DType>(Volume, fPhysicalVolumeName, fTranslation);
+  auto volume = G4PhysicalVolumeStore::GetInstance()->GetVolume(fPhysicalVolumeName);
+  if (volume) {
+    auto solid = volume->GetLogicalVolume()->GetSolid();
+  if (auto box = dynamic_cast<G4Box*>(solid)) {
+    std::cout << "Box Dimensions: "
+              << box->GetXHalfLength() * 2 << ", "
+              << box->GetYHalfLength() * 2 << ", "
+                << box->GetZHalfLength() * 2 << std::endl;
+
+    Image3DType::RegionType region3;
+    Image3DType::SizeType size3;
+    Image3DType::SpacingType spacing3;
+    
+    size3[0] = fsize[0];
+    size3[1] = fsize[1];
+    size3[2] = fsize[2];
+
+    region3.SetSize(size3);
+
+    spacing3[0] = fspacing[0];
+    spacing3[1] = fspacing[1];
+    spacing3[2] = fspacing[2];
+
+    fVolume->SetRegions(region3);
+    fVolume->SetSpacing(spacing3);
+    fVolume->Allocate();
+    fVolume->FillBuffer(0);
+              // Initialize fVolume for a box (if needed)
+  } else if (auto tubs = dynamic_cast<G4Tubs*>(solid)) {
+    std::cout << "Cylinder Dimensions: "
+              << "Inner Radius: " << tubs->GetInnerRadius() << ", "
+              << "Outer Radius: " << tubs->GetOuterRadius() << ", "
+              << "Height: " << tubs->GetZHalfLength() * 2 << std::endl;
+    
+          // Initialize fVolume for a cylinder
+    Image3DType::RegionType region3;
+    Image3DType::SizeType size3;
+    Image3DType::SpacingType spacing3;
+    
+              // Calculate the size and spacing based on the cylinder dimensions
+    double height = tubs->GetZHalfLength() * 2; // Full height
+    double outerRadius = tubs->GetOuterRadius(); // Outer radius
+    
+          // Example: Define the resolution (adjust as needed)
+    double resolution = 1.0; // 1 mm per voxel
+    
+    size3[0] = static_cast<unsigned int>(2 * outerRadius / resolution); // Diameter in X
+    size3[1] = static_cast<unsigned int>(2 * outerRadius / resolution); // Diameter in Y
+    size3[2] = static_cast<unsigned int>(height / resolution);          // Height in Z
+    
+    spacing3[0] = resolution; // Spacing in X
+    spacing3[1] = resolution; // Spacing in Y
+    spacing3[2] = resolution; // Spacing in Z
+    
+    region3.SetSize(size3);
+    
+    fVolume->SetRegions(region3);
+    fVolume->SetSpacing(spacing3);
+    fVolume->Allocate();
+    fVolume->FillBuffer(0);
+    
+    std::cout << "Initialized ITK image for cylinder:" << std::endl;
+    std::cout << "Size: " << size3[0] << ", " << size3[1] << ", " << size3[2] << std::endl;
+    std::cout << "Spacing: " << spacing3[0] << ", " << spacing3[1] << ", " << spacing3[2] << std::endl;
+    } else {
+      std::cerr << "Unsupported solid type: " << solid->GetName() << std::endl;
+    }
+    } else {
+      std::cerr << "Volume not found: " << fPhysicalVolumeName << std::endl;
+    }
+  AttachImageToVolume<Image3DType>(fVolume, fPhysicalVolumeName, fTranslation);
+  std::cout<<"AFTER"<<std::endl;
+  std::cout<<"size"<<fVolume->GetLargestPossibleRegion().GetSize()<<std::endl;
+  std::cout<<"Direction"<<fVolume->GetDirection()<<std::endl;
+  std::cout<<"index"<<fVolume->GetLargestPossibleRegion().GetIndex()<<std::endl;
+  std::cout<<"spacing"<<fVolume->GetSpacing()<<std::endl;
+  std::cout<<"origin"<<fVolume->GetOrigin()<<std::endl;
 }
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(const G4Run *run) {}
@@ -153,11 +205,11 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
     // verify if we are inside the volume of interest
     Image3DType::IndexType index;
-    G4bool isInside = Volume->TransformPhysicalPointToIndex(point, index);
+    G4bool isInside = fVolume->TransformPhysicalPointToIndex(point, index);
+
     if (!isInside) {
       continue;
     }
-
     Image2DType::IndexType ind;
 
     // Sampling the energy of the gamma

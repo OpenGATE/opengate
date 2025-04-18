@@ -61,9 +61,8 @@ public:
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
   std::string fPhysicalVolumeName;
-
   typedef itk::Image<double, 3> Image3DType;
-  Image3DType::Pointer Volume;
+  Image3DType::Pointer fVolume;
 
   typedef itk::Image<double, 2> Image2DType;
   Image2DType::Pointer output_image;

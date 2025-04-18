@@ -6,8 +6,9 @@ from .actoroutput import (
     ActorOutputSingleImageOfHistogram,
     ActorOutputImage,
     ActorOutputSingleImage,
-    UserInterfaceToActorOutputImage,
+    UserInterfaceToActorOutputImage,ActorOutputBase, ActorOutputUsingDataItemContainer
 )
+import itk
 
 from ..image import (
     update_image_py_to_cpp,
@@ -109,8 +110,8 @@ class VoxelizedPromptGammaTLEActor(
     user_output_config = {
         "correl": {
             "actor_output_class": ActorOutputSingleImage,
-            "active": True,
-        }
+            "active": True
+        },
     }
 
     def __init__(self, *args, **kwargs) -> None:
