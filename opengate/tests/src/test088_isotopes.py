@@ -102,6 +102,11 @@ if __name__ == "__main__":
     print("Run the simulation with Deuterium")
     neutron_deuterium = create_simu("Deuterium")
     print("Number of detected neutrons: " + str(neutron_deuterium))
+    print()
+    # Run a simulation with a material with frequency < 1
+    print("Run the simulation with BrainBNCTB1025mMB")
+    neutron_brainBNCTB1025mMB = create_simu("BrainBNCTB1025mMB")
+    print("Number of detected neutrons: " + str(neutron_brainBNCTB1025mMB))
 
     # Compute std (poisson distribution)
     std = np.sqrt(neutron_water)
