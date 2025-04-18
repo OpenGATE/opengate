@@ -485,7 +485,7 @@ class IsotopicElementBuilder:
             fatal(
                 f"Error reading line {line} \n during the elements of material {self.name}"
             )
-        # read f or n, put the other one to 'None'
+        # read f
         f = float(read_tag(s[1], "f"))
         e = Box({"name": elname, "f": f, "type": "isotope"})
         return e
