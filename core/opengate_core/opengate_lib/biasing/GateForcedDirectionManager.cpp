@@ -12,6 +12,10 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "G4RunManager.hh"
 
+// Must come before including cmath
+#define _USE_MATH_DEFINES
+#include <cmath> // for M_PI
+
 GateForcedDirectionManager::GateForcedDirectionManager() {
   fEnabledFlag = false;
   fFDLastRunId = -1;
@@ -24,7 +28,7 @@ GateForcedDirectionManager::GateForcedDirectionManager() {
   fNormalAngleTolerance = 0;
 }
 
-GateForcedDirectionManager::~GateForcedDirectionManager() {}
+GateForcedDirectionManager::~GateForcedDirectionManager() = default;
 
 void GateForcedDirectionManager::Initialize(py::dict user_info,
                                             const bool is_valid_type) {
