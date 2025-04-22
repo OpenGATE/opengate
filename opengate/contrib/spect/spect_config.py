@@ -571,6 +571,8 @@ def spect_freeflight_initialize_primary(sim, sc, source, options):
 
 
 def _spect_freeflight_initialize_primary_fd(sim, sc, source, options):
+    options = Box(options)
+
     # need an additional source copy for each head
     sources = [source]
     for i in range(1, sc.detector_config.number_of_heads):

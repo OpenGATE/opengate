@@ -12,10 +12,6 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "G4RunManager.hh"
 
-// Must come before including cmath
-#define _USE_MATH_DEFINES
-#include <cmath> // for M_PI
-
 GateForcedDirectionManager::GateForcedDirectionManager() {
   fEnabledFlag = false;
   fFDLastRunId = -1;
@@ -115,7 +111,7 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
 G4ThreeVector
 GateForcedDirectionManager::SampleDirectionWithinCone(double &theta) const {
   // Uniformly sample phi between 0 and 2*pi
-  const double phi = G4UniformRand() * 2 * M_PI;
+  const double phi = G4UniformRand() * 2 * CLHEP::pi;
 
   // Uniformly sample cos(theta) between cos(0) and cos(theta_max)
   const double cosTheta = fCosThetaMax + G4UniformRand() * (1.0 - fCosThetaMax);
