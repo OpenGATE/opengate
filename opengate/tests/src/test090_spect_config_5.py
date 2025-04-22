@@ -39,7 +39,7 @@ if __name__ == "__main__":
     spect_freeflight_initialize_scatter(sim, sc, output.source, options)
 
     # run it
-    sim.random_seed = "auto"
+    sim.random_seed = 123654987
     sim.run()
 
     # we check only that the output files exist

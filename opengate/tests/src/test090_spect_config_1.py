@@ -42,7 +42,7 @@ if __name__ == "__main__":
     print(output)
 
     # run it
-    sim.random_seed = "auto"
+    sim.random_seed = 123654
     sim.run()
 
     # we check only that the output files exist

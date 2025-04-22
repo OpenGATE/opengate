@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from opengate.contrib.spect.spect_config import SPECTConfig
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from test090_helpers import *
 
@@ -45,7 +43,7 @@ if __name__ == "__main__":
     print(output)
 
     # run it
-    sim.random_seed = "auto"
+    sim.random_seed = 123456
     sim.run(start_new_process=True)
 
     # we check only that the output files exist
@@ -58,7 +56,7 @@ if __name__ == "__main__":
     sc.source_config.radionuclide = "in111"
     sim = gate.Simulation()
     output = sc.create_simulation(sim, number_of_threads=1, visu=False)
-    sim.random_seed = "auto"
+    sim.random_seed = 987654
     sim.run(start_new_process=True)
 
     # test

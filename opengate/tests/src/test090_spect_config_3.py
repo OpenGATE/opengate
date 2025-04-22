@@ -35,7 +35,7 @@ if __name__ == "__main__":
     spect_freeflight_initialize_primary(sim, sc, output.source, options)
 
     # run it
-    sim.random_seed = "auto"
+    sim.random_seed = 654456
     sim.run(start_new_process=True)
 
     # we check only that the output files exist
