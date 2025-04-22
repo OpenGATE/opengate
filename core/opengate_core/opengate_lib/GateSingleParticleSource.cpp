@@ -32,6 +32,7 @@ GateSingleParticleSource::GateSingleParticleSource(
   fBackToBackMode = false;
   fAccolinearityFlag = false;
   fAccolinearitySigma = 0.0;
+  fPolarizationFlag = false;
 }
 
 GateSingleParticleSource::~GateSingleParticleSource() {
@@ -51,6 +52,11 @@ void GateSingleParticleSource::SetParticleDefinition(
   fParticleDefinition = def;
   fCharge = fParticleDefinition->GetPDGCharge();
   fMass = fParticleDefinition->GetPDGMass();
+}
+
+void GateSingleParticleSource::SetPolarization(G4ThreeVector &polarization) {
+  fPolarization = polarization;
+  fPolarizationFlag = true;
 }
 
 G4ThreeVector
@@ -105,8 +111,9 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
   particle->SetMass(fMass);
   particle->SetMomentumDirection(direction);
   particle->SetCharge(fCharge);
+  if (fPolarizationFlag)
+    particle->SetPolarization(fPolarization);
 
-  // FIXME polarization
   // FIXME weight from eneGenerator + bias ? (should not be useful yet ?)
 
   // set vertex
