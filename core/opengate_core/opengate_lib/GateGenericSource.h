@@ -116,6 +116,8 @@ protected:
 
   virtual void InitializeDirection(py::dict user_info);
 
+  virtual void InitializePolarization(py::dict user_info);
+
   virtual void InitializeEnergy(py::dict user_info);
 
   void UpdateActivity(double time) override;

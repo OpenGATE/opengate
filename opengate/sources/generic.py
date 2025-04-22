@@ -166,6 +166,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             _generic_source_default_energy(),
             {"doc": "Define the energy of the primary particles"},
         ),
+        "polarization": (
+            [],
+            {"doc": "Polarization of the particle (3 Stokes parameters)."},
+        ),
     }
 
     def __init__(self, *args, **kwargs):

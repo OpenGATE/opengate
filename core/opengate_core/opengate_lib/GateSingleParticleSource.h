@@ -58,6 +58,8 @@ public:
 
   void SetBackToBackMode(bool flag, bool accolinearityFlag);
 
+  void SetPolarization(G4ThreeVector &polarization);
+
   // Probably an underestimation in most cases, but it is the most cited
   // value (Moses 2011)
   void SetAccolinearityFWHM(double accolinearityFWHM);
@@ -73,6 +75,8 @@ protected:
   bool fAccolinearityFlag;
   bool fBackToBackMode;
   double fAccolinearitySigma;
+  G4ThreeVector fPolarization;
+  bool fPolarizationFlag;
 
   // for acceptance angle
   GateAcceptanceAngleManager *fAAManager;
