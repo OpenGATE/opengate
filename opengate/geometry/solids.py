@@ -320,6 +320,38 @@ class SphereSolid(SolidBase):
         )
 
 
+class EllipsoidSolid(SolidBase):
+    user_info_defaults = {
+        "xSemiAxis": (1 * g4_units.mm, {"doc": "Semiaxis in X"}),
+        "ySemiAxis": (
+            1 * g4_units.mm,
+            {"doc": "Semiaxis in Y"},
+        ),
+        "zSemiAxis": (
+            1 * g4_units.mm,
+            {"doc": "Semiaxis in Z"},
+        ),
+        "zBottomCut": (
+            0 * g4_units.mm,
+            {"doc": "lower cut plane level, Z"},
+        ),
+        "zTopCut": (
+            0 * g4_units.mm,
+            {"doc": "upper cut plane level, Z"},
+        ),
+    }
+
+    def build_solid(self):
+        return g4.G4Ellipsoid(
+            self.name,
+            self.xSemiAxis,
+            self.ySemiAxis,
+            self.zSemiAxis,
+            self.zBottomCut,
+            self.zTopCut,
+        )
+
+
 class TrapSolid(SolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -577,6 +609,7 @@ process_cls(HexagonSolid)
 process_cls(ConsSolid)
 process_cls(PolyhedraSolid)
 process_cls(SphereSolid)
+process_cls(EllipsoidSolid)
 process_cls(TrapSolid)
 process_cls(TrdSolid)
 process_cls(TubsSolid)
