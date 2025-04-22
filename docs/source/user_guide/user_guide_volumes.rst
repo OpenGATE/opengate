@@ -97,6 +97,7 @@ Examples of volumes
 -------------------
 
 These are examples of how to add and configure volumes in Gate. A more detailed description is in section :ref:`volumes-reference-label`.
+A test with all available volumes is available in `test0089_geometries.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test089_geometries.py>`_.
 
 .. code:: python
 
@@ -176,6 +177,8 @@ along x, y, z
 
 Note that the above properties are read-only - you cannot set their
 values.
+
+.. _materials_section:
 
 Materials
 ---------
