@@ -46,13 +46,15 @@ public:
 
   void SetFDManager(GateForcedDirectionManager *fd_manager);
 
-  void GeneratePrimaryVertex(G4Event *evt) override;
+  void GeneratePrimaryVertex(G4Event *event) override;
 
   G4ThreeVector GenerateDirectionWithAA(const G4ThreeVector &position,
                                         bool &zero_energy_flag) const;
 
-  void GeneratePrimaryVertexBackToBack(G4Event *event, G4ThreeVector &position,
-                                       G4ThreeVector &direction, double energy);
+  void GeneratePrimaryVertexBackToBack(G4Event *event,
+                                       const G4ThreeVector &position,
+                                       const G4ThreeVector &direction,
+                                       double energy) const;
 
   void SetBackToBackMode(bool flag, bool accolinearityFlag);
 
