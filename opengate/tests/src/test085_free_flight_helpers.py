@@ -121,9 +121,6 @@ def create_simulation_test085(
     # sim.physics_manager.set_production_cut("phantom", "gamma", 0.01 * mm)
     sim.user_hook_after_init = check_process_user_hook
 
-    if angle_tolerance is None:
-        angle_tolerance = 20 * deg
-
     # add iec voxelized source
     iec_source_filename = data_folder / "iec_4mm_activity.mhd"
     source = sim.add_source("VoxelSource", "src")
@@ -141,9 +138,10 @@ def create_simulation_test085(
     stats.output_filename = f"stats_{simu_name}.txt"
 
     # set the gantry orientation
+    starting_angle_deg = 10
     if len(heads) == 2:
-        nm670.rotate_gantry(heads[0], radius, 0, 0, 1)
-        nm670.rotate_gantry(heads[1], radius, 180, 0, 1)
+        nm670.rotate_gantry(heads[0], radius, starting_angle_deg, 0, 1)
+        nm670.rotate_gantry(heads[1], radius, starting_angle_deg + 180, 0, 1)
 
     return source, actors
 
