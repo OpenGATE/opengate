@@ -216,6 +216,8 @@ bool StrToBool(const std::string &s) {
 }
 
 double StrToDouble(const std::string &s) {
+  // this is needed ! as the local may interfere
+  std::locale::global(std::locale("C"));
   try {
     return std::stod(s);
   } catch (const std::invalid_argument &) {

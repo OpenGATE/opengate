@@ -183,7 +183,7 @@ void GateGenericSource::PrepareNextRun() {
   pos->SetPosRot2(r2);
 
   // For the direction, the orientation may or may not be
-  // relative to the volume according to user option
+  // relative to the volume according to the user option
   auto *ang = ll.fSPS->GetAngDist();
   ang->fDirectionRelativeToAttachedVolume = fDirectionRelativeToAttachedVolume;
   ang->fGlobalRotation = l.fGlobalRotation;
@@ -215,8 +215,8 @@ void GateGenericSource::UpdateEffectiveEventTime(
   }
 }
 
-void GateGenericSource::GeneratePrimaries(G4Event *event,
-                                          double current_simulation_time) {
+void GateGenericSource::GeneratePrimaries(
+    G4Event *event, const double current_simulation_time) {
   auto &ll = GetThreadLocalDataGenericSource();
   // Generic ion cannot be created at initialization.
   // It must be created the first time we get there
@@ -237,7 +237,7 @@ void GateGenericSource::GeneratePrimaries(G4Event *event,
   }
 
   // sample the particle properties with SingleParticleSource
-  // (acceptance angle is included)
+  // (the acceptance angle or forced direction is included)
   ll.fSPS->SetParticleTime(current_simulation_time);
   ll.fSPS->GeneratePrimaryVertex(event);
 
