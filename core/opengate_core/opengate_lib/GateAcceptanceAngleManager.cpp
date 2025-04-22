@@ -38,7 +38,7 @@ void GateAcceptanceAngleManager::Initialize(py::dict user_info,
   fAcceptanceAngleParam = DictToMap(user_info);
   auto s = DictGetStr(user_info, "skip_policy");
   fMaxNotAcceptedEvents = DictGetInt(user_info, "max_rejection");
-  DDD(fMaxNotAcceptedEvents);
+
   fPolicy = AAUndefined;
   if (s == "ZeroEnergy")
     fPolicy = AAZeroEnergy;
@@ -90,8 +90,8 @@ bool GateAcceptanceAngleManager::TestIfAccept(
   if (!fEnabledFlag)
     return true;
 
-  // Loop on all volume to check if it at least one volume is accepted
-  for (auto *tester : fAATesters) {
+  // Loop on all the volumes to check if it at least one volume is accepted
+  for (const auto *tester : fAATesters) {
     bool accept = tester->TestIfAccept(position, momentum_direction);
     if (accept)
       return true;

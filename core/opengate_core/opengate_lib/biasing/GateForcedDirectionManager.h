@@ -8,7 +8,6 @@
 #ifndef GateForcedDirectionManager_h
 #define GateForcedDirectionManager_h
 
-#include "../GateAcceptanceAngleSingleVolume.h"
 #include "../GateHelpers.h"
 
 class GateForcedDirectionManager {
@@ -17,36 +16,29 @@ public:
 
   ~GateForcedDirectionManager();
 
-  // enum AAPolicyType { AAZeroEnergy, AASkipEvent, AAUndefined };
-
   void Initialize(py::dict user_info, bool is_valid_type);
 
   void InitializeForcedDirection();
 
-  unsigned long GetNumberOfNotAcceptedEvents() const;
-
   bool IsEnabled() const { return fEnabledFlag; }
 
-  G4ThreeVector GenerateForcedDirection(G4ThreeVector position,
+  G4ThreeVector GenerateForcedDirection(const G4ThreeVector &position,
                                         bool &zero_energy_flag, double &weight);
 
-  G4ThreeVector SampleDirectionWithinCone(double &theta);
+  G4ThreeVector SampleDirectionWithinCone(double &theta) const;
 
   std::map<std::string, std::string> fAcceptanceAngleParam;
-  std::vector<GateAcceptanceAngleSingleVolume *> fAATesters{};
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
-  unsigned long fNotAcceptedEvents;
-  unsigned long fMaxNotAcceptedEvents;
-  int fAALastRunId;
+  int fFDLastRunId;
 
   double fNormalAngleTolerance;
   G4ThreeVector fNormalVector;
-  G4AffineTransform fAATransform;
-  G4RotationMatrix *fAARotation;
+  G4AffineTransform fFDTransformWorldToVolume;
+  G4RotationMatrix *fFDRotation;
   G4RotationMatrix fAARotationInverse;
-  G4VSolid *fAASolid;
-  G4Navigator *fAANavigator;
+  G4VSolid *fSolid;
+  G4Navigator *fNavigator;
 
   double fSinThetaMax;
   double fCosThetaMax;

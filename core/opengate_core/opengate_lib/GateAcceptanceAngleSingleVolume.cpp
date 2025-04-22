@@ -76,14 +76,13 @@ GateAcceptanceAngleSingleVolume::~GateAcceptanceAngleSingleVolume() {
 
 void GateAcceptanceAngleSingleVolume::UpdateTransform() {
 
-  if (fAARotation != nullptr)
-    delete fAARotation;
+  if (fAARotation == nullptr)
+    fAARotation = new G4RotationMatrix;
 
   // Get the transformation
   G4ThreeVector tr;
-  fAARotation = new G4RotationMatrix; // FIXME to delete each run ?
   ComputeTransformationFromWorldToVolume(fAcceptanceAngleVolumeName, tr,
-                                         *fAARotation);
+                                         *fAARotation, true);
   // It is not fully clear why the AffineTransform need the inverse
   fAATransform = G4AffineTransform(fAARotation->inverse(), tr);
 }
