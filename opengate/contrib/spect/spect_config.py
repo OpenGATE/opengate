@@ -32,7 +32,6 @@ class SPECTConfig:
         # default
         self.output_folder = "output"
         self.output_basename = "projection.mhd"
-        self.sim = None
         self.simu_name = simu_name
 
         # main elements
@@ -40,37 +39,29 @@ class SPECTConfig:
         self.phantom_config = PhantomConfig(self)
         self.source_config = SourceConfig(self)
         self.acquisition_config = AcquisitionConfig(self)
-        self.stats = None
 
-    def print(self, str_only=False):
+    def __str__(self):
         s = f"SPECT simulation\n"
         s += f"Output folder: {self.output_folder}\n"
         s += f"Output basename: {self.output_basename}\n"
-        s += self.detector_config.print(True)
-        s += self.phantom_config.print(True)
-        s += self.source_config.print(True)
-        s += self.acquisition_config.print(True)
-        if str_only:
-            return s
-        print(s)
+        s += f"{self.detector_config}\n"
+        s += f"{self.phantom_config}\n"
+        s += f"{self.source_config}\n"
+        s += f"{self.acquisition_config}\n"
+        return s
 
-    def create_simulation(self, number_of_threads=1, visu=False):
-        # create a new simulation object each time
-        self.sim = Simulation()
-        self.initialize_simulation(number_of_threads, visu)
-
+    def create_simulation(self, sim, number_of_threads=1, visu=False):
+        output = Box()
+        self.initialize_simulation(sim, output, number_of_threads, visu)
         # init all elements
-        self.detector_config.create_simulation()
-        self.phantom_config.create_simulation()
-        self.source_config.create_simulation()
-        self.acquisition_config.create_simulation()
+        self.detector_config.create_simulation(sim, output)
+        self.phantom_config.create_simulation(sim, output)
+        self.source_config.create_simulation(sim, output)
+        self.acquisition_config.create_simulation(sim, output, output.detectors)
+        return output
 
-        # return
-        return self.sim
-
-    def initialize_simulation(self, number_of_threads, visu):
+    def initialize_simulation(self, sim, output, number_of_threads, visu):
         # main options
-        sim = self.sim
         sim.random_seed = "auto"
         sim.check_volumes_overlap = True
         sim.visu = visu
@@ -79,7 +70,7 @@ class SPECTConfig:
         sim.progress_bar = True
         sim.store_json_archive = True
         sim.store_input_files = False
-        sim.json_archive_filename = "simu.json"
+        sim.json_archive_filename = f"{self.simu_name}.json"
 
         # thread
         if visu:
@@ -96,19 +87,21 @@ class SPECTConfig:
         sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
         sim.physics_manager.global_production_cuts.all = 2 * gate.g4_units.mm
 
-        # add stat actor
+        # add the "stats" actor
         stats = sim.add_actor("SimulationStatisticsActor", "stats")
         stats.output_filename = "stats.txt"
-        self.stats = stats
+
+        # store some created elements
+        output.stats = stats
 
 
 class PhantomConfig:
     """
-    Used in SPECTConfig. Represents a phantom configuration
+    This class is used in SPECTConfig. Represents a phantom configuration
 
     This class is used to configure and handle a phantom in a medical imaging
     simulation context. It includes properties for the phantom image,
-    labels, and density tolerance, and provides methods for printing the
+    labels, density tolerance, and provides methods for printing the
     phantom configuration and generating a simulation. The phantom's
     construction and materials are based on Hounsfield Unit (HU) mappings
     to materials defined in external files.
@@ -139,23 +132,20 @@ class PhantomConfig:
         self.labels = None
         self.material_db = None
         self.density_tol = 0.05 * gcm3
-        self.phantom = None
 
-    def print(self, str_only=False):
+    def __str__(self):
         s = f"Phantom image: {self.image}\n"
-        s += f"Phantom labels: {self.labels}\n"
-        if str_only:
-            return s
-        print(s)
+        s += f"Phantom labels: {self.labels}"
+        return s
 
-    def create_simulation(self):
-        sim = self.spect_config.sim
+    def create_simulation(self, sim, output):
         # can be: nothing or voxelized
         if self.image is None:
             return
         # special case for visu
         if sim.visu is True:
-            return self.add_fake_phantom_for_visu()
+            self.add_fake_phantom_for_visu(sim, output)
+            return
         # insert voxelized phantom
         phantom = sim.add_volume("Image", f"{self.spect_config.simu_name}_phantom")
         phantom.image = self.image
@@ -171,15 +161,15 @@ class PhantomConfig:
                 sim, self.density_tol, f1, f2
             )
             phantom.voxel_materials = vm
-        self.phantom = phantom
+        output.phantom = phantom
 
-    def add_fake_phantom_for_visu(self):
-        sim = self.spect_config.sim
+    def add_fake_phantom_for_visu(self, sim, output):
+        gate.exception.warning(f"FAKE voxelized phantom for visu: {self.image}")
         img_info = read_image_info(self.image)
         phantom = sim.add_volume("Box", f"{self.spect_config.simu_name}_phantom")
         phantom.material = "G4_WATER"
         phantom.size = img_info.size * img_info.spacing
-        self.phantom = phantom
+        output.phantom = phantom
 
 
 class DetectorConfig:
@@ -194,25 +184,19 @@ class DetectorConfig:
         self.spect_config = spect_config
         # spect models
         self.available_models = ("intevo", "nm670")
-        # built objects
-        self.detectors = []
-        self.digitizers = []
-        self.crystals = []
         # user param
         self.model = None
         self.collimator = None
-        self.digitizer = None
+        self.digitizer_function = None
         self.number_of_heads = 2
         self.garf = GARFConfig(spect_config)
 
-    def print(self, str_only=False):
+    def __str__(self):
         s = f"Detector model: {self.model}\n"
         s += f"Detector collimator: {self.collimator}\n"
-        s += f"Detector digitizer: {self.digitizer}\n"
-        s += f"Detector # of heads: {self.number_of_heads}\n"
-        if str_only:
-            return s
-        print(s)
+        s += f"Detector digitizer: {self.digitizer_function}\n"
+        s += f"Detector # of heads: {self.number_of_heads}"
+        return s
 
     def get_model_module(self):
         m = None
@@ -235,40 +219,48 @@ class DetectorConfig:
         f = f"{filename}_{i}{ext}"
         return f
 
-    def create_simulation(self):
+    def create_simulation(self, sim, output):
         if self.model not in self.available_models:
             fatal(
                 f'The model "{self.model}" is unknown. '
                 f"Known models are: {self.available_models}"
             )
 
-        self.detectors = []
-        self.crystals = []
-        self.digitizers = []
-        m = self.get_model_module()
-        sim = self.spect_config.sim
-
         # GARF ?
         if self.garf.is_enabled():
-            return self.garf.create_simulation(sim, m)
+            self.garf.create_simulation(sim, output)
+            return
 
         # or real SPECT volumes
+        output.detectors = []
+        output.crystals = []
+        output.digitizers = []
+        m = self.get_model_module()
+        simu_name = self.spect_config.simu_name
         for i in range(self.number_of_heads):
             det, colli, crystal = m.add_spect_head(
                 sim,
-                f"{self.spect_config.simu_name}_spect{i}",
+                f"{simu_name}_spect{i}",
                 collimator_type=self.collimator,
                 debug=sim.visu == True,
             )
-            self.detectors.append(det)
-            self.crystals.append(crystal)
+            output.detectors.append(det)
+            output.crystals.append(crystal)
             # set the digitizer
-            if self.digitizer is not None:
-                proj = self.digitizer(
-                    sim, crystal.name, f"{self.spect_config.simu_name}_digit{i}"
+            if self.digitizer_function is not None:
+                self.digitizer_function(sim, crystal.name, f"{simu_name}_digit{i}")
+                projs = sim.actor_manager.find_actors(
+                    f"{simu_name}_digit{i}_projection"
                 )
+                if len(projs) != 1:
+                    fatal(
+                        f"Cannot find the projection actor "
+                        f'"{simu_name}_digit{i}_projection"'
+                        f"found : {projs}"
+                    )
+                proj = projs[0]
                 proj.output_filename = self.get_proj_filename(i)
-                self.digitizers.append(proj)
+                output.digitizers.append(proj)
 
 
 class GARFConfig:
@@ -294,19 +286,19 @@ class GARFConfig:
         self.detectors = []
         self.garf_actors = []
 
-    def print(self, str_only=False):
+    def __str__(self):
         s = f"GARF : {self.pth_filename}\n"
         s += f"GARF image size: {self.size}\n"
         s += f"GARF image spacing: {self.spacing}\n"
-        s += f"GARF batch size: {self.batch_size}\n"
-        if str_only:
-            return s
-        print(s)
+        s += f"GARF batch size: {self.batch_size}"
+        return s
 
     def is_enabled(self):
         return self.pth_filename is not None
 
-    def create_simulation(self, sim, m):
+    def create_simulation(self, sim, output):
+        fatal("TODO")
+        m = self.spect_config.get_model_module()
         colli = self.spect_config.detector_config.collimator
         for i in range(self.spect_config.detector_config.number_of_heads):
             # create the plane
@@ -356,28 +348,23 @@ class SourceConfig:
         # user param
         self.image = None
         self.radionuclide = None
-        self.total_activity = 0
-        self.source = None
+        self.total_activity = 1 * g4_units.Bq
         # self.gaga = GAGAConfig(spect_config) # FIXME todo
 
-    def print(self, str_only=False):
+    def __str__(self):
         s = f"Activity source image: {self.image}\n"
-        s = f"Activity source radionuclide: {self.radionuclide}\n"
-        s = f"Activity source: {self.total_activity/gate.g4_units.Bq} Bq\n"
-        if str_only:
-            return s
-        print(s)
+        s += f"Activity source radionuclide: {self.radionuclide}\n"
+        s += f"Activity source: {self.total_activity/gate.g4_units.Bq} Bq"
+        return s
 
-    def create_simulation(self):
-        # can be: nothing / voxelized / gaga
+    def create_simulation(self, sim, output):
+        # can be: nothing or voxelized or gaga (later)
         if self.image is None:
             return
         if self.radionuclide is None:
             fatal(f"Radionuclide is None, please set a radionuclide (eg. 'lu177')")
 
         # FIXME gaga tests
-
-        sim = self.spect_config.sim
         source = sim.add_source("VoxelSource", f"{self.spect_config.simu_name}_source")
         source.image = self.image
         set_source_energy_spectrum(source, self.radionuclide)
@@ -386,8 +373,7 @@ class SourceConfig:
         if sim.visu is True:
             source.activity = 100 * gate.g4_units.Bq
 
-        self.source = source
-        return source
+        output.source = source
 
 
 class AcquisitionConfig:
@@ -415,182 +401,278 @@ class AcquisitionConfig:
             # FIXME later for Veriton
         }
 
-    def print(self, str_only=False):
+    def __str__(self):
         s = f"Acquisition duration: {self.duration/g4_units.s} sec\n"
         s += f"Acquisition radius: {self.radius/g4_units.mm} mm\n"
-        s += f"Acquisition # angles: {self.number_of_angles}\n"
-        if str_only:
-            return s
-        print(s)
+        s += f"Acquisition # angles: {self.number_of_angles}"
+        return s
 
-    def create_simulation(self):
-        # get number of heads and starting angles
+    def create_simulation(self, sim, output, detectors):
+        # get the number of heads and starting angles
         nb = str(self.spect_config.detector_config.number_of_heads)
         if nb not in self.available_starting_head_angles:
-            fatal(f"The number of heads must be 1 to 4")
+            fatal(f"The number of heads must in {self.available_starting_head_angles}")
         head_angles = self.available_starting_head_angles[nb]
-
-        # get the rotation angles
-        # if self.number_of_angles is None and self.angles is None:
-        #    fatal(f"You should provide either number_of_angles or angles")
 
         # set the rotation angles (runs)
         step_time = self.duration / self.number_of_angles
-        sim = self.spect_config.sim
         sim.run_timing_intervals = [
             [i * step_time, (i + 1) * step_time] for i in range(self.number_of_angles)
         ]
 
         # compute the gantry rotations
         step_angle = 360.0 / len(head_angles) / self.number_of_angles
-        d = self.spect_config.detector_config
-        m = d.get_model_module()
+        m = self.spect_config.detector_config.get_model_module()
         i = 0
         for sa in head_angles:
             m.rotate_gantry(
-                d.detectors[i], self.radius, sa, step_angle, self.number_of_angles
+                detectors[i], self.radius, sa, step_angle, self.number_of_angles
             )
             i += 1
 
 
-def spect_freeflight_run(sc, options):
+def spect_freeflight_run(sc, options, nb_threads=1, visu=False):
+    """
+    This is a help function to run primary + scatter simulations.
+    Only works if the source is unique and managed by the SPECTConfig.
+    """
 
-    # prepare output dict
+    # prepare an output dict
     output = Box()
-    out = sc.output_folder.resolve()
+    output_folder = sc.output_folder.resolve()
     output.options = options
 
     # run 1 = primary
-    sim = sc.create_simulation(number_of_threads=options.number_of_threads, visu=False)
-    source = sc.source_config.source
-    sim.output_dir = f"{sim.output_dir}/freeflight_primary"
-    spect_freeflight_initialize_primary(sim, sc, options)
+    print("----------------------------------------")
+    print("Simulation 1/2: primary")
+    sim = gate.Simulation()
+    output_prim = sc.create_simulation(sim, number_of_threads=nb_threads, visu=visu)
+    sim.output_dir = sim.output_dir / "primary"
+    options.volume_names = [c.name for c in output_prim.crystals]
+    spect_freeflight_initialize_primary(sim, sc, output_prim.source, options)
+    output_prim.source.activity = options.primary_activity
     sim.run(start_new_process=True)
 
     # store some output information
-    output.nb_detectors = len(sc.detector_config.detectors)
+    output.nb_detectors = len(output_prim.detectors)
     output.prim = Box()
-    output.prim.stats = sc.stats.stats.merged_data
-    output.prim.activity = source.activity / g4_units.Bq * sim.number_of_threads
+    output.prim.stats = output_prim.stats.stats.merged_data
+    output.prim.activity = (
+        output_prim.source.activity / g4_units.Bq * sim.number_of_threads
+    )
     output.prim.proj_paths = [
-        str(d.get_output_path("counts").relative_to(out))
-        for d in sc.detector_config.digitizers
+        str(d.get_output_path("counts").relative_to(output_folder))
+        for d in output_prim.digitizers
     ]
     output.prim.squared_proj_paths = [
-        str(d.get_output_path("squared_counts").relative_to(out))
-        for d in sc.detector_config.digitizers
+        str(d.get_output_path("squared_counts").relative_to(output_folder))
+        for d in output_prim.digitizers
     ]
-    print(sc.stats)
+    print(output_prim.stats)
 
     # run 2 = scatter
-    print()
-    print()
-    print()
-    sim = sc.create_simulation(number_of_threads=options.number_of_threads, visu=False)
-    source = sc.source_config.source
-    sim.output_dir = f"{sim.output_dir}/freeflight_scatter"
-    ff = spect_freeflight_initialize_scatter(sim, sc, options)
+    print("----------------------------------------")
+    print("Simulation 2/2: scatter")
+    sim = gate.Simulation()
+    output_scatter = sc.create_simulation(sim, number_of_threads=nb_threads, visu=visu)
+    sim.output_dir = sim.output_dir / "scatter"
+    options.volume_names = [c.name for c in output_scatter.crystals]
+    ff = spect_freeflight_initialize_scatter(sim, sc, output_scatter.source, options)
+    output_scatter.source.activity = options.scatter_activity
     sim.run(start_new_process=True)
 
     # store some output information
     output.scatter = Box()
-    output.scatter.stats = sc.stats.stats.merged_data
-    output.scatter.activity = source.activity / g4_units.Bq * sim.number_of_threads
+    output.scatter.stats = output_scatter.stats.stats.merged_data
+    output.scatter.activity = (
+        output_scatter.source.activity / g4_units.Bq * sim.number_of_threads
+    )
     output.scatter.proj_paths = [
-        str(d.get_output_path("counts").relative_to(out))
-        for d in sc.detector_config.digitizers
+        str(d.get_output_path("counts").relative_to(output_folder))
+        for d in output_scatter.digitizers
     ]
     output.scatter.squared_proj_paths = [
-        str(d.get_output_path("squared_counts").relative_to(out))
-        for d in sc.detector_config.digitizers
+        str(d.get_output_path("squared_counts").relative_to(output_folder))
+        for d in output_scatter.digitizers
     ]
-    print(sc.stats)
+    print(output_scatter.stats)
     print(ff)
 
     return output
 
 
-def spect_freeflight_initialize(sim):
+def spect_freeflight_initialize(sim, sc):
     # Weights MUST be in the digitizer
     hits_actors = sim.actor_manager.find_actors("hits")
+    if len(hits_actors) == 0:
+        fatal(
+            f'Cannot find actors with name "hits" in the simulation. '
+            f"{sim.actor_manager.actors}"
+        )
     for ha in hits_actors:
         if "Weight" not in ha.attributes:
             ha.attributes.append("Weight")
 
+    # be sure the squared counts flag is enabled
+    proj_actors = sim.actor_manager.find_actors("projection")
+    if len(proj_actors) == 0:
+        fatal(
+            f"Cannot find the digitizers in the detector config. {sc.detector_config}"
+        )
+    for d in proj_actors:
+        d.squared_counts.active = True
+
     # GeneralProcess must *NOT* be used
     s = f"/process/em/UseGeneralProcess false"
-    sim.g4_commands_before_init.append(s)
+    if s not in sim.g4_commands_before_init:
+        sim.g4_commands_before_init.append(s)
 
 
-def spect_freeflight_initialize_primary(sim, sc, options):
-    spect_freeflight_initialize(sim)
+def spect_freeflight_initialize_primary(sim, sc, source, options):
+    spect_freeflight_initialize(sim, sc)
     options = Box(options)
 
-    # get some information from spect config
-    source = sc.source_config.source
-    digitizers = sc.detector_config.digitizers
-    crystal_names = [c.name for c in sc.detector_config.crystals]
+    if "volume_names" not in options:
+        crystals = sim.volume_manager.find_volumes("crystal")
+        crystal_names = [c.name for c in crystals]
+        options.volume_names = crystal_names
 
-    # add the ff actor
-    n = sc.detector_config.get_detector_normal()
+    # add the ff actor (only once !)
+    normal_vector = sc.detector_config.get_detector_normal()
     ff_name = f"{sc.simu_name}_ff"
-    if not ff_name in sim.actor_manager.actors:
-        # (only one ff actor, but can have several sources)
+    if ff_name not in sim.actor_manager.actors:
         ff = sim.add_actor("GammaFreeFlightActor", ff_name)
         ff.attached_to = "world"
-        ff.ignored_volumes = crystal_names
+        ff.ignored_volumes = options.volume_names
     else:
-        ff = sim.actor_manager.actors[ff_name]
-    # source.direction.acceptance_angle.skip_policy = "ZeroEnergy"
-    source.direction.acceptance_angle.skip_policy = "SkipEvents"
-    source.direction.acceptance_angle.max_rejection = 1000
-    source.direction.acceptance_angle.intersection_flag = True
-    source.direction.acceptance_angle.volumes = crystal_names
-    source.direction.acceptance_angle.normal_flag = True
-    source.direction.acceptance_angle.normal_vector = n
-    source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
-    source.direction.acceptance_angle.distance_dependent_normal_tolerance = False
-    if "angle_tolerance_min_distance" in options:
-        source.direction.acceptance_angle.normal_tolerance_min_distance = (
-            options.angle_tolerance_min_distance
-        )
+        ff = sim.actor_manager.get_actor(ff_name)
+
     if "forced_direction_flag" in options:
         if options.forced_direction_flag:
-            source.direction.acceptance_angle.normal_flag = False
-            source.direction.acceptance_angle.intersection_flag = False
-            source.direction.acceptance_angle.forced_direction_flag = True
+            _spect_freeflight_initialize_primary_fd(sim, sc, source, options)
+            return ff
 
-    for d in digitizers:
-        d.squared_counts.active = True
     source.activity = options.primary_activity
+    source.direction.acceptance_angle.skip_policy = "SkipEvents"
+    if "max_rejection" in options:
+        source.direction.acceptance_angle.max_rejection = options.max_rejection
+    source.direction.acceptance_angle.volumes = options.volume_names
+    source.direction.acceptance_angle.forced_direction_flag = False
+    source.direction.acceptance_angle.intersection_flag = True
+    source.direction.acceptance_angle.normal_flag = True
+    source.direction.acceptance_angle.normal_vector = normal_vector
+    source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
+    # distance dependent normal tol is very slow, dont use it
+    source.direction.acceptance_angle.distance_dependent_normal_tolerance = False
+    # minimal distance should not be used for primary
+    source.direction.acceptance_angle.normal_tolerance_min_distance = 0
 
     return ff
 
 
-def spect_freeflight_initialize_scatter(sim, sc, options):
-    spect_freeflight_initialize(sim)
+def _spect_freeflight_initialize_primary_fd(sim, sc, source, options):
+    # need an additional source copy for each head
+    sources = [source]
+    for i in range(1, sc.detector_config.number_of_heads):
+        s = sim.source_manager.add_source_copy(source.name, f"{source.name}_{i}")
+        sources.append(s)
+
+    normal_vector = sc.detector_config.get_detector_normal()
+    i = 0
+    for source in sources:
+        source.activity = options.primary_activity
+        source.direction.acceptance_angle.skip_policy = "SkipEvents"
+        source.direction.acceptance_angle.volumes = [options.volume_names[i]]
+        source.direction.acceptance_angle.normal_vector = normal_vector
+        source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
+        source.direction.acceptance_angle.normal_flag = False
+        source.direction.acceptance_angle.intersection_flag = False
+        source.direction.acceptance_angle.forced_direction_flag = True
+        i += 1
+
+
+def spect_freeflight_initialize_primary_OLD_TO_REMOVE(sim, sc, options, sources=None):
+    spect_freeflight_initialize(sim, sc)
     options = Box(options)
 
-    # get some information from spect config
-    source = sc.source_config.source
-    digitizers = sc.detector_config.digitizers
-    crystal_names = [c.name for c in sc.detector_config.crystals]
+    # consider the sources to bias
+    if sources is None:
+        sources = [sc.source_config.source]
+    # check if sources is a list or a single element
+    if not isinstance(sources, list):
+        sources = [sources]
 
-    # reset the source AA if it was changed by "primary"
+    # get some information from spect config
+    crystal_names = [c.name for c in sc.detector_config.crystals]
+    total_activity = sum([source.activity for source in sources])
+
+    # add the ff actor (only one !)
+    n = sc.detector_config.get_detector_normal()
+    ff_name = f"{sc.simu_name}_ff"
+    if ff_name not in sim.actor_manager.actors:
+        ff = sim.add_actor("GammaFreeFlightActor", ff_name)
+        ff.attached_to = "world"
+        ff.ignored_volumes = crystal_names
+    else:
+        ff = sim.actor_manager.get_actor(ff_name)
+
+    for source in sources:
+        if total_activity != 0:
+            source.activity = (
+                source.activity / total_activity
+            ) * options.primary_activity
+        else:
+            source.activity = options.primary_activity
+        source.direction.acceptance_angle.skip_policy = "SkipEvents"
+        source.direction.acceptance_angle.max_rejection = 1000
+        source.direction.acceptance_angle.volumes = crystal_names
+        source.direction.acceptance_angle.intersection_flag = True
+        source.direction.acceptance_angle.normal_flag = True
+        source.direction.acceptance_angle.normal_vector = n
+        source.direction.acceptance_angle.normal_tolerance = options.angle_tolerance
+        # distance dependent normal tol is very slow, dont use it
+        source.direction.acceptance_angle.distance_dependent_normal_tolerance = False
+        # minimal distance should not be used for primary
+        source.direction.acceptance_angle.normal_tolerance_min_distance = 0
+        # Two methods: AA or FD
+        # AA = Angular Acceptance rejection
+        # FD = Forced Direction
+        if "forced_direction_flag" in options:
+            if options.forced_direction_flag:
+                source.direction.acceptance_angle.normal_flag = False
+                source.direction.acceptance_angle.intersection_flag = False
+                source.direction.acceptance_angle.forced_direction_flag = True
+
+    return ff
+
+
+def spect_freeflight_initialize_scatter(sim, sc, source, options):
+    spect_freeflight_initialize(sim, sc)
+    options = Box(options)
+
+    if "volume_names" not in options:
+        crystals = sim.volume_manager.find_volumes("crystal")
+        crystal_names = [c.name for c in crystals]
+        options.volume_names = crystal_names
+
+    # reset the source biasing if it was changed by "primary"
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
+    source.direction.acceptance_angle.forced_direction_flag = False
+    source.activity = options.scatter_activity
 
-    # run 1 = primary
+    # set the FF actor for scatter
     n = sc.detector_config.get_detector_normal()
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", f"{sc.simu_name}_ff")
     ff.attached_to = "world"
-    ff.ignored_volumes = crystal_names
+    ff.ignored_volumes = options.volume_names
     ff.compton_splitting_factor = options.compton_splitting_factor
     ff.rayleigh_splitting_factor = options.rayleigh_splitting_factor
     ff.max_compton_level = options.max_compton_level
     ff.acceptance_angle.intersection_flag = True
-    ff.acceptance_angle.volumes = crystal_names
     ff.acceptance_angle.normal_flag = True
+    ff.acceptance_angle.forced_direction_flag = False
+    ff.acceptance_angle.volumes = options.volume_names
     ff.acceptance_angle.normal_vector = n
     ff.acceptance_angle.normal_tolerance = options.angle_tolerance
     if "angle_tolerance_min_distance" in options:
@@ -607,10 +689,59 @@ def spect_freeflight_initialize_scatter(sim, sc, options):
     ff.acceptance_angle.distance2 = tol[2]
     ff.acceptance_angle.angle2 = tol[3]
     """
+    print(ff.user_info)
+    return ff
 
-    for d in digitizers:
-        d.squared_counts.active = True
-    source.activity = options.scatter_activity
+
+def spect_freeflight_initialize_scatter_OLD_TO_REMOVE(sim, sc, options, sources=None):
+    spect_freeflight_initialize(sim, sc)
+    options = Box(options)
+
+    # get some information from spect config
+    crystal_names = [c.name for c in sc.detector_config.crystals]
+
+    # reset the source biasing if it was changed by "primary"
+    # set the activity
+    if sources is None:
+        sources = [sc.source_config.source]
+    total_activity = sum([source.activity for source in sources])
+    for source in sources:
+        source.direction.acceptance_angle.intersection_flag = False
+        source.direction.acceptance_angle.normal_flag = False
+        if total_activity > 0:
+            source.activity = (
+                source.activity / total_activity
+            ) * options.scatter_activity
+        else:
+            source.activity = options.scatter_activity
+
+    # run 1 = primary
+    n = sc.detector_config.get_detector_normal()
+    ff = sim.add_actor("ScatterSplittingFreeFlightActor", f"{sc.simu_name}_ff")
+    ff.attached_to = "world"
+    ff.ignored_volumes = crystal_names
+    ff.compton_splitting_factor = options.compton_splitting_factor
+    ff.rayleigh_splitting_factor = options.rayleigh_splitting_factor
+    ff.max_compton_level = options.max_compton_level
+    ff.acceptance_angle.intersection_flag = True
+    ff.acceptance_angle.normal_flag = True
+    ff.acceptance_angle.volumes = crystal_names
+    ff.acceptance_angle.normal_vector = n
+    ff.acceptance_angle.normal_tolerance = options.angle_tolerance
+    if "angle_tolerance_min_distance" in options:
+        ff.acceptance_angle.normal_tolerance_min_distance = (
+            options.angle_tolerance_min_distance
+        )
+    ff.acceptance_angle.distance_dependent_normal_tolerance = False
+
+    """ REMOVED because too slow
+    ff.acceptance_angle.distance_dependent_normal_tolerance = True
+    tol = options.scatter_angle_tolerance
+    ff.acceptance_angle.distance1 = tol[0]
+    ff.acceptance_angle.angle1 = tol[1]
+    ff.acceptance_angle.distance2 = tol[2]
+    ff.acceptance_angle.angle2 = tol[3]
+    """
 
     return ff
 

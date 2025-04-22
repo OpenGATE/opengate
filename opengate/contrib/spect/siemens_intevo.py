@@ -412,7 +412,7 @@ def add_crystal(sim, head):
     red = [1, 0.0, 0.0, 0.9]
 
     name = head.name
-    crystal_sheath = sim.add_volume("Box", f"{name}_crystal_sheath")
+    crystal_sheath = sim.add_volume("Box", f"{name}_crys_sheath")
     crystal_sheath.mother = name
     crystal_sheath.size = [
         0.3048 * mm,  # , 591 * mm, 445 * mm
