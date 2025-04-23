@@ -623,6 +623,11 @@ class MaterialBuilder:
         n = read_tag(s[1], "n")
         if not n:
             f = float(read_tag(s[1], "f"))
+            if f == 0:
+                fatal(
+                    f"Error during reading material database {self.material_database.current_filename}"
+                    f", for the sub material {elname}, the fraction 'f=' is 0."
+                )
         else:
             n = int(n)
         e = Box({"name": elname, "n": n, "f": f, "type": "element"})
