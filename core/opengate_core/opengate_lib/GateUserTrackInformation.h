@@ -19,8 +19,8 @@ public:
     fMapOfTrackInformation[myActor] = boolInformation;
   }
 
-  G4bool GetGateTrackInformation(GateVActor *myActor) {
-    return fMapOfTrackInformation[myActor];
+  G4bool GetGateTrackInformation(GateVActor *myActor) const {
+    return fMapOfTrackInformation.at(myActor);
   }
 
 private:
