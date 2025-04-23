@@ -69,6 +69,8 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
   const auto dd = py::dict(user_info["acceptance_angle"]);
   l.fComptonSplittingOperation->InitializeAAManager(dd);
   l.fRayleighSplittingOperation->InitializeAAManager(dd);
+  l.fComptonSplittingOperation->SetInvolvedBiasActor(this);
+  l.fRayleighSplittingOperation->SetInvolvedBiasActor(this);
 }
 
 void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
@@ -119,7 +121,7 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
   auto *info =
       dynamic_cast<GateUserTrackInformation *>(track->GetUserInformation());
   // if not, just track as usual
-  if (info->fInfoType !=
+  if (info->GetGateTrackInformation(this) !=
       GateScatterSplittingFreeFlightOptn::cScatterSplittingFreeFlightType) {
     return;
   }
