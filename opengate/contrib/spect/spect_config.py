@@ -450,7 +450,6 @@ def spect_freeflight_run(sc, options, nb_threads=1, visu=False):
     sim.output_dir = sim.output_dir / "primary"
     options.volume_names = [c.name for c in output_prim.crystals]
     spect_freeflight_initialize_primary(sim, sc, output_prim.source, options)
-    output_prim.source.activity = options.primary_activity
     sim.run(start_new_process=True)
 
     # store some output information
@@ -544,6 +543,7 @@ def spect_freeflight_initialize_primary(sim, sc, source, options):
         ff = sim.add_actor("GammaFreeFlightActor", ff_name)
         ff.attached_to = "world"
         ff.ignored_volumes = options.volume_names
+        ff.minimal_weight = 1e-100
     else:
         ff = sim.actor_manager.get_actor(ff_name)
 
@@ -583,6 +583,7 @@ def _spect_freeflight_initialize_primary_fd(sim, sc, source, options):
     i = 0
     for source in sources:
         source.activity = options.primary_activity
+        print(source.activity)
         source.direction.acceptance_angle.skip_policy = "SkipEvents"
         source.direction.acceptance_angle.volumes = [options.volume_names[i]]
         source.direction.acceptance_angle.normal_vector = normal_vector
@@ -667,6 +668,7 @@ def spect_freeflight_initialize_scatter(sim, sc, source, options):
     n = sc.detector_config.get_detector_normal()
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", f"{sc.simu_name}_ff")
     ff.attached_to = "world"
+    ff.minimal_weight = 1e-100
     ff.ignored_volumes = options.volume_names
     ff.compton_splitting_factor = options.compton_splitting_factor
     ff.rayleigh_splitting_factor = options.rayleigh_splitting_factor
