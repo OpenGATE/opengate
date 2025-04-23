@@ -13,6 +13,7 @@ Copyright (C): OpenGATE Collaboration
 #include "../GateUserTrackInformation.h"
 #include "G4ParticleChange.hh"
 #include "G4VBiasingOperation.hh"
+#include "GateVBiasOptrActor.h"
 
 class GateScatterSplittingFreeFlightOptn : public G4VBiasingOperation {
 public:
@@ -33,13 +34,15 @@ public:
 
   void SetSplittingFactor(G4int splittingFactor);
   void InitializeAAManager(const py::dict &user_info);
+  void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
   G4int fSplittingFactor;
   G4ParticleChange fParticleChange;
   GateAcceptanceAngleManager *fAAManager;
   double *fNbTracks;
-  static constexpr int cScatterSplittingFreeFlightType = 666;
+  static constexpr bool cScatterSplittingFreeFlightType = true;
   GateUserTrackInformation *fUserTrackInformation;
+  GateVBiasOptrActor *fActor = nullptr;
 };
 
 #endif
