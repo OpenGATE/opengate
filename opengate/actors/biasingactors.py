@@ -86,6 +86,13 @@ class GenericBiasingActorBase(ActorBase):
                 "doc": "FIXME ",
             },
         ),
+        "minimal_weight": (
+            -1,
+            {
+                "doc": "if the particle weight become lower than this value, the particle is killed. "
+                "Negative values are considered with minimal_weight = min double default (1e-300)"
+            },
+        ),
     }
 
 

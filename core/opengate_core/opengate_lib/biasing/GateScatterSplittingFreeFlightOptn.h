@@ -40,7 +40,6 @@ public:
   G4ParticleChange fParticleChange;
   GateAcceptanceAngleManager *fAAManager;
   double *fNbTracks;
-  static constexpr bool cScatterSplittingFreeFlightType = true;
   GateUserTrackInformation *fUserTrackInformation;
   GateVBiasOptrActor *fActor = nullptr;
 };

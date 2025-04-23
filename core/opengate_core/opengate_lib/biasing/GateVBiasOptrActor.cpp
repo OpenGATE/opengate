@@ -17,6 +17,9 @@ GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
     : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {
   // It seems that it is needed in MT (see PreUserTrackingAction)
   fActions.insert("PreUserTrackingAction");
+  // SteppingAction for killing when the weight is too low
+  fActions.insert("SteppingAction");
+  fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
 }
 
 std::vector<G4VBiasingOperator *> &
@@ -34,6 +37,11 @@ void GateVBiasOptrActor::ClearOperators() {
 
 void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
+  fMinimalWeight = DictGetDouble(user_info, "minimal_weight");
+  if (fMinimalWeight < 0) {
+    fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
+  }
+
   fIgnoredVolumes = DictGetVecStr(user_info, "ignored_volumes");
 
   // check ignored volumes
@@ -86,5 +94,11 @@ void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *logicalDaughtersVolume =
         volume->GetDaughter(i)->GetLogicalVolume();
     AttachAllLogicalDaughtersVolumes(logicalDaughtersVolume);
+  }
+}
+
+void GateVBiasOptrActor::SteppingAction(G4Step *step) {
+  if (step->GetTrack()->GetWeight() < fMinimalWeight) {
+    step->GetTrack()->SetTrackStatus(fStopAndKill);
   }
 }

@@ -48,7 +48,7 @@ void GateScatterSplittingFreeFlightOptn::InitializeAAManager(
   fAAManager = new GateAcceptanceAngleManager();
   fAAManager->Initialize(user_info, true);
 
-  if (G4EmParameters::Instance()->GeneralProcessActive() == true) {
+  if (G4EmParameters::Instance()->GeneralProcessActive()) {
     Fatal("GeneralGammaProcess is not active. . This do *not* work for "
           "ScatterSplittingFreeFlight");
   }
@@ -118,8 +118,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
       // Seems that this pointer is free by G4
       fUserTrackInformation = new GateUserTrackInformation();
-      fUserTrackInformation->SetGateTrackInformation(
-          fActor, cScatterSplittingFreeFlightType);
+      fUserTrackInformation->SetGateTrackInformation(fActor, true);
       gammaTrack->SetUserInformation(fUserTrackInformation);
 
       // Add the track in the stack

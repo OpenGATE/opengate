@@ -124,8 +124,7 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
   const auto *info =
       dynamic_cast<GateUserTrackInformation *>(track->GetUserInformation());
   // if not, just track as usual
-  if (info->GetGateTrackInformation(this) !=
-      GateScatterSplittingFreeFlightOptn::cScatterSplittingFreeFlightType) {
+  if (!info->GetGateTrackInformation(this)) {
     return;
   }
 
@@ -196,6 +195,9 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
 
   // Check if this is free flight
   if (l.fCurrentTrackIsFreeFlight) {
+    if (step->GetTrack()->GetWeight() < fMinimalWeight) {
+      step->GetTrack()->SetTrackStatus(fStopAndKill);
+    }
     return;
   }
 

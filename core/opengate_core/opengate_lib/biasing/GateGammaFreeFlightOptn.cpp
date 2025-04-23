@@ -13,7 +13,6 @@ GateGammaFreeFlightOptn::GateGammaFreeFlightOptn(const G4String &name)
     : G4VBiasingOperation(name) {
   fForceFreeFlightInteractionLaw =
       new G4ILawForceFreeFlight("LawForOperation" + name);
-  fWeightIsTooLow = false;
 }
 
 GateGammaFreeFlightOptn::~GateGammaFreeFlightOptn() {
@@ -41,16 +40,8 @@ GateGammaFreeFlightOptn::GenerateBiasingFinalState(const G4Track *,
   return nullptr;
 }
 
-G4ILawForceFreeFlight *GateGammaFreeFlightOptn::GetForceFreeFlightLaw() const {
-  return fForceFreeFlightInteractionLaw;
-}
-
 void GateGammaFreeFlightOptn::ResetInitialTrackWeight(G4double w) {
   fProposedWeight = w;
-}
-
-G4bool GateGammaFreeFlightOptn::OperationComplete() const {
-  return fOperationComplete;
 }
 
 G4VParticleChange *GateGammaFreeFlightOptn::ApplyFinalStateBiasing(
@@ -61,9 +52,6 @@ G4VParticleChange *GateGammaFreeFlightOptn::ApplyFinalStateBiasing(
   fProposedWeight *= fProcessTypeToWeight[callingProcess->GetWrappedProcess()
                                               ->GetProcessSubType()];
   fParticleChange.ProposeWeight(fProposedWeight);
-
-  // FIXME check w and kill if too low ?
-
   fOperationComplete = true;
   return &fParticleChange;
 }

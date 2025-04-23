@@ -47,12 +47,14 @@ public:
   void Configure() override;
   void ConfigureForWorker() override;
   void PreUserTrackingAction(const G4Track *track) override;
+  void SteppingAction(G4Step *step) override;
   virtual void AttachAllLogicalDaughtersVolumes(G4LogicalVolume *volume);
 
   static void ClearOperators();
   static std::vector<G4VBiasingOperator *> &GetNonConstBiasingOperators();
 
   std::vector<std::string> fIgnoredVolumes;
+  double fMinimalWeight;
 };
 
 #endif
