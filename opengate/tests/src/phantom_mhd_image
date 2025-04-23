@@ -1,0 +1,16 @@
+# BREAST PHANTOM
+ct_image = path_of_your_file / "UncompressedBreast22.mhd"
+Breast_Phantom = sim.add_volume("Image", "Breast_Phantom")
+# Breast_Phantom = sim.add_volume('Box', "Breast_Phantom") # for visualization
+Breast_Phantom.image = (ct_image)
+# Breast_Phantom.size = [102.87 * mm, 102.87 * mm, 40.85 * mm] # for visualization
+Breast_Phantom.mother = "world"
+Breast_Phantom.translation = [0 * mm, 0 * mm, 0 * mm] 
+rot2 = R.from_euler('x',[90],degrees=True)
+Breast_Phantom.rotation = rot2.as_matrix()
+Breast_Phantom.voxel_materials =   # comment out for visualization
+[	[0, 0, "Air"],
+	[1, 1, "Adipose"],
+	[2, 2, "Glandular"],
+	[3, 3, "Skin_Bone"],
+]
