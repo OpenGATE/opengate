@@ -412,7 +412,7 @@ class AcquisitionConfig:
         nb = str(self.spect_config.detector_config.number_of_heads)
         if nb not in self.available_starting_head_angles:
             fatal(f"The number of heads must in {self.available_starting_head_angles}")
-        head_angles = self.available_starting_head_angles[nb]
+        starting_head_angles = self.available_starting_head_angles[nb]
 
         # set the rotation angles (runs)
         step_time = self.duration / self.number_of_angles
@@ -421,10 +421,10 @@ class AcquisitionConfig:
         ]
 
         # compute the gantry rotations
-        step_angle = 360.0 / len(head_angles) / self.number_of_angles
+        step_angle = 360.0 / len(starting_head_angles) / self.number_of_angles
         m = self.spect_config.detector_config.get_model_module()
         i = 0
-        for sa in head_angles:
+        for sa in starting_head_angles:
             m.rotate_gantry(
                 detectors[i], self.radius, sa, step_angle, self.number_of_angles
             )

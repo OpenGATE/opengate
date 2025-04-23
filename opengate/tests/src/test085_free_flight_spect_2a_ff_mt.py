@@ -25,7 +25,7 @@ if __name__ == "__main__":
         use_phsp=False,
     )
 
-    # AA with acceptance angle
+    # FF with Acceptance Angle
     source.direction.acceptance_angle.intersection_flag = True
     source.direction.acceptance_angle.normal_flag = True
     source.direction.acceptance_angle.volumes = ["spect_1"]
