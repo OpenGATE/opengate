@@ -84,14 +84,14 @@ if __name__ == "__main__":
     phspa.attributes = [
         "Polarization",
     ]
-    phspa.output_filename = "test090_phsp_actor_no_defined_polarization.root"
+    phspa.output_filename = "test091_phsp_actor_no_defined_polarization.root"
 
     # Run the simulation without user defined polarization
     print("Run the simulation without user defined polarization")
     sim.run(start_new_process=True)
 
     # The polarization outputs should be random
-    root_filename = paths.output / "test090_phsp_actor_no_defined_polarization.root"
+    root_filename = paths.output / "test091_phsp_actor_no_defined_polarization.root"
     root_file = uproot.open(root_filename)["PhaseSpace"]
     px = root_file["Polarization_X"].array(library="np")
     nb_compton_no_polarization = px.size
@@ -105,12 +105,12 @@ if __name__ == "__main__":
     # source.polarization = [0, 0, 1]  # circular polarization (right)
     # source.polarization = [0, 0, -1]  # circular polarization (left)
     # source.polarization = [0, 0, 0]  # unpolarized
-    phspa.output_filename = "test090_phsp_actor_with_polarization.root"
+    phspa.output_filename = "test091_phsp_actor_with_polarization.root"
     print("Run the simulation with user defined linear polarization")
     sim.run(start_new_process=True)
 
     # The polarization outputs should be 1, 0, 0
-    root_filename = paths.output / "test090_phsp_actor_with_polarization.root"
+    root_filename = paths.output / "test091_phsp_actor_with_polarization.root"
     root_file = uproot.open(root_filename)["PhaseSpace"]
     px = root_file["Polarization_X"].array(library="np")
     nb_compton_with_polarization = px.size
