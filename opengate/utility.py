@@ -620,3 +620,14 @@ def read_json_file(filename: Path) -> dict:
 
     with open(filename, "rb") as f:
         return json.load(f)
+
+
+def get_basename_and_extension(filename):
+    """Return the basename and extension of a filename even if .nii.gz is used."""
+    base = filename
+    extensions = []
+    while os.path.splitext(base)[1]:
+        base, ext = os.path.splitext(base)
+        extensions.append(ext)
+    extensions.reverse()
+    return os.path.basename(base), "".join(extensions)

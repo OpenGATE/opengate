@@ -8,7 +8,7 @@ import subprocess
 import os, sys
 
 
-def main(dependency="test085_free_flight_spect_2_ff_mt.py"):
+def main(dependency="test085_free_flight_spect_2a_ff_mt.py"):
 
     paths = utility.get_default_test_paths(
         __file__, None, output_folder="test085_spect"

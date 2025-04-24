@@ -51,7 +51,7 @@ void GatePencilBeamSource::InitializeDirection(py::dict puser_info) {
   auto d = py::dict(puser_info["direction"]);
   auto dd = py::dict(d["acceptance_angle"]);
   auto &l = fThreadLocalDataGenericSource.Get();
-  l.fAAManager = new GateAcceptanceAngleTesterManager;
+  l.fAAManager = new GateAcceptanceAngleManager;
   l.fAAManager->Initialize(dd, false);
   if (l.fAAManager->IsEnabled()) {
     Fatal("Sorry, cannot use Acceptance Angle with Pencil Beam source (yet).");

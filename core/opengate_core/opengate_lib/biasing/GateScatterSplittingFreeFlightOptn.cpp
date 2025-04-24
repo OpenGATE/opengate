@@ -45,10 +45,10 @@ void GateScatterSplittingFreeFlightOptn::SetSplittingFactor(
 
 void GateScatterSplittingFreeFlightOptn::InitializeAAManager(
     const py::dict &user_info) {
-  fAAManager = new GateAcceptanceAngleTesterManager();
+  fAAManager = new GateAcceptanceAngleManager();
   fAAManager->Initialize(user_info, true);
 
-  if (G4EmParameters::Instance()->GeneralProcessActive() == true) {
+  if (G4EmParameters::Instance()->GeneralProcessActive()) {
     Fatal("GeneralGammaProcess is not active. . This do *not* work for "
           "ScatterSplittingFreeFlight");
   }
@@ -80,7 +80,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
   // delete secondaries to avoid memory leak
   for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
-    auto *sec = final_state->GetSecondary(j);
+    const auto *sec = final_state->GetSecondary(j);
     delete sec;
   }
   particle_change->Clear(); // FIXME useful ? like in brem ?
@@ -95,11 +95,11 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
     // delete secondaries to avoid memory leak
     for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
-      auto *sec = final_state->GetSecondary(j);
+      const auto *sec = final_state->GetSecondary(j);
       delete sec;
     }
 
-    // Angular Acceptance rejection
+    // Angular Acceptance rejection, we ignore the secondary if not ok
     const auto momentum = particle_change->GetProposedMomentumDirection();
     if (!fAAManager->TestIfAccept(position, momentum)) {
       continue;
@@ -108,7 +108,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     energy = particle_change->GetProposedKineticEnergy();
     if (energy > 0) {
       // Create a new track with another gamma (free by G4)
-      auto gammaTrack = new G4Track(*track);
+      const auto gammaTrack = new G4Track(*track);
       gammaTrack->SetWeight(weight);
       gammaTrack->SetMomentumDirection(momentum);
       gammaTrack->SetKineticEnergy(energy);
@@ -118,8 +118,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
 
       // Seems that this pointer is free by G4
       fUserTrackInformation = new GateUserTrackInformation();
-      fUserTrackInformation->SetGateTrackInformation(
-          fActor, cScatterSplittingFreeFlightType);
+      fUserTrackInformation->SetGateTrackInformation(fActor, true);
       gammaTrack->SetUserInformation(fUserTrackInformation);
 
       // Add the track in the stack

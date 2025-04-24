@@ -404,6 +404,11 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     - database: The database source for attenuation coefficients, either 'EPDL' or 'NIST'.
     """
 
+    # IDE hints
+    image_volume = str
+    energy = float
+    database = str
+
     user_info_defaults = {
         "image_volume": (  # FIXME name or not name
             None,

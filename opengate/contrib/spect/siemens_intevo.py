@@ -4,7 +4,6 @@ from opengate.geometry.volumes import RepeatParametrisedVolume, BoxVolume
 from opengate.actors.digitizers import *
 from opengate.managers import Simulation
 from opengate.utility import g4_units
-from box import Box
 from opengate.contrib.spect.spect_helpers import get_volume_position_in_head
 from opengate.geometry.utility import get_transform_orbiting
 
@@ -249,12 +248,12 @@ def add_collimator_lehr(sim, head, debug):
     """
     #########################################################################
     #
-    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # 	Type	|	Diameter	|	Septal thickness	|	No. of holes
     # -----------------------------------------------------------------------
     # 	hex		|	1.11 mm		|	0.16 mm 			|	148000
     #
-    #	y spacing	= diameter + septial = 1.27 mm
-    #	z spacing	= 2 * (diameter + septial) * sin(60) = 2.19970453 mm
+    #	y spacing	= diameter + septal = 1.27 mm
+    #	z spacing	= 2 * (diameter + septal) * sin(60) = 2.19970453 mm
     #
     #	y translation	= y spacing / 2 = 0.635 mm
     #	z translation	= z spacing / 2 = 1.09985 mm
@@ -300,7 +299,7 @@ def add_collimator_melp(sim, head, debug):
     """
     #########################################################################
     #
-    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # 	Type	|	Diameter	|	Septal thickness	|	No. of holes
     # -----------------------------------------------------------------------
     # 	hex		|	2.94 mm		|	1.14 mm 			|	14000
     #
@@ -370,12 +369,12 @@ def add_collimator_he(sim, head, debug):
     """
     #########################################################################
     #
-    # 	Type	|	Diameter	|	Septial thickness	|	No. of holes
+    # 	Type	|	Diameter	|	Septal thickness	|	No. of holes
     # -----------------------------------------------------------------------
     # 	hex		|	4.0 mm		|	2.0 mm 				|	8000
     #
-    #	y spacing	= diameter + septial = 6.0 mm
-    #	z spacing	= 2 * (diameter + septial) * sin(60) = 10.39230485 mm
+    #	y spacing	= diameter + Septal = 6.0 mm
+    #	z spacing	= 2 * (diameter + Septal) * sin(60) = 10.39230485 mm
     #
     #	y translation	= y spacing / 2 = 3.0 mm
     #	z translation	= z spacing / 2 = 5.196152423 mm
@@ -413,7 +412,7 @@ def add_crystal(sim, head):
     red = [1, 0.0, 0.0, 0.9]
 
     name = head.name
-    crystal_sheath = sim.add_volume("Box", f"{name}_crystal_sheath")
+    crystal_sheath = sim.add_volume("Box", f"{name}_crys_sheath")
     crystal_sheath.mother = name
     crystal_sheath.size = [
         0.3048 * mm,  # , 591 * mm, 445 * mm
@@ -968,7 +967,6 @@ def rotate_gantry(
     for r in range(nb_angle):
         tr = head.translation.copy()
         tr[1] += radius
-        # t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
         t, rot = get_transform_orbiting(tr, "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
         rot = rot * initial_rotation
@@ -985,3 +983,142 @@ def rotate_gantry(
     # with the first position
     head.translation = translations[0]
     head.rotation = rotations[0]
+
+
+def add_intevo_digitizer_lu177_v3(sim, crystal_name, name, spectrum_channel=False):
+
+    keV = g4_units.keV
+    proj, singles_ene_windows = add_intevo_digitizer_v3(sim, crystal_name, name)
+    channels = [
+        {"name": f"spectrum", "min": 3 * keV, "max": 515 * keV},
+        {"name": f"scatter1_{name}", "min": 96 * keV, "max": 104 * keV},
+        {"name": f"peak113_{name}", "min": 104.52 * keV, "max": 121.48 * keV},
+        {"name": f"scatter2_{name}", "min": 122.48 * keV, "max": 133.12 * keV},
+        {"name": f"scatter3_{name}", "min": 176.46 * keV, "max": 191.36 * keV},
+        {"name": f"peak208_{name}", "min": 192.4 * keV, "max": 223.6 * keV},
+        {"name": f"scatter4_{name}", "min": 224.64 * keV, "max": 243.3 * keV},
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    singles_ene_windows.channels = channels
+    proj.input_digi_collections = [x["name"] for x in channels]
+
+    return proj
+
+
+def add_intevo_digitizer_lu177_v4(sim, crystal_name, name, spectrum_channel=False):
+
+    keV = g4_units.keV
+    proj, singles_ene_windows = add_intevo_digitizer_v3(sim, crystal_name, name)
+    channels = [
+        {"name": f"scatter1_{name}", "min": 84.75 * keV, "max": 101.7 * keV},
+        {"name": f"peak113_{name}", "min": 101.7 * keV, "max": 124.3 * keV},
+        {"name": f"scatter2_{name}", "min": 124.3 * keV, "max": 141.25 * keV},
+        {"name": f"scatter3_{name}", "min": 145.6 * keV, "max": 187.2 * keV},
+        {"name": f"peak208_{name}", "min": 187.2 * keV, "max": 228.8 * keV},
+        {"name": f"scatter4_{name}", "min": 228.8 * keV, "max": 270.4 * keV},
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    singles_ene_windows.channels = channels
+    proj.input_digi_collections = [x["name"] for x in channels]
+
+    return proj
+
+
+def add_intevo_digitizer_tc99m_v3(sim, crystal_name, name, spectrum_channel=False):
+
+    keV = g4_units.keV
+    proj, singles_ene_windows = add_intevo_digitizer_v3(sim, crystal_name, name)
+    channels = [
+        {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
+        {"name": f"scatter", "min": 108.57749938965 * keV, "max": 129.5924987793 * keV},
+        {"name": f"peak140", "min": 129.5924987793 * keV, "max": 150.60751342773 * keV},
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    singles_ene_windows.channels = channels
+    proj.input_digi_collections = [x["name"] for x in channels]
+
+    return proj
+
+
+def add_intevo_digitizer_v3(sim, crystal_name, name):
+
+    # hits
+    hits = sim.add_actor("DigitizerHitsCollectionActor", f"hits_{name}")
+    hits.attached_to = crystal_name
+    hits.output_filename = ""  # No output
+    hits.attributes = [
+        "PostPosition",
+        "TotalEnergyDeposit",
+        "PreStepUniqueVolumeID",
+        "PostStepUniqueVolumeID",
+        "GlobalTime",
+        "Weight",  # required when using VRT techniques such as Free Flight
+    ]
+
+    # singles
+    singles = sim.add_actor("DigitizerAdderActor", f"singles_{name}")
+    singles.attached_to = crystal_name
+    singles.input_digi_collection = hits.name
+    # sc.policy = "EnergyWeightedCentroidPosition"
+    singles.policy = "EnergyWinnerPosition"
+    singles.output_filename = ""  # No output
+    singles.group_volume = None
+
+    # efficiency actor
+    eff = sim.add_actor("DigitizerEfficiencyActor", f"singles_{name}_eff")
+    eff.attached_to = crystal_name
+    eff.input_digi_collection = singles.name
+    eff.efficiency = 0.86481  # FIXME probably wrong, to evaluate
+    eff.efficiency = 1.0
+    eff.output_filename = ""  # No output
+
+    # energy blur
+    keV = g4_units.keV
+    MeV = g4_units.MeV
+    ene_blur = sim.add_actor("DigitizerBlurringActor", f"singles_{name}_eblur")
+    ene_blur.output_filename = ""
+    ene_blur.attached_to = crystal_name
+    ene_blur.input_digi_collection = eff.name
+    ene_blur.blur_attribute = "TotalEnergyDeposit"
+    ene_blur.blur_method = "Linear"
+    ene_blur.blur_resolution = 0.13
+    ene_blur.blur_reference_value = 80 * keV
+    ene_blur.blur_slope = -0.09 * 1 / MeV
+
+    # spatial blurring
+    mm = g4_units.mm
+    spatial_blur = sim.add_actor(
+        "DigitizerSpatialBlurringActor", f"singles_{name}_sblur"
+    )
+    spatial_blur.output_filename = ""
+    spatial_blur.attached_to = crystal_name
+    spatial_blur.input_digi_collection = ene_blur.name
+    spatial_blur.blur_attribute = "PostPosition"
+    spatial_blur.blur_fwhm = 3.9 * mm
+    spatial_blur.keep_in_solid_limits = True
+
+    # energy windows
+    singles_ene_windows = sim.add_actor(
+        "DigitizerEnergyWindowsActor", f"{name}_energy_window"
+    )
+    singles_ene_windows.attached_to = crystal_name
+    singles_ene_windows.input_digi_collection = spatial_blur.name
+    singles_ene_windows.output_filename = ""  # No output
+
+    # projection
+    proj = sim.add_actor("DigitizerProjectionActor", f"{name}_projection")
+    proj.attached_to = crystal_name
+    proj.spacing = [4.7951998710632 * mm / 2, 4.7951998710632 * mm / 2]
+    proj.size = [128 * 2, 128 * 2]
+    proj.output_filename = "projection.mhd"
+    proj.origin_as_image_center = True
+
+    # plane orientation
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (90, 90), degrees=True
+    ).as_matrix()
+
+    return proj, singles_ene_windows

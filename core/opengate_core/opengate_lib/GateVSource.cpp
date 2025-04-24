@@ -90,11 +90,11 @@ void GateVSource::SetOrientationAccordingToAttachedVolume() {
 }
 
 unsigned long
-GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &simulation_times) {
+GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &time_intervals) {
   if (fMaxN != 0)
     return fMaxN;
   unsigned long n = 0;
-  for (auto time_interval : simulation_times)
+  for (auto time_interval : time_intervals)
     n += GetExpectedNumberOfEvents(time_interval);
   return n;
 }
@@ -102,11 +102,11 @@ GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &simulation_times) {
 unsigned long
 GateVSource::GetExpectedNumberOfEvents(const TimeInterval &time_interval) {
   long n = 0;
-  auto t0 = time_interval.first / CLHEP::s;
-  auto t1 = time_interval.second / CLHEP::s;
-  auto a = fInitialActivity / CLHEP::Bq;
-  auto l = fDecayConstant;
-  auto duration = t1 - t0;
+  const auto t0 = time_interval.first / CLHEP::s;
+  const auto t1 = time_interval.second / CLHEP::s;
+  const auto a = fInitialActivity / CLHEP::Bq;
+  const auto l = fDecayConstant;
+  const auto duration = t1 - t0;
   if (fHalfLife <= 0)
     n = (long)round((duration)*a);
   else {

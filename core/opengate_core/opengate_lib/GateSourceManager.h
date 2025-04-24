@@ -54,31 +54,31 @@ public:
   ~GateSourceManager() override;
 
   // [py side] store the list of run time intervals
-  void Initialize(TimeIntervals simulation_times, py::dict &options);
+  void Initialize(const TimeIntervals &simulation_times, py::dict &options);
 
   // [py side] add a source to manage
   void AddSource(GateVSource *source);
 
   // [py side] set the list of actors
-  void SetActors(std::vector<GateVActor *> &actors);
+  void SetActors(const std::vector<GateVActor *> &actors);
 
   // Return a source
-  GateVSource *FindSourceByName(std::string name) const;
+  GateVSource *FindSourceByName(const std::string &name) const;
 
   // [available on py side] start the simulation, master thread only
   void StartMasterThread();
 
   // Initialize a new Run
-  void PrepareRunToStart(int run_id);
+  void PrepareRunToStart(int run_id) const;
 
   // Called by G4 fEngine
-  void GeneratePrimaries(G4Event *anEvent) override;
+  void GeneratePrimaries(G4Event *event) override;
 
   // After an event, prepare for the next
-  void PrepareNextSource();
+  void PrepareNextSource() const;
 
   // Check if the current run is terminated
-  void CheckForNextRun();
+  void CheckForNextRun() const;
 
   void InitializeVisualization();
 
@@ -130,7 +130,8 @@ public:
     GateUserEventInformation *fUserEventInformation;
 
     // progress bar
-    indicators::ProgressBar *fProgressBar{};
+    // indicators::ProgressBar *fProgressBar;
+    std::unique_ptr<indicators::ProgressBar> fProgressBar;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 

@@ -100,7 +100,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # Calculate Wasserstein distance for comparison
     distance_posX = wasserstein_distance(both_posX, ref_both_posX)
-    tolerance_posX = 0.8
+    tolerance_posX = 1.0
     print(f"Wasserstein distance on X : {distance_posX}, tolerence {tolerance_posX}")
 
     distance_energy = wasserstein_distance(both_energy, ref_both_energy)

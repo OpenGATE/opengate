@@ -40,7 +40,8 @@ public:
 
   virtual double PrepareNextTime(double current_simulation_time);
 
-  virtual void GeneratePrimaries(G4Event *event, double time);
+  virtual void GeneratePrimaries(G4Event *event,
+                                 double current_simulation_time);
 
   virtual void SetOrientationAccordingToAttachedVolume();
 

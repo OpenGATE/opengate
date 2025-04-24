@@ -1,5 +1,6 @@
 import sys
 import logging
+import copy
 from typing import Optional, List, Union
 from box import Box
 from anytree import RenderTree, LoopError
@@ -339,6 +340,25 @@ class SourceManager(GateObject):
         if new_source is not source:
             return new_source
 
+    def add_source_copy(self, origin_source_name, copied_source_name):
+        # get the source to copy
+        orig = self.get_source(origin_source_name)
+        # get its type name
+        cls_name = type(orig).__name__
+        # create the new source
+        new_source = self.add_source(cls_name, copied_source_name)
+        # copy all elements except its name
+        new_source.user_info = copy.deepcopy(orig.user_info)
+        new_source.user_info.name = copied_source_name
+        return new_source
+
+    def remove_source(self, source_name):
+        if not source_name in self.sources:
+            fatal(
+                f"In 'remove_source', the source {source_name} is not in the list of sources: {self.sources}"
+            )
+        self.sources.pop(source_name)
+
     def _create_source(self, source_type, name):
         cls = None
         try:
@@ -459,6 +479,19 @@ class ActorManager(GateObject):
         # return the volume if it has not been passed as input, i.e. it was created here
         if new_actor is not actor:
             return new_actor
+
+    def find_actors(self, sub_str, case_sensitive=False):
+        # find all actors that contains this substring
+        actors = []
+        if not case_sensitive:
+            sub_str = sub_str.lower()
+        for actor in self.actors.values():
+            name = actor.name
+            if not case_sensitive:
+                name = name.lower()
+            if sub_str in name:
+                actors.append(actor)
+        return actors
 
     def remove_actor(self, name):
         self.actors.pop(name)
@@ -1135,6 +1168,19 @@ class VolumeManager(GateObject):
                     f"Volumes included in this simulation are: {self.volumes.keys()}"
                 )
 
+    def find_volumes(self, sub_str, case_sensitive=False):
+        # find all volumes that contains this substring
+        volumes = []
+        if not case_sensitive:
+            sub_str = sub_str.lower()
+        for actor in self.volumes.values():
+            name = actor.name
+            if not case_sensitive:
+                name = name.lower()
+            if sub_str in name:
+                volumes.append(actor)
+        return volumes
+
     def update_volume_tree_if_needed(self):
         if self._need_tree_update is True:
             self.update_volume_tree()
@@ -1611,19 +1657,11 @@ class Simulation(GateObject):
         self.actor_manager.from_dictionary(d["actor_manager"])
 
     def to_json_string(self):
-        warning(
-            "******************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            "******************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be dumped as JSON")
         return dumps_json(self.to_dictionary())
 
     def to_json_file(self, directory=None, filename=None):
-        warning(
-            "******************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            "******************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be dumped as JSON.")
         d = self.to_dictionary()
         if filename is None:
             filename = self.json_archive_filename
@@ -1635,19 +1673,11 @@ class Simulation(GateObject):
             self.copy_input_files(directory, dct=d)
 
     def from_json_string(self, json_string):
-        warning(
-            "**********************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            "**********************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be reloaded from JSON.")
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
-        warning(
-            "**********************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            "**********************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be reloaded from JSON.")
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 
@@ -1833,6 +1863,13 @@ class Simulation(GateObject):
                 print(w)
                 print()
             print("*" * 20)
+
+        # For all biasing operators inheriting from G4VBiasingOperator,
+        # we need to clean the global static variable "fOperators" once everything is done
+        # in order to be able to start another simulation. This should be only once
+        # and for any one of the operators, we choose GateGammaFreeFlightOptrActor
+        # but this clean for all. Trust me.
+        g4.GateGammaFreeFlightOptrActor.ClearOperators()
 
     def voxelize_geometry(
         self,

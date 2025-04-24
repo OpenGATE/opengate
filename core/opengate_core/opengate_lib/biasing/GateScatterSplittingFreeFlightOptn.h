@@ -8,7 +8,7 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptnComptonScatteringSplitting_h
 #define GateOptnComptonScatteringSplitting_h 1
 
-#include "../GateAcceptanceAngleTesterManager.h"
+#include "../GateAcceptanceAngleManager.h"
 #include "../GateHelpers.h"
 #include "../GateUserTrackInformation.h"
 #include "G4ParticleChange.hh"
@@ -38,9 +38,8 @@ public:
 
   G4int fSplittingFactor;
   G4ParticleChange fParticleChange;
-  GateAcceptanceAngleTesterManager *fAAManager;
+  GateAcceptanceAngleManager *fAAManager;
   double *fNbTracks;
-  static constexpr bool cScatterSplittingFreeFlightType = true;
   GateUserTrackInformation *fUserTrackInformation;
   GateVBiasOptrActor *fActor = nullptr;
 };

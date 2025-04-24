@@ -3,7 +3,6 @@ import pathlib
 import SimpleITK as sitk
 import itk
 from pathlib import Path
-
 from opengate.geometry.utility import (
     translate_point_to_volume,
     vec_g4_as_np,
@@ -242,3 +241,205 @@ def read_projections_as_sinograms(
         img.SetDirection(img.GetDirection())
         sinograms.append(img)
     return sinograms
+
+
+def poisson_rel_uncertainty(np_image):
+    """
+    Uncertainty for Poisson counts is sqrt(counts) = standard deviation
+    Relative uncertainty is sqrt(counts)/counts
+    """
+    relative_uncertainty = np_image
+    uncertainty = np.sqrt(np_image)
+    relative_uncertainty = np.divide(
+        uncertainty,
+        relative_uncertainty,
+        out=np.zeros_like(relative_uncertainty),
+        where=relative_uncertainty != 0,
+    )
+    return relative_uncertainty
+
+
+def poisson_rel_uncertainty_from_files(input_filename, output_rel_uncert=None):
+    """ """
+    img = sitk.ReadImage(input_filename)
+    relative_uncertainty = sitk.GetArrayFromImage(img)
+    relative_uncertainty = poisson_rel_uncertainty(relative_uncertainty)
+    if output_rel_uncert is not None:
+        uncert = sitk.GetImageFromArray(relative_uncertainty)
+        uncert.CopyInformation(img)
+        sitk.WriteImage(uncert, output_rel_uncert)
+    return relative_uncertainty
+
+
+def batch_rel_uncertainty(np_images):
+    """
+    Computes the mean and the relative uncertainty of the given images as np arrays.
+    Parameters:
+        np_images (list of np.ndarray): List of Numpy arrays from images.
+    Returns:
+        np.ndarray: The mean image.
+        np.ndarray: The relative uncertainty image.
+    """
+    mean = None
+    nb_batch = len(np_images)
+
+    # Compute mean
+    for m in np_images:
+        if mean is None:
+            mean = m.copy()
+        else:
+            mean += m
+    mean /= nb_batch
+
+    # Compute standard deviation (variance)
+    squared = None
+    for m in np_images:
+        diff_squared = np.power(m - mean, 2)
+        if squared is None:
+            squared = diff_squared
+        else:
+            squared += diff_squared
+
+    # Compute uncertainty
+    uncert = np.sqrt(np.divide(squared, nb_batch * (nb_batch - 1)))
+
+    # Compute relative uncertainty in %
+    uncert = np.divide(uncert, mean, out=np.zeros_like(mean), where=mean != 0)
+
+    return mean, uncert
+
+
+def batch_rel_uncertainty_from_files(
+    image_filenames, mean_filename=None, rel_uncert_filename=None
+):
+    """
+    Wrapper function that reads images from file, computes relative uncertainty, and writes results to files.
+    Parameters:
+        image_filenames (list of str): List of image file paths.
+        mean_filename (str): Path to save the mean image (optional).
+        rel_uncert_filename (str): Path to save the relative uncertainty image (optional).
+    Returns:
+        np.ndarray: The mean image.
+        np.ndarray: The relative uncertainty image.
+    """
+    # Read images into Numpy arrays
+    np_images = [sitk.GetArrayFromImage(sitk.ReadImage(f)) for f in image_filenames]
+
+    # Compute mean and relative uncertainty
+    mean, uncert = batch_rel_uncertainty(np_images)
+
+    # Write results back to files if filenames are provided
+    if mean_filename is not None:
+        img = sitk.GetImageFromArray(mean)
+        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
+        sitk.WriteImage(img, str(mean_filename))
+    if rel_uncert_filename is not None:
+        img = sitk.GetImageFromArray(uncert)
+        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
+        sitk.WriteImage(img, str(rel_uncert_filename))
+
+    return mean, uncert
+
+
+def compute_efficiency_from_files(filename, duration):
+    img_ref = sitk.ReadImage(str(filename))
+    np_uncert = sitk.GetArrayFromImage(img_ref)
+    return compute_efficiency(np_uncert, duration)
+
+
+def compute_efficiency(np_uncert, duration):
+    ones = np.ones_like(np_uncert)
+    eff = np.divide(
+        ones,
+        (np_uncert * np_uncert) * duration,
+        out=np.zeros_like(np_uncert),
+        where=np_uncert != 0,
+    )
+    return eff
+
+
+def history_rel_uncertainty(np_img, np_img_squared, n):
+    mean = np_img / n
+    squared = np_img_squared / n
+    variance = (squared - np.power(mean, 2)) / (n - 1)
+    uncertainty = np.divide(
+        np.sqrt(variance),
+        mean,
+        out=np.zeros_like(variance),
+        where=mean != 0,
+    )
+    return uncertainty
+
+
+def history_rel_uncertainty_from_files(
+    img_filename,
+    img_squared_filename,
+    n,
+    output_filename=None,
+):
+    # primary
+    img = sitk.ReadImage(img_filename)
+    img_squared = sitk.ReadImage(img_squared_filename)
+    mean = sitk.GetArrayFromImage(img)
+    squared = sitk.GetArrayFromImage(img_squared)
+
+    # compute
+    uncert = history_rel_uncertainty(mean, squared, n)
+
+    if output_filename is not None:
+        img_uncert = sitk.GetImageFromArray(uncert)
+        img_uncert.CopyInformation(img)
+        sitk.WriteImage(img_uncert, output_filename)
+
+    return uncert, mean, squared
+
+
+def history_ff_combined_rel_uncertainty(
+    vprim, vprim_squared, vscatter, vscatter_squared, n_prim, n_scatter
+):
+
+    # means for one event
+    prim = vprim / n_prim
+    prim_squared = vprim_squared / n_prim
+    scatter = vscatter / n_scatter
+    scatter_squared = vscatter_squared / n_scatter
+
+    # variances
+    prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
+    scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
+
+    # combine uncertainty
+    mean = prim + scatter
+    variance = prim_var + scatter_var
+    uncert = np.divide(
+        np.sqrt(variance),
+        mean,
+        out=np.zeros_like(variance),
+        where=mean != 0,
+    )
+
+    # rescale the mean for the final results
+    mean = mean * n_prim
+
+    return uncert, mean
+
+
+def batch_ff_combined_rel_uncertainty(
+    prim_mean, prim_uncert, scatter_mean, scatter_uncert, n_prim, n_scatter
+):
+    # combine mean
+    r = n_prim / n_scatter
+    mean = prim_mean + scatter_mean * r
+
+    # combine uncertainties
+    prim_var = np.power(prim_uncert * prim_mean, 2)
+    sc_var = np.power(scatter_uncert * scatter_mean, 2) * np.power(r, 2)
+    uncert = np.sqrt(prim_var + sc_var)
+    uncert = np.divide(
+        uncert,
+        mean,
+        out=np.zeros_like(uncert),
+        where=mean != 0,
+    )
+
+    return uncert, mean

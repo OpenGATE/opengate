@@ -78,7 +78,7 @@ void GateDigitizerHitsCollectionActor::BeginOfEventAction(
      actors may need hits from several events, so we leave the option to keep
      more events. It only fills to root if needed.
    */
-  bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+  const bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
   fHits->FillToRootIfNeeded(must_clear);
 }
 
@@ -98,10 +98,10 @@ void GateDigitizerHitsCollectionActor::SteppingAction(G4Step *step) {
               << " track=" << step->GetTrack()->GetTrackID() << " " << x << " "
               << s << std::endl;
     // nb transportation
-    auto post = step->GetPostStepPoint();
+    const auto post = step->GetPostStepPoint();
     auto process = post->GetProcessDefinedStep();
     if (process != nullptr) {
-      auto pname = process->GetProcessName();
+      const auto pname = process->GetProcessName();
       static int nb_tr = 0;
       if (pname == "Transportation") {
         nb_tr++;

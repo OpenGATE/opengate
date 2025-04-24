@@ -197,7 +197,7 @@ void CheckIsIn(const std::string &s, std::vector<std::string> &v) {
         "' in the list of possible values: " + c);
 }
 
-std::map<std::string, std::string> DictToMap(py::dict &user_info) {
+std::map<std::string, std::string> DictToMap(const py::dict &user_info) {
   std::map<std::string, std::string> map;
   for (auto p : user_info) {
     map[py::str(p.first)] = py::str(p.second);
@@ -205,7 +205,7 @@ std::map<std::string, std::string> DictToMap(py::dict &user_info) {
   return map;
 }
 
-bool StrToBool(std::string &s) {
+bool StrToBool(const std::string &s) {
   if (s == "True")
     return true;
   if (s == "False")
@@ -215,13 +215,26 @@ bool StrToBool(std::string &s) {
   return false; // to avoid warning
 }
 
-double StrToDouble(std::string &s) { return atof(s.c_str()); }
+double StrToDouble(const std::string &s) {
+  // this is needed ! as the local may interfere
+  std::locale::global(std::locale("C"));
+  try {
+    return std::stod(s);
+  } catch (const std::invalid_argument &) {
+    throw std::runtime_error("Invalid input string: cannot convert to double " +
+                             s);
+  } catch (const std::out_of_range &) {
+    throw std::runtime_error(
+        "Out of range: the value is out of range to store in a double " + s);
+  }
+}
 
-G4ThreeVector StrToG4ThreeVector(std::string &s) {
+G4ThreeVector StrToG4ThreeVector(const std::string &s) {
   G4ThreeVector n;
-  std::replace(s.begin(), s.end(), '[', ' ');
-  std::replace(s.begin(), s.end(), ']', ' ');
-  std::istringstream f(s);
+  std::string ls = s;
+  std::replace(ls.begin(), ls.end(), '[', ' ');
+  std::replace(ls.begin(), ls.end(), ']', ' ');
+  std::istringstream f(ls);
   std::string v;
   int i = 0;
   while (getline(f, v, ',')) {

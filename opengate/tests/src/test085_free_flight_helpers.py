@@ -3,6 +3,7 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
+import opengate.contrib.spect.siemens_intevo as intevo
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
@@ -63,7 +64,7 @@ def create_simulation_test085(
     if sim.visu:
         sim.number_of_threads = 1
         activity = 1000 * BqmL / sim.number_of_threads
-        activity = 0.2 * BqmL / sim.number_of_threads
+        activity = 50 * BqmL / sim.number_of_threads
 
     # world
     world = sim.world
@@ -120,9 +121,6 @@ def create_simulation_test085(
     # sim.physics_manager.set_production_cut("phantom", "gamma", 0.01 * mm)
     sim.user_hook_after_init = check_process_user_hook
 
-    if angle_tolerance is None:
-        angle_tolerance = 20 * deg
-
     # add iec voxelized source
     iec_source_filename = data_folder / "iec_4mm_activity.mhd"
     source = sim.add_source("VoxelSource", "src")
@@ -140,9 +138,10 @@ def create_simulation_test085(
     stats.output_filename = f"stats_{simu_name}.txt"
 
     # set the gantry orientation
+    starting_angle_deg = 10
     if len(heads) == 2:
-        nm670.rotate_gantry(heads[0], radius, 0, 0, 1)
-        nm670.rotate_gantry(heads[1], radius, 180, 0, 1)
+        nm670.rotate_gantry(heads[0], radius, starting_angle_deg, 0, 1)
+        nm670.rotate_gantry(heads[1], radius, starting_angle_deg + 180, 0, 1)
 
     return source, actors
 
@@ -188,6 +187,8 @@ def add_spect_heads(sim, simu_name, radius):
     proj1.output_filename = f"projection_1_{simu_name}.mhd"
     proj2 = digit2.find_module("projection")
     proj2.output_filename = f"projection_2_{simu_name}.mhd"
+    proj1.squared_counts.active = True
+    proj2.squared_counts.active = True
     projs = [proj1, proj2]
 
     # sim.physics_manager.set_production_cut(crystals[0].name, "all", 2 * mm)
