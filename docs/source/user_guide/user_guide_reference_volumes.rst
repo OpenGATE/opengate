@@ -356,6 +356,7 @@ Reference
 
 .. autoclass:: opengate.geometry.volumes.RepeatParametrisedVolume
 
+.. _boolean_vol:
 
 Boolean volumes
 ---------------

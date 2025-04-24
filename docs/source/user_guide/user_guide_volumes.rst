@@ -50,7 +50,7 @@ Most users will opt for this way of creating volumes.
 
 This second way of creating volumes is useful in cases where the volume
 is needed but should not be part of the simulation. For example, if it
-serves as basis for a `boolean operation <#boolean-volumes>`__, e.g. to
+serves as basis for a :ref:`boolean operation <boolean_vol>`, e.g. to
 be intersected with another volume.
 
 Note that the ``add_volume`` command in the second example does not
@@ -257,7 +257,7 @@ In this setup, the voxelized CT is placed in the primary world, representing the
 Volume voxelization
 -------------------
 
-Tools to convert any volume into voxelized image (a matrix of voxels) is provided. It is described in  `Voxelization <#voxelization>`__.
+Tools to convert any volume into voxelized image (a matrix of voxels) is provided. It is described in  :ref:`Voxelization <voxelization>`.
 
 
 Examples of complex geometries: Linac, SPECT, PET, phantoms

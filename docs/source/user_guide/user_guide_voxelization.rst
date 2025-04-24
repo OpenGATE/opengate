@@ -1,3 +1,4 @@
+.. _voxelization:
 ***************************************
 Details: Volume and source voxelization
 ***************************************
