@@ -107,7 +107,7 @@ Without modifications, most annihilation photon pairs from positron-electron ann
 Ion or e+ source
 ----------------
 
-To enable this behavior in a simulation, the user needs to set the `MeanEnergyPerIonPair` of all the materials where APA is desired to 0.5 eV (`Geant4 Release note <www.geant4.org/download/release-notes/notes-v10.7.0.html>`_).
+To enable this behavior in a simulation, the user needs to set the `MeanEnergyPerIonPair` of all the materials where APA is desired to 0.5 eV (`Geant4 Release note <https://www.geant4.org/download/release-notes/notes-v10.7.0.html>`_).
 This is done differently depending on whether the material is defined by Geant4, in `GateMaterials.db` or created dynamically.
 
 Geant4 default material

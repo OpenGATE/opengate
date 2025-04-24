@@ -6,6 +6,8 @@ Details: Volumes
 This section describes the different volumes available in GATE 10 and
 their parameters.
 
+.. _common_parameters:
+
 Common parameters
 -----------------
 
@@ -401,7 +403,7 @@ second shape is translated and rotated, respectively, with respect to
 the first shape prior to the boolean operation. The absolute placement
 in space in the simulation is irrelevant for this. On the other hand,
 the line ``final_vol.translation = [5 * cm, 5 * cm, 5 * cm]`` simply
-refers to the `common parameter <#Common%20parameters>`__ which
+refers to the :ref:`common parameter <common_parameters>` which
 specifies the placement of the final volume in space with respect to its
 mother, in this case the world volume.
 
