@@ -17,6 +17,8 @@ void init_G4Element(py::module &m) {
 
       // name symbol Zeff Aeff
       .def(py::init<const G4String &, const G4String &, G4double, G4double>())
+      // name symbol nbIsotopes
+      .def(py::init<const G4String &, const G4String &, G4int>())
 
       .def("__repr__",
            [](const G4Element &Element) {
@@ -25,6 +27,7 @@ void init_G4Element(py::module &m) {
              return flux.str();
            })
 
+      .def("AddIsotope", &G4Element::AddIsotope)
       .def("GetName", &G4Element::GetName, py::return_value_policy::reference)
       .def("GetSymbol", &G4Element::GetSymbol,
            py::return_value_policy::reference)

@@ -28,7 +28,7 @@ def main():
     cm = gate.g4_units.cm
 
     # add a material database
-    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     #  change world size
     world = sim.world

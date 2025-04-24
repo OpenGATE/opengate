@@ -33,9 +33,7 @@ if __name__ == "__main__":
     # activity = 1e2 * Bq / sim.number_of_threads
 
     # add a material database
-    sim.volume_manager.add_material_database(
-        test43.paths.gate_data / "GateMaterials.db"
-    )
+    sim.volume_manager.add_material_database(test43.paths.data / "GateMaterials.db")
 
     # init world
     test43.sim_set_world(sim)
