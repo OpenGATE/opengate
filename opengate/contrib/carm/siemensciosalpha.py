@@ -2,6 +2,7 @@ import opengate as gate
 from scipy.spatial.transform import Rotation
 import numpy as np
 from opengate.utility import LazyModuleLoader
+from .anode_heel_effect_model import get_phi_distribution
 
 sp = LazyModuleLoader("spekpy")
 import pathlib
@@ -111,12 +112,11 @@ class Ciosalpha:
         source.direction_relative_to_attached_volume = True
         source.direction.type = "histogram"
         source.direction.histogram_theta_weights = [1]
-        source.direction.histogram_theta_angles = [85 * deg, 95 * deg]
+        source.direction.histogram_theta_angles = [82.68 * deg, 97.32 * deg]
 
-        # TODO: Need real values for the anode heel effect
-        data = np.load(current_path / "anodeheeleffect.npz")
-        source.direction.histogram_phi_weights = data["weight"]
-        source.direction.histogram_phi_angles = data["angle"]
+        phi_weights, phi_angles = get_phi_distribution(kvp)
+        source.direction.histogram_phi_weights = phi_weights
+        source.direction.histogram_phi_angles = phi_angles
 
         source.energy.type = "histogram"
         source.energy.histogram_weight = weights
@@ -125,7 +125,7 @@ class Ciosalpha:
         source.direction.acceptance_angle.volumes = [sourcebox.name]
         source.direction.acceptance_angle.normal_flag = True
         source.direction.acceptance_angle.normal_vector = [1, 0, 0]
-        source.direction.acceptance_angle.normal_tolerance = 5 * deg
+        source.direction.acceptance_angle.normal_tolerance = 180 * deg
         source.direction.acceptance_angle.skip_policy = "SkipEvents"
 
         return source
@@ -136,20 +136,20 @@ class Ciosalpha:
 
         collimators = [
             {
-                "translation": [37.5 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-                "size": [2.5 * cm, 5 * cm, 1 * mm],
+                "translation": [42.5 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+                "size": [1.5 * cm, 10 * cm, 1 * mm],
             },
             {
                 "translation": [-37.5 * mm, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-                "size": [2.5 * cm, 5 * cm, 1 * mm],
+                "size": [1.5 * cm, 10 * cm, 1 * mm],
             },
             {
                 "translation": [0 * cm, 37.5 * mm, -z_xray_tank / 2 * mm + 3 * mm],
-                "size": [5 * cm, 2.5 * cm, 1 * mm],
+                "size": [10 * cm, 1.5 * cm, 1 * mm],
             },
             {
                 "translation": [0 * cm, -37.5 * mm, -z_xray_tank / 2 * mm + 3 * mm],
-                "size": [5 * cm, 2.5 * cm, 1 * mm],
+                "size": [10 * cm, 1.5 * cm, 1 * mm],
             },
         ]
 
@@ -166,7 +166,7 @@ class Ciosalpha:
         killer.attached_to = [f"{self.machine_name}_collimator{i+1}" for i in range(4)]
 
     def set_collimation(self, collimation1, collimation2):
-        if not 0 <= collimation1 <= 25 or not 0 <= collimation2 <= 25:
+        if not 10 <= collimation1 <= 25 or not 10 <= collimation2 <= 25:
             raise ValueError("Collimation values must be between 0 and 25 mm")
 
         collimation1 = 25 - collimation1
@@ -176,10 +176,10 @@ class Ciosalpha:
         z_xray_tank = xray_tank.size[2]
 
         translations = [
-            [37.5 * mm - collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-            [-37.5 * mm + collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
-            [0 * cm, 37.5 * mm - collimation2, -z_xray_tank / 2 * mm + 3 * mm],
-            [0 * cm, -37.5 * mm + collimation2, -z_xray_tank / 2 * mm + 3 * mm],
+            [42.5 * mm - collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+            [-42.5 * mm + collimation1, 0 * cm, -z_xray_tank / 2 * mm + 1 * mm],
+            [0 * cm, 42.5 * mm - collimation2, -z_xray_tank / 2 * mm + 3 * mm],
+            [0 * cm, -42.5 * mm + collimation2, -z_xray_tank / 2 * mm + 3 * mm],
         ]
 
         for i, translation in enumerate(translations):
