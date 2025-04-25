@@ -4,6 +4,7 @@ import pathlib
 import joblib
 from scipy.interpolate import interp1d
 
+
 # Function to generate phi_weights and phi_angles based on kvp (energy)
 def get_phi_distribution(kvp):
     # Load the scaler and model
@@ -14,14 +15,15 @@ def get_phi_distribution(kvp):
     distances = np.arange(-9, 10, 1)
     phi_angles = np.arctan(distances / 70)
 
-
     # Create a DataFrame for prediction
-    input_data = pd.DataFrame({
-        'Distance': distances,
-        'Energy': kvp,
-        'Theta': phi_angles,
-        'ThetaDegrees': np.degrees(phi_angles)
-    })
+    input_data = pd.DataFrame(
+        {
+            "Distance": distances,
+            "Energy": kvp,
+            "Theta": phi_angles,
+            "ThetaDegrees": np.degrees(phi_angles),
+        }
+    )
 
     # Scale the input data
     input_data_scaled = scaler.transform(input_data)
@@ -34,7 +36,7 @@ def get_phi_distribution(kvp):
     fine_phi_angles = np.arctan(fine_distances / 70)
 
     # Interpolate the predicted weights using linear interpolation
-    interp_function = interp1d(distances, phi_weights, kind='linear')
+    interp_function = interp1d(distances, phi_weights, kind="linear")
 
     # Interpolate predictions for the finer distances
     fine_phi_weights = interp_function(fine_distances)
