@@ -144,8 +144,8 @@ class VoxelizedPromptGammaTLEActor(
         )
 
     def initialize(self, *args):
-        self.check_user_input()  
-        VoxelDepositActor.initialize(self)  
+        self.check_user_input()
+        VoxelDepositActor.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 

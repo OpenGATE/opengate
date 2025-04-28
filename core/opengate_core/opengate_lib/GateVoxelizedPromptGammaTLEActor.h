@@ -5,55 +5,54 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-   #ifndef GateVoxelizedPromptGammaTLEActor_h
-   #define GateVoxelizedPromptGammaTLEActor_h
-   
-   #include "GateDoseActor.h"
-   #include "GateMaterialMuHandler.h"
-   #include "G4Cache.hh"
-   #include "G4EmCalculator.hh"
-   #include "G4NistManager.hh"
-   #include "G4VPrimitiveScorer.hh"
-   
-   #include <pybind11/stl.h>
-   
-   namespace py = pybind11;
-   
-   class GateVoxelizedPromptGammaTLEActor : public GateVActor {
-   
-   public:
-     // Constructor
-     ~GateVoxelizedPromptGammaTLEActor() override;
+#ifndef GateVoxelizedPromptGammaTLEActor_h
+#define GateVoxelizedPromptGammaTLEActor_h
 
-     explicit GateVoxelizedPromptGammaTLEActor(py::dict &user_info);
-   
-     void InitializeUserInfo(py::dict &user_info) override;
-   
-     void InitializeCpp() override;
-   
-     void BeginOfRunActionMasterThread(int run_id) override;
+#include "G4Cache.hh"
+#include "G4EmCalculator.hh"
+#include "G4NistManager.hh"
+#include "G4VPrimitiveScorer.hh"
+#include "GateDoseActor.h"
+#include "GateMaterialMuHandler.h"
 
-     int EndOfRunActionMasterThread(int run_id) override;
+#include <pybind11/stl.h>
 
-     void EndOfRunAction(const G4Run *run);
-   
-     void BeginOfEventAction(const G4Event *event) override;
+namespace py = pybind11;
 
+class GateVoxelizedPromptGammaTLEActor : public GateVActor {
 
-     void SteppingAction(G4Step *) override;
+public:
+  // Constructor
+  ~GateVoxelizedPromptGammaTLEActor() override;
 
-     // Image type
-     typedef itk::Image<double, 4> ImageType;
-     ImageType::Pointer cpp_image;
+  explicit GateVoxelizedPromptGammaTLEActor(py::dict &user_info);
 
-    private:
-     G4double T0;
-     G4double norm;
-     G4int incidentParticles;
-     G4int bins;
-     G4double range;
-     G4ThreeVector fTranslation;
-     G4bool prot;
-   };
-   
-   #endif // GateVoxelizedPromptGammaTLEActor_h
+  void InitializeUserInfo(py::dict &user_info) override;
+
+  void InitializeCpp() override;
+
+  void BeginOfRunActionMasterThread(int run_id) override;
+
+  int EndOfRunActionMasterThread(int run_id) override;
+
+  void EndOfRunAction(const G4Run *run);
+
+  void BeginOfEventAction(const G4Event *event) override;
+
+  void SteppingAction(G4Step *) override;
+
+  // Image type
+  typedef itk::Image<double, 4> ImageType;
+  ImageType::Pointer cpp_image;
+
+private:
+  G4double T0;
+  G4double norm;
+  G4int incidentParticles;
+  G4int bins;
+  G4double range;
+  G4ThreeVector fTranslation;
+  G4bool prot;
+};
+
+#endif // GateVoxelizedPromptGammaTLEActor_h
