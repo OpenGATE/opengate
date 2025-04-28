@@ -9,8 +9,10 @@
 
 namespace py = pybind11;
 
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 void init_GateHelpers(py::module &m) {
   m.def("DictGetG4RotationMatrix", DictGetG4RotationMatrix);
+  m.def("createTestQtWindow", &createTestQtWindow);
 }
