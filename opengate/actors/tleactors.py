@@ -6,7 +6,20 @@ from .actoroutput import (
     ActorOutputSingleImageOfHistogram,
     ActorOutputImage,
     ActorOutputSingleImage,
+    UserInterfaceToActorOutputImage,
+    ActorOutputBase,
+    ActorOutputUsingDataItemContainer,
 )
+import itk
+
+from ..image import (
+    update_image_py_to_cpp,
+    get_py_image_from_cpp_image,
+    images_have_same_domain,
+    resample_itk_image_like,
+)
+import SimpleITK as sitk
+import itk
 from .doseactors import DoseActor, VoxelDepositActor
 
 
@@ -68,6 +81,7 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
         super().initialize(args)
 
 
+
 class VoxelizedPromptGammaTLEActor(
     VoxelDepositActor, g4.GateVoxelizedPromptGammaTLEActor
 ):
@@ -82,14 +96,35 @@ class VoxelizedPromptGammaTLEActor(
                 "doc": "TODO",
             },
         ),
-        "bins": (100, {"doc": "TODO"}),
+        "bins":(
+            200,
+            {
+                "doc": "Number of bins in the histogram",
+            },
+        ),
+        "range":(
+            10 * g4_units.ns,
+            {
+                "doc": "Range of the histogram in ns",
+            },
+        ),
+        "proton":(
+            True,
+            {
+                "doc": "True if the collisions of interest are from the proton, False if it is from the neutron",
+            },
+        )
     }
 
     user_output_config = {
+<<<<<<< HEAD
         "vpg": {
             "actor_output_class": ActorOutputSingleImageOfHistogram,
             "active": True,
         },
+=======
+        "correl": {"actor_output_class": ActorOutputSingleImage, "active": True},
+>>>>>>> 9b6b31a2805308283a15bc5a0006868397adf09a
     }
 
     def __init__(self, *args, **kwargs) -> None:
@@ -103,7 +138,7 @@ class VoxelizedPromptGammaTLEActor(
                 "BeginOfRunActionMasterThread",
                 "BeginOfEventAction",
                 "SteppingAction",
-                "PreUserTrackingAction",
+                "EndOfRunAction",
                 "EndOfRunActionMasterThread",
             }
         )
@@ -111,8 +146,6 @@ class VoxelizedPromptGammaTLEActor(
     def initialize(self, *args):
         self.check_user_input()
         VoxelDepositActor.initialize(self)
-
-        # C++ side
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
