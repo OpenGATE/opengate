@@ -23,9 +23,10 @@ from .actoroutput import (
     ActorOutputSingleImageWithVariance,
     UserInterfaceToActorOutputImage,
     ActorOutputRoot,
-    ActorOutputImage
+    ActorOutputImage,
 )
 import itk
+
 
 class VoxelDepositActor(ActorBase):
     """Base class which holds user input parameters common to all actors
@@ -229,8 +230,8 @@ class VoxelDepositActor(ActorBase):
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         self._assert_output_exists(output_name)
-        #self.user_output[output_name].size = self.size
-        #self.user_output[output_name].spacing = self.spacing
+        # self.user_output[output_name].size = self.size
+        # self.user_output[output_name].spacing = self.spacing
         self.user_output[output_name].create_empty_image(
             run_index, self.size, self.spacing, origin=self.translation, **kwargs
         )
@@ -919,7 +920,6 @@ class ProductionAndStoppingActor(VoxelDepositActor, g4.GateProductionAndStopping
 
 class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
 
-
     user_info_defaults = {
         "timebins": (
             None,
@@ -933,12 +933,7 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
                 "doc": "Number of energy bins",
             },
         ),
-        "output_name":(
-            None,
-            {
-                "doc":"output_name"
-            }
-        )
+        "output_name": (None, {"doc": "output_name"}),
     }
 
     user_output_config = {
@@ -973,18 +968,17 @@ class FluenceActor(VoxelDepositActor, g4.GateFluenceActor):
         self.InitializeCpp()
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
 
-
     def BeginOfRunActionMasterThread(self, run_index):
         g4.GateFluenceActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-      
-           # Save the image using ITK 
+
+        # Save the image using ITK
         filename = g4.GateFluenceActor.GetOutputImage(self)
         itk_image = itk.imread(filename)
-        itk.imwrite(itk_image, self.user_info['output_name'])
+        itk.imwrite(itk_image, self.user_info["output_name"])
         self.user_output.emission.store_data(run_index, itk_image)
-        
+
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 
