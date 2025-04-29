@@ -104,6 +104,9 @@ void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
 void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we (re-)attach each run
   AttachImageToVolume<Image3DType>(tof_cpp_image, fPhysicalVolumeName, fTranslation);
+  std::cout<<tof_cpp_image->GetOrigin()<<std::endl;
+  std::cout<<tof_cpp_image->GetSpacing()<<std::endl;
+  std::cout<<tof_cpp_image->GetLargestPossibleRegion()<<std::endl;
 }
 
 void GateFluenceActor::SteppingAction(G4Step *step) {
