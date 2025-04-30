@@ -15,6 +15,7 @@ from multiprocessing import Pool
 import yaml
 from box import Box
 import ast
+import hashlib
 
 from opengate.exception import fatal, colored, color_ok, color_error, color_warning
 from opengate_core.testsDataSetup import check_tests_data_folder
@@ -40,6 +41,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     is_flag=True,
     default=False,
     help="Start the last 10 tests and 1/4 of the others randomly",
+)
+@click.option(
+    "--seed",
+    "-s",
+    default="",
+    help="Seed for the random generator",
 )
 @click.option(
     "--processes_run",
@@ -70,6 +77,7 @@ def go(
     start_id,
     end_id,
     random_tests,
+    seed,
     no_log_on_fail,
     processes_run,
     run_previously_failed_jobs,
@@ -102,7 +110,9 @@ def go(
 
     if not run_previously_failed_jobs:
         files_to_run_avail, files_to_ignore = get_files_to_run()
-        files_to_run = select_files(files_to_run_avail, start_id, end_id, random_tests)
+        files_to_run = select_files(
+            files_to_run_avail, start_id, end_id, random_tests, seed
+        )
         download_data_at_first_run(files_to_run_avail[0])
         dashboard_dict_out = {k: [""] for k in files_to_run_avail}
     else:
@@ -289,7 +299,7 @@ def decompose_g4_versioning(g4str):
     return g4_version
 
 
-def select_files(files_to_run, test_id, end_id, random_tests):
+def select_files(files_to_run, test_id, end_id, random_tests, seed):
     pattern = re.compile(r"^test([0-9]+)")
 
     if test_id != "all" or end_id != "all":
@@ -310,6 +320,13 @@ def select_files(files_to_run, test_id, end_id, random_tests):
     elif random_tests:
         files_new = files_to_run[-10:]
         prob = 0.25
+        if not seed == "":
+            # Convert string to a hash and then to an integer
+            hash_object = hashlib.md5(seed.encode())
+            hash_hex = hash_object.hexdigest()
+            seed_nb = int(hash_hex, 16) % (2**32)
+            random.seed(seed_nb)
+
         files = files_new + random.sample(
             files_to_run[:-10], int(prob * (len(files_to_run) - 10))
         )
