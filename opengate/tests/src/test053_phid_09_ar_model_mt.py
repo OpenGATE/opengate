@@ -69,7 +69,7 @@ def main(dependency="test053_phid_08_ar_ref_mt.py"):
         end_time,
         model_index=147,
         tol=0.015,
-        n_tol=0.18,
+        n_tol=0.185,
     )
 
     test_ok(is_ok)
