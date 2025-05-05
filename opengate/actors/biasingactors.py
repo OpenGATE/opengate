@@ -14,7 +14,7 @@ def generic_source_default_aa():
     return Box(
         {
             "skip_policy": "SkipEvents",
-            "max_rejection": 1000,
+            "max_rejection": 10000,
             "volumes": [],
             "intersection_flag": False,
             "normal_flag": False,
