@@ -203,13 +203,16 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
 
     # attenuation correction
     att_transform = None
+    att_img = None
     if "attenuation_image" in options:
         att_filename = options["attenuation_image"]
         if att_filename is not None:
+            print(att_filename, type(att_filename))
             if type(att_filename) is str:
                 img = sitk.ReadImage(att_filename)
             else:
                 img = att_filename
+            att_img = img
             arr = (
                 sitk.GetArrayFromImage(img).astype(np.float32) / 10
             )  # need cm-1 -> ???? FIXME
@@ -258,6 +261,10 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
     reconstructed_object_sitk.SetSpacing(spacing_itk)
     origin = -(size * spacing_itk) / 2.0 + spacing_itk / 2.0
     reconstructed_object_sitk.SetOrigin(origin)
+
+    # att ?
+    if att_transform is not None:
+        reconstructed_object_sitk.SetOrigin(att_img.GetOrigin())
 
     return reconstructed_object_sitk
 
