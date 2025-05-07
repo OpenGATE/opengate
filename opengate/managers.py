@@ -315,6 +315,7 @@ class SourceManager(GateObject):
                 f"Cannot find the source {source_name}. "
                 f"Sources included in this simulation are: {list(self.sources.keys())}"
             )
+            return None  # (to avoid warning)
 
     def add_source(self, source, name):
         new_source = None
@@ -336,9 +337,10 @@ class SourceManager(GateObject):
             )
         self.sources[new_source.name] = new_source
         self.sources[new_source.name].simulation = self.simulation
-        # return the volume if it has not been passed as input, i.e. it was created here
+        # return the volume if it has not been passed as input, i.e., it was created here
         if new_source is not source:
             return new_source
+        return source
 
     def add_source_copy(self, origin_source_name, copied_source_name):
         # get the source to copy

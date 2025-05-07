@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # create the simulation
     print(sc)
     sim = gate.Simulation()
-    output = sc.create_simulation(sim, number_of_threads=1, visu=False)
+    output = sc.setup_simulation(sim, number_of_threads=1, visu=False)
     print(output)
 
     # make it FF-AA primary
