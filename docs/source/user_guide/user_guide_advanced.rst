@@ -109,7 +109,7 @@ Ion or e+ source
 
 To enable this behavior in a simulation, the user needs to set the `MeanEnergyPerIonPair` of all the materials where APA is desired to 0.5 eV (`Geant4 Release note <https://www.geant4.org/download/release-notes/notes-v10.7.0.html>`_).
 This is done differently depending on whether the material is defined by Geant4, in `GateMaterials.db` or created dynamically.
-Note: not all physics lists simulate APA (em_standard does but not Penelope). 
+Note: not all physics lists simulate APA (em_standard does but not Penelope).
 
 Geant4 default material
 ~~~~~~~~~~~~~~~~~~~~~~~
