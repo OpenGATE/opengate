@@ -1084,7 +1084,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
             label_to_mu[label] = mu
 
         arr = itk.GetArrayViewFromImage(self.label_image)
-        mu_arr = arr.copy().astype("float")
+        mu_arr = arr.copy().astype("float32")
         for label, mu in label_to_mu.items():
             mu_arr[mu_arr == label] = mu
         itk_mu_img = itk.GetImageFromArray(mu_arr)
