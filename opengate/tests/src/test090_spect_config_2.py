@@ -39,7 +39,7 @@ if __name__ == "__main__":
     # create the simulation
     print(sc)
     sim = gate.Simulation()
-    output = sc.setup_simulation(sim, number_of_threads=1, visu=False)
+    output = sc.create_simulation(sim, number_of_threads=1, visu=False)
     print(output)
 
     # run it
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     sc.acquisition_config.number_of_angles = 3
     sc.source_config.radionuclide = "in111"
     sim = gate.Simulation()
-    output = sc.setup_simulation(sim, number_of_threads=1, visu=False)
+    output = sc.create_simulation(sim, number_of_threads=1, visu=False)
     sim.random_seed = 987654
     sim.run(start_new_process=True)
 

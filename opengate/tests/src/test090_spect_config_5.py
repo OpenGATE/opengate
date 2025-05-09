@@ -12,26 +12,35 @@ if __name__ == "__main__":
     # TEST 3: intevo, Lu177, 2 heads, 3 angles, with FF scatter
     sc = create_test_spect_config(paths)
 
-    # units
-    deg = g4_units.deg
-    Bq = g4_units.Bq
-    cm = g4_units.cm
-
-    # make it FF scatter
-    sc.free_flight_config.scatter_activity = 1e3 * Bq
-    sc.free_flight_config.angle_tolerance = 15 * deg
-    sc.free_flight_config.angle_tolerance_min_distance = 6 * cm
-    sc.free_flight_config.max_compton_level = 5
-    sc.free_flight_config.compton_splitting_factor = 20
-    sc.free_flight_config.rayleigh_splitting_factor = 20
-
     # create the simulation
+    print(sc)
     sim = gate.Simulation()
-    sim.random_seed = 123654987
-    output = sc.setup_simulation_ff_scatter(sim, number_of_threads=1, visu=False)
+    output = sc.create_simulation(sim, number_of_threads=1, visu=False)
+    print(output)
 
-    # go
-    sim.run(start_new_process=True)
+    # make it FF-AA primary
+    deg = g4_units.deg
+    ac = 1e3 * g4_units.Bq / sim.number_of_threads
+    if sim.visu:
+        ac = 10 * g4_units.Bq
+    crystals = sim.volume_manager.find_volumes("crystal")
+    crystal_names = [c.name for c in crystals]
+    options = Box(
+        {
+            "scatter_activity": ac,
+            "angle_tolerance": 15 * deg,
+            "volume_names": crystal_names,
+            "angle_tolerance_min_distance": 6 * g4_units.cm,
+            "max_compton_level": 5,
+            "compton_splitting_factor": 20,
+            "rayleigh_splitting_factor": 20,
+        }
+    )
+    spect_freeflight_initialize_scatter(sim, sc, output.source, options)
+
+    # run it
+    sim.random_seed = 123654987
+    sim.run()
 
     # we check only that the output files exist
     is_ok = True

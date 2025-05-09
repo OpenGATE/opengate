@@ -166,19 +166,25 @@ def merge_several_heads_projections(filenames):
     return output_img
 
 
-def read_projections_as_sinograms(filenames, nb_of_gantry_angles):
+def read_projections_as_sinograms(
+    projections_folder, projections_filenames, nb_of_gantry_angles
+):
     """
     Reads projection files from a specified folder, processes them into sinograms per
     energy window, and ensures consistency in image metadata across all projections.
 
     Args:
-        filenames : List of projection filenames to read.
+        projections_folder (str|Path): Path to the folder containing projection files.
+        projections_filenames : List of projection filenames to read.
         nb_of_gantry_angles (int): Number of gantry angles in the projections.
 
     Returns:
         list[sitk.Image]: List of SimpleITK Image objects containing the sinograms per
         energy window.
     """
+    # get all filenames
+    filenames = [Path(projections_folder) / f for f in projections_filenames]
+
     # init variables
     sinograms_per_energy_window = None
     nb_of_energy_windows = None
@@ -211,12 +217,12 @@ def read_projections_as_sinograms(filenames, nb_of_gantry_angles):
                 f"Projections in {f} have different spacing than in {filenames[0]}"
             )
 
-        # convert to a numpy array
+        # convert to numpy array
         arr = sitk.GetArrayViewFromImage(img)
 
-        # concatenate projections for the different heads and for each energy window
+        # concatenate projections for the different heads, for each energy windows
         for ene in range(nb_of_energy_windows):
-            # this is important to make a copy here!
+            # this is important to make a copy here !
             # Otherwise, the concatenate operation may fail later
             a = arr[ene::nb_of_energy_windows, :, :].copy()
             if sinograms_per_energy_window[ene] is None:

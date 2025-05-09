@@ -16,21 +16,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 @click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--image", "-i", required=True, type=str, help="Input image filename")
 @click.option("--output", "-o", default="output.mhd", help="Output image filename")
-@click.option("--labels", "-l", default=None, help="Input label to material (json)")
+@click.option(
+    "--labels", "-l", required=True, type=str, help="Input label to material (json)"
+)
 @click.option("--energy", "-e", default=0.1405, help="Energy in MeV")
-@click.option(
-    "--size",
-    "-s",
-    default=None,
-    type=(float, float, float),
-    help="Attenuation image size",
-)
-@click.option(
-    "--spacing",
-    default=None,
-    type=(float, float, float),
-    help="Attenuation image spacing",
-)
+@click.option("--size", "-s", default=None, help="Attenuation image size")
+@click.option("--spacing", default=None, help="Attenuation image spacing")
 @click.option("--database", default="NIST", help="Database, NIST or EPDL")
 @click.option(
     "--material_database",
@@ -49,10 +40,10 @@ def go(
     Parameters:
     - image: Input image filename (required).
     - output: Output image filename, defaults to 'output.mhd'.
-    - labels: Input label to material from a JSON file. If not provided: Schneider method.
+    - labels: Input label to material from a JSON file (required).
     - energy: Energy in MeV, defaults to 0.1405.
-    - size: Attenuation image size (if resample)
-    - spacing: Attenuation image spacing  (if resample)
+    - size: Attenuation image size, default is (128, 128, 128) if not specified.
+    - spacing: Attenuation image spacing, default is (4.42, 4.42, 4.42) if not specified.
     - database: Specifies the database to be used, either "NIST" or "EPDL". Default is "NIST".
     - verbose: Flag to toggle verbose output, defaults to False.
 
@@ -70,21 +61,24 @@ def go(
     # options
     image_filename = image
     labels_filename = labels
+    if size is None:
+        size = (128, 128, 128)
+    if spacing is None:
+        spacing = (4.42, 4.42, 4.42)
+
+    # read image
+    image = itk.imread(image_filename)
 
     # resample to the given size
-    if size is not None and spacing is not None:
-        verbose and print("Resampling image ...")
-        # read image
-        image = itk.imread(image_filename)
-        image = resample_itk_image(
-            image, size, spacing, default_pixel_value=-1000, linear=False
-        )
-        itk.imwrite(image, output)
-        image_filename = output
+    verbose and print("Resampling image ...")
+    image = resample_itk_image(
+        image, size, spacing, default_pixel_value=0, linear=False
+    )
+    itk.imwrite(image, output)
 
     # compute attenuation map (another sim)
     image = create_photon_attenuation_image(
-        image_filename,
+        output,
         labels_filename,
         energy=energy * g4_units.MeV,
         material_database=material_database,
