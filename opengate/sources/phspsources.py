@@ -23,6 +23,7 @@ class PhaseSpaceSourceGenerator:
         self.root_file = None
         self.num_entries = 0
         self.cycle_count = 0
+        self.cycle_changed_flag = False
         # used during generation
         self.batch = None
         self.points = None
@@ -110,10 +111,21 @@ class PhaseSpaceSourceGenerator:
         (Yes maybe the copy could be avoided, but I did not manage to do it)
         """
 
+        # warn phsp is recycled
+        if self.cycle_changed_flag:
+            warning(
+                f"End of the phase-space {self.num_entries} elements, "
+                f"restart from beginning. Cycle count = {self.cycle_count}"
+            )
+            self.cycle_changed_flag = False
+            self.current_index = 0
+
         # read data from root tree
         current_batch_size = source.batch_size
-        if self.current_index + source.batch_size > self.num_entries:
+        if self.current_index + source.batch_size >= self.num_entries:
             current_batch_size = self.num_entries - self.current_index
+            self.cycle_count += 1
+            self.cycle_changed_flag = True
 
         if source.verbose_batch:
             print(
@@ -129,6 +141,7 @@ class PhaseSpaceSourceGenerator:
             library="numpy",
         )
         batch = self.batch
+        self.current_index += current_batch_size
 
         # ensure encoding is float32
         for key in batch:
@@ -138,16 +151,6 @@ class PhaseSpaceSourceGenerator:
             else:
                 if np.issubdtype(batch[key].dtype, np.integer):
                     batch[key] = batch[key].astype(np.int32)
-
-        # update index if end of file
-        self.current_index += current_batch_size
-        if self.current_index >= self.num_entries:
-            self.cycle_count += 1
-            warning(
-                f"End of the phase-space {self.num_entries} elements, "
-                f"restart from beginning. Cycle count = {self.cycle_count}"
-            )
-            self.current_index = 0
 
         # set particle type
         if source.particle == "" or source.particle is None:
@@ -424,17 +427,27 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
         super().__init__(self, *args, **kwargs)
         self.__initcpp__()
         # there will be one particle generator per thread
-        self.particle_generator = {}
+        self.particle_generators = {}
         # number of entries in the phsp root file
         self.num_entries = None
 
     def __initcpp__(self):
         g4.GatePhaseSpaceSource.__init__(self)
 
+    def __getstate__(self):
+        # the particle generator cannot (?) being pickled
+        # we convert in a dict with the cycle count values
+        all_pg = self.particle_generators
+        self.particle_generators = {}
+        for k, pg in all_pg.items():
+            self.particle_generators[k] = Box({"cycle_count": pg.cycle_count})
+        state_dict = super().__getstate__()
+        return state_dict
+
     def initialize(self, run_timing_intervals):
         # create a generator for each thread
         tid = g4.G4GetThreadId()
-        self.particle_generator[tid] = PhaseSpaceSourceGenerator(tid)
+        self.particle_generators[tid] = PhaseSpaceSourceGenerator(tid)
 
         # initialize source
         SourceBase.initialize(self, run_timing_intervals)
@@ -481,23 +494,23 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
                 self.entry_start = [i * step for i in range(n_threads)]
 
         # initialize the generator (read the phsp file)
-        self.particle_generator[tid].initialize(self)
+        self.particle_generators[tid].initialize(self)
 
         # keep a copy of the number of entries
-        self.num_entries = self.particle_generator[tid].num_entries
+        self.num_entries = self.particle_generators[tid].num_entries
 
         # set the function pointer to the cpp side
-        self.SetGeneratorFunction(self.particle_generator[tid].generate)
+        self.SetGeneratorFunction(self.particle_generators[tid].generate)
 
     @property
     def cycle_count(self):
         if not g4.IsMultithreadedApplication():
             tid = g4.G4GetThreadId()
-            return self.particle_generator[tid].cycle_count
+            return self.particle_generators[tid].cycle_count
         else:
             s = " ".join(
-                str(self.particle_generator[tid].cycle_count)
-                for tid in self.particle_generator.keys()
+                str(self.particle_generators[tid].cycle_count)
+                for tid in self.particle_generators.keys()
             )
             return s
 
