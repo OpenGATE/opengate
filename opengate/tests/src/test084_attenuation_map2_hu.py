@@ -4,12 +4,14 @@
 import opengate as gate
 from opengate.tests import utility
 from opengate.sources.utility import get_spectrum
+from pytomography.metadata.SPECT import *
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test084")
 
     # create the simulation
     sim = gate.Simulation()
+    print(gate.logger.global_log)
 
     # main options
     sim.output_dir = paths.output
@@ -53,6 +55,8 @@ if __name__ == "__main__":
     print(f"Energy is {mumap.energy/keV} keV")
     print(f"Database is {mumap.database}")
 
+    sim.verbose_level = gate.logger.NONE
+    print(gate.logger.global_log)
     sim.run()
 
     # compare with ref
