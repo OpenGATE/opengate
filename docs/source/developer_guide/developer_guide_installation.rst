@@ -70,13 +70,13 @@ STEP 1 - Geant4 and Qt
 Installing QT is optional. Currently, QT visualisation is not working on
 all architectures.
 
-If you wish to use QT, you must install qt5 **before** installing Geant4
+If you wish to use QT, you must install qt6 **before** installing Geant4
 so that Geant4 can find the correct qt lib. It can be done for example
 with conda:
 
 .. code:: bash
 
-     conda install qt=5
+     conda install conda-forge::qt6-main conda-forge::qt6-3d
 
 For **Geant4**, you need to compile with the following options:
 
@@ -90,6 +90,7 @@ For **Geant4**, you need to compile with the following options:
          -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
          -DGEANT4_USE_QT=ON \
          -DGEANT4_USE_OPENGL_X11=ON \
+         -DGEANT4_USE_QT_QT6=ON \
          -DGEANT4_BUILD_MULTITHREADED=ON \
          ../geant4
    make -j 32
