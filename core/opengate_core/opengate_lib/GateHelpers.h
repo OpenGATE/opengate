@@ -64,8 +64,6 @@ static const double fwhm_to_sigma = 1.0 / sigma_to_fwhm;
 
 std::string DebugStep(const G4Step *step);
 
-int createTestQtWindow();
-
 #include "GateHelpers.txx"
 
 #endif // GateHelpers_h
