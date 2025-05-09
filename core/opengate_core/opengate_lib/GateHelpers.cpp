@@ -9,10 +9,6 @@
 
 #include "G4GammaGeneralProcess.hh"
 #include <G4VProcess.hh>
-#if USE_USE_VISU == 1
-#include <QApplication>
-#include <QWidget>
-#endif
 #include <stdexcept>
 
 const int LogLevel_RUN = 20;
@@ -44,22 +40,4 @@ std::string DebugStep(const G4Step *step) {
       << " E= " << step->GetPreStepPoint()->GetKineticEnergy()
       << " w=" << step->GetTrack()->GetWeight() << " " << pp;
   return oss.str();
-}
-
-int createTestQtWindow() {
-#if USE_USE_VISU == 1
-  int argc = 1;
-  char *argv[] = {(char *)"minimal", nullptr};
-  QApplication app(argc, argv);
-
-  QWidget window;
-  window.resize(320, 240);
-  window.setWindowTitle("Minimal Qt Example");
-  window.show();
-
-  return app.exec();
-#else
-  std::cerr << "Qt is not available in this build of OpenGate." << std::endl;
-  return -1;
-#endif
 }

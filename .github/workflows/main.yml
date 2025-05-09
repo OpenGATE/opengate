@@ -124,7 +124,7 @@ jobs:
           if [ ${{ matrix.os }} == "ubuntu-24.04-arm" ]; then
             export ARMDOCKER="_arm64"
           fi
-          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}_qt6$ARMDOCKER /home/.github/workflows/createWheelLinux.sh
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}$ARMDOCKER /home/.github/workflows/createWheelLinux.sh
           ls wheelhouse
           rm -rf dist
           mv wheelhouse dist

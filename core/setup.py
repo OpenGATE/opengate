@@ -72,7 +72,7 @@ class CMakeBuild(build_ext):
             "-DPYTHON_EXECUTABLE=" + sys.executable,
         ]
 
-        # cfg = "Debug" if self.debug else 'Release'
+        # cfg = 'Debug' if self.debug else 'Release'
         cfg = "Release"
         build_args = ["--config", cfg]
 
@@ -156,10 +156,11 @@ if platform.system() == "Darwin":
     package_data = {
         "opengate_core": ["plugins/platforms/*.dylib"]
         + ["plugins/imageformats/*.dylib"]
+        + ["plugins/miniconda/libQt5Svg.5.9.7.dylib"]
     }
     # package_data = {}
 else:
-    package_data = {"opengate_core": ["plugins/*/*.so"] + ["plugins/*.so"]}
+    package_data = {"opengate_core": ["plugins/*/*.so"]}
 
 setuptools.setup(
     name="opengate-core",

@@ -173,5 +173,3 @@ nohup.out
 temp/
 venv_osx_3.12
 preload*
-
-.zed/
