@@ -1,12 +1,15 @@
 #Docker for opengate_core
 #systemctl start docker
 #login: docker login
-#build: docker build -t tbaudier/opengate_core -f Dockerfile_opengate_core .
+#build: docker build -t tbaudier/opengate_core -f Dockerfile_opengate_core_arm64 .
 #push: docker push tbaudier/opengate_core
 #run: docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDERMANYLINUX}" -v $(Pipeline.Workspace)/software:/home tbaudier/opengate_core /home/opengate_core/azureCreateWheelLinux.sh
-#interactive: docker run -ti --rm -v $PWD:/home quay.io/pypa/manylinux_2_34_x86_64 /bin/bash
+#interactive: docker run -ti --rm -v $PWD:/home quay.io/pypa/manylinux_2_34_aarch64 /bin/bash
+#with arm64 on x86 machines: use qemu and run
+#docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+#docker build --platform linux/arm64 -t tbaudier/opengate_core -f Dockerfile_opengate_core_arm64 .
 
-FROM quay.io/pypa/manylinux_2_34_x86_64
+FROM quay.io/pypa/manylinux_2_34_aarch64
 MAINTAINER Thomas Baudier <thomas.baudier@creatis.insa-lyon.fr>
 #Install packages
 RUN     yum install -y gcc wget git expat-devel fftw-devel qt6-qtbase-devel freeglut-devel libXmu-devel xerces-c-devel \
@@ -16,10 +19,10 @@ RUN     yum install -y gcc wget git expat-devel fftw-devel qt6-qtbase-devel free
 
 #Install cmake
     &&  cd /software/cmake \
-    &&  wget https://github.com/Kitware/CMake/releases/download/v3.18.2/cmake-3.18.2-Linux-x86_64.tar.gz \
-    &&  tar xzvf cmake-3.18.2-Linux-x86_64.tar.gz \
-    &&  rm -rf cmake-3.18.2-Linux-x86_64.tar.gz \
-    &&  export PATH=/software/cmake/cmake-3.18.2-Linux-x86_64/bin/:${PATH} \
+    &&  wget https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-linux-aarch64.tar.gz \
+    &&  tar xzvf cmake-3.31.7-linux-aarch64.tar.gz \
+    &&  rm -rf cmake-3.31.7-linux-aarch64.tar.gz \
+    &&  export PATH=/software/cmake/cmake-3.31.7-linux-aarch64/bin/:${PATH} \
 
 #Compile Geant4
     &&  cd /software/geant4 \
