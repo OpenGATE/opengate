@@ -11,17 +11,23 @@ except ModuleNotFoundError:
     sys.modules[__name__] = None
     raise SystemExit
 
+from opengate.contrib.spect.spect_config import *
 import pytomography
-from pytomography.metadata.SPECT import SPECTObjectMeta, SPECTProjMeta
+from pytomography.metadata.SPECT import SPECTObjectMeta, SPECTProjMeta, SPECTPSFMeta
 from pytomography.transforms.SPECT import SPECTPSFTransform, SPECTAttenuationTransform
 from pytomography.projectors.SPECT import SPECTSystemMatrix
 from pytomography.likelihoods import PoissonLogLikelihood
 from pytomography.algorithms import OSEM
 from pytomography.io.SPECT import dicom
+from pytomography.utils import compute_EW_scatter
+from scipy.ndimage import affine_transform
 
 import torch
 import SimpleITK as sitk
 import numpy as np
+import json
+import os
+from pathlib import Path
 
 
 def rotation_image_to_pytomo_coordinate(np_image, spacing=None, size=None):
@@ -129,6 +135,38 @@ def rotation_pytomo_to_sinogram_coordinate(np_sinogram, spacing=None, size=None)
         return rotated_sinogram
 
 
+def rotation_image_pytomo_to_gate(np_image, spacing=None, size=None):
+    rotation_arr = np.transpose(np_image, axes=(2, 1, 0))
+    if size is not None:
+        c = size.copy()
+        size[0] = c[2]
+        size[1] = c[1]
+        size[2] = c[0]
+    if spacing is not None:
+        c = size.copy()
+        spacing[0] = c[2]
+        spacing[1] = c[1]
+        spacing[2] = c[0]
+    return rotation_arr
+
+
+def rotation_sinogram_pytomo_to_gate(np_image, spacing=None, size=None):
+    rotation_arr = np.transpose(np_image, axes=(0, 2, 1))
+    # need copy because negative stride
+    rotation_arr = rotation_arr[:, :, ::-1].copy()
+    if size is not None:
+        c = size.copy()
+        size[0] = c[0]
+        size[1] = c[2]
+        size[2] = c[1]
+    if spacing is not None:
+        c = size.copy()
+        spacing[0] = c[0]
+        spacing[1] = c[2]
+        spacing[2] = c[1]
+    return rotation_arr
+
+
 def osem_pytomography(sinogram, angles_deg, radii_cm, options):
     """
     Perform OSEM (Ordered Subset Expectation Maximization) image reconstruction
@@ -199,13 +237,16 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
 
     # attenuation correction
     att_transform = None
+    att_img = None
     if "attenuation_image" in options:
         att_filename = options["attenuation_image"]
         if att_filename is not None:
+            print(att_filename, type(att_filename))
             if type(att_filename) is str:
                 img = sitk.ReadImage(att_filename)
             else:
                 img = att_filename
+            att_img = img
             arr = (
                 sitk.GetArrayFromImage(img).astype(np.float32) / 10
             )  # need cm-1 -> ???? FIXME
@@ -255,4 +296,329 @@ def osem_pytomography(sinogram, angles_deg, radii_cm, options):
     origin = -(size * spacing_itk) / 2.0 + spacing_itk / 2.0
     reconstructed_object_sitk.SetOrigin(origin)
 
+    # att ?
+    if att_transform is not None:
+        reconstructed_object_sitk.SetOrigin(att_img.GetOrigin())
+
     return reconstructed_object_sitk
+
+
+def pytomography_read_metadata(json_file):
+    json_file = Path(json_file).resolve()
+    with open(json_file, "r") as f:
+        metadata = json.load(f)
+        metadata["folder"] = json_file.parent
+    return metadata
+
+
+def pytomography_new_metadata():
+    return {
+        "Projection Geometry Data": {
+            "source_file": None,
+            "number_of_projections": 0,
+            "detector_position_x": [],
+            "detector_position_y": [],
+            "detector_position_z": [],
+            "detector_orientation_x": [],
+            "detector_orientation_y": [],
+            "detector_orientation_z": [],
+            "projection_pixel_size_r": 0.48,
+            "projection_pixel_size_z": 0.48,
+            "projection_dimension_r": 128,
+            "projection_dimension_z": 128,
+        },
+        "Energy Window Data": {
+            "energy_window_lower_bounds": [],
+            "energy_window_upper_bounds": [],
+            "number_of_energy_windows": 0,
+        },
+        "Detector Physics Data": {
+            # some default values as an example
+            "hole_shape": 6,
+            "hole_diameter": 0.294,
+            "hole_spacing": 0.4,
+            "collimator_thickness": 4.064,
+            "collimator_material": "lead",
+            "crystal_spatial_resolution_fwhm_energy_model": "A*sqrt(B/energy)",
+            "crystal_spatial_resolution_fwhm_energy_model_parameters": [0.36, 140.5],
+            "crystal_energy_resolution_fwhm_pct_energy_model": "A*sqrt(B/energy)",
+            "crystal_energy_resolution_fwhm_pct_energy_model_parameters": [9.9, 140.5],
+            "crystal_width": 55.3,
+            "crystal_height": 38.1,
+            "isotope_name": "Lu177",
+        },
+        "Attenuation Data": {
+            "source_file": None,
+            "voxel_size_x": 0.24,
+            "voxel_size_y": 0.24,
+            "voxel_size_z": 0.24,
+            "dimension_x": 256,
+            "dimension_y": 256,
+            "dimension_z": 256,
+            "origin_x": -30.599999999999998,
+            "origin_y": -30.599999999999998,
+            "origin_z": -30.599999999999998,
+            "energy": 208,
+        },
+    }
+
+
+def pytomography_set_detector_orientation(metadata, detector):
+    geom = metadata["Projection Geometry Data"]
+    for dp in detector.dynamic_params.values():
+        translations = np.array(dp["translation"]) / g4_units.cm
+        rotations = dp["rotation"]
+        for tr, rot in zip(translations, rotations):
+            # translation and rotation are according to the mother volume of the detector
+            geom["detector_position_x"].append(tr[0])
+            geom["detector_position_y"].append(tr[1])
+            # detector_orientation_z is *not* used yet by pytomography
+            geom["detector_position_z"].append(tr[2])
+            # detector_orientation is *not* used yet by pytomography
+            geom["detector_orientation_x"].append(rot[0].tolist())
+            geom["detector_orientation_y"].append(rot[1].tolist())
+            geom["detector_orientation_z"].append(rot[2].tolist())
+        geom["number_of_projections"] += len(translations)
+
+
+def pytomography_set_detector_info(metadata, pixel_size, dimension):
+    geom = metadata["Projection Geometry Data"]
+    geom["projection_pixel_size_r"] = pixel_size[0] / g4_units.cm
+    geom["projection_pixel_size_z"] = pixel_size[1] / g4_units.cm
+    geom["projection_dimension_r"] = dimension[0]
+    geom["projection_dimension_z"] = dimension[1]
+
+
+def pytomography_set_energy_windows(metadata, channels):
+    ew = metadata["Energy Window Data"]
+    for channel in channels:
+        ew["energy_window_lower_bounds"].append(channel["min"])
+        ew["energy_window_upper_bounds"].append(channel["max"])
+        ew["number_of_energy_windows"] += 1
+
+
+def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
+    # consider sinogram for all energy windows
+    sinograms = read_projections_as_sinograms(filenames, number_of_angles)
+
+    sino_arr = None
+    for sinogram in sinograms:
+        arr = sitk.GetArrayFromImage(sinogram)
+        arr = np.transpose(arr, axes=(0, 2, 1))  # probably ok, like in helpers
+        arr = arr[:, :, ::-1].copy()
+        if sino_arr is None:
+            sino_arr = arr
+        else:
+            sino_arr = np.concatenate((sino_arr, arr), axis=0)
+
+    sino_itk = sitk.GetImageFromArray(sino_arr)
+    sino_itk.SetSpacing(sinograms[0].GetSpacing())
+    sino_itk.SetOrigin(sinograms[0].GetOrigin())
+    sino_itk.SetDirection(sinograms[0].GetDirection())
+    sitk.WriteImage(sino_itk, output_filename)
+    return sino_arr
+
+
+# ------ below should be in pytomography ? --------
+
+
+def pytomography_get_detector_data(metadata):
+    geometry_meta = metadata["Projection Geometry Data"]
+    detector_position_x = np.array(geometry_meta["detector_position_x"])
+    detector_position_y = np.array(geometry_meta["detector_position_y"])
+
+    # the following are not used yet
+    detector_position_z = np.array(geometry_meta["detector_position_z"])
+    detector_orientation_x = np.array(geometry_meta["detector_orientation_x"])
+    detector_orientation_y = np.array(geometry_meta["detector_orientation_y"])
+    detector_orientation_z = np.array(geometry_meta["detector_orientation_z"])
+
+    # pixel size and spacing
+    projection_pixel_size_r = geometry_meta["projection_pixel_size_r"]
+    projection_pixel_size_z = geometry_meta["projection_pixel_size_z"]
+    projection_dimension_r = geometry_meta["projection_dimension_r"]
+    projection_dimension_z = geometry_meta["projection_dimension_z"]
+
+    # For now assume all oriented towards the center
+    radii = np.sqrt(detector_position_x**2 + detector_position_y**2)
+    angles = np.arctan2(detector_position_y, detector_position_x)
+    # for GATE intevo : -90 deg rotation
+    angles = np.degrees(angles) - 90
+
+    object_meta = SPECTObjectMeta(
+        [projection_pixel_size_r, projection_pixel_size_r, projection_pixel_size_z],
+        [projection_dimension_r, projection_dimension_r, projection_dimension_z],
+    )
+
+    proj_meta = SPECTProjMeta(
+        [projection_dimension_r, projection_dimension_z],
+        [projection_pixel_size_r, projection_pixel_size_z],
+        angles,
+        radii,
+    )
+
+    return object_meta, proj_meta
+
+
+def pytomography_read_projections(metadata, folder=None):
+    object_meta, proj_meta = pytomography_get_detector_data(metadata)
+    energy_meta = metadata["Energy Window Data"]
+    number_of_energy_windows = energy_meta["number_of_energy_windows"]
+    geometry_meta = metadata["Projection Geometry Data"]
+    imagefile = geometry_meta["source_file"]
+    if folder is None:
+        folder = Path(metadata["folder"])
+    projections = np.fromfile(folder / imagefile, dtype=np.float32)
+    projections = projections.reshape(number_of_energy_windows, *proj_meta.shape)
+    projections = torch.tensor(projections).to(pytomography.device)
+    return projections
+
+
+def get_psf_meta_from_json(metadata, photon_energy, min_sigmas=3):
+    FWHM2sigma = 1 / (2 * np.sqrt(2 * np.log(2)))
+    detector_meta = metadata["Detector Physics Data"]
+    hole_diameter = detector_meta["hole_diameter"]
+    hole_length = detector_meta["collimator_thickness"]
+    crystal_spatial_resolution_model = detector_meta[
+        "crystal_spatial_resolution_fwhm_energy_model"
+    ]
+    if crystal_spatial_resolution_model == "A*sqrt(B/energy)":
+        crystal_spatial_resolution_model_parameters = detector_meta[
+            "crystal_spatial_resolution_fwhm_energy_model_parameters"
+        ]
+        A = crystal_spatial_resolution_model_parameters[0]
+        B = crystal_spatial_resolution_model_parameters[1]
+        intrinsic_resolution = A * np.sqrt(B / photon_energy)
+    else:
+        raise ValueError("Unsupported crystal spatial resolution model")
+    collimator_slope = hole_diameter / hole_length * FWHM2sigma
+    collimator_intercept = hole_diameter * FWHM2sigma
+    sigma_fit = lambda r, a, b, c: np.sqrt((a * r + b) ** 2 + c**2)
+    sigma_fit_params = [collimator_slope, collimator_intercept, intrinsic_resolution]
+    return SPECTPSFMeta(
+        sigma_fit_params=sigma_fit_params, sigma_fit=sigma_fit, min_sigmas=min_sigmas
+    )
+
+
+def compute_TEW_scatter_estimate(
+    metadata,
+    index_lower,
+    index_upper,
+    index_peak,
+    weighting_lower: float = 0.5,
+    weighting_upper: float = 0.5,
+    sigma_theta: float = 0,
+    sigma_r: float = 0,
+    sigma_z: float = 0,
+    N_sigmas: int = 3,
+    return_scatter_variance_estimate: bool = False,
+):
+    energy_data = metadata["Energy Window Data"]
+    energy_window_lower_bounds = energy_data["energy_window_lower_bounds"]
+    energy_window_upper_bounds = energy_data["energy_window_upper_bounds"]
+    width_lower = (
+        energy_window_upper_bounds[index_lower]
+        - energy_window_lower_bounds[index_lower]
+    )
+    width_upper = (
+        energy_window_upper_bounds[index_upper]
+        - energy_window_lower_bounds[index_upper]
+    )
+    width_peak = (
+        energy_window_upper_bounds[index_peak] - energy_window_lower_bounds[index_peak]
+    )
+    projections = pytomography_read_projections(metadata)
+    projections_lower = projections[index_lower]
+    projections_upper = projections[index_upper]
+    _, proj_meta = pytomography_get_detector_data(metadata)
+    TEW = compute_EW_scatter(
+        projections_lower,
+        projections_upper,
+        width_lower,
+        width_upper,
+        width_peak,
+        weighting_lower,
+        weighting_upper,
+        proj_meta=proj_meta,
+        sigma_r=sigma_r,
+        sigma_z=sigma_z,
+        sigma_theta=sigma_theta,
+        N_sigmas=N_sigmas,
+        return_scatter_variance_estimate=return_scatter_variance_estimate,
+    )
+    return TEW
+
+
+def get_attenuation_map_from_json(metadata):
+    attenuation_meta = metadata["Attenuation Data"]
+    voxel_size_x = attenuation_meta["voxel_size_x"]
+    voxel_size_y = attenuation_meta["voxel_size_y"]
+    voxel_size_z = attenuation_meta["voxel_size_z"]
+    dimension_x = attenuation_meta["dimension_x"]
+    dimension_y = attenuation_meta["dimension_y"]
+    dimension_z = attenuation_meta["dimension_z"]
+    origin_x = attenuation_meta["origin_x"]
+    origin_y = attenuation_meta["origin_y"]
+    origin_z = attenuation_meta["origin_z"]
+    energy = attenuation_meta["energy"]
+    imagefile = attenuation_meta["source_file"]
+    amap = np.fromfile(os.path.join(metadata["folder"], imagefile), dtype=np.float32)
+    amap = amap.reshape((dimension_x, dimension_y, dimension_z))
+
+    print(f"voxel size = {voxel_size_x} {voxel_size_y} {voxel_size_z}")
+
+    # origin_z -= 20
+    # print(f"origin = {origin_x} {origin_y} {origin_z}")
+
+    # amap = np.transpose(amap, axes=(0, 1, 2))
+    amap = np.transpose(amap, axes=(2, 1, 0))  # FIXME as a function ?
+
+    # affine transform, for now assume projections aligned with amap
+    geometry_meta = metadata["Projection Geometry Data"]
+    projection_dimension_r = geometry_meta["projection_dimension_r"]
+    projection_dimension_z = geometry_meta["projection_dimension_z"]
+    projection_pixel_size_r = geometry_meta["projection_pixel_size_r"]
+    projection_pixel_size_z = geometry_meta["projection_pixel_size_z"]
+    translation = attenuation_meta["translation"]
+    print(translation)
+    affine_amap = np.zeros((4, 4))
+    affine_amap[0, 0] = voxel_size_x
+    affine_amap[1, 1] = voxel_size_y
+    affine_amap[2, 2] = voxel_size_z
+    affine_amap[0, 3] = origin_x
+    affine_amap[1, 3] = origin_y
+    affine_amap[2, 3] = origin_z
+    affine_amap[3, 3] = 1
+
+    # this is currently how object_meta is made
+    affine_proj = np.zeros((4, 4))
+    affine_proj[0, 0] = projection_pixel_size_r
+    affine_proj[1, 1] = projection_pixel_size_r
+    affine_proj[2, 2] = projection_pixel_size_z
+    # affine_proj[0, 3] = -(projection_dimension_r - 1) / 2 * projection_pixel_size_r
+    # affine_proj[1, 3] = -(projection_dimension_r - 1) / 2 * projection_pixel_size_r
+    # affine_proj[2, 3] = -(projection_dimension_z - 1) / 2 * projection_pixel_size_z
+
+    affine_proj[0, 3] = origin_x + translation[0]
+    affine_proj[1, 3] = origin_y + translation[1]
+    affine_proj[2, 3] = origin_z + translation[2]
+    affine_proj[3, 3] = 1
+
+    print(affine_amap)
+    print(affine_proj)
+
+    M = np.linalg.inv(affine_amap) @ affine_proj
+
+    print(M)
+
+    output_shape = (
+        projection_dimension_r,
+        projection_dimension_r,
+        projection_dimension_z,
+    )
+    amap_aligned = affine_transform(
+        amap, M, cval=0, order=1, mode="constant", output_shape=output_shape
+    )
+
+    # amap_aligned = amap_aligned * 1000 # check
+    return torch.tensor(amap_aligned).to(pytomography.device)
