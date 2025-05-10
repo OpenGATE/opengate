@@ -6,6 +6,11 @@ from opengate.utility import g4_units
 from opengate.logger import INFO, DEBUG, RUN, NONE
 from opengate.managers import Simulation
 
+
+def rm_timing(s):
+    return "\n".join(line for line in s.splitlines() if "Simulation: STOP." not in line)
+
+
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, None, "test092")
 
@@ -36,6 +41,9 @@ if __name__ == "__main__":
     #    f.write(sim.log_output)
     with open(ref1, "r") as f:
         ref = f.read()
+    # remove the line with the time
+    ref = rm_timing(ref)
+    sim.log_output = rm_timing(sim.log_output)
     b = ref == sim.log_output and is_ok
     print_test(b, "Compare output with logger level INFO")
 
@@ -68,6 +76,8 @@ if __name__ == "__main__":
     #    f.write(sim.log_output)
     with open(ref2, "r") as f:
         ref = f.read()
+    ref = rm_timing(ref)
+    sim.log_output = rm_timing(sim.log_output)
     b = ref == sim.log_output and is_ok
     print_test(b, "Compare output with logger level DEBUG")
 

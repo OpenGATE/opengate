@@ -1161,8 +1161,8 @@ class SimulationEngine(GateSingletonFatal):
         # we want to capture only the warnings from this point on
         # because everything else has already been executed in the main process
         # and potential warnings have already been registered.
-        if self.new_process is True:
-            self.simulation.reset_warnings()
+        # if self.new_process is True:
+        #    self.simulation.reset_warnings()
 
         # initialization
         self.initialize()
