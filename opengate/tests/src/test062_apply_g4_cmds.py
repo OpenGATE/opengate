@@ -44,7 +44,7 @@ if __name__ == "__main__":
     sim.user_hook_after_init = print_em_parameters
 
     # start simulation
-    sim.run(start_new_process=False)
+    sim.run(start_new_process=True)
     h = sim.user_hook_log
     print("output", h)
     is_ok = h.bearden == 0 and h.pixe_sec_model == "Empirical"
