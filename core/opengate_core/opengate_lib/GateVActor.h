@@ -12,6 +12,7 @@
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
+#include <pybind11/functional.h>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -162,6 +163,12 @@ public:
   bool fWriteToDisk;
 
   GateSourceManager *fSourceManager;
+
+  // Filter function
+  // using FilterFunction = std::function<bool(void*)>;
+  using FilterFunction = py::function;
+  FilterFunction fFilter;
+  void SetFilterFunction(FilterFunction filter) { fFilter = filter; }
 };
 
 #endif // GateVActor_h
