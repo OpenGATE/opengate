@@ -6,9 +6,7 @@ from opengate.geometry.volumes import (
     unite_volumes,
 )
 from opengate.geometry.utility import (
-    translate_point_to_volume,
     get_transform_orbiting,
-    vec_g4_as_np,
 )
 from opengate.actors.digitizers import *
 from opengate.contrib.spect.spect_helpers import get_volume_position_in_head
@@ -671,6 +669,59 @@ def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
     sb = digitizer.add_module("DigitizerSpatialBlurringActor")
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 7.6 * mm  # FAKE
+    sb.keep_in_solid_limits = True
+
+    # energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    keV = g4_units.keV
+    # 112.9498 keV  = 6.20 %
+    # 208.3662 keV  = 10.38 %
+    p1 = 112.9498 * keV
+    p2 = 208.3662 * keV
+    channels = [
+        {"name": "spectrum", "min": 35 * keV, "max": 588 * keV},
+        *energy_windows_peak_scatter("peak113", "scatter1", "scatter2", p1, 0.2, 0.1),
+        *energy_windows_peak_scatter("peak208", "scatter3", "scatter4", p2, 0.2, 0.1),
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+    proj.size = [128, 128]
+
+    # end
+    return digitizer
+
+
+def add_digitizer_lu177_v2(sim, crystal_name, name, spectrum_channel=True):
+    # create main chain
+    mm = g4_units.mm
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.063  # FAKE
+    eb.blur_reference_value = 140.57 * keV
+
+    # spatial blurring
+    # Source: HE4SPECS - FWHM = 3.9 mm
+    # FWHM = 2.sigma.sqrt(2ln2) -> sigma = 1.656 mm
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor")
+    sb.blur_attribute = "PostPosition"
+    sb.blur_fwhm = 3.9 * mm  # FAKE
     sb.keep_in_solid_limits = True
 
     # energy windows (Energy range. 35-588 keV)

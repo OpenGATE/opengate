@@ -2,7 +2,7 @@ import opengate as gate
 from opengate.contrib.spect.spect_helpers import *
 from opengate.actors.biasingactors import distance_dependent_angle_tolerance
 from opengate.exception import fatal
-from opengate import Simulation, g4_units
+from opengate import g4_units
 from box import Box
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 import opengate.contrib.spect.siemens_intevo as intevo
@@ -87,9 +87,7 @@ class SPECTConfig:
     ):
         # because primary was probably config/run before we clean the
         # static variables from G4 to avoid issues.
-        print("before clear")
         g4.GateGammaFreeFlightOptrActor.ClearOperators()
-        print("after clear")
 
         save_folder = Path(self.output_folder)
         self.output_folder = save_folder / "scatter"
@@ -209,12 +207,6 @@ class PhantomConfig:
                 sim, self.density_tol, f1, f2
             )
             phantom.voxel_materials = vm
-            # save materials and materials database
-            # f = self.spect_config.output_folder
-            # n = self.spect_config.simu_name
-            # phantom.write_material_database(f / f"{n}_phantom_materials.db")
-            # phantom.write_label_to_material(f / f"{n}_phantom_materials.json")
-            # sim.volume_manager.add_material_database(f / f"{n}_phantom_materials.db")
 
         # translation ?
         if self.translation is not None:

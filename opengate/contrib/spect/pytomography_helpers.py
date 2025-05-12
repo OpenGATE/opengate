@@ -12,6 +12,11 @@ except ModuleNotFoundError:
     raise SystemExit
 
 from opengate.contrib.spect.spect_config import *
+from opengate.image import resample_itk_image
+from opengate.contrib.dose.photon_attenuation_image_helpers import (
+    create_photon_attenuation_image,
+)
+
 import pytomography
 from pytomography.metadata.SPECT import SPECTObjectMeta, SPECTProjMeta, SPECTPSFMeta
 from pytomography.transforms.SPECT import SPECTPSFTransform, SPECTAttenuationTransform
@@ -381,10 +386,10 @@ def pytomography_set_detector_orientation(metadata, detector):
         geom["number_of_projections"] += len(translations)
 
 
-def pytomography_set_detector_info(metadata, pixel_size, dimension):
+def pytomography_set_detector_info(metadata, pixel_spacing, dimension):
     geom = metadata["Projection Geometry Data"]
-    geom["projection_pixel_size_r"] = pixel_size[0] / g4_units.cm
-    geom["projection_pixel_size_z"] = pixel_size[1] / g4_units.cm
+    geom["projection_pixel_size_r"] = pixel_spacing[0] / g4_units.cm
+    geom["projection_pixel_size_z"] = pixel_spacing[1] / g4_units.cm
     geom["projection_dimension_r"] = dimension[0]
     geom["projection_dimension_z"] = dimension[1]
 
@@ -417,6 +422,68 @@ def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
     sino_itk.SetDirection(sinograms[0].GetDirection())
     sitk.WriteImage(sino_itk, output_filename)
     return sino_arr
+
+
+def pytomography_set_attenuation_data(
+    metadata,
+    ct_filename,
+    energy,
+    attenuation_filename,
+    size,
+    spacing,
+    translation=None,
+    verbose=False,
+):
+
+    # check attenuation_filename must be mhd/raw
+    attenuation_filename = Path(attenuation_filename)
+    if attenuation_filename.suffix != ".mhd":
+        fatal(
+            f"Attenuation file must be mhd/raw, while the "
+            f"extension is {attenuation_filename.suffix} ({attenuation_filename})"
+        )
+    raw_filename = attenuation_filename.with_suffix(".raw")
+
+    # resample
+    image = itk.imread(ct_filename)
+    verbose and print(f"Resample CT image {ct_filename} to {size} and {spacing}")
+    image = resample_itk_image(
+        image, size, spacing, default_pixel_value=-1000, linear=False
+    )
+    itk.imwrite(image, attenuation_filename)
+
+    # mumap
+    verbose and print(f"Compute attenuation map for E={energy/g4_units.MeV} MeV")
+    attenuation_image = create_photon_attenuation_image(
+        attenuation_filename,
+        labels_filename=None,
+        energy=energy,
+        material_database=None,
+        database="EPDL",
+        verbose=False,
+        density_tol=0.05 * gate.g4_units.g_cm3,
+    )
+    itk.imwrite(attenuation_image, attenuation_filename)
+
+    # consider the raw part of the attenuation_filename
+
+    # information and translation
+    if translation is None:
+        translation = np.array([0, 0, 0])
+    verbose and print(f"Phantom translation: {translation}")
+    ad = metadata["Attenuation Data"]
+    ad["source_file"] = str(raw_filename.name)
+    ad["energy"] = energy / g4_units.keV  # this is not used by pytomography
+    ad["voxel_size_x"] = spacing[0] / g4_units.cm
+    ad["voxel_size_y"] = spacing[1] / g4_units.cm
+    ad["voxel_size_z"] = spacing[2] / g4_units.cm
+    ad["dimension_x"] = size[0]
+    ad["dimension_y"] = size[1]
+    ad["dimension_z"] = size[2]
+    ad["origin_x"] = attenuation_image.GetOrigin()[0] / g4_units.cm
+    ad["origin_y"] = attenuation_image.GetOrigin()[1] / g4_units.cm
+    ad["origin_z"] = attenuation_image.GetOrigin()[2] / g4_units.cm
+    ad["translation"] = (translation / g4_units.cm).tolist()
 
 
 # ------ below should be in pytomography ? --------
