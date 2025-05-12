@@ -23,7 +23,6 @@ setup(
         "scipy",
         "matplotlib",
         "GitPython",
-        "colorlog",
         "numpy-stl",
         "radioactivedecay",
         "jsonpickle",
