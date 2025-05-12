@@ -4,14 +4,13 @@
 import opengate as gate
 from opengate.tests import utility
 from opengate.sources.utility import get_spectrum
-from pytomography.metadata.SPECT import *
+
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test084")
 
     # create the simulation
     sim = gate.Simulation()
-    print(gate.logger.global_log)
 
     # main options
     sim.output_dir = paths.output
@@ -45,7 +44,7 @@ if __name__ == "__main__":
     )
     print(f"Number of materials: {len(materials)}")
 
-    # mu map actor (process at the first begin of run only)
+    # mu map actor (process at the first "begin of run" only)
     mumap = sim.add_actor("AttenuationImageActor", "mumap")
     mumap.image_volume = patient  # FIXME volume for the moment, not the name
     mumap.output_filename = "mumap2.mhd"
@@ -55,9 +54,9 @@ if __name__ == "__main__":
     print(f"Energy is {mumap.energy/keV} keV")
     print(f"Database is {mumap.database}")
 
-    sim.verbose_level = gate.logger.NONE
-    print(gate.logger.global_log)
-    sim.run()
+    # remove verbose
+    sim.verbose_level = "NONE"
+    sim.run(start_new_process=True)
 
     # compare with ref
     ref = paths.output_ref / mumap.output_filename
