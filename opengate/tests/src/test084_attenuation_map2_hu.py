@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import logging
-
-# Disable all output from the root logger
-logging.getLogger().setLevel(logging.CRITICAL)
-logging.getLogger().handlers.clear()
-logging.getLogger("numexpr").setLevel(logging.CRITICAL)
-from pytomography.metadata.SPECT import *
-
-
 import opengate as gate
 from opengate.tests import utility
 from opengate.sources.utility import get_spectrum
