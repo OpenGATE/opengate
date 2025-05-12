@@ -1,4 +1,14 @@
 from loguru import logger
+import os
+import sys
+
+# Ensure UTF-8 encoding is used
+os.environ["PYTHONUTF8"] = "1"
+if sys.getdefaultencoding() != "utf-8":
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+
 
 # Remove the default logger configuration
 logger.remove()
