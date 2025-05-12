@@ -33,6 +33,7 @@ setup(
         "SimpleITK",
         "spekpy",
         "icrp107-database",
+        "loguru",
     ]
     + install_requires_windows,
 )
