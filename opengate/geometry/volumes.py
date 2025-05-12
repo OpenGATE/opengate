@@ -30,6 +30,7 @@ from ..actors.dynamicactors import (
 )
 from .materials import create_density_img, write_material_database
 from opengate.serialization import dump_json
+from opengate.utility import g4_units
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -1113,13 +1114,15 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     def create_attenuation_image(self, database, energy):
         # convert all materials to mu
         label_to_mu = {}
-        mu_handler = g4.GateMaterialMuHandler.GetInstance(database, 200)  # max in MeV
+        mu_handler = g4.GateMaterialMuHandler.GetInstance(
+            database, 200 * g4_units.MeV
+        )  # max in MeV
         prod_cuts_table = g4.G4ProductionCutsTable.GetProductionCutsTable()
         for i in range(prod_cuts_table.GetTableSize()):
             couple = prod_cuts_table.GetMaterialCutsCouple(i)
             mat_name = str(couple.GetMaterial().GetName())
             label = self.material_to_label_lut[mat_name]
-            mu = mu_handler.GetMu(couple, energy)
+            mu = mu_handler.GetMu(couple, energy / g4_units.MeV)
             label_to_mu[label] = mu
 
         arr = itk.GetArrayViewFromImage(self.label_image)

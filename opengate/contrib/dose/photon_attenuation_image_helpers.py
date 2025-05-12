@@ -13,10 +13,12 @@ def create_photon_attenuation_image(
     database="NIST",
     verbose=False,
     density_tol=None,
+    progress_bar=False,
 ):
     # create a temporary simulation
     sim = gate.Simulation()
     sim.verbose_level = gate.logger.NONE
+    sim.progress_bar = progress_bar
 
     # add the voxelized image
     image_volume = sim.add_volume("Image", "image")
@@ -48,7 +50,7 @@ def create_photon_attenuation_image(
     # mu map actor (process at the first begin of run only)
     mumap = sim.add_actor("AttenuationImageActor", "mumap")
     mumap.image_volume = image_volume
-    mumap.energy = energy * gate.g4_units.MeV
+    mumap.energy = energy
     mumap.database = database
     mumap.write_to_disk = False
     verbose and print(f"Energy is {mumap.energy / gate.g4_units.keV} keV")
