@@ -865,7 +865,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         ),
         "size": (
             [128, 128],
-            {"doc": "FIXME"},
+            {"doc": "size of the 2D projection in pixels"},
         ),
         "physical_volume_index": (
             -1,

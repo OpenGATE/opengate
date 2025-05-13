@@ -483,7 +483,7 @@ class ActorManager(GateObject):
             return new_actor
 
     def find_actors(self, sub_str, case_sensitive=False):
-        # find all actors that contains this substring
+        # find all actors that contain this substring
         actors = []
         if not case_sensitive:
             sub_str = sub_str.lower()
