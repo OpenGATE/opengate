@@ -12,7 +12,7 @@ void GateUserEventInformation::Print() const {
   // FIXME
 }
 
-std::string GateUserEventInformation::GetParticleName(G4int track_id) {
+std::string GateUserEventInformation::GetParticleName(G4int track_id) const {
   if (fMapOfParticleName.count(track_id) > 0) {
     return fMapOfParticleName.at(track_id);
   } else

@@ -119,10 +119,11 @@ def simulation(n: int, visu=False):
     fp = sim.add_filter("ParticleFilter", "fp")
     fp.particle = "gamma"
 
-    dose.filters.append(fp)
+    # dose.filters.append(fp)
 
     # dose.filter = "5 == 0"
-    # dose.filter = "particle_name == 'gamma' and 5 == 5 or pre_kinetic_energy < 10 * MeV and False"
+    dose.filter = "particle_name == 'gamma' and 5 == 5 or 2 * pre_kinetic_energy < 20 * MeV and dbgp((pre_kinetic_energy - post_kinetic_energy) / step_length)"
+    # dose.filter = "particle_name == 'gamma'"
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

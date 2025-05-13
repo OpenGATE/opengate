@@ -525,12 +525,13 @@ class ActorBase(GateObject):
         e = ast.FunctionDef(name=name, args=args, body=body, decorator_list=[])
 
         imports = [
+            ast.Import(names=[ast.alias(name="numpy", asname="np")]),
             ast.Import(names=[ast.alias(name="opengate_core", asname=None)]),
             ast.Import(names=[ast.alias(name="opengate.filters.ast", asname=None)]),
             ast.ImportFrom(
                 module="filters.ast",
                 names=[
-                    ast.alias(name="attr_particle_name", asname=None),
+                    ast.alias(name="dbgp", asname=None),
                 ],
                 level=2,
             ),
@@ -538,6 +539,8 @@ class ActorBase(GateObject):
 
         module = ast.Module(body=[*imports, e], type_ignores=[])
         ast.fix_missing_locations(module)
+
+        print(ast.dump(module))
 
         exec(compile(module, filename="<ast>", mode="exec"), globals())
 
