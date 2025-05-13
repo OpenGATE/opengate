@@ -291,7 +291,7 @@ class DetectorConfig:
             if self.spacing is not None:
                 # modify the digitizer to change the size/spacing
                 def digit(sim, crystal_name, name, spectrum_channel=False):
-                    proj = intevo.add_intevo_digitizer_lu177_v3(
+                    proj = self.digitizer_function(
                         sim, crystal_name, name, spectrum_channel
                     )
                     proj.size = self.size
