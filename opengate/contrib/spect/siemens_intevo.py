@@ -837,7 +837,6 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
         "yx", (90, 90), degrees=True
     ).as_matrix()
     proj.write_to_disk = True
-    # proj.output_filename = "proj.mhd"
 
     # end
     return digitizer

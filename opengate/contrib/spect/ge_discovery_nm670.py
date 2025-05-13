@@ -693,6 +693,7 @@ def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
     proj.input_digi_collections = channel_names
     proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
     proj.size = [128, 128]
+    proj.write_to_disk = True
 
     # end
     return digitizer
@@ -746,6 +747,7 @@ def add_digitizer_lu177_v2(sim, crystal_name, name, spectrum_channel=True):
     proj.input_digi_collections = channel_names
     proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
     proj.size = [128, 128]
+    proj.write_to_disk = True
 
     # end
     return digitizer
