@@ -523,33 +523,30 @@ class FreeFlightConfig:
         self.primary_activity = 1 * g4_units.Bq
         self.scatter_activity = 1 * g4_units.Bq
         self.max_rejection = None
-        # optional
-        self.hits_actors = None
-        self.proj_actors = None
+        # keep volume names
         self.volume_names = None
 
     def initialize(self, sim):
         # Weights MUST be in the digitizer
-        if self.hits_actors is None:
-            self.hits_actors = sim.actor_manager.find_actors("hits")
-            if len(self.hits_actors) == 0:
-                fatal(
-                    f'Cannot find actors with name "hits". Actors:'
-                    f"{sim.actor_manager.actors}"
-                )
-        for ha in self.hits_actors:
+        hits_actors = sim.actor_manager.find_actors("hits")
+        if len(hits_actors) == 0:
+            fatal(
+                f'Cannot find actors with name "hits". Actors:'
+                f"{sim.actor_manager.actors}"
+            )
+        for ha in hits_actors:
             if "Weight" not in ha.attributes:
                 ha.attributes.append("Weight")
 
         # be sure the squared counts flag is enabled
-        if self.proj_actors is None:
-            self.proj_actors = sim.actor_manager.find_actors("projection")
-            if len(self.proj_actors) == 0:
-                fatal(
-                    f"Cannot find the 'projection' digitizers. Actors:"
-                    f"{sim.actor_manager.actors}"
-                )
-        for d in self.proj_actors:
+        proj_actors = sim.actor_manager.find_actors("projection")
+        if len(proj_actors) == 0:
+            fatal(
+                f"Cannot find the 'projection' digitizers. Actors:"
+                f"{sim.actor_manager.actors}"
+            )
+
+        for d in proj_actors:
             d.squared_counts.active = True
 
         # GeneralProcess must *NOT* be used
