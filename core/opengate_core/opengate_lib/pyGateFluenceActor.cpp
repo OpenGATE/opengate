@@ -33,8 +33,7 @@ void init_GateFluenceActor(py::module &m) {
              std::unique_ptr<GateFluenceActor, py::nodelete>, GateVActor>(
       m, "GateFluenceActor")
       .def(py::init<py::dict &>())
-      .def("InitializeUserInfo",
-        &GateFluenceActor::InitializeUserInfo)
+      .def("InitializeUserInfo", &GateFluenceActor::InitializeUserInfo)
       .def("BeginOfRunActionMasterThread",
            &GateFluenceActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
@@ -42,5 +41,6 @@ void init_GateFluenceActor(py::module &m) {
       .def("GetPhysicalVolumeName", &GateFluenceActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateFluenceActor::SetPhysicalVolumeName)
       .def("GetOutputImage", &GateFluenceActor::GetOutputImage)
-      .def_readwrite("fPhysicalVolumeName",&GateFluenceActor::fPhysicalVolumeName);
+      .def_readwrite("fPhysicalVolumeName",
+                     &GateFluenceActor::fPhysicalVolumeName);
 }

@@ -23,8 +23,8 @@
 #include "itkImage.h"
 #include <G4Threading.hh>
 
-#include <itkImageFileWriter.h>
 #include <itkCastImageFilter.h>
+#include <itkImageFileWriter.h>
 
 namespace py = pybind11;
 
@@ -43,8 +43,8 @@ public:
   void BeginOfEventAction(const G4Event *event) override;
 
   int EndOfRunActionMasterThread(int run_id) override;
-  
-  void EndOfRunAction(const G4Run *run) override; 
+
+  void EndOfRunAction(const G4Run *run) override;
 
   std::string GetOutputImage();
 
@@ -67,7 +67,8 @@ public:
   G4ThreeVector fTranslation;
   G4ThreeVector fsize;
   G4ThreeVector fspacing;
-private: 
+
+private:
   G4int norm;
   G4int nb_inel;
   G4int Nbbinstime;
