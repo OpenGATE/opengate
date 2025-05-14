@@ -521,6 +521,9 @@ jobs:
               export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
               export PATH="${path}\\opengate_core.libs":${PATH}
           fi
+          if [[ ${{ matrix.os }} == "macos-14" ]]; then
+              export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.5
+          fi
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
           if [ "${{ github.event_name }}" = "schedule" ]; then
