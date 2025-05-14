@@ -107,7 +107,7 @@ if __name__ == "__main__":
     # otherwise, output will be saved under the current directory where the script resides
 
     # use
-    help(optigan)
+    # help(optigan)
     # for an explanation of the input parameters
     # -------
 

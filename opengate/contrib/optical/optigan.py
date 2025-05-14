@@ -12,6 +12,7 @@ import torch.nn as nn
 from opengate.base import GateObject
 from opengate.exception import fatal
 from opengate.utility import delete_folder_contents
+import platform
 
 
 def extract_number(filename):
@@ -321,6 +322,8 @@ class OptiGAN(GateObject):
         input_dim, output_dim, hidden_dim, labels_len = self.gan_arguments.values()
 
         # Load the saved model checkpoint.
+        if platform.system() == "Darwin" and torch.backends.mps.is_available():
+            torch.mps.empty_cache()
         checkpoint = torch.load(self.path_to_optigan_model, map_location=self.device)
 
         # Initialize the model.
