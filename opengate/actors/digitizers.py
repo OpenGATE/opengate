@@ -1123,8 +1123,9 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
 
 
 class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
-    """Similar to HitsCollectionActor : store a list of hits.
-    However only the first hit of given event is stored here.
+    """
+    Similar to HitsCollectionActor : store a list of hits.
+    The hits can be stored when entering, exiting, first time seen or always (all hits stored).
     """
 
     user_info_defaults = {
@@ -1149,7 +1150,8 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         "steps_to_store": (
             "entering",
             {
-                "doc": "FIXME entering exiting first (can be combined)",
+                "doc": "Define when to store the hits. ",
+                "allowed_values": ["entering", "exiting", "first", "all"],
             },
         ),
     }
@@ -1191,6 +1193,70 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
 
 
+class DigiAttributeProcessDefinedStepInVolumeActor(
+    ActorBase, g4.GateDigiAttributeProcessDefinedStepInVolumeActor
+):
+    """
+    This actor is use when the user create a ProcessDefinedStepAttribute.
+    The actor is automatically created and use to store how many time a given process (process_name)
+    occur in a given volume (attached_to).
+    This actor is not intended to be used directly by the user.
+    """
+
+    user_info_defaults = {
+        "process_name": (None, {}),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigiAttributeProcessDefinedStepInVolumeActor.__init__(
+            self, self.user_info
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        ActorBase.StartSimulationAction(self)
+        g4.GateDigiAttributeProcessDefinedStepInVolumeActor.StartSimulationAction(self)
+
+
+class ProcessDefinedStepInVolumeAttribute:
+    """ """
+
+    def __init__(self, sim, process_name, volume_name):
+        self.name = f"ProcessDefinedStep__{process_name}__{volume_name}"
+        self.actor = sim.add_actor(
+            "DigiAttributeProcessDefinedStepInVolumeActor", self.name
+        )
+        self._process_name = process_name
+        self._volume_name = volume_name
+        self.actor.attached_to = volume_name
+        self.actor.process_name = process_name
+        # self.actor.priority = 1  # FIXME before other
+
+    @property
+    def process_name(self):
+        return self._process_name
+
+    @property
+    def volume_name(self):
+        return self._volume_name
+
+    @process_name.setter
+    def process_name(self, value):
+        fatal(f"Cannot change dynamically the process name")
+
+    @volume_name.setter
+    def volume_name(self, value):
+        fatal(f"Cannot change dynamically the volume name")
+
+
 process_cls(DigitizerBase)
 process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
@@ -1202,3 +1268,4 @@ process_cls(DigitizerHitsCollectionActor)
 process_cls(DigitizerProjectionActor)
 process_cls(DigitizerReadoutActor)
 process_cls(PhaseSpaceActor)
+process_cls(DigiAttributeProcessDefinedStepInVolumeActor)
