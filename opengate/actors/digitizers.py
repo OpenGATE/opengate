@@ -1150,8 +1150,9 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         "steps_to_store": (
             "entering",
             {
-                "doc": "Define when to store the hits. ",
-                "allowed_values": ["entering", "exiting", "first", "all"],
+                "doc": "Define when to store the hits, can be 'entering', 'exiting', 'first' or 'all'. "
+                "Or several values separated by a space. ",
+                # "allowed_values": ["entering", "exiting", "first", "all"], # can be multiple
             },
         ),
     }
