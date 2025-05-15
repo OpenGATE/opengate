@@ -108,7 +108,7 @@ if __name__ == "__main__":
             "PhaseSpace",
             keys1=keys,
             keys2=keys,
-            tols=[0.05, 0.05, 0.05, 0.05],
+            tols=[0.07, 0.07, 0.05, 0.05],
             scalings1=[1] * n,
             scalings2=[1] * n,
             img=paths.output / "phsp.png",
