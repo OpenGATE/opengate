@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests.utility import (
-    get_default_test_paths,
-    test_ok,
-    print_test,
-    compare_root3,
-)
-from opengate.utility import g4_units
-from opengate.logger import INFO, DEBUG, RUN, NONE
+from opengate.tests.utility import *
 from opengate.managers import Simulation
 from opengate.actors.digitizers import *
 
@@ -27,6 +20,7 @@ if __name__ == "__main__":
     sim.visu = False
     sim.visu_type = "qt"
     sim.output_dir = paths.output
+    sim.random_seed = 32145987
 
     # add a volume
     waterbox1 = sim.add_volume("Box", "Waterbox1")
@@ -84,10 +78,12 @@ if __name__ == "__main__":
     ]
 
     # not possible:
+    is_ok = True
     try:
         att3.volume_name = "toto"
         att3.process_name = "toto"
-        fatal(f"volume_name and process_name cannot be changed")
+        print(f"volume_name and process_name cannot be changed")
+        is_ok = False
     except Exception as e:
         print("OK, cannot change the volume_name")
 
@@ -104,17 +100,20 @@ if __name__ == "__main__":
     print(phsp.attributes)
     keys = [att1.name, att2.name, att3.name, att4.name]
     n = len(keys)
-    is_ok = compare_root3(
-        ref_root,
-        test_root,
-        "PhaseSpace",
-        "PhaseSpace",
-        keys1=keys,
-        keys2=keys,
-        tols=[0.2, 0.2, 0.1, 0.1] * n,
-        scalings1=[1] * n,
-        scalings2=[1] * n,
-        img=paths.output / "phsp.png",
+    is_ok = (
+        compare_root3(
+            ref_root,
+            test_root,
+            "PhaseSpace",
+            "PhaseSpace",
+            keys1=keys,
+            keys2=keys,
+            tols=[0.05, 0.05, 0.05, 0.05],
+            scalings1=[1] * n,
+            scalings2=[1] * n,
+            img=paths.output / "phsp.png",
+        )
+        and is_ok
     )
 
     test_ok(is_ok)
