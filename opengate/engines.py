@@ -175,6 +175,12 @@ class SourceEngine(EngineBase):
         # to allow better control on geometry between the different runs
         # FIXME (2) : check estimated nb of particle, warning if too large
         # start the master thread (only main thread)
+        for (
+            solid
+        ) in self.simulation_engine.simulation.volume_manager.solid_with_texture_init:
+            self.g4_master_source_manager.RegisterImageBox(solid)
+        self.simulation_engine.simulation.volume_manager.solid_with_texture_init = []
+
         self.g4_master_source_manager.StartMasterThread()
 
         # once terminated, packup the sources (if needed)

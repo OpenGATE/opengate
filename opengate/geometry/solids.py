@@ -560,11 +560,18 @@ class ImageSolid(SolidBase):
         self.g4_solid_y = None
         self.g4_solid_z = None
 
+        self.slice_xy = None
+        self.slice_xz = None
+        self.slice_yz = None
+
     def __getstate__(self):
         return_dict = super().__getstate__()
         return_dict["g4_solid_x"] = None
         return_dict["g4_solid_y"] = None
         return_dict["g4_solid_z"] = None
+        return_dict["slice_xy"] = None
+        return_dict["slice_xz"] = None
+        return_dict["slice_yz"] = None
         return return_dict
 
     def close(self):
@@ -575,6 +582,9 @@ class ImageSolid(SolidBase):
         self.g4_solid_x = None
         self.g4_solid_y = None
         self.g4_solid_z = None
+        self.slice_xy = None
+        self.slice_xz = None
+        self.slice_yz = None
 
     @requires_fatal("half_size_mm")
     @requires_fatal("half_spacing")
@@ -597,9 +607,13 @@ class ImageSolid(SolidBase):
             self.half_spacing[1],
             self.half_spacing[2],
         )
-        self.g4_solid = g4.G4Box(
-            self.name, self.half_size_mm[0], self.half_size_mm[1], self.half_size_mm[2]
-        )
+
+        image_dict = {
+            "name": self.name,
+            "half_size_mm": self.half_size_mm,
+            "size": (self.half_size_mm / self.half_spacing).astype(int),
+        }
+        self.g4_solid = g4.GateImageBox(image_dict)
 
 
 process_cls(SolidBase)
