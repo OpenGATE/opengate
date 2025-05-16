@@ -324,7 +324,12 @@ class OptiGAN(GateObject):
         # Load the saved model checkpoint.
         if platform.system() == "Darwin" and torch.backends.mps.is_available():
             torch.mps.empty_cache()
-        checkpoint = torch.load(self.path_to_optigan_model, map_location=self.device)
+            checkpoint = torch.load(self.path_to_optigan_model, map_location="cpu")
+            model = checkpoint["model"].to("mps")
+        else:
+            checkpoint = torch.load(
+                self.path_to_optigan_model, map_location=self.device
+            )
 
         # Initialize the model.
         generator = WGANGenerator(input_dim, output_dim, hidden_dim, labels_len)
