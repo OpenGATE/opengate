@@ -12,6 +12,7 @@ import torch.nn as nn
 from opengate.base import GateObject
 from opengate.exception import fatal
 from opengate.utility import delete_folder_contents
+import platform
 
 
 def extract_number(filename):
@@ -321,7 +322,9 @@ class OptiGAN(GateObject):
         input_dim, output_dim, hidden_dim, labels_len = self.gan_arguments.values()
 
         # Load the saved model checkpoint.
-        checkpoint = torch.load(self.path_to_optigan_model, map_location=self.device)
+        if platform.system() == "Darwin" and torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+        checkpoint = torch.load(self.path_to_optigan_model, map_location="cpu")
 
         # Initialize the model.
         generator = WGANGenerator(input_dim, output_dim, hidden_dim, labels_len)
@@ -413,15 +416,15 @@ class OptiGAN(GateObject):
             print(f"Processing {file_name} with {total_number_of_photons} photons.")
 
             # Move the initial conditional values to the device.
-            classX_single = torch.tensor(
-                df["gamma_pos_x"].values, dtype=torch.float32
-            ).to(self.device)
-            classY_single = torch.tensor(
-                df["gamma_pos_y"].values, dtype=torch.float32
-            ).to(self.device)
-            classZ_single = torch.tensor(
-                df["gamma_pos_z"].values, dtype=torch.float32
-            ).to(self.device)
+            if platform.system() == "Darwin" and torch.backends.mps.is_available():
+                torch.mps.empty_cache()
+
+            tensor_cpu_x = torch.tensor(df["gamma_pos_x"].values, dtype=torch.float32)
+            classX_single = tensor_cpu_x.to(self.device)
+            tensor_cpu_y = torch.tensor(df["gamma_pos_y"].values, dtype=torch.float32)
+            classY_single = tensor_cpu_x.to(self.device)
+            tensor_cpu_z = torch.tensor(df["gamma_pos_z"].values, dtype=torch.float32)
+            classZ_single = tensor_cpu_x.to(self.device)
 
             # Expand the conditional input vectors to match the total number of rows.
             classX = classX_single.expand(total_number_of_photons)
