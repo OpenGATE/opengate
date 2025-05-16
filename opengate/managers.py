@@ -1,10 +1,8 @@
-import sys
 import copy
 from typing import Optional, List, Union
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
-import os
 import weakref
 from pathlib import Path
 import io
@@ -115,6 +113,7 @@ from .actors.digitizers import (
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
     PhaseSpaceActor,
+    DigiAttributeProcessDefinedStepInVolumeActor,
 )
 
 particle_names_Gate_to_G4 = {
@@ -154,6 +153,7 @@ actor_types = {
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "DigiAttributeProcessDefinedStepInVolumeActor": DigiAttributeProcessDefinedStepInVolumeActor,
     # biasing
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,
