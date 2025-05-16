@@ -294,7 +294,7 @@ To restrict the decay to the run_timing_intervals, you can set the parameter:
 .. code-block:: python
 
     sim.run_timing_intervals = [[18 * sec, 28 * sec]]
-    source1.user_particle_life_time = 0
+    source.user_particle_life_time = 0
 
 
 .. autoproperty:: opengate.sources.generic.GenericSource.half_life
