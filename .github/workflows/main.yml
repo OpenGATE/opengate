@@ -522,7 +522,7 @@ jobs:
               export PATH="${path}\\opengate_core.libs":${PATH}
           fi
           if [[ ${{ matrix.os }} == "macos-14" ]]; then
-              #export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.5
+              export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0
               export PYTORCH_ENABLE_MPS_FALLBACK=1
           fi
           dashboard_path=`opengate_library_path.py -p tests`
