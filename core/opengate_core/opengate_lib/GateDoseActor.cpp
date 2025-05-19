@@ -246,20 +246,6 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 
 void GateDoseActor::EndOfEventAction(const G4Event *event) {
 
-  // flush thread local data into global image
-  // reset local data to zero
-  int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
-  if (fEdepSquaredFlag) {
-    GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(),
-                                     cpp_edep_squared_image);
-    PrepareLocalDataForRun(fThreadLocalDataEdep.Get(), N_voxels);
-  }
-  if (fDoseSquaredFlag) {
-    GateDoseActor::FlushSquaredValue(fThreadLocalDataDose.Get(),
-                                     cpp_dose_squared_image);
-    PrepareLocalDataForRun(fThreadLocalDataDose.Get(), N_voxels);
-  }
-
   // if the user didn't set uncertainty goal, do nothing
   if (fUncertaintyGoal == 0) {
     return;
@@ -267,6 +253,20 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
 
   // check if we reached the Nb of events for next evaluation
   if (NbOfEvent >= NbEventsNextCheck) {
+    // flush thread local data into global image
+    // reset local data to zero
+    int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+    if (fEdepSquaredFlag) {
+      GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(),
+                                       cpp_edep_squared_image);
+      PrepareLocalDataForRun(fThreadLocalDataEdep.Get(), N_voxels);
+    }
+    if (fDoseSquaredFlag) {
+      GateDoseActor::FlushSquaredValue(fThreadLocalDataDose.Get(),
+                                       cpp_dose_squared_image);
+      PrepareLocalDataForRun(fThreadLocalDataDose.Get(), N_voxels);
+    }
+
     // get thread idx. Ideally, only one thread should do the uncertainty
     // calculation don't ask for thread idx if no MT
     if (!G4Threading::IsMultithreadedApplication() ||
