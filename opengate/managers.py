@@ -1,10 +1,8 @@
-import sys
 import copy
 from typing import Optional, List, Union
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
-import os
 import weakref
 from pathlib import Path
 import io
@@ -115,6 +113,7 @@ from .actors.digitizers import (
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
     PhaseSpaceActor,
+    DigiAttributeProcessDefinedStepInVolumeActor,
 )
 
 particle_names_Gate_to_G4 = {
@@ -154,6 +153,7 @@ actor_types = {
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "DigiAttributeProcessDefinedStepInVolumeActor": DigiAttributeProcessDefinedStepInVolumeActor,
     # biasing
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
     "GammaFreeFlightActor": GammaFreeFlightActor,
@@ -1869,6 +1869,9 @@ class Simulation(GateObject):
                 if "total_zero_events" in s.__dict__:
                     source.total_zero_events = s.__dict__["total_zero_events"]
                     source.total_skipped_events = s.__dict__["total_skipped_events"]
+                if "particle_generators" in s.__dict__:
+                    source.particle_generators = s.__dict__["particle_generators"]
+                    source.num_entries = s.__dict__["num_entries"]
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process
