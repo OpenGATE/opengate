@@ -254,17 +254,14 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
   // check if we reached the Nb of events for next evaluation
   if (NbOfEvent >= NbEventsNextCheck) {
     // flush thread local data into global image
-    // reset local data to zero
-    int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+    // reset local data to zero is done in FlushSquaredValue
     if (fEdepSquaredFlag) {
       GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(),
                                        cpp_edep_squared_image);
-      PrepareLocalDataForRun(fThreadLocalDataEdep.Get(), N_voxels);
     }
     if (fDoseSquaredFlag) {
       GateDoseActor::FlushSquaredValue(fThreadLocalDataDose.Get(),
                                        cpp_dose_squared_image);
-      PrepareLocalDataForRun(fThreadLocalDataDose.Get(), N_voxels);
     }
 
     // get thread idx. Ideally, only one thread should do the uncertainty
@@ -400,6 +397,9 @@ void GateDoseActor::FlushSquaredValue(threadLocalT &data,
         data.squared_worker_flatimg[sub2ind(index_f)];
     ImageAddValue<Image3DType>(cpp_image, index_f, pixelValue3D * pixelValue3D);
   }
+  // reset threadlocal data to zero
+  int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+  PrepareLocalDataForRun(data, N_voxels);
 }
 
 int GateDoseActor::EndOfRunActionMasterThread(int run_id) { return 0; }
