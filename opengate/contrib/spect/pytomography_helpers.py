@@ -318,20 +318,6 @@ def pytomography_read_metadata(json_file):
 
 def pytomography_new_metadata():
     return {
-        "Projection Geometry Data": {
-            "source_file": None,
-            "number_of_projections": 0,
-            "detector_position_x": [],
-            "detector_position_y": [],
-            "detector_position_z": [],
-            "detector_orientation_x": [],
-            "detector_orientation_y": [],
-            "detector_orientation_z": [],
-            "projection_pixel_size_r": 0.48,
-            "projection_pixel_size_z": 0.48,
-            "projection_dimension_r": 128,
-            "projection_dimension_z": 128,
-        },
         "Energy Window Data": {
             "energy_window_lower_bounds": [],
             "energy_window_upper_bounds": [],
@@ -364,6 +350,20 @@ def pytomography_new_metadata():
             "origin_y": -30.599999999999998,
             "origin_z": -30.599999999999998,
             "energy": 208,
+        },
+        "Projection Geometry Data": {
+            "source_file": None,
+            "number_of_projections": 0,
+            "detector_position_x": [],
+            "detector_position_y": [],
+            "detector_position_z": [],
+            "detector_orientation_x": [],
+            "detector_orientation_y": [],
+            "detector_orientation_z": [],
+            "projection_pixel_size_r": 0.48,
+            "projection_pixel_size_z": 0.48,
+            "projection_dimension_r": 128,
+            "projection_dimension_z": 128,
         },
     }
 
@@ -618,74 +618,126 @@ def compute_TEW_scatter_estimate(
 
 def get_attenuation_map_from_json(metadata):
     attenuation_meta = metadata["Attenuation Data"]
-    voxel_size_x = attenuation_meta["voxel_size_x"]
-    voxel_size_y = attenuation_meta["voxel_size_y"]
-    voxel_size_z = attenuation_meta["voxel_size_z"]
     dimension_x = attenuation_meta["dimension_x"]
     dimension_y = attenuation_meta["dimension_y"]
     dimension_z = attenuation_meta["dimension_z"]
+
+    # the following are not used for the moment
+    voxel_size_x = attenuation_meta["voxel_size_x"]
+    voxel_size_y = attenuation_meta["voxel_size_y"]
+    voxel_size_z = attenuation_meta["voxel_size_z"]
     origin_x = attenuation_meta["origin_x"]
     origin_y = attenuation_meta["origin_y"]
     origin_z = attenuation_meta["origin_z"]
+
+    # the energy is not used
     energy = attenuation_meta["energy"]
+
+    # get the image from the raw data
     imagefile = attenuation_meta["source_file"]
     amap = np.fromfile(os.path.join(metadata["folder"], imagefile), dtype=np.float32)
     amap = amap.reshape((dimension_x, dimension_y, dimension_z))
 
-    print(f"voxel size = {voxel_size_x} {voxel_size_y} {voxel_size_z}")
-
-    # origin_z -= 20
-    # print(f"origin = {origin_x} {origin_y} {origin_z}")
-
-    # amap = np.transpose(amap, axes=(0, 1, 2))
+    # rotation from gate to pytomo
+    print("rotation FIXME ")
     amap = np.transpose(amap, axes=(2, 1, 0))  # FIXME as a function ?
 
-    # affine transform, for now assume projections aligned with amap
-    geometry_meta = metadata["Projection Geometry Data"]
-    projection_dimension_r = geometry_meta["projection_dimension_r"]
-    projection_dimension_z = geometry_meta["projection_dimension_z"]
-    projection_pixel_size_r = geometry_meta["projection_pixel_size_r"]
-    projection_pixel_size_z = geometry_meta["projection_pixel_size_z"]
-    translation = attenuation_meta["translation"]
-    print(translation)
-    affine_amap = np.zeros((4, 4))
-    affine_amap[0, 0] = voxel_size_x
-    affine_amap[1, 1] = voxel_size_y
-    affine_amap[2, 2] = voxel_size_z
-    affine_amap[0, 3] = origin_x
-    affine_amap[1, 3] = origin_y
-    affine_amap[2, 3] = origin_z
-    affine_amap[3, 3] = 1
+    # we consider the attenuation map has already be resampled
+    # like the projection / reconstructed object
+    return torch.tensor(amap).to(pytomography.device)
 
-    # this is currently how object_meta is made
-    affine_proj = np.zeros((4, 4))
-    affine_proj[0, 0] = projection_pixel_size_r
-    affine_proj[1, 1] = projection_pixel_size_r
-    affine_proj[2, 2] = projection_pixel_size_z
-    # affine_proj[0, 3] = -(projection_dimension_r - 1) / 2 * projection_pixel_size_r
-    # affine_proj[1, 3] = -(projection_dimension_r - 1) / 2 * projection_pixel_size_r
-    # affine_proj[2, 3] = -(projection_dimension_z - 1) / 2 * projection_pixel_size_z
 
-    affine_proj[0, 3] = origin_x + translation[0]
-    affine_proj[1, 3] = origin_y + translation[1]
-    affine_proj[2, 3] = origin_z + translation[2]
-    affine_proj[3, 3] = 1
+def pytomgraphy_osem_reconstruction(
+    metadata,
+    index_peak,
+    psf_photon_energy,
+    attenuation_flag,
+    scatter_mode=None,
+    index_lower=None,
+    index_upper=None,
+    n_iters=4,
+    n_subsets=8,
+):
+    # get metadata information
+    object_meta, proj_meta = pytomography_get_detector_data(metadata)
 
-    print(affine_amap)
-    print(affine_proj)
+    # get projections data
+    projections = pytomography_read_projections(metadata)
 
-    M = np.linalg.inv(affine_amap) @ affine_proj
+    # attenuation correction
+    att_transform = None
+    if attenuation_flag:
+        amap = get_attenuation_map_from_json(metadata)
+        att_transform = SPECTAttenuationTransform(amap)
 
-    print(M)
-
-    output_shape = (
-        projection_dimension_r,
-        projection_dimension_r,
-        projection_dimension_z,
+    # PSF correction
+    psf_meta = get_psf_meta_from_json(
+        metadata,
+        photon_energy=psf_photon_energy / g4_units.keV,
     )
-    amap_aligned = affine_transform(
-        amap, M, cval=0, order=1, mode="constant", output_shape=output_shape
+    psf_transform = SPECTPSFTransform(psf_meta)
+
+    # scatter correction (may be None if no sc correction)
+    additive_term = None
+    if scatter_mode == "TEW":
+        if index_lower is None:
+            index_lower = index_peak - 1
+        if index_upper is None:
+            index_upper = index_peak + 1
+        scatter_estimate = compute_TEW_scatter_estimate(
+            metadata,
+            index_lower=index_lower,
+            index_upper=index_upper,
+            index_peak=index_peak,
+        )
+        additive_term = scatter_estimate
+    if scatter_mode == "DEW":
+        print("todo")
+
+    # FIXME complete other scatter correction
+
+    # system matrix
+    if attenuation_flag:
+        obj = [att_transform, psf_transform]
+    else:
+        obj = [psf_transform]
+    system_matrix = SPECTSystemMatrix(
+        obj2obj_transforms=obj,
+        proj2proj_transforms=[],
+        object_meta=object_meta,
+        proj_meta=proj_meta,
     )
 
-    # amap_aligned = amap_aligned * 1000 # check
-    return torch.tensor(amap_aligned).to(pytomography.device)
+    # loss function
+    likelihood = PoissonLogLikelihood(
+        system_matrix=system_matrix,
+        projections=projections[index_peak],
+        additive_term=additive_term,
+    )
+
+    # go !
+    recon_algorithm = OSEM(likelihood)
+    reconstructed_image = recon_algorithm(n_iters=n_iters, n_subsets=n_subsets)
+
+    # build the final sitk image
+    # (warning spacing in cm)
+    spacing = np.array([object_meta.dx, object_meta.dy, object_meta.dz]) * g4_units.cm
+    size = np.array(object_meta.shape)
+    recon_arr = reconstructed_image.cpu().numpy()
+    recon_arr = rotation_image_pytomo_to_gate(recon_arr)
+    recon_sitk = sitk.GetImageFromArray(recon_arr)
+    recon_sitk.SetSpacing(spacing)
+
+    # get the origin according to the attenuation map
+    # (warning itk in mm and pytomography in cm)
+    if attenuation_flag:
+        am = metadata["Attenuation Data"]
+        origin = np.array([am["origin_x"], am["origin_y"], am["origin_z"]])
+        tr = np.array(am["translation"])
+        origin -= tr
+        origin = origin * g4_units.cm
+    else:
+        origin = -(size * spacing) / 2.0 + spacing / 2.0
+    recon_sitk.SetOrigin(origin)
+
+    return recon_sitk
