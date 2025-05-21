@@ -10,8 +10,8 @@
 #include "G4Polyhedron.hh"
 #include "G4VGraphicsScene.hh"
 #include "G4VisManager.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
-
 #include <typeinfo>
 
 //-----------------------------------------------------------------------------
@@ -26,6 +26,11 @@ GateImageBox::GateImageBox(py::dict &user_info)
   position_x = std::round(size_pix_x * 0.5);
   position_y = std::round(size_pix_y * 0.5);
   position_z = std::round(size_pix_z * 0.5);
+  texture_xy = 0;
+  texture_xz = 0;
+  texture_yz = 0;
+  isInitialized = false;
+  DDD("end of GateImageBox constructor");
 }
 //-----------------------------------------------------------------------------
 
@@ -35,6 +40,7 @@ GateImageBox::~GateImageBox() {}
 
 //-----------------------------------------------------------------------------
 void GateImageBox::SetSlices(py::dict &user_info) {
+  DDD("SetSlices: start");
   sliceXY = DictGetVecDouble(user_info, "slice_xy");
   sliceXZ = DictGetVecDouble(user_info, "slice_xz");
   sliceYZ = DictGetVecDouble(user_info, "slice_yz");
@@ -43,6 +49,11 @@ void GateImageBox::SetSlices(py::dict &user_info) {
 
 //-----------------------------------------------------------------------------
 void GateImageBox::DescribeYourselfTo(G4VGraphicsScene &scene) const {
+  DDD("DescribeYourselfTo: G4VGraphicsScene");
+  if (!isInitialized) {
+    InitialiseSlice();
+  }
+  DDD(GATEIMAGEBOX_USE_OPENGL);
 #ifdef GATEIMAGEBOX_USE_OPENGL
   try {
     G4OpenGLSceneHandler &opengl = dynamic_cast<G4OpenGLSceneHandler &>(scene);
@@ -60,6 +71,7 @@ void GateImageBox::DescribeYourselfTo(G4VGraphicsScene &scene) const {
 //-----------------------------------------------------------------------------
 #ifdef GATEIMAGEBOX_USE_OPENGL
 void GateImageBox::DescribeYourselfTo(G4OpenGLSceneHandler &scene) const {
+  DDD("DescribeYourselfTo: G4OpenGLSceneHandler");
 
   scene.BeginPrimitives(scene.GetObjectTransformation());
 
@@ -152,6 +164,8 @@ void GateImageBox::DescribeYourselfTo(G4OpenGLSceneHandler &scene) const {
 
 //-----------------------------------------------------------------------------
 GLubyte *GateImageBox::convertToRGB(std::vector<PixelType> slice) const {
+  DDD("convertToRGB");
+  DDD(slice.size());
   GLubyte *rgb = new GLubyte[slice.size() * 3];
 
   int i = 0;
@@ -173,15 +187,27 @@ GLubyte *GateImageBox::convertToRGB(std::vector<PixelType> slice) const {
 //-----------------------------------------------------------------------------
 GLuint GateImageBox::genOpenGLTexture(const GLubyte *rgb, int width,
                                       int height) const {
+  DDD("genOpenGLTexture");
+  DDD(width);
+  DDD(height);
   GLuint texture;
+  DDD(texture);
   glGenTextures(1, &texture);
+  DDD("here");
   glBindTexture(GL_TEXTURE_2D, texture);
+
+  // need glew unsure
+  // glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+
+  DDD(texture);
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glPixelStorei(GL_PACK_ALIGNMENT, 1);
+  DDD("after glPixelStorei GL_PACK_ALIGNMENT");
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,
                GL_UNSIGNED_BYTE, (GLvoid *)rgb);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  DDD("end of genOpenGLTexture");
   return texture;
 }
 //-----------------------------------------------------------------------------
@@ -190,7 +216,8 @@ GLuint GateImageBox::genOpenGLTexture(const GLubyte *rgb, int width,
 // void GateImageBox::InitialiseSlice(std::vector<PixelType> & sliceXY,
 // std::vector<PixelType> & sliceXZ, std::vector<PixelType> & sliceYZ, const
 // double resol_x, const double resol_y, const double resol_z) {
-void GateImageBox::InitialiseSlice() {
+void GateImageBox::InitialiseSlice() const {
+  DDD("InitialiseSlice");
   {
     GLubyte *rgb = convertToRGB(sliceXY);
     texture_xy = genOpenGLTexture(rgb, size_pix_x, size_pix_y);
@@ -208,6 +235,7 @@ void GateImageBox::InitialiseSlice() {
     texture_yz = genOpenGLTexture(rgb, size_pix_y, size_pix_z);
     delete[] rgb;
   }
+  isInitialized = true;
 }
 //-----------------------------------------------------------------------------
 
