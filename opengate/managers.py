@@ -1103,6 +1103,11 @@ class VolumeManager(GateObject):
         # database of materials
         self.material_database = MaterialDatabase()
 
+        # List of ImageBox solids
+        # They need to be init after the creation of OpenGL
+        # Store them to init them later
+        self.solid_with_texture_init = []
+
     def reset(self):
         self.__init__(self.simulation)
 
