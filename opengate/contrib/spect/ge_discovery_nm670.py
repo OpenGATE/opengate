@@ -634,6 +634,11 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
     proj.size = [128, 128]
     proj.write_to_disk = True
 
+    # here, we need this rotation
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (0, 180), degrees=True  # 0 180 => like intevo
+    ).as_matrix()
+
     # end
     return digitizer
 
@@ -836,6 +841,12 @@ def rotate_gantry(
     current_angle_deg = start_angle_deg
     if initial_rotation is None:
         initial_rotation = Rotation.from_euler("X", 90, degrees=True)
+        initial_rotation = Rotation.from_euler("xz", (180, 90), degrees=True)
+        initial_rotation = Rotation.from_euler("xz", (90, 180), degrees=True)
+        initial_rotation = Rotation.from_euler(
+            "xy", (90, 180), degrees=True
+        )  # ok left right
+        initial_rotation = Rotation.from_euler("xy", (90, 0), degrees=True)
     for r in range(nb_angle):
         t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
