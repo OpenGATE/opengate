@@ -12,7 +12,8 @@ from opengate.sources.utility import set_source_energy_spectrum
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-
+import json
+from pathlib import Path
 
 ## FIXME -> separate classes for analog/normal/FF etc ?
 
@@ -50,6 +51,7 @@ class SPECTConfig:
         s += f"{self.phantom_config}\n"
         s += f"{self.source_config}\n"
         s += f"{self.acquisition_config}\n"
+        s += f"{self.free_flight_config}\n"
         return s
 
     def setup_simulation(self, sim, number_of_threads=1, visu=False):
@@ -70,7 +72,8 @@ class SPECTConfig:
         self, sim, sources=None, number_of_threads=1, visu=False
     ):
         save_folder = Path(self.output_folder)
-        self.output_folder = save_folder / "primary"
+        prim_output_folder = save_folder / "primary"
+        self.output_folder = prim_output_folder
         output = self.setup_simulation(sim, number_of_threads, visu)
         self.output_folder = save_folder
         if sources is None:
@@ -80,6 +83,17 @@ class SPECTConfig:
         for source in sources:
             self.free_flight_config.setup_simulation_primary(sim, source)
         output.activity = self.free_flight_config.primary_activity
+
+        # dump a file with information
+        n = {
+            "primary_activity": self.free_flight_config.primary_activity
+            / g4_units.Bq
+            * number_of_threads,
+            "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
+        }
+        with open(prim_output_folder / "ff_info.json", "w") as f:
+            json.dump(n, f, indent=4)
+
         return output
 
     def setup_simulation_ff_scatter(
@@ -90,7 +104,8 @@ class SPECTConfig:
         g4.GateGammaFreeFlightOptrActor.ClearOperators()
 
         save_folder = Path(self.output_folder)
-        self.output_folder = save_folder / "scatter"
+        scatter_output_folder = save_folder / "scatter"
+        self.output_folder = scatter_output_folder
         output = self.setup_simulation(sim, number_of_threads, visu)
         self.output_folder = save_folder
         if sources is None:
@@ -100,6 +115,20 @@ class SPECTConfig:
         for source in sources:
             self.free_flight_config.setup_simulation_scatter(sim, source)
         output.activity = self.free_flight_config.scatter_activity
+
+        # dump a file with information
+        n = {
+            "scatter_activity": self.free_flight_config.scatter_activity
+            / g4_units.Bq
+            * number_of_threads,
+            "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
+            "max_compton_level": self.free_flight_config.max_compton_level,
+            "compton_splitting_factor": self.free_flight_config.compton_splitting_factor,
+            "rayleigh_splitting_factor": self.free_flight_config.rayleigh_splitting_factor,
+        }
+        with open(scatter_output_folder / "ff_info.json", "w") as f:
+            json.dump(n, f, indent=4)
+
         return output
 
     def initialize_simulation(self, sim, output, number_of_threads, visu):
@@ -112,7 +141,7 @@ class SPECTConfig:
         sim.progress_bar = True
         sim.store_json_archive = True
         sim.store_input_files = False
-        sim.json_archive_filename = f"{self.simu_name}.json"
+        sim.json_archive_filename = f"simulation.json"
 
         # thread
         if visu:
@@ -526,6 +555,18 @@ class FreeFlightConfig:
         # keep volume names
         self.volume_names = None
 
+    def __str__(self):
+        s = f"FreeFlight FD: {self.forced_direction_flag}\n"
+        s += f"FreeFlight angle tol: {self.angle_tolerance / g4_units.deg} deg\n"
+        s += f"FreeFlight angle tol min dist: {self.angle_tolerance_min_distance / g4_units.mm} mm\n"
+        s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
+        s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
+        s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
+        s += f"FreeFlight minimal_weight: {self.minimal_weight}\n"
+        s += f"FreeFlight primary_activity: {self.primary_activity / g4_units.Bq} Bq\n"
+        s += f"FreeFlight scatter_activity: {self.scatter_activity / g4_units.Bq} Bq\n"
+        return s
+
     def initialize(self, sim):
         # Weights MUST be in the digitizer
         hits_actors = sim.actor_manager.find_actors("hits")
@@ -666,63 +707,86 @@ class FreeFlightConfig:
         return ff
 
 
-def spect_freeflight_merge(output_prim, output_scatter, output_folder, n_target):
-    nd = len(output_prim.detectors)
-    print(f"nd = {nd}")
+def spect_freeflight_merge(
+    folder,
+    n_prim,
+    n_scatter,
+    n_target,
+    prim_folder="primary",
+    scatter_folder="scatter",
+    counts_filename="projection_0_counts.mhd",
+    sq_counts_filename="projection_0_squared_counts.mhd",
+    mean_filename="mean.mhd",
+    rel_uncert_suffix="relative_uncertainty",
+    verbose=True,
+):
+    # make them path
+    prim_folder = Path(prim_folder)
+    scatter_folder = Path(scatter_folder)
 
-    n_prim = output_prim.activity
-    n_scatter = output_scatter.activity
-    output_folder = Path(output_folder)
+    # primary
+    img = folder / prim_folder / counts_filename
+    sq_img = folder / prim_folder / sq_counts_filename
+    out = folder / prim_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
+    _, prim, prim_squared = history_rel_uncertainty_from_files(img, sq_img, n_prim, out)
 
-    for i in range(nd):
-        # primary
-        img = output_folder / output_prim.digitizers[i].get_output_path(
-            "counts"
-        ).relative_to(output_folder.resolve())
-        sq_img = output_folder / output_prim.digitizers[i].get_output_path(
-            "squared_counts"
-        ).relative_to(output_folder.resolve())
-        out = img.parent / f"relative_uncertainty_primary_{i}.mhd"
-        print(img, out)
-        _, prim, prim_squared = history_rel_uncertainty_from_files(
-            img, sq_img, n_prim, out
-        )
-        # scatter
-        img = output_folder / output_scatter.digitizers[i].get_output_path(
-            "counts"
-        ).relative_to(output_folder.resolve())
-        sq_img = output_folder / output_scatter.digitizers[i].get_output_path(
-            "squared_counts"
-        ).relative_to(output_folder.resolve())
-        out = img.parent / f"relative_uncertainty_scatter_{i}.mhd"
-        print(img, out)
-        _, scatter, scatter_squared = history_rel_uncertainty_from_files(
-            img, sq_img, n_scatter, out
-        )
-        # combined
-        uncert, mean = history_ff_combined_rel_uncertainty(
-            prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
-        )
-        scaling = n_target / n_prim
-        mean = mean * scaling
+    # scatter
+    img = folder / scatter_folder / counts_filename
+    sq_img = folder / scatter_folder / sq_counts_filename
+    out = folder / scatter_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
+    _, scatter, scatter_squared = history_rel_uncertainty_from_files(
+        img, sq_img, n_scatter, out
+    )
+
+    # combined
+    uncert, mean = history_ff_combined_rel_uncertainty(
+        prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
+    )
+
+    scaling = n_target / n_prim
+    mean = mean * scaling
+    if verbose:
         print(f"Primary n = {n_prim}  Scatter n = {n_scatter}  Target n = {n_target}")
         print(f"Primary to scatter ratio = {n_prim / n_scatter:.01f}")
         print(f"Scaling to target        = {scaling:.01f}")
 
-        # write combined image
-        prim_img = sitk.ReadImage(img)
-        img = sitk.GetImageFromArray(mean)
-        img.CopyInformation(prim_img)
-        fn = output_folder / f"mean_{i}.mhd"
-        sitk.WriteImage(img, fn)
+    # write combined image
+    prim_img = sitk.ReadImage(img)
+    img = sitk.GetImageFromArray(mean)
+    img.CopyInformation(prim_img)
+    fn = folder / mean_filename
+    sitk.WriteImage(img, fn)
+    if verbose:
         print(fn)
 
-        # write combined relative uncertainty
-        img = sitk.GetImageFromArray(uncert)
-        img.CopyInformation(prim_img)
-        fn = output_folder / f"relative_uncertainty_{i}.mhd"
-        sitk.WriteImage(img, fn)
+    # write combined relative uncertainty
+    img = sitk.GetImageFromArray(uncert)
+    img.CopyInformation(prim_img)
+    fn = folder / f"{fn.stem}_{rel_uncert_suffix}.mhd"
+    sitk.WriteImage(img, fn)
+    if verbose:
         print(fn)
+
+    # open info if the file exists
+    prim_info = {}
+    prim_info_fn = folder / prim_folder / "ff_info.json"
+    if prim_info_fn.is_file():
+        with open(prim_info_fn, "r") as f:
+            prim_info = json.load(f)
+
+    # open info if the file exists
+    scatter_info = {}
+    scatter_info_fn = folder / scatter_folder / "ff_info.json"
+    if scatter_info_fn.is_file():
+        with open(scatter_info_fn, "r") as f:
+            scatter_info = json.load(f)
+
+    # write combined information
+    info = prim_info
+    info.update(scatter_info)
+    info_fn = folder / "ff_info.json"
+    with open(info_fn, "w") as f:
+        json.dump(info, f, indent=4)
 
 
 def plot_ddaa(acceptance_angle, output_filename=None):
