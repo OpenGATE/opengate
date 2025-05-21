@@ -2,7 +2,6 @@ import numpy as np
 import pathlib
 import SimpleITK as sitk
 import itk
-from pathlib import Path
 from opengate.geometry.utility import (
     translate_point_to_volume,
     vec_g4_as_np,
