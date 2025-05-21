@@ -1,75 +1,39 @@
-import logging
-import colorlog
+from loguru import logger
+import os
 import sys
 
-# https://github.com/borntyping/python-colorlog
-# The available color names are black,
-# red, green, yellow, blue, purple, cyan and white.
+# Ensure UTF-8 encoding is used
+os.environ["PYTHONUTF8"] = "1"
+if sys.getdefaultencoding() != "utf-8":
+    sys.stdin.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
 
 
-class CustomFormatter(colorlog.ColoredFormatter):
-    """
-    The level name (INFO, DEBUG etc) is only printed if not equal to INFO
-    """
+# Remove the default logger configuration
+logger.remove()
 
-    def format(self, record):
-        # Check the log level and adjust the message format accordingly
-        if record.levelname == "INFO":
-            self._style._fmt = "%(log_color)s%(message)s%(reset)s"
-        else:
-            self._style._fmt = (
-                "%(log_color)s%(levelname)-8s%(reset)s%(log_color)s%(message)s"
-            )
+# configure logger
+logger.level("DEBUG", color="<green>")
+logger.level("DEBUG", icon="🐞 ")
+logger.level("INFO", icon="")
+logger.level("INFO", color="<green>")
+logger.level("NONE", no=100, color="")
+logger.level("WARNING", icon="⚠️ ")
+logger.level("CRITICAL", icon="☠️ ")
 
-        return super().format(record)
+# default log level of loguru
+DEBUG = 10
+INFO = 20
+WARNING = 30
+CRITICAL = 50
+NONE = 100
 
-
-# main format
-formatter = CustomFormatter(
-    "%(log_color)s%(levelname)-8s%(reset)s%(log_color)s%(message)s",
-    log_colors={
-        "DEBUG": "cyan",
-        "INFO": "green",
-        "WARNING": "yellow",
-        "ERROR": "red",
-        "CRITICAL": "red,bg_white",
-    },
-)
-
-
-# set output message to standard output
-log_handler = colorlog.StreamHandler(sys.stdout)
-
-# install default handler format
-log_handler.setFormatter(formatter)
-
-# get main log object
-global_log = colorlog.getLogger("opengate_logger")
-global_log.propagate = False
-if not global_log.hasHandlers():
-    global_log.addHandler(log_handler)
-
-# default log level
-# global_log.setLevel(logging.INFO)
-global_log.setLevel(0)
-
-
-def print_logger_hierarchy(logger_name):
-    logger = logging.getLogger(logger_name)
-    while logger:
-        print(f"Logger: {logger.name}")
-        print(f"  Level: {logger.level}")
-        print(f"  Handlers: {logger.handlers}")
-        # Move to the parent logger
-        if logger.parent and logger.parent is not logger:
-            logger = logger.parent
-        else:
-            break
-
-
-# shorter for level
-NONE = 0
-DEBUG = logging.DEBUG
-INFO = logging.INFO
+# default log level for running_verbose_level
 RUN = 20
 EVENT = 50
+
+
+def log_level(log_handler_id):
+    handler_config = logger._core.handlers.get(log_handler_id)
+    return handler_config.levelno

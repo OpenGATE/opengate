@@ -247,7 +247,8 @@ void GateSourceManager::PrepareNextSource() const {
       l.fNextSimulationTime = t;
     }
   }
-  // If no next time in the current interval, active source is NULL
+  // If no next time in the current interval,
+  // the next active source is nullptr
 }
 
 void GateSourceManager::CheckForNextRun() const {
@@ -258,7 +259,7 @@ void GateSourceManager::CheckForNextRun() const {
     l.fNextRunId++;
     if (l.fNextRunId >= fSimulationTimes.size()) {
       // Sometimes, the source must clean some data in its own thread, not by
-      // the master thread (for example with a G4SingleParticleSource object)
+      // the master thread (for example, with a G4SingleParticleSource object)
       // The CleanThread method is used for that.
       for (auto *source : fSources) {
         source->CleanWorkerThread();

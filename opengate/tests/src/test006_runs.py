@@ -15,7 +15,6 @@ if __name__ == "__main__":
     sim.visu = False
     sim.number_of_threads = 1
     sim.random_seed = 13241234
-    gate.logger.global_log.debug(sim)
 
     cm = gate.g4_units.cm
     MeV = gate.g4_units.MeV

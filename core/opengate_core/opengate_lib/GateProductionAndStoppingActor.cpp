@@ -79,6 +79,8 @@ void GateProductionAndStoppingActor::SteppingAction(G4Step *step) {
 }
 void GateProductionAndStoppingActor::PostUserTrackingAction(
     const G4Track *track) {
+  // call mother class first
+  GateVActor::PostUserTrackingAction(track);
   if (fStopImageEnabled) {
     auto step = track->GetStep();
     AddValueToImage(track->GetStep());

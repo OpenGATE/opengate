@@ -14,6 +14,7 @@ import shutil
 from pathlib import Path
 from matplotlib.ticker import StrMethodFormatter
 from matplotlib.patches import Circle
+import io
 import gatetools.phsp
 
 from ..utility import (
@@ -2170,3 +2171,25 @@ def delete_folder_contents(folder_path):
         print(f"Contents of '{folder_path}' have been deleted.")
     else:
         print(f"The folder '{folder_path}' does not exist.")
+
+
+def capture_stdout(command, *args, **kwargs):
+    # Define a function that captures stdout
+    # Save the original stdout
+    original_stdout = sys.stdout
+    # Create a buffer to capture output
+    captured_output = io.StringIO()
+
+    try:
+        # Redirect stdout to the buffer
+        sys.stdout = captured_output
+        # Execute the command
+        command(*args, **kwargs)
+    finally:
+        # Restore the original stdout
+        sys.stdout = original_stdout
+
+    # Get the output from the buffer and return it
+    print("here", captured_output)
+    print("here", captured_output.getvalue())
+    return captured_output.getvalue()

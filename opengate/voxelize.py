@@ -47,15 +47,15 @@ def voxelize_geometry(
             opposite corners of the box-shaped
             sub-portion of the geometry to be extracted, or a volume or list volumes.
             In the latter case, the box is automatically determined to contain the volume(s).
-        spacing (tuple) : The voxel spacing in x-, y-, z-direction.
+        spacing (tuple): The voxel spacing in x-, y-, z-direction.
         margin : Width (in voxels) of the additional margin around the extracted box-shaped sub-portion
             indicated by `extent`.
-        filename (str, optional) : The filename/path to which the voxelized image and labels are written.
+        filename (str, optional): The filename/path to which the voxelized image and labels are written.
             Suffix added automatically. Path can be relative to the global output directory of the simulation.
-        return_path (bool) : Return the absolute path where the voxelized image was written?
+        return_path (bool): Return the absolute path where the voxelized image was written?
 
     Returns:
-        dict, itk image, (path) : A dictionary containing the label to volume LUT; the voxelized geometry;
+        dict, itk image, (path): A dictionary containing the label to volume LUT; the voxelized geometry;
             optionally: the absolute path where the image was written, if applicable.
     """
     # collect volumes which are directly underneath the world/parallel worlds

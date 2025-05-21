@@ -94,7 +94,7 @@ if __name__ == "__main__":
     sc.output_filename = hc.output_filename
 
     sec = gate.g4_units.second
-    sim.running_verbose_level = 2
+    sim.running_verbose_level = gate.logger.RUN
     sim.run_timing_intervals = [
         [0, 0.33 * sec],
         [0.33 * sec, 0.66 * sec],

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     sim.output_dir = paths.output
 
     # shhhht !
-    gate.logger.global_log.setLevel(gate.logger.NONE)
+    sim.verbose_level = gate.logger.NONE
 
     m = gate.g4_units.m
     cm = gate.g4_units.cm
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     extra_sphere.rmax = 2 * gate.g4_units.cm
     extra_sphere.translation = [20 * cm, 20 * cm, 20 * cm]
 
-    print("Automatic voxelization entire geometry")
+    print("Automatic voxelization of all the geometry")
     # voxelize the geometry with 3x3x3 mm spacing
     labels_auto, image_auto = sim.voxelize_geometry(filename="test032_auto")
     info = gate.image.get_info_from_image(image_auto)

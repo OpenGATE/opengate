@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigiAttributeManager.h"
+#include "GateDigiAttributeProcessDefinedStepInVolume.h"
 #include "GateTDigiAttribute.h"
 
 GateDigiAttributeManager *GateDigiAttributeManager::fInstance = nullptr;
@@ -21,7 +22,7 @@ GateDigiAttributeManager::GateDigiAttributeManager() {
 }
 
 GateVDigiAttribute *
-GateDigiAttributeManager::GetDigiAttribute(std::string name) {
+GateDigiAttributeManager::GetDigiAttribute(const std::string &name) {
   if (fAvailableDigiAttributes.find(name) == fAvailableDigiAttributes.end()) {
     std::ostringstream oss;
     oss << "Error the attribute named '" << name << "' does not exists. Abort.";
@@ -89,8 +90,11 @@ void GateDigiAttributeManager::DefineDigiAttribute(
 }
 
 GateVDigiAttribute *GateDigiAttributeManager::CopyDigiAttribute(
-    GateVDigiAttribute *att) { // FIXME to move elsewhere !!!!!
+    GateVDigiAttribute *att) { // FIXME to move elsewhere
   GateVDigiAttribute *a = nullptr;
+
+  // FIXME do a real copy, including the inner members !
+
   if (att->GetDigiAttributeType() == 'D') {
     a = new GateTDigiAttribute<double>(att->GetDigiAttributeName());
   }

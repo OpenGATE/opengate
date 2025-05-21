@@ -143,7 +143,7 @@ def create_simulation(geom, paths, version):
     sc.output_filename = hc.output_filename
 
     sec = gate.g4_units.second
-    sim.running_verbose_level = 2
+    sim.running_verbose_level = gate.logger.RUN
     # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     sim.run_timing_intervals = [[0, 1 * sec]]
 
