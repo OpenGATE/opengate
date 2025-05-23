@@ -14,6 +14,8 @@
 #include <G4VoxelLimits.hh>
 #include <Randomize.hh>
 #include <iostream>
+#include <math.h>
+
 
 GateDigitizerSpatialBlurringActor::GateDigitizerSpatialBlurringActor(
     py::dict &user_info)
@@ -33,6 +35,7 @@ void GateDigitizerSpatialBlurringActor::InitializeUserInfo(
   fBlurAttributeName = DictGetStr(user_info, "blur_attribute");
   fBlurSigma3 = DictGetG4ThreeVector(user_info, "blur_sigma");
   fKeepInSolidLimits = DictGetBool(user_info, "keep_in_solid_limits");
+  fUseTruncatedGaussian = DictGetBool(user_info, "use_truncated_Gaussian");
 }
 
 void GateDigitizerSpatialBlurringActor::DigitInitialize(
@@ -136,19 +139,46 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
 
     static const double tiny = 1 * CLHEP::nm;
 
-    if (p.getX() < Xmin)
-      p.setX(Xmin + tiny);
-    if (p.getY() < Ymin)
-      p.setY(Ymin + tiny);
-    if (p.getZ() < Zmin)
-      p.setZ(Zmin + tiny);
+    if (fUseTruncatedGaussian){
+      G4double newX(p.getX()),newY(p.getY()),newZ(p.getZ()), newSigmaX, newSigmaY,newSigmaZ;
+     
+      newSigmaX = (ComputeTruncatedGaussianSigma(v.getX(),fBlurSigma3.getX(),Xmin,Xmax));
+      newSigmaY = (ComputeTruncatedGaussianSigma(v.getY(),fBlurSigma3.getY(),Ymin,Ymax));
+      newSigmaZ = (ComputeTruncatedGaussianSigma(v.getZ(),fBlurSigma3.getZ(),Zmin,Zmax));
 
-    if (p.getX() > Xmax)
-      p.setX(Xmax - tiny);
-    if (p.getY() > Ymax)
-      p.setY(Ymax - tiny);
-    if (p.getZ() > Zmax)
-      p.setZ(Zmax - tiny);
+
+      //std::cout<<<newSigmaX<<","<<std::endl;
+
+   
+      
+      while ((newX>Xmax) || (newX<Xmin))
+        newX = G4RandGauss::shoot(v.getX(), newSigmaX);
+      while ((newY>Ymax) || (newY<Ymin))
+        newY = G4RandGauss::shoot(v.getY(), newSigmaY);
+      while ((newZ>Zmax) || (newZ<Zmin))
+        newZ = G4RandGauss::shoot(v.getZ(), newSigmaZ);
+
+      p.setX(newX);
+      p.setY(newY);
+      p.setZ(newZ);
+   }
+   
+
+    else{ 
+      if (p.getX() < Xmin)
+        p.setX(Xmin + tiny);
+      if (p.getY() < Ymin)
+        p.setY(Ymin + tiny);
+      if (p.getZ() < Zmin)
+        p.setZ(Zmin + tiny);
+
+      if (p.getX() > Xmax)
+        p.setX(Xmax - tiny);
+      if (p.getY() > Ymax)
+        p.setY(Ymax - tiny);
+      if (p.getZ() > Zmax)
+        p.setZ(Zmax - tiny);
+    }
   }
 
   // convert back to global position
@@ -156,4 +186,66 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
 
   // store
   fOutputBlurAttribute->Fill3Value(p);
+}
+
+
+
+double GateDigitizerSpatialBlurringActor::ComputeTruncatedGaussianSigma(G4double mu, G4double sigma, G4double lowLimit,  G4double highLimit){
+
+double lowLim_std = (lowLimit - mu) / sigma;
+double hiLim_std = (highLimit - mu) / sigma;
+
+
+double phi_lowLim = pdf(lowLim_std);
+double phi_hiLim = pdf(hiLim_std);
+double Fl = cdf(lowLim_std);
+double Fh = cdf(hiLim_std);
+
+double Z = Fh - Fl;
+double mean_shift = (phi_lowLim - phi_hiLim) / Z;
+double variance_correction = 1 - (lowLim_std * phi_lowLim - hiLim_std * phi_hiLim) / Z - mean_shift * mean_shift;
+
+
+// Due to the double asymetrical truncation (both edges), an extra edge correction is needed 
+// Through analytical tests an exponential correction was found to fit the results within 5% error 
+
+double edgeCorrectedSigma = ComputeEdgeCorrectedSigma(mu,sigma * sqrt(variance_correction),lowLimit,highLimit);
+return edgeCorrectedSigma;
+}
+
+
+double GateDigitizerSpatialBlurringActor::ComputeEdgeCorrectedSigma(double mu, double sigma,
+                                 double lowLimit, double highLimit)
+{
+
+
+    const double A = 3.61070188;
+    const double B = -0.86538264; 
+    
+
+    // Distance to nearest edge
+    double delta = std::min(mu - lowLimit, highLimit - mu);
+    delta = std::max(0., delta);  // Ensure it's not negative
+
+    double delta_norm = delta / sigma;
+    double correction 1;
+
+    //These cuts on delta_norm > 0.95 and delta_norm < 4 are needed to comply with the safe limits of the fit.
+    delta_norm = std::max(.95, delta_norm); 
+    if (delta_norm < 4) correction = A * std::exp(B * delta_norm);
+
+    // Return corrected sigma
+    return sigma * correction;
+}
+
+
+
+// Standard normal PDF
+G4double GateDigitizerSpatialBlurringActor::pdf(G4double x){
+    return exp(-0.5 * x * x) / sqrt(2.0 * M_PI);
+}
+//___________________________________________________________________
+// Standard normal CDF using the error function
+G4double GateDigitizerSpatialBlurringActor::cdf(G4double x){
+    return 0.5 * (1 + erf(x / sqrt(2.0)));
 }
