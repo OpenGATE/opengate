@@ -2,6 +2,7 @@ import opengate as gate
 import os, sys
 import ROOT
 import opengate_core as g4
+
 # Create the simulation
 from opengate.geometry.utility import get_grid_repetition, get_circular_repetition
 import numpy as np
@@ -9,15 +10,13 @@ import matplotlib.pyplot as plt
 from opengate.tests import utility
 
 
+def check_stats(path, fwhmX, fwhmY, fwhmZ):
 
-def check_stats(path,fwhmX,fwhmY,fwhmZ):
-    
     is_ok = True
-    
-    inFile = ROOT . TFile . Open ( path ," READ ")
-    Singles_TG = inFile.Get('Singles_crystal')
-    Singles_SB_TG = inFile.Get('Singles_crystal_2')
 
+    inFile = ROOT.TFile.Open(path, " READ ")
+    Singles_TG = inFile.Get("Singles_crystal")
+    Singles_SB_TG = inFile.Get("Singles_crystal_2")
 
     df_TG = ROOT.RDataFrame(Singles_TG)
     df_SB = ROOT.RDataFrame(Singles_SB_TG)
@@ -31,24 +30,23 @@ def check_stats(path,fwhmX,fwhmY,fwhmZ):
     Y_SB_TG = df_SB.AsNumpy(["PostPosition_Y"])["PostPosition_Y"]
     Z_SB_TG = df_SB.AsNumpy(["PostPosition_Z"])["PostPosition_Z"]
 
-    dX = (np.asarray(X_TG)-np.asarray(X_SB_TG))
-    dY = (np.asarray(Y_TG)-np.asarray(Y_SB_TG))
-    dZ = (np.asarray(Z_TG)-np.asarray(Z_SB_TG))
+    dX = np.asarray(X_TG) - np.asarray(X_SB_TG)
+    dY = np.asarray(Y_TG) - np.asarray(Y_SB_TG)
+    dZ = np.asarray(Z_TG) - np.asarray(Z_SB_TG)
 
-    if ((np.abs(np.std(dX)*2.35-fwhmX)/fwhmX)>0.05):
+    if (np.abs(np.std(dX) * 2.35 - fwhmX) / fwhmX) > 0.05:
         print("ERROR IN X!")
         is_ok = False
-       
-    if ((np.abs(np.std(dY)*2.35-fwhmY)/fwhmY)>0.05):
+
+    if (np.abs(np.std(dY) * 2.35 - fwhmY) / fwhmY) > 0.05:
         print("ERROR IN Y!")
         is_ok = False
-    
-    if ((np.abs(np.std(dZ)*2.35-fwhmZ)/fwhmZ)>0.05):
+
+    if (np.abs(np.std(dZ) * 2.35 - fwhmZ) / fwhmZ) > 0.05:
         print("ERROR IN Z!")
         is_ok = False
 
     return is_ok
-
 
 
 sim = gate.Simulation()
@@ -64,7 +62,7 @@ eV = gate.g4_units.eV
 MeV = gate.g4_units.MeV
 KeV = gate.g4_units.keV
 Bq = gate.g4_units.Bq
-kBq = gate.g4_units.Bq*1000
+kBq = gate.g4_units.Bq * 1000
 gcm3 = gate.g4_units.g_cm3
 sec = gate.g4_units.s
 
@@ -89,15 +87,15 @@ crystal.material = "LYSO"
 crystal.mother = world.name
 
 
-source = sim.add_source('GenericSource', 'mysource')
+source = sim.add_source("GenericSource", "mysource")
 source.particle = "gamma"
 
 source.position.type = "box"
-source.position.size = [crystal.size[0]*0.99,crystal.size[1]*0.99,0.1*mm]
-source.position.translation = [ 0 * cm, 0 * cm, -5 * cm]
+source.position.size = [crystal.size[0] * 0.99, crystal.size[1] * 0.99, 0.1 * mm]
+source.position.translation = [0 * cm, 0 * cm, -5 * cm]
 
 source.direction.type = "momentum"
-source.direction.momentum = [0,0,1]
+source.direction.momentum = [0, 0, 1]
 source.energy.type = "mono"
 source.energy.mono = 511 * KeV
 source.activity = 20 * kBq
@@ -133,7 +131,7 @@ bc.input_digi_collection = sc.name
 bc.keep_in_solid_limits = True
 bc.use_truncated_Gaussian = True
 bc.blur_attribute = "PostPosition"
-bc.blur_fwhm = [35*mm, 20*mm, 1*mm]
+bc.blur_fwhm = [35 * mm, 20 * mm, 1 * mm]
 
 
 # timing
@@ -142,5 +140,5 @@ sim.run_timing_intervals = [[0, 1 * sec]]
 # go
 sim.run()
 
-is_ok = check_stats(hc.output_filename,*bc.blur_fwhm)
+is_ok = check_stats(hc.output_filename, *bc.blur_fwhm)
 utility.test_ok(is_ok)
