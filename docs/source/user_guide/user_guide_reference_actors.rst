@@ -564,14 +564,14 @@ Description
 
 .. code-block:: python
 
-bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
-bc.attached_to = hc.attached_to
-bc.output_filename = hc.output_filename
-bc.input_digi_collection = sc.name
-bc.keep_in_solid_limits = True
-bc.use_truncated_Gaussian = True
-bc.blur_attribute = "PostPosition"
-bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
+   bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
+   bc.attached_to = hc.attached_to
+   bc.output_filename = hc.output_filename
+   bc.input_digi_collection = sc.name
+   bc.keep_in_solid_limits = True
+   bc.use_truncated_Gaussian = True
+   bc.blur_attribute = "PostPosition"
+   bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
 
 
 
