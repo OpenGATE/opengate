@@ -47,8 +47,10 @@ protected:
 
   void BlurCurrentThreeVectorValue();
 
-  double ComputeTruncatedGaussianSigma(G4double mu, G4double sigma, G4double lowLimit,  G4double highLimit);
-  double ComputeEdgeCorrectedSigma(G4double mu, G4double sigma, G4double lowLimit, G4double highLimit);
+  double ComputeTruncatedGaussianSigma(G4double mu, G4double sigma,
+                                       G4double lowLimit, G4double highLimit);
+  double ComputeEdgeCorrectedSigma(G4double mu, G4double sigma,
+                                   G4double lowLimit, G4double highLimit);
   G4double pdf(G4double x);
   G4double cdf(G4double x);
 
