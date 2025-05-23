@@ -266,7 +266,7 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
         // fStopRunFlag = true;
         fSourceManager->SetRunTerminationFlag(true);
       } else {
-        // estimate Nevents at which next check should occour
+        // estimate Nevents at which next check should occur
         NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
                             (UncCurrent / fUncertaintyGoal) * NbOfEvent *
                             Overshoot;
@@ -370,7 +370,7 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
     auto v = data.squared_worker_flatimg[index_flat];
     {
       G4AutoLock mutex(&SetPixelMutex);
-      ImageAddValue<Image3DType>(cpp_image, index, v * v);
+      ImageAddValue<Image3DType>(cpp_image, index, v * v); // implicit flush
     }
     // new temp value
     data.squared_worker_flatimg[index_flat] = value;
