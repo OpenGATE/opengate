@@ -594,15 +594,12 @@ class DigitizerSpatialBlurringActor(
                 "doc": "FIXME",
             },
         ),
-        
         "use_truncated_Gaussian": (
             True,
             {
                 "doc": "FIXME",
             },
         ),
-        
-
     }
 
     def __init__(self, *args, **kwargs):
