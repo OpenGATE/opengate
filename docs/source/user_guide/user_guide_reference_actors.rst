@@ -560,7 +560,9 @@ DigitizerSpatialBlurringActor
 Description
 ~~~~~~~~~~~
 
-   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This will push the hits back to the closest edge of the crystal. Alternatively the `use_truncated_Gaussian` option can be used with `keep_in_solid_limits` to recreate a more realistic scenario. This option changes the common Gaussian distribution to a new truncated Gaussian that preserves the standard deviation of the distribution within the crystal. This variation is paramount when using big crystals with spatial resolution, since it is the only way to preserve the original standard deviation of the reconstructed distribution. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+
+
 
 Reference
 ~~~~~~~~~
