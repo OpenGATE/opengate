@@ -562,6 +562,17 @@ Description
 
    The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This will push the hits back to the closest edge of the crystal. Alternatively the `use_truncated_Gaussian` option can be used with `keep_in_solid_limits` to recreate a more realistic scenario. This option changes the common Gaussian distribution to a new truncated Gaussian that preserves the standard deviation of the distribution within the crystal. This variation is paramount when using big crystals with spatial resolution, since it is the only way to preserve the original standard deviation of the reconstructed distribution. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
 
+.. code-block:: python
+
+bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
+bc.attached_to = hc.attached_to
+bc.output_filename = hc.output_filename
+bc.input_digi_collection = sc.name
+bc.keep_in_solid_limits = True
+bc.use_truncated_Gaussian = True
+bc.blur_attribute = "PostPosition"
+bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
+
 
 
 Reference
