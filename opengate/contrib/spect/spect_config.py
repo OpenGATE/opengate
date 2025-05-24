@@ -3,7 +3,6 @@ from opengate.contrib.spect.spect_helpers import *
 from opengate.actors.biasingactors import distance_dependent_angle_tolerance
 from opengate.exception import fatal
 from opengate import g4_units
-from box import Box
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 import opengate.contrib.spect.siemens_intevo as intevo
 from opengate.image import read_image_info
@@ -15,19 +14,17 @@ import os
 import json
 from pathlib import Path
 
-## FIXME -> separate classes for analog/normal/FF etc ?
-
 
 class SPECTConfig:
     """
     Represents the configuration object for a SPECT simulation.
 
-    This class organizes and manages the configuration details required to set up
+    This class organises and manages the configuration details required to set up
     and execute a SPECT (Single Photon Emission Computed Tomography) simulation.
 
     It includes settings for the simulation output, main configurable elements,
     such as detector, phantom, source, and protocol, as well as simulation
-    initialization and execution methods.
+    initialisation and execution methods.
     """
 
     def __init__(self, simu_name="spect"):
@@ -35,6 +32,11 @@ class SPECTConfig:
         self.output_folder = Path("output")
         self.output_basename = "projection.mhd"
         self.simu_name = simu_name
+        self.number_of_threads = 1
+
+        # only used if ff
+        self.output_folder_primary = None
+        self.output_folder_scatter = None
 
         # main elements
         self.detector_config = DetectorConfig(self)
@@ -47,6 +49,7 @@ class SPECTConfig:
         s = f"SPECT simulation\n"
         s += f"Output folder: {self.output_folder}\n"
         s += f"Output basename: {self.output_basename}\n"
+        s += f"Nb of threads: {self.number_of_threads}\n"
         s += f"{self.detector_config}\n"
         s += f"{self.phantom_config}\n"
         s += f"{self.source_config}\n"
@@ -54,27 +57,24 @@ class SPECTConfig:
         s += f"{self.free_flight_config}\n"
         return s
 
-    def setup_simulation(self, sim, number_of_threads=1, visu=False):
+    def setup_simulation(self, sim, visu=False):
         # create the output folder if not exist
         os.makedirs(self.output_folder, exist_ok=True)
-        # prepare output dictionary
-        output = Box()
         # default initialization
-        self.initialize_simulation(sim, output, number_of_threads, visu)
+        self.initialize_simulation(sim, visu)
         # init all elements
-        self.detector_config.setup_simulation(sim, output)
-        self.phantom_config.setup_simulation(sim, output)
-        self.source_config.setup_simulation(sim, output)
-        self.acquisition_config.setup_simulation(sim, output, output.detectors)
-        return output
+        self.detector_config.setup_simulation(sim)
+        phantom = self.phantom_config.setup_simulation(sim)
+        self.source_config.setup_simulation(sim, phantom)
+        self.acquisition_config.setup_simulation(sim, self.detector_config.head_names)
 
-    def setup_simulation_ff_primary(
-        self, sim, sources=None, number_of_threads=1, visu=False
-    ):
+    def setup_simulation_ff_primary(self, sim, sources=None, visu=False):
+        # we temporarily change the output folder
         save_folder = Path(self.output_folder)
-        prim_output_folder = save_folder / "primary"
-        self.output_folder = prim_output_folder
-        output = self.setup_simulation(sim, number_of_threads, visu)
+        self.output_folder_primary = save_folder / "primary"
+        self.output_folder = self.output_folder_primary
+        self.setup_simulation(sim, visu)
+        # but keep the initial one for further use of config
         self.output_folder = save_folder
         if sources is None:
             n = f"{self.simu_name}_source"
@@ -82,31 +82,15 @@ class SPECTConfig:
             sources = [source]
         for source in sources:
             self.free_flight_config.setup_simulation_primary(sim, source)
-        output.activity = self.free_flight_config.primary_activity
+        self.dump_ff_info_primary()
 
-        # dump a file with information
-        n = {
-            "primary_activity": self.free_flight_config.primary_activity
-            / g4_units.Bq
-            * number_of_threads,
-            "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
-        }
-        with open(prim_output_folder / "ff_info.json", "w") as f:
-            json.dump(n, f, indent=4)
-
-        return output
-
-    def setup_simulation_ff_scatter(
-        self, sim, sources=None, number_of_threads=1, visu=False
-    ):
+    def setup_simulation_ff_scatter(self, sim, sources=None, visu=False):
         # because primary was probably config/run before we clean the
         # static variables from G4 to avoid issues.
         g4.GateGammaFreeFlightOptrActor.ClearOperators()
-
         save_folder = Path(self.output_folder)
-        scatter_output_folder = save_folder / "scatter"
-        self.output_folder = scatter_output_folder
-        output = self.setup_simulation(sim, number_of_threads, visu)
+        self.output_folder_scatter = save_folder / "scatter"
+        self.output_folder = self.output_folder_scatter
         self.output_folder = save_folder
         if sources is None:
             n = f"{self.simu_name}_source"
@@ -114,24 +98,30 @@ class SPECTConfig:
             sources = [source]
         for source in sources:
             self.free_flight_config.setup_simulation_scatter(sim, source)
-        output.activity = self.free_flight_config.scatter_activity
+        self.dump_ff_info_scatter()
 
-        # dump a file with information
+    def dump_ff_info_primary(self, filename="ff_info.json"):
         n = {
-            "scatter_activity": self.free_flight_config.scatter_activity
-            / g4_units.Bq
-            * number_of_threads,
+            "primary_activity": self.free_flight_config.primary_activity / g4_units.Bq,
+            "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
+        }
+        fn = self.output_folder_primary / filename
+        with open(fn, "w") as f:
+            json.dump(n, f, indent=4)
+
+    def dump_ff_info_scatter(self, filename="ff_info.json"):
+        n = {
+            "scatter_activity": self.free_flight_config.scatter_activity / g4_units.Bq,
             "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
             "max_compton_level": self.free_flight_config.max_compton_level,
             "compton_splitting_factor": self.free_flight_config.compton_splitting_factor,
             "rayleigh_splitting_factor": self.free_flight_config.rayleigh_splitting_factor,
         }
-        with open(scatter_output_folder / "ff_info.json", "w") as f:
+        fn = self.output_folder_scatter / filename
+        with open(fn, "w") as f:
             json.dump(n, f, indent=4)
 
-        return output
-
-    def initialize_simulation(self, sim, output, number_of_threads, visu):
+    def initialize_simulation(self, sim, visu):
         # main options
         sim.random_seed = "auto"
         sim.check_volumes_overlap = True
@@ -143,11 +133,10 @@ class SPECTConfig:
         sim.store_input_files = False
         sim.json_archive_filename = f"simulation.json"
 
-        # thread
+        # threads
         if visu:
-            sim.number_of_threads = 1
-        else:
-            sim.number_of_threads = number_of_threads
+            self.number_of_threads = 1
+        sim.number_of_threads = self.number_of_threads
 
         # world
         m = gate.g4_units.m
@@ -161,9 +150,6 @@ class SPECTConfig:
         # add the "stats" actor
         stats = sim.add_actor("SimulationStatisticsActor", "stats")
         stats.output_filename = "stats.txt"
-
-        # store some created elements
-        output.stats = stats
 
 
 class PhantomConfig:
@@ -210,16 +196,15 @@ class PhantomConfig:
         s += f"Phantom labels: {self.labels}"
         return s
 
-    def setup_simulation(self, sim, output):
+    def setup_simulation(self, sim):
         # can be: nothing or voxelized
         if self.image is None:
             return
         # special case for visu
         if sim.visu is True:
-            phantom = self.add_fake_phantom_for_visu(sim, output)
+            phantom = self.add_fake_phantom_for_visu(sim)
             if self.translation is not None:
                 phantom.translation = self.translation
-            output.phantom = phantom
             return
         # insert voxelized phantom
         phantom = sim.add_volume("Image", f"{self.spect_config.simu_name}_phantom")
@@ -240,15 +225,15 @@ class PhantomConfig:
         # translation ?
         if self.translation is not None:
             phantom.translation = self.translation
-        output.phantom = phantom
 
-    def add_fake_phantom_for_visu(self, sim, output):
+        return phantom
+
+    def add_fake_phantom_for_visu(self, sim):
         gate.exception.warning(f"FAKE voxelized phantom for visu: {self.image}")
         img_info = read_image_info(self.image)
         phantom = sim.add_volume("Box", f"{self.spect_config.simu_name}_phantom")
         phantom.material = "G4_WATER"
         phantom.size = img_info.size * img_info.spacing
-        output.phantom = phantom
         return phantom
 
 
@@ -268,9 +253,12 @@ class DetectorConfig:
         self.model = None
         self.collimator = None
         self.digitizer_function = None
+        self.digitizer_channels = None
         self.number_of_heads = 2
         self.size = None
         self.spacing = None
+        # computed (not user-defined)
+        self.head_names = []
         # fix later
         self.garf = GARFConfig(spect_config)
 
@@ -302,7 +290,7 @@ class DetectorConfig:
         f = f"{filename}_{i}{ext}"
         return f
 
-    def setup_simulation(self, sim, output):
+    def setup_simulation(self, sim):
         if self.model not in self.available_models:
             fatal(
                 f'The model "{self.model}" is unknown. '
@@ -311,7 +299,7 @@ class DetectorConfig:
 
         # GARF ?
         if self.garf.is_enabled():
-            self.garf.create_simulation(sim, output)
+            self.garf.create_simulation(sim)
             return
 
         # digitizer_function with updated size ?
@@ -330,35 +318,30 @@ class DetectorConfig:
                 func = digit
 
         # or real SPECT volumes
-        output.detectors = []
-        output.crystals = []
-        output.digitizers = []
         m = self.get_model_module()
         simu_name = self.spect_config.simu_name
         for i in range(self.number_of_heads):
+            hn = f"{simu_name}_spect{i}"
+            self.head_names.append(hn)
             det, colli, crystal = m.add_spect_head(
                 sim,
-                f"{simu_name}_spect{i}",
+                hn,
                 collimator_type=self.collimator,
                 debug=sim.visu == True,
             )
-            output.detectors.append(det)
-            output.crystals.append(crystal)
+
             # set the digitizer
             if func is not None:
-                func(sim, crystal.name, f"{simu_name}_digit{i}")
-                projs = sim.actor_manager.find_actors(
-                    f"{simu_name}_digit{i}_projection"
-                )
-                if len(projs) != 1:
-                    fatal(
-                        f"Cannot find the projection actor "
-                        f'"{simu_name}_digit{i}_projection"'
-                        f"found : {projs}"
-                    )
-                proj = projs[0]
+                digitizer = func(sim, crystal.name, f"{simu_name}_digit{i}")
+                proj = digitizer.find_module_by_type("DigitizerProjectionActor")
                 proj.output_filename = self.get_proj_filename(i)
-                output.digitizers.append(proj)
+
+                # set the energy window channels if nedeed
+                if self.digitizer_channels is not None:
+                    ew = digitizer.find_module_by_type("DigitizerEnergyWindowsActor")
+                    ew.channels = self.digitizer_channels
+                    channel_names = [c["name"] for c in ew.channels]
+                    proj.input_digi_collections = channel_names
 
 
 class GARFConfig:
@@ -455,16 +438,16 @@ class SourceConfig:
         s += f"Activity source: {self.total_activity / gate.g4_units.Bq} Bq"
         return s
 
-    def setup_simulation(self, sim, output):
+    def setup_simulation(self, sim, phantom):
         # can be: nothing or voxelized or gaga (later)
         if self.image is None:
             return
         if self.radionuclide is None:
             fatal(f"Radionuclide is None, please set a radionuclide (eg. 'lu177')")
 
-        # FIXME gaga tests
+        # set the source
         source = sim.add_source("VoxelSource", f"{self.spect_config.simu_name}_source")
-        source.attached_to = output.phantom
+        source.attached_to = phantom
         source.image = str(self.image)
         # mode voxelized source according to voxelized phantom
         if self.spect_config.phantom_config.image is not None:
@@ -475,11 +458,9 @@ class SourceConfig:
             )
         set_source_energy_spectrum(source, self.radionuclide)
         source.particle = "gamma"
-        source.activity = self.total_activity
+        source.activity = self.total_activity / self.spect_config.number_of_threads
         if sim.visu is True:
-            source.activity = 30 * gate.g4_units.Bq
-
-        output.source = source
+            source.activity = 10 * gate.g4_units.Bq
 
 
 class AcquisitionConfig:
@@ -513,7 +494,7 @@ class AcquisitionConfig:
         s += f"Acquisition # angles: {self.number_of_angles}"
         return s
 
-    def setup_simulation(self, sim, output, detectors):
+    def setup_simulation(self, sim, detector_names):
         # get the number of heads and starting angles
         nb = str(self.spect_config.detector_config.number_of_heads)
         if nb not in self.available_starting_head_angles:
@@ -525,6 +506,9 @@ class AcquisitionConfig:
         sim.run_timing_intervals = [
             [i * step_time, (i + 1) * step_time] for i in range(self.number_of_angles)
         ]
+
+        # get the detectors
+        detectors = [sim.volume_manager.get_volume(n) for n in detector_names]
 
         # compute the gantry rotations
         step_angle = 360.0 / len(starting_head_angles) / self.number_of_angles
@@ -624,7 +608,8 @@ class FreeFlightConfig:
     def setup_acceptance_angle(self, sim, source):
         detector_config = self.spect_config.detector_config
         normal_vector = detector_config.get_detector_normal()
-        source.activity = self.primary_activity
+        n = self.spect_config.number_of_threads
+        source.activity = self.primary_activity / n
         source.direction.acceptance_angle.forced_direction_flag = False
         source.direction.acceptance_angle.skip_policy = "SkipEvents"
         if self.max_rejection is not None:
@@ -649,9 +634,10 @@ class FreeFlightConfig:
 
         normal_vector = detector_config.get_detector_normal()
         i = 0
+        n = self.spect_config.number_of_threads
 
         for source in sources:
-            source.activity = self.primary_activity
+            source.activity = self.primary_activity / n
             source.direction.acceptance_angle.forced_direction_flag = True
             source.direction.acceptance_angle.skip_policy = "SkipEvents"
             # force the direction to one single volume for each source
@@ -671,7 +657,8 @@ class FreeFlightConfig:
             crystal_names = [c.name for c in crystals]
             self.volume_names = crystal_names
 
-        source.activity = self.scatter_activity
+        n = self.spect_config.number_of_threads
+        source.activity = self.scatter_activity / n
 
         # set the FF actor for scatter
         normal_vector = self.spect_config.detector_config.get_detector_normal()
@@ -705,6 +692,36 @@ class FreeFlightConfig:
         """
 
         return ff
+
+
+def spect_freeflight_merge_all_heads(
+    folder,
+    n_prim,
+    n_scatter,
+    n_target,
+    prim_folder="primary",
+    scatter_folder="scatter",
+    nb_of_heads=2,
+    counts_filename_pattern="projection_$I_counts.mhd",
+    sq_counts_filename_pattern="projection_$I_squared_counts.mhd",
+    mean_filename="projection_$I_counts.mhd",
+    rel_uncert_suffix="relative_uncertainty_$I",
+    verbose=True,
+):
+    for d in range(nb_of_heads):
+        spect_freeflight_merge(
+            folder,
+            n_prim,
+            n_scatter,
+            n_target,
+            prim_folder=prim_folder,
+            scatter_folder=scatter_folder,
+            counts_filename=counts_filename_pattern.replace("$I", str(d)),
+            sq_counts_filename=sq_counts_filename_pattern.replace("$I", str(d)),
+            mean_filename=mean_filename.replace("$I", str(d)),
+            rel_uncert_suffix=rel_uncert_suffix.replace("$I", str(d)),
+            verbose=verbose,
+        )
 
 
 def spect_freeflight_merge(
