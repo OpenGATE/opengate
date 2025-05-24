@@ -53,7 +53,7 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
           std::to_string(fNormalAngleTolerance));
   }
 
-  // DD -> not recommended (too slow), prefer normal_tolerance_min_distance
+  // DistDep -> not recommended (too slow), prefer normal_tolerance_min_distance
   fDistanceDependentAngleToleranceFlag =
       StrToBool(param.at("distance_dependent_normal_tolerance"));
   fAngle1 = StrToDouble(param.at("angle1"));
