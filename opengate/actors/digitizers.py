@@ -208,6 +208,15 @@ class Digitizer:
                 return m
         return None
 
+    def find_module_by_type(this, module_type):
+        for m in this.actors:
+            if m.type_name == module_type:
+                return m
+        fatal(
+            f'Error, the module type "{module_type}" is not found in the digitizer "{this.name}"'
+        )
+        return None
+
 
 class DigitizerBase(ActorBase):
     _output_name_root = "root_output"
