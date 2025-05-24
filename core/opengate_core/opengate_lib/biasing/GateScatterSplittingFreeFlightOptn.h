@@ -33,7 +33,7 @@ public:
                                             G4bool &) override;
 
   void SetSplittingFactor(G4int splittingFactor);
-  void InitializeAAManager(const py::dict &user_info);
+  void InitializeAAManager(const std::map<std::string, std::string> &user_info);
   void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
   G4int fSplittingFactor;

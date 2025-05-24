@@ -19,7 +19,8 @@ public:
 
   enum AAPolicyType { AAZeroEnergy, AASkipEvent, AAUndefined };
 
-  void Initialize(py::dict user_info, bool is_valid_type);
+  void Initialize(const std::map<std::string, std::string> &user_info,
+                  bool is_valid_type);
 
   void InitializeAcceptanceAngle();
 

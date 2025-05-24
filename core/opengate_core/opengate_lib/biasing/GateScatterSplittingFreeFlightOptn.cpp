@@ -44,7 +44,7 @@ void GateScatterSplittingFreeFlightOptn::SetSplittingFactor(
 }
 
 void GateScatterSplittingFreeFlightOptn::InitializeAAManager(
-    const py::dict &user_info) {
+    const std::map<std::string, std::string> &user_info) {
   fAAManager = new GateAcceptanceAngleManager();
   fAAManager->Initialize(user_info, true);
 
