@@ -34,9 +34,9 @@ def create_test_spect_config(paths):
     return sc
 
 
-def check_stats_file(n, sc, output, is_ok):
-    print(output.stats.get_output_path())
-    stats = utility.read_stat_file(output.stats.get_output_path())
+def check_stats_file(n, sc, stats, is_ok):
+    print(stats.get_output_path())
+    stats = utility.read_stat_file(stats.get_output_path())
     print(stats)
     b = stats.counts.runs == sc.acquisition_config.number_of_angles
     is_ok = is_ok and b
@@ -50,11 +50,12 @@ def check_stats_file(n, sc, output, is_ok):
     return is_ok
 
 
-def check_projection_files(sim, paths, output, is_ok, tol=60, squared_flag=False):
-    stats = utility.read_stat_file(output.stats.get_output_path())
+def check_projection_files(sim, paths, stats, is_ok, tol=60, squared_flag=False):
+    stats = utility.read_stat_file(stats.get_output_path())
     # check images
     channel = sim.actor_manager.find_actors("energy_window")[0]
-    for d in output.digitizers:
+    projs = sim.actor_manager.find_actors("projection")
+    for d in projs:
         # counts
         ref_file = paths.output_ref / "projection_0_counts.mhd"
         img_file = d.get_output_path("counts")

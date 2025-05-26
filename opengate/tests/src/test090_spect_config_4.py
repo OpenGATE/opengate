@@ -26,14 +26,15 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.random_seed = 987456
-    output = sc.setup_simulation_ff_primary(sim, number_of_threads=1, visu=False)
+    sc.setup_simulation_ff_primary(sim, visu=False)
+    stats = sim.actor_manager.find_actors("stats")[0]
 
     # go
     sim.run(start_new_process=True)
 
     # we check only that the output files exist
     is_ok = True
-    is_ok = check_stats_file(10887, sc, output, is_ok)
-    is_ok = check_projection_files(sim, paths, output, is_ok, tol=81, squared_flag=True)
+    is_ok = check_stats_file(10887, sc, stats, is_ok)
+    is_ok = check_projection_files(sim, paths, stats, is_ok, tol=81, squared_flag=True)
 
     utility.test_ok(is_ok)
