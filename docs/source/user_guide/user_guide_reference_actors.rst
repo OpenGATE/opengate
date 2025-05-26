@@ -108,6 +108,63 @@ Adding following lines
 
 to the dose actor object will trigger an additional image scoring the dose. The uncertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
 
+**Setting and Evaluating the Statistical Uncertainty Goal**
+
+This section demonstrates how to monitor and enforce a statistical uncertainty goal during a Monte Carlo simulation, particularly in dose simulations using GATE10. It includes how to define the uncertainty criteria, how often to check it, and how to evaluate the final result based on the deposited energy distribution.
+
+To ensure simulation efficiency, we may wish to stop early when a target uncertainty (e.g., 5%) is reached in the high-dose (high-edep) region.
+
+.. code-block:: python
+
+   # Target statistical uncertainty (e.g., 5%)
+   unc_goal = 0.05
+   
+   # Define how "high-dose" voxels are selected: here, > 70% of max edep value
+   thresh_voxel_edep_for_unc_calc = 0.7
+   
+   # Planned number of primary particles or events (e.g., 100 MBq)
+   n_planned = 100 * 1e6  # 100 million particles
+
+These parameters are then passed to the dose actor:
+
+.. code-block:: python
+
+   dose.uncertainty_goal = unc_goal # 0.05
+   dose.uncertainty_first_check_after_n_events = 0.01 * n_planned # check statistical uncertainty every 1 MBq particles
+   dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc # 0.7
+
+Uncertainty is computed only in high-deposition voxels to focus on the clinically relevant region:
+
+.. code-block:: python
+
+   def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
+       # Average the uncertainty values ​​over the high energy deposition areas
+       edep_max = np.amax(edep_arr)
+       mask = edep_arr > edep_max * edep_thresh_rel
+       unc_used = unc_arr[mask]
+       unc_mean = np.mean(unc_used)
+
+       return unc_mean
+Note: This method uses a relative threshold based on the maximum deposited energy, which may be sensitive to outliers. Consider using a percentile-based threshold for robustness if needed.
+
+At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
+
+.. code-block:: python
+
+   # test that final mean uncertainty satisfies the goal uncertainty
+   edep_arr = np.asarray(dose.edep.image)
+   unc_array = np.asarray(dose.edep_uncertainty.image)
+   unc_mean = calculate_mean_unc(edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc)
+   n_effective = stats.counts.events
+   
+   print(f"{unc_goal = }")
+   print(f"{unc_mean = }")
+   print(f"{n_planned = }")
+   print(f"{n_effective = }")
+   if n_effective < n_planned: print("Simulation ended early.")
+
+This can help determine if the simulation converged early due to meeting the uncertainty goal.
+
 Like any image, the output dose map will have an origin, spacing and orientation. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True`, the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin.
 
 .. image:: ../figures/image_coord_system.png
