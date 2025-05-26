@@ -1396,12 +1396,12 @@ class SimulationEngine(GateSingletonFatal):
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
 
-        # G4's MT RunManager needs an empty run to initialize workers
+        # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
             self.g4_RunManager.FakeBeamOn()
 
-        # Actions initialization
-        # This must come after the G4RunManager initialization
+        # Actions initialisation
+        # This must come after the G4RunManager initialisation
         # because the RM initialization calls ActionEngine.Build()
         # which is required for initialize()
         # Actors initialization (before the RunManager Initialize)
@@ -1421,7 +1421,7 @@ class SimulationEngine(GateSingletonFatal):
             logger.info("Simulation: (no volumes overlap checking)")
 
         # Register sensitive detector.
-        # if G4 was compiled with MT (regardless if it is used or not)
+        # If G4 was compiled with MT (regardless if it is used or not),
         # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GateInfo.get_G4MULTITHREADED():
             fatal("DEBUG Register sensitive detector in no MT mode")
