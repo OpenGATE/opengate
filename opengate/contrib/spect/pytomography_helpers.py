@@ -25,7 +25,6 @@ from pytomography.likelihoods import PoissonLogLikelihood
 from pytomography.algorithms import OSEM
 from pytomography.io.SPECT import dicom
 from pytomography.utils import compute_EW_scatter
-from scipy.ndimage import affine_transform
 
 import torch
 import SimpleITK as sitk
@@ -368,7 +367,7 @@ def pytomography_new_metadata():
     }
 
 
-def pytomography_set_detector_orientation(metadata, detector):
+def pytomography_add_detector_orientation(metadata, detector):
     geom = metadata["Projection Geometry Data"]
     for dp in detector.dynamic_params.values():
         translations = np.array(dp["translation"]) / g4_units.cm
@@ -424,26 +423,14 @@ def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
     return sino_arr
 
 
-def pytomography_set_attenuation_data(
-    metadata,
+def create_attenuation_image(
     ct_filename,
     energy,
     attenuation_filename,
     size,
     spacing,
-    translation=None,
     verbose=False,
 ):
-
-    # check attenuation_filename must be mhd/raw
-    attenuation_filename = Path(attenuation_filename)
-    if attenuation_filename.suffix != ".mhd":
-        fatal(
-            f"Attenuation file must be mhd/raw, while the "
-            f"extension is {attenuation_filename.suffix} ({attenuation_filename})"
-        )
-    raw_filename = attenuation_filename.with_suffix(".raw")
-
     # resample
     image = itk.imread(ct_filename)
     verbose and print(f"Resample CT image {ct_filename} to {size} and {spacing}")
@@ -465,11 +452,34 @@ def pytomography_set_attenuation_data(
     )
     itk.imwrite(attenuation_image, attenuation_filename)
 
-    # consider the raw part of the attenuation_filename
+
+def pytomography_set_attenuation_data(
+    metadata,
+    energy,
+    attenuation_filename,
+    translation=None,
+    verbose=False,
+):
+
+    # check attenuation_filename must be mhd/raw
+    attenuation_filename = Path(attenuation_filename)
+    if attenuation_filename.suffix != ".mhd":
+        fatal(
+            f"Attenuation file must be mhd/raw, while the "
+            f"extension is {attenuation_filename.suffix} ({attenuation_filename})"
+        )
+    raw_filename = attenuation_filename.with_suffix(".raw")
+
+    # read attenuation image
+    attenuation_image = sitk.ReadImage(attenuation_filename)
+    size = attenuation_image.GetSize()
+    spacing = attenuation_image.GetSpacing()
 
     # information and translation
     if translation is None:
         translation = np.array([0, 0, 0])
+    else:
+        translation = np.array(translation)
     verbose and print(f"Phantom translation: {translation}")
     ad = metadata["Attenuation Data"]
     ad["source_file"] = str(raw_filename.name)
@@ -532,10 +542,10 @@ def pytomography_read_projections(metadata, folder=None):
     energy_meta = metadata["Energy Window Data"]
     number_of_energy_windows = energy_meta["number_of_energy_windows"]
     geometry_meta = metadata["Projection Geometry Data"]
-    imagefile = geometry_meta["source_file"]
+    image_file = geometry_meta["source_file"]
     if folder is None:
         folder = Path(metadata["folder"])
-    projections = np.fromfile(folder / imagefile, dtype=np.float32)
+    projections = np.fromfile(folder / image_file, dtype=np.float32)
     projections = projections.reshape(number_of_energy_windows, *proj_meta.shape)
     projections = torch.tensor(projections).to(pytomography.device)
     return projections
@@ -616,6 +626,135 @@ def compute_TEW_scatter_estimate(
     return TEW
 
 
+def compute_DEW_scatter_estimate(
+    metadata,
+    index_scatter_window,  # Index of the single scatter window (e.g., lower scatter)
+    index_peak_window,  # Index of the photopeak window
+    k_factor: float = 0.5,  # The crucial 'k' factor for DEW. Default is illustrative.
+    sigma_theta: float = 0,
+    sigma_r: float = 0,
+    sigma_z: float = 0,
+    N_sigmas: int = 3,
+    return_scatter_variance_estimate: bool = False,  # DEW typically doesn't yield variance in this way
+):
+    """
+    Computes the scatter estimate in the photopeak window using the Dual Energy Window (DEW) method.
+
+    This function implements the classic DEW approach where scatter in the photopeak is estimated
+    by scaling the counts in a single scatter window by a calibrated 'k' factor.
+    It's particularly suited for radionuclides like Tc-99m, though the k_factor is crucial.
+
+    Args:
+        metadata (dict): A dictionary containing metadata, including 'Energy Window Data'
+                         with 'energy_window_lower_bounds' and 'energy_window_upper_bounds'.
+                         Also implicitly contains information for reading projections.
+        index_scatter_window (int): The index of the single scatter window in the metadata's
+                                    energy window data. This is typically a lower scatter window.
+        index_peak_window (int): The index of the photopeak window in the metadata's
+                                 energy window data.
+        k_factor (float): The empirically determined or simulated 'k' factor used to scale
+                          the scatter window counts to estimate photopeak scatter.
+                          This value is critical and depends on the acquisition setup.
+                          A common range for Tc-99m might be 0.4 to 0.6, but needs calibration.
+        sigma_theta (float): Standard deviation for angular Gaussian smoothing (in radians).
+                             Applied to the scatter window projections before scaling.
+        sigma_r (float): Standard deviation for radial Gaussian smoothing (in pixels).
+                         Applied to the scatter window projections before scaling.
+        sigma_z (float): Standard deviation for axial Gaussian smoothing (in pixels).
+                         Applied to the scatter window projections before scaling.
+        N_sigmas (int): Number of standard deviations for Gaussian smoothing kernel truncation.
+        return_scatter_variance_estimate (bool): Not typically used for direct DEW,
+                                                 included for function signature consistency.
+                                                 Will always return None if True.
+
+    Returns:
+        numpy.ndarray: A 3D NumPy array representing the estimated scatter in the photopeak window,
+                       with the same shape as the photopeak projections.
+    """
+
+    energy_data = metadata["Energy Window Data"]
+    energy_window_lower_bounds = energy_data["energy_window_lower_bounds"]
+    energy_window_upper_bounds = energy_data["energy_window_upper_bounds"]
+
+    # Although not directly used for the DEW calculation formula,
+    # it's good practice to ensure these indices are valid.
+    # We'll use the 'width_peak' for potential future extensions or consistency.
+    width_scatter = (
+        energy_window_upper_bounds[index_scatter_window]
+        - energy_window_lower_bounds[index_scatter_window]
+    )
+    width_peak = (
+        energy_window_upper_bounds[index_peak_window]
+        - energy_window_lower_bounds[index_peak_window]
+    )
+
+    # Read all projections from the metadata
+    projections = pytomography_read_projections(metadata)
+
+    # Get the specific scatter window projections
+    projections_scatter = projections[index_scatter_window]
+
+    # Get detector metadata for smoothing
+    _, proj_meta = pytomography_get_detector_data(metadata)
+
+    # Apply Gaussian smoothing to the scatter window projections if sigmas are provided
+    if sigma_theta > 0 or sigma_r > 0 or sigma_z > 0:
+        # Assuming pytomography.utils.gaussian_filter_projections is available
+        # or you'd apply it directly using scipy.ndimage.gaussian_filter
+        # As there's no direct equivalent to proj_meta handling in scipy.ndimage
+        # for these specific (theta, r, z) dimensions, we'll need to define
+        # how `pytomography_gaussian_filter_projections` works.
+        # For simplicity, assuming a conceptual helper or direct `scipy.ndimage` application.
+
+        # If pytomography provides a direct way to smooth based on sigma_r, sigma_z, sigma_theta,
+        # you'd use that. Otherwise, you might apply standard N-D Gaussian filtering,
+        # being mindful of the axes.
+        # Example using a conceptual pytomography smoothing function:
+        # projections_scatter_smoothed = pytomography_gaussian_filter_projections(
+        #     projections_scatter,
+        #     sigma_r=sigma_r,
+        #     sigma_z=sigma_z,
+        #     sigma_theta=sigma_theta,
+        #     N_sigmas=N_sigmas,
+        #     proj_meta=proj_meta # Pass proj_meta for proper dimension handling
+        # )
+        # For a practical example with standard scipy, you'd map sigma_r, sigma_z, sigma_theta
+        # to the correct axes of the projections_scatter array.
+        # Projections are typically (angle, radial_bin, axial_bin).
+        # Let's use `pytomography.utils.gaussian_filter_projections` if it's what's expected.
+        try:
+            from pytomography.utils import gaussian_filter_projections
+
+            projections_scatter_smoothed = gaussian_filter_projections(
+                projections_scatter,
+                sigma_r=sigma_r,
+                sigma_z=sigma_z,
+                sigma_theta=sigma_theta,
+                N_sigmas=N_sigmas,
+                proj_meta=proj_meta,  # Pass proj_meta for proper dimension handling
+            )
+        except AttributeError:
+            print(
+                "Warning: `pytomography.utils.gaussian_filter_projections` not found. Skipping smoothing."
+            )
+            print(
+                "Please ensure this function is available or handle smoothing manually (e.g., using scipy.ndimage)."
+            )
+            projections_scatter_smoothed = projections_scatter
+    else:
+        projections_scatter_smoothed = projections_scatter
+
+    # Implement the DEW scatter estimation: Scatter_peak = k_factor * Scatter_window
+    DEW_scatter_estimate = k_factor * projections_scatter_smoothed
+
+    # DEW typically doesn't provide a variance estimate directly in this way.
+    # So we return None for consistency with the TEW function signature if requested.
+    if return_scatter_variance_estimate:
+        return DEW_scatter_estimate, None
+    else:
+        return DEW_scatter_estimate
+
+
 def get_attenuation_map_from_json(metadata):
     attenuation_meta = metadata["Attenuation Data"]
     dimension_x = attenuation_meta["dimension_x"]
@@ -677,22 +816,30 @@ def pytomgraphy_osem_reconstruction(
     )
     psf_transform = SPECTPSFTransform(psf_meta)
 
-    # scatter correction (may be None if no sc correction)
+    # scatter correction (it may be None if no sc correction)
     additive_term = None
+    if index_lower is None:
+        index_lower = index_peak - 1
     if scatter_mode == "TEW":
-        if index_lower is None:
-            index_lower = index_peak - 1
         if index_upper is None:
             index_upper = index_peak + 1
-        scatter_estimate = compute_TEW_scatter_estimate(
+        additive_term = compute_TEW_scatter_estimate(
             metadata,
             index_lower=index_lower,
             index_upper=index_upper,
             index_peak=index_peak,
         )
-        additive_term = scatter_estimate
     if scatter_mode == "DEW":
-        print("todo")
+        additive_term = compute_DEW_scatter_estimate(
+            metadata,
+            index_scatter_window=index_lower,
+            index_peak_window=index_peak,
+            k_factor=1,
+            sigma_theta=0,
+            sigma_r=0,
+            sigma_z=0,
+            N_sigmas=3,
+        )
 
     # FIXME complete other scatter correction
 
@@ -730,14 +877,103 @@ def pytomgraphy_osem_reconstruction(
 
     # get the origin according to the attenuation map
     # (warning itk in mm and pytomography in cm)
-    if attenuation_flag:
-        am = metadata["Attenuation Data"]
-        origin = np.array([am["origin_x"], am["origin_y"], am["origin_z"]])
-        tr = np.array(am["translation"])
-        origin -= tr
-        origin = origin * g4_units.cm
-    else:
-        origin = -(size * spacing) / 2.0 + spacing / 2.0
+    am = metadata["Attenuation Data"]
+    origin = np.array([am["origin_x"], am["origin_y"], am["origin_z"]])
+    tr = np.array(am["translation"])
+    origin -= tr
+    origin = origin * g4_units.cm
+
+    # FIXME ? use this if no attenuation?
+    #    origin = -(size * spacing) / 2.0 + spacing / 2.0
     recon_sitk.SetOrigin(origin)
 
     return recon_sitk
+
+
+def pytomography_build_metadata(
+    sc,
+    sim,
+    isotope_name,
+    attenuation_energy,
+    verbose=True,
+):
+    """
+    Here are the necessary inputs to create the metadata
+    - list of detector heads: for orientation
+    - Digitizer projection actor: for size and spacing
+    - Digitizer energy windows actor: for energy window
+    - list of projections files: for build the sinogram in pytomography orientation
+    - energy for the attenuation map
+    """
+
+    # create a new (empty) pytomography metadata file
+    metadata = pytomography_new_metadata()
+
+    # set the detector orientations
+    detectors = sc.detector_config.get_heads(sim)
+    for detector in detectors:
+        pytomography_add_detector_orientation(metadata, detector)
+    nb_proj = metadata["Projection Geometry Data"]["number_of_projections"]
+    verbose and print(f"Found a total of {nb_proj} projections")
+
+    # set the detector size and spacing
+    size = [
+        sc.detector_config.size[0],
+        sc.detector_config.size[1],
+        sc.detector_config.size[1],
+    ]
+    spacing = [
+        sc.detector_config.spacing[0],
+        sc.detector_config.spacing[1],
+        sc.detector_config.spacing[1],
+    ]
+    pytomography_set_detector_info(metadata, spacing, size)
+    verbose and print(f"Found detector size and spacing set to {size} and {spacing}")
+
+    # set the energy windows
+    ews = sim.actor_manager.find_actors("energy_window")
+    channels = ews[0].channels
+    pytomography_set_energy_windows(metadata, channels)
+    verbose and print(f"Found {len(channels)} energy windows")
+
+    # create the sinogram with all the projections
+    filenames = sc.detector_config.get_proj_filenames(sim)
+    o = sc.output_folder / "sinogram.mhd"
+    sino = pytomography_create_sinogram(
+        filenames, sc.acquisition_config.number_of_angles, o
+    )
+    verbose and print(f"Build sinogram with shape {sino.shape} in {o}")
+    # set the raw data only for pytomography
+    metadata["Projection Geometry Data"]["source_file"] = "sinogram.raw"
+
+    # PSF correction "Detector Physics Data"
+    dpd = metadata["Detector Physics Data"]
+    m = sc.detector_config.get_model_module()
+    dpd.update(m.get_pytomography_detector_physics_data(sc.detector_config.collimator))
+    dpd["isotope_name"] = isotope_name
+    # FIXME ?
+    dpd["crystal_spatial_resolution_fwhm_energy_model"] = "A*sqrt(B/energy)"
+    dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.36, 140.5]
+    dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
+    dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]
+
+    # attenuation correction
+    # read CT image and resample like the reconstructed image
+    # for the moment MUST be same size and spacing than the projection images
+    create_attenuation_image(
+        sc.phantom_config.image,
+        attenuation_energy,
+        sc.output_folder / "mumap.mhd",
+        size,
+        spacing,
+        verbose=True,
+    )
+    pytomography_set_attenuation_data(
+        metadata,
+        attenuation_energy,
+        sc.output_folder / "mumap.mhd",
+        translation=sc.phantom_config.translation,
+        verbose=True,
+    )
+
+    return metadata
