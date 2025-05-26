@@ -222,6 +222,7 @@ def add_collimator(sim, head, collimator_type, debug):
         f'Cannot build the collimator "{collimator_type}". '
         f"Available collimator types are: {col}"
     )
+    return None
 
 
 def add_collimator_empty(sim, head):
@@ -842,6 +843,71 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
+def add_digitizer_v4(sim, crystal_name, name, spectrum_channel=True):
+    # create main chain
+    mm = g4_units.mm
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # detection efficiency
+    # ea = digitizer.add_module("DigitizerEfficiencyActor")
+    # ea.efficiency = 0.86481  # FAKE
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.099  # in %
+    eb.blur_reference_value = 140.5 * keV
+
+    # spatial blurring
+    # Source: HE4SPECS - FWHM = 3.9 mm
+    # FWHM = 2.sigma.sqrt(2ln2) -> sigma = 1.656 mm
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor")
+    sb.blur_attribute = "PostPosition"
+    # intrinsic spatial resolution at 140 keV for 9.5 mm thick NaI
+    sb.blur_fwhm = 3.6 * mm
+    sb.keep_in_solid_limits = True
+
+    # energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    channels = [
+        {"name": f"scatter", "min": 108.57749938965 * keV, "max": 129.5924987793 * keV},
+        {"name": f"peak140", "min": 129.5924987793 * keV, "max": 150.60751342773 * keV},
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = [4.7951998710632 * mm / 2, 4.7951998710632 * mm / 2]
+    proj.size = [256, 256]
+
+    # projection plane: it depends on how the spect device is described
+    # here, we need this rotation
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (90, 90), degrees=True
+    ).as_matrix()
+    proj.write_to_disk = True
+
+    # end
+    return digitizer
+
+
+def update_digitizer_energy_windows(digitizer, channels):
+    cc = digitizer.find_module_by_type("DigitizerEnergyWindowsActor")
+    print(cc)
+    cc.channels = channels
+
+
 def compute_plane_position_and_distance_to_crystal(collimator_type):
     sim = Simulation()
     spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
@@ -985,7 +1051,6 @@ def rotate_gantry(
 
 
 def add_intevo_digitizer_lu177_v3(sim, crystal_name, name, spectrum_channel=False):
-
     keV = g4_units.keV
     proj, singles_ene_windows = add_intevo_digitizer_v3(sim, crystal_name, name)
     channels = [
@@ -1006,7 +1071,6 @@ def add_intevo_digitizer_lu177_v3(sim, crystal_name, name, spectrum_channel=Fals
 
 
 def add_intevo_digitizer_lu177_v4(sim, crystal_name, name, spectrum_channel=False):
-
     keV = g4_units.keV
     proj, singles_ene_windows = add_intevo_digitizer_v3(sim, crystal_name, name)
     channels = [
@@ -1025,8 +1089,19 @@ def add_intevo_digitizer_lu177_v4(sim, crystal_name, name, spectrum_channel=Fals
     return proj
 
 
-def add_intevo_digitizer_tc99m_v3(sim, crystal_name, name, spectrum_channel=False):
+def get_channels_lu177_v4(name="ew"):
+    keV = g4_units.keV
+    return [
+        {"name": f"scatter1_{name}", "min": 84.75 * keV, "max": 101.7 * keV},
+        {"name": f"peak113_{name}", "min": 101.7 * keV, "max": 124.3 * keV},
+        {"name": f"scatter2_{name}", "min": 124.3 * keV, "max": 141.25 * keV},
+        {"name": f"scatter3_{name}", "min": 145.6 * keV, "max": 187.2 * keV},
+        {"name": f"peak208_{name}", "min": 187.2 * keV, "max": 228.8 * keV},
+        {"name": f"scatter4_{name}", "min": 228.8 * keV, "max": 270.4 * keV},
+    ]
 
+
+def add_intevo_digitizer_tc99m_v3(sim, crystal_name, name, spectrum_channel=False):
     keV = g4_units.keV
     proj, singles_ene_windows = add_intevo_digitizer_v3(sim, crystal_name, name)
     channels = [
@@ -1043,7 +1118,6 @@ def add_intevo_digitizer_tc99m_v3(sim, crystal_name, name, spectrum_channel=Fals
 
 
 def add_intevo_digitizer_v3(sim, crystal_name, name):
-
     # hits
     hits = sim.add_actor("DigitizerHitsCollectionActor", f"hits_{name}")
     hits.attached_to = crystal_name
@@ -1067,12 +1141,12 @@ def add_intevo_digitizer_v3(sim, crystal_name, name):
     singles.group_volume = None
 
     # efficiency actor
-    eff = sim.add_actor("DigitizerEfficiencyActor", f"singles_{name}_eff")
-    eff.attached_to = crystal_name
-    eff.input_digi_collection = singles.name
-    eff.efficiency = 0.86481  # FIXME probably wrong, to evaluate
-    eff.efficiency = 1.0
-    eff.output_filename = ""  # No output
+    # eff = sim.add_actor("DigitizerEfficiencyActor", f"singles_{name}_eff")
+    # eff.attached_to = crystal_name
+    # eff.input_digi_collection = singles.name
+    # eff.efficiency = 0.86481  # FIXME probably wrong, to evaluate
+    # eff.efficiency = 1.0
+    # eff.output_filename = ""  # No output
 
     # energy blur
     keV = g4_units.keV
@@ -1080,7 +1154,7 @@ def add_intevo_digitizer_v3(sim, crystal_name, name):
     ene_blur = sim.add_actor("DigitizerBlurringActor", f"singles_{name}_eblur")
     ene_blur.output_filename = ""
     ene_blur.attached_to = crystal_name
-    ene_blur.input_digi_collection = eff.name
+    ene_blur.input_digi_collection = singles.name
     ene_blur.blur_attribute = "TotalEnergyDeposit"
     ene_blur.blur_method = "Linear"
     ene_blur.blur_resolution = 0.13
@@ -1121,3 +1195,23 @@ def add_intevo_digitizer_v3(sim, crystal_name, name):
     ).as_matrix()
 
     return proj, singles_ene_windows
+
+
+def get_pytomography_detector_physics_data(colli_name):
+    cm = g4_units.cm
+    # create a fake simulation to get the volume information
+    sim = Simulation()
+    det, colli, crystal = add_spect_head(sim, f"fake", collimator_type=colli_name)
+    holep = sim.volume_manager.find_volumes("collimator_hole1_param")[0]
+    hole = sim.volume_manager.find_volumes("collimator_hole1")[0]
+    d = {
+        "hole_shape": 6,
+        "hole_diameter": hole.radius * 2 / cm,
+        "hole_spacing": holep.translation[1] / cm,
+        "collimator_thickness": hole.height / cm,
+        "collimator_material": colli.material.lower(),
+        "crystal_width": crystal.size[1] / cm,
+        "crystal_height": crystal.size[2] / cm,
+    }
+
+    return d
