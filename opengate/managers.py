@@ -499,6 +499,31 @@ class ActorManager(GateObject):
                 actors.append(actor)
         return actors
 
+    def find_actors_by_type(self, type_name, sub_str=None, case_sensitive=False):
+        # find all actors of a given type
+        actors = []
+        if not case_sensitive:
+            sub_str = sub_str.lower()
+        for actor in self.actors.values():
+            if actor.type_name == type_name:
+                if sub_str is None:
+                    actors.append(actor)
+                else:
+                    name = actor.name
+                    if not case_sensitive:
+                        name = name.lower()
+                    if sub_str in name:
+                        actors.append(actor)
+        return actors
+
+    def find_actor_by_type(self, type_name, sub_str=None, case_sensitive=False):
+        actors = self.find_actors_by_type(type_name, sub_str, case_sensitive)
+        if len(actors) == 1:
+            return actors[0]
+        else:
+            fatal(f'Found {len(actors)} actors of type "{type_name}". Expected 1.')
+            return None
+
     def remove_actor(self, name):
         self.actors.pop(name)
 
