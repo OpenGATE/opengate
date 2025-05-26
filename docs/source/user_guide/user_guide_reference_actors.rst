@@ -118,10 +118,10 @@ To ensure simulation efficiency, we may wish to stop early when a target uncerta
 
    # Target statistical uncertainty (e.g., 5%)
    unc_goal = 0.05
-   
+
    # Define how "high-dose" voxels are selected: here, > 70% of max edep value
    thresh_voxel_edep_for_unc_calc = 0.7
-   
+
    # Planned number of primary particles or events (e.g., 100 MBq)
    n_planned = 100 * 1e6  # 100 million particles
 
@@ -156,7 +156,7 @@ At the end of the simulation, the actual mean uncertainty and the number of even
    unc_array = np.asarray(dose.edep_uncertainty.image)
    unc_mean = calculate_mean_unc(edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc)
    n_effective = stats.counts.events
-   
+
    print(f"{unc_goal = }")
    print(f"{unc_mean = }")
    print(f"{n_planned = }")
