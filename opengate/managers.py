@@ -1771,6 +1771,9 @@ class Simulation(GateObject):
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
 
+    def find_actors(self, sub_str, case_sensitive=False):
+        return self.actor_manager.find_actors(sub_str, case_sensitive)
+
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
