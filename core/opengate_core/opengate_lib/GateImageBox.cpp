@@ -10,6 +10,7 @@
 #include "G4Polyhedron.hh"
 #include "G4VGraphicsScene.hh"
 #include "G4VisManager.hh"
+#include "GateHelpers.h"
 #include "GateHelpersDict.h"
 
 #include <typeinfo>
@@ -26,6 +27,12 @@ GateImageBox::GateImageBox(py::dict &user_info)
   position_x = std::round(size_pix_x * 0.5);
   position_y = std::round(size_pix_y * 0.5);
   position_z = std::round(size_pix_z * 0.5);
+#ifdef GATEIMAGEBOX_USE_OPENGL
+  texture_xy = 0;
+  texture_xz = 0;
+  texture_yz = 0;
+  isInitialized = false;
+#endif
 }
 //-----------------------------------------------------------------------------
 
@@ -44,6 +51,9 @@ void GateImageBox::SetSlices(py::dict &user_info) {
 //-----------------------------------------------------------------------------
 void GateImageBox::DescribeYourselfTo(G4VGraphicsScene &scene) const {
 #ifdef GATEIMAGEBOX_USE_OPENGL
+  if (!isInitialized) {
+    InitialiseSlice();
+  }
   try {
     G4OpenGLSceneHandler &opengl = dynamic_cast<G4OpenGLSceneHandler &>(scene);
     scene.AddSolid(*this);
@@ -190,7 +200,7 @@ GLuint GateImageBox::genOpenGLTexture(const GLubyte *rgb, int width,
 // void GateImageBox::InitialiseSlice(std::vector<PixelType> & sliceXY,
 // std::vector<PixelType> & sliceXZ, std::vector<PixelType> & sliceYZ, const
 // double resol_x, const double resol_y, const double resol_z) {
-void GateImageBox::InitialiseSlice() {
+void GateImageBox::InitialiseSlice() const {
   {
     GLubyte *rgb = convertToRGB(sliceXY);
     texture_xy = genOpenGLTexture(rgb, size_pix_x, size_pix_y);
@@ -208,6 +218,7 @@ void GateImageBox::InitialiseSlice() {
     texture_yz = genOpenGLTexture(rgb, size_pix_y, size_pix_z);
     delete[] rgb;
   }
+  isInitialized = true;
 }
 //-----------------------------------------------------------------------------
 

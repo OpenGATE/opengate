@@ -37,14 +37,14 @@ namespace py = pybind11;
 class GateImageBox : public G4Box {
 public:
   explicit GateImageBox(py::dict &user_info);
-  ~GateImageBox();
+  ~GateImageBox() override;
 
   typedef double PixelType;
 
-  void DescribeYourselfTo(G4VGraphicsScene &scene) const;
+  void DescribeYourselfTo(G4VGraphicsScene &scene) const override;
   void SetSlices(py::dict &user_info);
 #ifdef GATEIMAGEBOX_USE_OPENGL
-  void InitialiseSlice();
+  void InitialiseSlice() const;
 #endif
 
 private:
@@ -54,9 +54,9 @@ private:
   GLubyte *convertToRGB(std::vector<PixelType> slice) const;
   GLuint genOpenGLTexture(const GLubyte *rgb, int width, int height) const;
 
-  GLuint texture_xy;
-  GLuint texture_xz;
-  GLuint texture_yz;
+  mutable GLuint texture_xy;
+  mutable GLuint texture_xz;
+  mutable GLuint texture_yz;
 #endif
   size_t position_x;
   size_t position_y;
@@ -67,6 +67,7 @@ private:
   std::vector<PixelType> sliceXY;
   std::vector<PixelType> sliceXZ;
   std::vector<PixelType> sliceYZ;
+  mutable bool isInitialized;
 };
 
 #endif // GateImageBox_h
