@@ -588,7 +588,7 @@ def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
 
 
 def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
-    # create main chain
+    # create the main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
 
@@ -753,6 +753,19 @@ def add_digitizer_lu177_v2(sim, crystal_name, name, spectrum_channel=True):
     proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
     proj.size = [128, 128]
     proj.write_to_disk = True
+
+    # end
+    return digitizer
+
+
+def add_digitizer_lu177_v3(sim, crystal_name, name, spectrum_channel=True):
+    digitizer = add_digitizer_lu177_v2(sim, crystal_name, name, spectrum_channel)
+
+    # here, we need this rotation
+    proj = digitizer.find_module_by_type("DigitizerProjectionActor")
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (0, 180), degrees=True  # 0 180 => like intevo
+    ).as_matrix()
 
     # end
     return digitizer
@@ -939,3 +952,23 @@ def add_arf_detector(
     arf.gpu_mode = "auto"
 
     return det_plane, arf
+
+
+def get_pytomography_detector_physics_data(colli_name):
+    cm = g4_units.cm
+    # create a fake simulation to get the volume information
+    sim = Simulation()
+    det, colli, crystal = add_spect_head(sim, f"fake", collimator_type=colli_name)
+    holep = sim.volume_manager.find_volumes("collimator_hole_param")[0]
+    hole = sim.volume_manager.find_volumes("collimator_hole")[0]
+    d = {
+        "hole_shape": 6,
+        "hole_diameter": hole.radius * 2 / cm,
+        "hole_spacing": holep.translation[1] / cm,
+        "collimator_thickness": hole.height / cm,
+        "collimator_material": colli.material.lower(),
+        "crystal_width": crystal.size[1] / cm,
+        "crystal_height": crystal.size[2] / cm,
+    }
+
+    return d
