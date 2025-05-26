@@ -53,8 +53,9 @@ class SPECTConfig:
         s += f"{self.detector_config}\n"
         s += f"{self.phantom_config}\n"
         s += f"{self.source_config}\n"
-        s += f"{self.acquisition_config}\n"
-        s += f"{self.free_flight_config}\n"
+        s += f"{self.acquisition_config}"
+        # do not print ff, only on demand.
+        # s += f"{self.free_flight_config}\n"
         return s
 
     def setup_simulation(self, sim, visu=False):
@@ -73,8 +74,9 @@ class SPECTConfig:
         save_folder = Path(self.output_folder)
         self.output_folder_primary = save_folder / "primary"
         self.output_folder = self.output_folder_primary
+        # set the initial simulation
         self.setup_simulation(sim, visu)
-        # but keep the initial one for further use of config
+        # but keep the initial folder for further use of config
         self.output_folder = save_folder
         if sources is None:
             n = f"{self.simu_name}_source"
@@ -88,13 +90,17 @@ class SPECTConfig:
         # because primary was probably config/run before we clean the
         # static variables from G4 to avoid issues.
         g4.GateGammaFreeFlightOptrActor.ClearOperators()
+        # we temporarily change the output folder
         save_folder = Path(self.output_folder)
         self.output_folder_scatter = save_folder / "scatter"
         self.output_folder = self.output_folder_scatter
+        # set the initial simulation
+        self.setup_simulation(sim, visu)
+        # but keep the initial folder for further use of config
         self.output_folder = save_folder
         if sources is None:
-            n = f"{self.simu_name}_source"
-            source = sim.source_manager.get_source(n)
+            name = f"{self.simu_name}_source"
+            source = sim.source_manager.get_source(name)  # FIXME
             sources = [source]
         for source in sources:
             self.free_flight_config.setup_simulation_scatter(sim, source)
@@ -205,7 +211,7 @@ class PhantomConfig:
             phantom = self.add_fake_phantom_for_visu(sim)
             if self.translation is not None:
                 phantom.translation = self.translation
-            return
+            return phantom
         # insert voxelized phantom
         phantom = sim.add_volume("Image", f"{self.spect_config.simu_name}_phantom")
         phantom.image = self.image
@@ -259,6 +265,7 @@ class DetectorConfig:
         self.spacing = None
         # computed (not user-defined)
         self.head_names = []
+        self.proj_names = []
         # fix later
         self.garf = GARFConfig(spect_config)
 
@@ -276,7 +283,16 @@ class DetectorConfig:
         if self.model == "intevo":
             m = intevo
         # FIXME veriton
+        if m is None:
+            fatal(
+                f'Unknown detector model: "{self.model}", available models: {self.available_models}'
+            )
         return m
+
+    def get_heads(self, sim):
+        # only set after initialisation
+        detectors = [sim.volume_manager.get_volume(name) for name in self.head_names]
+        return detectors
 
     def get_detector_normal(self):
         if self.model == "nm670":
@@ -284,11 +300,25 @@ class DetectorConfig:
         if self.model == "intevo":
             return [1, 0, 0]
         fatal(f"Unknown detector model: {self.model}")
+        return None
 
-    def get_proj_filename(self, i):
+    def get_proj_actors(self, sim):
+        # only set after initialisation
+        projs = [sim.actor_manager.get_actor(name) for name in self.proj_names]
+        return projs
+
+    def get_proj_base_filename(self, i):
         filename, ext = get_basename_and_extension(self.spect_config.output_basename)
         f = f"{filename}_{i}{ext}"
         return f
+
+    def get_proj_filenames(self, sim):
+        projs = self.get_proj_actors(sim)
+        filenames = [
+            self.spect_config.output_folder / proj.get_output_path("counts").name
+            for proj in projs
+        ]
+        return filenames
 
     def setup_simulation(self, sim):
         if self.model not in self.available_models:
@@ -299,25 +329,26 @@ class DetectorConfig:
 
         # GARF ?
         if self.garf.is_enabled():
-            self.garf.create_simulation(sim)
+            fatal(f"Not implemented yet")
+            self.garf.create_simulation(sim)  # FIXME
             return
 
-        # digitizer_function with updated size ?
+        # digitizer_function (with updated size if needed)
         func = self.digitizer_function
         if self.size is not None:
             if self.spacing is not None:
                 # modify the digitizer to change the size/spacing
-                def digit(sim, crystal_name, name, spectrum_channel=False):
-                    proj = self.digitizer_function(
-                        sim, crystal_name, name, spectrum_channel
+                def fdigit_with_size(sim, crystal_name, name, spectrum_channel=False):
+                    self.digitizer_function(sim, crystal_name, name, spectrum_channel)
+                    proj = sim.actor_manager.find_actor_by_type(
+                        "DigitizerProjectionActor", name
                     )
                     proj.size = self.size
                     proj.spacing = self.spacing
-                    return proj
 
-                func = digit
+                func = fdigit_with_size
 
-        # or real SPECT volumes
+        # create the SPECT detector
         m = self.get_model_module()
         simu_name = self.spect_config.simu_name
         for i in range(self.number_of_heads):
@@ -332,13 +363,19 @@ class DetectorConfig:
 
             # set the digitizer
             if func is not None:
-                digitizer = func(sim, crystal.name, f"{simu_name}_digit{i}")
-                proj = digitizer.find_module_by_type("DigitizerProjectionActor")
-                proj.output_filename = self.get_proj_filename(i)
+                dname = f"{simu_name}_digit{i}"
+                func(sim, crystal.name, dname)
+                proj = sim.actor_manager.find_actor_by_type(
+                    "DigitizerProjectionActor", dname
+                )
+                proj.output_filename = self.get_proj_base_filename(i)
+                self.proj_names.append(proj.name)
 
-                # set the energy window channels if nedeed
+                # set the energy window channels if needed
                 if self.digitizer_channels is not None:
-                    ew = digitizer.find_module_by_type("DigitizerEnergyWindowsActor")
+                    ew = sim.actor_manager.find_actor_by_type(
+                        "DigitizerEnergyWindowsActor", dname
+                    )
                     ew.channels = self.digitizer_channels
                     channel_names = [c["name"] for c in ew.channels]
                     proj.input_digi_collections = channel_names
@@ -399,7 +436,9 @@ class GARFConfig:
                 "ARFActor", f"{self.spect_config.simu_name}_{det_plane.name}_arf"
             )
             arf.attached_to = det_plane.name
-            arf.output_filename = self.spect_config.detector_config.get_proj_filename(i)
+            arf.output_filename = (
+                self.spect_config.detector_config.get_proj_base_filename(i)
+            )
             arf.batch_size = 1e5
             arf.image_size = self.size
             arf.image_spacing = self.spacing
