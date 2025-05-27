@@ -15,7 +15,179 @@ import json
 from pathlib import Path
 
 
-class SPECTConfig:
+class ConfigBase:
+    """
+    Base class that provides generic to_dict and from_dict methods
+    for configuration objects and equality operator __eq__.
+    """
+
+    def __eq__(self, other):
+        """
+        Generic comparison for ConfigBase and derived classes.
+        Recursively compares attributes, handling special cases like functions and paths.
+        """
+        if not isinstance(other, self.__class__):
+            return False
+
+        # Compare all attributes
+        for key, value1 in vars(self).items():
+            if key == "spect_config":
+                continue
+            if key not in vars(other):
+                print(f'Attribute "{key}" not in other')
+                return False
+            value2 = getattr(other, key)
+            if not self.compare_values(value1, value2):
+                print(f"Values for attribute '{key}' differ :" f" {value1} != {value2}")
+                return False
+
+        # Ensure consistent attributes in both objects
+        if set(vars(self).keys()) != set(vars(other).keys()):
+            return False
+
+        return True
+
+    @staticmethod
+    def compare_values(value1, value2):
+        """
+        Compare two values, handling special cases like callables, paths, and ConfigBase objects.
+        """
+        # Handle function comparison by name and module
+        if callable(value1) and callable(value2):
+            return (
+                value1.__name__ == value2.__name__
+                and value1.__module__ == value2.__module__
+            )
+        # Handle Path objects comparison
+        if isinstance(value1, Path) and isinstance(value2, Path):
+            return str(value1) == str(value2)
+        # Handle nested ConfigBase objects
+        if isinstance(value1, ConfigBase) and isinstance(value2, ConfigBase):
+            return value1 == value2
+        # Default comparison
+        return value1 == value2
+
+    def serialize_value(self, value):
+        """Helper method to serialise different types of values."""
+        if callable(value):
+            return {
+                "type": "function",
+                "module": value.__module__,
+                "function_name": value.__name__,
+            }
+        if isinstance(value, Path):
+            return str(value)
+        if isinstance(value, ConfigBase):
+            return value.to_dict()
+        if isinstance(value, (list, tuple)):
+            return [self.serialize_value(item) for item in value]
+        if isinstance(value, dict):
+            return {k: self.serialize_value(v) for k, v in value.items()}
+        return value
+
+    def deserialize_value(self, key, value):
+        """Helper method to deserialize different types of values."""
+        if isinstance(value, dict):
+            if "type" in value and value["type"] == "function":
+                try:
+                    module = __import__(
+                        value["module"], fromlist=[value["function_name"]]
+                    )
+                    return getattr(module, value["function_name"])
+                except (ImportError, AttributeError) as e:
+                    raise RuntimeError(
+                        f"Cannot import function {value['function_name']} "
+                        f"from module {value['module']}"
+                    ) from e
+            # Check if this is a nested config
+            if "_config" in key:
+                return self._create_config_instance(key, value)
+            # Normal dict
+            return {k: self.deserialize_value(k, v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [self.deserialize_value(key, v) for v in value]
+        elif isinstance(value, str):
+            # Try to detect if the string represents a path
+            path_indicators = ["/", "\\", "output", "data"]
+            if any(indicator in value for indicator in path_indicators):
+                try:
+                    path = Path(value)
+                    # Additional validation could be added here if needed
+                    return path
+                except Exception:
+                    return value
+        return value
+
+    def _create_config_instance(self, key, data):
+        """Create and populate a config instance based on data structure."""
+        # Determine the config class type based on the data
+        config_class = None
+        if "detector" in key:
+            config_class = DetectorConfig
+        elif "acquisition" in key:
+            config_class = AcquisitionConfig
+        elif "phantom" in key:
+            config_class = PhantomConfig
+        elif "source" in key:
+            config_class = SourceConfig
+        elif "free_flight" in key:
+            config_class = FreeFlightConfig
+        elif "garf" in key:
+            config_class = GARFConfig
+
+        if config_class:
+            instance = config_class(
+                spect_config=self
+            )  # getattr(self, "spect_config", None))
+            instance.from_dict(data)
+            return instance
+        return data
+
+    def get_excluded_keys(self):
+        """Keys to exclude from serialisation (e.g. circular references)."""
+        return ["spect_config"] if hasattr(self, "spect_config") else []
+
+    def to_dict(self):
+        """Convert configuration to dictionary, handling special types."""
+        excluded = self.get_excluded_keys()
+        return {
+            k: self.serialize_value(v)
+            for k, v in vars(self).items()
+            if k not in excluded
+        }
+
+    def from_dict(self, data):
+        """Populate configuration from a dictionary, handling special types."""
+        for key, value in data.items():
+            if key not in self.get_excluded_keys():
+                setattr(self, key, self.deserialize_value(key, value))
+        return self
+
+    def to_json(self, file_path=None):
+        """Serialise configuration to JSON."""
+        json_dict = self.to_dict()
+        if file_path:
+            with open(file_path, "w") as f:
+                json.dump(json_dict, f, indent=4)
+        return json.dumps(json_dict, indent=4)
+
+    @classmethod
+    def from_json(cls, file_path=None, json_str=None):
+        """Create a configuration instance from JSON."""
+        if file_path is not None:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+        elif json_str is not None:
+            data = json.loads(json_str)
+        else:
+            raise ValueError("Either file_path or json_str must be provided")
+
+        instance = cls()
+        instance.from_dict(data)
+        return instance
+
+
+class SPECTConfig(ConfigBase):
     """
     Represents the configuration object for a SPECT simulation.
 
@@ -114,6 +286,7 @@ class SPECTConfig:
         fn = self.output_folder_primary / filename
         with open(fn, "w") as f:
             json.dump(n, f, indent=4)
+        return json.dump(n, f, indent=4)
 
     def dump_ff_info_scatter(self, filename="ff_info.json"):
         n = {
@@ -126,6 +299,7 @@ class SPECTConfig:
         fn = self.output_folder_scatter / filename
         with open(fn, "w") as f:
             json.dump(n, f, indent=4)
+        return json.dump(n, f, indent=4)
 
     def initialize_simulation(self, sim, visu):
         # main options
@@ -158,7 +332,7 @@ class SPECTConfig:
         stats.output_filename = "stats.txt"
 
 
-class PhantomConfig:
+class PhantomConfig(ConfigBase):
     """
     This class is used in SPECTConfig. Represents a phantom configuration
 
@@ -168,23 +342,6 @@ class PhantomConfig:
     phantom configuration and generating a simulation. The phantom's
     construction and materials are based on Hounsfield Unit (HU) mappings
     to materials defined in external files.
-
-    Attributes:
-        spect_config (SpectConfig): The SpectConfig object containing simulation
-            setup and parameters.
-        image (Optional[any]): The phantom image data used in the simulation,
-            initially set to None.
-        labels (Optional[any]): Labels associated with the phantom,
-            initially set to None.
-        density_tol (float): The density tolerance threshold in g/cm^3
-            for material mapping, default set to 0.05 * g/cm^3.
-
-    Methods:
-        print(str_only: bool = False) -> Optional[str]:
-            Prints or returns a string representation of the phantom configuration.
-        create_simulation(visu: Optional[any]):
-            Creates a voxelized simulation configuration based on the set
-            phantom image and materials.
     """
 
     def __init__(self, spect_config):
@@ -205,7 +362,7 @@ class PhantomConfig:
     def setup_simulation(self, sim):
         # can be: nothing or voxelized
         if self.image is None:
-            return
+            return None
         # special case for visu
         if sim.visu is True:
             phantom = self.add_fake_phantom_for_visu(sim)
@@ -243,7 +400,7 @@ class PhantomConfig:
         return phantom
 
 
-class DetectorConfig:
+class DetectorConfig(ConfigBase):
     """
     Used in SPECTConfig. Represents the configuration for a SPECT detector.
 
@@ -254,7 +411,7 @@ class DetectorConfig:
     def __init__(self, spect_config):
         self.spect_config = spect_config
         # spect models
-        self.available_models = ("intevo", "nm670")
+        self.available_models = ["intevo", "nm670"]
         # user param
         self.model = None
         self.collimator = None
@@ -267,7 +424,7 @@ class DetectorConfig:
         self.head_names = []
         self.proj_names = []
         # fix later
-        self.garf = GARFConfig(spect_config)
+        self.garf_config = GARFConfig(spect_config)
 
     def __str__(self):
         s = f"Detector model: {self.model}\n"
@@ -295,7 +452,7 @@ class DetectorConfig:
         return detectors
 
     def get_detector_normal(self):
-        if self.model == "nm670":
+        if self.model == "nm670":  # FIXME must be in intevo / nm670 module
             return [0, 0, -1]
         if self.model == "intevo":
             return [1, 0, 0]
@@ -328,12 +485,14 @@ class DetectorConfig:
             )
 
         # GARF ?
-        if self.garf.is_enabled():
+        if self.garf_config.is_enabled():
             fatal(f"Not implemented yet")
-            self.garf.create_simulation(sim)  # FIXME
+            self.garf_config.create_simulation(sim)  # FIXME
             return
 
         # digitizer_function (with updated size if needed)
+        self.head_names = []
+        self.proj_names = []
         func = self.digitizer_function
         if self.size is not None:
             if self.spacing is not None:
@@ -381,7 +540,7 @@ class DetectorConfig:
                     proj.input_digi_collections = channel_names
 
 
-class GARFConfig:
+class GARFConfig(ConfigBase):
     """
     Used in DetectorConfig.
     Configuration class for GARF detector.
@@ -455,7 +614,7 @@ class GARFConfig:
                 fatal(f"TODO")
 
 
-class SourceConfig:
+class SourceConfig(ConfigBase):
     """
     Used in SPECTConfig. Represents a configuration for an activity source.
 
@@ -502,7 +661,7 @@ class SourceConfig:
             source.activity = 10 * gate.g4_units.Bq
 
 
-class AcquisitionConfig:
+class AcquisitionConfig(ConfigBase):
     """
     Used in SPECTConfig. A configuration class for acquisition settings specific to a simulation.
 
@@ -515,7 +674,7 @@ class AcquisitionConfig:
         self.spect_config = spect_config
         # user param
         self.duration = 1 * gate.g4_units.s
-        self.radius = None
+        self.radius = 30 * g4_units.cm
         # self.angles = None
         self.number_of_angles = 1
         # internal var
@@ -560,7 +719,7 @@ class AcquisitionConfig:
             i += 1
 
 
-class FreeFlightConfig:
+class FreeFlightConfig(ConfigBase):
 
     def __init__(self, spect_config):
         self.spect_config = spect_config
