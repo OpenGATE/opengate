@@ -1,6 +1,6 @@
 import opengate as gate
 import os, sys
-import ROOT
+import uproot
 import opengate_core as g4
 
 # Create the simulation
@@ -14,21 +14,18 @@ def check_stats(path, fwhmX, fwhmY, fwhmZ):
 
     is_ok = True
 
-    inFile = ROOT.TFile.Open(path, " READ ")
-    Singles_TG = inFile.Get("Singles_crystal")
-    Singles_SB_TG = inFile.Get("Singles_crystal_2")
-
-    df_TG = ROOT.RDataFrame(Singles_TG)
-    df_SB = ROOT.RDataFrame(Singles_SB_TG)
+    inFile = uproot.open(path)
+    Singles_TG = inFile["Singles_crystal"]
+    Singles_SB_TG = inFile["Singles_crystal_2"]
 
     # Convert branches to numpy arrays (fast and efficient)
-    X_TG = df_TG.AsNumpy(["PostPosition_X"])["PostPosition_X"]
-    Y_TG = df_TG.AsNumpy(["PostPosition_Y"])["PostPosition_Y"]
-    Z_TG = df_TG.AsNumpy(["PostPosition_Z"])["PostPosition_Z"]
+    X_TG = Singles_TG["PostPosition_X"]
+    Y_TG = Singles_TG["PostPosition_Y"]
+    Z_TG = Singles_TG["PostPosition_Z"]
 
-    X_SB_TG = df_SB.AsNumpy(["PostPosition_X"])["PostPosition_X"]
-    Y_SB_TG = df_SB.AsNumpy(["PostPosition_Y"])["PostPosition_Y"]
-    Z_SB_TG = df_SB.AsNumpy(["PostPosition_Z"])["PostPosition_Z"]
+    X_SB_TG = Singles_SB_TG["PostPosition_X"]
+    Y_SB_TG = Singles_SB_TG["PostPosition_Y"]
+    Z_SB_TG = Singles_SB_TG["PostPosition_Z"]
 
     dX = np.asarray(X_TG) - np.asarray(X_SB_TG)
     dY = np.asarray(Y_TG) - np.asarray(Y_SB_TG)
