@@ -224,7 +224,7 @@ double GateDigitizerSpatialBlurringActor::ComputeEdgeCorrectedSigma(
   delta = std::max(0., delta); // Ensure it's not negative
 
   double delta_norm = delta / sigma;
-  double correction 1;
+  double correction = 1;
 
   // These cuts on delta_norm > 0.95 and delta_norm < 4 are needed to comply
   // with the safe limits of the fit.
