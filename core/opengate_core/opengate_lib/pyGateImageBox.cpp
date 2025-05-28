@@ -6,16 +6,20 @@
    -------------------------------------------------- */
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-#include "GateConfiguration.h"
+#include "G4Box.hh"
+#include "GateImageBox.h"
 
-#if USE_VISU > 0
-#include <qmainwindow.h>
+void init_GateImageBox(py::module &m) {
 
-void init_QMainWindow(py::module &m) {
-  py::class_<QMainWindow>(m, "QMainWindow")
-      .def("setVisible", &QMainWindow::setVisible);
-}
+  py::class_<GateImageBox, G4Box>(m, "GateImageBox")
+      .def(py::init<py::dict &>())
+      .def("SetSlices", &GateImageBox::SetSlices)
+#ifdef GATEIMAGEBOX_USE_OPENGL
+      .def("InitialiseSlice", &GateImageBox::InitialiseSlice)
 #endif
+      ;
+}

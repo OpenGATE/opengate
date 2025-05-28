@@ -344,6 +344,13 @@ void GateSourceManager::InitializeVisualization() {
       (fVisualizationType == "gdml_file_only"))
     return;
 
+  if (fVisualizationFlag && (fVisualizationType == "qt")) {
+#if USE_VISU == 0
+    fVisualizationFlag = false;
+    return;
+#endif
+  }
+
   char **argv = new char *[1]; // Allocate 1 element
   argv[0] = nullptr;           // Properly indicate no arguments
 
@@ -375,6 +382,19 @@ void GateSourceManager::InitializeVisualization() {
     G4VisManager::GetInstance()->SetVerboseLevel("all");
   else
     G4VisManager::GetInstance()->SetVerboseLevel("quit");
+
+  // Add the image to the g4_solids Need to be done after GL init
+  /*#ifdef GATEIMAGEBOX_USE_OPENGL
+    if (fVisualizationType == "qt") {
+      for (auto *g4_solid : fImageBoxes) {
+        g4_solid->InitialiseSlice();
+      }
+    }
+  #endif*/
+}
+
+void GateSourceManager::RegisterImageBox(GateImageBox *g4_solid) {
+  fImageBoxes.push_back(g4_solid);
 }
 
 void GateSourceManager::StartVisualization() const {
