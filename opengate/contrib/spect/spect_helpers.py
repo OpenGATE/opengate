@@ -442,6 +442,7 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
     n = radionuclide_name.lower()
     keV = g4_units.keV
     channels = []
+
     if "177lu" in n or "lu177" in n:
         channels = [
             {"name": f"spectrum", "min": 3 * keV, "max": 515 * keV},
@@ -458,7 +459,8 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
             {"name": f"scatter", "min": 108.58 * keV, "max": 129.59 * keV},
             {"name": f"peak140", "min": 129.59 * keV, "max": 150.61 * keV},
         ]
-    if "in111" or "111in" in n:
+    if "in111" in n or "111in" in n:
+        # 15% around the peaks
         channels = [
             {"name": "spectrum_full", "min": 3.0, "max": 515.0},
             {"name": "scatter_171_low", "min": 138.4525, "max": 158.4525},
