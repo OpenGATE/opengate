@@ -13,6 +13,7 @@ if __name__ == "__main__":
     # delete the output path content
     utility.delete_folder_contents(paths.output)
     data_path = paths.data
+    mm = gate.g4_units.mm
 
     sc = SPECTConfig()
     sc.simu_name = "test090"
@@ -22,7 +23,9 @@ if __name__ == "__main__":
     sc.detector_config.model = "intevo"
     sc.detector_config.collimator = "melp"
     sc.detector_config.number_of_heads = 2
-    sc.detector_config.digitizer_function = intevo.add_intevo_digitizer_lu177_v3
+    sc.detector_config.digitizer_function = intevo.add_digitizer
+    sc.detector_config.size = [256, 256]
+    sc.detector_config.spacing = [2.39759994 * mm, 2.39759994 * mm]
     # phantom
     sc.phantom_config.image = data_path / "iec_5mm.mhd"
     sc.phantom_config.labels = data_path / "iec_5mm_labels.json"
