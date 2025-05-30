@@ -7,6 +7,7 @@ from opengate.exception import warning
 from opengate.tests import utility
 import opengate.contrib.spect.siemens_intevo as intevo
 import opengate.contrib.spect.ge_discovery_nm670 as discovery
+from opengate.contrib.spect.spect_helpers import get_default_energy_windows
 from scipy.spatial.transform import Rotation
 import itk
 import numpy as np
@@ -41,10 +42,10 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
 
     # spect digitizer
     if digitizer == 1:
-        channels = intevo.get_default_energy_windows("lu177", spectrum_channel=True)
+        channels = get_default_energy_windows("lu177", spectrum_channel=True)
         intevo.add_digitizer(sim, crystal.name, channels=channels)
     if digitizer == 2:
-        channels = intevo.get_default_energy_windows("lu177", spectrum_channel=True)
+        channels = get_default_energy_windows("lu177", spectrum_channel=True)
         intevo.add_digitizer(sim, crystal.name, channels=channels)
         # change parameters to add a fake blurring
         keV = gate.g4_units.keV
