@@ -256,15 +256,13 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
     // flush thread local data into global image
     // reset local data to zero is done in FlushSquaredValue
     if (fEdepSquaredFlag) {
-      GateDoseActor::FlushSquaredValue(fThreadLocalDataEdep.Get(),
-                                       cpp_edep_squared_image);
+      FlushSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image);
     }
     if (fDoseSquaredFlag) {
-      GateDoseActor::FlushSquaredValue(fThreadLocalDataDose.Get(),
-                                       cpp_dose_squared_image);
+      FlushSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image);
     }
 
-    // get thread idx. Ideally, only one thread should do the uncertainty
+    // Get thread idx. Ideally, only one thread should do the uncertainty
     // calculation don't ask for thread idx if no MT
     if (!G4Threading::IsMultithreadedApplication() ||
         G4Threading::G4GetThreadId() == 0) {
