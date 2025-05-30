@@ -498,7 +498,7 @@ class ActorManager(GateObject):
     def find_actors_by_type(self, type_name, sub_str=None, case_sensitive=False):
         # find all actors of a given type
         actors = []
-        if not case_sensitive:
+        if not case_sensitive and sub_str is not None:
             sub_str = sub_str.lower()
         for actor in self.actors.values():
             if actor.type_name == type_name:
