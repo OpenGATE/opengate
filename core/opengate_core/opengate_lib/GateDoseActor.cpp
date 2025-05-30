@@ -245,28 +245,26 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 }
 
 void GateDoseActor::EndOfEventAction(const G4Event *event) {
+  // flush thread local data into the global image (postponed for now)
 
-  // flush thread local data into global image (postponed for now)
-
-  // if the user didn't set uncertainty goal, do nothing
+  // if the user didn't set an uncertainty goal, do nothing
   if (fUncertaintyGoal == 0) {
     return;
   }
 
-  // check if we reached the Nb of events for next evaluation
+  // check if we reached the Nb of events for the next evaluation
   if (NbOfEvent >= NbEventsNextCheck) {
     // get thread idx. Ideally, only one thread should do the uncertainty
     // calculation don't ask for thread idx if no MT
     if (!G4Threading::IsMultithreadedApplication() ||
         G4Threading::G4GetThreadId() == 0) {
       // check stop criteria
-      std::cout << "NbEventsNextCheck: " << NbEventsNextCheck << std::endl;
       double UncCurrent = ComputeMeanUncertainty();
       if (UncCurrent <= fUncertaintyGoal) {
         // fStopRunFlag = true;
         fSourceManager->SetRunTerminationFlag(true);
       } else {
-        // estimate nb of events at which next check should occur
+        // estimate nb of events at which the next check should occur
         NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
                             (UncCurrent / fUncertaintyGoal) * NbOfEvent *
                             Overshoot;
@@ -322,7 +320,6 @@ double GateDoseActor::ComputeMeanUncertainty() {
   } else {
     mean_unc = 1.;
   }
-  std::cout << "unc: " << mean_unc << std::endl;
   return mean_unc;
 }
 
