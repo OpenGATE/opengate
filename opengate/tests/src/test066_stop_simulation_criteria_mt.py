@@ -106,7 +106,7 @@ if __name__ == "__main__":
     dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc
     dose.write_to_disk = False
 
-    # add stat actor
+    # add a stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
     stat.write_to_disk = False
