@@ -266,7 +266,7 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
         // fStopRunFlag = true;
         fSourceManager->SetRunTerminationFlag(true);
       } else {
-        // estimate Nevents at which next check should occur
+        // estimate nb of events at which next check should occur
         NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
                             (UncCurrent / fUncertaintyGoal) * NbOfEvent *
                             Overshoot;
