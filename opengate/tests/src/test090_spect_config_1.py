@@ -46,7 +46,7 @@ if __name__ == "__main__":
     stats = sim.actor_manager.find_actors("stats")[0]
 
     # run it
-    sim.random_seed = 123654
+    sim.random_seed = 987654
     sim.run()
 
     # we check only that the output files exist
