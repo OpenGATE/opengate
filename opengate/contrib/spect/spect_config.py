@@ -501,8 +501,8 @@ class DetectorConfig(ConfigBase):
         # channels? Keep the initial digitizer_channels value.
         channels = self.digitizer_channels
         if self.digitizer_channels is None:
-            r = self.spect_config.source_config.radionuclide
-            channels = m.get_default_energy_windows(r)
+            rad = self.spect_config.source_config.radionuclide
+            channels = get_default_energy_windows(rad)
 
         # create the SPECT detector for each head
         simu_name = self.spect_config.simu_name
