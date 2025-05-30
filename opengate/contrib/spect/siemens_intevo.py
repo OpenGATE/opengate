@@ -466,198 +466,6 @@ def add_light_guide(sim, back_compartment):
     return light_guide
 
 
-def add_digitizer(sim, head, crystal):
-    digit_chain = {}
-
-    # hits
-    hc = add_digitizer_hits(sim, head, crystal)
-    digit_chain[hc.name] = hc
-
-    # singles
-    sc = add_digitizer_adder(sim, head, crystal, hc)
-    digit_chain[sc.name] = sc
-
-    # blurring
-    eb, sb = add_digitizer_blur(sim, head, crystal, sc)
-    digit_chain[eb.name] = eb
-    digit_chain[sb.name] = sb
-
-    # energy windows
-    cc = add_digitizer_ene_win(sim, head, crystal, sb)
-    digit_chain[cc.name] = cc
-
-    # projection
-    proj = add_digitizer_proj(sim, crystal, cc)
-    digit_chain[proj.name] = proj
-
-    return digit_chain
-
-
-def add_digitizer_test1(sim, head, crystal):
-    digit_chain = {}
-
-    # hits
-    hc = add_digitizer_hits(sim, head, crystal)
-    digit_chain[hc.name] = hc
-
-    # singles
-    sc = add_digitizer_adder(sim, head, crystal, hc)
-    digit_chain[sc.name] = sc
-
-    # energy windows
-    cc = add_digitizer_ene_win(sim, head, crystal, sc)
-    digit_chain[cc.name] = cc
-
-    # projection
-    proj = add_digitizer_proj(sim, crystal, cc)
-    digit_chain[proj.name] = proj
-
-    return digit_chain
-
-
-def add_digitizer_test2(sim, head, crystal):
-    digit_chain = {}
-
-    # hits
-    hc = add_digitizer_hits(sim, head, crystal)
-    digit_chain[hc.name] = hc
-
-    # singles
-    sc = add_digitizer_adder(sim, head, crystal, hc)
-    digit_chain[sc.name] = sc
-
-    # blurring
-    eb, sb = add_digitizer_blur_test2(sim, head, crystal, sc)
-    digit_chain[eb.name] = eb
-    digit_chain[sb.name] = sb
-
-    # energy windows
-    cc = add_digitizer_ene_win(sim, head, crystal, sb)
-    digit_chain[cc.name] = cc
-
-    # projection
-    proj = add_digitizer_proj(sim, crystal, cc)
-    digit_chain[proj.name] = proj
-
-    return digit_chain
-
-
-def add_digitizer_hits(sim, head, crystal):
-    # hits
-    hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal.name}")
-    hc.attached_to = crystal.name
-    hc.output_filename = ""  # No output
-    hc.attributes = [
-        "PostPosition",
-        "TotalEnergyDeposit",
-        "PreStepUniqueVolumeID",
-        "PostStepUniqueVolumeID",
-        "GlobalTime",
-    ]
-    return hc
-
-
-def add_digitizer_adder(sim, head, crystal, hc):
-    # singles
-    sc = sim.add_actor("DigitizerAdderActor", f"Singles_{crystal.name}")
-    sc.attached_to = hc.attached_to
-    sc.input_digi_collection = hc.name
-    # sc.policy = "EnergyWeightedCentroidPosition"
-    sc.policy = "EnergyWinnerPosition"
-    sc.output_filename = ""
-    sc.group_volume = None
-    return sc
-
-
-def add_digitizer_blur_test2(sim, head, crystal, sc):
-    mm = g4_units.mm
-    keV = g4_units.keV
-    MeV = g4_units.MeV
-    eb = sim.add_actor("DigitizerBlurringActor", f"Singles_{crystal.name}_eblur")
-    eb.output_filename = sc.output_filename
-    eb.attached_to = crystal.name
-    eb.input_digi_collection = sc.name
-    eb.blur_attribute = "TotalEnergyDeposit"
-    eb.blur_method = "Linear"
-    eb.blur_resolution = 0.13
-    eb.blur_reference_value = 80 * keV
-    eb.blur_slope = -0.09 * 1 / MeV
-
-    # spatial blurring
-    sb = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_sblur")
-    sb.output_filename = f"output/{head.name}_singles.root"
-    sb.attached_to = crystal.name
-    sb.input_digi_collection = eb.name
-    sb.blur_attribute = "PostPosition"
-    sb.blur_fwhm = 10 * mm
-    sb.keep_in_solid_limits = True
-
-    return eb, sb
-
-
-def add_digitizer_blur(sim, head, crystal, sc):
-    mm = g4_units.mm
-    keV = g4_units.keV
-    MeV = g4_units.MeV
-    eb = sim.add_actor("DigitizerBlurringActor", f"Singles_{crystal.name}_eblur")
-    eb.output_filename = sc.output_filename
-    eb.attached_to = crystal.name
-    eb.input_digi_collection = sc.name
-    eb.blur_attribute = "TotalEnergyDeposit"
-    eb.blur_method = "Linear"
-    eb.blur_resolution = 0.13
-    eb.blur_reference_value = 80 * keV
-    eb.blur_slope = -0.09 * 1 / MeV
-
-    # spatial blurring
-    sb = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_sblur")
-    sb.output_filename = f"output/{head.name}_singles.root"
-    sb.attached_to = crystal.name
-    sb.input_digi_collection = eb.name
-    sb.blur_attribute = "PostPosition"
-    sb.blur_fwhm = 3.9 * mm
-    sb.keep_in_solid_limits = True
-
-    return eb, sb
-
-
-def add_digitizer_ene_win(sim, head, crystal, sc):
-    # energy windows
-    cc = sim.add_actor("DigitizerEnergyWindowsActor", f"EnergyWindows_{crystal.name}")
-    keV = g4_units.keV
-    channels = [
-        {"name": f"spectrum_{head.name}", "min": 3 * keV, "max": 515 * keV},
-        {"name": f"scatter1_{head.name}", "min": 96 * keV, "max": 104 * keV},
-        {"name": f"peak113_{head.name}", "min": 104.52 * keV, "max": 121.48 * keV},
-        {"name": f"scatter2_{head.name}", "min": 122.48 * keV, "max": 133.12 * keV},
-        {"name": f"scatter3_{head.name}", "min": 176.46 * keV, "max": 191.36 * keV},
-        {"name": f"peak208_{head.name}", "min": 192.4 * keV, "max": 223.6 * keV},
-        {"name": f"scatter4_{head.name}", "min": 224.64 * keV, "max": 243.3 * keV},
-    ]
-    cc.attached_to = sc.attached_to
-    cc.input_digi_collection = sc.name
-    cc.channels = channels
-    cc.output_filename = ""  # No output
-    return cc
-
-
-def add_digitizer_proj(sim, crystal, cc):
-    mm = g4_units.mm
-    deg = g4_units.deg
-    # projection
-    proj = sim.add_actor("DigitizerProjectionActor", f"Projection_{crystal.name}")
-    proj.attached_to = cc.attached_to
-    proj.input_digi_collections = [x["name"] for x in cc.channels]
-    proj.spacing = [4.7951998710632 * mm, 4.7951998710632 * mm]
-    proj.size = [128, 128]
-    proj.output_filename = "proj.mhd"
-    proj.origin_as_image_center = False
-    r1 = Rotation.from_euler("y", 90 * deg)
-    r2 = Rotation.from_euler("x", 90 * deg)
-    proj.detector_orientation_matrix = (r2 * r1).as_matrix()
-    return proj
-
-
 def add_digitizer_lu177(sim, crystal_name, name):
     # create main chain
     mm = g4_units.mm
@@ -1215,3 +1023,103 @@ def get_pytomography_detector_physics_data(colli_name):
     }
 
     return d
+
+
+def add_digitizer(
+    sim, crystal_name, name=None, size=None, spacing=None, channels=None, filename=None
+):
+    # default parameters
+    mm = g4_units.mm
+    if name is None:
+        name = crystal_name
+    if size is None:
+        size = [128, 128]
+    if spacing is None:
+        spacing = [4.7951998710632 * mm, 4.7951998710632 * mm]
+    if channels is None:
+        channels = get_default_energy_windows("tc99m")
+
+    # create the main digitizer chain
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # detection efficiency
+    # ea = digitizer.add_module("DigitizerEfficiencyActor")
+    # ea.efficiency = 0.86481  # FAKE
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor", f"{name}_eblur")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.099  # in %
+    eb.blur_reference_value = 140.5 * keV
+    # alternative :
+    # eb.blur_method = "Linear"
+    # eb.blur_resolution = 0.13
+    # eb.blur_reference_value = 80 * keV
+    # eb.blur_slope = -0.09 * 1 / MeV
+
+    # spatial blurring
+    # Source: HE4SPECS - FWHM = 3.9 mm or 3.6 mm?
+    # FWHM = 2.sigma.sqrt(2ln2) -> sigma = 1.656 mm
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sblur")
+    sb.blur_attribute = "PostPosition"
+    # intrinsic spatial resolution at 140 keV for 9.5 mm thick NaI
+    sb.blur_fwhm = 3.6 * mm
+    sb.keep_in_solid_limits = True
+
+    # default energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = spacing
+    proj.size = size
+    proj.write_to_disk = True
+
+    # projection plane: it depends on how the spect device is described
+    # here, we need this rotation
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (90, 90), degrees=True
+    ).as_matrix()
+
+    # FIXME debug
+    # n = [a.name for a in digitizer.actors]
+    # print(n)
+
+    return digitizer
+
+
+def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
+    n = radionuclide_name.lower()
+    keV = g4_units.keV
+    channels = []
+    if "177lu" in n or "lu177" in n:
+        channels = [
+            {"name": f"spectrum", "min": 3 * keV, "max": 515 * keV},
+            {"name": f"scatter1", "min": 84.75 * keV, "max": 101.7 * keV},
+            {"name": f"peak113", "min": 101.7 * keV, "max": 124.3 * keV},
+            {"name": f"scatter2", "min": 124.3 * keV, "max": 141.25 * keV},
+            {"name": f"scatter3", "min": 145.6 * keV, "max": 187.2 * keV},
+            {"name": f"peak208", "min": 187.2 * keV, "max": 228.8 * keV},
+            {"name": f"scatter4", "min": 228.8 * keV, "max": 270.4 * keV},
+        ]
+    if "tc99m" in n:
+        channels = [
+            {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
+            {"name": f"scatter", "min": 108.58 * keV, "max": 129.59 * keV},
+            {"name": f"peak140", "min": 129.59 * keV, "max": 150.61 * keV},
+        ]
+    if not spectrum_channel:
+        channels.pop(0)
+    if len(channels) == 0:
+        raise ValueError(f"No default energy windows for {radionuclide_name}")
+    return channels

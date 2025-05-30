@@ -259,9 +259,12 @@ class SPECTConfig(ConfigBase):
         self.dump_ff_info_primary()
 
     def setup_simulation_ff_scatter(self, sim, sources=None, visu=False):
+
+        # FIXME not here !!!!
         # because primary was probably config/run before we clean the
         # static variables from G4 to avoid issues.
-        g4.GateGammaFreeFlightOptrActor.ClearOperators()
+        # g4.GateGammaFreeFlightOptrActor.ClearOperators()
+
         # we temporarily change the output folder
         save_folder = Path(self.output_folder)
         self.output_folder_scatter = save_folder / "scatter"
@@ -286,7 +289,6 @@ class SPECTConfig(ConfigBase):
         fn = self.output_folder_primary / filename
         with open(fn, "w") as f:
             json.dump(n, f, indent=4)
-        return json.dump(n, f, indent=4)
 
     def dump_ff_info_scatter(self, filename="ff_info.json"):
         n = {
@@ -299,7 +301,6 @@ class SPECTConfig(ConfigBase):
         fn = self.output_folder_scatter / filename
         with open(fn, "w") as f:
             json.dump(n, f, indent=4)
-        return json.dump(n, f, indent=4)
 
     def initialize_simulation(self, sim, visu):
         # main options
@@ -490,27 +491,22 @@ class DetectorConfig(ConfigBase):
             self.garf_config.create_simulation(sim)  # FIXME
             return
 
-        # digitizer_function (with updated size if needed)
+        # digit function ?
+        m = self.get_model_module()
+        if self.digitizer_function is None:
+            self.digitizer_function = m.add_digitizer
         self.head_names = []
         self.proj_names = []
-        func = self.digitizer_function
-        if self.size is not None:
-            if self.spacing is not None:
-                # modify the digitizer to change the size/spacing
-                def fdigit_with_size(sim, crystal_name, name, spectrum_channel=False):
-                    self.digitizer_function(sim, crystal_name, name, spectrum_channel)
-                    proj = sim.actor_manager.find_actor_by_type(
-                        "DigitizerProjectionActor", name
-                    )
-                    proj.size = self.size
-                    proj.spacing = self.spacing
 
-                func = fdigit_with_size
+        # channels ?
+        if self.digitizer_channels is None:
+            r = self.spect_config.source_config.radionuclide
+            self.digitizer_channels = m.get_default_energy_windows(r)
 
-        # create the SPECT detector
-        m = self.get_model_module()
+        # create the SPECT detector for each head
         simu_name = self.spect_config.simu_name
         for i in range(self.number_of_heads):
+            # Create the head detector
             hn = f"{simu_name}_spect{i}"
             self.head_names.append(hn)
             det, colli, crystal = m.add_spect_head(
@@ -519,25 +515,21 @@ class DetectorConfig(ConfigBase):
                 collimator_type=self.collimator,
                 debug=sim.visu == True,
             )
-
             # set the digitizer
-            if func is not None:
-                dname = f"{simu_name}_digit{i}"
-                func(sim, crystal.name, dname)
-                proj = sim.actor_manager.find_actor_by_type(
-                    "DigitizerProjectionActor", dname
-                )
-                proj.output_filename = self.get_proj_base_filename(i)
-                self.proj_names.append(proj.name)
-
-                # set the energy window channels if needed
-                if self.digitizer_channels is not None:
-                    ew = sim.actor_manager.find_actor_by_type(
-                        "DigitizerEnergyWindowsActor", dname
-                    )
-                    ew.channels = self.digitizer_channels
-                    channel_names = [c["name"] for c in ew.channels]
-                    proj.input_digi_collections = channel_names
+            dname = f"{simu_name}_digit{i}"
+            self.digitizer_function(
+                sim,
+                crystal.name,
+                dname,
+                self.size,
+                self.spacing,
+                self.digitizer_channels,
+                self.get_proj_base_filename(i),
+            )
+            proj = sim.actor_manager.find_actor_by_type(
+                "DigitizerProjectionActor", dname
+            )
+            self.proj_names.append(proj.name)
 
 
 class GARFConfig(ConfigBase):
