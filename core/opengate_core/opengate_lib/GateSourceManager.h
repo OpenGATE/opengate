@@ -16,6 +16,7 @@
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
 
+#include "GateImageBox.h"
 #include "GateUserEventInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
@@ -84,6 +85,8 @@ public:
 
   void InitializeProgressBar();
 
+  void RegisterImageBox(GateImageBox *g4Solid);
+
   bool IsEndOfSimulationForWorker() const;
 
   void StartVisualization() const;
@@ -138,6 +141,9 @@ public:
 
   // List of managed sources
   std::vector<GateVSource *> fSources;
+
+  // List of GateImageBox
+  std::vector<GateImageBox *> fImageBoxes;
 
   // List of actors (for PreRunMaster callback)
   std::vector<GateVActor *> fActors;
