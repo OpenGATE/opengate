@@ -365,11 +365,11 @@ class PhantomConfig(ConfigBase):
         if self.image is None:
             return None
         # special case for visu
-        if sim.visu is True:
+        """if sim.visu is True:
             phantom = self.add_fake_phantom_for_visu(sim)
             if self.translation is not None:
                 phantom.translation = self.translation
-            return phantom
+            return phantom"""
         # insert voxelized phantom
         phantom = sim.add_volume("Image", f"{self.spect_config.simu_name}_phantom")
         phantom.image = self.image
@@ -498,10 +498,11 @@ class DetectorConfig(ConfigBase):
         self.head_names = []
         self.proj_names = []
 
-        # channels ?
+        # channels? Keep the initial digitizer_channels value.
+        channels = self.digitizer_channels
         if self.digitizer_channels is None:
             r = self.spect_config.source_config.radionuclide
-            self.digitizer_channels = m.get_default_energy_windows(r)
+            channels = m.get_default_energy_windows(r)
 
         # create the SPECT detector for each head
         simu_name = self.spect_config.simu_name
@@ -523,7 +524,7 @@ class DetectorConfig(ConfigBase):
                 dname,
                 self.size,
                 self.spacing,
-                self.digitizer_channels,
+                channels,
                 self.get_proj_base_filename(i),
             )
             proj = sim.actor_manager.find_actor_by_type(
