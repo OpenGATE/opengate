@@ -9,7 +9,7 @@ if __name__ == "__main__":
         __file__, None, output_folder="test090_spect_config_2"
     )
 
-    # TEST 2: nm670, tc99m, 1 head, 6 angles
+    # TEST 2: nm670, tc99m, 1 head, 2 angles
 
     # delete the output path content
     utility.delete_folder_contents(paths.output)
@@ -24,7 +24,8 @@ if __name__ == "__main__":
     sc.detector_config.model = "nm670"
     sc.detector_config.collimator = "lehr"
     sc.detector_config.number_of_heads = 1
-    sc.detector_config.digitizer_function = nm670.add_digitizer
+    # sc.detector_config.digitizer_function = nm670.add_digitizer
+    # sc.detector_config.digitizer_channels = get_default_energy_windows()
     sc.detector_config.size = [256, 256]
     sc.detector_config.spacing = [2.39759994 * mm, 2.39759994 * mm]
     # phantom
@@ -47,7 +48,7 @@ if __name__ == "__main__":
     stats = sim.actor_manager.find_actors("stats")[0]
 
     # run it
-    sim.random_seed = 123456
+    sim.random_seed = 987456
     sim.run(start_new_process=True)
 
     # we check only that the output files exist
@@ -61,7 +62,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     sc.setup_simulation(sim, visu=False)
     stats = sim.actor_manager.find_actors("stats")[0]
-    sim.random_seed = 987654
+    sim.random_seed = 123654
     sim.run(start_new_process=True)
 
     # test
