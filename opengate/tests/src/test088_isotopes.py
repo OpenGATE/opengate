@@ -1,9 +1,9 @@
-import os
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import opengate as gate
 import uproot
 import numpy as np
-from opengate.exception import GateImplementationError
 import opengate.tests.utility as utility
 
 
@@ -60,7 +60,8 @@ def create_simu(material):
     source.position.translation = [0, 0, -100 * cm]
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = 100000
+    # source.n = 100000
+    source.n = 10000
 
     # stats
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -111,6 +112,15 @@ if __name__ == "__main__":
     # Compute std (poisson distribution)
     std = np.sqrt(neutron_water)
     is_ok = neutron_water_h2 > (neutron_water + 4 * std)
-    is_ok = is_ok and neutron_deuterium > (neutron_water + 4 * std)
+    utility.print_test(
+        is_ok,
+        f"neutron_water_h2 {neutron_water_h2} > neutron_water + 4 * std {neutron_water + 4 * std}",
+    )
+    b = neutron_deuterium > (neutron_water + 4 * std)
+    utility.print_test(
+        b,
+        f"neutron_deuterium {neutron_deuterium} > neutron_water + 4 * std {neutron_water + 4 * std}",
+    )
+    is_ok = is_ok and b
 
     utility.test_ok(is_ok)
