@@ -4,16 +4,19 @@ from opengate.geometry.volumes import RepeatParametrisedVolume, BoxVolume
 from opengate.actors.digitizers import *
 from opengate.managers import Simulation
 from opengate.utility import g4_units
-from opengate.contrib.spect.spect_helpers import get_volume_position_in_head
+from opengate.contrib.spect.spect_helpers import (
+    get_volume_position_in_head,
+    get_default_energy_windows,
+)
 from opengate.geometry.utility import get_transform_orbiting
 
 # colors
-red = [1, 0.7, 0.7, 0.8]
-blue = [0.5, 0.5, 1, 0.8]
-gray = [0.5, 0.5, 0.5, 1]
-white = [1, 1, 1, 1]
-yellow = [1, 1, 0, 1]
-green = [0, 1, 0, 1]
+# red = [1, 0.7, 0.7, 0.8]
+# blue = [0.5, 0.5, 1, 0.8]
+# gray = [0.5, 0.5, 0.5, 1]
+# white = [1, 1, 1, 1]
+# yellow = [1, 1, 0, 1]
+# green = [0, 1, 0, 1]
 
 
 def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
@@ -64,6 +67,7 @@ def add_head_box(sim, name):
     head = sim.add_volume("Box", name)
     head.material = "G4_AIR"
     head.size = [260.0448 * mm, 685 * mm, 539 * mm]
+    white = [1, 1, 1, 1]
     head.color = white
     return head
 
@@ -111,6 +115,7 @@ def add_shielding_lehr_melp(sim, head):
     sim.add_volume(shield)
     shield.mother = head.name
     shield.translation = [-dx, 0, 0]
+    gray = [0.5, 0.5, 0.5, 1]
     shield.color = gray
     shield.material = "Lead"
 
@@ -173,6 +178,7 @@ def add_shielding_he(sim, head):
     sim.add_volume(shield)
     shield.mother = head.name
     shield.translation = [-dx, 0, 0]
+    gray = [0.5, 0.5, 0.5, 1]
     shield.color = gray
     shield.material = "Lead"
 
@@ -196,6 +202,7 @@ def add_shielding_he(sim, head):
     sim.add_volume(shield)
     shield.mother = head.name
     shield.translation = [-87.0776 * mm, ty, 0]
+    blue = [0.5, 0.5, 1, 0.8]
     shield.color = blue
     shield.material = "Lead"
 
@@ -231,6 +238,7 @@ def add_collimator_empty(sim, head):
     colli.mother = head.name
     colli.size = [59.7 * mm, 533 * mm, 387 * mm]
     colli.translation = [-96.7324 * mm, 0, 0]
+    blue = [0.5, 0.5, 1, 0.8]
     colli.color = blue
     colli.material = head.material
     return colli
@@ -243,6 +251,7 @@ def add_collimator_lehr(sim, head, debug):
     colli.mother = name
     colli.size = [24.05 * mm, 533 * mm, 387 * mm]
     colli.translation = [-78.9074 * mm, 0, 0]
+    blue = [0.5, 0.5, 1, 0.8]
     colli.color = blue
     colli.material = "Lead"
 
@@ -294,6 +303,7 @@ def add_collimator_melp(sim, head, debug):
     colli.mother = name
     colli.size = [40.64 * mm, 533 * mm, 387 * mm]
     colli.translation = [-87.2024 * mm, 0, 0]
+    blue = [0.5, 0.5, 1, 0.8]
     colli.color = blue
     colli.material = "Lead"
 
@@ -364,6 +374,7 @@ def add_collimator_he(sim, head, debug):
     colli.mother = name
     colli.size = [59.7 * mm, 583 * mm, 440 * mm]
     colli.translation = [-96.7324 * mm, 0, 0]
+    blue = [0.5, 0.5, 1, 0.8]
     colli.color = blue
     colli.material = "Lead"
 
@@ -448,8 +459,8 @@ def add_back_compartment(sim, head):
     back_compartment.size = [147.5 * mm, 651.0 * mm, 485.0 * mm]
     back_compartment.translation = [16.6724 * mm, 0, 0]
     back_compartment.material = "G4_AIR"  # FIXME strange ?
+    green = [0, 1, 0, 1]
     back_compartment.color = green
-
     return back_compartment
 
 
@@ -461,6 +472,7 @@ def add_light_guide(sim, back_compartment):
     light_guide.size = [9.5 * mm, 643.0 * mm, 477.1037366 * mm]
     light_guide.translation = [-69.0 * mm, 0, 0]
     light_guide.material = "Glass"
+    green = [0, 1, 0, 1]
     light_guide.color = green
 
     return light_guide
@@ -1084,6 +1096,7 @@ def add_digitizer(
     proj.spacing = spacing
     proj.size = size
     proj.write_to_disk = True
+    proj.output_filename = filename
 
     # projection plane: it depends on how the spect device is described
     # here, we need this rotation
@@ -1091,35 +1104,4 @@ def add_digitizer(
         "yx", (90, 90), degrees=True
     ).as_matrix()
 
-    # FIXME debug
-    # n = [a.name for a in digitizer.actors]
-    # print(n)
-
     return digitizer
-
-
-def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
-    n = radionuclide_name.lower()
-    keV = g4_units.keV
-    channels = []
-    if "177lu" in n or "lu177" in n:
-        channels = [
-            {"name": f"spectrum", "min": 3 * keV, "max": 515 * keV},
-            {"name": f"scatter1", "min": 84.75 * keV, "max": 101.7 * keV},
-            {"name": f"peak113", "min": 101.7 * keV, "max": 124.3 * keV},
-            {"name": f"scatter2", "min": 124.3 * keV, "max": 141.25 * keV},
-            {"name": f"scatter3", "min": 145.6 * keV, "max": 187.2 * keV},
-            {"name": f"peak208", "min": 187.2 * keV, "max": 228.8 * keV},
-            {"name": f"scatter4", "min": 228.8 * keV, "max": 270.4 * keV},
-        ]
-    if "tc99m" in n:
-        channels = [
-            {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
-            {"name": f"scatter", "min": 108.58 * keV, "max": 129.59 * keV},
-            {"name": f"peak140", "min": 129.59 * keV, "max": 150.61 * keV},
-        ]
-    if not spectrum_channel:
-        channels.pop(0)
-    if len(channels) == 0:
-        raise ValueError(f"No default energy windows for {radionuclide_name}")
-    return channels

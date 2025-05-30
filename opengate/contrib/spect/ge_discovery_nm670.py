@@ -9,7 +9,10 @@ from opengate.geometry.utility import (
     get_transform_orbiting,
 )
 from opengate.actors.digitizers import *
-from opengate.contrib.spect.spect_helpers import get_volume_position_in_head
+from opengate.contrib.spect.spect_helpers import (
+    get_volume_position_in_head,
+    get_default_energy_windows,
+)
 from scipy.spatial.transform import Rotation
 from box import Box
 
@@ -481,13 +484,13 @@ def add_simplified_digitizer_tc99m(
             "max": 154.55 * keV,
         }
     )
-    proj = add_digitizer(sim, crystal_volume_name, channels)
+    proj = add_digitizer_OLD(sim, crystal_volume_name, channels)
     # output
     proj.output_filename = output_name
     return proj
 
 
-def add_digitizer(sim, crystal_volume_name, channels):
+def add_digitizer_OLD(sim, crystal_volume_name, channels):
     # units
     mm = g4_units.mm
     cc = add_digitizer_energy_windows(sim, crystal_volume_name, channels)
@@ -599,7 +602,7 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
 
     # detection efficiency
     # ea = digitizer.add_module("DigitizerEfficiencyActor", f"{name}_eff")
-    # ea.efficiency = 0.86481  # FAKE
+    # ea.efficiency = 0.86481 # FAKE
 
     # energy blurring
     keV = g4_units.keV
@@ -972,3 +975,70 @@ def get_pytomography_detector_physics_data(colli_name):
     }
 
     return d
+
+
+def add_digitizer(
+    sim, crystal_name, name=None, size=None, spacing=None, channels=None, filename=None
+):
+    # default parameters
+    mm = g4_units.mm
+    if name is None:
+        name = crystal_name
+    if size is None:
+        size = [128, 128]
+    if spacing is None:
+        spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+    if channels is None:
+        channels = get_default_energy_windows("tc99m")
+
+    # create the main digitizer chain
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # detection efficiency
+    # ea = digitizer.add_module("DigitizerEfficiencyActor")
+    # ea.efficiency = 0.86481  # FAKE
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor", f"{name}_eblur")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.063  # in %, FAKE !
+    eb.blur_reference_value = 140.57 * keV
+    # alternative :
+    # eb.blur_method = "Linear"
+    # eb.blur_resolution = 0.13
+    # eb.blur_reference_value = 80 * keV
+    # eb.blur_slope = -0.09 * 1 / MeV
+
+    # spatial blurring
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sblur")
+    sb.blur_attribute = "PostPosition"
+    sb.blur_fwhm = 3 * mm  # FAKE !
+    sb.keep_in_solid_limits = True
+
+    # default energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = spacing
+    proj.size = size
+    proj.write_to_disk = True
+    proj.output_filename = filename
+
+    # projection plane: it depends on how the spect device is described
+    # here, we need this rotation
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (0, 180), degrees=True  # 0 180 => like intevo
+    ).as_matrix()
+
+    return digitizer
