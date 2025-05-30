@@ -98,7 +98,7 @@ class SourceBase(GateObject):
 
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
-        # this will initialize and set user_info to the cpp side
+        # this will initialise and set user_info to the cpp side
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):
