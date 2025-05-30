@@ -57,7 +57,7 @@ GateSourceManager::~GateSourceManager() {
   // fUIEx is already deleted
 }
 
-void GateSourceManager::SetRunTerminationFlag(const bool flag) {
+void GateSourceManager::SetRunTerminationFlag(bool flag) {
   fRunTerminationFlag = flag;
 }
 

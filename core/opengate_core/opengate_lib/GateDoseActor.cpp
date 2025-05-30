@@ -268,13 +268,12 @@ void GateDoseActor::EndOfEventAction(const G4Event *event) {
       // check stop criteria
       double UncCurrent = ComputeMeanUncertainty();
       if (UncCurrent <= fUncertaintyGoal) {
-        // fStopRunFlag = true;
-        fSourceManager->SetRunTerminationFlag(true);
+        GateSourceManager::SetRunTerminationFlag(true);
       } else {
         // estimate nb of events at which the next check should occur
-        NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
-                            (UncCurrent / fUncertaintyGoal) * NbOfEvent *
-                            Overshoot;
+        NbEventsNextCheck = static_cast<int>((UncCurrent / fUncertaintyGoal) *
+                                             (UncCurrent / fUncertaintyGoal) *
+                                             NbOfEvent * Overshoot);
       }
     }
   }
