@@ -41,9 +41,22 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
 
     # spect digitizer
     if digitizer == 1:
-        intevo.add_digitizer_test1(sim, head, crystal)
+        channels = intevo.get_default_energy_windows("lu177", spectrum_channel=True)
+        intevo.add_digitizer(sim, crystal.name, channels=channels)
     if digitizer == 2:
-        intevo.add_digitizer_test2(sim, head, crystal)
+        channels = intevo.get_default_energy_windows("lu177", spectrum_channel=True)
+        intevo.add_digitizer(sim, crystal.name, channels=channels)
+        # change parameters to add a fake blurring
+        keV = gate.g4_units.keV
+        MeV = gate.g4_units.MeV
+        eb = sim.actor_manager.find_actor_by_type("DigitizerBlurringActor")
+        sb = sim.actor_manager.find_actor_by_type("DigitizerSpatialBlurringActor")
+        eb.blur_attribute = "TotalEnergyDeposit"
+        eb.blur_method = "Linear"
+        eb.blur_resolution = 0.13
+        eb.blur_reference_value = 80 * keV
+        eb.blur_slope = -0.09 * 1 / MeV
+        sb.blur_fwhm = 10 * mm
 
     # physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
@@ -62,7 +75,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     s1.direction.type = "iso"
     s1.activity = activity
 
-    s2 = sim.add_source("GenericSource", "s2.")
+    s2 = sim.add_source("GenericSource", "s2")
     s2.particle = "gamma"
     s2.position.type = "sphere"
     s2.position.radius = 60 * mm
@@ -71,7 +84,7 @@ def create_sim_tests(sim, threads=1, digitizer=1, debug=False):
     s2.direction.type = "iso"
     s2.activity = activity
 
-    s3 = sim.add_source("GenericSource", "s3.")
+    s3 = sim.add_source("GenericSource", "s3")
     s3.particle = "gamma"
     s3.position.type = "sphere"
     s3.position.radius = 25 * mm
@@ -109,7 +122,8 @@ def compare_root_hits(crystal, sim, root_filename, path, n=1):
     print()
     warning("Compare hits")
     gate_file = root_filename
-    hc_file = sim.get_actor(f"Hits_{crystal.name}").get_output_path()
+    hc = sim.actor_manager.find_actor_by_type(f"DigitizerHitsCollectionActor")
+    hc_file = hc.get_output_path()
     checked_keys = [
         {"k1": "posX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "posY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
@@ -121,7 +135,7 @@ def compare_root_hits(crystal, sim, root_filename, path, n=1):
         gate_file,
         hc_file,
         "Hits",
-        f"Hits_{crystal.name}",
+        f"{crystal.name}_hits",
         checked_keys,
         path / f"test073_test_{n}_hits.png",
         n_tol=16,
@@ -133,7 +147,9 @@ def compare_root_singles(crystal, sim, root_filename, path, sname, n=1):
     # Compare root files
     print()
     warning("Compare singles")
-    hc_file = sim.get_actor(f"Singles_{crystal.name}").get_output_path()
+    # hc_file = sim.get_actor(f"Singles_{crystal.name}").get_output_path()
+    hc = sim.actor_manager.find_actor_by_type(f"DigitizerAdderActor")
+    hc_file = hc.get_output_path()
     checked_keys = [
         {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
         {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
@@ -156,8 +172,8 @@ def compare_proj_images(crystal, sim, stats, image_filename, path, n=1):
     # compare images with Gate
     print()
     print("Compare images (old spacing/origin)")
-    # read image and force change the offset to be similar to old Gate
-    proj = sim.get_actor(f"Projection_{crystal.name}")
+    # read the image and force change the offset to be similar to old Gate
+    proj = sim.actor_manager.find_actor_by_type(f"DigitizerProjectionActor")
     fr = image_filename
     f1 = path / f"projections_test{n}_counts.mhd"
     f2 = path / f"projections_test{n}_offset.mhd"
