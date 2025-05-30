@@ -1010,11 +1010,6 @@ def add_digitizer(
     eb.blur_method = "InverseSquare"
     eb.blur_resolution = 0.063  # in %, FAKE !
     eb.blur_reference_value = 140.57 * keV
-    # alternative :
-    # eb.blur_method = "Linear"
-    # eb.blur_resolution = 0.13
-    # eb.blur_reference_value = 80 * keV
-    # eb.blur_slope = -0.09 * 1 / MeV
 
     # spatial blurring
     sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sblur")
@@ -1033,7 +1028,8 @@ def add_digitizer(
     proj.spacing = spacing
     proj.size = size
     proj.write_to_disk = True
-    proj.output_filename = filename
+    if filename is not None:
+        proj.output_filename = filename
 
     # projection plane: it depends on how the spect device is described
     # here, we need this rotation
