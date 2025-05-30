@@ -28,6 +28,8 @@
 
 /* There will be one SourceManager per thread */
 
+bool GateSourceManager::fRunTerminationFlag = false;
+
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
   fVisualizationVerboseFlag = false;

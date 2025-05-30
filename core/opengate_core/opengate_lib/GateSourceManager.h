@@ -95,10 +95,10 @@ public:
 
   void ComputeExpectedNumberOfEvents();
 
-  void SetRunTerminationFlag(bool flag);
+  static void SetRunTerminationFlag(bool flag);
 
   // fRunTerminationFlag should not be thread local
-  bool fRunTerminationFlag;
+  static bool fRunTerminationFlag;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;
