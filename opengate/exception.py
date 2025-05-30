@@ -27,7 +27,7 @@ class GateImplementationError(Exception):
 
 color_error = colored.fore("red") + colored.style("bold")
 color_warning = colored.fore("orange_1")
-color_ok = colored.fore("green")
+color_ok = colored.fore("light_blue")
 
 
 def fatal(s):
