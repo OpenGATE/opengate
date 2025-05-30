@@ -11,8 +11,8 @@
 // FIXME to put elsewhere, only when Log is required
 
 template<typename S, typename... Args>
-void Log(int level, const S &format_str, Args &&... args) {
-    if (level > GateSourceManager::fVerboseLevel) return;
+void Log(int level, int verboseLevel, const S &format_str, Args &&... args) {
+    if (level > verboseLevel) return;
     fmt::print(fg(fmt::color::bisque), format_str, args...);
 }
 
