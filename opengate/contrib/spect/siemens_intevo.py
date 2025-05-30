@@ -1096,7 +1096,8 @@ def add_digitizer(
     proj.spacing = spacing
     proj.size = size
     proj.write_to_disk = True
-    proj.output_filename = filename
+    if filename is not None:
+        proj.output_filename = filename
 
     # projection plane: it depends on how the spect device is described
     # here, we need this rotation
