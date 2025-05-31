@@ -44,7 +44,7 @@ def create_simulation_test085(
     sim.store_json_archive = True
     sim.store_input_files = False
     sim.json_archive_filename = f"simu_{simu_name}.json"
-    sim.random_seed = 1235342  # "auto"
+    sim.random_seed = 321654  # "auto"
     data_folder = Path(paths.data) / "test085"
 
     # units
@@ -132,7 +132,7 @@ def create_simulation_test085(
     source.activity = activity * np.array(volumes).sum()
     print(f"Total activity is {source.activity / Bq}")
 
-    # add stat actor
+    # add a stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
     stats.output_filename = f"stats_{simu_name}.txt"
