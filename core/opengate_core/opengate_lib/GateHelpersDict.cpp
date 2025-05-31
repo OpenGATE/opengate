@@ -200,7 +200,8 @@ void CheckIsIn(const std::string &s, std::vector<std::string> &v) {
 std::map<std::string, std::string> DictToMap(const py::dict &user_info) {
   std::map<std::string, std::string> map;
   for (auto p : user_info) {
-    map[py::str(p.first)] = py::str(p.second);
+    // copy the strings
+    map[std::string(py::str(p.first))] = std::string(py::str(p.second));
   }
   return map;
 }
@@ -216,16 +217,37 @@ bool StrToBool(const std::string &s) {
 }
 
 double StrToDouble(const std::string &s) {
-  // this is needed ! as the local may interfere
-  std::locale::global(std::locale("C"));
   try {
-    return std::stod(s);
+    std::istringstream ss(s);
+    ss.imbue(std::locale("C"));
+    double result;
+    ss >> result;
+
+    if (ss.fail() || !ss.eof()) {
+      throw std::runtime_error(
+          "Invalid input string: cannot convert to double " + s);
+    }
+
+    return result;
   } catch (const std::invalid_argument &) {
     throw std::runtime_error("Invalid input string: cannot convert to double " +
                              s);
   } catch (const std::out_of_range &) {
     throw std::runtime_error(
         "Out of range: the value is out of range to store in a double " + s);
+  }
+}
+
+int StrToInt(const std::string &s) {
+  std::locale::global(std::locale("C"));
+  try {
+    return std::stoi(s);
+  } catch (const std::invalid_argument &) {
+    throw std::runtime_error(
+        "Invalid input string: cannot convert to integer " + s);
+  } catch (const std::out_of_range &) {
+    throw std::runtime_error(
+        "Out of range: the value is out of range to store in an integer " + s);
   }
 }
 
@@ -242,4 +264,44 @@ G4ThreeVector StrToG4ThreeVector(const std::string &s) {
     i += 1;
   }
   return n;
+}
+
+std::vector<std::string>
+GetVectorFromMapString(const std::map<std::string, std::string> &map_input,
+                       const std::string &key) {
+  std::vector<std::string> result;
+
+  const auto it = map_input.find(key);
+  if (it == map_input.end() || it->second.empty()) {
+    return result;
+  }
+
+  std::string value = it->second;
+  // Remove leading '[' and trailing ']'
+  if (value.front() == '[' && value.back() == ']') {
+    value = value.substr(1, value.length() - 2);
+  }
+
+  size_t pos = 0;
+  while (pos < value.length()) {
+    // Find the next quote
+    pos = value.find('\'', pos);
+    if (pos == std::string::npos)
+      break;
+
+    // Find the closing quote
+    const size_t end = value.find('\'', pos + 1);
+    if (end == std::string::npos)
+      break;
+
+    // Extract the string between quotes
+    std::string item = value.substr(pos + 1, end - pos - 1);
+    if (!item.empty()) {
+      result.push_back(item);
+    }
+
+    pos = end + 1;
+  }
+
+  return result;
 }

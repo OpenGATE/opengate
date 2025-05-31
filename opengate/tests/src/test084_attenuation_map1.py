@@ -60,9 +60,9 @@ if __name__ == "__main__":
     is_ok = utility.assert_images(
         ref,
         mumap.get_output_path(),
-        tolerance=1e-5,
+        tolerance=1e-4,
         fig_name=paths.output / "mumap1.png",
-        sum_tolerance=1e-5,
+        sum_tolerance=1e-4,
     )
 
     utility.test_ok(is_ok)

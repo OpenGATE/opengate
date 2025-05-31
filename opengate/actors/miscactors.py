@@ -413,7 +413,7 @@ class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
         "image_volume": (  # FIXME name or not name
             None,
             {
-                "doc": "InputVolume image from which the attenuation map is generated.",
+                "doc": "Input ImageVolume for which the attenuation map is generated.",
             },
         ),
         "energy": (

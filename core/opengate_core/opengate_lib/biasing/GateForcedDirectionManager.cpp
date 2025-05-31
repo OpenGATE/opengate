@@ -26,17 +26,18 @@ GateForcedDirectionManager::GateForcedDirectionManager() {
 
 GateForcedDirectionManager::~GateForcedDirectionManager() = default;
 
-void GateForcedDirectionManager::Initialize(py::dict user_info,
-                                            const bool is_valid_type) {
+void GateForcedDirectionManager::Initialize(
+    const std::map<std::string, std::string> &user_info,
+    const bool is_valid_type) {
   // Main flag
   fEnabledFlag =
-      DictGetBool(user_info, "forced_direction_flag") && is_valid_type;
+      StrToBool(user_info.at("forced_direction_flag")) && is_valid_type;
   if (!fEnabledFlag)
     return;
 
   // Check AA flags
-  const bool b2 = DictGetBool(user_info, "intersection_flag");
-  const bool b3 = DictGetBool(user_info, "normal_flag");
+  const bool b2 = StrToBool(user_info.at("intersection_flag"));
+  const bool b3 = StrToBool(user_info.at("normal_flag"));
   if (b2 || b3) {
     std::ostringstream oss;
     oss << "Cannot use 'forced_direction_flag' mode with forced_direction_flag "
@@ -45,11 +46,11 @@ void GateForcedDirectionManager::Initialize(py::dict user_info,
   }
 
   // Volumes
-  fAcceptanceAngleVolumeNames = DictGetVecStr(user_info, "volumes");
+  fAcceptanceAngleVolumeNames = GetVectorFromMapString(user_info, "volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
 
   // (we cannot use py::dict here as it is lost at the end of the function)
-  fAcceptanceAngleParam = DictToMap(user_info);
+  // fAcceptanceAngleParam = DictToMap(user_info);
   if (fAcceptanceAngleVolumeNames.size() > 1) {
     Fatal("Cannot use several volume for forced direction flag");
   }
@@ -57,9 +58,8 @@ void GateForcedDirectionManager::Initialize(py::dict user_info,
   if (!fEnabledFlag)
     return;
 
-  fNormalVector = StrToG4ThreeVector(fAcceptanceAngleParam.at("normal_vector"));
-  fNormalAngleTolerance =
-      StrToDouble(fAcceptanceAngleParam.at("normal_tolerance"));
+  fNormalVector = StrToG4ThreeVector(user_info.at("normal_vector"));
+  fNormalAngleTolerance = StrToDouble(user_info.at("normal_tolerance"));
 
   // Precompute values
   fSinThetaMax = std::sin(fNormalAngleTolerance);

@@ -28,9 +28,7 @@
 
 /* There will be one SourceManager per thread */
 
-// Initialisation of static variable
-int GateSourceManager::fVerboseLevel = 0;
-bool fRunTerminationFlag = false;
+bool GateSourceManager::fRunTerminationFlag = false;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
@@ -52,13 +50,14 @@ GateSourceManager::GateSourceManager() {
   fExpectedNumberOfEvents = 0;
   fProgressBarStep = 1000;
   fCurrentEvent = 0;
+  fRunTerminationFlag = false;
 }
 
 GateSourceManager::~GateSourceManager() {
   // fUIEx is already deleted
 }
 
-void GateSourceManager::SetRunTerminationFlag(const bool flag) {
+void GateSourceManager::SetRunTerminationFlag(bool flag) {
   fRunTerminationFlag = flag;
 }
 
@@ -169,7 +168,7 @@ void GateSourceManager::StartMasterThread() {
 void GateSourceManager::InitializeProgressBar() {
   if (!fProgressBarFlag)
     return;
-  // (the expected number is computed by all thread)
+  // (all threads compute the expected number of events)
   ComputeExpectedNumberOfEvents();
 
   // the progress bar is only for one thread (id ==0)
@@ -205,7 +204,7 @@ long int GateSourceManager::GetExpectedNumberOfEvents() const {
   return fExpectedNumberOfEvents;
 }
 
-void GateSourceManager::PrepareRunToStart(int run_id) const {
+void GateSourceManager::PrepareRunToStart(int run_id) {
   /*
    In MT mode, this function (PrepareRunToStart) is called
    by Master thread AND by workers
@@ -227,7 +226,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) const {
     return;
   }
   l.fStartNewRun = false;
-  Log(LogLevel_RUN, "Starting run {} ({})\n", run_id,
+  Log(LogLevel_RUN, fVerboseLevel, "Starting run {} ({})\n", run_id,
       G4Threading::IsMasterThread() == TRUE
           ? "master"
           : std::to_string(G4Threading::G4GetThreadId()));
@@ -300,16 +299,16 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
       std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
       std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
       std::string s = l.fNextActiveSource->fName;
-      Log(LogLevel_EVENT, "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
-          event->GetEventID(), t,
-          prim->GetParticleDefinition()->GetParticleName(), e,
+      Log(LogLevel_EVENT, fVerboseLevel,
+          "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n", event->GetEventID(),
+          t, prim->GetParticleDefinition()->GetParticleName(), e,
           event->GetPrimaryVertex(0)->GetPosition()[0],
           event->GetPrimaryVertex(0)->GetPosition()[1],
           event->GetPrimaryVertex(0)->GetPosition()[2], s);
     }
   }
 
-  // Add user information ?
+  // Add user information?
   if (fUserEventInformationFlag) {
     // the user info is deleted by the event destructor, so
     // we need to create a new one everytime

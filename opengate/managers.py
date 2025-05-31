@@ -340,7 +340,7 @@ class SourceManager(GateObject):
         # return the volume if it has not been passed as input, i.e. it was created here
         if new_source is not source:
             return new_source
-        return None
+        return source
 
     def add_source_copy(self, origin_source_name, copied_source_name):
         # get the source to copy
@@ -487,7 +487,7 @@ class ActorManager(GateObject):
             return new_actor
 
     def find_actors(self, sub_str, case_sensitive=False):
-        # find all actors that contains this substring
+        # find all actors that contain this substring
         actors = []
         if not case_sensitive:
             sub_str = sub_str.lower()
@@ -498,6 +498,31 @@ class ActorManager(GateObject):
             if sub_str in name:
                 actors.append(actor)
         return actors
+
+    def find_actors_by_type(self, type_name, sub_str=None, case_sensitive=False):
+        # find all actors of a given type
+        actors = []
+        if not case_sensitive and sub_str is not None:
+            sub_str = sub_str.lower()
+        for actor in self.actors.values():
+            if actor.type_name == type_name:
+                if sub_str is None:
+                    actors.append(actor)
+                else:
+                    name = actor.name
+                    if not case_sensitive:
+                        name = name.lower()
+                    if sub_str in name:
+                        actors.append(actor)
+        return actors
+
+    def find_actor_by_type(self, type_name, sub_str=None, case_sensitive=False):
+        actors = self.find_actors_by_type(type_name, sub_str, case_sensitive)
+        if len(actors) == 1:
+            return actors[0]
+        else:
+            fatal(f'Found {len(actors)} actors of type "{type_name}". Expected 1.')
+            return None
 
     def remove_actor(self, name):
         self.actors.pop(name)
@@ -1804,6 +1829,9 @@ class Simulation(GateObject):
 
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
+
+    def find_actors(self, sub_str, case_sensitive=False):
+        return self.actor_manager.find_actors(sub_str, case_sensitive)
 
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)

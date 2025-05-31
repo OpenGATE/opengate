@@ -49,10 +49,10 @@ void FatalKeyError(std::string s);
 
 // Log verbose (with color and level)
 template <typename S, typename... Args>
-void Log(int level, const S &format_str, Args &&...args);
+void Log(int level, int verboseLevel, const S &format_str, Args &&...args);
 
 template <typename S, typename... Args>
-void LogDebug(int level, const S &format_str, Args &&...args);
+void LogDebug(const S &format_str, Args &&...args);
 
 extern const int LogLevel_RUN;
 extern const int LogLevel_EVENT;

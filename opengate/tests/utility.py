@@ -168,7 +168,8 @@ def read_stat_file_legacy(filename):
 def print_test(b, s):
     s += f" --> OK? {b}"
     if b:
-        print(s)
+        color = color_ok
+        print(colored.stylize(s, color))
     else:
         color = color_error
         print(colored.stylize(s, color))

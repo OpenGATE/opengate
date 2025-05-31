@@ -477,7 +477,7 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
 
   // set the angle acceptance volume if needed
   const auto d = py::dict(puser_info["direction"]);
-  const auto dd = py::dict(d["acceptance_angle"]);
+  auto dd = DictToMap(d["acceptance_angle"]);
   const auto is_valid_type =
       ang->GetDistType() == "iso" || ang->GetDistType() == "user";
   ll.fAAManager = new GateAcceptanceAngleManager;
