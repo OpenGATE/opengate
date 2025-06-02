@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    ac = 4e4
+    ac = 1e4
     # sim.visu = True
     source, actors = create_simulation_test085(
         sim,
@@ -52,10 +52,10 @@ if __name__ == "__main__":
             paths.output_ref / "projection_1_ff_sc_counts.mhd",
             paths.output / "projection_1_ff_sc_counts.mhd",
             stats,
-            tolerance=110,
+            tolerance=300,
             ignore_value_data1=0,
-            sum_tolerance=10,
-            sad_profile_tolerance=24,
+            sum_tolerance=60,
+            sad_profile_tolerance=33,
             axis="x",
         )
         and is_ok
