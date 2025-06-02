@@ -25,7 +25,7 @@ if __name__ == "__main__":
         use_phsp=False,
     )
 
-    # FF with Forced Direction
+    # FF with Forced Direction (one single head !)
     source.direction.acceptance_angle.intersection_flag = False
     source.direction.acceptance_angle.normal_flag = False
     source.direction.acceptance_angle.forced_direction_flag = True

@@ -3,7 +3,7 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
-import opengate.contrib.spect.siemens_intevo as intevo
+from opengate.contrib.spect.spect_helpers import get_default_energy_windows
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
@@ -167,12 +167,9 @@ def add_spect_heads(sim, simu_name, radius):
     heads, crystals = nm670.add_spect_two_heads(
         sim, "spect", "lehr", debug=sim.visu, radius=radius
     )
-    digit1 = nm670.add_digitizer_tc99m_v2(
-        sim, crystals[0].name, "digit1", spectrum_channel=False
-    )
-    digit2 = nm670.add_digitizer_tc99m_v2(
-        sim, crystals[1].name, "digit2", spectrum_channel=False
-    )
+    channels = get_default_energy_windows("tc99m")
+    digit1 = nm670.add_digitizer(sim, crystals[0].name, "digit1", channels=channels)
+    digit2 = nm670.add_digitizer(sim, crystals[1].name, "digit2", channels=channels)
 
     # we need the weights for the digitizer
     hits1 = digit1.find_module("hits")
