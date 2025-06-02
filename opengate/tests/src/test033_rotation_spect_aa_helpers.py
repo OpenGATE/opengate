@@ -108,11 +108,11 @@ def create_test(sim, nb_thread=1):
     stat.output_filename = "test033_stats.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
-    proj = gate_spect.add_simplified_digitizer_tc99m(
+    proj = gate_spect.add_simplified_digitizer_tc99m_OLD(
         sim, "spect1_crystal", "test033_proj_1.mhd"
     )
     proj.origin_as_image_center = False
-    proj = gate_spect.add_simplified_digitizer_tc99m(
+    proj = gate_spect.add_simplified_digitizer_tc99m_OLD(
         sim, "spect2_crystal", "test033_proj_2.mhd"
     )
     proj.origin_as_image_center = False

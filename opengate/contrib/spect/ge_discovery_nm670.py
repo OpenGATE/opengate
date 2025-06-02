@@ -462,7 +462,7 @@ def lehr_collimator_repeater_noparam_WIP(sim, name, core, debug):
     return hole
 
 
-def add_simplified_digitizer_tc99m(
+def add_simplified_digitizer_tc99m_OLD(
     sim, crystal_volume_name, output_name, scatter_flag=False
 ):
     # units
@@ -493,7 +493,7 @@ def add_simplified_digitizer_tc99m(
 def add_digitizer_OLD(sim, crystal_volume_name, channels):
     # units
     mm = g4_units.mm
-    cc = add_digitizer_energy_windows(sim, crystal_volume_name, channels)
+    cc = add_digitizer_energy_windows_OLD(sim, crystal_volume_name, channels)
 
     # projection
     proj = sim.add_actor(
@@ -508,7 +508,7 @@ def add_digitizer_OLD(sim, crystal_volume_name, channels):
     return proj
 
 
-def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
+def add_digitizer_energy_windows_OLD(sim, crystal_volume_name, channels):
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal_volume_name}")
     hc.attached_to = crystal_volume_name
@@ -540,7 +540,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     return cc
 
 
-def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
+def add_digitizer_tc99m_OLD(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -590,7 +590,7 @@ def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
-def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
+def add_digitizer_tc99m_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
     # create the main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -646,7 +646,7 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
-def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
+def add_digitizer_lu177_OLD(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -707,7 +707,7 @@ def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
-def add_digitizer_lu177_v2(sim, crystal_name, name, spectrum_channel=True):
+def add_digitizer_lu177_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -761,8 +761,8 @@ def add_digitizer_lu177_v2(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
-def add_digitizer_lu177_v3(sim, crystal_name, name, spectrum_channel=True):
-    digitizer = add_digitizer_lu177_v2(sim, crystal_name, name, spectrum_channel)
+def add_digitizer_lu177_v3_OLD(sim, crystal_name, name, spectrum_channel=True):
+    digitizer = add_digitizer_lu177_v2_OLD(sim, crystal_name, name, spectrum_channel)
 
     # here, we need this rotation
     proj = digitizer.find_module_by_type("DigitizerProjectionActor")
