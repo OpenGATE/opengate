@@ -70,7 +70,7 @@ if __name__ == "__main__":
         {"name": f"scatter_{spect.name}", "min": 114 * keV, "max": 126 * keV},
         {"name": f"peak140_{spect.name}", "min": 126 * keV, "max": 154 * keV},
     ]
-    cc = gate_spect.add_digitizer_energy_windows(sim, crystal_name, channels)
+    cc = gate_spect.add_digitizer_energy_windows_OLD(sim, crystal_name, channels)
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
