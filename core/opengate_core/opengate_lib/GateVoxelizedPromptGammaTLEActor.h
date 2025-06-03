@@ -48,7 +48,6 @@ public:
   ImageType::Pointer cpp_E_proton_image;
   ImageType::Pointer cpp_E_neutron_image;
 
-
 private:
   G4double T0;
   G4int incidentParticles;

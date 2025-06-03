@@ -75,7 +75,6 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
         super().initialize(args)
 
 
-
 class VoxelizedPromptGammaTLEActor(
     VoxelDepositActor, g4.GateVoxelizedPromptGammaTLEActor
 ):
@@ -90,25 +89,25 @@ class VoxelizedPromptGammaTLEActor(
                 "doc": "TODO",
             },
         ),
-        "bins":(
+        "bins": (
             200,
             {
                 "doc": "Number of bins in the histogram",
             },
         ),
-        "range":(
+        "range": (
             10 * g4_units.ns,
             {
                 "doc": "Range of the histogram in ns",
             },
         ),
-        "proton":(
+        "proton": (
             True,
             {
                 "doc": "True if the collisions of interest are from the proton, False if it is from the neutron",
             },
         ),
-        "energy":(
+        "energy": (
             True,
             {
                 "doc": "True if the quantity of interest is the energy and not the time of flight"
@@ -170,36 +169,48 @@ class VoxelizedPromptGammaTLEActor(
         )
 
     def BeginOfRunActionMasterThread(self, run_index):
-        if self.user_info["proton"] == False :
-            if self.user_info["energy"] == False :
+        if self.user_info["proton"] == False:
+            if self.user_info["energy"] == False:
                 self.prepare_output_for_run("vpg_n_tof", run_index)
-                self.push_to_cpp_image("vpg_n_tof", run_index, self.cpp_tof_neutron_image)
-            else :
+                self.push_to_cpp_image(
+                    "vpg_n_tof", run_index, self.cpp_tof_neutron_image
+                )
+            else:
                 self.prepare_output_for_run("vpg_n_E", run_index)
                 self.push_to_cpp_image("vpg_n_E", run_index, self.cpp_E_neutron_image)
-        else :
-            if self.user_info["energy"] == False :
+        else:
+            if self.user_info["energy"] == False:
                 self.prepare_output_for_run("vpg_p_tof", run_index)
-                self.push_to_cpp_image("vpg_p_tof", run_index, self.cpp_tof_proton_image)
-            else :
+                self.push_to_cpp_image(
+                    "vpg_p_tof", run_index, self.cpp_tof_proton_image
+                )
+            else:
                 self.prepare_output_for_run("vpg_p_E", run_index)
                 self.push_to_cpp_image("vpg_p_E", run_index, self.cpp_E_proton_image)
-        g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(self, run_index)
+        g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(
+            self, run_index
+        )
 
     def EndOfRunActionMasterThread(self, run_index):
         print("end of run action master thread")
-        if self.user_info["proton"] == False :
-            if self.user_info["energy"] == False :
-                self.fetch_from_cpp_image("vpg_n_tof", run_index, self.cpp_tof_neutron_image)
+        if self.user_info["proton"] == False:
+            if self.user_info["energy"] == False:
+                self.fetch_from_cpp_image(
+                    "vpg_n_tof", run_index, self.cpp_tof_neutron_image
+                )
                 self._update_output_coordinate_system("vpg_n_tof", run_index)
             else:
-                self.fetch_from_cpp_image("vpg_n_E", run_index, self.cpp_E_neutron_image)
+                self.fetch_from_cpp_image(
+                    "vpg_n_E", run_index, self.cpp_E_neutron_image
+                )
                 self._update_output_coordinate_system("vpg_n_E", run_index)
-        if self.user_info["proton"] == True :
-            if self.user_info["energy"] == False :
-                self.fetch_from_cpp_image("vpg_p_tof", run_index, self.cpp_tof_proton_image)
+        if self.user_info["proton"] == True:
+            if self.user_info["energy"] == False:
+                self.fetch_from_cpp_image(
+                    "vpg_p_tof", run_index, self.cpp_tof_proton_image
+                )
                 self._update_output_coordinate_system("vpg_p_tof", run_index)
-            else :
+            else:
                 self.fetch_from_cpp_image("vpg_p_E", run_index, self.cpp_E_proton_image)
                 self._update_output_coordinate_system("vpg_p_E", run_index)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
