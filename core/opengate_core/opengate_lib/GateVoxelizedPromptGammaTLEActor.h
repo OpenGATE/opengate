@@ -22,7 +22,7 @@ namespace py = pybind11;
 class GateVoxelizedPromptGammaTLEActor : public GateVActor {
 
 public:
-  // Constructor
+  // destructor
   ~GateVoxelizedPromptGammaTLEActor() override;
 
   explicit GateVoxelizedPromptGammaTLEActor(py::dict &user_info);
@@ -43,16 +43,20 @@ public:
 
   // Image type
   typedef itk::Image<double, 4> ImageType;
-  ImageType::Pointer cpp_image;
+  ImageType::Pointer cpp_tof_neutron_image;
+  ImageType::Pointer cpp_tof_proton_image;
+  ImageType::Pointer cpp_E_proton_image;
+  ImageType::Pointer cpp_E_neutron_image;
+
 
 private:
   G4double T0;
-  G4double norm;
   G4int incidentParticles;
   G4int bins;
   G4double range;
   G4ThreeVector fTranslation;
   G4bool prot;
+  G4bool energy;
 };
 
 #endif // GateVoxelizedPromptGammaTLEActor_h

@@ -41,5 +41,8 @@ void init_GateVoxelizedPromptGammaTLEActor(py::module &m) {
            &GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
            &GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread)
-      .def_readwrite("cpp_image", &GateVoxelizedPromptGammaTLEActor::cpp_image);
+      .def_readwrite("cpp_tof_neutron_image", &GateVoxelizedPromptGammaTLEActor::cpp_tof_neutron_image)
+      .def_readwrite("cpp_tof_proton_image", &GateVoxelizedPromptGammaTLEActor::cpp_tof_proton_image)
+      .def_readwrite("cpp_E_neutron_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_neutron_image)
+      .def_readwrite("cpp_E_proton_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_proton_image);
 }
