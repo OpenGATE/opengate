@@ -93,13 +93,12 @@ void GateFluenceActor::InitializeCpp() {
   nb_inel = 0;
 }
 
-void GateFluenceActor::BeginOfEventAction(const G4Event *event) {
-  norm++;
-}
+void GateFluenceActor::BeginOfEventAction(const G4Event *event) { norm++; }
 
 void GateFluenceActor::BeginOfRunActionMasterThread(int run_id) {
   // Important ! The volume may have moved, so we (re-)attach each run
-  AttachImageToVolume<Image3DType>(tof_cpp_image, fPhysicalVolumeName, fTranslation);
+  AttachImageToVolume<Image3DType>(tof_cpp_image, fPhysicalVolumeName,
+                                   fTranslation);
 }
 
 void GateFluenceActor::SteppingAction(G4Step *step) {
@@ -212,9 +211,10 @@ void GateFluenceActor::SteppingAction(G4Step *step) {
 }
 
 void GateFluenceActor::EndOfRunAction(const G4Run *run) {
-  itk::ImageRegionIterator<Image2DType>
-  it(output_image,output_image->GetLargestPossibleRegion()); for
-  (it.GoToBegin(); !it.IsAtEnd(); ++it) { it.Set(it.Get() / norm);
+  itk::ImageRegionIterator<Image2DType> it(
+      output_image, output_image->GetLargestPossibleRegion());
+  for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
+    it.Set(it.Get() / norm);
   }
   std::cout << "incidentpart" << norm << std::endl;
   std::cout << "nb gammas" << nb_inel << std::endl;
