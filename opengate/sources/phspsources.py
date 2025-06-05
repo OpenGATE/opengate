@@ -255,6 +255,7 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
     entry_start: int
     particle: str
     global_flag: bool
+    isotropic_momentum: bool
     translate_position: bool
     rotate_direction: bool
     batch_size: int
@@ -292,6 +293,13 @@ class PhaseSpaceSource(SourceBase, g4.GatePhaseSpaceSource):
                 "doc": "If true, the positions of the generated particles in the phase-space "
                 "are in the world coordinate system. If false, they are relative to the volume"
                 "this source is attached to",
+            },
+        ),
+        "isotropic_direction": (
+            False,
+            {
+                "doc": "If true, It enables to generate a particle with a position energy and weight "
+                "according to the provided phase but with an isotropic momentum.",
             },
         ),
         "translate_position": (
