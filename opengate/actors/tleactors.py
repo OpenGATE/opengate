@@ -95,7 +95,6 @@ class VoxelizedPromptGammaTLEActor(
                 "doc": "Number of bins in the histogram",
             },
         ),
-        "range": (5 * g4_units.ns,),
         "range": (
             10 * g4_units.ns,
             {
