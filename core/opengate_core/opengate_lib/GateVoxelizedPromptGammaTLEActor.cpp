@@ -112,7 +112,7 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
       0; // initiate the conuter of incidente protons - scaling factor
 }
 
-void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
+void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(
     int run_id) {
 
   // Attach the 3D volume used to
