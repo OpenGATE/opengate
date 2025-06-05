@@ -67,7 +67,6 @@ private:
   G4double range;
   G4bool prot;
   G4bool energy;
-  G4double width;
 
   G4ThreeVector fsize;
   G4ThreeVector fspacing;
