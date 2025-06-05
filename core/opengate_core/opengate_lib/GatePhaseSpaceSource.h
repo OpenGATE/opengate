@@ -47,6 +47,8 @@ public:
 
   bool ParticleIsPrimary() const;
 
+  G4ParticleMomentum GenerateRandomDirection();
+
   void GenerateBatchOfParticles();
 
   G4ParticleTable *fParticleTable;
@@ -55,6 +57,7 @@ public:
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
   bool fVerbose;
+  G4bool fIsotropicMomentum;
 
   void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 
