@@ -21,10 +21,9 @@ MeV = gate.g4_units.MeV
 deg = gate.g4_units.deg
 
 
-
-def is_ok(phsp_1,phsp_2):
-    f1 = uproot.open(phsp_1+":PhaseSpace1")
-    f2 = uproot.open(phsp_2+":PhaseSpace1")
+def is_ok(phsp_1, phsp_2):
+    f1 = uproot.open(phsp_1 + ":PhaseSpace1")
+    f2 = uproot.open(phsp_2 + ":PhaseSpace1")
     df1 = f1.arrays()
     df2 = f2.arrays()
 
@@ -34,15 +33,18 @@ def is_ok(phsp_1,phsp_2):
         data_2 = df2[key]
         mean_data_1 = np.mean(data_1)
         mean_data_2 = np.mean(data_2)
-        std_dev_data_1 = np.std(data_1,ddof=1)
+        std_dev_data_1 = np.std(data_1, ddof=1)
         std_dev_data_2 = np.std(data_2, ddof=1)
 
-        std_err = np.sqrt((std_dev_data_1/np.sqrt(len(data_1)))**2 + (std_dev_data_2/np.sqrt(len(data_2))**2))
-        print("data 1 mean for " +key + " = " + str(mean_data_1))
+        std_err = np.sqrt(
+            (std_dev_data_1 / np.sqrt(len(data_1))) ** 2
+            + (std_dev_data_2 / np.sqrt(len(data_2)) ** 2)
+        )
+        print("data 1 mean for " + key + " = " + str(mean_data_1))
         print("data 2 mean for " + key + " = " + str(mean_data_2))
-        print("standard error for " + key + " = " + str(std_err) )
+        print("standard error for " + key + " = " + str(std_err))
         print("")
-        if np.abs(mean_data_1 - mean_data_2)/std_err > 4:
+        if np.abs(mean_data_1 - mean_data_2) / std_err > 4:
             return False
     return True
 
@@ -57,8 +59,9 @@ def add_source(sim, plan_to_attach):
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
     source.energy.type = "mono"
-    source.energy.mono = 1* MeV
+    source.energy.mono = 1 * MeV
     source.attached_to = plan_to_attach.name
+
 
 def add_source_2(sim, plan_to_attach):
     source = sim.add_source("GenericSource", "GenSource")
@@ -69,8 +72,9 @@ def add_source_2(sim, plan_to_attach):
     source.position.radius = radius
     source.direction.type = "iso"
     source.energy.type = "mono"
-    source.energy.mono = 1* MeV
+    source.energy.mono = 1 * MeV
     source.attached_to = plan_to_attach.name
+
 
 def add_phsp_source(sim, plan_to_attach):
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
@@ -86,12 +90,13 @@ def add_phsp_source(sim, plan_to_attach):
     source.attached_to = plan_to_attach.name
     return source
 
-def add_phsp_sphere_actor(sim,name):
+
+def add_phsp_sphere_actor(sim, name):
     cm = gate.g4_units.cm
     nm = gate.g4_units.nm
-    sphere = sim.volume_manager.add_volume("Sphere","a_sphere")
-    sphere.rmin = 50 *cm
-    sphere.rmax = sphere.rmin + 1*nm
+    sphere = sim.volume_manager.add_volume("Sphere", "a_sphere")
+    sphere.rmin = 50 * cm
+    sphere.rmax = sphere.rmin + 1 * nm
 
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
     ta1.attached_to = sphere.name
@@ -107,7 +112,7 @@ def add_phsp_sphere_actor(sim,name):
     ta1.output_filename = name
 
 
-def add_phsp_actor(sim,plan_to_attach):
+def add_phsp_actor(sim, plan_to_attach):
     ta1 = sim.add_actor("PhaseSpaceActor", "PhaseSpace1")
     ta1.attached_to = plan_to_attach.name
     ta1.attributes = [
@@ -159,7 +164,6 @@ for i in range(3):
     s_plane.translation = [0 * mm, 0 * mm, 0 * mm]
     s_plane.color = [1, 0, 0, 1]  # red
 
-
     plane = sim.add_volume("Tubs", "phsp_actor_plane")
     # plane.material = "G4_AIR"
     plane.material = "G4_Galactic"
@@ -175,18 +179,22 @@ for i in range(3):
     ##########################################################################################
     # PhaseSpace Actor
 
-    if i == 0 :
-        add_source(sim,s_plane)
-        add_phsp_actor(sim,plane)
+    if i == 0:
+        add_source(sim, s_plane)
+        add_phsp_actor(sim, plane)
     if i == 1:
         add_source_2(sim, s_plane)
-        add_phsp_sphere_actor(sim,"test060_phsp_actor_sphere_ref.root")
+        add_phsp_sphere_actor(sim, "test060_phsp_actor_sphere_ref.root")
 
     if i == 2:
         add_phsp_source(sim, s_plane)
-        add_phsp_sphere_actor(sim,"test060_phsp_actor_sphere_phsp.root")
-
+        add_phsp_sphere_actor(sim, "test060_phsp_actor_sphere_phsp.root")
 
     sim.run(start_new_process=True)
 
-print(is_ok("../output/test060_phsp_actor_sphere_ref.root","../output/test060_phsp_actor_sphere_phsp.root"))
+print(
+    is_ok(
+        "../output/test060_phsp_actor_sphere_ref.root",
+        "../output/test060_phsp_actor_sphere_phsp.root",
+    )
+)
