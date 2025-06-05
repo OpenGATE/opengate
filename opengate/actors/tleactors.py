@@ -84,7 +84,7 @@ class VoxelizedPromptGammaTLEActor(
 
     user_info_defaults = {
         "database": (
-            None, #stage 0 from Geant4 // upload
+            None,  # stage 0 from Geant4 // upload
             {
                 "doc": "TODO",
             },
@@ -95,9 +95,7 @@ class VoxelizedPromptGammaTLEActor(
                 "doc": "Number of bins in the histogram",
             },
         ),
-        "range":(
-            5 * g4_units.ns,
-        ),
+        "range": (5 * g4_units.ns,),
         "range": (
             10 * g4_units.ns,
             {
