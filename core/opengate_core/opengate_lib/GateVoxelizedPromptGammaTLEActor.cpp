@@ -110,8 +110,6 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
 
   incidentParticles =
       0; // initiate the conuter of incidente protons - scaling factor
-  width = range / bins; // width calculated in the initiation to facilitate the
-                        // binning later
 }
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
@@ -144,8 +142,6 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
 
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   // Get the voxel index
-
-  // Get the voxel index
   G4ThreeVector position;
   G4bool isInside;
   Image3DType::IndexType index;
@@ -167,25 +163,21 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   ind[1] = index[1];
   ind[2] = index[2];
 
-  // Initiate the bin (fourth index) at 0
-  int bin = 0;
-
   if (!energy) { // If the quantity of interest is the time of flight
 
     // Get the time of flight
     G4double randomtime = G4UniformRand();
     G4double pretime = step->GetPreStepPoint()->GetGlobalTime() - T0;
     G4double posttime = step->GetPostStepPoint()->GetGlobalTime() - T0;
-    G4double time = (pretime + randomtime * (posttime - pretime));
+    G4double time = (posttime + randomtime * (pretime - posttime));
 
     // Get the voxel index (fourth dim) corresponding to the time of flight
-    G4int bin = static_cast<int>(time / width); // Always the left bin
+    G4int bin = static_cast<int>(time / (range/bins); // Always the left bin
     if (bin == bins) {
       bin = bins - 1;
     }
     ind[3] = bin;
-    std::cout << "tof = " << time << std::endl;
-    std::cout << "bin = " << bin << std::endl;
+     
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
     if (prot) {
       ImageAddValue<ImageType>(cpp_tof_proton_image, ind, w);
@@ -208,14 +200,11 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
     // Get the voxel index (fourth dim) corresponding to the energy of the
     // projectile
-    bin = static_cast<int>(projectileEnergy / width); // Always the left bin
+    G4int bin = static_cast<int>(projectileEnergy / (range/bins)); // Always the left bin
     if (bin == bins) {
       bin = bins - 1;
     }
     ind[3] = bin;
-
-    std::cout << "energy = " << projectileEnergy << std::endl;
-    std::cout << "bin = " << bin << std::endl;
 
     // Get the step lenght
     const G4double &l = step->GetStepLength();
