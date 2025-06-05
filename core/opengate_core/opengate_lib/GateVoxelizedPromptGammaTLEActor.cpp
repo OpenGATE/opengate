@@ -5,7 +5,6 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-
 #include "G4EmCalculator.hh"
 #include "G4Gamma.hh"
 #include "G4ParticleDefinition.hh"
@@ -21,12 +20,12 @@
 #include "GateMaterialMuHandler.h"
 #include "GateVoxelizedPromptGammaTLEActor.h"
 
+#include "CLHEP/Random/Randomize.h"
 #include <iostream>
 #include <itkAddImageFilter.h>
 #include <itkCastImageFilter.h>
 #include <itkImageRegionIterator.h>
 #include <vector>
-#include "CLHEP/Random/Randomize.h" 
 
 GateVoxelizedPromptGammaTLEActor::GateVoxelizedPromptGammaTLEActor(
     py::dict &user_info)
@@ -57,26 +56,28 @@ void GateVoxelizedPromptGammaTLEActor::InitializeUserInfo(py::dict &user_info) {
 
 void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
   GateVActor::InitializeCpp();
-  // Create the image pointers according if the actor is set for energy, neutron, proton, time...
-  if(!prot){
-    if(!energy){
+
+  // Create the image pointers
+  // (the size and allocation will be performed on the py side)
+  if (!prot) {
+    if (!energy) {
       cpp_tof_neutron_image = ImageType::New();
       cpp_tof_proton_image = nullptr;
       cpp_E_neutron_image = nullptr;
       cpp_E_proton_image = nullptr;
-    }else{
+    } else {
       cpp_tof_neutron_image = nullptr;
       cpp_tof_proton_image = nullptr;
       cpp_E_neutron_image = ImageType::New();
       cpp_E_proton_image = nullptr;
     }
-  }else{
-    if (!energy){
+  } else {
+    if (!energy) {
       cpp_tof_neutron_image = nullptr;
       cpp_tof_proton_image = ImageType::New();
       cpp_E_neutron_image = nullptr;
       cpp_E_proton_image = nullptr;
-    }else{
+    } else {
       cpp_tof_neutron_image = nullptr;
       cpp_tof_proton_image = nullptr;
       cpp_E_neutron_image = nullptr;
@@ -116,20 +117,20 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
     AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
 
     // Fill the 4D volume of interest with 0 to ensure that it is well initiated 
-    if(prot){
-      if(energy){
-        cpp_E_proton_image->FillBuffer(0);
-      }else{
-        cpp_tof_proton_image->FillBuffer(0);
-      }
-    }else{
-      if(energy){
-        cpp_E_neutron_image->FillBuffer(0);
-      }else{
-        cpp_tof_neutron_image->FillBuffer(0);
-      }
+  if (prot) {
+    if (energy) {
+      cpp_E_proton_image->FillBuffer(0);
+    } else {
+      cpp_tof_proton_image->FillBuffer(0);
+    }
+  } else {
+    if (energy) {
+      cpp_E_neutron_image->FillBuffer(0);
+    } else {
+      cpp_tof_neutron_image->FillBuffer(0);
     }
   }
+}
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
     const G4Event *event) {
@@ -138,24 +139,13 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
 }
 
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
-  
-  if ((step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
-       "proton") &&
-      prot) {
-    return; // Skip if not a proton and proton wanted
-  }
+  // Get the voxel index
 
-  if ((step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
-       "neutron") &&
-      !prot) {
-    return; // Skip if not a neutron and neutron wanted
-  }
-
-    // Get the voxel index
-    G4ThreeVector position;
-    bool isInside;
-    Image3DType::IndexType index;
-    GetStepVoxelPosition<Image3DType>(step, fHitType, volume, position, isInside, index);
+  // Get the voxel index
+  G4ThreeVector position;
+  G4bool isInside;
+  Image3DType::IndexType index;
+  GetStepVoxelPosition<Image3DType>(step, fHitType, volume, position, isInside, index);
 
     if (!isInside) { //verification
       return; // Skip if not inside the volume
@@ -242,25 +232,28 @@ void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
       for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
         it.Set(it.Get() / incidentParticles);
       }
-    }else{
-      itk::ImageRegionIterator<ImageType> it(cpp_E_proton_image,cpp_E_proton_image->GetLargestPossibleRegion());
+    } else {
+      itk::ImageRegionIterator<ImageType> it(
+          cpp_E_proton_image, cpp_E_proton_image->GetLargestPossibleRegion());
       for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
         it.Set(it.Get() / incidentParticles);
       }
     }
-    }else{
-      if(!energy){
-        itk::ImageRegionIterator<ImageType> it(cpp_tof_neutron_image, cpp_tof_neutron_image->GetLargestPossibleRegion());
-        for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
-          it.Set(it.Get() / incidentParticles);}
-      }else{
-        itk::ImageRegionIterator<ImageType> it(cpp_E_neutron_image, cpp_E_neutron_image->GetLargestPossibleRegion());
-        for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
-          it.Set(it.Get() / incidentParticles);
-        }
+  } else {
+    if (!energy) {
+      itk::ImageRegionIterator<ImageType> it(cpp_tof_neutron_image,cpp_tof_neutron_image->GetLargestPossibleRegion());
+      for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
+        it.Set(it.Get() / incidentParticles);
+      }
+    } else {
+      itk::ImageRegionIterator<ImageType> it(
+          cpp_E_neutron_image, cpp_E_neutron_image->GetLargestPossibleRegion());
+      for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
+        it.Set(it.Get() / incidentParticles);
       }
     }
   }
+}
 
 int GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread(int run_id) {
   return 0;

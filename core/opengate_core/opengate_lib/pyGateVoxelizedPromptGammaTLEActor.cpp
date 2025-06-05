@@ -41,6 +41,7 @@ void init_GateVoxelizedPromptGammaTLEActor(py::module &m) {
            &GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread)
       .def("EndOfRunActionMasterThread",
            &GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread)
+<<<<<<< HEAD
       .def("SetPhysicalVolumeName",
           &GateVoxelizedPromptGammaTLEActor::SetPhysicalVolumeName)
       .def("GetPhysicalVolumeName",
@@ -51,4 +52,14 @@ void init_GateVoxelizedPromptGammaTLEActor(py::module &m) {
       .def_readwrite("cpp_tof_proton_image", &GateVoxelizedPromptGammaTLEActor::cpp_tof_proton_image)
       .def_readwrite("cpp_E_neutron_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_neutron_image)
       .def_readwrite("cpp_E_proton_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_proton_image);
+=======
+      .def_readwrite("cpp_tof_neutron_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_tof_neutron_image)
+      .def_readwrite("cpp_tof_proton_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_tof_proton_image)
+      .def_readwrite("cpp_E_neutron_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_E_neutron_image)
+      .def_readwrite("cpp_E_proton_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_E_proton_image);
+>>>>>>> c5d40c423fe6e188bde33b10844401d60c47e75f
 }
