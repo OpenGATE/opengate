@@ -177,7 +177,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
       bin = bins - 1;
     }
     ind[3] = bin;
-     
+
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
     if (prot) {
       ImageAddValue<ImageType>(cpp_tof_proton_image, ind, w);
@@ -200,7 +200,8 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
     // Get the voxel index (fourth dim) corresponding to the energy of the
     // projectile
-    G4int bin = static_cast<int>(projectileEnergy / (range/bins)); // Always the left bin
+    G4int bin = static_cast<int>(projectileEnergy /
+                                 (range / bins)); // Always the left bin
     if (bin == bins) {
       bin = bins - 1;
     }
