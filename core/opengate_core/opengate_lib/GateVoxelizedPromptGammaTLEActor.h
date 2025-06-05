@@ -41,6 +41,14 @@ public:
 
   void SteppingAction(G4Step *) override;
 
+  inline std::string GetPhysicalVolumeName() const {
+    return fPhysicalVolumeName;
+  }
+
+  inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
+
+  std::string fPhysicalVolumeName;
+
   // Image type
   typedef itk::Image<double, 4> ImageType;
   ImageType::Pointer cpp_tof_neutron_image;
@@ -48,15 +56,23 @@ public:
   ImageType::Pointer cpp_E_proton_image;
   ImageType::Pointer cpp_E_neutron_image;
 
+  typedef itk::Image<double, 3> Image3DType;
+  Image3DType::Pointer volume;
 
 private:
   G4double T0;
   G4int incidentParticles;
+
   G4int bins;
   G4double range;
-  G4ThreeVector fTranslation;
   G4bool prot;
   G4bool energy;
+  G4double width;
+
+  G4ThreeVector fsize;
+  G4ThreeVector fspacing;
+  std::string fHitType;
+  G4ThreeVector fTranslation;
 };
 
 #endif // GateVoxelizedPromptGammaTLEActor_h

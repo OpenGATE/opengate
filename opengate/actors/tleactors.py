@@ -85,7 +85,7 @@ class VoxelizedPromptGammaTLEActor(
 
     user_info_defaults = {
         "database": (
-            None,
+            None, #stage 0 from Geant4 // upload
             {
                 "doc": "TODO",
             },
@@ -97,7 +97,7 @@ class VoxelizedPromptGammaTLEActor(
             },
         ),
         "range":(
-            10 * g4_units.ns,
+            5 * g4_units.ns,
             {
                 "doc": "Range of the histogram in ns",
             },
@@ -156,6 +156,7 @@ class VoxelizedPromptGammaTLEActor(
         VoxelDepositActor.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+        self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         # need to override because create image is different for img of histo
