@@ -4,9 +4,16 @@ from ..utility import g4_units
 from ..base import process_cls
 from .actoroutput import (
     ActorOutputSingleImageOfHistogram,
-    ActorOutputImage,
-    ActorOutputSingleImage,
 )
+
+from ..image import (
+    update_image_py_to_cpp,
+    get_py_image_from_cpp_image,
+    images_have_same_domain,
+    resample_itk_image_like,
+)
+import SimpleITK as sitk
+import itk
 from .doseactors import DoseActor, VoxelDepositActor
 
 
@@ -76,19 +83,54 @@ class VoxelizedPromptGammaTLEActor(
     """
 
     user_info_defaults = {
-        "stage_0_database": (
-            None,
+        "database": (
+            None,  # stage 0 from Geant4 // upload
             {
                 "doc": "TODO",
             },
         ),
-        "bins": (100, {"doc": "TODO"}),
+        "bins": (
+            200,
+            {
+                "doc": "Number of bins in the histogram",
+            },
+        ),
+        "range": (
+            10 * g4_units.ns,
+            {
+                "doc": "Range of the histogram in ns",
+            },
+        ),
+        "proton": (
+            True,
+            {
+                "doc": "True if the collisions of interest are from the proton, False if it is from the neutron",
+            },
+        ),
+        "energy": (
+            True,
+            {
+                "doc": "True if the quantity of interest is the energy and not the time of flight"
+            },
+        ),
     }
 
     user_output_config = {
-        "vpg": {
+        "vpg_p_E": {
             "actor_output_class": ActorOutputSingleImageOfHistogram,
             "active": True,
+        },
+        "vpg_n_E": {
+            "actor_output_class": ActorOutputSingleImageOfHistogram,
+            "active": False,
+        },
+        "vpg_p_tof": {
+            "actor_output_class": ActorOutputSingleImageOfHistogram,
+            "active": False,
+        },
+        "vpg_n_tof": {
+            "actor_output_class": ActorOutputSingleImageOfHistogram,
+            "active": False,
         },
     }
 
@@ -103,7 +145,7 @@ class VoxelizedPromptGammaTLEActor(
                 "BeginOfRunActionMasterThread",
                 "BeginOfEventAction",
                 "SteppingAction",
-                "PreUserTrackingAction",
+                "EndOfRunAction",
                 "EndOfRunActionMasterThread",
             }
         )
@@ -111,10 +153,9 @@ class VoxelizedPromptGammaTLEActor(
     def initialize(self, *args):
         self.check_user_input()
         VoxelDepositActor.initialize(self)
-
-        # C++ side
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+        self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         # need to override because create image is different for img of histo
@@ -123,22 +164,56 @@ class VoxelizedPromptGammaTLEActor(
             run_index,
             self.size,
             self.spacing,
-            self.bins,
+            self.bins + 1,
             origin=self.translation,
             **kwargs,
         )
 
     def BeginOfRunActionMasterThread(self, run_index):
-        self.prepare_output_for_run("vpg", run_index)
-        self.push_to_cpp_image("vpg", run_index, self.cpp_image)
+        if self.user_info["proton"] == False:
+            if self.user_info["energy"] == False:
+                self.prepare_output_for_run("vpg_n_tof", run_index)
+                self.push_to_cpp_image(
+                    "vpg_n_tof", run_index, self.cpp_tof_neutron_image
+                )
+            else:
+                self.prepare_output_for_run("vpg_n_E", run_index)
+                self.push_to_cpp_image("vpg_n_E", run_index, self.cpp_E_neutron_image)
+        else:
+            if self.user_info["energy"] == False:
+                self.prepare_output_for_run("vpg_p_tof", run_index)
+                self.push_to_cpp_image(
+                    "vpg_p_tof", run_index, self.cpp_tof_proton_image
+                )
+            else:
+                self.prepare_output_for_run("vpg_p_E", run_index)
+                self.push_to_cpp_image("vpg_p_E", run_index, self.cpp_E_proton_image)
         g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(
             self, run_index
         )
 
     def EndOfRunActionMasterThread(self, run_index):
-        print("end of run action master thread", run_index)
-        self.fetch_from_cpp_image("vpg", run_index, self.cpp_image)
-        self._update_output_coordinate_system("vpg", run_index)
+        print("end of run action master thread")
+        if self.user_info["proton"] == False:
+            if self.user_info["energy"] == False:
+                self.fetch_from_cpp_image(
+                    "vpg_n_tof", run_index, self.cpp_tof_neutron_image
+                )
+                self._update_output_coordinate_system("vpg_n_tof", run_index)
+            else:
+                self.fetch_from_cpp_image(
+                    "vpg_n_E", run_index, self.cpp_E_neutron_image
+                )
+                self._update_output_coordinate_system("vpg_n_E", run_index)
+        if self.user_info["proton"] == True:
+            if self.user_info["energy"] == False:
+                self.fetch_from_cpp_image(
+                    "vpg_p_tof", run_index, self.cpp_tof_proton_image
+                )
+                self._update_output_coordinate_system("vpg_p_tof", run_index)
+            else:
+                self.fetch_from_cpp_image("vpg_p_E", run_index, self.cpp_E_proton_image)
+                self._update_output_coordinate_system("vpg_p_E", run_index)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
 
