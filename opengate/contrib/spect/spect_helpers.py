@@ -196,6 +196,13 @@ def read_projections_as_sinograms(filenames, nb_of_gantry_angles):
             projection_spacing = img.GetSpacing()
             sinograms_per_energy_window = [None] * nb_of_energy_windows
 
+        if nb_of_energy_windows < 1:
+            raise ValueError(
+                f"nb_of_energy_windows={nb_of_energy_windows} is invalid ; "
+                f"image size is {img.GetSize()} and "
+                f"nb of angles is {nb_of_gantry_angles}"
+            )
+
         # check that size and origin are the same for all images
         if img.GetSize() != projection_size:
             raise ValueError(
