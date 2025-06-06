@@ -141,13 +141,17 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
 
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
-  if(step->GetTrack()->GetParticleDefinition()->GetParticleName()!="proton" && prot){
-    return; //If proton wanted and not a proton
+  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
+          "proton" &&
+      prot) {
+    return; // If proton wanted and not a proton
   }
-  if(step->GetTrack()->GetParticleDefinition()->GetParticleName()!="neutron" && !prot){
-    return;//if neutron wanted and not a neutron
+  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
+          "neutron" &&
+      !prot) {
+    return; // if neutron wanted and not a neutron
   }
-   
+
   // Get the voxel index
   G4ThreeVector position;
   G4bool isInside;
