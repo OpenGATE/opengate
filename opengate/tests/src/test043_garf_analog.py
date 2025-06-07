@@ -51,7 +51,7 @@ if __name__ == "__main__":
         {"name": f"scatter_{spect.name}", "min": 114 * keV, "max": 126 * keV},
         {"name": f"peak140_{spect.name}", "min": 126 * keV, "max": 154 * keV},
     ]
-    proj = gate_spect.add_digitizer(sim, crystal_name, channels)
+    proj = gate_spect.add_digitizer_OLD(sim, crystal_name, channels)
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.output_filename = test43.paths.output / "test043_projection_analog.mhd"
 

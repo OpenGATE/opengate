@@ -24,17 +24,19 @@ if __name__ == "__main__":
 
     # output
     crystal = sim.volume_manager.get_volume(f"spect_crystal")
-    hits = sim.get_actor(f"Hits_{crystal.name}")
-    singles = sim.get_actor(f"Singles_{crystal.name}")
-    eb = sim.get_actor(f"Singles_{crystal.name}_eblur")
-    sb = sim.get_actor(f"Singles_{crystal.name}_sblur")
-    proj = sim.get_actor(f"Projection_{crystal.name}")
+    hits = sim.actor_manager.find_actor_by_type("DigitizerHitsCollectionActor")
+    singles = sim.actor_manager.find_actor_by_type("DigitizerAdderActor")
+    eb = sim.actor_manager.find_actor_by_type("DigitizerBlurringActor")
+    sb = sim.actor_manager.find_actor_by_type("DigitizerSpatialBlurringActor")
+    proj = sim.actor_manager.find_actor_by_type("DigitizerProjectionActor")
     stats = sim.get_actor("stats")
 
     hits.output_filename = "output_test2.root"
     singles.output_filename = hits.output_filename
+    singles.write_to_disk = True
     eb.output_filename = hits.output_filename
     sb.output_filename = hits.output_filename
+    sb.write_to_disk = True
     proj.output_filename = "projections_test2.mhd"
     stats.output_filename = "stats2.txt"
     print(hits.get_output_path())
@@ -61,7 +63,7 @@ if __name__ == "__main__":
 
     # Compare root files
     fr = paths.gate_output / "output2.root"
-    sn = f"Singles_{crystal.name}_sblur"
+    sn = f"{crystal.name}_sblur"
     is_ok = compare_root_singles(crystal, sim, fr, paths.output, sn, n=2) and is_ok
 
     # compare images with Gate

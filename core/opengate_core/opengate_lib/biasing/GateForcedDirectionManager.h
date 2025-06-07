@@ -16,7 +16,8 @@ public:
 
   ~GateForcedDirectionManager();
 
-  void Initialize(py::dict user_info, bool is_valid_type);
+  void Initialize(const std::map<std::string, std::string> &user_info,
+                  bool is_valid_type);
 
   void InitializeForcedDirection();
 
@@ -27,7 +28,6 @@ public:
 
   G4ThreeVector SampleDirectionWithinCone(double &theta) const;
 
-  std::map<std::string, std::string> fAcceptanceAngleParam;
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
   int fFDLastRunId;

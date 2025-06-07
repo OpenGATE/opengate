@@ -2,7 +2,6 @@ import numpy as np
 import pathlib
 import SimpleITK as sitk
 import itk
-from pathlib import Path
 from opengate.geometry.utility import (
     translate_point_to_volume,
     vec_g4_as_np,
@@ -166,25 +165,19 @@ def merge_several_heads_projections(filenames):
     return output_img
 
 
-def read_projections_as_sinograms(
-    projections_folder, projections_filenames, nb_of_gantry_angles
-):
+def read_projections_as_sinograms(filenames, nb_of_gantry_angles):
     """
     Reads projection files from a specified folder, processes them into sinograms per
     energy window, and ensures consistency in image metadata across all projections.
 
     Args:
-        projections_folder (str|Path): Path to the folder containing projection files.
-        projections_filenames : List of projection filenames to read.
+        filenames : List of projection filenames to read.
         nb_of_gantry_angles (int): Number of gantry angles in the projections.
 
     Returns:
         list[sitk.Image]: List of SimpleITK Image objects containing the sinograms per
         energy window.
     """
-    # get all filenames
-    filenames = [Path(projections_folder) / f for f in projections_filenames]
-
     # init variables
     sinograms_per_energy_window = None
     nb_of_energy_windows = None
@@ -203,6 +196,13 @@ def read_projections_as_sinograms(
             projection_spacing = img.GetSpacing()
             sinograms_per_energy_window = [None] * nb_of_energy_windows
 
+        if nb_of_energy_windows < 1:
+            raise ValueError(
+                f"nb_of_energy_windows={nb_of_energy_windows} is invalid ; "
+                f"image size is {img.GetSize()} and "
+                f"nb of angles is {nb_of_gantry_angles}"
+            )
+
         # check that size and origin are the same for all images
         if img.GetSize() != projection_size:
             raise ValueError(
@@ -217,12 +217,12 @@ def read_projections_as_sinograms(
                 f"Projections in {f} have different spacing than in {filenames[0]}"
             )
 
-        # convert to numpy array
+        # convert to a numpy array
         arr = sitk.GetArrayViewFromImage(img)
 
-        # concatenate projections for the different heads, for each energy windows
+        # concatenate projections for the different heads and for each energy window
         for ene in range(nb_of_energy_windows):
-            # this is important to make a copy here !
+            # this is important to make a copy here!
             # Otherwise, the concatenate operation may fail later
             a = arr[ene::nb_of_energy_windows, :, :].copy()
             if sinograms_per_energy_window[ene] is None:
@@ -443,3 +443,42 @@ def batch_ff_combined_rel_uncertainty(
     )
 
     return uncert, mean
+
+
+def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
+    n = radionuclide_name.lower()
+    keV = g4_units.keV
+    channels = []
+
+    if "177lu" in n or "lu177" in n:
+        channels = [
+            {"name": f"spectrum", "min": 3 * keV, "max": 515 * keV},
+            {"name": f"scatter1", "min": 84.75 * keV, "max": 101.7 * keV},
+            {"name": f"peak113", "min": 101.7 * keV, "max": 124.3 * keV},
+            {"name": f"scatter2", "min": 124.3 * keV, "max": 141.25 * keV},
+            {"name": f"scatter3", "min": 145.6 * keV, "max": 187.2 * keV},
+            {"name": f"peak208", "min": 187.2 * keV, "max": 228.8 * keV},
+            {"name": f"scatter4", "min": 228.8 * keV, "max": 270.4 * keV},
+        ]
+    if "tc99m" in n:
+        channels = [
+            {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
+            {"name": f"scatter", "min": 108.58 * keV, "max": 129.59 * keV},
+            {"name": f"peak140", "min": 129.59 * keV, "max": 150.61 * keV},
+        ]
+    if "in111" in n or "111in" in n:
+        # 15% around the peaks
+        channels = [
+            {"name": "spectrum_full", "min": 3.0, "max": 515.0},
+            {"name": "scatter_171_low", "min": 138.4525, "max": 158.4525},
+            {"name": "peak_171", "min": 158.4525, "max": 184.1475},
+            {"name": "scatter_171_high", "min": 184.1475, "max": 204.1475},
+            {"name": "scatter_245_low", "min": 206.995, "max": 226.995},
+            {"name": "peak_245", "min": 226.995, "max": 263.805},
+            {"name": "scatter_245_high", "min": 263.805, "max": 283.805},
+        ]
+    if not spectrum_channel:
+        channels.pop(0)
+    if len(channels) == 0:
+        raise ValueError(f"No default energy windows for {radionuclide_name}")
+    return channels

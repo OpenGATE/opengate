@@ -13,15 +13,19 @@ if __name__ == "__main__":
     # delete the output path content
     utility.delete_folder_contents(paths.output)
     data_path = paths.data
+    mm = gate.g4_units.mm
 
     sc = SPECTConfig()
     sc.simu_name = "test090"
     sc.output_folder = paths.output
+    sc.number_of_threads = 1
     # detectors
     sc.detector_config.model = "intevo"
     sc.detector_config.collimator = "melp"
     sc.detector_config.number_of_heads = 2
-    sc.detector_config.digitizer_function = intevo.add_intevo_digitizer_lu177_v3
+    sc.detector_config.digitizer_function = intevo.add_digitizer
+    sc.detector_config.size = [256, 256]
+    sc.detector_config.spacing = [2.39759994 * mm, 2.39759994 * mm]
     # phantom
     sc.phantom_config.image = data_path / "iec_5mm.mhd"
     sc.phantom_config.labels = data_path / "iec_5mm_labels.json"
@@ -38,16 +42,16 @@ if __name__ == "__main__":
     # create the simulation
     print(sc)
     sim = gate.Simulation()
-    output = sc.create_simulation(sim, number_of_threads=1, visu=False)
-    print(output)
+    sc.setup_simulation(sim, visu=False)
+    stats = sim.actor_manager.find_actors("stats")[0]
 
     # run it
-    sim.random_seed = 123654
+    sim.random_seed = 987654
     sim.run()
 
     # we check only that the output files exist
     is_ok = True
-    is_ok = check_stats_file(272198, sc, output, is_ok)
-    is_ok = check_projection_files(sim, paths, output, is_ok)
+    is_ok = check_stats_file(272198, sc, stats, is_ok)
+    is_ok = check_projection_files(sim, paths, stats, is_ok)
 
     utility.test_ok(is_ok)

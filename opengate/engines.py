@@ -107,11 +107,7 @@ class SourceEngine(EngineBase):
 
     def initialize_actors(self):
         """
-        Parameters
-        ----------
-        actors : dict
-            The dictionary ActorEngine.actors which contains key-value pairs
-            "actor_name" : "Actor object"
+        Set all actors to the master source manager
         """
         self.g4_master_source_manager.SetActors(
             self.simulation_engine.simulation.actor_manager.sorted_actors
@@ -126,9 +122,9 @@ class SourceEngine(EngineBase):
 
     def create_g4_thread_source_manager(self, append=True):
         """
-        This is called by all threads
-        This object is needed here, because it can only be
-        created after physics initialization
+        This is called by all threads.
+        This object is needed here because it can only be
+        created after physics initialisation
         """
         # create a source manager for the current thread
         ms = g4.GateSourceManager()
@@ -164,7 +160,7 @@ class SourceEngine(EngineBase):
         ms.fUserEventInformationFlag = (
             self.simulation_engine.user_event_information_flag
         )
-        # keep pointer to avoid deletion
+        # keep the pointer to avoid deletion
         if append:
             self.g4_thread_source_managers.append(ms)
 
@@ -1396,13 +1392,13 @@ class SimulationEngine(GateSingletonFatal):
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
 
-        # G4's MT RunManager needs an empty run to initialize workers
+        # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
             self.g4_RunManager.FakeBeamOn()
 
-        # Actions initialization
-        # This must come after the G4RunManager initialization
-        # because the RM initialization calls ActionEngine.Build()
+        # Actions initialisation
+        # This must come after the G4RunManager initialisation
+        # because the RM initialisation calls ActionEngine.Build()
         # which is required for initialize()
         # Actors initialization (before the RunManager Initialize)
         # self.actor_engine.create_actors()  # calls the actors' constructors
@@ -1421,7 +1417,7 @@ class SimulationEngine(GateSingletonFatal):
             logger.info("Simulation: (no volumes overlap checking)")
 
         # Register sensitive detector.
-        # if G4 was compiled with MT (regardless if it is used or not)
+        # If G4 was compiled with MT (regardless if it is used or not),
         # ConstructSDandField (in VolumeManager) will be automatically called
         if not g4.GateInfo.get_G4MULTITHREADED():
             fatal("DEBUG Register sensitive detector in no MT mode")

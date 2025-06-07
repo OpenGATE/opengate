@@ -69,7 +69,7 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
   l.fRayleighSplittingOperation->SetSplittingFactor(fRayleighSplittingFactor);
 
   // Initialize the AA (Angular Acceptance) for the Compton operation
-  const auto dd = py::dict(user_info["acceptance_angle"]);
+  auto dd = DictToMap(user_info["acceptance_angle"]);
   l.fComptonSplittingOperation->InitializeAAManager(dd);
   l.fRayleighSplittingOperation->InitializeAAManager(dd);
   l.fComptonSplittingOperation->SetInvolvedBiasActor(this);
