@@ -4,6 +4,7 @@ from itertools import chain
 import awkward as ak
 import numpy as np
 import pandas as pd
+import os
 
 
 class ChunkSizeTooSmallError(Exception):
@@ -19,6 +20,9 @@ def coincidences_sorter(
     max_axial_distance,
     chunk_size=10000,
     return_type="dict",
+    save_to_file=False,
+    output_file_path=None,
+    output_file_format="hdf5",
 ):
     """
     Sort singles and detect coincidences.
@@ -98,10 +102,13 @@ def coincidences_sorter(
         and num_chunk_size_increases < max_num_chunk_size_increases
     ):
         try:
+            if save_to_file and os.path.exists(output_file_path):
+                os.remove(output_file_path)
             # A double-ended queue is used as a FIFO to store the current and the next chunk of singles
             queue = deque()
-            coincidences = []
             num_singles = 0
+            coincidences_to_transfer = None
+            coincidences_to_return = []
             for chunk in singles_tree.iterate(step_size=chunk_size):
                 num_singles_in_chunk = len(chunk)
                 # Convert chunk to pandas DataFrame
@@ -114,29 +121,75 @@ def coincidences_sorter(
                 queue.append(chunk_pd)
                 # Process a chunk, unless only one has been read so far
                 if len(queue) > 1:
-                    coincidences.append(process_chunk(queue, time_window))
+                    coincidences = process_chunk(queue, time_window)
+                    coincidences_to_filter = coincidences.loc[
+                        coincidences["GlobalTime1"]
+                        < coincidences["GlobalTime1"].iloc[-1]
+                    ].reset_index(drop=True)
+                    if coincidences_to_transfer is not None:
+                        coincidences_to_filter = pd.concat(
+                            [coincidences_to_transfer, coincidences_to_filter],
+                            axis=0,
+                            ignore_index=True,
+                        )
+                    coincidences_to_transfer = coincidences.loc[
+                        coincidences["GlobalTime1"]
+                        == coincidences["GlobalTime1"].iloc[-1]
+                    ].reset_index(drop=True)
+                    # Apply policy
+                    filtered_coincidences = policy_functions[policy](
+                        coincidences_to_filter,
+                        min_transaxial_distance,
+                        transaxial_plane,
+                        max_axial_distance,
+                    )
+                    # Remove the temporary SingleIndex columns
+                    filtered_coincidences = filtered_coincidences.drop(
+                        columns=["SingleIndex1", "SingleIndex2"]
+                    )
+                    if save_to_file:
+                        filtered_coincidences.to_hdf(
+                            output_file_path,
+                            key="coincidences",
+                            mode="a",
+                            format="table",
+                            append=True,
+                        )
+                    else:
+                        coincidences_to_return.append(filtered_coincidences)
                     # Remove processed chunk from the left of the queue
                     queue.popleft()
                 num_singles += num_singles_in_chunk
 
             # At this point, all chunks have been read. Now process the last chunk.
-            coincidences.append(process_chunk(queue, time_window))
-
-            # Combine all coincidences from all chunks into a single pandas DataFrame
-            all_coincidences = pd.concat(coincidences, axis=0, ignore_index=True)
-
-            # Apply policy
+            coincidences_to_filter = process_chunk(queue, time_window)
+            if coincidences_to_transfer is not None:
+                coincidences_to_filter = pd.concat(
+                    [coincidences_to_transfer, coincidences_to_filter],
+                    axis=0,
+                    ignore_index=True,
+                )
             filtered_coincidences = policy_functions[policy](
-                all_coincidences,
+                coincidences_to_filter,
                 min_transaxial_distance,
                 transaxial_plane,
                 max_axial_distance,
             )
-
             # Remove the temporary SingleIndex columns
             filtered_coincidences = filtered_coincidences.drop(
                 columns=["SingleIndex1", "SingleIndex2"]
             )
+            if save_to_file:
+                filtered_coincidences.to_hdf(
+                    output_file_path,
+                    key="coincidences",
+                    mode="a",
+                    format="table",
+                    append=True,
+                )
+            else:
+                coincidences_to_return.append(filtered_coincidences)
+
             processing_finished = True
 
         except ChunkSizeTooSmallError:
@@ -148,10 +201,15 @@ def coincidences_sorter(
         # Coincidence sorting has failed, even after repeated increases of the chunk size
         raise ChunkSizeTooSmallError
 
-    if return_type == "dict":
-        return filtered_coincidences.to_dict(orient="list")
-    elif return_type == "pd":
-        return filtered_coincidences
+    if not save_to_file:
+        # Combine all coincidences from all chunks into a single pandas DataFrame
+        coincidences_to_return = pd.concat(
+            coincidences_to_return, axis=0, ignore_index=True
+        )
+        if return_type == "dict":
+            return coincidences_to_return.to_dict(orient="list")
+        elif return_type == "pd":
+            return coincidences_to_return
 
 
 def process_chunk(queue, time_window):
