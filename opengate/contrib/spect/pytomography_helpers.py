@@ -754,7 +754,7 @@ def pytomography_build_metadata(
         verbose=True,
     )
     verbose and print(
-        f"Build attenuation map with shape {size} in {output_folder / "mumap.mhd"}"
+        f"Build attenuation map with shape {size} in {output_folder / 'mumap.mhd'}"
     )
 
     return metadata
