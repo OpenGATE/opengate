@@ -8,11 +8,12 @@ Copyright (C): OpenGATE Collaboration
 #ifndef GateOptnComptonScatteringSplitting_h
 #define GateOptnComptonScatteringSplitting_h 1
 
-#include "../GateAcceptanceAngleTesterManager.h"
+#include "../GateAcceptanceAngleManager.h"
 #include "../GateHelpers.h"
 #include "../GateUserTrackInformation.h"
 #include "G4ParticleChange.hh"
 #include "G4VBiasingOperation.hh"
+#include "GateVBiasOptrActor.h"
 
 class GateScatterSplittingFreeFlightOptn : public G4VBiasingOperation {
 public:
@@ -32,14 +33,15 @@ public:
                                             G4bool &) override;
 
   void SetSplittingFactor(G4int splittingFactor);
-  void InitializeAAManager(const py::dict &user_info);
+  void InitializeAAManager(const std::map<std::string, std::string> &user_info);
+  void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
   G4int fSplittingFactor;
   G4ParticleChange fParticleChange;
-  GateAcceptanceAngleTesterManager *fAAManager;
+  GateAcceptanceAngleManager *fAAManager;
   double *fNbTracks;
-  static constexpr int cScatterSplittingFreeFlightType = 666;
   GateUserTrackInformation *fUserTrackInformation;
+  GateVBiasOptrActor *fActor = nullptr;
 };
 
 #endif

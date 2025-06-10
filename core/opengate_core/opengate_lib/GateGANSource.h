@@ -73,7 +73,7 @@ public:
   /// used to skip event with too low or too high energy
   double fEnergyMinThreshold;
   double fEnergyMaxThreshold;
-  typedef GateAcceptanceAngleTesterManager::AAPolicyType SEPolicyType;
+  typedef GateAcceptanceAngleManager::AAPolicyType SEPolicyType;
   SEPolicyType fSkipEnergyPolicy;
 
   bool fRelativeTiming;

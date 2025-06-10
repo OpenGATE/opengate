@@ -11,7 +11,6 @@
 #include <G4DataVector.hh>
 #include <G4RotationMatrix.hh>
 #include <G4ThreeVector.hh>
-#include <iostream>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
@@ -65,12 +64,18 @@ std::vector<G4ThreeVector> DictGetVecG4ThreeVector(py::dict &user_info,
 
 bool IsIn(const std::string &s, std::vector<std::string> &v);
 
-std::map<std::string, std::string> DictToMap(py::dict &user_info);
+std::map<std::string, std::string> DictToMap(const py::dict &user_info);
 
-bool StrToBool(std::string &s);
+bool StrToBool(const std::string &s);
 
-double StrToDouble(std::string &s);
+double StrToDouble(const std::string &s);
 
-G4ThreeVector StrToG4ThreeVector(std::string &s);
+int StrToInt(const std::string &s);
+
+G4ThreeVector StrToG4ThreeVector(const std::string &s);
+
+std::vector<std::string>
+GetVectorFromMapString(const std::map<std::string, std::string> &map_input,
+                       const std::string &key);
 
 #endif // OPENGATE_CORE_OPENGATEHELPERSDICT_H

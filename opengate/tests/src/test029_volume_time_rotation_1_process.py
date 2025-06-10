@@ -39,7 +39,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj029.mhd",
-            proj_actor.get_output_path(),
+            proj_actor.get_output_path("counts"),
             stats,
             tolerance=59,
             ignore_value_data2=0,

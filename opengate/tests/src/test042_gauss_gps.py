@@ -30,7 +30,7 @@ if __name__ == "__main__":
     kBq = 1000 * Bq
 
     # add a material database
-    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     #  change world size
     world = sim.world

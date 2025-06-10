@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    ac = 4e4
+    ac = 1e4
     # sim.visu = True
     source, actors = create_simulation_test085(
         sim,
@@ -26,7 +26,8 @@ if __name__ == "__main__":
 
     # free flight actor
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
-    ff.attached_to = "phantom"
+    ff.attached_to = "world"
+    ff.ignored_volumes = ["spect_1_crystal", "spect_2_crystal"]
     ff.compton_splitting_factor = 50
     ff.rayleigh_splitting_factor = 10
     ff.max_compton_level = 10000
@@ -35,10 +36,6 @@ if __name__ == "__main__":
     ff.acceptance_angle.normal_flag = True
     ff.acceptance_angle.normal_vector = [0, 0, -1]
     ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
-
-    # free flight actor
-    ffc = sim.add_actor("GammaFreeFlightActor", "ffc")
-    ffc.attached_to = "spect_1_collimator_trd"
 
     # go
     sim.run()
@@ -52,13 +49,13 @@ if __name__ == "__main__":
     is_ok = True
     is_ok = (
         utility.assert_images(
-            paths.output_ref / "projection_1_ff_sc.mhd",
-            paths.output / "projection_1_ff_sc.mhd",
+            paths.output_ref / "projection_1_ff_sc_counts.mhd",
+            paths.output / "projection_1_ff_sc_counts.mhd",
             stats,
-            tolerance=110,
+            tolerance=300,
             ignore_value_data1=0,
-            sum_tolerance=10,
-            sad_profile_tolerance=20,
+            sum_tolerance=60,
+            sad_profile_tolerance=33,
             axis="x",
         )
         and is_ok

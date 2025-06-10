@@ -57,7 +57,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14, windows-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-13, macos-14, windows-latest]
         python-version: [3.9, '3.10', '3.11', '3.12']
         exclude:
           - os: macos-14
@@ -85,12 +85,11 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        architecture: 'x64'
     - name: Get OS version
       id: get-os-version
       shell: bash -l {0}
       run: |
-        if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
+        if [[ ${{ matrix.os }} == "ubuntu-latest" ]] || [[ ${{ matrix.os }} == "ubuntu-24.04-arm" ]]; then
             varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
             varOS=($varOS)
             echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
@@ -110,7 +109,7 @@ jobs:
         key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
         restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
     - name: Create opengate_core Wheel Linux
-      if: matrix.os == 'ubuntu-latest'
+      if: (matrix.os == 'ubuntu-latest') || (matrix.os == 'ubuntu-24.04-arm')
       run: |
           if [ ${{ matrix.python-version }} == "3.9" ]; then
             export PYTHONFOLDER="cp39-cp39"
@@ -122,7 +121,10 @@ jobs:
             export PYTHONFOLDER="cp312-cp312"
           fi
           mkdir -p $HOME/software
-          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }} /home/.github/workflows/createWheelLinux.sh
+          if [ ${{ matrix.os }} == "ubuntu-24.04-arm" ]; then
+            export ARMDOCKER="_arm64"
+          fi
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}_qt6$ARMDOCKER /home/.github/workflows/createWheelLinux.sh
           ls wheelhouse
           rm -rf dist
           mv wheelhouse dist
@@ -461,8 +463,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, windows-latest]
+        os: [ubuntu-latest, macos-14, windows-latest]
         python-version: [3.9, '3.10', '3.11', '3.12']
+        exclude:
+          - os: macos-14
+            python-version: 3.9
+          - os: macos-14
+            python-version: '3.10'
     steps:
     - uses: actions/download-artifact@v4
       with:
@@ -473,7 +480,6 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-        architecture: 'x64'
     - name: Run tests
       shell: bash {0}
       run: |
@@ -490,9 +496,9 @@ jobs:
             export OSNAME="manylinux"
             export PLATFORM="x86_"
             pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
-          elif [[ ${{ matrix.os }} == "macos-13" ]]; then
+          elif [[ ${{ matrix.os }} == "macos-14" ]]; then
             export OSNAME="macosx"
-            export PLATFORM="x86_"
+            export PLATFORM="arm"
             which python
             python --version
             pip install torch
@@ -517,10 +523,12 @@ jobs:
           fi
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
+          sha=$(git rev-parse HEAD)
+          sha=$sha$OSNAME$PYTHONFOLDER
           if [ "${{ github.event_name }}" = "schedule" ]; then
               OutputTest=$(opengate_tests)
           else
-              OutputTest=$(opengate_tests -r)
+              OutputTest=$(opengate_tests -r -s $sha)
           fi
           echo "$OutputTest"
           ls $dashboard_path/../output_dashboard/

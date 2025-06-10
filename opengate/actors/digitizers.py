@@ -208,6 +208,15 @@ class Digitizer:
                 return m
         return None
 
+    def find_module_by_type(this, module_type):
+        for m in this.actors:
+            if m.type_name == module_type:
+                return m
+        fatal(
+            f'Error, the module type "{module_type}" is not found in the digitizer "{this.name}"'
+        )
+        return None
+
 
 class DigitizerBase(ActorBase):
     _output_name_root = "root_output"
@@ -858,7 +867,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         ),
         "size": (
             [128, 128],
-            {"doc": "FIXME"},
+            {"doc": "size of the 2D projection in pixels"},
         ),
         "physical_volume_index": (
             -1,
@@ -881,8 +890,12 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
     }
 
     user_output_config = {
-        "projection": {
+        "counts": {
             "actor_output_class": ActorOutputSingleImage,
+        },
+        "squared_counts": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": False,
         },
     }
 
@@ -983,7 +996,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         # we use the image associated with run 0 for the entire simulation
         # in the future, this actor should implement a BeginOfRunActionMasterThread
         # to be able to work on a per-run basis
-        self.user_output.projection.create_empty_image(0, size, spacing)
+        self.user_output.counts.create_empty_image(0, size, spacing)
 
         # check physical_volume_index and number of repeating
         n = len(self.attached_to_volume.g4_physical_volumes)
@@ -1009,17 +1022,32 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             )
             pv = None  # avoid warning from IDE
         align_image_with_physical_volume(
-            self.attached_to_volume, self.user_output.projection.data_per_run[0].image
+            self.attached_to_volume, self.user_output.counts.data_per_run[0].image
         )
         self.SetPhysicalVolumeName(str(pv.GetName()))
 
         # update the cpp image and start
         update_image_py_to_cpp(
-            self.user_output.projection.data_per_run[0].image, self.fImage, True
+            self.user_output.counts.data_per_run[0].image, self.fImage, True
         )
+
+        # uncertainty ?
+        if self.user_output.squared_counts.get_active():
+            self.user_output.squared_counts.create_empty_image(0, size, spacing)
+            align_image_with_physical_volume(
+                self.attached_to_volume,
+                self.user_output.squared_counts.data_per_run[0].image,
+            )
+            update_image_py_to_cpp(
+                self.user_output.squared_counts.data_per_run[0].image,
+                self.fSquaredImage,
+                True,
+            )
+            self.EnableSquaredImage(True)
+
         # keep initial origin
         self.start_output_origin = list(
-            self.user_output.projection.data_per_run[0].get_image_properties()[0].origin
+            self.user_output.counts.data_per_run[0].get_image_properties()[0].origin
         )
         g4.GateDigitizerProjectionActor.StartSimulationAction(self)
 
@@ -1027,12 +1055,12 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         g4.GateDigitizerProjectionActor.EndSimulationAction(self)
 
         # retrieve the image
-        self.user_output.projection.store_data(
+        self.user_output.counts.store_data(
             "merged", get_py_image_from_cpp_image(self.fImage)
         )
 
         # set its properties
-        info = self.user_output.projection.data_per_run[0].get_image_properties()[0]
+        info = self.user_output.counts.data_per_run[0].get_image_properties()[0]
         spacing = info.spacing
         if self.origin_as_image_center:
             origin = -info.size * spacing / 2.0 + spacing / 2.0
@@ -1040,14 +1068,23 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             origin = self.start_output_origin
         origin[2] = 0
         spacing[2] = 1
-        self.user_output.projection.merged_data.SetSpacing(list(spacing))
-        self.user_output.projection.merged_data.SetOrigin(list(origin))
+        self.user_output.counts.merged_data.SetSpacing(list(spacing))
+        self.user_output.counts.merged_data.SetOrigin(list(origin))
 
-        self.user_output.projection.data_per_run.pop(
-            0
-        )  # remove the image for run 0 as result is in merged_data
+        # remove the image for run 0 as result is in merged_data
+        self.user_output.counts.data_per_run.pop(0)
 
-        self.user_output.projection.write_data_if_requested(which="merged")
+        self.user_output.counts.write_data_if_requested(which="merged")
+
+        # squared ?
+        if self.user_output.squared_counts.get_active():
+            self.user_output.squared_counts.store_data(
+                "merged", get_py_image_from_cpp_image(self.fSquaredImage)
+            )
+            self.user_output.squared_counts.merged_data.SetSpacing(list(spacing))
+            self.user_output.squared_counts.merged_data.SetOrigin(list(origin))
+            self.user_output.squared_counts.data_per_run.pop(0)
+            self.user_output.squared_counts.write_data_if_requested(which="merged")
 
 
 class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
@@ -1095,8 +1132,9 @@ class DigitizerReadoutActor(DigitizerAdderActor, g4.GateDigitizerReadoutActor):
 
 
 class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
-    """Similar to HitsCollectionActor : store a list of hits.
-    However only the first hit of given event is stored here.
+    """
+    Similar to HitsCollectionActor : store a list of hits.
+    The hits can be stored when entering, exiting, first time seen or always (all hits stored).
     """
 
     user_info_defaults = {
@@ -1121,7 +1159,9 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         "steps_to_store": (
             "entering",
             {
-                "doc": "FIXME entering exiting first (can be combined)",
+                "doc": "Define when to store the hits, can be 'entering', 'exiting', 'first' or 'all'. "
+                "Or several values separated by a space. ",
+                # "allowed_values": ["entering", "exiting", "first", "all"], # can be multiple
             },
         ),
     }
@@ -1163,6 +1203,70 @@ class PhaseSpaceActor(DigitizerWithRootOutput, g4.GatePhaseSpaceActor):
         g4.GatePhaseSpaceActor.EndSimulationAction(self)
 
 
+class DigiAttributeProcessDefinedStepInVolumeActor(
+    ActorBase, g4.GateDigiAttributeProcessDefinedStepInVolumeActor
+):
+    """
+    This actor is use when the user create a ProcessDefinedStepAttribute.
+    The actor is automatically created and use to store how many time a given process (process_name)
+    occur in a given volume (attached_to).
+    This actor is not intended to be used directly by the user.
+    """
+
+    user_info_defaults = {
+        "process_name": (None, {}),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigiAttributeProcessDefinedStepInVolumeActor.__init__(
+            self, self.user_info
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        ActorBase.StartSimulationAction(self)
+        g4.GateDigiAttributeProcessDefinedStepInVolumeActor.StartSimulationAction(self)
+
+
+class ProcessDefinedStepInVolumeAttribute:
+    """ """
+
+    def __init__(self, sim, process_name, volume_name):
+        self.name = f"ProcessDefinedStep__{process_name}__{volume_name}"
+        self.actor = sim.add_actor(
+            "DigiAttributeProcessDefinedStepInVolumeActor", self.name
+        )
+        self._process_name = process_name
+        self._volume_name = volume_name
+        self.actor.attached_to = volume_name
+        self.actor.process_name = process_name
+        # self.actor.priority = 1  # FIXME before other
+
+    @property
+    def process_name(self):
+        return self._process_name
+
+    @property
+    def volume_name(self):
+        return self._volume_name
+
+    @process_name.setter
+    def process_name(self, value):
+        fatal(f"Cannot change dynamically the process name")
+
+    @volume_name.setter
+    def volume_name(self, value):
+        fatal(f"Cannot change dynamically the volume name")
+
+
 process_cls(DigitizerBase)
 process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
@@ -1174,3 +1278,4 @@ process_cls(DigitizerHitsCollectionActor)
 process_cls(DigitizerProjectionActor)
 process_cls(DigitizerReadoutActor)
 process_cls(PhaseSpaceActor)
+process_cls(DigiAttributeProcessDefinedStepInVolumeActor)

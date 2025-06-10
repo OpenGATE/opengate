@@ -230,6 +230,26 @@ Using ``source.direction_relative_to_attached_volume = True`` will make
 your source direction change following the rotation of that volume.
 
 
+Polarization
+------------
+
+``polarization = '[1, 0, 0]'`` assigns a polarization to primary particles (gamma).
+The polarization is defined in the particle coordinate system with the
+`Stokes parameters <https://en.wikipedia.org/wiki/Stokes_parameters>`_ [Q, U, V].
+Do not forget to use an adequate physics list. You can define the polarization as follows:
+
+   .. code:: python
+
+      source.polarization = [1, 0, 0] # linear polarization (horizontal)
+      source.polarization = [-1, 0, 0] # linear polarization (vertical)
+      source.polarization = [0, 1, 0] # linear polarization (45°)
+      source.polarization = [0, -1, 0] # linear polarization (-45°)
+      source.polarization = [0, 0, 1] # circular polarization (right)
+      source.polarization = [0, 0, -1] # circular polarization (left)
+      source.polarization = [0, 0, 0] # unpolarized
+      sim.physics_manager.physics_list_name = "G4EmLivermorePolarizedPhysics"
+
+.. autoproperty:: opengate.sources.generic.GenericSource.polarization
 
 Acceptance Angle
 ----------------
@@ -258,12 +278,24 @@ Half-life
 ---------
 
 You can instruct GATE to decrease the activity according to an exponential
-decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Exmaple:
+decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Example:
 
 .. code-block:: python
 
     source = sim.add_source('GenericSource, 'mysource')
     source.half_life = 60 * gate.g4_units.s
+
+Note1: If you set a run_timing_intervals starting at t > 0, the activity set in the source is the activity at t=0.
+
+Note2: If you do not set the half_life for an ion, G4 will use it's own value. Moreover, if you set a
+run_timing_intervals, by default you the source will decrease without taking into account the run_timing_intervals.
+To restrict the decay to the run_timing_intervals, you can set the parameter:
+
+.. code-block:: python
+
+    sim.run_timing_intervals = [[18 * sec, 28 * sec]]
+    source.user_particle_life_time = 0
+
 
 .. autoproperty:: opengate.sources.generic.GenericSource.half_life
 
@@ -360,9 +392,9 @@ where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neut
 "auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
 only b-spectra is histogram based (see next section), the rest are discrete. ``database`` can be "icrp107" or "radar".
 
-ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`
-with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`.
-`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`
+ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`__
+with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`__.
+`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`__
 
 The source can be configured like this:
 

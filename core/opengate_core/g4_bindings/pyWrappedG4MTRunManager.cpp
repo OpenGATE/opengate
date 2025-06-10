@@ -47,7 +47,7 @@ void init_WrappedG4MTRunManager(py::module &m) {
 
       .def("FakeBeamOn",
            [](WrappedG4MTRunManager *mt) {
-             py::gil_scoped_release release;
+             py::gil_scoped_release release; // needed
              mt->FakeBeamOn();
            })
 

@@ -6,12 +6,13 @@ from opengate.geometry.volumes import (
     unite_volumes,
 )
 from opengate.geometry.utility import (
-    translate_point_to_volume,
     get_transform_orbiting,
-    vec_g4_as_np,
 )
 from opengate.actors.digitizers import *
-from opengate.contrib.spect.spect_helpers import get_volume_position_in_head
+from opengate.contrib.spect.spect_helpers import (
+    get_volume_position_in_head,
+    get_default_energy_windows,
+)
 from scipy.spatial.transform import Rotation
 from box import Box
 
@@ -461,7 +462,7 @@ def lehr_collimator_repeater_noparam_WIP(sim, name, core, debug):
     return hole
 
 
-def add_simplified_digitizer_tc99m(
+def add_simplified_digitizer_tc99m_OLD(
     sim, crystal_volume_name, output_name, scatter_flag=False
 ):
     # units
@@ -483,16 +484,16 @@ def add_simplified_digitizer_tc99m(
             "max": 154.55 * keV,
         }
     )
-    proj = add_digitizer(sim, crystal_volume_name, channels)
+    proj = add_digitizer_OLD(sim, crystal_volume_name, channels)
     # output
     proj.output_filename = output_name
     return proj
 
 
-def add_digitizer(sim, crystal_volume_name, channels):
+def add_digitizer_OLD(sim, crystal_volume_name, channels):
     # units
     mm = g4_units.mm
-    cc = add_digitizer_energy_windows(sim, crystal_volume_name, channels)
+    cc = add_digitizer_energy_windows_OLD(sim, crystal_volume_name, channels)
 
     # projection
     proj = sim.add_actor(
@@ -507,7 +508,7 @@ def add_digitizer(sim, crystal_volume_name, channels):
     return proj
 
 
-def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
+def add_digitizer_energy_windows_OLD(sim, crystal_volume_name, channels):
     # Hits
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits_{crystal_volume_name}")
     hc.attached_to = crystal_volume_name
@@ -539,7 +540,7 @@ def add_digitizer_energy_windows(sim, crystal_volume_name, channels):
     return cc
 
 
-def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
+def add_digitizer_tc99m_OLD(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -589,8 +590,8 @@ def add_digitizer_tc99m(sim, crystal_name, name, spectrum_channel=True):
     return digitizer
 
 
-def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
-    # create main chain
+def add_digitizer_tc99m_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
+    # create the main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
 
@@ -601,7 +602,7 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
 
     # detection efficiency
     # ea = digitizer.add_module("DigitizerEfficiencyActor", f"{name}_eff")
-    # ea.efficiency = 0.86481  # FAKE
+    # ea.efficiency = 0.86481 # FAKE
 
     # energy blurring
     keV = g4_units.keV
@@ -636,11 +637,16 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
     proj.size = [128, 128]
     proj.write_to_disk = True
 
+    # here, we need this rotation
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (0, 180), degrees=True  # 0 180 => like intevo
+    ).as_matrix()
+
     # end
     return digitizer
 
 
-def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
+def add_digitizer_lu177_OLD(sim, crystal_name, name, spectrum_channel=True):
     # create main chain
     mm = g4_units.mm
     digitizer = Digitizer(sim, crystal_name, name)
@@ -695,6 +701,74 @@ def add_digitizer_lu177(sim, crystal_name, name, spectrum_channel=True):
     proj.input_digi_collections = channel_names
     proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
     proj.size = [128, 128]
+    proj.write_to_disk = True
+
+    # end
+    return digitizer
+
+
+def add_digitizer_lu177_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
+    # create main chain
+    mm = g4_units.mm
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.063  # FAKE
+    eb.blur_reference_value = 140.57 * keV
+
+    # spatial blurring
+    # Source: HE4SPECS - FWHM = 3.9 mm
+    # FWHM = 2.sigma.sqrt(2ln2) -> sigma = 1.656 mm
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor")
+    sb.blur_attribute = "PostPosition"
+    sb.blur_fwhm = 3.9 * mm  # FAKE
+    sb.keep_in_solid_limits = True
+
+    # energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    keV = g4_units.keV
+    # 112.9498 keV  = 6.20 %
+    # 208.3662 keV  = 10.38 %
+    p1 = 112.9498 * keV
+    p2 = 208.3662 * keV
+    channels = [
+        {"name": "spectrum", "min": 35 * keV, "max": 588 * keV},
+        *energy_windows_peak_scatter("peak113", "scatter1", "scatter2", p1, 0.2, 0.1),
+        *energy_windows_peak_scatter("peak208", "scatter3", "scatter4", p2, 0.2, 0.1),
+    ]
+    if not spectrum_channel:
+        channels.pop(0)
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+    proj.size = [128, 128]
+    proj.write_to_disk = True
+
+    # end
+    return digitizer
+
+
+def add_digitizer_lu177_v3_OLD(sim, crystal_name, name, spectrum_channel=True):
+    digitizer = add_digitizer_lu177_v2_OLD(sim, crystal_name, name, spectrum_channel)
+
+    # here, we need this rotation
+    proj = digitizer.find_module_by_type("DigitizerProjectionActor")
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (0, 180), degrees=True  # 0 180 => like intevo
+    ).as_matrix()
 
     # end
     return digitizer
@@ -783,6 +857,12 @@ def rotate_gantry(
     current_angle_deg = start_angle_deg
     if initial_rotation is None:
         initial_rotation = Rotation.from_euler("X", 90, degrees=True)
+        initial_rotation = Rotation.from_euler("xz", (180, 90), degrees=True)
+        initial_rotation = Rotation.from_euler("xz", (90, 180), degrees=True)
+        initial_rotation = Rotation.from_euler(
+            "xy", (90, 180), degrees=True
+        )  # ok left right
+        initial_rotation = Rotation.from_euler("xy", (90, 0), degrees=True)
     for r in range(nb_angle):
         t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
@@ -875,3 +955,86 @@ def add_arf_detector(
     arf.gpu_mode = "auto"
 
     return det_plane, arf
+
+
+def get_pytomography_detector_physics_data(colli_name):
+    cm = g4_units.cm
+    # create a fake simulation to get the volume information
+    sim = Simulation()
+    det, colli, crystal = add_spect_head(sim, f"fake", collimator_type=colli_name)
+    holep = sim.volume_manager.find_volumes("collimator_hole_param")[0]
+    hole = sim.volume_manager.find_volumes("collimator_hole")[0]
+    d = {
+        "hole_shape": 6,
+        "hole_diameter": hole.radius * 2 / cm,
+        "hole_spacing": holep.translation[1] / cm,
+        "collimator_thickness": hole.height / cm,
+        "collimator_material": colli.material.lower(),
+        "crystal_width": crystal.size[1] / cm,
+        "crystal_height": crystal.size[2] / cm,
+    }
+
+    return d
+
+
+def add_digitizer(
+    sim, crystal_name, name=None, size=None, spacing=None, channels=None, filename=None
+):
+    # default parameters
+    mm = g4_units.mm
+    if name is None:
+        name = crystal_name
+    if size is None:
+        size = [128, 128]
+    if spacing is None:
+        spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+    if channels is None:
+        channels = get_default_energy_windows("tc99m")
+
+    # create the main digitizer chain
+    digitizer = Digitizer(sim, crystal_name, name)
+
+    # Singles
+    sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
+    sc.group_volume = None
+    sc.policy = "EnergyWinnerPosition"
+
+    # detection efficiency
+    # ea = digitizer.add_module("DigitizerEfficiencyActor")
+    # ea.efficiency = 0.86481  # FAKE
+
+    # energy blurring
+    keV = g4_units.keV
+    eb = digitizer.add_module("DigitizerBlurringActor", f"{name}_eblur")
+    eb.blur_attribute = "TotalEnergyDeposit"
+    eb.blur_method = "InverseSquare"
+    eb.blur_resolution = 0.063  # in %, FAKE !
+    eb.blur_reference_value = 140.57 * keV
+
+    # spatial blurring
+    sb = digitizer.add_module("DigitizerSpatialBlurringActor", f"{name}_sblur")
+    sb.blur_attribute = "PostPosition"
+    sb.blur_fwhm = 3 * mm  # FAKE !
+    sb.keep_in_solid_limits = True
+
+    # default energy windows (Energy range. 35-588 keV)
+    cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
+    cc.channels = channels
+
+    # projection
+    proj = digitizer.add_module("DigitizerProjectionActor", f"{name}_projection")
+    channel_names = [c["name"] for c in channels]
+    proj.input_digi_collections = channel_names
+    proj.spacing = spacing
+    proj.size = size
+    proj.write_to_disk = True
+    if filename is not None:
+        proj.output_filename = filename
+
+    # projection plane: it depends on how the spect device is described
+    # here, we need this rotation
+    proj.detector_orientation_matrix = Rotation.from_euler(
+        "yx", (0, 180), degrees=True  # 0 180 => like intevo
+    ).as_matrix()
+
+    return digitizer

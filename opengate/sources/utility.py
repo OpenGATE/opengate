@@ -98,7 +98,7 @@ def set_source_energy_spectrum(source, rad: str, database=DEFAULT_DATABASE) -> N
     rad : str
         The name of the radionuclide to use
     database : str, optional
-        The database to use. Default is "icrp107".
+        The database to use. The default is "icrp107".
 
     Notes
     -----

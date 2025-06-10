@@ -261,8 +261,12 @@ def compute_image_3D_CDF(image):
 
     :param image: itk image
     """
-    # consider image as np array
-    array = itk.array_view_from_image(image)
+    # consider the image as a np array
+    # WARNING: cannot use array_view_from_image here because it seems to lead to
+    # a segfault in some cases (linux + multithread + multiple sources)
+    # It is unclear why, but for now we use array_from_image that copy the data
+    # array = itk.array_view_from_image(image)
+    array = itk.array_from_image(image)
 
     # normalize
     array = array / np.sum(array)
@@ -278,7 +282,7 @@ def compute_image_3D_CDF(image):
         for j in range(array.shape[1]):  # Y
             # cumulated sum along X axis
             t = np.cumsum(array[i][j])
-            # normalise if last value (sum) is not zero
+            # normalise if the last value (sum) is not zero
             if t[-1] != 0:
                 t = t / t[-1]
             cdf_x[i].append(t)

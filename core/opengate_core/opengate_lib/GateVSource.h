@@ -26,7 +26,7 @@ public:
   virtual ~GateVSource();
 
   // May be used to clear some allocated data during a thread
-  // (see for example GateGenericSource)
+  // (see, for example, GateGenericSource)
   virtual void CleanWorkerThread() {}
 
   // Called at initialisation to set the source properties from a single dict
@@ -40,7 +40,8 @@ public:
 
   virtual double PrepareNextTime(double current_simulation_time);
 
-  virtual void GeneratePrimaries(G4Event *event, double time);
+  virtual void GeneratePrimaries(G4Event *event,
+                                 double current_simulation_time);
 
   virtual void SetOrientationAccordingToAttachedVolume();
 

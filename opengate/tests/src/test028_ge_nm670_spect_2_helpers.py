@@ -139,7 +139,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     sc.input_digi_collection = "Hits"
     sc.policy = "EnergyWinnerPosition"
     # sc.policy = 'EnergyWeightedCentroidPosition'
-    sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep", "KineticEnergy"]
+    sc.skip_attributes = ["KineticEnergy", "ProcessDefinedStep"]
     sc.output_filename = hc.output_filename
 
     # EnergyWindows
@@ -164,7 +164,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
         3. EnergyWindows
     """
 
-    # sec = gate.g4_units('second')
+    # sec = gate.g4_units.second
     # sim.run_timing_intervals = [[0, 0.5 * sec], [0.5 * sec, 1 * sec]]
 
     # user hook function
@@ -342,11 +342,11 @@ def test_spect_proj(sim, paths, proj, version="3"):
     print()
     print("Compare images (old spacing/origin)")
     # read image and force change the offset to be similar to old Gate
-    fname = sim.get_actor("Projection").get_output_path()
+    fname = sim.get_actor("Projection").get_output_path("counts")
     fname_stem = Path(fname).stem
     fname_offset = fname_stem + "_offset.mhd"
     img = itk.imread(str(paths.output / fname))
-    spacing = np.array(proj.projection.image.GetSpacing())  # user_info.spacing)
+    spacing = np.array(proj.counts.image.GetSpacing())  # user_info.spacing)
     origin = spacing / 2.0
     origin[2] = 0.5
     spacing[2] = 1

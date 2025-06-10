@@ -5,28 +5,41 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "GateAcceptanceAngleTesterManager.h"
+#include "GateAcceptanceAngleManager.h"
 #include "G4RunManager.hh"
-#include "GateAcceptanceAngleTester.h"
+#include "GateAcceptanceAngleSingleVolume.h"
 #include "GateHelpersDict.h"
 
-GateAcceptanceAngleTesterManager::GateAcceptanceAngleTesterManager() {
+GateAcceptanceAngleManager::GateAcceptanceAngleManager() {
   fEnabledFlag = false;
   fNotAcceptedEvents = 0;
   fAALastRunId = -1;
   fPolicy = AASkipEvent;
-  fMaxNotAcceptedEvents = 100000;
+  fMaxNotAcceptedEvents = 10000;
 }
 
-void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
-                                                  bool is_valid_type) {
-  fAcceptanceAngleVolumeNames = DictGetVecStr(puser_info, "volumes");
+GateAcceptanceAngleManager::~GateAcceptanceAngleManager() {}
+
+void GateAcceptanceAngleManager::Initialize(
+    const std::map<std::string, std::string> &user_info, bool is_valid_type) {
+  // AA is enabled if volumes is not empty and one of the flags is True
+  // intersection_flag or normal_flag
+  // fAcceptanceAngleVolumeNames = DictGetVecStr(user_info, "volumes");
+  fAcceptanceAngleVolumeNames = GetVectorFromMapString(user_info, "volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
+
+  bool b2 = StrToBool(user_info.at("intersection_flag"));
+  bool b3 = StrToBool(user_info.at("normal_flag"));
+
+  fEnabledFlag = fEnabledFlag && (b2 || b3);
+
   if (!fEnabledFlag)
     return;
   // (we cannot use py::dict here as it is lost at the end of the function)
-  fAcceptanceAngleParam = DictToMap(puser_info);
-  auto s = DictGetStr(puser_info, "skip_policy");
+  // fAcceptanceAngleParam = DictToMap(user_info);
+  auto s = user_info.at("skip_policy");
+  fMaxNotAcceptedEvents = StrToInt(user_info.at("max_rejection"));
+
   fPolicy = AAUndefined;
   if (s == "ZeroEnergy")
     fPolicy = AAZeroEnergy;
@@ -34,7 +47,7 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
     fPolicy = AASkipEvent;
   if (fPolicy == AAUndefined) {
     std::ostringstream oss;
-    oss << "Unknown '" << s << "' mode for GateAcceptanceAngleTesterManager. "
+    oss << "Unknown '" << s << "' mode for GateAcceptanceAngleManager. "
         << "Expected: ZeroEnergy or SkipEvents";
     Fatal(oss.str());
   }
@@ -46,15 +59,19 @@ void GateAcceptanceAngleTesterManager::Initialize(py::dict puser_info,
            "type";
     Fatal(oss.str());
   }
+
+  // copy for later
+  fAcceptanceAngleParam = user_info;
 }
 
-void GateAcceptanceAngleTesterManager::InitializeAcceptanceAngle() {
+void GateAcceptanceAngleManager::InitializeAcceptanceAngle() {
   if (!fEnabledFlag)
     return;
   // Create the testers (only the first time)
   if (fAATesters.empty()) {
     for (const auto &name : fAcceptanceAngleVolumeNames) {
-      auto *t = new GateAcceptanceAngleTester(name, fAcceptanceAngleParam);
+      auto *t =
+          new GateAcceptanceAngleSingleVolume(name, fAcceptanceAngleParam);
       fAATesters.push_back(t);
     }
   }
@@ -68,23 +85,21 @@ void GateAcceptanceAngleTesterManager::InitializeAcceptanceAngle() {
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
 }
 
-unsigned long
-GateAcceptanceAngleTesterManager::GetNumberOfNotAcceptedEvents() const {
+unsigned long GateAcceptanceAngleManager::GetNumberOfNotAcceptedEvents() const {
   return fNotAcceptedEvents;
 }
 
-bool GateAcceptanceAngleTesterManager::TestIfAccept(
+bool GateAcceptanceAngleManager::TestIfAccept(
     const G4ThreeVector &position, const G4ThreeVector &momentum_direction) {
   if (!fEnabledFlag)
     return true;
 
-  // Loop on all volume to check if it at least one volume is accepted
-  for (auto *tester : fAATesters) {
+  // Loop on all the volumes to check if it at least one volume is accepted
+  for (const auto *tester : fAATesters) {
     bool accept = tester->TestIfAccept(position, momentum_direction);
     if (accept)
       return true;
   }
-  fNotAcceptedEvents++;
   if (fNotAcceptedEvents > fMaxNotAcceptedEvents) {
     std::ostringstream oss;
     oss << "Error, in AcceptanceAngleTest: " << fNotAcceptedEvents
@@ -92,10 +107,11 @@ bool GateAcceptanceAngleTesterManager::TestIfAccept(
            "possible direction here. Abort. ";
     Fatal(oss.str());
   }
+  fNotAcceptedEvents++;
   return false;
 }
 
-void GateAcceptanceAngleTesterManager::StartAcceptLoop() {
+void GateAcceptanceAngleManager::StartAcceptLoop() {
   if (!fEnabledFlag)
     return;
   fNotAcceptedEvents = 0;

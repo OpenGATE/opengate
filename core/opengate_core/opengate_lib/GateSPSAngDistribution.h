@@ -8,14 +8,11 @@
 #ifndef GateSPSAngDistribution_h
 #define GateSPSAngDistribution_h
 
-#include "G4ParticleDefinition.hh"
 #include "G4SPSAngDistribution.hh"
 
 class GateSPSAngDistribution : public G4SPSAngDistribution {
 
 public:
-  virtual ~GateSPSAngDistribution() = default;
-
   // Cannot inherit from GenerateOne, so we consider VGenerateOne instead
   virtual G4ThreeVector VGenerateOne();
 

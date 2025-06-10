@@ -5,19 +5,22 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateAcceptanceAngleTesterManager_h
-#define GateAcceptanceAngleTesterManager_h
+#ifndef GateAcceptanceAngleManager_h
+#define GateAcceptanceAngleManager_h
 
-#include "GateAcceptanceAngleTester.h"
+#include "GateAcceptanceAngleSingleVolume.h"
 #include "GateHelpers.h"
 
-class GateAcceptanceAngleTesterManager {
+class GateAcceptanceAngleManager {
 public:
-  GateAcceptanceAngleTesterManager();
+  GateAcceptanceAngleManager();
+
+  ~GateAcceptanceAngleManager();
 
   enum AAPolicyType { AAZeroEnergy, AASkipEvent, AAUndefined };
 
-  void Initialize(py::dict puser_info, bool is_iso);
+  void Initialize(const std::map<std::string, std::string> &user_info,
+                  bool is_valid_type);
 
   void InitializeAcceptanceAngle();
 
@@ -34,7 +37,7 @@ public:
 
   AAPolicyType fPolicy;
   std::map<std::string, std::string> fAcceptanceAngleParam;
-  std::vector<GateAcceptanceAngleTester *> fAATesters{};
+  std::vector<GateAcceptanceAngleSingleVolume *> fAATesters{};
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
   unsigned long fNotAcceptedEvents;
@@ -42,4 +45,4 @@ public:
   int fAALastRunId;
 };
 
-#endif // GateAcceptanceAngleTesterManager_h
+#endif // GateAcceptanceAngleManager_h
