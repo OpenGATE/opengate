@@ -37,6 +37,55 @@ def add_fake_table(sim, name="table"):
     table.dz = 200 * cm / 2.0
     table.sphi = 0 * deg
     table.dphi = 70 * deg
+    table.translation = [0, -25 * cm, 0]
+    table.rotation = Rotation.from_euler("z", 55, degrees=True).as_matrix()
+    table.material = "CarbonFiber"
+    table.color = white
+
+    # interior of the table
+    tablein = sim.add_volume("Tubs", f"{name}_tablein")
+    tablein.mother = table.name
+    tablein.rmax = 436.5 * mm
+    tablein.rmin = 408.5 * mm
+    tablein.dz = 200 * cm / 2.0
+    tablein.sphi = 0 * deg
+    tablein.dphi = 69 * deg
+    tablein.translation = [0, 0, 0]
+    tablein.rotation = Rotation.from_euler("z", 0.5, degrees=True).as_matrix()
+    tablein.material = "G4_AIR"
+    tablein.color = red
+
+    return table
+
+
+def add_fake_table_OLD(sim, name="table"):
+    """
+    Add a patient table (fake)
+    """
+
+    # unit
+    mm = g4_units.mm
+    cm = g4_units.cm
+    cm3 = g4_units.cm3
+    deg = g4_units.deg
+    gcm3 = g4_units.g / cm3
+
+    # colors
+    red = [1, 0.7, 0.7, 0.8]
+    white = [1, 1, 1, 1]
+
+    sim.volume_manager.material_database.add_material_weights(
+        f"CarbonFiber", ["C"], [1], 1.78 * gcm3
+    )
+
+    # main bed
+    table = sim.add_volume("Tubs", f"{name}_table")
+    table.mother = "world"
+    table.rmax = 439 * mm
+    table.rmin = 406 * mm
+    table.dz = 200 * cm / 2.0
+    table.sphi = 0 * deg
+    table.dphi = 70 * deg
     table.translation = [0, 25 * cm, 0]
     table.rotation = Rotation.from_euler("z", -125, degrees=True).as_matrix()
     table.material = "CarbonFiber"
