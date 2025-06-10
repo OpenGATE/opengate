@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-from scipy.spatial.transform import Rotation
-import gatetools.phsp as phsp
 import opengate as gate
-from opengate.tests import utility
-from pathlib import Path
 import uproot
 import numpy as np
-import pandas as pd
+from opengate.tests import utility
 
 # units
 m = gate.g4_units.m
@@ -21,7 +16,7 @@ MeV = gate.g4_units.MeV
 deg = gate.g4_units.deg
 
 
-def is_ok(phsp_1, phsp_2):
+def is_test_ok(phsp_1, phsp_2):
     f1 = uproot.open(phsp_1 + ":PhaseSpace1")
     f2 = uproot.open(phsp_2 + ":PhaseSpace1")
     df1 = f1.arrays()
@@ -127,74 +122,75 @@ def add_phsp_actor(sim, plan_to_attach):
     ta1.output_filename = "test060_phsp_isotropic.root"
 
 
-for i in range(3):
-    sim = gate.Simulation()
-    # main options
-    sim.output_dir = "../output"
-    sim.g4_verbose = False
-    # sim.visu = True
-    sim.visu_type = "vrml"
-    sim.check_volumes_overlap = False
-    # sim.running_verbose_level = gate.EVENT
-    sim.number_of_threads = 1
-    sim.random_seed = 987654321
+if __name__ == "__main__":
 
-    # units
-    m = gate.g4_units.m
-    cm = gate.g4_units.cm
-    nm = gate.g4_units.nm
-    MeV = gate.g4_units.MeV
+    for i in range(3):
+        sim = gate.Simulation()
+        # main options
+        sim.output_dir = "../output"
+        sim.g4_verbose = False
+        # sim.visu = True
+        sim.visu_type = "vrml"
+        sim.check_volumes_overlap = False
+        # sim.running_verbose_level = gate.EVENT
+        sim.number_of_threads = 1
+        sim.random_seed = 987654321
 
-    ##########################################################################################
-    # geometry
-    ##########################################################################################
-    #  adapt world size
-    world = sim.world
-    world.size = [1 * m, 1 * m, 1 * m]
-    world.material = "G4_Galactic"
+        # units
+        m = gate.g4_units.m
+        cm = gate.g4_units.cm
+        nm = gate.g4_units.nm
+        MeV = gate.g4_units.MeV
 
-    # virtual plane for phase space
-    s_plane = sim.add_volume("Tubs", "source_plane")
-    # plane.material = "G4_AIR"
-    s_plane.material = "G4_Galactic"
-    s_plane.rmin = 0
-    s_plane.rmax = 30 * cm
-    s_plane.dz = 1 * nm  # half height
-    # plane.rotation = Rotation.from_euler("xy", [180, 30], degrees=True).as_matrix()
-    s_plane.translation = [0 * mm, 0 * mm, 0 * mm]
-    s_plane.color = [1, 0, 0, 1]  # red
+        ##########################################################################################
+        # geometry
+        ##########################################################################################
+        #  adapt world size
+        world = sim.world
+        world.size = [1 * m, 1 * m, 1 * m]
+        world.material = "G4_Galactic"
 
-    plane = sim.add_volume("Tubs", "phsp_actor_plane")
-    # plane.material = "G4_AIR"
-    plane.material = "G4_Galactic"
-    plane.rmin = 0
-    plane.rmax = 30 * cm
-    plane.dz = 1 * nm  # half height
-    # plane.rotation = Rotation.from_euler("xy", [180, 30], degrees=True).as_matrix()
-    plane.translation = [0 * mm, 0 * mm, 1 * cm]
-    plane.color = [1, 0, 0, 1]  # red
+        # virtual plane for phase space
+        s_plane = sim.add_volume("Tubs", "source_plane")
+        # plane.material = "G4_AIR"
+        s_plane.material = "G4_Galactic"
+        s_plane.rmin = 0
+        s_plane.rmax = 30 * cm
+        s_plane.dz = 1 * nm  # half height
+        # plane.rotation = Rotation.from_euler("xy", [180, 30], degrees=True).as_matrix()
+        s_plane.translation = [0 * mm, 0 * mm, 0 * mm]
+        s_plane.color = [1, 0, 0, 1]  # red
 
-    ##########################################################################################
-    # Actors
-    ##########################################################################################
-    # PhaseSpace Actor
+        plane = sim.add_volume("Tubs", "phsp_actor_plane")
+        # plane.material = "G4_AIR"
+        plane.material = "G4_Galactic"
+        plane.rmin = 0
+        plane.rmax = 30 * cm
+        plane.dz = 1 * nm  # half height
+        # plane.rotation = Rotation.from_euler("xy", [180, 30], degrees=True).as_matrix()
+        plane.translation = [0 * mm, 0 * mm, 1 * cm]
+        plane.color = [1, 0, 0, 1]  # red
 
-    if i == 0:
-        add_source(sim, s_plane)
-        add_phsp_actor(sim, plane)
-    if i == 1:
-        add_source_2(sim, s_plane)
-        add_phsp_sphere_actor(sim, "test060_phsp_actor_sphere_ref.root")
+        ##########################################################################################
+        # Actors
+        ##########################################################################################
+        # PhaseSpace Actor
 
-    if i == 2:
-        add_phsp_source(sim, s_plane)
-        add_phsp_sphere_actor(sim, "test060_phsp_actor_sphere_phsp.root")
+        if i == 0:
+            add_source(sim, s_plane)
+            add_phsp_actor(sim, plane)
+        if i == 1:
+            add_source_2(sim, s_plane)
+            add_phsp_sphere_actor(sim, "test060_phsp_actor_sphere_ref.root")
 
-    sim.run(start_new_process=True)
+        if i == 2:
+            add_phsp_source(sim, s_plane)
+            add_phsp_sphere_actor(sim, "test060_phsp_actor_sphere_phsp.root")
 
-print(
-    is_ok(
+        sim.run(start_new_process=True)
+
+    is_ok = is_test_ok(
         "../output/test060_phsp_actor_sphere_ref.root",
         "../output/test060_phsp_actor_sphere_phsp.root",
     )
-)
+    utility.test_ok(is_test_ok)

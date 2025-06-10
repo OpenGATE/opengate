@@ -3,7 +3,6 @@
 
 from opengate.tests import utility
 import SimpleITK as sitk
-import numpy as np
 import subprocess
 import os, sys
 
