@@ -650,6 +650,7 @@ def pytomography_build_metadata(
     sc,
     sim,
     attenuation_energy,
+    output_folder=None,
     verbose=True,
 ):
     """
@@ -660,6 +661,10 @@ def pytomography_build_metadata(
     - list of projection files: for build the sinogram in pytomography orientation
     - energy for the attenuation map
     """
+
+    # output folder for sinogram and attenuation map
+    if output_folder is None:
+        output_folder = sc.output_folder
 
     # create a new (empty) pytomography metadata file
     metadata = pytomography_new_metadata()
@@ -696,7 +701,7 @@ def pytomography_build_metadata(
 
     # create the sinogram with all the projections
     filenames = sc.detector_config.get_proj_filenames(sim)
-    o = sc.output_folder / "sinogram.mhd"
+    o = output_folder / "sinogram.mhd"
     sino = pytomography_create_sinogram(
         filenames, sc.acquisition_config.number_of_angles, o
     )
@@ -735,7 +740,7 @@ def pytomography_build_metadata(
     create_attenuation_image(
         sc.phantom_config.image,
         attenuation_energy,
-        sc.output_folder / "mumap.mhd",
+        output_folder / "mumap.mhd",
         size,
         spacing,
         translation=sc.phantom_config.translation,
@@ -744,9 +749,12 @@ def pytomography_build_metadata(
     pytomography_set_attenuation_data(
         metadata,
         attenuation_energy,
-        sc.output_folder / "mumap.mhd",
+        output_folder / "mumap.mhd",
         translation=sc.phantom_config.translation,
         verbose=True,
+    )
+    verbose and print(
+        f"Build attenuation map with shape {size} in {output_folder / "mumap.mhd"}"
     )
 
     return metadata

@@ -3,14 +3,18 @@
 
 from opengate.contrib.spect.pytomography_helpers import *
 from opengate.tests import utility
+import subprocess
 
 
-if __name__ == "__main__":
+def main(dependency="test094b_spect_build_pytomography.py"):
 
     paths = utility.get_default_test_paths(
         __file__, None, output_folder="test094_pytomography"
     )
-    data_folder = paths.data
+
+    # The test needs the output of the other tests
+    if not os.path.isfile(paths.output / "sinogram.raw"):
+        subprocess.call(["python", paths.current / dependency])
 
     # read the metadata file
     json_file = paths.output / "pytomography_gate.json"
@@ -56,3 +60,7 @@ if __name__ == "__main__":
     )
 
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    main()

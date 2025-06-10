@@ -38,7 +38,9 @@ if __name__ == "__main__":
     # (no need to run the simulation)
     sim = gate.Simulation()
     sc.setup_simulation(sim, visu=False)
-    metadata = pytomography_build_metadata(sc, sim, 208 * keV, verbose=True)
+    metadata = pytomography_build_metadata(
+        sc, sim, 208 * keV, output_folder=paths.output, verbose=True
+    )
 
     # write metadata as a JSON file
     fn = paths.output / "pytomography_gate.json"
