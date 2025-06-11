@@ -3,16 +3,14 @@
 
 import opengate as gate
 from opengate.tests import utility
-import stl
 import numpy as np
 import itk
+from opengate.geometry import off
 
 
-def create_test_mesh(file_name="myTesselatedBoxVolume.stl"):
-    my_mesh = create_box_mesh()
-    translate_mesh_to_center(my_mesh)
-    show_mesh_info(my_mesh)
-    store_mesh_to_file(my_mesh, file_name, mode=stl.stl.ASCII)
+def create_test_mesh(file_name="myTesselatedBoxVolume.off"):
+    vertices, faces = create_box_mesh()
+    off.write_file(file_name, vertices, faces)
 
 
 def create_box_mesh():
@@ -57,42 +55,8 @@ def create_box_mesh():
             [0, 5, 4],
         ]
     )
-    # Create the mesh
-    box_mesh = stl.mesh.Mesh(np.zeros(faces.shape[0], dtype=stl.mesh.Mesh.dtype))
-    for i, f in enumerate(faces):
-        for j in range(3):
-            box_mesh.vectors[i][j] = vertices[f[j]]
 
-    # create a mesh from the data#
-    # box_mesh = mesh.Mesh(data.copy())
-    return box_mesh
-
-
-def read_mesh_from_file(file_name):
-    # Using an existing stl file:
-    box_mesh = stl.mesh.Mesh.from_file(file_name)
-    return box_mesh
-
-
-def translate_mesh_to_center(mesh_to_translate):
-    # translate the mesh to the center of gravity
-    cog = mesh_to_translate.get_mass_properties()[1]
-    mesh_to_translate.translate(-cog)
-    return mesh_to_translate
-
-
-def show_mesh_info(mesh_to_use):
-    volume, cog, inertia = mesh_to_use.get_mass_properties()
-    print("volume ", volume)
-    print("center of gravity ", cog)
-    # print("inertia ", inertia)
-    # print("get_unit_normals ", mesh_to_use.get_unit_normals())
-    print("is_closed ", mesh_to_use.is_closed())
-
-
-def store_mesh_to_file(mesh_to_store, file_name, mode=0):
-    dir(mesh_to_store)
-    mesh_to_store.save(file_name, mode=mode)
+    return vertices, faces
 
 
 def create_simulation():
@@ -125,7 +89,8 @@ def create_simulation():
 
     tes = sim.add_volume("Tesselated", name="MyTesselatedVolume")
     tes.material = "G4_WATER"
-    tes.file_name = output_path / "myTesselatedBoxVolume.stl"
+    tes.file_name = output_path / "myTesselatedBoxVolume.off"
+    tes.origin_at_cog = True
 
     # print the list of available volumes types:
     sim.volume_manager.print_volume_types()
@@ -210,13 +175,13 @@ def eval_results(sim):
 
 
 paths = utility.get_default_test_paths(
-    __file__, "test066_stl_volume", output_folder="test067"
+    __file__, "test067_tesselated_off_volume", output_folder="test067"
 )
 
 
 if __name__ == "__main__":
-    print("Generating STL data")
-    create_test_mesh(file_name=paths.output / "myTesselatedBoxVolume.stl")
+    print("Generating OFF data")
+    create_test_mesh(file_name=paths.output / "myTesselatedBoxVolume.off")
     sim = create_simulation()
     print("Running GATE simulation")
     sim.run()
