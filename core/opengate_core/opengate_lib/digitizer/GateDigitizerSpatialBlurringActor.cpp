@@ -14,7 +14,8 @@
 #include <G4VoxelLimits.hh>
 #include <Randomize.hh>
 #include <iostream>
-#include <math.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 GateDigitizerSpatialBlurringActor::GateDigitizerSpatialBlurringActor(
     py::dict &user_info)
