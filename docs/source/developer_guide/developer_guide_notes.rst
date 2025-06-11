@@ -102,7 +102,7 @@ So, after a long explanation, the key points are:
    release_g4_references() method is called by the class’s close()
    method.
 
-An example may be the implementation of the Tesselated Volume (STL or OFF).
+An example may be the implementation of the Tesselated Volume.
 
 Pybindings in pyG4TriangularFacet.cpp:
 

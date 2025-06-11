@@ -1,8 +1,8 @@
 from box import Box
 from scipy.spatial.transform import Rotation
-import stl
 import logging
-import pathlib
+import numpy as np
+import meshio
 
 from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
@@ -11,7 +11,6 @@ import opengate_core as g4
 from ..decorators import requires_fatal
 
 from .utility import ensure_is_g4_rotation, ensure_is_g4_translation, vec_np_as_g4
-from . import off
 
 
 logger = logging.getLogger(__name__)
@@ -492,7 +491,7 @@ class TesselatedSolid(SolidBase):
     user_info_defaults = {
         "file_name": (
             "",
-            {"doc": "Path and file name of the STL or OFF file."},
+            {"doc": "Path and file name of the mesh file."},
         ),
         "origin_at_cog": (
             True,
@@ -510,74 +509,38 @@ class TesselatedSolid(SolidBase):
         # self.g4_facets = None
         super().close()
 
-    def read_file(self):
-        ext = pathlib.Path(self.file_name).suffix.lower()
-        if ext == ".stl":
-            return self._read_stl()
-        elif ext == ".off":
-            return self._read_off()
-        else:
-            msg = (
-                f"Error in {self.type_name} called {self.name}. "
-                f"Unknown file type {ext} ({self.file_name}). Aborting."
-            )
-            fatal(msg)
-
-    def _read_stl(self):
-        try:
-            return stl.mesh.Mesh.from_file(self.file_name)
-        except Exception as e:
-            msg = (
-                f"Error in {self.type_name} called {self.name}. "
-                f"Could not read the file {self.file_name}. Aborting. "
-                f"The error encountered was: \n{e}"
-            )
-            fatal(msg)
-
-    def _read_off(self):
-        try:
-            return off.Mesh.from_file(self.file_name)
-        except Exception as e:
-            msg = (
-                f"Error in {self.type_name} called {self.name}. "
-                f"Could not read the file {self.file_name}. Aborting. "
-                f"The error encountered was: \n{e}"
-            )
-            fatal(msg)
-
-    def translate_mesh_to_center(self, mesh_to_translate):
-        # translate the mesh to the center of gravity
-        cog = mesh_to_translate.get_mass_properties()[1]
-        mesh_to_translate.translate(-cog)
-        return mesh_to_translate
-
     def build_solid(self):
         mm = g4_units.mm
 
-        box_mesh = self.read_file()
+        mesh = meshio.read(self.file_name)
+        points = mesh.points
 
         # translate the mesh to the center of gravity
         if self.origin_at_cog:
-            box_mesh = self.translate_mesh_to_center(box_mesh)
+            centre = np.mean(points, axis=0)
+            points = [point - centre for point in points]
 
-        vectors = box_mesh.vectors
-
-        # generate the tessellated solid
         tessellated_solid = g4.G4TessellatedSolid(self.name)
-        # create an array of facets
-        # self.g4_facets = []
-        for vertex in vectors:
-            # Create the new facet
-            # ABSOLUTE =0
-            # RELATIVE =1
-            g4_facet = g4.G4TriangularFacet(
-                vec_np_as_g4(vertex[0]),
-                vec_np_as_g4(vertex[1]),
-                vec_np_as_g4(vertex[2]),
-                g4.G4FacetVertexType.ABSOLUTE,
-            )
-            tessellated_solid.AddFacet(g4_facet)
-            # self.g4_facets.append(g4_facet)
+        if "triangle" in mesh.cells_dict:
+            for triangle in mesh.cells_dict["triangle"]:
+                g4_facet = g4.G4TriangularFacet(
+                    vec_np_as_g4(points[triangle[0]]),
+                    vec_np_as_g4(points[triangle[1]]),
+                    vec_np_as_g4(points[triangle[2]]),
+                    g4.G4FacetVertexType.ABSOLUTE,
+                )
+                tessellated_solid.AddFacet(g4_facet)
+
+        if "quad" in mesh.cells_dict:
+            for quad in mesh.cells_dict["quad"]:
+                g4_facet = g4.G4QuadrangularFacet(
+                    vec_np_as_g4(points[quad[0]]),
+                    vec_np_as_g4(points[quad[1]]),
+                    vec_np_as_g4(points[quad[2]]),
+                    vec_np_as_g4(points[quad[3]]),
+                    g4.G4FacetVertexType.ABSOLUTE,
+                )
+                tessellated_solid.AddFacet(g4_facet)
 
         # set the solid closed
         tessellated_solid.SetSolidClosed(True)
