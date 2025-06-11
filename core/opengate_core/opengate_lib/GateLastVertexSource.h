@@ -8,7 +8,6 @@
 #ifndef GateLastVertexSource_h
 #define GateLastVertexSource_h
 
-#include "GateAcceptanceAngleTesterManager.h"
 #include "GateLastVertexSplittingDataContainer.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"

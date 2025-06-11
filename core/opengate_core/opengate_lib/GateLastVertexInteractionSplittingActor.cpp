@@ -63,8 +63,8 @@ void GateLastVertexInteractionSplittingActor::InitializeUserInfo(
   fAAManager = nullptr;
   fBatchSize = DictGetDouble(user_info, "batch_size");
   fNbOfMaxBatchPerEvent = DictGetInt(user_info, "nb_of_max_batch_per_event");
-  const auto dd = py::dict(user_info["acceptance_angle"]);
-  InitializeAAManager(dd);
+  auto dd = DictToMap(user_info["acceptance_angle"]);
+  this->InitializeAAManager(dd);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -87,8 +87,8 @@ void GateLastVertexInteractionSplittingActor::print_tree(
 }
 
 void GateLastVertexInteractionSplittingActor::InitializeAAManager(
-    const py::dict &user_info) {
-  fAAManager = new GateAcceptanceAngleTesterManager();
+    const std::map<std::string, std::string> &user_info) {
+  fAAManager = new GateAcceptanceAngleManager();
   fAAManager->Initialize(user_info, true);
 
 
@@ -191,11 +191,13 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
     G4Track *newTrack =
         CreateComptonTrack(gammaProcessFinalState, *fTrackToSplit, fWeight);
 
-
+    //std::cout<<fAAManager<<std::endl;
+    //std::cout<<(!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))<<std::endl;
     if ((fAAManager !=0) && (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))){
         delete newTrack;
       }
     else{
+      //std::cout<<"in"<<std::endl;
       fStackManager->PushOneTrack(newTrack);
     }
 
@@ -364,7 +366,12 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
   fNumberOfTrackToSimulate =
       fStackManager->GetNTotalTrack() - nbOfTrackAlreadyInStack;
   fNbOfBatchForExitingParticle++;
+
+  if(fNumberOfTrackToSimulate == 0){
+    CreateNewParticleAtTheLastVertex(initStep,step, theContainer,batchSize);
+  }
   if (fNbOfBatchForExitingParticle > fNbOfMaxBatchPerEvent) {
+    std::cout<<"clear"<<std::endl;
     fStackManager->clear();
     fRemovedParticle++;
   }
@@ -571,6 +578,8 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     delete fCopyInitStep;
     fCopyInitStep = nullptr;
   }
+  if ((fSplitCounter != 0) && (fSplitCounter != 11))
+  std::cout<<fSplitCounter<<std::endl;
   fSplitCounter = 0;
   fNumberOfTrackToSimulate = 0;
   fKilledBecauseOfProcess = false;
@@ -607,7 +616,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
 
     if (IsParticleExitTheBiasedVolume(step)) {
       if (fAAManager != 0){
-        std::cout<<"conven tracking moment"<<"    "<<fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())<<std::endl;
+        //std::cout<<"conven tracking moment"<<"    "<<fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())<<std::endl;
         if (fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())){
           if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() != "None") {
           fListOfContainer.push_back((*fIterator));
@@ -685,7 +694,10 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
         else {
           if (fIsFirstStep) {
             fNumberOfTrackToSimulate--;
+            
+            //std::cout<<fNumberOfTrackToSimulate<<std::endl;
             if (fKilledBecauseOfProcess == false) {
+              //std::cout<<fSplitCounter<<std::endl;
               fSplitCounter += 1;
             } else {
               fKilledBecauseOfProcess = false;
@@ -705,6 +717,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
           if (fIsFirstStep) {
             if (fSplitCounter <= fSplittingFactor) {
               if (fNumberOfTrackToSimulate == 0) {
+                //std::cout<<"recreate"<<std::endl;
                 // CreateNewParticleAtTheLastVertex(
                 //  fCopyInitStep, step, fContainer,
                 //(fSplittingFactor - fSplitCounter + 1) / fSplittingFactor *

@@ -8,46 +8,35 @@ from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
 
-def validation_test(arr_data, vector_director, max_theta):
+def validation_test(arr_data, nb_split):
     arr_data = arr_data[arr_data["ParticleName"] == "gamma"]
-    qt_mvt_data = arr_data[["PreDirection_X", "PreDirection_Y", "PreDirection_Z"]]
-    mom_data = np.zeros((len(qt_mvt_data["PreDirection_X"]), 3))
-    mom_data[:, 0] += np.array(qt_mvt_data["PreDirection_X"])
-    mom_data[:, 1] += np.array(qt_mvt_data["PreDirection_Y"])
-    mom_data[:, 2] += np.array(qt_mvt_data["PreDirection_Z"])
-
-    l_theta = np.zeros(len(mom_data[:, 0]))
-
-    for i in range(len(l_theta)):
-        theta = np.arccos(mom_data[i].dot(vector_director))
-        l_theta[i] = theta
-    print(
-        "Number of particles with an angle higher than max_theta:",
-        len(l_theta[l_theta > max_theta]),
-    )
-    if len(l_theta[l_theta > max_theta]) == 0:
-        return True
-    else:
-        return False
+    event_ID = np.unique(arr_data["EventID"].to_numpy())
+    for event in event_ID:
+        tmp_data = arr_data[arr_data["EventID"] == event]
+        # print(len(tmp_data))
+    print(len(event_ID), int(len(arr_data)/nb_split))
+    return (len(event_ID) == int(len(arr_data)/nb_split))
 
 
 if __name__ == "__main__":
     bias = True
     paths = utility.get_default_test_paths(
-        __file__, "test084_last_vertex_splitting", output_folder="test084"
+        __file__, "test094_last_vertex_splitting", output_folder="test094"
     )
 
     # create the simulation
     sim = gate.Simulation()
 
     # main options
+    sim.output_dir = paths.output
+    print(paths.output)
     ui = sim.user_info
     ui.g4_verbose = False
-    ui.visu = False
+    # ui.visu = True
     ui.visu_type = "vrml"
     ui.check_volumes_overlap = False
     ui.number_of_threads = 1
-    ui.random_seed = 123456789
+    ui.random_seed = 12345678
 
     # units
     m = gate.g4_units.m
@@ -92,6 +81,11 @@ if __name__ == "__main__":
     ).as_matrix()
     W_tubs.rotation = rotation
 
+    plan = sim.add_volume("Box", "plan_phsp")
+    plan.material = "G4_Galactic"
+    plan.size = [5 * cm, 5 * cm, 1 * nm]
+    plan.translation = [0, 0, -1 * cm]
+
     if bias:
         ###### Last vertex Splitting ACTOR #########
         nb_split = 10
@@ -100,18 +94,14 @@ if __name__ == "__main__":
         )
         vertex_splitting_actor.attached_to = W_tubs.name
         vertex_splitting_actor.splitting_factor = nb_split
-        vertex_splitting_actor.angular_kill = True
-        vertex_splitting_actor.vector_director = [0, 0, -1]
-        vertex_splitting_actor.max_theta = 15 * deg
-        vertex_splitting_actor.batch_size = 10
+        vertex_splitting_actor.acceptance_angle.volumes = [plan.name]
+        vertex_splitting_actor.acceptance_angle.intersection_flag = True
+        vertex_splitting_actor.acceptance_angle.skip_policy = "SkipEvents"
+        # vertex_splitting_actor.batch_size = 10
+        vertex_splitting_actor.batch_size = 1000
+        vertex_splitting_actor.nb_of_max_batch_per_event= 500
+        vertex_splitting_actor.acceptance_angle.max_rejection = 100000000
 
-    plan = sim.add_volume("Box", "plan_phsp")
-    plan.material = "G4_Galactic"
-    plan.size = [5 * cm, 5 * cm, 1 * nm]
-    plan.translation = [0, 0, -1 * cm]
-
-    if bias:
-        vector_director = np.array(vertex_splitting_actor.vector_director)
 
     ####### gamma source ###########
     source = sim.add_source("GenericSource", "source1")
@@ -134,7 +124,6 @@ if __name__ == "__main__":
         source_0.n = 1
 
     ####### PHASE SPACE ACTOR ##############
-    sim.output_dir = paths.output
     phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
     phsp_actor.attached_to = plan.name
     phsp_actor.attributes = [
@@ -148,7 +137,7 @@ if __name__ == "__main__":
         "TrackCreatorProcess",
     ]
     if bias:
-        phsp_actor.output_filename = "test084_output_data_last_vertex_angular_kill.root"
+        phsp_actor.output_filename = "test094_output_data_last_vertex_angular_kill.root"
 
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
     s.track_types_flag = True
@@ -164,8 +153,8 @@ if __name__ == "__main__":
     print(s)
 
     f_data = uproot.open(
-        paths.output / "test084_output_data_last_vertex_angular_kill.root"
+        paths.output / "test094_output_data_last_vertex_angular_kill.root"
     )
     arr_data = f_data["PhaseSpace"].arrays()
-    is_ok = validation_test(arr_data, vector_director, vertex_splitting_actor.max_theta)
+    is_ok = validation_test(arr_data,nb_split)
     utility.test_ok(is_ok)

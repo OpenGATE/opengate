@@ -85,16 +85,17 @@ if __name__ == "__main__":
         else:
             bias = True
         paths = utility.get_default_test_paths(
-            __file__, "test084_last_vertex_splitting", output_folder="test084"
+            __file__, "test094_last_vertex_splitting", output_folder="test094"
         )
 
         # create the simulation
         sim = gate.Simulation()
+        sim.output_dir = paths.output
 
         # main options
         ui = sim.user_info
         ui.g4_verbose = False
-        ui.visu = False
+        # ui.visu = True
         ui.visu_type = "vrml"
         ui.check_volumes_overlap = False
         ui.number_of_threads = 1
@@ -151,9 +152,6 @@ if __name__ == "__main__":
             )
             vertex_splitting_actor.attached_to = W_tubs.name
             vertex_splitting_actor.splitting_factor = nb_split
-            vertex_splitting_actor.angular_kill = True
-            vertex_splitting_actor.vector_director = [0, 0, -1]
-            vertex_splitting_actor.max_theta = 90 * deg
             vertex_splitting_actor.batch_size = 10
 
         plan = sim.add_volume("Box", "plan_phsp")
@@ -164,7 +162,7 @@ if __name__ == "__main__":
         ####### gamma source ###########
         source = sim.add_source("GenericSource", "source1")
         source.particle = "gamma"
-        source.n = 100000
+        source.n = 10000
         if bias:
             source.n = source.n / nb_split
 
@@ -196,9 +194,9 @@ if __name__ == "__main__":
             "TrackCreatorProcess",
         ]
         if bias:
-            phsp_actor.output_filename = "test084_output_data_last_vertex_biased.root"
+            phsp_actor.output_filename = "test094_output_data_last_vertex_biased.root"
         else:
-            phsp_actor.output_filename = "test084_output_data_last_vertex_ref.root"
+            phsp_actor.output_filename = "test094_output_data_last_vertex_ref.root"
 
         s = sim.add_actor("SimulationStatisticsActor", "Stats")
         s.track_types_flag = True
@@ -213,8 +211,8 @@ if __name__ == "__main__":
         output = sim.run(True)
         print(s)
 
-    f_data = uproot.open(paths.output / "test084_output_data_last_vertex_biased.root")
-    f_ref_data = uproot.open(paths.output / "test084_output_data_last_vertex_ref.root")
+    f_data = uproot.open(paths.output / "test094_output_data_last_vertex_biased.root")
+    f_ref_data = uproot.open(paths.output / "test094_output_data_last_vertex_ref.root")
     arr_data = f_data["PhaseSpace"].arrays()
     arr_ref_data = f_ref_data["PhaseSpace"].arrays()
     # #
