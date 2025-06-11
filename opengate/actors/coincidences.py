@@ -333,8 +333,15 @@ def remove_multiples(
 ):
     # Remove multiple coincidences.
     # Remaining coincidences are the ones that are alone in their time window.
-
-    coincidences_output = filter_multi(coincidences)
+    coincidences_multiples_removed = filter_multi(coincidences)
+    # Only keep coincidences that comply with the minimum transaxial distance
+    # and the maximum axial distance.
+    coincidences_output = filter_goods(
+        coincidences_multiples_removed,
+        min_transaxial_distance,
+        transaxial_plane,
+        max_axial_distance,
+    )
     return coincidences_output
 
 
