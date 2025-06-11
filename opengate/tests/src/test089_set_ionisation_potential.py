@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Apr  2 09:48:30 2025
+Created on Wed Apr 2 09:48:30 2025
 
 @author: fava
 """
@@ -11,7 +11,6 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.utility import g4_units
 import opengate.tests.utility as utility
-import opengate_core as g4
 
 
 def simuation_IDD(test_material):
