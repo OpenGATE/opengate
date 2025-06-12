@@ -329,10 +329,12 @@ class ItkImageDataItem(DataItem):
         origin=None,
         pixel_type="float",
         allocate=True,
-        fill_value = 0
+        fill_value=0,
     ):
         self.set_data(
-            create_3d_image_of_histogram(size, spacing, bins, origin, pixel_type, allocate, fill_value)
+            create_3d_image_of_histogram(
+                size, spacing, bins, origin, pixel_type, allocate, fill_value
+            )
         )
 
     def write(self, path):
@@ -641,8 +643,6 @@ class SingleItkImage(DataItemContainer):
     @property
     def image(self):
         return self.data
-    
-
 
 
 class SingleMeanItkImage(DataItemContainer):

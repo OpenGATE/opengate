@@ -4,7 +4,7 @@ from ..utility import g4_units
 from ..base import process_cls
 from .actoroutput import (
     ActorOutputSingleImageOfHistogram,
-    UserInterfaceToActorOutputImage
+    UserInterfaceToActorOutputImage,
 )
 
 from .doseactors import DoseActor, VoxelDepositActor
@@ -74,6 +74,7 @@ class VoxelizedPromptGammaTLEActor(
     """
     FIXME doc todo
     """
+
     user_info_defaults = {
         "bins": (
             200,
@@ -90,40 +91,40 @@ class VoxelizedPromptGammaTLEActor(
     }
 
     user_output_config = {
-        "p_E":{
+        "p_E": {
             "actor_output_class": ActorOutputSingleImageOfHistogram,
-            "interfaces":{
-                "prot_E":{
+            "interfaces": {
+                "prot_E": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": True,
                 },
             },
         },
-        "p_tof":{
+        "p_tof": {
             "actor_output_class": ActorOutputSingleImageOfHistogram,
-            "interfaces":{
-                "prot_tof":{
+            "interfaces": {
+                "prot_tof": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
             },
         },
-        "n_E":{
+        "n_E": {
             "actor_output_class": ActorOutputSingleImageOfHistogram,
-            "interfaces":{
-                "neutr_E":{
+            "interfaces": {
+                "neutr_E": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
                 },
             },
         },
-        "n_tof":{
+        "n_tof": {
             "actor_output_class": ActorOutputSingleImageOfHistogram,
-            "interfaces":{
-                "neutr_tof":{
+            "interfaces": {
+                "neutr_tof": {
                     "interface_class": UserInterfaceToActorOutputImage,
                     "item": 0,
                     "active": False,
@@ -133,12 +134,12 @@ class VoxelizedPromptGammaTLEActor(
     }
 
     def __init__(self, *args, **kwargs):
-        
+
         VoxelDepositActor.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
-        
+
         g4.GateVoxelizedPromptGammaTLEActor.__init__(self, self.user_info)
         self.AddActions(
             {
@@ -151,22 +152,22 @@ class VoxelizedPromptGammaTLEActor(
         )
 
     def initialize(self, *args):
-       
+
         self.check_user_input()
         VoxelDepositActor.initialize(self)
-        
-        self.user_output.p_E.set_active(True, item = 0)
-        self.user_output.p_E.set_write_to_disk(True, item = 0)
 
-        if not(self.user_output.p_tof.get_active(item = 0)):
-            self.user_output.p_tof.set_write_to_disk(False, item = 0)
-            self.user_output.p_tof.set_active(True,item=0)
-        if(not(self.user_output.n_E.get_active(item = 0))):
-            self.user_output.n_E.set_write_to_disk(False, item = 0)
-            self.user_output.n_E.set_active(True,item=0)
-        if(not(self.user_output.n_tof.get_active(item = 0))):
-            self.user_output.n_tof.set_write_to_disk(False, item = 0)
-            self.user_output.n_tof.set_active(True,item=0)
+        self.user_output.p_E.set_active(True, item=0)
+        self.user_output.p_E.set_write_to_disk(True, item=0)
+
+        if not (self.user_output.p_tof.get_active(item=0)):
+            self.user_output.p_tof.set_write_to_disk(False, item=0)
+            self.user_output.p_tof.set_active(True, item=0)
+        if not (self.user_output.n_E.get_active(item=0)):
+            self.user_output.n_E.set_write_to_disk(False, item=0)
+            self.user_output.n_E.set_active(True, item=0)
+        if not (self.user_output.n_tof.get_active(item=0)):
+            self.user_output.n_tof.set_write_to_disk(False, item=0)
+            self.user_output.n_tof.set_active(True, item=0)
 
         self.InitializeUserInfo(self.user_info)
 
@@ -177,7 +178,6 @@ class VoxelizedPromptGammaTLEActor(
 
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
-        
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         # need to override because create image is different for img of histo
@@ -195,29 +195,31 @@ class VoxelizedPromptGammaTLEActor(
         self.prepare_output_for_run("p_E", run_index)
         self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image)
 
-        if (self.user_output.p_tof.get_active(item=0)):
-            self.prepare_output_for_run("p_tof",run_index)
+        if self.user_output.p_tof.get_active(item=0):
+            self.prepare_output_for_run("p_tof", run_index)
             self.push_to_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
-        if (self.user_output.n_E.get_active(item=0)):
-            self.prepare_output_for_run("n_E",run_index)
+        if self.user_output.n_E.get_active(item=0):
+            self.prepare_output_for_run("n_E", run_index)
             self.push_to_cpp_image("n_E", run_index, self.cpp_E_neutron_image)
-        if (self.user_output.n_tof.get_active(item=0)):
-            self.prepare_output_for_run("n_tof",run_index)
+        if self.user_output.n_tof.get_active(item=0):
+            self.prepare_output_for_run("n_tof", run_index)
             self.push_to_cpp_image("n_tof", run_index, self.cpp_tof_neutron_image)
-        g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(self, run_index)
+        g4.GateVoxelizedPromptGammaTLEActor.BeginOfRunActionMasterThread(
+            self, run_index
+        )
 
     def EndOfRunActionMasterThread(self, run_index):
-      
+
         self.fetch_from_cpp_image("p_E", run_index, self.cpp_E_proton_image)
         self._update_output_coordinate_system("p_E", run_index)
-        if (self.user_output.p_tof.get_active(item=0)):
-            self.fetch_from_cpp_image("p_tof", run_index,self.cpp_tof_proton_image)
+        if self.user_output.p_tof.get_active(item=0):
+            self.fetch_from_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
             self._update_output_coordinate_system("p_tof", run_index)
-        if (self.user_output.n_E.get_active(item=0)):
-            self.fetch_from_cpp_image("n_E", run_index,self.cpp_E_neutron_image)
+        if self.user_output.n_E.get_active(item=0):
+            self.fetch_from_cpp_image("n_E", run_index, self.cpp_E_neutron_image)
             self._update_output_coordinate_system("n_E", run_index)
-        if (self.user_output.n_tof.get_active(item=0)):
-            self.fetch_from_cpp_image("n_tof", run_index,self.cpp_tof_neutron_image)
+        if self.user_output.n_tof.get_active(item=0):
+            self.fetch_from_cpp_image("n_tof", run_index, self.cpp_tof_neutron_image)
             self._update_output_coordinate_system("n_tof", run_index)
         VoxelDepositActor.EndOfRunActionMasterThread(self, run_index)
         return 0
