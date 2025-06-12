@@ -31,7 +31,7 @@ public:
 
   void InitializeCpp() override;
 
-  void BeginOfRunActionMasterThread(int run_id) override;
+  void BeginOfRunActionMasterThread(int run_id);
 
   int EndOfRunActionMasterThread(int run_id) override;
 
@@ -40,6 +40,22 @@ public:
   void BeginOfEventAction(const G4Event *event) override;
 
   void SteppingAction(G4Step *) override;
+
+  inline bool GetProtonTimeFlag() const {return fProtonTimeFlag; }
+
+  inline void SetProtonTimeFlag(const bool b) { fProtonTimeFlag = b; }
+
+  inline bool GetNeutronTimeFlag() const {return fNeutronTimeFlag; }
+
+  inline void SetNeutronTimeFlag(const bool b) { fNeutronTimeFlag = b; }
+
+  inline bool GetProtonEnergyFlag() const {return fProtonEnergyFlag; }
+
+  inline void SetProtonEnergyFlag(const bool b) { fProtonEnergyFlag = b; }
+
+  inline bool GetNeutronEnergyFlag() const {return fNeutronEnergyFlag; }
+
+  inline void SetNeutronEnergyFlag(const bool b) { fNeutronEnergyFlag = b; }
 
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
@@ -59,15 +75,16 @@ public:
   typedef itk::Image<double, 3> Image3DType;
   Image3DType::Pointer volume;
 
-private:
   G4double T0;
   G4int incidentParticles;
 
   G4int bins;
   G4double range;
-  G4bool prot;
-  G4bool energy;
-  G4double width;
+
+  bool fProtonTimeFlag{};
+  bool fProtonEnergyFlag{};
+  bool fNeutronTimeFlag{};
+  bool fNeutronEnergyFlag{};
 
   G4ThreeVector fsize;
   G4ThreeVector fspacing;

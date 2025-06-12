@@ -11,6 +11,7 @@ from ..image import (
     multiply_itk_images,
     scale_itk_image,
     create_3d_image,
+    create_3d_image_of_histogram,
     write_itk_image,
     get_info_from_image,
 )
@@ -320,6 +321,20 @@ class ItkImageDataItem(DataItem):
             create_3d_image(size, spacing, origin, pixel_type, allocate, fill_value)
         )
 
+    def create_image_of_histograms(
+        self,
+        size,
+        spacing,
+        bins,
+        origin=None,
+        pixel_type="float",
+        allocate=True,
+        fill_value = 0
+    ):
+        self.set_data(
+            create_3d_image_of_histogram(size, spacing, bins, origin, pixel_type, allocate, fill_value)
+        )
+
     def write(self, path):
         write_itk_image(self.data, ensure_filename_is_str(path))
 
@@ -625,7 +640,9 @@ class SingleItkImage(DataItemContainer):
 
     @property
     def image(self):
-        return self.data[0].image
+        return self.data
+    
+
 
 
 class SingleMeanItkImage(DataItemContainer):
