@@ -106,7 +106,7 @@ def HU_read_density_table(file_density):
                 continue
             if words[0][0] == "#":
                 continue
-            d = {"HU": int(words[0]), "density": float(words[1])}
+            d = {"HU": float(words[0]), "density": float(words[1])}
             densities.append(d)
     return densities
 
