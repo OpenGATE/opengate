@@ -62,9 +62,10 @@ def create_3d_image(
 def create_3d_image_of_histogram(
     size, spacing, bins, origin=None, pixel_type="float", allocate=True
 ):
-    size.append(bins)
-    spacing.append(1.0)
-    if origin is not None:
+    if len(size) != 4:
+        size.append(bins)
+        spacing.append(1.0)
+    if (origin is not None) and (len(origin) != 4):
         origin.append(0.0)
     return create_4d_image(size, spacing, origin, pixel_type, allocate)
 
