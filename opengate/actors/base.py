@@ -1,3 +1,4 @@
+import ast
 from box import Box
 from functools import wraps
 
@@ -6,6 +7,10 @@ from ..exception import fatal, GateImplementationError
 from ..base import GateObject, process_cls
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
+from ..filters.ast import FilterASTTransformer
+import ROOT
+import tempfile
+import opengate_core
 
 
 def _setter_hook_attached_to(self, attached_to):
@@ -87,6 +92,7 @@ class ActorBase(GateObject):
 
     # hints for IDE
     attached_to: str
+    filter: str
     filters: list
     filters_boolean_operator: str
     priority: int
@@ -103,6 +109,12 @@ class ActorBase(GateObject):
             None,
             {
                 "deprecated": "The user input parameter 'mother' is deprecated. Use 'attached_to' instead. ",
+            },
+        ),
+        "filter": (
+            "",
+            {
+                "doc": "Filter used by this actor. ",
             },
         ),
         "filters": (
@@ -491,6 +503,96 @@ class ActorBase(GateObject):
                 f"(actor type: {self.type_name}). "
                 f"Does the actor class somehow inherit from GateVActor (as it should)?"
             )
+
+        # set filter function
+        if self.filter != "":
+            self._build_and_set_filter_function()
+
+    def _build_and_set_filter_function(self):
+        tr = FilterASTTransformer()
+        e = ast.parse(self.filter, mode="eval")
+        e = tr.visit(e)
+
+        name = "local_filter"
+        args = ast.arguments(
+            posonlyargs=[],
+            args=[ast.arg(arg="step")],
+            kwonlyargs=[],
+            kw_defaults=[],
+            defaults=[],
+        )
+        body = [ast.Return(value=e.body)]
+        e = ast.FunctionDef(name=name, args=args, body=body, decorator_list=[])
+
+        imports = [
+            ast.Import(names=[ast.alias(name="numpy", asname="np")]),
+            ast.Import(names=[ast.alias(name="opengate_core", asname=None)]),
+            ast.Import(names=[ast.alias(name="opengate.filters.ast", asname=None)]),
+            ast.ImportFrom(
+                module="filters.ast",
+                names=[
+                    ast.alias(name="dbgp", asname=None),
+                ],
+                level=2,
+            ),
+        ]
+
+        module = ast.Module(body=[*imports, e], type_ignores=[])
+        ast.fix_missing_locations(module)
+
+        print(ast.dump(module))
+
+        exec(compile(module, filename="<ast>", mode="exec"), globals())
+
+        # include_paths = [
+        #    "/home/alexis/work/external/geant4/geant4-v11.3.0/source/track/include",
+        #    "/home/alexis/work/external/geant4/geant4-v11.3.0/source/global/management/include",
+        #    "/home/alexis/work/external/geant4/geant4-v11.3.0/source/particles/management/include",
+        #    "/home/alexis/work/external/geant4/geant4-v11.3.0/source/geometry/management/include",
+        #    "/home/alexis/work/external/geant4/geant4-v11.3.0/source/global/HEPGeometry/include",
+        #    "/home/alexis/work/external/geant4/geant4-v11.3.0/source/materials/include",
+        #    "/home/alexis/work/external/geant4/geant4-v11.3.0/build/source/global/include",
+        # ]
+
+        # cpp_fun = """
+        # bool cpp_local_filter(void* ptr) {
+        #     auto* step = reinterpret_cast<G4Step*>(ptr);
+        #     return step->GetTrack()->GetParticleDefinition()->GetParticleName() == "proton";
+        # }
+        # """
+        # for include_path in include_paths:
+        #   ROOT.gInterpreter.AddIncludePath(include_path)
+        # ROOT.gInterpreter.Declare("#include <G4Step.hh>")
+        # ROOT.gInterpreter.Declare("#include <G4Track.hh>")
+        # ROOT.gInterpreter.Declare("#include <G4ParticleDefinition.hh>")
+        # ROOT.gInterpreter.Declare(cpp_fun)
+
+        # cpp_code = """
+        # #include <G4Step.hh>
+        # #include <G4Track.hh>
+        # #include <G4ParticleDefinition.hh>
+        #
+        # bool cpp_local_filter(void* ptr) {
+        #     auto* step = reinterpret_cast<G4Step*>(ptr);
+        #     return step->GetTrack()->GetParticleDefinition()->GetParticleName() == "proton";
+        # }
+        # """
+        #
+        # cpp_file = ""
+        # with tempfile.NamedTemporaryFile(suffix=".C", mode="w", delete=False) as f:
+        #     f.write(cpp_code)
+        #     cpp_file = f.name
+        #
+        # for include_path in include_paths:
+        #   ROOT.gSystem.AddIncludePath(f"-I{include_path}")
+
+        # ROOT.gSystem.SetMakeSharedLib(f"g++ -O2 -Wall -fPIC -shared -o $LibName $ObjectFiles")
+        # ROOT.gSystem.CompileMacro(cpp_file, "kO")
+        # ROOT.gSystem.Load("/tmp/tmpfhe1bkxu_C.so")
+
+        self.SetFilterFunction(local_filter)
+        # self.SetFilterFunction(ROOT.cpp_local_filter)
+        # self.SetFilterFunction(llocal_filter)
 
     def _init_user_output_instance(self):
         for output_name, output_config in self._processed_user_output_config.items():
