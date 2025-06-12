@@ -81,10 +81,11 @@ public:
   G4int bins;
   G4double range;
 
-  bool fProtonTimeFlag{};
-  bool fProtonEnergyFlag{};
-  bool fNeutronTimeFlag{};
-  bool fNeutronEnergyFlag{};
+  G4bool fProtonTimeFlag{};
+  G4bool fProtonEnergyFlag{};
+  G4bool fNeutronTimeFlag{};
+  G4bool fNeutronEnergyFlag{};
+
 
   G4ThreeVector fsize;
   G4ThreeVector fspacing;

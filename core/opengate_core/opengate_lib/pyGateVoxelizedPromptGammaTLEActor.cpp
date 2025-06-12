@@ -59,3 +59,4 @@ void init_GateVoxelizedPromptGammaTLEActor(py::module &m) {
       .def_readwrite("cpp_E_neutron_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_neutron_image)
       .def_readwrite("cpp_E_proton_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_proton_image);
 }
+

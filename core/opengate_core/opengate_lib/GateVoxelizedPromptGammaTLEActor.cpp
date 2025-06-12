@@ -30,11 +30,12 @@
 GateVoxelizedPromptGammaTLEActor::GateVoxelizedPromptGammaTLEActor(
     py::dict &user_info)
     : GateVActor(user_info, true) {
-  fMultiThreadReady = true; // But used as a single thread python side : nb pf runs = 1
+  fMultiThreadReady =
+      true; // But used as a single thread python side : nb pf runs = 1
 }
 
 GateVoxelizedPromptGammaTLEActor::~GateVoxelizedPromptGammaTLEActor() {
-  //not needed
+  // not needed
 }
 
 void GateVoxelizedPromptGammaTLEActor::InitializeUserInfo(py::dict &user_info) {
@@ -70,7 +71,8 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
     cpp_tof_neutron_image = ImageType::New();
   }
 
-  // Construction of the 3D image with the same shape/mat that the voxel of the actor but is accepted by the method of volume_attach and "isInside"
+  // Construction of the 3D image with the same shape/mat that the voxel of the
+  // actor but is accepted by the method of volume_attach and "isInside"
   volume = Image3DType::New();
 
   Image3DType::RegionType region;
@@ -78,8 +80,8 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
   Image3DType::SpacingType spacing;
 
   size[0] = fsize[0];
-  size [1] = fsize[1];
-  size [2] = fsize[2];
+  size[1] = fsize[1];
+  size[2] = fsize[2];
   region.SetSize(size);
 
   spacing[0] = fspacing[0];
@@ -127,6 +129,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   if(step->GetTrack()->GetParticleDefinition()->GetParticleName()!="neutron" && (fNeutronEnergyFlag || fNeutronTimeFlag) ){
     return;
   }
+
   // Get the voxel index
   G4ThreeVector position;
   G4bool isInside;
@@ -135,17 +138,16 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     if (!isInside) { //verification
       return; // Skip if not inside the volume
     }
-
-  // Get the weight of the track (particle history) for potential russian roulette or splitting
+  // Get the weight of the track (particle history) for potential russian
+  // roulette or splitting
   G4double w = step->GetTrack()->GetWeight();
 
-  // Get the spatial index from the index obtained with the 3D volume and th emethod GetStepVoxelPosition()
+  // Get the spatial index from the index obtained with the 3D volume and th
+  // emethod GetStepVoxelPosition()
   ImageType::IndexType ind;
   ind[0] = index[0];
   ind[1] = index[1];
   ind[2] = index[2];
-
-
     // Get the step lenght
     const G4double &l = step->GetStepLength();
     G4Material *mat = step->GetPreStepPoint()->GetMaterial();
@@ -161,6 +163,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
   // Get the voxel index (fourth dim) corresponding to the time of flight
     G4int bin = static_cast<int>(time / (range / bins)); // Always the left bin
+
     if (bin == bins) {
       bin = bins - 1;
     }
@@ -172,7 +175,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
       ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, l * rho * w);
     }
 
-  }else{  // when the quantity of interest is the energy
+  } else { // when the quantity of interest is the energy
 
     // Get the energy of the projectile
     G4double randomenergy = G4UniformRand();
@@ -180,7 +183,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     const G4double &preE = step->GetPreStepPoint()->GetKineticEnergy();//MeV
     G4double projectileEnergy = postE + randomenergy * (preE - postE);//MeV
     // thershold with a minimum energy of 40 keV
-    if(projectileEnergy < 0.04 * CLHEP::MeV){
+    if (projectileEnergy < 0.04 * CLHEP::MeV) {
       return;
     }
 
@@ -199,7 +202,6 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     }
   }
 }
-
 
 void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
   std::cout << "incident particles : " << incidentParticles << std::endl;
