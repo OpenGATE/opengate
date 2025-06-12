@@ -24,6 +24,7 @@ setup(
         "matplotlib",
         "GitPython",
         "numpy-stl",
+        "meshio",
         "radioactivedecay",
         "jsonpickle",
         "pandas",
