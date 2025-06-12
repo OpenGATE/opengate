@@ -39,6 +39,7 @@ autodoc_mock_imports = [
     # "GitPython",
     # "colorlog",
     # "numpy-stl",
+    # "meshio",
     # "radioactivedecay",
     # "jsonpickle",
     # "pandas",
