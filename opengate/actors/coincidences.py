@@ -5,6 +5,10 @@ import awkward as ak
 import numpy as np
 import pandas as pd
 import os
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ChunkSizeTooSmallError(Exception):
@@ -18,7 +22,7 @@ def coincidences_sorter(
     min_transaxial_distance,
     transaxial_plane,
     max_axial_distance,
-    chunk_size=10000,
+    chunk_size=100000,
     return_type="dict",
     save_to_file=False,
     output_file_path=None,
@@ -94,9 +98,12 @@ def coincidences_sorter(
     # (especially in case of multithreaded simulation), singles in one chunk
     # may be more recent than the singles in the next chunk.
     # If that's the case, the chunk size must be increased for successful coincidence sorting.
+    original_chunk_size = chunk_size
     max_num_chunk_size_increases = 10
     num_chunk_size_increases = 0
     processing_finished = False
+    start = time.time()
+    time_lost = 0
     while (
         not processing_finished
         and num_chunk_size_increases < max_num_chunk_size_increases
@@ -204,10 +211,18 @@ def coincidences_sorter(
             # Double chunk size and start all over again
             chunk_size *= 2
             num_chunk_size_increases += 1
+            time_lost = time.time() - start
 
     if not processing_finished:
         # Coincidence sorting has failed, even after repeated increases of the chunk size
         raise ChunkSizeTooSmallError
+
+    if num_chunk_size_increases > 0:
+        time_reduction = time_lost / (time.time() - start)
+        if time_reduction >= 0.01:
+            logger.warning(
+                f"Coincidence sorting execution time can be reduced by {time_reduction*100:.02f}% by using chunk_size {chunk_size} instead of {original_chunk_size}"
+            )
 
     if not save_to_file:
         # Combine all coincidences from all chunks into a single pandas DataFrame
