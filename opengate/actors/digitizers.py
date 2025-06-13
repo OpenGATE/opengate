@@ -552,6 +552,7 @@ class DigitizerSpatialBlurringActor(
     blur_fwhm: float
     blur_sigma: float
     keep_in_solid_limits: bool
+    use_truncated_Gaussian: bool
 
     user_info_defaults = {
         "attributes": (
@@ -597,6 +598,12 @@ class DigitizerSpatialBlurringActor(
             },
         ),
         "keep_in_solid_limits": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "use_truncated_Gaussian": (
             True,
             {
                 "doc": "FIXME",
