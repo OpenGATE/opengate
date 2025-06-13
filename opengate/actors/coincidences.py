@@ -122,9 +122,17 @@ def coincidences_sorter(
                 # Process a chunk, unless only one has been read so far
                 if len(queue) > 1:
                     coincidences = process_chunk(queue, time_window)
+                    # Before filtering coincidences, we want to make sure that we have all
+                    # coincidences that belong to the same time window (same SingleIndex1 value).
+                    # When processing the next chunk of singles, we may still find one or more
+                    # coincidences that belong to the same time window as the last coincidence so far.
+                    #
+                    # All coincidences that have a SingleIndex1 value different from the last one
+                    # can already be filtered, the others will be transferred to be filtered in
+                    # the next iteration.
                     coincidences_to_filter = coincidences.loc[
-                        coincidences["GlobalTime1"]
-                        < coincidences["GlobalTime1"].iloc[-1]
+                        coincidences["SingleIndex1"]
+                        != coincidences["SingleIndex1"].iloc[-1]
                     ].reset_index(drop=True)
                     if coincidences_to_transfer is not None:
                         coincidences_to_filter = pd.concat(
@@ -133,8 +141,8 @@ def coincidences_sorter(
                             ignore_index=True,
                         )
                     coincidences_to_transfer = coincidences.loc[
-                        coincidences["GlobalTime1"]
-                        == coincidences["GlobalTime1"].iloc[-1]
+                        coincidences["SingleIndex1"]
+                        == coincidences["SingleIndex1"].iloc[-1]
                     ].reset_index(drop=True)
                     # Apply policy
                     filtered_coincidences = policy_functions[policy](
