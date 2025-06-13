@@ -4,6 +4,11 @@ from itertools import chain
 import awkward as ak
 import numpy as np
 import pandas as pd
+import os
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ChunkSizeTooSmallError(Exception):
@@ -17,8 +22,11 @@ def coincidences_sorter(
     min_transaxial_distance,
     transaxial_plane,
     max_axial_distance,
-    chunk_size=10000,
+    chunk_size=100000,
     return_type="dict",
+    save_to_file=False,
+    output_file_path=None,
+    output_file_format="hdf5",
 ):
     """
     Sort singles and detect coincidences.
@@ -90,18 +98,24 @@ def coincidences_sorter(
     # (especially in case of multithreaded simulation), singles in one chunk
     # may be more recent than the singles in the next chunk.
     # If that's the case, the chunk size must be increased for successful coincidence sorting.
+    original_chunk_size = chunk_size
     max_num_chunk_size_increases = 10
     num_chunk_size_increases = 0
     processing_finished = False
+    start = time.time()
+    time_lost = 0
     while (
         not processing_finished
         and num_chunk_size_increases < max_num_chunk_size_increases
     ):
         try:
+            if save_to_file and os.path.exists(output_file_path):
+                os.remove(output_file_path)
             # A double-ended queue is used as a FIFO to store the current and the next chunk of singles
             queue = deque()
-            coincidences = []
             num_singles = 0
+            coincidences_to_transfer = None
+            coincidences_to_return = []
             for chunk in singles_tree.iterate(step_size=chunk_size):
                 num_singles_in_chunk = len(chunk)
                 # Convert chunk to pandas DataFrame
@@ -114,44 +128,111 @@ def coincidences_sorter(
                 queue.append(chunk_pd)
                 # Process a chunk, unless only one has been read so far
                 if len(queue) > 1:
-                    coincidences.append(process_chunk(queue, time_window))
+                    coincidences = process_chunk(queue, time_window)
+                    # Before filtering coincidences, we want to make sure that we have all
+                    # coincidences that belong to the same time window (same SingleIndex1 value).
+                    # When processing the next chunk of singles, we may still find one or more
+                    # coincidences that belong to the same time window as the last coincidence so far.
+                    #
+                    # All coincidences that have a SingleIndex1 value different from the last one
+                    # can already be filtered, the others will be transferred to be filtered in
+                    # the next iteration.
+                    coincidences_to_filter = coincidences.loc[
+                        coincidences["SingleIndex1"]
+                        != coincidences["SingleIndex1"].iloc[-1]
+                    ].reset_index(drop=True)
+                    if coincidences_to_transfer is not None:
+                        coincidences_to_filter = pd.concat(
+                            [coincidences_to_transfer, coincidences_to_filter],
+                            axis=0,
+                            ignore_index=True,
+                        )
+                    coincidences_to_transfer = coincidences.loc[
+                        coincidences["SingleIndex1"]
+                        == coincidences["SingleIndex1"].iloc[-1]
+                    ].reset_index(drop=True)
+                    # Apply policy
+                    filtered_coincidences = policy_functions[policy](
+                        coincidences_to_filter,
+                        min_transaxial_distance,
+                        transaxial_plane,
+                        max_axial_distance,
+                    )
+                    # Remove the temporary SingleIndex columns
+                    filtered_coincidences = filtered_coincidences.drop(
+                        columns=["SingleIndex1", "SingleIndex2"]
+                    )
+                    if save_to_file:
+                        filtered_coincidences.to_hdf(
+                            output_file_path,
+                            key="coincidences",
+                            mode="a",
+                            format="table",
+                            append=True,
+                        )
+                    else:
+                        coincidences_to_return.append(filtered_coincidences)
                     # Remove processed chunk from the left of the queue
                     queue.popleft()
                 num_singles += num_singles_in_chunk
 
             # At this point, all chunks have been read. Now process the last chunk.
-            coincidences.append(process_chunk(queue, time_window))
-
-            # Combine all coincidences from all chunks into a single pandas DataFrame
-            all_coincidences = pd.concat(coincidences, axis=0, ignore_index=True)
-
-            # Apply policy
+            coincidences_to_filter = process_chunk(queue, time_window)
+            if coincidences_to_transfer is not None:
+                coincidences_to_filter = pd.concat(
+                    [coincidences_to_transfer, coincidences_to_filter],
+                    axis=0,
+                    ignore_index=True,
+                )
             filtered_coincidences = policy_functions[policy](
-                all_coincidences,
+                coincidences_to_filter,
                 min_transaxial_distance,
                 transaxial_plane,
                 max_axial_distance,
             )
-
             # Remove the temporary SingleIndex columns
             filtered_coincidences = filtered_coincidences.drop(
                 columns=["SingleIndex1", "SingleIndex2"]
             )
+            if save_to_file:
+                filtered_coincidences.to_hdf(
+                    output_file_path,
+                    key="coincidences",
+                    mode="a",
+                    format="table",
+                    append=True,
+                )
+            else:
+                coincidences_to_return.append(filtered_coincidences)
+
             processing_finished = True
 
         except ChunkSizeTooSmallError:
             # Double chunk size and start all over again
             chunk_size *= 2
             num_chunk_size_increases += 1
+            time_lost = time.time() - start
 
     if not processing_finished:
         # Coincidence sorting has failed, even after repeated increases of the chunk size
         raise ChunkSizeTooSmallError
 
-    if return_type == "dict":
-        return filtered_coincidences.to_dict(orient="list")
-    elif return_type == "pd":
-        return filtered_coincidences
+    if num_chunk_size_increases > 0:
+        time_reduction = time_lost / (time.time() - start)
+        if time_reduction >= 0.01:
+            logger.warning(
+                f"Coincidence sorting execution time can be reduced by {time_reduction*100:.02f}% by using chunk_size {chunk_size} instead of {original_chunk_size}"
+            )
+
+    if not save_to_file:
+        # Combine all coincidences from all chunks into a single pandas DataFrame
+        coincidences_to_return = pd.concat(
+            coincidences_to_return, axis=0, ignore_index=True
+        )
+        if return_type == "dict":
+            return coincidences_to_return.to_dict(orient="list")
+        elif return_type == "pd":
+            return coincidences_to_return
 
 
 def process_chunk(queue, time_window):
@@ -267,8 +348,15 @@ def remove_multiples(
 ):
     # Remove multiple coincidences.
     # Remaining coincidences are the ones that are alone in their time window.
-
-    coincidences_output = filter_multi(coincidences)
+    coincidences_multiples_removed = filter_multi(coincidences)
+    # Only keep coincidences that comply with the minimum transaxial distance
+    # and the maximum axial distance.
+    coincidences_output = filter_goods(
+        coincidences_multiples_removed,
+        min_transaxial_distance,
+        transaxial_plane,
+        max_axial_distance,
+    )
     return coincidences_output
 
 
