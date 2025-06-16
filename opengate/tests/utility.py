@@ -10,9 +10,11 @@ import scipy
 import pathlib
 import uproot
 import sys
+import shutil
 from pathlib import Path
 from matplotlib.ticker import StrMethodFormatter
 from matplotlib.patches import Circle
+import io
 import gatetools.phsp
 
 from ..utility import (
@@ -114,6 +116,9 @@ def read_stat_file_json(filename):
     counts = {}
     for k, d in data.items():
         counts[k] = d["value"]
+        u = d["unit"]
+        if u in g4_units:
+            counts[k] *= g4_units[u]
     stat = SimulationStatisticsActor(name=r)
     stat.user_output.stats.store_data(counts)
     return stat
@@ -163,7 +168,8 @@ def read_stat_file_legacy(filename):
 def print_test(b, s):
     s += f" --> OK? {b}"
     if b:
-        print(s)
+        color = color_ok
+        print(colored.stylize(s, color))
     else:
         color = color_error
         print(colored.stylize(s, color))
@@ -2149,3 +2155,42 @@ def get_image_1d_profile(filename, axis, offset=(0, 0)):
         pdd_y = img_arr[int(s[0] / 2) + offset[0], int(s[1] / 2) + offset[1], :]
         pdd_x = np.arange(0, s[2] * spacing[0], spacing[0])
     return pdd_x, pdd_y
+
+
+def delete_folder_contents(folder_path):
+    # Check if the folder exists
+    if os.path.exists(folder_path):
+        # Iterate through the folder contents
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            # Check if it's a file and delete it
+            if os.path.isfile(item_path) or os.path.islink(item_path):
+                os.unlink(item_path)  # Remove file or symbolic link
+            # Check if it's a directory and delete it
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        print(f"Contents of '{folder_path}' have been deleted.")
+    else:
+        print(f"The folder '{folder_path}' does not exist.")
+
+
+def capture_stdout(command, *args, **kwargs):
+    # Define a function that captures stdout
+    # Save the original stdout
+    original_stdout = sys.stdout
+    # Create a buffer to capture output
+    captured_output = io.StringIO()
+
+    try:
+        # Redirect stdout to the buffer
+        sys.stdout = captured_output
+        # Execute the command
+        command(*args, **kwargs)
+    finally:
+        # Restore the original stdout
+        sys.stdout = original_stdout
+
+    # Get the output from the buffer and return it
+    print("here", captured_output)
+    print("here", captured_output.getvalue())
+    return captured_output.getvalue()

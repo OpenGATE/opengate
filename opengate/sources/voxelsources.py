@@ -43,13 +43,13 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
     def set_transform_from_user_info(self):
         # get source image information
         src_info = read_image_info(str(self.image))
-        # get pointer to SPSVoxelPosDistribution
+        # get the pointer to SPSVoxelPosDistribution
         pg = self.GetSPSVoxelPosDistribution()
         # update cpp image info (no need to allocate)
         update_image_py_to_cpp(self.itk_image, pg.cpp_edep_image, False)
         # set spacing
         pg.cpp_edep_image.set_spacing(src_info.spacing)
-        # set origin (half size + translation and half pixel shift)
+        # set origin (half size + translation and half-pixel shift)
         c = (
             -src_info.size / 2.0 * src_info.spacing
             + self.position.translation
@@ -80,7 +80,7 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
 
         # FIXME -> check other option in position not used here
 
-        # initialize standard options (particle energy, etc.)
+        # initialise standard options (particle energy, etc.)
         # we temporarily set the position attribute to reuse
         # the GenericSource verification
         GenericSource.initialize(self, run_timing_intervals)

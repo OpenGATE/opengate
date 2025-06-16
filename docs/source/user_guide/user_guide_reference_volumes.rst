@@ -6,6 +6,8 @@ Details: Volumes
 This section describes the different volumes available in GATE 10 and
 their parameters.
 
+.. _common_parameters:
+
 Common parameters
 -----------------
 
@@ -21,7 +23,7 @@ Common parameters are:
    to the reference frame of the mother volume and therefore moves with
    the mother volume.
 -  ``material``: the name of the material that composes the volume,
-   e.g. ``G4_WATER``. See section `Materials <#materials>`__
+   e.g. ``G4_WATER``. See section :ref:`Materials <materials_section>`
 -  ``translation``: list of 3 numerical values,
    e.g. ``[0, 2*cm, 3*mm]``. It defines the translation of the volume
    with respect to the reference frame of the mother volume. Note: the
@@ -356,6 +358,7 @@ Reference
 
 .. autoclass:: opengate.geometry.volumes.RepeatParametrisedVolume
 
+.. _boolean_vol:
 
 Boolean volumes
 ---------------
@@ -400,7 +403,7 @@ second shape is translated and rotated, respectively, with respect to
 the first shape prior to the boolean operation. The absolute placement
 in space in the simulation is irrelevant for this. On the other hand,
 the line ``final_vol.translation = [5 * cm, 5 * cm, 5 * cm]`` simply
-refers to the `common parameter <#Common%20parameters>`__ which
+refers to the :ref:`common parameter <common_parameters>` which
 specifies the placement of the final volume in space with respect to its
 mother, in this case the world volume.
 

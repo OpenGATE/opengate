@@ -20,9 +20,7 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     if not os.path.isfile(paths.output / "phsp_sphere_ref.root"):
         subprocess.call(["python", paths.current / dependency])
     if not os.path.isfile(paths.output / "phsp_sphere_ff.root"):
-        subprocess.call(
-            ["python", paths.current / "test085_free_flight_phsp_2_ff_mt.py"]
-        )
+        subprocess.call(["python", paths.current / "test085_free_flight_phsp_2_ff.py"])
     if not os.path.isfile(paths.output / "phsp_sphere_ff_sc.root"):
         subprocess.call(
             ["python", paths.current / "test085_free_flight_phsp_3_scatter_mt.py"]

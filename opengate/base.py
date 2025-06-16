@@ -21,7 +21,7 @@ from .definitions import (
 )
 from .decorators import requires_fatal
 import traceback
-from .logger import global_log
+from .logger import logger
 
 
 def print_call_location():
@@ -452,7 +452,7 @@ class GateObject:
 
     def __init__(self, *args, simulation=None, **kwargs) -> None:
         self._simulation = simulation
-        # keep internal number of raised warnings (for debug)
+        # keep the internal number of raised warnings (for debug)
         self.number_of_warnings = 0
         self._temporary_warning_cache = []
         # prefill user info with defaults
@@ -503,8 +503,7 @@ class GateObject:
 
     def __str__(self):
         ret_string = (
-            f"***\n"
-            f"{type(self).__name__} named {self.name} "
+            f"GateObject {type(self).__name__} named {self.name} "
             f"with the following parameters:\n"
         )
         for k, v in self.user_info.items():
@@ -804,15 +803,15 @@ class DynamicGateObject(GateObject):
             self.user_info["dynamic_params"] = {}
         processed_params, extra_params = self.process_dynamic_parametrisation(params)
         processed_params["extra_params"] = extra_params
-        # if user provided no name, create one
+        # if the user provided no name, create one
         if name is None:
             name = f"parametrisation_{len(self.dynamic_params)}"
         self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
-        # issue debugging message
+        # issue a debugging message
         s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
-        global_log.debug(s)
+        logger.debug(s)
 
     def create_changers(self):
         # this base class implementation is here to keep inheritance intact.

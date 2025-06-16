@@ -4,23 +4,40 @@ from ..base import process_cls
 from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
+import numpy as np
 
 
 def generic_source_default_aa():
     # aa = Angular Acceptance
     # this is used to control the direction of events in
     # the generic source, but is also used in the SplitComptonActor
-    deg = g4_units.deg
     return Box(
         {
             "skip_policy": "SkipEvents",
+            "max_rejection": 5000,
             "volumes": [],
             "intersection_flag": False,
             "normal_flag": False,
+            "forced_direction_flag": False,
             "normal_vector": [0, 0, 1],
-            "normal_tolerance": 3 * deg,
+            "normal_tolerance": 3 * g4_units.deg,
+            "normal_tolerance_min_distance": 0 * g4_units.cm,
+            "distance_dependent_normal_tolerance": False,
+            "angle1": 90 * g4_units.degree,
+            "distance1": 0 * g4_units.cm,
+            "angle2": 20 * g4_units.degree,
+            "distance2": 50 * g4_units.cm,
         }
     )
+
+
+def distance_dependent_angle_tolerance(a1, a2, d1, d2, dist):
+    a = (1 / np.tan(a1) - 1 / np.tan(a2)) / (d1 - d2)
+    b = 1 / np.tan(a1) - a * d1
+    tol = np.arctan(1.0 / (a * dist + b))
+    if tol < 0:
+        tol = 90 * g4_units.deg
+    return tol
 
 
 def _setter_hook_particles(self, value):
@@ -61,6 +78,19 @@ class GenericBiasingActorBase(ActorBase):
             {
                 "doc": "Specifies the particles to split. The default value, all, includes all particles",
                 "setter_hook": _setter_hook_particles,
+            },
+        ),
+        "ignored_volumes": (
+            [],
+            {
+                "doc": "FIXME ",
+            },
+        ),
+        "minimal_weight": (
+            -1,
+            {
+                "doc": "if the particle weight become lower than this value, the particle is killed. "
+                "Negative values are considered with minimal_weight = min double default (1e-300)"
             },
         ),
     }
@@ -210,15 +240,34 @@ class ActorOutputScatterSplittingFreeFlightActor(ActorOutputBase):
         s = ""
         for key, value in self.split_info.items():
             s += f"{key}: {value}\n"
-        f = self.split_info.nb_tracks_with_free_flight / (
-            self.split_info.nb_compt_splits * self.split_info.compton_splitting_factor
-            + self.split_info.nb_rayl_splits * self.split_info.rayleigh_splitting_factor
-        )
-        s += f"Fraction of ff:4" f" {f*100:.2f} %\n"
-        f = self.split_info.nb_tracks_with_free_flight / (
-            self.split_info.nb_compt_tracks + self.split_info.nb_rayl_tracks
-        )
-        s += f"Check split/ff: {f*100:.2f} %\n"
+
+        if (
+            self.split_info.compton_splitting_factor > 0
+            and self.split_info.nb_compt_splits > 0
+        ):
+            f = self.split_info.nb_compt_tracks / (
+                self.split_info.nb_compt_splits
+                * self.split_info.compton_splitting_factor
+            )
+            s += f"Fraction of FF compton: {f*100:.2f} %\n"
+
+        if (
+            self.split_info.rayleigh_splitting_factor > 0
+            and self.split_info.nb_rayl_splits > 0
+        ):
+            f = self.split_info.nb_rayl_tracks / (
+                self.split_info.nb_rayl_splits
+                * self.split_info.rayleigh_splitting_factor
+            )
+            s += f"Fraction of FF rayleigh: {f*100:.2f} %\n"
+
+        if self.split_info.nb_compt_tracks < 1 and self.split_info.nb_rayl_tracks < 1:
+            f = 0
+        else:
+            f = self.split_info.nb_tracks_with_free_flight / (
+                self.split_info.nb_compt_tracks + self.split_info.nb_rayl_tracks
+            )
+        s += f"Check split vs ff (should be 100): {f*100:.2f} %\n"
         return s
 
 

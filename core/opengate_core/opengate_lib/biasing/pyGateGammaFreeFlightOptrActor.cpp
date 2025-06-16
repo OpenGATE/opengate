@@ -12,10 +12,10 @@ namespace py = pybind11;
 
 void init_GateGammaFreeFlightOptrActor(py::module &m) {
 
-  py::class_<GateGammaFreeFlightOptrActor, G4VBiasingOperator, GateVActor,
-             std::unique_ptr<GateGammaFreeFlightOptrActor, py::nodelete>>(
+  py::class_<GateGammaFreeFlightOptrActor, G4VBiasingOperator, GateVActor>(
       m, "GateGammaFreeFlightOptrActor")
       .def(py::init<py::dict &>())
       .def("ConfigureForWorker",
-           &GateGammaFreeFlightOptrActor::ConfigureForWorker);
+           &GateGammaFreeFlightOptrActor::ConfigureForWorker)
+      .def("ClearOperators", &GateGammaFreeFlightOptrActor::ClearOperators);
 }

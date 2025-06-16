@@ -45,13 +45,8 @@ public:
   G4VParticleChange *GenerateBiasingFinalState(const G4Track *,
                                                const G4Step *) override;
 
-  G4ILawForceFreeFlight *GetForceFreeFlightLaw();
-
   void ResetInitialTrackWeight(G4double w);
 
-  G4bool OperationComplete() const;
-
-  bool fWeightIsTooLow;
   std::map<int, double> fProcessTypeToWeight;
   G4ILawForceFreeFlight *fForceFreeFlightInteractionLaw = nullptr;
   double fProposedWeight = -1.0;

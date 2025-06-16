@@ -3,6 +3,7 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
+from opengate.contrib.spect.spect_helpers import get_default_energy_windows
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
@@ -43,7 +44,7 @@ def create_simulation_test085(
     sim.store_json_archive = True
     sim.store_input_files = False
     sim.json_archive_filename = f"simu_{simu_name}.json"
-    sim.random_seed = 1235342  # "auto"
+    sim.random_seed = 321654  # "auto"
     data_folder = Path(paths.data) / "test085"
 
     # units
@@ -63,7 +64,7 @@ def create_simulation_test085(
     if sim.visu:
         sim.number_of_threads = 1
         activity = 1000 * BqmL / sim.number_of_threads
-        activity = 0.2 * BqmL / sim.number_of_threads
+        activity = 50 * BqmL / sim.number_of_threads
 
     # world
     world = sim.world
@@ -120,9 +121,6 @@ def create_simulation_test085(
     # sim.physics_manager.set_production_cut("phantom", "gamma", 0.01 * mm)
     sim.user_hook_after_init = check_process_user_hook
 
-    if angle_tolerance is None:
-        angle_tolerance = 20 * deg
-
     # add iec voxelized source
     iec_source_filename = data_folder / "iec_4mm_activity.mhd"
     source = sim.add_source("VoxelSource", "src")
@@ -134,15 +132,16 @@ def create_simulation_test085(
     source.activity = activity * np.array(volumes).sum()
     print(f"Total activity is {source.activity / Bq}")
 
-    # add stat actor
+    # add a stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
     stats.output_filename = f"stats_{simu_name}.txt"
 
     # set the gantry orientation
+    starting_angle_deg = 10
     if len(heads) == 2:
-        nm670.rotate_gantry(heads[0], radius, 0, 0, 1)
-        nm670.rotate_gantry(heads[1], radius, 180, 0, 1)
+        nm670.rotate_gantry(heads[0], radius, starting_angle_deg, 0, 1)
+        nm670.rotate_gantry(heads[1], radius, starting_angle_deg + 180, 0, 1)
 
     return source, actors
 
@@ -168,12 +167,9 @@ def add_spect_heads(sim, simu_name, radius):
     heads, crystals = nm670.add_spect_two_heads(
         sim, "spect", "lehr", debug=sim.visu, radius=radius
     )
-    digit1 = nm670.add_digitizer_tc99m_v2(
-        sim, crystals[0].name, "digit1", spectrum_channel=False
-    )
-    digit2 = nm670.add_digitizer_tc99m_v2(
-        sim, crystals[1].name, "digit2", spectrum_channel=False
-    )
+    channels = get_default_energy_windows("tc99m")
+    digit1 = nm670.add_digitizer(sim, crystals[0].name, "digit1", channels=channels)
+    digit2 = nm670.add_digitizer(sim, crystals[1].name, "digit2", channels=channels)
 
     # we need the weights for the digitizer
     hits1 = digit1.find_module("hits")
@@ -188,6 +184,8 @@ def add_spect_heads(sim, simu_name, radius):
     proj1.output_filename = f"projection_1_{simu_name}.mhd"
     proj2 = digit2.find_module("projection")
     proj2.output_filename = f"projection_2_{simu_name}.mhd"
+    proj1.squared_counts.active = True
+    proj2.squared_counts.active = True
     projs = [proj1, proj2]
 
     # sim.physics_manager.set_production_cut(crystals[0].name, "all", 2 * mm)

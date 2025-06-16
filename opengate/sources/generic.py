@@ -15,6 +15,9 @@ from ..exception import fatal, warning
 
 
 def _generic_source_default_position():
+    """
+    types {"sphere", "point", "box", "disc", "cylinder"};
+    """
     return Box(
         {
             "type": "point",
@@ -163,6 +166,10 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             _generic_source_default_energy(),
             {"doc": "Define the energy of the primary particles"},
         ),
+        "polarization": (
+            [],
+            {"doc": "Polarization of the particle (3 Stokes parameters)."},
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -202,7 +209,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
             self.energy.type = "mono"
             self.energy.mono = 511 * g4_units.keV
 
-        # check energy type
+        # check the energy type
         l = [
             "mono",
             "gauss",
@@ -221,7 +228,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 f"Available types are {l}"
             )
 
-        # check energy spectrum type if not None
+        # check if the energy spectrum type if known
         valid_spectrum_types = [
             "discrete",
             "histogram",

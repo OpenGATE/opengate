@@ -18,7 +18,7 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
   std::string name = phys_volume_name;
   auto pvs = G4PhysicalVolumeStore::GetInstance();
   while (name != "world") {
-    auto phys = pvs->GetVolume(name);
+    const auto *phys = pvs->GetVolume(name);
     if (phys == nullptr) {
       std::ostringstream oss;
       oss << "The volume '" << name
@@ -29,17 +29,17 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
       }
       oss << std::endl;
       Fatal(oss.str());
+    } else {
+      auto tr = phys->GetObjectTranslation();
+      auto rot = phys->GetObjectRotationValue();
+      rotation = rot * rotation;
+      translation = rot * translation + tr;
+      // Warning, the world can be a parallel world
+      if (phys->GetMotherLogical() == nullptr)
+        name = "world";
+      else
+        name = phys->GetMotherLogical()->GetName();
     }
-    auto tr = phys->GetObjectTranslation();
-    // auto rot = *phys->GetObjectRotation();
-    auto rot = phys->GetObjectRotationValue();
-    rotation = rot * rotation;
-    translation = rot * translation + tr;
-    // Warning, the world can be a parallel world
-    if (phys->GetMotherLogical() == nullptr)
-      name = "world";
-    else
-      name = phys->GetMotherLogical()->GetName();
   }
 }
 

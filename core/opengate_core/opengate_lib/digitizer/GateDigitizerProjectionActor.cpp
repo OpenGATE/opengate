@@ -20,6 +20,7 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
   fPhysicalVolumeName = "None";
+  fEnableSquaredImage = false;
 }
 
 GateDigitizerProjectionActor::~GateDigitizerProjectionActor() = default;
@@ -34,10 +35,17 @@ void GateDigitizerProjectionActor::InitializeUserInfo(py::dict &user_info) {
 
 void GateDigitizerProjectionActor::InitializeCpp() {
   fImage = ImageType::New();
+  fSquaredImage = ImageType::New();
 }
 
-void GateDigitizerProjectionActor::SetPhysicalVolumeName(std::string name) {
+void GateDigitizerProjectionActor::SetPhysicalVolumeName(
+    const std::string &name) {
   fPhysicalVolumeName = name;
+}
+
+void GateDigitizerProjectionActor::EnableSquaredImage(const bool b) {
+  fEnableSquaredImage = b;
+  // FIXME check if weight exists ?
 }
 
 // Called when the simulation start
@@ -55,6 +63,8 @@ void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
   // Set the image to the correct position/orientation
   AttachImageToVolume<ImageType>(fImage, fPhysicalVolumeName, G4ThreeVector(),
                                  fDetectorOrientationMatrix);
+  AttachImageToVolume<ImageType>(fSquaredImage, fPhysicalVolumeName,
+                                 G4ThreeVector(), fDetectorOrientationMatrix);
 }
 
 void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
@@ -118,10 +128,13 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
       pindex[2] = slice;
 
       // Take particle weight into account (if in the attribute list)
-      if (!weights.empty())
+      if (!weights.empty()) {
         ImageAddValue<ImageType>(fImage, pindex,
                                  static_cast<float>(weights[i]));
-      else
+        if (fEnableSquaredImage)
+          ImageAddValue<ImageType>(fSquaredImage, pindex,
+                                   static_cast<float>(weights[i] * weights[i]));
+      } else
         ImageAddValue<ImageType>(fImage, pindex, 1.0);
     } else {
       // Should never be here (?)

@@ -6,14 +6,15 @@ Copyright (C): OpenGATE Collaboration
    -------------------------------------------------- */
 
 #include "GateGammaFreeFlightOptrActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
-#include "../GateHelpersImage.h"
 #include "G4BiasingProcessInterface.hh"
 
 GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
-    : GateVBiasOptrActor("GammaFreeFlightOperator", user_info, false) {
+    : GateVBiasOptrActor("GammaFreeFlightOperator", user_info, true) {
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation = nullptr;
+  l.fIsFirstTime = true;
 }
 
 GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
@@ -24,10 +25,11 @@ GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
 void GateGammaFreeFlightOptrActor::InitializeCpp() {}
 
 void GateGammaFreeFlightOptrActor::InitializeUserInfo(py::dict &user_info) {
-  GateVActor::InitializeUserInfo(user_info);
+  GateVBiasOptrActor::InitializeUserInfo(user_info);
   threadLocal_t &l = threadLocalData.Get();
   l.fFreeFlightOperation =
-      new GateGammaFreeFlightOptn("GammaFreeFlightOperator");
+      new GateGammaFreeFlightOptn("GammaFreeFlightOperation");
+  l.fIsFirstTime = true;
 }
 
 void GateGammaFreeFlightOptrActor::StartTracking(const G4Track *track) {

@@ -55,7 +55,7 @@ void GateBeamQualityActor::InitializeUserInfo(py::dict &user_info) {
 double GateBeamQualityActor::ScoringQuantityFn(G4Step *step,
                                                double *secondQuantity) {
   auto *current_material = step->GetPreStepPoint()->GetMaterial();
-  auto density = current_material->GetDensity() / CLHEP::g * CLHEP::cm3;
+  auto density = current_material->GetDensity(); // / CLHEP::g * CLHEP::cm3;
   const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
   auto &l = fThreadLocalData.Get();
   auto dedx_currstep = l.dedx_currstep;

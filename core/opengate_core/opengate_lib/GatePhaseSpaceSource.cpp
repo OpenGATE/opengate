@@ -11,6 +11,7 @@
 #include "G4UnitsTable.hh"
 #include "GateHelpersDict.h"
 #include "GateHelpersPyBind.h"
+#include "Randomize.hh"
 
 GatePhaseSpaceSource::GatePhaseSpaceSource() : GateVSource() {
   fCharge = 0;
@@ -39,6 +40,7 @@ void GatePhaseSpaceSource::InitializeUserInfo(py::dict &user_info) {
   fGlobalFag = DictGetBool(user_info, "global_flag");
 
   fVerbose = DictGetInt(user_info, "verbose");
+  fIsotropicMomentum = DictGetBool(user_info, "isotropic_direction");
 
   // This is done in GateSingleParticleSource, but we need charge/mass later
   auto pname = DictGetStr(user_info, "particle");
@@ -171,6 +173,17 @@ void GatePhaseSpaceSource::GeneratePrimaries(G4Event *event,
   }
 }
 
+G4ParticleMomentum GatePhaseSpaceSource::GenerateRandomDirection() {
+  G4double cosTheta = 2.0 * G4UniformRand() - 1.0;
+  G4double sinTheta = std::sqrt(1.0 - cosTheta * cosTheta);
+  G4double phi = 2.0 * CLHEP::pi * G4UniformRand();
+  G4double x = sinTheta * std::cos(phi);
+  G4double y = sinTheta * std::sin(phi);
+  G4double z = cosTheta;
+
+  return G4ParticleMomentum(x, y, z);
+}
+
 void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
                                               double current_simulation_time) {
   auto &l = fThreadLocalDataPhsp.Get();
@@ -178,9 +191,17 @@ void GatePhaseSpaceSource::GenerateOnePrimary(G4Event *event,
   auto position = G4ThreeVector(l.fPositionX[l.fCurrentIndex],
                                 l.fPositionY[l.fCurrentIndex],
                                 l.fPositionZ[l.fCurrentIndex]);
-  auto direction = G4ParticleMomentum(l.fDirectionX[l.fCurrentIndex],
-                                      l.fDirectionY[l.fCurrentIndex],
-                                      l.fDirectionZ[l.fCurrentIndex]);
+
+  G4ParticleMomentum direction;
+  if (fIsotropicMomentum == false) {
+    direction = G4ParticleMomentum(l.fDirectionX[l.fCurrentIndex],
+                                   l.fDirectionY[l.fCurrentIndex],
+                                   l.fDirectionZ[l.fCurrentIndex]);
+  }
+
+  else {
+    direction = GenerateRandomDirection();
+  }
   auto energy = l.fEnergy[l.fCurrentIndex];
   auto weight = l.fWeight[l.fCurrentIndex];
 
