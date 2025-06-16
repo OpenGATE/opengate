@@ -7,12 +7,54 @@ import pandas as pd
 import os
 import time
 import logging
+import uproot
 
 logger = logging.getLogger(__name__)
 
 
 class ChunkSizeTooSmallError(Exception):
     pass
+
+
+class CoincidenceOutputFile:
+    def __init__(self, file_path, file_format):
+        assert file_format in ["root", "hdf5"]
+        self.file_path = file_path
+        self.format = file_format
+        self.empty = True
+
+        if self.format == "root":
+            # recreate() deletes the file that may already exist with the same name.
+            self.file = uproot.recreate(self.file_path)
+        elif self.format == "hdf5":
+            if os.path.exists(self.file_path):
+                os.remove(self.file_path)
+
+    def add(self, coincidences):
+        if len(coincidences) == 0:
+            return
+        for col in coincidences.columns:
+            if coincidences[col].dtype == "object":
+                coincidences[col] = pd.Categorical(coincidences[col])
+        table_name = "Coincidences"
+        if self.format == "root":
+            if self.empty:
+                self.file[table_name] = coincidences
+            else:
+                self.file[table_name].extend(coincidences)
+        elif self.format == "hdf5":
+            coincidences.to_hdf(
+                self.file_path,
+                key=table_name,
+                mode="a",
+                format="table",
+                append=True,
+            )
+        self.empty = False
+
+    def close(self):
+        if self.format == "root":
+            self.file.close()
 
 
 def coincidences_sorter(
@@ -26,7 +68,7 @@ def coincidences_sorter(
     return_type="dict",
     save_to_file=False,
     output_file_path=None,
-    output_file_format="hdf5",
+    output_file_format="root",
 ):
     """
     Sort singles and detect coincidences.
@@ -87,12 +129,21 @@ def coincidences_sorter(
             f"Unknown policy '{policy}', must be one of {policy_functions.keys()}"
         )
 
-    # Check validity of return_type
-    known_return_types = ["dict", "pd"]
-    if return_type not in known_return_types:
-        raise ValueError(
-            f"Unknown return type '{return_type}', must be one of {known_return_types}"
-        )
+    # Check validity of return_type or output_file_format and output_file_path.
+    if not save_to_file:
+        known_return_types = ["dict", "pd"]
+        if return_type not in known_return_types:
+            raise ValueError(
+                f"Unknown return type '{return_type}', must be one of {known_return_types}"
+            )
+    else:
+        known_output_formats = ["root", "hdf5"]
+        if output_file_format not in known_output_formats:
+            raise ValueError(
+                f"Unknown output file format '{output_file_format}', must be one of {known_output_formats}"
+            )
+        if not output_file_path:
+            raise ValueError(f"Output file path has not been provided")
 
     # Since singles in the root file are not guaranteed to be sorted by GlobalTime
     # (especially in case of multithreaded simulation), singles in one chunk
@@ -109,8 +160,11 @@ def coincidences_sorter(
         and num_chunk_size_increases < max_num_chunk_size_increases
     ):
         try:
-            if save_to_file and os.path.exists(output_file_path):
-                os.remove(output_file_path)
+            if save_to_file:
+                output_file = CoincidenceOutputFile(
+                    output_file_path, output_file_format
+                )
+
             # A double-ended queue is used as a FIFO to store the current and the next chunk of singles
             queue = deque()
             num_singles = 0
@@ -163,13 +217,7 @@ def coincidences_sorter(
                         columns=["SingleIndex1", "SingleIndex2"]
                     )
                     if save_to_file:
-                        filtered_coincidences.to_hdf(
-                            output_file_path,
-                            key="coincidences",
-                            mode="a",
-                            format="table",
-                            append=True,
-                        )
+                        output_file.add(filtered_coincidences)
                     else:
                         coincidences_to_return.append(filtered_coincidences)
                     # Remove processed chunk from the left of the queue
@@ -195,13 +243,7 @@ def coincidences_sorter(
                 columns=["SingleIndex1", "SingleIndex2"]
             )
             if save_to_file:
-                filtered_coincidences.to_hdf(
-                    output_file_path,
-                    key="coincidences",
-                    mode="a",
-                    format="table",
-                    append=True,
-                )
+                output_file.add(filtered_coincidences)
             else:
                 coincidences_to_return.append(filtered_coincidences)
 
@@ -212,6 +254,10 @@ def coincidences_sorter(
             chunk_size *= 2
             num_chunk_size_increases += 1
             time_lost = time.time() - start
+
+        finally:
+            if save_to_file:
+                output_file.close()
 
     if not processing_finished:
         # Coincidence sorting has failed, even after repeated increases of the chunk size
