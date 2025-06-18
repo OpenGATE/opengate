@@ -35,28 +35,45 @@ void init_GateVoxelizedPromptGammaTLEActor(py::module &m) {
              std::unique_ptr<GateVoxelizedPromptGammaTLEActor, py::nodelete>,
              GateVActor>(m, "GateVoxelizedPromptGammaTLEActor")
       .def(py::init<py::dict &>())
-      .def("InitializeUserInfo",&GateVoxelizedPromptGammaTLEActor::InitializeUserInfo)
-      .def("BeginOfRunActionMasterThread",&GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread)
-      .def("EndOfRunActionMasterThread",&GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread)
-      .def("SetPhysicalVolumeName",&GateVoxelizedPromptGammaTLEActor::SetPhysicalVolumeName)
-      .def("GetPhysicalVolumeName",&GateVoxelizedPromptGammaTLEActor::GetPhysicalVolumeName)
+      .def("InitializeUserInfo",
+           &GateVoxelizedPromptGammaTLEActor::InitializeUserInfo)
+      .def("BeginOfRunActionMasterThread",
+           &GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread)
+      .def("EndOfRunActionMasterThread",
+           &GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread)
+      .def("SetPhysicalVolumeName",
+           &GateVoxelizedPromptGammaTLEActor::SetPhysicalVolumeName)
+      .def("GetPhysicalVolumeName",
+           &GateVoxelizedPromptGammaTLEActor::GetPhysicalVolumeName)
 
-      .def("SetProtonTimeFlag",&GateVoxelizedPromptGammaTLEActor::SetProtonTimeFlag)
-      .def("GetProtonTimeFlag",&GateVoxelizedPromptGammaTLEActor::GetProtonTimeFlag)
+      .def("SetProtonTimeFlag",
+           &GateVoxelizedPromptGammaTLEActor::SetProtonTimeFlag)
+      .def("GetProtonTimeFlag",
+           &GateVoxelizedPromptGammaTLEActor::GetProtonTimeFlag)
 
-      .def("SetProtonEnergyFlag",&GateVoxelizedPromptGammaTLEActor::SetProtonEnergyFlag)
-      .def("GetProtonEnergyFlag",&GateVoxelizedPromptGammaTLEActor::GetProtonEnergyFlag)
+      .def("SetProtonEnergyFlag",
+           &GateVoxelizedPromptGammaTLEActor::SetProtonEnergyFlag)
+      .def("GetProtonEnergyFlag",
+           &GateVoxelizedPromptGammaTLEActor::GetProtonEnergyFlag)
 
-      .def("SetNeutronEnergyFlag",&GateVoxelizedPromptGammaTLEActor::SetNeutronEnergyFlag)
-      .def("GetNeutronEnergyFlag",&GateVoxelizedPromptGammaTLEActor::GetNeutronEnergyFlag)
-      
-      .def("SetNeutronTimeFlag",&GateVoxelizedPromptGammaTLEActor::SetNeutronTimeFlag)
-      .def("GetNeutronTimeFlag",&GateVoxelizedPromptGammaTLEActor::GetNeutronTimeFlag)
+      .def("SetNeutronEnergyFlag",
+           &GateVoxelizedPromptGammaTLEActor::SetNeutronEnergyFlag)
+      .def("GetNeutronEnergyFlag",
+           &GateVoxelizedPromptGammaTLEActor::GetNeutronEnergyFlag)
 
-      .def_readwrite("fPhysicalVolumeName",&GateVoxelizedPromptGammaTLEActor::fPhysicalVolumeName)
-      .def_readwrite("cpp_tof_neutron_image", &GateVoxelizedPromptGammaTLEActor::cpp_tof_neutron_image)
-      .def_readwrite("cpp_tof_proton_image", &GateVoxelizedPromptGammaTLEActor::cpp_tof_proton_image)
-      .def_readwrite("cpp_E_neutron_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_neutron_image)
-      .def_readwrite("cpp_E_proton_image", &GateVoxelizedPromptGammaTLEActor::cpp_E_proton_image);
+      .def("SetNeutronTimeFlag",
+           &GateVoxelizedPromptGammaTLEActor::SetNeutronTimeFlag)
+      .def("GetNeutronTimeFlag",
+           &GateVoxelizedPromptGammaTLEActor::GetNeutronTimeFlag)
+
+      .def_readwrite("fPhysicalVolumeName",
+                     &GateVoxelizedPromptGammaTLEActor::fPhysicalVolumeName)
+      .def_readwrite("cpp_tof_neutron_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_tof_neutron_image)
+      .def_readwrite("cpp_tof_proton_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_tof_proton_image)
+      .def_readwrite("cpp_E_neutron_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_E_neutron_image)
+      .def_readwrite("cpp_E_proton_image",
+                     &GateVoxelizedPromptGammaTLEActor::cpp_E_proton_image);
 }
-

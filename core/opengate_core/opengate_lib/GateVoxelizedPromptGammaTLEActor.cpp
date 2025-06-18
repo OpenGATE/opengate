@@ -57,24 +57,22 @@ void GateVoxelizedPromptGammaTLEActor::InitializeUserInfo(py::dict &user_info) {
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
   fsize = DictGetG4ThreeVector(user_info, "size");
   fspacing = DictGetG4ThreeVector(user_info, "spacing");
-
-  
 }
 
 void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
   GateVActor::InitializeCpp();
   // Create the image pointers
   // (the size and allocation will be performed on the py side)
-  if (fProtonTimeFlag){
+  if (fProtonTimeFlag) {
     cpp_tof_proton_image = ImageType::New();
   }
-  if (fProtonEnergyFlag){
+  if (fProtonEnergyFlag) {
     cpp_E_proton_image = ImageType::New();
   }
-  if (fNeutronEnergyFlag){
+  if (fNeutronEnergyFlag) {
     cpp_E_neutron_image = ImageType::New();
   }
-  if (fNeutronTimeFlag){
+  if (fNeutronTimeFlag) {
     cpp_tof_neutron_image = ImageType::New();
   }
 
@@ -100,27 +98,28 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
   volume->Allocate();
   volume->FillBuffer(0);
 
-  incidentParticles = 0; // initiate the conuter of incidente protons - scaling factor 
+  incidentParticles =
+      0; // initiate the conuter of incidente protons - scaling factor
 }
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
     int run_id) {
-    // Attach the 3D volume used to 
-    
-    // Fill the 4D volume of interest with 0 to ensure that it is well initiated 
-    if (fProtonTimeFlag){
-      cpp_tof_proton_image->FillBuffer(0);
-    }
-    if (fProtonEnergyFlag){
-      cpp_E_proton_image->FillBuffer(0);
-    }
-    if (fNeutronEnergyFlag){
-      cpp_E_neutron_image->FillBuffer(0);
-    }
-    if (fNeutronTimeFlag){
-      cpp_tof_neutron_image->FillBuffer(0);
-    }
-    AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
+  // Attach the 3D volume used to
+
+  // Fill the 4D volume of interest with 0 to ensure that it is well initiated
+  if (fProtonTimeFlag) {
+    cpp_tof_proton_image->FillBuffer(0);
+  }
+  if (fProtonEnergyFlag) {
+    cpp_E_proton_image->FillBuffer(0);
+  }
+  if (fNeutronEnergyFlag) {
+    cpp_E_neutron_image->FillBuffer(0);
+  }
+  if (fNeutronTimeFlag) {
+    cpp_tof_neutron_image->FillBuffer(0);
+  }
+  AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
 }
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(const G4Run *run) {
@@ -134,6 +133,7 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
 }
 
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
+
   if(step->GetTrack()->GetParticleDefinition()->GetParticleName()!="neutron" && (step->GetTrack()->GetParticleDefinition()->GetParticleName()!="proton")){
     return;
   }
@@ -150,6 +150,7 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   point[2] = localPosition[2];
  
   Image3DType::IndexType index;
+
   G4bool isInside = volume->TransformPhysicalPointToIndex(point, index);
   if (!isInside) { //verification
     return; // Skip if not inside the volume
@@ -164,31 +165,35 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   ind[0] = index[0];
   ind[1] = index[1];
   ind[2] = index[2];
-  
-    // Get the step lenght
-    //const G4double &l = step->GetStepLength();
 
-  if(fProtonTimeFlag || fNeutronTimeFlag){ //If the quantity of interest is the time of flight
+  // Get the step lenght
+  const G4double &l = step->GetStepLength();
+  G4Material *mat = step->GetPreStepPoint()->GetMaterial();
+  G4double rho = mat->GetDensity() / (CLHEP::g / CLHEP::cm3);
+  auto w = step->GetTrack()->GetWeight(); // Get the weight of the track (particle history) for potential russian roulette or splitting
+  if (fProtonTimeFlag ||
+      fNeutronTimeFlag) { // If the quantity of interest is the time of flight
 
-  // Get the time of flight
+    // Get the time of flight
     G4double randomtime = G4UniformRand();
-    G4double pretime = step->GetPreStepPoint()->GetGlobalTime()- T0; //ns
-    G4double posttime = step->GetPostStepPoint()->GetGlobalTime()- T0;//ns
-    G4double time = (posttime + randomtime * (pretime - posttime));//ns
+    G4double pretime = step->GetPreStepPoint()->GetGlobalTime() - T0;   // ns
+    G4double posttime = step->GetPostStepPoint()->GetGlobalTime() - T0; // ns
+    G4double time = (posttime + randomtime * (pretime - posttime));     // ns
 
   // Get the voxel index (fourth dim) corresponding to the time of flight
     G4int bin = static_cast<int>(time / (timerange / timebins)); // Always the left bin
+
 
     if (bin == timebins) {
       bin = timebins - 1;
     }
     ind[3] = bin;
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
-    if (fProtonTimeFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="proton"){
-      ImageAddValue<ImageType>(cpp_tof_proton_image, ind,1);
-    }
-    if (fNeutronTimeFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="neutron") { 
-      ImageAddValue<ImageType>(cpp_tof_neutron_image, ind,1);
+
+    if (fProtonTimeFlag) {
+      ImageAddValue<ImageType>(cpp_tof_proton_image, ind, l * rho * w);
+    } else {
+      ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, l * rho * w);
     }
 
   }
@@ -196,27 +201,27 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
     // Get the energy of the projectile
     G4double randomenergy = G4UniformRand();
-    const G4double &postE = step->GetPostStepPoint()->GetKineticEnergy();//MeV
-    const G4double &preE = step->GetPreStepPoint()->GetKineticEnergy();//MeV
-    G4double projectileEnergy = postE + randomenergy * (preE - postE);//MeV
+    const G4double &postE = step->GetPostStepPoint()->GetKineticEnergy(); // MeV
+    const G4double &preE = step->GetPreStepPoint()->GetKineticEnergy();   // MeV
+    G4double projectileEnergy = postE + randomenergy * (preE - postE);    // MeV
     // thershold with a minimum energy of 40 keV
     if (projectileEnergy < 0.04 * CLHEP::MeV) {
       return;
     }
-
     //Get the voxel index (fourth dim) corresponding to the energy of the projectile
     G4int bin = static_cast<int>(projectileEnergy / (energyrange/energybins)); // Always the left bin
     if (bin == energybins) {
       bin = energybins - 1;
+
     }
-    ind[3] = bin; 
+    ind[3] = bin;
 
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
     if (fProtonEnergyFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="proton") {
-      ImageAddValue<ImageType>(cpp_E_proton_image, ind, 1);
+      ImageAddValue<ImageType>(cpp_E_proton_image, ind, l * rho * w);
     }
     if (fNeutronEnergyFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="neutron") {
-      ImageAddValue<ImageType>(cpp_E_neutron_image, ind,1);
+      ImageAddValue<ImageType>(cpp_E_neutron_image, ind, l * rho * w);
     }
   }
 }
@@ -234,20 +239,24 @@ void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
       it.Set(it.Get() / incidentParticles);
     }
   }
-  if (fProtonEnergyFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_E_proton_image, cpp_E_proton_image->GetLargestPossibleRegion());
+  if (fProtonEnergyFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_E_proton_image, cpp_E_proton_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
   }
-  if (fNeutronEnergyFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_E_neutron_image, cpp_E_neutron_image->GetLargestPossibleRegion());
+  if (fNeutronEnergyFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_E_neutron_image, cpp_E_neutron_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
   }
-  if (fNeutronTimeFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_tof_neutron_image,cpp_tof_neutron_image->GetLargestPossibleRegion());
+  if (fNeutronTimeFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_tof_neutron_image,
+        cpp_tof_neutron_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
