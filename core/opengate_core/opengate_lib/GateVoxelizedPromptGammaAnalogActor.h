@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateVoxelizedPromptGammaTLEActor_h
-#define GateVoxelizedPromptGammaTLEActor_h
+#ifndef GateVoxelizedPromptGammaAnalogActor_h
+#define GateVoxelizedPromptGammaAnalogActor_h
 
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
@@ -19,13 +19,13 @@
 
 namespace py = pybind11;
 
-class GateVoxelizedPromptGammaTLEActor : public GateVActor {
+class GateVoxelizedPromptGammaAnalogActor : public GateVActor {
 
 public:
   // destructor
-  ~GateVoxelizedPromptGammaTLEActor() override;
+  ~GateVoxelizedPromptGammaAnalogActor() override;
 
-  explicit GateVoxelizedPromptGammaTLEActor(py::dict &user_info);
+  explicit GateVoxelizedPromptGammaAnalogActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -96,4 +96,4 @@ public:
   G4ThreeVector fTranslation;
 };
 
-#endif // GateVoxelizedPromptGammaTLEActor_h
+#endif // GateVoxelizedPromptGammaAnalogActor_h
