@@ -83,7 +83,11 @@ from .actors.doseactors import (
     FluenceActor,
     ProductionAndStoppingActor,
 )
-from .actors.tleactors import TLEDoseActor, VoxelizedPromptGammaTLEActor, VoxelizedPromptGammaAnalogActor
+from .actors.tleactors import (
+    TLEDoseActor,
+    VoxelizedPromptGammaTLEActor,
+    VoxelizedPromptGammaAnalogActor,
+)
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -123,7 +127,7 @@ actor_types = {
     "DoseActor": DoseActor,
     "TLEDoseActor": TLEDoseActor,
     "VoxelizedPromptGammaTLEActor": VoxelizedPromptGammaTLEActor,
-    "VoxelizedPromptGammaAnalogActor" : VoxelizedPromptGammaAnalogActor,
+    "VoxelizedPromptGammaAnalogActor": VoxelizedPromptGammaAnalogActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
     "FluenceActor": FluenceActor,

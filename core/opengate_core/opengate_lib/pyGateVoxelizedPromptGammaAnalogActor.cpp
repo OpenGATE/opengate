@@ -16,7 +16,8 @@ class PyGateVoxelizedPromptGammaAnalogActor
     : public GateVoxelizedPromptGammaAnalogActor {
 public:
   // Inherit the constructors
-  using GateVoxelizedPromptGammaAnalogActor::GateVoxelizedPromptGammaAnalogActor;
+  using GateVoxelizedPromptGammaAnalogActor::
+      GateVoxelizedPromptGammaAnalogActor;
 
   void BeginOfRunActionMasterThread(int run_id) override {
     PYBIND11_OVERLOAD(void, GateVoxelizedPromptGammaAnalogActor,
@@ -35,28 +36,46 @@ void init_GateVoxelizedPromptGammaAnalogActor(py::module &m) {
              std::unique_ptr<GateVoxelizedPromptGammaAnalogActor, py::nodelete>,
              GateVActor>(m, "GateVoxelizedPromptGammaAnalogActor")
       .def(py::init<py::dict &>())
-      .def("InitializeUserInfo",&GateVoxelizedPromptGammaAnalogActor::InitializeUserInfo)
-      .def("BeginOfRunActionMasterThread",&GateVoxelizedPromptGammaAnalogActor::BeginOfRunActionMasterThread)
-      .def("EndOfRunActionMasterThread",&GateVoxelizedPromptGammaAnalogActor::EndOfRunActionMasterThread)
-      .def("SetPhysicalVolumeName",&GateVoxelizedPromptGammaAnalogActor::SetPhysicalVolumeName)
-      .def("GetPhysicalVolumeName",&GateVoxelizedPromptGammaAnalogActor::GetPhysicalVolumeName)
+      .def("InitializeUserInfo",
+           &GateVoxelizedPromptGammaAnalogActor::InitializeUserInfo)
+      .def("BeginOfRunActionMasterThread",
+           &GateVoxelizedPromptGammaAnalogActor::BeginOfRunActionMasterThread)
+      .def("EndOfRunActionMasterThread",
+           &GateVoxelizedPromptGammaAnalogActor::EndOfRunActionMasterThread)
+      .def("SetPhysicalVolumeName",
+           &GateVoxelizedPromptGammaAnalogActor::SetPhysicalVolumeName)
+      .def("GetPhysicalVolumeName",
+           &GateVoxelizedPromptGammaAnalogActor::GetPhysicalVolumeName)
 
-      .def("SetProtonTimeFlag",&GateVoxelizedPromptGammaAnalogActor::SetProtonTimeFlag)
-      .def("GetProtonTimeFlag",&GateVoxelizedPromptGammaAnalogActor::GetProtonTimeFlag)
+      .def("SetProtonTimeFlag",
+           &GateVoxelizedPromptGammaAnalogActor::SetProtonTimeFlag)
+      .def("GetProtonTimeFlag",
+           &GateVoxelizedPromptGammaAnalogActor::GetProtonTimeFlag)
 
-      .def("SetProtonEnergyFlag",&GateVoxelizedPromptGammaAnalogActor::SetProtonEnergyFlag)
-      .def("GetProtonEnergyFlag",&GateVoxelizedPromptGammaAnalogActor::GetProtonEnergyFlag)
+      .def("SetProtonEnergyFlag",
+           &GateVoxelizedPromptGammaAnalogActor::SetProtonEnergyFlag)
+      .def("GetProtonEnergyFlag",
+           &GateVoxelizedPromptGammaAnalogActor::GetProtonEnergyFlag)
 
-      .def("SetNeutronEnergyFlag",&GateVoxelizedPromptGammaAnalogActor::SetNeutronEnergyFlag)
-      .def("GetNeutronEnergyFlag",&GateVoxelizedPromptGammaAnalogActor::GetNeutronEnergyFlag)
-      
-      .def("SetNeutronTimeFlag",&GateVoxelizedPromptGammaAnalogActor::SetNeutronTimeFlag)
-      .def("GetNeutronTimeFlag",&GateVoxelizedPromptGammaAnalogActor::GetNeutronTimeFlag)
+      .def("SetNeutronEnergyFlag",
+           &GateVoxelizedPromptGammaAnalogActor::SetNeutronEnergyFlag)
+      .def("GetNeutronEnergyFlag",
+           &GateVoxelizedPromptGammaAnalogActor::GetNeutronEnergyFlag)
 
-      .def_readwrite("fPhysicalVolumeName",&GateVoxelizedPromptGammaAnalogActor::fPhysicalVolumeName)
-      .def_readwrite("cpp_tof_neutron_image", &GateVoxelizedPromptGammaAnalogActor::cpp_tof_neutron_image)
-      .def_readwrite("cpp_tof_proton_image", &GateVoxelizedPromptGammaAnalogActor::cpp_tof_proton_image)
-      .def_readwrite("cpp_E_neutron_image", &GateVoxelizedPromptGammaAnalogActor::cpp_E_neutron_image)
-      .def_readwrite("cpp_E_proton_image", &GateVoxelizedPromptGammaAnalogActor::cpp_E_proton_image);
+      .def("SetNeutronTimeFlag",
+           &GateVoxelizedPromptGammaAnalogActor::SetNeutronTimeFlag)
+      .def("GetNeutronTimeFlag",
+           &GateVoxelizedPromptGammaAnalogActor::GetNeutronTimeFlag)
+
+      .def_readwrite("fPhysicalVolumeName",
+                     &GateVoxelizedPromptGammaAnalogActor::fPhysicalVolumeName)
+      .def_readwrite(
+          "cpp_tof_neutron_image",
+          &GateVoxelizedPromptGammaAnalogActor::cpp_tof_neutron_image)
+      .def_readwrite("cpp_tof_proton_image",
+                     &GateVoxelizedPromptGammaAnalogActor::cpp_tof_proton_image)
+      .def_readwrite("cpp_E_neutron_image",
+                     &GateVoxelizedPromptGammaAnalogActor::cpp_E_neutron_image)
+      .def_readwrite("cpp_E_proton_image",
+                     &GateVoxelizedPromptGammaAnalogActor::cpp_E_proton_image);
 }
-

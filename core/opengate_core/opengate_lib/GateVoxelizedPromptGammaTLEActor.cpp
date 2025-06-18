@@ -30,7 +30,8 @@
 GateVoxelizedPromptGammaTLEActor::GateVoxelizedPromptGammaTLEActor(
     py::dict &user_info)
     : GateVActor(user_info, true) {
-  fMultiThreadReady = true; // But used as a single thread python side : nb pf runs = 1
+  fMultiThreadReady =
+      true; // But used as a single thread python side : nb pf runs = 1
 }
 
 GateVoxelizedPromptGammaTLEActor::~GateVoxelizedPromptGammaTLEActor() {
@@ -42,7 +43,9 @@ GateVoxelizedPromptGammaTLEActor::~GateVoxelizedPromptGammaTLEActor() {
 
   // Release the 3D volume
   volume = nullptr;
-  std::cout << "GateVoxelizedPromptGammaTLEActor destructor called. Resources released." << std::endl;
+  std::cout << "GateVoxelizedPromptGammaTLEActor destructor called. Resources "
+               "released."
+            << std::endl;
 }
 
 void GateVoxelizedPromptGammaTLEActor::InitializeUserInfo(py::dict &user_info) {
@@ -122,9 +125,7 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
   AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
 }
 
-void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(const G4Run *run) {
-  
-}
+void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(const G4Run *run) {}
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
     const G4Event *event) {
@@ -134,30 +135,34 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
 
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
-  if(step->GetTrack()->GetParticleDefinition()->GetParticleName()!="neutron" && (step->GetTrack()->GetParticleDefinition()->GetParticleName()!="proton")){
+  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
+          "neutron" &&
+      (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
+       "proton")) {
     return;
   }
 
   auto position = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
   // Get the voxel index
-  auto localPosition = touchable->GetHistory()->GetTransform(0).TransformPoint(position);
+  auto localPosition =
+      touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
   // convert G4ThreeVector to itk PointType
   Image3DType::PointType point;
   point[0] = localPosition[0];
   point[1] = localPosition[1];
   point[2] = localPosition[2];
- 
+
   Image3DType::IndexType index;
 
   G4bool isInside = volume->TransformPhysicalPointToIndex(point, index);
-  if (!isInside) { //verification
-    return; // Skip if not inside the volume
+  if (!isInside) { // verification
+    return;        // Skip if not inside the volume
   }
   // Get the weight of the track (particle history) for potential russian
   // roulette or splitting
-  //G4double w = step->GetTrack()->GetWeight();
+  // G4double w = step->GetTrack()->GetWeight();
 
   // Get the spatial index from the index obtained with the 3D volume and th
   // emethod GetStepVoxelPosition()
@@ -170,7 +175,9 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   const G4double &l = step->GetStepLength();
   G4Material *mat = step->GetPreStepPoint()->GetMaterial();
   G4double rho = mat->GetDensity() / (CLHEP::g / CLHEP::cm3);
-  auto w = step->GetTrack()->GetWeight(); // Get the weight of the track (particle history) for potential russian roulette or splitting
+  auto w = step->GetTrack()
+               ->GetWeight(); // Get the weight of the track (particle history)
+                              // for potential russian roulette or splitting
   if (fProtonTimeFlag ||
       fNeutronTimeFlag) { // If the quantity of interest is the time of flight
 
@@ -180,9 +187,9 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     G4double posttime = step->GetPostStepPoint()->GetGlobalTime() - T0; // ns
     G4double time = (posttime + randomtime * (pretime - posttime));     // ns
 
-  // Get the voxel index (fourth dim) corresponding to the time of flight
-    G4int bin = static_cast<int>(time / (timerange / timebins)); // Always the left bin
-
+    // Get the voxel index (fourth dim) corresponding to the time of flight
+    G4int bin =
+        static_cast<int>(time / (timerange / timebins)); // Always the left bin
 
     if (bin == timebins) {
       bin = timebins - 1;
@@ -195,9 +202,9 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     } else {
       ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, l * rho * w);
     }
-
   }
-  if (fProtonEnergyFlag || fNeutronEnergyFlag) { // when the quantity of interest is the energy
+  if (fProtonEnergyFlag ||
+      fNeutronEnergyFlag) { // when the quantity of interest is the energy
 
     // Get the energy of the projectile
     G4double randomenergy = G4UniformRand();
@@ -208,19 +215,24 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     if (projectileEnergy < 0.04 * CLHEP::MeV) {
       return;
     }
-    //Get the voxel index (fourth dim) corresponding to the energy of the projectile
-    G4int bin = static_cast<int>(projectileEnergy / (energyrange/energybins)); // Always the left bin
+    // Get the voxel index (fourth dim) corresponding to the energy of the
+    // projectile
+    G4int bin = static_cast<int>(
+        projectileEnergy / (energyrange / energybins)); // Always the left bin
     if (bin == energybins) {
       bin = energybins - 1;
-
     }
     ind[3] = bin;
 
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
-    if (fProtonEnergyFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="proton") {
+    if (fProtonEnergyFlag &&
+        step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+            "proton") {
       ImageAddValue<ImageType>(cpp_E_proton_image, ind, l * rho * w);
     }
-    if (fNeutronEnergyFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="neutron") {
+    if (fNeutronEnergyFlag &&
+        step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+            "neutron") {
       ImageAddValue<ImageType>(cpp_E_neutron_image, ind, l * rho * w);
     }
   }
@@ -229,12 +241,15 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
   std::cout << "incident particles : " << incidentParticles << std::endl;
   if (incidentParticles == 0) {
-    std::cerr << "Error: incidentParticles is zero. Skipping scaling." << std::endl;
+    std::cerr << "Error: incidentParticles is zero. Skipping scaling."
+              << std::endl;
     return;
   }
-  // scaling all the 4D voxels with th enumber of incident protons (= number of event)
-  if (fProtonTimeFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_tof_proton_image,cpp_tof_proton_image->GetLargestPossibleRegion());
+  // scaling all the 4D voxels with th enumber of incident protons (= number of
+  // event)
+  if (fProtonTimeFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_tof_proton_image, cpp_tof_proton_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
