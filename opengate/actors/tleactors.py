@@ -169,8 +169,8 @@ class VoxelizedPromptGammaTLEActor(
         self.check_user_input()
         VoxelDepositActor.initialize(self)
 
-        self.user_output.p_E.set_active(True, item = 0)
-
+        if not(self.user_output.p_E.get_active(item = 0)):
+            self.user_output.p_E.set_write_to_disk(False, item = 0)
         if not(self.user_output.p_tof.get_active(item = 0)):
             self.user_output.p_tof.set_write_to_disk(False, item = 0)
         if(not(self.user_output.n_E.get_active(item = 0))):
@@ -211,9 +211,9 @@ class VoxelizedPromptGammaTLEActor(
             )
 
     def BeginOfRunActionMasterThread(self, run_index):
-        self.prepare_output_for_run("p_E", run_index)
-        self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image)
-
+        if self.user_output.p_E.get_active(item=0):
+            self.prepare_output_for_run("p_E", run_index)
+            self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image)
         if self.user_output.p_tof.get_active(item=0):
             self.prepare_output_for_run("p_tof", run_index)
             self.push_to_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
@@ -228,9 +228,9 @@ class VoxelizedPromptGammaTLEActor(
         )
 
     def EndOfRunActionMasterThread(self, run_index):
-
-        self.fetch_from_cpp_image("p_E", run_index, self.cpp_E_proton_image)
-        self._update_output_coordinate_system("p_E", run_index)
+        if self.user_output.p_E.get_active(item=0):
+            self.fetch_from_cpp_image("p_E", run_index, self.cpp_E_proton_image)
+            self._update_output_coordinate_system("p_E", run_index)
         if self.user_output.p_tof.get_active(item=0):
             self.fetch_from_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
             self._update_output_coordinate_system("p_tof", run_index)
@@ -347,8 +347,8 @@ class VoxelizedPromptGammaAnalogActor(
         self.check_user_input()
         VoxelDepositActor.initialize(self)
         
-        self.user_output.p_E.set_active(True, item = 0)
-
+        if not(self.user_output.p_E.get_active(item = 0)):
+            self.user_output.p_E.set_write_to_disk(False, item = 0)
         if not(self.user_output.p_tof.get_active(item = 0)):
             self.user_output.p_tof.set_write_to_disk(False, item = 0)
         if(not(self.user_output.n_E.get_active(item = 0))):
@@ -390,9 +390,10 @@ class VoxelizedPromptGammaAnalogActor(
             )
 
     def BeginOfRunActionMasterThread(self, run_index):
-        self.prepare_output_for_run("p_E", run_index)
-        self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image)
 
+        if (self.user_output.p_E.get_active(item=0)):
+            self.prepare_output_for_run("p_E", run_index)
+            self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image)
         if (self.user_output.p_tof.get_active(item=0)):
             self.prepare_output_for_run("p_tof",run_index)
             self.push_to_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
@@ -405,9 +406,9 @@ class VoxelizedPromptGammaAnalogActor(
         g4.GateVoxelizedPromptGammaAnalogActor.BeginOfRunActionMasterThread(self, run_index)
 
     def EndOfRunActionMasterThread(self, run_index):
-      
-        self.fetch_from_cpp_image("p_E", run_index, self.cpp_E_proton_image)
-        self._update_output_coordinate_system("p_E", run_index)
+        if (self.user_output.p_E.get_active(item=0)):
+            self.fetch_from_cpp_image("p_E", run_index, self.cpp_E_proton_image)
+            self._update_output_coordinate_system("p_E", run_index)
         if (self.user_output.p_tof.get_active(item=0)):
             self.fetch_from_cpp_image("p_tof", run_index,self.cpp_tof_proton_image)
             self._update_output_coordinate_system("p_tof", run_index)
