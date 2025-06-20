@@ -92,7 +92,7 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     const G4ThreeVector &momentum_direction) const {
   const auto localDirection = (*fAARotation) * (momentum_direction);
   double dist = 0;
-  if (fIntersectionFlag || fDistanceDependentAngleToleranceFlag) {
+  if (fIntersectionFlag) { // || fDistanceDependentAngleToleranceFlag) {
     const auto localPosition = fAATransform.TransformPoint(position);
     dist = fAASolid->DistanceToIn(localPosition, localDirection);
   }
@@ -100,12 +100,12 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     if (dist == kInfinity)
       return false;
   }
-  if (fNormalFlag || fDistanceDependentAngleToleranceFlag) {
+  if (fNormalFlag) { // || fDistanceDependentAngleToleranceFlag) {
     const auto angle = fNormalVector.angle(localDirection);
     if (dist < fMinDistanceNormalAngleTolerance)
       return true;
-    if (fDistanceDependentAngleToleranceFlag)
-      return DistanceDependentToleranceTest(angle, dist);
+    // if (fDistanceDependentAngleToleranceFlag)
+    //   return DistanceDependentToleranceTest(angle, dist);
     return angle < fNormalAngleTolerance;
   }
   return true;
