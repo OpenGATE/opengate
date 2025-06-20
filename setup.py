@@ -27,6 +27,7 @@ setup(
         "radioactivedecay",
         "jsonpickle",
         "pandas",
+        "tables",
         "requests",
         "PyYAML",
         "SimpleITK",
