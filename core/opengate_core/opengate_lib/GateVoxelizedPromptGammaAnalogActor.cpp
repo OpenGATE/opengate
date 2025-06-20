@@ -30,7 +30,8 @@
 GateVoxelizedPromptGammaAnalogActor::GateVoxelizedPromptGammaAnalogActor(
     py::dict &user_info)
     : GateVActor(user_info, true) {
-  fMultiThreadReady = true; // But used as a single thread python side : nb pf runs = 1
+  fMultiThreadReady =
+      true; // But used as a single thread python side : nb pf runs = 1
 }
 
 GateVoxelizedPromptGammaAnalogActor::~GateVoxelizedPromptGammaAnalogActor() {
@@ -42,10 +43,13 @@ GateVoxelizedPromptGammaAnalogActor::~GateVoxelizedPromptGammaAnalogActor() {
 
   // Release the 3D volume
   volume = nullptr;
-  std::cout << "GateVoxelizedPromptGammaAnalogActor destructor called. Resources released." << std::endl;
+  std::cout << "GateVoxelizedPromptGammaAnalogActor destructor called. "
+               "Resources released."
+            << std::endl;
 }
 
-void GateVoxelizedPromptGammaAnalogActor::InitializeUserInfo(py::dict &user_info) {
+void GateVoxelizedPromptGammaAnalogActor::InitializeUserInfo(
+    py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
 
   // retrieve the python param here
@@ -57,24 +61,22 @@ void GateVoxelizedPromptGammaAnalogActor::InitializeUserInfo(py::dict &user_info
   fTranslation = DictGetG4ThreeVector(user_info, "translation");
   fsize = DictGetG4ThreeVector(user_info, "size");
   fspacing = DictGetG4ThreeVector(user_info, "spacing");
-
-  
 }
 
 void GateVoxelizedPromptGammaAnalogActor::InitializeCpp() {
   GateVActor::InitializeCpp();
   // Create the image pointers
   // (the size and allocation will be performed on the py side)
-  if (fProtonTimeFlag){
+  if (fProtonTimeFlag) {
     cpp_tof_proton_image = ImageType::New();
   }
-  if (fProtonEnergyFlag){
+  if (fProtonEnergyFlag) {
     cpp_E_proton_image = ImageType::New();
   }
-  if (fNeutronEnergyFlag){
+  if (fNeutronEnergyFlag) {
     cpp_E_neutron_image = ImageType::New();
   }
-  if (fNeutronTimeFlag){
+  if (fNeutronTimeFlag) {
     cpp_tof_neutron_image = ImageType::New();
   }
 
@@ -100,32 +102,31 @@ void GateVoxelizedPromptGammaAnalogActor::InitializeCpp() {
   volume->Allocate();
   volume->FillBuffer(0);
 
-  incidentParticles = 0; // initiate the conuter of incidente protons - scaling factor 
+  incidentParticles =
+      0; // initiate the conuter of incidente protons - scaling factor
 }
 
 void GateVoxelizedPromptGammaAnalogActor::BeginOfRunActionMasterThread(
     int run_id) {
-    // Attach the 3D volume used to 
-    
-    // Fill the 4D volume of interest with 0 to ensure that it is well initiated 
-    if (fProtonTimeFlag){
-      cpp_tof_proton_image->FillBuffer(0);
-    }
-    if (fProtonEnergyFlag){
-      cpp_E_proton_image->FillBuffer(0);
-    }
-    if (fNeutronEnergyFlag){
-      cpp_E_neutron_image->FillBuffer(0);
-    }
-    if (fNeutronTimeFlag){
-      cpp_tof_neutron_image->FillBuffer(0);
-    }
-    AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
+  // Attach the 3D volume used to
+
+  // Fill the 4D volume of interest with 0 to ensure that it is well initiated
+  if (fProtonTimeFlag) {
+    cpp_tof_proton_image->FillBuffer(0);
+  }
+  if (fProtonEnergyFlag) {
+    cpp_E_proton_image->FillBuffer(0);
+  }
+  if (fNeutronEnergyFlag) {
+    cpp_E_neutron_image->FillBuffer(0);
+  }
+  if (fNeutronTimeFlag) {
+    cpp_tof_neutron_image->FillBuffer(0);
+  }
+  AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
 }
 
-void GateVoxelizedPromptGammaAnalogActor::BeginOfRunAction(const G4Run *run) {
-  
-}
+void GateVoxelizedPromptGammaAnalogActor::BeginOfRunAction(const G4Run *run) {}
 
 void GateVoxelizedPromptGammaAnalogActor::BeginOfEventAction(
     const G4Event *event) {
@@ -134,27 +135,34 @@ void GateVoxelizedPromptGammaAnalogActor::BeginOfEventAction(
 }
 
 void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
-  if(step->GetTrack()->GetParticleDefinition()->GetParticleName()!="neutron" && (step->GetTrack()->GetParticleDefinition()->GetParticleName()!="proton")){
+  if (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
+          "neutron" &&
+      (step->GetTrack()->GetParticleDefinition()->GetParticleName() !=
+       "proton")) {
     return;
   }
-  if(step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName()!="protonInelastic" && step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName()!="neutronInelastic"){
+  if (step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName() !=
+          "protonInelastic" &&
+      step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName() !=
+          "neutronInelastic") {
     return;
   }
   auto position = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
   // Get the voxel index
-  auto localPosition = touchable->GetHistory()->GetTransform(0).TransformPoint(position);
+  auto localPosition =
+      touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
   // convert G4ThreeVector to itk PointType
   Image3DType::PointType point;
   point[0] = localPosition[0];
   point[1] = localPosition[1];
   point[2] = localPosition[2];
- 
+
   Image3DType::IndexType index;
   G4bool isInside = volume->TransformPhysicalPointToIndex(point, index);
-  if (!isInside) { //verification
-    return; // Skip if not inside the volume
+  if (!isInside) { // verification
+    return;        // Skip if not inside the volume
   }
 
   // Get the spatial index from the index obtained with the 3D volume and th
@@ -163,7 +171,7 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
   ind[0] = index[0];
   ind[1] = index[1];
   ind[2] = index[2];
-  
+
   auto secondaries = step->GetSecondary();
   for (size_t i = 0; i < secondaries->size(); i++) {
     auto secondary = secondaries->at(i);
@@ -171,6 +179,8 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
     if (secondary_def != G4Gamma::Gamma()){
       continue;
     }
+    if (fProtonTimeFlag ||
+        fNeutronTimeFlag) { // If the quantity of interest is the time of flight
 
     G4double gammaEnergy = secondary->GetKineticEnergy(); // in MeV
     // thershold with a minimum energy of 40 keV
@@ -213,7 +223,6 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
         bin = 0; // underflow
       }
       ind[3] = bin; 
-
       // Store the value in the volume for neutrons OR protons -> LEFT BINNING
       if (fProtonEnergyFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="proton") {
         ImageAddValue<ImageType>(cpp_E_proton_image, ind, 1);
@@ -224,40 +233,49 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
     } 
   }
 }
+}
 
 void GateVoxelizedPromptGammaAnalogActor::EndOfRunAction(const G4Run *run) {
   std::cout << "incident particles : " << incidentParticles << std::endl;
   if (incidentParticles == 0) {
-    std::cerr << "Error: incidentParticles is zero. Skipping scaling." << std::endl;
+    std::cerr << "Error: incidentParticles is zero. Skipping scaling."
+              << std::endl;
     return;
   }
-  // scaling all the 4D voxels with th enumber of incident protons (= number of event)
-  if (fProtonTimeFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_tof_proton_image,cpp_tof_proton_image->GetLargestPossibleRegion());
+  // scaling all the 4D voxels with th enumber of incident protons (= number of
+  // event)
+  if (fProtonTimeFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_tof_proton_image, cpp_tof_proton_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
   }
-  if (fProtonEnergyFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_E_proton_image, cpp_E_proton_image->GetLargestPossibleRegion());
+  if (fProtonEnergyFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_E_proton_image, cpp_E_proton_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
   }
-  if (fNeutronEnergyFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_E_neutron_image, cpp_E_neutron_image->GetLargestPossibleRegion());
+  if (fNeutronEnergyFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_E_neutron_image, cpp_E_neutron_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
   }
-  if (fNeutronTimeFlag){
-    itk::ImageRegionIterator<ImageType> it(cpp_tof_neutron_image,cpp_tof_neutron_image->GetLargestPossibleRegion());
+  if (fNeutronTimeFlag) {
+    itk::ImageRegionIterator<ImageType> it(
+        cpp_tof_neutron_image,
+        cpp_tof_neutron_image->GetLargestPossibleRegion());
     for (it.GoToBegin(); !it.IsAtEnd(); ++it) {
       it.Set(it.Get() / incidentParticles);
     }
   }
 }
 
-int GateVoxelizedPromptGammaAnalogActor::EndOfRunActionMasterThread(int run_id) {
+int GateVoxelizedPromptGammaAnalogActor::EndOfRunActionMasterThread(
+    int run_id) {
   return 0;
 }

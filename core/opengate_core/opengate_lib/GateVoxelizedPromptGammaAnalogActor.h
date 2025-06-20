@@ -43,19 +43,19 @@ public:
 
   void SteppingAction(G4Step *) override;
 
-  inline bool GetProtonTimeFlag() const {return fProtonTimeFlag; }
+  inline bool GetProtonTimeFlag() const { return fProtonTimeFlag; }
 
   inline void SetProtonTimeFlag(const bool b) { fProtonTimeFlag = b; }
 
-  inline bool GetNeutronTimeFlag() const {return fNeutronTimeFlag; }
+  inline bool GetNeutronTimeFlag() const { return fNeutronTimeFlag; }
 
   inline void SetNeutronTimeFlag(const bool b) { fNeutronTimeFlag = b; }
 
-  inline bool GetProtonEnergyFlag() const {return fProtonEnergyFlag; }
+  inline bool GetProtonEnergyFlag() const { return fProtonEnergyFlag; }
 
   inline void SetProtonEnergyFlag(const bool b) { fProtonEnergyFlag = b; }
 
-  inline bool GetNeutronEnergyFlag() const {return fNeutronEnergyFlag; }
+  inline bool GetNeutronEnergyFlag() const { return fNeutronEnergyFlag; }
 
   inline void SetNeutronEnergyFlag(const bool b) { fNeutronEnergyFlag = b; }
 
@@ -89,7 +89,6 @@ public:
   G4bool fProtonEnergyFlag{};
   G4bool fNeutronTimeFlag{};
   G4bool fNeutronEnergyFlag{};
-
 
   G4ThreeVector fsize;
   G4ThreeVector fspacing;
