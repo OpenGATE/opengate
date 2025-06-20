@@ -169,14 +169,14 @@ class VoxelizedPromptGammaTLEActor(
         self.check_user_input()
         VoxelDepositActor.initialize(self)
 
-        if not(self.user_output.p_E.get_active(item = 0)):
-            self.user_output.p_E.set_write_to_disk(False, item = 0)
-        if not(self.user_output.p_tof.get_active(item = 0)):
-            self.user_output.p_tof.set_write_to_disk(False, item = 0)
-        if(not(self.user_output.n_E.get_active(item = 0))):
-            self.user_output.n_E.set_write_to_disk(False, item = 0)
-        if(not(self.user_output.n_tof.get_active(item = 0))):
-            self.user_output.n_tof.set_write_to_disk(False, item = 0)
+        if not (self.user_output.p_E.get_active(item=0)):
+            self.user_output.p_E.set_write_to_disk(False, item=0)
+        if not (self.user_output.p_tof.get_active(item=0)):
+            self.user_output.p_tof.set_write_to_disk(False, item=0)
+        if not (self.user_output.n_E.get_active(item=0)):
+            self.user_output.n_E.set_write_to_disk(False, item=0)
+        if not (self.user_output.n_tof.get_active(item=0)):
+            self.user_output.n_tof.set_write_to_disk(False, item=0)
 
         self.InitializeUserInfo(self.user_info)
 
@@ -348,14 +348,14 @@ class VoxelizedPromptGammaAnalogActor(
 
         self.check_user_input()
         VoxelDepositActor.initialize(self)
-        if not(self.user_output.p_E.get_active(item = 0)):
-            self.user_output.p_E.set_write_to_disk(False, item = 0)
-        if not(self.user_output.p_tof.get_active(item = 0)):
-            self.user_output.p_tof.set_write_to_disk(False, item = 0)
-        if(not(self.user_output.n_E.get_active(item = 0))):
-            self.user_output.n_E.set_write_to_disk(False, item = 0)
-        if(not(self.user_output.n_tof.get_active(item = 0))):
-            self.user_output.n_tof.set_write_to_disk(False, item = 0)
+        if not (self.user_output.p_E.get_active(item=0)):
+            self.user_output.p_E.set_write_to_disk(False, item=0)
+        if not (self.user_output.p_tof.get_active(item=0)):
+            self.user_output.p_tof.set_write_to_disk(False, item=0)
+        if not (self.user_output.n_E.get_active(item=0)):
+            self.user_output.n_E.set_write_to_disk(False, item=0)
+        if not (self.user_output.n_tof.get_active(item=0)):
+            self.user_output.n_tof.set_write_to_disk(False, item=0)
 
         self.InitializeUserInfo(self.user_info)
 
@@ -391,11 +391,11 @@ class VoxelizedPromptGammaAnalogActor(
 
     def BeginOfRunActionMasterThread(self, run_index):
 
-        if (self.user_output.p_E.get_active(item=0)):
+        if self.user_output.p_E.get_active(item=0):
             self.prepare_output_for_run("p_E", run_index)
             self.push_to_cpp_image("p_E", run_index, self.cpp_E_proton_image)
-        if (self.user_output.p_tof.get_active(item=0)):
-            self.prepare_output_for_run("p_tof",run_index)
+        if self.user_output.p_tof.get_active(item=0):
+            self.prepare_output_for_run("p_tof", run_index)
             self.push_to_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
         if self.user_output.n_E.get_active(item=0):
             self.prepare_output_for_run("n_E", run_index)
@@ -408,11 +408,11 @@ class VoxelizedPromptGammaAnalogActor(
         )
 
     def EndOfRunActionMasterThread(self, run_index):
-        if (self.user_output.p_E.get_active(item=0)):
+        if self.user_output.p_E.get_active(item=0):
             self.fetch_from_cpp_image("p_E", run_index, self.cpp_E_proton_image)
             self._update_output_coordinate_system("p_E", run_index)
-        if (self.user_output.p_tof.get_active(item=0)):
-            self.fetch_from_cpp_image("p_tof", run_index,self.cpp_tof_proton_image)
+        if self.user_output.p_tof.get_active(item=0):
+            self.fetch_from_cpp_image("p_tof", run_index, self.cpp_tof_proton_image)
             self._update_output_coordinate_system("p_tof", run_index)
         if self.user_output.n_E.get_active(item=0):
             self.fetch_from_cpp_image("n_E", run_index, self.cpp_E_neutron_image)
