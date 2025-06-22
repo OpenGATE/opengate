@@ -69,7 +69,6 @@ def coincidences_sorter(
     max_axial_distance,
     chunk_size=100000,
     return_type="dict",
-    save_to_file=False,
     output_file_path=None,
     output_file_format="root",
 ):
@@ -89,7 +88,10 @@ def coincidences_sorter(
     :param max_axial_distance: maximum axial distance between the two singles of a coincidence
     :param chunk_size: singles are processed by this chunk size
     :param return_type: "dict" or "pd"
-    :return: the coincidences as a dict of events (return_type "dict") or pandas DataFrame (return_type "pd")
+    :param output_file_path: if provided, the coincidences will be saved to the given file path
+    :param output_file_format: "root" or "hdf5"
+    :return: if output_file_path is given, the return value is None, otherwise the coincidences are returned
+             as a dict of events (return_type "dict") or a pandas DataFrame (return_type "pd")
 
     Chunk size is important for very large root file to avoid loading everything in memory at once
 
@@ -133,7 +135,7 @@ def coincidences_sorter(
         )
 
     # Check validity of return_type or output_file_format and output_file_path.
-    if not save_to_file:
+    if output_file_path is None:
         known_return_types = ["dict", "pd"]
         if return_type not in known_return_types:
             raise ValueError(
@@ -163,7 +165,7 @@ def coincidences_sorter(
         and num_chunk_size_increases < max_num_chunk_size_increases
     ):
         try:
-            if save_to_file:
+            if output_file_path:
                 output_file = CoincidenceOutputFile(
                     output_file_path, output_file_format
                 )
@@ -219,7 +221,7 @@ def coincidences_sorter(
                     filtered_coincidences = filtered_coincidences.drop(
                         columns=["SingleIndex1", "SingleIndex2"]
                     )
-                    if save_to_file:
+                    if output_file_path:
                         output_file.add(filtered_coincidences)
                     else:
                         coincidences_to_return.append(filtered_coincidences)
@@ -245,7 +247,7 @@ def coincidences_sorter(
             filtered_coincidences = filtered_coincidences.drop(
                 columns=["SingleIndex1", "SingleIndex2"]
             )
-            if save_to_file:
+            if output_file_path:
                 output_file.add(filtered_coincidences)
             else:
                 coincidences_to_return.append(filtered_coincidences)
@@ -259,7 +261,7 @@ def coincidences_sorter(
             time_lost = time.time() - start
 
         finally:
-            if save_to_file:
+            if output_file_path:
                 output_file.close()
 
     if not processing_finished:
@@ -273,7 +275,7 @@ def coincidences_sorter(
                 f"Coincidence sorting execution time can be reduced by {time_reduction*100:.02f}% by using chunk_size {chunk_size} instead of {original_chunk_size}"
             )
 
-    if not save_to_file:
+    if output_file_path is None:
         # Combine all coincidences from all chunks into a single pandas DataFrame
         coincidences_to_return = pd.concat(
             coincidences_to_return, axis=0, ignore_index=True

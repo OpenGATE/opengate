@@ -50,7 +50,6 @@ def main(dependency="test072_coinc_sorter_step1.py"):
         minDistanceXY,
         transaxial_plane,
         maxDistanceZ,
-        save_to_file=True,
         output_file_path=paths.output / "coincidences.root",
         output_file_format="root",  # Could be ommitted since "root" is the default format
     )
@@ -68,7 +67,6 @@ def main(dependency="test072_coinc_sorter_step1.py"):
         minDistanceXY,
         transaxial_plane,
         maxDistanceZ,
-        save_to_file=True,
         output_file_path=paths.output / "coincidences.hdf5",
         output_file_format="hdf5",
     )
