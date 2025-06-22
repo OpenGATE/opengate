@@ -33,9 +33,6 @@ class CoincidenceOutputFile:
     def add(self, coincidences):
         if len(coincidences) == 0:
             return
-        for col in coincidences.columns:
-            if coincidences[col].dtype == "object":
-                coincidences[col] = pd.Categorical(coincidences[col])
         table_name = "Coincidences"
         if self.format == "root":
             if self.empty:
@@ -49,6 +46,7 @@ class CoincidenceOutputFile:
                 mode="a",
                 format="table",
                 append=True,
+                index=False,
             )
         self.empty = False
 
