@@ -33,6 +33,11 @@ class CoincidenceOutputFile:
     def add(self, coincidences):
         if len(coincidences) == 0:
             return
+        # dtype "object" (used for strings) is not accepted by extend() function in uproot,
+        # need to convert to categorical.
+        for col in coincidences.columns:
+            if coincidences[col].dtype == "object":
+                coincidences[col] = pd.Categorical(coincidences[col])
         table_name = "Coincidences"
         if self.format == "root":
             if self.empty:
