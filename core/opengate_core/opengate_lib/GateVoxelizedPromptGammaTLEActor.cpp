@@ -30,8 +30,7 @@
 GateVoxelizedPromptGammaTLEActor::GateVoxelizedPromptGammaTLEActor(
     py::dict &user_info)
     : GateVActor(user_info, true) {
-  fMultiThreadReady =
-      true; // But used as a single thread python side : nb pf runs = 1
+  fMultiThreadReady = true; // But used as a single thread python side : nb pf runs = 1
 }
 
 GateVoxelizedPromptGammaTLEActor::~GateVoxelizedPromptGammaTLEActor() {
@@ -125,7 +124,6 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
 void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
 
   if(step->GetTrack()->GetParticleDefinition()->GetParticleName()!="neutron" && (step->GetTrack()->GetParticleDefinition()->GetParticleName()!="proton")){
-
     return;
   }
   auto position = step->GetPostStepPoint()->GetPosition();
@@ -160,19 +158,17 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   const G4double &l = step->GetStepLength();
   G4Material *mat = step->GetPreStepPoint()->GetMaterial();
   G4double rho = mat->GetDensity() / (CLHEP::g / CLHEP::cm3);
-  auto w = step->GetTrack()
-               ->GetWeight(); // Get the weight of the track (particle history)
+  auto w = step->GetTrack()->GetWeight(); // Get the weight of the track (particle history)
                               // for potential russian roulette or splitting
   if (fProtonTimeFlag ||
       fNeutronTimeFlag) { // If the quantity of interest is the time of flight
 
-    // Get the time of flight
-    G4double randomtime = G4UniformRand();
-    G4double pretime = step->GetPreStepPoint()->GetGlobalTime() - T0;   // ns
-    G4double posttime = step->GetPostStepPoint()->GetGlobalTime() - T0; // ns
-    G4double time = (posttime + randomtime * (pretime - posttime));     // ns
-
-
+      // Get the time of flight
+      G4double randomtime = G4UniformRand();
+      G4double pretime = step->GetPreStepPoint()->GetGlobalTime() - T0;   // ns
+      G4double posttime = step->GetPostStepPoint()->GetGlobalTime() - T0; // ns
+      G4double time = (posttime + randomtime * (pretime - posttime));     // ns
+    
   // Get the voxel index (fourth dim) corresponding to the time of flight
     G4int bin = static_cast<int>(time / (timerange / timebins)); 
     if (bin >= timebins) {
@@ -193,14 +189,18 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   }
   if (fProtonEnergyFlag ||
       fNeutronEnergyFlag) { // when the quantity of interest is the energy
-
-    // Get the energy of the projectile
-    G4double randomenergy = G4UniformRand();
-    const G4double &postE = step->GetPostStepPoint()->GetKineticEnergy(); // MeV
-    const G4double &preE = step->GetPreStepPoint()->GetKineticEnergy();   // MeV
-    G4double projectileEnergy = postE + randomenergy * (preE - postE);    // MeV
-
-    
+    G4double projectileEnergy = 0;
+    if(step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName() == "protonInelastic" ||
+    step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName() == "neutronInelastic") {
+    projectileEnergy = step->GetPreStepPoint()->GetKineticEnergy(); // MeV
+    }  
+    else{
+      // Get the energy of the projectile
+      G4double randomenergy = G4UniformRand();
+      const G4double &postE = step->GetPostStepPoint()->GetKineticEnergy(); // MeV
+      const G4double &preE = step->GetPreStepPoint()->GetKineticEnergy();   // MeV
+      G4double projectileEnergy = postE + randomenergy * (preE - postE);    // MeV
+    }
     //Get the voxel index (fourth dim) corresponding to the energy of the projectile
     G4int bin = static_cast<int>(projectileEnergy / (energyrange/energybins)); // Always the left bin
     if (bin >= energybins) {
