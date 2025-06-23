@@ -499,12 +499,16 @@ def resample_itk_image_like(img, like_img, default_pixel_value, linear=True):
     return resampled_img
 
 
-def resample_itk_image(image, size, spacing, default_pixel_value, linear=True):
+def resample_itk_image(
+    image, size, spacing, default_pixel_value, linear=True, translation=None
+):
     # create a temporary image
     like = create_3d_image(size, spacing, allocate=False)
-    # position the image such as the center is the same than the initial image
+    # position the image such as the centre is the same as the initial image
     info1 = get_info_from_image(like)
     center1 = info1.size / 2.0 * info1.spacing + info1.origin - info1.spacing / 2.0
+    if translation is not None:
+        center1 += translation
     info2 = get_info_from_image(image)
     center2 = info2.size / 2.0 * info2.spacing + info2.origin - info2.spacing / 2.0
     tr = center2 - center1

@@ -11,6 +11,7 @@ except ModuleNotFoundError:
     sys.modules[__name__] = None
     raise SystemExit
 
+from opengate.exception import warning
 from opengate.contrib.spect.spect_config import *
 from opengate.image import resample_itk_image
 from opengate.contrib.dose.photon_attenuation_image_helpers import (
@@ -23,7 +24,6 @@ from pytomography.transforms.SPECT import SPECTPSFTransform, SPECTAttenuationTra
 from pytomography.projectors.SPECT import SPECTSystemMatrix
 from pytomography.likelihoods import PoissonLogLikelihood
 from pytomography.algorithms import OSEM
-from pytomography.io.SPECT import dicom
 from pytomography.utils import compute_EW_scatter
 
 import torch
@@ -34,277 +34,33 @@ import os
 from pathlib import Path
 
 
-def rotation_image_to_pytomo_coordinate(np_image, spacing=None, size=None):
+def rotate_np_image_to_pytomography(np_image):
     """
-    Rotate image from ITK coordinate system to pytomography coordinate system (z,x,y) -> (x,y,z)
-
-    Parameters:
-    np_image : np.array
-        Input image in numpy array format.
-    spacing : np.array default=None
-        Spacing of the image in the format [spacing_z, spacing_x, spacing_y].
-
-    Returns:
-    np.array
-        The rotated image in numpy array format.
-    np.array if spacing is not None
-        The rotated spacing in the format [spacing_x, spacing_y, spacing_z].
+    Rotate a numpy image to the pytomography coordinate system.
+    For example, for the attenuation map.
     """
-    if spacing is not None and size is not None:
-        rotated_image = np.transpose(np_image, axes=(1, 2, 0))
-        rotated_spacing = np.array([spacing[1], spacing[2], spacing[0]])
-        rotated_size = np.array([size[1], size[2], size[0]])
-        return rotated_image, rotated_spacing, rotated_size
-    else:
-        rotated_image = np.transpose(np_image, axes=(1, 2, 0))
-        return rotated_image
-
-
-def rotation_pytomo_to_image_coordinate(np_image, spacing=None, size=None):
-    """
-    Rotate image from pytomography coordinate system to ITK coordinate system (x,y,z) -> (z,x,y)
-
-    Parameters:
-    np_image : np.array
-        Input image in numpy array format.
-    spacing : np.array default=None
-        Spacing of the image in the format [spacing_x, spacing_y, spacing_z].
-
-    Returns:
-    np.array
-        The rotated image in numpy array format.
-    np.array if spacing is not None
-        The rotated spacing in the format [spacing_z, spacing_x, spacing_y].
-    """
-    if spacing is not None and size is not None:
-        rotated_image = np.transpose(np_image, axes=(2, 0, 1))
-        rotated_spacing = np.array([spacing[2], spacing[0], spacing[1]])
-        rotated_size = np.array([size[2], size[0], size[1]])
-        return rotated_image, rotated_spacing, rotated_size
-    else:
-        rotated_image = np.transpose(np_image, axes=(2, 0, 1))
-        return rotated_image
-
-
-def rotation_sinogram_to_pytomo_coordinate(np_sinogram, spacing=None, size=None):
-    """
-    Rotate sinogram from ITK coordinate system to pytomography coordinate system (angles,z,x) -> (angles,x,z)
-
-    Parameters:
-    np_sinogram : np.array
-        Input sinogram in numpy array format.
-    spacing : np.array default=None
-        Spacing of the sinogram in the format [spacing_z, spacing_x].
-
-    Returns:
-    np.array
-        The rotated sinogram in numpy array format.
-    np.array if spacing is not None
-        The rotated spacing in the format [spacing_x, spacing_z].
-    """
-    if spacing is not None and size is not None:
-        rotated_sinogram = np.transpose(np_sinogram, axes=(0, 2, 1))
-        rotated_spacing = np.array([spacing[1], spacing[0]])
-        rotated_size = np.array([size[1], size[0]])
-        return rotated_sinogram, rotated_spacing, rotated_size
-    else:
-        rotated_sinogram = np.transpose(np_sinogram, axes=(0, 2, 1))
-        return rotated_sinogram
-
-
-def rotation_pytomo_to_sinogram_coordinate(np_sinogram, spacing=None, size=None):
-    """
-    Rotate sinogram from pytomography coordinate system to ITK coordinate system (angles,x,z) -> (angles,z,x)
-
-    Parameters:
-    np_sinogram : np.array
-        Input sinogram in numpy array format.
-    spacing : np.array default=None
-        Spacing of the sinogram in the format [spacing_x, spacing_z].
-
-    Returns:
-    np.array
-        The rotated sinogram in numpy array format.
-    np.array if spacing is not None
-        The rotated spacing in the format [spacing_z, spacing_x].
-
-    """
-    if spacing is not None and size is not None:
-        rotated_sinogram = np.transpose(np_sinogram, axes=(0, 2, 1))
-        rotated_spacing = np.array([spacing[1], spacing[0]])
-        rotated_size = np.array([size[1], size[0]])
-        return rotated_sinogram, rotated_spacing, rotated_size
-    else:
-        rotated_sinogram = np.transpose(np_sinogram, axes=(0, 2, 1))
-        return rotated_sinogram
-
-
-def rotation_image_pytomo_to_gate(np_image, spacing=None, size=None):
     rotation_arr = np.transpose(np_image, axes=(2, 1, 0))
-    if size is not None:
-        c = size.copy()
-        size[0] = c[2]
-        size[1] = c[1]
-        size[2] = c[0]
-    if spacing is not None:
-        c = size.copy()
-        spacing[0] = c[2]
-        spacing[1] = c[1]
-        spacing[2] = c[0]
     return rotation_arr
 
 
-def rotation_sinogram_pytomo_to_gate(np_image, spacing=None, size=None):
-    rotation_arr = np.transpose(np_image, axes=(0, 2, 1))
-    # need copy because negative stride
-    rotation_arr = rotation_arr[:, :, ::-1].copy()
-    if size is not None:
-        c = size.copy()
-        size[0] = c[0]
-        size[1] = c[2]
-        size[2] = c[1]
-    if spacing is not None:
-        c = size.copy()
-        spacing[0] = c[0]
-        spacing[1] = c[2]
-        spacing[2] = c[1]
+def rotate_np_pytomography_to_image(np_image):
+    """
+    Rotate a numpy pytomography reconstructed image to the Gate coordinate system.
+    """
+    rotation_arr = np.transpose(np_image, axes=(2, 1, 0))
+    rotation_arr = rotation_arr[:, ::-1, :].copy()
     return rotation_arr
 
 
-def osem_pytomography(sinogram, angles_deg, radii_cm, options):
+def rotate_np_sinogram_to_pytomography(np_sinogram):
     """
-    Perform OSEM (Ordered Subset Expectation Maximization) image reconstruction
-    from a provided sinogram using specific tomography parameters and options.
-
-    Reconstruction is performed with pytomography library https://github.com/PyTomography
-
-    The function constructs the necessary metadata and system matrix for SPECT
-    (single-photon emission computed tomography) reconstruction, applying
-    attenuation and point spread function (PSF) transformations. Before starting
-    the reconstruction process, the function ensures consistency between the
-    dimensions and spacing of the sinogram projections and the reconstructed
-    image. It finally returns the reconstructed image as a SimpleITK image.
-
-    Parameters:
-    sinogram : SimpleITK.Image
-        Input sinogram in SimpleITK image format.
-    angles_deg : List[float]
-        List of angles in degrees at which projections are taken.
-    radii_cm : List[float]
-        List of radii in centimeters for each projection.
-    options : dict
-        Options for the reconstruction process. Must include keys 'size',
-        'spacing', 'collimator_name', 'energy_kev', 'intrinsic_resolution_cm',
-        'n_iters', and 'n_subsets'.
-
-    Returns:
-    SimpleITK.Image
-        The reconstructed image.
+    Rotate numpy sinogram to the Pytomography coordinate system [angles,z,x] -> [angles,x,z]
+    we reverse the Z axis (gantry rotation) because the rotation of the
+    gantry is in the opposite direction
     """
-
-    # set information about the projections
-    proj_size_itk = sinogram.GetSize()[0:2]
-    proj_spacing_itk = sinogram.GetSpacing()[0:2]
-
-    # set information about the reconstructed image
-    size_itk = np.array(options["size"]).astype(int)
-    spacing_itk = np.array(options["spacing"])
-
-    # convert sinogram to torch
-    arr = sitk.GetArrayFromImage(sinogram)
-    arr, proj_spacing, proj_size = rotation_sinogram_to_pytomo_coordinate(
-        arr, proj_spacing_itk, proj_size_itk
-    )
-    projections = torch.tensor(arr).to(pytomography.device)
-
-    _, spacing, size = rotation_image_to_pytomo_coordinate(
-        np.zeros(size_itk), spacing=spacing_itk, size=size_itk
-    )
-
-    # set pytomography metadata
-    object_meta = SPECTObjectMeta(list(spacing), list(size))
-    proj_meta = SPECTProjMeta(proj_size, proj_spacing, angles_deg, radii_cm)
-
-    # FIXME it seems that pytomography requires projection size equals to reconstructed image size
-    if not np.all(proj_size == size[0:2]):
-        raise ValueError(
-            f"Projection size and reconstructed image size must be equal: {proj_size} != {size[0:2]}"
-        )
-    if not np.all(proj_spacing == spacing[0:2]):
-        raise ValueError(
-            f"Projection spacing and reconstructed image spacing must be equal: {proj_spacing} != {spacing[0:2]}"
-        )
-    if size[2] != size[0]:
-        raise ValueError(
-            f"Image size[2] must be equal to image size[0]: {size[2]} != {size[0]}"
-        )
-
-    # attenuation correction
-    att_transform = None
-    att_img = None
-    if "attenuation_image" in options:
-        att_filename = options["attenuation_image"]
-        if att_filename is not None:
-            print(att_filename, type(att_filename))
-            if type(att_filename) is str:
-                img = sitk.ReadImage(att_filename)
-            else:
-                img = att_filename
-            att_img = img
-            arr = (
-                sitk.GetArrayFromImage(img).astype(np.float32) / 10
-            )  # need cm-1 -> ???? FIXME
-
-            arr = rotation_image_to_pytomo_coordinate(arr)
-            attenuation_map = torch.tensor(arr).to(pytomography.device)
-            att_transform = SPECTAttenuationTransform(attenuation_map=attenuation_map)
-
-    # PSF correction
-    psf_meta = dicom.get_psfmeta_from_scanner_params(
-        options["collimator_name"],
-        options["energy_kev"],
-        intrinsic_resolution=options["intrinsic_resolution_cm"],
-    )
-    psf_transform = SPECTPSFTransform(psf_meta)
-
-    # scatter correction
-    # FIXME
-
-    # Build the system matrix
-    obj2obj_transforms = [psf_transform]
-    if att_transform is not None:
-        obj2obj_transforms = [att_transform, psf_transform]
-    system_matrix = SPECTSystemMatrix(
-        obj2obj_transforms=obj2obj_transforms,
-        proj2proj_transforms=[],
-        object_meta=object_meta,
-        proj_meta=proj_meta,
-    )
-
-    # Setup OSEM
-    likelihood = PoissonLogLikelihood(system_matrix, projections)
-    reconstruction_algorithm = OSEM(likelihood)
-
-    # Go !
-    reconstructed_object = reconstruction_algorithm(
-        n_iters=options["n_iters"], n_subsets=options["n_subsets"]
-    )
-
-    # build the final sitk image
-    reconstructed_object_arr = reconstructed_object.cpu().numpy()
-    reconstructed_object_arr = rotation_pytomo_to_image_coordinate(
-        reconstructed_object_arr
-    )
-    reconstructed_object_sitk = sitk.GetImageFromArray(reconstructed_object_arr)
-    reconstructed_object_sitk.SetSpacing(spacing_itk)
-    origin = -(size * spacing_itk) / 2.0 + spacing_itk / 2.0
-    reconstructed_object_sitk.SetOrigin(origin)
-
-    # att ?
-    if att_transform is not None:
-        reconstructed_object_sitk.SetOrigin(att_img.GetOrigin())
-
-    return reconstructed_object_sitk
+    rotated_sinogram = np.transpose(np_sinogram, axes=(0, 2, 1))
+    rotated_sinogram = rotated_sinogram[:, :, ::-1].copy()
+    return rotated_sinogram
 
 
 def pytomography_read_metadata(json_file):
@@ -363,6 +119,7 @@ def pytomography_new_metadata():
             "projection_pixel_size_z": 0.48,
             "projection_dimension_r": 128,
             "projection_dimension_z": 128,
+            "starting_angle_deg": -90,
         },
     }
 
@@ -404,12 +161,11 @@ def pytomography_set_energy_windows(metadata, channels):
 def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
     # consider sinogram for all energy windows
     sinograms = read_projections_as_sinograms(filenames, number_of_angles)
-
     sino_arr = None
     for sinogram in sinograms:
         arr = sitk.GetArrayFromImage(sinogram)
-        arr = np.transpose(arr, axes=(0, 2, 1))  # probably ok, like in helpers
-        arr = arr[:, :, ::-1].copy()
+        arr = rotate_np_sinogram_to_pytomography(arr)
+        # concatenate all energy windows
         if sino_arr is None:
             sino_arr = arr
         else:
@@ -429,13 +185,19 @@ def create_attenuation_image(
     attenuation_filename,
     size,
     spacing,
+    translation=None,
     verbose=False,
 ):
     # resample
     image = itk.imread(ct_filename)
     verbose and print(f"Resample CT image {ct_filename} to {size} and {spacing}")
     image = resample_itk_image(
-        image, size, spacing, default_pixel_value=-1000, linear=False
+        image,
+        size,
+        spacing,
+        default_pixel_value=-1000,
+        linear=False,
+        translation=translation,
     )
     itk.imwrite(image, attenuation_filename)
 
@@ -516,11 +278,12 @@ def pytomography_get_detector_data(metadata):
     projection_dimension_r = geometry_meta["projection_dimension_r"]
     projection_dimension_z = geometry_meta["projection_dimension_z"]
 
-    # For now assume all oriented towards the center
+    # For now, assume all oriented towards the centre
     radii = np.sqrt(detector_position_x**2 + detector_position_y**2)
     angles = np.arctan2(detector_position_y, detector_position_x)
-    # for GATE intevo : -90 deg rotation
-    angles = np.degrees(angles) - 90
+
+    # starting angle
+    angles = np.degrees(angles) + geometry_meta["starting_angle_deg"]
 
     object_meta = SPECTObjectMeta(
         [projection_pixel_size_r, projection_pixel_size_r, projection_pixel_size_z],
@@ -577,7 +340,7 @@ def get_psf_meta_from_json(metadata, photon_energy, min_sigmas=3):
     )
 
 
-def compute_TEW_scatter_estimate(
+def compute_tew_scatter_estimate(
     metadata,
     index_lower,
     index_upper,
@@ -626,7 +389,7 @@ def compute_TEW_scatter_estimate(
     return TEW
 
 
-def compute_DEW_scatter_estimate(
+def compute_dew_scatter_estimate(
     metadata,
     index_scatter_window,  # Index of the single scatter window (e.g., lower scatter)
     index_peak_window,  # Index of the photopeak window
@@ -634,7 +397,7 @@ def compute_DEW_scatter_estimate(
     sigma_theta: float = 0,
     sigma_r: float = 0,
     sigma_z: float = 0,
-    N_sigmas: int = 3,
+    n_sigmas: int = 3,
     return_scatter_variance_estimate: bool = False,  # DEW typically doesn't yield variance in this way
 ):
     """
@@ -662,7 +425,7 @@ def compute_DEW_scatter_estimate(
                          Applied to the scatter window projections before scaling.
         sigma_z (float): Standard deviation for axial Gaussian smoothing (in pixels).
                          Applied to the scatter window projections before scaling.
-        N_sigmas (int): Number of standard deviations for Gaussian smoothing kernel truncation.
+        n_sigmas (int): Number of standard deviations for Gaussian smoothing kernel truncation.
         return_scatter_variance_estimate (bool): Not typically used for direct DEW,
                                                  included for function signature consistency.
                                                  Will always return None if True.
@@ -730,7 +493,7 @@ def compute_DEW_scatter_estimate(
                 sigma_r=sigma_r,
                 sigma_z=sigma_z,
                 sigma_theta=sigma_theta,
-                N_sigmas=N_sigmas,
+                N_sigmas=n_sigmas,
                 proj_meta=proj_meta,  # Pass proj_meta for proper dimension handling
             )
         except AttributeError:
@@ -778,15 +541,14 @@ def get_attenuation_map_from_json(metadata):
     amap = amap.reshape((dimension_x, dimension_y, dimension_z))
 
     # rotation from gate to pytomo
-    print("rotation FIXME ")
-    amap = np.transpose(amap, axes=(2, 1, 0))  # FIXME as a function ?
+    amap = rotate_np_image_to_pytomography(amap)
 
-    # we consider the attenuation map has already be resampled
+    # we consider the attenuation map has already been resampled
     # like the projection / reconstructed object
     return torch.tensor(amap).to(pytomography.device)
 
 
-def pytomgraphy_osem_reconstruction(
+def pytomography_osem_reconstruction(
     metadata,
     index_peak,
     psf_photon_energy,
@@ -823,14 +585,14 @@ def pytomgraphy_osem_reconstruction(
     if scatter_mode == "TEW":
         if index_upper is None:
             index_upper = index_peak + 1
-        additive_term = compute_TEW_scatter_estimate(
+        additive_term = compute_tew_scatter_estimate(
             metadata,
             index_lower=index_lower,
             index_upper=index_upper,
             index_peak=index_peak,
         )
     if scatter_mode == "DEW":
-        additive_term = compute_DEW_scatter_estimate(
+        additive_term = compute_dew_scatter_estimate(
             metadata,
             index_scatter_window=index_lower,
             index_peak_window=index_peak,
@@ -838,10 +600,8 @@ def pytomgraphy_osem_reconstruction(
             sigma_theta=0,
             sigma_r=0,
             sigma_z=0,
-            N_sigmas=3,
+            n_sigmas=3,
         )
-
-    # FIXME complete other scatter correction
 
     # system matrix
     if attenuation_flag:
@@ -866,12 +626,12 @@ def pytomgraphy_osem_reconstruction(
     recon_algorithm = OSEM(likelihood)
     reconstructed_image = recon_algorithm(n_iters=n_iters, n_subsets=n_subsets)
 
-    # build the final sitk image
-    # (warning spacing in cm)
+    # build the final image
+    # (warning spacing is in cm)
     spacing = np.array([object_meta.dx, object_meta.dy, object_meta.dz]) * g4_units.cm
     size = np.array(object_meta.shape)
     recon_arr = reconstructed_image.cpu().numpy()
-    recon_arr = rotation_image_pytomo_to_gate(recon_arr)
+    recon_arr = rotate_np_pytomography_to_image(recon_arr)
     recon_sitk = sitk.GetImageFromArray(recon_arr)
     recon_sitk.SetSpacing(spacing)
 
@@ -879,12 +639,8 @@ def pytomgraphy_osem_reconstruction(
     # (warning itk in mm and pytomography in cm)
     am = metadata["Attenuation Data"]
     origin = np.array([am["origin_x"], am["origin_y"], am["origin_z"]])
-    tr = np.array(am["translation"])
-    origin -= tr
     origin = origin * g4_units.cm
 
-    # FIXME ? use this if no attenuation?
-    #    origin = -(size * spacing) / 2.0 + spacing / 2.0
     recon_sitk.SetOrigin(origin)
 
     return recon_sitk
@@ -893,8 +649,8 @@ def pytomgraphy_osem_reconstruction(
 def pytomography_build_metadata(
     sc,
     sim,
-    isotope_name,
     attenuation_energy,
+    output_folder=None,
     verbose=True,
 ):
     """
@@ -902,9 +658,13 @@ def pytomography_build_metadata(
     - list of detector heads: for orientation
     - Digitizer projection actor: for size and spacing
     - Digitizer energy windows actor: for energy window
-    - list of projections files: for build the sinogram in pytomography orientation
+    - list of projection files: for build the sinogram in pytomography orientation
     - energy for the attenuation map
     """
+
+    # output folder for sinogram and attenuation map
+    if output_folder is None:
+        output_folder = sc.output_folder
 
     # create a new (empty) pytomography metadata file
     metadata = pytomography_new_metadata()
@@ -915,6 +675,9 @@ def pytomography_build_metadata(
         pytomography_add_detector_orientation(metadata, detector)
     nb_proj = metadata["Projection Geometry Data"]["number_of_projections"]
     verbose and print(f"Found a total of {nb_proj} projections")
+
+    # the angle zero is on the side of the table
+    metadata["Projection Geometry Data"]["starting_angle_deg"] = -90
 
     # set the detector size and spacing
     size = [
@@ -938,7 +701,7 @@ def pytomography_build_metadata(
 
     # create the sinogram with all the projections
     filenames = sc.detector_config.get_proj_filenames(sim)
-    o = sc.output_folder / "sinogram.mhd"
+    o = output_folder / "sinogram.mhd"
     sino = pytomography_create_sinogram(
         filenames, sc.acquisition_config.number_of_angles, o
     )
@@ -950,30 +713,48 @@ def pytomography_build_metadata(
     dpd = metadata["Detector Physics Data"]
     m = sc.detector_config.get_model_module()
     dpd.update(m.get_pytomography_detector_physics_data(sc.detector_config.collimator))
-    dpd["isotope_name"] = isotope_name
-    # FIXME ?
-    dpd["crystal_spatial_resolution_fwhm_energy_model"] = "A*sqrt(B/energy)"
-    dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.36, 140.5]
-    dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
-    dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]
+    dpd["isotope_name"] = sc.source_config.radionuclide
+
+    # crystal mode
+    known_crystal_models = ["intevo"]  # , "nm670"]
+    if sc.detector_config.model not in known_crystal_models:
+        warning(f"Unknown crystal model: {sc.detector_config.model}")
+        warning(f'the crystal parameters are set by default like "intevo"')
+
+    if sc.detector_config.model == "intevo":
+        dpd["crystal_spatial_resolution_fwhm_energy_model"] = "A*sqrt(B/energy)"
+        dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.36, 140.5]
+        dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
+        dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]
+
+    """if sc.detector_config.model == "nm670":
+        dpd["crystal_spatial_resolution_fwhm_energy_model"] = "A*sqrt(B/energy)"
+        dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.36, 140.5]
+        dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
+        dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]"""
 
     # attenuation correction
     # read CT image and resample like the reconstructed image
     # for the moment MUST be same size and spacing than the projection images
+    # Important: take into account the translation of the phantom!
     create_attenuation_image(
         sc.phantom_config.image,
         attenuation_energy,
-        sc.output_folder / "mumap.mhd",
+        output_folder / "mumap.mhd",
         size,
         spacing,
+        translation=sc.phantom_config.translation,
         verbose=True,
     )
     pytomography_set_attenuation_data(
         metadata,
         attenuation_energy,
-        sc.output_folder / "mumap.mhd",
+        output_folder / "mumap.mhd",
         translation=sc.phantom_config.translation,
         verbose=True,
+    )
+    verbose and print(
+        f"Build attenuation map with shape {size} in {output_folder / 'mumap.mhd'}"
     )
 
     return metadata

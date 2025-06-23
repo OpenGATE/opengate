@@ -838,7 +838,7 @@ def rotate_gantry(
     head, radius, start_angle_deg, step_angle_deg=1, nb_angle=1, initial_rotation=None
 ):
     """
-    This function rotate the gantry both for 1) conventional spect or 2) ARF plane,
+    This function rotates the gantry both for 1) conventional spect or 2) ARF plane,
     according to the value of initial_rotation
     """
     # compute the nb translation and rotation
