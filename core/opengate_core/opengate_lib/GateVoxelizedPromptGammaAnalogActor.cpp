@@ -176,12 +176,9 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
   for (size_t i = 0; i < secondaries->size(); i++) {
     auto secondary = secondaries->at(i);
     auto secondary_def = secondary->GetParticleDefinition();
-    if (secondary_def != G4Gamma::Gamma()){
+    if (secondary_def != G4Gamma::Gamma()) {
       continue;
     }
-    if (fProtonTimeFlag ||
-        fNeutronTimeFlag) { // If the quantity of interest is the time of flight
-
     G4double gammaEnergy = secondary->GetKineticEnergy(); // in MeV
     // thershold with a minimum energy of 40 keV
     if (gammaEnergy < 0.04 * CLHEP::MeV) {
@@ -201,18 +198,19 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
       if (bin >= timebins) {
         bin = timebins;
       }
-      if (bin < 0) {
-        bin = 0; // underflow
+        ind[3] = bin;
+        // Store the value in the volume for neutrons OR protons -> LEFT BINNING
+        if (fProtonTimeFlag &&
+            step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+                "proton") {
+          ImageAddValue<ImageType>(cpp_tof_proton_image, ind, 1);
+        }
+        if (fNeutronTimeFlag &&
+            step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+                "neutron") {
+          ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, 1);
+        }
       }
-      ind[3] = bin;
-      // Store the value in the volume for neutrons OR protons -> LEFT BINNING
-      if (fProtonTimeFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="proton"){
-        ImageAddValue<ImageType>(cpp_tof_proton_image, ind,1);
-      }
-      if (fNeutronTimeFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="neutron") { 
-        ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, 1);
-      }
-    }
     if (fProtonEnergyFlag || fNeutronEnergyFlag) { // when the quantity of interest is the energy
       //Get the voxel index (fourth dim) corresponding to the energy of the projectile
       G4int bin = static_cast<int>(gammaEnergy / (energyrange/energybins)); // Always the left bin
@@ -232,7 +230,6 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
       }
     } 
   }
-}
 }
 
 void GateVoxelizedPromptGammaAnalogActor::EndOfRunAction(const G4Run *run) {

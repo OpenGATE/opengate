@@ -90,7 +90,8 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
   volume->Allocate();
   volume->FillBuffer(0);
 
-  incidentParticles = 0; // initiate the conuter of incidente protons - scaling factor
+  incidentParticles =
+      0; // initiate the conuter of incidente protons - scaling factor
 }
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
@@ -129,8 +130,9 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
   auto position = step->GetPostStepPoint()->GetPosition();
   auto touchable = step->GetPreStepPoint()->GetTouchable();
   // Get the voxel index
-  
-  auto localPosition = touchable->GetHistory()->GetTransform(0).TransformPoint(position);
+
+  auto localPosition =
+      touchable->GetHistory()->GetTransform(0).TransformPoint(position);
 
   // convert G4ThreeVector to itk PointType
   Image3DType::PointType point;
@@ -171,19 +173,24 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     
   // Get the voxel index (fourth dim) corresponding to the time of flight
     G4int bin = static_cast<int>(time / (timerange / timebins)); 
+
     if (bin >= timebins) {
-      bin = timebins; //overflow
+      bin = timebins; // overflow
     }
-    if (bin<0){
-      bin = 0; //underflow
+    if (bin < 0) {
+      bin = 0; // underflow
     }
     ind[3] = bin;
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
-    
-    if (fProtonTimeFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="proton") {
+
+    if (fProtonTimeFlag &&
+        step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+            "proton") {
       ImageAddValue<ImageType>(cpp_tof_proton_image, ind, l * rho * w);
     }
-    if (fNeutronTimeFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="neutron") {
+    if (fNeutronTimeFlag &&
+        step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+            "neutron") {
       ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, l * rho * w);
     }
   }
@@ -206,8 +213,8 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     if (bin >= energybins) {
       bin = energybins; // last bin = overflow
     }
-    if (bin<0){
-      bin = 0; //underflow
+    if (bin < 0) {
+      bin = 0; // underflow
     }
     ind[3] = bin;
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
