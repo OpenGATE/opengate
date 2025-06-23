@@ -185,50 +185,59 @@ void GateVoxelizedPromptGammaAnalogActor::SteppingAction(G4Step *step) {
       continue;
     }
 
-    if(fProtonTimeFlag || fNeutronTimeFlag){ //If the quantity of interest is the time of flight
-    // Get the time of flight
-      //G4double randomtime = G4UniformRand();
-      //G4double pretime = step->GetPreStepPoint()->GetGlobalTime()- T0; //ns
-      //G4double posttime = step->GetPostStepPoint()->GetGlobalTime()- T0;//ns
-      G4double time = secondary->GetGlobalTime() - T0;//ns
+    if (fProtonTimeFlag ||
+        fNeutronTimeFlag) { // If the quantity of interest is the time of flight
+      // Get the time of flight
+      // G4double randomtime = G4UniformRand();
+      // G4double pretime = step->GetPreStepPoint()->GetGlobalTime()- T0; //ns
+      // G4double posttime = step->GetPostStepPoint()->GetGlobalTime()- T0;//ns
+      G4double time = secondary->GetGlobalTime() - T0; // ns
 
-    // Get the voxel index (fourth dim) corresponding to the time of flight
-      G4int bin = static_cast<int>(time / (timerange / timebins)); // Always the left bin
+      // Get the voxel index (fourth dim) corresponding to the time of flight
+      G4int bin = static_cast<int>(
+          time / (timerange / timebins)); // Always the left bin
 
       if (bin >= timebins) {
         bin = timebins;
       }
-        ind[3] = bin;
-        // Store the value in the volume for neutrons OR protons -> LEFT BINNING
-        if (fProtonTimeFlag &&
-            step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
-                "proton") {
-          ImageAddValue<ImageType>(cpp_tof_proton_image, ind, 1);
-        }
-        if (fNeutronTimeFlag &&
-            step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
-                "neutron") {
-          ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, 1);
-        }
+      ind[3] = bin;
+      // Store the value in the volume for neutrons OR protons -> LEFT BINNING
+      if (fProtonTimeFlag &&
+          step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+              "proton") {
+        ImageAddValue<ImageType>(cpp_tof_proton_image, ind, 1);
       }
-    if (fProtonEnergyFlag || fNeutronEnergyFlag) { // when the quantity of interest is the energy
-      //Get the voxel index (fourth dim) corresponding to the energy of the projectile
-      G4int bin = static_cast<int>(gammaEnergy / (energyrange/energybins)); // Always the left bin
+      if (fNeutronTimeFlag &&
+          step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+              "neutron") {
+        ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, 1);
+      }
+    }
+    if (fProtonEnergyFlag ||
+        fNeutronEnergyFlag) { // when the quantity of interest is the energy
+      // Get the voxel index (fourth dim) corresponding to the energy of the
+      // projectile
+      G4int bin = static_cast<int>(
+          gammaEnergy / (energyrange / energybins)); // Always the left bin
       if (bin >= energybins) {
         bin = energybins;
       }
       if (bin < 0) {
         bin = 0; // underflow
       }
-      ind[3] = bin; 
+      ind[3] = bin;
       // Store the value in the volume for neutrons OR protons -> LEFT BINNING
-      if (fProtonEnergyFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="proton") {
+      if (fProtonEnergyFlag &&
+          step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+              "proton") {
         ImageAddValue<ImageType>(cpp_E_proton_image, ind, 1);
       }
-      if (fNeutronEnergyFlag && step->GetTrack()->GetParticleDefinition()->GetParticleName()=="neutron") {
-        ImageAddValue<ImageType>(cpp_E_neutron_image, ind,  1);
+      if (fNeutronEnergyFlag &&
+          step->GetTrack()->GetParticleDefinition()->GetParticleName() ==
+              "neutron") {
+        ImageAddValue<ImageType>(cpp_E_neutron_image, ind, 1);
       }
-    } 
+    }
   }
 }
 
