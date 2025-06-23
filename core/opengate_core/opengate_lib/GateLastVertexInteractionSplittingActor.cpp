@@ -102,8 +102,7 @@ void GateLastVertexInteractionSplittingActor::InitializeAAManager(
 G4VProcess *GateLastVertexInteractionSplittingActor::GetProcessFromProcessName(
     G4String particleName, G4String pName) {
   auto *particle_table = G4ParticleTable::GetParticleTable();
-  G4ParticleDefinition *particleDefinition =
-      particle_table->FindParticle(particleName);
+  G4ParticleDefinition *particleDefinition =particle_table->FindParticle(particleName);
   G4ProcessManager *processManager = particleDefinition->GetProcessManager();
   G4ProcessVector *processList = processManager->GetProcessList();
   G4VProcess *nullProcess = nullptr;
@@ -695,9 +694,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
           if (fIsFirstStep) {
             fNumberOfTrackToSimulate--;
             
-            //std::cout<<fNumberOfTrackToSimulate<<std::endl;
             if (fKilledBecauseOfProcess == false) {
-              //std::cout<<fSplitCounter<<std::endl;
               fSplitCounter += 1;
             } else {
               fKilledBecauseOfProcess = false;
@@ -717,11 +714,6 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
           if (fIsFirstStep) {
             if (fSplitCounter <= fSplittingFactor) {
               if (fNumberOfTrackToSimulate == 0) {
-                //std::cout<<"recreate"<<std::endl;
-                // CreateNewParticleAtTheLastVertex(
-                //  fCopyInitStep, step, fContainer,
-                //(fSplittingFactor - fSplitCounter + 1) / fSplittingFactor *
-                //   fBatchSize);
                 CreateNewParticleAtTheLastVertex(fCopyInitStep, step,
                                                  fContainer, fBatchSize);
               }
