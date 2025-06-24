@@ -29,7 +29,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     # sim.visu = True
-    sim.number_of_threads = 1
+    sim.number_of_threads = 3
     sim.output_dir = paths.output
 
     # useful units
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("GenericSource", "source1")
     source.particle = "gamma"
-    source.n= 100000
+    source.n= 100000/sim.number_of_threads
     source.position.type = "sphere"
     source.position.radius = 1 * nm
     source.position.translation = [0,0,10*cm]
@@ -105,5 +105,5 @@ if __name__ == "__main__":
     f_data = uproot.open(paths.output / "test095_output.root")
     arr_data = f_data["phsp"].arrays()
     # #
-    is_ok = validation_test(arr_data,source.n)
+    is_ok = validation_test(arr_data,source.n*sim.number_of_threads)
     utility.test_ok(is_ok)
