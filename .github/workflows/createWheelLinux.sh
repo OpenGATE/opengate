@@ -3,18 +3,7 @@
 set -e -x
 echo ${PYTHONFOLDER}
 cd /home/core/
-cd /software/cmake
-rm -rf *
-if [ "$(uname -m)" = "aarch64" ]; then
-    wget https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-aarch64.tar.gz
-    tar xzvf cmake-3.31.8-linux-aarch64.tar.gz
-    export PATH=/software/cmake/cmake-3.31.8-linux-aarch64/bin/:${PATH}
-else
-    wget https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-x86_64.tar.gz
-    tar xzvf cmake-3.31.8-linux-x86_64.tar.gz
-    export PATH=/software/cmake/cmake-3.31.8-Linux-x86_64/bin/:${PATH}
-fi
-cd /home/core/
+export PATH=/software/cmake/cmake/bin/:${PATH}
 source /software/geant4/bin/geant4make.sh
 export CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/:${CMAKE_PREFIX_PATH}
 . /opt/rh/gcc-toolset-14/enable
