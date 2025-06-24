@@ -512,8 +512,11 @@ class KillNonInteractingParticleActor(
         return s
 
 
-class KillParticlesNotCrossingMaterialsActor(ActorBase, g4.GateKillParticlesNotCrossingMaterialsActor):
+class KillParticlesNotCrossingMaterialsActor(
+    ActorBase, g4.GateKillParticlesNotCrossingMaterialsActor
+):
     """Actor which kills a particle entering a volume."""
+
     user_info_defaults = {
         "material_sparing_particles": (
             [],
@@ -530,9 +533,7 @@ class KillParticlesNotCrossingMaterialsActor(ActorBase, g4.GateKillParticlesNotC
 
     def __initcpp__(self):
         g4.GateKillParticlesNotCrossingMaterialsActor.__init__(self, self.user_info)
-        self.AddActions(
-            {"PreUserTrackingAction","SteppingAction"}
-        )
+        self.AddActions({"PreUserTrackingAction", "SteppingAction"})
 
     def initialize(self):
         ActorBase.initialize(self)
@@ -702,6 +703,7 @@ class LastVertexInteractionSplittingActor(
     def EndSimulationAction(self):
         print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())
+
 
 class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     """

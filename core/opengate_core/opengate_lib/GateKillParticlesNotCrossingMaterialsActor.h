@@ -20,7 +20,7 @@ public:
   // Constructor
   GateKillParticlesNotCrossingMaterialsActor(py::dict &user_info);
 
-  void PreUserTrackingAction(const G4Track*) override;
+  void PreUserTrackingAction(const G4Track *) override;
 
   // Main function called every step in attached volume
   void SteppingAction(G4Step *) override;
@@ -31,9 +31,6 @@ public:
   struct threadLocalT {
     G4bool fKillParticle;
   };
-
-
-
 
 private:
   std::vector<std::string> fMaterialsSparingParticles;

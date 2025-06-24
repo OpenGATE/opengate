@@ -12,10 +12,12 @@ namespace py = pybind11;
 #include "GateKillParticlesNotCrossingMaterialsActor.h"
 
 void init_GateKillParticlesNotCrossingMaterialsActor(py::module &m) {
-  py::class_<GateKillParticlesNotCrossingMaterialsActor, std::unique_ptr<GateKillParticlesNotCrossingMaterialsActor, py::nodelete>,
-             GateVActor>(m, "GateKillParticlesNotCrossingMaterialsActor")
-   .def_readwrite(
+  py::class_<
+      GateKillParticlesNotCrossingMaterialsActor,
+      std::unique_ptr<GateKillParticlesNotCrossingMaterialsActor, py::nodelete>,
+      GateVActor>(m, "GateKillParticlesNotCrossingMaterialsActor")
+      .def_readwrite(
           "fListOfVolumeAncestor",
           &GateKillParticlesNotCrossingMaterialsActor::fListOfVolumeAncestor)
-   .def(py::init<py::dict &>());
+      .def(py::init<py::dict &>());
 }
