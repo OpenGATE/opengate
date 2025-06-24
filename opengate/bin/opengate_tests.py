@@ -92,7 +92,7 @@ def go(
         try:
             g4_version = get_required_g4_version(path_tests_src)
         except:
-            g4_version = "v11.3.0"
+            g4_version = "v11.3.2"
     if not check_g4_version(g4_version):
         warning(f'The geant4 version "{g4_version}" is not the expected version.')
         # return 0

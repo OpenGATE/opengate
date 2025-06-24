@@ -12,25 +12,27 @@ MAINTAINER Thomas Baudier <thomas.baudier@creatis.insa-lyon.fr>
 RUN     yum install -y gcc wget git expat-devel fftw-devel freeglut-devel libXmu-devel xerces-c-devel \
 
 #Create folder
-    &&  mkdir -p /software/cmake /software/geant4/src /software/geant4/bin /software/geant4/data /software/itk/src /software/itk/bin /software/wheelhouse \
+    &&  mkdir -p /software/cmake /software/geant4/src /software/geant4/bin /software/itk/src /software/itk/bin /software/wheelhouse \
 
 #Install cmake
     &&  cd /software/cmake \
-    &&  wget https://github.com/Kitware/CMake/releases/download/v3.18.2/cmake-3.18.2-Linux-x86_64.tar.gz \
-    &&  tar xzvf cmake-3.18.2-Linux-x86_64.tar.gz \
-    &&  export PATH=/software/cmake/cmake-3.18.2-Linux-x86_64/bin/:${PATH} \
+    &&  wget https://github.com/Kitware/CMake/releases/download/v3.31.8/cmake-3.31.8-linux-x86_64.tar.gz \
+    &&  tar xzvf cmake-3.31.8-linux-x86_64.tar.gz \
+    &&  rm -rf cmake-3.31.8-linux-x86_64.tar.gz \
+    &&  mv cmake-3.31.8-linux-x86_64 cmake \
+    &&  export PATH=/software/cmake/cmake/bin/:${PATH} \
 
 #Compile Geant4
     &&  cd /software/geant4 \
-    &&  git clone --branch v11.3.0 https://github.com/Geant4/geant4.git --depth 1 src \
+    &&  git clone --branch v11.3.2 https://github.com/Geant4/geant4.git --depth 1 src \
     &&  cd bin \
-    &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DGEANT4_BUILD_MULTITHREADED=ON -DGEANT4_USE_GDML=OFF -DGEANT4_INSTALL_DATA=OFF -DGEANT4_INSTALL_DATADIR=/sofware/geant4/data -DGEANT4_USE_QT=OFF -DGEANT4_USE_OPENGL_X11=OFF ../src \
+    &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DGEANT4_BUILD_MULTITHREADED=ON -DGEANT4_USE_GDML=OFF -DGEANT4_INSTALL_DATA=OFF -DGEANT4_USE_QT=OFF -DGEANT4_USE_OPENGL_X11=OFF -DGEANT4_BUILD_TLS_MODEL=global-dynamic ../src \
     &&  make -j10 \
     &&  source /software/geant4/bin/geant4make.sh \
 
 #Compile ITK
     &&  cd /software/itk \
-    &&  git clone --branch v5.2.1 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1 src \
+    &&  git clone --branch v5.4.4 https://github.com/InsightSoftwareConsortium/ITK.git --depth 1 src \
     &&  cd bin \
     &&  cmake -DCMAKE_CXX_FLAGS=-std=c++17 -DBUILD_TESTING=OFF -DITK_USE_FFTWD=ON -DITK_USE_FFTWF=ON -DITK_USE_SYSTEM_FFTW:BOOL=ON ../src \
     &&  make -j10
