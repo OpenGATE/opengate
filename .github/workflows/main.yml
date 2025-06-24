@@ -548,6 +548,7 @@ jobs:
         path: output_dashboard/dashboard_output*.json
     - name: Upload test095 results
       uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: results_test095-${{ matrix.os }}-${{ matrix.python-version }}
         path: test095/
