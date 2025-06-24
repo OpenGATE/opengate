@@ -7,6 +7,7 @@ from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
+from anytree import RenderTree
 
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
@@ -394,6 +395,44 @@ class KillActor(ActorBase, g4.GateKillActor):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
+class KillParticlesNotCrossingMaterialsActor(ActorBase, g4.GateKillParticlesNotCrossingMaterialsActor):
+    """Actor which kills a particle entering a volume."""
+    user_info_defaults = {
+        "material_sparing_particles": (
+            [],
+            {
+                "doc": "List of material which will spare the particle if passing through"
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateKillParticlesNotCrossingMaterialsActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"PreUserTrackingAction","SteppingAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+
 class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     """
     This actor generates an attenuation image for a simulation run.
@@ -468,4 +507,5 @@ process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
+process_cls(KillParticlesNotCrossingMaterialsActor)
 process_cls(AttenuationImageActor)
