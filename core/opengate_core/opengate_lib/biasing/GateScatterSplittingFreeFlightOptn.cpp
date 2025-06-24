@@ -116,7 +116,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
       // FIXME time ? polarization ?
       gammaTrack->SetTrackStatus(particle_change->GetTrackStatus()); // needed ?
 
-      // Seems that this pointer is free by G4
+      // It seems that this pointer is free by G4
       fUserTrackInformation = new GateUserTrackInformation();
       fUserTrackInformation->SetGateTrackInformation(fActor, true);
       gammaTrack->SetUserInformation(fUserTrackInformation);
