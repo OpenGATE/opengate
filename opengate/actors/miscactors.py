@@ -512,6 +512,44 @@ class KillNonInteractingParticleActor(
         return s
 
 
+class KillParticlesNotCrossingMaterialsActor(ActorBase, g4.GateKillParticlesNotCrossingMaterialsActor):
+    """Actor which kills a particle entering a volume."""
+    user_info_defaults = {
+        "material_sparing_particles": (
+            [],
+            {
+                "doc": "List of material which will spare the particle if passing through"
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateKillParticlesNotCrossingMaterialsActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"PreUserTrackingAction","SteppingAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+
 def _setter_hook_particles(self, value):
     if isinstance(value, str):
         return [value]
@@ -665,7 +703,6 @@ class LastVertexInteractionSplittingActor(
         print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())
 
-
 class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     """
     This actor generates an attenuation image for a simulation run.
@@ -743,4 +780,5 @@ process_cls(KillAccordingProcessesActor)
 process_cls(LastVertexInteractionSplittingActor)
 process_cls(KillNonInteractingParticleActor)
 process_cls(SplittingActorBase)
+process_cls(KillParticlesNotCrossingMaterialsActor)
 process_cls(AttenuationImageActor)

@@ -17,7 +17,7 @@ setup(
         "click",
         "python-box<7.0.0",
         "anytree",
-        "numpy<2.0.0",
+        "numpy",
         "itk",
         "uproot",
         "scipy",

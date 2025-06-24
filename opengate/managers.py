@@ -102,6 +102,7 @@ from .actors.miscactors import (
     KillAccordingParticleNameActor,
     SplittingActorBase,
     AttenuationImageActor,
+    KillParticlesNotCrossingMaterialsActor,
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
@@ -151,6 +152,7 @@ actor_types = {
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    "KillParticlesNotCrossingMaterialsActor":KillParticlesNotCrossingMaterialsActor,
     # digit
     "PhaseSpaceActor": PhaseSpaceActor,
     "DigitizerAdderActor": DigitizerAdderActor,

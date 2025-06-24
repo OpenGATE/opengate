@@ -332,6 +332,8 @@ void init_GateKillNonInteractingParticleActor(py::module &);
 
 void init_GateKillAccordingParticleNameActor(py::module &);
 
+void init_GateKillParticlesNotCrossingMaterialsActor(py::module &);
+
 void init_GateAttenuationImageActor(py::module &);
 
 void init_itk_image(py::module &);
@@ -645,6 +647,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateKillAccordingProcessesActor(m);
   init_GateKillNonInteractingParticleActor(m);
   init_GateKillAccordingParticleNameActor(m);
+  init_GateKillParticlesNotCrossingMaterialsActor(m);
   init_GateAttenuationImageActor(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
