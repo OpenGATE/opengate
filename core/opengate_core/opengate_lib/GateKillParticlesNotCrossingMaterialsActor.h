@@ -28,11 +28,16 @@ public:
   void InitializeUserInfo(py::dict &user_info) override;
   std::vector<std::string> fListOfVolumeAncestor;
 
+  struct threadLocalT {
+    G4bool fKillParticle;
+  };
+
 
 
 
 private:
   std::vector<std::string> fMaterialsSparingParticles;
+  G4Cache<threadLocalT> fThreadLocalBooleanKilling;
   G4bool fKillParticle;
 };
 
