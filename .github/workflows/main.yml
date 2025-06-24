@@ -534,6 +534,7 @@ jobs:
           ls $dashboard_path/../output_dashboard/
           cp -r $dashboard_path/../output_dashboard .
           OutputTest=$(echo "$OutputTest" | tail -1)
+          cp -r /opt/hostedtoolcache/Python/*/*/lib/python3.*/site-packages/opengate/tests/output/test022 test095
           if [[ "$OutputTest" != "True" ]]; then
               exit -1
           else
@@ -545,6 +546,11 @@ jobs:
       with:
         name: results_json-${{ matrix.os }}-${{ matrix.python-version }}
         path: output_dashboard/dashboard_output*.json
+    - name: Upload test095 results
+      uses: actions/upload-artifact@v4
+      with:
+        name: results_test095-${{ matrix.os }}-${{ matrix.python-version }}
+        path: test095/
 
   publish_test:
     runs-on: ubuntu-latest
