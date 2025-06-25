@@ -7,6 +7,7 @@ from opengate.geometry.utility import (
     vec_g4_as_np,
 )
 from opengate.actors.digitizers import *
+import sys
 
 
 def add_fake_table(sim, name="table"):
@@ -531,3 +532,81 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
     if len(channels) == 0:
         raise ValueError(f"No default energy windows for {radionuclide_name}")
     return channels
+
+
+def get_mu_from_xraylib(material_symbol, energy):
+    """
+    Retrieves the linear attenuation coefficient (mu) for a given material and energy.
+    Uses the xraylib library to get data from standard physics databases.
+
+    Args:
+        material_symbol (str): The chemical symbol of the material (e.g. 'Pb', 'W').
+        energy (float): The photon energy (will be used in keV)
+
+    Returns:
+        float: The linear attenuation coefficient in cm^-1, or None if the material is unknown.
+    """
+    try:
+        import xraylib
+    except ImportError:
+        print(
+            "Error: The 'xraylib' library is required for dynamic calculations of attenuation coefficients."
+        )
+        print("Please install it using: pip install xraylib")
+        sys.exit(1)
+
+    try:
+        # Get atomic number and density for the material from xraylib's database
+        atomic_number = xraylib.SymbolToAtomicNumber(material_symbol)
+        print(atomic_number)
+        density = xraylib.ElementDensity(atomic_number)
+        print(density)
+
+        # Get the total mass attenuation coefficient (cm^2/g).
+        # Xraylib expects energy in keV for this function.
+        mass_attenuation_coeff = xraylib.CS_Total(atomic_number, energy / g4_units.keV)
+        print(mass_attenuation_coeff)
+
+        # Calculate linear attenuation coefficient: mu = (mu/rho) * rho
+        linear_attenuation_coeff = mass_attenuation_coeff * density
+
+        return linear_attenuation_coeff
+
+    except ValueError:
+        print(
+            f"Error: Material symbol '{material_symbol}' not found in xraylib database."
+        )
+        return None
+
+
+def calculate_acceptance_angle(
+    hole_diameter, collimator_length, linear_attenuation_coeff_cm
+):
+    """
+    Calculates the effective length and acceptance angle of a collimator.
+
+    Args:
+        hole_diameter (float): The diameter of the collimator hole in mm.
+        collimator_length (float): The physical length of the collimator in mm.
+        linear_attenuation_coeff_cm (float): The linear attenuation coefficient
+                                             of the septal material in cm^-1.
+
+    Returns:
+        tuple: A tuple containing (effective_length_mm, acceptance_angle_degrees).
+    """
+
+    mm = g4_units.mm
+
+    # Convert mu to mm^-1
+    mu_mm = linear_attenuation_coeff_cm / 10.0
+
+    # Calculate effective length: Leff = L - 2/mu
+    effective_length_mm = collimator_length / mm - (2 / mu_mm)
+
+    # Calculate acceptance angle: theta = arctan(d / Leff)
+    acceptance_angle_rad = np.arctan((hole_diameter / mm) / effective_length_mm)
+
+    # Convert to degrees
+    acceptance_angle_degrees = np.rad2deg(acceptance_angle_rad)
+
+    return effective_length_mm, acceptance_angle_degrees
