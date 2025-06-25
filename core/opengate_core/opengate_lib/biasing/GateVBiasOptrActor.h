@@ -54,6 +54,7 @@ public:
   static std::vector<G4VBiasingOperator *> &GetNonConstBiasingOperators();
 
   std::vector<std::string> fIgnoredVolumes;
+  std::vector<const G4LogicalVolume *> fIgnoredLogicalVolumes;
   double fMinimalWeight;
 };
 

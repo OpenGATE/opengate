@@ -47,6 +47,7 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   // check ignored volumes
   for (auto &name : fIgnoredVolumes) {
     const auto *v = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
+    fIgnoredLogicalVolumes.push_back(v);
     if (v == nullptr) {
       Fatal("Cannot find ignored volume: " + name + " in the actor " +
             fActorName);
