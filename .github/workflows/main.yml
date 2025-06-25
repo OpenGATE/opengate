@@ -523,7 +523,7 @@ jobs:
           fi
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
-          sha=$(git rev-parse HEAD)
+          sha=${{ github.sha }}
           sha=$sha$OSNAME$PYTHONFOLDER
           if [ "${{ github.event_name }}" = "schedule" ]; then
               OutputTest=$(opengate_tests)
