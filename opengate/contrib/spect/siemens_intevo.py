@@ -9,14 +9,10 @@ from opengate.contrib.spect.spect_helpers import (
     get_default_energy_windows,
 )
 from opengate.geometry.utility import get_transform_orbiting
-
-# colors
-# red = [1, 0.7, 0.7, 0.8]
-# blue = [0.5, 0.5, 1, 0.8]
-# gray = [0.5, 0.5, 0.5, 1]
-# white = [1, 1, 1, 1]
-# yellow = [1, 1, 0, 1]
-# green = [0, 1, 0, 1]
+from opengate.contrib.spect.spect_helpers import (
+    get_mu_from_xraylib,
+    calculate_acceptance_angle,
+)
 
 
 def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
@@ -1057,7 +1053,7 @@ def add_digitizer(
     # Singles
     sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
     sc.group_volume = None
-    sc.policy = "EnergyWinnerPosition"
+    sc.policy = "EnergyWeightedCentroidPosition"
 
     # detection efficiency
     # ea = digitizer.add_module("DigitizerEfficiencyActor")
@@ -1106,3 +1102,33 @@ def add_digitizer(
     ).as_matrix()
 
     return digitizer
+
+
+def calculate_collimator_acceptance_angle(collimator_type, energy):
+    mm = g4_units.mm
+
+    hole_diameter = None
+    collimator_length = None
+    if collimator_type == "lehr":
+        hole_diameter = 0.555 * mm * 2
+        collimator_length = 24.05 * mm
+    if collimator_type == "melp":
+        hole_diameter = 1.47 * mm * 2
+        collimator_length = 40.64 * mm
+    if collimator_type == "he":
+        hole_diameter = 2.0 * mm * 2
+        collimator_length = 59.7 * mm
+    if collimator_length is None:
+        raise ValueError("Unknown collimator type. Known types are lehr, melp, he.")
+
+    mu_lead_cm = get_mu_from_xraylib("Pb", energy)
+    print(
+        f"collimator_type: {collimator_type}, energy: {energy} keV, mu_lead_cm: {mu_lead_cm} cm-1"
+    )
+    print(f"collimator_length: {collimator_length} mm, hole_diam = {hole_diameter}")
+    l_eff, theta_acc = calculate_acceptance_angle(
+        hole_diameter, collimator_length, mu_lead_cm
+    )
+    print(f"l_eff: {l_eff} mm, theta_acc: {theta_acc} deg")
+
+    return theta_acc
