@@ -33,7 +33,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
-    sim.random_seed = 123456
+    sim.random_seed = 123457
     sim.output_dir = paths.output
 
     # world size
