@@ -78,12 +78,12 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   // set the weight for the split track and the position
   const double weight = track->GetWeight() / fSplittingFactor;
 
-  // delete secondaries to avoid memory leak
+  // delete secondaries to avoid memory leak (needed)
   for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
     const auto *sec = final_state->GetSecondary(j);
     delete sec;
   }
-  particle_change->Clear(); // FIXME useful ? like in brem ?
+  particle_change->Clear();
 
   // Loop to split Compton gammas
   fAAManager->StartAcceptLoop();

@@ -120,7 +120,7 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     return;
   }
 
-  // If there is a user info, check if the type is ok
+  // If there is a user_info, test the associated bool
   const auto *info =
       dynamic_cast<GateUserTrackInformation *>(track->GetUserInformation());
   // if not, just track as usual
@@ -147,7 +147,7 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  // Should we track the particle with free flight or not ?
+  // Should we track the particle with free flight or not?
   threadLocal_t &l = threadLocalData.Get();
   if (l.fCurrentTrackIsFreeFlight) {
     return l.fFreeFlightOperation;
@@ -159,7 +159,6 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-
   // This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
 
@@ -201,15 +200,8 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
     return;
   }
 
-  // if not free flight, we kill the gamma when it exits the volume
-  if (IsStepExitingAttachedVolume(step)) {
-    step->GetTrack()->SetTrackStatus(fStopAndKill);
-    l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
-    return;
-  }
-
   // if not free flight, we kill the gamma when it enters an ignored volume
-  if (IsStepEnteringVolume(step, fIgnoredVolumes)) {
+  if (IsStepEnteringVolume(step, fIgnoredLogicalVolumes)) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
     return;

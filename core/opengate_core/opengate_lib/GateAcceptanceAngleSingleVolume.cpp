@@ -101,9 +101,9 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
       return false;
   }
   if (fNormalFlag) { // || fDistanceDependentAngleToleranceFlag) {
-    const auto angle = fNormalVector.angle(localDirection);
     if (dist < fMinDistanceNormalAngleTolerance)
       return true;
+    const auto angle = fNormalVector.angle(localDirection);
     // if (fDistanceDependentAngleToleranceFlag)
     //   return DistanceDependentToleranceTest(angle, dist);
     return angle < fNormalAngleTolerance;
@@ -112,8 +112,8 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
 }
 
 bool GateAcceptanceAngleSingleVolume::DistanceDependentToleranceTest(
-    // This is very slow, (3x than other methods
-    // We recommend to not use this method
+    // This is very slow, (3x than other methods)
+    // We recommend not using this method
     const double angle, const double dist) const {
   const double tol = atan(1.0 / (a * dist + b));
 
