@@ -15,6 +15,10 @@ from opengate.contrib.spect.spect_helpers import (
 )
 from scipy.spatial.transform import Rotation
 from box import Box
+from opengate.contrib.spect.spect_helpers import (
+    get_mu_from_xraylib,
+    calculate_acceptance_angle,
+)
 
 
 def get_collimator(rad):
@@ -1038,3 +1042,33 @@ def add_digitizer(
     ).as_matrix()
 
     return digitizer
+
+
+def calculate_collimator_acceptance_angle(collimator_type, energy):
+    cm = g4_units.cm
+
+    hole_diameter = None
+    collimator_length = None
+    if collimator_type == "lehr":
+        hole_diameter = 0.075 * cm * 2
+        collimator_length = 3.5 * cm
+    if collimator_type == "megp":
+        hole_diameter = 0.15 * cm * 2
+        collimator_length = 5.8 * cm
+    if collimator_type == "hegp":
+        hole_diameter = 0.2 * cm * 2
+        collimator_length = 6.6 * cm
+    if collimator_length is None:
+        raise ValueError("Unknown collimator type. Known types are lehr, melp, he.")
+
+    mu_lead_cm = get_mu_from_xraylib("Pb", energy)
+    print(
+        f"collimator_type: {collimator_type}, energy: {energy} keV, mu_lead_cm: {mu_lead_cm} cm-1"
+    )
+    print(f"collimator_length: {collimator_length} mm, hole_diam = {hole_diameter}")
+    l_eff, theta_acc = calculate_acceptance_angle(
+        hole_diameter, collimator_length, mu_lead_cm
+    )
+    print(f"l_eff: {l_eff} mm, theta_acc: {theta_acc} deg")
+
+    return theta_acc
