@@ -42,12 +42,12 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
     fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
   }
 
-  fIgnoredVolumes = DictGetVecStr(user_info, "ignored_volumes");
+  fUnbiasedVolumes = DictGetVecStr(user_info, "unbiased_volumes");
 
   // check ignored volumes
-  for (auto &name : fIgnoredVolumes) {
+  for (auto &name : fUnbiasedVolumes) {
     const auto *v = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
-    fIgnoredLogicalVolumes.push_back(v);
+    fUnbiasedLogicalVolumes.push_back(v);
     if (v == nullptr) {
       Fatal("Cannot find ignored volume: " + name + " in the actor " +
             fActorName);
@@ -81,9 +81,9 @@ void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
 void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
   // Do not attach to ignored volumes
-  const auto iter = std::find(fIgnoredVolumes.begin(), fIgnoredVolumes.end(),
+  const auto iter = std::find(fUnbiasedVolumes.begin(), fUnbiasedVolumes.end(),
                               volume->GetName());
-  if (iter != fIgnoredVolumes.end())
+  if (iter != fUnbiasedVolumes.end())
     return;
 
   // Attach to the volume
