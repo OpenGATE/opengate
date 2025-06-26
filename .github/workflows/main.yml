@@ -66,8 +66,8 @@ jobs:
             python-version: '3.10'
 
     env:
-      GEANT4_VERSION: 'v11.3.0'
-      ITK_VERSION: 'v5.2.1'
+      GEANT4_VERSION: 'v11.3.2'
+      ITK_VERSION: 'v5.4.4'
 
     steps:
     - name: Checkout github repo
@@ -106,8 +106,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
     - name: Create opengate_core Wheel Linux
       if: (matrix.os == 'ubuntu-latest') || (matrix.os == 'ubuntu-24.04-arm')
       run: |
@@ -124,7 +124,7 @@ jobs:
           if [ ${{ matrix.os }} == "ubuntu-24.04-arm" ]; then
             export ARMDOCKER="_arm64"
           fi
-          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}_qt6$ARMDOCKER /home/.github/workflows/createWheelLinux.sh
+          docker run --rm -e "PYTHONFOLDER=${PYTHONFOLDER}" -v $GITHUB_WORKSPACE:/home tbaudier/opengate_core:${{ env.GEANT4_VERSION }}$ARMDOCKER /home/.github/workflows/createWheelLinux.sh
           ls wheelhouse
           rm -rf dist
           mv wheelhouse dist
@@ -315,8 +315,8 @@ jobs:
         python-version: [3.9, '3.10', '3.11', '3.12']
 
     env:
-      GEANT4_VERSION: 'v11.3.0'
-      ITK_VERSION: 'v5.2.1'
+      GEANT4_VERSION: 'v11.3.2'
+      ITK_VERSION: 'v5.4.4'
 
     steps:
     - name: Checkout github repo
@@ -343,8 +343,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/software
-        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
     - name: Create opengate_core_novis Wheel Linux
       run: |
           if [ ${{ matrix.python-version }} == "3.9" ]; then
@@ -412,8 +412,8 @@ jobs:
 
 #  ssh_session:
 #    env:
-#      GEANT4_VERSION: 'v11.3.0'
-#      ITK_VERSION: 'v5.2.1'
+#      GEANT4_VERSION: 'v11.3.2'
+#      ITK_VERSION: 'v5.4.4'
 #    runs-on: macos-13
 #    steps:
 #    - name: Checkout github repo
@@ -440,8 +440,8 @@ jobs:
 #      uses: actions/cache@v4
 #      with:
 #        path: ~/software
-#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
-#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build2
+#        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
+#        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
 #    - uses: conda-incubator/setup-miniconda@v3
 #      with:
 #          miniconda-version: "latest"
@@ -523,7 +523,7 @@ jobs:
           fi
           dashboard_path=`opengate_library_path.py -p tests`
           pip freeze
-          sha=$(git rev-parse HEAD)
+          sha=${{ github.sha }}
           sha=$sha$OSNAME$PYTHONFOLDER
           if [ "${{ github.event_name }}" = "schedule" ]; then
               OutputTest=$(opengate_tests)
