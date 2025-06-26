@@ -63,6 +63,8 @@ protected:
   };
   G4Cache<threadLocal_t> threadLocalData;
 
+  std::vector<std::string> fKillVolumes;
+  std::vector<const G4LogicalVolume *> fKillLogicalVolumes;
   std::map<std::string, double> fBiasInformation;
   int fComptonSplittingFactor;
   int fRayleighSplittingFactor;

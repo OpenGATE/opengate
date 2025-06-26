@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.ignored_volumes = ["spect_1_crystal"]
+    ff.unbiased_volumes = ["spect_1_crystal"]
 
     # go
     sim.run()
