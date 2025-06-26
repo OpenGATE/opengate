@@ -3,7 +3,7 @@
 set -e -x
 echo ${PYTHONFOLDER}
 cd /home/core/
-export PATH=/software/cmake/cmake-3.18.2-Linux-x86_64/bin/:${PATH}
+export PATH=/software/cmake/cmake/bin/:${PATH}
 source /software/geant4/bin/geant4make.sh
 export CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/:${CMAKE_PREFIX_PATH}
 . /opt/rh/gcc-toolset-14/enable

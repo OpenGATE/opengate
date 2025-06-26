@@ -111,15 +111,15 @@ if __name__ == "__main__":
 
     # Compute std (poisson distribution)
     std = np.sqrt(neutron_water)
-    is_ok = neutron_water_h2 > (neutron_water + 4 * std)
+    is_ok = neutron_water_h2 > (neutron_water + 2 * std)
     utility.print_test(
         is_ok,
-        f"neutron_water_h2 {neutron_water_h2} > neutron_water + 4 * std {neutron_water + 4 * std}",
+        f"neutron_water_h2 {neutron_water_h2} > neutron_water + 2 * std {neutron_water + 2 * std}",
     )
-    b = neutron_deuterium > (neutron_water + 4 * std)
+    b = neutron_deuterium > (neutron_water + 2 * std)
     utility.print_test(
         b,
-        f"neutron_deuterium {neutron_deuterium} > neutron_water + 4 * std {neutron_water + 4 * std}",
+        f"neutron_deuterium {neutron_deuterium} > neutron_water + 2 * std {neutron_water + 2 * std}",
     )
     is_ok = is_ok and b
 

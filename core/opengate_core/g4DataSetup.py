@@ -8,7 +8,7 @@ from time import sleep
 from pathlib import Path
 
 # Data for Geant4
-# Geant4 11.3.0
+# Geant4 11.3.2
 data_packages = {
     "G4NEUTRONHPDATA": "https://cern.ch/geant4-data/datasets/G4NDL.4.7.1.tar.gz",
     "G4LEDATA": "https://cern.ch/geant4-data/datasets/G4EMLOW.8.6.1.tar.gz",
@@ -166,7 +166,7 @@ def get_g4_data_folder() -> Path:
 # Return Geant4 data path:
 def get_g4_data_paths() -> dict:
     data_location = get_g4_data_folder()
-    # 11.3.0
+    # 11.3.2
     g4_data_path = {
         "G4NEUTRONHPDATA": data_location / "G4NDL4.7.1",
         "G4LEDATA": data_location / "G4EMLOW8.6.1",
