@@ -260,7 +260,6 @@ class SPECTConfig(ConfigBase):
 
     def setup_simulation_ff_scatter(self, sim, sources=None, visu=False):
 
-        # FIXME not here !!!!
         # because primary was probably config/run before we clean the
         # static variables from G4 to avoid issues.
         # g4.GateGammaFreeFlightOptrActor.ClearOperators()
@@ -728,9 +727,11 @@ class FreeFlightConfig(ConfigBase):
         self.primary_activity = 1 * g4_units.Bq
         self.scatter_activity = 1 * g4_units.Bq
         self.max_rejection = None
-        # crystal or detector ? (for DEBUG only)
-        self.primary_ff_ignored_volume = "detector"
-        self.scatter_ff_ignored_volume = "detector"
+        # primary: do not bias in those volumes
+        self.primary_unbiased_volumes = "detector"
+        # scatter options
+        self.scatter_unbiased_volumes = "detector"
+        self.scatter_kill_interacting_in_volumes = "crystal"
 
     def __str__(self):
         s = f"FreeFlight FD: {self.forced_direction_flag}\n"
@@ -792,12 +793,12 @@ class FreeFlightConfig(ConfigBase):
 
         # consider the volume where we stop applying ff
         target_volume_names = None
-        if self.primary_ff_ignored_volume == "crystal":
+        if self.primary_unbiased_volumes == "crystal":
             target_volume_names = self.get_crystal_volume_names()
-        elif self.primary_ff_ignored_volume == "detector":
+        elif self.primary_unbiased_volumes == "detector":
             target_volume_names = self.get_detector_volume_names()
         else:
-            fatal(f"Unknown ff ignored volume: {self.primary_ff_ignored_volume}")
+            fatal(f"Unknown ff ignored volume: {self.primary_unbiased_volumes}")
 
         print(f"prim ignored vol = {target_volume_names}")
 
@@ -806,7 +807,7 @@ class FreeFlightConfig(ConfigBase):
         if ff_name not in sim.actor_manager.actors:
             ff = sim.add_actor("GammaFreeFlightActor", ff_name)
             ff.attached_to = "world"
-            ff.ignored_volumes = target_volume_names
+            ff.unbiased_volumes = target_volume_names
             ff.minimal_weight = self.minimal_weight
         else:
             ff = sim.actor_manager.get_actor(ff_name)
@@ -868,19 +869,31 @@ class FreeFlightConfig(ConfigBase):
         self.initialize(sim)
 
         target_volume_names = None
-        if self.scatter_ff_ignored_volume == "crystal":
+        if self.scatter_unbiased_volumes == "crystal":
             target_volume_names = self.get_crystal_volume_names()
-        elif self.scatter_ff_ignored_volume == "detector":
+        elif self.scatter_unbiased_volumes == "detector":
             target_volume_names = self.get_detector_volume_names()
         else:
             fatal(
-                f"Unknown ff-scatter ignored volume: {self.scatter_ff_ignored_volume}"
+                f"Unknown ff-scatter unbiased volume: {self.scatter_unbiased_volumes}"
+            )
+
+        kill_volumes = None
+        if self.scatter_kill_interacting_in_volumes == "crystal":
+            kill_volumes = self.get_crystal_volume_names()
+        elif self.scatter_kill_interacting_in_volumes == "detector":
+            kill_volumes = self.get_detector_volume_names()
+        else:
+
+            fatal(
+                f"Unknown ff-scatter kill_interacting volume: {self.scatter_unbiased_volumes}"
             )
 
         n = self.spect_config.number_of_threads
         source.activity = self.scatter_activity / n
 
         print(f"scatter ignored vol = {target_volume_names}")
+        print(f"scatter kill vol = {kill_volumes}")
 
         # set the FF actor for scatter
         normal_vector = self.spect_config.detector_config.get_detector_normal()
@@ -890,7 +903,8 @@ class FreeFlightConfig(ConfigBase):
         )
         ff.attached_to = "world"  # FIXME -> remove this, always world + ignored_vol
         ff.minimal_weight = self.minimal_weight
-        ff.ignored_volumes = target_volume_names
+        ff.unbiased_volumes = target_volume_names
+        ff.kill_interacting_in_volumes = kill_volumes
         ff.compton_splitting_factor = self.compton_splitting_factor
         ff.rayleigh_splitting_factor = self.rayleigh_splitting_factor
         ff.max_compton_level = self.max_compton_level

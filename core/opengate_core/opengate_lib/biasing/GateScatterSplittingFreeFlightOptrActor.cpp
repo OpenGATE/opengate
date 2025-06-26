@@ -74,6 +74,13 @@ void GateScatterSplittingFreeFlightOptrActor::InitializeUserInfo(
   l.fRayleighSplittingOperation->InitializeAAManager(dd);
   l.fComptonSplittingOperation->SetInvolvedBiasActor(this);
   l.fRayleighSplittingOperation->SetInvolvedBiasActor(this);
+
+  // Kill volumes
+  fKillVolumes = DictGetVecStr(user_info, "kill_interacting_in_volumes");
+  for (auto &name : fKillVolumes) {
+    const auto *v = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
+    fKillLogicalVolumes.push_back(v);
+  }
 }
 
 void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
@@ -92,7 +99,7 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
     l.fBiasInformationPerThread["nb_killed_weight_too_low"] = 0;
 
     // Check GeneralGammaProcess
-    if (G4EmParameters::Instance()->GeneralProcessActive() == true) {
+    if (G4EmParameters::Instance()->GeneralProcessActive()) {
       Fatal("GeneralGammaProcess is active. This do *not* work for "
             "ScatterSplittingFreeFlightActor");
     }
@@ -140,6 +147,8 @@ G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
     const G4Track * /* track */,
     const G4BiasingProcessInterface * /* callingProcess */) {
+  // (Do NOT enter here if step in "unbiased volume" or outside the "attached
+  // volume")
   threadLocal_t &l = threadLocalData.Get();
   return nullptr;
 }
@@ -147,7 +156,8 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  // Should we track the particle with free flight or not?
+  // (Do NOT enter here if step in "unbiased volume" or outside the "attached
+  // volume") Should we track the particle with free flight or not?
   threadLocal_t &l = threadLocalData.Get();
   if (l.fCurrentTrackIsFreeFlight) {
     return l.fFreeFlightOperation;
@@ -159,7 +169,8 @@ GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  // This function is called every interaction except 'Transportation'
+  // (Do NOT enter here if step in "unbiased volume" or outside the "attached
+  // volume") This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
 
   // Check if this is free flight
@@ -189,10 +200,13 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
 }
 
 void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
-  // Go in this function every step, even Transportation
+  // (Do NOT enter here if step outside the "attached volume" ; but enter if in
+  // "unbiased volume") Go in this function every step, even Transportation
   threadLocal_t &l = threadLocalData.Get();
 
-  // Check if this is free flight
+  // Check if this is free flight. If yes, we do nothing.
+  // This particle is tracked by FF except if it is in an unbiased volume.
+  // This is managed by Optr/Optn Geant4 biasing logic.
   if (l.fCurrentTrackIsFreeFlight) {
     if (step->GetTrack()->GetWeight() < fMinimalWeight) {
       step->GetTrack()->SetTrackStatus(fStopAndKill);
@@ -200,14 +214,14 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
     return;
   }
 
-  // if not free flight, we kill the gamma when it enters an ignored volume
-  if (IsStepEnteringVolume(step, fIgnoredLogicalVolumes)) {
+  // if not free flight, we kill the gamma when it enters some defined volumes
+  if (IsStepEnteringVolume(step, fKillLogicalVolumes)) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] += 1;
     return;
   }
 
-  // if too much Compton, we kill the gamma
+  // if too much Compton, we also kill the gamma
   // (cannot be done during ProposeFinalStateBiasingOperation)
   if (l.fComptonInteractionCount > fMaxComptonLevel) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
