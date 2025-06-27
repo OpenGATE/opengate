@@ -730,11 +730,11 @@ def pytomography_build_metadata_and_attenuation_map(
         dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
         dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]
 
-    """if sc.detector_config.model == "nm670":
+    if sc.detector_config.model == "nm670":
         dpd["crystal_spatial_resolution_fwhm_energy_model"] = "A*sqrt(B/energy)"
-        dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.36, 140.5]
+        dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.3, 140.5]
         dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
-        dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]"""
+        dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [6.3, 140.5]
 
     # attenuation correction
     if sc.phantom_config.image is not None:
