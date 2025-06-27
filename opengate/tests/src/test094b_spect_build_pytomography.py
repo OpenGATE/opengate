@@ -38,7 +38,7 @@ if __name__ == "__main__":
     # (no need to run the simulation)
     sim = gate.Simulation()
     sc.setup_simulation(sim, visu=False)
-    metadata = pytomography_build_metadata(
+    metadata = pytomography_build_metadata_and_attenuation_map(
         sc, sim, 208 * keV, output_folder=paths.output, verbose=True
     )
 
