@@ -247,6 +247,7 @@ class SPECTConfig(ConfigBase):
         self.output_folder_primary = save_folder / "primary"
         self.output_folder = self.output_folder_primary
         # set the initial simulation
+        self.source_config.total_activity = self.free_flight_config.primary_activity
         self.setup_simulation(sim, visu)
         # but keep the initial folder for further use of config
         self.output_folder = save_folder
@@ -269,6 +270,7 @@ class SPECTConfig(ConfigBase):
         self.output_folder_scatter = save_folder / "scatter"
         self.output_folder = self.output_folder_scatter
         # set the initial simulation
+        self.source_config.total_activity = self.free_flight_config.scatter_activity
         self.setup_simulation(sim, visu)
         # but keep the initial folder for further use of config
         self.output_folder = save_folder
@@ -502,6 +504,10 @@ class DetectorConfig(ConfigBase):
         channels = self.digitizer_channels
         if self.digitizer_channels is None:
             rad = self.spect_config.source_config.radionuclide
+            if rad is None:
+                fatal(
+                    f'Unknown radionuclide: "{self.spect_config.source_config.radionuclide}"'
+                )
             channels = get_default_energy_windows(rad)
 
         # create the SPECT detector for each head
@@ -530,6 +536,10 @@ class DetectorConfig(ConfigBase):
             proj = sim.actor_manager.find_actor_by_type(
                 "DigitizerProjectionActor", dname
             )
+            # update size/spacing that may have been set in the digitizer_function
+            self.size = proj.size
+            self.spacing = proj.spacing
+            # keep the name of the projection actors
             self.proj_names.append(proj.name)
 
 
@@ -717,13 +727,13 @@ class FreeFlightConfig(ConfigBase):
     def __init__(self, spect_config):
         self.spect_config = spect_config
         # user param
-        self.angle_tolerance = 15 * g4_units.deg
+        self.angle_tolerance = 6 * g4_units.deg
         self.forced_direction_flag = True
         self.angle_tolerance_min_distance = 6 * g4_units.cm
         self.max_compton_level = 5
         self.compton_splitting_factor = 50
         self.rayleigh_splitting_factor = 50
-        self.minimal_weight = 1e-100
+        self.minimal_weight = 1e-30
         self.primary_activity = 1 * g4_units.Bq
         self.scatter_activity = 1 * g4_units.Bq
         self.max_rejection = None
@@ -800,8 +810,6 @@ class FreeFlightConfig(ConfigBase):
         else:
             fatal(f"Unknown ff ignored volume: {self.primary_unbiased_volumes}")
 
-        print(f"prim ignored vol = {target_volume_names}")
-
         # add the ff actor (only once !)
         ff_name = f"{self.spect_config.simu_name}_ff"
         if ff_name not in sim.actor_manager.actors:
@@ -842,6 +850,7 @@ class FreeFlightConfig(ConfigBase):
 
     def setup_forced_detection(self, sim, source, target_volume_names):
         detector_config = self.spect_config.detector_config
+
         # need an additional source copy for each head
         sources = [source]
         for i in range(1, detector_config.number_of_heads):
@@ -850,10 +859,8 @@ class FreeFlightConfig(ConfigBase):
 
         normal_vector = detector_config.get_detector_normal()
         i = 0
-        n = self.spect_config.number_of_threads
 
         for source in sources:
-            source.activity = self.primary_activity / n
             source.direction.acceptance_angle.forced_direction_flag = True
             source.direction.acceptance_angle.skip_policy = "SkipEvents"
             # force the direction to one single volume for each source
@@ -891,9 +898,6 @@ class FreeFlightConfig(ConfigBase):
 
         n = self.spect_config.number_of_threads
         source.activity = self.scatter_activity / n
-
-        print(f"scatter ignored vol = {target_volume_names}")
-        print(f"scatter kill vol = {kill_volumes}")
 
         # set the FF actor for scatter
         normal_vector = self.spect_config.detector_config.get_detector_normal()
@@ -980,18 +984,28 @@ def spect_freeflight_merge(
     scatter_folder = Path(scatter_folder)
 
     # primary
-    img = folder / prim_folder / counts_filename
-    sq_img = folder / prim_folder / sq_counts_filename
-    out = folder / prim_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-    _, prim, prim_squared = history_rel_uncertainty_from_files(img, sq_img, n_prim, out)
+    if n_prim > 0:
+        img = folder / prim_folder / counts_filename
+        sq_img = folder / prim_folder / sq_counts_filename
+        out = folder / prim_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
+        _, prim, prim_squared = history_rel_uncertainty_from_files(
+            img, sq_img, n_prim, out
+        )
+    else:
+        prim = None
+        prim_squared = None
 
     # scatter
-    img = folder / scatter_folder / counts_filename
-    sq_img = folder / scatter_folder / sq_counts_filename
-    out = folder / scatter_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-    _, scatter, scatter_squared = history_rel_uncertainty_from_files(
-        img, sq_img, n_scatter, out
-    )
+    if n_scatter > 0:
+        img = folder / scatter_folder / counts_filename
+        sq_img = folder / scatter_folder / sq_counts_filename
+        out = folder / scatter_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
+        _, scatter, scatter_squared = history_rel_uncertainty_from_files(
+            img, sq_img, n_scatter, out
+        )
+    else:
+        scatter = None
+        scatter_squared = None
 
     # combined
     uncert, mean = history_ff_combined_rel_uncertainty(
@@ -1002,7 +1016,8 @@ def spect_freeflight_merge(
     mean = mean * scaling
     if verbose:
         print(f"Primary n = {n_prim}  Scatter n = {n_scatter}  Target n = {n_target}")
-        print(f"Primary to scatter ratio = {n_prim / n_scatter:.01f}")
+        if n_scatter > 0:
+            print(f"Primary to scatter ratio = {n_prim / n_scatter:.01f}")
         print(f"Scaling to target        = {scaling:.01f}")
 
     # write combined image
@@ -1024,17 +1039,19 @@ def spect_freeflight_merge(
 
     # open info if the file exists
     prim_info = {}
-    prim_info_fn = folder / prim_folder / "ff_info.json"
-    if prim_info_fn.is_file():
-        with open(prim_info_fn, "r") as f:
-            prim_info = json.load(f)
+    if n_prim > 0:
+        prim_info_fn = folder / prim_folder / "ff_info.json"
+        if prim_info_fn.is_file():
+            with open(prim_info_fn, "r") as f:
+                prim_info = json.load(f)
 
     # open info if the file exists
     scatter_info = {}
-    scatter_info_fn = folder / scatter_folder / "ff_info.json"
-    if scatter_info_fn.is_file():
-        with open(scatter_info_fn, "r") as f:
-            scatter_info = json.load(f)
+    if n_scatter > 0:
+        scatter_info_fn = folder / scatter_folder / "ff_info.json"
+        if scatter_info_fn.is_file():
+            with open(scatter_info_fn, "r") as f:
+                scatter_info = json.load(f)
 
     # write combined information
     info = prim_info
