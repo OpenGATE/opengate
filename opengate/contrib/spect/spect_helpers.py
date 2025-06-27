@@ -449,18 +449,23 @@ def history_ff_combined_rel_uncertainty(
 ):
 
     # means for one event
-    prim = vprim / n_prim
-    prim_squared = vprim_squared / n_prim
-    scatter = vscatter / n_scatter
-    scatter_squared = vscatter_squared / n_scatter
+    if vprim is not None:
+        prim = vprim / n_prim
+        prim_squared = vprim_squared / n_prim
+        prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
+        mean = prim
+        variance = prim_var
+    if vscatter is not None:
+        scatter = vscatter / n_scatter
+        scatter_squared = vscatter_squared / n_scatter
+        scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
+        mean = scatter
+        variance = scatter_var
 
-    # variances
-    prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
-    scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
+    if vprim is not None and vscatter is not None:
+        mean = prim + scatter
+        variance = prim_var + scatter_var
 
-    # combine uncertainty
-    mean = prim + scatter
-    variance = prim_var + scatter_var
     uncert = np.divide(
         np.sqrt(variance),
         mean,
