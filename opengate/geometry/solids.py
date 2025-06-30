@@ -487,6 +487,7 @@ class TesselatedSolid(SolidBase):
 
     file_name: str
     origin_at_cog: bool
+    size_unit: float
 
     user_info_defaults = {
         "file_name": (
@@ -496,6 +497,10 @@ class TesselatedSolid(SolidBase):
         "origin_at_cog": (
             True,
             {"doc": "Translate the volume so its centre of gravity is at (0, 0, 0)."},
+        ),
+        "size_unit": (
+            g4_units.mm,
+            {"doc": "Unit to interpret data in the mesh file."},
         ),
     }
 
@@ -511,6 +516,7 @@ class TesselatedSolid(SolidBase):
 
     def build_solid(self):
         mm = g4_units.mm
+        unit = self.size_unit
 
         mesh = meshio.read(self.file_name)
         points = mesh.points
@@ -524,9 +530,9 @@ class TesselatedSolid(SolidBase):
         if "triangle" in mesh.cells_dict:
             for triangle in mesh.cells_dict["triangle"]:
                 g4_facet = g4.G4TriangularFacet(
-                    vec_np_as_g4(points[triangle[0]]),
-                    vec_np_as_g4(points[triangle[1]]),
-                    vec_np_as_g4(points[triangle[2]]),
+                    vec_np_as_g4(points[triangle[0]] * unit),
+                    vec_np_as_g4(points[triangle[1]] * unit),
+                    vec_np_as_g4(points[triangle[2]] * unit),
                     g4.G4FacetVertexType.ABSOLUTE,
                 )
                 tessellated_solid.AddFacet(g4_facet)
@@ -534,10 +540,10 @@ class TesselatedSolid(SolidBase):
         if "quad" in mesh.cells_dict:
             for quad in mesh.cells_dict["quad"]:
                 g4_facet = g4.G4QuadrangularFacet(
-                    vec_np_as_g4(points[quad[0]]),
-                    vec_np_as_g4(points[quad[1]]),
-                    vec_np_as_g4(points[quad[2]]),
-                    vec_np_as_g4(points[quad[3]]),
+                    vec_np_as_g4(points[quad[0]] * unit),
+                    vec_np_as_g4(points[quad[1]] * unit),
+                    vec_np_as_g4(points[quad[2]] * unit),
+                    vec_np_as_g4(points[quad[3]] * unit),
                     g4.G4FacetVertexType.ABSOLUTE,
                 )
                 tessellated_solid.AddFacet(g4_facet)
@@ -545,7 +551,8 @@ class TesselatedSolid(SolidBase):
         # set the solid closed
         tessellated_solid.SetSolidClosed(True)
         logger.debug(
-            f"Created tesselated volume '{self.name}' with a volume of {tessellated_solid.GetCubicVolume() / mm**3} mm3"
+            f"Created tesselated volume '{self.name}'"
+            f"with a volume of {tessellated_solid.GetCubicVolume() * unit**3 / mm**3} mm³"
         )
 
         return tessellated_solid
