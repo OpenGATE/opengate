@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
-    digit = intevo.add_digitizer_tc99m(sim, crystal.name, "digit_tc99m")
+    digit = intevo.add_digitizer_tc99m_OLD(sim, crystal.name, "digit_tc99m")
 
     # add a channel 'spectrum' (which is not by default because not compatible with ARF)
     keV = gate.g4_units.keV

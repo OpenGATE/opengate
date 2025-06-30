@@ -487,14 +487,19 @@ class DetectorConfig(ConfigBase):
                 f"Known models are: {self.available_models}"
             )
 
+        # get the module intevo or nm670
+        m = self.get_model_module()
+
         # GARF ?
         if self.garf_config.is_enabled():
-            fatal(f"Not implemented yet")
-            self.garf_config.create_simulation(sim)  # FIXME
+            if self.size is None:
+                self.size = m.get_default_size_and_spacing()[0]
+            if self.spacing is None:
+                self.spacing = m.get_default_size_and_spacing()[1]
+            self.head_names = self.garf_config.create_simulation(sim)
             return
 
         # digit function ?
-        m = self.get_model_module()
         if self.digitizer_function is None:
             self.digitizer_function = m.add_digitizer
         self.head_names = []
@@ -552,69 +557,40 @@ class GARFConfig(ConfigBase):
     def __init__(self, spect_config):
         self.spect_config = spect_config
         # options
-        mm = gate.g4_units.mm
-        self.spacing = [
-            4.7951998710632 * mm / 2,
-            4.7951998710632 * mm / 2,
-        ]  # FIXME intevo
-        self.size = [128 * 2, 128 * 2]
         self.pth_filename = None
         self.batch_size = 1e5
         self.verbose_batch = True
         self.gpu_mode = "auto"
-        # built objects
-        self.detectors = []
-        self.garf_actors = []
 
     def __str__(self):
         s = f"GARF : {self.pth_filename}\n"
-        s += f"GARF image size: {self.size}\n"
-        s += f"GARF image spacing: {self.spacing}\n"
+        s += f"GARF image size: {self.spect_config.detector_config.size}\n"
+        s += f"GARF image spacing: {self.spect_config.detector_config.spacing}\n"
         s += f"GARF batch size: {self.batch_size}"
         return s
 
     def is_enabled(self):
         return self.pth_filename is not None
 
-    def create_simulation(self, sim, output):
-        fatal("TODO")
-        m = self.spect_config.get_model_module()
+    def create_simulation(self, sim):
+        # get the module (intevo, nm670)
+        m = self.spect_config.detector_config.get_model_module()
         colli = self.spect_config.detector_config.collimator
+        size = self.spect_config.detector_config.size
+        spacing = self.spect_config.detector_config.spacing
+        head_names = []
         for i in range(self.spect_config.detector_config.number_of_heads):
-            # create the plane
-            det_plane = m.add_detection_plane_for_arf(
-                sim, f"{self.spect_config.simu_name}_det{i}", colli
+            name = f"{self.spect_config.simu_name}__arf_{i}"
+            _, arf = m.add_arf_detector(
+                sim, name, colli, size, spacing, self.pth_filename
             )
-            self.spect_config.detector_config.detectors.append(det_plane)
-
-            # set the position in front of the collimator
-            _, crystal_distance, _ = m.compute_plane_position_and_distance_to_crystal(
-                colli
-            )
-            # rotate_gantry(det_plane, radius=0, start_angle_deg=0) # FIXME later
-
-            # output filename
-            arf = sim.add_actor(
-                "ARFActor", f"{self.spect_config.simu_name}_{det_plane.name}_arf"
-            )
-            arf.attached_to = det_plane.name
+            # same name as conventional detector
             arf.output_filename = (
                 self.spect_config.detector_config.get_proj_base_filename(i)
             )
-            arf.batch_size = 1e5
-            arf.image_size = self.size
-            arf.image_spacing = self.spacing
-            arf.verbose_batch = False
-            arf.distance_to_crystal = crystal_distance  # 74.625 * mm
-            arf.pth_filename = self.pth_filename
-            arf.gpu_mode = "auto"
-
-            # specific to each SPECT model
-            if self.spect_config.detector_config.model == "intevo":
-                arf.flip_plane = False
-                arf.plane_axis = [1, 2, 0]
-            if self.spect_config.detector_config.model == "nm670":
-                fatal(f"TODO")
+            arf.output_filename = arf.output_filename.replace(".mhd", "_counts.mhd")
+            head_names.append(name)
+        return head_names
 
 
 class SourceConfig(ConfigBase):
@@ -891,10 +867,12 @@ class FreeFlightConfig(ConfigBase):
         elif self.scatter_kill_interacting_in_volumes == "detector":
             kill_volumes = self.get_detector_volume_names()
         else:
-
             fatal(
                 f"Unknown ff-scatter kill_interacting volume: {self.scatter_unbiased_volumes}"
             )
+
+        print("unbiased_volumes:", target_volume_names)
+        print("kill_volumes:", kill_volumes)
 
         n = self.spect_config.number_of_threads
         source.activity = self.scatter_activity / n

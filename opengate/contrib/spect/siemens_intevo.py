@@ -475,10 +475,12 @@ def add_light_guide(sim, back_compartment):
 
 
 def compute_plane_position_and_distance_to_crystal(collimator_type):
-    sim = Simulation()
-    spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
-    pos = get_volume_position_in_head(sim, "spect", f"collimator", "min", axis=0)
-    y = get_volume_position_in_head(sim, "spect", "crystal", "center", axis=0)
+    temp_sim = Simulation()
+    spect, colli, crystal = add_spect_head(
+        temp_sim, "spect", collimator_type, debug=True
+    )
+    pos = get_volume_position_in_head(temp_sim, "spect", f"collimator", "min", axis=0)
+    y = get_volume_position_in_head(temp_sim, "spect", "crystal", "center", axis=0)
     crystal_distance = y - pos
     psd = spect.size[2] / 2.0 - pos
     return pos, crystal_distance, psd
@@ -496,6 +498,9 @@ def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
     detector_plane.material = "G4_Galactic"
     detector_plane.color = [1, 0, 0, 1]
     detector_plane.size = [1 * nm, plane_size[0], plane_size[1]]
+
+    # rotate
+    rotate_gantry(detector_plane, radius=0, start_angle_deg=0)
 
     # compute the correct position according to the collimator
     pos, _, _ = compute_plane_position_and_distance_to_crystal(colli_type)
@@ -530,16 +535,10 @@ def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
 
     # detector input plane
     sim.add_parallel_world("arf_world")
-    # detector_plane = add_detection_plane_for_arf(
-    #   sim, "arf_plane", plane_size=[1533, 1387]) # for debug
-    detector_plane = add_detection_plane_for_arf(sim, "arf_plane", colli_type)
-    detector_plane.color = [0, 1, 0, 1]
-    detector_plane.mother = "arf_world"
-    rotate_gantry(detector_plane, radius=0, start_angle_deg=0)
 
-    # set the position in front of the collimator
-    pos, _, _ = compute_plane_position_and_distance_to_crystal(colli_type)
-    detector_plane.translation = [0, pos, 0]
+    detector_plane = add_detection_plane_for_arf(sim, "arf_plane", colli_type)
+    detector_plane.color = [1, 0, 0, 1]
+    detector_plane.mother = "arf_world"
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
@@ -557,10 +556,10 @@ def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
 def add_arf_detector(sim, name, colli_type, image_size, image_spacing, pth_filename):
     # create the plane
     det_plane = add_detection_plane_for_arf(sim, name, colli_type)
+    print(det_plane.translation)
 
     # set the position in front of the collimator
     _, crystal_distance, _ = compute_plane_position_and_distance_to_crystal(colli_type)
-    rotate_gantry(det_plane, radius=0, start_angle_deg=0)
 
     arf = sim.add_actor("ARFActor", f"{name}_arf")
     arf.attached_to = det_plane.name
@@ -634,6 +633,11 @@ def get_pytomography_detector_physics_data(colli_name):
     return d
 
 
+def get_default_size_and_spacing():
+    mm = g4_units.mm
+    return [128, 128], [4.7951998710632 * mm, 4.7951998710632 * mm]
+
+
 def add_digitizer(
     sim, crystal_name, name=None, size=None, spacing=None, channels=None, filename=None
 ):
@@ -642,9 +646,9 @@ def add_digitizer(
     if name is None:
         name = crystal_name
     if size is None:
-        size = [128, 128]
+        size = get_default_size_and_spacing()[0]
     if spacing is None:
-        spacing = [4.7951998710632 * mm, 4.7951998710632 * mm]
+        spacing = get_default_size_and_spacing()[1]
     if channels is None:
         channels = get_default_energy_windows("tc99m")
 
