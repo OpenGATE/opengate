@@ -785,8 +785,8 @@ def add_digitizer_lu177_v3_OLD(sim, crystal_name, name, spectrum_channel=True):
 def compute_plane_position_and_distance_to_crystal(collimator_type):
     sim = Simulation()
     spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
-    pos = get_volume_position_in_head(sim, "spect", "collimator_psd", "max")
-    y = get_volume_position_in_head(sim, "spect", "crystal", "center")
+    pos = get_volume_position_in_head(sim, "spect", "collimator_psd", "max", axis=2)
+    y = get_volume_position_in_head(sim, "spect", "crystal", "min", axis=2)
     crystal_distance = pos - y
     psd = spect.size[2] / 2.0 - pos
     return pos, crystal_distance, psd
@@ -898,7 +898,7 @@ def add_source_for_arf_training_dataset(
     source.activity = activity
     source.position.type = "disc"
     source.position.radius = 5 * cm
-    source.position.translation = [0, 0, 20 * cm]
+    source.position.translation = [0, -20 * cm, 0]
     source.direction.type = "iso"
     source.energy.type = "range"
     source.energy.min_energy = min_energy
@@ -912,6 +912,7 @@ def add_source_for_arf_training_dataset(
 def add_actor_for_arf_training_dataset(sim, head, colli_type, ene_win_actor, rr):
     nm = g4_units.nm
     cm = g4_units.cm
+
     # detector input plane
     pos, crystal_dist, psd = get_plane_position_and_distance_to_crystal(colli_type)
     pos += 1 * nm  # to avoid overlap
@@ -920,7 +921,7 @@ def add_actor_for_arf_training_dataset(sim, head, colli_type, ene_win_actor, rr)
     detector_plane.size = [57.6 * cm, 44.6 * cm, 1 * nm]
     detector_plane.translation = [0, 0, pos]
     detector_plane.material = "G4_Galactic"
-    detector_plane.color = [0, 1, 0, 1]
+    detector_plane.color = [1, 0, 0, 1]
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
@@ -985,6 +986,11 @@ def get_pytomography_detector_physics_data(colli_name):
     return d
 
 
+def get_default_size_and_spacing():
+    mm = g4_units.mm
+    return [128, 128], [2.21 * mm * 2, 2.21 * mm * 2]
+
+
 def add_digitizer(
     sim, crystal_name, name=None, size=None, spacing=None, channels=None, filename=None
 ):
@@ -993,9 +999,9 @@ def add_digitizer(
     if name is None:
         name = crystal_name
     if size is None:
-        size = [128, 128]
+        size = get_default_size_and_spacing()[0]
     if spacing is None:
-        spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+        spacing = get_default_size_and_spacing()[1]
     if channels is None:
         channels = get_default_energy_windows("tc99m")
 
