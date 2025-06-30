@@ -30,7 +30,7 @@ def test_half_life_fit(sim, output, half_life, ax):
     # fit for half life
     start_time = sim.run_timing_intervals[0][0] / sec
     end_time = sim.run_timing_intervals[0][1] / sec
-    hl, xx, yy = utility.fit_exponential_decay(time1, start_time, end_time)
+    hl, xx, yy = utility.fit_exponential_decay(time2, start_time, end_time)
     # compare with source half_life (convert in sec)
     tol = 0.09
     hl_ref = half_life / sec
@@ -40,7 +40,7 @@ def test_half_life_fit(sim, output, half_life, ax):
     utility.print_test(b, f"Half life {hl_ref:.2f} sec vs {hl:.2f} sec : {diff:.2f}% ")
 
     ax.hist(
-        time1,
+        time2,
         bins=100,
         label="decay source",
         histtype="stepfilled",
