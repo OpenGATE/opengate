@@ -5,6 +5,22 @@ import matplotlib.cm as cm
 from box import Box
 import opengate_core as g4
 from opengate.geometry.utility import vec_g4_as_np, rot_g4_as_np
+import json
+
+
+def store_volumes_info(sim, json_filename):
+    # get the pointers to the Geant4 volumes
+    vol_info_raw = get_g4_volumes_pointers(sim)
+
+    for k, vol in vol_info_raw.items():
+        print(k, vol)
+
+    # Prepare a dictionary to hold processed volume data with world coordinates
+    processed_volumes = serialize_volume_data(vol_info_raw)
+
+    # save as json
+    with open(json_filename, "w") as f:
+        json.dump(processed_volumes, f, indent=4)
 
 
 # Helper function to get the 8 corners of a bounding box
