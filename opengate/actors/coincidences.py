@@ -8,6 +8,7 @@ import os
 import time
 import logging
 import uproot
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +147,12 @@ def coincidences_sorter(
         if output_file_format not in known_output_formats:
             raise ValueError(
                 f"Unknown output file format '{output_file_format}', must be one of {known_output_formats}"
+            )
+        # Saving to a HDF5 file in append mode requires pytables>=3.10 if numpy>=2.0 is used,
+        # but that version of pytables is only supported from Python 3.10 onwards
+        if output_file_format == "hdf5" and sys.version_info[1] < 10:
+            raise NotImplementedError(
+                "HDF5 output is only supported in Python 3.10 or newer"
             )
         if not output_file_path:
             raise ValueError(f"Output file path has not been provided")

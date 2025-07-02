@@ -59,20 +59,22 @@ def main(dependency="test072_coinc_sorter_step1.py"):
         coincidences_from_root = tree.arrays(library="pd").drop(columns=["index"])
     os.remove(paths.output / "coincidences.root")
 
-    # Run coincidence sorter again, saving coincidences to a HDF5 file
-    coincidences_sorter(
-        singles_tree,
-        time_window,
-        policy,
-        minDistanceXY,
-        transaxial_plane,
-        maxDistanceZ,
-        output_file_path=paths.output / "coincidences.hdf5",
-        output_file_format="hdf5",
-    )
-    # Read back the coincidences from the HDF5 file
-    coincidences_from_hdf5 = pd.read_hdf(paths.output / "coincidences.hdf5")
-    os.remove(paths.output / "coincidences.hdf5")
+    # Coincidence sorter output to HDF5 is supported only in Python 3.10 and higher
+    if sys.version_info[1] > 9:
+        # Run coincidence sorter again, saving coincidences to a HDF5 file
+        coincidences_sorter(
+            singles_tree,
+            time_window,
+            policy,
+            minDistanceXY,
+            transaxial_plane,
+            maxDistanceZ,
+            output_file_path=paths.output / "coincidences.hdf5",
+            output_file_format="hdf5",
+        )
+        # Read back the coincidences from the HDF5 file
+        coincidences_from_hdf5 = pd.read_hdf(paths.output / "coincidences.hdf5")
+        os.remove(paths.output / "coincidences.hdf5")
 
     # Check that the coincidences from the root file and the HDF5 file are equal to the original DataFrame
     try:
@@ -83,13 +85,15 @@ def main(dependency="test072_coinc_sorter_step1.py"):
             check_categorical=False,
             check_exact=True,
         )
-        pd.testing.assert_frame_equal(
-            coincidences_from_hdf5,
-            coincidences_pd,
-            check_dtype=False,
-            check_categorical=False,
-            check_exact=True,
-        )
+        # Coincidence sorter output to HDF5 is supported only in Python 3.10 and higher
+        if sys.version_info[1] > 9:
+            pd.testing.assert_frame_equal(
+                coincidences_from_hdf5,
+                coincidences_pd,
+                check_dtype=False,
+                check_categorical=False,
+                check_exact=True,
+            )
         is_ok = True
     except AssertionError:
         is_ok = False
