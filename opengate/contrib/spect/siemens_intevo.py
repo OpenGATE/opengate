@@ -506,6 +506,7 @@ def add_digitizer_lu177(sim, crystal_name, name):
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3.9 * mm
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -569,6 +570,7 @@ def add_digitizer_tc99m(sim, crystal_name, name):
     # intrinsic spatial resolution at 140 keV for 9.5 mm thick NaI
     sb.blur_fwhm = 3.9 * mm
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -628,6 +630,7 @@ def add_digitizer_tc99m_v2(sim, crystal_name, name, spectrum_channel=True):
     # intrinsic spatial resolution at 140 keV for 9.5 mm thick NaI
     sb.blur_fwhm = 3.9 * mm
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -689,6 +692,7 @@ def add_digitizer_v4(sim, crystal_name, name, spectrum_channel=True):
     # intrinsic spatial resolution at 140 keV for 9.5 mm thick NaI
     sb.blur_fwhm = 3.6 * mm
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -988,6 +992,7 @@ def add_intevo_digitizer_v3(sim, crystal_name, name):
     spatial_blur.blur_attribute = "PostPosition"
     spatial_blur.blur_fwhm = 3.9 * mm
     spatial_blur.keep_in_solid_limits = True
+    spatial_blur.use_truncated_Gaussian = False
 
     # energy windows
     singles_ene_windows = sim.add_actor(
@@ -1080,6 +1085,7 @@ def add_digitizer(
     # intrinsic spatial resolution at 140 keV for 9.5 mm thick NaI
     sb.blur_fwhm = 3.6 * mm
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # default energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")

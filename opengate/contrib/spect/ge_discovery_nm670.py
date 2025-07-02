@@ -571,6 +571,7 @@ def add_digitizer_tc99m_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 7.6 * mm  # FAKE
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -621,6 +622,7 @@ def add_digitizer_tc99m_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3 * mm  # FAKE
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -682,6 +684,7 @@ def add_digitizer_lu177_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 7.6 * mm  # FAKE
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -736,6 +739,7 @@ def add_digitizer_lu177_v2_OLD(sim, crystal_name, name, spectrum_channel=True):
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3.9 * mm  # FAKE
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
@@ -1020,6 +1024,7 @@ def add_digitizer(
     sb.blur_attribute = "PostPosition"
     sb.blur_fwhm = 3 * mm  # FAKE !
     sb.keep_in_solid_limits = True
+    sb.use_truncated_Gaussian = False
 
     # default energy windows (Energy range. 35-588 keV)
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")

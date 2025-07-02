@@ -30,6 +30,7 @@ if __name__ == "__main__":
     bc.attached_to = "spect_crystal"  # important !
     bc.input_digi_collection = sc.name
     bc.blur_attribute = "PostPosition"
+    bc.use_truncated_Gaussian = False
     # r = 20 * mm
     bc.blur_fwhm = 20 * mm  # [r, r, r]
     # 8.493218
