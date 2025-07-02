@@ -260,7 +260,6 @@ class SPECTConfig(ConfigBase):
 
     def setup_simulation_ff_scatter(self, sim, sources=None, visu=False):
 
-        # FIXME not here !!!!
         # because primary was probably config/run before we clean the
         # static variables from G4 to avoid issues.
         # g4.GateGammaFreeFlightOptrActor.ClearOperators()
@@ -275,7 +274,7 @@ class SPECTConfig(ConfigBase):
         self.output_folder = save_folder
         if sources is None:
             name = f"{self.simu_name}_source"
-            source = sim.source_manager.get_source(name)  # FIXME
+            source = sim.source_manager.get_source(name)
             sources = [source]
         for source in sources:
             self.free_flight_config.setup_simulation_scatter(sim, source)
@@ -331,6 +330,7 @@ class SPECTConfig(ConfigBase):
         # add the "stats" actor
         stats = sim.add_actor("SimulationStatisticsActor", "stats")
         stats.output_filename = "stats.txt"
+        stats.track_types_flag = True
 
 
 class PhantomConfig(ConfigBase):
@@ -727,8 +727,11 @@ class FreeFlightConfig(ConfigBase):
         self.primary_activity = 1 * g4_units.Bq
         self.scatter_activity = 1 * g4_units.Bq
         self.max_rejection = None
-        # keep volume names
-        self.volume_names = None
+        # primary: do not bias in those volumes
+        self.primary_unbiased_volumes = "detector"
+        # scatter options
+        self.scatter_unbiased_volumes = "detector"
+        self.scatter_kill_interacting_in_volumes = "crystal"
 
     def __str__(self):
         s = f"FreeFlight FD: {self.forced_direction_flag}\n"
@@ -744,7 +747,8 @@ class FreeFlightConfig(ConfigBase):
 
     def initialize(self, sim):
         # Weights MUST be in the digitizer
-        hits_actors = sim.actor_manager.find_actors("hits")
+        # FIXME change the way to get the hits
+        hits_actors = sim.actor_manager.find_actors("_hits")
         if len(hits_actors) == 0:
             fatal(
                 f'Cannot find actors with name "hits". Actors:'
@@ -770,33 +774,52 @@ class FreeFlightConfig(ConfigBase):
         if s not in sim.g4_commands_before_init:
             sim.g4_commands_before_init.append(s)
 
+    def get_crystal_volume_names(self):
+        volume_names = [
+            f"{self.spect_config.simu_name}_spect{i}_crystal"
+            for i in range(self.spect_config.detector_config.number_of_heads)
+        ]
+        return volume_names
+
+    def get_detector_volume_names(self):
+        volume_names = [
+            f"{self.spect_config.simu_name}_spect{i}"
+            for i in range(self.spect_config.detector_config.number_of_heads)
+        ]
+        return volume_names
+
     def setup_simulation_primary(self, sim, source):
         self.initialize(sim)
 
-        # consider the volume to *not* apply ff
-        if self.volume_names is None:
-            crystals = sim.volume_manager.find_volumes("crystal")
-            crystal_names = [c.name for c in crystals]
-            self.volume_names = crystal_names
+        # consider the volume where we stop applying ff
+        target_volume_names = None
+        if self.primary_unbiased_volumes == "crystal":
+            target_volume_names = self.get_crystal_volume_names()
+        elif self.primary_unbiased_volumes == "detector":
+            target_volume_names = self.get_detector_volume_names()
+        else:
+            fatal(f"Unknown ff ignored volume: {self.primary_unbiased_volumes}")
+
+        print(f"prim ignored vol = {target_volume_names}")
 
         # add the ff actor (only once !)
         ff_name = f"{self.spect_config.simu_name}_ff"
         if ff_name not in sim.actor_manager.actors:
             ff = sim.add_actor("GammaFreeFlightActor", ff_name)
             ff.attached_to = "world"
-            ff.ignored_volumes = self.volume_names
+            ff.unbiased_volumes = target_volume_names
             ff.minimal_weight = self.minimal_weight
         else:
             ff = sim.actor_manager.get_actor(ff_name)
 
         if self.forced_direction_flag:
-            self.setup_forced_detection(sim, source)
+            self.setup_forced_detection(sim, source, target_volume_names)
         else:
-            self.setup_acceptance_angle(sim, source)
+            self.setup_acceptance_angle(sim, source, target_volume_names)
 
         return ff
 
-    def setup_acceptance_angle(self, sim, source):
+    def setup_acceptance_angle(self, sim, source, target_volume_names):
         detector_config = self.spect_config.detector_config
         normal_vector = detector_config.get_detector_normal()
         n = self.spect_config.number_of_threads
@@ -805,7 +828,7 @@ class FreeFlightConfig(ConfigBase):
         source.direction.acceptance_angle.skip_policy = "SkipEvents"
         if self.max_rejection is not None:
             source.direction.acceptance_angle.max_rejection = self.max_rejection
-        source.direction.acceptance_angle.volumes = self.volume_names
+        source.direction.acceptance_angle.volumes = target_volume_names
         source.direction.acceptance_angle.intersection_flag = True
         source.direction.acceptance_angle.normal_flag = True
         source.direction.acceptance_angle.normal_vector = normal_vector
@@ -815,7 +838,9 @@ class FreeFlightConfig(ConfigBase):
         # minimal distance should not be used for primary
         source.direction.acceptance_angle.normal_tolerance_min_distance = 0
 
-    def setup_forced_detection(self, sim, source):
+        return source
+
+    def setup_forced_detection(self, sim, source, target_volume_names):
         detector_config = self.spect_config.detector_config
         # need an additional source copy for each head
         sources = [source]
@@ -832,40 +857,61 @@ class FreeFlightConfig(ConfigBase):
             source.direction.acceptance_angle.forced_direction_flag = True
             source.direction.acceptance_angle.skip_policy = "SkipEvents"
             # force the direction to one single volume for each source
-            source.direction.acceptance_angle.volumes = [self.volume_names[i]]
+            source.direction.acceptance_angle.volumes = [target_volume_names[i]]
             source.direction.acceptance_angle.normal_vector = normal_vector
             source.direction.acceptance_angle.normal_tolerance = self.angle_tolerance
             source.direction.acceptance_angle.normal_flag = False
             source.direction.acceptance_angle.intersection_flag = False
             i += 1
+        return sources
 
     def setup_simulation_scatter(self, sim, source):
         self.initialize(sim)
 
-        # consider the volume to *not* apply ff
-        if self.volume_names is None:
-            crystals = sim.volume_manager.find_volumes("crystal")
-            crystal_names = [c.name for c in crystals]
-            self.volume_names = crystal_names
+        target_volume_names = None
+        if self.scatter_unbiased_volumes == "crystal":
+            target_volume_names = self.get_crystal_volume_names()
+        elif self.scatter_unbiased_volumes == "detector":
+            target_volume_names = self.get_detector_volume_names()
+        else:
+            fatal(
+                f"Unknown ff-scatter unbiased volume: {self.scatter_unbiased_volumes}"
+            )
+
+        kill_volumes = None
+        if self.scatter_kill_interacting_in_volumes == "crystal":
+            kill_volumes = self.get_crystal_volume_names()
+        elif self.scatter_kill_interacting_in_volumes == "detector":
+            kill_volumes = self.get_detector_volume_names()
+        else:
+
+            fatal(
+                f"Unknown ff-scatter kill_interacting volume: {self.scatter_unbiased_volumes}"
+            )
 
         n = self.spect_config.number_of_threads
         source.activity = self.scatter_activity / n
 
+        print(f"scatter ignored vol = {target_volume_names}")
+        print(f"scatter kill vol = {kill_volumes}")
+
         # set the FF actor for scatter
         normal_vector = self.spect_config.detector_config.get_detector_normal()
         ff = sim.add_actor(
-            "ScatterSplittingFreeFlightActor", f"{self.spect_config.simu_name}_ff"
+            "ScatterSplittingFreeFlightActor",
+            f"{self.spect_config.simu_name}_ff",
         )
-        ff.attached_to = "world"
+        ff.attached_to = "world"  # FIXME -> remove this, always world + ignored_vol
         ff.minimal_weight = self.minimal_weight
-        ff.ignored_volumes = self.volume_names
+        ff.unbiased_volumes = target_volume_names
+        ff.kill_interacting_in_volumes = kill_volumes
         ff.compton_splitting_factor = self.compton_splitting_factor
         ff.rayleigh_splitting_factor = self.rayleigh_splitting_factor
         ff.max_compton_level = self.max_compton_level
         ff.acceptance_angle.intersection_flag = True
         ff.acceptance_angle.normal_flag = True
         ff.acceptance_angle.forced_direction_flag = False
-        ff.acceptance_angle.volumes = self.volume_names
+        ff.acceptance_angle.volumes = target_volume_names
         ff.acceptance_angle.normal_vector = normal_vector
         ff.acceptance_angle.normal_tolerance = self.angle_tolerance
         ff.acceptance_angle.normal_tolerance_min_distance = (
@@ -881,6 +927,7 @@ class FreeFlightConfig(ConfigBase):
         ff.acceptance_angle.distance2 = tol[2]
         ff.acceptance_angle.angle2 = tol[3]
         """
+        # g4.GateGammaFreeFlightOptrActor.ClearOperators() # NO
 
         return ff
 
