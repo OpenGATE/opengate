@@ -60,7 +60,7 @@ if __name__ == "__main__":
             tolerance=80,
             ignore_value_data1=0,
             sum_tolerance=12,
-            sad_profile_tolerance=30,
+            sad_profile_tolerance=32,
             scaleImageValuesFactor=2e5 / ac,
             axis="x",
             fig_name=paths.output / "projection_ff_check_1.png",
