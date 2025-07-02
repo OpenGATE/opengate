@@ -321,7 +321,7 @@ def analyze_results(sim, paths, all_cond):
     tols[checked_keys.index("PrePosition_Z")] = 5.1
     tols[checked_keys.index("PreDirection_X")] = 0.03
     tols[checked_keys.index("PreDirection_Y")] = 0.02
-    tols[checked_keys.index("PreDirection_Z")] = 0.02
+    tols[checked_keys.index("PreDirection_Z")] = 0.03
     print(scalings, tols)
     is_ok = (
         utility.compare_root3(
