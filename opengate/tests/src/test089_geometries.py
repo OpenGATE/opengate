@@ -162,7 +162,7 @@ if __name__ == "__main__":
     # Image Volume example in test009_voxels.py
     # Boolean Volume example in test016_bool_volumes.py
     # Repeatable Volume example in test017_repeatable.py
-    # Tesselated Volume example in test067_stl_volume.py
+    # Tesselated Volume example in test067_tesselated_volume.py
 
     labels, image = sim.voxelize_geometry(extent="Auto", spacing=(2, 2, 2), margin=1)
     itk.imwrite(image, paths.output / "test089_geometries.mhd")
