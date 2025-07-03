@@ -34,6 +34,7 @@ def create_simulation(param):
     sim.verbose_level = INFO
     param.output_folder = pathlib.Path(param.output_folder)
     sim.output_dir = param.output_folder
+    sim.progress_bar = True
 
     # units
     m = g4_units.m
@@ -96,10 +97,10 @@ def create_simulation(param):
     )
 
     # cuts
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = True
     sim.physics_manager.set_production_cut("world", "all", 1 * m)
-    sim.physics_manager.set_production_cut("ct", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("ct", "all", 2 * mm)
 
     # add dose actor (get the same size as the source)
     source_info = read_image_info(param.activity_image)
