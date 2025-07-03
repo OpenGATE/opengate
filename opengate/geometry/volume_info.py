@@ -12,9 +12,6 @@ def store_volumes_info(sim, json_filename):
     # get the pointers to the Geant4 volumes
     vol_info_raw = get_g4_volumes_pointers(sim)
 
-    for k, vol in vol_info_raw.items():
-        print(k, vol)
-
     # Prepare a dictionary to hold processed volume data with world coordinates
     processed_volumes = serialize_volume_data(vol_info_raw)
 
@@ -159,12 +156,6 @@ def serialize_one_volume_data(vol_info, all_volume_data=None):
     """
     Serializes volume information, including local and world coordinate system
     bounding limits.
-
-    Args:
-        vol_info (Box): A Box object containing physical_volume, logical_volume, and solid.
-        all_volume_data (dict, optional): The complete dictionary of all volumes,
-                                          needed for world coordinate transformation.
-                                          If None, world_bounding_limits will not be calculated.
     """
     v = Box()
     # PL
@@ -253,9 +244,6 @@ def serialize_one_volume_data(vol_info, all_volume_data=None):
     v.entity_type = str(solid.GetEntityType())
     v.is_faceted = solid.IsFaceted()
     v.num_of_constituents = solid.GetNumOfConstituents()
-    # print(solid.GetConstituentSolid(0))
-    # v.constituents_solid = [ str(solid.GetConstituentSolid(i).GetName()) for i in range(solid.GetNumOfConstituents()) ]
-    # StreamInfo
 
     return v
 
@@ -265,29 +253,17 @@ def plot_volume_boundaries(
 ):
     """
     Plots the bounding box boundaries of Geant4 volumes along a specified axis.
-
-    Args:
-        volume_data (dict): A dictionary containing volume information, typically
-                            loaded from a JSON file like 'spect_info.json'.
-                            Each key is a volume name, and its value is a dict
-                            containing 'bounding_limits' (list of [xmin, ymin, zmin, xmax, ymax, zmax]).
-        axis (str): The axis along which to plot the boundaries. Can be 'X', 'Y', or 'Z'.
-                    Case-insensitive.
-        show_labels (bool): If True, display the volume names next to their boundaries.
     """
-    # Validate the input axis
     axis = axis.upper()
     if axis not in ["X", "Y", "Z"]:
         print(f"Error: Invalid axis '{axis}'. Please choose 'X', 'Y', or 'Z'.")
         return
 
-    # Determine the indices for the chosen axis
     axis_map = {"X": (0, 3), "Y": (1, 4), "Z": (2, 5)}
     min_idx, max_idx = axis_map[axis]
 
     fig, ax = plt.subplots(figsize=(12, 8))
 
-    # Prepare data for plotting
     plot_data = []
     for name, info in volume_data.items():
         if "bounding_limits" in info and len(info["bounding_limits"]) == 6:
@@ -300,14 +276,10 @@ def plot_volume_boundaries(
                 f"Warning: Volume '{name}' missing 'bounding_limits' or invalid format. Skipping."
             )
 
-    # Sort volumes by their minimum boundary along the chosen axis for better visualization
     plot_data.sort(key=lambda x: x["min"])
-
     y_pos = np.arange(len(plot_data))
 
-    # Plot each volume's boundaries
     for i, vol in enumerate(plot_data):
-        # Plot the line representing the extent of the volume along the axis
         ax.plot(
             [vol["min"], vol["max"]],
             [y_pos[i], y_pos[i]],
@@ -316,8 +288,6 @@ def plot_volume_boundaries(
             markersize=8,
             label=vol["name"],
         )
-
-        # Add text labels for min and max values
         ax.text(
             vol["min"],
             y_pos[i],
@@ -336,8 +306,6 @@ def plot_volume_boundaries(
             fontsize=8,
             color="red",
         )
-
-        # Optionally add volume name label
         if show_labels:
             ax.text(
                 vol["max"] + (vol["max"] - vol["min"]) * 0.05,
@@ -363,31 +331,23 @@ def plot_volume_boundaries_2d(
     plane: str = "XY",
     show_labels: bool = True,
     highlight_volumes: list = None,
+    ax=None,
 ):
     """
-    Plots the 2D bounding boxes of Geant4 volumes along a specified plane.
-
-    Args:
-        volume_data (dict): A dictionary containing volume information, typically
-                            loaded from a JSON file like 'spect_info.json'.
-                            Each key is a volume name, and its value is a dict
-                            containing 'bounding_limits' (list of [xmin, ymin, zmin, xmax, ymax, zmax]).
-        plane (str): The plane along which to plot the 2D boundaries. Can be 'XY', 'XZ', or 'YZ'.
-                     Case-insensitive.
-        show_labels (bool): If True, display the volume names near their bounding boxes.
-        highlight_volumes (list): A list of volume names to highlight. These volumes will be drawn
-                                  last and with a bolder outline.
+    Plots the 2D bounding boxes of Geant4 volumes on a specified plane.
+    Can plot on a given matplotlib axis `ax` or create a new figure.
     """
+    is_standalone = ax is None
+    if is_standalone:
+        fig, ax = plt.subplots(figsize=(12, 10))
+
     plane = plane.upper()
     if plane not in ["XY", "XZ", "YZ"]:
         print(f"Error: Invalid plane '{plane}'. Please choose 'XY', 'XZ', or 'YZ'.")
         return
 
-    if highlight_volumes is None:
-        highlight_volumes = []
+    highlight_volumes = highlight_volumes or []
 
-    # Map plane to corresponding indices in bounding_limits [xmin, ymin, zmin, xmax, ymax, zmax]
-    # (x_min_idx, y_min_idx), (x_max_idx, y_max_idx) for the chosen plane's axes
     plane_map = {
         "XY": ((0, 1), (3, 4), "X-axis", "Y-axis"),
         "XZ": ((0, 2), (3, 5), "X-axis", "Z-axis"),
@@ -395,15 +355,9 @@ def plot_volume_boundaries_2d(
     }
     (min1_idx, min2_idx), (max1_idx, max2_idx), xlabel, ylabel = plane_map[plane]
 
-    fig, ax = plt.subplots(figsize=(12, 10))  # Increased figure width for legend
-
-    # Helper to calculate depth
     def _get_volume_depth(volume_name, data, current_depth=0, memo={}):
         if volume_name in memo:
             return memo[volume_name]
-
-        # If the volume itself is not in the provided data (e.g., a mother that's not fully described)
-        # or if it's a top-level volume with no mother, consider it as a base depth.
         if volume_name not in data or data[volume_name].get("mother") is None:
             memo[volume_name] = current_depth
             return current_depth
@@ -413,10 +367,13 @@ def plot_volume_boundaries_2d(
             memo[volume_name] = depth
             return depth
 
-    # Prepare data for plotting, including depth
     processed_volumes = []
     for name, info in volume_data.items():
-        if "world_bounding_limits" in info and len(info["world_bounding_limits"]) == 6:
+        if (
+            "world_bounding_limits" in info
+            and info["world_bounding_limits"]
+            and len(info["world_bounding_limits"]) == 6
+        ):
             depth = _get_volume_depth(name, volume_data)
             processed_volumes.append({"name": name, "info": info, "depth": depth})
         else:
@@ -424,66 +381,35 @@ def plot_volume_boundaries_2d(
                 f"Warning: Volume '{name}' missing 'world_bounding_limits' or invalid format. Skipping for 2D plot."
             )
 
-    # Sort volumes by depth (ascending), then by name for consistent plotting order
-    # This ensures that deeper elements are drawn on top of their parents.
     processed_volumes.sort(key=lambda x: (x["depth"], x["name"]))
 
-    # Separate volumes into normal and highlighted lists
     volumes_to_plot_normal = [
         v for v in processed_volumes if v["name"] not in highlight_volumes
     ]
     volumes_to_plot_highlight = [
         v for v in processed_volumes if v["name"] in highlight_volumes
     ]
-
-    # Ensure highlighted volumes are drawn last by appending them
-    # This maintains their depth order relative to each other, but places them on top of all normal volumes.
     plotting_order = volumes_to_plot_normal + volumes_to_plot_highlight
 
-    # Get a colormap for distinct colors
     num_volumes_to_plot = len(plotting_order)
-    if num_volumes_to_plot <= 20:
-        colors_cmap = cm.get_cmap(
-            "tab20", num_volumes_to_plot
-        )  # tab20 provides 20 distinct colors
-    else:
-        colors_cmap = cm.get_cmap(
-            "viridis", num_volumes_to_plot
-        )  # Viridis for more than 20 distinct colors, perceptually uniform
-
+    colors_cmap = cm.get_cmap(
+        "tab20" if num_volumes_to_plot <= 20 else "viridis", num_volumes_to_plot
+    )
     color_idx = 0
-
-    # To store min/max for auto-cropping
-    all_x_coords = []
-    all_y_coords = []
+    all_x_coords, all_y_coords = [], []
 
     for vol_entry in plotting_order:
-        name = vol_entry["name"]
-        info = vol_entry["info"]
-
+        name, info = vol_entry["name"], vol_entry["info"]
         limits = info["world_bounding_limits"]
-
-        # Extract relevant 2D coordinates
-        x_min = limits[min1_idx]
-        y_min = limits[min2_idx]
-        x_max = limits[max1_idx]
-        y_max = limits[max2_idx]
-
-        width = x_max - x_min
-        height = y_max - y_min
-
-        # Assign a unique color from the colormap
+        x_min, y_min = limits[min1_idx], limits[min2_idx]
+        x_max, y_max = limits[max1_idx], limits[max2_idx]
+        width, height = x_max - x_min, y_max - y_min
         color = colors_cmap(color_idx)
         color_idx += 1
+        linewidth, edgecolor = (
+            (3.0, "black") if name in highlight_volumes else (1.5, color)
+        )
 
-        # Determine styling for highlighted volumes
-        linewidth = 1.5
-        edgecolor = color
-        if name in highlight_volumes:
-            linewidth = 3.0  # Make it bolder
-            edgecolor = "black"  # Distinct color for highlight border
-
-        # Create a rectangle patch with unique color and styling
         rect = patches.Rectangle(
             (x_min, y_min),
             width,
@@ -495,7 +421,45 @@ def plot_volume_boundaries_2d(
         )
         ax.add_patch(rect)
 
-        # Add label to the right of the box
+        # Add text labels for min and max values on the axes
+        if width > 0 and height > 0:
+            ax.text(
+                x_min,
+                y_min - height * 0.03,
+                f"{x_min:.1f}",
+                ha="center",
+                va="top",
+                fontsize=7,
+                color=edgecolor,
+            )
+            ax.text(
+                x_max,
+                y_min - height * 0.03,
+                f"{x_max:.1f}",
+                ha="center",
+                va="top",
+                fontsize=7,
+                color=edgecolor,
+            )
+            ax.text(
+                x_min - width * 0.03,
+                y_min,
+                f"{y_min:.1f}",
+                ha="right",
+                va="center",
+                fontsize=7,
+                color=edgecolor,
+            )
+            ax.text(
+                x_min - width * 0.03,
+                y_max,
+                f"{y_max:.1f}",
+                ha="right",
+                va="center",
+                fontsize=7,
+                color=edgecolor,
+            )
+
         if show_labels:
             ax.text(
                 x_max + width * 0.02,
@@ -504,7 +468,7 @@ def plot_volume_boundaries_2d(
                 ha="left",
                 va="center",
                 fontsize=8,
-                color=color,  # Label text color matches volume color
+                color=color,
                 bbox=dict(
                     facecolor="white",
                     alpha=0.7,
@@ -513,107 +477,85 @@ def plot_volume_boundaries_2d(
                 ),
             )
 
-        # Indicate boundaries on the projected axis
-        # X-axis boundaries
-        ax.plot(
-            [x_min, x_min],
-            [y_min, y_min - height * 0.02],
-            color=color,
-            linestyle="--",
-            linewidth=0.8,
-        )
-        ax.plot(
-            [x_max, x_max],
-            [y_min, y_min - height * 0.02],
-            color=color,
-            linestyle="--",
-            linewidth=0.8,
-        )
-        ax.text(
-            x_min,
-            y_min - height * 0.03,
-            f"{x_min:.1f}",
-            ha="center",
-            va="top",
-            fontsize=7,
-            color=color,
-        )
-        ax.text(
-            x_max,
-            y_min - height * 0.03,
-            f"{x_max:.1f}",
-            ha="center",
-            va="top",
-            fontsize=7,
-            color=color,
-        )
-
-        # Y-axis boundaries
-        ax.plot(
-            [x_min, x_min - width * 0.02],
-            [y_min, y_min],
-            color=color,
-            linestyle="--",
-            linewidth=0.8,
-        )
-        ax.plot(
-            [x_min, x_min - width * 0.02],
-            [y_max, y_max],
-            color=color,
-            linestyle="--",
-            linewidth=0.8,
-        )
-        ax.text(
-            x_min - width * 0.03,
-            y_min,
-            f"{y_min:.1f}",
-            ha="right",
-            va="center",
-            fontsize=7,
-            color=color,
-        )
-        ax.text(
-            x_min - width * 0.03,
-            y_max,
-            f"{y_max:.1f}",
-            ha="right",
-            va="center",
-            fontsize=7,
-            color=color,
-        )
-
-        # Collect coordinates for auto-cropping, excluding 'world' volumes
         if "world" not in name.lower():
             all_x_coords.extend([x_min, x_max])
             all_y_coords.extend([y_min, y_max])
 
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
-    ax.set_title(f"Geant4 Volume Boundaries in {plane}-plane")
+    ax.set_title(f"Volume Boundaries in {plane}-plane")
     ax.grid(True, linestyle="--", alpha=0.7)
-    ax.set_aspect(
-        "equal", adjustable="box"
-    )  # Maintain aspect ratio for better visual representation
+    ax.set_aspect("equal", adjustable="box")
 
-    # Auto-crop based on non-"world" volumes
     if all_x_coords and all_y_coords:
-        x_min_plot = min(all_x_coords)
-        x_max_plot = max(all_x_coords)
-        y_min_plot = min(all_y_coords)
-        y_max_plot = max(all_y_coords)
-
-        # Add a small buffer to the limits
+        x_min_plot, x_max_plot = min(all_x_coords), max(all_x_coords)
+        y_min_plot, y_max_plot = min(all_y_coords), max(all_y_coords)
         x_buffer = (x_max_plot - x_min_plot) * 0.1
         y_buffer = (y_max_plot - y_min_plot) * 0.1
         ax.set_xlim(x_min_plot - x_buffer, x_max_plot + x_buffer)
         ax.set_ylim(y_min_plot - y_buffer, y_max_plot + y_buffer)
     else:
-        ax.autoscale_view()  # Fallback to default autoscale if no non-world volumes found
+        ax.autoscale_view()
 
-    # Place legend outside plot to avoid cropping
-    # Adjust rect parameter to leave space on the right for the legend
-    ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5), fontsize=8)
-    plt.tight_layout(
-        rect=[0, 0, 0.85, 1]
-    )  # [left, bottom, right, top] in figure coordinates
+    if is_standalone:
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = dict(zip(labels, handles))
+        if by_label:
+            ax.legend(
+                by_label.values(),
+                by_label.keys(),
+                loc="center left",
+                bbox_to_anchor=(1.02, 0.5),
+                fontsize=8,
+            )
+        # plt.tight_layout(rect=[0, 0, 0.85, 1])
+        plt.show()
+
+
+def plot_all_views_2d(
+    volume_data: dict, show_labels: bool = True, highlight_volumes: list = None
+):
+    """
+    Plots the 2D bounding boxes of Geant4 volumes from three different views (XY, XZ, YZ)
+    on a single figure with three subplots.
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(30, 9))
+
+    # Plot on each subplot
+    plot_volume_boundaries_2d(
+        volume_data,
+        plane="XY",
+        show_labels=show_labels,
+        highlight_volumes=highlight_volumes,
+        ax=axes[0],
+    )
+    plot_volume_boundaries_2d(
+        volume_data,
+        plane="XZ",
+        show_labels=show_labels,
+        highlight_volumes=highlight_volumes,
+        ax=axes[1],
+    )
+    plot_volume_boundaries_2d(
+        volume_data,
+        plane="YZ",
+        show_labels=show_labels,
+        highlight_volumes=highlight_volumes,
+        ax=axes[2],
+    )
+
+    # Create a single, combined legend for the entire figure
+    handles, labels = axes[0].get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))  # To remove duplicate labels
+    if by_label:
+        fig.legend(
+            by_label.values(),
+            by_label.keys(),
+            loc="center right",
+            bbox_to_anchor=(0.98, 0.5),
+            fontsize=9,
+        )
+
+    fig.suptitle("Geant4 Volume Boundaries - All Views", fontsize=16)
+    # plt.tight_layout(rect=[0, 0, 0.9, 0.95])  # Adjust for suptitle and legend
     plt.show()
