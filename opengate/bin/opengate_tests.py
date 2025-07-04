@@ -71,7 +71,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.0",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.2",
 )
 def go(
     start_id,

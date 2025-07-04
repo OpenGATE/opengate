@@ -82,7 +82,7 @@ For **Geant4**, you need to compile with the following options:
 
 .. code:: bash
 
-   git clone --branch v11.3.0 https://github.com/Geant4/geant4.git --depth 1
+   git clone --branch v11.3.2 https://github.com/Geant4/geant4.git --depth 1
    mkdir geant4.11-build
    cd geant4.11-build
    cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
@@ -97,8 +97,8 @@ For **Geant4**, you need to compile with the following options:
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
-WARNING : since January 2025, `Geant4
-11.3.0 <https://geant4.web.cern.ch/download/11.3.0.html>`__ is needed.
+WARNING : since July 2025, `Geant4
+11.3.2 <https://geant4.web.cern.ch/download/11.3.2.html>`__ is needed.
 
 STEP 2 - ITK
 ------------
