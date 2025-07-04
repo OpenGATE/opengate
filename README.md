@@ -58,15 +58,6 @@ pip install torch
 pip install gaga-phsp
 ````
 
-**WARNING (3)** With some linux systems (not all), you may encounter an error similar to “cannot allocate memory in static TLS block”. In that case, you must add a specific path to the linker as follows:
-````
-export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
-````
-or
-````
-export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000
-````
-
 The test history can be visualized here: https://opengate.github.io/opengate_tests_results
 
 ### How to install (long version, for developers)
