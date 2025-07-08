@@ -105,6 +105,9 @@ def create_simulation(param):
     source_info = read_image_info(param.activity_image)
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "edep.mhd"
+    dose.dose_uncertainty.active = True
+    dose.dose_squared.active = True
+    dose.dose.active = True
     dose.attached_to = ct.name
     dose.size = source_info.size
     dose.spacing = source_info.spacing
@@ -118,5 +121,7 @@ def create_simulation(param):
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
+    stats.output_filename = "stats.txt"
+    stats.stats.write_to_disk = True
 
     return sim
