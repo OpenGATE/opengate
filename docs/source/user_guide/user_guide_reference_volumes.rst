@@ -159,7 +159,7 @@ Reference
 .. autoclass:: opengate.geometry.volumes.TubsVolume
 
 
-Tesselated (STL) volumes
+Tesselated (mesh) volumes
 ------------------------
 
 .. _description-tesselated-volume:
@@ -167,17 +167,16 @@ Tesselated (STL) volumes
 Description
 ~~~~~~~~~~~
 
-It is possible to create a tesselated volume shape based on an Standard
-Triangle Language (STL) data file. Such a file contains a mesh of
-triangles for one object. It is a typical output format of Computer
-Aided Design (CAD) software. To create such a volume add a volume of
-type “Tesselated”. Please keep in mind, that no material information is
-provided, it has to be specified by the user. A Tesselated volume
-inherits the the same basic options as other solids described above such
-as translation or rotation. A basic example how to import an STL file
-into a geometry “MyTesselatedVolume” and assign the material G4_WATER to
-it can be found below. In order to verify the correct generation of the
-solid, one could look at the volume.
+It is possible to create a tessellated volume shape based on a mesh file:
+STL, OBJ, OFF, CTK, … full list available at https://github.com/nschloe/meshio.
+
+To create such a volume add a volume of type “Tesselated”. Please keep in mind,
+that no material information is provided, it has to be specified by the user. A
+Tesselated volume inherits the same basic options as other solids described
+above such as translation or rotation. A basic example how to import a Standard
+Triangle Language (STL) file into a geometry “MyTesselatedVolume” and assign
+the material G4_WATER to it can be found below. In order to verify the correct
+generation of the solid, one could look at the volume.
 
 .. code:: python
 
@@ -187,6 +186,7 @@ solid, one could look at the volume.
    tes.material = "G4_WATER"
    tes.mother = "world"  # by default
    tes.file_name = "myTesselatedVolume.stl"
+   tes.origin_at_cog = True  # by default
    #to read the volume of the generated solid
    print("volume: ",sim.volume_manager.get_volume(
            "MyTesselatedVolume"
@@ -194,7 +194,7 @@ solid, one could look at the volume.
    #an alternative way read the volume of the generated solid
    print("same volume: ",tes.solid_info.cubic_volume)
 
-See test test067_stl_volume for example.
+See test test067_tesselated_volume for example.
 
 .. _reference-1:
 

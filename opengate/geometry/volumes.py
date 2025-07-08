@@ -703,8 +703,7 @@ class TubsVolume(RepeatableVolume, solids.TubsSolid):
 
 class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
     """
-    Volume based on a mesh volume
-    by reading an STL file.
+    Volume based on a mesh volume by reading a mesh file.
     """
 
 

@@ -23,7 +23,7 @@ setup(
         "scipy",
         "matplotlib",
         "GitPython",
-        "numpy-stl",
+        "meshio",
         "radioactivedecay",
         "jsonpickle",
         "pandas",
