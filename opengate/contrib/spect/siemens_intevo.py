@@ -13,6 +13,67 @@ from opengate.contrib.spect.spect_helpers import (
     get_mu_from_xraylib,
     calculate_acceptance_angle,
 )
+from box import Box
+import json
+
+
+def get_geometrical_parameters_filename():
+    filename = (
+        pathlib.Path(__file__).parent
+        / "spect_siemens_intevo_geometrical_parameters.json"
+    )
+    return pathlib.Path(filename)
+
+
+geometrical_parameters = None
+
+
+def get_geometrical_parameters():
+    global geometrical_parameters
+    if geometrical_parameters is None:
+        filename = get_geometrical_parameters_filename()
+        if not filename.exists():
+            print(f'update geometrical parameters to "{filename}"')
+            update_geometrical_parameters(store_to_file=True)
+        # print(f'Loading geometrical parameters from "{filename}"')
+        with open(filename) as json_file:
+            geometrical_parameters = json.load(json_file)
+        geometrical_parameters = Box(geometrical_parameters)
+    return geometrical_parameters
+
+
+def update_geometrical_parameters(store_to_file=False):
+    p = Box()
+    p.collimators = ["lehr", "melp", "he"]
+    # for all colli
+    nm = g4_units.nm
+    for c in p.collimators:
+        s = Simulation()
+        spect, colli, crystal = add_spect_head(s, "spect", c, debug=True)
+        pos = get_volume_position_in_head(s, "spect", f"collimator", "min", axis=0)
+        y = get_volume_position_in_head(s, "spect", "crystal", "center", axis=0)
+        psd = get_volume_position_in_head(s, "spect", "shielding_front", "min", axis=0)
+        p[c] = Box()
+        # distance from box boundary to collimator
+        p[c].collimator_position = pos
+        # distance to the center of the box head
+        p[c].half_box_size = spect.size[0] / 2.0 + 1 * nm
+        # distance from box boundary to crystal center (for arf)
+        p[c].crystal_distance = -y
+        # distance from box boundary to the shielding front
+        p[c].psd = p[c].half_box_size + psd
+
+        # collimator holes
+        hole = s.volume_manager.get_volume(f"spect_collimator_hole1")
+        p[c].hole_diameter = hole.radius * 2
+        p[c].collimator_length = hole.height
+
+    if store_to_file:
+        filename = get_geometrical_parameters_filename()
+        with open(filename, "w") as json_file:
+            json.dump(p, json_file)
+
+    return p
 
 
 def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
@@ -474,19 +535,27 @@ def add_light_guide(sim, back_compartment):
     return light_guide
 
 
-def compute_plane_position_and_distance_to_crystal(collimator_type):
+def compute_plane_position_and_distance_to_crystal_OLD(collimator_type):
     temp_sim = Simulation()
     spect, colli, crystal = add_spect_head(
         temp_sim, "spect", collimator_type, debug=True
     )
     pos = get_volume_position_in_head(temp_sim, "spect", f"collimator", "min", axis=0)
     y = get_volume_position_in_head(temp_sim, "spect", "crystal", "center", axis=0)
-    crystal_distance = y - pos
-    psd = spect.size[2] / 2.0 - pos
+    # crystal_distance = y - pos
+    crystal_distance = -y
+    # psd = spect.size[2] / 2.0 - pos
+    psd = -spect.size[0] / 2.0 - 1 * g4_units.nm
+
+    print(f"coll min position {pos} mm")
+    print(f"crystal distance {crystal_distance} mm")
+    print(f"psd {psd} mm")
     return pos, crystal_distance, psd
 
 
 def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
+    # the plane is in the world coordinate system outside the real spect head box.
+
     # user plane size only for debug purpose
     mm = g4_units.mm
     if plane_size is None:
@@ -503,8 +572,9 @@ def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
     rotate_gantry(detector_plane, radius=0, start_angle_deg=0)
 
     # compute the correct position according to the collimator
-    pos, _, _ = compute_plane_position_and_distance_to_crystal(colli_type)
-    detector_plane.translation = [0, pos, 0]
+    p = get_geometrical_parameters()
+    arf_position = p[colli_type].half_box_size
+    detector_plane.translation = [0, -arf_position, 0]
 
     return detector_plane
 
@@ -530,15 +600,8 @@ def add_source_for_arf_training_dataset(
 
 
 def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
-    # WARNING head must be in a specific position, because the detector plane
-    # is in a parallel world, not attached to the head
-
-    # detector input plane
-    sim.add_parallel_world("arf_world")
-
+    # the detector is in front of the spect head volume, outside
     detector_plane = add_detection_plane_for_arf(sim, "arf_plane", colli_type)
-    detector_plane.color = [1, 0, 0, 1]
-    detector_plane.mother = "arf_world"
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
@@ -556,10 +619,11 @@ def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
 def add_arf_detector(sim, name, colli_type, image_size, image_spacing, pth_filename):
     # create the plane
     det_plane = add_detection_plane_for_arf(sim, name, colli_type)
-    print(det_plane.translation)
 
     # set the position in front of the collimator
-    _, crystal_distance, _ = compute_plane_position_and_distance_to_crystal(colli_type)
+    p = get_geometrical_parameters()
+    crystal_distance = p[colli_type].crystal_distance
+    print(crystal_distance)
 
     arf = sim.add_actor("ARFActor", f"{name}_arf")
     arf.attached_to = det_plane.name
@@ -568,7 +632,7 @@ def add_arf_detector(sim, name, colli_type, image_size, image_spacing, pth_filen
     arf.image_size = image_size
     arf.image_spacing = image_spacing
     arf.verbose_batch = False
-    arf.distance_to_crystal = crystal_distance  # 74.625 * mm
+    arf.distance_to_crystal = crystal_distance
     arf.pth_filename = pth_filename
     arf.flip_plane = False
     arf.plane_axis = [1, 2, 0]
@@ -711,21 +775,9 @@ def add_digitizer(
 
 
 def calculate_collimator_acceptance_angle(collimator_type, energy):
-    mm = g4_units.mm
-
-    hole_diameter = None
-    collimator_length = None
-    if collimator_type == "lehr":
-        hole_diameter = 0.555 * mm * 2
-        collimator_length = 24.05 * mm
-    if collimator_type == "melp":
-        hole_diameter = 1.47 * mm * 2
-        collimator_length = 40.64 * mm
-    if collimator_type == "he":
-        hole_diameter = 2.0 * mm * 2
-        collimator_length = 59.7 * mm
-    if collimator_length is None:
-        raise ValueError("Unknown collimator type. Known types are lehr, melp, he.")
+    p = get_geometrical_parameters()
+    hole_diameter = p[collimator_type].hole_diameter
+    collimator_length = p[collimator_type].collimator_length
 
     mu_lead_cm = get_mu_from_xraylib("Pb", energy)
     print(
