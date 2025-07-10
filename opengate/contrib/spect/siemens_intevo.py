@@ -499,7 +499,6 @@ def add_crystal(sim, head):
         head.size[1] - front_shield_size,
         head.size[2] - front_shield_size,
     ]
-    # print(crystal.size) # [533 * mm, 387 * mm]
 
     crystal.translation = [-61.8276 * mm, 0, 0]
     crystal.material = "NaI"
@@ -542,9 +541,7 @@ def compute_plane_position_and_distance_to_crystal_OLD(collimator_type):
     )
     pos = get_volume_position_in_head(temp_sim, "spect", f"collimator", "min", axis=0)
     y = get_volume_position_in_head(temp_sim, "spect", "crystal", "center", axis=0)
-    # crystal_distance = y - pos
     crystal_distance = -y
-    # psd = spect.size[2] / 2.0 - pos
     psd = -spect.size[0] / 2.0 - 1 * g4_units.nm
 
     print(f"coll min position {pos} mm")
@@ -623,7 +620,6 @@ def add_arf_detector(sim, name, colli_type, image_size, image_spacing, pth_filen
     # set the position in front of the collimator
     p = get_geometrical_parameters()
     crystal_distance = p[colli_type].crystal_distance
-    print(crystal_distance)
 
     arf = sim.add_actor("ARFActor", f"{name}_arf")
     arf.attached_to = det_plane.name
