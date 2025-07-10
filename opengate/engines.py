@@ -5,6 +5,7 @@ import os
 import weakref
 from box import Box
 from anytree import PreOrderIter
+import numpy as np
 
 import opengate_core as g4
 from .exception import fatal, warning, GateImplementationError
