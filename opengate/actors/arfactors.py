@@ -304,7 +304,6 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
     def initialize_device(self):
         # which device for GARF : cpu cuda mps ?
-        # we recommend CPU only
         current_gpu_mode, current_gpu_device = garf.helpers.get_gpu_device(
             self.gpu_mode
         )
@@ -351,26 +350,21 @@ class ARFActor(ActorBase, g4.GateARFActor):
         pos_y = np.array(actor.GetPositionY())
         dir_x = np.array(actor.GetDirectionX())
         dir_y = np.array(actor.GetDirectionY())
+        dir_z = np.array(actor.GetDirectionZ())
         weights = np.array(actor.GetWeights())
 
         # do nothing if no hits
         if energy.size == 0:
             return
 
-        # convert direction in angles
-        degree = g4_units.degree
-        theta = np.arccos(dir_y) / degree
-        phi = np.arccos(dir_x) / degree
+        # (do NOT use plane_axis here, it is included in GateARFActor)
 
-        # update
-        self.batch_nb += 1
-        self.detected_particles += energy.shape[0]
-
-        # build the data
+        # build the data by passing direction vectors, NOT angles
+        px_base = (pos_x, pos_y, dir_x, dir_y, dir_z, energy)
         if len(weights) == 0:
-            px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+            px = np.column_stack(px_base)
         else:
-            px = np.column_stack((pos_x, pos_y, theta, phi, energy, weights))
+            px = np.column_stack(px_base + (weights,))
         self.debug_nb_hits_before += len(px)
 
         # verbose current batch
