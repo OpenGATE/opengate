@@ -327,7 +327,7 @@ class SPECTConfig(ConfigBase):
 
         # physics
         sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
-        sim.physics_manager.global_production_cuts.all = 2 * gate.g4_units.mm
+        sim.physics_manager.global_production_cuts.all = 1 * gate.g4_units.mm
 
         # add the "stats" actor
         stats = sim.add_actor("SimulationStatisticsActor", "stats")
