@@ -640,6 +640,7 @@ class PhysicsManager(GateObject):
                     ("electron", False),
                     ("positron", False),
                     ("proton", False),
+                    ("neutron", False),
                 ]
             ),
             {
@@ -692,6 +693,7 @@ class PhysicsManager(GateObject):
         #             ("electron", None),
         #             ("positron", None),
         #             ("proton", None),
+        #             ("neutron", None),
         #         ]
         #     ),
         #     {
@@ -881,7 +883,7 @@ class PhysicsManager(GateObject):
         """
 
         charged_particles = {"e-", "e+", "proton"}
-        all_particles = charged_particles.union({"gamma"})
+        all_particles = charged_particles.union({"gamma", "neutron"})
 
         # create a dictionary with sets as entries (to ensure uniqueness)
         particles_processes = dict([(p, set()) for p in all_particles])

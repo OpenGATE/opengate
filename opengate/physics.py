@@ -20,6 +20,7 @@ cut_particle_names = {
     "electron": "e-",
     "positron": "e+",
     "proton": "proton",
+    "neutron": "neutron"
 }
 
 

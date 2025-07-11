@@ -14,7 +14,7 @@
 #include "G4VPrimitiveScorer.hh"
 #include "GateDoseActor.h"
 #include "GateMaterialMuHandler.h"
-
+#include <G4VProcess.hh>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -63,6 +63,8 @@ public:
     return fPhysicalVolumeName;
   }
 
+  //void SetVector(pybind11::array_t<double> vect_p, pybind11::array_t<double> vect_n );
+
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
   std::string fPhysicalVolumeName;
@@ -93,6 +95,31 @@ public:
   G4ThreeVector fsize;
   G4ThreeVector fspacing;
   G4ThreeVector fTranslation;
+
+  G4int Ncount;
+  G4int Pcount;
+  //std::vector<double> fVectorP;
+  //std::vector<double> fVectorN;
+
+ // Add this method to GateVoxelizedPromptGammaTLEActor
+/*void GateVoxelizedPromptGammaTLEActor::SetVector(pybind11::array_t<double> vect_p, pybind11::array_t<double> vect_n) {
+  // Convert py::array_t to a C++ vector
+  pybind11::buffer_info proton_buf = proton_vect.request();
+  if (proton_buf.ndim != 1) {
+      throw std::runtime_error("Expected a 1D NumPy array for protons");
+  }
+  fProtonVector.resize(proton_buf.shape[0]);
+  std::memcpy(fProtonVector.data(), proton_buf.ptr, proton_buf.size * sizeof(double));
+
+  // Convert neutron vector
+  pybind11::buffer_info neutron_buf = neutron_vect.request();
+  if (neutron_buf.ndim != 1) {
+      throw std::runtime_error("Expected a 1D NumPy array for neutrons");
+  }
+  fNeutronVector.resize(neutron_buf.shape[0]);
+  std::memcpy(fNeutronVector.data(), neutron_buf.ptr, neutron_buf.size * sizeof(double));
+}*/
+
 };
 
 #endif // GateVoxelizedPromptGammaTLEActor_h
