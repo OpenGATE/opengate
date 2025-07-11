@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#import itk
+# import itk
 import uproot
 import hist
 import opengate as gate
-#import xraylib
-#import periodictable
+
+# import xraylib
+# import periodictable
 from opengate.tests import utility
 import os
 import numpy as np
-#import matplotlib.pyplot as plt
-#import matplotlib.ticker as mticker
+
+# import matplotlib.pyplot as plt
+# import matplotlib.ticker as mticker
 import test_088_variables
 
 
-def simulation(output, File_name, job_id, number_of_particles, visu = False, verbose = False, actor = "VoxelizedPromptGammaTLEActor"):
-    
+def simulation(
+    output,
+    File_name,
+    job_id,
+    number_of_particles,
+    visu=False,
+    verbose=False,
+    actor="VoxelizedPromptGammaTLEActor",
+):
 
     paths = utility.get_default_test_paths(__file__, output_folder=output)
 
@@ -50,11 +59,11 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "G4_Galactic"
 
-    #cas test = boite à un élément
+    # cas test = boite à un élément
     ct = sim.add_volume("Box", "ct")
     ct.mother = "world"
     ct.translation = [0 * cm, 15 * cm, 0 * cm]
-    ct.size = [4 * cm , 20 * cm , 4 * cm]
+    ct.size = [4 * cm, 20 * cm, 4 * cm]
     ct.material = "G4_C"
     ct.color = [1, 0, 0, 1]
 
@@ -74,27 +83,25 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     print(f"tol = {tol/gcm3} g/cm3")
     print(f"mat : {len(ct.voxel_materials)} materials")
 
-    ct.dump_label_image = paths.output / "labels.mhd" 
+    ct.dump_label_image = paths.output / "labels.mhd"
     ct.mother = "world"
     """
-
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_HP_EMY"
 
-    #sim.physics_manager.set_production_cut("world", "gamma", 1 * km) 
-    #sim.physics_manager.set_production_cut("world", "electron", 1 * km) 
-    #sim.physics_manager.set_production_cut("world", "proton", 1 * km) 
-    #sim.physics_manager.set_production_cut("world", "positron", 1 * km) 
+    # sim.physics_manager.set_production_cut("world", "gamma", 1 * km)
+    # sim.physics_manager.set_production_cut("world", "electron", 1 * km)
+    # sim.physics_manager.set_production_cut("world", "proton", 1 * km)
+    # sim.physics_manager.set_production_cut("world", "positron", 1 * km)
 
-    sim.physics_manager.set_production_cut("ct", "gamma", 1 * mm) 
-    #sim.physics_manager.set_production_cut("ct", "electron", 1 * mm) 
-    sim.physics_manager.set_production_cut("ct", "proton", 1 * mm) 
-    #sim.physics_manager.set_production_cut("ct", "positron", 1 * mm) 
+    sim.physics_manager.set_production_cut("ct", "gamma", 1 * mm)
+    # sim.physics_manager.set_production_cut("ct", "electron", 1 * mm)
+    sim.physics_manager.set_production_cut("ct", "proton", 1 * mm)
+    # sim.physics_manager.set_production_cut("ct", "positron", 1 * mm)
 
-    sim.physics_manager.set_max_step_size('ct', 1 * mm)
-    sim.physics_manager.set_user_limits_particles(['proton'])
-
+    sim.physics_manager.set_max_step_size("ct", 1 * mm)
+    sim.physics_manager.set_user_limits_particles(["proton"])
 
     # source of proton
     # FIXME to replace by a more realistic proton beam, see tests 044
@@ -108,12 +115,11 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 
-
-        #add vpgtle actor
+    # add vpgtle actor
     vpg_tle = sim.add_actor(actor, "vpg_tle")
     vpg_tle.attached_to = "ct"
-    vpg_tle.output_filename = paths.output/f"{File_name}_appic_{job_id}.nii.gz"
-    vpg_tle.size = [40, 400, 40]   
+    vpg_tle.output_filename = paths.output / f"{File_name}_appic_{job_id}.nii.gz"
+    vpg_tle.size = [40, 400, 40]
     vpg_tle.spacing = [1 * mm, 1 * mm, 1 * mm]
     vpg_tle.translation = [0, 0, 0]
     vpg_tle.timebins = 200
@@ -122,14 +128,14 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     vpg_tle.energyrange = 150 * MeV
     vpg_tle.prot_E.active = False
 
-    vpg_tle.neutr_E.active =True
+    vpg_tle.neutr_E.active = True
     vpg_tle.prot_tof.active = False
     vpg_tle.neutr_tof.active = True
 
-     # add stat actor
+    # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    stats.output_filename = paths.output/f"stat_{job_id}.txt"
+    stats.output_filename = paths.output / f"stat_{job_id}.txt"
 
     return sim, ct, vpg_tle, source
 
@@ -143,4 +149,3 @@ if __name__ == "__main__":
     sim = simulation(output, File_name, 0, number_of_particles,False, False, actor)
         # start simulation
     sim.run()"""
-

@@ -45,7 +45,7 @@ void init_GateVoxelizedPromptGammaTLEActor(py::module &m) {
            &GateVoxelizedPromptGammaTLEActor::SetPhysicalVolumeName)
       .def("GetPhysicalVolumeName",
            &GateVoxelizedPromptGammaTLEActor::GetPhysicalVolumeName)
-      //.def("SetVector", 
+      //.def("SetVector",
       //     &GateVoxelizedPromptGammaTLEActor::SetVector);
 
       .def("SetProtonTimeFlag",

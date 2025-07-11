@@ -15,7 +15,7 @@ from scipy.optimize import curve_fit
 from scipy.spatial.transform import Rotation as R
 import spekpy as sp
 
-#import critical_angle 
+#import critical_angle
 #import psutil
 from test_088_vpg_tle_script import *
 DEFAULT_OUTPUT = 'debug_new' #file name where single root file are stocked
@@ -38,7 +38,7 @@ def opengate_run(
     output=DEFAULT_OUTPUT,
     job_id=0,
     number_of_particles=DEFAULT_NUMBER_OF_PARTICLES,
-    visu=True, 
+    visu=True,
     verbose=True,
     polarization=False,
     energy_type=False,
@@ -58,7 +58,7 @@ def opengate_run(
     sim, ct, vpg_actor, source = simulation(output, File_name, job_id, number_of_particles, visu, verbose, actor)
 
     sim.run()
-    
+
     #visualization
 
     # === Charger le fichier VRML avec PyVista ===
@@ -90,7 +90,7 @@ def itk_merge(
             print(*args, **kwargs)
     if not os.path.exists(output):
         os.makedirs(output)
-    if number_of_jobs == 1 : 
+    if number_of_jobs == 1 :
         print_verbose("Skipping merge, only one job was run.")
         return
     try:
@@ -113,7 +113,7 @@ def itk_merge(
                 type_list.append(type_name)
             init = itk.imread(path.output/f"{File_name}_{actor_list[0]}_1_{type_list[0]}")
             init_arr = itk.array_from_image(init)
-            merged_array = np.zeros_like(init_arr, dtype=np.float32) 
+            merged_array = np.zeros_like(init_arr, dtype=np.float32)
             for type_name in type_list:
                 for actor_name in actor_list:
                     merged_array.fill(0) # Initialize the merged array
@@ -130,8 +130,8 @@ def itk_merge(
                     merged_image.CopyInformation(init)  # Copy metadata from the initial image
                     output_file = path.output/f"{File_name}_{actor_name}_merged_{type_name}"
                     print_verbose(f"Saving merged image to: {output_file}")
-                    itk.imwrite(merged_image, output_file)  
-                    
+                    itk.imwrite(merged_image, output_file)
+
 
 
     except FileNotFoundError as e:
@@ -180,37 +180,37 @@ def opengate_pool_run(
                     x * delta_x,
                     y * delta_y,
                     position[2]
-                ] 
+                ]
                 #le carré décrit est balayé de gauche à droite et de haut en bas
-                
+
 
                 copied_position = position.copy()
                 print(f"launching job #{job_id}/{number_of_jobs} with position x={copied_position[0]/mm:.2f} mm, y={copied_position[1]/mm:.2f} mm")
 
                 result = pool.apply_async(opengate_run, kwds={
                 'output': output,
-                'job_id': job_id, 
+                'job_id': job_id,
                 'number_of_particles': number_of_particles_per_job,
                 'visu': visu,
                 'verbose': verbose,
                 'position': copied_position
 
-                #'position' : position 
+                #'position' : position
                 })
                 results.append(result)"""
 
 
 
-        
+
         for i in range(number_of_jobs):
-            
+
                 job_id = i+1
                 #copied_position = position.copy()
                 print(f"launching job #{job_id}/{number_of_jobs}")
                 #print(f"launching job #{job_id}/{number_of_jobs} with position x={copied_position[0]/mm:.2f} mm")
                 result = pool.apply_async(opengate_run, kwds={
                 'output': output,
-                'job_id': job_id, 
+                'job_id': job_id,
                 'number_of_particles': number_of_particles_per_job,
                 'visu': visu,
                 'verbose': verbose,
@@ -227,8 +227,8 @@ def opengate_pool_run(
                 results.append(result)
                 #position[0] += delta_x
 
-            
-        
+
+
 
 
         pool.close()
@@ -265,7 +265,7 @@ def main():
     #parser.add_argument('-step', '--step', help="size of a step between two succesive positions en mm", default=DEFAULT_STEP_SIZE, type=float)
     #parser.add_argument('-size', '--size', help="number of pixels in lines/columns", default=DEFAULT_STEP_SIZE, type=int)
     #parser.add_argument('-pos', '--number-of-positions', help="Number of positions to simulate", default=DEFAULT_NUMBER_OF_POSITIONS, type=int)
-    #argument position initiale ?     
+    #argument position initiale ?
     #argument pour le nombre de position à couvrir (taille de l'image à balayer en gros)
     args_info = parser.parse_args()
 
