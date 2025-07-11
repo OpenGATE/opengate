@@ -11,9 +11,11 @@ from opengate.definitions import elements_name_symbol
 import os
 import numpy as np
 from test_088_vpg_tle_script import *
+
 from test_088_multijobs import DEFAULT_OUTPUT, DEFAULT_FILE_NAME, DEFAULT_NUMBER_OF_PARTICLES, DEFAULT_ACTOR
 
 gcm3 = gate.g4_units.g_cm3
+
 
 class tle_sim:
     def __init__(self, sim, ct, actor, source):
@@ -29,11 +31,13 @@ class tle_sim:
         (mat_fraction,el) = gate.geometry.materials.HU_read_materials_table(f1)
         mat_fraction.pop()
         database_mat = gate.geometry.materials.write_material_database(sim, materials, str(paths.data/"database.db"))
+
         self.mat_fraction = mat_fraction
         self.voxel_mat = voxel_materials
         self.el = el
         self.database_mat = database_mat
         p = os.path.abspath(str(paths.data/"database.db"))
+
         self.data_way = p
         f3 = str(paths.data / "data_merge.root")
         f4 = str(paths.data / "data_merge_neutron.root")
@@ -46,11 +50,13 @@ class tle_sim:
         vol_trans = list(actor_vol.translation)
         #passer du centre au côtés droit voxel
         ct_size = list(array.shape) # size du ct
+
         ct_size = array.shape
         ct_space = list(ct.spacing)
         ct_len = ct_size[0] * ct_space[0]
         ct_wid = ct_size[1] * ct_space[1]
         ct_hig = ct_size[2] * ct_space[2]
+
          # côté droit du vol
         x_center = ct_trans[2] - ct_len / 2
         y_center = ct_trans[1] - ct_wid / 2
@@ -62,6 +68,7 @@ class tle_sim:
         Y = ind[1] * actor_vol.spacing[1]
         Z = ind[2] * actor_vol.spacing[2]
         #calculer la position du voxel dans le ct
+
         x = (X + decal[0]) / ct_space[0]
         y = (Y + decal[1]) / ct_space[1]
         z = (Z + decal[2]) / ct_space[2]
@@ -78,6 +85,7 @@ class tle_sim:
         w = histo.to_numpy()[0]
         return w
     
+
     def density_mat(self, mat, data_way):
         with open(data_way, "r") as f:
             mat = mat + ":"
@@ -105,6 +113,7 @@ class tle_sim:
                 break   
         return mat #str
     
+
     def mat_to_UH(self, mat, mat_data):
         mat = mat.lower()
         for l in mat_data:
@@ -112,6 +121,7 @@ class tle_sim:
             if l[2] == mat.capitalize():
                 return l[0]
         return "DEFAULT"
+
     
     def liste_el_frac(self, mat,frac_data):
         if mat[-3] == "_":
@@ -121,10 +131,12 @@ class tle_sim:
         liste = []
         frac = []
         for l in frac_data:
+
             if l["name"] == mat :
                 for el in l:
                     if ((el != "HU") and (el != "name")):
                         if l[el] != 0.0 :
+
                             liste.append(el)
                             frac.append(l[el])
         return liste, frac
@@ -135,6 +147,7 @@ class tle_sim:
         array_el = np.empty((int(size[0]/spacing[0]), int(size[1]/spacing[0]), int(size[2]/spacing[0])), dtype=object)
         array_el.fill(vol.material) #fill the array with the material of the volume
         return array_el #3D array
+
 
     def gamma_mat(self, UH, root_data, prot):
         Gamma = np.zeros((500, 250))  # Initialize a 2D array for gamma emission
@@ -148,5 +161,6 @@ class tle_sim:
             vect = self.find_emission_vector(el, root_data, prot)
             Gamma += vect * w * rho_mat
         return Gamma
+
 
 

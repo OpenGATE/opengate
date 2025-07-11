@@ -4,12 +4,12 @@ import itk
 import uproot
 import hist
 import opengate as gate
-#import xraylib
-#import periodictable
+
 from opengate.tests import utility
 import os
 import glob
 import numpy as np
+
 #import matplotlib.pyplot as plt
 #import matplotlib.ticker as mticker
 from variables import tle_sim
@@ -25,10 +25,10 @@ tle_simu = tle_sim(simu, ct, vpg_actor, source)
 #FIRST STEP : retrieve the arrays and all the needed features
 #CT volume :
 
+
 ct_object = tle_simu.ct
 UH_array = itk.array_from_image(ct_object.load_input_image())
 
-#ACTORS volume as a list of object and the output place:
 
 path = tle_simu.path
 actor_object = tle_simu.vpg_actor
@@ -39,8 +39,6 @@ File_name = DEFAULT_FILE_NAME
 
 data_protons = tle_simu.root_file
 data_neutrons = tle_simu.root_file_neutron
-
-#SECOND STEP : compute the material Gamma for each materials present in the ct and store it in a list
 
 gamma_neutron = {}
 gamma_proton = {}
@@ -55,19 +53,17 @@ for x in range(UH_array.shape[2]):
                 gamma_proton[UH] = tle_simu.gamma_mat(UH, data_protons, True)
 
 
-#THIRD STEP : convert the energy histogram stored the 4D output into emission spectra for each voxel of the ct volume
-
 Ep = np.linspace(0, actor_object.energyrange, actor_object.energybins + 1)
 
 output_name = actor_object.name
 for type_name in feature:
     file_path = os.path.join(path.output, f"{File_name}_{output_name}_1_{type_name}.nii.gz")
+
     print(file_path)
     # Check if the file exists
     if not os.path.exists(file_path):
         print(f"File {file_path} not found in output directory.")
         continue  # Skip to the next iteration if the file does not exist
-    
     # Read the image
     img = itk.imread(file_path)
 
@@ -90,10 +86,12 @@ for type_name in feature:
                     En = i * actor_object.energyrange / actor_object.energybins  # Calculate the energy for the current bin
                     bin_index = int(En / (200 / 500))  # Determine the bin index for the current energy value
                     spectrum = spectrum + Gamma_m[bin_index,:] * histo_E[i]
+
                 treated_array[:, z, y, x] = treated_array[:, z, y, x] + spectrum
 # Create a new ITK image from the treated array
 itk_output = itk.image_from_array(treated_array)
 itk_output.CopyInformation(img)
+
 itk.imwrite(itk_output, path.output/f"VPG_{output_name}_Energy.nii.gz")
 
         
@@ -103,3 +101,4 @@ itk.imwrite(itk_output, path.output/f"VPG_{output_name}_Energy.nii.gz")
 
 
     
+

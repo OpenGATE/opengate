@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 #import itk
 import uproot
 import hist
@@ -16,6 +17,7 @@ import test_088_variables
 
 def simulation(output, File_name, job_id, number_of_particles, visu = False, verbose = False, actor = "VoxelizedPromptGammaTLEActor"):
     
+
     paths = utility.get_default_test_paths(__file__, output_folder=output)
 
     # create the simulation
@@ -71,10 +73,11 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     ) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
     print(f"tol = {tol/gcm3} g/cm3")
     print(f"mat : {len(ct.voxel_materials)} materials")
+
     ct.dump_label_image = paths.output / "labels.mhd" 
     ct.mother = "world"
     """
-    
+
 
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_HP_EMY"
@@ -92,6 +95,7 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     sim.physics_manager.set_max_step_size('ct', 1 * mm)
     sim.physics_manager.set_user_limits_particles(['proton'])
 
+
     # source of proton
     # FIXME to replace by a more realistic proton beam, see tests 044
     source = sim.add_source("GenericSource", "proton_beam")
@@ -103,6 +107,7 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     source.n = number_of_particles
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
+
 
         #add vpgtle actor
     vpg_tle = sim.add_actor(actor, "vpg_tle")
@@ -116,6 +121,7 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
     vpg_tle.energybins = 250
     vpg_tle.energyrange = 150 * MeV
     vpg_tle.prot_E.active = False
+
     vpg_tle.neutr_E.active =True
     vpg_tle.prot_tof.active = False
     vpg_tle.neutr_tof.active = True
@@ -127,8 +133,7 @@ def simulation(output, File_name, job_id, number_of_particles, visu = False, ver
 
     return sim, ct, vpg_tle, source
 
-    
-   
+
 """output = "TEST"
 File_name = "test"
 number_of_particles = 1000
@@ -138,5 +143,4 @@ if __name__ == "__main__":
     sim = simulation(output, File_name, 0, number_of_particles,False, False, actor)
         # start simulation
     sim.run()"""
-    #print("Simulation completed successfully.")
-    #print("Output files are located in:", utility.get_default_test_paths(__file__, output_folder="prestep").output)
+

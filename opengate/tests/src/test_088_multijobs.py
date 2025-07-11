@@ -14,16 +14,20 @@ from scipy.optimize import curve_fit
 
 from scipy.spatial.transform import Rotation as R
 import spekpy as sp
+
 #import critical_angle 
 #import psutil
 from test_088_vpg_tle_script import *
 DEFAULT_OUTPUT = 'debug_new' #file name where single root file are stocked
+
 DEFAULT_NUMBER_OF_JOBS = 1
 DEFAULT_NUMBER_OF_PARTICLES = 1e6
 DEFAULT_POSITION = [0, 0, 0]
 DEFAULT_STEP_SIZE = float(1)
+
 DEFAULT_WORLD = "G4_Galactic" #default material of the world volume
 DEFAULT_SAMPLE = "Water3ppmPt"   #default material of the sample volume
+
 DEFAULT_FILE_NAME = "prestep"
 DEFAULT_BEAM_ENERGY = 130
 DEFAULT_ACTOR = "VoxelizedPromptGammaAnalogActor"
@@ -56,6 +60,7 @@ def opengate_run(
     sim.run()
     
     #visualization
+
     # === Charger le fichier VRML avec PyVista ===
     """print("📂 Chargement du fichier VRML pour affichage...")
     pl = pv.Plotter()
@@ -74,7 +79,6 @@ def opengate_run(
     pl.show_grid()  # Afficher une grille
     pl.show()  # Afficher la scène 3D"""
 
-    
 def itk_merge(
     output=DEFAULT_OUTPUT,
     verbose=False,
@@ -102,6 +106,7 @@ def itk_merge(
             base_name = os.path.basename(file_path)
             actor_name = base_name.split("_")[1]
             type_name = base_name.split("_")[3] + "_" + base_name.split("_")[4]  # e.g., neutr_e
+
             if actor_name not in actor_list:
                 actor_list.append(actor_name)
             if type_name not in type_list:
@@ -128,8 +133,10 @@ def itk_merge(
                     itk.imwrite(merged_image, output_file)  
                     
 
+
     except FileNotFoundError as e:
         print(e)
+
 
 def opengate_pool_run(
     output,
@@ -146,23 +153,24 @@ def opengate_pool_run(
     energy,
     #step,
     #size,
+
 ):
 
     with Pool(maxtasksperchild=1) as pool:
 
         results = []
-        
-        
         number_of_particles_per_job = int(number_of_particles / number_of_jobs)
         mm = gate.g4_units.mm
         um = gate.g4_units.um
         cm = gate.g4_units.cm
+
         position = [0, 0, 20*cm] #position initiale à 30um -> trop proche de la source
         #delta_x = 0.1*mm #pas du raster scan pour passer d'un pixel à l'autre
         #delta_x = step*mm
         #delta_y = -step*mm
         job_id = 0
         #image_size = size
+
 
         """ for y in range(image_size) : #lignes
             for x in range(image_size) : #colonnes
@@ -175,6 +183,7 @@ def opengate_pool_run(
                 ] 
                 #le carré décrit est balayé de gauche à droite et de haut en bas
                 
+
                 copied_position = position.copy()
                 print(f"launching job #{job_id}/{number_of_jobs} with position x={copied_position[0]/mm:.2f} mm, y={copied_position[1]/mm:.2f} mm")
 
@@ -185,6 +194,7 @@ def opengate_pool_run(
                 'visu': visu,
                 'verbose': verbose,
                 'position': copied_position
+
                 #'position' : position 
                 })
                 results.append(result)"""
@@ -220,6 +230,7 @@ def opengate_pool_run(
             
         
 
+
         pool.close()
         pool.join()
 
@@ -229,17 +240,13 @@ def opengate_pool_run(
                 print("Failure in MC simulation")
                 exit(1)
 
-
-
-
-
     itk_merge(
         output=output,
         verbose=verbose,
         File_name=File_name,
         number_of_jobs=number_of_jobs,
     )
-                
+
 def main():
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -265,4 +272,3 @@ def main():
     opengate_pool_run(**vars(args_info))
     #opengate_run(output, 1, number_of_particles, visu, verbose)
 if __name__ == '__main__':
-    main()
