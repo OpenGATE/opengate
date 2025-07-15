@@ -408,28 +408,20 @@ class PhysicsEngine(EngineBase):
     def initialize_optical_material_properties(self):
         # Load optical material properties if special physics constructor "G4OpticalPhysics"
         # is set to True in PhysicsManager's user info
-        if (
-            self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics
-            is True
-        ):
+        if self.simulation_engine.simulation.physics_manager.special_physics_constructors.G4OpticalPhysics is True:
             # retrieve path to file from physics manager
-            for (
-                vol
-            ) in self.simulation_engine.simulation.volume_manager.volumes.values():
-                if hasattr(
-                    vol, "voxel_materials"
-                ):  # True if voxelized volume (ImageVolume)
-                    for i in np.array(vol.voxel_materials)[
-                        :, 2
-                    ]:  # Read all materials contained in voxel_materials
-                        for (
-                            mat
-                        ) in (
-                            g4.G4Material.GetMaterialTable
-                        ):  # Loop on all materials created in the simulation
-                            if (
-                                str(mat.GetName()) == i
-                            ):  # If material is in voxel_materials
+            for vol in self.simulation_engine.simulation.volume_manager.volumes.values():
+                if hasattr(vol, "voxel_materials"):
+                    # True if voxelized volume (ImageVolume)
+                    materials = [m[2] for m in vol.voxel_materials]
+                    materials.append(vol.material)
+                    print(materials)
+                    for i in materials:  
+                        # Read all materials contained in voxel_materials
+                        for mat in g4.G4Material.GetMaterialTable:
+                            # Loop on all materials created in the simulation
+                            if str(mat.GetName()) == i:
+                                # If material is in voxel_materials
                                 mat_prop = load_optical_properties_from_xml(
                                     self.physics_manager.optical_properties_file,
                                     mat.GetName(),
