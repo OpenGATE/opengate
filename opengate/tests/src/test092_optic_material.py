@@ -47,23 +47,19 @@ if __name__ == "__main__":
     world = sim.world
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "Air"
-    #world.material = "G4_Galactic"
-    #world.material = "G4_AIR"
+    # world.material = "G4_Galactic"
+    # world.material = "G4_AIR"
 
-    img = itk.imread(
-        paths.test_data / "vox_volume.mhd"
-    )
+    img = itk.imread(paths.test_data / "vox_volume.mhd")
     spacing = img.GetSpacing()
     size = np.array(img.GetLargestPossibleRegion().GetSize())
-    center = size*spacing / 2
+    center = size * spacing / 2
 
     patient = sim.add_volume("Image", name="patient")
     patient.image = paths.test_data / "vox_volume.mhd"  # CT image
-    #patient.material = "Air"
+    # patient.material = "Air"
     patient.material = "G4_AIR"
-    patient.dump_label_image = (
-        paths.test_data / "labels_vox_volume.mhd"
-    )
+    patient.dump_label_image = paths.test_data / "labels_vox_volume.mhd"
     patient.translation = [0, 0, 0]
     patient.voxel_materials = [[-2, 2, "Muscle"]]
     # patient.voxel_materials = [[-500, -49, "Fat"],[-49, 150, "Muscle"]]
@@ -93,7 +89,7 @@ if __name__ == "__main__":
         0,
         0,
         -center[2] * mm,
-    ]  #The source is at the border between the image and the exterior
+    ]  # The source is at the border between the image and the exterior
     source.n = 100000 / sim.number_of_threads
 
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
