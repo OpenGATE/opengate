@@ -12,7 +12,7 @@ import opengate_core as g4
 import uproot
 import numpy as np
 from scipy.spatial.transform import Rotation
-import SimpleITK as sitk
+import itk
 
 
 if __name__ == "__main__":
@@ -40,47 +40,46 @@ if __name__ == "__main__":
     deg = g4_units.deg
 
     sim.visu = False
-    sim.visu_type = "vrml"
+    sim.visu_type = "qt"
+    sim.number_of_threads = 1
+    sim.random_seed = 123456789
 
     world = sim.world
     world.size = [3 * m, 3 * m, 3 * m]
     world.material = "Air"
+    #world.material = "G4_Galactic"
+    #world.material = "G4_AIR"
 
-    img = sitk.ReadImage(
+    img = itk.imread(
         paths.test_data / "vox_volume.mhd"
-    )  # Extraction des caractéristiques de l'images - chemin de l'image test (voxels de 1mm)
-    Spacing = img.GetSpacing()  # Taille de voxel en mm
-    Size = np.array(img.GetSize())  # Taille de l'image en nombre de voxels
-    Size2 = np.array(
-        [Size[i] * Spacing[i] for i in range(len(Size))]
-    )  # Taille de l'image en mm
-    Center = Size2 / 2  # Pour placer la source
+    )
+    spacing = img.GetSpacing()
+    size = np.array(img.GetLargestPossibleRegion().GetSize())
+    center = size*spacing / 2
 
     patient = sim.add_volume("Image", name="patient")
-    patient.image = paths.test_data / "vox_volume.mhd"  # image CT
-    patient.material = "Air"
+    patient.image = paths.test_data / "vox_volume.mhd"  # CT image
+    #patient.material = "Air"
+    patient.material = "G4_AIR"
     patient.dump_label_image = (
         paths.test_data / "labels_vox_volume.mhd"
-    )  # Vérifier que tout correspond à du muscle
+    )
     patient.translation = [0, 0, 0]
-    patient.voxel_materials = [[-2, 2, "Muscle"]]  # Valeurs des voxels == 1
+    patient.voxel_materials = [[-2, 2, "Muscle"]]
     # patient.voxel_materials = [[-500, -49, "Fat"],[-49, 150, "Muscle"]]
 
     #####################################################################
 
     # dose = sim.add_actor("DoseActor", "dose")
-    # dose.output_filename = "../output/imageVolume_photon_unique.mhd"
+    # dose.output_filename = paths.output / "imageVolume_photon_unique.mhd"
     # dose.attached_to = patient.name
-    # dose.size = [Size[0],Size[1],Size[2]]  # Même nombre de voxels que l'image
-    # mm = gate.g4_units.mm
-    # dose.spacing = [
-    #     Spacing[i] * mm for i in range(len(Spacing))
-    # ]  # Même taille de voxel que l'image
+    # dose.size = size
+    # dose.spacing = spacing
     # dose.translation = [0, 0, 0]
     # dose.edep_uncertainty.active = False
     # dose.hit_type = "random"
 
-    ################################################ SOURCE DE PHOTONS OPTIQUES
+    ################################################ Optical photon source
     source = sim.add_source("GenericSource", "mysource")
     source.particle = "opticalphoton"
     source.energy.type = "mono"
@@ -93,9 +92,9 @@ if __name__ == "__main__":
     source.position.translation = [
         0,
         0,
-        -Center[2] * mm,
-    ]  # La source est à l'interface entre l'image et l'extérieur
-    source.n = 1 / sim.number_of_threads
+        -center[2] * mm,
+    ]  #The source is at the border between the image and the exterior
+    source.n = 100000 / sim.number_of_threads
 
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
