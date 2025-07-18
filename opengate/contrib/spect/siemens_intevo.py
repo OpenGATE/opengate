@@ -12,6 +12,8 @@ from opengate.geometry.utility import get_transform_orbiting
 from opengate.contrib.spect.spect_helpers import (
     get_mu_from_xraylib,
     calculate_acceptance_angle,
+    calculate_max_penetration_angle,
+    calculate_theta_max_angle,
 )
 from box import Box
 import json
@@ -67,6 +69,9 @@ def update_geometrical_parameters(store_to_file=False):
         hole = s.volume_manager.get_volume(f"spect_collimator_hole1")
         p[c].hole_diameter = hole.radius * 2
         p[c].collimator_length = hole.height
+        holep = s.volume_manager.get_volume(f"spect_collimator_hole1_param")
+        tr = holep.translation
+        p[c].septa_thickness = tr[1] - p[c].hole_diameter
 
     if store_to_file:
         filename = get_geometrical_parameters_filename()
@@ -770,7 +775,7 @@ def add_digitizer(
     return digitizer
 
 
-def calculate_collimator_acceptance_angle(collimator_type, energy):
+def calculate_collimator_acceptance_angle_OLD(collimator_type, energy):
     p = get_geometrical_parameters()
     hole_diameter = p[collimator_type].hole_diameter
     collimator_length = p[collimator_type].collimator_length
@@ -786,3 +791,22 @@ def calculate_collimator_acceptance_angle(collimator_type, energy):
     print(f"l_eff: {l_eff} mm, theta_acc: {theta_acc} deg")
 
     return theta_acc
+
+
+def calculate_collimator_acceptance_angle(collimator_type, energy, prob_threshold):
+    p = get_geometrical_parameters()
+    hole_diameter = p[collimator_type].hole_diameter
+    collimator_length = p[collimator_type].collimator_length
+    septa_thickness = p[collimator_type].septa_thickness
+
+    mu_lead_cm = get_mu_from_xraylib("Pb", energy)
+    print(
+        f"collimator_type: {collimator_type}, energy: {energy} keV, mu_lead_cm: {mu_lead_cm} cm-1"
+    )
+    print(f"collimator septa thicnkess {septa_thickness} mm")
+    theta_max = calculate_theta_max_angle(
+        hole_diameter, collimator_length, septa_thickness, mu_lead_cm
+    )
+    print(f"theta_max: {theta_max} deg")
+
+    return theta_max
