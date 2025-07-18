@@ -76,7 +76,7 @@ def update_geometrical_parameters(store_to_file=False):
     if store_to_file:
         filename = get_geometrical_parameters_filename()
         with open(filename, "w") as json_file:
-            json.dump(p, json_file)
+            json.dump(p, json_file, indent=4)
 
     return p
 

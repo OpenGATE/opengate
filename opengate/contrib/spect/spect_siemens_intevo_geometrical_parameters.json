@@ -10,7 +10,8 @@
     "crystal_distance": 61.8276,
     "psd": 12.944800999999998,
     "hole_diameter": 1.11,
-    "collimator_length": 24.05
+    "collimator_length": 24.05,
+    "septa_thickness": 0.15999999999999992
   },
   "melp": {
     "collimator_position": -107.5224,
@@ -18,7 +19,8 @@
     "crystal_distance": 61.8276,
     "psd": 12.944800999999998,
     "hole_diameter": 2.94,
-    "collimator_length": 40.64
+    "collimator_length": 40.64,
+    "septa_thickness": 1.1400000000000001
   },
   "he": {
     "collimator_position": -126.5824,
@@ -26,6 +28,7 @@
     "crystal_distance": 61.8276,
     "psd": 12.944800999999998,
     "hole_diameter": 4.0,
-    "collimator_length": 59.7
+    "collimator_length": 59.7,
+    "septa_thickness": 2.0
   }
 }
