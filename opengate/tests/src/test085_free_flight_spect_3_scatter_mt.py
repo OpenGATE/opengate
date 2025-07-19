@@ -27,7 +27,8 @@ if __name__ == "__main__":
     # free flight actor
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.ignored_volumes = ["spect_1_crystal", "spect_2_crystal"]
+    ff.unbiased_volumes = ["spect_1_crystal", "spect_2_crystal"]
+    ff.kill_interacting_in_volumes = ["spect_1_crystal", "spect_2_crystal"]
     ff.compton_splitting_factor = 50
     ff.rayleigh_splitting_factor = 10
     ff.max_compton_level = 10000

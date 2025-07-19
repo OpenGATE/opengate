@@ -188,22 +188,21 @@ void GateVActor::RegisterSD(G4LogicalVolume *lv) {
 
 void GateVActor::SetSourceManager(GateSourceManager *s) { fSourceManager = s; }
 
-bool GateVActor::IsStepEnteringVolume(const G4Step *step,
-                                      const std::vector<std::string> &volumes) {
+bool GateVActor::IsStepEnteringVolume(
+    const G4Step *step, const std::vector<const G4LogicalVolume *> &volumes) {
   // empty list ? do nothing
   if (volumes.size() == 0)
     return false;
 
-  // If the pre step is not on a boundary: not entering
-  if (step->GetPreStepPoint()->GetStepStatus() != fGeomBoundary)
+  if (step->GetPostStepPoint()->GetStepStatus() != fGeomBoundary)
     return false;
 
-  // if the pre step is at boundary AND if it is in one of the volumes: entering
-  const auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
-  const auto vol_name = vol->GetName();
-  auto i = std::find(volumes.begin(), volumes.end(), vol_name);
-  if (i != volumes.end())
+  const auto *vol =
+      step->GetPostStepPoint()->GetTouchable()->GetVolume()->GetLogicalVolume();
+  auto i = std::find(volumes.begin(), volumes.end(), vol);
+  if (i != volumes.end()) {
     return true;
+  }
   return false;
 }
 
