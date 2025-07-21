@@ -5,15 +5,17 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include <array>
-
+#include "GateUniqueVolumeID.h"
 #include "G4NavigationHistory.hh"
-#include "G4RunManager.hh"
 #include "G4VPhysicalVolume.hh"
 #include "GateHelpers.h"
-#include "GateUniqueVolumeID.h"
+#include <functional> // Required for std::hash
+#include <sstream>
 
-GateUniqueVolumeID::GateUniqueVolumeID() { fID = "undefined"; }
+GateUniqueVolumeID::GateUniqueVolumeID() {
+  fID = "undefined";
+  fNumericID = 0;
+}
 
 GateUniqueVolumeID::~GateUniqueVolumeID() {}
 
@@ -51,6 +53,58 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
   }
   fArrayID = ComputeArrayID(touchable);
   fID = touchable->GetVolume()->GetName() + "-" + ArrayIDToStr(fArrayID);
+
+  // Generate the deterministic numeric ID by hashing the unique string ID.
+  fNumericID = std::hash<std::string>{}(fID);
+}
+
+uint64_t GateUniqueVolumeID::GetIdUpToDepthAsHash(int depth) const {
+  // Check if the hash is already in our cache.
+  auto it = fCachedIdDepthHash.find(depth);
+  if (it != fCachedIdDepthHash.end()) {
+    return it->second;
+  }
+
+  // If not, get the string ID (this function has its own cache).
+  const std::string &s = GetIdUpToDepth(depth);
+
+  // Compute the hash.
+  uint64_t h = std::hash<std::string>{}(s);
+
+  // Store the newly computed hash in our cache and return it.
+  fCachedIdDepthHash[depth] = h;
+  return h;
+}
+
+std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) const {
+  if (depth == -1)
+    return fID;
+
+  // Check if the string is already in our cache.
+  auto it = fCachedIdDepth.find(depth);
+  if (it != fCachedIdDepth.end()) {
+    return it->second;
+  }
+
+  // If not, build the string.
+  std::ostringstream oss;
+  oss << fVolumeDepthID[depth].fVolumeName << "-";
+  int i = 0;
+  auto id = fArrayID;
+  bool appended = false;
+  while (i <= depth && id[i] != -1) {
+    oss << id[i] << "_";
+    appended = true;
+    i++;
+  }
+  auto s = oss.str();
+  if (appended) {
+    s.pop_back();
+  }
+
+  // Store the newly created string in the cache and return it.
+  fCachedIdDepth[depth] = s;
+  return s;
 }
 
 GateUniqueVolumeID::IDArrayType
@@ -80,7 +134,9 @@ std::string GateUniqueVolumeID::ArrayIDToStr(IDArrayType id) {
     i++;
   }
   auto s = oss.str();
-  s.pop_back();
+  if (!s.empty()) {
+    s.pop_back();
+  }
   return s;
 }
 
@@ -103,6 +159,7 @@ G4AffineTransform *GateUniqueVolumeID::GetWorldToLocalTransform(size_t depth) {
   translation = rotation * translation;
   translation = -translation;
   auto tt = new G4AffineTransform(rotation, translation);
+  delete t; // Avoid memory leak
   return tt;
 }
 
@@ -119,24 +176,4 @@ G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(size_t depth) {
   auto &translation = fVolumeDepthID[depth].fTranslation;
   auto t = new G4AffineTransform(rotation, translation);
   return t;
-}
-
-std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) {
-  if (depth == -1)
-    return fID;
-  if (fCachedIdDepth.count(depth) != 0) {
-    return fCachedIdDepth[depth];
-  }
-  std::ostringstream oss;
-  oss << fVolumeDepthID[depth].fVolumeName << "-";
-  int i = 0;
-  auto id = fArrayID;
-  while (i <= depth && id[i] != -1) {
-    oss << id[i] << "_";
-    i++;
-  }
-  auto s = oss.str();
-  s.pop_back();
-  fCachedIdDepth[depth] = s;
-  return s;
 }
