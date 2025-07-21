@@ -200,8 +200,9 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
 }
 
 void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
-  // (Do NOT enter here if step outside the "attached volume" ; but enter if in
-  // "unbiased volume") Go in this function every step, even Transportation
+  // G4 do NOT enter here if the step is outside the "attached volume"
+  // (but this is usually the world), but do enter if in "unbiased volume"
+  // (Go in this function every step, even Transportation)
   threadLocal_t &l = threadLocalData.Get();
 
   // Check if this is free flight. If yes, we do nothing.
@@ -279,9 +280,7 @@ int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
   GetSubProcessName() = GammaGeneralProc  GetSubProcessSubType() = 16
   */
 
-  if (ggp->GetSubProcessSubType() == 13 || ggp->GetSubProcessSubType() == 11)
-    return ggp->GetSubProcessSubType();
-  return 0;
+  return ggp->GetSubProcessSubType();
 }
 
 int GateScatterSplittingFreeFlightOptrActor::IsScatterInteraction(
@@ -306,9 +305,5 @@ int GateScatterSplittingFreeFlightOptrActor::IsScatterInteraction(
   GetProcessName() = phot   GetProcessSubType() = 12
   */
 
-  if (wrapped_p->GetProcessSubType() == 13 ||
-      wrapped_p->GetProcessSubType() == 11)
-    return wrapped_p->GetProcessSubType();
-
-  return 0;
+  return wrapped_p->GetProcessSubType();
 }
