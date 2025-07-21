@@ -104,6 +104,8 @@ public:
 
   std::string DumpLastDigi() const;
 
+  std::string DumpDigi(int i) const;
+
   Iterator NewIterator();
 
   size_t GetBeginOfEventIndex() const;
