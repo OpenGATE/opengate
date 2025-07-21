@@ -9,6 +9,7 @@
 #include "GateHelpers.h"
 #include <shared_mutex>
 
+// This mutex protects access to the fToVolumeID map
 std::shared_mutex GetVolumeIDMutex;
 
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::fInstance = nullptr;
@@ -34,8 +35,7 @@ GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
   const auto name = touchable->GetVolume()->GetName();
   const auto id = GateUniqueVolumeID::ComputeArrayID(touchable);
 
-  // Gain read access before checking if the touchable has already
-  // been associated with a unique volume ID.
+  // Gain read access to check if the ID already exists
   std::shared_lock<std::shared_mutex> readLock(GetVolumeIDMutex);
   auto it = fToVolumeID.find({name, id});
   if (it != fToVolumeID.end()) {
@@ -43,16 +43,18 @@ GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
   } else {
     // The volume ID does not exist yet, so we will create it.
     readLock.unlock();
-    const auto uid = GateUniqueVolumeID::New(touchable);
-    // Before modifying the map, we must obtain exclusive write access.
+
     std::unique_lock<std::shared_mutex> writeLock(GetVolumeIDMutex);
-    // There is a chance that another thread has already created the volume ID
-    // in the time interval between unlocking the read lock and locking the
-    // write lock, so we have to check again if the volume ID exists already.
+
+    // Check again in case another thread created it in the meantime
     it = fToVolumeID.find({name, id});
     if (it != fToVolumeID.end()) {
       return it->second;
     } else {
+      // Create the new GateUniqueVolumeID. It will generate its own IDs
+      // internally.
+      const auto uid = GateUniqueVolumeID::New(touchable);
+
       // Add the new ID to the map and return it.
       fToVolumeID[{name, id}] = uid;
       return uid;
@@ -63,6 +65,7 @@ GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
 std::vector<GateUniqueVolumeID::Pointer>
 GateUniqueVolumeIDManager::GetAllVolumeIDs() const {
   std::vector<GateUniqueVolumeID::Pointer> l;
+  l.reserve(fToVolumeID.size());
   for (const auto &x : fToVolumeID) {
     l.push_back(x.second);
   }
