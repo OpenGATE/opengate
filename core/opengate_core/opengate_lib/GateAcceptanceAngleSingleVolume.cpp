@@ -32,6 +32,9 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   // Retrieve the solid
   const auto lvs = G4LogicalVolumeStore::GetInstance();
   const auto lv = lvs->GetVolume(fAcceptanceAngleVolumeName);
+  if (!lv) {
+    Fatal("Could not find logical volume named: " + fAcceptanceAngleVolumeName);
+  }
   fAASolid = lv->GetSolid();
 
   // Init a navigator that will be used to find the transform
@@ -72,6 +75,7 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
 
 GateAcceptanceAngleSingleVolume::~GateAcceptanceAngleSingleVolume() {
   delete fAARotation;
+  delete fAANavigator;
 }
 
 void GateAcceptanceAngleSingleVolume::UpdateTransform() {
@@ -92,20 +96,16 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     const G4ThreeVector &momentum_direction) const {
   const auto localDirection = (*fAARotation) * (momentum_direction);
   double dist = 0;
-  if (fIntersectionFlag) { // || fDistanceDependentAngleToleranceFlag) {
+  if (fIntersectionFlag) {
     const auto localPosition = fAATransform.TransformPoint(position);
     dist = fAASolid->DistanceToIn(localPosition, localDirection);
-  }
-  if (fIntersectionFlag) {
     if (dist == kInfinity)
       return false;
   }
-  if (fNormalFlag) { // || fDistanceDependentAngleToleranceFlag) {
+  if (fNormalFlag) {
     if (dist < fMinDistanceNormalAngleTolerance)
       return true;
     const auto angle = fNormalVector.angle(localDirection);
-    // if (fDistanceDependentAngleToleranceFlag)
-    //   return DistanceDependentToleranceTest(angle, dist);
     return angle < fNormalAngleTolerance;
   }
   return true;
