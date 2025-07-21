@@ -218,6 +218,20 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         }
       });
 
+  DefineDigiAttribute(
+      "HitUniqueVolumeIDAsInt", 'I', FILLF {
+        auto *m = GateUniqueVolumeIDManager::GetInstance();
+        if (step->GetPostStepPoint()
+                ->GetProcessDefinedStep()
+                ->GetProcessName() == "Transportation") {
+          auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+          att->FillIValue(uid->GetNumericID());
+        } else {
+          auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+          att->FillIValue(uid->GetNumericID());
+        }
+      });
+
   // -----------------------------------------------------
   // Position
   // FIXME -> add global/local position
