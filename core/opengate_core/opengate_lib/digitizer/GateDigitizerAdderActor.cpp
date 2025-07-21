@@ -9,6 +9,10 @@
 #include "../GateHelpersDict.h"
 #include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
+#include <cstring>    // Required for std::memcpy
+#include <functional> // Required for std::hash
+#include <iomanip>    // Required for std::setprecision
+#include <sstream>    // Required for std::ostringstream
 
 GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
@@ -113,7 +117,7 @@ void GateDigitizerAdderActor::DigitInitialize(
   lr.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
   lr.fInputIter.TrackAttribute("GlobalTime", &l.time);
 
-  // Weights ? In that case, we consider to group for tracks with the exact same
+  // Weights ? In that case, we consider grouping for tracks with the exact same
   // weights
   if (fInputDigiCollection->IsDigiAttributeExists("Weight")) {
     lr.fInputIter.TrackAttribute("Weight", &l.weight);
@@ -126,6 +130,7 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
   iter.GoToBegin();
+
   while (!iter.IsAtEnd()) {
     AddDigiPerVolume();
     iter++;
@@ -133,13 +138,13 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
 
   // create the output hits collection for grouped hits
   auto &l = fThreadLocalData.Get();
+
   for (auto &h : l.fMapOfDigiInVolume) {
     const auto &hit = h.second;
     // terminate the merge
     hit->Terminate();
     // Don't store anything if edep is zero
     if (hit->fFinalEdep > 0) {
-      // all "Fill" calls are thread local
       fOutputEdepAttribute->FillDValue(hit->fFinalEdep);
       fOutputPosAttribute->Fill3Value(hit->fFinalPosition);
       fOutputGlobalTimeAttribute->FillDValue(hit->fFinalTime);
@@ -149,6 +154,8 @@ void GateDigitizerAdderActor::EndOfEventAction(const G4Event *event) {
         fOutputNumberOfHitsAttribute->FillDValue(hit->fNumberOfHits);
       lr.fDigiAttributeFiller->Fill(hit->fFinalIndex);
     }
+    // Clean up the allocated GateDigiAdderInVolume object
+    delete hit;
   }
 
   // reset the structure of hits
@@ -159,20 +166,37 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
   auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   const auto &i = lr.fInputIter.fIndex;
+
   if (*l.edep == 0)
     return;
-  // uid is only used for repeated volume (such as in PET)
-  // weight: if it is not the same, it means the hits come from 2 different
-  // tracks with VRT, so we separate them.
-  const auto uid = l.volID->get()->GetIdUpToDepth(fGroupVolumeDepth);
-  std::string wid;
-  if (fWeightsAreUsedFlag)
-    wid = uid + std::to_string(*l.weight);
-  else
-    wid = uid;
-  if (l.fMapOfDigiInVolume.count(wid) == 0) {
-    l.fMapOfDigiInVolume[wid] = new GateDigiAdderInVolume(
+
+  // Create an efficient key for grouping hits.
+  // This key combines the volume ID and, if needed, the track weight.
+  DigiKey key;
+
+  // 1. Get the cached hash of the volume ID string based on the required depth.
+  // This new function handles caching internally for maximum efficiency.
+  key.volumeID = l.volID->get()->GetIdUpToDepthAsHash(fGroupVolumeDepth);
+
+  // 2. Get the weight. If VRT is used, we must group only hits with the
+  // exact same weight. To do this safely with floating-point numbers,
+  // we use their underlying bit representation as part of the key.
+  key.weightBits = 0; // Default value if weights are not used
+  if (fWeightsAreUsedFlag) {
+    // This copies the bit pattern of the double into the uint64_t.
+    // static_assert(sizeof(double) == sizeof(uint64_t), "Size of double and
+    // uint64_t must match for bit-casting");
+    std::memcpy(&key.weightBits, l.weight, sizeof(double));
+  }
+
+  // Find or create an entry in the map for this unique key.
+  auto it = l.fMapOfDigiInVolume.find(key);
+  if (it == l.fMapOfDigiInVolume.end()) {
+    // If no entry exists, create a new one.
+    l.fMapOfDigiInVolume[key] = new GateDigiAdderInVolume(
         fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);
   }
-  l.fMapOfDigiInVolume[wid]->Update(i, *l.edep, *l.pos, *l.time);
+
+  // Update the adder (either newly created or pre-existing).
+  l.fMapOfDigiInVolume[key]->Update(i, *l.edep, *l.pos, *l.time);
 }
