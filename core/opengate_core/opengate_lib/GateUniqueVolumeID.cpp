@@ -17,7 +17,7 @@ GateUniqueVolumeID::GateUniqueVolumeID() {
   fNumericID = 0;
 }
 
-GateUniqueVolumeID::~GateUniqueVolumeID() {}
+GateUniqueVolumeID::~GateUniqueVolumeID() = default;
 
 GateUniqueVolumeID::Pointer
 GateUniqueVolumeID::New(const G4VTouchable *touchable, bool debug) {
@@ -29,7 +29,7 @@ GateUniqueVolumeID::New(const G4VTouchable *touchable, bool debug) {
 GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
                                        bool debug)
     : GateUniqueVolumeID() {
-  // retrieve the tree of embedded volumes
+  // Retrieve the tree of the embedded volumes
   // See ComputeArrayID warning for explanation.
   const auto *hist = touchable->GetHistory();
   for (auto i = 0; i <= (int)hist->GetDepth(); i++) {
@@ -58,7 +58,7 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
   fNumericID = std::hash<std::string>{}(fID);
 }
 
-uint64_t GateUniqueVolumeID::GetIdUpToDepthAsHash(int depth) const {
+uint64_t GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
   // Check if the hash is already in our cache.
   auto it = fCachedIdDepthHash.find(depth);
   if (it != fCachedIdDepthHash.end()) {
