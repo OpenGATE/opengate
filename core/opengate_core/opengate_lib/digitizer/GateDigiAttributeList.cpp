@@ -14,7 +14,7 @@
 #include "GateDigiAttributeManager.h"
 
 /* Macros to reduce the code size
-   Use FILLFS when step is not used to avoid warning
+   Use FILLFS when the step variable is not used to avoid warning
 
     In the G4 docs:
     "The second argument of FillHits() method, i.e. G4TouchableHistory, is
@@ -315,6 +315,9 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   // Length
   DefineDigiAttribute(
       "StepLength", 'D', FILLF { att->FillDValue(step->GetStepLength()); });
+  DefineDigiAttribute(
+      "CurrentStepNumber", 'I',
+      FILLF { att->FillIValue(step->GetTrack()->GetCurrentStepNumber()); });
   DefineDigiAttribute(
       "TrackLength", 'D',
       FILLF { att->FillDValue(step->GetTrack()->GetTrackLength()); });
