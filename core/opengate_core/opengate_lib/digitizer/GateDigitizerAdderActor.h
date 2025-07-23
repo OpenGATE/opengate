@@ -109,6 +109,7 @@ protected:
     GateUniqueVolumeID::Pointer *volID;
     double *time;
     double *weight;
+    int64_t *track_info_id;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

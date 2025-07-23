@@ -7,16 +7,15 @@
 
 #include "GateDigitizerAdderActor.h"
 #include "../GateHelpersDict.h"
+#include "../GateUserTrackInformation.h"
 #include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
-#include <cstring>    // Required for std::memcpy
-#include <functional> // Required for std::hash
-#include <iomanip>    // Required for std::setprecision
-#include <sstream>    // Required for std::ostringstream
+#include <functional>
+#include <sstream>
 
 GateDigitizerAdderActor::GateDigitizerAdderActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
-  // actions (in addition of the ones in GateVDigitizerWithOutputActor)
+  // actions (in addition to the ones in GateVDigitizerWithOutputActor)
   fActions.insert("EndOfEventAction");
   fGroupVolumeDepth = -1;
   fPolicy = AdderPolicy::EnergyWinnerPosition;
@@ -52,7 +51,7 @@ void GateDigitizerAdderActor::InitializeUserInfo(py::dict &user_info) {
   fGroupVolumeDepth = -1;
 }
 
-void GateDigitizerAdderActor::SetGroupVolumeDepth(int depth) {
+void GateDigitizerAdderActor::SetGroupVolumeDepth(const int depth) {
   fGroupVolumeDepth = depth;
 }
 
@@ -117,8 +116,8 @@ void GateDigitizerAdderActor::DigitInitialize(
   lr.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
   lr.fInputIter.TrackAttribute("GlobalTime", &l.time);
 
-  // Weights ? In that case, we consider grouping for tracks with the exact same
-  // weights
+  // Weights?
+  // If yes, we consider grouping for tracks with the exact same weights
   if (fInputDigiCollection->IsDigiAttributeExists("Weight")) {
     lr.fInputIter.TrackAttribute("Weight", &l.weight);
     fWeightsAreUsedFlag = true;
@@ -172,7 +171,7 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
 
   // Create an efficient key for grouping hits.
   // This key combines the volume ID and, if needed, the track weight.
-  DigiKey key;
+  DigiKey key{};
 
   // 1. Get the cached hash of the volume ID string based on the required depth.
   // This new function handles caching internally for maximum efficiency.
@@ -183,15 +182,12 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
   // we use their underlying bit representation as part of the key.
   key.weightBits = 0; // Default value if weights are not used
   if (fWeightsAreUsedFlag) {
-    // This copies the bit pattern of the double into the uint64_t.
-    // static_assert(sizeof(double) == sizeof(uint64_t), "Size of double and
-    // uint64_t must match for bit-casting");
+    // this copies the bit pattern of the double into the uint64_t.
     std::memcpy(&key.weightBits, l.weight, sizeof(double));
   }
 
   // Find or create an entry in the map for this unique key.
-  auto it = l.fMapOfDigiInVolume.find(key);
-  if (it == l.fMapOfDigiInVolume.end()) {
+  if (l.fMapOfDigiInVolume.find(key) == l.fMapOfDigiInVolume.end()) {
     // If no entry exists, create a new one.
     l.fMapOfDigiInVolume[key] = new GateDigiAdderInVolume(
         fPolicy, fTimeDifferenceFlag, fNumberOfHitsFlag);
