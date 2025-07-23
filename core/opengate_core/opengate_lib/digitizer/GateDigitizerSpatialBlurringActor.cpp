@@ -88,7 +88,7 @@ void GateDigitizerSpatialBlurringActor::BeginOfRunAction(const G4Run *run) {
 
 void GateDigitizerSpatialBlurringActor::EndOfEventAction(
     const G4Event * /*unused*/) {
-  // loop on all digi of this events
+  // loop on all digi of this event
   // auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
@@ -113,13 +113,13 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
   if (fKeepInSolidLimits) {
     G4TouchableHistory fTouchableHistory;
     l.fNavigator->LocateGlobalPointAndUpdateTouchable(vec, &fTouchableHistory);
-    auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
+    const auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
     phys_vol = vid->GetVolumeDepthID().back().fVolume;
     // If the volume is parameterised, we consider the parent volume to compute
     // the extent (otherwise the keep in solid will consider one single instance
     // of the repeated solid, instead of the whole parameterised volume).
     if (phys_vol->IsParameterised()) {
-      auto n = vid->GetVolumeDepthID().size();
+      const auto n = vid->GetVolumeDepthID().size();
       phys_vol = vid->GetVolumeDepthID()[n - 2].fVolume;
     }
   }
@@ -132,11 +132,11 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
 
   if (fKeepInSolidLimits) {
     // check limits according to the volume
-    G4VoxelLimits limits;
+    const G4VoxelLimits limits;
     G4double Xmin, Xmax, Ymin, Ymax, Zmin, Zmax;
-    G4AffineTransform at;
+    const G4AffineTransform at;
 
-    auto solid = phys_vol->GetLogicalVolume()->GetSolid();
+    const auto solid = phys_vol->GetLogicalVolume()->GetSolid();
     solid->CalculateExtent(kXAxis, limits, at, Xmin, Xmax);
     solid->CalculateExtent(kYAxis, limits, at, Ymin, Ymax);
     solid->CalculateExtent(kZAxis, limits, at, Zmin, Zmax);
