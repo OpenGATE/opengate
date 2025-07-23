@@ -45,6 +45,12 @@ template <class T> void GateTDigiAttribute<T>::FillIValue(int) {
   Fatal("Cannot use FillIValue for this type");
 }
 
+template <class T> void GateTDigiAttribute<T>::FillLValue(int64_t) {
+  DDE(fDigiAttributeType);
+  DDE(fDigiAttributeName);
+  Fatal("Cannot use FillLValue for this type");
+}
+
 template <class T> void GateTDigiAttribute<T>::Fill3Value(G4ThreeVector) {
   DDE(fDigiAttributeType);
   DDE(fDigiAttributeName);
@@ -64,25 +70,30 @@ template <class T> std::vector<double> &GateTDigiAttribute<T>::GetDValues() {
 }
 
 template <class T> std::vector<int> &GateTDigiAttribute<T>::GetIValues() {
-  Fatal("Cannot use GetDValues for this type, GateTDigiAttribute<T> I");
+  Fatal("Cannot use GetIValues for this type, GateTDigiAttribute<T> I");
   return *(new std::vector<int>); // to avoid warning
+}
+
+template <class T> std::vector<int64_t> &GateTDigiAttribute<T>::GetLValues() {
+  Fatal("Cannot use GetLValues for this type, GateTDigiAttribute<T> L");
+  return *(new std::vector<int64_t>); // to avoid warning
 }
 
 template <class T>
 std::vector<std::string> &GateTDigiAttribute<T>::GetSValues() {
-  Fatal("Cannot use GetDValues for this type, GateTDigiAttribute<T> S");
+  Fatal("Cannot use GetSValues for this type, GateTDigiAttribute<T> S");
   return *(new std::vector<std::string>); // to avoid warning
 }
 
 template <class T>
 std::vector<G4ThreeVector> &GateTDigiAttribute<T>::Get3Values() {
-  Fatal("Cannot use GetDValues for this type, GateTDigiAttribute<T> 3");
+  Fatal("Cannot use Get3Values for this type, GateTDigiAttribute<T> 3");
   return *(new std::vector<G4ThreeVector>); // to avoid warning
 }
 
 template <class T>
 std::vector<GateUniqueVolumeID::Pointer> &GateTDigiAttribute<T>::GetUValues() {
-  Fatal("Cannot use GetDValues for this type, GateTDigiAttribute<T> U");
+  Fatal("Cannot use GetUValues for this type, GateTDigiAttribute<T> U");
   return *(new std::vector<GateUniqueVolumeID::Pointer>); // to avoid warning
 }
 
@@ -136,6 +147,12 @@ GateTDigiAttribute<int>::GateTDigiAttribute(std::string vname)
 }
 
 template <>
+GateTDigiAttribute<int64_t>::GateTDigiAttribute(std::string vname)
+    : GateVDigiAttribute(vname, 'L') {
+  InitDefaultProcessHitsFunction();
+}
+
+template <>
 GateTDigiAttribute<std::string>::GateTDigiAttribute(std::string vname)
     : GateVDigiAttribute(vname, 'S') {
   InitDefaultProcessHitsFunction();
@@ -159,6 +176,10 @@ template <> void GateTDigiAttribute<double>::FillDigiWithEmptyValue() {
 }
 
 template <> void GateTDigiAttribute<int>::FillDigiWithEmptyValue() {
+  threadLocalData.Get().fValues.push_back(0);
+}
+
+template <> void GateTDigiAttribute<int64_t>::FillDigiWithEmptyValue() {
   threadLocalData.Get().fValues.push_back(0);
 }
 
@@ -189,6 +210,10 @@ template <> void GateTDigiAttribute<int>::FillIValue(int value) {
   threadLocalData.Get().fValues.push_back(value);
 }
 
+template <> void GateTDigiAttribute<int64_t>::FillLValue(int64_t value) {
+  threadLocalData.Get().fValues.push_back(value);
+}
+
 template <>
 void GateTDigiAttribute<G4ThreeVector>::Fill3Value(G4ThreeVector value) {
   threadLocalData.Get().fValues.push_back(value);
@@ -207,6 +232,12 @@ template <> void GateTDigiAttribute<double>::FillToRoot(size_t index) const {
 }
 
 template <> void GateTDigiAttribute<int>::FillToRoot(size_t index) const {
+  auto *ram = G4RootAnalysisManager::Instance();
+  auto v = threadLocalData.Get().fValues[index];
+  ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
+}
+
+template <> void GateTDigiAttribute<int64_t>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
   auto v = threadLocalData.Get().fValues[index];
   ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
@@ -241,6 +272,10 @@ template <> std::vector<double> &GateTDigiAttribute<double>::GetDValues() {
 }
 
 template <> std::vector<int> &GateTDigiAttribute<int>::GetIValues() {
+  return threadLocalData.Get().fValues;
+}
+
+template <> std::vector<int64_t> &GateTDigiAttribute<int64_t>::GetLValues() {
   return threadLocalData.Get().fValues;
 }
 
