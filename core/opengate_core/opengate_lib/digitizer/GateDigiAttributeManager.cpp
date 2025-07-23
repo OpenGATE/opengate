@@ -6,7 +6,6 @@
    -------------------------------------------------- */
 
 #include "GateDigiAttributeManager.h"
-#include "GateDigiAttributeProcessDefinedStepInVolume.h"
 #include "GateTDigiAttribute.h"
 
 GateDigiAttributeManager *GateDigiAttributeManager::fInstance = nullptr;
@@ -71,7 +70,8 @@ void GateDigiAttributeManager::DefineDigiAttribute(
     att = new GateTDigiAttribute<double>(name);
   if (type == 'I')
     att = new GateTDigiAttribute<int>(name);
-
+  if (type == 'L')
+    att = new GateTDigiAttribute<int64_t>(name);
   if (type == 'S')
     att = new GateTDigiAttribute<std::string>(name);
   if (type == '3')
@@ -100,6 +100,9 @@ GateVDigiAttribute *GateDigiAttributeManager::CopyDigiAttribute(
   }
   if (att->GetDigiAttributeType() == 'I') {
     a = new GateTDigiAttribute<int>(att->GetDigiAttributeName());
+  }
+  if (att->GetDigiAttributeType() == 'L') {
+    a = new GateTDigiAttribute<int64_t>(att->GetDigiAttributeName());
   }
   if (att->GetDigiAttributeType() == 'S') {
     a = new GateTDigiAttribute<std::string>(att->GetDigiAttributeName());
