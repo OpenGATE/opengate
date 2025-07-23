@@ -512,7 +512,7 @@ def get_library_path():
         return "unknown"
 
     files = os.listdir(path)
-    lib_ext = "dll" if os.name == "nt" else "so"
+    lib_ext = "pyd" if os.name == "nt" else "so"
     libs = [file for file in files if file.endswith(f".{lib_ext}")]
     if len(libs) == 0:
         return "unknown"
