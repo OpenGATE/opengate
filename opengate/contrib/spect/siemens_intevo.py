@@ -722,7 +722,7 @@ def add_digitizer(
 
     # Singles
     sc = digitizer.add_module("DigitizerAdderActor", f"{name}_singles")
-    sc.group_volume = None
+    sc.group_volume = crystal_name
     sc.policy = "EnergyWeightedCentroidPosition"
 
     # detection efficiency
@@ -752,7 +752,7 @@ def add_digitizer(
     sb.keep_in_solid_limits = True
     sb.use_truncated_Gaussian = False
 
-    # default energy windows (Energy range. 35-588 keV)
+    # energy windows
     cc = digitizer.add_module("DigitizerEnergyWindowsActor", f"{name}_energy_window")
     cc.channels = channels
 
