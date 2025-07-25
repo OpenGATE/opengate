@@ -319,6 +319,7 @@ class ScatterSplittingFreeFlightActor(
     # Do NOT work with GammaGeneralProc
     # Do NOT include "phot" process here.
     processes = ["compt", "Rayl"]
+    particles = ["gamma"]
 
     user_output_config = {
         "info": {
