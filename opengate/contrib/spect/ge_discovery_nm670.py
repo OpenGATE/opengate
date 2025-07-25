@@ -19,6 +19,68 @@ from opengate.contrib.spect.spect_helpers import (
     get_mu_from_xraylib,
     calculate_acceptance_angle,
 )
+import json
+
+
+def get_geometrical_parameters_filename():
+    filename = (
+        pathlib.Path(__file__).parent / "ge_discovery_nm670_geometrical_parameters.json"
+    )
+    return pathlib.Path(filename)
+
+
+geometrical_parameters = None
+
+
+def get_geometrical_parameters():
+    global geometrical_parameters
+    if geometrical_parameters is None:
+        filename = get_geometrical_parameters_filename()
+        if not filename.exists():
+            print(f'update geometrical parameters to "{filename}"')
+            update_geometrical_parameters(store_to_file=True)
+        # print(f'Loading geometrical parameters from "{filename}"')
+        with open(filename) as json_file:
+            geometrical_parameters = json.load(json_file)
+        geometrical_parameters = Box(geometrical_parameters)
+    return geometrical_parameters
+
+
+def update_geometrical_parameters(store_to_file=False):
+    p = Box()
+    p.collimators = ["lehr", "megp", "hegp"]
+    # for all colli
+    nm = g4_units.nm
+    for c in p.collimators:
+        s = Simulation()
+        spect, colli, crystal = add_spect_head(s, "spect", c, debug=True)
+        pos = get_volume_position_in_head(s, "spect", f"collimator_trd", "min", axis=0)
+        y = get_volume_position_in_head(s, "spect", "crystal", "center", axis=0)
+        psd = get_volume_position_in_head(s, "spect", "collimator_psd", "min", axis=0)
+        p[c] = Box()
+        # distance from box boundary to collimator
+        p[c].collimator_position = pos
+        # distance to the center of the box head
+        p[c].half_box_size = spect.size[0] / 2.0 + 1 * nm
+        # distance from box boundary to crystal center (for arf)
+        p[c].crystal_distance = -y
+        # distance from box boundary to the shielding front
+        p[c].psd = p[c].half_box_size + psd
+
+        # collimator holes
+        hole = s.volume_manager.get_volume(f"spect_collimator_hole")
+        p[c].hole_diameter = hole.radius * 2
+        p[c].collimator_length = hole.height
+        holep = s.volume_manager.get_volume(f"spect_collimator_hole_param")
+        tr = holep.translation
+        p[c].septa_thickness = tr[1] - p[c].hole_diameter
+
+    if store_to_file:
+        filename = get_geometrical_parameters_filename()
+        with open(filename, "w") as json_file:
+            json.dump(p, json_file, indent=4)
+
+    return p
 
 
 def get_collimator(rad):
@@ -1055,7 +1117,7 @@ def add_digitizer(
     return digitizer
 
 
-def calculate_collimator_acceptance_angle(collimator_type, energy):
+def calculate_collimator_acceptance_angle_OLD(collimator_type, energy):
     cm = g4_units.cm
 
     hole_diameter = None
@@ -1083,3 +1145,25 @@ def calculate_collimator_acceptance_angle(collimator_type, energy):
     print(f"l_eff: {l_eff} mm, theta_acc: {theta_acc} deg")
 
     return theta_acc
+
+
+def calculate_collimator_acceptance_angle(collimator_type, energy, prob_threshold):
+    p = get_geometrical_parameters()
+    hole_diameter = p[collimator_type].hole_diameter
+    collimator_length = p[collimator_type].collimator_length
+    septa_thickness = p[collimator_type].septa_thickness
+
+    mu_lead_cm = get_mu_from_xraylib("Pb", energy)
+    print(
+        f"collimator_type: {collimator_type}, energy: {energy} keV, mu_lead_cm: {mu_lead_cm} cm-1"
+    )
+    print(f"collimator septa thicnkess {septa_thickness} mm")
+    # theta_max = calculate_max_penetration_angle(
+    #    hole_diameter, collimator_length, septa_thickness, mu_lead_cm, prob_threshold
+    # )
+    l_eff, theta_acc = calculate_acceptance_angle(
+        hole_diameter, collimator_length, mu_lead_cm
+    )
+    print(f"theta_max: {theta_acc} deg")
+
+    return l_eff, theta_acc
