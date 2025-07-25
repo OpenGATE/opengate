@@ -117,29 +117,16 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
   // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
-  l.fComptonInteractionCount = 0;
-  l.fCurrentTrackIsFreeFlight = false;
-  l.fBiasInformationPerThread["nb_tracks"] += 1;
 
-  // test if this track was created with GateScatterSplittingFreeFlightOptn
-  // If no userinfo, this is not the case
-  if (track->GetUserInformation() == nullptr) {
+  if (track->GetWeight() == 1) {
+    // this is not a FF or secondary of a FF
+    l.fComptonInteractionCount = 0;
+    l.fBiasInformationPerThread["nb_tracks"] += 1;
     return;
   }
 
-  // If there is a user_info, test the associated bool
-  const auto *info =
-      dynamic_cast<GateUserTrackInformation *>(track->GetUserInformation());
-  // if not, just track as usual
-  if (!info->GetGateTrackInformation(this)) {
-    return;
-  }
-
-  // We apply free flight
-  l.fCurrentTrackIsFreeFlight = true;
+  // This is a FF
   l.fFreeFlightOperation->ResetInitialTrackWeight(track->GetWeight());
-
-  // debug info
   l.fBiasInformationPerThread["nb_tracks_with_free_flight"] += 1;
 }
 
@@ -156,13 +143,10 @@ GateScatterSplittingFreeFlightOptrActor::ProposeNonPhysicsBiasingOperation(
 G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
-  // (Do NOT enter here if step in "unbiased volume" or outside the "attached
-  // volume") Should we track the particle with free flight or not?
   threadLocal_t &l = threadLocalData.Get();
-  if (l.fCurrentTrackIsFreeFlight) {
+  if (track->GetWeight() != 1) {
     return l.fFreeFlightOperation;
   }
-  // Conventional tracking (the occurrence of compt is not modified)
   return nullptr;
 }
 
@@ -173,12 +157,12 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   // volume") This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
 
-  // Check if this is free flight
-  if (l.fCurrentTrackIsFreeFlight) {
+  // If the weight is not 1, this is a FF
+  if (track->GetWeight() != 1) {
     return l.fFreeFlightOperation;
   }
 
-  // FIXME check energy ?
+  // This is not a FF, we may split if Compton or Rayleigh
   const int sc = IsScatterInteraction(callingProcess);
   // This is a Compton, we split it
   if (sc == 13 && fComptonSplittingFactor > 0) {
@@ -206,12 +190,12 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   threadLocal_t &l = threadLocalData.Get();
 
   // Check if this is free flight. If yes, we do nothing.
-  // This particle is tracked by FF except if it is in an unbiased volume.
+  // FF tracks this particle except if it is in an unbiased volume.
   // This is managed by Optr/Optn Geant4 biasing logic.
-  if (l.fCurrentTrackIsFreeFlight) {
-    if (step->GetTrack()->GetWeight() < fMinimalWeight) {
-      step->GetTrack()->SetTrackStatus(fStopAndKill);
-    }
+  if (step->GetTrack()->GetWeight() != 1) {
+    // if (step->GetTrack()->GetWeight() < fMinimalWeight) {
+    //   step->GetTrack()->SetTrackStatus(fStopAndKill);
+    // }
     return;
   }
 
