@@ -70,7 +70,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   fParticleChange.ProposeMomentumDirection(
       particle_change->GetProposedMomentumDirection());
 
-  // Copied from G4: "inform we take care of secondaries weight (otherwise these
+  // Copied from G4: "inform we take care of secondary weight (otherwise these
   // secondaries are by default given the primary weight)."
   fParticleChange.SetSecondaryWeightByProcess(true); // 'true' is needed
   // fParticleChange.SetParentWeightByProcess(true);   // unsure ?
@@ -115,11 +115,6 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
       gammaTrack->SetPosition(position);
       // FIXME time ? polarization ?
       gammaTrack->SetTrackStatus(particle_change->GetTrackStatus()); // needed ?
-
-      // It seems that this pointer is free by G4
-      fUserTrackInformation = new GateUserTrackInformation();
-      fUserTrackInformation->SetGateTrackInformation(fActor, true);
-      gammaTrack->SetUserInformation(fUserTrackInformation);
 
       // Add the track in the stack
       fParticleChange.AddSecondary(gammaTrack);
