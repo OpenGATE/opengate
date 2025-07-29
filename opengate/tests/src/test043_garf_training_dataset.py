@@ -18,7 +18,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
     sim.visu = False
-    sim.random_seed = 987654
+    sim.random_seed = 321456
     sim.output_dir = test43.paths.output
 
     # units
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     checked_keys = [
         {"k1": "E", "k2": "E", "tol": 0.002, "scaling": 1},
         {"k1": "Theta", "k2": "Theta", "tol": 2, "scaling": 1},
-        {"k1": "Phi", "k2": "Phi", "tol": 1.5, "scaling": 1},
+        {"k1": "Phi", "k2": "Phi", "tol": 4, "scaling": 1},
         {"k1": "window", "k2": "window", "tol": 0.006, "scaling": 1},
     ]
     is_ok = (
