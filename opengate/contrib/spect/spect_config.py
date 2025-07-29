@@ -365,11 +365,11 @@ class PhantomConfig(ConfigBase):
         if self.image is None:
             return None
         # special case for visu
-        """if sim.visu is True:
+        if sim.visu is True:
             phantom = self.add_fake_phantom_for_visu(sim)
             if self.translation is not None:
                 phantom.translation = self.translation
-            return phantom"""
+            return phantom
         # insert voxelized phantom
         phantom = sim.add_volume("Image", f"{self.spect_config.simu_name}_phantom")
         phantom.image = self.image
@@ -559,6 +559,7 @@ class GARFConfig(ConfigBase):
         self.batch_size = 1e5
         self.verbose_batch = True
         self.gpu_mode = "auto"
+        self.arf_actors = []
 
     def __str__(self):
         s = f"GARF : {self.pth_filename}\n"
@@ -586,7 +587,7 @@ class GARFConfig(ConfigBase):
             arf.output_filename = (
                 self.spect_config.detector_config.get_proj_base_filename(i)
             )
-            arf.output_filename = arf.output_filename.replace(".mhd", "_counts.mhd")
+            self.arf_actors.append(arf)
             head_names.append(name)
         return head_names
 
@@ -733,25 +734,20 @@ class FreeFlightConfig(ConfigBase):
         # Weights MUST be in the digitizer
         # FIXME change the way to get the hits
         hits_actors = sim.actor_manager.find_actors("_hits")
-        if len(hits_actors) == 0:
-            fatal(
-                f'Cannot find actors with name "hits". Actors:'
-                f"{sim.actor_manager.actors}"
-            )
-        for ha in hits_actors:
-            if "Weight" not in ha.attributes:
-                ha.attributes.append("Weight")
-
+        if len(hits_actors) != 0:
+            for ha in hits_actors:
+                if "Weight" not in ha.attributes:
+                    ha.attributes.append("Weight")
         # be sure the squared counts flag is enabled
         proj_actors = sim.actor_manager.find_actors("projection")
-        if len(proj_actors) == 0:
-            fatal(
-                f"Cannot find the 'projection' digitizers. Actors:"
-                f"{sim.actor_manager.actors}"
-            )
+        if len(proj_actors) != 0:
+            for d in proj_actors:
+                d.squared_counts.active = True
 
-        for d in proj_actors:
-            d.squared_counts.active = True
+        # if garf is used, compute the squared counts
+        if self.spect_config.detector_config.garf_config.pth_filename is not None:
+            for arf in self.spect_config.detector_config.garf_config.arf_actors:
+                arf.squared_counts.active = True
 
         # GeneralProcess must *NOT* be used
         s = f"/process/em/UseGeneralProcess false"
@@ -766,10 +762,7 @@ class FreeFlightConfig(ConfigBase):
         return volume_names
 
     def get_detector_volume_names(self):
-        volume_names = [
-            f"{self.spect_config.simu_name}_spect{i}"
-            for i in range(self.spect_config.detector_config.number_of_heads)
-        ]
+        volume_names = self.spect_config.detector_config.head_names
         return volume_names
 
     def setup_simulation_primary(self, sim, source):
