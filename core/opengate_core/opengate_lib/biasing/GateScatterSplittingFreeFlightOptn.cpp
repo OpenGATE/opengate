@@ -85,13 +85,19 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   }
   particle_change->Clear();
 
+  G4Track templateTrack(*track);
+  templateTrack.SetWeight(weight);
+  templateTrack.SetPosition(position);
+  // templateTrack.SetTrackStatus(particle_change->GetTrackStatus());
+
   // Loop to split Compton gammas
   fAAManager->StartAcceptLoop();
   for (auto i = 0; i < fSplittingFactor; i++) {
     double energy = 0;
     final_state =
         callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
-    particle_change = dynamic_cast<G4ParticleChangeForGamma *>(final_state);
+    // particle_change = dynamic_cast<G4ParticleChangeForGamma *>(final_state);
+    particle_change = static_cast<G4ParticleChangeForGamma *>(final_state);
 
     // delete secondaries to avoid memory leak
     for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
@@ -108,13 +114,9 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     energy = particle_change->GetProposedKineticEnergy();
     if (energy > 0) {
       // Create a new track with another gamma (free by G4)
-      const auto gammaTrack = new G4Track(*track);
-      gammaTrack->SetWeight(weight);
+      const auto gammaTrack = new G4Track(templateTrack);
       gammaTrack->SetMomentumDirection(momentum);
       gammaTrack->SetKineticEnergy(energy);
-      gammaTrack->SetPosition(position);
-      // FIXME time ? polarization ?
-      gammaTrack->SetTrackStatus(particle_change->GetTrackStatus()); // needed ?
 
       // Add the track in the stack
       fParticleChange.AddSecondary(gammaTrack);
