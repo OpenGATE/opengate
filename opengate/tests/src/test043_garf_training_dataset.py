@@ -18,7 +18,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
     sim.visu = False
-    sim.random_seed = 12365
+    sim.random_seed = 987654
     sim.output_dir = test43.paths.output
 
     # units
