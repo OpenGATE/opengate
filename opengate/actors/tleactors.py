@@ -100,18 +100,18 @@ class VoxelizedPromptGammaTLEActor(
                 "doc": "Range of the histogram in MeV",
             },
         ),
-        #"vect_p": (
-        #    None, 
-        #    {
-        #        "doc": "Vector of weights for proton ToF deposition.",
-        #    },
-        #),
-        #"vect_n": (
-        #    None,
-        #    {
-        #        "doc": "Vector of weights for neutron ToF deposition.",
-        #    }
-        #)
+        "vect_p": (
+            None, 
+            {
+                "doc": "Vector of weights for proton ToF deposition.",
+            },
+        ),
+        "vect_n": (
+            None,
+            {
+                "doc": "Vector of weights for neutron ToF deposition.",
+            }
+        )
     }
 
     user_output_config = {
@@ -196,6 +196,8 @@ class VoxelizedPromptGammaTLEActor(
         self.SetProtonTimeFlag(self.user_output.p_tof.get_active(item=0))
         self.SetNeutronEnergyFlag(self.user_output.n_E.get_active(item=0))
         self.SetNeutronTimeFlag(self.user_output.n_tof.get_active(item=0))
+
+        self.SetVector(self.user_info.get("vect_p"), self.user_info.get("vect_n"))
 
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()

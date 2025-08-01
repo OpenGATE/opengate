@@ -207,6 +207,9 @@
          if (bin >= timebins) {
            bin = timebins;
          }
+         if (bin < 0) {
+          bin = 0; // underflow
+        }
          ind[3] = bin;
          // Store the value in the volume for neutrons OR protons -> LEFT BINNING
          if (fProtonTimeFlag &&
