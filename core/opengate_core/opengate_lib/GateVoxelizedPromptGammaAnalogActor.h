@@ -5,8 +5,8 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#ifndef GateVoxelizedPromptGammaTLEActor_h
-#define GateVoxelizedPromptGammaTLEActor_h
+#ifndef GateVoxelizedPromptGammaAnalogActor_h
+#define GateVoxelizedPromptGammaAnalogActor_h
 
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
@@ -14,19 +14,18 @@
 #include "G4VPrimitiveScorer.hh"
 #include "GateDoseActor.h"
 #include "GateMaterialMuHandler.h"
-#include <G4VProcess.hh>
-#include <pybind11/numpy.h>
+
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
 
-class GateVoxelizedPromptGammaTLEActor : public GateVActor {
+class GateVoxelizedPromptGammaAnalogActor : public GateVActor {
 
 public:
   // destructor
-  ~GateVoxelizedPromptGammaTLEActor() override;
+  ~GateVoxelizedPromptGammaAnalogActor() override;
 
-  explicit GateVoxelizedPromptGammaTLEActor(py::dict &user_info);
+  explicit GateVoxelizedPromptGammaAnalogActor(py::dict &user_info);
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -60,14 +59,9 @@ public:
 
   inline void SetNeutronEnergyFlag(const bool b) { fNeutronEnergyFlag = b; }
 
-  void SetVector(py::array_t<double> vect_p, py::array_t<double> vect_n);
-
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
   }
-
-  // void SetVector(pybind11::array_t<double> vect_p, pybind11::array_t<double>
-  // vect_n );
 
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 
@@ -99,11 +93,6 @@ public:
   G4ThreeVector fsize;
   G4ThreeVector fspacing;
   G4ThreeVector fTranslation;
-  std::vector<double> fProtonVector;
-  std::vector<double> fNeutronVector;
-
-  G4int Ncount;
-  G4int Pcount;
 };
 
-#endif // GateVoxelizedPromptGammaTLEActor_h
+#endif // GateVoxelizedPromptGammaAnalogActor_h

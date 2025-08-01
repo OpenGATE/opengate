@@ -83,7 +83,11 @@ from .actors.doseactors import (
     FluenceActor,
     ProductionAndStoppingActor,
 )
-from .actors.tleactors import TLEDoseActor, VoxelizedPromptGammaTLEActor
+from .actors.tleactors import (
+    TLEDoseActor,
+    VoxelizedPromptGammaTLEActor,
+    VoxelizedPromptGammaAnalogActor,
+)
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -123,6 +127,7 @@ actor_types = {
     "DoseActor": DoseActor,
     "TLEDoseActor": TLEDoseActor,
     "VoxelizedPromptGammaTLEActor": VoxelizedPromptGammaTLEActor,
+    "VoxelizedPromptGammaAnalogActor": VoxelizedPromptGammaAnalogActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
     "FluenceActor": FluenceActor,
@@ -635,6 +640,7 @@ class PhysicsManager(GateObject):
                     ("electron", False),
                     ("positron", False),
                     ("proton", False),
+                    ("neutron", False),
                 ]
             ),
             {
@@ -687,6 +693,7 @@ class PhysicsManager(GateObject):
         #             ("electron", None),
         #             ("positron", None),
         #             ("proton", None),
+        #             ("neutron", None),
         #         ]
         #     ),
         #     {
@@ -876,7 +883,7 @@ class PhysicsManager(GateObject):
         """
 
         charged_particles = {"e-", "e+", "proton"}
-        all_particles = charged_particles.union({"gamma"})
+        all_particles = charged_particles.union({"gamma", "neutron"})
 
         # create a dictionary with sets as entries (to ensure uniqueness)
         particles_processes = dict([(p, set()) for p in all_particles])

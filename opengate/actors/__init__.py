@@ -6,4 +6,5 @@ from . import (
     arfactors,
     dynamicactors,
     biasingactors,
+    tleactors,
 )
