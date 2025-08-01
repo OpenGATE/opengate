@@ -117,6 +117,7 @@ AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunAction(const G4Run *run) {}
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfEventAction(
+
   const G4Event *event) {
 T0 = event->GetPrimaryVertex()->GetT0();
 incidentParticles++;

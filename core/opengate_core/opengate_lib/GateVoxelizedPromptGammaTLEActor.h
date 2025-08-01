@@ -67,7 +67,8 @@ public:
     return fPhysicalVolumeName;
   }
 
-  //void SetVector(pybind11::array_t<double> vect_p, pybind11::array_t<double> vect_n );
+  // void SetVector(pybind11::array_t<double> vect_p, pybind11::array_t<double>
+  // vect_n );
 
   inline void SetPhysicalVolumeName(std::string s) { fPhysicalVolumeName = s; }
 

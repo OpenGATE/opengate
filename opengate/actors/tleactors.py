@@ -110,9 +110,10 @@ class VoxelizedPromptGammaTLEActor(
             None,
             {
                 "doc": "Vector of weights for neutron ToF deposition.",
-            }
-        )
+            },
+        ),
     }
+    
 
     user_output_config = {
         "p_E": {
@@ -201,7 +202,7 @@ class VoxelizedPromptGammaTLEActor(
 
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
-        #g4.GateVoxelizedPromptGammaTLEActor.SetVector(self, self.user_info.get("vect_p"), self.user_info.get("vect_n"))
+        # g4.GateVoxelizedPromptGammaTLEActor.SetVector(self, self.user_info.get("vect_p"), self.user_info.get("vect_n"))
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         # need to override because create image is different for img of histo
@@ -381,7 +382,6 @@ class VoxelizedPromptGammaAnalogActor(
 
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
-        
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         # need to override because create image is different for img of histo
