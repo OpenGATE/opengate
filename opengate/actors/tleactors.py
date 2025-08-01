@@ -101,7 +101,7 @@ class VoxelizedPromptGammaTLEActor(
             },
         ),
         "vect_p": (
-            None, 
+            None,
             {
                 "doc": "Vector of weights for proton ToF deposition.",
             },
@@ -113,7 +113,6 @@ class VoxelizedPromptGammaTLEActor(
             },
         ),
     }
-    
 
     user_output_config = {
         "p_E": {

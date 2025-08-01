@@ -15,8 +15,8 @@
 #include "GateDoseActor.h"
 #include "GateMaterialMuHandler.h"
 #include <G4VProcess.hh>
-#include <pybind11/stl.h>
 #include <pybind11/numpy.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -60,8 +60,7 @@ public:
 
   inline void SetNeutronEnergyFlag(const bool b) { fNeutronEnergyFlag = b; }
 
-  void SetVector(py::array_t<double> vect_p, 
-                 py::array_t<double> vect_n);
+  void SetVector(py::array_t<double> vect_p, py::array_t<double> vect_n);
 
   inline std::string GetPhysicalVolumeName() const {
     return fPhysicalVolumeName;
@@ -100,12 +99,11 @@ public:
   G4ThreeVector fsize;
   G4ThreeVector fspacing;
   G4ThreeVector fTranslation;
-  std::vector <double> fProtonVector;
+  std::vector<double> fProtonVector;
   std::vector<double> fNeutronVector;
 
   G4int Ncount;
   G4int Pcount;
-
 };
 
 #endif // GateVoxelizedPromptGammaTLEActor_h
