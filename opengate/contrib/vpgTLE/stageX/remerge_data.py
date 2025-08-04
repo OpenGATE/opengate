@@ -12,7 +12,7 @@ with uproot.recreate("data/data_merge_" + case + ".root") as new_file:
         # Remove the first ";1" from the key name
         clean_key = key.split(";")[0]  # Remove the cycle suffix
         if isinstance(obj, uproot.models.TH.Model_TH2D_v4):
-                # Copy other TH2D histograms as they are
+            # Copy other TH2D histograms as they are
             bin_contents = obj.values()
             edges_x = obj.axis(0).edges()
             edges_y = obj.axis(1).edges()
@@ -26,7 +26,7 @@ with uproot.recreate("data/data_merge_" + case + ".root") as new_file:
         # Remove the first ";1" from the key name
         clean_key = key.split(";")[0]  # Remove the cycle suffix
         if isinstance(obj, uproot.models.TH.Model_TH2D_v4):
-                # Copy other TH2D histograms as they are
+            # Copy other TH2D histograms as they are
             bin_contents = obj.values()
             edges_x = obj.axis(0).edges()
             edges_y = obj.axis(1).edges()
