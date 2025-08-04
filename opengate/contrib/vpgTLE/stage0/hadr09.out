@@ -14,7 +14,7 @@ IsIonProjectile: false
 
 
 ================================================================================
-                                 INCL++ WARNING                                 
+                                 INCL++ WARNING
 INCL++/G4ExcitationHandler could not use its own level-density parameter for fission
 ================================================================================
 
@@ -37,13 +37,13 @@ Use HETC submodel for pre-compound model            0
 Type of de-excitation inverse x-section             3
 Type of de-excitation factory                       Evaporation+GEM
 Number of de-excitation channels                    68
-Min excitation energy                               10 eV 
+Min excitation energy                               10 eV
 Min energy per nucleon for multifragmentation       200 GeV
 Limit excitation energy for Fermi BreakUp           20 MeV
 Level density (1/MeV)                               0.075
 Use simple level density model                      1
 Use discrete excitation energy of the residual      1
-Time limit for long lived isomeres                  1 ns 
+Time limit for long lived isomeres                  1 ns
 Isomer production flag                              1
 Internal e- conversion flag                         1
 Store e- internal conversion data                   0
@@ -52,7 +52,7 @@ Max 2J for sampling of angular correlations         10
 =======================================================================
 
 	 --> #secondaries=48  impactParameter[fm]=1.74487  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=34  #NNcollisions=6
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	anti_proton	 p=(2379.36,1098.48,4092.374949.33) MeV
 	 	 	 j=1	pi+	 p=(294.115,-152.028,413.023547.434) MeV
 	 	 	 j=2	pi-	 p=(-187.561,-27.7343,151.778280.115) MeV
@@ -301,7 +301,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=45  impactParameter[fm]=1.71245  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=30  #NNcollisions=6
 	 Collision 100  projectile=Bs0  Ekin[MeV]=8274.36  direction=(0.678483,0.346049,0.648005)  material=G4_Fe
 	 --> #secondaries=18  impactParameter[fm]=0.194704  #projectileSpectatorNucleons=-1  #targetSpectatorNucleons=53  #NNcollisions=3
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	B+	 p=(6950.74,4631.42,5604.311359.7) MeV
 	 	 	 j=1	sigma-	 p=(428.943,158.676,654.2581439.13) MeV
 	 	 	 j=2	proton	 p=(88.455,5.35339,590.3361112.07) MeV
@@ -520,7 +520,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=72  impactParameter[fm]=2.02579  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=201  #NNcollisions=1
 	 Collision 200  projectile=omega-  Ekin[MeV]=25096.3  direction=(0.829495,0.394965,0.394894)  material=G4_H
 	 --> #secondaries=5  impactParameter[fm]=0.597442  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=0  #NNcollisions=1
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	xi-	 p=(16865.8,8138.79,8019.4320414.6) MeV
 	 	 	 j=1	pi+	 p=(-252.498,-244.026,191.548423.644) MeV
 	 	 	 j=2	sigma-	 p=(4819.62,2675.79,1948.425968.15) MeV
@@ -726,7 +726,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=6  impactParameter[fm]=1.21843  #projectileSpectatorNucleons=-1  #targetSpectatorNucleons=0  #NNcollisions=1
 	 Collision 300  projectile=anti_deuteron  Ekin[MeV]=1439.23  direction=(0.915461,0.348818,0.200642)  material=G4_Ar
 	 --> #secondaries=32  impactParameter[fm]=4.41779  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=39  #NNcollisions=2
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	pi+	 p=(-309.961,-611.352,-63.9263702.42) MeV
 	 	 	 j=1	anti_proton	 p=(37.7971,139.715,-27.6481949.773) MeV
 	 	 	 j=2	neutron	 p=(18.3331,130.753,316.9761000.34) MeV
@@ -959,7 +959,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=21  impactParameter[fm]=0.90853  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=10  #NNcollisions=4
 	 Collision 400  projectile=B-  Ekin[MeV]=24551.5  direction=(0.0903547,0.39088,0.915996)  material=G4_H
 	 --> #secondaries=6  impactParameter[fm]=0.284423  #projectileSpectatorNucleons=-1  #targetSpectatorNucleons=0  #NNcollisions=1
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	pi+	 p=(-56.1729,175.66,433.158491.037) MeV
 	 	 	 j=1	pi0	 p=(869.942,628.785,3226.173402.73) MeV
 	 	 	 j=2	B-	 p=(184.883,6314.13,12997.115385) MeV
@@ -1166,7 +1166,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=15  impactParameter[fm]=2.87049  #projectileSpectatorNucleons=-1  #targetSpectatorNucleons=27  #NNcollisions=1
 	 Collision 500  projectile=Ds+  Ekin[MeV]=2032.72  direction=(0.318612,0.939824,0.123358)  material=G4_Be
 	 --> #secondaries=7  impactParameter[fm]=2.75001  #projectileSpectatorNucleons=-1  #targetSpectatorNucleons=8  #NNcollisions=1
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	kaon0L	 p=(682.086,439.85,302.672998.969) MeV
 	 	 	 j=1	lambda_c+	 p=(-23.3525,2455.93,131.4243358.17) MeV
 	 	 	 j=2	pi0	 p=(357.435,51.6308,-78.7129393.497) MeV
@@ -1374,7 +1374,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=32  impactParameter[fm]=0.798524  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=51  #NNcollisions=2
 	 Collision 600  projectile=anti_sigma+  Ekin[MeV]=20346.9  direction=(0.160907,0.346235,0.924246)  material=G4_Si
 	 --> #secondaries=25  impactParameter[fm]=2.82091  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=27  #NNcollisions=1
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	anti_proton	 p=(1480.43,2981.14,8399.119083.19) MeV
 	 	 	 j=1	pi0	 p=(72.1729,408.76,670.112799.726) MeV
 	 	 	 j=2	pi0	 p=(-213.767,214.35,238.212408.174) MeV
@@ -1600,7 +1600,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=16  impactParameter[fm]=0.0476196  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=1  #NNcollisions=3
 	 Collision 700  projectile=omega_b-  Ekin[MeV]=18163.9  direction=(0.750714,0.269928,0.602966)  material=G4_W
 	 --> #secondaries=38  impactParameter[fm]=1.51836  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=180  #NNcollisions=2
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	xi-	 p=(1984.2,1115.46,1819.153199.61) MeV
 	 	 	 j=1	pi+	 p=(1064.7,272.437,1024.731509.09) MeV
 	 	 	 j=2	eta	 p=(1588.4,484.316,1890.042574.87) MeV
@@ -1839,7 +1839,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=22  impactParameter[fm]=-999  #projectileSpectatorNucleons=-999  #targetSpectatorNucleons=-999  #NNcollisions=-999
 	 Collision 800  projectile=xi-  Ekin[MeV]=3354.12  direction=(0.597646,0.801051,0.0337247)  material=G4_Si
 	 --> #secondaries=12  impactParameter[fm]=3.49046  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=27  #NNcollisions=0
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	xi-	 p=(2412.68,3261.9,307.4864278.14) MeV
 	 	 	 j=1	proton	 p=(320.093,187.337,-259.9761041.87) MeV
 	 	 	 j=2	proton	 p=(-127.661,-125.096,-103.898960.779) MeV
@@ -2052,7 +2052,7 @@ Max 2J for sampling of angular correlations         10
 	 --> #secondaries=49  impactParameter[fm]=4.96218  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=183  #NNcollisions=3
 	 Collision 900  projectile=lambda_b  Ekin[MeV]=28217.3  direction=(0.523476,0.844578,0.11252)  material=G4_Cu
 	 --> #secondaries=63  impactParameter[fm]=2.07665  #projectileSpectatorNucleons=0  #targetSpectatorNucleons=57  #NNcollisions=6
-	 	 List of produced secondaries: 
+	 	 List of produced secondaries:
 	 	 	 j=0	sigma_b-	 p=(6001.92,9697.94,1579.7912899.2) MeV
 	 	 	 j=1	pi0	 p=(324.975,691.407,51.1809777.49) MeV
 	 	 	 j=2	pi+	 p=(16.4977,149.79,30.3021207.623) MeV

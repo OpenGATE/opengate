@@ -86,13 +86,13 @@
 #include "G4ProcessManager.hh"
 #include "G4ParticleTable.hh"
 #include "G4IonTable.hh"
-#include "CLHEP/Random/Randomize.h" 
-#include "CLHEP/Random/Ranlux64Engine.h" 
+#include "CLHEP/Random/Randomize.h"
+#include "CLHEP/Random/Ranlux64Engine.h"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 int main( int , char** ) {
-  
+
   G4cout << "=== Test of the HadronicGenerator ===" << G4endl;
 
   // See the HadronicGenerator class for the possibilities and meaning of the "physics cases".
@@ -110,12 +110,12 @@ int main( int , char** ) {
   //const G4String namePhysics = "BIC";
   //const G4String namePhysics = "IonBIC";
   //const G4String namePhysics = "INCL";
-  
+
   // The kinetic energy of the projectile will be sampled randomly, with flat probability
   // in the interval [minEnergy, maxEnergy].
   G4double minEnergy =  1.0*CLHEP::GeV;  //***LOOKHERE***  HADRON PROJECTILE MIN Ekin
   G4double maxEnergy = 30.0*CLHEP::GeV;  //***LOOKHERE***  HADRON PROJECTILE MAX Ekin
-  
+
   const G4int numCollisions = 1000;  //***LOOKHERE***  NUMBER OF COLLISIONS
 
   // Enable or disable the print out of this program: if enabled, the number of secondaries
@@ -123,7 +123,7 @@ int main( int , char** ) {
   // collisions, the list of secondaries is printed out.
   const G4bool isPrintingEnabled = true;           //***LOOKHERE***  PRINT OUT ON/OFF
   const G4int  printingGap = 100;                  //***LOOKHERE***  GAP IN PRINTING
-  
+
   // Vector of Geant4 names of hadron projectiles: one of this will be sampled randomly
   // (with uniform probability) for each collision, when the projectile is not an ion.
   // Note: comment out the corresponding line in order to exclude a particle.
@@ -198,11 +198,11 @@ int main( int , char** ) {
   vecProjectiles.push_back( "lambda_b" );
   vecProjectiles.push_back( "anti_lambda_b" );
   //Note: vecProjectiles.push_back( "sigma_b+" );          // Excluded because too short-lived
-  //Note: vecProjectiles.push_back( "anti_sigma_b+" );     // Excluded because too short-lived  
+  //Note: vecProjectiles.push_back( "anti_sigma_b+" );     // Excluded because too short-lived
   //Note: vecProjectiles.push_back( "sigma_b0" );          // Excluded because too short-lived
   //Note: vecProjectiles.push_back( "sigma_b0" );          // Excluded because too short-lived
   //Note: vecProjectiles.push_back( "sigma_b-" );          // Excluded because too short-lived
-  //Note: vecProjectiles.push_back( "anti_sigma_b-" );     // Excluded because too short-lived  
+  //Note: vecProjectiles.push_back( "anti_sigma_b-" );     // Excluded because too short-lived
   vecProjectiles.push_back( "xi_b0" );
   vecProjectiles.push_back( "anti_xi_b0" );
   vecProjectiles.push_back( "xi_b-" );
@@ -218,7 +218,7 @@ int main( int , char** ) {
   partTable->SetReadiness();
   ions->CreateAllIon();
   ions->CreateAllIsomer();
-  
+
   const G4bool isProjectileIon = true;   //***LOOKHERE***  HADRON (false) OR ION (true) PROJECTILE ?
   if ( isProjectileIon ) {
     minEnergy = 40.0*13.0*CLHEP::GeV;    //***LOOKHERE***  ION PROJECTILE MIN Ekin
@@ -244,7 +244,7 @@ int main( int , char** ) {
   //vecMaterials.push_back( "G4_Cu" );
   //vecMaterials.push_back( "G4_W" );
   //vecMaterials.push_back( "G4_Pb" );
-  
+
   const G4int numProjectiles = vecProjectiles.size();
   const G4int numMaterials = vecMaterials.size();
 
@@ -260,17 +260,17 @@ int main( int , char** ) {
          << ( projectileNucleus != nullptr ? projectileNucleus->GetParticleName() : "") << G4endl
          << "===================================================" << G4endl
          << G4endl;
-  
-  CLHEP::Ranlux64Engine defaultEngine( 1234567, 4 ); 
-  CLHEP::HepRandom::setTheEngine( &defaultEngine ); 
-  G4int seed = time( NULL ); 
-  CLHEP::HepRandom::setTheSeed( seed ); 
-  G4cout << G4endl << " Initial seed = " << seed << G4endl << G4endl; 
-  
+
+  CLHEP::Ranlux64Engine defaultEngine( 1234567, 4 );
+  CLHEP::HepRandom::setTheEngine( &defaultEngine );
+  G4int seed = time( NULL );
+  CLHEP::HepRandom::setTheSeed( seed );
+  G4cout << G4endl << " Initial seed = " << seed << G4endl << G4endl;
+
   // Instanciate the HadronicGenerator providing the name of the "physics case"
   HadronicGenerator* theHadronicGenerator = new HadronicGenerator( namePhysics );
   //****************************************************************************
-  
+
   if ( theHadronicGenerator == nullptr ) {
     G4cerr << "ERROR: theHadronicGenerator is NULL !" << G4endl;
     return 1;
@@ -278,14 +278,14 @@ int main( int , char** ) {
     G4cerr << "ERROR: this physics case is NOT supported !" << G4endl;
     return 2;
   }
-  
+
   // Loop over the collisions
   G4double rnd1, rnd2, rnd3, rnd4, rnd5, rnd6, normalization, projectileEnergy;
   G4VParticleChange* aChange = nullptr;
   for ( G4int i = 0; i < numCollisions; ++i ) {
     // Draw some random numbers to select the hadron-nucleus interaction:
     // projectile hadron, projectile kinetic energy, projectile direction, and target material.
-    rnd1 = CLHEP::HepRandom::getTheEngine()->flat(); 
+    rnd1 = CLHEP::HepRandom::getTheEngine()->flat();
     rnd2 = CLHEP::HepRandom::getTheEngine()->flat();
     rnd3 = CLHEP::HepRandom::getTheEngine()->flat();
     rnd4 = CLHEP::HepRandom::getTheEngine()->flat();
@@ -293,14 +293,14 @@ int main( int , char** ) {
     rnd6 = CLHEP::HepRandom::getTheEngine()->flat();
     // Sample the projectile kinetic energy
     projectileEnergy = minEnergy + rnd1*( maxEnergy - minEnergy );
-    if ( projectileEnergy <= 0.0 ) projectileEnergy = minEnergy; 
+    if ( projectileEnergy <= 0.0 ) projectileEnergy = minEnergy;
     // Sample the projectile direction
     normalization = 1.0 / std::sqrt( rnd2*rnd2 + rnd3*rnd3 + rnd4*rnd4 );
-    const G4bool isOnSmearingDirection = false;                 //***LOOKHERE***  IF true THEN SMEAR DIRECTION 
+    const G4bool isOnSmearingDirection = false;                 //***LOOKHERE***  IF true THEN SMEAR DIRECTION
     G4ThreeVector aDirection = G4ThreeVector( 0.0, 0.0, 1.0 );  //***LOOKHERE***  ELSE USE THIS FIXED DIRECTION
     if ( isOnSmearingDirection ) {
       aDirection = G4ThreeVector( normalization*rnd2, normalization*rnd3, normalization*rnd4 );
-    } 
+    }
     // Sample the projectile hadron from the vector vecProjectiles
     G4int index_projectile = std::trunc( rnd5*numProjectiles );
     G4String nameProjectile = vecProjectiles[ index_projectile ];
@@ -321,22 +321,22 @@ int main( int , char** ) {
     if ( isPrintingEnabled ) {
       G4cout << "\t Collision " << i << " ; projectile=" << nameProjectile;
       if ( projectileNucleus ) {
-        G4cout << " ; Ekin[MeV]/nucleon=" << projectileEnergy / 
+        G4cout << " ; Ekin[MeV]/nucleon=" << projectileEnergy /
 	  static_cast< G4double >( std::abs( projectileNucleus->GetBaryonNumber() ) );
       } else {
-        G4cout << " ; Ekin[MeV]=" << projectileEnergy; 
+        G4cout << " ; Ekin[MeV]=" << projectileEnergy;
       }
       G4cout << " ; direction=" << aDirection << " ; material=" << nameMaterial;
     }
-    
+
     // Call here the "hadronic generator" to get the secondaries produced by the hadronic collision
     aChange = theHadronicGenerator->GenerateInteraction( projectile, projectileEnergy,
     /* ********************************************** */ aDirection, material );
-    
+
     G4int nsec = aChange ? aChange->GetNumberOfSecondaries() : 0;
     G4bool isPrintingOfSecondariesEnabled = false;
     if ( isPrintingEnabled ) {
-      G4cout << G4endl << "\t --> #secondaries=" << nsec 
+      G4cout << G4endl << "\t --> #secondaries=" << nsec
              << " ; impactParameter[fm]=" << theHadronicGenerator->GetImpactParameter() / fermi
 	     << " ; #projectileSpectatorNucleons=" << theHadronicGenerator->GetNumberOfProjectileSpectatorNucleons()
 	     << " ; #targetSpectatorNucleons=" << theHadronicGenerator->GetNumberOfTargetSpectatorNucleons()

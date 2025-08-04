@@ -41,21 +41,20 @@
 // 36 exclusive final states are consideded.
 
 #include "G4HadronicInteraction.hh"
+#include "G4ParticleDefinition.hh"
 #include "G4ParticleHPChannel.hh"
 #include "G4ParticleHPChannelList.hh"
-#include "G4ParticleDefinition.hh"
 #include "globals.hh"
 
-class G4ParticleHPInelastic : public G4HadronicInteraction
-{
+class G4ParticleHPInelastic : public G4HadronicInteraction {
 public:
-  G4ParticleHPInelastic(G4ParticleDefinition* p = G4Neutron::Neutron(),
-			const char* name = "NeutronHPInelastic");
+  G4ParticleHPInelastic(G4ParticleDefinition *p = G4Neutron::Neutron(),
+                        const char *name = "NeutronHPInelastic");
 
   ~G4ParticleHPInelastic() override;
 
-  G4HadFinalState* ApplyYourself(const G4HadProjectile& aTrack,
-				 G4Nucleus& aTargetNucleus) override;
+  G4HadFinalState *ApplyYourself(const G4HadProjectile &aTrack,
+                                 G4Nucleus &aTargetNucleus) override;
 
   const std::pair<G4double, G4double>
   GetFatalEnergyCheckLevels() const override;
@@ -64,26 +63,25 @@ public:
 
   inline void SetHadrGenFlag(const bool b) { HadrGen = b; }
 
-  void BuildPhysicsTable(const G4ParticleDefinition&) override;
-  void ModelDescription(std::ostream& outFile) const override;
+  void BuildPhysicsTable(const G4ParticleDefinition &) override;
+  void ModelDescription(std::ostream &outFile) const override;
 
   G4ParticleHPInelastic(G4ParticleHPInelastic &) = delete;
-  G4ParticleHPInelastic & operator=
-  (const G4ParticleHPInelastic &right) = delete;
-// flag to indicate if hadronic generator is used
-   G4bool HadrGen{false};
-private:
+  G4ParticleHPInelastic &operator=(const G4ParticleHPInelastic &right) = delete;
+  // flag to indicate if hadronic generator is used
+  G4bool HadrGen{false};
 
+private:
   void ClearData();
 
-  G4ParticleDefinition* theProjectile;
+  G4ParticleDefinition *theProjectile;
   G4bool isFirst{false};
   static G4bool fLock[6];
 
 protected:
   // one List per element
-  static std::vector<G4ParticleHPChannelList*>* theInelastic[6];
-  G4ParticleHPManager* fManager;
+  static std::vector<G4ParticleHPChannelList *> *theInelastic[6];
+  G4ParticleHPManager *fManager;
   G4String dirName;
   G4int numEle{0};
   G4int indexP;

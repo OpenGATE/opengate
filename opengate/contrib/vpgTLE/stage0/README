@@ -34,7 +34,7 @@ To build this example:
 
 To run it:
   ./Hadr09
-  
+
 which simulates 1000 hadron-nucleus collisions, randomnly selected, and
 prints out some information about the secondaries produced in these
 interactions. It takes only a few seconds to run.

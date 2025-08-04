@@ -1,5 +1,5 @@
 [Elements]
-Hydrogen:   S= H   ; Z=  1. ; A=   1.01  g/mole  
+Hydrogen:   S= H   ; Z=  1. ; A=   1.01  g/mole
 Helium:     S= He  ; Z=  2. ; A=   4.003 g/mole
 Lithium:    S= Li  ; Z=  3. ; A=   6.941 g/mole
 Beryllium:  S= Be  ; Z=  4. ; A=   9.012 g/mole
@@ -54,68 +54,68 @@ Water1ppmPt: d=1 g/cm3 ; n = 3
         +el: name=Hydrogen;     f=0.111898
         +el: name=Oxygen;       f=0.888101
         +el: name=Platin;       f=0.000001
-       
+
 Water3ppmPt: d=1 g/cm3 ; n = 3
         +el: name=Hydrogen;     f=0.111898
         +el: name=Oxygen;       f=0.888099
-        +el: name=Platin;       f=0.000003 
-        
+        +el: name=Platin;       f=0.000003
+
 ppmPtry: d=1 g/cm3 ; n = 3
         +el: name=Hydrogen;     f=0.100000
         +el: name=Oxygen;       f=0.897000
-        +el: name=Platin;       f=0.003000 
-        
+        +el: name=Platin;       f=0.003000
+
 Water_3mgI: d=1 g/cm3 ; n = 3
         +el: name=Hydrogen;     f=0.111562
         +el: name=Oxygen;       f=0.885438
-        +el: name=Iodine;       f=0.003000 
-        
+        +el: name=Iodine;       f=0.003000
+
 Water_50mgI: d=1 g/cm3 ; n = 3
         +el: name=Hydrogen;     f=0.106303
         +el: name=Oxygen;       f=0.843697
-        +el: name=Iodine;       f=0.050000    
-        
+        +el: name=Iodine;       f=0.050000
+
 Water_300mgI: d=1 g/cm3 ; n = 3
         +el: name=Hydrogen;     f=0.078329
         +el: name=Oxygen;       f=0.621671
-        +el: name=Iodine;       f=0.300000           
+        +el: name=Iodine;       f=0.300000
 
 Water_3mgGd: d=1 g/cm3 ; n = 3
         +el: name=Hydrogen;     f=0.111562
         +el: name=Oxygen;       f=0.885438
-        +el: name=Gadolinium;   f=0.003000 
-        
+        +el: name=Gadolinium;   f=0.003000
+
 H2O_I_Gd_mix: d=1 g/cm3 ; n = 4
         +el: name=Hydrogen;     f=0.111562
         +el: name=Oxygen;       f=0.885438
         +el: name=Iodine;       f=0.001500
-        +el: name=Gadolinium;   f=0.001500    
-        
+        +el: name=Gadolinium;   f=0.001500
+
 H2O_I_Gd_mix_2: d=1 g/cm3 ; n = 4
         +el: name=Hydrogen;     f=0.111227
         +el: name=Oxygen;       f=0.882773
         +el: name=Iodine;       f=0.003000
-        +el: name=Gadolinium;   f=0.003000      
+        +el: name=Gadolinium;   f=0.003000
 
 H2O_I_Gd_mix_3: d=1 g/cm3 ; n = 4
         +el: name=Hydrogen;     f=0.110779
         +el: name=Oxygen;       f=0.879221
         +el: name=Iodine;       f=0.005000
-        +el: name=Gadolinium;   f=0.005000  
-        
+        +el: name=Gadolinium;   f=0.005000
+
 H2O_I_Gd_mix_4: d=1 g/cm3 ; n = 4
         +el: name=Hydrogen;     f=0.110220
         +el: name=Oxygen;       f=0.874780
         +el: name=Iodine;       f=0.007500
-        +el: name=Gadolinium;   f=0.007500  
-        
+        +el: name=Gadolinium;   f=0.007500
+
 H2O_I_Gd_mix_5: d=1 g/cm3 ; n = 4
         +el: name=Hydrogen;     f=0.109660
         +el: name=Oxygen;       f=0.870340
         +el: name=Iodine;       f=0.010000
-        +el: name=Gadolinium;   f=0.010000          
-        
-Vacuum: d=0.000001 mg/cm3 ; n=1 
+        +el: name=Gadolinium;   f=0.010000
+
+Vacuum: d=0.000001 mg/cm3 ; n=1
 	+el: name=Hydrogen ; n=1
 
 Aluminium: d=2.7 g/cm3 ; n=1 ; state=solid
@@ -177,7 +177,7 @@ Plexiglass: d=1.19 g/cm3; n=3; state=solid
         +el: name=Carbon;     f=0.599848
         +el: name=Oxygen;     f=0.319614
 
-	
+
 GSO: d=6.7 g/cm3; n=3 ; state=Solid
 	+el: name=Gadolinium ; n=2
 	+el: name=Silicon; n=1
@@ -232,19 +232,19 @@ LuYAP-70: d=7.1 g/cm3 ; n=4
 	+el: name=Yttrium ;  n= 3
 	+el: name=Aluminium; n=10
 	+el: name=Oxygen;    n=30
-	
+
 LuYAP-80: d=7.5 g/cm3 ; n=4
 	+el: name=Lutetium ; n= 8
 	+el: name=Yttrium ;  n= 2
 	+el: name=Aluminium; n=10
 	+el: name=Oxygen;    n=30
-	
+
 Plastic:  d=1.18 g/cm3 ; n=3; state=solid
         +el: name=Carbon ; n=5
         +el: name=Hydrogen ; n=8
         +el: name=Oxygen ; n=2
 
-CZT:  d=5.68 g/cm3 ; n=3; state=solid  
+CZT:  d=5.68 g/cm3 ; n=3; state=solid
         +el: name=Cadmium   ; n=9
         +el: name=Zinc      ; n=1
         +el: name=Tellurium ; n=10
@@ -289,7 +289,7 @@ LYSO:   d=5.37 g/cm3; n=4 ; state=Solid
 Body:   d=1.00 g/cm3 ; n=2
         +el: name=Hydrogen  ; f=0.112
         +el: name=Oxygen    ; f=0.888
-                                                                                                                                         
+
 Muscle: d=1.05 g/cm3 ; n=9
         +el: name=Hydrogen  ; f=0.102
         +el: name=Carbon    ; f=0.143
@@ -300,7 +300,7 @@ Muscle: d=1.05 g/cm3 ; n=9
         +el: name=Sulfur    ; f=0.003
         +el: name=Chlorine  ; f=0.001
         +el: name=Potassium ; f=0.004
-                                                                                                                                            
+
 LungMoby: d=0.30 g/cm3 ; n=6
         +el: name=Hydrogen  ; f=0.099
         +el: name=Carbon    ; f=0.100
@@ -308,7 +308,7 @@ LungMoby: d=0.30 g/cm3 ; n=6
         +el: name=Oxygen    ; f=0.740
         +el: name=Phosphor  ; f=0.001
         +el: name=Calcium   ; f=0.032
-                                                                                                                                       
+
 SpineBone: d=1.42 g/cm3 ; n=11
         +el: name=Hydrogen  ; f=0.063
         +el: name=Carbon    ; f=0.261
@@ -321,7 +321,7 @@ SpineBone: d=1.42 g/cm3 ; n=11
         +el: name=Chlorine  ; f=0.001
         +el: name=Potassium ; f=0.001
         +el: name=Calcium   ; f=0.133
-                                                                                                                                          
+
 RibBone: d=1.92 g/cm3 ; n=9
         +el: name=Hydrogen  ; f=0.034
         +el: name=Carbon    ; f=0.155
@@ -340,7 +340,7 @@ Adipose: d=0.92 g/cm3 ; n=6
         +el: name=Oxygen    ; f=0.229
         +el: name=Phosphor  ; f=0.002
         +el: name=Calcium   ; f=0.001
- 
+
 Blood:  d=1.06 g/cm3 ; n=10
         +el: name=Hydrogen  ; f=0.102
         +el: name=Carbon    ; f=0.11
@@ -363,7 +363,7 @@ Heart:  d=1.05 g/cm3 ; n=9
         +el: name=Sulfur    ; f=0.002
         +el: name=Chlorine  ; f=0.002
         +el: name=Potassium ; f=0.003
- 
+
 Kidney: d=1.05 g/cm3 ; n=10
         +el: name=Hydrogen  ; f=0.103
         +el: name=Carbon    ; f=0.132
@@ -375,7 +375,7 @@ Kidney: d=1.05 g/cm3 ; n=10
         +el: name=Chlorine  ; f=0.002
         +el: name=Potassium ; f=0.002
         +el: name=Calcium   ; f=0.001
- 
+
 Liver:  d=1.06 g/cm3 ; n=9
         +el: name=Hydrogen  ; f=0.102
         +el: name=Carbon    ; f=0.139
@@ -406,7 +406,7 @@ Pancreas: d=1.04 g/cm3 ; n=9
         +el: name=Sulfur    ; f=0.001
         +el: name=Chlorine  ; f=0.002
         +el: name=Potassium ; f=0.002
- 
+
 Intestine: d=1.03 g/cm3 ; n=9
         +el: name=Hydrogen  ; f=0.106
         +el: name=Carbon    ; f=0.115
@@ -417,7 +417,7 @@ Intestine: d=1.03 g/cm3 ; n=9
         +el: name=Sulfur    ; f=0.001
         +el: name=Chlorine  ; f=0.002
         +el: name=Potassium ; f=0.001
- 
+
 Skull:  d=1.61 g/cm3 ; n=9
         +el: name=Hydrogen  ; f=0.05
         +el: name=Carbon    ; f=0.212
@@ -438,7 +438,7 @@ Cartilage: d=1.10 g/cm3 ; n=8
         +el: name=Phosphor  ; f=0.022
         +el: name=Sulfur    ; f=0.009
         +el: name=Chlorine  ; f=0.003
- 
+
 Brain:  d=1.04 g/cm3 ; n=9
         +el: name=Hydrogen  ; f=0.107
         +el: name=Carbon    ; f=0.145

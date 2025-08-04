@@ -25,7 +25,7 @@
 //
 /// \file HadronicGenerator-vpgtle.hh
 /// \brief Definition of the HadronicGenerator class
-// 
+//
 //------------------------------------------------------------------------
 // Class: HadronicGenerator
 // Author: Alberto Ribon (CERN EP/SFT)
@@ -54,7 +54,7 @@
 // This class does NOT use the Geant4 run-manager, and therefore should
 // be usable in a multi-threaded application, with one instance of this
 // class in each thread.
-// 
+//
 // This class has been inspired by test30 (whose author is Vladimir
 // Ivanchenko), with various simplifications and restricted to hadronic
 // inelastic interactions.
@@ -66,14 +66,14 @@
 #ifndef HadronicGenerator_h
 #define HadronicGenerator_h 1
 
-#include <iomanip>
-#include "globals.hh"
-#include "G4ios.hh"
-#include "G4ThreeVector.hh"
-#include <map>
 #include "G4HadronicProcess.hh"
+#include "G4ThreeVector.hh"
+#include "G4ios.hh"
+#include "globals.hh"
 #include <TH1D.h>
 #include <TH2D.h>
+#include <iomanip>
+#include <map>
 
 class G4ParticleDefinition;
 class G4VParticleChange;
@@ -93,75 +93,76 @@ class HadronicGenerator {
   // run-manager, so it should work fine in a multi-threaded environment,
   // with a separate instance of this class in each thread.
 public:
-    explicit HadronicGenerator(const G4String physicsCase = "QGSP_BIC_HP");
-    // Currently supported final-state hadronic inelastic "physics cases":
-    // -  Hadronic models :        BERT, BIC, IonBIC, INCL, FTFP, QGSP
-    // -  "Physics-list proxies" : FTFP_BERT_ATL (default), FTFP_BERT,
-    //                             QGSP_BERT, QGSP_BIC, FTFP_INCLXX
-    //    (i.e. they are not real, complete physics lists - for instance
-    //     they do not have: transportation, electromagnetic physics,
-    //     hadron elastic scattering, neutron fission and capture, etc. -
-    //     however, they cover all hadron types and all energies by
-    //     combining different hadronic models, i.e. there are transitions
-    //     between two hadronic models in well-defined energy intervals,
-    //     e.g. "FTFP_BERT" has the transition between BERT and FTFP
-    //     hadronic models; moreover, the transition intervals used in
-    //     our "physics cases" might not be the same as in the corresponding
-    //     physics lists).
+  explicit HadronicGenerator(const G4String physicsCase = "QGSP_BIC_HP");
+  // Currently supported final-state hadronic inelastic "physics cases":
+  // -  Hadronic models :        BERT, BIC, IonBIC, INCL, FTFP, QGSP
+  // -  "Physics-list proxies" : FTFP_BERT_ATL (default), FTFP_BERT,
+  //                             QGSP_BERT, QGSP_BIC, FTFP_INCLXX
+  //    (i.e. they are not real, complete physics lists - for instance
+  //     they do not have: transportation, electromagnetic physics,
+  //     hadron elastic scattering, neutron fission and capture, etc. -
+  //     however, they cover all hadron types and all energies by
+  //     combining different hadronic models, i.e. there are transitions
+  //     between two hadronic models in well-defined energy intervals,
+  //     e.g. "FTFP_BERT" has the transition between BERT and FTFP
+  //     hadronic models; moreover, the transition intervals used in
+  //     our "physics cases" might not be the same as in the corresponding
+  //     physics lists).
 
-    ~HadronicGenerator();
+  ~HadronicGenerator();
 
-    inline G4bool IsPhysicsCaseSupported() const;
-    // Returns "true" if the physicsCase is supported; "false" otherwise. 
+  inline G4bool IsPhysicsCaseSupported() const;
+  // Returns "true" if the physicsCase is supported; "false" otherwise.
 
-  G4int GenerateInteraction(G4ParticleDefinition* projectileDefinition,
-			    G4Material* targetMaterial,
-			    TH2D* TH2D_EpEpg,
-			    TH1D* TH1D_SigmaInelastic,
-			    TH2D* TH2D_GammaZ,
-			    TH1D* NrPG,
-            G4int numCollisions);
-    // This is the main method provided by the class:
-    // in input it receives the projectile (either by name or particle definition),
-    // its energy, its direction and the target material, and it returns one sampled
-    // final-state of the inelastic hadron-nuclear collision as modelled by the
-    // final-state hadronic inelastic "physics case" specified in the constructor.
-    // If the required hadronic collision is not possible, then the method returns
-    // immediately an empty "G4VParticleChange", i.e. without secondaries produced.
+  G4int GenerateInteraction(G4ParticleDefinition *projectileDefinition,
+                            G4Material *targetMaterial, TH2D *TH2D_EpEpg,
+                            TH1D *TH1D_SigmaInelastic, TH2D *TH2D_GammaZ,
+                            TH1D *NrPG, G4int numCollisions);
+  // This is the main method provided by the class:
+  // in input it receives the projectile (either by name or particle
+  // definition), its energy, its direction and the target material, and it
+  // returns one sampled final-state of the inelastic hadron-nuclear collision
+  // as modelled by the final-state hadronic inelastic "physics case" specified
+  // in the constructor. If the required hadronic collision is not possible,
+  // then the method returns immediately an empty "G4VParticleChange", i.e.
+  // without secondaries produced.
 
-    inline G4HadronicProcess* GetHadronicProcess() const;
-    inline G4HadronicInteraction* GetHadronicInteraction() const;
-    // Returns the hadronic process and the hadronic interaction, respectively,
-    // that handled the last call of "GenerateInteraction".
+  inline G4HadronicProcess *GetHadronicProcess() const;
+  inline G4HadronicInteraction *GetHadronicInteraction() const;
+  // Returns the hadronic process and the hadronic interaction, respectively,
+  // that handled the last call of "GenerateInteraction".
 
-    G4double GetCrossSection(const G4DynamicParticle *part, const G4Element *elm, const G4Material* targetMaterial);
-    // In the case of hadronic interactions handled by the FTF model, returns,
-    // respectively, the impact parameter, the number of target/projectile
-    // spectator nucleons, and the number of nucleon-nucleon collisions,
-    // else, returns a negative value (-999).
+  G4double GetCrossSection(const G4DynamicParticle *part, const G4Element *elm,
+                           const G4Material *targetMaterial);
+  // In the case of hadronic interactions handled by the FTF model, returns,
+  // respectively, the impact parameter, the number of target/projectile
+  // spectator nucleons, and the number of nucleon-nucleon collisions,
+  // else, returns a negative value (-999).
 
-    G4String WeightCompute(TH2D* TH2D_GammaZ, TH1D* TH1D_weight, G4double frac);
+  G4String WeightCompute(TH2D *TH2D_GammaZ, TH1D *TH1D_weight, G4double frac);
 
 private:
-    G4String fPhysicsCase;
-    G4bool fPhysicsCaseIsSupported;
-    G4HadronicProcess* fLastHadronicProcess;
-    G4ParticleTable* fPartTable;
-    std::map<G4ParticleDefinition*, G4HadronicProcess*> fProcessMap;
-    std::map<G4ParticleDefinition*, G4HadronicProcess*> fProcessMapHP;
-    G4Track* gTrack;
-    G4StepPoint* aPoint;
+  G4String fPhysicsCase;
+  G4bool fPhysicsCaseIsSupported;
+  G4HadronicProcess *fLastHadronicProcess;
+  G4ParticleTable *fPartTable;
+  std::map<G4ParticleDefinition *, G4HadronicProcess *> fProcessMap;
+  std::map<G4ParticleDefinition *, G4HadronicProcess *> fProcessMapHP;
+  G4Track *gTrack;
+  G4StepPoint *aPoint;
 };
 
-inline G4HadronicProcess* HadronicGenerator::GetHadronicProcess() const {
-    return fLastHadronicProcess;
+inline G4HadronicProcess *HadronicGenerator::GetHadronicProcess() const {
+  return fLastHadronicProcess;
 }
 
-inline G4HadronicInteraction* HadronicGenerator::GetHadronicInteraction() const {
-    return fLastHadronicProcess == nullptr ? nullptr : fLastHadronicProcess->GetHadronicInteraction();
+inline G4HadronicInteraction *
+HadronicGenerator::GetHadronicInteraction() const {
+  return fLastHadronicProcess == nullptr
+             ? nullptr
+             : fLastHadronicProcess->GetHadronicInteraction();
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #endif
-

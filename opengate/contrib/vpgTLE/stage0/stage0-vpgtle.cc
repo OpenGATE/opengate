@@ -71,237 +71,270 @@
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-#include <iomanip>
-#include "globals.hh"
-#include "G4ios.hh"
-#include "G4PhysicalConstants.hh"
-#include "G4SystemOfUnits.hh"
+#include "CLHEP/Random/Randomize.h"
+#include "CLHEP/Random/Ranlux64Engine.h"
+#include "G4GenericIon.hh"
+#include "G4HadronicParameters.hh"
+#include "G4IonTable.hh"
 #include "G4Material.hh"
 #include "G4NistManager.hh"
-#include "G4VParticleChange.hh"
-#include "G4UnitsTable.hh"
-#include "HadronicGenerator-vpgtle.hh"
-#include "G4GenericIon.hh"
-#include "G4ProcessManager.hh"
 #include "G4ParticleTable.hh"
-#include "G4IonTable.hh"
-#include "CLHEP/Random/Randomize.h" 
-#include "CLHEP/Random/Ranlux64Engine.h" 
-#include "G4HadronicParameters.hh"
+#include "G4PhysicalConstants.hh"
+#include "G4ProcessManager.hh"
+#include "G4SystemOfUnits.hh"
+#include "G4UnitsTable.hh"
+#include "G4VParticleChange.hh"
+#include "G4ios.hh"
+#include "HadronicGenerator-vpgtle.hh"
+#include "TAxis.h"
 #include "TFile.h"
+#include "TGraph.h"
 #include "TTree.h"
-#include <vector>
-#include <iostream>
+#include "globals.hh"
+#include <TDirectory.h>
 #include <TH1D.h>
 #include <TH2D.h>
-#include <TDirectory.h>
 #include <TString.h>
+#include <iomanip>
+#include <iostream>
 #include <numeric>
-#include "TGraph.h"
-#include "TAxis.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <vector>
 
 using namespace std;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-int main( int argc, char* argv[]) {
-  
-    // G4cout << "=== Test of the HadronicGenerator ===" << G4endl;
+int main(int argc, char *argv[]) {
 
-    // Enable light hypernuclei and anti-hypernuclei
-    G4HadronicParameters::Instance()->SetEnableHyperNuclei(false);
-    bool stw = false;
-    bool pro = false;
-    bool num = false;
-    G4int numCollisions = 1e4; // Default number of collisions
-    G4String strprojectile = "proton"; // Default projectile type
-    for(int i = 0; i < argc; ++i) {
-      std::string arg = argv[i];
-      if (arg == "weight"){
-        stw = true;
-      }
-      if (arg == "-n") {
-        numCollisions = atoi(argv[i+1]);
-        if (numCollisions <= 0) {
-          G4cout << "ERROR: Number of collisions must be a positive integer! 1e4 will be used" << G4endl;
-          numCollisions = 1e4; // Default value
-        }
-        num = true;
-        G4cout << "Number of collisions set to: " << numCollisions << G4endl;
-      }
-      if (arg == "-p") {
-        strprojectile = argv[i+1];
-        pro = true;
-        if (strprojectile != "proton" && strprojectile != "neutron") {
-          G4cout << "ERROR: Invalid projectile type! Proton will be used." << G4endl;
-          strprojectile = "proton"; // Default value
-        }
-        G4cout << "Projectile type set to: " << strprojectile << G4endl;
-      }
+  // G4cout << "=== Test of the HadronicGenerator ===" << G4endl;
+
+  // Enable light hypernuclei and anti-hypernuclei
+  G4HadronicParameters::Instance()->SetEnableHyperNuclei(false);
+  bool stw = false;
+  bool pro = false;
+  bool num = false;
+  G4int numCollisions = 1e4;         // Default number of collisions
+  G4String strprojectile = "proton"; // Default projectile type
+  for (int i = 0; i < argc; ++i) {
+    std::string arg = argv[i];
+    if (arg == "weight") {
+      stw = true;
     }
-
-    // See the HadronicGenerator class for the possibilities and meaning of the "physics cases".
-    // ( In short, it is the name of the Geant4 hadronic model used for the simulation of
-    //   the collision, with the possibility of having a transition between two models in
-    //   a given energy interval, as in physics lists. )
-    const G4String namePhysics = "QGSP_BIC_HP";
-    
-    // Creation des fichier.root
-    // Create the ROOT file and histograms
-    const TString physlist = namePhysics;
-    TFile* file = new TFile("/path/to/your/stage0/output/test.root", "RECREATE");
-    const std::vector<G4double> Fraction = {0.65, 0.185, 0.103, 0.03, 0.015, 0.01, 0.002, 0.002, 0.001, 0.001, 0.001};
-    const std::vector<G4String> Body_approx = {"G4_O","G4_C","G4_H","G4_N","G4_Ca","G4_P","G4_K","G4_S","G4_Na","G4_Cl","G4_Mg"};
-    // Enable or disable the print out of this program: if enabled, the number of secondaries
-    // produced in each collisions is printed out; moreover, once every "printingGap"
-    // collisions, the list of secondaries is printed out.
-            
-    const std::vector<G4String> humanBodyElements = {//"G4_Al",
-                   //"G4_Ar",
-                   //"G4_Be",
-                   //"G4_B",
-                   //"G4_Ca",
-                   "G4_C",};
-                   //"G4_Cl",
-                   //"G4_Cu",
-                   //"G4_F",
-                   //"G4_He",
-                   //"G4_H",
-                   //"G4_Li",
-                   //"G4_Mg",
-                   //"G4_Ne",
-						       //"G4_N",
-						       //"G4_O",};
-                   //"G4_P",
-                   //"G4_K",
-                   //"G4_Si",
-                   //"G4_Ag",
-						      //"G4_Na",
-						      //"G4_S",
-                  //"G4_Sn",
-                  //"G4_Ti",
-                  //"G4_Zn"};    
-
-    G4int humanbodyindex = humanBodyElements.size();  //***LOOKHERE***  GAP IN PRINTING
-    G4ParticleDefinition* projectileNucleus = nullptr;
-    G4GenericIon* gion = G4GenericIon::GenericIon();
-    gion->SetProcessManager(new G4ProcessManager(gion));
-    G4ParticleTable* partTable = G4ParticleTable::GetParticleTable();
-    G4IonTable* ions = partTable->GetIonTable();
-    partTable->SetReadiness();
-    ions->CreateAllIon();
-    ions->CreateAllIsomer();
-    
-    G4int protonNbBins = 500;
-    G4double protonMinEnergy = 0; //MeV
-    G4double protonMaxEnergy = 200.; //MeV
-    G4int gammaNbBins = 250;
-    G4double gammaMinEnergy = 0; //MeV
-    G4double gammaMaxEnergy = 10; // MeV
-    
-    TDirectory* dirw = nullptr; // default
-    TH1D* TH1D_weight = nullptr; // default
-    if (stw){
-      G4cout << "Weight computation activated" << G4endl;
-    TDirectory* dirw = file->mkdir("standard_Weight");
-    TH1D* TH1D_weight = new TH1D("Weight", "Weight of the interaction for ToF computing;Protons energy [MeV];Weight [mm-1]",
-      protonNbBins, protonMinEnergy, protonMaxEnergy);
+    if (arg == "-n") {
+      numCollisions = atoi(argv[i + 1]);
+      if (numCollisions <= 0) {
+        G4cout << "ERROR: Number of collisions must be a positive integer! 1e4 "
+                  "will be used"
+               << G4endl;
+        numCollisions = 1e4; // Default value
+      }
+      num = true;
+      G4cout << "Number of collisions set to: " << numCollisions << G4endl;
     }
-
-    // The kinetic energy of the projectile will be sampled randomly, with flat probability
-    // in the interval [minEnergy, maxEnergy].
-    //***LOOKHERE***  HADRON PROJECTILE MAX Ekin
-    
-    HadronicGenerator* theHadronicGenerator = new HadronicGenerator(namePhysics);    
-
-    if (theHadronicGenerator == nullptr) {
-      G4cerr << "ERROR: theHadronicGenerator is NULL !" << G4endl;
-      return 1;
+    if (arg == "-p") {
+      strprojectile = argv[i + 1];
+      pro = true;
+      if (strprojectile != "proton" && strprojectile != "neutron") {
+        G4cout << "ERROR: Invalid projectile type! Proton will be used."
+               << G4endl;
+        strprojectile = "proton"; // Default value
+      }
+      G4cout << "Projectile type set to: " << strprojectile << G4endl;
     }
-
-    for (G4int k = 0; k < humanbodyindex; k++) {
-      
-      G4String done = "not counting in the approximation";
-      G4String nameMaterial = humanBodyElements[k]; 
-      G4Material* targetMaterial = G4NistManager::Instance()->FindOrBuildMaterial(nameMaterial);
-      if (targetMaterial == nullptr) {
-	      G4cerr << "ERROR: Material " << nameMaterial << " is not found !" << G4endl;
-	      return 3;
-      }
-      const G4Element* targetElement = targetMaterial->GetElement(0);
-      
-      TDirectory* dir = file->mkdir(targetElement->GetSymbol()); // Création du dossier pour chaque élément chimique
-
-      TString PGbin = to_string(10./250);
-      TH2D* TH2D_EpEpg = new TH2D("EpEpg","PGs energy as a function of protons;Protons energy [MeV];PGs energy [MeV];Log(number of gammas)",
-				  protonNbBins, protonMinEnergy, protonMaxEnergy, gammaNbBins, gammaMinEnergy, gammaMaxEnergy); // Graph 2D 
-      TH2D* TH2D_GammaZ = new TH2D("GammaZ", "PG yield per [" + PGbin + "MeV*cm];Protons energy [MeV];PGs energy [MeV];Log(GAMMAZ/1)",
-				   protonNbBins, protonMinEnergy, protonMaxEnergy, gammaNbBins, gammaMinEnergy, gammaMaxEnergy); // Graph 2D 
-      TH1D* TH1D_SigmaInelastic = new TH1D("Kapa inelastique", "Linear attenuation coefficient [/cm];Protons energy [MeV];kapa inelastique [cm-1]",
-					   protonNbBins, protonMinEnergy, protonMaxEnergy);
-      TH1D* TH1D_NrPG = new TH1D("NrPG", "Number of prompt gamma-rays;Protons energy [MeV];Number of PGs",
-				 protonNbBins, protonMinEnergy, protonMaxEnergy);
-      
-      G4cout << "Loop on element: " << targetElement->GetSymbol() << G4endl;
-      
-      
-      // G4DynamicParticle* dynamicProjectile = new G4DynamicParticle(projectile, aDirection, projectileEnergy);
-      
-      CLHEP::Ranlux64Engine defaultEngine(1234567, 4); 
-      CLHEP::HepRandom::setTheEngine(&defaultEngine); 
-      G4int seed = time(NULL); 
-      CLHEP::HepRandom::setTheSeed(seed); 
-      
-      G4int nbPG(0);
-      G4int nbCollisions = 1e4; // Default number of collisions
-      if(num){
-        nbCollisions = numCollisions;
-      }
-      G4cout << "Number of collisions: " << nbCollisions << G4endl;
-      G4ParticleDefinition* projectile = nullptr;
-      if (pro){
-        projectile = partTable->FindParticle(strprojectile);
-      }else{
-        projectile = partTable->FindParticle("proton");
-      }
-      G4cout<< "Projectile: " << projectile->GetParticleName() << G4endl;
-      nbPG = theHadronicGenerator->GenerateInteraction(projectile, targetMaterial, TH2D_EpEpg, TH1D_SigmaInelastic, TH2D_GammaZ, TH1D_NrPG, nbCollisions);
-      if (argv[argc] == "weight"){
-      auto ind = std::find(Body_approx.begin(), Body_approx.end(), nameMaterial);
-      // Check if the element was found
-    if (ind != Body_approx.end()) {
-      // Calculate the index
-      size_t index = std::distance(Body_approx.begin(), ind);
-      done = theHadronicGenerator->WeightCompute(TH2D_GammaZ, TH1D_weight, Fraction[index]);
   }
-}
 
-      G4cout << "nr of PG: " << nbPG << G4endl;
-      G4cout << nameMaterial << " : " << done << G4endl;
-      dir->cd();
-      TH2D_EpEpg->Write();
-      TH1D_SigmaInelastic->Write();
-      TH1D_NrPG->Write();
-      TH2D_GammaZ->Write();
+  // See the HadronicGenerator class for the possibilities and meaning of the
+  // "physics cases". ( In short, it is the name of the Geant4 hadronic model
+  // used for the simulation of
+  //   the collision, with the possibility of having a transition between two
+  //   models in a given energy interval, as in physics lists. )
+  const G4String namePhysics = "QGSP_BIC_HP";
 
-      delete TH2D_EpEpg;
-      delete TH2D_GammaZ;
-      delete TH1D_SigmaInelastic;
-      delete TH1D_NrPG;
+  // Creation des fichier.root
+  // Create the ROOT file and histograms
+  const TString physlist = namePhysics;
+  TFile *file = new TFile("/path/to/your/stage0/output/test.root", "RECREATE");
+  const std::vector<G4double> Fraction = {
+      0.65, 0.185, 0.103, 0.03, 0.015, 0.01, 0.002, 0.002, 0.001, 0.001, 0.001};
+  const std::vector<G4String> Body_approx = {"G4_O",  "G4_C",  "G4_H", "G4_N",
+                                             "G4_Ca", "G4_P",  "G4_K", "G4_S",
+                                             "G4_Na", "G4_Cl", "G4_Mg"};
+  // Enable or disable the print out of this program: if enabled, the number of
+  // secondaries produced in each collisions is printed out; moreover, once
+  // every "printingGap" collisions, the list of secondaries is printed out.
+
+  const std::vector<G4String> humanBodyElements = {
+      //"G4_Al",
+      //"G4_Ar",
+      //"G4_Be",
+      //"G4_B",
+      //"G4_Ca",
+      "G4_C",
+  };
+  //"G4_Cl",
+  //"G4_Cu",
+  //"G4_F",
+  //"G4_He",
+  //"G4_H",
+  //"G4_Li",
+  //"G4_Mg",
+  //"G4_Ne",
+  //"G4_N",
+  //"G4_O",};
+  //"G4_P",
+  //"G4_K",
+  //"G4_Si",
+  //"G4_Ag",
+  //"G4_Na",
+  //"G4_S",
+  //"G4_Sn",
+  //"G4_Ti",
+  //"G4_Zn"};
+
+  G4int humanbodyindex =
+      humanBodyElements.size(); //***LOOKHERE***  GAP IN PRINTING
+  G4ParticleDefinition *projectileNucleus = nullptr;
+  G4GenericIon *gion = G4GenericIon::GenericIon();
+  gion->SetProcessManager(new G4ProcessManager(gion));
+  G4ParticleTable *partTable = G4ParticleTable::GetParticleTable();
+  G4IonTable *ions = partTable->GetIonTable();
+  partTable->SetReadiness();
+  ions->CreateAllIon();
+  ions->CreateAllIsomer();
+
+  G4int protonNbBins = 500;
+  G4double protonMinEnergy = 0;    // MeV
+  G4double protonMaxEnergy = 200.; // MeV
+  G4int gammaNbBins = 250;
+  G4double gammaMinEnergy = 0;  // MeV
+  G4double gammaMaxEnergy = 10; // MeV
+
+  TDirectory *dirw = nullptr;  // default
+  TH1D *TH1D_weight = nullptr; // default
+  if (stw) {
+    G4cout << "Weight computation activated" << G4endl;
+    TDirectory *dirw = file->mkdir("standard_Weight");
+    TH1D *TH1D_weight =
+        new TH1D("Weight",
+                 "Weight of the interaction for ToF computing;Protons energy "
+                 "[MeV];Weight [mm-1]",
+                 protonNbBins, protonMinEnergy, protonMaxEnergy);
+  }
+
+  // The kinetic energy of the projectile will be sampled randomly, with flat
+  // probability in the interval [minEnergy, maxEnergy].
+  //***LOOKHERE***  HADRON PROJECTILE MAX Ekin
+
+  HadronicGenerator *theHadronicGenerator = new HadronicGenerator(namePhysics);
+
+  if (theHadronicGenerator == nullptr) {
+    G4cerr << "ERROR: theHadronicGenerator is NULL !" << G4endl;
+    return 1;
+  }
+
+  for (G4int k = 0; k < humanbodyindex; k++) {
+
+    G4String done = "not counting in the approximation";
+    G4String nameMaterial = humanBodyElements[k];
+    G4Material *targetMaterial =
+        G4NistManager::Instance()->FindOrBuildMaterial(nameMaterial);
+    if (targetMaterial == nullptr) {
+      G4cerr << "ERROR: Material " << nameMaterial << " is not found !"
+             << G4endl;
+      return 3;
     }
-    if (stw){
+    const G4Element *targetElement = targetMaterial->GetElement(0);
+
+    TDirectory *dir = file->mkdir(
+        targetElement
+            ->GetSymbol()); // Création du dossier pour chaque élément chimique
+
+    TString PGbin = to_string(10. / 250);
+    TH2D *TH2D_EpEpg =
+        new TH2D("EpEpg",
+                 "PGs energy as a function of protons;Protons energy [MeV];PGs "
+                 "energy [MeV];Log(number of gammas)",
+                 protonNbBins, protonMinEnergy, protonMaxEnergy, gammaNbBins,
+                 gammaMinEnergy, gammaMaxEnergy); // Graph 2D
+    TH2D *TH2D_GammaZ = new TH2D(
+        "GammaZ",
+        "PG yield per [" + PGbin +
+            "MeV*cm];Protons energy [MeV];PGs energy [MeV];Log(GAMMAZ/1)",
+        protonNbBins, protonMinEnergy, protonMaxEnergy, gammaNbBins,
+        gammaMinEnergy, gammaMaxEnergy); // Graph 2D
+    TH1D *TH1D_SigmaInelastic =
+        new TH1D("Kapa inelastique",
+                 "Linear attenuation coefficient [/cm];Protons energy "
+                 "[MeV];kapa inelastique [cm-1]",
+                 protonNbBins, protonMinEnergy, protonMaxEnergy);
+    TH1D *TH1D_NrPG = new TH1D(
+        "NrPG",
+        "Number of prompt gamma-rays;Protons energy [MeV];Number of PGs",
+        protonNbBins, protonMinEnergy, protonMaxEnergy);
+
+    G4cout << "Loop on element: " << targetElement->GetSymbol() << G4endl;
+
+    // G4DynamicParticle* dynamicProjectile = new G4DynamicParticle(projectile,
+    // aDirection, projectileEnergy);
+
+    CLHEP::Ranlux64Engine defaultEngine(1234567, 4);
+    CLHEP::HepRandom::setTheEngine(&defaultEngine);
+    G4int seed = time(NULL);
+    CLHEP::HepRandom::setTheSeed(seed);
+
+    G4int nbPG(0);
+    G4int nbCollisions = 1e4; // Default number of collisions
+    if (num) {
+      nbCollisions = numCollisions;
+    }
+    G4cout << "Number of collisions: " << nbCollisions << G4endl;
+    G4ParticleDefinition *projectile = nullptr;
+    if (pro) {
+      projectile = partTable->FindParticle(strprojectile);
+    } else {
+      projectile = partTable->FindParticle("proton");
+    }
+    G4cout << "Projectile: " << projectile->GetParticleName() << G4endl;
+    nbPG = theHadronicGenerator->GenerateInteraction(
+        projectile, targetMaterial, TH2D_EpEpg, TH1D_SigmaInelastic,
+        TH2D_GammaZ, TH1D_NrPG, nbCollisions);
+    if (argv[argc] == "weight") {
+      auto ind =
+          std::find(Body_approx.begin(), Body_approx.end(), nameMaterial);
+      // Check if the element was found
+      if (ind != Body_approx.end()) {
+        // Calculate the index
+        size_t index = std::distance(Body_approx.begin(), ind);
+        done = theHadronicGenerator->WeightCompute(TH2D_GammaZ, TH1D_weight,
+                                                   Fraction[index]);
+      }
+    }
+
+    G4cout << "nr of PG: " << nbPG << G4endl;
+    G4cout << nameMaterial << " : " << done << G4endl;
+    dir->cd();
+    TH2D_EpEpg->Write();
+    TH1D_SigmaInelastic->Write();
+    TH1D_NrPG->Write();
+    TH2D_GammaZ->Write();
+
+    delete TH2D_EpEpg;
+    delete TH2D_GammaZ;
+    delete TH1D_SigmaInelastic;
+    delete TH1D_NrPG;
+  }
+  if (stw) {
     dirw->cd();
     TH1D_weight->Write();
   }
-    delete TH1D_weight;
-    
-    file->Close();
-    delete theHadronicGenerator;
+  delete TH1D_weight;
 
-    return 0;
+  file->Close();
+  delete theHadronicGenerator;
+
+  return 0;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
