@@ -41,15 +41,15 @@ GateVoxelizedPromptGammaTLEActor::~GateVoxelizedPromptGammaTLEActor() {
 void GateVoxelizedPromptGammaTLEActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
 
-// retrieve the python param here
-timebins = py::int_(user_info["timebins"]);
-timerange = py::float_(user_info["timerange"]);
-energybins = py::int_(user_info["energybins"]);
-energyrange = py::float_(user_info["energyrange"]);
-weight = py::bool_(user_info["weight"]);
-fTranslation = DictGetG4ThreeVector(user_info, "translation");
-fsize = DictGetG4ThreeVector(user_info, "size");
-fspacing = DictGetG4ThreeVector(user_info, "spacing");
+  // retrieve the python param here
+  timebins = py::int_(user_info["timebins"]);
+  timerange = py::float_(user_info["timerange"]);
+  energybins = py::int_(user_info["energybins"]);
+  energyrange = py::float_(user_info["energyrange"]);
+  weight = py::bool_(user_info["weight"]);
+  fTranslation = DictGetG4ThreeVector(user_info, "translation");
+  fsize = DictGetG4ThreeVector(user_info, "size");
+  fspacing = DictGetG4ThreeVector(user_info, "spacing");
 }
 
 void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
@@ -203,14 +203,19 @@ void GateVoxelizedPromptGammaTLEActor::SteppingAction(G4Step *step) {
     G4double pg_sum = 1;
     // Store the value in the volume for neutrons OR protons -> LEFT BINNING
     if (fProtonTimeFlag && particle == G4Proton::Proton()) {
-      if (weight){ pg_sum = fProtonVector[binE];}
+      if (weight) {
+        pg_sum = fProtonVector[binE];
+      }
       ImageAddValue<ImageType>(cpp_tof_proton_image, ind, pg_sum * l * rho * w);
     }
     if (fNeutronTimeFlag && particle == G4Neutron::Neutron()) {
-      if (weight){ pg_sum = fProtonVector[binE];}
-      ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, pg_sum * l * rho * w);
+      if (weight) {
+        pg_sum = fProtonVector[binE];
+      }
+      ImageAddValue<ImageType>(cpp_tof_neutron_image, ind,
+                               pg_sum * l * rho * w);
+    }
   }
-}
   if (fProtonEnergyFlag ||
       fNeutronEnergyFlag) { // when the quantity of interest is the energy
     ind[3] = binE;
