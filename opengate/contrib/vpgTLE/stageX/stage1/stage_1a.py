@@ -6,8 +6,10 @@ from opengate.tests import utility
 import uproot
 
 
-def simulation(output, File_name, job_id, number_of_particles, visu, verbose, actor, Erange):
-    
+def simulation(
+    output, File_name, job_id, number_of_particles, visu, verbose, actor, Erange
+):
+
     paths = utility.get_default_test_paths(__file__, output_folder=output)
 
     # create the simulation
@@ -61,21 +63,21 @@ def simulation(output, File_name, job_id, number_of_particles, visu, verbose, ac
         ct.voxel_materials,
         materials,
     ) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
-    ct.dump_label_image = paths.output / "labels.mhd" 
+    ct.dump_label_image = paths.output / "labels.mhd"
     ct.mother = "world"
     ct.load_input_image()
-    
+
     # physics
     sim.physics_manager.physics_list_name = "QGSP_BIC_HP_EMY"
 
     sim.physics_manager.apply_cuts = False  # default
-    sim.physics_manager.global_production_cuts.gamma = 0.1 *mm
+    sim.physics_manager.global_production_cuts.gamma = 0.1 * mm
     sim.physics_manager.global_production_cuts.electron = 0.1 * mm
     sim.physics_manager.global_production_cuts.positron = 0.1 * mm
-    sim.physics_manager.global_production_cuts.proton = 0.1 *mm
+    sim.physics_manager.global_production_cuts.proton = 0.1 * mm
 
-    sim.physics_manager.set_max_step_size('ct', 0.1 * mm)
-    sim.physics_manager.set_user_limits_particles(['proton'])
+    sim.physics_manager.set_max_step_size("ct", 0.1 * mm)
+    sim.physics_manager.set_user_limits_particles(["proton"])
 
     # source of proton
     # FIXME to replace by a more realistic proton beam, see tests 044
@@ -89,18 +91,22 @@ def simulation(output, File_name, job_id, number_of_particles, visu, verbose, ac
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 
-    with uproot.open(paths.data /"data_merge_proton.root") as root_file:
+    with uproot.open(paths.data / "data_merge_proton.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_p = histo.to_numpy()[0]
-    with uproot.open(paths.data /"data_merge_neutron.root") as root_file:
+    with uproot.open(paths.data / "data_merge_neutron.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_n = histo.to_numpy()[0]
-    
+
     vpg_tle = sim.add_actor(actor, "vpg_tle")
     vpg_tle.attached_to = "ct"
-    vpg_tle.output_filename = paths.output/f"{File_name}.nii.gz"
-    vpg_tle.size = [125, 125, 189] #can be modified
-    vpg_tle.spacing = [4, 4 ,4]#the same spacing is mandatory for the actor and the ct
+    vpg_tle.output_filename = paths.output / f"{File_name}.nii.gz"
+    vpg_tle.size = [125, 125, 189]  # can be modified
+    vpg_tle.spacing = [
+        4,
+        4,
+        4,
+    ]  # the same spacing is mandatory for the actor and the ct
     vpg_tle.timebins = 250
     vpg_tle.timerange = 5 * ns
     vpg_tle.energybins = 250
@@ -109,7 +115,7 @@ def simulation(output, File_name, job_id, number_of_particles, visu, verbose, ac
     vpg_tle.neutr_E.active = True
     vpg_tle.prot_tof.active = True
     vpg_tle.neutr_tof.active = True
-    vpg_tle.weight = True # True to obtain weighted time spectra
+    vpg_tle.weight = True  # True to obtain weighted time spectra
     if actor == "VoxelizedPromptGammaTLEActor":
         vpg_tle.vect_p = vect_p
         vpg_tle.vect_n = vect_n
@@ -129,21 +135,23 @@ def simulation(output, File_name, job_id, number_of_particles, visu, verbose, ac
     dose.edep.keep_data_per_run = True
     """
 
-
-     # add stat actor
+    # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    stats.output_filename = paths.output/f"stat_{job_id}_{File_name}.txt"
+    stats.output_filename = paths.output / f"stat_{job_id}_{File_name}.txt"
 
-    return sim 
-    
+    return sim
+
+
 output = "debog"
 File_name = "vox"
 number_of_particles = 1e2
-#actor = "VoxelizedPromptGammaAnalogActor"
+# actor = "VoxelizedPromptGammaAnalogActor"
 actor = "VoxelizedPromptGammaTLEActor"
 Erange = 130
 if __name__ == "__main__":
-    sim = simulation(output, File_name, 0, number_of_particles,False, False, actor, Erange)
-        # start simulation
+    sim = simulation(
+        output, File_name, 0, number_of_particles, False, False, actor, Erange
+    )
+    # start simulation
     sim.run()
