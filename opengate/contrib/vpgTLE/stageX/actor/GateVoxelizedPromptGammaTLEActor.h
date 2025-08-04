@@ -102,7 +102,6 @@ public:
   G4ThreeVector fTranslation;
   std::vector<double> fProtonVector;
   std::vector<double> fNeutronVector;
-
 };
 
 #endif // GateVoxelizedPromptGammaTLEActor_h
