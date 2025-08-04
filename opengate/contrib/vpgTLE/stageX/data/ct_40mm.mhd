@@ -1,0 +1,13 @@
+ObjectType = Image
+NDims = 3
+BinaryData = True
+BinaryDataByteOrderMSB = False
+CompressedData = False
+TransformMatrix = 1 0 0 0 1 0 0 0 1
+Offset = -250 -250 -1376.75
+CenterOfRotation = 0 0 0
+AnatomicalOrientation = RAI
+ElementSpacing = 40 40 40
+DimSize = 13 13 19
+ElementType = MET_SHORT
+ElementDataFile = ct_40mm.raw
