@@ -46,6 +46,7 @@ timebins = py::int_(user_info["timebins"]);
 timerange = py::float_(user_info["timerange"]);
 energybins = py::int_(user_info["energybins"]);
 energyrange = py::float_(user_info["energyrange"]);
+weight = py::bool_(user_info["weight"]);
 fTranslation = DictGetG4ThreeVector(user_info, "translation");
 fsize = DictGetG4ThreeVector(user_info, "size");
 fspacing = DictGetG4ThreeVector(user_info, "spacing");
@@ -196,15 +197,14 @@ if ((fProtonTimeFlag) ||
     bin = 0; // underflow
   }
   ind[3] = bin;
+  G4double pg_sum = 1;
   // Store the value in the volume for neutrons OR protons -> LEFT BINNING
   if (fProtonTimeFlag && particle == G4Proton::Proton()) {
-    G4double pg_sum = fProtonVector[binE];
-    //G4double pg_sum = 1;
+    if (weight){ pg_sum = fProtonVector[binE];}
     ImageAddValue<ImageType>(cpp_tof_proton_image, ind, pg_sum * l * rho * w);
   }
   if (fNeutronTimeFlag && particle == G4Neutron::Neutron()) {
-    G4double pg_sum = fNeutronVector[binE];
-    //G4double pg_sum = 1;
+    if (weight){ pg_sum = fProtonVector[binE];}
     ImageAddValue<ImageType>(cpp_tof_neutron_image, ind, pg_sum * l * rho * w);
   }
 }

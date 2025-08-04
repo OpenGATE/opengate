@@ -96,15 +96,13 @@ public:
   G4bool fProtonEnergyFlag{};
   G4bool fNeutronTimeFlag{};
   G4bool fNeutronEnergyFlag{};
+  G4bool weight;
 
   G4ThreeVector fsize;
   G4ThreeVector fspacing;
   G4ThreeVector fTranslation;
   std::vector <double> fProtonVector;
   std::vector<double> fNeutronVector;
-
-  G4int Ncount;
-  G4int Pcount;
 
 };
 

@@ -100,6 +100,12 @@ class VoxelizedPromptGammaTLEActor(
                 "doc": "Range of the histogram in MeV",
             },
         ),
+        "weight": (
+            True,
+            {
+                "doc": "if the ToF spectra is weighted or not",
+            },
+        ),
         "vect_p": (
             None, 
             {
@@ -202,7 +208,6 @@ class VoxelizedPromptGammaTLEActor(
 
         self.SetPhysicalVolumeName(self.user_info.get("attached_to"))
         self.InitializeCpp()
-        # g4.GateVoxelizedPromptGammaTLEActor.SetVector(self, self.user_info.get("vect_p"), self.user_info.get("vect_n"))
 
     def prepare_output_for_run(self, output_name, run_index, **kwargs):
         # need to override because create image is different for img of histo
