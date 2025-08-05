@@ -21,6 +21,15 @@ fwhm_to_sigma = 1.0 / sigma_to_fwhm
 
 # correspondence element names <> symbol
 elements_name_symbol = {
+    "Boron": "B",
+    "Aluminium": "Al",
+    "Silicon": "Si",
+    "Phosphorus": "P",
+    "Neon": "Ne",
+    "Lithium": "Li",
+    "Beryllium": "Be",
+    "Fluorine": "F",
+    "Helium": "He",
     "Hydrogen": "H",
     "Carbon": "C",
     "Nitrogen": "N",
