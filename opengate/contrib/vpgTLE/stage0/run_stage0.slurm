@@ -16,5 +16,5 @@ mkdir output_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}
 
 
 cd /sps/creatis/vguittet/geant-stage0/bin
-./Hadr09 ${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}
+./stage0 ${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}
 
