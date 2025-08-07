@@ -211,12 +211,11 @@ int main(int argc, char *argv[]) {
   G4double gammaMinEnergy = 0;  // MeV
   G4double gammaMaxEnergy = 10; // MeV
 
-    TH1D *TH1D_weight =
-        new TH1D("Weight",
-                 "Weight of the interaction for ToF computing;Protons energy "
-                 "[MeV];Weight [mm-1]",
-                 protonNbBins, protonMinEnergy, protonMaxEnergy);
-  
+  TH1D *TH1D_weight =
+      new TH1D("Weight",
+               "Weight of the interaction for ToF computing;Protons energy "
+               "[MeV];Weight [mm-1]",
+               protonNbBins, protonMinEnergy, protonMaxEnergy);
 
   // The kinetic energy of the projectile will be sampled randomly, with flat
   // probability in the interval [minEnergy, maxEnergy].
