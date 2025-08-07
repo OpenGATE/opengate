@@ -5,16 +5,20 @@
 #SBATCH --mem=2000                    # Mémoire en MB par défaut
 #SBATCH --error=Seq%A_%a.out        # nom du fichier d'erreur (ici en commun avec la sortie)
 
-# sbatch run_stage0.slurm
+# sbatch --export=N=10000,P=proton,W=weight run_stage0.slurm
 
 module load /pbs/software/modulefiles/redhat-9-x86_64/Compilers/gcc/13.2.0
 module load /pbs/software/modulefiles/redhat-9-x86_64/Analysis/root/6.30.06
-source /sps/creatis/vguittet/geant4.11.2.1/bin/geant4make.sh
+source /path/to/theG4used/geant4.11.2.1/bin/geant4make.sh
 
-cd /sps/creatis/vguittet/geant-stage0/output
+cd /path/to/your/outputfolder/geant-stage0/output
 mkdir output_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}
+N=${1:-10000}
+P=${2:-proton}
+W=${3:-""}
+
+cd /path/to/your/compilation/folder/bin
+./stage0-vpgtle ${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID} -n ${N} -p ${P} ${W}
 
 
-cd /sps/creatis/vguittet/geant-stage0/bin
-./stage0 ${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}
 
