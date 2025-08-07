@@ -211,17 +211,12 @@ int main(int argc, char *argv[]) {
   G4double gammaMinEnergy = 0;  // MeV
   G4double gammaMaxEnergy = 10; // MeV
 
-  TDirectory *dirw = nullptr;  // default
-  TH1D *TH1D_weight = nullptr; // default
-  if (stw) {
-    G4cout << "Weight computation activated" << G4endl;
-    TDirectory *dirw = file->mkdir("standard_Weight");
     TH1D *TH1D_weight =
         new TH1D("Weight",
                  "Weight of the interaction for ToF computing;Protons energy "
                  "[MeV];Weight [mm-1]",
                  protonNbBins, protonMinEnergy, protonMaxEnergy);
-  }
+  
 
   // The kinetic energy of the projectile will be sampled randomly, with flat
   // probability in the interval [minEnergy, maxEnergy].
@@ -326,6 +321,7 @@ int main(int argc, char *argv[]) {
     delete TH1D_NrPG;
   }
   if (stw) {
+    TDirectory *dirw = file->mkdir("standard_Weight");
     dirw->cd();
     TH1D_weight->Write();
   }
