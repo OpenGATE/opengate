@@ -91,7 +91,7 @@ def simulation(
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 
-    #LOOKHERE :: if database not well implanted, has to be modified
+    # LOOKHERE :: if database not well implanted, has to be modified
     with uproot.open(paths.data / "data_merge_proton.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_p = histo.to_numpy()[0]
@@ -127,16 +127,17 @@ def simulation(
 
     return sim
 
-#features of simulation that can be modify
+
+# features of simulation that can be modify
 output = "stage1a"
 File_name = "vpg"
 actor_name = "vpg_tle"
 vol_name = "ct"
 
 number_of_particles = 1e2
-#if analog is used, should be replace (Erange = 10 MeV and differenciate from the source energy)
+# if analog is used, should be replace (Erange = 10 MeV and differenciate from the source energy)
 actor = "VoxelizedPromptGammaTLEActor"
-#source Energy andrange of the actor
+# source Energy andrange of the actor
 Erange = 130
 if __name__ == "__main__":
     sim = simulation(
