@@ -110,7 +110,7 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
   if (fNeutronTimeFlag) {
     cpp_tof_neutron_image->FillBuffer(0);
   }
-   //Attach the 3D volume to verify if the particle is inside the ct volume
+  // Attach the 3D volume to verify if the particle is inside the ct volume
   AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
 }
 
@@ -272,7 +272,7 @@ int GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread(int run_id) {
   return 0;
 }
 
-// Standarsized Vectors For ToF weights 
+// Standarsized Vectors For ToF weights
 void GateVoxelizedPromptGammaTLEActor::SetVector(py::array_t<double> vect_p,
                                                  py::array_t<double> vect_n) {
   fProtonVector =
