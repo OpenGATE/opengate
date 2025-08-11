@@ -51,7 +51,7 @@ def simulation(
     ct.dump_label_image = "labels.mhd"
     """
 
-    ct = sim.add_volume("Image", "ct")
+    ct = sim.add_volume("Image", vol_name)
     ct.image = paths.data / f"ct_4mm.mhd"
     if sim.visu:
         ct.image = paths.data / f"ct_40mm.mhd"
@@ -82,7 +82,7 @@ def simulation(
     # source of proton
     # FIXME to replace by a more realistic proton beam, see tests 044
     source = sim.add_source("GenericSource", "DEFAULT")
-    source.energy.mono = 130 * MeV
+    source.energy.mono = Erange * MeV
     source.particle = "proton"
     source.position.type = "point"
     source.position.radius = 1 * mm
@@ -91,6 +91,7 @@ def simulation(
     source.direction.type = "momentum"
     source.direction.momentum = [0, 1, 0]
 
+    #LOOKHERE :: if database not well implanted, has to be modified
     with uproot.open(paths.data / "data_merge_proton.root") as root_file:
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_p = histo.to_numpy()[0]
@@ -98,15 +99,15 @@ def simulation(
         histo = root_file["standard_Weight"]["Weight"].to_hist()
         vect_n = histo.to_numpy()[0]
 
-    vpg_tle = sim.add_actor(actor, "vpg_tle")
-    vpg_tle.attached_to = "ct"
+    vpg_tle = sim.add_actor(actor, actor_name)
+    vpg_tle.attached_to = vol_name
     vpg_tle.output_filename = paths.output / f"{File_name}.nii.gz"
-    vpg_tle.size = [125, 125, 189]  # can be modified
+    vpg_tle.size = [125, 125, 189]  # the same size than ct image is stronly adviced
     vpg_tle.spacing = [
         4,
         4,
         4,
-    ]  # the same spacing is mandatory for the actor and the ct
+    ]  # the same spacing is stronly adviced
     vpg_tle.timebins = 250
     vpg_tle.timerange = 5 * ns
     vpg_tle.energybins = 250
@@ -116,24 +117,8 @@ def simulation(
     vpg_tle.prot_tof.active = True
     vpg_tle.neutr_tof.active = True
     vpg_tle.weight = True  # True to obtain weighted time spectra
-    if actor == "VoxelizedPromptGammaTLEActor":
-        vpg_tle.vect_p = vect_p
-        vpg_tle.vect_n = vect_n
-
-    """
-        # add dose actor
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.attached_to = "ct"
-    dose.size = [21, 100 , 21]
-    mm = gate.g4_units.mm
-    dose.spacing = [4 * mm, 4 * mm, 4 * mm]
-    dose.edep_uncertainty.active = True
-    dose.edep_squared.active = True
-    dose.hit_type = "random"
-    dose.output_coordinate_system = "local"
-    dose.output_filename = paths.output/f"dosemap.nii.gz"
-    dose.edep.keep_data_per_run = True
-    """
+    vpg_tle.vect_p = vect_p
+    vpg_tle.vect_n = vect_n
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -142,12 +127,16 @@ def simulation(
 
     return sim
 
+#features of simulation that can be modify
+output = "stage1a"
+File_name = "vpg"
+actor_name = "vpg_tle"
+vol_name = "ct"
 
-output = "debog"
-File_name = "vox"
 number_of_particles = 1e2
-# actor = "VoxelizedPromptGammaAnalogActor"
+#if analog is used, should be replace (Erange = 10 MeV and differenciate from the source energy)
 actor = "VoxelizedPromptGammaTLEActor"
+#source Energy andrange of the actor
 Erange = 130
 if __name__ == "__main__":
     sim = simulation(
