@@ -155,8 +155,8 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   ions->CreateAllIon();
   ions->CreateAllIsomer();
 
-// Building the ElementTable for the NeutronHP model 
-// TO BE MODIFIED :: there should be a method in Geant4 for this purpose
+  // Building the ElementTable for the NeutronHP model
+  // TO BE MODIFIED :: there should be a method in Geant4 for this purpose
   std::vector<G4Element *> myElements;
   myElements.push_back(new G4Element("Hydrogen", "H", 1., 1.01 * g / mole));
   myElements.push_back(new G4Element("Helium", "He", 2., 4.00 * g / mole));
@@ -199,7 +199,9 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   // HP model
   G4NeutronHPInelastic *theNeutronHP = new G4NeutronHPInelastic;
   theNeutronHP->BuildPhysicsTable(*G4Neutron::Neutron());
-  theNeutronHP->SetHadrGenFlag(true); // Enable hadronic generator flag :: due to the ElementTable building default :: TO BE MODIFIED
+  theNeutronHP->SetHadrGenFlag(
+      true); // Enable hadronic generator flag :: due to the ElementTable
+             // building default :: TO BE MODIFIED
 
   // Model instance with constraint to be above a kinetic energy threshold.
   // (Used for ions in all physics lists)
@@ -289,7 +291,7 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   fProcessMap.insert(
       ProcessPair(G4Proton::Definition(), theProtonInelasticProcess));
 
-    //a specific processmap is dedidcated to the HP physics for neutron
+  // a specific processmap is dedidcated to the HP physics for neutron
   G4HadronicProcess *theNeutronHPInelasticProcess =
       new G4HadronInelasticProcess("NeutronHPInelastic",
                                    G4Neutron::Definition());
@@ -301,7 +303,7 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   fProcessMap.insert(
       ProcessPair(G4Neutron::Definition(), theNeutronInelasticProcess));
 
-  // For the HP model, we need to create a new process for the neutron 
+  // For the HP model, we need to create a new process for the neutron
   // Prompt-gamma timing with a track-length estimator in proton therapy, JM
   // Létang et al, 2024
 
@@ -328,7 +330,7 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
       new G4HadronInelasticProcess("ionInelastic", G4GenericIon::Definition());
   fProcessMap.insert(
       ProcessPair(G4GenericIon::Definition(), theIonInelasticProcess));
-        
+
   // Add the cross sections to the corresponding hadronic processes
 
   // cross-sections for nucleons
@@ -479,10 +481,11 @@ G4int HadronicGenerator::GenerateInteraction(
       } else {
         theProjectileDef = projectileDefinition;
       }
-        //HP case ??
+      // HP case ??
       if (projectileDefinition == G4Neutron::Neutron() &&
           projectileEnergy < 20 * MeV && projectileEnergy > 4.4 * MeV) {
-        // For the HP model, we use the neutron HP inelastic process => specific processmap is used
+        // For the HP model, we use the neutron HP inelastic process => specific
+        // processmap is used
         auto mapIndex = fProcessMapHP.find(theProjectileDef);
         if (mapIndex != fProcessMapHP.end())
           theProcess = mapIndex->second;
