@@ -133,7 +133,7 @@ output = "stage1a"
 File_name = "vpg"
 actor_name = "vpg_tle"
 vol_name = "ct"
-
+MJ = False
 number_of_particles = 1e2
 # if analog is used, should be replace (Erange = 10 MeV and differenciate from the source energy)
 actor = "VoxelizedPromptGammaTLEActor"
