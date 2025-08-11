@@ -112,11 +112,16 @@ int main(int argc, char *argv[]) {
 
   // Enable light hypernuclei and anti-hypernuclei
   G4HadronicParameters::Instance()->SetEnableHyperNuclei(false);
+
+  // stw, pro and num are bool that states if options for projectiles type/number and standard computation are activated
   bool stw = false;
   bool pro = false;
   bool num = false;
+  
   G4int numCollisions = 1e4;         // Default number of collisions
   G4String strprojectile = "proton"; // Default projectile type
+
+  // to read the options
   for (int i = 0; i < argc; ++i) {
     std::string arg = argv[i];
     if (arg == "weight") {
@@ -151,20 +156,20 @@ int main(int argc, char *argv[]) {
   //   the collision, with the possibility of having a transition between two
   //   models in a given energy interval, as in physics lists. )
   const G4String namePhysics = "QGSP_BIC_HP";
-
-  // Creation des fichier.root
-  // Create the ROOT file and histograms
   const TString physlist = namePhysics;
+
+  
+  // Create the ROOT file and histograms
   TFile *file = new TFile("/path/to/your/stage0/output/test.root", "RECREATE");
+
+  // Set up the parameters for the standard computation
   const std::vector<G4double> Fraction = {
       0.65, 0.185, 0.103, 0.03, 0.015, 0.01, 0.002, 0.002, 0.001, 0.001, 0.001};
   const std::vector<G4String> Body_approx = {"G4_O",  "G4_C",  "G4_H", "G4_N",
                                              "G4_Ca", "G4_P",  "G4_K", "G4_S",
                                              "G4_Na", "G4_Cl", "G4_Mg"};
-  // Enable or disable the print out of this program: if enabled, the number of
-  // secondaries produced in each collisions is printed out; moreover, once
-  // every "printingGap" collisions, the list of secondaries is printed out.
 
+  // List of elements in the root file.
   const std::vector<G4String> humanBodyElements = {
       //"G4_Al",
       //"G4_Ar",
@@ -195,6 +200,7 @@ int main(int argc, char *argv[]) {
 
   G4int humanbodyindex =
       humanBodyElements.size(); //***LOOKHERE***  GAP IN PRINTING
+  
   G4ParticleDefinition *projectileNucleus = nullptr;
   G4GenericIon *gion = G4GenericIon::GenericIon();
   gion->SetProcessManager(new G4ProcessManager(gion));
@@ -204,6 +210,9 @@ int main(int argc, char *argv[]) {
   ions->CreateAllIon();
   ions->CreateAllIsomer();
 
+    // The kinetic energy of the projectile will be sampled randomly, with flat
+  // probability in the interval [minEnergy, maxEnergy].
+  //***LOOKHERE***  HADRON PROJECTILE MAX Ekin
   G4int protonNbBins = 500;
   G4double protonMinEnergy = 0;    // MeV
   G4double protonMaxEnergy = 200.; // MeV
@@ -211,15 +220,12 @@ int main(int argc, char *argv[]) {
   G4double gammaMinEnergy = 0;  // MeV
   G4double gammaMaxEnergy = 10; // MeV
 
+  // histogram for the standard weight 
   TH1D *TH1D_weight =
       new TH1D("Weight",
                "Weight of the interaction for ToF computing;Protons energy "
                "[MeV];Weight [mm-1]",
                protonNbBins, protonMinEnergy, protonMaxEnergy);
-
-  // The kinetic energy of the projectile will be sampled randomly, with flat
-  // probability in the interval [minEnergy, maxEnergy].
-  //***LOOKHERE***  HADRON PROJECTILE MAX Ekin
 
   HadronicGenerator *theHadronicGenerator = new HadronicGenerator(namePhysics);
 
@@ -228,9 +234,10 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  // Loop on the element
   for (G4int k = 0; k < humanbodyindex; k++) {
-
-    G4String done = "not counting in the approximation";
+    G4String done = "not counting in the approximation"; // pre-print for standard computation
+    
     G4String nameMaterial = humanBodyElements[k];
     G4Material *targetMaterial =
         G4NistManager::Instance()->FindOrBuildMaterial(nameMaterial);
@@ -294,7 +301,7 @@ int main(int argc, char *argv[]) {
     nbPG = theHadronicGenerator->GenerateInteraction(
         projectile, targetMaterial, TH2D_EpEpg, TH1D_SigmaInelastic,
         TH2D_GammaZ, TH1D_NrPG, nbCollisions);
-    if (argv[argc] == "weight") {
+    if (stw) {
       auto ind =
           std::find(Body_approx.begin(), Body_approx.end(), nameMaterial);
       // Check if the element was found
