@@ -180,8 +180,9 @@ G4ParticleHPInelastic::ApplyYourself(const G4HadProjectile &aTrack,
            << " index=" << index << " from material " << theMaterial->GetName()
            << G4endl;
 #endif
-    //a specific flag has been builded in order to deal with the case of the HP in stage 0.
-    //The problem rise with the method GetIndex() that returns the ElementTable size while the position of the element is needed.
+  // a specific flag has been builded in order to deal with the case of the HP
+  // in stage 0. The problem rise with the method GetIndex() that returns the
+  // ElementTable size while the position of the element is needed.
   if (GetHadrGenFlag()) {
     G4double Z = elm->GetZ();
     if (Z <= 20) {
