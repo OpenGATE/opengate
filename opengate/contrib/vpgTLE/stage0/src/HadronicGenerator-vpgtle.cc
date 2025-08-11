@@ -155,8 +155,9 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   ions->CreateAllIon();
   ions->CreateAllIsomer();
 
+// Building the ElementTable for the NeutronHP model 
+// TO BE MODIFIED :: there should be a method in Geant4 for this purpose
   std::vector<G4Element *> myElements;
-
   myElements.push_back(new G4Element("Hydrogen", "H", 1., 1.01 * g / mole));
   myElements.push_back(new G4Element("Helium", "He", 2., 4.00 * g / mole));
   myElements.push_back(new G4Element("Lithium", "Li", 3., 6.94 * g / mole));
@@ -177,14 +178,10 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   myElements.push_back(new G4Element("Argon", "Ar", 18., 39.95 * g / mole));
   myElements.push_back(new G4Element("Potassium", "K", 19., 39.10 * g / mole));
   myElements.push_back(new G4Element("Calcium", "Ca", 20., 40.08 * g / mole));
-
   myElements.push_back(new G4Element("Titanium", "Ti", 22., 47.87 * g / mole));
-
   myElements.push_back(new G4Element("Copper", "Cu", 29., 63.55 * g / mole));
   myElements.push_back(new G4Element("Zinc", "Zn", 30., 65.38 * g / mole));
-
   myElements.push_back(new G4Element("Silver", "Ag", 47., 107.87 * g / mole));
-
   myElements.push_back(new G4Element("Tin", "Sn", 50., 118.71 * g / mole));
 
   // Build BIC model
@@ -202,11 +199,10 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   // HP model
   G4NeutronHPInelastic *theNeutronHP = new G4NeutronHPInelastic;
   theNeutronHP->BuildPhysicsTable(*G4Neutron::Neutron());
-  theNeutronHP->SetHadrGenFlag(true); // Enable hadronic generator flag
+  theNeutronHP->SetHadrGenFlag(true); // Enable hadronic generator flag :: due to the ElementTable building default :: TO BE MODIFIED
 
   // Model instance with constraint to be above a kinetic energy threshold.
   // (Used for ions in all physics lists)
-
   G4GeneratorPrecompoundInterface *theCascade =
       new G4GeneratorPrecompoundInterface;
   theCascade->SetDeExcitation(thePreEquilib);
@@ -226,7 +222,6 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
 
   // Model instance with constraint to be within two kinetic energy thresholds.
   // (Used in the case of QGS-based physics lists for nucleons)
-
   G4TheoFSGenerator *theFTFPmodel_constrained = new G4TheoFSGenerator("FTFP");
   theFTFPmodel_constrained->SetMaxEnergy(
       G4HadronicParameters::Instance()->GetMaxEnergy());
@@ -249,7 +244,6 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
 
   // For the case of "physics-list proxies", select the energy range for each
   // hadronic model.
-
   const G4double ftfpMinE =
       G4HadronicParameters::Instance()->GetMinEnergyTransitionFTF_Cascade();
   const G4double BICMaxE =
@@ -268,7 +262,6 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
 
   // Cross sections (needed by Geant4 to sample the target nucleus from the
   // target material)
-
   G4VCrossSectionDataSet *theProtonXSdata =
       new G4BGGNucleonInelasticXS(G4Proton::Proton());
   theProtonXSdata->BuildPhysicsTable(*(G4Proton::Definition()));
@@ -278,10 +271,6 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
 
   G4VCrossSectionDataSet *theNeutronHPXSdatainel = new G4NeutronHPInelasticXS;
   theNeutronHPXSdatainel->BuildPhysicsTable(*G4Neutron::Definition());
-
-  // G4VCrossSectionDataSet* theNeutronHPCapturedata = new
-  // G4NeutronHPCaptureData;
-  // theNeutronHPCapturedata->BuildPhysicsTable(*G4Neutron::Definition());
 
   G4VCrossSectionDataSet *theHyperonsXSdata =
       new G4CrossSectionInelastic(new G4ComponentGGHadronNucleusXsc);
@@ -300,6 +289,7 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   fProcessMap.insert(
       ProcessPair(G4Proton::Definition(), theProtonInelasticProcess));
 
+    //a specific processmap is dedidcated to the HP physics for neutron
   G4HadronicProcess *theNeutronHPInelasticProcess =
       new G4HadronInelasticProcess("NeutronHPInelastic",
                                    G4Neutron::Definition());
@@ -311,9 +301,7 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
   fProcessMap.insert(
       ProcessPair(G4Neutron::Definition(), theNeutronInelasticProcess));
 
-  // For the HP model, we need to create a new process for the neutron :
-  //  interaction that are considered as relevant are the capture and fission (+
-  //  inelastic HP process neutron -nucleus)
+  // For the HP model, we need to create a new process for the neutron 
   // Prompt-gamma timing with a track-length estimator in proton therapy, JM
   // Létang et al, 2024
 
@@ -321,36 +309,26 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
       new G4HadronInelasticProcess("dInelastic", G4Deuteron::Definition());
   fProcessMap.insert(
       ProcessPair(G4Deuteron::Definition(), theDeuteronInelasticProcess));
-  fProcessMapHP.insert(
-      ProcessPair(G4Deuteron::Definition(), theDeuteronInelasticProcess));
 
   G4HadronicProcess *theTritonInelasticProcess =
       new G4HadronInelasticProcess("tInelastic", G4Triton::Definition());
   fProcessMap.insert(
       ProcessPair(G4Triton::Definition(), theTritonInelasticProcess));
-  fProcessMapHP.insert(
-      ProcessPair(G4Triton::Definition(), theTritonInelasticProcess));
 
   G4HadronicProcess *theHe3InelasticProcess =
       new G4HadronInelasticProcess("he3Inelastic", G4He3::Definition());
   fProcessMap.insert(ProcessPair(G4He3::Definition(), theHe3InelasticProcess));
-  fProcessMapHP.insert(
-      ProcessPair(G4He3::Definition(), theHe3InelasticProcess));
 
   G4HadronicProcess *theAlphaInelasticProcess =
       new G4HadronInelasticProcess("alphaInelastic", G4Alpha::Definition());
   fProcessMap.insert(
-      ProcessPair(G4Alpha::Definition(), theAlphaInelasticProcess));
-  fProcessMapHP.insert(
       ProcessPair(G4Alpha::Definition(), theAlphaInelasticProcess));
 
   G4HadronicProcess *theIonInelasticProcess =
       new G4HadronInelasticProcess("ionInelastic", G4GenericIon::Definition());
   fProcessMap.insert(
       ProcessPair(G4GenericIon::Definition(), theIonInelasticProcess));
-  fProcessMapHP.insert(
-      ProcessPair(G4GenericIon::Definition(), theIonInelasticProcess));
-
+        
   // Add the cross sections to the corresponding hadronic processes
 
   // cross-sections for nucleons
@@ -359,7 +337,6 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
 
   // specific cross-sections for neutrons in HP model
   theNeutronHPInelasticProcess->AddDataSet(theNeutronHPXSdatainel);
-  // theNeutronHPInelasticProcess->AddDataSet( theNeutronHPCapturedata );
 
   // cross-sections for ions
   theDeuteronInelasticProcess->AddDataSet(theNuclNuclXSdata);
@@ -381,7 +358,6 @@ HadronicGenerator::HadronicGenerator(const G4String physicsCase)
 
   // processes for HP => low-energy on neutrons
   theNeutronHPInelasticProcess->RegisterMe(theNeutronHP);
-  // theNeutronHPInelasticProcess->RegisterMe( theNeutronHPCapture );
 
   // processes for ion (BIC for ions)
   theDeuteronInelasticProcess->RegisterMe(theIonBICmodel);
@@ -496,7 +472,6 @@ G4int HadronicGenerator::GenerateInteraction(
       gTrack->SetKineticEnergy(projectileEnergy);
 
       // Loop on the collisions
-
       G4HadronicProcess *theProcess = nullptr;
       G4ParticleDefinition *theProjectileDef = nullptr;
       if (projectileDefinition->IsGeneralIon()) {
@@ -504,9 +479,10 @@ G4int HadronicGenerator::GenerateInteraction(
       } else {
         theProjectileDef = projectileDefinition;
       }
+        //HP case ??
       if (projectileDefinition == G4Neutron::Neutron() &&
           projectileEnergy < 20 * MeV && projectileEnergy > 4.4 * MeV) {
-        // For the HP model, we use the neutron HP inelastic process
+        // For the HP model, we use the neutron HP inelastic process => specific processmap is used
         auto mapIndex = fProcessMapHP.find(theProjectileDef);
         if (mapIndex != fProcessMapHP.end())
           theProcess = mapIndex->second;
@@ -516,7 +492,6 @@ G4int HadronicGenerator::GenerateInteraction(
         }
       } else {
         auto mapIndex = fProcessMap.find(theProjectileDef);
-
         if (mapIndex != fProcessMap.end())
           theProcess = mapIndex->second;
         if (theProcess == nullptr) {
