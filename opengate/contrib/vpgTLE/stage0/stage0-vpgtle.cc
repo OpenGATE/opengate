@@ -113,11 +113,12 @@ int main(int argc, char *argv[]) {
   // Enable light hypernuclei and anti-hypernuclei
   G4HadronicParameters::Instance()->SetEnableHyperNuclei(false);
 
-  // stw, pro and num are bool that states if options for projectiles type/number and standard computation are activated
+  // stw, pro and num are bool that states if options for projectiles
+  // type/number and standard computation are activated
   bool stw = false;
   bool pro = false;
   bool num = false;
-  
+
   G4int numCollisions = 1e4;         // Default number of collisions
   G4String strprojectile = "proton"; // Default projectile type
 
@@ -158,7 +159,6 @@ int main(int argc, char *argv[]) {
   const G4String namePhysics = "QGSP_BIC_HP";
   const TString physlist = namePhysics;
 
-  
   // Create the ROOT file and histograms
   TFile *file = new TFile("/path/to/your/stage0/output/test.root", "RECREATE");
 
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 
   G4int humanbodyindex =
       humanBodyElements.size(); //***LOOKHERE***  GAP IN PRINTING
-  
+
   G4ParticleDefinition *projectileNucleus = nullptr;
   G4GenericIon *gion = G4GenericIon::GenericIon();
   gion->SetProcessManager(new G4ProcessManager(gion));
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
   ions->CreateAllIon();
   ions->CreateAllIsomer();
 
-    // The kinetic energy of the projectile will be sampled randomly, with flat
+  // The kinetic energy of the projectile will be sampled randomly, with flat
   // probability in the interval [minEnergy, maxEnergy].
   //***LOOKHERE***  HADRON PROJECTILE MAX Ekin
   G4int protonNbBins = 500;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
   G4double gammaMinEnergy = 0;  // MeV
   G4double gammaMaxEnergy = 10; // MeV
 
-  // histogram for the standard weight 
+  // histogram for the standard weight
   TH1D *TH1D_weight =
       new TH1D("Weight",
                "Weight of the interaction for ToF computing;Protons energy "
@@ -236,8 +236,9 @@ int main(int argc, char *argv[]) {
 
   // Loop on the element
   for (G4int k = 0; k < humanbodyindex; k++) {
-    G4String done = "not counting in the approximation"; // pre-print for standard computation
-    
+    G4String done = "not counting in the approximation"; // pre-print for
+                                                         // standard computation
+
     G4String nameMaterial = humanBodyElements[k];
     G4Material *targetMaterial =
         G4NistManager::Instance()->FindOrBuildMaterial(nameMaterial);
