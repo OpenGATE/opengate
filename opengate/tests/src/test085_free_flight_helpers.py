@@ -148,10 +148,10 @@ def create_simulation_test085(
 
 def add_spect_arf(sim, data_folder, simu_name, radius, size, spacing):
     pth = data_folder / "arf_034_nm670_tc99m_v2.pth"
-    det_plane1, arf1 = nm670.add_arf_detector(
+    det_plane1, arf1 = nm670.add_arf_detector_OLD(
         sim, radius, 0, size, spacing, "lehr", "spect", 1, pth
     )
-    det_plane2, arf2 = nm670.add_arf_detector(
+    det_plane2, arf2 = nm670.add_arf_detector_OLD(
         sim, radius, 180, size, spacing, "lehr", "spect", 2, pth
     )
     det_planes = [det_plane1, det_plane2]
