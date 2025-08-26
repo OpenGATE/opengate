@@ -27,6 +27,7 @@ def build_test_simu(
     sim.user_hook_after_init_arg = sim.output_dir / fn
 
     m = None
+    head = None
     if spect_model == "intevo":
         m = intevo
         head, colli, crystal = m.add_spect_head(
