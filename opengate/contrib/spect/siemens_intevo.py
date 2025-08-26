@@ -59,7 +59,7 @@ def update_geometrical_parameters(store_to_file=False):
         # distance to the center of the box head
         p[c].half_box_size = spect.size[0] / 2.0 + 1 * nm
         # distance from box boundary to the crystal center (for arf)
-        p[c].crystal_distance = -y
+        p[c].crystal_distance = p[c].half_box_size + y
         # distance from box boundary to the shielding front
         p[c].psd = p[c].half_box_size + psd
 
