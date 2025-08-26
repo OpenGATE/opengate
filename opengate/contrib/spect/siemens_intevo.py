@@ -11,8 +11,6 @@ from opengate.contrib.spect.spect_helpers import (
 from opengate.geometry.utility import get_transform_orbiting
 from opengate.contrib.spect.spect_helpers import (
     get_mu_from_xraylib,
-    calculate_acceptance_angle,
-    calculate_max_penetration_angle,
     calculate_theta_max_angle,
 )
 from box import Box
@@ -60,7 +58,7 @@ def update_geometrical_parameters(store_to_file=False):
         p[c].collimator_position = pos
         # distance to the center of the box head
         p[c].half_box_size = spect.size[0] / 2.0 + 1 * nm
-        # distance from box boundary to crystal center (for arf)
+        # distance from box boundary to the crystal center (for arf)
         p[c].crystal_distance = -y
         # distance from box boundary to the shielding front
         p[c].psd = p[c].half_box_size + psd
@@ -93,6 +91,7 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     Collimator MELP: Medium Energy Low Penetration (for In111, Lu177)
     Collimator HE:   High Energy General Purpose   (for I131)
 
+    By default, a translation is set such as the shielding_front is at position 0.
     """
     f = pathlib.Path(__file__).parent.resolve()
     fdb = f"{f}/spect_siemens_intevo_materials.db"
@@ -119,6 +118,12 @@ def add_spect_head(sim, name="spect", collimator_type="lehr", debug=False):
     light_guide = add_light_guide(sim, back_comp)
     # pmt = add_PMT_array(sim, head)
     # elec = add_electronics(sim, head)
+
+    # default head translation to set the shielding_front at position 0
+    # (this translation is considered in rotate_gantry)
+    p = get_geometrical_parameters()
+    r = p[collimator_type].half_box_size - p[collimator_type].psd
+    head.translation = [0, r, 0]
 
     return head, colli, crystal
 
@@ -397,7 +402,6 @@ def add_collimator_melp(sim, head, debug):
     hole.material = "G4_AIR"
     hole.mother = colli.name
     hole.build_physical_volume = False  # FIXME remove
-    hole.color = [1, 0, 0, 1]
 
     # parameterised holes
     size = [1, 128, 55]
@@ -483,7 +487,7 @@ def add_collimator_he(sim, head, debug):
 def add_crystal(sim, head):
     mm = g4_units.mm
     front_shield_size = 76 * mm * 2
-    red = [1, 0.0, 0.0, 0.9]
+    yellow = [1, 1, 0, 0.9]
 
     name = head.name
     crystal_sheath = sim.add_volume("Box", f"{name}_crys_sheath")
@@ -495,7 +499,7 @@ def add_crystal(sim, head):
     ]
     crystal_sheath.translation = [-66.73 * mm, 0, 0]
     crystal_sheath.material = "Aluminium"
-    crystal_sheath.color = red
+    crystal_sheath.color = yellow
 
     crystal = sim.add_volume("Box", f"{name}_crystal")
     crystal.mother = name
@@ -507,7 +511,7 @@ def add_crystal(sim, head):
 
     crystal.translation = [-61.8276 * mm, 0, 0]
     crystal.material = "NaI"
-    crystal.color = red
+    crystal.color = yellow
 
     return crystal
 
@@ -540,6 +544,9 @@ def add_light_guide(sim, back_compartment):
 
 
 def compute_plane_position_and_distance_to_crystal_OLD(collimator_type):
+    """
+    (OLD version only used in spect_validation and spect_into_gan)
+    """
     temp_sim = Simulation()
     spect, colli, crystal = add_spect_head(
         temp_sim, "spect", collimator_type, debug=True
@@ -570,13 +577,13 @@ def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
     detector_plane.color = [1, 0, 0, 1]
     detector_plane.size = [1 * nm, plane_size[0], plane_size[1]]
 
+    # compute the position according to the front shielding
+    p = get_geometrical_parameters()
+    arf_position = p[colli_type].psd
+    detector_plane.translation = [0, -arf_position, 0]
+
     # rotate
     rotate_gantry(detector_plane, radius=0, start_angle_deg=0)
-
-    # compute the correct position according to the collimator
-    p = get_geometrical_parameters()
-    arf_position = p[colli_type].half_box_size
-    detector_plane.translation = [0, -arf_position, 0]
 
     return detector_plane
 
@@ -773,24 +780,6 @@ def add_digitizer(
     ).as_matrix()
 
     return digitizer
-
-
-def calculate_collimator_acceptance_angle_OLD(collimator_type, energy):
-    p = get_geometrical_parameters()
-    hole_diameter = p[collimator_type].hole_diameter
-    collimator_length = p[collimator_type].collimator_length
-
-    mu_lead_cm = get_mu_from_xraylib("Pb", energy)
-    print(
-        f"collimator_type: {collimator_type}, energy: {energy} keV, mu_lead_cm: {mu_lead_cm} cm-1"
-    )
-    print(f"collimator_length: {collimator_length} mm, hole_diam = {hole_diameter}")
-    l_eff, theta_acc = calculate_acceptance_angle(
-        hole_diameter, collimator_length, mu_lead_cm
-    )
-    print(f"l_eff: {l_eff} mm, theta_acc: {theta_acc} deg")
-
-    return theta_acc
 
 
 def calculate_collimator_acceptance_angle(collimator_type, energy, prob_threshold):
