@@ -562,6 +562,10 @@ def compute_plane_position_and_distance_to_crystal_OLD(collimator_type):
     return pos, crystal_distance, psd
 
 
+def get_normal_to_detector():
+    return [1, 0, 0]
+
+
 def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
     # the plane is in the world coordinate system outside the real spect head box.
 
@@ -581,6 +585,14 @@ def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
     p = get_geometrical_parameters()
     arf_position = p[colli_type].psd
     detector_plane.translation = [0, -arf_position, 0]
+
+    # DEBUG
+    """fake = sim.add_volume("Box", "fake")
+    fake.mother = detector_plane
+    fake.material = "G4_Galactic"
+    fake.color = [1, 1, 0, 1]
+    fake.size = [2 * mm, 20 * mm, 10 * mm]
+    fake.translation = [0, -plane_size[0] / 2, -plane_size[1] / 2]"""
 
     # rotate
     rotate_gantry(detector_plane, radius=0, start_angle_deg=0)
@@ -618,9 +630,7 @@ def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
     arf.attached_to = detector_plane.name
     arf.output_filename = f"arf_training_dataset.root"
     arf.russian_roulette = rr
-    # arf.plane_axis = [0, 1, 2] -> no ?
-    # arf.plane_axis = [0, 2, 1]
-    arf.plane_axis = [1, 2, 0]  # -> seems ok
+    arf.plane_axis = [1, 2, 0]  # the depth is plane_axis[2] = 0
 
     return detector_plane, arf
 
