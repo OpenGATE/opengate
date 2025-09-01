@@ -105,7 +105,9 @@ def add_fake_spect_head(sim, name="spect"):
 
 def get_orientation_for_ct(colli_type, table_shift, radius):
     nm = g4_units.nm
-    pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal(colli_type)
+    pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal_OLD(
+        colli_type
+    )
     pos += 1 * nm
     p = [0, table_shift, -(radius + psdd)]
     return get_transform_orbiting(p, "x", 90)
@@ -867,7 +869,7 @@ def compute_plane_position_and_distance_to_crystal(collimator_type):
     return pos, crystal_distance, psd
 
 
-def get_plane_position_and_distance_to_crystal(collimator_type):
+def get_plane_position_and_distance_to_crystal_OLD(collimator_type):
     """
     This has been computed with t043_distances or compute_plane_position_and_distance_to_crystal
     - first : distance from head center to the PSD (translation for the plane)
@@ -1070,7 +1072,7 @@ def add_actor_for_arf_training_dataset_OLD(sim, head, colli_type, ene_win_actor,
     cm = g4_units.cm
 
     # detector input plane
-    pos, crystal_dist, psd = get_plane_position_and_distance_to_crystal(colli_type)
+    pos, crystal_dist, psd = get_plane_position_and_distance_to_crystal_OLD(colli_type)
     pos += 1 * nm  # to avoid overlap
     detector_plane = sim.add_volume("Box", "arf_plane")
     detector_plane.mother = head

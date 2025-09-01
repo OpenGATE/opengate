@@ -17,8 +17,8 @@ deg = gate.g4_units.deg
 
 
 def is_test_ok(phsp_1, phsp_2):
-    f1 = uproot.open(phsp_1 + ":PhaseSpace1")
-    f2 = uproot.open(phsp_2 + ":PhaseSpace1")
+    f1 = uproot.open(str(phsp_1) + ":PhaseSpace1")
+    f2 = uproot.open(str(phsp_2) + ":PhaseSpace1")
     df1 = f1.arrays()
     df2 = f2.arrays()
 
@@ -73,7 +73,8 @@ def add_source_2(sim, plan_to_attach):
 
 def add_phsp_source(sim, plan_to_attach):
     source = sim.add_source("PhaseSpaceSource", "phsp_source_global")
-    source.phsp_file = "../output/test060_phsp_isotropic.root"
+    paths = utility.get_default_test_paths(__file__, "", "test060")
+    source.phsp_file = paths.output / "test060_phsp_isotropic.root"
     source.isotropic_direction = True
     source.position_key = "PrePositionLocal"
     source.direction_key = "PreDirectionLocal"
@@ -123,11 +124,13 @@ def add_phsp_actor(sim, plan_to_attach):
 
 
 if __name__ == "__main__":
+    paths = utility.get_default_test_paths(__file__, "", "test060")
 
     for i in range(3):
         sim = gate.Simulation()
         # main options
-        sim.output_dir = "../output"
+        sim.output_dir = paths.output
+        print(sim.output_dir)
         sim.g4_verbose = False
         # sim.visu = True
         sim.visu_type = "vrml"
@@ -190,7 +193,7 @@ if __name__ == "__main__":
         sim.run(start_new_process=True)
 
     is_ok = is_test_ok(
-        "../output/test060_phsp_actor_sphere_ref.root",
-        "../output/test060_phsp_actor_sphere_phsp.root",
+        paths.output / "test060_phsp_actor_sphere_ref.root",
+        paths.output / "test060_phsp_actor_sphere_phsp.root",
     )
     utility.test_ok(is_test_ok)
