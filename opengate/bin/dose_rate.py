@@ -33,13 +33,12 @@ def go(json_param, output_folder):
 
     # create the simu
     sim = create_simulation(param)
-    stats = sim.find_actors("stats")[0]
-    stats.output_filename = "stats.txt"
 
     # run
     sim.run()
 
     # print results at the end
+    stats = sim.get_actor("Stats")
     print(stats)
     print(f"Output in {param.output_folder}")
 
