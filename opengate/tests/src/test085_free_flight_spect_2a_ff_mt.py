@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.visu = False
+    # sim.visu = True
     sim.number_of_threads = 4
     ac = 2e5
     source, actors = create_simulation_test085(

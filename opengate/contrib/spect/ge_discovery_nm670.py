@@ -156,6 +156,13 @@ def add_spect_head(
     if collimator_type:
         colli = add_collimator(sim, name, head, collimator_type, rotation_deg, debug)
 
+    # default orientation
+    set_default_orientation(head, collimator_type)
+
+    return head, colli, crystal
+
+
+def set_default_orientation(head, collimator_type):
     # default head translation to set the shielding_front at position 0
     # (this translation is considered in rotate_gantry)
     p = get_geometrical_parameters()
@@ -168,8 +175,6 @@ def add_spect_head(
     # also the orientation is set such as Y is the normal of the detector
     rot = Rotation.from_euler("xy", (90, 0), degrees=True)
     head.rotation = rot.as_matrix()
-
-    return head, colli, crystal
 
 
 def add_spect_two_heads(
@@ -188,7 +193,9 @@ def add_spect_two_heads(
     )
 
     # set at their initial position
+    set_default_orientation(head1, collimator_type)
     rotate_gantry(head1, radius, start_angle_deg=0, step_angle_deg=1, nb_angle=1)
+    set_default_orientation(head2, collimator_type)
     rotate_gantry(head2, radius, start_angle_deg=180, step_angle_deg=1, nb_angle=1)
 
     return [head1, head2], [crystal1, crystal2]
