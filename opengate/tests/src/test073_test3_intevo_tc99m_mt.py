@@ -34,6 +34,8 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
     set_source_energy_spectrum(source, "Tc99m")
     source.activity = 2e7 * Bq / sim.number_of_threads
+    if sim.visu:
+        source.activity = 1e3 * Bq
 
     # start simulation
     sim.run()

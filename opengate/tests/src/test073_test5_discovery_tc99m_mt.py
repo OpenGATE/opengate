@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
-    digit = discovery.add_digitizer_tc99m_OLD(sim, crystal.name, "digit_tc99m")
+    digit = nm670.add_digitizer_tc99m_OLD(sim, crystal.name, "digit_tc99m")
     ew = digit.find_module("energy_window")
     ew.output_filename = "output_discovery_tc99m.root"
     ew.root_output.write_to_disk = True
@@ -30,6 +30,8 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
     set_source_energy_spectrum(source, "Tc99m")
     source.activity = 4e7 * Bq / sim.number_of_threads
+    if sim.visu:
+        source.activity = 1e3 * Bq
 
     # start simulation
     sim.run()
@@ -43,6 +45,8 @@ if __name__ == "__main__":
 
     # compare root
     fr = ref_folder / "output_discovery_tc99m.root"
+    print(fr)
+    print(ew.get_output_path())
     is_ok = (
         compare_root_spectrum2(
             fr, ew.get_output_path(), paths.output / "test073_discovery_tc99m.png"

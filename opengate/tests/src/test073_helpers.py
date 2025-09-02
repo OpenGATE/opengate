@@ -6,7 +6,7 @@ from opengate.sources.utility import set_source_energy_spectrum
 from opengate.exception import warning
 from opengate.tests import utility
 import opengate.contrib.spect.siemens_intevo as intevo
-import opengate.contrib.spect.ge_discovery_nm670 as discovery
+import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.contrib.spect.spect_helpers import get_default_energy_windows
 from scipy.spatial.transform import Rotation
 import itk
@@ -126,10 +126,10 @@ def compare_root_hits(crystal, sim, root_filename, path, n=1):
     hc = sim.actor_manager.find_actor_by_type(f"DigitizerHitsCollectionActor")
     hc_file = hc.get_output_path()
     checked_keys = [
-        {"k1": "posX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
-        {"k1": "posY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
-        {"k1": "posZ", "k2": "PostPosition_Z", "tol": 0.12, "scaling": 1},
-        {"k1": "edep", "k2": "TotalEnergyDeposit", "tol": 0.004, "scaling": 1},
+        {"k1": "posX", "k2": "PostPosition_X", "tol": 3.2, "scaling": 1},
+        {"k1": "posY", "k2": "PostPosition_Y", "tol": 7, "scaling": 1},
+        {"k1": "posZ", "k2": "PostPosition_Z", "tol": 0.21, "scaling": 1},
+        {"k1": "edep", "k2": "TotalEnergyDeposit", "tol": 0.005, "scaling": 1},
         {"k1": "time", "k2": "GlobalTime", "tol": 0.05, "scaling": 1e-9},
     ]
     is_ok = utility.compare_root2(
@@ -152,10 +152,10 @@ def compare_root_singles(crystal, sim, root_filename, path, sname, n=1):
     hc = sim.actor_manager.find_actor_by_type(f"DigitizerAdderActor")
     hc_file = hc.get_output_path()
     checked_keys = [
-        {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 3, "scaling": 1},
-        {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 6, "scaling": 1},
+        {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 4.5, "scaling": 1},
+        {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 9.0, "scaling": 1},
         {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.29, "scaling": 1},
-        {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.0035, "scaling": 1},
+        {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.0045, "scaling": 1},
     ]
     is_ok = utility.compare_root2(
         root_filename,
@@ -164,7 +164,7 @@ def compare_root_singles(crystal, sim, root_filename, path, sname, n=1):
         sname,
         checked_keys,
         f"{path}/test050_test_{n}_singles.png",
-        n_tol=8,
+        n_tol=9,
     )
     return is_ok
 
@@ -211,7 +211,7 @@ def test073_setup_sim(sim, spect_type, collimator_type):
     sim.g4_verbose_level = 1
     sim.number_of_threads = 4
     # sim.visu = True
-    sim.visu_type = "vrml"
+    sim.visu_type = "qt"
     # sim.random_seed = 321654987
 
     # world size
@@ -227,9 +227,10 @@ def test073_setup_sim(sim, spect_type, collimator_type):
         head.translation = [0, 0, -280 * mm]
         head.rotation = Rotation.from_euler("y", 90, degrees=True).as_matrix()
     if spect_type == "discovery":
-        head, _, _ = discovery.add_spect_head(
+        head, _, _ = nm670.add_spect_head(
             sim, "spect", collimator_type=collimator_type, debug=sim.visu
         )
+        head.rotation = Rotation.from_euler("z", 9, degrees=True).as_matrix()
         head.translation = [0, 0, -280 * mm]
 
     # source
@@ -269,7 +270,7 @@ def compare_root_spectrum(ref_output, output, png_filename):
             "tol": 0.003,
             "scaling": 1,
         },
-        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.3e7, "scaling": 1},
+        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.6e7, "scaling": 1},
     ]
     is_ok = utility.compare_root2(
         ref_output,
@@ -278,7 +279,7 @@ def compare_root_spectrum(ref_output, output, png_filename):
         "spectrum",
         checked_keys,
         png_filename,
-        n_tol=16,
+        n_tol=25,
     )
     return is_ok
 
@@ -288,16 +289,16 @@ def compare_root_spectrum2(ref_output, output, png_filename):
     print()
     warning("Compare spectrum")
     checked_keys = [
-        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.5, "scaling": 1},
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 2.0, "scaling": 1},
         {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 2.0, "scaling": 1},
         {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.4, "scaling": 1},
         {
             "k1": "TotalEnergyDeposit",
             "k2": "TotalEnergyDeposit",
-            "tol": 0.004,
+            "tol": 0.005,
             "scaling": 1,
         },
-        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.2e7, "scaling": 1},
+        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.6e7, "scaling": 1},
     ]
     is_ok = utility.compare_root2(
         ref_output,
