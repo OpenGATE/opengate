@@ -16,6 +16,10 @@ GateDigitizerBlurringActor::GateDigitizerBlurringActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, true) {
   // actions
   fActions.insert("EndOfEventAction");
+  fBlurSigma = 0;
+  fBlurReferenceValue = 0;
+  fBlurResolution = 0;
+  fBlurSlope = 0;
 }
 
 GateDigitizerBlurringActor::~GateDigitizerBlurringActor() = default;
@@ -54,28 +58,28 @@ void GateDigitizerBlurringActor::DigitInitialize(
 }
 
 void GateDigitizerBlurringActor::EndOfEventAction(const G4Event * /*unused*/) {
-  // loop on all digi of this events
+  // loop on all digi of this event
   auto &l = fThreadLocalData.Get();
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &iter = lr.fInputIter;
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
     // blur the current value
-    auto v = fBlurValue(*l.fAttDValue);
+    const auto v = fBlurValue(*l.fAttDValue);
     fOutputBlurAttribute->FillDValue(v);
     // copy the other attributes
-    auto &i = lr.fInputIter.fIndex;
+    const auto &i = lr.fInputIter.fIndex;
     lr.fDigiAttributeFiller->Fill(i);
     iter++;
   }
 }
 
-double GateDigitizerBlurringActor::GaussianBlur(double value) {
+double GateDigitizerBlurringActor::GaussianBlur(const double value) const {
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateLocalTimeResolution.cc
   return G4RandGauss::shoot(value, fBlurSigma);
 }
 
-double GateDigitizerBlurringActor::InverseSquare(double value) {
+double GateDigitizerBlurringActor::InverseSquare(const double value) const {
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateBlurring.cc
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateInverseSquareBlurringLaw.cc
   auto v = fBlurResolution * (sqrt(fBlurReferenceValue) / sqrt(value));
@@ -83,7 +87,7 @@ double GateDigitizerBlurringActor::InverseSquare(double value) {
   return x;
 }
 
-double GateDigitizerBlurringActor::Linear(double value) {
+double GateDigitizerBlurringActor::Linear(const double value) const {
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateBlurring.cc
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateLinearBlurringLaw.cc
   auto v = fBlurSlope * (value - fBlurReferenceValue) + fBlurResolution;

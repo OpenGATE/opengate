@@ -8,7 +8,6 @@ Created on Wed Apr  2 09:48:30 2025
 import opengate as gate
 from opengate.utility import g4_units
 import opengate.tests.utility as utility
-import opengate_core as g4
 import uproot
 
 

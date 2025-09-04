@@ -7,6 +7,7 @@ from opengate.geometry.utility import (
     vec_g4_as_np,
 )
 from opengate.actors.digitizers import *
+import sys
 
 
 def add_fake_table(sim, name="table"):
@@ -448,18 +449,23 @@ def history_ff_combined_rel_uncertainty(
 ):
 
     # means for one event
-    prim = vprim / n_prim
-    prim_squared = vprim_squared / n_prim
-    scatter = vscatter / n_scatter
-    scatter_squared = vscatter_squared / n_scatter
+    if vprim is not None:
+        prim = vprim / n_prim
+        prim_squared = vprim_squared / n_prim
+        prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
+        mean = prim
+        variance = prim_var
+    if vscatter is not None:
+        scatter = vscatter / n_scatter
+        scatter_squared = vscatter_squared / n_scatter
+        scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
+        mean = scatter
+        variance = scatter_var
 
-    # variances
-    prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
-    scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
+    if vprim is not None and vscatter is not None:
+        mean = prim + scatter
+        variance = prim_var + scatter_var
 
-    # combine uncertainty
-    mean = prim + scatter
-    variance = prim_var + scatter_var
     uncert = np.divide(
         np.sqrt(variance),
         mean,
@@ -531,3 +537,219 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
     if len(channels) == 0:
         raise ValueError(f"No default energy windows for {radionuclide_name}")
     return channels
+
+
+def get_mu_from_xraylib(material_symbol, energy):
+    """
+    Retrieves the linear attenuation coefficient (mu) for a given material and energy.
+    Uses the xraylib library to get data from standard physics databases.
+
+    Args:
+        material_symbol (str): The chemical symbol of the material (e.g. 'Pb', 'W').
+        energy (float): The photon energy (will be used in keV)
+
+    Returns:
+        float: The linear attenuation coefficient in cm^-1, or None if the material is unknown.
+    """
+    try:
+        import xraylib
+    except ImportError:
+        print(
+            "Error: The 'xraylib' library is required for dynamic calculations of attenuation coefficients."
+        )
+        print("Please install it using: pip install xraylib")
+        sys.exit(1)
+
+    try:
+        # Get atomic number and density for the material from xraylib's database
+        atomic_number = xraylib.SymbolToAtomicNumber(material_symbol)
+        density = xraylib.ElementDensity(atomic_number)
+        # print(f'energy = {energy/ g4_units.keV} keV, material = "{material_symbol}"')
+
+        # Get the total mass attenuation coefficient (cm^2/g).
+        # Xraylib expects energy in keV for this function.
+        mass_attenuation_coeff = xraylib.CS_Total(atomic_number, energy / g4_units.keV)
+
+        # Calculate linear attenuation coefficient: mu = (mu/rho) * rho
+        linear_attenuation_coeff = mass_attenuation_coeff * density
+
+        return linear_attenuation_coeff
+
+    except ValueError:
+        print(
+            f"Error: Material symbol '{material_symbol}' not found in xraylib database."
+        )
+        return None
+
+
+def calculate_acceptance_angle(
+    hole_diameter, collimator_length, linear_attenuation_coeff_cm
+):
+    """
+    Calculates the effective length and acceptance angle of a collimator.
+
+    Args:
+        hole_diameter (float): The diameter of the collimator hole in mm.
+        collimator_length (float): The physical length of the collimator in mm.
+        linear_attenuation_coeff_cm (float): The linear attenuation coefficient
+                                             of the septal material in cm^-1.
+
+    Returns:
+        tuple: A tuple containing (effective_length_mm, acceptance_angle_degrees).
+    """
+
+    mm = g4_units.mm
+
+    # Convert mu to mm^-1
+    mu_mm = linear_attenuation_coeff_cm / 10.0
+
+    # Calculate effective length: Leff = L - 2/mu
+    effective_length_mm = collimator_length / mm - (2 / mu_mm)
+
+    # Calculate acceptance angle: theta = arctan(d / Leff)
+    acceptance_angle_rad = np.arctan((hole_diameter / mm) / effective_length_mm)
+
+    # Convert to degrees
+    acceptance_angle_degrees = np.rad2deg(acceptance_angle_rad)
+
+    return effective_length_mm, acceptance_angle_degrees
+
+
+def calculate_max_penetration_angle_OLD(
+    septal_thickness_mm, linear_attenuation_coeff_cm, prob_threshold=0.01
+):
+    """
+    Calculates the maximum acceptance angle based on septal penetration
+    probability.
+
+    This angle represents the point at which the probability of a photon
+    passing through the shortest path in a septum drops to a given threshold.
+
+    Args:
+        septal_thickness_mm (float): The thickness of the collimator septa in mm.
+        linear_attenuation_coeff_cm (float): The linear attenuation coefficient
+                                             of the septal material in cm^-1.
+        prob_threshold (float, optional): The transmission probability threshold.
+                                          Defaults to 0.01 (1%).
+
+    Returns:
+        float: The maximum acceptance angle in degrees.
+    """
+    # Ensure the probability threshold is valid
+    if not 0 < prob_threshold < 1:
+        raise ValueError("Probability threshold must be between 0 and 1.")
+
+    # Convert the linear attenuation coefficient from cm^-1 to mm^-1
+    mu_mm = linear_attenuation_coeff_cm / 10.0
+
+    # Calculate the argument for arcsin: (-mu * t) / ln(P_th)
+    # The numerator is negative, and ln(P_th) is also negative, so the
+    # result is positive.
+    arcsin_arg = (-mu_mm * septal_thickness_mm) / np.log(prob_threshold)
+
+    # Check if the argument is valid for arcsin (it must be between -1 and 1)
+    if arcsin_arg > 1:
+        # This can happen if the septa are very thick or mu is very high,
+        # making penetration even at 90 degrees less likely than the threshold.
+        # In this case, the effective max angle is 90 degrees.
+        return 90.0
+
+    # Calculate the angle in radians
+    angle_rad = np.arcsin(arcsin_arg)
+
+    # Convert the angle to degrees
+    angle_deg = np.rad2deg(angle_rad)
+
+    return angle_deg
+
+
+def calculate_max_penetration_angle(
+    hole_diameter_mm: float,
+    collimator_length_mm: float,
+    septal_thickness_mm: float,
+    linear_attenuation_coeff_cm: float,
+    strictness_s: float,
+    accurate_cutoff: float = 0.001,
+) -> float:
+    """
+    Calculates the max acceptance angle using a "Strictness" parameter.
+
+    The model interpolates between a purely geometric angle (S=1) and a
+    physically accurate angle that includes penetration (S=0).
+
+    Args:
+        hole_diameter_mm (float): Diameter of the collimator hole in mm.
+        collimator_length_mm (float): Physical length of the collimator in mm.
+        septal_thickness_mm (float): Thickness of the collimator septa in mm.
+        linear_attenuation_coeff_cm (float): Linear attenuation coefficient
+                                             of the septal material in cm^-1.
+        strictness_s (float): The strictness parameter, from 0 to 1.
+                              S=1 is maximally strict (geometric only).
+                              S=0 is minimally strict (fully accurate).
+        accurate_cutoff (float, optional): The internal probability cutoff used
+                                           to define the 'fully accurate' angle.
+                                           Defaults to 0.001 (0.1%).
+
+    Returns:
+        float: The maximum acceptance angle in degrees.
+    """
+    if not 0 <= strictness_s <= 1:
+        raise ValueError("Strictness (S) must be between 0 and 1.")
+
+    # --- 1. Calculate the Geometric Angle (S=1 case) ---
+    theta_geom = np.rad2deg(np.arctan(hole_diameter_mm / collimator_length_mm))
+
+    # --- 2. Calculate the "Fully Accurate" Angle (S=0 case) ---
+    # This is the angle where transmission probability drops to the low cutoff.
+    # It represents the widest plausible angle including penetration.
+    mu_mm = linear_attenuation_coeff_cm / 10.0
+    try:
+        # From the physical model: sin(theta) = -mu*t / ln(cutoff)
+        arcsin_arg = (-mu_mm * septal_thickness_mm) / np.log(accurate_cutoff)
+
+        if 0 < arcsin_arg < 1:
+            theta_accurate = np.rad2deg(np.arcsin(arcsin_arg))
+        else:
+            # If arg is invalid (e.g., > 1), penetration is essentially
+            # impossible. The most accurate model is the geometric one.
+            theta_accurate = theta_geom
+
+    except (ValueError, ZeroDivisionError):
+        # Handle invalid log() input or other math errors
+        theta_accurate = theta_geom
+
+    # --- 3. Interpolate using the Strictness parameter S ---
+    # S=1 gives theta_geom, S=0 gives theta_accurate.
+    theta_max = strictness_s * theta_geom + (1 - strictness_s) * theta_accurate
+
+    return theta_max
+
+
+def calculate_theta_max_angle(
+    hole_diameter_mm: float,
+    collimator_length_mm: float,
+    septal_thickness_mm: float,
+    linear_attenuation_coeff_cm: float,
+) -> float:
+
+    # Calculate the Geometric Angle
+    theta_geom = np.rad2deg(np.arctan(hole_diameter_mm / collimator_length_mm))
+
+    # Calculate the effective length, according to mu
+    Leff = collimator_length_mm - 2 / linear_attenuation_coeff_cm
+
+    # Calculate the effective angle, according to mu
+    theta_acc = np.rad2deg(np.arctan(hole_diameter_mm / Leff))
+
+    # Calculate the crossover max angle
+    theta_cross = np.rad2deg(
+        np.arctan((hole_diameter_mm + septal_thickness_mm) / collimator_length_mm)
+    )
+
+    # print
+    print(f"Geometric angle: {theta_geom:.2f} deg")
+    print(f"Effective length: {Leff:.2f} mm vs {collimator_length_mm:.2f} mm")
+    print(f"Effective angle: {theta_acc:.2f} deg")
+    print(f"Crossover angle: {theta_cross:.2f} deg")
+
+    return theta_acc

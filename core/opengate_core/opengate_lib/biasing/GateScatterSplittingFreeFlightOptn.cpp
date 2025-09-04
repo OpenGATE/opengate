@@ -70,7 +70,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   fParticleChange.ProposeMomentumDirection(
       particle_change->GetProposedMomentumDirection());
 
-  // Copied from G4: "inform we take care of secondaries weight (otherwise these
+  // Copied from G4: "inform we take care of secondary weight (otherwise these
   // secondaries are by default given the primary weight)."
   fParticleChange.SetSecondaryWeightByProcess(true); // 'true' is needed
   // fParticleChange.SetParentWeightByProcess(true);   // unsure ?
@@ -78,12 +78,17 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   // set the weight for the split track and the position
   const double weight = track->GetWeight() / fSplittingFactor;
 
-  // delete secondaries to avoid memory leak
+  // delete secondaries to avoid memory leak (needed)
   for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
     const auto *sec = final_state->GetSecondary(j);
     delete sec;
   }
-  particle_change->Clear(); // FIXME useful ? like in brem ?
+  particle_change->Clear();
+
+  G4Track templateTrack(*track);
+  templateTrack.SetWeight(weight);
+  templateTrack.SetPosition(position);
+  // templateTrack.SetTrackStatus(particle_change->GetTrackStatus());
 
   // Loop to split Compton gammas
   fAAManager->StartAcceptLoop();
@@ -91,7 +96,8 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     double energy = 0;
     final_state =
         callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
-    particle_change = dynamic_cast<G4ParticleChangeForGamma *>(final_state);
+    // particle_change = dynamic_cast<G4ParticleChangeForGamma *>(final_state);
+    particle_change = static_cast<G4ParticleChangeForGamma *>(final_state);
 
     // delete secondaries to avoid memory leak
     for (auto j = 0; j < final_state->GetNumberOfSecondaries(); j++) {
@@ -108,18 +114,9 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     energy = particle_change->GetProposedKineticEnergy();
     if (energy > 0) {
       // Create a new track with another gamma (free by G4)
-      const auto gammaTrack = new G4Track(*track);
-      gammaTrack->SetWeight(weight);
+      const auto gammaTrack = new G4Track(templateTrack);
       gammaTrack->SetMomentumDirection(momentum);
       gammaTrack->SetKineticEnergy(energy);
-      gammaTrack->SetPosition(position);
-      // FIXME time ? polarization ?
-      gammaTrack->SetTrackStatus(particle_change->GetTrackStatus()); // needed ?
-
-      // Seems that this pointer is free by G4
-      fUserTrackInformation = new GateUserTrackInformation();
-      fUserTrackInformation->SetGateTrackInformation(fActor, true);
-      gammaTrack->SetUserInformation(fUserTrackInformation);
 
       // Add the track in the stack
       fParticleChange.AddSecondary(gammaTrack);

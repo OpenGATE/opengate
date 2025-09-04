@@ -15,6 +15,72 @@ from opengate.contrib.spect.spect_helpers import (
 )
 from scipy.spatial.transform import Rotation
 from box import Box
+from opengate.contrib.spect.spect_helpers import (
+    get_mu_from_xraylib,
+    calculate_acceptance_angle,
+)
+import json
+
+
+def get_geometrical_parameters_filename():
+    filename = (
+        pathlib.Path(__file__).parent / "ge_discovery_nm670_geometrical_parameters.json"
+    )
+    return pathlib.Path(filename)
+
+
+geometrical_parameters = None
+
+
+def get_geometrical_parameters():
+    global geometrical_parameters
+    if geometrical_parameters is None:
+        filename = get_geometrical_parameters_filename()
+        if not filename.exists():
+            print(f'update geometrical parameters to "{filename}"')
+            update_geometrical_parameters(store_to_file=True)
+        # print(f'Loading geometrical parameters from "{filename}"')
+        with open(filename) as json_file:
+            geometrical_parameters = json.load(json_file)
+        geometrical_parameters = Box(geometrical_parameters)
+    return geometrical_parameters
+
+
+def update_geometrical_parameters(store_to_file=False):
+    p = Box()
+    p.collimators = ["lehr", "megp", "hegp"]
+    # for all colli
+    nm = g4_units.nm
+    for c in p.collimators:
+        s = Simulation()
+        spect, colli, crystal = add_spect_head(s, "spect", c, debug=True)
+        pos = get_volume_position_in_head(s, "spect", f"collimator_trd", "max", axis=2)
+        y = get_volume_position_in_head(s, "spect", "crystal", "center", axis=2)
+        psd = get_volume_position_in_head(s, "spect", "collimator_psd", "min", axis=2)
+        p[c] = Box()
+        # distance from box boundary to collimator
+        p[c].collimator_position = pos
+        # distance to the center of the box head
+        p[c].half_box_size = spect.size[2] / 2.0 + 1 * nm
+        # distance from box boundary to crystal center (for arf)
+        p[c].crystal_distance = p[c].half_box_size - y
+        # distance from box boundary to the collimator_psd
+        p[c].psd = p[c].half_box_size - psd
+
+        # collimator holes
+        hole = s.volume_manager.get_volume(f"spect_collimator_hole")
+        p[c].hole_diameter = hole.radius * 2
+        p[c].collimator_length = hole.height
+        holep = s.volume_manager.get_volume(f"spect_collimator_hole_param")
+        tr = holep.translation
+        p[c].septa_thickness = tr[1] - p[c].hole_diameter
+
+    if store_to_file:
+        filename = get_geometrical_parameters_filename()
+        with open(filename, "w") as json_file:
+            json.dump(p, json_file, indent=4)
+
+    return p
 
 
 def get_collimator(rad):
@@ -39,7 +105,9 @@ def add_fake_spect_head(sim, name="spect"):
 
 def get_orientation_for_ct(colli_type, table_shift, radius):
     nm = g4_units.nm
-    pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal(colli_type)
+    pos, crystal_distance, psdd = get_plane_position_and_distance_to_crystal_OLD(
+        colli_type
+    )
     pos += 1 * nm
     p = [0, table_shift, -(radius + psdd)]
     return get_transform_orbiting(p, "x", 90)
@@ -75,7 +143,7 @@ def add_spect_head(
     add_materials(sim)
 
     # check overlap
-    # sim.check_volumes_overlap = False  # set to True for debug
+    # sim.check_volumes_overlap = False # set to True for debug
 
     # spect head
     head, lead_cover = add_spect_box(sim, name, crystal_size)
@@ -88,7 +156,25 @@ def add_spect_head(
     if collimator_type:
         colli = add_collimator(sim, name, head, collimator_type, rotation_deg, debug)
 
+    # default orientation
+    set_default_orientation(head, collimator_type)
+
     return head, colli, crystal
+
+
+def set_default_orientation(head, collimator_type):
+    # default head translation to set the shielding_front at position 0
+    # (this translation is considered in rotate_gantry)
+    p = get_geometrical_parameters()
+    if collimator_type:
+        tr = p[collimator_type].half_box_size - p[collimator_type].psd
+    else:
+        tr = 0
+    head.translation = [0, tr, 0]
+
+    # also the orientation is set such as Y is the normal of the detector
+    rot = Rotation.from_euler("xy", (90, 0), degrees=True)
+    head.rotation = rot.as_matrix()
 
 
 def add_spect_two_heads(
@@ -107,7 +193,9 @@ def add_spect_two_heads(
     )
 
     # set at their initial position
+    set_default_orientation(head1, collimator_type)
     rotate_gantry(head1, radius, start_angle_deg=0, step_angle_deg=1, nb_angle=1)
+    set_default_orientation(head2, collimator_type)
     rotate_gantry(head2, radius, start_angle_deg=180, step_angle_deg=1, nb_angle=1)
 
     return [head1, head2], [crystal1, crystal2]
@@ -781,14 +869,14 @@ def add_digitizer_lu177_v3_OLD(sim, crystal_name, name, spectrum_channel=True):
 def compute_plane_position_and_distance_to_crystal(collimator_type):
     sim = Simulation()
     spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
-    pos = get_volume_position_in_head(sim, "spect", "collimator_psd", "max")
-    y = get_volume_position_in_head(sim, "spect", "crystal", "center")
+    pos = get_volume_position_in_head(sim, "spect", "collimator_psd", "max", axis=2)
+    y = get_volume_position_in_head(sim, "spect", "crystal", "min", axis=2)
     crystal_distance = pos - y
     psd = spect.size[2] / 2.0 - pos
     return pos, crystal_distance, psd
 
 
-def get_plane_position_and_distance_to_crystal(collimator_type):
+def get_plane_position_and_distance_to_crystal_OLD(collimator_type):
     """
     This has been computed with t043_distances or compute_plane_position_and_distance_to_crystal
     - first : distance from head center to the PSD (translation for the plane)
@@ -823,7 +911,7 @@ def set_head_orientation(head, collimator_type, radius, gantry_angle_deg=0):
     return r
 
 
-def add_detection_plane_for_arf(
+def add_detection_plane_for_arf_OLD(
     sim, plane_size, colli_type, radius, gantry_angle_deg=0, det_name=None
 ):
     if det_name is None:
@@ -852,26 +940,127 @@ def add_detection_plane_for_arf(
     return detector_plane
 
 
-def rotate_gantry(
-    head, radius, start_angle_deg, step_angle_deg=1, nb_angle=1, initial_rotation=None
+def get_normal_to_arf_plane():
+    return [0, 0, 1]
+
+
+def get_normal_to_detector():
+    return [0, 0, -1]
+
+
+def add_detection_plane_for_arf(sim, det_name, colli_type, plane_size=None):
+    # the plane is in the world coordinate system outside the real spect head box.
+
+    # user plane size only for debug purpose
+    mm = g4_units.mm
+    if plane_size is None:
+        plane_size = [576 * mm, 446 * mm]
+
+    # plane
+    nm = g4_units.nm
+    detector_plane = sim.add_volume("Box", det_name)
+    detector_plane.material = "G4_Galactic"
+    detector_plane.color = [1, 0, 0, 1]
+    detector_plane.size = [plane_size[0], plane_size[1], 1 * nm]
+
+    # compute the position according to the front psd
+    p = get_geometrical_parameters()
+    arf_position = p[colli_type].psd
+    detector_plane.translation = [0, -arf_position, 0]
+
+    # initial_rotation like the detector
+    r = Rotation.from_euler("x", -90, degrees=True)
+    detector_plane.rotation = r.as_matrix()
+
+    # DEBUG
+    """fake = sim.add_volume("Box", "fake")
+    fake.mother = detector_plane
+    fake.material = "G4_Galactic"
+    fake.color = [1, 1, 0, 1]
+    fake.size = [20 * mm, 10 * mm, 2 * mm]
+    fake.translation = [-plane_size[0] / 2, -plane_size[1] / 2, 0]"""
+
+    # rotate
+    rotate_gantry(detector_plane, radius=0, start_angle_deg=0)
+    return detector_plane
+
+
+def add_source_for_arf_training_dataset(
+    sim, source_name, activity, detector_plane, min_energy, max_energy
 ):
+    cm = g4_units.cm
+    source = sim.add_source("GenericSource", source_name)
+    source.particle = "gamma"
+    source.activity = activity
+    source.position.type = "disc"
+    source.position.radius = 5 * cm
+    source.position.translation = [0, -20 * cm, 0]
+    source.direction.type = "iso"
+    source.energy.type = "range"
+    source.energy.min_energy = min_energy
+    source.energy.max_energy = max_energy
+    source.direction.acceptance_angle.volumes = [detector_plane.name]
+    source.direction.acceptance_angle.intersection_flag = True
+
+    return source
+
+
+def add_actor_for_arf_training_dataset(sim, colli_type, ene_win_actor, rr):
+    # the detector is in front of the spect head volume, outside
+    detector_plane = add_detection_plane_for_arf(sim, "arf_plane", colli_type)
+
+    # arf actor for building the training dataset
+    arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
+    arf.energy_windows_actor = ene_win_actor.name
+    arf.attached_to = detector_plane.name
+    arf.output_filename = "arf_training_dataset.root"
+    arf.russian_roulette = rr
+    arf.plane_axis = [0, 1, 2]  # the depth is plane_axis[2] = 2
+
+    return detector_plane, arf
+
+
+def add_arf_detector(sim, name, colli_type, image_size, image_spacing, pth_filename):
+    # plane_size = [image_size[0] * image_spacing[0], image_size[1] * image_spacing[1]]
+    # print(f"plane_size: {plane_size}")
+    det_plane = add_detection_plane_for_arf(sim, det_name=name, colli_type=colli_type)
+
+    # set the position in front of the collimator
+    p = get_geometrical_parameters()
+    crystal_distance = p[colli_type].crystal_distance
+
+    arf = sim.add_actor("ARFActor", f"{name}_arf")
+    arf.attached_to = det_plane.name
+    arf.output_filename = f"projection_{arf.name}.mhd"
+    arf.batch_size = 1e5
+    arf.image_size = image_size
+    arf.image_spacing = image_spacing
+    arf.verbose_batch = False
+    print(f"crystal_distance: {crystal_distance}")
+    arf.distance_to_crystal = crystal_distance
+    arf.pth_filename = pth_filename
+    arf.flip_plane = False
+    arf.plane_axis = [0, 1, 2]
+    arf.enable_hit_slice = False
+    arf.gpu_mode = "auto"
+
+    return det_plane, arf
+
+
+def rotate_gantry(head, radius, start_angle_deg, step_angle_deg=1, nb_angle=1):
     # compute the nb translation and rotation
+    # WARNING: use the initial rotation and translation of the head.
     translations = []
     rotations = []
     current_angle_deg = start_angle_deg
-    if initial_rotation is None:
-        initial_rotation = Rotation.from_euler("X", 90, degrees=True)
-        initial_rotation = Rotation.from_euler("xz", (180, 90), degrees=True)
-        initial_rotation = Rotation.from_euler("xz", (90, 180), degrees=True)
-        initial_rotation = Rotation.from_euler(
-            "xy", (90, 180), degrees=True
-        )  # ok left right
-        initial_rotation = Rotation.from_euler("xy", (90, 0), degrees=True)
     for r in range(nb_angle):
-        t, rot = get_transform_orbiting([0, radius, 0], "Z", current_angle_deg)
+        tr = head.translation.copy()
+        initial_rotation = head.rotation
+        tr[1] += radius
+        t, rot = get_transform_orbiting(tr, "Z", current_angle_deg)
         rot = Rotation.from_matrix(rot)
-        rot = rot * initial_rotation
         rot = rot.as_matrix()
+        rot = np.matmul(rot, initial_rotation)
         translations.append(t)
         rotations.append(rot)
         current_angle_deg += step_angle_deg
@@ -885,38 +1074,19 @@ def rotate_gantry(
     head.rotation = rotations[0]
 
 
-def add_source_for_arf_training_dataset(
-    sim, source_name, activity, detector_plane, min_energy, max_energy
-):
-    cm = g4_units.cm
-    source = sim.add_source("GenericSource", source_name)
-    source.particle = "gamma"
-    source.activity = activity
-    source.position.type = "disc"
-    source.position.radius = 5 * cm
-    source.position.translation = [0, 0, 20 * cm]
-    source.direction.type = "iso"
-    source.energy.type = "range"
-    source.energy.min_energy = min_energy
-    source.energy.max_energy = max_energy
-    source.direction.acceptance_angle.volumes = [detector_plane.name]
-    source.direction.acceptance_angle.intersection_flag = True
-
-    return source
-
-
-def add_actor_for_arf_training_dataset(sim, head, colli_type, ene_win_actor, rr):
+def add_actor_for_arf_training_dataset_OLD(sim, head, colli_type, ene_win_actor, rr):
     nm = g4_units.nm
     cm = g4_units.cm
+
     # detector input plane
-    pos, crystal_dist, psd = get_plane_position_and_distance_to_crystal(colli_type)
+    pos, crystal_dist, psd = get_plane_position_and_distance_to_crystal_OLD(colli_type)
     pos += 1 * nm  # to avoid overlap
     detector_plane = sim.add_volume("Box", "arf_plane")
     detector_plane.mother = head
     detector_plane.size = [57.6 * cm, 44.6 * cm, 1 * nm]
     detector_plane.translation = [0, 0, pos]
     detector_plane.material = "G4_Galactic"
-    detector_plane.color = [0, 1, 0, 1]
+    detector_plane.color = [1, 0, 0, 1]
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
@@ -928,11 +1098,11 @@ def add_actor_for_arf_training_dataset(sim, head, colli_type, ene_win_actor, rr)
     return detector_plane, arf
 
 
-def add_arf_detector(
+def add_arf_detector_OLD(
     sim, radius, gantry_angle, size, spacing, colli_type, name, i, pth
 ):
     plane_size = [size[0] * spacing[0], size[1] * spacing[1]]
-    det_plane = add_detection_plane_for_arf(
+    det_plane = add_detection_plane_for_arf_OLD(
         sim,
         plane_size,
         colli_type=colli_type,
@@ -981,6 +1151,11 @@ def get_pytomography_detector_physics_data(colli_name):
     return d
 
 
+def get_default_size_and_spacing():
+    mm = g4_units.mm
+    return [128, 128], [2.21 * mm * 2, 2.21 * mm * 2]
+
+
 def add_digitizer(
     sim, crystal_name, name=None, size=None, spacing=None, channels=None, filename=None
 ):
@@ -989,9 +1164,9 @@ def add_digitizer(
     if name is None:
         name = crystal_name
     if size is None:
-        size = [128, 128]
+        size = get_default_size_and_spacing()[0]
     if spacing is None:
-        spacing = [2.21 * mm * 2, 2.21 * mm * 2]
+        spacing = get_default_size_and_spacing()[1]
     if channels is None:
         channels = get_default_energy_windows("tc99m")
 
@@ -1043,3 +1218,25 @@ def add_digitizer(
     ).as_matrix()
 
     return digitizer
+
+
+def calculate_collimator_acceptance_angle(collimator_type, energy, prob_threshold):
+    p = get_geometrical_parameters()
+    hole_diameter = p[collimator_type].hole_diameter
+    collimator_length = p[collimator_type].collimator_length
+    septa_thickness = p[collimator_type].septa_thickness
+
+    mu_lead_cm = get_mu_from_xraylib("Pb", energy)
+    print(
+        f"collimator_type: {collimator_type}, energy: {energy} keV, mu_lead_cm: {mu_lead_cm} cm-1"
+    )
+    print(f"collimator septa thicnkess {septa_thickness} mm")
+    # theta_max = calculate_max_penetration_angle(
+    #    hole_diameter, collimator_length, septa_thickness, mu_lead_cm, prob_threshold
+    # )
+    l_eff, theta_acc = calculate_acceptance_angle(
+        hole_diameter, collimator_length, mu_lead_cm
+    )
+    print(f"theta_max: {theta_acc} deg")
+
+    return l_eff, theta_acc

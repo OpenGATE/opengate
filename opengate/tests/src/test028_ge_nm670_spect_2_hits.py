@@ -7,15 +7,13 @@ from opengate.tests import utility
 
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(
-        __file__, "gate_test028_ge_nm670_spect", output_folder="test028"
-    )
+    paths = utility.get_default_test_paths(__file__, "", output_folder="test028_hits")
 
     # create the simulation
     sim = gate.Simulation()
 
     # main description
-    test028.create_spect_simu(sim, paths, version="_2_hits")
+    test028.create_spect_simu(sim, paths)
 
     # mono thread
     sim.number_of_threads = 1
@@ -23,6 +21,6 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = test028.test_spect_hits(sim, paths)
+    is_ok = test028.test_spect_root(sim, paths)
 
     utility.test_ok(is_ok)

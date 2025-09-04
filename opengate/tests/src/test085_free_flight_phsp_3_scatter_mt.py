@@ -25,7 +25,10 @@ if __name__ == "__main__":
     # ff scatter: for this test, this is very inefficient
     # we only check the potential bias
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
-    ff.attached_to = "phantom"
+    ff.attached_to = "world"  # Warning, if "phantom": cannot kill outside the phantom
+    # warning : the interacting initial gamma are not killed when exist the phantom
+    # we explicitly kill then when they go out
+    ff.kill_interacting_in_volumes = ["phsp_sphere"]
     ff.compton_splitting_factor = 4  # the value must have no effect
     ff.rayleigh_splitting_factor = 4  # the value must have no effect
     ff.max_compton_level = 1000  # count everything

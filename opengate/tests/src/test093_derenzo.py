@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 ### Derenzo phantom with 6 sets of cylinders of different size for each set
 ### For phantom1 set of cylinders each cylinder is assigned with an activity value
 ### The same procedure as in phantom1 with the activity can be followed to all phantom sets

@@ -85,16 +85,16 @@ if __name__ == "__main__":
     # print info
     print("")
     arf = sim.get_actor("arf")
-    img = itk.imread(str(arf.get_output_path()))
+    img = itk.imread(str(arf.get_output_path("counts")))
     # set the first channel to the same channel (spectrum) than the analog
     img[0, :] = img[1, :] + img[2, :]
     print(f"Number of batch: {arf.batch_nb}")
     print(f"Number of detected particles: {arf.detected_particles}")
-    filename1 = str(arf.get_output_path()).replace(".mhd", "_0.mhd")
+    filename1 = str(arf.get_output_path("counts")).replace(".mhd", "_0.mhd")
     itk.imwrite(img, filename1)
 
     # high stat
-    filename2 = str(arf.get_output_path()).replace(".mhd", "_hs.mhd")
+    filename2 = str(arf.get_output_path("counts")).replace(".mhd", "_hs.mhd")
     scale = 4e8 * Bq / activity / sim.number_of_threads
     print(f"Scaling ref = 4e8, activity = {activity}, scale = {scale}")
     img2 = gate.image.scale_itk_image(img, scale)

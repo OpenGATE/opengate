@@ -426,7 +426,7 @@ def get_random_folder_name(size=8, create=True):
         if not directory.exists():
             print(f"Creating output folder {r}")
             directory.mkdir(parents=True, exist_ok=True)
-        if not directory.isdir():
+        if not directory.is_dir():
             fatal(f"Error, while creating {r}.")
     return r
 

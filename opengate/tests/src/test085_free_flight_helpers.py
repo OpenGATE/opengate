@@ -44,7 +44,7 @@ def create_simulation_test085(
     sim.store_json_archive = True
     sim.store_input_files = False
     sim.json_archive_filename = f"simu_{simu_name}.json"
-    sim.random_seed = 321654  # "auto"
+    sim.random_seed = 123234
     data_folder = Path(paths.data) / "test085"
 
     # units
@@ -63,7 +63,6 @@ def create_simulation_test085(
     # visu
     if sim.visu:
         sim.number_of_threads = 1
-        activity = 1000 * BqmL / sim.number_of_threads
         activity = 50 * BqmL / sim.number_of_threads
 
     # world
@@ -140,6 +139,8 @@ def create_simulation_test085(
     # set the gantry orientation
     starting_angle_deg = 10
     if len(heads) == 2:
+        nm670.set_default_orientation(heads[0], "lehr")
+        nm670.set_default_orientation(heads[1], "lehr")
         nm670.rotate_gantry(heads[0], radius, starting_angle_deg, 0, 1)
         nm670.rotate_gantry(heads[1], radius, starting_angle_deg + 180, 0, 1)
 
@@ -148,10 +149,10 @@ def create_simulation_test085(
 
 def add_spect_arf(sim, data_folder, simu_name, radius, size, spacing):
     pth = data_folder / "arf_034_nm670_tc99m_v2.pth"
-    det_plane1, arf1 = nm670.add_arf_detector(
+    det_plane1, arf1 = nm670.add_arf_detector_OLD(
         sim, radius, 0, size, spacing, "lehr", "spect", 1, pth
     )
-    det_plane2, arf2 = nm670.add_arf_detector(
+    det_plane2, arf2 = nm670.add_arf_detector_OLD(
         sim, radius, 180, size, spacing, "lehr", "spect", 2, pth
     )
     det_planes = [det_plane1, det_plane2]
