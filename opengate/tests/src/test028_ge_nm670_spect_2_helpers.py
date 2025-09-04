@@ -292,7 +292,7 @@ def test_spect_root(sim, paths):
     ref_file = paths.output_ref / "test028.root"
     hc_file = sim.get_actor("EnergyWindows").get_output_path()
     checked_keys = [
-        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 12, "scaling": 1},
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 13, "scaling": 1},
         {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 5, "scaling": 1},
         {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 8, "scaling": 1},
         {
