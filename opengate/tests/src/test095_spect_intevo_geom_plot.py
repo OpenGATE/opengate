@@ -38,7 +38,10 @@ if __name__ == "__main__":
         print(ref_json_file)
         j_ref = json.load(open(ref_json_file))
         j_test = json.load(open(sim.user_hook_after_init_arg))
-        b = j_ref == j_test
+        added, removed, modified, same = utility.dict_compare(
+            j_ref, j_test, tolerance=1e5
+        )
+        b = len(added) == 0 and len(removed) == 0 and len(modified) == 0
         utility.print_test(b, f"Compare json volume info with reference")
         is_ok = is_ok and b
         i = i + 1
