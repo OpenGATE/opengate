@@ -1090,21 +1090,21 @@ def open_root_as_np(root_file, tree_name):
 
 
 # https://stackoverflow.com/questions/4527942/comparing-two-dictionaries-and-checking-how-many-key-value-pairs-are-equal
-def dict_compare(d1, d2, tolerance=1e-6, optional_keys=None, parent_key=""):
+def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
     """
     Compare two dictionaries with a tolerance for float values and optional keys to ignore.
 
     Args:
         d1, d2: Dictionaries to compare
         tolerance: Float tolerance for float values
-        optional_keys: List of keys that are optional
+        ignored_keys: List of keys that are optional
         parent_key: Internal use for tracking nested key path
     """
-    optional_keys = set() if optional_keys is None else set(optional_keys)
+    ignored_keys = set() if ignored_keys is None else set(ignored_keys)
 
     # Get all keys excluding optional ones
-    d1_keys = set(d1.keys()) - optional_keys
-    d2_keys = set(d2.keys()) - optional_keys
+    d1_keys = set(d1.keys()) - ignored_keys
+    d2_keys = set(d2.keys()) - ignored_keys
     shared_keys = d1_keys.intersection(d2_keys)
     added = d1_keys - d2_keys
     removed = d2_keys - d1_keys
@@ -1143,12 +1143,12 @@ def dict_compare(d1, d2, tolerance=1e-6, optional_keys=None, parent_key=""):
     def values_equal(v1, v2, key):
         full_key = f"{parent_key}->{key}" if parent_key else key
 
-        if key in optional_keys:
+        if key in ignored_keys:
             return True
 
         if isinstance(v1, dict) and isinstance(v2, dict):
             _, _, nested_modified, _ = dict_compare(
-                v1, v2, tolerance, optional_keys, full_key
+                v1, v2, tolerance, ignored_keys, full_key
             )
             return len(nested_modified) == 0
         elif isinstance(v1, list) and isinstance(v2, list):
