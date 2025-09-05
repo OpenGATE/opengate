@@ -13,8 +13,8 @@ if __name__ == "__main__":
     
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
+
     
-    gate_materials_path       = "utils/GateMaterials.db"
     number_of_total_events    = 1_000_000
     
     
@@ -36,7 +36,7 @@ if __name__ == "__main__":
         number_of_total_events    = 1
     number_of_events    = int(number_of_total_events/sim.number_of_threads) + 1
     
-
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
     
     #=====================================================
     # GEOMETRY
