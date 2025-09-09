@@ -370,7 +370,6 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
     CreateNewParticleAtTheLastVertex(initStep,step, theContainer,batchSize);
   }
   if (fNbOfBatchForExitingParticle > fNbOfMaxBatchPerEvent) {
-    std::cout<<"clear"<<std::endl;
     fStackManager->clear();
     fRemovedParticle++;
   }
@@ -577,8 +576,6 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     delete fCopyInitStep;
     fCopyInitStep = nullptr;
   }
-  if ((fSplitCounter != 0) && (fSplitCounter != 11))
-  std::cout<<fSplitCounter<<std::endl;
   fSplitCounter = 0;
   fNumberOfTrackToSimulate = 0;
   fKilledBecauseOfProcess = false;
