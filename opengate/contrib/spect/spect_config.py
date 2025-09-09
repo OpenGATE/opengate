@@ -972,7 +972,7 @@ def spect_freeflight_merge(
         scatter = None
         scatter_squared = None
 
-    # combined
+    # combined (combined prim/scatter is scaled to n_primary)
     uncert, mean = history_ff_combined_rel_uncertainty(
         prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
     )
