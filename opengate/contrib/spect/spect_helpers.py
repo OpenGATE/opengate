@@ -448,6 +448,15 @@ def history_ff_combined_rel_uncertainty(
     vprim, vprim_squared, vscatter, vscatter_squared, n_prim, n_scatter
 ):
 
+    if vprim is None and vscatter is None:
+        raise ValueError("At least one of the primary or scattering values must be set")
+    prim = None
+    scatter = None
+    prim_var = None
+    scatter_var = None
+    variance = None
+    mean = None
+
     # means for one event
     if vprim is not None:
         prim = vprim / n_prim
