@@ -438,6 +438,7 @@ class KillActor(ActorBase, g4.GateKillActor):
     def EndSimulationAction(self):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
+
 class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
@@ -516,6 +517,7 @@ def _setter_hook_particles(self, value):
         return [value]
     else:
         return list(value)
+
 
 class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
     """

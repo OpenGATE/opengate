@@ -8,17 +8,21 @@ from scipy.spatial.transform import Rotation
 from opengate.tests import utility
 
 
-def validation_test(arr_data,arr_data_sphere, nb_split):
+def validation_test(arr_data, arr_data_sphere, nb_split):
     arr_data = arr_data[arr_data["ParticleName"] == "gamma"]
     arr_data_sphere = arr_data_sphere[arr_data_sphere["ParticleName"] == "gamma"]
     event_ID = np.unique(arr_data["EventID"].to_numpy())
-    bool_1 = len(event_ID)*nb_split == len(arr_data_sphere)
-    bool_2 = (len(event_ID)*nb_split - len(arr_data))/(len(event_ID)*nb_split) <0.01
+    bool_1 = len(event_ID) * nb_split == len(arr_data_sphere)
+    bool_2 = (len(event_ID) * nb_split - len(arr_data)) / (
+        len(event_ID) * nb_split
+    ) < 0.01
     if bool_1:
         print("All the replayed particle exited the geometry")
     if bool_2:
-        print("At the rayleigh process exception, all the emitted particles well targeted the plan ")
-    return ( bool_1 and bool_2)
+        print(
+            "At the rayleigh process exception, all the emitted particles well targeted the plan "
+        )
+    return bool_1 and bool_2
 
 
 if __name__ == "__main__":
@@ -89,11 +93,10 @@ if __name__ == "__main__":
     plan.size = [5 * cm, 5 * cm, 1 * nm]
     plan.translation = [0, 0, -1 * cm]
 
-
-    sphere = sim.add_volume("Sphere",'sphere_phsp')
+    sphere = sim.add_volume("Sphere", "sphere_phsp")
     sphere.material = "G4_Galactic"
-    sphere.rmin = 10*cm
-    sphere.rmax = 10*cm +1*nm
+    sphere.rmin = 10 * cm
+    sphere.rmax = 10 * cm + 1 * nm
 
     if bias:
         ###### Last vertex Splitting ACTOR #########
@@ -107,9 +110,8 @@ if __name__ == "__main__":
         vertex_splitting_actor.acceptance_angle.intersection_flag = True
         vertex_splitting_actor.acceptance_angle.skip_policy = "SkipEvents"
         vertex_splitting_actor.batch_size = 100
-        vertex_splitting_actor.nb_of_max_batch_per_event= 500
+        vertex_splitting_actor.nb_of_max_batch_per_event = 500
         vertex_splitting_actor.acceptance_angle.max_rejection = 100000000
-
 
     ####### gamma source ###########
     source = sim.add_source("GenericSource", "source1")
@@ -131,9 +133,8 @@ if __name__ == "__main__":
         source_0 = sim.add_source("LastVertexSource", "source_vertex")
         source_0.n = 1
 
-
-    phsp_name_list = ["","_sphere"]
-    mother_volume_list = [plan.name,sphere.name]
+    phsp_name_list = ["", "_sphere"]
+    mother_volume_list = [plan.name, sphere.name]
     ####### PHASE SPACE ACTOR ##############
     for i, phsp_name in enumerate(phsp_name_list):
         phsp_actor = sim.add_actor("PhaseSpaceActor", "PhaseSpace" + phsp_name)
@@ -149,7 +150,9 @@ if __name__ == "__main__":
             "TrackCreatorProcess",
         ]
 
-        phsp_actor.output_filename = "test094_output_data_last_vertex_angular_kill" + phsp_name + ".root"
+        phsp_actor.output_filename = (
+            "test094_output_data_last_vertex_angular_kill" + phsp_name + ".root"
+        )
         print(phsp_actor.output_filename)
 
     s = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -171,5 +174,5 @@ if __name__ == "__main__":
     )
     arr_data = f_data["PhaseSpace"].arrays()
     arr_data_sphere = f_data_sphere["PhaseSpace_sphere"].arrays()
-    is_ok = validation_test(arr_data,arr_data_sphere,nb_split)
+    is_ok = validation_test(arr_data, arr_data_sphere, nb_split)
     utility.test_ok(is_ok)

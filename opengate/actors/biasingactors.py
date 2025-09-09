@@ -349,7 +349,9 @@ class ScatterSplittingFreeFlightActor(
         )
 
 
-class LastVertexInteractionSplittingActor( ActorBase, g4.GateLastVertexInteractionSplittingActor):
+class LastVertexInteractionSplittingActor(
+    ActorBase, g4.GateLastVertexInteractionSplittingActor
+):
     """Specific VRT which do not use the generic biaising. This splitting actor proposes an interaction splitting at the last particle vertex before the exit
      of the biased volume.  This actor can be usefull for application where collimation are important,
     such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
@@ -424,6 +426,7 @@ class LastVertexInteractionSplittingActor( ActorBase, g4.GateLastVertexInteracti
     def EndSimulationAction(self):
         print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())
+
 
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)

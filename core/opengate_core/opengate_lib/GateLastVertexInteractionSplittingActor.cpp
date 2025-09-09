@@ -91,18 +91,17 @@ void GateLastVertexInteractionSplittingActor::InitializeAAManager(
   fAAManager = new GateAcceptanceAngleManager();
   fAAManager->Initialize(user_info, true);
 
-
   if (G4EmParameters::Instance()->GeneralProcessActive() == true) {
     Fatal("GeneralGammaProcess is not active. . This do *not* work for "
           "ScatterSplittingFreeFlight");
   }
 }
 
-
 G4VProcess *GateLastVertexInteractionSplittingActor::GetProcessFromProcessName(
     G4String particleName, G4String pName) {
   auto *particle_table = G4ParticleTable::GetParticleTable();
-  G4ParticleDefinition *particleDefinition =particle_table->FindParticle(particleName);
+  G4ParticleDefinition *particleDefinition =
+      particle_table->FindParticle(particleName);
   G4ProcessManager *processManager = particleDefinition->GetProcessManager();
   G4ProcessVector *processList = processManager->GetProcessList();
   G4VProcess *nullProcess = nullptr;
@@ -190,13 +189,15 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
     G4Track *newTrack =
         CreateComptonTrack(gammaProcessFinalState, *fTrackToSplit, fWeight);
 
-    //std::cout<<fAAManager<<std::endl;
-    //std::cout<<(!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))<<std::endl;
-    if ((fAAManager !=0) && (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))){
-        delete newTrack;
-      }
-    else{
-      //std::cout<<"in"<<std::endl;
+    // std::cout<<fAAManager<<std::endl;
+    // std::cout<<(!(fAAManager->TestIfAccept(newTrack->GetPosition(),
+    // newTrack->GetMomentumDirection())))<<std::endl;
+    if ((fAAManager != 0) &&
+        (!(fAAManager->TestIfAccept(newTrack->GetPosition(),
+                                    newTrack->GetMomentumDirection())))) {
+      delete newTrack;
+    } else {
+      // std::cout<<"in"<<std::endl;
       fStackManager->PushOneTrack(newTrack);
     }
 
@@ -316,13 +317,13 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
       G4ThreeVector momentum = newTrack->GetMomentumDirection();
 
       if (!(isnan(momentum[0]))) {
-         if ((fAAManager !=0) && (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))){
-            delete newTrack;
-          }
-        else if (IsPushBack == true) {
+        if ((fAAManager != 0) &&
+            (!(fAAManager->TestIfAccept(newTrack->GetPosition(),
+                                        newTrack->GetMomentumDirection())))) {
           delete newTrack;
-        } 
-        else {
+        } else if (IsPushBack == true) {
+          delete newTrack;
+        } else {
           newTrack->SetWeight(fWeight);
           newTrack->SetCreatorProcess(process);
           // trackVector->emplace_back(newTrack);
@@ -366,8 +367,8 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
       fStackManager->GetNTotalTrack() - nbOfTrackAlreadyInStack;
   fNbOfBatchForExitingParticle++;
 
-  if(fNumberOfTrackToSimulate == 0){
-    CreateNewParticleAtTheLastVertex(initStep,step, theContainer,batchSize);
+  if (fNumberOfTrackToSimulate == 0) {
+    CreateNewParticleAtTheLastVertex(initStep, step, theContainer, batchSize);
   }
   if (fNbOfBatchForExitingParticle > fNbOfMaxBatchPerEvent) {
     fStackManager->clear();
@@ -548,7 +549,7 @@ G4bool GateLastVertexInteractionSplittingActor::
 
 void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
     const G4Run *run) {
-      //fAAManager->StartAcceptLoop();
+  // fAAManager->StartAcceptLoop();
   fListOfProcessesAccordingParticles["gamma"] = {"compt", "phot", "conv"};
   fListOfProcessesAccordingParticles["e-"] = {"eBrem", "eIoni", "msc"};
   fListOfProcessesAccordingParticles["e+"] = {"eBrem", "eIoni", "msc",
@@ -562,7 +563,6 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
   auto *source = fSourceManager->FindSourceByName("source_vertex");
   fVertexSource = (GateLastVertexSource *)source;
   fStackManager = G4EventManager::GetEventManager()->GetStackManager();
-
 }
 
 void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
@@ -611,12 +611,17 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
     FillOfDataTree(step);
 
     if (IsParticleExitTheBiasedVolume(step)) {
-      if (fAAManager != 0){
-        //std::cout<<"conven tracking moment"<<"    "<<fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())<<std::endl;
-        if (fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())){
-          if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() != "None") {
-          fListOfContainer.push_back((*fIterator));
-          fNumberOfReplayedParticle++;
+      if (fAAManager != 0) {
+        // std::cout<<"conven tracking moment"<<"
+        // "<<fAAManager->TestIfAccept(step->GetTrack()->GetPosition(),
+        // step->GetTrack()->GetMomentumDirection())<<std::endl;
+        if (fAAManager->TestIfAccept(
+                step->GetTrack()->GetPosition(),
+                step->GetTrack()->GetMomentumDirection())) {
+          if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() !=
+              "None") {
+            fListOfContainer.push_back((*fIterator));
+            fNumberOfReplayedParticle++;
           }
         }
       }
@@ -690,7 +695,7 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
         else {
           if (fIsFirstStep) {
             fNumberOfTrackToSimulate--;
-            
+
             if (fKilledBecauseOfProcess == false) {
               fSplitCounter += 1;
             } else {

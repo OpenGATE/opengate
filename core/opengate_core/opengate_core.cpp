@@ -350,7 +350,6 @@ void init_GateSimulationStatisticsActor(py::module &);
 
 void init_GatePhaseSpaceActor(py::module &);
 
-
 // biasing
 void init_GateBOptrBremSplittingActor(py::module &m);
 
