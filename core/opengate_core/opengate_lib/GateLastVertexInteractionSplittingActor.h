@@ -30,11 +30,11 @@
 #define GateLastVertexInteractionSplittingActor_h 1
 
 #include "CLHEP/Vector/ThreeVector.h"
-#include "GateAcceptanceAngleManager.h"
-#include "GateAcceptanceAngleSingleVolume.h"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4StackManager.hh"
 #include "G4VEnergyLossProcess.hh"
+#include "GateAcceptanceAngleManager.h"
+#include "GateAcceptanceAngleSingleVolume.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingDataContainer.h"
 #include "GateVActor.h"
