@@ -127,7 +127,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       });
   DefineDigiAttribute(
       "ProcessDefinedStep", 'S', FILLF {
-        const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
+        const auto *p = step->GetPostStepPoint()->GetProcessDefinedStep();
         if (p != nullptr)
           att->FillSValue(p->GetProcessName());
         else
