@@ -190,13 +190,10 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
     G4Track *newTrack =
         CreateComptonTrack(gammaProcessFinalState, *fTrackToSplit, fWeight);
 
-    //std::cout<<fAAManager<<std::endl;
-    //std::cout<<(!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))<<std::endl;
     if ((fAAManager !=0) && (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))){
         delete newTrack;
       }
     else{
-      //std::cout<<"in"<<std::endl;
       fStackManager->PushOneTrack(newTrack);
     }
 
@@ -269,7 +266,6 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
   }
   for (int j = 0; j < batchSize; j++) {
     G4int NbOfSecondaries = 0;
-
     G4int count = 0;
     while (NbOfSecondaries == 0) {
       if (process->GetProcessName() == "eBrem") {
@@ -305,10 +301,13 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
             "GateLastVertexInteractionSplittingActor::SecondariesSplitting",
             "BIAS.LV1", JustWarning, ed);
         G4RunManager::GetRunManager()->AbortEvent();
+        fAbortedEvent = true;
         break;
       }
     }
-
+    if(fAbortedEvent){
+      break;
+    }
     G4int idx = 0;
     G4bool IsPushBack = false;
     for (int i = 0; i < NbOfSecondaries; i++) {
@@ -366,7 +365,7 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
       fStackManager->GetNTotalTrack() - nbOfTrackAlreadyInStack;
   fNbOfBatchForExitingParticle++;
 
-  if(fNumberOfTrackToSimulate == 0){
+  if((fNumberOfTrackToSimulate == 0) && (fAbortedEvent == false)){
     CreateNewParticleAtTheLastVertex(initStep,step, theContainer,batchSize);
   }
   if (fNbOfBatchForExitingParticle > fNbOfMaxBatchPerEvent) {
@@ -569,6 +568,7 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     const G4Event *event) {
   fEventID = event->GetEventID();
   fIsAnnihilAlreadySplit = false;
+  fAbortedEvent = false;
   fNbOfBatchForExitingParticle = 0;
   if (fEventID % 50000 == 0)
     std::cout << "event ID : " << fEventID << std::endl;
@@ -612,7 +612,6 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
 
     if (IsParticleExitTheBiasedVolume(step)) {
       if (fAAManager != 0){
-        //std::cout<<"conven tracking moment"<<"    "<<fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())<<std::endl;
         if (fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())){
           if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() != "None") {
           fListOfContainer.push_back((*fIterator));

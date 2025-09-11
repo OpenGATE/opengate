@@ -74,6 +74,7 @@ public:
   G4int fCounter;
   G4bool fKilledBecauseOfProcess = false;
   G4bool fFirstSplittedPart = true;
+  G4bool fAbortedEvent = false;
   G4bool fOnlyTree = false;
   G4double fWeight;
   G4double fBatchSize;
