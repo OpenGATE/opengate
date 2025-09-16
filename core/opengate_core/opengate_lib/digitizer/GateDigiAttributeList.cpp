@@ -166,15 +166,15 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "PreStepVolumeCopyNo", 'I', FILLF {
         const auto *touchable = step->GetPreStepPoint()->GetTouchable();
-        auto depth = touchable->GetHistoryDepth();
-        auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
+        const auto depth = touchable->GetHistoryDepth();
+        const auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
         att->FillIValue(copyNb);
       });
   DefineDigiAttribute(
       "PostStepVolumeCopyNo", 'I', FILLF {
         const auto *touchable = step->GetPostStepPoint()->GetTouchable();
-        auto depth = touchable->GetHistoryDepth();
-        auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
+        const auto depth = touchable->GetHistoryDepth();
+        const auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
         att->FillIValue(copyNb);
       });
   DefineDigiAttribute(
@@ -184,14 +184,23 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "PreStepUniqueVolumeID", 'U', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
-        auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+        const auto uid =
+            m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
         att->FillUValue(uid);
       });
   DefineDigiAttribute(
       "PostStepUniqueVolumeID", 'U', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
-        auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+        const auto uid =
+            m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
         att->FillUValue(uid);
+      });
+  DefineDigiAttribute(
+      "PostStepUniqueVolumeIDAsInt", 'I', FILLF {
+        auto *m = GateUniqueVolumeIDManager::GetInstance();
+        const auto uid =
+            m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+        att->FillIValue(uid->GetNumericID());
       });
   DefineDigiAttribute(
       "PDGCode", 'I', FILLF {
@@ -234,7 +243,6 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
 
   // -----------------------------------------------------
   // Position
-  // FIXME -> add global/local position
   DefineDigiAttribute(
       "Position", '3',
       // Position is the same as PostPosition
@@ -263,7 +271,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "EventPosition", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
-        auto p = event->GetPrimaryVertex(0)->GetPosition();
+        const auto p = event->GetPrimaryVertex(0)->GetPosition();
         att->Fill3Value(p);
       });
   DefineDigiAttribute(
@@ -300,7 +308,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "EventDirection", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
-        auto d =
+        const auto d =
             event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
         att->Fill3Value(d);
       });
