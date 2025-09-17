@@ -101,7 +101,7 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
       G4RandGauss::shoot(local_position.getZ(), fBlurSigma3.getZ()));
 
   // check limits according to the volume
-  if (not l.fSolidExtentIsUpdated) {
+  if (!l.fSolidExtentIsUpdated) {
     // the extent is computed only once per run.
     const G4VoxelLimits limits;
     const G4AffineTransform at;
