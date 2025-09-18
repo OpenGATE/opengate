@@ -155,7 +155,7 @@ jobs:
                        libomp \
                        xquartz \
                        xerces-c \
-                       wget
+                       wget  || true
           brew uninstall --ignore-dependencies libxext
           brew uninstall --ignore-dependencies libx11
           export LDFLAGS="-L/usr/local/opt/llvm/lib"
