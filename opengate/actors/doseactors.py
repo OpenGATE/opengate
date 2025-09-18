@@ -720,6 +720,7 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
                 "BeginOfEventAction",
                 "SteppingAction",
                 "PreUserTrackingAction",
+                "EndOfRunAction",
             }
         )
 
