@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     # options
     sim = gate.Simulation()
-    sim.random_seed = "auto"
+    sim.random_seed = 123654
     sim.number_of_threads = 2
     sim.output_dir = output_path
     sim.verbose_level = gate.logger.NONE

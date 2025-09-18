@@ -31,7 +31,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     # sim.visu = True
     sim.visu_type = "qt"
-    sim.random_seed = "auto"
+    sim.random_seed = 123456
     sim.number_of_threads = 1
     sim.output_dir = output_path
     # sim.progress_bar = True
