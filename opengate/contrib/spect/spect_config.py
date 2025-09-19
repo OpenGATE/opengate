@@ -623,7 +623,8 @@ class SourceConfig(ConfigBase):
 
         # set the source
         source = sim.add_source("VoxelSource", f"{self.spect_config.simu_name}_source")
-        source.attached_to = phantom
+        if phantom is not None:
+            source.attached_to = phantom
         source.image = str(self.image)
         # mode voxelized source according to voxelized phantom
         if self.spect_config.phantom_config.image is not None:
@@ -749,7 +750,7 @@ class FreeFlightConfig(ConfigBase):
             for arf in self.spect_config.detector_config.garf_config.arf_actors:
                 arf.squared_counts.active = True
 
-        # GeneralProcess must *NOT* be used
+        # GeneralProcess must *NOT* be used with FF
         s = f"/process/em/UseGeneralProcess false"
         if s not in sim.g4_commands_before_init:
             sim.g4_commands_before_init.append(s)
@@ -911,8 +912,9 @@ def spect_freeflight_merge_all_heads(
     nb_of_heads=2,
     counts_filename_pattern="projection_$I_counts.mhd",
     sq_counts_filename_pattern="projection_$I_squared_counts.mhd",
-    mean_filename="projection_$I_counts.mhd",
+    merge_filename="projection_$I_counts.mhd",
     rel_uncert_suffix="relative_uncertainty_$I",
+    spr_filename="projection_$I_spr.mhd",
     verbose=True,
 ):
     for d in range(nb_of_heads):
@@ -925,8 +927,9 @@ def spect_freeflight_merge_all_heads(
             scatter_folder=scatter_folder,
             counts_filename=counts_filename_pattern.replace("$I", str(d)),
             sq_counts_filename=sq_counts_filename_pattern.replace("$I", str(d)),
-            mean_filename=mean_filename.replace("$I", str(d)),
+            merge_filename=merge_filename.replace("$I", str(d)),
             rel_uncert_suffix=rel_uncert_suffix.replace("$I", str(d)),
+            spr_filename=spr_filename.replace("$I", str(d)),
             verbose=verbose,
         )
 
@@ -940,11 +943,12 @@ def spect_freeflight_merge(
     scatter_folder="scatter",
     counts_filename="projection_0_counts.mhd",
     sq_counts_filename="projection_0_squared_counts.mhd",
-    mean_filename="mean.mhd",
+    merge_filename="projection_0_counts.mhd",
     rel_uncert_suffix="relative_uncertainty",
+    spr_filename="projection_0_spr.mhd",
     verbose=True,
 ):
-    # make them path
+    # make the paths
     prim_folder = Path(prim_folder)
     scatter_folder = Path(scatter_folder)
 
@@ -977,19 +981,25 @@ def spect_freeflight_merge(
         prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
     )
 
+    # combined image
     scaling = n_target / n_prim
     mean = mean * scaling
     if verbose:
         print(f"Primary n = {n_prim}  Scatter n = {n_scatter}  Target n = {n_target}")
         if n_scatter > 0:
-            print(f"Primary to scatter ratio = {n_prim / n_scatter:.01f}")
-        print(f"Scaling to target        = {scaling:.01f}")
+            print(f"Primary to scatter ratio = {n_prim / n_scatter}")
+        print(f"Scaling to target        = {scaling}")
+
+    # Scatter-to-Primary Ratio (SPR)
+    vprim = (prim / n_prim) * n_target
+    vscatter = (scatter / n_scatter) * n_target
+    spr = np.divide(vscatter, vprim, out=np.zeros_like(vscatter), where=vprim != 0)
 
     # write combined image
     prim_img = sitk.ReadImage(img)
     img = sitk.GetImageFromArray(mean)
     img.CopyInformation(prim_img)
-    fn = folder / mean_filename
+    fn = folder / merge_filename
     sitk.WriteImage(img, fn)
     if verbose:
         print(fn)
@@ -998,6 +1008,14 @@ def spect_freeflight_merge(
     img = sitk.GetImageFromArray(uncert)
     img.CopyInformation(prim_img)
     fn = folder / f"{fn.stem}_{rel_uncert_suffix}.mhd"
+    sitk.WriteImage(img, fn)
+    if verbose:
+        print(fn)
+
+    # write SPR
+    img = sitk.GetImageFromArray(spr)
+    img.CopyInformation(prim_img)
+    fn = folder / spr_filename
     sitk.WriteImage(img, fn)
     if verbose:
         print(fn)
