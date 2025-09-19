@@ -20,6 +20,7 @@ if __name__ == "__main__":
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     sec = gate.g4_units.s
+    ns = gate.g4_units.ns
     ps = gate.g4_units.ps
     keV = gate.g4_units.keV
     Bq = gate.g4_units.Bq
@@ -64,7 +65,7 @@ if __name__ == "__main__":
 
     # source and physics
     stats = test_add_physics_and_stats(sim, "pet")
-    activity = 1000 * Bq / sim.number_of_threads
+    activity = 1e3 * Bq / sim.number_of_threads
     if sim.visu:
         activity = 50 * Bq
     test_add_b2b_source(sim, activity)
@@ -77,7 +78,10 @@ if __name__ == "__main__":
     param = castor.set_hook_castor_config(sim, crystal.name, filename)
 
     # go
-    print(f"Run a simulation of 1 sec with {activity/Bq:.0f} Bq")
+    duration = 1 * sec
+    print(f"Run with {activity/Bq:.0f} Bq during {duration/sec:.03f} s")
+    print(f"Mean time between events = {((1*sec)/(activity/Bq))/ns:.3f} ns")
+    sim.run_timing_intervals = [[0, duration]]
     sim.run()
 
     # print info
