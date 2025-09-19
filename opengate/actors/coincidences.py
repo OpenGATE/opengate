@@ -100,7 +100,7 @@ def coincidences_sorter(
     1) TODO: add option allDigiOpenCoincGate=false, so far only for allDigiOpenCoincGate=true
     """
 
-    # Check availability of the necessary branches in the root file
+    # Check the availability of the necessary branches in the root file
     required_branches = {
         "EventID",
         "GlobalTime",
@@ -135,7 +135,7 @@ def coincidences_sorter(
             f"Unknown policy '{policy}', must be one of {policy_functions.keys()}"
         )
 
-    # Check validity of return_type or output_file_format and output_file_path.
+    # Check the validity of return_type or output_file_format and output_file_path.
     if output_file_path is None:
         known_return_types = ["dict", "pd"]
         if return_type not in known_return_types:
@@ -158,7 +158,7 @@ def coincidences_sorter(
             raise ValueError(f"Output file path has not been provided")
 
     # Since singles in the root file are not guaranteed to be sorted by GlobalTime
-    # (especially in case of multithreaded simulation), singles in one chunk
+    # (especially in the case of multithreaded simulation), singles in one chunk
     # may be more recent than the singles in the next chunk.
     # If that's the case, the chunk size must be increased for successful coincidence sorting.
     original_chunk_size = chunk_size
