@@ -36,7 +36,17 @@ def create_material(sim):
     )
 
 
-def add_pet(sim, name="pet", create_housing=True, create_mat=True, debug=False):
+def add_pet(
+    sim,
+    name="pet",
+    create_housing=True,
+    create_mat=True,
+    debug=False,
+    nb_module=None,
+    nb_stack=None,
+    nb_die=None,
+    nb_crystal=None,
+):
     """
     Geometry of a PET Philips VEREOS
     Salvadori J, Labour J, Odille F, Marie PY, Badel JN, Imbert L, Sarrut D.
@@ -73,8 +83,10 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True, debug=False):
     module.size = [19 * mm, 131.4 * mm, 164 * mm]
     module.material = "ABS"
     module.color = blue
+    if nb_module is None:
+        nb_module = 18
     translations_ring, rotations_ring = get_circular_repetition(
-        18, [391.5 * mm, 0, 0], start_angle_deg=190, axis=[0, 0, 1]
+        nb_module, [391.5 * mm, 0, 0], start_angle_deg=190, axis=[0, 0, 1]
     )
     module.translation = translations_ring
     module.rotation = rotations_ring
@@ -82,9 +94,17 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True, debug=False):
     # Stack (each stack has 4x4 die)
     stack = sim.add_volume("Box", f"{name}_stack")
     stack.mother = module.name
-    stack.size = [module.size[0], 32.6 * mm, 32.6 * mm]
+    if nb_stack is None:
+        nb_stack = [4, 5]
+    stack.size = [
+        module.size[0],
+        32.6 * mm * 4 / nb_stack[0],
+        32.6 * mm * 5 / nb_stack[1],
+    ]
     stack.material = "G4_AIR"
-    stack.translation = get_grid_repetition([1, 4, 5], [0, 32.85 * mm, 32.85 * mm])
+    stack.translation = get_grid_repetition(
+        [1, nb_stack[0], nb_stack[1]], [0, 32.85 * mm, 32.85 * mm]
+    )
     stack.color = green
 
     # Die (each die has 2x2 crystal)
@@ -92,7 +112,11 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True, debug=False):
     die.mother = stack.name
     die.size = [module.size[0], 8 * mm, 8 * mm]
     die.material = "G4_AIR"
-    die.translation = get_grid_repetition([1, 4, 4], [0, 8 * mm, 8 * mm])
+    if nb_die is None:
+        nb_die = [4, 4]
+    die.translation = get_grid_repetition(
+        [1, nb_die[0], nb_die[1]], [0, 8 * mm, 8 * mm]
+    )
     die.color = white
 
     # Crystal
@@ -100,7 +124,11 @@ def add_pet(sim, name="pet", create_housing=True, create_mat=True, debug=False):
     crystal.mother = die.name
     crystal.size = [module.size[0], 4 * mm, 4 * mm]
     crystal.material = "LYSO"
-    crystal.translation = get_grid_repetition([1, 2, 2], [0, 4 * mm, 4 * mm])
+    if nb_crystal is None:
+        nb_crystal = [2, 2]
+    crystal.translation = get_grid_repetition(
+        [1, nb_crystal[0], nb_crystal[1]], [0, 4 * mm, 4 * mm]
+    )
 
     # with debug mode, only very few crystal to decrease the number of created
     # volumes, speed up the visualization

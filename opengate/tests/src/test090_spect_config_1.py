@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # source
     sc.source_config.image = data_path / "iec_5mm_activity.mhd"
     sc.source_config.radionuclide = "177lu"
-    sc.source_config.total_activity = 5e4 * gate.g4_units.Bq
+    sc.source_config.total_activity = 1e5 * gate.g4_units.Bq
     # acquisition
     sc.acquisition_config.radius = 300 * gate.g4_units.mm
     sc.acquisition_config.duration = 30 * gate.g4_units.s
@@ -46,12 +46,12 @@ if __name__ == "__main__":
     stats = sim.actor_manager.find_actors("stats")[0]
 
     # run it
-    sim.random_seed = 987654
+    sim.random_seed = 3456
     sim.run()
 
     # we check only that the output files exist
     is_ok = True
-    is_ok = check_stats_file(272198, sc, stats, is_ok)
+    is_ok = check_stats_file(541437, sc, stats, is_ok)
     is_ok = check_projection_files(sim, paths, stats, is_ok)
 
     utility.test_ok(is_ok)

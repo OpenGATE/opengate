@@ -18,5 +18,6 @@ void init_GateUniqueVolumeIDManager(py::module &m) {
              std::unique_ptr<GateUniqueVolumeIDManager, py::nodelete>>(
       m, "GateUniqueVolumeIDManager")
       .def("GetInstance", &GateUniqueVolumeIDManager::GetInstance)
+      .def("GetVolumeID", &GateUniqueVolumeIDManager::GetVolumeID)
       .def("GetAllVolumeIDs", &GateUniqueVolumeIDManager::GetAllVolumeIDs);
 }

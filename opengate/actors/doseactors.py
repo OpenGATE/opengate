@@ -3,15 +3,11 @@ import pandas as pd
 import os
 from scipy.spatial.transform import Rotation
 from pathlib import Path
-import SimpleITK as sitk
 
 import opengate_core as g4
 from .base import ActorBase
-from ..exception import fatal, warning
-from ..utility import (
-    g4_units,
-    standard_error_c4_correction,
-)
+from ..exception import fatal
+from ..utility import g4_units
 from ..image import (
     update_image_py_to_cpp,
     get_py_image_from_cpp_image,
@@ -22,7 +18,6 @@ from ..image import (
     scale_itk_image,
 )
 from ..geometry.utility import get_transform_world_to_local
-from ..geometry.materials import create_density_img
 from ..base import process_cls
 from .actoroutput import (
     ActorOutputSingleImage,

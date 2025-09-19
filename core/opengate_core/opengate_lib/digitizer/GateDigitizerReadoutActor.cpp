@@ -6,6 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateDigitizerReadoutActor.h"
+#include "../GateHelpers.h"
 #include "../GateHelpersDict.h"
 #include "G4Navigator.hh"
 #include "G4PhysicalVolumeStore.hh"
@@ -68,27 +69,28 @@ void GateDigitizerReadoutActor::EndOfEventAction(const G4Event * /*unused*/) {
 
   // create the output digi collection for grouped digi
   for (auto &h : l.fMapOfDigiInVolume) {
-    auto &digi = h.second;
+    const auto &digi = h.second;
     // terminate the merge
     digi->Terminate();
 
-    // Don't store if edep is zero
+    // Only store if edep is not zero
     if (digi->fFinalEdep > 0) {
       // Discretize: find the volume that contains the position
       G4TouchableHistory fTouchableHistory;
       lro.fNavigator->LocateGlobalPointAndUpdateTouchable(digi->fFinalPosition,
                                                           &fTouchableHistory);
-      auto vid = GateUniqueVolumeID::New(&fTouchableHistory);
 
-      /* When computing the centroid, the final position maybe outside the
-       * DiscretizeVolume. In that case, we ignore the hits */
-      if (fDiscretizeVolumeDepth >= vid->GetDepth()) {
-        lro.fIgnoredHitsCount++;
-        continue;
-      }
-      auto tr = vid->GetLocalToWorldTransform(fDiscretizeVolumeDepth);
-      G4ThreeVector c; // 0,0,0 is the center of the shape
-      tr->ApplyPointTransform(c);
+      /*
+       FIXME:  When computing the centroid, the final position maybe outside the
+       DiscretizeVolume. In that case, should we ignore the hits?
+       */
+
+      // Compute the position of the center of the volume (0,0,0) in the world
+      // coordinate system
+      G4ThreeVector c;
+      c = fTouchableHistory.GetHistory()
+              ->GetTransform(fDiscretizeVolumeDepth)
+              .InverseTransformPoint(c);
       digi->fFinalPosition.set(c.getX(), c.getY(), c.getZ());
 
       // (all "Fill" calls are thread local)

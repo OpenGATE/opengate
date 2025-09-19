@@ -582,31 +582,31 @@ class DigitizerSpatialBlurringActor(
         "blur_attribute": (
             None,
             {
-                "doc": "FIXME",
+                "doc": "Which attribute to blur, e.g. PostPosition.",
             },
         ),
         "blur_fwhm": (
             None,
             {
-                "doc": "FIXME",
+                "doc": "FWHM for the blurring.",
             },
         ),
         "blur_sigma": (
             None,
             {
-                "doc": "FIXME",
+                "doc": "std. dev. for the blurring.",
             },
         ),
         "keep_in_solid_limits": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "If the blurring move the position outside the solid limits, keep the point inside, on the boundary",
             },
         ),
         "use_truncated_Gaussian": (
             True,
             {
-                "doc": "FIXME",
+                "doc": "Apply a truncated Gaussian distribution to blur the position when close to the solid limits.",
             },
         ),
     }

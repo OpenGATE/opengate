@@ -18,8 +18,10 @@ void init_G4TouchableHistory(py::module &m) {
            py::return_value_policy::reference)
       .def("GetSolid", &G4TouchableHistory::GetSolid,
            py::return_value_policy::reference)
-      .def("GetTranslation", &G4TouchableHistory::GetTranslation)
-      .def("GetRotation", &G4TouchableHistory::GetRotation)
+      .def("GetTranslation", &G4TouchableHistory::GetTranslation,
+           py::return_value_policy::reference)
+      .def("GetRotation", &G4TouchableHistory::GetRotation,
+           py::return_value_policy::copy)
       .def("GetReplicaNumber", &G4TouchableHistory::GetReplicaNumber)
       .def("GetHistoryDepth", &G4TouchableHistory::GetHistoryDepth)
       .def("GetHistory", &G4TouchableHistory::GetHistory,
