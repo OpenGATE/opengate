@@ -189,10 +189,11 @@ void GateLastVertexInteractionSplittingActor::ComptonSplitting(
     G4Track *newTrack =
         CreateComptonTrack(gammaProcessFinalState, *fTrackToSplit, fWeight);
 
-    if ((fAAManager !=0) && (!(fAAManager->TestIfAccept(newTrack->GetPosition(), newTrack->GetMomentumDirection())))){
-        delete newTrack;
-      }
-    else{
+    if ((fAAManager != 0) &&
+        (!(fAAManager->TestIfAccept(newTrack->GetPosition(),
+                                    newTrack->GetMomentumDirection())))) {
+      delete newTrack;
+    } else {
       fStackManager->PushOneTrack(newTrack);
     }
 
@@ -304,7 +305,7 @@ void GateLastVertexInteractionSplittingActor::SecondariesSplitting(
         break;
       }
     }
-    if(fAbortedEvent){
+    if (fAbortedEvent) {
       break;
     }
     G4int idx = 0;
@@ -364,8 +365,8 @@ void GateLastVertexInteractionSplittingActor::CreateNewParticleAtTheLastVertex(
       fStackManager->GetNTotalTrack() - nbOfTrackAlreadyInStack;
   fNbOfBatchForExitingParticle++;
 
-  if((fNumberOfTrackToSimulate == 0) && (fAbortedEvent == false)){
-    CreateNewParticleAtTheLastVertex(initStep,step, theContainer,batchSize);
+  if ((fNumberOfTrackToSimulate == 0) && (fAbortedEvent == false)) {
+    CreateNewParticleAtTheLastVertex(initStep, step, theContainer, batchSize);
   }
   if (fNbOfBatchForExitingParticle > fNbOfMaxBatchPerEvent) {
     fStackManager->clear();
@@ -609,11 +610,14 @@ void GateLastVertexInteractionSplittingActor::SteppingAction(G4Step *step) {
     FillOfDataTree(step);
 
     if (IsParticleExitTheBiasedVolume(step)) {
-      if (fAAManager != 0){
-        if (fAAManager->TestIfAccept(step->GetTrack()->GetPosition(), step->GetTrack()->GetMomentumDirection())){
-          if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() != "None") {
-          fListOfContainer.push_back((*fIterator));
-          fNumberOfReplayedParticle++;
+      if (fAAManager != 0) {
+        if (fAAManager->TestIfAccept(
+                step->GetTrack()->GetPosition(),
+                step->GetTrack()->GetMomentumDirection())) {
+          if ((*fIterator).GetContainerToSplit().GetProcessNameToSplit() !=
+              "None") {
+            fListOfContainer.push_back((*fIterator));
+            fNumberOfReplayedParticle++;
           }
         }
       }
