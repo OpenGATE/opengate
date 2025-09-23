@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     # digit
     crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
-    digit = discovery.add_digitizer_lu177_OLD(sim, crystal.name, "digit_lu177")
+    digit = nm670.add_digitizer_lu177_OLD(sim, crystal.name, "digit_lu177")
     ew = digit.find_module("energy_window")
     ew.output_filename = "output_discovery_lu177.root"
     ew.root_output.write_to_disk = True
@@ -31,6 +31,8 @@ if __name__ == "__main__":
     Bq = gate.g4_units.Bq
     set_source_energy_spectrum(source, "Lu177", "radar")
     source.activity = 3e8 * Bq / sim.number_of_threads
+    if sim.visu:
+        source.activity = 1e3 * Bq
 
     # start simulation
     sim.run()
@@ -44,6 +46,8 @@ if __name__ == "__main__":
 
     # compare root
     fr = ref_folder / "output_discovery_lu177.root"
+    print(fr)
+    print(ew.get_output_path())
     is_ok = (
         compare_root_spectrum2(
             fr, ew.get_output_path(), paths.output / "test073_discovery_lu177.png"

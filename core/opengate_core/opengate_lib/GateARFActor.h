@@ -31,6 +31,8 @@ public:
   // End run callback
   void EndOfRunAction(const G4Run * /*run*/) override;
 
+  void PreUserTrackingAction(const G4Track *track) override;
+
   int GetCurrentNumberOfHits() const;
 
   int GetCurrentRunId() const;
@@ -74,6 +76,7 @@ protected:
     int fCurrentNumberOfHits;
     // Current run id (to detect if the run has changed)
     int fCurrentRunId;
+    bool fIsFirstInteraction;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

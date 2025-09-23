@@ -21,6 +21,7 @@ if __name__ == "__main__":
     gsource.direction.acceptance_angle.volumes = ["spect1"]
     gsource.direction.acceptance_angle.intersection_flag = True
     gsource.direction.acceptance_angle.normal_flag = False
+    gsource.direction.acceptance_angle.max_rejection = 20000
     gsource.direction.acceptance_angle.skip_policy = "SkipEvents"
     # gsource.batch_size = 2e4
 

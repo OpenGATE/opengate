@@ -552,6 +552,7 @@ class DigitizerSpatialBlurringActor(
     blur_fwhm: float
     blur_sigma: float
     keep_in_solid_limits: bool
+    use_truncated_Gaussian: bool
 
     user_info_defaults = {
         "attributes": (
@@ -597,6 +598,12 @@ class DigitizerSpatialBlurringActor(
             },
         ),
         "keep_in_solid_limits": (
+            True,
+            {
+                "doc": "FIXME",
+            },
+        ),
+        "use_truncated_Gaussian": (
             True,
             {
                 "doc": "FIXME",
@@ -940,7 +947,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
 
     @property
     def output_spacing(self):
-        # consider 3D images, third dimension can be the energy windows
+        # consider 3D images, the third dimension can be the energy windows
         output_spacing = list(self.spacing)
         if len(output_spacing) != 2:
             fatal(
@@ -1045,7 +1052,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
             )
             self.EnableSquaredImage(True)
 
-        # keep initial origin
+        # keep the initial origin
         self.start_output_origin = list(
             self.user_output.counts.data_per_run[0].get_image_properties()[0].origin
         )
@@ -1071,7 +1078,7 @@ class DigitizerProjectionActor(DigitizerBase, g4.GateDigitizerProjectionActor):
         self.user_output.counts.merged_data.SetSpacing(list(spacing))
         self.user_output.counts.merged_data.SetOrigin(list(origin))
 
-        # remove the image for run 0 as result is in merged_data
+        # remove the image for run 0 as the result is in merged_data
         self.user_output.counts.data_per_run.pop(0)
 
         self.user_output.counts.write_data_if_requested(which="merged")

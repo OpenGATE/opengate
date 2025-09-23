@@ -10,12 +10,10 @@
 
 #include "../GateHelpers.h"
 #include "../GateUniqueVolumeID.h"
-#include "G4TouchableHistory.hh"
-#include <pybind11/stl.h>
 
 class GateVDigiAttribute {
 public:
-  GateVDigiAttribute(std::string vname, char vtype);
+  GateVDigiAttribute(const std::string &vname, char vtype);
 
   virtual ~GateVDigiAttribute();
 
@@ -24,6 +22,8 @@ public:
   virtual std::vector<double> &GetDValues();
 
   virtual std::vector<int> &GetIValues();
+
+  virtual std::vector<int64_t> &GetLValues();
 
   virtual std::vector<std::string> &GetSValues();
 
@@ -38,6 +38,8 @@ public:
   virtual void FillSValue(std::string) {}
 
   virtual void FillIValue(int) {}
+
+  virtual void FillLValue(int64_t) {}
 
   virtual void Fill3Value(G4ThreeVector) {}
 
@@ -74,7 +76,7 @@ protected:
   // Name of the attribute (e.g. "KineticEnergy")
   std::string fDigiAttributeName;
 
-  // Attribute type as a single character : D I S 3
+  // Attribute type as a single character: D I L S 3
   char fDigiAttributeType;
 
   // Attribute index in a given DigiCollection

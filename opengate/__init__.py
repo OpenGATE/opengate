@@ -67,10 +67,11 @@ def restart_with_qt_libs():
     Restart the current process with QT libs set.
     Only for mac and wheel installation
     """
-
-    if is_developer_installation():
+    developer_mode = is_developer_installation()
+    if is_python_interactive_shell() or developer_mode:
         # we cannot know the real plugin_path nor if DYLD_LIBRARY_PATH is already correctly set
         # so we ignore.
+        # no vizualisation
         return
 
     plugin_path = os.path.join(get_site_packages_dir(), "opengate_core/plugins")
@@ -94,23 +95,16 @@ def restart_with_qt_libs():
     os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
 
 
-def restart_with_glibc_tunables():
+def check_ld_preload(e):
     """
-    Restart the current process with GLIBC_TUNABLES set.
-    If interactive: we cannot do anything.
+    Check if the LD_PRELOAD environment variable is set correctly.
     """
 
     # Check if opengate_core can be loaded, if yes we continue
-    try:
-        import opengate_core
-
-        return
-    except ImportError as e:
-        # if the error is different from 'TLS block', we stop
-        if "cannot allocate memory in static TLS block" not in str(e):
-            print("Cannot import opengate_core module")
-            print(e)
-            exit(-1)
+    if "cannot allocate memory in static TLS block" not in str(e):
+        print("Cannot import opengate_core module")
+        print(e)
+        exit(-1)
 
     developer_mode = is_developer_installation()
 
@@ -120,42 +114,18 @@ def restart_with_glibc_tunables():
         exit(-1)
 
     # print error message
-    print_ld_preload_error(developer_mode)
-
-    # check if was here already
-    if "GLIBC_TUNABLES" in os.environ:
-        print(
-            f"GLIBC_TUNABLES is already set but opengate_core cannot be loaded, sorry."
-        )
+    if developer_mode:
+        print_ld_preload_error(developer_mode)
         exit(-1)
 
-    # Set the environment variable
-    core_lib_path = os.path.join(get_site_packages_dir(), "opengate_core.libs")
-    new_env = os.environ.copy()
-    print("We try to restart with :")
-    if not developer_mode:
-        ldlp = ""
-        if "LD_LIBRARY_PATH" in new_env:
-            ldlp = new_env["LD_LIBRARY_PATH"]
-        new_env["LD_LIBRARY_PATH"] = f"{core_lib_path}:{ldlp}"
-        ldpl = ""
-        if "LD_PRELOAD" in new_env:
-            ldpl = new_env["LD_PRELOAD"]
-        new_env["LD_PRELOAD"] = f'{get_lib_g4_path("processes")}:{ldpl}'
-        new_env["LD_PRELOAD"] = f'{get_lib_g4_path("geometry")}:{new_env["LD_PRELOAD"]}'
-        print(f'export LD_LIBRARY_PATH={new_env["LD_LIBRARY_PATH"]}:$LD_LIBRARY_PATH')
-        print(f'export LD_PRELOAD={new_env["LD_PRELOAD"]}:$LD_PRELOAD')
-    new_env["GLIBC_TUNABLES"] = tunables_value
-    print(f'export GLIBC_TUNABLES={new_env["GLIBC_TUNABLES"]}')
-    print()
 
-    # Restart the process with the new environment
-    os.execve(sys.executable, [sys.executable] + sys.argv, new_env)
+try:
+    import opengate_core
+except ImportError as e:
+    if sys.platform.startswith("linux"):
+        check_ld_preload(e)
 
-
-if sys.platform.startswith("linux"):
-    restart_with_glibc_tunables()
-elif sys.platform.startswith("darwin"):
+if sys.platform.startswith("darwin"):
     restart_with_qt_libs()
 
 # subpackages

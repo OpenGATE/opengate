@@ -560,7 +560,20 @@ DigitizerSpatialBlurringActor
 Description
 ~~~~~~~~~~~
 
-   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This will push the hits back to the closest edge of the crystal. Alternatively the `use_truncated_Gaussian` option can be used with `keep_in_solid_limits` to recreate a more realistic scenario. This option changes the common Gaussian distribution to a new truncated Gaussian that preserves the standard deviation of the distribution within the crystal. This variation is paramount when using big crystals with spatial resolution, since it is the only way to preserve the original standard deviation of the reconstructed distribution. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+
+.. code-block:: python
+
+   bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
+   bc.attached_to = hc.attached_to
+   bc.output_filename = hc.output_filename
+   bc.input_digi_collection = sc.name
+   bc.keep_in_solid_limits = True
+   bc.use_truncated_Gaussian = True
+   bc.blur_attribute = "PostPosition"
+   bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
+
+
 
 Reference
 ~~~~~~~~~
@@ -663,26 +676,59 @@ Coincidences Sorter
 .. note::
    The current version of the Coincidence sorter is still a work in progress. It is only available for offline use.
 
-The Coincidence Sorter finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences:
+The Coincidence Sorter finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences.
 
 .. code-block:: python
 
+   root_file = uproot.open("singles.root")
    singles_tree = root_file["Singles_crystal"]
    ns = gate.g4_units.nanosecond
    time_window = 3 * ns
-   policy = "keepAll"
-   minSecDiff = 1  # NOT YET IMPLEMENTED
+   policy = "takeAllGoods"
+   mm = gate.g4_units.mm
+   transaxial_plane = "xy"
+   min_transaxial_distance = 0 * mm
+   max_axial_distance = 32 * mm
 
    # Apply coincidence sorter
-   coincidences = coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=1000000)
+   coincidences = coincidences_sorter(
+      singles_tree,
+      time_window,
+      policy,
+      min_transaxial_distance,
+      transaxial_plane,
+      max_axial_distance,
+   )
 
-The following policies are supported:
+Coincidences with oblique lines of response can be excluded by limiting the axial distance between their two singles (`max_axial_distance`).
+Likewise, coincidences between adjacent detectors can be excluded by imposing a minimum transaxial distance (`min_transaxial_distance`).
+The `transaxial_plane` can be `"xy"`, `"yz"`, or `"xz"`, depending on the PET scanner geometry.
+Coincidences that comply with the given `max_distance_axial` and `max_distance_axial` are referred to
+as "good pairs" in the definitions below.
 
-- **takeAllGoods**: Each good pair is considered.
-- **takeWinnerOfGoods**: Only the pair with the highest energy is considered.
-- **takeWinnerIfIsGood**: If the highest energy pair is good, take it; otherwise, kill the event.
-- **keepIfOnlyOneGood**: If exactly one good pair exists, keep the multicoincidence.
+The following policies are supported to deal with multiple coincidences in the same time window:
+
 - **removeMultiples**: No multiple coincidences are accepted, even if there are good pairs.
+- **takeAllGoods**: Each good pair is considered.
+- **takeWinnerOfGoods**: From all good pairs, only the one with the highest energy is considered.
+- **takeIfOnlyOneGood**: If exactly one good pair exists, keep it, otherwise discard all pairs.
+- **takeWinnerIfIsGood**: If the highest energy pair is good, take it, otherwise discard all pairs.
+- **takeWinnerIfAllAreGoods**: If all pairs are good, then take the one with the highest energy, otherwise discard all pairs.
+
+By default, coincidences are returned from the function in a Python dictionary (`return_type="dict"`).
+Alternatively, they can be returned as a pandas DataFrame (`return_type="pd"`).
+It is also possible to specify an output file for saving the coincidences (`output_file_path`) in ROOT format,
+(`output_file_format="root"`, the default) or HDF5 format (`output_file_format="hdf5"`).
+In the case of file output, the function returns `None`.
+Saving coincidences to a file is recommended when processing large numbers of singles, to avoid running out of memory.
+
+The coincidence sorter reads singles from the `singles_tree` in groups containing `chunk_size` singles.
+Larger chunk sizes result in more efficient disk I/O but can also result in higher memory consumption.
+The coincidence sorter may internally use a larger chunk size than indicated by the `chunk_size` parameter,
+when required to correctly handle non-monotonicities of time in the singles tree. These non-monotonicities typically
+arise in multi-threaded simulations, because time progresses independently in each thread.
+It is important to note that the resulting coincidences are independent of the value of `chunk_size`,
+because the coincidence sorter also considers coincidences between singles in consecutive chunks.
 
 Refer to test072 for more details.
 

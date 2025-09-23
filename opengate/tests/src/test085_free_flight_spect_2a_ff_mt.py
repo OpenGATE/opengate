@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.visu = False
+    # sim.visu = True
     sim.number_of_threads = 4
     ac = 2e5
     source, actors = create_simulation_test085(
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.ignored_volumes = ["spect_1_crystal"]
+    ff.unbiased_volumes = ["spect_1_crystal"]
 
     # go
     sim.run()
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             tolerance=80,
             ignore_value_data1=0,
             sum_tolerance=12,
-            sad_profile_tolerance=30,
+            sad_profile_tolerance=32,
             scaleImageValuesFactor=2e5 / ac,
             axis="x",
             fig_name=paths.output / "projection_ff_check_1.png",

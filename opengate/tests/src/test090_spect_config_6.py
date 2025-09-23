@@ -26,8 +26,7 @@ if __name__ == "__main__":
     sc.detector_config.model = "intevo"
     sc.detector_config.collimator = "melp"
     sc.detector_config.number_of_heads = 2
-    # sc.detector_config.digitizer_function = intevo.add_intevo_digitizer_lu177_v3
-    sc.detector_config.digitizer_channels = intevo.get_channels_lu177_v4()
+    sc.detector_config.digitizer_channels = intevo.get_default_energy_windows("lu177")
     # phantom
     sc.phantom_config.image = data_path / "iec_5mm.mhd"
     sc.phantom_config.labels = data_path / "iec_5mm_labels.json"

@@ -18,7 +18,6 @@ from opengate.contrib.dose.photon_attenuation_image_helpers import (
     create_photon_attenuation_image,
 )
 
-import pytomography
 from pytomography.metadata.SPECT import SPECTObjectMeta, SPECTProjMeta, SPECTPSFMeta
 from pytomography.transforms.SPECT import SPECTPSFTransform, SPECTAttenuationTransform
 from pytomography.projectors.SPECT import SPECTSystemMatrix
@@ -537,6 +536,8 @@ def get_attenuation_map_from_json(metadata):
 
     # get the image from the raw data
     imagefile = attenuation_meta["source_file"]
+    if imagefile is None:
+        return None
     amap = np.fromfile(os.path.join(metadata["folder"], imagefile), dtype=np.float32)
     amap = amap.reshape((dimension_x, dimension_y, dimension_z))
 
@@ -569,6 +570,8 @@ def pytomography_osem_reconstruction(
     att_transform = None
     if attenuation_flag:
         amap = get_attenuation_map_from_json(metadata)
+        if amap is None:
+            fatal(f"No attenuation map found in metadata. Aborting.")
         att_transform = SPECTAttenuationTransform(amap)
 
     # PSF correction
@@ -646,7 +649,7 @@ def pytomography_osem_reconstruction(
     return recon_sitk
 
 
-def pytomography_build_metadata(
+def pytomography_build_metadata_and_attenuation_map(
     sc,
     sim,
     attenuation_energy,
@@ -727,34 +730,35 @@ def pytomography_build_metadata(
         dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
         dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]
 
-    """if sc.detector_config.model == "nm670":
+    if sc.detector_config.model == "nm670":
         dpd["crystal_spatial_resolution_fwhm_energy_model"] = "A*sqrt(B/energy)"
-        dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.36, 140.5]
+        dpd["crystal_spatial_resolution_fwhm_energy_model_parameters"] = [0.3, 140.5]
         dpd["crystal_energy_resolution_fwhm_pct_energy_model"] = "A*sqrt(B/energy)"
-        dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [9.9, 140.5]"""
+        dpd["crystal_energy_resolution_fwhm_pct_energy_model_parameters"] = [6.3, 140.5]
 
     # attenuation correction
-    # read CT image and resample like the reconstructed image
-    # for the moment MUST be same size and spacing than the projection images
-    # Important: take into account the translation of the phantom!
-    create_attenuation_image(
-        sc.phantom_config.image,
-        attenuation_energy,
-        output_folder / "mumap.mhd",
-        size,
-        spacing,
-        translation=sc.phantom_config.translation,
-        verbose=True,
-    )
-    pytomography_set_attenuation_data(
-        metadata,
-        attenuation_energy,
-        output_folder / "mumap.mhd",
-        translation=sc.phantom_config.translation,
-        verbose=True,
-    )
-    verbose and print(
-        f"Build attenuation map with shape {size} in {output_folder / 'mumap.mhd'}"
-    )
+    if sc.phantom_config.image is not None:
+        # read CT image and resample like the reconstructed image
+        # for the moment MUST be same size and spacing than the projection images
+        # Important: take into account the translation of the phantom!
+        create_attenuation_image(
+            sc.phantom_config.image,
+            attenuation_energy,
+            output_folder / "mumap.mhd",
+            size,
+            spacing,
+            translation=sc.phantom_config.translation,
+            verbose=True,
+        )
+        pytomography_set_attenuation_data(
+            metadata,
+            attenuation_energy,
+            output_folder / "mumap.mhd",
+            translation=sc.phantom_config.translation,
+            verbose=True,
+        )
+        verbose and print(
+            f"Build attenuation map with shape {size} in {output_folder / 'mumap.mhd'}"
+        )
 
     return metadata

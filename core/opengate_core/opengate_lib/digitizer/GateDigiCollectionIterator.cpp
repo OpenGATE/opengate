@@ -36,6 +36,14 @@ void GateDigiCollectionIterator::TrackAttribute(const std::string &name,
 }
 
 void GateDigiCollectionIterator::TrackAttribute(const std::string &name,
+                                                int64_t **value) {
+  auto *att = fDigiCollection->GetDigiAttribute(name);
+  auto &v = att->GetLValues();
+  fLAttributes.push_back(value);
+  fLAttributesVector.push_back(&v);
+}
+
+void GateDigiCollectionIterator::TrackAttribute(const std::string &name,
                                                 G4ThreeVector **value) {
   auto *att = fDigiCollection->GetDigiAttribute(name);
   auto &v = att->Get3Values();
@@ -65,6 +73,10 @@ void GateDigiCollectionIterator::GoTo(const size_t index) const {
   for (size_t i = 0; i < fIAttributes.size(); i++) {
     auto &v = *fIAttributesVector[i];
     *fIAttributes[i] = &v[index];
+  }
+  for (size_t i = 0; i < fLAttributes.size(); i++) {
+    auto &v = *fLAttributesVector[i];
+    *fLAttributes[i] = &v[index];
   }
   for (size_t i = 0; i < f3Attributes.size(); i++) {
     auto &v = *f3AttributesVector[i];

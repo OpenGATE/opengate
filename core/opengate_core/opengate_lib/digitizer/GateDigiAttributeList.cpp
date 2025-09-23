@@ -14,7 +14,7 @@
 #include "GateDigiAttributeManager.h"
 
 /* Macros to reduce the code size
-   Use FILLFS when step is not used to avoid warning
+   Use FILLFS when the step variable is not used to avoid warning
 
     In the G4 docs:
     "The second argument of FillHits() method, i.e. G4TouchableHistory, is
@@ -127,7 +127,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       });
   DefineDigiAttribute(
       "ProcessDefinedStep", 'S', FILLF {
-        const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
+        const auto *p = step->GetPostStepPoint()->GetProcessDefinedStep();
         if (p != nullptr)
           att->FillSValue(p->GetProcessName());
         else
@@ -218,6 +218,20 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         }
       });
 
+  DefineDigiAttribute(
+      "HitUniqueVolumeIDAsInt", 'I', FILLF {
+        auto *m = GateUniqueVolumeIDManager::GetInstance();
+        if (step->GetPostStepPoint()
+                ->GetProcessDefinedStep()
+                ->GetProcessName() == "Transportation") {
+          auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+          att->FillIValue(uid->GetNumericID());
+        } else {
+          auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+          att->FillIValue(uid->GetNumericID());
+        }
+      });
+
   // -----------------------------------------------------
   // Position
   // FIXME -> add global/local position
@@ -301,6 +315,9 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   // Length
   DefineDigiAttribute(
       "StepLength", 'D', FILLF { att->FillDValue(step->GetStepLength()); });
+  DefineDigiAttribute(
+      "CurrentStepNumber", 'I',
+      FILLF { att->FillIValue(step->GetTrack()->GetCurrentStepNumber()); });
   DefineDigiAttribute(
       "TrackLength", 'D',
       FILLF { att->FillDValue(step->GetTrack()->GetTrackLength()); });

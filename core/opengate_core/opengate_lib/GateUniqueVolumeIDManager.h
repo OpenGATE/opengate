@@ -10,8 +10,10 @@
 
 #include "G4VTouchable.hh"
 #include "GateUniqueVolumeID.h"
+#include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 /*
     Global singleton class that manage a correspondence between touchable

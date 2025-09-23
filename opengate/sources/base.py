@@ -1,3 +1,5 @@
+import numpy as np
+
 from ..actors.base import _setter_hook_attached_to
 from ..base import GateObject, process_cls
 from ..utility import g4_units
@@ -99,6 +101,10 @@ class SourceBase(GateObject):
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
         # this will initialise and set user_info to the cpp side
+        if type(self.user_info.n) == int  or type(self.user_info.n) == float:
+            self.user_info.n = np.array([self.user_info.n],dtype = int)
+        else :
+            self.user_info.n = np.array(self.user_info.n, dtype=int)
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):

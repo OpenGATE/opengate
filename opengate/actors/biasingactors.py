@@ -15,7 +15,7 @@ def generic_source_default_aa():
     return Box(
         {
             "skip_policy": "SkipEvents",
-            "max_rejection": 5000,
+            "max_rejection": 10000,
             "volumes": [],
             "intersection_flag": False,
             "normal_flag": False,
@@ -81,10 +81,10 @@ class GenericBiasingActorBase(ActorBase):
                 "setter_hook": _setter_hook_particles,
             },
         ),
-        "ignored_volumes": (
+        "unbiased_volumes": (
             [],
             {
-                "doc": "FIXME ",
+                "doc": "A list of volumes where this actor's biasing is disabled, allowing particles to be tracked with normal, unbiased physics. ",
             },
         ),
         "minimal_weight": (
@@ -309,10 +309,18 @@ class ScatterSplittingFreeFlightActor(
                 "doc": "See generic source",
             },
         ),
+        "kill_interacting_in_volumes": (
+            [],
+            {
+                "doc": "When a non-split particle enters one of those volumes, it is killed.",
+            },
+        ),
     }
 
     # Do NOT work with GammaGeneralProc
+    # Do NOT include "phot" process here.
     processes = ["compt", "Rayl"]
+    particles = ["gamma"]
 
     user_output_config = {
         "info": {

@@ -18,5 +18,7 @@ void init_GateRepeatParameterisation(py::module &m) {
   py::class_<GateRepeatParameterisation, G4VPVParameterisation>(
       m, "GateRepeatParameterisation")
       .def(py::init<>())
-      .def("SetUserInfo", &GateRepeatParameterisation::SetUserInfo);
+      .def("SetUserInfo", &GateRepeatParameterisation::SetUserInfo)
+      .def("ComputeTransformation",
+           &GateRepeatParameterisation::ComputeTransformation);
 }

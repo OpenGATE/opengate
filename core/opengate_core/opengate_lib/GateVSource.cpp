@@ -40,7 +40,9 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
   fAttachedToVolumeName = DictGetStr(user_info, "attached_to");
 
   // get user info about activity or nb of events
-  fMaxN = DictGetInt(user_info, "n");
+  fVectorOfMaxN = DictGetVecInt(user_info, "n");
+  fMaxN = fVectorOfMaxN[0];
+  //fMaxN= DictGetInt(user_info, "n");
   fActivity = DictGetDouble(user_info, "activity");
   fInitialActivity = fActivity;
 
@@ -62,6 +64,10 @@ double GateVSource::CalcNextTime(double current_simulation_time) {
 }
 
 void GateVSource::PrepareNextRun() {
+  auto &l = GetThreadLocalData();
+  l.fNumberOfGeneratedEvents = 0;
+  fMaxN = fVectorOfMaxN[l.fRunID];
+  l.fRunID ++;
   SetOrientationAccordingToAttachedVolume();
 }
 
@@ -91,6 +97,7 @@ void GateVSource::SetOrientationAccordingToAttachedVolume() {
 
 unsigned long
 GateVSource::GetExpectedNumberOfEvents(const TimeIntervals &time_intervals) {
+  // A MODIF
   if (fMaxN != 0)
     return fMaxN;
   unsigned long n = 0;

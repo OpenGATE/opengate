@@ -51,10 +51,15 @@ public:
   virtual unsigned long
   GetExpectedNumberOfEvents(const TimeInterval &time_interval);
 
+  std::vector<int> GetVectorOfSimulatedEvents(){
+    return fVectorOfMaxN;
+  }
+
   std::string fName;
   double fStartTime;
   double fEndTime;
 
+  
   std::string fAttachedToVolumeName;
   std::vector<G4ThreeVector> fTranslations;
   std::vector<G4RotationMatrix> fRotations;
@@ -66,18 +71,23 @@ public:
   G4RotationMatrix fGlobalRotation;
 
 protected:
+  std::vector<int> fVectorOfMaxN;
   unsigned long fMaxN;
   double fActivity;
   double fInitialActivity;
   double fHalfLife;
   double fDecayConstant;
+  
 
   struct threadLocalT {
     unsigned long fNumberOfGeneratedEvents = 0;
     G4ThreeVector fGlobalTranslation;
     G4RotationMatrix fGlobalRotation;
+    G4int fRunID = 0;
   };
   G4Cache<threadLocalT> fThreadLocalData;
+
+
 
   virtual threadLocalT &GetThreadLocalData();
 };

@@ -1090,14 +1090,87 @@ def open_root_as_np(root_file, tree_name):
 
 
 # https://stackoverflow.com/questions/4527942/comparing-two-dictionaries-and-checking-how-many-key-value-pairs-are-equal
-def dict_compare(d1, d2):
-    d1_keys = set(d1.keys())
-    d2_keys = set(d2.keys())
+def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
+    """
+    Compare two dictionaries with a tolerance for float values and optional keys to ignore.
+
+    Args:
+        d1, d2: Dictionaries to compare
+        tolerance: Float tolerance for float values
+        ignored_keys: List of keys that are optional
+        parent_key: Internal use for tracking nested key path
+    """
+    ignored_keys = set() if ignored_keys is None else set(ignored_keys)
+
+    # Get all keys excluding optional ones
+    d1_keys = set(d1.keys()) - ignored_keys
+    d2_keys = set(d2.keys()) - ignored_keys
     shared_keys = d1_keys.intersection(d2_keys)
     added = d1_keys - d2_keys
     removed = d2_keys - d1_keys
-    modified = {o: (d1[o], d2[o]) for o in shared_keys if d1[o] != d2[o]}
-    same = set(o for o in shared_keys if d1[o] == d2[o])
+
+    # Print added and removed keys (only for non-optional keys)
+    if added and not parent_key:
+        print("Keys added in d1:", added)
+    if removed and not parent_key:
+        print("Keys removed in d2:", removed)
+
+    def compare_arrays(arr1, arr2, key):
+        """Compare two arrays and print differences with indices"""
+        if isinstance(arr1, list) and isinstance(arr2, list):
+            if len(arr1) != len(arr2):
+                print(
+                    f"{key}: Arrays have different lengths ({len(arr1)} vs {len(arr2)})"
+                )
+                return False
+
+            is_equal = True
+            for i, (v1, v2) in enumerate(zip(arr1, arr2)):
+                if isinstance(v1, list) and isinstance(v2, list):
+                    if not compare_arrays(v1, v2, f"{key}[{i}]"):
+                        is_equal = False
+                elif isinstance(v1, float) and isinstance(v2, float):
+                    if abs(v1 - v2) > tolerance:
+                        print(f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+                        is_equal = False
+                elif v1 != v2:
+                    print(f"{key}[{i}] : {v1} vs {v2}")
+                    is_equal = False
+            return is_equal
+        return arr1 == arr2
+
+    # Modified comparison logic with tolerance for floats
+    def values_equal(v1, v2, key):
+        full_key = f"{parent_key}->{key}" if parent_key else key
+
+        if key in ignored_keys:
+            return True
+
+        if isinstance(v1, dict) and isinstance(v2, dict):
+            _, _, nested_modified, _ = dict_compare(
+                v1, v2, tolerance, ignored_keys, full_key
+            )
+            return len(nested_modified) == 0
+        elif isinstance(v1, list) and isinstance(v2, list):
+            return compare_arrays(v1, v2, full_key)
+        elif isinstance(v1, float) and isinstance(v2, float):
+            if abs(v1 - v2) > tolerance:
+                print(f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+                return False
+            return True
+        else:
+
+            if v1 != v2:
+                print(f"{full_key} : {v1} vs {v2}")
+            return v1 == v2
+
+    # Check all shared keys (including optional ones for modification tracking)
+    all_shared_keys = set(d1.keys()).intersection(set(d2.keys()))
+    modified = {
+        o: (d1[o], d2[o]) for o in all_shared_keys if not values_equal(d1[o], d2[o], o)
+    }
+    same = set(o for o in all_shared_keys if values_equal(d1[o], d2[o], o))
+
     return added, removed, modified, same
 
 
@@ -2065,7 +2138,7 @@ def add_border(ax, border_color, border_width):
         spine.set_linewidth(border_width)
 
 
-def plot_compare_profile(ref_names, test_names, options):
+def plot_compare_slice_profile(ref_names, test_names, options):
     # options
     scaling = options.scaling
     n_slice = options.n_slice

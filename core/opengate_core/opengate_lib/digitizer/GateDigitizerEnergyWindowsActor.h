@@ -52,7 +52,7 @@ public:
   void EndSimulationAction() override;
 
   // Get the id of the last energy window
-  int GetLastEnergyWindowId();
+  int GetLastEnergyWindowId() const;
 
 protected:
   std::string fInputDigiCollectionName;
@@ -64,7 +64,7 @@ protected:
   std::vector<double> fChannelMax;
   int fClearEveryNEvents;
 
-  void ApplyThreshold(size_t i, double min, double max);
+  void ApplyThreshold(size_t i, double min, double max) const;
 
   // During computation
   struct threadLocalT {
