@@ -776,7 +776,10 @@ class FreeFlightConfig(ConfigBase):
         elif self.primary_unbiased_volumes == "detector":
             target_volume_names = self.get_detector_volume_names()
         else:
-            fatal(f"Unknown ff ignored volume: {self.primary_unbiased_volumes}")
+            fatal(
+                f"FF primary: unknown ignored volume: "
+                f"{self.primary_unbiased_volumes}. Should be detector or crystal"
+            )
 
         # add the ff actor (only once !)
         ff_name = f"{self.spect_config.simu_name}_ff"
