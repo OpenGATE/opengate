@@ -27,7 +27,8 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  double PrepareNextTime(double current_simulation_time,double NumberOfGeneratedEvents) override;
+  double PrepareNextTime(double current_simulation_time,
+                         double NumberOfGeneratedEvents) override;
 
   void PrepareNextRun() override;
 

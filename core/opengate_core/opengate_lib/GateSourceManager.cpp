@@ -244,7 +244,8 @@ void GateSourceManager::PrepareNextSource() const {
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
     G4int numberOfSimulatedEvents = source->GetNumberOfSimulatedEvents();
-    auto t = source->PrepareNextTime(l.fCurrentSimulationTime,numberOfSimulatedEvents);
+    auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
+                                     numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
       max_time = t;
       l.fNextActiveSource = source;

@@ -102,23 +102,23 @@ class SourceBase(GateObject):
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
         # this will initialise and set user_info to the cpp side
-        if type(self.user_info.n) == int  or type(self.user_info.n) == float:
-            self.user_info.n = np.array([self.user_info.n],dtype = int)
-        else :
+        if type(self.user_info.n) == int or type(self.user_info.n) == float:
+            self.user_info.n = np.array([self.user_info.n], dtype=int)
+        else:
             self.user_info.n = np.array(self.user_info.n, dtype=int)
 
-        if (self.user_info.activity == 0) and (len(self.user_info.n) != len(run_timing_intervals)):
-            fatal(
-                f"source.n and run_timing_intervals do not have the same length."
-            )
-        if np.any(self.user_info.n  > 0) and self.user_info.activity > 0:
+        if (self.user_info.activity == 0) and (
+            len(self.user_info.n) != len(run_timing_intervals)
+        ):
+            fatal(f"source.n and run_timing_intervals do not have the same length.")
+        if np.any(self.user_info.n > 0) and self.user_info.activity > 0:
             fatal(
                 f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
             )
         if np.all(self.user_info.n == 0) and self.user_info.activity == 0:
             fatal(f"You must set one of the two parameters 'n' or 'activity'.")
         if self.activity > 0:
-            self.user_info.n = np.array(np.zeros(len(run_timing_intervals),dtype = int))
+            self.user_info.n = np.array(np.zeros(len(run_timing_intervals), dtype=int))
         if np.any(self.user_info.n > 0):
             self.user_info.activity = 0
         self.InitializeUserInfo(self.user_info)

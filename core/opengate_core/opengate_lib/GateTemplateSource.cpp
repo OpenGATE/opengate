@@ -31,7 +31,6 @@ void GateTemplateSource::InitializeUserInfo(py::dict &user_info) {
   }
 }
 
-
 void GateTemplateSource::PrepareNextRun() {
   // The following compute the global transformation from
   // the local volume (mother) to the world
