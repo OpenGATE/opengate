@@ -106,4 +106,5 @@ void GateLastVertexSource::GeneratePrimaries(G4Event *event,
   if (fNumberOfGeneratedEvents == fListOfContainer.size()) {
     fListOfContainer.clear();
   }
+
 }

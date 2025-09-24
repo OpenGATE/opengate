@@ -412,6 +412,7 @@ class LastVertexInteractionSplittingActor(
                 "SteppingAction",
                 "PostUserTrackingAction",
                 "EndOfEventAction",
+                "EndOfRunAction",
                 "EndSimulationAction",
             }
         )

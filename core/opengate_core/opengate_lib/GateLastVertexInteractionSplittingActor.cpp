@@ -47,7 +47,11 @@
 #include "GateLastVertexInteractionSplittingActor.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingPostStepDoIt.h"
+#include "GateActorManager.h"
+#include "GateDoseActor.h"
 #include <cmath>
+
+G4Mutex SetEventCorrectionForLastVertex = G4MUTEX_INITIALIZER;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -548,6 +552,12 @@ G4bool GateLastVertexInteractionSplittingActor::
 void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
     const G4Run *run) {
   // fAAManager->StartAcceptLoop();
+  fNumberOfReplayedEventPerRun  = 0;
+  auto actorManager = GateActorManager::GetInstance();
+  
+  fDoseActors= actorManager->GetActorsFromActorInheritanceDiagram<GateDoseActor>();
+  fSimulationStatisticsActors  = actorManager->GetActorsFromActorInheritanceDiagram<GateSimulationStatisticsActor>();
+
   fListOfProcessesAccordingParticles["gamma"] = {"compt", "phot", "conv"};
   fListOfProcessesAccordingParticles["e-"] = {"eBrem", "eIoni", "msc"};
   fListOfProcessesAccordingParticles["e+"] = {"eBrem", "eIoni", "msc",
@@ -594,6 +604,15 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     fTrackToSplit = CreateATrackFromContainer(fContainer);
     if (fTrackToSplit != 0)
       fWeight = fTrackToSplit->GetWeight() / fSplittingFactor;
+    
+
+    if (fDoseActors.size()> 0){
+      for (auto* a:fDoseActors){
+        G4AutoLock mutex(&SetEventCorrectionForLastVertex);
+        a->NbOfEvent = a->NbOfEvent  -1;
+      }
+    }
+    fNumberOfReplayedEventPerRun ++;
   }
 }
 
@@ -749,6 +768,17 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
     fActiveSource = fSourceManager->GetActiveSourceName();
   }
 }
+
+void GateLastVertexInteractionSplittingActor::EndOfRunAction(
+    const G4Run *run) {
+    
+  if (fSimulationStatisticsActors.size() >0){
+    for (auto* a:fSimulationStatisticsActors){
+        a->ModifyEventCounts(-fNumberOfReplayedEventPerRun);
+    }
+  }
+}
+
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
