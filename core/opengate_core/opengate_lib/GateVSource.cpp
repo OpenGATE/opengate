@@ -58,8 +58,10 @@ void GateVSource::UpdateActivity(double time) {
 }
 
 double GateVSource::CalcNextTime(double current_simulation_time) {
-  double next_time =
-      current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+  double next_time = current_simulation_time;
+  if ((fMaxN <= 0) && (fActivity >0)){
+    next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+  }
   return next_time;
 }
 
@@ -71,9 +73,24 @@ void GateVSource::PrepareNextRun() {
   SetOrientationAccordingToAttachedVolume();
 }
 
-double GateVSource::PrepareNextTime(double current_simulation_time) {
-  Fatal("PrepareNextTime must be overloaded");
-  return current_simulation_time;
+double GateVSource::PrepareNextTime(double current_simulation_time, double numberOfGeneratedEvents) {
+  UpdateActivity(current_simulation_time);
+  if ((fMaxN <= 0) || ((fMaxN > numberOfGeneratedEvents) && (fMaxN > 0))){
+    if (current_simulation_time < fStartTime)
+      return fStartTime;
+    if (current_simulation_time >= fEndTime)
+      return -1;
+
+    double next_time = CalcNextTime(current_simulation_time);
+    if (next_time >= fEndTime)
+      return -1;
+    return next_time;
+  }
+  else {
+    return -1;
+
+  }
+  return fStartTime; // FIXME timing ?
 }
 
 void GateVSource::GeneratePrimaries(G4Event * /*event*/, double /*time*/) {

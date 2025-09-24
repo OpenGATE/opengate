@@ -283,17 +283,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
-
-        if self.n > 0 and self.activity > 0:
-            fatal(
-                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
-            )
-        if self.n == 0 and self.activity == 0:
-            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
-        if self.activity > 0:
-            self.n = 0
-        if self.n > 0:
-            self.activity = 0
         # warning for non-used ?
 
         # check confine

@@ -4,6 +4,7 @@ from ..actors.base import _setter_hook_attached_to
 from ..base import GateObject, process_cls
 from ..utility import g4_units
 from ..definitions import __world_name__
+from ..exception import fatal, warning
 
 
 class SourceBase(GateObject):
@@ -105,6 +106,21 @@ class SourceBase(GateObject):
             self.user_info.n = np.array([self.user_info.n],dtype = int)
         else :
             self.user_info.n = np.array(self.user_info.n, dtype=int)
+
+        if (self.user_info.activity == 0) and (len(self.user_info.n) != len(run_timing_intervals)):
+            fatal(
+                f"source.n and run_timing_intervals do not have the same length."
+            )
+        if np.any(self.user_info.n  > 0) and self.user_info.activity > 0:
+            fatal(
+                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
+            )
+        if np.all(self.user_info.n == 0) and self.user_info.activity == 0:
+            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
+        if self.activity > 0:
+            self.user_info.n = np.array(np.zeros(len(run_timing_intervals),dtype = int))
+        if np.any(self.user_info.n > 0):
+            self.user_info.activity = 0
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):

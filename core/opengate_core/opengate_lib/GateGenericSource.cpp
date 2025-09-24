@@ -126,40 +126,20 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
 }
 
 double
-GateGenericSource::PrepareNextTime(const double current_simulation_time) {
+GateGenericSource::PrepareNextTime(const double current_simulation_time, double NumberOfGeneratedEvents) {
   auto &ll = GetThreadLocalDataGenericSource();
   // initialization of the effective event time (it can be in the
   // future according to the current_simulation_time)
   if (ll.fEffectiveEventTime < current_simulation_time) {
     ll.fEffectiveEventTime = current_simulation_time;
   }
-  UpdateActivity(ll.fEffectiveEventTime);
   fTotalSkippedEvents += ll.fCurrentSkippedEvents; // FIXME lock ?
   fTotalZeroEvents += ll.fCurrentZeroEvents;
   ll.fCurrentZeroEvents = 0;
   const auto cse = ll.fCurrentSkippedEvents;
   ll.fCurrentSkippedEvents = 0;
 
-  // if MaxN is below zero, we check the time
-  if (fMaxN <= 0) {
-    if (ll.fEffectiveEventTime < fStartTime)
-      return fStartTime;
-    if (ll.fEffectiveEventTime >= fEndTime)
-      return -1;
-
-    // get next time according to current fActivity
-    const double next_time = CalcNextTime(ll.fEffectiveEventTime);
-    if (next_time >= fEndTime)
-      return -1;
-    return next_time;
-  }
-
-  // check according to t MaxN
-  auto &l = GetThreadLocalData();
-  if (l.fNumberOfGeneratedEvents + cse >= fMaxN) {
-    return -1;
-  }
-  return fStartTime;
+  return GateVSource::PrepareNextTime(ll.fEffectiveEventTime,NumberOfGeneratedEvents + cse);
 }
 
 void GateGenericSource::PrepareNextRun() {

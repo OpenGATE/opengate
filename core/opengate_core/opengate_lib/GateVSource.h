@@ -38,7 +38,7 @@ public:
 
   virtual void PrepareNextRun();
 
-  virtual double PrepareNextTime(double current_simulation_time);
+  virtual double PrepareNextTime(double current_simulation_time,double NumberOfGeneratedEvents);
 
   virtual void GeneratePrimaries(G4Event *event,
                                  double current_simulation_time);
@@ -50,6 +50,12 @@ public:
 
   virtual unsigned long
   GetExpectedNumberOfEvents(const TimeInterval &time_interval);
+
+
+  G4int GetNumberOfSimulatedEvents(){
+    auto &l = fThreadLocalData.Get();
+    return l.fNumberOfGeneratedEvents;
+  }
 
   std::vector<int> GetVectorOfSimulatedEvents(){
     return fVectorOfMaxN;
