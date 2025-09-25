@@ -79,7 +79,6 @@ void GatePhaseSpaceSource::PrepareNextRun() {
   GateVSource::PrepareNextRun();
 }
 
-
 void GatePhaseSpaceSource::SetGeneratorFunction(
     ParticleGeneratorType &f) const {
   auto &ll = fThreadLocalDataPhsp.Get();
@@ -241,7 +240,8 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
   // weights
   event->GetPrimaryVertex(0)->SetWeight(w);
   if (fVerbose) {
-    std::cout << "Particle PDGCode: " << ll.fParticleDefinition->GetPDGEncoding()
+    std::cout << "Particle PDGCode: "
+              << ll.fParticleDefinition->GetPDGEncoding()
               << " Energy: " << energy << " Weight: " << w
               << " Position: " << position << " Direction: " << direction
               << " Time: " << time << " EventID: " << event->GetEventID()

@@ -42,7 +42,7 @@ void GateVSource::InitializeUserInfo(py::dict &user_info) {
   // get user info about activity or nb of events
   fVectorOfMaxN = DictGetVecInt(user_info, "n");
   fMaxN = fVectorOfMaxN[0];
-  //fMaxN= DictGetInt(user_info, "n");
+  // fMaxN= DictGetInt(user_info, "n");
   fActivity = DictGetDouble(user_info, "activity");
   fInitialActivity = fActivity;
 
@@ -69,13 +69,14 @@ void GateVSource::PrepareNextRun() {
   auto &l = GetThreadLocalData();
   l.fNumberOfGeneratedEvents = 0;
   fMaxN = fVectorOfMaxN[l.fRunID];
-  l.fRunID ++;
+  l.fRunID++;
   SetOrientationAccordingToAttachedVolume();
 }
 
-double GateVSource::PrepareNextTime(double current_simulation_time, double numberOfGeneratedEvents) {
+double GateVSource::PrepareNextTime(double current_simulation_time,
+                                    double numberOfGeneratedEvents) {
   UpdateActivity(current_simulation_time);
-  if ((fMaxN <= 0) || ((fMaxN > numberOfGeneratedEvents) && (fMaxN > 0))){
+  if ((fMaxN <= 0) || ((fMaxN > numberOfGeneratedEvents) && (fMaxN > 0))) {
     if (current_simulation_time < fStartTime)
       return fStartTime;
     if (current_simulation_time >= fEndTime)
@@ -85,10 +86,8 @@ double GateVSource::PrepareNextTime(double current_simulation_time, double numbe
     if (next_time >= fEndTime)
       return -1;
     return next_time;
-  }
-  else {
+  } else {
     return -1;
-
   }
   return fStartTime; // FIXME timing ?
 }
