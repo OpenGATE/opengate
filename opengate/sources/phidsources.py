@@ -77,11 +77,11 @@ class PhotonFromIonDecaySource(GenericSource):
                 phid_build_all_sub_sources(self)
 
         # super class conventional initialization
-        GenericSource.initialize(self, run_timing_intervals)
 
-        # init timing intervals for all ui
+        GenericSource.initialize(self, run_timing_intervals)
         self.initialize_start_end_time(run_timing_intervals)
         for sub_source in self.sub_sources:
+
             sub_source.start_time = self.start_time
             sub_source.end_time = self.end_time
 
@@ -106,6 +106,7 @@ class PhotonFromIonDecaySource(GenericSource):
             self.check_confine(sub_source)
 
             # final initialize to cpp side
+            # sub_source.n = np.array([sub_source.n],dtype = int)
             sub_source.InitializeUserInfo(sub_source.user_info)
 
         # dump log
