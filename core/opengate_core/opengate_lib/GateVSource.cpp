@@ -59,8 +59,9 @@ void GateVSource::UpdateActivity(double time) {
 
 double GateVSource::CalcNextTime(double current_simulation_time) {
   double next_time = current_simulation_time;
-  if ((fMaxN <= 0)){
-    next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+  if ((fMaxN <= 0)) {
+    next_time =
+        current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
   }
   return next_time;
 }
