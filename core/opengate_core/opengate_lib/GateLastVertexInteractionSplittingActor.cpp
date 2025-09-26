@@ -571,6 +571,7 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
 void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     const G4Event *event) {
   fEventID = event->GetEventID();
+  fNumberOfEvent ++;
   fIsAnnihilAlreadySplit = false;
   fAbortedEvent = false;
   fNbOfBatchForExitingParticle = 0;

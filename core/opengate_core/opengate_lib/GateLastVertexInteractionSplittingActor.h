@@ -92,6 +92,7 @@ public:
   G4int fRemovedParticle = 0;
   G4int fNumberOfReplayedParticle = 0;
   G4int fNumberOfReplayedEvent = 0;
+  G4int fNumberOfEvent = 0;
   G4ThreeVector fCurrentVectorDirector;
   G4Track *fTrackToSplit = nullptr;
   G4Step *fCopyInitStep = nullptr;
@@ -147,6 +148,7 @@ public:
                   tree<LastVertexDataContainer>::pre_order_iterator end);
   inline long GetNumberOfKilledParticles() { return fRemovedParticle; }
   inline long GetNumberOfReplayedEvents() { return fNumberOfReplayedEvent;}
+  inline long GetNumberOfEvents() { return fNumberOfEvent;}
   inline long GetNumberOfReplayedParticles() {
     return fNumberOfReplayedParticle;
   }

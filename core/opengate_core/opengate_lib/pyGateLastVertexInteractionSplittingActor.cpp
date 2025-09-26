@@ -24,7 +24,10 @@ void init_GateLastVertexInteractionSplittingActor(py::module &m) {
       .def("GetNumberOfReplayedParticles",
            &GateLastVertexInteractionSplittingActor::
                GetNumberOfReplayedParticles)
-    .def("GetNumberOfReplayedEvents",
+        .def("GetNumberOfReplayedEvents",
            &GateLastVertexInteractionSplittingActor::
-               GetNumberOfReplayedEvents);
+               GetNumberOfReplayedEvents)
+        .def("GetNumberOfEvents",
+           &GateLastVertexInteractionSplittingActor::
+               GetNumberOfEvents);
 }

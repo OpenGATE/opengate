@@ -7,6 +7,9 @@ from ..utility import g4_units
 from .actoroutput import ActorOutputBase
 from anytree import RenderTree
 import numpy as np
+import itk
+
+
 
 
 
@@ -363,10 +366,12 @@ class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.number_of_replayed_events= 0
+        self.number_of_events = 0
 
     def get_processed_output(self):
         d = {}
         d["replayed_particles"] = self.number_of_replayed_events
+        d["nb_events"] = self.number_of_events
         return d
 
     def __str__(self):
@@ -455,19 +460,50 @@ class LastVertexInteractionSplittingActor(
         self.fListOfVolumeAncestor = self.list_of_volume_name
 
     def EndSimulationAction(self):
-        self.retrieveDoseActors()
-        self.user_output.last_vertex_output.number_of_replayed_events = (self.GetNumberOfReplayedEvents())
+        self.user_output.last_vertex_output.number_of_events = self.GetNumberOfEvents()
+        self.user_output.last_vertex_output.number_of_replayed_events = self.GetNumberOfReplayedEvents()
         print("Number of replayed Events: ", self.GetNumberOfReplayedEvents())
-        # print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())
 
     def __str__(self):
         s = self.user_output["last_vertex_output"].__str__()
         return s
 
-    def retrieveDoseActors(self):
+
+    def UncertaintyCalculation(self,N,uncertainty_file,file,squared_file):
+        img = itk.imread(file)
+        array = itk.GetArrayFromImage(img)
+
+        squared_img = itk.imread(squared_file)
+        squared_array = itk.GetArrayFromImage(squared_img)
+
+        unc_dose_array = np.sqrt(1 / (N - 1) * (squared_array / N - (array / N) ** 2))
+        unc_dose_array = unc_dose_array / (array / N)
+
+        new_uncertainty_img = itk.GetImageFromArray(unc_dose_array)
+        new_uncertainty_img.CopyInformation(img)
+        itk.imwrite(new_uncertainty_img, uncertainty_file)
+
+    def CorrectDoseUncertainty(self):
         actors = self.simulation.actor_manager.actors
-        
+        output_dir = self.simulation.output_dir
+        for key in actors.keys():
+            actor = actors[key]
+            if hasattr(actor,"dose_uncertainty"):
+                N = self.user_output.last_vertex_output.number_of_events
+                t_N = (N - self.user_output.last_vertex_output.number_of_replayed_events)
+                if actor.dose_uncertainty.active == True and actor.dose_squared.active == True :
+                    uncertainty_file = output_dir + actor.edep_uncertainty.output_filename
+                    file = output_dir + actor.dose.output_filename
+                    squared_file = output_dir + actor.dose_squared.output_filename
+                    self.UncertaintyCalculation(t_N,uncertainty_file,file,squared_file)
+                elif actor.edep_uncertainty.active == True and actor.edep_squared.active == True :
+                    uncertainty_file = output_dir + actor.edep_uncertainty.output_filename
+                    file = output_dir + actor.edep.output_filename
+                    squared_file = output_dir + actor.edep_squared.output_filename
+                    self.UncertaintyCalculation(t_N,uncertainty_file,file,squared_file)
+
+
     # def retrieveDoseActors(self):
     #     actors = self.simulation.actor_manager.actors
     #     VoxelDepositActorSubClasses = self.retrieveVoxelDepositActorSubClasses(gate.actors.doseactors.VoxelDepositActor)
