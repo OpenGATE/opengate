@@ -1,4 +1,5 @@
 import opengate_core as g4
+import opengate as gate
 from .base import ActorBase
 from ..base import process_cls
 from box import Box
@@ -6,6 +7,7 @@ from ..utility import g4_units
 from .actoroutput import ActorOutputBase
 from anytree import RenderTree
 import numpy as np
+
 
 
 def generic_source_default_aa():
@@ -356,6 +358,23 @@ class ScatterSplittingFreeFlightActor(
             self.user_info.rayleigh_splitting_factor,
         )
 
+class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_replayed_events= 0
+
+    def get_processed_output(self):
+        d = {}
+        d["replayed_particles"] = self.number_of_replayed_events
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            s = k + ": " + str(v)
+            s += "\n"
+        return s
 
 class LastVertexInteractionSplittingActor(
     ActorBase, g4.GateLastVertexInteractionSplittingActor
@@ -399,6 +418,9 @@ class LastVertexInteractionSplittingActor(
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(
+            ActorOutputLastVertexInteractionSplittingActor, "last_vertex_output"
+        )
         self.__initcpp__()
         self.list_of_volume_name = []
 
@@ -433,9 +455,36 @@ class LastVertexInteractionSplittingActor(
         self.fListOfVolumeAncestor = self.list_of_volume_name
 
     def EndSimulationAction(self):
-        print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
+        self.retrieveDoseActors()
+        self.user_output.last_vertex_output.number_of_replayed_events = (self.GetNumberOfReplayedEvents())
+        print("Number of replayed Events: ", self.GetNumberOfReplayedEvents())
+        # print("Number of replayed particles: ", self.GetNumberOfReplayedParticles())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())
 
+    def __str__(self):
+        s = self.user_output["last_vertex_output"].__str__()
+        return s
+
+    def retrieveDoseActors(self):
+        actors = self.simulation.actor_manager.actors
+        
+    # def retrieveDoseActors(self):
+    #     actors = self.simulation.actor_manager.actors
+    #     VoxelDepositActorSubClasses = self.retrieveVoxelDepositActorSubClasses(gate.actors.doseactors.VoxelDepositActor)
+    #     print(VoxelDepositActorSubClasses)
+    #     for key in actors.keys():
+    #         print(type(actors[key]))
+    #         if type(actors[key]) in VoxelDepositActorSubClasses:
+    #             print(actors[key])
+    #
+    #
+    #
+    # def retrieveVoxelDepositActorSubClasses(self,cls):
+    #     result = []
+    #     for sub in cls.__subclasses__():
+    #         result.append(sub)
+    #         result.extend(self.retrieveVoxelDepositActorSubClasses(sub))  # récursif
+    #     return result
 
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
@@ -444,3 +493,4 @@ process_cls(GammaFreeFlightActor)
 process_cls(ActorOutputScatterSplittingFreeFlightActor)
 process_cls(ScatterSplittingFreeFlightActor)
 process_cls(LastVertexInteractionSplittingActor)
+process_cls(ActorOutputLastVertexInteractionSplittingActor)

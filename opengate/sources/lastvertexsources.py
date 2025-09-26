@@ -2,6 +2,7 @@ from box import Box
 from scipy.spatial.transform import Rotation
 
 import opengate_core as g4
+import numpy as np
 from .base import (
     SourceBase,
 )
@@ -23,6 +24,7 @@ class LastVertexSource(SourceBase, g4.GateLastVertexSource):
         g4.GateLastVertexSource.__init__(self)
 
     def initialize(self, run_timing_intervals):
+        self.user_info.n = np.zeros(len(run_timing_intervals)) + 1
         SourceBase.initialize(self, run_timing_intervals)
 
 

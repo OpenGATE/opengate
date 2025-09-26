@@ -34,6 +34,7 @@ if __name__ == "__main__":
     sim.number_of_threads = 1
     sim.random_seed = 987654321
     sim.output_dir = paths.output
+    sim.user_info.running_verbose_level = gate.logger.EVENT
 
     # world size
     world = sim.world
@@ -72,7 +73,7 @@ if __name__ == "__main__":
     # sim.running_verbose_level = gate.EVENT
     # (purposely a "hole" in the runtime ; warning not too large otherwise the fit fails)
     sim.run_timing_intervals = [[0, 2.9 * sec], [3 * sec, 7 * sec]]
-    sim.run(start_new_process=True)
+    sim.run()
 
     # print
     print(stats)

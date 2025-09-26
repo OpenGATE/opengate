@@ -91,15 +91,13 @@ public:
   G4int fNbOfMaxBatchPerEvent;
   G4int fRemovedParticle = 0;
   G4int fNumberOfReplayedParticle = 0;
-  G4int fNumberOfReplayedEventPerRun = 0;
+  G4int fNumberOfReplayedEvent = 0;
   G4ThreeVector fCurrentVectorDirector;
   G4Track *fTrackToSplit = nullptr;
   G4Step *fCopyInitStep = nullptr;
   G4String fProcessNameToSplit;
   G4VProcess *fProcessToSplit;
   LastVertexDataContainer fContainer;
-  std::vector<GateDoseActor*> fDoseActors;
-  std::vector<GateSimulationStatisticsActor*> fSimulationStatisticsActors;
 
   std::vector<G4Track> fTracksToPostpone;
   std::map<G4String, std::vector<G4String>> fListOfProcessesAccordingParticles;
@@ -116,7 +114,6 @@ public:
   virtual void BeginOfEventAction(const G4Event *) override;
   virtual void EndOfEventAction(const G4Event *) override;
   virtual void BeginOfRunAction(const G4Run *run) override;
-  virtual void EndOfRunAction(const G4Run *run) override;
   virtual void PreUserTrackingAction(const G4Track *track) override;
 
   // Pure splitting functions
@@ -149,6 +146,7 @@ public:
                   tree<LastVertexDataContainer>::pre_order_iterator it,
                   tree<LastVertexDataContainer>::pre_order_iterator end);
   inline long GetNumberOfKilledParticles() { return fRemovedParticle; }
+  inline long GetNumberOfReplayedEvents() { return fNumberOfReplayedEvent;}
   inline long GetNumberOfReplayedParticles() {
     return fNumberOfReplayedParticle;
   }

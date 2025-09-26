@@ -211,15 +211,6 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
    by Master thread AND by workers
    */
   // set the current time interval
-  G4bool isARun = false;
-
-  for (auto *source : fSources) {
-    G4int nbOfRuns = source->GetVectorOfSimulatedEvents().size();
-    if (run_id < nbOfRuns){
-      isARun = true;
-    }    
-  }
-
   auto &l = fThreadLocalData.Get();
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
@@ -245,20 +236,16 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
 void GateSourceManager::PrepareNextSource() const {
   auto &l = fThreadLocalData.Get();
   l.fNextActiveSource = nullptr;
-  G4int maxN = fSources[0]->GetVectorOfSimulatedEvents()[0];
-  G4int nbOfRunFromN = fSources[0]->GetVectorOfSimulatedEvents().size();
   G4int nbOfRunFromTimes = fSimulationTimes.size();
 
   double min_time = l.fCurrentTimeInterval.first;
   double max_time = l.fCurrentTimeInterval.second;
 
-  if ((nbOfRunFromTimes == nbOfRunFromN) && (maxN > 0)) {
-    min_time = 0 ;
-    max_time = 1 ;
-  }
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    auto t = source->PrepareNextTime(l.fCurrentSimulationTime);
+    G4int numberOfSimulatedEvents = source->GetNumberOfSimulatedEvents();
+    auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
+                                     numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
       max_time = t;
       l.fNextActiveSource = source;

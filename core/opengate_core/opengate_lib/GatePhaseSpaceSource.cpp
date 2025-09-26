@@ -79,28 +79,6 @@ void GatePhaseSpaceSource::PrepareNextRun() {
   GateVSource::PrepareNextRun();
 }
 
-double GatePhaseSpaceSource::PrepareNextTime(double current_simulation_time) {
-  // check according to t MaxN
-
-  UpdateActivity(current_simulation_time);
-  if (fMaxN <= 0) {
-    if (current_simulation_time < fStartTime)
-      return fStartTime;
-    if (current_simulation_time >= fEndTime)
-      return -1;
-
-    double next_time = CalcNextTime(current_simulation_time);
-    if (next_time >= fEndTime)
-      return -1;
-    return next_time;
-  }
-  auto &l = fThreadLocalData.Get();
-  if (l.fNumberOfGeneratedEvents >= fMaxN) {
-    return -1;
-  }
-  return fStartTime; // FIXME timing ?
-}
-
 void GatePhaseSpaceSource::SetGeneratorFunction(
     ParticleGeneratorType &f) const {
   auto &ll = fThreadLocalDataPhsp.Get();
@@ -262,7 +240,8 @@ void GatePhaseSpaceSource::AddOnePrimaryVertex(G4Event *event,
   // weights
   event->GetPrimaryVertex(0)->SetWeight(w);
   if (fVerbose) {
-    std::cout << "Particle PDGCode: " << ll.fParticleDefinition->GetPDGEncoding()
+    std::cout << "Particle PDGCode: "
+              << ll.fParticleDefinition->GetPDGEncoding()
               << " Energy: " << energy << " Weight: " << w
               << " Position: " << position << " Direction: " << direction
               << " Time: " << time << " EventID: " << event->GetEventID()

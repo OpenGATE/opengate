@@ -552,11 +552,6 @@ G4bool GateLastVertexInteractionSplittingActor::
 void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
     const G4Run *run) {
   // fAAManager->StartAcceptLoop();
-  fNumberOfReplayedEventPerRun  = 0;
-  auto actorManager = GateActorManager::GetInstance();
-  
-  fDoseActors= actorManager->GetActorsFromActorInheritanceDiagram<GateDoseActor>();
-  fSimulationStatisticsActors  = actorManager->GetActorsFromActorInheritanceDiagram<GateSimulationStatisticsActor>();
 
   fListOfProcessesAccordingParticles["gamma"] = {"compt", "phot", "conv"};
   fListOfProcessesAccordingParticles["e-"] = {"eBrem", "eIoni", "msc"};
@@ -606,13 +601,7 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
       fWeight = fTrackToSplit->GetWeight() / fSplittingFactor;
     
 
-    if (fDoseActors.size()> 0){
-      for (auto* a:fDoseActors){
-        G4AutoLock mutex(&SetEventCorrectionForLastVertex);
-        a->NbOfEvent = a->NbOfEvent  -1;
-      }
-    }
-    fNumberOfReplayedEventPerRun ++;
+    fNumberOfReplayedEvent ++;
   }
 }
 
@@ -769,15 +758,6 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
   }
 }
 
-void GateLastVertexInteractionSplittingActor::EndOfRunAction(
-    const G4Run *run) {
-    
-  if (fSimulationStatisticsActors.size() >0){
-    for (auto* a:fSimulationStatisticsActors){
-        a->ModifyEventCounts(-fNumberOfReplayedEventPerRun);
-    }
-  }
-}
 
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

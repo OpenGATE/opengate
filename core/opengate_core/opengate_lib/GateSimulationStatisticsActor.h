@@ -47,11 +47,6 @@ public:
 
   py::dict GetCounts();
 
-  void ModifyEventCounts(G4int event_to_add){
-    threadLocal_t &data = threadLocalData.Get();
-    data.fEventCount += event_to_add;
-  } 
-
 protected:
   // Local data for the threads (each one has a copy)
   struct threadLocal_t {

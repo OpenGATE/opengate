@@ -17,10 +17,10 @@ GateLastVertexSource::~GateLastVertexSource() {}
 void GateLastVertexSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   // get user info about activity or nb of events
-  fN = DictGetInt(user_info, "n");
+  fN = 0;
 }
 
-double GateLastVertexSource::PrepareNextTime(double current_simulation_time) {
+double GateLastVertexSource::PrepareNextTime(double current_simulation_time,double NumberOfGeneratedEvents) {
 
   /*
   // If all N events have been generated, we stop (negative time)
