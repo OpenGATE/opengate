@@ -54,7 +54,7 @@ public:
 
   uint64_t GetNumericID() const { return fNumericID; }
 
-  static std::string ArrayIDToStr(IDArrayType id);
+  static std::string ArrayIDToStr(const IDArrayType &id);
 
   G4VPhysicalVolume *GetTopPhysicalVolume() const;
 
