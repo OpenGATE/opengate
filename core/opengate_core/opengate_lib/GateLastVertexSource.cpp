@@ -20,7 +20,8 @@ void GateLastVertexSource::InitializeUserInfo(py::dict &user_info) {
   fN = 0;
 }
 
-double GateLastVertexSource::PrepareNextTime(double current_simulation_time,double NumberOfGeneratedEvents) {
+double GateLastVertexSource::PrepareNextTime(double current_simulation_time,
+                                             double NumberOfGeneratedEvents) {
 
   /*
   // If all N events have been generated, we stop (negative time)
@@ -106,5 +107,4 @@ void GateLastVertexSource::GeneratePrimaries(G4Event *event,
   if (fNumberOfGeneratedEvents == fListOfContainer.size()) {
     fListOfContainer.clear();
   }
-
 }

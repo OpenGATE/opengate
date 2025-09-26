@@ -44,11 +44,11 @@
 #include "G4TrackingManager.hh"
 #include "G4VParticleChange.hh"
 #include "G4eplusAnnihilation.hh"
+#include "GateActorManager.h"
+#include "GateDoseActor.h"
 #include "GateLastVertexInteractionSplittingActor.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingPostStepDoIt.h"
-#include "GateActorManager.h"
-#include "GateDoseActor.h"
 #include <cmath>
 
 G4Mutex SetEventCorrectionForLastVertex = G4MUTEX_INITIALIZER;
@@ -571,7 +571,7 @@ void GateLastVertexInteractionSplittingActor::BeginOfRunAction(
 void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     const G4Event *event) {
   fEventID = event->GetEventID();
-  fNumberOfEvent ++;
+  fNumberOfEvent++;
   fIsAnnihilAlreadySplit = false;
   fAbortedEvent = false;
   fNbOfBatchForExitingParticle = 0;
@@ -600,9 +600,8 @@ void GateLastVertexInteractionSplittingActor::BeginOfEventAction(
     fTrackToSplit = CreateATrackFromContainer(fContainer);
     if (fTrackToSplit != 0)
       fWeight = fTrackToSplit->GetWeight() / fSplittingFactor;
-    
 
-    fNumberOfReplayedEvent ++;
+    fNumberOfReplayedEvent++;
   }
 }
 
@@ -758,8 +757,6 @@ void GateLastVertexInteractionSplittingActor::EndOfEventAction(
     fActiveSource = fSourceManager->GetActiveSourceName();
   }
 }
-
-
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 

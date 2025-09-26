@@ -45,5 +45,3 @@ GateVActor *GateActorManager::GetActor(const std::string &name) {
   Fatal(oss.str());
   return nullptr;
 }
-
-

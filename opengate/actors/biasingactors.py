@@ -10,9 +10,6 @@ import numpy as np
 import itk
 
 
-
-
-
 def generic_source_default_aa():
     # aa = Angular Acceptance
     # this is used to control the direction of events in
@@ -361,11 +358,12 @@ class ScatterSplittingFreeFlightActor(
             self.user_info.rayleigh_splitting_factor,
         )
 
+
 class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.number_of_replayed_events= 0
+        self.number_of_replayed_events = 0
         self.number_of_events = 0
 
     def get_processed_output(self):
@@ -380,6 +378,7 @@ class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
             s = k + ": " + str(v)
             s += "\n"
         return s
+
 
 class LastVertexInteractionSplittingActor(
     ActorBase, g4.GateLastVertexInteractionSplittingActor
@@ -461,7 +460,9 @@ class LastVertexInteractionSplittingActor(
 
     def EndSimulationAction(self):
         self.user_output.last_vertex_output.number_of_events = self.GetNumberOfEvents()
-        self.user_output.last_vertex_output.number_of_replayed_events = self.GetNumberOfReplayedEvents()
+        self.user_output.last_vertex_output.number_of_replayed_events = (
+            self.GetNumberOfReplayedEvents()
+        )
         print("Number of replayed Events: ", self.GetNumberOfReplayedEvents())
         print("Number of killed particle:", self.GetNumberOfKilledParticles())
 
@@ -469,8 +470,7 @@ class LastVertexInteractionSplittingActor(
         s = self.user_output["last_vertex_output"].__str__()
         return s
 
-
-    def UncertaintyCalculation(self,N,uncertainty_file,file,squared_file):
+    def UncertaintyCalculation(self, N, uncertainty_file, file, squared_file):
         img = itk.imread(file)
         array = itk.GetArrayFromImage(img)
 
@@ -489,20 +489,33 @@ class LastVertexInteractionSplittingActor(
         output_dir = self.simulation.output_dir
         for key in actors.keys():
             actor = actors[key]
-            if hasattr(actor,"dose_uncertainty"):
+            if hasattr(actor, "dose_uncertainty"):
                 N = self.user_output.last_vertex_output.number_of_events
-                t_N = (N - self.user_output.last_vertex_output.number_of_replayed_events)
-                if actor.dose_uncertainty.active == True and actor.dose_squared.active == True :
-                    uncertainty_file = output_dir + actor.edep_uncertainty.output_filename
+                t_N = N - self.user_output.last_vertex_output.number_of_replayed_events
+                if (
+                    actor.dose_uncertainty.active == True
+                    and actor.dose_squared.active == True
+                ):
+                    uncertainty_file = (
+                        output_dir + actor.edep_uncertainty.output_filename
+                    )
                     file = output_dir + actor.dose.output_filename
                     squared_file = output_dir + actor.dose_squared.output_filename
-                    self.UncertaintyCalculation(t_N,uncertainty_file,file,squared_file)
-                elif actor.edep_uncertainty.active == True and actor.edep_squared.active == True :
-                    uncertainty_file = output_dir + actor.edep_uncertainty.output_filename
+                    self.UncertaintyCalculation(
+                        t_N, uncertainty_file, file, squared_file
+                    )
+                elif (
+                    actor.edep_uncertainty.active == True
+                    and actor.edep_squared.active == True
+                ):
+                    uncertainty_file = (
+                        output_dir + actor.edep_uncertainty.output_filename
+                    )
                     file = output_dir + actor.edep.output_filename
                     squared_file = output_dir + actor.edep_squared.output_filename
-                    self.UncertaintyCalculation(t_N,uncertainty_file,file,squared_file)
-
+                    self.UncertaintyCalculation(
+                        t_N, uncertainty_file, file, squared_file
+                    )
 
     # def retrieveDoseActors(self):
     #     actors = self.simulation.actor_manager.actors
@@ -521,6 +534,7 @@ class LastVertexInteractionSplittingActor(
     #         result.append(sub)
     #         result.extend(self.retrieveVoxelDepositActorSubClasses(sub))  # récursif
     #     return result
+
 
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
