@@ -103,7 +103,7 @@ if __name__ == "__main__":
     source2.position.translation = [0, 0, -3 * cm]
     source2.direction.type = "iso"
     source2.user_particle_life_time = lifetime
-    source2.n = [activity_Bq / Bq / sim.number_of_threads * lifetime / sec,0]
+    source2.n = [activity_Bq / Bq / sim.number_of_threads * lifetime / sec, 0]
     print()
     print("Source2 n = ", source2.n)
     print(f"Source2 HL = {half_life / sec} sec")

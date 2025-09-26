@@ -57,7 +57,7 @@ if __name__ == "__main__":
     source.energy.mono = 80 * keV
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
-    source.n = [100000 / sim.number_of_threads,0,0]
+    source.n = [100000 / sim.number_of_threads, 0, 0]
 
     # src
     source = sim.add_source("GenericSource", "s3")
