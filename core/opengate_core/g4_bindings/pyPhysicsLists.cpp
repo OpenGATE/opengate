@@ -91,6 +91,10 @@ namespace py = pybind11;
            py::overload_cast<const G4String &, const std::vector<G4String> &>( \
                &G4GenericBiasingPhysics::PhysicsBias),                         \
            py::return_value_policy::reference_internal)                        \
+      .def("PhysicsBias",                                                      \
+           py::overload_cast<const G4String &>(                                \
+               &G4GenericBiasingPhysics::PhysicsBias),                         \
+           py::return_value_policy::reference_internal)                        \
       .def("NonPhysicsBias",                                                   \
            py::overload_cast<const G4String &>(                                \
                &G4GenericBiasingPhysics::NonPhysicsBias),                      \
