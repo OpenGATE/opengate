@@ -38,6 +38,7 @@ from .serialization import dump_json, dumps_json, loads_json, load_json
 from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
+from .sources.lastvertexsources import LastVertexSource
 from .sources.phspsources import PhaseSpaceSource
 from .sources.voxelsources import VoxelSource
 from .sources.gansources import GANSource, GANPairsSource
@@ -47,6 +48,7 @@ from .voxelize import voxelize_geometry
 
 source_types = {
     "GenericSource": GenericSource,
+    "LastVertexSource": LastVertexSource,
     "PhaseSpaceSource": PhaseSpaceSource,
     "VoxelSource": VoxelSource,
     "GANSource": GANSource,
@@ -95,7 +97,12 @@ from .actors.miscactors import (
     SimulationStatisticsActor,
     KillActor,
     KillAccordingProcessesActor,
+    LastVertexInteractionSplittingActor,
+    KillNonInteractingParticleActor,
+    KillAccordingParticleNameActor,
+    SplittingActorBase,
     AttenuationImageActor,
+    KillParticlesNotCrossingMaterialsActor,
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
@@ -140,9 +147,12 @@ actor_types = {
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,
     "KillAccordingProcessesActor": KillAccordingProcessesActor,
+    "KillNonInteractingParticleActor": KillNonInteractingParticleActor,
+    "KillAccordingParticleNameActor": KillAccordingParticleNameActor,
     "DynamicGeometryActor": DynamicGeometryActor,
     "ARFActor": ARFActor,
     "ARFTrainingDatasetActor": ARFTrainingDatasetActor,
+    "KillParticlesNotCrossingMaterialsActor": KillParticlesNotCrossingMaterialsActor,
     # digit
     "PhaseSpaceActor": PhaseSpaceActor,
     "DigitizerAdderActor": DigitizerAdderActor,
@@ -153,6 +163,8 @@ actor_types = {
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "LastVertexInteractionSplittingActor": LastVertexInteractionSplittingActor,
+    "AttenuationImageActor": AttenuationImageActor,
     "DigiAttributeProcessDefinedStepInVolumeActor": DigiAttributeProcessDefinedStepInVolumeActor,
     # biasing
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
@@ -1324,11 +1336,23 @@ class VolumeManager(GateObject):
             s += f"{vt} "
         return s
 
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
     def print_volume_types(self):
         print(self.dump_volume_types())
 
     def dump_material_database_names(self):
         return list(self.material_database.filenames)
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
+
+    def get_volume_tree(self):
+        return self.volume_tree_root
 
     def print_material_database_names(self):
         print(self.dump_material_database_names())

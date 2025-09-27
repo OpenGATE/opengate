@@ -146,7 +146,6 @@ GateGenericSource::PrepareNextTime(const double current_simulation_time) {
       return fStartTime;
     if (ll.fEffectiveEventTime >= fEndTime)
       return -1;
-
     // get next time according to current fActivity
     const double next_time = CalcNextTime(ll.fEffectiveEventTime);
     if (next_time >= fEndTime)
