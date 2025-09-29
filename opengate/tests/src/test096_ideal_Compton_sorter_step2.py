@@ -11,7 +11,7 @@ import os
 import numpy as np
 import sys
 import pandas as pd
-
+import matplotlib.pyplot as plt
 
 
 
@@ -35,14 +35,13 @@ def main(dependency="test096_coinc_sorter_step1.py"):
 
 
     data_coinc = ccmod_ideal_coincidences(data)
-    data_cones = ccmod_make_cones(data_coinc)
+    data_cones = ccmod_make_cones(data_coinc,energy_key_name = "IdealTotalEnergyDeposit")
     
 
     #compare cones from GATE9 and from GATE10
     # Compare with reference output
     
     ref_folder = paths.output_ref
-    print(ref_folder)
     ref_filename = ref_folder / "CC_idealprocessing_Singles.root"
     file = uproot.open(ref_filename)
     Sn = file['Singles']
@@ -60,16 +59,45 @@ def main(dependency="test096_coinc_sorter_step1.py"):
     data_cones_GATE9 = ccmod_make_cones(data_GATE9,energy_key_name = "IdealTotalEnergyDeposit", posX_key_name ="globalPosX",posY_key_name = "globalPosY",posZ_key_name = "globalPosZ")
 
 
-   
-    distance_energy = wasserstein_distance(data_cones["Energy1"],data_cones_GATE9["Energy1"])
+       
+  
+    keV = gate.g4_units.keV
+    E1 = data_cones["Energy1"]/ keV
+    E1_GATE9 = data_cones_GATE9["Energy1"]/ keV
+
     
-    #Faire un moyen de la energy et l'energy max pour le tst. wher I have Cpmtpo So I know tha max for my energy 
-    #tolerance_energy = 0.005
-    #print(
-    #    f"Wasserstein distance on energy : {distance_energy}, tolerence {tolerance_energy}"
-    #)
+
+    is_ok = utility.check_diff(np.mean(E1), np.mean(E1_GATE9), 5, f"Energy mean  difference in keV:")
+    #The test is not ok. But either with physics knowledge
+    is_ok = (
+        utility.check_diff(
+            np.max(E1), np.max(E1_GATE9), 1, f"Energy max difference in keV:"
+        )
+        and is_ok
+    )
+    #477.6 keV for backscatteirng  of 662 keV 
+    is_ok = (
+        utility.check_diff(
+            len(E1), len(E1_GATE9), 5, f"Number of coincidences difference :"
+        )
+        and is_ok
+    )
+    #
+
+
+    # plot
+    f, ax = plt.subplots(1, 2, figsize=(25, 10))
+    utility.plot_hist(ax[0], E1, f"E1 (keV)")
+    utility.plot_hist(ax[0], E1_GATE9, f"E1(keV) GATE9 )")
+
+    fn = paths.output / "test096_ideal_coinc_opt2.png"
+    plt.savefig(fn)
+    print(f"Plot in {fn}")
+
     
     
+
+    utility.test_ok(is_ok)
     
    
 
