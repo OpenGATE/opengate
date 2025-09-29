@@ -100,15 +100,15 @@ if __name__ == "__main__":
     ]
     ta2.output_filename = output_path / "PhaseSpace.root"
     ta2.steps_to_store = "allsteps"
-    #f = sim.add_filter("ParticleFilter", "f")
-    #f.particle = "gamma"
-    #ta2.filters.append(f)
+    f = sim.add_filter("ParticleFilter", "f")
+    f.particle = "gamma"
+    ta2.filters.append(f)
 
     # check overlap
     sim.check_volumes_overlap = True
 
     # phys
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option2"#To avoid Doppler 
     sim.physics_manager.set_production_cut("world", "all", 1 * mm)
     sim.physics_manager.set_production_cut("BB_box", "all", 0.1 * mm)
 
@@ -129,7 +129,7 @@ if __name__ == "__main__":
 
     
     # timing
-    sim.run_timing_intervals = [[0, 10 * sec]]
+    sim.run_timing_intervals = [[0, 5 * sec]]
     
     # go
     sim.run()
