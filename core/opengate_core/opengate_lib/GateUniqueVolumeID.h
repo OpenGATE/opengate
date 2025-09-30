@@ -12,7 +12,6 @@
 #include "G4VPhysicalVolume.hh"
 #include "G4VTouchable.hh"
 #include <array>
-#include <cstdint> // Required for uint64_t
 #include <map>
 #include <memory>
 #include <string>
@@ -47,12 +46,15 @@ public:
 
   static IDArrayType ComputeArrayID(const G4VTouchable *touchable);
 
+  // Compute the string ID from a touchable without creating a full object
+  static std::string ComputeStringID(const G4VTouchable *touchable);
+
   static Pointer New(const G4VTouchable *touchable = nullptr,
                      bool debug = false);
 
   size_t GetDepth() const { return fTouchable.GetDepth(); }
 
-  uint64_t GetNumericID() const { return fNumericID; }
+  int GetNumericID() const { return fNumericID; }
 
   static std::string ArrayIDToStr(const IDArrayType &id);
 
@@ -62,17 +64,17 @@ public:
   std::string GetIdUpToDepth(int depth) const;
 
   // Get the hashed ID for a given depth (uses an internal cache)
-  uint64_t GetIdUpToDepthAsHash(int depth) const;
+  int GetIdUpToDepthAsHash(int depth) const;
 
   IDArrayType fArrayID{};
   std::string fID;
-  uint64_t fNumericID;
+  int fNumericID;
   G4NavigationHistory fTouchable;
 
   // Caches for strings and their hashes, mutable to allow modification in const
   // methods
   mutable std::map<int, std::string> fCachedIdDepth;
-  mutable std::map<int, uint64_t> fCachedIdDepthHash;
+  mutable std::map<int, int> fCachedIdDepthHash;
 };
 
 #endif // GateUniqueVolumeID_h

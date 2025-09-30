@@ -9,7 +9,7 @@
 #include "G4NavigationHistory.hh"
 #include "G4VPhysicalVolume.hh"
 #include "GateHelpers.h"
-#include <functional> // Required for std::hash
+#include "GateUniqueVolumeIDManager.h"
 #include <sstream>
 
 GateUniqueVolumeID::GateUniqueVolumeID() {
@@ -48,16 +48,16 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
     }
   }
   fArrayID = ComputeArrayID(touchable);
-  fID = touchable->GetVolume()->GetName() + "-" + ArrayIDToStr(fArrayID);
-
-  // Generate the deterministic numeric ID by hashing the unique string ID.
-  fNumericID = std::hash<std::string>{}(fID);
+  fID = ComputeStringID(touchable);
+  // The numeric ID can only be updated later.
+  // It will be the first time we need GetNumericID
+  fNumericID = -1;
 }
 
-uint64_t GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
+int GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
   // Check if the hash is already in our cache.
-  const auto it = fCachedIdDepthHash.find(depth);
-  if (it != fCachedIdDepthHash.end()) {
+  if (const auto it = fCachedIdDepthHash.find(depth);
+      it != fCachedIdDepthHash.end()) {
     return it->second;
   }
 
@@ -65,7 +65,7 @@ uint64_t GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
   const std::string &s = GetIdUpToDepth(depth);
 
   // Compute the hash.
-  const uint64_t h = std::hash<std::string>{}(s);
+  const int h = std::hash<std::string>{}(s);
 
   // Store the newly computed hash in our cache and return it.
   fCachedIdDepthHash[depth] = h;
@@ -77,8 +77,7 @@ std::string GateUniqueVolumeID::GetIdUpToDepth(const int depth) const {
     return fID;
 
   // Check if the string is already in our cache.
-  auto it = fCachedIdDepth.find(depth);
-  if (it != fCachedIdDepth.end()) {
+  if (auto it = fCachedIdDepth.find(depth); it != fCachedIdDepth.end()) {
     return it->second;
   }
 
@@ -149,4 +148,9 @@ std::string GateUniqueVolumeID::ArrayIDToStr(const IDArrayType &id) {
 
 G4VPhysicalVolume *GateUniqueVolumeID::GetTopPhysicalVolume() const {
   return fTouchable.GetVolume(GetDepth());
+}
+
+std::string GateUniqueVolumeID::ComputeStringID(const G4VTouchable *touchable) {
+  const auto arrayID = ComputeArrayID(touchable);
+  return touchable->GetVolume()->GetName() + "-" + ArrayIDToStr(arrayID);
 }
