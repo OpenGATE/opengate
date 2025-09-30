@@ -3,10 +3,8 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.coincidences import (
-    coincidences_sorter,
-    copy_tree_for_dump,
-)
+from opengate.actors.coincidences import coincidences_sorter
+from opengate.contrib.root_helpers import *
 import uproot
 import os
 import numpy as np
@@ -66,9 +64,10 @@ def main(dependency="test072_coinc_sorter_step1.py"):
 
     # save to file
     # WARNING root version >= 5.2.2 needed
-    output_file = uproot.recreate(paths.output / f"output_minDistanceXY.root")
-    output_file["coincidences"] = coincidences
-    output_file["singles"] = copy_tree_for_dump(singles_tree)
+    output_filename = paths.output / f"output_minDistanceXY.root"
+    root_write_trees(
+        output_filename, ["coincidences", "singles"], [coincidences, singles_tree]
+    )
 
     # Compare with reference output
     ref_folder = paths.output_ref
