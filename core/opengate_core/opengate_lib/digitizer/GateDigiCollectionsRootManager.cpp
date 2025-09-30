@@ -155,6 +155,11 @@ void GateDigiCollectionsRootManager::CreateNtupleColumn(
     att_id = ram->CreateNtupleSColumn(tupleId, att->GetDigiAttributeName());
   if (att->GetDigiAttributeType() == 'I')
     att_id = ram->CreateNtupleIColumn(tupleId, att->GetDigiAttributeName());
+  if (att->GetDigiAttributeType() == 'L') {
+    Fatal("Error GateDigiCollectionsRootManager::CreateNtupleColumn no LONG "
+          "possible yet");
+    // att_id = ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName());
+  }
   if (att->GetDigiAttributeType() == '3') {
     att_id =
         ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName() + "_X");
