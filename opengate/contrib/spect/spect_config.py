@@ -517,7 +517,7 @@ class DetectorConfig(ConfigBase):
         simu_name = self.spect_config.simu_name
         for i in range(self.number_of_heads):
             # Create the head detector
-            hn = f"{simu_name}_spect{i}"
+            hn = f"{simu_name}_head_{i}"
             self.head_names.append(hn)
             det, colli, crystal = m.add_spect_head(
                 sim,
@@ -526,7 +526,7 @@ class DetectorConfig(ConfigBase):
                 debug=sim.visu == True,
             )
             # set the digitizer
-            dname = f"{simu_name}_digit{i}"
+            dname = f"{simu_name}_digit_{i}"
             self.digitizer_function(
                 sim,
                 crystal.name,
@@ -607,6 +607,7 @@ class SourceConfig(ConfigBase):
         self.radionuclide = None
         self.total_activity = 1 * g4_units.Bq
         # self.gaga = GAGAConfig(spect_config) # FIXME todo
+        self.source_name = None
 
     def __str__(self):
         s = f"Activity source image: {self.image}\n"
@@ -638,6 +639,7 @@ class SourceConfig(ConfigBase):
         source.activity = self.total_activity / self.spect_config.number_of_threads
         if sim.visu is True:
             source.activity = 10 * gate.g4_units.Bq
+        self.source_name = source.name
 
 
 class AcquisitionConfig(ConfigBase):
@@ -757,7 +759,7 @@ class FreeFlightConfig(ConfigBase):
 
     def get_crystal_volume_names(self):
         volume_names = [
-            f"{self.spect_config.simu_name}_spect{i}_crystal"
+            f"{self.spect_config.simu_name}_head_{i}_crystal"
             for i in range(self.spect_config.detector_config.number_of_heads)
         ]
         return volume_names
@@ -994,9 +996,10 @@ def spect_freeflight_merge(
         print(f"Scaling to target        = {scaling}")
 
     # Scatter-to-Primary Ratio (SPR)
-    vprim = (prim / n_prim) * n_target
-    vscatter = (scatter / n_scatter) * n_target
-    spr = np.divide(vscatter, vprim, out=np.zeros_like(vscatter), where=vprim != 0)
+    if n_scatter > 0:
+        vprim = (prim / n_prim) * n_target
+        vscatter = (scatter / n_scatter) * n_target
+        spr = np.divide(vscatter, vprim, out=np.zeros_like(vscatter), where=vprim != 0)
 
     # write combined image
     prim_img = sitk.ReadImage(img)
@@ -1016,12 +1019,13 @@ def spect_freeflight_merge(
         print(fn)
 
     # write SPR
-    img = sitk.GetImageFromArray(spr)
-    img.CopyInformation(prim_img)
-    fn = folder / spr_filename
-    sitk.WriteImage(img, fn)
-    if verbose:
-        print(fn)
+    if n_scatter > 0:
+        img = sitk.GetImageFromArray(spr)
+        img.CopyInformation(prim_img)
+        fn = folder / spr_filename
+        sitk.WriteImage(img, fn)
+        if verbose:
+            print(fn)
 
     # open info if the file exists
     prim_info = {}
@@ -1033,11 +1037,18 @@ def spect_freeflight_merge(
 
     # open info if the file exists
     scatter_info = {}
-    if n_scatter > 0:
-        scatter_info_fn = folder / scatter_folder / "ff_info.json"
-        if scatter_info_fn.is_file():
-            with open(scatter_info_fn, "r") as f:
-                scatter_info = json.load(f)
+    scatter_info_fn = folder / scatter_folder / "ff_info.json"
+    if scatter_info_fn.is_file():
+        with open(scatter_info_fn, "r") as f:
+            scatter_info = json.load(f)
+    else:
+        scatter_info = {
+            "scatter_activity": 0,
+            "max_compton_level": 10,
+            "angle_tolerance": 10.0,
+            "compton_splitting_factor": 300,
+            "rayleigh_splitting_factor": 300,
+        }
 
     # write combined information
     info = prim_info
