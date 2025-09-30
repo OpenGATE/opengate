@@ -35,7 +35,8 @@ def create_castor_config(simulation_engine, param):
     # update the unique volume id and other parameters
     for touchable in touchables:
         unique_vol = m.GetVolumeID(touchable)
-        uid = unique_vol.fID
+        # suid = unique_vol.fID
+        uid = unique_vol.fNumericID
         translation = vec_g4_as_np(touchable.GetTranslation(0))
         rotation = rot_g4_as_np(touchable.GetRotation(0).inverse())
         solid = touchable.GetSolid(0)
@@ -50,6 +51,7 @@ def create_castor_config(simulation_engine, param):
         r = [rotation[i].tolist() for i in range(3)]
         castor_config["rotation"].append(r)
         castor_config["translation"].append(translation.tolist())
+        # castor_config["unique_volume_id"].append(suid)
         castor_config["unique_volume_id"].append(uid)
         castor_config["size"].append(size)
 
