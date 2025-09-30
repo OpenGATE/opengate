@@ -3,7 +3,6 @@
 
 import opengate.contrib.pet.philipsvereos as vereos
 import opengate.contrib.pet.castor_helpers as castor
-from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 from test096_pet_castor_helpers import *
 import os
@@ -69,6 +68,13 @@ if __name__ == "__main__":
     if sim.visu:
         activity = 50 * Bq
     test_add_b2b_source(sim, activity)
+
+    # Set the function that will create the file for castor.
+    # This function is a hook because it must be run once the geometry is built by geant4.
+    # The param structure contains input parameters and will contain the output castor_config
+    # after the simulation
+    filename = paths.output / "castor_config_ref.json"
+    param = castor.set_hook_castor_config(sim, crystal.name, filename)
 
     # go
     duration = 1 * sec

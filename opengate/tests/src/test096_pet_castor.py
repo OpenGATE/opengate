@@ -108,10 +108,10 @@ if __name__ == "__main__":
     print()
     is_ok = assert_positions(fn, "hits", castor_config, check_pos=True)
     print()
-    # dont check the position for the singles as Position is replaced by weighted centroid
+    # don't check the position for the singles as Position is replaced by weighted centroid
     is_ok = assert_positions(fn, "singles", castor_config) and is_ok
     print()
-    # dont check the position for the singles as Position is replaced by blured position
+    # don't check the position for the singles as Position is replaced by blured position
     is_ok = assert_positions(fn, "singles_blur", castor_config) and is_ok
 
     utility.test_ok(is_ok)

@@ -16,6 +16,7 @@ def add_test_digitizer(sim, crystal, filename="output.root"):
         "PostPositionLocal",
         "TotalEnergyDeposit",
         "PreStepUniqueVolumeID",
+        "PreStepUniqueVolumeIDAsInt",
         "GlobalTime",
         "ParticleName",
     ]
@@ -89,12 +90,12 @@ def test_add_b2b_source(sim, activity, name="b2b"):
 
 def read_root_positions(root_file_path, tree_name="hits"):
     # open the root file
-    tree = read_root_tree(root_file_path, tree_name)
+    tree = root_read_tree(root_file_path, tree_name)
 
-    # 1. Get the branches as ak arrays
-    vol_ids = tree_get_branch(tree, "PreStepUniqueVolumeID")
-    positions = tree_get_branch(tree, "PostPosition")
-    local_positions = tree_get_branch(tree, "PostPositionLocal")
+    # Get the branches as np arrays (FIXME -> np ? ak ?)
+    vol_ids = root_tree_get_branch(tree, "PreStepUniqueVolumeIDAsInt")
+    positions = root_tree_get_branch(tree, "PostPosition")
+    local_positions = root_tree_get_branch(tree, "PostPositionLocal")
 
     return vol_ids, positions, local_positions
 
