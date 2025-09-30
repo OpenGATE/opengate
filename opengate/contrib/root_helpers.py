@@ -52,6 +52,14 @@ def root_write_tree(output_file, tree_name, branch_types, branch_data):
     tree.extend(branch_data)
 
 
+def root_write_trees(output_filename, trees_names, trees_data):
+    with uproot.recreate(output_filename) as output_file:
+        for tree_name, tree_data in zip(trees_names, trees_data):
+            t_data = root_tree_get_branch_data(tree_data)
+            t_types = root_tree_get_branch_types(t_data)
+            root_write_tree(output_file, tree_name, t_types, t_data)
+
+
 def get_array_dtype(series):
     if isinstance(series, np.ndarray):
         sdtype = series.dtype
