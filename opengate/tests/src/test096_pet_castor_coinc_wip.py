@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from test096_pet_castor_helpers import *
-from opengate.actors.coincidences import coincidences_sorter, copy_tree_for_dump
+from opengate.actors.coincidences import *
 import os
 import sys
 
@@ -53,18 +53,27 @@ if __name__ == "__main__":
         min_trans_dist,
         transaxial_plane,
         max_trans_dist,
+        # return_type="pd",
     )
     nc = len(coincidences["GlobalTime1"])
     print(f"There are {nc} coincidences for the policy", policy)
 
     # save to file
-    # WARNING root version >= 5.2.2 needed
-    output_filename = root_folder / f"coincidences.root"
-    output_file = uproot.recreate(output_filename)
-    output_file["coincidences"] = coincidences
-    output_file["singles"] = copy_tree_for_dump(singles_tree)
-    output_file["hits"] = copy_tree_for_dump(hits_tree)
-    print(f"File {output_filename} saved")
+    output_filename = root_folder / "coincidences.root"
 
-    is_ok = False
-    utility.test_ok(is_ok)
+    hits_data = root_tree_get_branch_data(hits_tree)
+    singles_data = root_tree_get_branch_data(singles_tree, library="ak")
+    coincidences_data = root_tree_get_branch_data(coincidences)
+
+    hits_types = root_tree_get_branch_types(hits_data)
+    singles_types = root_tree_get_branch_types(singles_data)
+    coincidences_types = root_tree_get_branch_types(coincidences_data)
+
+    with uproot.recreate(output_filename) as output_file:
+        root_write_tree(output_file, "hits", hits_types, hits_data)
+        root_write_tree(output_file, "singles", singles_types, singles_data)
+        root_write_tree(
+            output_file, "coincidences", coincidences_types, coincidences_data
+        )
+
+    print(f"File {output_filename} saved")
