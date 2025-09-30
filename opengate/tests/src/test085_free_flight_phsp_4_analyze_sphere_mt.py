@@ -168,3 +168,8 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     # plt.show()
 
     utility.test_ok(is_ok)
+
+
+# --------------------------------------------------------------------------
+if __name__ == "__main__":
+    main()
