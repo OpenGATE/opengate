@@ -138,7 +138,11 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         att->FillSValue(
             step->GetTrack()->GetParticleDefinition()->GetParticleName());
       });
-
+  DefineDigiAttribute(
+      "PDGCode", 'I', FILLF {
+        att->FillIValue(
+            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
+      });
   DefineDigiAttribute(
       "ParentParticleName", 'S', FILLF {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
@@ -181,12 +185,22 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
       "TrackVolumeInstanceID", 'I', FILLF {
         att->FillIValue(step->GetTrack()->GetVolume()->GetInstanceID());
       });
+
+  // -----------------------------------------------------
+  // UniqueVolumeID
   DefineDigiAttribute(
       "PreStepUniqueVolumeID", 'U', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
         const auto uid =
             m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
         att->FillUValue(uid);
+      });
+  DefineDigiAttribute(
+      "PreStepUniqueVolumeIDAsInt", 'I', FILLF {
+        auto *m = GateUniqueVolumeIDManager::GetInstance();
+        const auto uid =
+            m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+        att->FillIValue(uid->GetNumericID());
       });
   DefineDigiAttribute(
       "PostStepUniqueVolumeID", 'U', FILLF {
@@ -201,44 +215,6 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         const auto uid =
             m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
         att->FillIValue(uid->GetNumericID());
-      });
-  DefineDigiAttribute(
-      "PDGCode", 'I', FILLF {
-        att->FillIValue(
-            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
-      });
-
-  DefineDigiAttribute(
-      "HitUniqueVolumeID", 'U', FILLF {
-        /*
-          Like in old GATE (see GateCrystalSD.cc).
-          However, no difference with PostStepUniqueVolumeID.
-          Unsure if needed.
-         */
-        auto *m = GateUniqueVolumeIDManager::GetInstance();
-        if (step->GetPostStepPoint()
-                ->GetProcessDefinedStep()
-                ->GetProcessName() == "Transportation") {
-          auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
-          att->FillUValue(uid);
-        } else {
-          auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
-          att->FillUValue(uid);
-        }
-      });
-
-  DefineDigiAttribute(
-      "HitUniqueVolumeIDAsInt", 'I', FILLF {
-        auto *m = GateUniqueVolumeIDManager::GetInstance();
-        if (step->GetPostStepPoint()
-                ->GetProcessDefinedStep()
-                ->GetProcessName() == "Transportation") {
-          auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
-          att->FillIValue(uid->GetNumericID());
-        } else {
-          auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
-          att->FillIValue(uid->GetNumericID());
-        }
       });
 
   // -----------------------------------------------------
