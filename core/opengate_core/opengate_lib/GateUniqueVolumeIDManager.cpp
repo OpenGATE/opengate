@@ -6,13 +6,17 @@
    -------------------------------------------------- */
 
 #include "GateUniqueVolumeIDManager.h"
+#include "GateGeometryUtils.h"
 #include "GateHelpers.h"
 #include <shared_mutex>
 
 // This mutex protects access to the fToVolumeID map
 std::shared_mutex GetVolumeIDMutex;
+G4Mutex GateUniqueVolumeIDManagerMutex = G4MUTEX_INITIALIZER;
 
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::fInstance = nullptr;
+std::map<const G4LogicalVolume *, std::map<std::string, int>>
+    GateUniqueVolumeIDManager::fLVtoNumericIds;
 
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::GetInstance() {
   if (fInstance == nullptr)
@@ -37,8 +41,7 @@ GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
 
   // Gain read access to check if the ID already exists
   std::shared_lock<std::shared_mutex> readLock(GetVolumeIDMutex);
-  auto it = fToVolumeID.find({name, id});
-  if (it != fToVolumeID.end()) {
+  if (auto it = fToVolumeID.find({name, id}); it != fToVolumeID.end()) {
     return it->second;
   } else {
     // The volume ID does not exist yet, so we will create it.
@@ -55,6 +58,10 @@ GateUniqueVolumeIDManager::GetVolumeID(const G4VTouchable *touchable) {
       // internally.
       const auto uid = GateUniqueVolumeID::New(touchable);
 
+      // Also generate the unique int id
+      const auto *lv = touchable->GetVolume()->GetLogicalVolume();
+      uid->fNumericID = GetNumericID(lv, uid->fID);
+
       // Add the new ID to the map and return it.
       fToVolumeID[{name, id}] = uid;
       return uid;
@@ -70,4 +77,41 @@ GateUniqueVolumeIDManager::GetAllVolumeIDs() const {
     l.push_back(x.second);
   }
   return l; // copy
+}
+
+int GateUniqueVolumeIDManager::GetNumericID(const G4LogicalVolume *lv,
+                                            std::string id) {
+  auto it = fLVtoNumericIds.find(lv);
+  if (it == fLVtoNumericIds.end()) {
+    InitializeNumericIDs(lv);
+    it = fLVtoNumericIds.find(lv);
+  }
+  return it->second[id];
+}
+
+void GateUniqueVolumeIDManager::InitializeNumericIDs(
+    const G4LogicalVolume *lv) {
+  G4AutoLock mutex(&GateUniqueVolumeIDManagerMutex);
+  const auto touchables = FindAllTouchables(lv->GetName());
+  std::vector<std::string> stringIDs;
+  for (const auto &touchable : touchables) {
+    // Compute only the string ID, without creating full GateUniqueVolumeID
+    const std::string stringID =
+        GateUniqueVolumeID::ComputeStringID(touchable.get());
+    stringIDs.push_back(stringID);
+  }
+
+  // Sort the string IDs to ensure deterministic ordering
+  std::sort(stringIDs.begin(), stringIDs.end());
+
+  // Assign sequential positive integers starting from 1
+  int nextID = 1;
+  std::map<std::string, int> sIDRegistry;
+  for (const auto &stringID : stringIDs) {
+    // Only assign if not already present (handles duplicates)
+    if (sIDRegistry.find(stringID) == sIDRegistry.end()) {
+      sIDRegistry[stringID] = nextID++;
+    }
+  }
+  fLVtoNumericIds[lv] = sIDRegistry;
 }
