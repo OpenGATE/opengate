@@ -92,11 +92,21 @@ jobs:
         if [[ ${{ matrix.os }} == "ubuntu-latest" ]] || [[ ${{ matrix.os }} == "ubuntu-24.04-arm" ]]; then
             varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
             varOS=($varOS)
-            echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
+            varOS=${varOS[0]}
+            if [[ ${{ matrix.os }} == "ubuntu-latest" ]]; then
+                varOS="${varOS}-intel"
+            else
+                varOS="${varOS}-arm"
+            fi
+            echo "release=${varOS}" >> $GITHUB_OUTPUT
         elif [[ ${{ matrix.os }} == "macos-15" ]] || [[ ${{ matrix.os }} == "macos-15-intel" ]]; then
-            varOS=`sw_vers | grep "ProductVersion:"`
-            varOS="${varOS#*:}"
-            echo "release=${varOS:1}" >> $GITHUB_OUTPUT
+            varOS=$(sw_vers -productVersion)
+            if [[ ${{ matrix.os }} == "macos-15" ]]; then
+                varOS="${varOS}-m1"
+            else
+                varOS="${varOS}-intel"
+            fi
+            echo "release=${varOS}" >> $GITHUB_OUTPUT
         else
             varOS=`windows`
             echo "release=${varOS}" >> $GITHUB_OUTPUT
@@ -337,7 +347,9 @@ jobs:
       run: |
         varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
         varOS=($varOS)
-        echo "release=${varOS[0]}" >> $GITHUB_OUTPUT
+        varOS=${varOS[0]}
+        varOS="${varOS}-intel"
+        echo "release=${varOS}" >> $GITHUB_OUTPUT
     - name: Cache modules
       id: cache_opengate_core_dependencies
       uses: actions/cache@v4
