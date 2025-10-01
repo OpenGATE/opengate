@@ -97,6 +97,7 @@ jobs:
                 varOS="${varOS}-intel"
             else
                 varOS="${varOS}-arm"
+            fi
             echo "release=${varOS}" >> $GITHUB_OUTPUT
         elif [[ ${{ matrix.os }} == "macos-15" ]] || [[ ${{ matrix.os }} == "macos-15-intel" ]]; then
             varOS=$(sw_vers -productVersion)
