@@ -808,9 +808,8 @@ LETActor
    Documentation TODO. Refer to test050 for current examples.
 
 
-BremSplittingActor
----------------------
-
+BremsstrahlungSplittingActor
+----------------------------
 
 Description
 ~~~~~~~~~~~
@@ -832,36 +831,6 @@ To be noted that the GEANT4 command line is a more straightforward way to obtain
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.miscactors.BremSplittingActor
+.. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
-ComptonSplittingActor
----------------------
-
-Description
-~~~~~~~~~~~
-
-This actor generates N particles with reduced weight whenever a Compton process occurs. The options include:
-
-.. code-block:: python
-
-   compt_splitting_actor = sim.add_actor("ComptSplittingActor", name="compt_splitting")
-   compt_splitting_actor.attached_to = W_tubs.name
-   compt_splitting_actor.splitting_factor = nb_split
-   compt_splitting_actor.russian_roulette = True
-   compt_splitting_actor.rotation_vector_director = True
-   compt_splitting_actor.vector_director = [0, 0, -1]
-
-Refer to test071 for more details.
-
-The options include:
-
-- the splitting factor: Specifies the number of splits to create.
-- A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
-- A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.
-
-
-Reference
-~~~~~~~~~
-
-.. autoclass:: opengate.actors.miscactors.ComptSplittingActor
 
