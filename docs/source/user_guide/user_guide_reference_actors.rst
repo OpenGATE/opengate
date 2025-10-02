@@ -145,6 +145,7 @@ Uncertainty is computed only in high-deposition voxels to focus on the clinicall
        unc_mean = np.mean(unc_used)
 
        return unc_mean
+
 Note: This method uses a relative threshold based on the maximum deposited energy, which may be sensitive to outliers. Consider using a percentile-based threshold for robustness if needed.
 
 At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
@@ -256,11 +257,9 @@ Description
 
 The RBEActor scores the relative biological effectiveness (RBE) map within a given volume. Spatial options are identical to those of :class:`~.opengate.actors.doseactors.DoseActor`. The available values for the `model` option are: `mMKM`, `LEM1lda`.
 
-- **mMKM**:
-The implementation of modified microdosimetric kinetic model (mMKM) was based on `Inaniwa et al., 2010 <https://doi.org/10.1088/0031-9155/55/22/008>`_. The actor reads a lookup table of saturation-corrected dose-averaged specific energy (z*_1D) values by `lookup_table_path`.
+- **mMKM**: The implementation of modified microdosimetric kinetic model (mMKM) was based on `Inaniwa et al., 2010 <https://doi.org/10.1088/0031-9155/55/22/008>`_. The actor reads a lookup table of saturation-corrected dose-averaged specific energy (z*_1D) values by `lookup_table_path`.
 
-- **LEM1lda**:
-The implementation of local effect model I with low dose approximation (LEM1lda) was based on `Krämer and Scholz, 2006 <https://doi.org/10.1088/0031-9155/51/8/001>`_. The actor reads a lookup table of initial slope (alpha_z) values by `lookup_table_path`.
+- **LEM1lda**: The implementation of local effect model I with low dose approximation (LEM1lda) was based on `Krämer and Scholz, 2006 <https://doi.org/10.1088/0031-9155/51/8/001>`_. The actor reads a lookup table of initial slope (alpha_z) values by `lookup_table_path`.
 
 The format requirement of the lookup table is identical to that in :class:`~.opengate.actors.doseactors.REActor`. By default, the actor uses the radiosensitivity parameters of aerobic `HSG` cells. In order to calculate RBE using the radiosentivity parameters of `Chordoma`, the user should specify by the `cell_type` option.
 
@@ -809,9 +808,8 @@ LETActor
    Documentation TODO. Refer to test050 for current examples.
 
 
-BremSplittingActor
----------------------
-
+BremsstrahlungSplittingActor
+----------------------------
 
 Description
 ~~~~~~~~~~~
@@ -833,36 +831,6 @@ To be noted that the GEANT4 command line is a more straightforward way to obtain
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.miscactors.BremSplittingActor
+.. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
-ComptonSplittingActor
----------------------
-
-Description
-~~~~~~~~~~~
-
-This actor generates N particles with reduced weight whenever a Compton process occurs. The options include:
-
-.. code-block:: python
-
-   compt_splitting_actor = sim.add_actor("ComptSplittingActor", name="compt_splitting")
-   compt_splitting_actor.attached_to = W_tubs.name
-   compt_splitting_actor.splitting_factor = nb_split
-   compt_splitting_actor.russian_roulette = True
-   compt_splitting_actor.rotation_vector_director = True
-   compt_splitting_actor.vector_director = [0, 0, -1]
-
-Refer to test071 for more details.
-
-The options include:
-
-- the splitting factor: Specifies the number of splits to create.
-- A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
-- A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.
-
-
-Reference
-~~~~~~~~~
-
-.. autoclass:: opengate.actors.miscactors.ComptSplittingActor
 
