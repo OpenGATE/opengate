@@ -145,6 +145,7 @@ Uncertainty is computed only in high-deposition voxels to focus on the clinicall
        unc_mean = np.mean(unc_used)
 
        return unc_mean
+
 Note: This method uses a relative threshold based on the maximum deposited energy, which may be sensitive to outliers. Consider using a percentile-based threshold for robustness if needed.
 
 At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
@@ -256,11 +257,9 @@ Description
 
 The RBEActor scores the relative biological effectiveness (RBE) map within a given volume. Spatial options are identical to those of :class:`~.opengate.actors.doseactors.DoseActor`. The available values for the `model` option are: `mMKM`, `LEM1lda`.
 
-- **mMKM**:
-The implementation of modified microdosimetric kinetic model (mMKM) was based on `Inaniwa et al., 2010 <https://doi.org/10.1088/0031-9155/55/22/008>`_. The actor reads a lookup table of saturation-corrected dose-averaged specific energy (z*_1D) values by `lookup_table_path`.
+- **mMKM**: The implementation of modified microdosimetric kinetic model (mMKM) was based on `Inaniwa et al., 2010 <https://doi.org/10.1088/0031-9155/55/22/008>`_. The actor reads a lookup table of saturation-corrected dose-averaged specific energy (z*_1D) values by `lookup_table_path`.
 
-- **LEM1lda**:
-The implementation of local effect model I with low dose approximation (LEM1lda) was based on `Krämer and Scholz, 2006 <https://doi.org/10.1088/0031-9155/51/8/001>`_. The actor reads a lookup table of initial slope (alpha_z) values by `lookup_table_path`.
+- **LEM1lda**: The implementation of local effect model I with low dose approximation (LEM1lda) was based on `Krämer and Scholz, 2006 <https://doi.org/10.1088/0031-9155/51/8/001>`_. The actor reads a lookup table of initial slope (alpha_z) values by `lookup_table_path`.
 
 The format requirement of the lookup table is identical to that in :class:`~.opengate.actors.doseactors.REActor`. By default, the actor uses the radiosensitivity parameters of aerobic `HSG` cells. In order to calculate RBE using the radiosentivity parameters of `Chordoma`, the user should specify by the `cell_type` option.
 
