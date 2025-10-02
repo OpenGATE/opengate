@@ -7,6 +7,7 @@
 
 #include "GateActorManager.h"
 #include "GateHelpers.h"
+#include "GateVActor.h"
 
 GateActorManager *GateActorManager::fInstance = nullptr;
 std::vector<GateVActor *> GateActorManager::fActors;

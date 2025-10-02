@@ -283,17 +283,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
-
-        if self.n > 0 and self.activity > 0:
-            fatal(
-                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
-            )
-        if self.n == 0 and self.activity == 0:
-            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
-        if self.activity > 0:
-            self.n = 0
-        if self.n > 0:
-            self.activity = 0
         # warning for non-used ?
 
         # check confine
@@ -303,18 +292,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                     f"In source {self.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
-
-    def check_ui_activity(self, ui):
-        # FIXME: This should rather be a function than a method
-        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
-        if ui.n > 0 and ui.activity > 0:
-            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
-        if ui.n == 0 and ui.activity == 0:
-            fatal(f"Choose either n or activity : {self.user_info}")
-        if ui.activity > 0:
-            ui.n = 0
-        if ui.n > 0:
-            ui.activity = 0
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method
@@ -352,6 +329,43 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                 return True
             return False
         return True
+
+
+class TemplateSource(SourceBase):
+    """
+    Source template: to create a new type of source, copy-paste
+    this file and adapt to your needs.
+    Also declare the source type in the file helpers_source.py
+    """
+
+    type_name = "TemplateSource"
+
+    @staticmethod
+    def set_default_user_info(user_info):
+        SourceBase.set_default_user_info(user_info)
+        # initial user info
+        user_info.float_value = None
+        user_info.vector_value = None
+
+    def create_g4_source(self):
+        return opengate_core.GateTemplateSource()
+
+    def __init__(self, user_info):
+        super().__init__(user_info)
+
+    def initialize(self, run_timing_intervals):
+        # Check user_info type
+        if self.user_info.float_value is None:
+            fatal(
+                f"Error for source {self.user_info.name}, float_value must be a float"
+            )
+        if self.user_info.vector_value is None:
+            fatal(
+                f"Error for source {self.user_info.name}, vector_value must be a vector"
+            )
+
+        # initialize
+        SourceBase.initialize(self, run_timing_intervals)
 
 
 process_cls(GenericSource)

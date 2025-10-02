@@ -1,12 +1,15 @@
 from box import Box
 import platform
+from anytree import Node, RenderTree
 import opengate_core as g4
+from anytree import Node, RenderTree
 from .base import ActorBase
 from ..utility import g4_units, g4_best_unit_tuple
 from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
+
 
 """
     It is feasible to get callback every Run, Event, Track, Step in the python side.
@@ -326,16 +329,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             },
         ),
     }
+
     user_output_config = {
         "kill_according_processes": {
             "actor_output_class": ActorOutputKillAccordingProcessesActor,
         },
     }
-
-    """
-    If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
-    without interaction, the particle is killed.
-    """
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -371,6 +370,52 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
         return s
 
 
+class KillAccordingParticleNameActor(ActorBase, g4.GateKillAccordingParticleNameActor):
+    """Actor which kills a particle according the particle name provied by the user at the exit of the
+    actorified volume."""
+
+    particles_name_to_kill: list
+
+    user_info_defaults = {
+        "particles_name_to_kill": (
+            [],
+            {
+                "doc": "Put particles name the user wants to kill at the exit of the volume"
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.number_of_killed_particles = 0
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateKillAccordingParticleNameActor.__init__(self, self.user_info)
+        self.AddActions(
+            {"PreUserTrackingAction", "SteppingAction", "EndSimulationAction"}
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        self.number_of_killed_particles = self.GetNumberOfKilledParticles()
+
+
 class KillActor(ActorBase, g4.GateKillActor):
     """Actor which kills a particle entering a volume."""
 
@@ -392,6 +437,86 @@ class KillActor(ActorBase, g4.GateKillActor):
 
     def EndSimulationAction(self):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
+
+
+class ActorOutputKillNonInteractingParticleActor(ActorOutputBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_killed_particles = 0
+
+    def get_processed_output(self):
+        d = {}
+        d["particles killed"] = self.number_of_killed_particles
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            s = k + ": " + str(v)
+            s += "\n"
+        return s
+
+
+class KillNonInteractingParticleActor(
+    ActorBase, g4.GateKillNonInteractingParticleActor
+):
+    """
+    If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
+    without interaction, the particle is killed. Warning : this actor being based on energy measurement, Rayleigh photon
+    may not be killed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(
+            ActorOutputKillNonInteractingParticleActor, "kill_non_interacting_particles"
+        )
+        self.__initcpp__()
+        self.list_of_volume_name = []
+        self.number_of_killed_particles = 0
+
+    def __initcpp__(self):
+        g4.GateKillNonInteractingParticleActor.__init__(self, self.user_info)
+        self.AddActions(
+            {
+                "StartSimulationAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "EndOfSimulationAction",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        self.user_output.kill_non_interacting_particles.number_of_killed_particles = (
+            self.number_of_killed_particles
+        )
+
+    def __str__(self):
+        s = self.user_output["kill_non_interacting_particles"].__str__()
+        return s
+
+
+def _setter_hook_particles(self, value):
+    if isinstance(value, str):
+        return [value]
+    else:
+        return list(value)
 
 
 class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
@@ -468,4 +593,5 @@ process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
+process_cls(KillNonInteractingParticleActor)
 process_cls(AttenuationImageActor)

@@ -38,7 +38,8 @@ public:
 
   virtual void PrepareNextRun();
 
-  virtual double PrepareNextTime(double current_simulation_time);
+  virtual double PrepareNextTime(double current_simulation_time,
+                                 double NumberOfGeneratedEvents);
 
   virtual void GeneratePrimaries(G4Event *event,
                                  double current_simulation_time);
@@ -50,6 +51,13 @@ public:
 
   virtual unsigned long
   GetExpectedNumberOfEvents(const TimeInterval &time_interval);
+
+  G4int GetNumberOfSimulatedEvents() {
+    auto &l = fThreadLocalData.Get();
+    return l.fNumberOfGeneratedEvents;
+  }
+
+  std::vector<int> GetVectorOfSimulatedEvents() { return fVectorOfMaxN; }
 
   std::string fName;
   double fStartTime;
@@ -66,6 +74,7 @@ public:
   G4RotationMatrix fGlobalRotation;
 
 protected:
+  std::vector<int> fVectorOfMaxN;
   unsigned long fMaxN;
   double fActivity;
   double fInitialActivity;
@@ -76,6 +85,7 @@ protected:
     unsigned long fNumberOfGeneratedEvents = 0;
     G4ThreeVector fGlobalTranslation;
     G4RotationMatrix fGlobalRotation;
+    G4int fRunID = 0;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 
