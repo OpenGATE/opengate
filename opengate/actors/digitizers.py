@@ -1,8 +1,6 @@
 from typing import List
-
 import numpy as np
 from scipy.spatial.transform import Rotation
-
 import opengate_core as g4
 from ..base import process_cls
 from .base import ActorBase
