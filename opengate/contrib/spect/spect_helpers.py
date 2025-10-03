@@ -447,45 +447,58 @@ def history_rel_uncertainty_from_files(
 def history_ff_combined_rel_uncertainty(
     vprim, vprim_squared, vscatter, vscatter_squared, n_prim, n_scatter
 ):
-
+    """
+    Combines primary and scatter simulation results, scaling them to the number of primary histories (n_prim).
+    """
     if vprim is None and vscatter is None:
         raise ValueError("At least one of the primary or scattering values must be set")
-    prim = None
-    scatter = None
-    prim_var = None
-    scatter_var = None
-    variance = None
-    mean = None
 
-    # means for one event
+    # Initialize total mean and variance, scaled to n_prim events
+    mean_total = np.zeros_like(vprim if vprim is not None else vscatter)
+    variance_total = np.zeros_like(mean_total)
+
+    # --- Process Primary Component ---
     if vprim is not None:
-        prim = vprim / n_prim
-        prim_squared = vprim_squared / n_prim
-        prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
-        mean = prim
-        variance = prim_var
+        # The total contribution from primaries is just vprim itself
+        mean_total += vprim
+
+        # Calculate the variance of the total primary contribution
+        # Var(total) = n^2 * Var(mean) = n^2 * (E[x^2] - E[x]^2)/(n-1)
+        mean_prim_per_event = vprim / n_prim
+        mean_prim_sq_per_event = vprim_squared / n_prim
+        variance_of_mean_prim = (
+            mean_prim_sq_per_event - np.power(mean_prim_per_event, 2)
+        ) / (n_prim - 1)
+        variance_total += variance_of_mean_prim * (n_prim**2)
+
+    # --- Process and Scale Scatter Component ---
     if vscatter is not None:
-        scatter = vscatter / n_scatter
-        scatter_squared = vscatter_squared / n_scatter
-        scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
-        mean = scatter
-        variance = scatter_var
+        # Scale the scatter counts to be equivalent to n_prim histories
+        scaling_factor = n_prim / n_scatter
+        mean_scatter_scaled = vscatter * scaling_factor
+        mean_total += mean_scatter_scaled
 
-    if vprim is not None and vscatter is not None:
-        mean = prim + scatter
-        variance = prim_var + scatter_var
+        # Calculate the variance of the scaled scatter contribution
+        # Var(s*X) = s^2 * Var(X)
+        mean_scatter_per_event = vscatter / n_scatter
+        mean_scatter_sq_per_event = vscatter_squared / n_scatter
+        variance_of_mean_scatter = (
+            mean_scatter_sq_per_event - np.power(mean_scatter_per_event, 2)
+        ) / (n_scatter - 1)
+        variance_total += (
+            variance_of_mean_scatter * (n_scatter**2) * (scaling_factor**2)
+        )
 
+    # --- Calculate Final Relative Uncertainty ---
+    # Based on the total scaled mean and total combined variance
     uncert = np.divide(
-        np.sqrt(variance),
-        mean,
-        out=np.zeros_like(variance),
-        where=mean != 0,
+        np.sqrt(variance_total),
+        mean_total,
+        out=np.zeros_like(variance_total),
+        where=mean_total != 0,
     )
 
-    # rescale the mean for the final results
-    mean = mean * n_prim
-
-    return uncert, mean
+    return uncert, mean_total
 
 
 def batch_ff_combined_rel_uncertainty(
