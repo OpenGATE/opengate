@@ -572,10 +572,3 @@ def axial_distance(coincidences, transaxial_plane):
     ]
 
     return np.abs(a1 - a2)
-
-
-def copy_tree_for_dump(input_tree):
-    branches = {}
-    for key in input_tree.keys():
-        branches[key] = input_tree.arrays([key], library="np")[key]
-    return branches
