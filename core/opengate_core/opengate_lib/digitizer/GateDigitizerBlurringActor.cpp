@@ -82,15 +82,15 @@ double GateDigitizerBlurringActor::GaussianBlur(const double value) const {
 double GateDigitizerBlurringActor::InverseSquare(const double value) const {
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateBlurring.cc
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateInverseSquareBlurringLaw.cc
-  auto v = fBlurResolution * (sqrt(fBlurReferenceValue) / sqrt(value));
-  auto x = G4RandGauss::shoot(value, (v * value) * fwhm_to_sigma);
+  const auto v = fBlurResolution * (sqrt(fBlurReferenceValue) / sqrt(value));
+  const auto x = G4RandGauss::shoot(value, (v * value) * fwhm_to_sigma);
   return x;
 }
 
 double GateDigitizerBlurringActor::Linear(const double value) const {
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateBlurring.cc
   // https://github.com/OpenGATE/Gate/blob/develop/source/digits_hits/src/GateLinearBlurringLaw.cc
-  auto v = fBlurSlope * (value - fBlurReferenceValue) + fBlurResolution;
-  auto x = G4RandGauss::shoot(value, (v * value) * fwhm_to_sigma);
+  const auto v = fBlurSlope * (value - fBlurReferenceValue) + fBlurResolution;
+  const auto x = G4RandGauss::shoot(value, (v * value) * fwhm_to_sigma);
   return x;
 }

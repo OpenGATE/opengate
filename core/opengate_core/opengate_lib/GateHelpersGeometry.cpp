@@ -24,7 +24,7 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
       oss << "The volume '" << name
           << "' is not found. Here is the list of volumes: ";
       auto map = pvs->GetMap();
-      for (auto m : map) {
+      for (const auto &m : map) {
         oss << m.first << " ";
       }
       oss << std::endl;

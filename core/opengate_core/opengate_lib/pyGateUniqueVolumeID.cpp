@@ -18,6 +18,7 @@ void init_GateUniqueVolumeID(py::module &m) {
   py::class_<GateUniqueVolumeID,
              std::unique_ptr<GateUniqueVolumeID, py::nodelete>>(
       m, "GateUniqueVolumeID")
-      .def("GetVolumeDepthID", &GateUniqueVolumeID::GetVolumeDepthID)
-      .def_readonly("fID", &GateUniqueVolumeID::fID);
+      .def("GetDepth", &GateUniqueVolumeID::GetDepth)
+      .def_readonly("fID", &GateUniqueVolumeID::fID)
+      .def_readonly("fNumericID", &GateUniqueVolumeID::fNumericID);
 }

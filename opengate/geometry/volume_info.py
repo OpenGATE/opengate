@@ -20,6 +20,125 @@ def store_volumes_info(sim, json_filename):
         json.dump(processed_volumes, f, indent=4)
 
 
+def store_expanded_volumes_info(sim, json_filename):
+    """
+    Main function to be called.
+    Expands the entire geometry tree to find every single instance of every
+    volume, calculates their world coordinates, and saves the complete,
+    expanded geometry to a JSON file. This is the correct method for
+    geometries with nested replications.
+    """
+    # 1. Get the initial prototype volumes from the G4 store
+    vol_info_raw = get_g4_volumes_pointers(sim)
+
+    # 2. Serialize the prototype volumes to get their basic properties (like local bounds)
+    #    This now uses the correct GetMother() method.
+    prototype_volumes = serialize_volume_data(vol_info_raw)
+
+    # 3. Expand the geometry to create a dictionary of all unique instances
+    expanded_volumes = expand_all_geometry_instances(prototype_volumes)
+
+    # 4. Save the final, expanded data to JSON
+    with open(json_filename, "w") as f:
+        # Use a custom encoder to handle numpy arrays if they exist
+        json.dump(expanded_volumes, f, indent=4, cls=NumpyEncoder)
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """Custom encoder for numpy data types"""
+
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
+def expand_all_geometry_instances(prototype_volumes: dict) -> dict:
+    """
+    Takes the dictionary of prototype volumes and expands it to create a new
+    dictionary containing every unique instance of every volume.
+    """
+    root_pv_name = None
+    for pv_name, pv_data in prototype_volumes.items():
+        if pv_data.get("mother") is None:
+            root_pv_name = pv_name
+            break
+    if not root_pv_name:
+        raise ValueError("Could not find a root volume (a volume with no mother).")
+
+    expanded_volumes = {}
+
+    # The recursive function will populate the expanded_volumes dictionary
+    _expand_and_store_recursively(
+        parent_pv_name=root_pv_name,
+        parent_world_transform=np.identity(4),
+        prototype_volumes=prototype_volumes,
+        expanded_volumes=expanded_volumes,
+        instance_counts={},
+    )
+    return expanded_volumes
+
+
+def _expand_and_store_recursively(
+    parent_pv_name,
+    parent_world_transform,
+    prototype_volumes,
+    expanded_volumes,
+    instance_counts,
+):
+    """
+    Recursive helper function to traverse the geometry, calculate world transforms,
+    and store unique instances in the 'expanded_volumes' dictionary.
+    """
+    parent_prototype = prototype_volumes.get(parent_pv_name, {})
+
+    for daughter_pv_name_prototype in parent_prototype.get("daughters", []):
+        daughter_prototype = prototype_volumes.get(daughter_pv_name_prototype)
+        if not daughter_prototype:
+            continue
+
+        # 1. Calculate the daughter's world transform
+        local_transform = _create_transform_matrix(
+            daughter_prototype.get("object_rotation"),
+            daughter_prototype.get("object_translation"),
+        )
+        daughter_world_transform = parent_world_transform @ local_transform
+
+        # 2. Get the local bounding box corners of the prototype
+        local_corners = _get_bbox_corners(*daughter_prototype.bounding_limits_local)
+
+        # 3. Transform corners to world coordinates
+        # This expression is mathematically equivalent to (local_corners @ daughter_world_transform.T)
+        # and now works because local_corners is the correct 8x4 shape.
+        transformed_corners = (daughter_world_transform @ local_corners.T).T
+        world_min = np.min(transformed_corners[:, :3], axis=0)
+        world_max = np.max(transformed_corners[:, :3], axis=0)
+        world_bounds = world_min.tolist() + world_max.tolist()
+
+        # 4. Create a unique name for this instance and store it
+        base_name = daughter_prototype.lv_name
+        instance_num = instance_counts.get(base_name, 0)
+        unique_name = f"{base_name}_#{instance_num}"
+        instance_counts[base_name] = instance_num + 1
+
+        new_volume_instance = {
+            "pv_name": unique_name,
+            "lv_name": base_name,
+            "mother": parent_prototype.get("lv_name"),
+            "world_bounding_limits": world_bounds,
+        }
+        expanded_volumes[unique_name] = new_volume_instance
+
+        # 5. Recurse into the grandchildren
+        _expand_and_store_recursively(
+            parent_pv_name=daughter_pv_name_prototype,
+            parent_world_transform=daughter_world_transform,
+            prototype_volumes=prototype_volumes,
+            expanded_volumes=expanded_volumes,
+            instance_counts=instance_counts,
+        )
+
+
 # Helper function to get the 8 corners of a bounding box
 def _get_bbox_corners(xmin, ymin, zmin, xmax, ymax, zmax):
     """Returns the 8 corners of a bounding box."""
@@ -559,3 +678,90 @@ def plot_all_views_2d(
     fig.suptitle("Geant4 Volume Boundaries - All Views", fontsize=16)
     # plt.tight_layout(rect=[0, 0, 0.9, 0.95])  # Adjust for suptitle and legend
     plt.show()
+
+
+def _expand_geometry_recursively(
+    parent_pv_name: str, parent_world_transform: np.ndarray, all_volume_data: dict
+):
+    """
+    Recursively traverses the geometry tree top-down, calculating the world
+    transform for every combinatorial instance of every volume.
+
+    Returns:
+        A dictionary where keys are LV names and values are lists of
+        all calculated world transformation matrices for that LV.
+    """
+    # This dictionary will store all transforms found under this parent
+    all_found_transforms = {}
+
+    parent_data = all_volume_data.get(parent_pv_name, {})
+
+    # Iterate through the physical daughters of the current parent
+    for daughter_pv_name in parent_data.get("daughters", []):
+        daughter_data = all_volume_data.get(daughter_pv_name)
+        if not daughter_data:
+            continue
+
+        # 1. Calculate the daughter's world transform
+        local_transform = _create_transform_matrix(
+            daughter_data.get("object_rotation"),
+            daughter_data.get("object_translation"),
+        )
+        daughter_world_transform = parent_world_transform @ local_transform
+
+        # 2. Store this daughter's transform
+        daughter_lv_name = daughter_data.get("lv_name")
+        if daughter_lv_name:
+            if daughter_lv_name not in all_found_transforms:
+                all_found_transforms[daughter_lv_name] = []
+            all_found_transforms[daughter_lv_name].append(daughter_world_transform)
+
+        # 3. Recurse into the grandchildren
+        child_transforms = _expand_geometry_recursively(
+            daughter_pv_name, daughter_world_transform, all_volume_data
+        )
+
+        # 4. Merge the results from the recursive call
+        for lv_name, transform_list in child_transforms.items():
+            if lv_name not in all_found_transforms:
+                all_found_transforms[lv_name] = []
+            all_found_transforms[lv_name].extend(transform_list)
+
+    return all_found_transforms
+
+
+def get_all_instances_transforms(volume_data: dict, target_lv_name: str) -> list:
+    """
+    Finds ALL combinatorial instances of a given logical volume (LV) by
+    performing a full, top-down expansion of the geometry tree.
+    """
+    # 1. Find the root of the geometry tree (the volume with no mother)
+    root_pv_name = None
+    for pv_name, pv_data in volume_data.items():
+        if pv_data.get("mother") is None:
+            root_pv_name = pv_name
+            break
+
+    if not root_pv_name:
+        raise ValueError("Could not find a root volume (a volume with no mother).")
+
+    # 2. Start the recursive expansion from the root volume
+    root_transform = np.identity(4)  # World's transform is identity
+    all_transforms_by_lv = _expand_geometry_recursively(
+        root_pv_name, root_transform, volume_data
+    )
+
+    # 3. Extract and format the results for the target LV
+    final_results = []
+    target_transforms = all_transforms_by_lv.get(target_lv_name, [])
+
+    for transform_matrix in target_transforms:
+        final_results.append(
+            {
+                "logical_volume_name": target_lv_name,
+                "world_translation": transform_matrix[:3, 3].tolist(),
+                "world_rotation": transform_matrix[:3, :3].tolist(),
+            }
+        )
+
+    return final_results
