@@ -1,7 +1,10 @@
+import numpy as np
+
 from ..actors.base import _setter_hook_attached_to
 from ..base import GateObject, process_cls
 from ..utility import g4_units
 from ..definitions import __world_name__
+from ..exception import fatal, warning
 
 
 class SourceBase(GateObject):
@@ -99,6 +102,7 @@ class SourceBase(GateObject):
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
         # this will initialise and set user_info to the cpp side
+        self.check_ui_activity(self.user_info)
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):
@@ -109,6 +113,27 @@ class SourceBase(GateObject):
 
     def can_predict_number_of_events(self):
         return True
+
+    def check_ui_activity(self, ui):
+        # FIXME: This should rather be a function than a method
+        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
+        # Old fix_me do not knwo if it's still valid
+        if np.array([ui.n]).shape == (1,):
+            ui.n = np.array([ui.n], dtype=int)
+        else:
+            ui.n = np.array(ui.n, dtype=int)
+        if (ui.activity == 0) and (len(ui.n) != len(self.run_timing_intervals)):
+            fatal(f"source.n and run_timing_intervals do not have the same length.")
+        if np.any(ui.n > 0) and ui.activity > 0:
+            fatal(
+                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
+            )
+        if np.all(ui.n == 0) and ui.activity == 0:
+            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
+        if ui.activity > 0:
+            ui.n = np.array(np.zeros(len(self.run_timing_intervals), dtype=int))
+        if np.any(ui.n > 0):
+            ui.activity = 0
 
 
 process_cls(SourceBase)
