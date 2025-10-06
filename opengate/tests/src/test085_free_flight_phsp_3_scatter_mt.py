@@ -46,7 +46,7 @@ if __name__ == "__main__":
     # compare
     ref_root = paths.output_ref / "phsp_sphere_ref_scatter.root"
     sc_root = paths.output / "phsp_sphere_ff_sc.root"
-    results, _ = compare_branches_chi2(
+    results, _ = root_compare_branches_chi2(
         ref_root, sc_root, tree_name="phsp_sphere", verbose=True
     )
     print()
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     )"""
 
     # plot
-    fig, axes = plot_branch_comparison(
+    fig, axes = root_plot_branch_comparison(
         ref_root,
         sc_root,
         tree_name="phsp_sphere",

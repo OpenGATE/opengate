@@ -48,7 +48,7 @@ if __name__ == "__main__":
 
     # NOTE: this MUST be slightly different, as the prim does not include part of the Rayl
     # that will come from the free flight scatter part.
-    results, b = compare_branches_chi2(
+    results, b = root_compare_branches_chi2(
         paths.output_ref / "phsp_sphere_ref_peak.root",
         paths.output / "phsp_sphere_ff.root",
         "phsp_sphere",
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     is_ok = is_ok and b
 
     fig = paths.output / "test085_phsp_prim.png"
-    plot_branch_comparison(
+    root_plot_branch_comparison(
         paths.output_ref / "phsp_sphere_ref_peak.root",
         paths.output / "phsp_sphere_ff.root",
         "phsp_sphere",

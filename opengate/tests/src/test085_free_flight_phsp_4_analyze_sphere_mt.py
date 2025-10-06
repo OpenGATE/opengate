@@ -167,7 +167,7 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
 
     # merge prim + scatter in one root file
     merged_filename = paths.output / "phsp_total.root"
-    merge_trees(
+    root_merge_trees(
         (prim_filename, sca_filename),
         merged_filename,
         "phsp_sphere",
@@ -218,7 +218,7 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     is_ok = b and is_ok"""
 
     # plot
-    fig, axes = plot_branch_comparison(
+    fig, axes = root_plot_branch_comparison(
         ref_filename,
         merged_filename,
         tree_name="phsp_sphere",

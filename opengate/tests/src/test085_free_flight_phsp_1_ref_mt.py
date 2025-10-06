@@ -42,7 +42,7 @@ if __name__ == "__main__":
         f"{lowE_root}"
     )
     print()
-    split_tree_by_branch(
+    root_split_tree_by_branch(
         ref_root,
         highE_root,
         lowE_root,
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     )
 
     # compare chi2
-    results, b = compare_branches_chi2(
+    results, b = root_compare_branches_chi2(
         paths.output_ref / "phsp_sphere_ref.root",
         paths.output / "phsp_sphere_ref.root",
         "phsp_sphere",
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     is_ok = is_ok and b
 
     fig = paths.output / "test085_phsp_ref2.png"
-    plot_branch_comparison(
+    root_plot_branch_comparison(
         paths.output_ref / "phsp_sphere_ref.root",
         paths.output / "phsp_sphere_ref.root",
         "phsp_sphere",
