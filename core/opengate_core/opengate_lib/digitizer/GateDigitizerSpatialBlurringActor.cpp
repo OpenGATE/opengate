@@ -12,6 +12,7 @@
 #include "GateDigiAdderInVolume.h"
 #include "GateDigiCollectionManager.h"
 #include <G4Navigator.hh>
+#include <G4RunManager.hh>
 #include <G4VoxelLimits.hh>
 #include <Randomize.hh>
 #include <iostream>
@@ -27,6 +28,8 @@ GateDigitizerSpatialBlurringActor::GateDigitizerSpatialBlurringActor(
     : GateVDigitizerWithOutputActor(user_info, true) {
   // actions
   fActions.insert("EndOfEventAction");
+  fUseTruncatedGaussian = false;
+  fKeepInSolidLimits = false;
 }
 
 GateDigitizerSpatialBlurringActor::~GateDigitizerSpatialBlurringActor() =
@@ -66,6 +69,16 @@ void GateDigitizerSpatialBlurringActor::BeginOfRunAction(const G4Run *run) {
   GateVDigitizerWithOutputActor::BeginOfRunAction(run);
   auto &l = fThreadLocalData.Get();
   l.fSolidExtentIsUpdated = false;
+
+  G4ThreeVector translation;
+  G4RotationMatrix rotation;
+  ComputeTransformationFromWorldToVolume(fAttachedToVolumeName, translation,
+                                         rotation);
+  fWorldToVolume = G4AffineTransform(rotation.inverse(), translation);
+
+  ComputeTransformationFromVolumeToWorld(fAttachedToVolumeName, translation,
+                                         rotation, true);
+  fVolumeToWorld = G4AffineTransform(rotation.inverse(), translation);
 }
 
 void GateDigitizerSpatialBlurringActor::EndOfEventAction(
@@ -91,10 +104,9 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
   const auto vol_uid = *l.fVolumeId;
   const auto *phys_vol = vol_uid->GetTopPhysicalVolume();
 
-  // Compute the position of 'vec' (which is in the world volume) in the local
-  // volume
-  const auto local_position =
-      vol_uid->fTouchable.GetTopTransform().TransformPoint(position);
+  // Compute the position of 'position' (which is in the world volume) in the
+  // local volume
+  const auto local_position = fWorldToVolume.TransformPoint(position);
   G4ThreeVector p(
       G4RandGauss::shoot(local_position.getX(), fBlurSigma3.getX()),
       G4RandGauss::shoot(local_position.getY(), fBlurSigma3.getY()),
@@ -151,7 +163,7 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
   }
 
   // convert back the point to the world coordinate
-  p = vol_uid->fTouchable.GetTopTransform().InverseTransformPoint(p);
+  p = fVolumeToWorld.TransformPoint(p);
 
   // store
   fOutputBlurAttribute->Fill3Value(p);

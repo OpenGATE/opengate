@@ -61,6 +61,8 @@ protected:
   bool fKeepInSolidLimits;
   bool fUseTruncatedGaussian;
   GateVDigiAttribute *fOutputBlurAttribute{};
+  G4AffineTransform fWorldToVolume;
+  G4AffineTransform fVolumeToWorld;
 
   // During computation (thread local)
   struct threadLocalT {
