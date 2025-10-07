@@ -597,7 +597,7 @@ def filter_pandas_tree(df, branch_name = "ParentID", value=0, accepted = True):
     
     return df
 
-def ccmod_ideal_coincidences(data):
+def ccmod_ideal_singles(data):
     required_branches = {
         "EventID",
         "PostPosition_X",
@@ -627,7 +627,14 @@ def ccmod_ideal_coincidences(data):
     df = df.drop(columns=["ParentID"])
     df = df.drop(columns=["PDGCode"])
 
+    return df
 
+def ccmod_ideal_coincidences(df):
+    required_branches = {
+        "EventID"
+    }
+    missing_columns = set(required_branches) - set(df.columns) #all branches in required that are not in data columns
+    assert not missing_columns, f"Missing columns: {missing_columns}" #Error if there are missing columns 
     #create a new attribute CoincID that groups hits from the same coincidence. We can have more that two hits/pulses in a coincidence oe
     nSingles = df["EventID"].value_counts()
     #keep only events with more than one nSingles

@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.actors.coincidences import ccmod_ideal_singles
 from opengate.actors.coincidences import ccmod_ideal_coincidences
 from opengate.actors.coincidences import ccmod_make_cones
 from scipy.stats import wasserstein_distance
@@ -33,8 +34,8 @@ def main(dependency="test096_coinc_sorter_step1.py"):
     data = phSp_tree.arrays(library="pd")
 
 
-
-    data_coinc = ccmod_ideal_coincidences(data)
+    data_singles = ccmod_ideal_singles(data)
+    data_coinc = ccmod_ideal_coincidences(data_singles)
     data_cones = ccmod_make_cones(data_coinc,energy_key_name = "IdealTotalEnergyDeposit")
     
 
