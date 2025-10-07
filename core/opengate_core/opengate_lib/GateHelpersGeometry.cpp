@@ -29,17 +29,16 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
       }
       oss << std::endl;
       Fatal(oss.str());
-    } else {
-      auto tr = phys->GetObjectTranslation();
-      auto rot = phys->GetObjectRotationValue();
-      rotation = rot * rotation;
-      translation = rot * translation + tr;
-      // Warning, the world can be a parallel world
-      if (phys->GetMotherLogical() == nullptr)
-        name = "world";
-      else
-        name = phys->GetMotherLogical()->GetName();
     }
+    auto tr = phys->GetObjectTranslation();
+    auto rot = phys->GetObjectRotationValue();
+    rotation = rot * rotation;
+    translation = rot * translation + tr;
+    // Warning, the world can be a parallel world
+    if (phys->GetMotherLogical() == nullptr)
+      name = "world";
+    else
+      name = phys->GetMotherLogical()->GetName();
   }
 }
 
