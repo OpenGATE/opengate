@@ -40,36 +40,40 @@ if __name__ == "__main__":
     data_path = paths.data
     output_path = paths.output
 
-
     sim.volume_manager.material_database.add_material_weights(
         "LYSO",
         ["Lu", "Y", "Si", "O", "Ce"],
-        [0.713838658203075, 0.040302477781781, 0.063721807284236, 0.181501252152072,0.000635804578835201],
+        [
+            0.713838658203075,
+            0.040302477781781,
+            0.063721807284236,
+            0.181501252152072,
+            0.000635804578835201,
+        ],
         7.10 * gcm3,
     )
 
     # world
     world = sim.world
     world.size = [10 * cm, 10 * cm, 40 * cm]
-    #sim.world.material = "G4_AIR"
+    # sim.world.material = "G4_AIR"
     sim.world.material = "G4_Galactic"
 
     # BB box for CCMod actor is not needed anymore ?
     BB = sim.add_volume("Box", "BB_box")
     BB.mother = sim.world
-    #BB.material = "G4_AIR"
+    # BB.material = "G4_AIR"
     BB.material = "G4_Galactic"
     BB.size = [4 * cm, 4 * cm, 7.6 * cm]
     BB.translation = [0, 0, 8.3 * cm]
     BB.color = [1, 0, 0, 1]  # red
 
-    # Scatt 
+    # Scatt
     Scatt = sim.add_volume("Box", "scatt_box")
     Scatt.mother = BB.name
     Scatt.material = "LYSO"
     Scatt.size = [2.72 * cm, 2.68 * cm, 0.5 * cm]
     Scatt.translation = [0, 0, -2.75 * cm]
-
 
     # Absorber
     Abs = sim.add_volume("Box", "Abs_box")
@@ -91,11 +95,11 @@ if __name__ == "__main__":
         "PostKineticEnergy",
         "PostPosition",
         "ProcessDefinedStep",
-        #"ParticleName",
+        # "ParticleName",
         "EventID",
         "ParentID",
         "PDGCode",
-        #"TrackVertexKineticEnergy",
+        # "TrackVertexKineticEnergy",
         "GlobalTime",
     ]
     ta2.output_filename = output_path / "PhaseSpace.root"
@@ -108,11 +112,13 @@ if __name__ == "__main__":
     sim.check_volumes_overlap = True
 
     # phys
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option2"#To avoid Doppler 
+    sim.physics_manager.physics_list_name = (
+        "G4EmStandardPhysics_option2"  # To avoid Doppler
+    )
     sim.physics_manager.set_production_cut("world", "all", 1 * mm)
     sim.physics_manager.set_production_cut("BB_box", "all", 0.1 * mm)
 
-    #source
+    # source
     source = sim.add_source("GenericSource", "src")
     source.particle = "gamma"
     source.energy.mono = 662 * keV
@@ -125,12 +131,9 @@ if __name__ == "__main__":
     if sim.visu:
         source.activity = 1 * Bq
 
-
-
-    
     # timing
     sim.run_timing_intervals = [[0, 5 * sec]]
-    
+
     # go
     sim.run()
 

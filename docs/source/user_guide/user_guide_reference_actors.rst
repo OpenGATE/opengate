@@ -734,7 +734,7 @@ Refer to test072 for more details.
 
 CCMod offline tools
 ------------------------------------
-A few functionalities from the Compton camera module (CCMod) have been added.  
+A few functionalities from the Compton camera module (CCMod) have been added.
 These tools are currently available only for offline use.
 
 Ideal singles
@@ -748,8 +748,8 @@ The ``ccmod_ideal_singles`` function uses as input a PhaseSpace file that stores
 	phSp_tree = root_file["PhaseSpace"]
 	data = phSp_tree.arrays(library="pd")
 	data_singles = ccmod_ideal_singles(data)
-	  
-    
+
+
 See test096 step1 for an example simulation that generates the PhaseSpace file.
 
 Ideal coincidences
@@ -759,10 +759,10 @@ The ``ccmod_ideal_coincidences`` sorts entries (hits or singles)  by eventID and
 .. code-block:: python
 
 	data_coinc = ccmod_ideal_coincidences(data_singles)
-	
+
 Create cones
 ~~~~~~~~~~~~
-The ``ccmod_make_cones``  takes the pandas data frame for coincidences (i.e. with "CoincID" attribute). Attributes for position and energy must be present. 
+The ``ccmod_make_cones``  takes the pandas data frame for coincidences (i.e. with "CoincID" attribute). Attributes for position and energy must be present.
 The name of these attributes can be specified in the function. By default  "TotalEnergyDeposit", "PostPosition_X", "PostPosition_Y" and  "PostPosition_Z" are employed. This function creates a new data frame with the information needed to create Compton cones. The new attributes for each "CoincID" value (each entry) are   "Energy1" (energy of the first interaction of the coincidence), "EnergyRest" (the energy corresponding to the rest of the interactions in the coincidence), and the position of the first ("X1", "Y1", "Z1") and second  interaction ("X2", "Y2", "Z2").
 
 In the following example cones are created using the "IdealTotalEnergyDeposit" attribute instead of "TotalEnergyDeposit".
@@ -771,11 +771,11 @@ In the following example cones are created using the "IdealTotalEnergyDeposit" a
 .. code-block:: python
 
     data_cones = ccmod_make_cones(data_coinc,energy_key_name = "IdealTotalEnergyDeposit", posX_key_name = "PostPosition_X", posY_key_name = "PostPosition_Y",posZ_key_name = "PostPosition_Z")
-    
-    
-    
 
-    
+
+
+
+
 Refer to test096 step2 for more details.
 
 ARFActor and ARFTrainingDatasetActor

@@ -581,21 +581,20 @@ def copy_tree_for_dump(input_tree):
     return branches
 
 
+def filter_pandas_tree(df, branch_name="ParentID", value=0, accepted=True):
 
-def filter_pandas_tree(df, branch_name = "ParentID", value=0, accepted = True):
-    
     if accepted == True:
         df = df[df[branch_name] == value]
-        #df.drop(df[df[branch_name] != value].index, inplace=True)
-        
+        # df.drop(df[df[branch_name] != value].index, inplace=True)
+
     else:
         df = df[df[branch_name] != value]
-        #df.drop(df[df[branch_name] == value].index, inplace=True) #to avoid copie of data frame. Is it worth it?
+        # df.drop(df[df[branch_name] == value].index, inplace=True) #to avoid copie of data frame. Is it worth it?
 
-    #print(f"Number of entries after filtering: {len(df_filtered)}")
+    # print(f"Number of entries after filtering: {len(df_filtered)}")
 
-    
     return df
+
 
 def ccmod_ideal_singles(data):
     required_branches = {
@@ -606,47 +605,70 @@ def ccmod_ideal_singles(data):
         "ProcessDefinedStep",
         "PreKineticEnergy",
         "PostKineticEnergy",
-        "PDGCode", #it could be optional ?
+        "PDGCode",  # it could be optional ?
         "ParentID",
     }
-    missing_columns = set(required_branches) - set(data.columns) #all branches in required that are not in data columns
-    assert not missing_columns, f"Missing columns: {missing_columns}" #Error if there are missing columns 
-    data["ProcessDefinedStep"] = data["ProcessDefinedStep"].astype(str) #otherwise strange error coming from having string values in the conversion to pandas
-    #Filter Hits 
-    df = filter_pandas_tree(data,  branch_name="PDGCode", value = 22, accepted = True) #it should be the case. Just check it
-    df = filter_pandas_tree(df,  branch_name="ParentID", value=0, accepted =True) # I rewrite the data but I couls save different ones 
-    df = filter_pandas_tree(df,  branch_name = "ProcessDefinedStep", value ='Transportation', accepted = False )
-    df = filter_pandas_tree(df,  branch_name = "ProcessDefinedStep", value ='Rayl', accepted = False )#Check but I think that this process did not generate a pulse
-    
-    #Create a new branch  with ideal energy info 
-    df["IdealTotalEnergyDeposit"] = df["PreKineticEnergy"] - df["PostKineticEnergy"] 
+    missing_columns = set(required_branches) - set(
+        data.columns
+    )  # all branches in required that are not in data columns
+    assert (
+        not missing_columns
+    ), f"Missing columns: {missing_columns}"  # Error if there are missing columns
+    data["ProcessDefinedStep"] = data["ProcessDefinedStep"].astype(
+        str
+    )  # otherwise strange error coming from having string values in the conversion to pandas
+    # Filter Hits
+    df = filter_pandas_tree(
+        data, branch_name="PDGCode", value=22, accepted=True
+    )  # it should be the case. Just check it
+    df = filter_pandas_tree(
+        df, branch_name="ParentID", value=0, accepted=True
+    )  # I rewrite the data but I couls save different ones
+    df = filter_pandas_tree(
+        df, branch_name="ProcessDefinedStep", value="Transportation", accepted=False
+    )
+    df = filter_pandas_tree(
+        df, branch_name="ProcessDefinedStep", value="Rayl", accepted=False
+    )  # Check but I think that this process did not generate a pulse
 
-    #rm branches (optional)# use of inplace worth it?
+    # Create a new branch  with ideal energy info
+    df["IdealTotalEnergyDeposit"] = df["PreKineticEnergy"] - df["PostKineticEnergy"]
+
+    # rm branches (optional)# use of inplace worth it?
     df = df.drop(columns=["PreKineticEnergy"])
-    #df = df.drop(columns=["PostKineticEnergy"])
+    # df = df.drop(columns=["PostKineticEnergy"])
     df = df.drop(columns=["ParentID"])
     df = df.drop(columns=["PDGCode"])
 
     return df
 
+
 def ccmod_ideal_coincidences(df):
-    required_branches = {
-        "EventID"
-    }
-    missing_columns = set(required_branches) - set(df.columns) #all branches in required that are not in data columns
-    assert not missing_columns, f"Missing columns: {missing_columns}" #Error if there are missing columns 
-    #create a new attribute CoincID that groups hits from the same coincidence. We can have more that two hits/pulses in a coincidence oe
+    required_branches = {"EventID"}
+    missing_columns = set(required_branches) - set(
+        df.columns
+    )  # all branches in required that are not in data columns
+    assert (
+        not missing_columns
+    ), f"Missing columns: {missing_columns}"  # Error if there are missing columns
+    # create a new attribute CoincID that groups hits from the same coincidence. We can have more that two hits/pulses in a coincidence oe
     nSingles = df["EventID"].value_counts()
-    #keep only events with more than one nSingles
+    # keep only events with more than one nSingles
     df = df[df["EventID"].isin(nSingles[nSingles > 1].index)]
-    #Assign CoincIDs starting from 0, in order of first appearance).
-    df["CoincID"] = pd.factorize(df["EventID"])[0] 
-    
+    # Assign CoincIDs starting from 0, in order of first appearance).
+    df["CoincID"] = pd.factorize(df["EventID"])[0]
 
     return df
 
-def ccmod_make_cones(data, energy_key_name = "TotalEnergyDeposit", posX_key_name = "PostPosition_X", posY_key_name = "PostPosition_Y",posZ_key_name = "PostPosition_Z"):
-    
+
+def ccmod_make_cones(
+    data,
+    energy_key_name="TotalEnergyDeposit",
+    posX_key_name="PostPosition_X",
+    posY_key_name="PostPosition_Y",
+    posZ_key_name="PostPosition_Z",
+):
+
     required_branches = {
         "CoincID",
         posX_key_name,
@@ -654,35 +676,45 @@ def ccmod_make_cones(data, energy_key_name = "TotalEnergyDeposit", posX_key_name
         posX_key_name,
         energy_key_name,
     }
-    missing_columns = set(required_branches) - set(data.columns) #all branches in required that are not in data columns
-    assert not missing_columns, f"Missing columns: {missing_columns}" #Error if there are missing columns 
-    
+    missing_columns = set(required_branches) - set(
+        data.columns
+    )  # all branches in required that are not in data columns
+    assert (
+        not missing_columns
+    ), f"Missing columns: {missing_columns}"  # Error if there are missing columns
 
-    #Attribute name  for energy to create the cones : either IdealTotalEnergyDeposit or TotalEnergyDeposit
-    first_vals = data.groupby("CoincID").first()[[energy_key_name, posX_key_name, posY_key_name, posZ_key_name]]
-    second_vals = data.groupby("CoincID").nth(1)[[ posX_key_name, posY_key_name, posZ_key_name]].reset_index()# reset otherwise old indexes of data
+    # Attribute name  for energy to create the cones : either IdealTotalEnergyDeposit or TotalEnergyDeposit
+    first_vals = data.groupby("CoincID").first()[
+        [energy_key_name, posX_key_name, posY_key_name, posZ_key_name]
+    ]
+    second_vals = (
+        data.groupby("CoincID")
+        .nth(1)[[posX_key_name, posY_key_name, posZ_key_name]]
+        .reset_index()
+    )  # reset otherwise old indexes of data
 
-    #last_vals = data.groupby("CoincID").last()[["PostKineticEnergy"]]
+    # last_vals = data.groupby("CoincID").last()[["PostKineticEnergy"]]
 
     total_energy = data.groupby("CoincID")[energy_key_name].sum()
     EnergyRest = total_energy - first_vals[energy_key_name]
 
-    #it would be nice to have the info of energy and position of the sourve
-    data_cones = pd.DataFrame({
-    #"CoincID": first_vals.index,#Not needed
-    "Energy1": first_vals[energy_key_name].values,
-    "EnergyRest": EnergyRest.values,
-    "X1": first_vals[posX_key_name].values,
-    "Y1": first_vals[posY_key_name].values,
-    "Z1": first_vals[posZ_key_name].values,
-    #
-    "X2": second_vals[posX_key_name].values,
-    "Y2": second_vals[posY_key_name].values,
-    "Z2": second_vals[posZ_key_name].values,
-    #"EnergyExit": last_vals["PostKineticEnergy"].values, #Added if possible 
-
-    }).reset_index(drop=True)#flatten index Do not save old index from data
+    # it would be nice to have the info of energy and position of the sourve
+    data_cones = pd.DataFrame(
+        {
+            # "CoincID": first_vals.index,#Not needed
+            "Energy1": first_vals[energy_key_name].values,
+            "EnergyRest": EnergyRest.values,
+            "X1": first_vals[posX_key_name].values,
+            "Y1": first_vals[posY_key_name].values,
+            "Z1": first_vals[posZ_key_name].values,
+            #
+            "X2": second_vals[posX_key_name].values,
+            "Y2": second_vals[posY_key_name].values,
+            "Z2": second_vals[posZ_key_name].values,
+            # "EnergyExit": last_vals["PostKineticEnergy"].values, #Added if possible
+        }
+    ).reset_index(
+        drop=True
+    )  # flatten index Do not save old index from data
 
     return data_cones
-
-    
