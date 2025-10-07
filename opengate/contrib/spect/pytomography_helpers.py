@@ -301,13 +301,16 @@ def pytomography_get_detector_data(metadata):
 
 def pytomography_read_projections(metadata, folder=None):
     object_meta, proj_meta = pytomography_get_detector_data(metadata)
+    print(f"shape of metadata: {proj_meta.shape}")
     energy_meta = metadata["Energy Window Data"]
     number_of_energy_windows = energy_meta["number_of_energy_windows"]
     geometry_meta = metadata["Projection Geometry Data"]
     image_file = geometry_meta["source_file"]
     if folder is None:
         folder = Path(metadata["folder"])
-    projections = np.fromfile(folder / image_file, dtype=np.float32)
+    projections = np.fromfile(folder / image_file)
+    # we need to convert to float32 (the image may be either 32 or 64 bits)
+    projections = projections.astype(np.float32)
     projections = projections.reshape(number_of_energy_windows, *proj_meta.shape)
     projections = torch.tensor(projections).to(pytomography.device)
     return projections
@@ -674,6 +677,7 @@ def pytomography_build_metadata_and_attenuation_map(
 
     # set the detector orientations
     detectors = sc.detector_config.get_heads(sim)
+    verbose and print(f"Number of detectors: {len(detectors)}")
     for detector in detectors:
         pytomography_add_detector_orientation(metadata, detector)
     nb_proj = metadata["Projection Geometry Data"]["number_of_projections"]
