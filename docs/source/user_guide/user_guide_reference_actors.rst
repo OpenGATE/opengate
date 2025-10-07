@@ -743,6 +743,7 @@ Ideal singles
 The ``ccmod_ideal_singles`` function uses as input a PhaseSpace file that stores all steps  n the slected volume (Compton camera volume), including those with zero energy deposition.  The following attributes are needed : "EventID", "PostPosition_X", "PostPosition_Y", "PostPosition_Z", "ProcessDefinedStep", "PreKineticEnergy", "PostKineticEnergy", "PDGCode", "ParentID". It  filters hits with "PDGCode" = 22 and "ParentID" equals to 0 and "ProcessDefinedStep" different from "Transportation" and "Rayl". Therefore, for a gamma source, it stores only the photonic interactions (except Rayleigh) of the primary photons. In order to use this function for ion sources the "ParentID"  corresponding to the primary photons should be selected. This function also creates a new attribute "IdealTotalEnergyDeposit" using the "PreKineticEnergy" and "PostKineticEnergy"  of the photons at each interaction. Therefore, we can recover Compton and Photoelectric interactions with the correct  position and the  ideal energy deposition obtained from the energy lost by the photon in the interaction.  Position  information and "EventID" are needed for the following steps when coincidences or cones are created.
 
 .. code-block:: python
+
 	root_file = uproot.open(root_filename)
 	phSp_tree = root_file["PhaseSpace"]
 	data = phSp_tree.arrays(library="pd")
