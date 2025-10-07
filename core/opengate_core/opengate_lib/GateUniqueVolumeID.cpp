@@ -77,7 +77,7 @@ std::string GateUniqueVolumeID::GetIdUpToDepth(const int depth) const {
     return fID;
 
   // Check if the string is already in our cache.
-  if (auto it = fCachedIdDepth.find(depth); it != fCachedIdDepth.end()) {
+  if (const auto it = fCachedIdDepth.find(depth); it != fCachedIdDepth.end()) {
     return it->second;
   }
 
