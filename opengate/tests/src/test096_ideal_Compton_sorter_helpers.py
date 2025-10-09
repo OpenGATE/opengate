@@ -16,7 +16,8 @@ yellow = [0.9, 0.9, 0.3, 1]
 gray = [0.5, 0.5, 0.5, 1]
 white = [1, 1, 1, 0.8]
 
-if __name__ == "__main__":
+
+def create_and_run_cc_simulation():
     paths = utility.get_default_test_paths(__file__, "gate_test096", "test096")
 
     sim = gate.Simulation()

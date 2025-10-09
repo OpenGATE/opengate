@@ -13,16 +13,15 @@ import numpy as np
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
+from test096_ideal_Compton_sorter_helpers import *
 
 
-def main(dependency="test096_coinc_sorter_step1.py"):
+def main():
 
     # If output_singles.root does not exist, run a simulation to generate it
     paths = utility.get_default_test_paths(__file__, output_folder="test096")
     root_filename = paths.output / "PhaseSpace.root"
-    if not os.path.exists(root_filename):
-        print(f"Simulating PhSp to create {root_filename} ...")
-        os.system(f"python {str(paths.current / dependency)}")
+    create_and_run_cc_simulation()
 
     root_file = uproot.open(root_filename)
     phSp_tree = root_file["PhaseSpace"]
@@ -91,13 +90,13 @@ def main(dependency="test096_coinc_sorter_step1.py"):
     #
 
     # plot
-    f, ax = plt.subplots(1, 2, figsize=(25, 10))
-    utility.plot_hist(ax[0], E1, f"E1 (keV)")
-    utility.plot_hist(ax[0], E1_GATE9, f"E1(keV) GATE9 )")
+    # f, ax = plt.subplots(1, 2, figsize=(25, 10))
+    # utility.plot_hist(ax[0], E1, f"E1 (keV)")
+    # utility.plot_hist(ax[0], E1_GATE9, f"E1(keV) GATE9 )")
 
-    fn = paths.output / "test096_ideal_coinc_opt2.png"
-    plt.savefig(fn)
-    print(f"Plot in {fn}")
+    # fn = paths.output / "test096_ideal_coinc_opt2.png"
+    # plt.savefig(fn)
+    # print(f"Plot in {fn}")
 
     utility.test_ok(is_ok)
 
