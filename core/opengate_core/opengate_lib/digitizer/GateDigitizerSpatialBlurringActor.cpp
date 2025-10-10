@@ -69,16 +69,6 @@ void GateDigitizerSpatialBlurringActor::BeginOfRunAction(const G4Run *run) {
   GateVDigitizerWithOutputActor::BeginOfRunAction(run);
   auto &l = fThreadLocalData.Get();
   l.fSolidExtentIsUpdated = false;
-
-  G4ThreeVector translation;
-  G4RotationMatrix rotation;
-  ComputeTransformationFromWorldToVolume(fAttachedToVolumeName, translation,
-                                         rotation);
-  fWorldToVolume = G4AffineTransform(rotation.inverse(), translation);
-
-  ComputeTransformationFromVolumeToWorld(fAttachedToVolumeName, translation,
-                                         rotation, true);
-  fVolumeToWorld = G4AffineTransform(rotation.inverse(), translation);
 }
 
 void GateDigitizerSpatialBlurringActor::EndOfEventAction(
@@ -106,7 +96,8 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
 
   // Compute the position of 'position' (which is in the world volume) in the
   // local volume
-  const auto local_position = fWorldToVolume.TransformPoint(position);
+  const auto local_position =
+      vol_uid->fTouchable.GetTopTransform().TransformPoint(position);
   G4ThreeVector p(
       G4RandGauss::shoot(local_position.getX(), fBlurSigma3.getX()),
       G4RandGauss::shoot(local_position.getY(), fBlurSigma3.getY()),
@@ -163,7 +154,7 @@ void GateDigitizerSpatialBlurringActor::BlurCurrentThreeVectorValue() {
   }
 
   // convert back the point to the world coordinate
-  p = fVolumeToWorld.TransformPoint(p);
+  p = vol_uid->fTouchable.GetTopTransform().InverseTransformPoint(p);
 
   // store
   fOutputBlurAttribute->Fill3Value(p);
