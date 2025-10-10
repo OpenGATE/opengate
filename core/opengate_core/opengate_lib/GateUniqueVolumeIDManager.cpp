@@ -17,6 +17,9 @@ G4Mutex GateUniqueVolumeIDManagerMutex = G4MUTEX_INITIALIZER;
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::fInstance = nullptr;
 std::map<const G4LogicalVolume *, std::map<std::string, int>>
     GateUniqueVolumeIDManager::fLVtoNumericIds;
+std::map<std::pair<std::string, GateUniqueVolumeID::IDArrayType>,
+         GateUniqueVolumeID::Pointer>
+    GateUniqueVolumeIDManager::fToVolumeID;
 
 GateUniqueVolumeIDManager *GateUniqueVolumeIDManager::GetInstance() {
   if (fInstance == nullptr)
@@ -114,4 +117,11 @@ void GateUniqueVolumeIDManager::InitializeNumericIDs(
     }
   }
   fLVtoNumericIds[lv] = sIDRegistry;
+}
+
+void GateUniqueVolumeIDManager::Clear() {
+  DDD(fLVtoNumericIds.size());
+  DDD(fToVolumeID.size());
+  fLVtoNumericIds.clear();
+  fToVolumeID.clear();
 }

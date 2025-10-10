@@ -30,6 +30,8 @@ public:
 
   static int GetNumericID(const G4LogicalVolume *lv, std::string id);
 
+  static void Clear();
+
 protected:
   GateUniqueVolumeIDManager();
 
@@ -41,8 +43,8 @@ protected:
 
   // Index of name + ID array to VolumeID
   // This map is created on the fly in GetVolumeID
-  std::map<std::pair<std::string, GateUniqueVolumeID::IDArrayType>,
-           GateUniqueVolumeID::Pointer>
+  static std::map<std::pair<std::string, GateUniqueVolumeID::IDArrayType>,
+                  GateUniqueVolumeID::Pointer>
       fToVolumeID;
 };
 
