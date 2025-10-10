@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.random_seed = 123654987
+    sim.random_seed = 666
     sc.setup_simulation_ff_scatter(sim, visu=False)
     stats = sim.actor_manager.find_actors("stats")[0]
 
@@ -37,6 +37,14 @@ if __name__ == "__main__":
     # we check only that the output files exist
     is_ok = True
     is_ok = check_stats_file(5409, sc, stats, is_ok)
-    is_ok = check_projection_files(sim, paths, stats, is_ok)
+    is_ok = check_projection_files(
+        sim,
+        paths,
+        stats,
+        is_ok,
+        tol=35,
+        output_ref=paths.output_ref / "scatter",
+        axis="x",
+    )
 
     utility.test_ok(is_ok)

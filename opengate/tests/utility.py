@@ -2064,6 +2064,56 @@ def np_plot_slice_v_line(ax, vline, crop_center, crop_width):
     ax.plot(y, x, color="r")
 
 
+def np_plot_slice_h_box(ax, hline, crop_center, crop_width, width):
+    """Draw a horizontal box on the slice with the same width as the profile plot"""
+    from matplotlib.patches import Rectangle
+
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+
+    if width == 0:
+        # If width is 0, draw a single line
+        x = np.arange(0, crop_width[0])
+        y = [c] * len(x)
+        ax.plot(x, y, color="r", linewidth=1)
+    else:
+        # Draw a filled rectangle with transparency
+        rect = Rectangle(
+            (0, c - width - 0.5),
+            crop_width[0] - 1,
+            2 * width,
+            linewidth=0,
+            edgecolor="none",
+            facecolor="r",
+            alpha=0.3,
+        )
+        ax.add_patch(rect)
+
+
+def np_plot_slice_v_box(ax, vline, crop_center, crop_width, width):
+    """Draw a vertical box on the slice with the same width as the profile plot"""
+    from matplotlib.patches import Rectangle
+
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+
+    if width == 0:
+        # If width is 0, draw a single line
+        x = np.arange(0, crop_width[1])
+        y = [c] * len(x)
+        ax.plot(y, x, color="r", linewidth=1)
+    else:
+        # Draw a filled rectangle with transparency
+        rect = Rectangle(
+            (c - width - 0.5, 0),
+            2 * width,
+            crop_width[1] - 1,
+            linewidth=0,
+            edgecolor="none",
+            facecolor="r",
+            alpha=0.3,
+        )
+        ax.add_patch(rect)
+
+
 def add_colorbar(imshow, window_level, window_width):
     cbar = plt.colorbar(
         imshow, orientation="vertical", format=StrMethodFormatter("{x:.1f}")
@@ -2086,7 +2136,9 @@ def np_plot_integrated_profile(
     ax.plot(values, profile, label=label)
 
 
-def np_plot_profile_X(ax, img, hline, num_slice, crop_center, crop_width, label, width):
+def np_plot_profile_X_old(
+    ax, img, hline, num_slice, crop_center, crop_width, label, width
+):
     c = int(hline - (crop_center[1] - crop_width[1] / 2))
     img, _ = np_img_crop(img, crop_center, crop_width)
     if width == 0:
@@ -2098,7 +2150,9 @@ def np_plot_profile_X(ax, img, hline, num_slice, crop_center, crop_width, label,
     ax.plot(x, y, label=label)
 
 
-def np_plot_profile_Y(ax, img, vline, num_slice, crop_center, crop_width, label, width):
+def np_plot_profile_Y_old(
+    ax, img, vline, num_slice, crop_center, crop_width, label, width
+):
     c = int(vline - (crop_center[0] - crop_width[0] / 2))
     img, _ = np_img_crop(img, crop_center, crop_width)
     if width == 0:
@@ -2108,6 +2162,38 @@ def np_plot_profile_Y(ax, img, vline, num_slice, crop_center, crop_width, label,
     x = np.mean(img, axis=1)
     y = np.arange(0, len(x))
     ax.plot(y, x, label=label)
+
+
+def np_plot_profile_X(
+    ax, img, hline, num_slice, crop_center, crop_width, label, width, spacing
+):
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, c : c + 1, :]
+    else:
+        img = img[num_slice, c - width : c + width, :]
+    y = np.mean(img, axis=0)
+    # Convert pixel indices to physical coordinates (mm)
+    x = np.arange(0, len(y)) * spacing[0] + crop_coord[0] * spacing[0]
+    ax.plot(x, y, label=label)
+    ax.set_xlabel("X (mm)")
+
+
+def np_plot_profile_Y(
+    ax, img, vline, num_slice, crop_center, crop_width, label, width, spacing
+):
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, :, c : c + 1]
+    else:
+        img = img[num_slice, :, c - width : c + width]
+    y = np.mean(img, axis=1)
+    # Convert pixel indices to physical coordinates (mm)
+    x = np.arange(0, len(y)) * spacing[1] + crop_coord[2] * spacing[1]
+    ax.plot(x, y, label=label)
+    ax.set_xlabel("Y (mm)")
 
 
 def np_get_circle_mean_value(img, center, radius):
@@ -2175,10 +2261,10 @@ def plot_compare_slice_profile(ref_names, test_names, options):
         last = np_plot_slice(
             ax[0][i * n + 1], img_test[i], n_slice, ww, wl, c, w, spacing
         )
-        np_plot_slice_h_line(ax[0][i * n], hline, c, w)
-        np_plot_slice_h_line(ax[0][i * n + 1], hline, c, w)
-        np_plot_slice_v_line(ax[0][i * n], vline, c, w)
-        np_plot_slice_v_line(ax[0][i * n + 1], vline, c, w)
+        np_plot_slice_h_box(ax[0][i * n], hline, c, w, wi)
+        np_plot_slice_h_box(ax[0][i * n + 1], hline, c, w, wi)
+        np_plot_slice_v_box(ax[0][i * n], vline, c, w, wi)
+        np_plot_slice_v_box(ax[0][i * n + 1], vline, c, w, wi)
 
     # Add colorbar to the figure
     add_colorbar(last, wl, ww)
@@ -2188,10 +2274,26 @@ def plot_compare_slice_profile(ref_names, test_names, options):
     ltest = f"{lab_test} (horizontal)"
     for i in range(len(img_ref)):
         np_plot_profile_X(
-            ax[1][i * n], img_ref[i], hline, n_slice, c, w, lref, width=wi
+            ax[1][i * n],
+            img_ref[i],
+            hline,
+            n_slice,
+            c,
+            w,
+            lref,
+            width=wi,
+            spacing=spacing,
         )
         np_plot_profile_X(
-            ax[1][i * n], img_test[i], hline, n_slice, c, w, ltest, width=wi
+            ax[1][i * n],
+            img_test[i],
+            hline,
+            n_slice,
+            c,
+            w,
+            ltest,
+            width=wi,
+            spacing=spacing,
         )
         ax[1][i * n].legend()
 
@@ -2199,10 +2301,26 @@ def plot_compare_slice_profile(ref_names, test_names, options):
     ltest = f"{lab_test} (vertical)"
     for i in range(len(img_ref)):
         np_plot_profile_Y(
-            ax[1][i * n + 1], img_ref[i], vline, n_slice, c, w, lref, width=wi
+            ax[1][i * n + 1],
+            img_ref[i],
+            vline,
+            n_slice,
+            c,
+            w,
+            lref,
+            width=wi,
+            spacing=spacing,
         )
         np_plot_profile_Y(
-            ax[1][i * n + 1], img_test[i], vline, n_slice, c, w, ltest, width=wi
+            ax[1][i * n + 1],
+            img_test[i],
+            vline,
+            n_slice,
+            c,
+            w,
+            ltest,
+            width=wi,
+            spacing=spacing,
         )
         ax[1][i * n + 1].legend()
 

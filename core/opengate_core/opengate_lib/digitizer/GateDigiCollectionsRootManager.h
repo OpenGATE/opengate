@@ -38,7 +38,7 @@ public:
 
   void Write(int tupleId);
 
-  int DeclareNewTuple(std::string name);
+  int DeclareNewTuple(const std::string &name);
 
   void CreateRootTuple(GateDigiCollection *hc);
 

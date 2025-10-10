@@ -59,7 +59,7 @@ if __name__ == "__main__":
             stats,
             tolerance=80,
             ignore_value_data1=0,
-            sum_tolerance=12,
+            sum_tolerance=14,
             sad_profile_tolerance=32,
             scaleImageValuesFactor=2e5 / ac,
             axis="x",

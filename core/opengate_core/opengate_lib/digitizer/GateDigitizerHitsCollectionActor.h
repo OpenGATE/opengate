@@ -25,7 +25,7 @@ public:
 
   void InitializeCpp() override;
 
-  // Called when the simulation start (master thread only)
+  // Called when the simulation starts (master thread only)
   void StartSimulationAction() override;
 
   // Called every time a Run starts (all threads)
@@ -34,7 +34,7 @@ public:
   // Called every time an Event starts
   void BeginOfEventAction(const G4Event *event) override;
 
-  // Called every time a batch of step must be processed
+  // Called every time a batch of steps must be processed
   void SteppingAction(G4Step * /*unused*/) override;
 
   // Called every time a Run ends (all threads)
@@ -43,7 +43,7 @@ public:
   // Called by every worker when the simulation is about to end
   void EndOfSimulationWorkerAction(const G4Run * /*lastRun*/) override;
 
-  // Called when the simulation end (master thread only)
+  // Called when the simulation ends (master thread only)
   void EndSimulationAction() override;
 
 protected:

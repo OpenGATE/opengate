@@ -174,7 +174,7 @@ void GateDigitizerAdderActor::AddDigiPerVolume() const {
   DigiKey key{};
 
   // 1. Get the cached hash of the volume ID string based on the required depth.
-  // This new function handles caching internally for maximum efficiency.
+  // This function handles caching internally
   key.volumeID = l.volID->get()->GetIdUpToDepthAsHash(fGroupVolumeDepth);
 
   // 2. Get the weight. If VRT is used, we must group only hits with the

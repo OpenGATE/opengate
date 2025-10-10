@@ -91,7 +91,7 @@ void GateSingleParticleSource::GeneratePrimaryVertex(G4Event *event) {
   // (No mutex needed because variables (position, etc.) are local)
 
   // Generate position
-  auto position = fPositionGenerator->VGenerateOne();
+  const auto position = fPositionGenerator->VGenerateOne();
 
   G4ThreeVector direction;
   double weight = 1.0;

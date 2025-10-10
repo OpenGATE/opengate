@@ -6,12 +6,12 @@ from opengate.tests import utility
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
-        __file__, None, output_folder="test085_spect"
+        __file__, None, output_folder="test085_spect_ref"
     )
 
     # create the simulation
     sim = gate.Simulation()
-    sim.number_of_threads = 8
+    sim.number_of_threads = 15
     # im.visu = True
     source, actors = create_simulation_test085(
         sim,
