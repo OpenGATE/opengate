@@ -224,12 +224,12 @@ def pytomography_set_attenuation_data(
 
     # check attenuation_filename must be mhd/raw
     attenuation_filename = Path(attenuation_filename)
-    if attenuation_filename.suffix != ".mhd":
-        fatal(
-            f"Attenuation file must be mhd/raw, while the "
-            f"extension is {attenuation_filename.suffix} ({attenuation_filename})"
-        )
-    raw_filename = attenuation_filename.with_suffix(".raw")
+    # if attenuation_filename.suffix != ".mhd":
+    #    fatal(
+    #        f"Attenuation file must be mhd/raw, while the "
+    #        f"extension is {attenuation_filename.suffix} ({attenuation_filename})"
+    #    )
+    raw_filename = attenuation_filename  # .with_suffix(".raw")
 
     # read attenuation image
     attenuation_image = sitk.ReadImage(attenuation_filename)
@@ -301,16 +301,14 @@ def pytomography_get_detector_data(metadata):
 
 def pytomography_read_projections(metadata, folder=None):
     object_meta, proj_meta = pytomography_get_detector_data(metadata)
-    print(f"shape of metadata: {proj_meta.shape}")
     energy_meta = metadata["Energy Window Data"]
     number_of_energy_windows = energy_meta["number_of_energy_windows"]
     geometry_meta = metadata["Projection Geometry Data"]
     image_file = geometry_meta["source_file"]
     if folder is None:
         folder = Path(metadata["folder"])
-    projections = np.fromfile(folder / image_file)
-    # we need to convert to float32 (the image may be either 32 or 64 bits)
-    projections = projections.astype(np.float32)
+    projections_img = sitk.ReadImage(str(folder / image_file))
+    projections = sitk.GetArrayFromImage(projections_img).astype(np.float32)
     projections = projections.reshape(number_of_energy_windows, *proj_meta.shape)
     projections = torch.tensor(projections).to(pytomography.device)
     return projections
@@ -541,7 +539,8 @@ def get_attenuation_map_from_json(metadata):
     imagefile = attenuation_meta["source_file"]
     if imagefile is None:
         return None
-    amap = np.fromfile(os.path.join(metadata["folder"], imagefile), dtype=np.float32)
+    amap_img = sitk.ReadImage(str(metadata["folder"] / imagefile))
+    amap = sitk.GetArrayFromImage(amap_img).astype(np.float32)
     amap = amap.reshape((dimension_x, dimension_y, dimension_z))
 
     # rotation from gate to pytomo
@@ -714,7 +713,7 @@ def pytomography_build_metadata_and_attenuation_map(
     )
     verbose and print(f"Build sinogram with shape {sino.shape} in {o}")
     # set the raw data only for pytomography
-    metadata["Projection Geometry Data"]["source_file"] = "sinogram.raw"
+    metadata["Projection Geometry Data"]["source_file"] = "sinogram.mhd"
 
     # PSF correction "Detector Physics Data"
     dpd = metadata["Detector Physics Data"]
