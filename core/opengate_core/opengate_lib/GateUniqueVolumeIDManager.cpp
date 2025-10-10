@@ -120,8 +120,7 @@ void GateUniqueVolumeIDManager::InitializeNumericIDs(
 }
 
 void GateUniqueVolumeIDManager::Clear() {
-  DDD(fLVtoNumericIds.size());
-  DDD(fToVolumeID.size());
+  G4AutoLock mutex(&GateUniqueVolumeIDManagerMutex);
   fLVtoNumericIds.clear();
   fToVolumeID.clear();
 }
