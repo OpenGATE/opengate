@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from test090_helpers import *
+from pathlib import Path
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -9,9 +10,11 @@ if __name__ == "__main__":
     )
 
     # TEST 1: intevo, Lu177, 2 heads, 3 angles
+    # ref = 1e7
 
     # delete the output path content
     utility.delete_folder_contents(paths.output)
+
     data_path = paths.data
     mm = gate.g4_units.mm
 
@@ -24,8 +27,8 @@ if __name__ == "__main__":
     sc.detector_config.collimator = "melp"
     sc.detector_config.number_of_heads = 2
     sc.detector_config.digitizer_function = intevo.add_digitizer
-    sc.detector_config.size = [256, 256]
-    sc.detector_config.spacing = [2.39759994 * mm, 2.39759994 * mm]
+    sc.detector_config.size = [64, 64]
+    sc.detector_config.spacing = [2.39759994 * mm * 4, 2.39759994 * mm * 4]
     # phantom
     sc.phantom_config.image = data_path / "iec_5mm.mhd"
     sc.phantom_config.labels = data_path / "iec_5mm_labels.json"
@@ -46,12 +49,21 @@ if __name__ == "__main__":
     stats = sim.actor_manager.find_actors("stats")[0]
 
     # run it
-    sim.random_seed = 3456
+    sim.random_seed = 987456312
     sim.run()
 
     # we check only that the output files exist
     is_ok = True
     is_ok = check_stats_file(541437, sc, stats, is_ok)
-    is_ok = check_projection_files(sim, paths, stats, is_ok)
+    is_ok = check_projection_files(
+        sim,
+        paths,
+        stats,
+        is_ok,
+        tol=30,
+        output_ref=Path(str(paths.output_ref) + "_ref"),
+        scaling=100,
+        axis="x",
+    )
 
     utility.test_ok(is_ok)
