@@ -546,13 +546,13 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
     if "in111" in n or "111in" in n:
         # 15% around the peaks
         channels = [
-            {"name": "spectrum_full", "min": 3.0, "max": 515.0},
-            {"name": "scatter_171_low", "min": 138.4525, "max": 158.4525},
-            {"name": "peak_171", "min": 158.4525, "max": 184.1475},
-            {"name": "scatter_171_high", "min": 184.1475, "max": 204.1475},
-            {"name": "scatter_245_low", "min": 206.995, "max": 226.995},
-            {"name": "peak_245", "min": 226.995, "max": 263.805},
-            {"name": "scatter_245_high", "min": 263.805, "max": 283.805},
+            {"name": "spectrum_full", "min": 3.0 * keV, "max": 515.0 * keV},
+            {"name": "scatter_171_low", "min": 138.4525 * keV, "max": 158.4525 * keV},
+            {"name": "peak_171", "min": 158.4525 * keV, "max": 184.1475 * keV},
+            {"name": "scatter_171_high", "min": 184.1475 * keV, "max": 204.1475 * keV},
+            {"name": "scatter_245_low", "min": 206.995 * keV, "max": 226.995 * keV},
+            {"name": "peak_245", "min": 226.995 * keV, "max": 263.805 * keV},
+            {"name": "scatter_245_high", "min": 263.805 * keV, "max": 283.805 * keV},
         ]
     if not spectrum_channel:
         channels.pop(0)
