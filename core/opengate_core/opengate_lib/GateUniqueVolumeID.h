@@ -8,21 +8,21 @@
 #ifndef GateUniqueVolumeID_h
 #define GateUniqueVolumeID_h
 
-#include "G4AffineTransform.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4VTouchable.hh"
+#include "GateHelpers.h"
 #include <array>
 #include <map>
 #include <memory>
 #include <string>
-#include <vector>
 
 /*
     Manage a unique ID for a given volume in the geometrical hierarchy.
     This is determined by the G4 touchable.
     The ID is a vector of int, with the CopyNb at each depth of the geometrical
-   tree, starting from world. Information about volume name and transform are
-   stored for convenience.
+   tree, starting from the world.
+   Information about volume name and transform are stored in the touchable
+   G4NavigationHistory.
 
     A string fID, of the form 0_0_1_4 (with copyNb at all depth separated with
    _) is also computed.
@@ -30,7 +30,7 @@
 
 class GateUniqueVolumeID {
 public:
-  // Shared pointer
+  // Shared pointer type
   typedef std::shared_ptr<GateUniqueVolumeID> Pointer;
 
   // Fixed sized array of CopyNo for all depth levels

@@ -51,6 +51,7 @@ GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
   fID = ComputeStringID(touchable);
   // The numeric ID can only be updated later.
   // It will be the first time we need GetNumericID
+  // (in GateUniqueVolumeIDManager::GetVolumeID)
   fNumericID = -1;
 }
 
