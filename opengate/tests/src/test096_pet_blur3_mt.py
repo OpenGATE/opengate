@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # options
     sim = gate.Simulation()
     sim.random_seed = 654321
-    sim.number_of_threads = 3
+    sim.number_of_threads = 5
     sim.output_dir = output_path
     sim.verbose_level = gate.logger.NONE
 
@@ -55,8 +55,14 @@ if __name__ == "__main__":
     filename = paths.output / "castor_config_blur3.json"
     param = castor.set_hook_castor_config(sim, crystal.name, filename)
 
-    # go
-    print(f"Run a simulation of 1 sec with {activity/Bq:.0f} Bq")
+    # go (with test several runs, because the VolumeUIDAsInt is reset each run)
+    print(f"Run a simulation of 1 sec, 3 runs, with {activity/Bq:.0f} Bq")
+    sec = gate.g4_units.s
+    sim.run_timing_intervals = [
+        [0, 0.5 * sec],
+        [0.5 * sec, 0.75 * sec],
+        [0.75 * sec, 1 * sec],
+    ]
     sim.run()
 
     # get the castor_config
