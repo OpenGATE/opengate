@@ -28,4 +28,10 @@
 std::vector<std::unique_ptr<G4VTouchable>>
 FindAllTouchables(const G4String &targetLVName);
 
+void FindAndBuildTouchables(G4VPhysicalVolume *currentVolume,
+                            G4NavigationHistory &navHistory,
+                            const G4String &targetLVName,
+                            std::vector<std::unique_ptr<G4VTouchable>> &results,
+                            const G4String &worldName);
+
 #endif // GEOMETRY_UTILS_HH

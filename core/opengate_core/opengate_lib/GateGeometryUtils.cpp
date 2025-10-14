@@ -10,10 +10,10 @@
 #include "G4PhysicalVolumeStore.hh"
 #include "G4RunManager.hh"
 #include "G4TouchableHistory.hh"
+#include "G4TransportationManager.hh"
 #include "G4VPhysicalVolume.hh"
 
 #include "GateGeometryUtils.h"
-
 #include "GateHelpers.h"
 #include "GateUniqueVolumeIDManager.h"
 
@@ -26,17 +26,23 @@
  * @param navHistory The navigation history being built during the traversal.
  * @param targetLVName The name of the logical volume we are searching for.
  * @param results The final vector where valid touchables are stored.
+ * @param worldName The name of the world being traversed (for debugging).
  */
-void FindAndBuildTouchables(
-    G4VPhysicalVolume *currentVolume, G4NavigationHistory &navHistory,
-    const G4String &targetLVName,
-    std::vector<std::unique_ptr<G4VTouchable>> &results) {
+void FindAndBuildTouchables(G4VPhysicalVolume *currentVolume,
+                            G4NavigationHistory &navHistory,
+                            const G4String &targetLVName,
+                            std::vector<std::unique_ptr<G4VTouchable>> &results,
+                            const G4String &worldName) {
+
   // 1. Add the current volume to the navigation history path.
-  if (currentVolume->GetName() != "world")
+  // Skip the world volume itself (it's already set as the first entry)
+  if (currentVolume->GetName() != worldName) {
     navHistory.NewLevel(currentVolume, kNormal, currentVolume->GetCopyNo());
+  }
 
   // 2. Check if the current volume's LV is the one we are looking for.
   const G4LogicalVolume *currentLV = currentVolume->GetLogicalVolume();
+
   if (currentLV->GetName() == targetLVName) {
     // We found a match, construct a new G4TouchableHistory
     // by copying the G4NavigationHistory.
@@ -50,34 +56,68 @@ void FindAndBuildTouchables(
   // 3. Recurse into all daughter volumes.
   for (size_t i = 0; i < currentLV->GetNoDaughters(); ++i) {
     G4VPhysicalVolume *daughterVolume = currentLV->GetDaughter(i);
-    FindAndBuildTouchables(daughterVolume, navHistory, targetLVName, results);
+    FindAndBuildTouchables(daughterVolume, navHistory, targetLVName, results,
+                           worldName);
   }
 
   // 4. Backtrack: Remove the current level from the navigation history.
-  navHistory.BackLevel();
+  if (currentVolume->GetName() != worldName) {
+    navHistory.BackLevel();
+  }
 }
 
 std::vector<std::unique_ptr<G4VTouchable>>
 FindAllTouchables(const G4String &targetLVName) {
   std::vector<std::unique_ptr<G4VTouchable>> touchableResults;
 
-  // Get the world volume directly from the RunManager and DetectorConstruction.
-  const auto pvs = G4PhysicalVolumeStore::GetInstance();
-  const auto worldVolume = pvs->GetVolume("world");
+  // Get the transportation manager to access all worlds
+  G4TransportationManager *transportMgr =
+      G4TransportationManager::GetTransportationManager();
 
-  if (!worldVolume) {
-    Fatal("FindAllTouchables, cannot find the World Volume. The geometry is "
-          "not initialized.");
+  if (!transportMgr) {
+    Fatal("FindAllTouchables: Cannot get G4TransportationManager. "
+          "The geometry is not initialized.");
   }
 
-  // Create the G4NavigationHistory object that will be built up during
-  // recursion.
-  G4NavigationHistory navHistory;
+  // Get the iterator to all navigators (one per world: mass world + parallel
+  // worlds)
+  const auto navigatorsBegin = transportMgr->GetActiveNavigatorsIterator();
 
-  // Start the recursive search from the world volume.
-  navHistory.SetFirstEntry(worldVolume);
-  FindAndBuildTouchables(worldVolume, navHistory, targetLVName,
-                         touchableResults);
+  // Get the number of worlds to know how many navigators to iterate through
+  const size_t numWorlds = transportMgr->GetNoWorlds();
+  DDD("Number of worlds: " + std::to_string(numWorlds));
+
+  if (numWorlds == 0) {
+    Fatal("FindAllTouchables: No worlds found. "
+          "The geometry is not initialized.");
+  }
+
+  // Iterate through all navigators
+  for (size_t i = 0; i < numWorlds; ++i) {
+    const G4Navigator *navigator = *(navigatorsBegin + i);
+
+    if (!navigator) {
+      DDD("Warning: Navigator " + std::to_string(i) + " is null");
+      continue;
+    }
+
+    G4VPhysicalVolume *worldVolume = navigator->GetWorldVolume();
+    if (!worldVolume) {
+      DDD("Warning: World volume for navigator " + std::to_string(i) +
+          " is null");
+      continue;
+    }
+
+    const G4String worldName = worldVolume->GetName();
+
+    // Create a navigation history for this world
+    G4NavigationHistory navHistory;
+    navHistory.SetFirstEntry(worldVolume);
+
+    // Start the recursive search from this world volume
+    FindAndBuildTouchables(worldVolume, navHistory, targetLVName,
+                           touchableResults, worldName);
+  }
 
   return touchableResults;
 }
