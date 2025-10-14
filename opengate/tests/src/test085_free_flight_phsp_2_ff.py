@@ -4,9 +4,16 @@
 from opengate.tests import utility
 from test085_free_flight_helpers import *
 from opengate.contrib.root_helpers import *
+import subprocess
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
+
+    # The test needs the output of the other tests
+    if not os.path.isfile(paths.output / "phsp_sphere_ref_peak"):
+        subprocess.call(
+            ["python", paths.current / "test085_free_flight_phsp_1_ref_mt.py"]
+        )
 
     # create the simulation
     sim = gate.Simulation()
@@ -49,7 +56,7 @@ if __name__ == "__main__":
     # NOTE: this MUST be slightly different, as the prim does not include part of the Rayl
     # that will come from the free flight scatter part.
     results, b = root_compare_branches_chi2(
-        paths.output_ref / "phsp_sphere_ref_peak.root",
+        paths.output / "phsp_sphere_ref_peak.root",
         paths.output / "phsp_sphere_ff.root",
         "phsp_sphere",
         verbose=True,
@@ -59,7 +66,7 @@ if __name__ == "__main__":
 
     fig = paths.output / "test085_phsp_prim.png"
     root_plot_branch_comparison(
-        paths.output_ref / "phsp_sphere_ref_peak.root",
+        paths.output / "phsp_sphere_ref_peak.root",
         paths.output / "phsp_sphere_ff.root",
         "phsp_sphere",
         save_path=fig,

@@ -33,8 +33,8 @@ if __name__ == "__main__":
 
     # split tree
     ref_root = paths.output_ref / "phsp_sphere_ref.root"
-    highE_root = paths.output_ref / "phsp_sphere_ref_peak.root"
-    lowE_root = paths.output_ref / "phsp_sphere_ref_scatter.root"
+    highE_root = paths.output / "phsp_sphere_ref_peak.root"
+    lowE_root = paths.output / "phsp_sphere_ref_scatter.root"
     print()
     print(
         f"Splitting tree in {paths.output_ref} into peak/scatter:\n"

@@ -4,9 +4,16 @@
 from opengate.tests import utility
 from test085_free_flight_helpers import *
 from opengate.contrib.root_helpers import *
+import subprocess
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
+
+    # The test needs the output of the other tests
+    if not os.path.isfile(paths.output / "phsp_sphere_ref_scatter"):
+        subprocess.call(
+            ["python", paths.current / "test085_free_flight_phsp_1_ref_mt.py"]
+        )
 
     # create the simulation
     sim = gate.Simulation()
@@ -44,7 +51,7 @@ if __name__ == "__main__":
     print(ff)
 
     # compare
-    ref_root = paths.output_ref / "phsp_sphere_ref_scatter.root"
+    ref_root = paths.output / "phsp_sphere_ref_scatter.root"
     sc_root = paths.output / "phsp_sphere_ff_sc.root"
     results, _ = root_compare_branches_chi2(
         ref_root, sc_root, tree_name="phsp_sphere", verbose=True
