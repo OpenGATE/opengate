@@ -32,11 +32,11 @@ public:
 
   GetInstance();
 
-  void OpenFile(int tupleId, std::string filename);
+  void OpenFile(int tupleId, const std::string &filename);
 
   void CloseFile(int tupleId);
 
-  void Write(int tupleId);
+  void Write(int tupleId) const;
 
   int DeclareNewTuple(const std::string &name);
 

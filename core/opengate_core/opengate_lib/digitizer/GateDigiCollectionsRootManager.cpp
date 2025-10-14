@@ -21,8 +21,8 @@ GateDigiCollectionsRootManager *GateDigiCollectionsRootManager::GetInstance() {
 
 GateDigiCollectionsRootManager::GateDigiCollectionsRootManager() {}
 
-void GateDigiCollectionsRootManager::OpenFile(int tupleId,
-                                              std::string filename) {
+void GateDigiCollectionsRootManager::OpenFile(const int tupleId,
+                                              const std::string &filename) {
   // Warning: this pointer is different for all workers in MT mode
   auto *ram = G4RootAnalysisManager::Instance();
   if (!ram->IsOpenFile()) {
@@ -75,7 +75,7 @@ void GateDigiCollectionsRootManager::AddNtupleRow(const int tupleId) {
   ram->AddNtupleRow(tupleId);
 }
 
-void GateDigiCollectionsRootManager::Write(const int tupleId) {
+void GateDigiCollectionsRootManager::Write(const int tupleId) const {
   auto &tl = threadLocalData.Get();
   // Do nothing if already Write
   if (G4Threading::IsMasterThread() && tl.fFileHasBeenWrittenByMaster)
