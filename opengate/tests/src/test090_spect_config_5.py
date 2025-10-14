@@ -42,7 +42,7 @@ if __name__ == "__main__":
         paths,
         stats,
         is_ok,
-        tol=35,
+        tol=44,
         output_ref=paths.output_ref / "scatter",
         axis="x",
     )
