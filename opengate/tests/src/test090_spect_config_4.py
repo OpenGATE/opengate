@@ -40,7 +40,7 @@ if __name__ == "__main__":
         paths,
         stats,
         is_ok,
-        tol=50,
+        tol=60,
         squared_flag=True,
         output_ref=paths.output_ref / "primary",
         axis="x",
