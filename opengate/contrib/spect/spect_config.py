@@ -918,7 +918,7 @@ def spect_freeflight_merge_all_heads(
     counts_filename_pattern="projection_$I_counts.mhd",
     sq_counts_filename_pattern="projection_$I_squared_counts.mhd",
     merge_filename="projection_$I_counts.mhd",
-    rel_uncert_suffix="relative_uncertainty_$I",
+    rel_uncert_suffix="relative_uncertainty",
     spr_filename="projection_$I_spr.mhd",
     verbose=True,
 ):
