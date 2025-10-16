@@ -85,7 +85,6 @@ FindAllTouchables(const G4String &targetLVName) {
 
   // Get the number of worlds to know how many navigators to iterate through
   const size_t numWorlds = transportMgr->GetNoWorlds();
-  DDD("Number of worlds: " + std::to_string(numWorlds));
 
   if (numWorlds == 0) {
     Fatal("FindAllTouchables: No worlds found. "
