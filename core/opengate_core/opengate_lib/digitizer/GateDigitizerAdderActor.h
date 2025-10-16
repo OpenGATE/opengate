@@ -59,7 +59,7 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  // Called when the simulation start (master thread only)
+  // Called when the simulation starts (master thread only)
   void StartSimulationAction() override;
 
   // Called every time an Event ends (all threads)

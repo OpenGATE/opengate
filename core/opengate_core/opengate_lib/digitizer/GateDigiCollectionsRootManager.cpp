@@ -21,12 +21,12 @@ GateDigiCollectionsRootManager *GateDigiCollectionsRootManager::GetInstance() {
 
 GateDigiCollectionsRootManager::GateDigiCollectionsRootManager() {}
 
-void GateDigiCollectionsRootManager::OpenFile(int tupleId,
-                                              std::string filename) {
-  // Warning : this pointer is not the same for all workers in MT mode
+void GateDigiCollectionsRootManager::OpenFile(const int tupleId,
+                                              const std::string &filename) {
+  // Warning: this pointer is different for all workers in MT mode
   auto *ram = G4RootAnalysisManager::Instance();
   if (!ram->IsOpenFile()) {
-    // The following does not seems to work (default is 4000)
+    // The following does not seem to work (default is 4000)
     // ram->SetBasketEntries(8000);
     // ram->SetBasketSize(5e6);
 
@@ -45,7 +45,7 @@ void GateDigiCollectionsRootManager::OpenFile(int tupleId,
   }
 }
 
-int GateDigiCollectionsRootManager::DeclareNewTuple(std::string name) {
+int GateDigiCollectionsRootManager::DeclareNewTuple(const std::string &name) {
   auto &fTupleShouldBeWritten = threadLocalData.Get().fTupleShouldBeWritten;
   if (fTupleNameIdMap.count(name) != 0) {
     std::ostringstream oss;
@@ -70,12 +70,12 @@ int GateDigiCollectionsRootManager::DeclareNewTuple(std::string name) {
   return id;
 }
 
-void GateDigiCollectionsRootManager::AddNtupleRow(int tupleId) {
+void GateDigiCollectionsRootManager::AddNtupleRow(const int tupleId) {
   auto *ram = G4RootAnalysisManager::Instance();
   ram->AddNtupleRow(tupleId);
 }
 
-void GateDigiCollectionsRootManager::Write(int tupleId) {
+void GateDigiCollectionsRootManager::Write(const int tupleId) const {
   auto &tl = threadLocalData.Get();
   // Do nothing if already Write
   if (G4Threading::IsMasterThread() && tl.fFileHasBeenWrittenByMaster)
@@ -155,6 +155,11 @@ void GateDigiCollectionsRootManager::CreateNtupleColumn(
     att_id = ram->CreateNtupleSColumn(tupleId, att->GetDigiAttributeName());
   if (att->GetDigiAttributeType() == 'I')
     att_id = ram->CreateNtupleIColumn(tupleId, att->GetDigiAttributeName());
+  if (att->GetDigiAttributeType() == 'L') {
+    Fatal("Error GateDigiCollectionsRootManager::CreateNtupleColumn no LONG "
+          "possible yet");
+    // att_id = ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName());
+  }
   if (att->GetDigiAttributeType() == '3') {
     att_id =
         ram->CreateNtupleDColumn(tupleId, att->GetDigiAttributeName() + "_X");

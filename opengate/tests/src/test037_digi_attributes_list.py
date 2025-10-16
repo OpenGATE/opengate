@@ -23,6 +23,6 @@ if __name__ == "__main__":
     n = 52
     is_ok = len(nlist) == n
 
-    utility.print_test(is_ok, f"Done for {n} attributes.")
+    utility.print_test(is_ok, f"Done for {n} vs {len(nlist)} attributes.")
 
     utility.test_ok(is_ok)

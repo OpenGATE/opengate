@@ -20,8 +20,8 @@ def create_test_spect_config(paths):
     sc.detector_config.collimator = "melp"
     sc.detector_config.number_of_heads = 2
     sc.detector_config.digitizer_function = intevo.add_digitizer
-    sc.detector_config.size = [256, 256]
-    sc.detector_config.spacing = [2.39759994 * mm, 2.39759994 * mm]
+    sc.detector_config.size = [256 / 4, 256 / 4]
+    sc.detector_config.spacing = [2.39759994 * mm * 4, 2.39759994 * mm * 4]
     # phantom
     sc.phantom_config.image = data_path / "iec_5mm.mhd"
     sc.phantom_config.labels = data_path / "iec_5mm_labels.json"
@@ -37,9 +37,10 @@ def create_test_spect_config(paths):
     return sc
 
 
-def check_stats_file(n, sc, stats, is_ok):
+def check_stats_file(n, sc, stats, is_ok, threads=1):
     print(stats.get_output_path())
     stats = utility.read_stat_file(stats.get_output_path())
+    stats.counts.runs = int(stats.counts.runs / threads)
     print(stats)
     b = stats.counts.runs == sc.acquisition_config.number_of_angles
     is_ok = is_ok and b
@@ -53,14 +54,28 @@ def check_stats_file(n, sc, stats, is_ok):
     return is_ok
 
 
-def check_projection_files(sim, paths, stats, is_ok, tol=60, squared_flag=False):
+def check_projection_files(
+    sim,
+    paths,
+    stats,
+    is_ok,
+    tol=60,
+    squared_flag=False,
+    output_ref=None,
+    scaling=1,
+    axis="z",
+    threads=1,
+):
     stats = utility.read_stat_file(stats.get_output_path())
+    stats.counts.runs = stats.counts.runs / threads
+    if output_ref is None:
+        output_ref = paths.output_ref
     # check images
     channel = sim.actor_manager.find_actors("energy_window")[0]
     projs = sim.actor_manager.find_actors("projection")
     for d in projs:
         # counts
-        ref_file = paths.output_ref / "projection_0_counts.mhd"
+        ref_file = output_ref / "projection_0_counts.mhd"
         img_file = d.get_output_path("counts")
         b = utility.assert_images(
             ref_file,
@@ -69,6 +84,8 @@ def check_projection_files(sim, paths, stats, is_ok, tol=60, squared_flag=False)
             ignore_value_data1=0,
             ignore_value_data2=0,
             sum_tolerance=tol,
+            scaleImageValuesFactor=scaling,
+            axis=axis,
         )
         is_ok = is_ok and b
 

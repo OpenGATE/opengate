@@ -138,7 +138,11 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
         att->FillSValue(
             step->GetTrack()->GetParticleDefinition()->GetParticleName());
       });
-
+  DefineDigiAttribute(
+      "PDGCode", 'I', FILLF {
+        att->FillIValue(
+            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
+      });
   DefineDigiAttribute(
       "ParentParticleName", 'S', FILLF {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
@@ -166,75 +170,55 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "PreStepVolumeCopyNo", 'I', FILLF {
         const auto *touchable = step->GetPreStepPoint()->GetTouchable();
-        auto depth = touchable->GetHistoryDepth();
-        auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
+        const auto depth = touchable->GetHistoryDepth();
+        const auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
         att->FillIValue(copyNb);
       });
   DefineDigiAttribute(
       "PostStepVolumeCopyNo", 'I', FILLF {
         const auto *touchable = step->GetPostStepPoint()->GetTouchable();
-        auto depth = touchable->GetHistoryDepth();
-        auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
+        const auto depth = touchable->GetHistoryDepth();
+        const auto copyNb = touchable->GetVolume(depth)->GetCopyNo();
         att->FillIValue(copyNb);
       });
   DefineDigiAttribute(
       "TrackVolumeInstanceID", 'I', FILLF {
         att->FillIValue(step->GetTrack()->GetVolume()->GetInstanceID());
       });
+
+  // -----------------------------------------------------
+  // UniqueVolumeID
   DefineDigiAttribute(
       "PreStepUniqueVolumeID", 'U', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
-        auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+        const auto uid =
+            m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
         att->FillUValue(uid);
+      });
+  DefineDigiAttribute(
+      "PreStepUniqueVolumeIDAsInt", 'I', FILLF {
+        auto *m = GateUniqueVolumeIDManager::GetInstance();
+        const auto uid =
+            m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
+        att->FillIValue(uid->GetNumericID());
       });
   DefineDigiAttribute(
       "PostStepUniqueVolumeID", 'U', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
-        auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+        const auto uid =
+            m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
         att->FillUValue(uid);
       });
   DefineDigiAttribute(
-      "PDGCode", 'I', FILLF {
-        att->FillIValue(
-            step->GetTrack()->GetParticleDefinition()->GetPDGEncoding());
-      });
-
-  DefineDigiAttribute(
-      "HitUniqueVolumeID", 'U', FILLF {
-        /*
-          Like in old GATE (see GateCrystalSD.cc).
-          However, no difference with PostStepUniqueVolumeID.
-          Unsure if needed.
-         */
+      "PostStepUniqueVolumeIDAsInt", 'I', FILLF {
         auto *m = GateUniqueVolumeIDManager::GetInstance();
-        if (step->GetPostStepPoint()
-                ->GetProcessDefinedStep()
-                ->GetProcessName() == "Transportation") {
-          auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
-          att->FillUValue(uid);
-        } else {
-          auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
-          att->FillUValue(uid);
-        }
-      });
-
-  DefineDigiAttribute(
-      "HitUniqueVolumeIDAsInt", 'I', FILLF {
-        auto *m = GateUniqueVolumeIDManager::GetInstance();
-        if (step->GetPostStepPoint()
-                ->GetProcessDefinedStep()
-                ->GetProcessName() == "Transportation") {
-          auto uid = m->GetVolumeID(step->GetPreStepPoint()->GetTouchable());
-          att->FillIValue(uid->GetNumericID());
-        } else {
-          auto uid = m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
-          att->FillIValue(uid->GetNumericID());
-        }
+        const auto uid =
+            m->GetVolumeID(step->GetPostStepPoint()->GetTouchable());
+        att->FillIValue(uid->GetNumericID());
       });
 
   // -----------------------------------------------------
   // Position
-  // FIXME -> add global/local position
   DefineDigiAttribute(
       "Position", '3',
       // Position is the same as PostPosition
@@ -263,7 +247,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "EventPosition", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
-        auto p = event->GetPrimaryVertex(0)->GetPosition();
+        const auto p = event->GetPrimaryVertex(0)->GetPosition();
         att->Fill3Value(p);
       });
   DefineDigiAttribute(
@@ -300,7 +284,7 @@ void GateDigiAttributeManager::InitializeAllDigiAttributes() {
   DefineDigiAttribute(
       "EventDirection", '3', FILLFS {
         const auto *event = G4RunManager::GetRunManager()->GetCurrentEvent();
-        auto d =
+        const auto d =
             event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
         att->Fill3Value(d);
       });

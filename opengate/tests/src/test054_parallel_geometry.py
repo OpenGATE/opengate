@@ -59,7 +59,7 @@ if __name__ == "__main__":
     sim.add_parallel_world("world2")
     sim.add_parallel_world("world3")
 
-    # detector in w2 (on top of world)
+    # detector in w2 (on top of the world)
     det = sim.add_volume("Box", "detector")
     det.mother = "world2"
     det.material = "G4_GLASS_LEAD"

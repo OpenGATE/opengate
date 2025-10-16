@@ -50,7 +50,7 @@ public:
   void EnableSquaredImage(bool b);
 
   // Image type is 3D float by default
-  typedef itk::Image<float, 3> ImageType;
+  typedef itk::Image<double, 3> ImageType;
   ImageType::Pointer fImage;
   ImageType::Pointer fSquaredImage;
   std::string fPhysicalVolumeName;

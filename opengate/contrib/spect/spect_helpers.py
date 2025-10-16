@@ -391,8 +391,8 @@ def batch_rel_uncertainty_from_files(
     return mean, uncert
 
 
-def compute_efficiency_from_files(filename, duration):
-    img_ref = sitk.ReadImage(str(filename))
+def compute_efficiency_from_files(uncert_filename, duration):
+    img_ref = sitk.ReadImage(str(uncert_filename))
     np_uncert = sitk.GetArrayFromImage(img_ref)
     return compute_efficiency(np_uncert, duration)
 
@@ -447,36 +447,58 @@ def history_rel_uncertainty_from_files(
 def history_ff_combined_rel_uncertainty(
     vprim, vprim_squared, vscatter, vscatter_squared, n_prim, n_scatter
 ):
+    """
+    Combines primary and scatter simulation results, scaling them to the number of primary histories (n_prim).
+    """
+    if vprim is None and vscatter is None:
+        raise ValueError("At least one of the primary or scattering values must be set")
 
-    # means for one event
+    # Initialize total mean and variance, scaled to n_prim events
+    mean_total = np.zeros_like(vprim if vprim is not None else vscatter)
+    variance_total = np.zeros_like(mean_total)
+
+    # --- Process Primary Component ---
     if vprim is not None:
-        prim = vprim / n_prim
-        prim_squared = vprim_squared / n_prim
-        prim_var = (prim_squared - np.power(prim, 2)) / (n_prim - 1)
-        mean = prim
-        variance = prim_var
+        # The total contribution from primaries is just vprim itself
+        mean_total += vprim
+
+        # Calculate the variance of the total primary contribution
+        # Var(total) = n^2 * Var(mean) = n^2 * (E[x^2] - E[x]^2)/(n-1)
+        mean_prim_per_event = vprim / n_prim
+        mean_prim_sq_per_event = vprim_squared / n_prim
+        variance_of_mean_prim = (
+            mean_prim_sq_per_event - np.power(mean_prim_per_event, 2)
+        ) / (n_prim - 1)
+        variance_total += variance_of_mean_prim * (n_prim**2)
+
+    # --- Process and Scale Scatter Component ---
     if vscatter is not None:
-        scatter = vscatter / n_scatter
-        scatter_squared = vscatter_squared / n_scatter
-        scatter_var = (scatter_squared - np.power(scatter, 2)) / (n_scatter - 1)
-        mean = scatter
-        variance = scatter_var
+        # Scale the scatter counts to be equivalent to n_prim histories
+        scaling_factor = n_prim / n_scatter
+        mean_scatter_scaled = vscatter * scaling_factor
+        mean_total += mean_scatter_scaled
 
-    if vprim is not None and vscatter is not None:
-        mean = prim + scatter
-        variance = prim_var + scatter_var
+        # Calculate the variance of the scaled scatter contribution
+        # Var(s*X) = s^2 * Var(X)
+        mean_scatter_per_event = vscatter / n_scatter
+        mean_scatter_sq_per_event = vscatter_squared / n_scatter
+        variance_of_mean_scatter = (
+            mean_scatter_sq_per_event - np.power(mean_scatter_per_event, 2)
+        ) / (n_scatter - 1)
+        variance_total += (
+            variance_of_mean_scatter * (n_scatter**2) * (scaling_factor**2)
+        )
 
+    # --- Calculate Final Relative Uncertainty ---
+    # Based on the total scaled mean and total combined variance
     uncert = np.divide(
-        np.sqrt(variance),
-        mean,
-        out=np.zeros_like(variance),
-        where=mean != 0,
+        np.sqrt(variance_total),
+        mean_total,
+        out=np.zeros_like(variance_total),
+        where=mean_total != 0,
     )
 
-    # rescale the mean for the final results
-    mean = mean * n_prim
-
-    return uncert, mean
+    return uncert, mean_total
 
 
 def batch_ff_combined_rel_uncertainty(
@@ -515,23 +537,43 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
             {"name": f"peak208", "min": 187.2 * keV, "max": 228.8 * keV},
             {"name": f"scatter4", "min": 228.8 * keV, "max": 270.4 * keV},
         ]
+
     if "tc99m" in n:
         channels = [
             {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
             {"name": f"scatter", "min": 108.58 * keV, "max": 129.59 * keV},
             {"name": f"peak140", "min": 129.59 * keV, "max": 150.61 * keV},
         ]
+
     if "in111" in n or "111in" in n:
         # 15% around the peaks
         channels = [
-            {"name": "spectrum_full", "min": 3.0, "max": 515.0},
-            {"name": "scatter_171_low", "min": 138.4525, "max": 158.4525},
-            {"name": "peak_171", "min": 158.4525, "max": 184.1475},
-            {"name": "scatter_171_high", "min": 184.1475, "max": 204.1475},
-            {"name": "scatter_245_low", "min": 206.995, "max": 226.995},
-            {"name": "peak_245", "min": 226.995, "max": 263.805},
-            {"name": "scatter_245_high", "min": 263.805, "max": 283.805},
+            {"name": "spectrum_full", "min": 3.0 * keV, "max": 515.0 * keV},
+            {"name": "scatter_171_low", "min": 138.4525 * keV, "max": 158.4525 * keV},
+            {"name": "peak_171", "min": 158.4525 * keV, "max": 184.1475 * keV},
+            {"name": "scatter_171_high", "min": 184.1475 * keV, "max": 204.1475 * keV},
+            {"name": "scatter_245_low", "min": 206.995 * keV, "max": 226.995 * keV},
+            {"name": "peak_245", "min": 226.995 * keV, "max": 263.805 * keV},
+            {"name": "scatter_245_high", "min": 263.805 * keV, "max": 283.805 * keV},
         ]
+
+    if "i123" in n or "123i" in n:
+        # 20% window around 159 keV peak
+        channels = [
+            {"name": "spectrum", "min": 3 * keV, "max": 200 * keV},
+            {"name": "scatter_low", "min": 125 * keV, "max": 143.1 * keV},
+            {"name": "peak159", "min": 143.1 * keV, "max": 174.9 * keV},
+            {"name": "scatter_high", "min": 174.9 * keV, "max": 195 * keV},
+        ]
+
+    if "i131" in n or "131i" in n:
+        # 20% window around 364 keV peak
+        channels = [
+            {"name": "spectrum", "min": 3 * keV, "max": 410 * keV},
+            {"name": "scatter_low", "min": 285 * keV, "max": 327.6 * keV},
+            {"name": "peak364", "min": 327.6 * keV, "max": 400.4 * keV},
+        ]
+
     if not spectrum_channel:
         channels.pop(0)
     if len(channels) == 0:

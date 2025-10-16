@@ -96,7 +96,7 @@ void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
   G4AutoLock mutex(&DigitizerProjectionActorMutex);
   const auto run = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
   for (size_t channel = 0; channel < fInputDigiCollections.size(); channel++) {
-    auto slice = channel + run * fInputDigiCollections.size();
+    const auto slice = channel + run * fInputDigiCollections.size();
     ProcessSlice(slice, channel);
   }
 }
@@ -106,7 +106,7 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
   auto &l = fThreadLocalData.Get();
   const auto *hc = fInputDigiCollections[channel];
   const auto index = hc->GetBeginOfEventIndex();
-  auto n = hc->GetSize() - index;
+  const auto n = hc->GetSize() - index;
   // If no new hits, do nothing
   if (n <= 0)
     return;
@@ -123,18 +123,17 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
     for (auto j = 0; j < 3; j++)
       point[j] = pos[i][j];
 
-    bool isInside = fImage->TransformPhysicalPointToIndex(point, pindex);
+    const bool isInside = fImage->TransformPhysicalPointToIndex(point, pindex);
     if (isInside) {
       // force the slice according to the channel
       pindex[2] = slice;
 
       // Take particle weight into account (if in the attribute list)
       if (!weights.empty()) {
-        ImageAddValue<ImageType>(fImage, pindex,
-                                 static_cast<float>(weights[i]));
+        ImageAddValue<ImageType>(fImage, pindex, weights[i]);
         if (fEnableSquaredImage)
           ImageAddValue<ImageType>(fSquaredImage, pindex,
-                                   static_cast<float>(weights[i] * weights[i]));
+                                   weights[i] * weights[i]);
       } else
         ImageAddValue<ImageType>(fImage, pindex, 1.0);
     } else {
@@ -145,8 +144,7 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
       DDE(pindex);
       DDE(slice);
       DDE(fImage->GetLargestPossibleRegion().GetSize());
-      nout++;
-      DDE(nout);*/
+      */
     }
   }
 }
