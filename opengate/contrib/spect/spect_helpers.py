@@ -391,8 +391,8 @@ def batch_rel_uncertainty_from_files(
     return mean, uncert
 
 
-def compute_efficiency_from_files(filename, duration):
-    img_ref = sitk.ReadImage(str(filename))
+def compute_efficiency_from_files(uncert_filename, duration):
+    img_ref = sitk.ReadImage(str(uncert_filename))
     np_uncert = sitk.GetArrayFromImage(img_ref)
     return compute_efficiency(np_uncert, duration)
 
