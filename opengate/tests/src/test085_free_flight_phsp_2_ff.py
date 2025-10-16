@@ -10,7 +10,7 @@ if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
 
     # The test needs the output of the other tests
-    if not os.path.isfile(paths.output / "phsp_sphere_ref_peak"):
+    if not os.path.isfile(paths.output / "phsp_sphere_ref_peak.root"):
         subprocess.call(
             ["python", paths.current / "test085_free_flight_phsp_1_ref_mt.py"]
         )
