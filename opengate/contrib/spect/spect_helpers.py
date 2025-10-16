@@ -537,12 +537,14 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
             {"name": f"peak208", "min": 187.2 * keV, "max": 228.8 * keV},
             {"name": f"scatter4", "min": 228.8 * keV, "max": 270.4 * keV},
         ]
+
     if "tc99m" in n:
         channels = [
             {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
             {"name": f"scatter", "min": 108.58 * keV, "max": 129.59 * keV},
             {"name": f"peak140", "min": 129.59 * keV, "max": 150.61 * keV},
         ]
+
     if "in111" in n or "111in" in n:
         # 15% around the peaks
         channels = [
@@ -554,6 +556,24 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
             {"name": "peak_245", "min": 226.995 * keV, "max": 263.805 * keV},
             {"name": "scatter_245_high", "min": 263.805 * keV, "max": 283.805 * keV},
         ]
+
+    if "i123" in n or "123i" in n:
+        # 20% window around 159 keV peak
+        channels = [
+            {"name": "spectrum", "min": 3 * keV, "max": 200 * keV},
+            {"name": "scatter_low", "min": 125 * keV, "max": 143.1 * keV},
+            {"name": "peak159", "min": 143.1 * keV, "max": 174.9 * keV},
+            {"name": "scatter_high", "min": 174.9 * keV, "max": 195 * keV},
+        ]
+
+    if "i131" in n or "131i" in n:
+        # 20% window around 364 keV peak
+        channels = [
+            {"name": "spectrum", "min": 3 * keV, "max": 410 * keV},
+            {"name": "scatter_low", "min": 285 * keV, "max": 327.6 * keV},
+            {"name": "peak364", "min": 327.6 * keV, "max": 400.4 * keV},
+        ]
+
     if not spectrum_channel:
         channels.pop(0)
     if len(channels) == 0:
