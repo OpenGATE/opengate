@@ -35,6 +35,15 @@ if __name__ == "__main__":
     # we check only that the output files exist
     is_ok = True
     is_ok = check_stats_file(10887, sc, stats, is_ok)
-    is_ok = check_projection_files(sim, paths, stats, is_ok, tol=81, squared_flag=True)
+    is_ok = check_projection_files(
+        sim,
+        paths,
+        stats,
+        is_ok,
+        tol=60,
+        squared_flag=True,
+        output_ref=paths.output_ref / "primary",
+        axis="x",
+    )
 
     utility.test_ok(is_ok)

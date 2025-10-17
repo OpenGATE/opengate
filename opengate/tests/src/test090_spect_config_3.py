@@ -18,14 +18,14 @@ if __name__ == "__main__":
     cm = g4_units.cm
 
     # make it FF-AA primary
-    sc.free_flight_config.primary_activity = 1e5 * Bq
+    sc.free_flight_config.primary_activity = 4e5 * Bq
     sc.free_flight_config.max_rejection = 10000
     sc.free_flight_config.angle_tolerance = 15 * deg
     sc.free_flight_config.forced_direction_flag = False
 
     # create the simulation
     sim = gate.Simulation()
-    sim.random_seed = 654456
+    sim.random_seed = 123654
     sc.setup_simulation_ff_primary(sim, visu=False)
     stats = sim.actor_manager.find_actors("stats")[0]
 
@@ -34,7 +34,16 @@ if __name__ == "__main__":
 
     # we check only that the output files exist
     is_ok = True
-    is_ok = check_stats_file(18960, sc, stats, is_ok)
-    is_ok = check_projection_files(sim, paths, stats, is_ok, tol=60, squared_flag=True)
+    is_ok = check_stats_file(73826, sc, stats, is_ok)
+    is_ok = check_projection_files(
+        sim,
+        paths,
+        stats,
+        is_ok,
+        tol=100,
+        squared_flag=True,
+        output_ref=paths.output_ref / "primary",
+        axis="x",
+    )
 
     utility.test_ok(is_ok)

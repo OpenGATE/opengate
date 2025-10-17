@@ -3,13 +3,16 @@
 
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
-from opengate.contrib.spect.spect_helpers import get_default_energy_windows
+from opengate.contrib.spect.spect_helpers import *
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
 from pathlib import Path
 import numpy as np
 import opengate_core as g4
+import matplotlib.pyplot as plt
+import SimpleITK as sitk
+import os
 
 
 def check_process_user_hook(simulation_engine):
@@ -30,7 +33,6 @@ def create_simulation_test085(
     paths,
     simu_name,
     ac=1e5,
-    angle_tolerance=None,
     use_spect_head=False,
     use_spect_arf=False,
     use_phsp=False,
@@ -44,7 +46,7 @@ def create_simulation_test085(
     sim.store_json_archive = True
     sim.store_input_files = False
     sim.json_archive_filename = f"simu_{simu_name}.json"
-    sim.random_seed = 123234
+    sim.random_seed = 654789
     data_folder = Path(paths.data) / "test085"
 
     # units
@@ -222,3 +224,191 @@ def add_phsp(sim, simu_name, radius, size, spacing, use_parallel_world, sph_rad=
     planes = [phsp_sphere]
 
     return phsps, planes
+
+
+def compute_zscore_per_pixel(ref, ff, squared_ff, n_ref, n_ff):
+    # compute reference uncertainty (Poisson)
+    # sigma_ref = poisson_rel_uncertainty(ref)
+
+    # compute scatter uncertainty
+    if squared_ff is None:
+        sigma_ff = poisson_rel_uncertainty(ff)
+    else:
+        sigma_ff = history_rel_uncertainty(ff, squared_ff, n_ff)
+    ff = ff * (n_ref / n_ff)
+
+    # compute zscore per pixel
+    mask = (ref > 0) & (ff > 0)
+    z_score = np.divide(
+        ff - ref,
+        np.sqrt(ref + (sigma_ff * ff) ** 2),
+        out=np.zeros_like(ref),
+        where=mask,
+    )
+
+    z_score = z_score.astype(np.float64)
+    return z_score
+
+
+def compute_zscore_and_rel_diff(
+    ref_filename,
+    test_filename,
+    n_ref,
+    n_test,
+    zscore_filename,
+    refdiff_filename,
+    squared_filename=None,
+):
+    ref_img = sitk.ReadImage(ref_filename)
+    test_img = sitk.ReadImage(test_filename)
+    ref_arr = sitk.GetArrayFromImage(ref_img).astype(np.float32)
+    test_arr = sitk.GetArrayFromImage(test_img).astype(np.float32)
+
+    if squared_filename is not None:
+        squared_test_img = sitk.ReadImage(squared_filename)
+        squared_test_arr = sitk.GetArrayFromImage(squared_test_img).astype(np.float32)
+    else:
+        squared_test_arr = None
+
+    # zscore
+    zscore = compute_zscore_per_pixel(
+        ref_arr, test_arr, squared_test_arr, n_ref, n_test
+    )
+    zimg = sitk.GetImageFromArray(zscore)
+    zimg.CopyInformation(ref_img)
+    sitk.WriteImage(zimg, zscore_filename)
+    print(zscore_filename)
+
+    # reldiff
+    test_arr = test_arr * (n_ref / n_test)
+    ref_diff = np.divide(
+        ref_arr - test_arr,
+        ref_arr,
+        out=np.zeros_like(ref_arr),
+        where=(ref_arr != 0) & (test_arr != 0),
+    )
+    ref_diff = ref_diff.astype(np.float32)
+    refdiff_img = sitk.GetImageFromArray(ref_diff)
+    refdiff_img.CopyInformation(ref_img)
+    sitk.WriteImage(refdiff_img, refdiff_filename)
+    print(refdiff_filename)
+
+
+def save_slice_histograms_as_pdf(filename: str, bins: int = 100):
+    """
+    Reads a 2D or 3D image and plots the histogram of each slice on a single
+    figure, arranged horizontally. It ignores zero-valued pixels and overlays
+    the mean and median.
+
+    The final figure is saved as a PDF with the same name as the input file.
+
+    Args:
+        filename (str): The path to the image file.
+        bins (int): The number of bins to use for the histogram.
+    """
+    # --- 1. Read the image using SimpleITK ---
+    try:
+        image_sitk = sitk.ReadImage(filename)
+    except Exception as e:
+        print(f"Error: Could not read the file '{filename}'.")
+        print(f"Details: {e}")
+        return
+
+    # --- 2. Convert to a NumPy array ([z, y, x] order) ---
+    image_np = sitk.GetArrayFromImage(image_sitk)
+
+    # --- 3. Handle both 2D and 3D images consistently ---
+    if image_np.ndim == 2:
+        image_np = image_np.reshape(1, *image_np.shape)
+
+    if image_np.ndim != 3:
+        print(
+            f"Error: Function expects a 2D or 3D image, but got {image_np.ndim} dimensions."
+        )
+        return
+
+    # --- 4. Pre-filter to find slices with actual data ---
+    # This helps determine the required number of subplots.
+    valid_slices_data = []
+    for i, slice_2d in enumerate(image_np):
+        # Flatten and filter out zeros
+        non_zero_pixels = slice_2d.flatten()
+        non_zero_pixels = non_zero_pixels[non_zero_pixels != 0]
+
+        if non_zero_pixels.size > 0:
+            valid_slices_data.append({"index": i, "data": non_zero_pixels})
+
+    if not valid_slices_data:
+        print("No non-zero data found in any slice. No plot will be generated.")
+        return
+
+    # --- 5. Create a single figure with multiple subplots ---
+    num_plots = len(valid_slices_data)
+    # Dynamically adjust figure size based on the number of plots
+    fig, axes = plt.subplots(nrows=1, ncols=num_plots, figsize=(6 * num_plots, 5))
+
+    # If there's only one plot, `subplots` returns a single Axes object, not an array.
+    # We wrap it in a list to make the subsequent loop work consistently.
+    if num_plots == 1:
+        axes = [axes]
+
+    # Set the main title for the entire figure
+    fig.suptitle(f"Histograms for: {os.path.basename(filename)}", fontsize=16)
+
+    # --- 6. Iterate through valid slices and plot on the corresponding subplot axis ---
+    for ax, slice_info in zip(axes, valid_slices_data):
+        slice_index = slice_info["index"]
+        non_zero_pixels = slice_info["data"]
+
+        mean_val = np.mean(non_zero_pixels)
+        median_val = np.median(non_zero_pixels)
+
+        # Plot the histogram on the specific subplot axis `ax`
+        ax.hist(
+            non_zero_pixels,
+            bins=bins,
+            color="deepskyblue",
+            edgecolor="blue",
+            alpha=0.7,
+        )
+
+        # Add vertical lines to the subplot
+        ax.axvline(
+            mean_val,
+            color="red",
+            linestyle="dashed",
+            linewidth=2,
+            label=f"Mean: {mean_val:.2f}",
+        )
+        ax.axvline(
+            median_val,
+            color="green",
+            linestyle="solid",
+            linewidth=2,
+            label=f"Median: {median_val:.2f}",
+        )
+
+        # Set titles and labels for the specific subplot
+        ax.set_title(f"Slice {slice_index}")
+        ax.set_xlabel("Pixel Intensity")
+        ax.set_ylabel("Frequency (Count)")
+        ax.legend()
+        ax.grid(axis="y", alpha=0.5)
+
+    # --- 7. Save the figure to a PDF file ---
+    # Adjust layout to prevent titles and labels from overlapping
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])  # rect makes space for suptitle
+
+    # Construct the output filename
+    base_filename, _ = os.path.splitext(filename)
+    output_filename = f"{base_filename}.pdf"
+
+    try:
+        plt.savefig(output_filename, bbox_inches="tight")
+        print(f"Histogram plot successfully saved to: {output_filename}")
+    except Exception as e:
+        print(f"\nError: Could not save the plot to '{output_filename}'.")
+        print(f"Details: {e}")
+    finally:
+        # Close the figure to free up memory
+        plt.close(fig)

@@ -19,10 +19,10 @@ namespace py = pybind11;
 /*
    This is based on a copy of G4BOptnForceFreeFlight (Feb 2025).
 
-   When several processes are biased, the weights was not correct,
+   When several processes are biased, the weights are not correct,
    The function AlongMoveBy is applied once for each process to cumulate
    the weights, but ApplyFinalStateBiasing is also applied once per process
-   re-applying the weights each times.
+   re-applying the weights each time.
  */
 
 class GateGammaFreeFlightOptn : public G4VBiasingOperation {
