@@ -30,7 +30,9 @@ if __name__ == "__main__":
     sc.phantom_config.image = data_folder / "ct_5mm.mhd"
     sc.phantom_config.translation = [0, 0, -20 * cm]
     sc.source_config.radionuclide = "177lu"
-    sc.acquisition_config.radius = 420 * mm
+    # spect position has changed since the initial creation of the reference data
+    # so we adapt the radius with 11 cm shift
+    sc.acquisition_config.radius = 420 * mm - 11.707759999999993 * cm
     sc.acquisition_config.duration = 30 * sec
     sc.acquisition_config.number_of_angles = 30
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import subprocess
-from matplotlib import pyplot as plt
 from opengate.tests import utility
+from opengate.contrib.root_helpers import *
 from test085_free_flight_helpers import *
 import uproot
 import os, sys
@@ -20,7 +20,9 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     if not os.path.isfile(paths.output / "phsp_sphere_ref.root"):
         subprocess.call(["python", paths.current / dependency])
     if not os.path.isfile(paths.output / "phsp_sphere_ff.root"):
-        subprocess.call(["python", paths.current / "test085_free_flight_phsp_2_ff.py"])
+        subprocess.call(
+            ["python", paths.current / "test085_free_flight_phsp_2_ff_mt.py"]
+        )
     if not os.path.isfile(paths.output / "phsp_sphere_ff_sc.root"):
         subprocess.call(
             ["python", paths.current / "test085_free_flight_phsp_3_scatter_mt.py"]
@@ -30,7 +32,7 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     ref_filename = paths.output / "phsp_sphere_ref.root"
     prim_filename = paths.output / "phsp_sphere_ff.root"
     sca_filename = paths.output / "phsp_sphere_ff_sc.root"
-    ref_n = 5e4
+    ref_n = 1e5
     prim_n = 1e4
     sca_n = 2e3
     scaling_sc = ref_n / sca_n
@@ -126,8 +128,6 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     utility.print_test(b, f"diff scatter ref-sc        = {check4:.2f} %    tol={tol}")
     is_ok = b and is_ok
 
-    # Key KineticEnergy min/mean/max: 0.08349965517188826 0.1404070326435755 0.140511
-
     ene_total = np.concatenate((ene_prim, ene_sc))
     w_total = np.concatenate((ene_prim_w, ene_sc_w))
 
@@ -167,4 +167,72 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     print(f)
     # plt.show()
 
+    # merge prim + scatter in one root file
+    merged_filename = paths.output / "phsp_total.root"
+    root_merge_trees(
+        (prim_filename, sca_filename),
+        merged_filename,
+        "phsp_sphere",
+        scaling_factors=(ref_n / prim_n, ref_n / sca_n),
+        verbose=True,
+    )
+
+    # compare with chi2 (must fail)
+    # results, b = compare_branches_chi2(
+    #    ref_filename, merged_filename, tree_name="phsp_sphere", verbose=True, bins=50
+    # )
+    # print(results)
+    # utility.print_test(b, "Chi2 difference ? ")
+    # is_ok = b and is_ok
+
+    # compare with zscore
+    """results = compare_branches_zscore(
+        ref_filename, merged_filename, tree_name="phsp_sphere", verbose=True, bins=10
+    )
+    outliers = [r for r in results if "outliers" in r]
+    print(f"Outliers : ", outliers)
+    b = len(outliers) < 1
+    utility.print_test(b, "Zscore difference ? ")
+    is_ok = b and is_ok"""
+
+    # compare with statistics
+    results = compare_branches_statistics(
+        ref_filename, merged_filename, tree_name="phsp_sphere", verbose=True
+    )
+    tol = 0.5  # %
+    b = all(np.fabs(r["mean_diff_vs_std"]) < tol for r in results)
+    utility.print_test(b, f"Statistics difference below {tol} ? ")
+    is_ok = b and is_ok
+
+    # NOPE because of weight
+    """b = utility.compare_root3(
+        ref_filename,
+        merged_filename,
+        "phsp_sphere",
+        "phsp_sphere",
+        keys1=None,
+        keys2=None,
+        tols=[0.01, 0.7, 1.4, 1.4, 0.01],
+        scalings1=[1] * 5,
+        scalings2=[1] * 5,
+        img=paths.output / "test085_phsp_4.png",
+    )
+    is_ok = b and is_ok"""
+
+    # plot
+    fig, axes = root_plot_branch_comparison(
+        ref_filename,
+        merged_filename,
+        tree_name="phsp_sphere",
+        verbose=True,
+    )
+    fn = paths.output / "test085_free_flight_phsp_4_merged.png"
+    fig.savefig(fn)
+    print(fn)
+
     utility.test_ok(is_ok)
+
+
+# --------------------------------------------------------------------------
+if __name__ == "__main__":
+    main()

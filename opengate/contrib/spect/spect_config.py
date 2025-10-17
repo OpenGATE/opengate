@@ -517,7 +517,7 @@ class DetectorConfig(ConfigBase):
         simu_name = self.spect_config.simu_name
         for i in range(self.number_of_heads):
             # Create the head detector
-            hn = f"{simu_name}_spect{i}"
+            hn = f"{simu_name}_head_{i}"
             self.head_names.append(hn)
             det, colli, crystal = m.add_spect_head(
                 sim,
@@ -526,7 +526,7 @@ class DetectorConfig(ConfigBase):
                 debug=sim.visu == True,
             )
             # set the digitizer
-            dname = f"{simu_name}_digit{i}"
+            dname = f"{simu_name}_digit_{i}"
             self.digitizer_function(
                 sim,
                 crystal.name,
@@ -607,6 +607,7 @@ class SourceConfig(ConfigBase):
         self.radionuclide = None
         self.total_activity = 1 * g4_units.Bq
         # self.gaga = GAGAConfig(spect_config) # FIXME todo
+        self.source_name = None
 
     def __str__(self):
         s = f"Activity source image: {self.image}\n"
@@ -623,7 +624,8 @@ class SourceConfig(ConfigBase):
 
         # set the source
         source = sim.add_source("VoxelSource", f"{self.spect_config.simu_name}_source")
-        source.attached_to = phantom
+        if phantom is not None:
+            source.attached_to = phantom
         source.image = str(self.image)
         # mode voxelized source according to voxelized phantom
         if self.spect_config.phantom_config.image is not None:
@@ -637,6 +639,7 @@ class SourceConfig(ConfigBase):
         source.activity = self.total_activity / self.spect_config.number_of_threads
         if sim.visu is True:
             source.activity = 10 * gate.g4_units.Bq
+        self.source_name = source.name
 
 
 class AcquisitionConfig(ConfigBase):
@@ -749,14 +752,14 @@ class FreeFlightConfig(ConfigBase):
             for arf in self.spect_config.detector_config.garf_config.arf_actors:
                 arf.squared_counts.active = True
 
-        # GeneralProcess must *NOT* be used
+        # GeneralProcess must *NOT* be used with FF
         s = f"/process/em/UseGeneralProcess false"
         if s not in sim.g4_commands_before_init:
             sim.g4_commands_before_init.append(s)
 
     def get_crystal_volume_names(self):
         volume_names = [
-            f"{self.spect_config.simu_name}_spect{i}_crystal"
+            f"{self.spect_config.simu_name}_head_{i}_crystal"
             for i in range(self.spect_config.detector_config.number_of_heads)
         ]
         return volume_names
@@ -775,7 +778,10 @@ class FreeFlightConfig(ConfigBase):
         elif self.primary_unbiased_volumes == "detector":
             target_volume_names = self.get_detector_volume_names()
         else:
-            fatal(f"Unknown ff ignored volume: {self.primary_unbiased_volumes}")
+            fatal(
+                f"FF primary: unknown ignored volume: "
+                f"{self.primary_unbiased_volumes}. Should be detector or crystal"
+            )
 
         # add the ff actor (only once !)
         ff_name = f"{self.spect_config.simu_name}_ff"
@@ -911,8 +917,9 @@ def spect_freeflight_merge_all_heads(
     nb_of_heads=2,
     counts_filename_pattern="projection_$I_counts.mhd",
     sq_counts_filename_pattern="projection_$I_squared_counts.mhd",
-    mean_filename="projection_$I_counts.mhd",
-    rel_uncert_suffix="relative_uncertainty_$I",
+    merge_filename="projection_$I_counts.mhd",
+    rel_uncert_suffix="relative_uncertainty",
+    spr_filename="projection_$I_spr.mhd",
     verbose=True,
 ):
     for d in range(nb_of_heads):
@@ -925,8 +932,9 @@ def spect_freeflight_merge_all_heads(
             scatter_folder=scatter_folder,
             counts_filename=counts_filename_pattern.replace("$I", str(d)),
             sq_counts_filename=sq_counts_filename_pattern.replace("$I", str(d)),
-            mean_filename=mean_filename.replace("$I", str(d)),
+            merge_filename=merge_filename.replace("$I", str(d)),
             rel_uncert_suffix=rel_uncert_suffix.replace("$I", str(d)),
+            spr_filename=spr_filename.replace("$I", str(d)),
             verbose=verbose,
         )
 
@@ -940,11 +948,12 @@ def spect_freeflight_merge(
     scatter_folder="scatter",
     counts_filename="projection_0_counts.mhd",
     sq_counts_filename="projection_0_squared_counts.mhd",
-    mean_filename="mean.mhd",
+    merge_filename="projection_0_counts.mhd",
     rel_uncert_suffix="relative_uncertainty",
+    spr_filename="projection_0_spr.mhd",
     verbose=True,
 ):
-    # make them path
+    # make the paths
     prim_folder = Path(prim_folder)
     scatter_folder = Path(scatter_folder)
 
@@ -972,24 +981,31 @@ def spect_freeflight_merge(
         scatter = None
         scatter_squared = None
 
-    # combined
+    # combined (combined prim/scatter is scaled to n_primary)
     uncert, mean = history_ff_combined_rel_uncertainty(
         prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
     )
 
+    # combined image
     scaling = n_target / n_prim
     mean = mean * scaling
     if verbose:
         print(f"Primary n = {n_prim}  Scatter n = {n_scatter}  Target n = {n_target}")
         if n_scatter > 0:
-            print(f"Primary to scatter ratio = {n_prim / n_scatter:.01f}")
-        print(f"Scaling to target        = {scaling:.01f}")
+            print(f"Primary to scatter ratio = {n_prim / n_scatter}")
+        print(f"Scaling to target        = {scaling}")
+
+    # Scatter-to-Primary Ratio (SPR)
+    if n_scatter > 0:
+        vprim = (prim / n_prim) * n_target
+        vscatter = (scatter / n_scatter) * n_target
+        spr = np.divide(vscatter, vprim, out=np.zeros_like(vscatter), where=vprim != 0)
 
     # write combined image
     prim_img = sitk.ReadImage(img)
     img = sitk.GetImageFromArray(mean)
     img.CopyInformation(prim_img)
-    fn = folder / mean_filename
+    fn = folder / merge_filename
     sitk.WriteImage(img, fn)
     if verbose:
         print(fn)
@@ -1002,6 +1018,15 @@ def spect_freeflight_merge(
     if verbose:
         print(fn)
 
+    # write SPR
+    if n_scatter > 0:
+        img = sitk.GetImageFromArray(spr)
+        img.CopyInformation(prim_img)
+        fn = folder / spr_filename
+        sitk.WriteImage(img, fn)
+        if verbose:
+            print(fn)
+
     # open info if the file exists
     prim_info = {}
     if n_prim > 0:
@@ -1012,11 +1037,18 @@ def spect_freeflight_merge(
 
     # open info if the file exists
     scatter_info = {}
-    if n_scatter > 0:
-        scatter_info_fn = folder / scatter_folder / "ff_info.json"
-        if scatter_info_fn.is_file():
-            with open(scatter_info_fn, "r") as f:
-                scatter_info = json.load(f)
+    scatter_info_fn = folder / scatter_folder / "ff_info.json"
+    if scatter_info_fn.is_file():
+        with open(scatter_info_fn, "r") as f:
+            scatter_info = json.load(f)
+    else:
+        scatter_info = {
+            "scatter_activity": 0,
+            "max_compton_level": 10,
+            "angle_tolerance": 10.0,
+            "compton_splitting_factor": 300,
+            "rayleigh_splitting_factor": 300,
+        }
 
     # write combined information
     info = prim_info

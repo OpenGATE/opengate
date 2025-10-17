@@ -9,7 +9,7 @@
 #include "G4NavigationHistory.hh"
 #include "G4VPhysicalVolume.hh"
 #include "GateHelpers.h"
-#include <functional> // Required for std::hash
+#include "GateUniqueVolumeIDManager.h"
 #include <sstream>
 
 GateUniqueVolumeID::GateUniqueVolumeID() {
@@ -27,41 +27,38 @@ GateUniqueVolumeID::New(const G4VTouchable *touchable, bool debug) {
 }
 
 GateUniqueVolumeID::GateUniqueVolumeID(const G4VTouchable *touchable,
-                                       bool debug)
+                                       const bool debug)
     : GateUniqueVolumeID() {
   // Retrieve the tree of the embedded volumes
   // See ComputeArrayID warning for explanation.
   const auto *hist = touchable->GetHistory();
-  for (auto i = 0; i <= (int)hist->GetDepth(); i++) {
-    int index = (int)hist->GetDepth() - i;
-    auto v = GateUniqueVolumeID::VolumeDepthID();
-    v.fVolumeName = touchable->GetVolume(index)->GetName();
-    v.fCopyNb = touchable->GetCopyNumber(index);
-    v.fDepth = i; // Start at world (depth=0), and increase
-    v.fTranslation = touchable->GetTranslation(index); // copy the translation
-    v.fRotation = G4RotationMatrix(
-        *touchable->GetRotation(index)); // copy of the rotation
-    v.fVolume = touchable->GetVolume(index);
-    fVolumeDepthID.push_back(v);
-    if (debug) {
+  fTouchable = G4NavigationHistory(*hist); // this is a copy
+
+  if (debug) {
+    for (auto i = 0; i <= (int)hist->GetDepth(); i++) {
+      // FIXME
+      const int index = (int)hist->GetDepth() - i;
+      if (touchable->GetVolume(index) == nullptr)
+        continue;
       DDE(i);
       DDE(index);
-      DDE(v.fVolumeName);
-      DDE(v.fCopyNb);
-      DDE(v.fTranslation);
+      DDE(touchable->GetVolume(index)->GetName());
+      DDE(touchable->GetCopyNumber(index));
+      DDE(touchable->GetTranslation(index));
     }
   }
   fArrayID = ComputeArrayID(touchable);
-  fID = touchable->GetVolume()->GetName() + "-" + ArrayIDToStr(fArrayID);
-
-  // Generate the deterministic numeric ID by hashing the unique string ID.
-  fNumericID = std::hash<std::string>{}(fID);
+  fID = ComputeStringID(touchable);
+  // The numeric ID can only be updated later.
+  // It will be the first time we need GetNumericID
+  // (in GateUniqueVolumeIDManager::GetVolumeID)
+  fNumericID = -1;
 }
 
-uint64_t GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
+int GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
   // Check if the hash is already in our cache.
-  auto it = fCachedIdDepthHash.find(depth);
-  if (it != fCachedIdDepthHash.end()) {
+  if (const auto it = fCachedIdDepthHash.find(depth);
+      it != fCachedIdDepthHash.end()) {
     return it->second;
   }
 
@@ -69,28 +66,27 @@ uint64_t GateUniqueVolumeID::GetIdUpToDepthAsHash(const int depth) const {
   const std::string &s = GetIdUpToDepth(depth);
 
   // Compute the hash.
-  uint64_t h = std::hash<std::string>{}(s);
+  const int h = std::hash<std::string>{}(s);
 
   // Store the newly computed hash in our cache and return it.
   fCachedIdDepthHash[depth] = h;
   return h;
 }
 
-std::string GateUniqueVolumeID::GetIdUpToDepth(int depth) const {
+std::string GateUniqueVolumeID::GetIdUpToDepth(const int depth) const {
   if (depth == -1)
     return fID;
 
   // Check if the string is already in our cache.
-  auto it = fCachedIdDepth.find(depth);
-  if (it != fCachedIdDepth.end()) {
+  if (const auto it = fCachedIdDepth.find(depth); it != fCachedIdDepth.end()) {
     return it->second;
   }
 
   // If not, build the string.
   std::ostringstream oss;
-  oss << fVolumeDepthID[depth].fVolumeName << "-";
+  oss << fTouchable.GetVolume(depth)->GetName() << "-";
   int i = 0;
-  auto id = fArrayID;
+  const auto id = fArrayID;
   bool appended = false;
   while (i <= depth && id[i] != -1) {
     oss << id[i] << "_";
@@ -117,16 +113,27 @@ GateUniqueVolumeID::ComputeArrayID(const G4VTouchable *touchable) {
      parametrised volumes.
    */
   const auto *hist = touchable->GetHistory();
-  GateUniqueVolumeID::IDArrayType a{};
+  IDArrayType a{};
   a.fill(-1);
-  int depth = (int)hist->GetDepth();
+  const int depth = static_cast<int>(hist->GetDepth());
+  int array_idx = 0;
   for (auto i = 0; i <= depth; i++) {
-    a[i] = touchable->GetCopyNumber(depth - i);
+    const int touchable_index = depth - i;
+
+    // Check if the volume pointer at this depth is valid.
+    if (touchable->GetVolume(touchable_index) != nullptr) {
+      // It's a valid level, so store its copy number in our array
+      // at the current 'array_idx'.
+      a[array_idx] = touchable->GetCopyNumber(touchable_index);
+
+      // Increment the array index to the next valid level.
+      array_idx++;
+    }
   }
   return a;
 }
 
-std::string GateUniqueVolumeID::ArrayIDToStr(IDArrayType id) {
+std::string GateUniqueVolumeID::ArrayIDToStr(const IDArrayType &id) {
   std::ostringstream oss;
   size_t i = 0;
   while (i < id.size() && id[i] != -1) {
@@ -140,40 +147,11 @@ std::string GateUniqueVolumeID::ArrayIDToStr(IDArrayType id) {
   return s;
 }
 
-std::ostream &operator<<(std::ostream &os,
-                         const GateUniqueVolumeID::VolumeDepthID &v) {
-  os << v.fDepth << " " << v.fVolumeName << " " << v.fCopyNb;
-  return os;
+G4VPhysicalVolume *GateUniqueVolumeID::GetTopPhysicalVolume() const {
+  return fTouchable.GetVolume(GetDepth());
 }
 
-const std::vector<GateUniqueVolumeID::VolumeDepthID> &
-GateUniqueVolumeID::GetVolumeDepthID() const {
-  return fVolumeDepthID;
-}
-
-G4AffineTransform *GateUniqueVolumeID::GetWorldToLocalTransform(size_t depth) {
-  auto t = GetLocalToWorldTransform(depth);
-  auto translation = t->NetTranslation();
-  auto rotation = t->NetRotation();
-  rotation.invert();
-  translation = rotation * translation;
-  translation = -translation;
-  auto tt = new G4AffineTransform(rotation, translation);
-  delete t; // Avoid memory leak
-  return tt;
-}
-
-G4AffineTransform *GateUniqueVolumeID::GetLocalToWorldTransform(size_t depth) {
-  if (depth >= fVolumeDepthID.size()) {
-    std::ostringstream oss;
-    oss << "Error depth = " << depth << " while vol depth is "
-        << fVolumeDepthID.size() << " " << fID
-        << ". It can happens for example when centroid is outside a deep "
-           "volume (crystal) and in";
-    Fatal(oss.str());
-  }
-  auto &rotation = fVolumeDepthID[depth].fRotation;
-  auto &translation = fVolumeDepthID[depth].fTranslation;
-  auto t = new G4AffineTransform(rotation, translation);
-  return t;
+std::string GateUniqueVolumeID::ComputeStringID(const G4VTouchable *touchable) {
+  const auto arrayID = ComputeArrayID(touchable);
+  return touchable->GetVolume()->GetName() + "-" + ArrayIDToStr(arrayID);
 }

@@ -31,7 +31,7 @@ void GateDigitizerEnergyWindowsActor::InitializeUserInfo(py::dict &user_info) {
   fClearEveryNEvents = DictGetInt(user_info, "clear_every");
 
   // Get information for all channels
-  auto dv = DictGetVecDict(user_info, "channels");
+  const auto dv = DictGetVecDict(user_info, "channels");
   for (auto d : dv) {
     fChannelNames.push_back(DictGetStr(d, "name"));
     fChannelMin.push_back(DictGetDouble(d, "min"));

@@ -22,22 +22,33 @@
 
 class GateUniqueVolumeIDManager {
 public:
+  // No constructor: get or create singleton
   static GateUniqueVolumeIDManager *GetInstance();
 
+  // Get or create a VolumeID on demand, from a touchable
   GateUniqueVolumeID::Pointer GetVolumeID(const G4VTouchable *touchable);
 
   std::vector<GateUniqueVolumeID::Pointer> GetAllVolumeIDs() const;
 
+  static void Clear();
+
 protected:
   GateUniqueVolumeIDManager();
-
   static GateUniqueVolumeIDManager *fInstance;
 
-  // Index of name + ID array to VolumeID
-  // This map is created on the fly in GetVolumeID
-  std::map<std::pair<std::string, GateUniqueVolumeID::IDArrayType>,
-           GateUniqueVolumeID::Pointer>
-      fToVolumeID;
+  static void InitializeNumericIDsForLV(const G4LogicalVolume *lv);
+  static int GetNumericID(const G4LogicalVolume *lv, const std::string &id);
+
+  // Thread-local map: this duplicates the memory and the computation of the UiD
+  // to all threads, but this avoids mutex and complex race conditions.
+  struct threadLocalT {
+    std::map<std::pair<std::string, GateUniqueVolumeID::IDArrayType>,
+             GateUniqueVolumeID::Pointer>
+        fToVolumeID;
+    std::map<const G4LogicalVolume *, std::map<std::string, int>>
+        fLVtoNumericIds;
+  };
+  static G4Cache<threadLocalT> fThreadLocalData;
 };
 
 #endif // GateUniqueVolumeIDManager_h
