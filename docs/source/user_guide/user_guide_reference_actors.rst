@@ -697,6 +697,10 @@ The Coincidence Sorter finds pairs of coincident singles within a defined time w
       min_transaxial_distance,
       transaxial_plane,
       max_axial_distance,
+      chunk_size=100000,
+      return_type="dict",
+      output_file_path=None,
+      output_file_format="root",
    )
 
 Coincidences with oblique lines of response can be excluded by limiting the axial distance between their two singles (`max_axial_distance`).
