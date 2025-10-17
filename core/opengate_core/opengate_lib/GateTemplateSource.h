@@ -32,8 +32,6 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  double PrepareNextTime(double current_simulation_time) override;
-
   void PrepareNextRun() override;
 
   void GeneratePrimaries(G4Event *event, double time) override;
