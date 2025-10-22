@@ -110,14 +110,14 @@ bool GateVActor::HasAction(const std::string &action) {
 bool GateVActor::IsSensitiveDetector() { return HasAction("SteppingAction"); };
 
 void GateVActor::PreUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
+  for (auto f : fFilters) { // TODO: does not seem to do anything
     if (!f->Accept(track))
       return;
   }
 }
 
 void GateVActor::PostUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
+  for (auto f : fFilters) { // TODO: does not seem to do anything
     if (!f->Accept(track))
       return;
   }
@@ -139,6 +139,24 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
 
     => so we decide to simplify and remove "touchable" in the following.
    */
+
+  // if using C++-compiled function
+  // if (fFilter) {
+  // 	if (fFilter(reinterpret_cast<void*>(step)))
+  // 		SteppingAction(step);
+  // 	return true;
+  // }
+
+  // else, if using Python pybind function
+  if (fFilter) {
+    py::gil_scoped_acquire gil_acquire;
+    auto accept = fFilter(step);
+    if (py::cast<bool>(accept)) {
+      // py::gil_scoped_release gil_release;
+      SteppingAction(step);
+    }
+    return true;
+  }
 
   // if the operator is AND, we perform the SteppingAction only if ALL filters
   // are true (If only one is false, we stop and return)
