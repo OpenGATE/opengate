@@ -191,6 +191,8 @@ The DoseActor has the following output:
 - :attr:`~.opengate.actors.doseactors.DoseActor.counts`
 - :attr:`~.opengate.actors.doseactors.DoseActor.density`
 
+Note: to report dose and uncertainty in radiation therapy, please refer to TG-268 report : https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.12702
+
 Reference
 ~~~~~~~~~
 
