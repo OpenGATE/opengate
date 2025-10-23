@@ -442,6 +442,10 @@ def assert_images(
     s = np.sum(d2)
     d1 = d1 / s
     d2 = d2 / s
+    if len(d2) == 0:
+        print_test(False, f"Error, the second image is empty (or only contains zero?")
+        is_ok = False
+
     if test_sad:
         # sum of absolute difference (in %)
         sad = np.fabs(d1 - d2).sum() * 100
