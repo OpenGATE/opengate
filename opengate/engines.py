@@ -946,6 +946,21 @@ class SimulationOutput:
         self.user_hook_log = []
         self.warnings = None
 
+    def __str__(self):
+        s = f"SimulationOutput: \n"
+        if self.simulation is not None:
+            s += f"\t sim = {self.simulation.name}\n"
+        else:
+            s += f"\t sim = None\n"
+        s += f"\t actors = {self.actors}\n"
+        s += f"\t sources = {self.sources}\n"
+        s += f"\t src thread = {self.sources_by_thread}\n"
+        s += f"\t pid = {self.pid}\n"
+        s += f"\t ppi = {self.ppid}\n"
+        s += f"\t user_hook_log = {self.user_hook_log}\n"
+        s += f"\t warnings = {self.warnings}\n"
+        return s
+
     def store_actors(self, simulation_engine):
         self.actors = simulation_engine.simulation.actor_manager.actors
         for actor in self.actors.values():

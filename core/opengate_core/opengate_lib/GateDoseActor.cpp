@@ -138,6 +138,9 @@ void GateDoseActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
   if (fHitType == "pre") {
     position = preGlobal;
   }
+  if (fHitType == "post") {
+    position = postGlobal;
+  }
   if (fHitType == "random") {
     auto x = G4UniformRand();
     auto direction = postGlobal - preGlobal;

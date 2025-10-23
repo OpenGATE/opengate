@@ -22,6 +22,11 @@ GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
   fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
 }
 
+GateVBiasOptrActor::~GateVBiasOptrActor() {
+  // Unsure if it is needed
+  ClearOperators();
+}
+
 std::vector<G4VBiasingOperator *> &
 GateVBiasOptrActor::GetNonConstBiasingOperators() {
   // WARNING PEGI 18: Don't look at it if you are sensitive and have a pure

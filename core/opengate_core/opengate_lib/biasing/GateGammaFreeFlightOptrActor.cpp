@@ -18,8 +18,10 @@ GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
 }
 
 GateGammaFreeFlightOptrActor::~GateGammaFreeFlightOptrActor() {
-  threadLocal_t &l = threadLocalData.Get();
-  delete l.fFreeFlightOperation;
+  // If we delete the fFreeFlightOperation, there are situations where
+  // there is a seg fault after the simulation.
+  // threadLocal_t &l = threadLocalData.Get();
+  // delete l.fFreeFlightOperation;
 }
 
 void GateGammaFreeFlightOptrActor::InitializeCpp() {}
