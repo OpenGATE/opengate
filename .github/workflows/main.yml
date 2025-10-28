@@ -558,6 +558,25 @@ jobs:
         name: results_json-${{ matrix.os }}-${{ matrix.python-version }}
         path: output_dashboard/dashboard_output*.json
 
+  ssh_session:
+    needs: [ build_opengate_wheel, build_opengate_core_wheel ]
+    runs-on: windows-latest
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: dist-*
+        merge-multiple: true
+        path: dist/
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Start SSH session
+      uses: luchihoratiu/debug-via-ssh@main
+      with:
+        NGROK_AUTH_TOKEN: ${{ secrets.NGROK_AUTH_TOKEN }}
+        SSH_PASS: ${{ secrets.SSH_PASS }}
+
   publish_test:
     runs-on: ubuntu-latest
     if: ${{ (always()) && (github.ref == 'refs/heads/master') }}
