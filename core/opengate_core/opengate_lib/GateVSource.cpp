@@ -58,6 +58,9 @@ void GateVSource::UpdateActivity(double time) {
 }
 
 double GateVSource::CalcNextTime(double current_simulation_time) {
+  std::cout << "GateVSource::CalcNextTime current_simulation_time="
+            << current_simulation_time << " fActivity=" << fActivity
+            << std::endl;
   double next_time = current_simulation_time;
   if ((fMaxN <= 0)) {
     next_time =
@@ -77,6 +80,12 @@ void GateVSource::PrepareNextRun() {
 double GateVSource::PrepareNextTime(double current_simulation_time,
                                     double numberOfGeneratedEvents) {
   UpdateActivity(current_simulation_time);
+  std::cout << "GateVSource::PrepareNextTime current_simulation_time="
+            << current_simulation_time
+            << " numberOfGeneratedEvents=" << numberOfGeneratedEvents
+            << " fMaxN=" << fMaxN << " fActivity=" << fActivity
+            << " fStartTime=" << fStartTime << " fEndTime=" << fEndTime
+            << std::endl;
   if ((fMaxN <= 0) || ((fMaxN > numberOfGeneratedEvents) && (fMaxN > 0))) {
     if (current_simulation_time < fStartTime)
       return fStartTime;
@@ -84,6 +93,8 @@ double GateVSource::PrepareNextTime(double current_simulation_time,
       return -1;
 
     double next_time = CalcNextTime(current_simulation_time);
+    std::cout << "GateVSource::PrepareNextTime next_time=" << next_time
+              << std::endl;
     if (next_time >= fEndTime)
       return -1;
     return next_time;
