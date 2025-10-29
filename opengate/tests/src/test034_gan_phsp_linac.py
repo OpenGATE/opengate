@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.visu = False
+    sim.visu_type = "qt"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.output_dir = paths.output
