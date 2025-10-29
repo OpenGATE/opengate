@@ -56,7 +56,7 @@ def main(dependency="test072_coinc_sorter_step1.py"):
     # Read back the coincidences from the root file and remove the colunm named "index"
     with uproot.open(paths.output / "coincidences.root") as file:
         tree = file["Coincidences"]
-        coincidences_from_root = tree.arrays(library="pd").drop(columns=["index"])
+        coincidences_from_root = tree.arrays(library="pd")
     os.remove(paths.output / "coincidences.root")
 
     # Coincidence sorter output to HDF5 is supported only in Python 3.10 and higher
