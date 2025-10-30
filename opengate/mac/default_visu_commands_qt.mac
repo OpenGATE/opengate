@@ -13,9 +13,9 @@
 
 # Work but generate txt on terminal
 /vis/scene/add/axes 0 0 0 50 cm
-/vis/scene/add/text 10 0 0 cm  20 0 0   X
-/vis/scene/add/text 0 10 0 cm  20 0 0   Y
-/vis/scene/add/text 0 0 10 cm  20 0 0   Z
+/vis/scene/add/text 10 0 0 cm  20 0 0   X # red
+/vis/scene/add/text 0 10 0 cm  20 0 0   Y # green
+/vis/scene/add/text 0 0 10 cm  20 0 0   Z # blue
 
 # change orientation (for debug)
 #/vis/viewer/set/upVector 0 0 1
