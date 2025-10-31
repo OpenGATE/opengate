@@ -33,7 +33,7 @@ setup(
         "PyYAML",
         "SimpleITK",
         "spekpy",
-        "icrp107-database",
+        "icrp107-database>=0.0.3",
         "loguru",
     ]
     + install_requires_windows,
