@@ -389,7 +389,7 @@ Probabilities are derived from weights simply by normalizing the weights list.
    spectrum = gate.sources.utility.get_spectrum("Lu177", spectrum_type, database="icrp107")
 
 where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron",
-"auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
+"auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra". From this list,
 only b-spectra is histogram based (see next section), the rest are discrete. ``database`` can be "icrp107" or "radar".
 
 ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`__

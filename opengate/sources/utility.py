@@ -32,7 +32,7 @@ icrp107_emissions = [
     "auger",
     "IE",
     "alpha recoil",
-    "anihilation",
+    "annihilation",
     "fission",
     "betaD",
     "b-spectra",  # beta spectras, both beta+ and beta-
@@ -56,7 +56,7 @@ def get_spectrum(
     spectrum_type : str, optional
         The type of spectrum to retrieve. Default is "gamma". Must be one of
         "gamma", "beta+", "beta-", or "e+". icrp107 allows also one of
-        "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra".
+        "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra".
         In the case of beta spectras, make use of the
         :py:func:`set_source_energy_spectrum` function instead.
 
@@ -250,7 +250,7 @@ def __get_icrp107_spectrum(rad_name: str, spectrum_type=DEFAULT_SPECTRUM_TYPE) -
         The name of the radionuclide in Gate format, e.g. "Tc99m", "Lu177"
 
     spectrum_type : str
-        The type of spectrum to retrieve. Must be one of "gamma", "beta-", "beta+", "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra"
+        The type of spectrum to retrieve. Must be one of "gamma", "beta-", "beta+", "alpha", "X", "neutron", "auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra"
 
     Returns
     -------
