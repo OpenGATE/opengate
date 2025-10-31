@@ -9,6 +9,7 @@ import time
 import logging
 import uproot
 import sys
+from opengate.contrib.root_helpers import *
 
 logger = logging.getLogger(__name__)
 
@@ -41,10 +42,30 @@ class CoincidenceOutputFile:
                 coincidences[col] = pd.Categorical(coincidences[col])
         table_name = "Coincidences"
         if self.format == "root":
+            coincidences_to_write = coincidences.to_dict(orient="list")
+            coincidences_to_write_data = root_tree_get_branch_data(
+                coincidences_to_write
+            )
             if self.empty:
-                self.file[table_name] = coincidences
+                coincidences_to_write_types = root_tree_get_branch_types(
+                    coincidences_to_write_data
+                )
+                root_write_tree(
+                    self.file,
+                    table_name,
+                    coincidences_to_write_types,
+                    coincidences_to_write_data,
+                )
             else:
-                self.file[table_name].extend(coincidences)
+                coincidences_tree = self.file[table_name]
+                coincidences_data = root_tree_get_branch_data(coincidences_tree)
+                coincidences_types = root_tree_get_branch_types(coincidences_data)
+                root_write_tree(
+                    self.file,
+                    table_name,
+                    coincidences_types,
+                    coincidences_data + coincidences_to_write_data,
+                )
         elif self.format == "hdf5":
             coincidences.to_hdf(
                 self.file_path,

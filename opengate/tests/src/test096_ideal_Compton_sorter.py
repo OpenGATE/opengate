@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-from opengate.tests import utility
 from opengate.actors.coincidences import ccmod_ideal_singles
 from opengate.actors.coincidences import ccmod_ideal_coincidences
 from opengate.actors.coincidences import ccmod_make_cones
-from scipy.stats import wasserstein_distance
 import uproot
-import os
 import numpy as np
-import sys
 import pandas as pd
-import matplotlib.pyplot as plt
 from test096_ideal_Compton_sorter_helpers import *
 
 
@@ -80,7 +74,7 @@ def main():
         )
         and is_ok
     )
-    # 477.6 keV for backscatteirng  of 662 keV
+    # 477.6keV for back scattering of 662 keV
     is_ok = (
         utility.check_diff(
             len(E1), len(E1_GATE9), 5, f"Number of coincidences difference :"

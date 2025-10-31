@@ -4,8 +4,6 @@
 # Simulation to test the ideal sorter to recover Compton kinematics
 
 import opengate as gate
-from pathlib import Path
-import os
 from opengate.tests import utility
 
 # colors

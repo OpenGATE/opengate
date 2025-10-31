@@ -3,7 +3,6 @@
 
 import click
 import itk
-
 from opengate import g4_units
 from opengate.contrib.dose.photon_attenuation_image_helpers import (
     create_photon_attenuation_image,
@@ -44,7 +43,6 @@ def go(
 ):
     """
     This function processes an input image to generate an attenuation map based on provided specifications and parameters.
-    The command-line interface (CLI) is used to specify options such as input image, output filename, labels, energy, size, spacing, and database type. Verbose mode can also be toggled for additional output information during execution.
 
     Parameters:
     - image: Input image filename (required).
