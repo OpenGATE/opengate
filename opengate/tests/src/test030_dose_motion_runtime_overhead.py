@@ -16,10 +16,11 @@ def simulate(number_of_dynamic_parametrisations=0):
     sim = gate.Simulation()
 
     # main options
-    sim.g4_verbose = False
+    sim.g4_verbose = True
     sim.visu = False
     sim.random_seed = 983456
     sim.output_dir = paths.output
+    sim.verbose_level = 10
 
     # units
     m = gate.g4_units.m
@@ -78,7 +79,7 @@ def simulate(number_of_dynamic_parametrisations=0):
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
 
     # go
-    sim.run(start_new_process=True)
+    # sim.run(start_new_process=True)
 
     if number_of_dynamic_parametrisations > 1:
         # fake motion
@@ -103,8 +104,10 @@ def simulate(number_of_dynamic_parametrisations=0):
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, output_folder="test030")
 
-    duration_static = simulate(0)
+    # duration_static = simulate(0)
+    duration_static = 0
     n_dyn = [10, 100, 1000]
+    n_dyn = [100]
     durations = []
     for n in n_dyn:
         durations.append(simulate(n))

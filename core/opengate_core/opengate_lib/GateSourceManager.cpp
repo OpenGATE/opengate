@@ -240,6 +240,11 @@ void GateSourceManager::PrepareNextSource() const {
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
     auto t = source->PrepareNextTime(l.fCurrentSimulationTime);
+    std::cout << "GateSourceManager::PrepareNextSource source=" << source->fName
+              << " current_time=" << l.fCurrentSimulationTime
+              << " nextSimulationTime=" << l.fNextSimulationTime
+              << " next_time=" << t << " current_interval=[" << min_time << ", "
+              << max_time << "]" << std::endl;
     if ((t >= min_time) && (t < max_time)) {
       max_time = t;
       l.fNextActiveSource = source;
@@ -252,6 +257,7 @@ void GateSourceManager::PrepareNextSource() const {
 
 void GateSourceManager::CheckForNextRun() const {
   auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = false;
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
@@ -318,7 +324,15 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
   }
 
   // prepare the next source
+  std::cout << "GateSourceManager::GeneratePrimaries1 next_active_source="
+            << (l.fNextActiveSource ? l.fNextActiveSource->fName : "nullptr")
+            << " current_simulation_time=" << l.fCurrentSimulationTime
+            << " fStartNewRun =" << l.fStartNewRun << std::endl;
   PrepareNextSource();
+  std::cout << "GateSourceManager::GeneratePrimaries2 next_active_source="
+            << (l.fNextActiveSource ? l.fNextActiveSource->fName : "nullptr")
+            << " current_simulation_time=" << l.fCurrentSimulationTime
+            << " fStartNewRun =" << l.fStartNewRun << std::endl;
 
   // check if this is not the end of the run
   CheckForNextRun();
