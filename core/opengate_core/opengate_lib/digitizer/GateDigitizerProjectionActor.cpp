@@ -11,6 +11,7 @@
 #include "G4RunManager.hh"
 #include "GateDigiCollectionManager.h"
 #include <iostream>
+#include <itkImageRegionIterator.h>
 
 G4Mutex DigitizerProjectionActorMutex = G4MUTEX_INITIALIZER;
 
@@ -19,8 +20,9 @@ GateDigitizerProjectionActor::GateDigitizerProjectionActor(py::dict &user_info)
   fActions.insert("StartSimulationAction");
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfRunAction");
+  fActions.insert("EndOfRunAction");
   fPhysicalVolumeName = "None";
-  fEnableSquaredImage = false;
+  fSquaredImageIsEnabled = false;
   fImage = nullptr;
 }
 
@@ -37,6 +39,8 @@ void GateDigitizerProjectionActor::InitializeUserInfo(py::dict &user_info) {
 void GateDigitizerProjectionActor::InitializeCpp() {
   fImage = ImageType::New();
   fSquaredImage = ImageType::New();
+  fSquaredTempImage = ImageType::New();
+  fLastEventIdImage = ImageIDType::New();
 }
 
 void GateDigitizerProjectionActor::SetPhysicalVolumeName(
@@ -45,7 +49,7 @@ void GateDigitizerProjectionActor::SetPhysicalVolumeName(
 }
 
 void GateDigitizerProjectionActor::EnableSquaredImage(const bool b) {
-  fEnableSquaredImage = b;
+  fSquaredImageIsEnabled = b;
   // FIXME check if weight exists ?
 }
 
@@ -66,10 +70,19 @@ void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
                                  fDetectorOrientationMatrix);
   AttachImageToVolume<ImageType>(fSquaredImage, fPhysicalVolumeName,
                                  G4ThreeVector(), fDetectorOrientationMatrix);
+  if (fSquaredImageIsEnabled) {
+    AttachImageToVolume<ImageType>(fSquaredTempImage, fPhysicalVolumeName,
+                                   G4ThreeVector(), fDetectorOrientationMatrix);
+    AttachImageToVolume<ImageIDType>(fLastEventIdImage, fPhysicalVolumeName,
+                                     G4ThreeVector(),
+                                     fDetectorOrientationMatrix);
+  }
 }
 
 void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
+  const auto should_init = !(G4Threading::IsMultithreadedApplication() &&
+                             G4Threading::G4GetThreadId() != 0);
   if (run->GetRunID() == 0) {
     // The first time here we need to initialize the input position
     l.fInputPos.resize(fInputDigiCollectionNames.size());
@@ -89,6 +102,18 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
         l.fInputWeights[slice]->clear();
       }
     }
+    // Set size and allocate temporary images
+    if (fSquaredImageIsEnabled && should_init) {
+      fSquaredTempImage->SetRegions(fImage->GetLargestPossibleRegion());
+      fLastEventIdImage->SetRegions(fImage->GetLargestPossibleRegion());
+      fSquaredTempImage->Allocate();
+      fLastEventIdImage->Allocate();
+      DDD("allocate done");
+    }
+  }
+  if (fSquaredImageIsEnabled && should_init) {
+    fSquaredTempImage->FillBuffer(0.0);
+    fLastEventIdImage->FillBuffer(0);
   }
 }
 
@@ -103,6 +128,7 @@ void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
 
 void GateDigitizerProjectionActor::ProcessSlice(const long slice,
                                                 const size_t channel) const {
+  // (Note: this is called during EndOfEventAction and in a mutex scope)
   auto &l = fThreadLocalData.Get();
   const auto *hc = fInputDigiCollections[channel];
   const auto index = hc->GetBeginOfEventIndex();
@@ -116,6 +142,9 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
   const auto &weights = *l.fInputWeights[channel];
   ImageType::PointType point;
   ImageType::IndexType pindex;
+  const auto current_event_id =
+      G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+  // DDD(current_event_id);
 
   // loop on channels
   for (size_t i = index; i < hc->GetSize(); i++) {
@@ -131,9 +160,10 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
       // Take particle weight into account (if in the attribute list)
       if (!weights.empty()) {
         ImageAddValue<ImageType>(fImage, pindex, weights[i]);
-        if (fEnableSquaredImage)
-          ImageAddValue<ImageType>(fSquaredImage, pindex,
-                                   weights[i] * weights[i]);
+        if (fSquaredImageIsEnabled) {
+          // like dose: square must be taken after each event, not each "hit"
+          ScoreSquaredValue(pindex, current_event_id, weights[i]);
+        }
       } else
         ImageAddValue<ImageType>(fImage, pindex, 1.0);
     } else {
@@ -145,6 +175,49 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
       DDE(slice);
       DDE(fImage->GetLargestPossibleRegion().GetSize());
       */
+    }
+  }
+}
+
+void GateDigitizerProjectionActor::ScoreSquaredValue(
+    const ImageType::IndexType &index, const int current_event_id,
+    const double value) const {
+  auto previous_event_id = fLastEventIdImage->GetPixel(index);
+  if (previous_event_id == current_event_id) {
+    // If the current event id is the same as the one at the pixel, we just sum
+    // the values
+    // DDD(previous_event_id);
+    // DDD(value);
+    ImageAddValue<ImageType>(fSquaredTempImage, index, value);
+  } else {
+    // If it is different, we square the deposited value from the last event id
+    // and start accumulating for this new event.
+    const auto v = fSquaredTempImage->GetPixel(index);
+    // DDD(v);
+    ImageAddValue<ImageType>(fSquaredImage, index, v * v);
+    fSquaredTempImage->SetPixel(index, value);
+    fLastEventIdImage->SetPixel(index, current_event_id);
+  }
+}
+
+void GateDigitizerProjectionActor::EndOfRunAction(const G4Run *run) {
+  FlushSquaredValues();
+}
+
+void GateDigitizerProjectionActor::FlushSquaredValues() const {
+  // When multithreading, the order is unclear, so we do it for all the threads,
+  // setting to zero once one is done.
+  G4AutoLock mutex(&DigitizerProjectionActorMutex);
+  itk::ImageRegionIterator<ImageType> iter1(
+      fSquaredTempImage, fSquaredTempImage->GetLargestPossibleRegion());
+  itk::ImageRegionIterator<ImageType> iter2(
+      fSquaredImage, fSquaredImage->GetLargestPossibleRegion());
+  for (iter1.GoToBegin(), iter2.GoToBegin();
+       !iter1.IsAtEnd() && !iter2.IsAtEnd(); ++iter1, ++iter2) {
+    if (iter1.Get() != 0.0) {
+      // Add the (temp) squared to the current accumulated value
+      iter2.Set(iter2.Get() + iter1.Get() * iter1.Get());
+      iter1.Set(0.0);
     }
   }
 }
