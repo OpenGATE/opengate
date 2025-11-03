@@ -51,7 +51,7 @@ void init_GateTLEDoseActor(py::module &m) {
       .def("SetCountsFlag", &GateTLEDoseActor::SetCountsFlag)
       .def("GetPhysicalVolumeName", &GateTLEDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateTLEDoseActor::SetPhysicalVolumeName)
-      .def_readwrite("NbOfEvent", &GateTLEDoseActor::NbOfEvent)
+      .def_readwrite("NbOfEvent", &GateTLEDoseActor::fNbOfEvent)
       .def_readwrite("cpp_edep_image", &GateTLEDoseActor::cpp_edep_image)
       .def_readwrite("cpp_edep_squared_image",
                      &GateTLEDoseActor::cpp_edep_squared_image)
