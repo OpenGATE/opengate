@@ -29,7 +29,6 @@ import torch
 import SimpleITK as sitk
 import numpy as np
 import json
-import os
 from pathlib import Path
 
 

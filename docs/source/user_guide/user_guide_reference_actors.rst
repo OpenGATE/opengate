@@ -191,6 +191,8 @@ The DoseActor has the following output:
 - :attr:`~.opengate.actors.doseactors.DoseActor.counts`
 - :attr:`~.opengate.actors.doseactors.DoseActor.density`
 
+Note: to report dose and uncertainty in radiation therapy, please refer to TG-268 report : https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.12702
+
 Reference
 ~~~~~~~~~
 
@@ -734,6 +736,52 @@ It is important to note that the resulting coincidences are independent of the v
 because the coincidence sorter also considers coincidences between singles in consecutive chunks.
 
 Refer to test072 for more details.
+
+CCMod offline tools
+------------------------------------
+A few functionalities from the Compton camera module (CCMod) have been added.
+These tools are currently available only for offline use.
+
+Ideal singles
+~~~~~~~~~~~~~
+
+The ``ccmod_ideal_singles`` function uses as input a PhaseSpace file that stores all steps  n the slected volume (Compton camera volume), including those with zero energy deposition.  The following attributes are needed : "EventID", "PostPosition_X", "PostPosition_Y", "PostPosition_Z", "ProcessDefinedStep", "PreKineticEnergy", "PostKineticEnergy", "PDGCode", "ParentID". It  filters hits with "PDGCode" = 22 and "ParentID" equals to 0 and "ProcessDefinedStep" different from "Transportation" and "Rayl". Therefore, for a gamma source, it stores only the photonic interactions (except Rayleigh) of the primary photons. In order to use this function for ion sources the "ParentID"  corresponding to the primary photons should be selected. This function also creates a new attribute "IdealTotalEnergyDeposit" using the "PreKineticEnergy" and "PostKineticEnergy"  of the photons at each interaction. Therefore, we can recover Compton and Photoelectric interactions with the correct  position and the  ideal energy deposition obtained from the energy lost by the photon in the interaction.  Position  information and "EventID" are needed for the following steps when coincidences or cones are created.
+
+.. code-block:: python
+
+	root_file = uproot.open(root_filename)
+	phSp_tree = root_file["PhaseSpace"]
+	data = phSp_tree.arrays(library="pd")
+	data_singles = ccmod_ideal_singles(data)
+
+
+See test096 step1 for an example simulation that generates the PhaseSpace file.
+
+Ideal coincidences
+~~~~~~~~~~~~~~~~~~
+The ``ccmod_ideal_coincidences`` sorts entries (hits or singles)  by eventID and groups them into coincidence events by adding a coincidence identification attribute  "CoincID". This function can be used with hits or singles (ideal or not). It adds the "CoincID" attribute to the data when more than two entries have the same eventID, and removes entries where the eventID value appears only once. The input and output are a pandas data frame.
+
+.. code-block:: python
+
+	data_coinc = ccmod_ideal_coincidences(data_singles)
+
+Create cones
+~~~~~~~~~~~~
+The ``ccmod_make_cones``  takes the pandas data frame for coincidences (i.e. with "CoincID" attribute). Attributes for position and energy must be present.
+The name of these attributes can be specified in the function. By default  "TotalEnergyDeposit", "PostPosition_X", "PostPosition_Y" and  "PostPosition_Z" are employed. This function creates a new data frame with the information needed to create Compton cones. The new attributes for each "CoincID" value (each entry) are   "Energy1" (energy of the first interaction of the coincidence), "EnergyRest" (the energy corresponding to the rest of the interactions in the coincidence), and the position of the first ("X1", "Y1", "Z1") and second  interaction ("X2", "Y2", "Z2").
+
+In the following example cones are created using the "IdealTotalEnergyDeposit" attribute instead of "TotalEnergyDeposit".
+
+
+.. code-block:: python
+
+    data_cones = ccmod_make_cones(data_coinc,energy_key_name = "IdealTotalEnergyDeposit", posX_key_name = "PostPosition_X", posY_key_name = "PostPosition_Y",posZ_key_name = "PostPosition_Z")
+
+
+
+
+
+Refer to test096 step2 for more details.
 
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------

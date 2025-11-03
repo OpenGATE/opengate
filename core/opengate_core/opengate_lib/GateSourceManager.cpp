@@ -215,6 +215,8 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
   l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
+  // init the next time as the end of the interval by default
+  l.fNextSimulationTime = l.fCurrentTimeInterval.second;
   // reset abort run flag to false
   fRunTerminationFlag = false;
   // Prepare the run for all sources
@@ -258,6 +260,7 @@ void GateSourceManager::PrepareNextSource() const {
 
 void GateSourceManager::CheckForNextRun() const {
   auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = false;
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
