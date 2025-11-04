@@ -32,8 +32,6 @@ public:
 
   void PrepareNextRun() override;
 
-  double PrepareNextTime(double current_simulation_time) override;
-
   void GeneratePrimaries(G4Event *event,
                          double current_simulation_time) override;
 

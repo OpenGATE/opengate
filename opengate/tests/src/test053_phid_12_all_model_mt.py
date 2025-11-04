@@ -54,7 +54,7 @@ def main(dependency="test053_phid_10_all_ref_mt.py"):
     sim.run_timing_intervals = [[start_time, end_time]]
 
     # go
-    sim.run(start_new_process=True)
+    sim.run(True)
 
     # print stats
     stats = sim.get_actor("stats")

@@ -10,7 +10,8 @@ if __name__ == "__main__":
 
     # main options
     sim.verbose_level = gate.logger.DEBUG
-    sim.running_verbose_level = 0  # gate.EVENT
+    sim.running_verbose_level = 0
+    ui = sim.user_info
     sim.g4_verbose = False
     sim.visu = False
     sim.number_of_threads = 1
@@ -35,7 +36,7 @@ if __name__ == "__main__":
     source1.position.radius = 10 * mm
     source1.direction.type = "momentum"
     source1.direction.momentum = [0, 0, 1]
-    source1.n = 2000
+    source1.n = [2000, 0, 0]
 
     source2 = sim.add_source("GenericSource", "source2")
     source2.particle = "proton"
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     source3.particle = "proton"
     source3.energy.mono = 150 * MeV
     source3.position.radius = 10 * mm
-    source3.n = 2400
+    source3.n = [0, 2400, 0]
     source3.start_time = 0.50 * sec
     source3.direction.type = "momentum"
     source3.direction.momentum = [0, 0, 1]

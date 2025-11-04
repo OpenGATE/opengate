@@ -31,16 +31,6 @@ void GateTemplateSource::InitializeUserInfo(py::dict &user_info) {
   }
 }
 
-double GateTemplateSource::PrepareNextTime(double current_simulation_time) {
-  // If all N events have been generated, we stop (negative time)
-  if (fNumberOfGeneratedEvents >= fN) {
-    return -1;
-  }
-  // Else we consider all event with a timestamp equal to the simulation
-  // StartTime
-  return fStartTime;
-}
-
 void GateTemplateSource::PrepareNextRun() {
   // The following compute the global transformation from
   // the local volume (mother) to the world
