@@ -108,7 +108,6 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
       fLastEventIdImage->SetRegions(fImage->GetLargestPossibleRegion());
       fSquaredTempImage->Allocate();
       fLastEventIdImage->Allocate();
-      DDD("allocate done");
     }
   }
   if (fSquaredImageIsEnabled && should_init) {
