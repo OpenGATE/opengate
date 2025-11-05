@@ -225,7 +225,8 @@ class SPECTConfig(ConfigBase):
         s += f"{self.detector_config}\n"
         s += f"{self.phantom_config}\n"
         s += f"{self.source_config}\n"
-        s += f"{self.acquisition_config}"
+        s += f"{self.acquisition_config}\n"
+        s += f"{self.free_flight_config}"
         return s
 
     def setup_simulation(self, sim, visu=False):
@@ -731,6 +732,9 @@ class FreeFlightConfig(ConfigBase):
         s += f"FreeFlight minimal_weight: {self.minimal_weight}\n"
         s += f"FreeFlight primary_activity: {self.primary_activity / g4_units.Bq} Bq\n"
         s += f"FreeFlight scatter_activity: {self.scatter_activity / g4_units.Bq} Bq\n"
+        s += f"FreeFlight primary_unbiased_volumes: {self.primary_unbiased_volumes} \n"
+        s += f"FreeFlight scatter_unbiased_volumes: {self.scatter_unbiased_volumes} \n"
+        s += f"FreeFlight scatter_kill_interacting_in_volumes: {self.scatter_kill_interacting_in_volumes} \n"
         return s
 
     def initialize(self, sim):
