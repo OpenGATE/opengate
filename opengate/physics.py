@@ -83,17 +83,24 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
         flag_all = "all" in ui.user_limits_particles
         flag_all_charged = "all_charged" in ui.user_limits_particles
         particles_to_consider = [
-                    translate_particle_name_gate_to_geant4(p) for p in ui.user_limits_particles
-                    if p not in ["all", "all_charged"]
-                ]
+            translate_particle_name_gate_to_geant4(p)
+            for p in ui.user_limits_particles
+            if p not in ["all", "all_charged"]
+        ]
 
-        known_g4_particles = list(g4.G4ParticleTable.GetParticleTable().GetParticleList())
+        known_g4_particles = list(
+            g4.G4ParticleTable.GetParticleTable().GetParticleList()
+        )
         known_g4_particle_names = [p.GetParticleName() for p in known_g4_particles]
 
         # check for consistency of particle names
-        wrong_particle_names = [p for p in particles_to_consider if p not in known_g4_particle_names]
+        wrong_particle_names = [
+            p for p in particles_to_consider if p not in known_g4_particle_names
+        ]
         if len(wrong_particle_names) > 0:
-            fatal(f"UserLimits were requested for the following unknown particles: {wrong_particle_names}")
+            fatal(
+                f"UserLimits were requested for the following unknown particles: {wrong_particle_names}"
+            )
 
         for particle in known_g4_particles:
             add_step_limiter = False
