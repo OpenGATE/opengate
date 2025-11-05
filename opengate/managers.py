@@ -700,18 +700,9 @@ class PhysicsManager(GateObject):
             },
         ),
         "user_limits_particles": (
-            Box(
-                [
-                    ("all", False),
-                    ("all_charged", True),
-                    ("gamma", False),
-                    ("electron", False),
-                    ("positron", False),
-                    ("proton", False),
-                ]
-            ),
+            ["all_charged"],
             {
-                "doc": "Switch on (True) or off (False) UserLimits, e.g. step limiter, for individual particles. Default: Step limiter is applied to all charged particles (in accordance with G4 default)."
+                "doc": "List of particles to which UserLimits, e.g. step limiter, are applied. Default: Step limiter is applied to all charged particles (in accordance with G4 default)."
             },
         ),
         "em_parameters": (
@@ -942,11 +933,15 @@ class PhysicsManager(GateObject):
         return self.regions[name]
 
     def find_or_create_region(self, volume_name):
-        if volume_name not in self.volumes_regions_lut:
-            region = self.add_region(volume_name + "_region")
+        if volume_name == self.simulation.world.name:
+            region_name = "DefaultRegionForTheWorld"
+        else:
+            region_name = volume_name + "_region"
+        if region_name not in self.volumes_regions_lut:
+            region = self.add_region(region_name)
             region.associate_volume(volume_name)
         else:
-            region = self.volumes_regions_lut[volume_name]
+            region = self.volumes_regions_lut[region_name]
         return region
 
     def get_biasing_particles_and_processes(self):
@@ -1024,17 +1019,19 @@ class PhysicsManager(GateObject):
     def set_user_limits_particles(self, particle_names):
         if not isinstance(particle_names, (list, set, tuple)):
             particle_names = list([particle_names])
-        for pn in list(particle_names):
-            # try to get current value to check if particle_name is eligible
-            try:
-                _ = self.user_info.user_limits_particles[pn]
-            except KeyError:
-                fatal(
-                    f"Found unknown particle name '{pn}' in set_user_limits_particles(). Eligible names are "
-                    + ", ".join(list(self.user_info.user_limits_particles.keys()))
-                    + "."
-                )
-            self.user_info.user_limits_particles[pn] = True
+        self.user_info.user_limits_particles = particle_names
+
+        # for pn in list(particle_names):
+        #     # try to get current value to check if particle_name is eligible
+        #     try:
+        #         _ = self.user_info.user_limits_particles[pn]
+        #     except KeyError:
+        #         fatal(
+        #             f"Found unknown particle name '{pn}' in set_user_limits_particles(). Eligible names are "
+        #             + ", ".join(list(self.user_info.user_limits_particles.keys()))
+        #             + "."
+        #         )
+        #     self.user_info.user_limits_particles[pn] = True
 
 
 class PostProcessingManager(GateObject):
