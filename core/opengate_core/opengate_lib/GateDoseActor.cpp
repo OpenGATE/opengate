@@ -5,9 +5,11 @@
    See LICENSE.md for further details
    ------------------------------------ -------------- */
 
-#include "G4Electron.hh"
 #include "G4EmCalculator.hh"
+#include "G4Electron.hh"
 #include "G4Gamma.hh"
+#include "G4Proton.hh"
+#include "G4Neutron.hh"
 #include "G4NistManager.hh"
 #include "G4ParticleDefinition.hh"
 #include "G4RandomTools.hh"
@@ -69,6 +71,11 @@ void GateDoseActor::InitializeCpp() {
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
   // Reset the number of events (per run)
   NbOfEvent = 0;
+
+  fNbStepsGammas = 0;
+  fNbStepsNeutrons = 0;
+  fNbStepsElectrons = 0;
+  fNbStepsProtons = 0;
 
   // for stop on target uncertainty. As we reset the nb of events, we reset also
   // this variable
@@ -185,11 +192,25 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     auto edep = step->GetTotalEnergyDeposit() / CLHEP::MeV * w;
     double dose;
 
+    const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+
+    if (p == G4Gamma::Gamma()) {
+      fNbStepsGammas++;
+    }
+    if (p == G4Electron::Electron()) {
+      fNbStepsElectrons++;
+    }
+    if (p == G4Proton::Proton()) {
+      fNbStepsProtons++;
+    }
+    if (p == G4Neutron::Neutron()) {
+      fNbStepsNeutrons++;
+    }
+
     if (fToWaterFlag) {
       auto *current_material = step->GetPreStepPoint()->GetMaterial();
       double dedx_cut = DBL_MAX;
       double dedx_currstep = 0., dedx_water = 0.;
-      const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
       static G4Material *water =
           G4NistManager::Instance()->FindOrBuildMaterial("G4_WATER");
       auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
