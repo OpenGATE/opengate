@@ -6,6 +6,7 @@
    ------------------------------------ -------------- */
 
 #include "GateARFTrainingDatasetActor.h"
+#include "G4Gamma.hh"
 #include "G4RandomTools.hh"
 #include "G4RunManager.hh"
 #include "GateActorManager.h"
@@ -18,8 +19,8 @@ GateARFTrainingDatasetActor::GateARFTrainingDatasetActor(py::dict &user_info)
   // action
   fActions.insert("EndOfEventAction");
   fActions.insert("BeginOfEventAction");
+  fActions.insert("PreUserTrackingAction");
   fActions.insert("SteppingAction");
-  // options
 }
 
 void GateARFTrainingDatasetActor::InitializeUserInfo(py::dict &user_info) {
@@ -28,6 +29,7 @@ void GateARFTrainingDatasetActor::InitializeUserInfo(py::dict &user_info) {
   fEnergyWindowsActor = dynamic_cast<GateDigitizerEnergyWindowsActor *>(
       GateActorManager::GetActor(fInputActorName));
   fRussianRouletteValue = DictGetInt(user_info, "russian_roulette");
+  fPlaneAxis = DictGetVecInt(user_info, "plane_axis");
   // init
   fRussianRouletteFactor = 1.0 / fRussianRouletteValue;
 }
@@ -61,28 +63,51 @@ void GateARFTrainingDatasetActor::StartSimulationAction() {
   fAtt_W = fHits->GetDigiAttribute("window");
 }
 
-void GateARFTrainingDatasetActor::BeginOfEventAction(const G4Event *event) {
-  GateDigitizerHitsCollectionActor::BeginOfEventAction(event);
+void GateARFTrainingDatasetActor::PreUserTrackingAction(const G4Track *track) {
+  GateVActor::PostUserTrackingAction(track);
+  auto &l = fThreadLocalData.Get();
   // some events will never reach the detector,
   // we used fE == -1 to detect and ignore them
-  fThreadLocalData.Get().fE = -1;
+  l.fE = -1;
+  // Reset "first interaction" for each new track
+  l.fIsFirstInteraction = true;
 }
 
 void GateARFTrainingDatasetActor::SteppingAction(G4Step *step) {
+  // First, only consider gammas
+  if (step->GetTrack()->GetDefinition() != G4Gamma::GammaDefinition()) {
+    return;
+  }
+
+  // Then, only consider the first interaction for this event
   auto &l = fThreadLocalData.Get();
-  /*
-   A gamma reach the detector, we store the energy and direction.
-   It will be used at the end of the event, once the digitization process end.
-   */
-  // Get all values, will be filled at end of events.
+  if (!l.fIsFirstInteraction) {
+    return;
+  }
+
+  // When a gamma reach the detector, we store the energy and direction.
+  // It will be used at the end of the event, once the digitization process end.
   auto *pre = step->GetPreStepPoint();
   l.fE = pre->GetKineticEnergy();
   const auto *theTouchable = step->GetPreStepPoint()->GetTouchable();
   auto dir = pre->GetMomentumDirection();
+  // This converts the direction from the world system to the local coordinate
+  // system of the current volume.
   dir = theTouchable->GetHistory()->GetTopTransform().TransformAxis(dir);
   dir = dir.unit();
-  l.fTheta = acos(dir.y()) / CLHEP::degree;
-  l.fPhi = acos(dir.x()) / CLHEP::degree;
+
+  // Add a filter to only accept particles moving towards the detector
+  // This will restrict theta to the [0, 90] degree range.
+  if (dir[fPlaneAxis[2]] <= 0) {
+    return;
+  }
+
+  // Get the angles
+  l.fTheta = acos(dir[fPlaneAxis[2]]) / CLHEP::degree;
+  l.fPhi = atan2(dir[fPlaneAxis[1]], dir[fPlaneAxis[0]]) / CLHEP::degree;
+
+  // This was the first interaction
+  l.fIsFirstInteraction = false;
 }
 
 void GateARFTrainingDatasetActor::EndOfEventAction(const G4Event * /*event*/) {

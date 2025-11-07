@@ -97,5 +97,6 @@ void init_G4LogicalVolume(py::module &m) {
            &G4LogicalVolume::GetFastSimulationManager,
            py::return_value_policy::reference_internal)
       .def("SetBiasWeight", &G4LogicalVolume::SetBiasWeight)
-      .def("GetBiasWeight", &G4LogicalVolume::GetBiasWeight);
+      .def("GetBiasWeight", &G4LogicalVolume::GetBiasWeight)
+      .def("GetInstanceID", &G4LogicalVolume::GetInstanceID);
 }

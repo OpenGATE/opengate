@@ -3,11 +3,8 @@
 import opengate as gate
 from opengate.tests import utility
 from opengate.tests.src.test081_tle_helpers import (
-    add_waterbox,
     add_simple_waterbox,
     add_source,
-    plot_pdd,
-    compare_pdd,
 )
 import sys
 import numpy as np
@@ -108,9 +105,12 @@ def main(argv):
     tle_dose_actor.dose.active = True
     tle_dose_actor.size = [1, 1, 1]
     tle_dose_actor.spacing = [x / y for x, y in zip(waterbox.size, tle_dose_actor.size)]
-    tle_dose_actor.energy_max = 2.5 * MeV
+    tle_dose_actor.tle_threshold_type = "max range"
+    tle_dose_actor.tle_threshold = 10 * mm
     print(f"TLE Dose actor pixels : {tle_dose_actor.size}")
     print(f"TLE Dose actor spacing : {tle_dose_actor.spacing} mm")
+    s = f"/process/eLoss/CSDARange true"
+    sim.g4_commands_before_init.append(s)
 
     # add conventional dose actor
     dose_actor = sim.add_actor("DoseActor", "dose_actor")

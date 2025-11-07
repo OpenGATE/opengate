@@ -5,11 +5,23 @@ from .base import ActorBase
 from ..utility import g4_units
 from .actoroutput import ActorOutputStatisticsActor
 from ..utility import g4_units, g4_best_unit_tuple
-from .actoroutput import ActorOutputBase
+from .actoroutput import ActorOutputBase, ActorOutputSingleImage
 from ..serialization import dump_json
 from ..exception import fatal, warning
 from ..base import process_cls
-from anytree import Node, RenderTree
+
+"""
+    It is feasible to get callback every Run, Event, Track, Step in the python side.
+    However, it is VERY time consuming. For SteppingAction, expect large performance drop.
+    It could be however useful for prototyping or tests.
+
+    it requires "trampoline functions" on the cpp side.
+
+    # it is feasible but very slow !
+    def SteppingAction(self, step, touchable):
+        g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
+        do_something()
+"""
 
 
 class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
@@ -92,20 +104,6 @@ class SimulationStatisticsActor(ActorBase, g4.GateSimulationStatisticsActor):
         self.user_output.stats.write_data_if_requested()
 
 
-"""
-    It is feasible to get callback every Run, Event, Track, Step in the python side.
-    However, it is VERY time consuming. For SteppingAction, expect large performance drop.
-    It could be however useful for prototyping or tests.
-
-    it requires "trampoline functions" on the cpp side.
-
-    # it is feasible but very slow !
-    def SteppingAction(self, step, touchable):
-        g4.GateSimulationStatisticsActor.SteppingAction(self, step, touchable)
-        do_something()
-"""
-
-
 class ActorOutputKillAccordingProcessesActor(ActorOutputBase):
 
     def __init__(self, *args, **kwargs):
@@ -149,6 +147,11 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             },
         ),
     }
+    user_output_config = {
+        "kill_according_processes": {
+            "actor_output_class": ActorOutputKillAccordingProcessesActor,
+        },
+    }
 
     """
     If a particle, not generated or generated within the volume at which our actor is attached, crosses the volume
@@ -157,9 +160,6 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
-        self._add_user_output(
-            ActorOutputKillAccordingProcessesActor, "kill_interacting_particles"
-        )
         self.__initcpp__()
         self.number_of_killed_particles = 0
 
@@ -183,12 +183,12 @@ class KillAccordingProcessesActor(ActorBase, g4.GateKillAccordingProcessesActor)
             fatal("You have to select at least one process ! ")
 
     def EndSimulationAction(self):
-        self.user_output.kill_interacting_particles.number_of_killed_particles = (
+        self.user_output.kill_according_processes.number_of_killed_particles = (
             self.number_of_killed_particles
         )
 
     def __str__(self):
-        s = self.user_output["kill_non_interacting_particles"].__str__()
+        s = self.user_output["kill_according_processes"].__str__()
         return s
 
 
@@ -215,152 +215,73 @@ class KillActor(ActorBase, g4.GateKillActor):
         self.number_of_killed_particles = self.GetNumberOfKilledParticles()
 
 
-def _setter_hook_particles(self, value):
-    if isinstance(value, str):
-        return [value]
-    else:
-        return list(value)
+class AttenuationImageActor(ActorBase, g4.GateAttenuationImageActor):
+    """
+    This actor generates an attenuation image for a simulation run.
+    The output is a single image volume in cm^-1
 
-
-class SplittingActorBase(ActorBase):
-    """Actors based on the G4GenericBiasing class of GEANT4. This class provides tools to interact with GEANT4 processes
-    during a simulation, allowing direct modification of process properties. Additionally, it enables non-physics-based
-    particle splitting (e.g., pure geometrical splitting) to introduce biasing into simulations. SplittingActorBase
-    serves as a foundational class for particle splitting operations, with parameters for configuring the splitting
-    behavior based on various conditions.
+    - image_volume: Input volume from which the attenuation map is generated.
+    - energy: The energy level for which to generate the attenuation image.
+    - database: The database source for attenuation coefficients, either 'EPDL' or 'NIST'.
     """
 
-    # hints for IDE
-    splitting_factor: int
-    bias_primary_only: bool
-    bias_only_once: bool
-    particles: list
+    # IDE hints
+    image_volume = str
+    energy = float
+    database = str
 
     user_info_defaults = {
-        "splitting_factor": (
-            1,
+        "image_volume": (  # FIXME name or not name
+            None,
             {
-                "doc": "Specifies the number of particles to generate each time the splitting mechanism is applied",
+                "doc": "Input ImageVolume for which the attenuation map is generated.",
             },
         ),
-        "bias_primary_only": (
-            True,
-            {
-                "doc": "If true, the splitting mechanism is applied only to particles with a ParentID of 1",
-            },
+        "energy": (
+            None,
+            {"doc": "The energy level for which to generate the attenuation image"},
         ),
-        "bias_only_once": (
-            True,
+        "database": (
+            "EPDL",
             {
-                "doc": "If true, the splitting mechanism is applied only once per particle history",
-            },
-        ),
-        "particles": (
-            [
-                "all",
-            ],
-            {
-                "doc": "Specifies the particles to split. The default value, all, includes all particles",
-                "setter_hook": _setter_hook_particles,
+                "doc": "The database source for attenuation coefficients, either 'EPDL' or 'NIST'",
+                "allowed_values": ("EPDL", "NIST"),
             },
         ),
     }
 
-
-class ComptSplittingActor(SplittingActorBase, g4.GateOptrComptSplittingActor):
-    """This splitting actor enables process-based splitting specifically for Compton interactions. Each time a Compton
-    process occurs, its behavior is modified by generating multiple Compton scattering tracks
-    (splitting factor - 1 additional tracks plus the original) associated with the initial particle.
-    Compton electrons produced in the interaction are also included, in accordance with the secondary cut settings
-    provided by the user.
-    """
-
-    # hints for IDE
-    min_weight_of_particle: float
-    russian_roulette: bool
-    rotation_vector_director: bool
-    vector_director: list
-    max_theta: float
-
-    user_info_defaults = {
-        "min_weight_of_particle": (
-            0,
-            {
-                "doc": "Defines a minimum weight for particles. Particles with weights below this threshold will not be split, limiting the splitting cascade of low-weight particles generated during Compton interactions.",
-            },
-        ),
-        "russian_roulette": (
-            False,
-            {
-                "doc": "If enabled (True), applies a Russian roulette mechanism. Particles emitted in undesired directions are discarded if a random number exceeds 1 / splitting_factor",
-            },
-        ),
-        "vector_director": (
-            [0, 0, 1],
-            {
-                "doc": "Specifies the particle’s direction of interest for the Russian roulette. In this direction, the Russian roulette is not applied",
-            },
-        ),
-        "rotation_vector_director": (
-            False,
-            {
-                "doc": "If enabled, allows the vector_director to rotate based on any rotation applied to a volume to which this actor is attached",
-            },
-        ),
-        "max_theta": (
-            90 * g4_units.deg,
-            {
-                "doc": "Sets the angular range (in degrees) around vector_director within which the Russian roulette mechanism is not applied.",
-            },
-        ),
+    user_output_config = {
+        "attenuation_image": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": True,
+            "write_to_disk": True,
+            "keep_data_in_memory": True,
+            "keep_data_per_run": True,
+        },
     }
-
-    processes = ("compt",)
 
     def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
+        ActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
 
     def __initcpp__(self):
-        g4.GateOptrComptSplittingActor.__init__(self, {"name": self.name})
+        g4.GateAttenuationImageActor.__init__(self, self.user_info)
+        self.AddActions({"BeginOfRunAction"})
 
     def initialize(self):
-        SplittingActorBase.initialize(self)
+        ActorBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
 
-
-class BremSplittingActor(SplittingActorBase, g4.GateBOptrBremSplittingActor):
-    """This splitting actor enables process-based splitting specifically for bremsstrahlung process. Each time a Brem
-    process occurs, its behavior is modified by generating multiple secondary Brem scattering tracks
-    (splitting factor) attached to  the initial charged particle.
-    """
-
-    # hints for IDE
-    processes: list
-
-    user_info_defaults = {
-        "processes": (
-            ["eBrem"],
-            {
-                "doc": "Specifies the process split by this actor. This parameter is set to eBrem, as the actor is specifically developed for this process. It is recommended not to modify this setting.",
-            },
-        ),
-    }
-
-    processes = ("eBrem",)
-
-    def __init__(self, *args, **kwargs):
-        SplittingActorBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateBOptrBremSplittingActor.__init__(self, {"name": self.name})
-
-    def initialize(self):
-        SplittingActorBase.initialize(self)
-        self.InitializeUserInfo(self.user_info)
-        self.InitializeCpp()
+    def BeginOfRunAction(self, run):
+        # the attenuation image is created during the first run only
+        if run.GetRunID() != 0:
+            return
+        mu_image = self.image_volume.create_attenuation_image(
+            self.database, self.energy
+        )
+        self.user_output.attenuation_image.store_data("merged", mu_image)
+        self.user_output.attenuation_image.end_of_simulation()
 
 
 process_cls(ActorOutputStatisticsActor)
@@ -368,6 +289,4 @@ process_cls(SimulationStatisticsActor)
 process_cls(KillActor)
 process_cls(ActorOutputKillAccordingProcessesActor)
 process_cls(KillAccordingProcessesActor)
-process_cls(SplittingActorBase)
-process_cls(ComptSplittingActor)
-process_cls(BremSplittingActor)
+process_cls(AttenuationImageActor)

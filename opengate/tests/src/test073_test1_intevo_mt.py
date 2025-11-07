@@ -27,14 +27,16 @@ if __name__ == "__main__":
     stats.output_filename = "stats1.txt"
 
     crystal = sim.volume_manager.get_volume(f"spect_crystal")
-    proj = sim.get_actor(f"Projection_{crystal.name}")
+    proj = sim.actor_manager.find_actor_by_type("DigitizerProjectionActor")
     proj.output_filename = "projections_test1.mhd"
 
-    hits = sim.get_actor(f"Hits_{crystal.name}")
+    hits = sim.actor_manager.find_actor_by_type("DigitizerHitsCollectionActor")
     hits.output_filename = "output_test1.root"
+    hits.write_to_disk = True
 
-    singles = sim.get_actor(f"Singles_{crystal.name}")
+    singles = sim.actor_manager.find_actor_by_type("DigitizerAdderActor")
     singles.output_filename = "output_test1.root"
+    singles.write_to_disk = True
 
     # start simulation
     sim.run()
@@ -60,7 +62,7 @@ if __name__ == "__main__":
     is_ok = compare_root_hits(crystal, sim, fr, paths.output) and is_ok
 
     # Compare root files
-    sn = f"Singles_{crystal.name}"
+    sn = f"{crystal.name}_singles"
     is_ok = compare_root_singles(crystal, sim, fr, paths.output, sn) and is_ok
 
     # compare images with Gate

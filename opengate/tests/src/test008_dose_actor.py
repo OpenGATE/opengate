@@ -78,6 +78,7 @@ if __name__ == "__main__":
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.edep_uncertainty.active = True
+    dose.edep_squared.active = True
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
     dose.output_filename = "test.nii.gz"
@@ -109,6 +110,19 @@ if __name__ == "__main__":
             dose.edep.get_output_path(),
             stat,
             tolerance=13,
+            ignore_value_data2=0,
+            sum_tolerance=2.5,
+        )
+        and is_ok
+    )
+
+    print("\nDifference for Square")
+    is_ok = (
+        utility.assert_images(
+            ref_path / "output-Edep-Squared.mhd",
+            dose.edep_squared.get_output_path(),
+            stat,
+            tolerance=8,
             ignore_value_data2=0,
             sum_tolerance=1.5,
         )

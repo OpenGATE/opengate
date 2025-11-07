@@ -106,22 +106,26 @@ void init_G4VUserActionInitialization(py::module &m) {
            */
 
       .def("SetUserAction",
-           (void(G4VUserActionInitialization::*)(G4UserRunAction *)) &
-               PyG4VUserActionInitialization::SetUserAction)
+           (void (G4VUserActionInitialization::*)(
+               G4UserRunAction *))&PyG4VUserActionInitialization::SetUserAction)
 
       .def("SetUserAction",
-           (void(G4VUserActionInitialization::*)(G4UserTrackingAction *)) &
-               PyG4VUserActionInitialization::SetUserAction)
+           (void (G4VUserActionInitialization::*)(
+               G4UserTrackingAction
+                   *))&PyG4VUserActionInitialization::SetUserAction)
 
       .def("SetUserAction",
-           (void(G4VUserActionInitialization::*)(G4UserEventAction *)) &
-               PyG4VUserActionInitialization::SetUserAction)
-
-      .def("SetUserAction", (void(G4VUserActionInitialization::*)(
-                                G4VUserPrimaryGeneratorAction *)) &
-                                PyG4VUserActionInitialization::SetUserAction)
+           (void (G4VUserActionInitialization::*)(
+               G4UserEventAction
+                   *))&PyG4VUserActionInitialization::SetUserAction)
 
       .def("SetUserAction",
-           (void(G4VUserActionInitialization::*)(G4UserSteppingAction *)) &
-               PyG4VUserActionInitialization::SetUserAction);
+           (void (G4VUserActionInitialization::*)(
+               G4VUserPrimaryGeneratorAction
+                   *))&PyG4VUserActionInitialization::SetUserAction)
+
+      .def("SetUserAction",
+           (void (G4VUserActionInitialization::*)(
+               G4UserSteppingAction
+                   *))&PyG4VUserActionInitialization::SetUserAction);
 }

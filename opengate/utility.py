@@ -6,7 +6,7 @@ import random
 from box import Box
 import textwrap
 import inspect
-import pkg_resources
+import importlib.resources as resources
 import sys
 from pathlib import Path
 import string
@@ -19,6 +19,7 @@ from importlib.metadata import version
 import shutil
 
 import opengate_core as g4
+from opengate import get_site_packages_dir
 from .exception import fatal, warning
 
 
@@ -56,7 +57,7 @@ git = LazyModuleLoader("git")
 
 def assert_equal_dic(d1, d2, name=""):
     for k in d1:
-        if not k in d2:
+        if k not in d2:
             fatal(f"ERROR missing key {k} in {name}")
         if isinstance(d1[k], np.ndarray):
             if np.any(d2[k] != d1[k]):
@@ -65,7 +66,7 @@ def assert_equal_dic(d1, d2, name=""):
             if d2[k] != d1[k]:
                 fatal(f"ERROR value for {k} in {name}")
     for k in d2:
-        if not k in d1:
+        if k not in d1:
             fatal(f"ERROR, additional key {k} in {name}")
 
 
@@ -378,18 +379,17 @@ def make_builders(class_names):
 def read_mac_file_to_commands(filename):
     # read a file located into the 'mac' folder of the source code
     # return a list of commands
-    resource_package = __name__
-    resource_path = "/".join(("mac", filename))  # Do not use os.filename.join()
-    template = pkg_resources.resource_string(resource_package, resource_path)
-    c = template.decode("utf-8")
-    commands = []
-    for s in c.split("\n"):
-        if s == "":
-            continue
-        # if s[0] == '#':
-        #    continue
-        commands.append(s)
-    return commands
+    resource_package = __package__
+    with resources.open_text(f"{resource_package}.mac", filename) as f:
+        c = f.read()
+        commands = []
+        for s in c.split("\n"):
+            if s == "":
+                continue
+            # if s[0] == '#':
+            #    continue
+            commands.append(s)
+        return commands
 
 
 def ensure_filename_is_str(filename):
@@ -426,7 +426,7 @@ def get_random_folder_name(size=8, create=True):
         if not directory.exists():
             print(f"Creating output folder {r}")
             directory.mkdir(parents=True, exist_ok=True)
-        if not directory.isdir():
+        if not directory.is_dir():
             fatal(f"Error, while creating {r}.")
     return r
 
@@ -512,8 +512,8 @@ def get_library_path():
         return "unknown"
 
     files = os.listdir(path)
-    lib_ext = "dll" if os.name == "nt" else "so"
-    libs = list(filter(lambda file: file.endswith(f".{lib_ext}"), files))
+    lib_ext = "pyd" if os.name == "nt" else "so"
+    libs = [file for file in files if file.endswith(f".{lib_ext}")]
     if len(libs) == 0:
         return "unknown"
     elif len(libs) > 1:
@@ -540,7 +540,7 @@ def print_opengate_info():
     pv = sys.version.replace("\n", "")
     print(f"Python version   {pv}")
     print(f"Platform         {sys.platform}")
-    print(f"Site package     {g4.get_site_packages_dir()}")
+    print(f"Site package     {get_site_packages_dir()}")
 
     print(f"Geant4 version   {v}")
     print(f"Geant4 MT        {gi.get_G4MULTITHREADED()}")
@@ -604,3 +604,30 @@ def standard_error_c4_correction(n):
     return (
         np.sqrt(2 / (n - 1)) * sc.special.gamma(n / 2) / sc.special.gamma((n - 1) / 2)
     )
+
+
+def read_json_file(filename: Path) -> dict:
+    """
+    Read a JSON file into a Python dictionary.
+
+    :param filename: Path object
+        The filename of the JSON file to read.
+    :return: dict
+        The data from the JSON file.
+    """
+    if not filename.is_file():
+        fatal(f"File {filename} does not exist.")
+
+    with open(filename, "rb") as f:
+        return json.load(f)
+
+
+def get_basename_and_extension(filename):
+    """Return the basename and extension of a filename even if .nii.gz is used."""
+    base = filename
+    extensions = []
+    while os.path.splitext(base)[1]:
+        base, ext = os.path.splitext(base)
+        extensions.append(ext)
+    extensions.reverse()
+    return os.path.basename(base), "".join(extensions)

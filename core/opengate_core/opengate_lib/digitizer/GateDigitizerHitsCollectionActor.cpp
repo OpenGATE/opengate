@@ -43,12 +43,12 @@ void GateDigitizerHitsCollectionActor::InitializeCpp() {
   fHits = nullptr;
 }
 
-// Called when the simulation start
+// Called when the simulation starts
 void GateDigitizerHitsCollectionActor::StartSimulationAction() {
   auto *dcm = GateDigiCollectionManager::GetInstance();
   fHits = dcm->NewDigiCollection(fHitsCollectionName);
-  // This order is important: filename and attributes must be set before Root
-  // initialization
+  // This order is important: filename and attributes must be set
+  // before Root initialisation
   std::string outputPath;
   if (!GetWriteToDisk(fOutputNameRoot)) {
     outputPath = "";
@@ -78,27 +78,30 @@ void GateDigitizerHitsCollectionActor::BeginOfEventAction(
      actors may need hits from several events, so we leave the option to keep
      more events. It only fills to root if needed.
    */
-  bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
+  const bool must_clear = event->GetEventID() % fClearEveryNEvents == 0;
   fHits->FillToRootIfNeeded(must_clear);
 }
 
-// Called every time a batch of step must be processed
+// Called every time a batch of steps must be processed
 void GateDigitizerHitsCollectionActor::SteppingAction(G4Step *step) {
-  // Do not store step with zero edep
+  // Do not store the steps with zero edep
   if (fKeepZeroEdep || step->GetTotalEnergyDeposit() > 0)
     fHits->FillHits(step);
   if (fDebug) {
     // nb edep = 0
-    auto s = fHits->DumpLastDigi();
-    auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-    std::string x =
+    const auto s = fHits->DumpLastDigi();
+    const auto id =
+        G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    const std::string x =
         step->GetTotalEnergyDeposit() > 0 ? "" : " (not stored edep=0) ";
-    std::cout << GetName() << " " << id << x << " " << s << std::endl;
+    std::cout << GetName() << " ev=" << id
+              << " track=" << step->GetTrack()->GetTrackID() << " " << x << " "
+              << s << std::endl;
     // nb transportation
-    auto post = step->GetPostStepPoint();
+    const auto post = step->GetPostStepPoint();
     auto process = post->GetProcessDefinedStep();
     if (process != nullptr) {
-      auto pname = process->GetProcessName();
+      const auto pname = process->GetProcessName();
       static int nb_tr = 0;
       if (pname == "Transportation") {
         nb_tr++;
@@ -112,8 +115,8 @@ void GateDigitizerHitsCollectionActor::SteppingAction(G4Step *step) {
 void GateDigitizerHitsCollectionActor::EndOfRunAction(const G4Run * /*run*/) {
   /*
    * We consider flushing values every run.
-   * If a process need to access hits across different run, this should be move
-   * in EndOfSimulationWorkerAction.
+   * If a process needs to access hits across different runs, this should be
+   * moved in EndOfSimulationWorkerAction.
    */
   fHits->FillToRootIfNeeded(true);
 }
@@ -124,7 +127,7 @@ void GateDigitizerHitsCollectionActor::EndOfSimulationWorkerAction(
   fHits->Write();
 }
 
-// Called when the simulation end
+// Called when the simulation ends
 void GateDigitizerHitsCollectionActor::EndSimulationAction() {
   fHits->Write();
   fHits->Close();

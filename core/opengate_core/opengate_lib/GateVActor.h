@@ -12,7 +12,6 @@
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
-#include <functional>
 #include <pybind11/stl.h>
 
 namespace py = pybind11;
@@ -38,9 +37,9 @@ public:
   // Every step in this volume will trigger a SteppingAction
   void RegisterSD(G4LogicalVolume *lv);
 
-  const bool HasAction(std::string);
+  bool HasAction(const std::string &);
 
-  const bool IsSensitiveDetector();
+  bool IsSensitiveDetector();
 
   // Called when the simulation start (master thread only)
   virtual void StartSimulationAction() {}
@@ -48,12 +47,14 @@ public:
   // Called when the simulation end (master thread only)
   virtual void EndSimulationAction() {}
 
+  // Call when the python actor is closed
+  virtual void Close() {}
+
   // Called by Geant4 every hit. Call SteppingAction and return True
   // Take care about the filters
   G4bool ProcessHits(G4Step *, G4TouchableHistory *) override;
 
   /*
-
    ************ WARNING ************
 
    * In multi-thread mode, there is (for the moment) a single actor object
@@ -106,28 +107,29 @@ public:
   // Called every FillHits, should be overloaded
   virtual void SteppingAction(G4Step *) {}
 
-  void SetOutputPath(std::string outputName, std::string outputPath);
+  void SetOutputPath(const std::string &outputName,
+                     const std::string &outputPath);
 
-  std::string GetOutputPath(std::string outputName);
+  std::string GetOutputPath(std::string outputName) const;
 
-  void SetWriteToDisk(std::string outputName, bool writeToDisk);
+  void SetWriteToDisk(const std::string &outputName, bool writeToDisk);
 
-  bool GetWriteToDisk(std::string outputName);
+  bool GetWriteToDisk(std::string outputName) const;
 
-  void AddActorOutputInfo(std::string outputName);
+  void AddActorOutputInfo(const std::string &outputName);
 
-  //  void RegisterCallBack(std::string, std::function);
+  static bool
+  IsStepEnteringVolume(const G4Step *step,
+                       const std::vector<const G4LogicalVolume *> &volumes);
 
-  // convenience function to get the output path of this actor via the callback
-  // function
-  //  std::string GetOutputPathString(std::string output_type, int run_index);
+  bool IsStepExitingAttachedVolume(const G4Step *step) const;
 
   inline static std::string fOutputNameRoot = "root_output";
 
   struct ActorOutputInfo {
-    std::string outputName;
-    std::string outputPath;
-    bool writeToDisk;
+    std::string outputName = "";
+    std::string outputPath = "";
+    bool writeToDisk = false;
   };
 
   typedef ActorOutputInfo ActorOutputInfo_t;
@@ -136,24 +138,29 @@ public:
 
   void SetSourceManager(GateSourceManager *s);
 
+  void SetMotherAttachedToVolumeName(const std::string &attachedToVolumeName);
+
   // List of actions (set to trigger some actions)
   // Can be set either on cpp or py side
   std::set<std::string> fActions;
 
   // Name of the mother volume (logical volume)
   std::string fAttachedToVolumeName;
+  std::string fAttachedToVolumeMotherName;
 
   // List of active filters
   std::vector<GateVFilter *> fFilters;
 
-  // callback functions
-  //  typedef CallbackMap std::map<std::string, std::function>;
-  //  CallbackMap fcallBacks;
-
   // Is this actor ok for multi-thread ?
   bool fMultiThreadReady;
+
+  // Name of the actor
+  std::string fActorName;
+
+  // Is the boolean operator between filters an 'and' ?
   bool fOperatorIsAnd;
 
+  // Should this actor write to disk ?
   bool fWriteToDisk;
 
   GateSourceManager *fSourceManager;

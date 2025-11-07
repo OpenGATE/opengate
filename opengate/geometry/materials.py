@@ -36,7 +36,7 @@ def read_voxel_materials(filename, def_mat="G4_AIR"):
 
     # consider all values
     pix_mat = []
-    previous = None
+    previous = materials[0][0]
     for m in materials:
         if previous and previous > m[0]:
             fatal(
@@ -106,7 +106,7 @@ def HU_read_density_table(file_density):
                 continue
             if words[0][0] == "#":
                 continue
-            d = {"HU": int(words[0]), "density": float(words[1])}
+            d = {"HU": float(words[0]), "density": float(words[1])}
             densities.append(d)
     return densities
 
@@ -297,8 +297,8 @@ def create_density_img(img_volume, material_database):
     ----------
     img_volume : ImageVolume
         opengate ImageVolume class instance
-    material_database : dict
-        dictionary with keys: material name, values: G4 material obj
+    material_database : MaterialDatabase
+        simulation.volume_manager.material_database
 
     Returns
     -------
@@ -306,11 +306,16 @@ def create_density_img(img_volume, material_database):
         Image of the same size and resolution of the ct. The voxel value is the density of the voxel converted to g/cm3.
 
     """
+    img_volume.load_input_image()
     act = itk.GetArrayFromImage(img_volume.itk_image)
     arho = np.zeros(act.shape, dtype=np.float32)
 
     for hu0, hu1, mat_name in img_volume.voxel_materials:
-        arho[(act >= hu0) * (act < hu1)] = material_database[mat_name].GetDensity()
+        if mat_name not in material_database.g4_materials:
+            material_database.FindOrBuildMaterial(mat_name)
+        arho[(act >= hu0) * (act < hu1)] = material_database.g4_materials[
+            mat_name
+        ].GetDensity()
 
     arho *= g4_units.cm3 / g4_units.g
     rho = itk.GetImageFromArray(arho)
@@ -383,6 +388,120 @@ def create_mass_img(ct_itk, hu_density_file, overrides=dict()):
     return mass
 
 
+class IsotopeBuilder:
+    """
+    A description of a G4Isotope that can be build.
+    """
+
+    def __init__(self, material_database):
+        self.type = "isotope"
+        self.name = None
+        self.Z = None
+        self.N = None
+        self.A = None
+        self.material_database = material_database
+
+    def __repr__(self):
+        u = g4_units.g_mole
+        s = f"({self.type}) {self.name} Z={self.Z} N={self.N} A={self.A / u} g/mole"
+        return s
+
+    def read(self, line):
+        self.type = "isotope"
+        s = line.split(":")
+        # name
+        self.name = s[0]
+        s = s[1].strip()
+        s = s.split(";")
+        # Z
+        self.Z = int(read_tag(s[0], "Z"))
+        # N
+        self.N = int(read_tag(s[1], "N"))
+        # A with units
+        self.A = read_tag_with_unit(s[2], "A")
+
+    def build(self):
+        m = g4.G4Isotope(self.name, self.Z, self.N, self.A)
+        return m
+
+
+class IsotopicElementBuilder:
+    """
+    A description of an element created from isotopes, that will can be built on demand.
+    An element is described by a list of components that can be isotopes or sub-elements.
+    """
+
+    def __init__(self, material_database):
+        self.type = "isotope"
+        self.name = None
+        self.symbol = None
+        self.n = None
+        self.components = {}
+        self.material_database = material_database
+
+    def __repr__(self):
+        s = f"({self.type}) {self.name} {self.n} {self.components}"
+        return s
+
+    def read(self, f, line):
+        # read the name
+        s = line.split(":")
+        if len(s) != 2:
+            fatal(
+                f"Error line {line}, expecting an element name follow by a colon ':'."
+            )
+        name = s[0]
+        self.name = name
+
+        # reading n and symbol
+        s = s[1].split(";")
+        if len(s) != 2:
+            fatal(f"Error while parsing element {self.name}, line {line}")
+
+        # nb of components
+        self.n = int(read_tag(s[0], "n"))
+
+        # symbol
+        self.symbol = read_tag(s[1], "S")
+
+        # elements
+        for e in range(self.n):
+            line = read_next_line(f)
+            if line.startswith("+iso"):
+                e = self.read_one_isotope(line)
+                self.components[e.name] = e
+
+    def read_one_isotope(self, line):
+        # skip the initial +iso
+        s = line.split("+iso:")
+        s = re.split("[;,]", s[1])
+        if len(s) != 2:
+            fatal(f"Error while reading the line: {line} \n" f'Expected "name=" ; "f="')
+        # read the name
+        elname = read_tag(s[0], "name")
+        if elname == "auto":
+            elname = self.name
+        if not elname:
+            fatal(
+                f"Error reading line {line} \n during the elements of material {self.name}"
+            )
+        # read f
+        f = float(read_tag(s[1], "f"))
+        e = Box({"name": elname, "f": f, "type": "isotope"})
+        return e
+
+    def build(self):
+        m = g4.G4Element(self.name, self.symbol, self.n)
+        # add all components
+        for iso in self.components.values():
+            self.add_iso_to_element(m, iso)
+        return m
+
+    def add_iso_to_element(self, elem, iso):
+        b = self.material_database.FindOrBuildIsotope(iso.name)
+        elem.AddIsotope(b, iso.f)
+
+
 class ElementBuilder:
     """
     A description of a G4Element that can be build.
@@ -417,7 +536,6 @@ class ElementBuilder:
 
     def build(self):
         m = g4.G4Element(self.name, self.symbol, self.Zeff, self.Aeff)
-        # FIXME alternative with Build an element from isotopes via AddIsotope ?
         return m
 
 
@@ -505,6 +623,11 @@ class MaterialBuilder:
         n = read_tag(s[1], "n")
         if not n:
             f = float(read_tag(s[1], "f"))
+            if f == 0:
+                fatal(
+                    f"Error during reading material database {self.material_database.current_filename}"
+                    f", for the sub material {elname}, the fraction 'f=' is 0."
+                )
         else:
             n = int(n)
         e = Box({"name": elname, "n": n, "f": f, "type": "element"})
@@ -613,6 +736,9 @@ class MaterialDatabase:
         # list of all read element (not build)
         self.element_builders = {}
         self.element_builders_by_filename = {}
+        # list of all read isotope (not build)
+        self.isotope_builders = {}
+        self.isotope_builders_by_filename = {}
         # additional manually added materials
         self.new_materials_nb_atoms = {}
         self.new_materials_weights = {}
@@ -620,6 +746,8 @@ class MaterialDatabase:
         self.g4_materials = {}
         # built elements
         self.g4_elements = {}
+        # built isotopes
+        self.g4_isotopes = {}
         # internal state when reading
         self.current_section = None
         self.current_filename = None
@@ -649,6 +777,7 @@ class MaterialDatabase:
         self.current_filename = filename
         self.element_builders_by_filename[self.current_filename] = {}
         self.material_builders_by_filename[self.current_filename] = {}
+        self.isotope_builders_by_filename[self.current_filename] = {}
         with open(filename, "r") as f:
             line = f.readline()
             while line:
@@ -665,6 +794,9 @@ class MaterialDatabase:
             return
         # check if the current section change
         w = line.split()[0]
+        if w == "[Isotopes]":
+            self.current_section = "isotope"
+            return
         if w == "[Elements]":
             self.current_section = "element"
             return
@@ -675,11 +807,21 @@ class MaterialDatabase:
             fatal(
                 f"Error while reading the file {self.current_filename}, "
                 f"current section is {self.current_section}. "
-                f"File must start with [Elements] or [Materials]"
+                f"File must start with [Isotopes], [Elements] or [Materials]"
             )
-        if self.current_section == "element":
-            b = ElementBuilder(self)
+        if self.current_section == "isotope":
+            b = IsotopeBuilder(self)
             b.read(line)
+            self.isotope_builders[b.name] = b
+            self.isotope_builders_by_filename[self.current_filename][b.name] = b
+        if self.current_section == "element":
+            b = None
+            if "Z=" in line:
+                b = ElementBuilder(self)
+                b.read(line)
+            if "n=" in line:
+                b = IsotopicElementBuilder(self)
+                b.read(f, line)
             self.element_builders[b.name] = b
             self.element_builders_by_filename[self.current_filename][b.name] = b
         if self.current_section == "material":
@@ -741,6 +883,17 @@ class MaterialDatabase:
             self.g4_materials[mat_name] = mat
         self.new_materials_weights = []
 
+    def FindOrBuildIsotope(self, isotope_name):
+        # try to build the isotope if it does not yet exist
+        if isotope_name not in self.g4_materials:
+            if isotope_name in self.isotope_builders:
+                self.g4_isotopes[isotope_name] = self.isotope_builders[
+                    isotope_name
+                ].build()
+            else:
+                fatal(f'Cannot find nor build isotope named "{isotope_name}"')
+        return self.g4_isotopes[isotope_name]
+
     def FindOrBuildMaterial(self, material_name):
         self.init_NIST()
         self.init_user_mat()
@@ -783,3 +936,13 @@ class MaterialDatabase:
                 f"The database '{db}' is not in the list of read database: {self.filenames}"
             )
         return [name for name in self.material_builders_by_filename[db]]
+
+
+def write_material_database(sim, materials, filename):
+    fn = str(filename)
+    with open(fn, "w") as file:
+        file.write("[Materials]\n")
+        for mat in materials:
+            m = sim.volume_manager.material_database.FindOrBuildMaterial(mat)
+            s = dump_material_like_Gate(m)
+            file.write(s)

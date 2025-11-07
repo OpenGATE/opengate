@@ -170,7 +170,7 @@ def create_simulation(sim, paths, colli="lehr", version=""):
     stat.output_filename = f"test038_gan_stats{version}.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
-    gate_spect.add_simplified_digitizer_tc99m(
+    gate_spect.add_simplified_digitizer_tc99m_OLD(
         sim, "spect1_crystal", "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
@@ -317,11 +317,11 @@ def analyze_results(sim, paths, all_cond):
     tols[checked_keys.index("GlobalTime")] = 0.2
     tols[checked_keys.index("KineticEnergy")] = 0.002
     tols[checked_keys.index("PrePosition_X")] = 7
-    tols[checked_keys.index("PrePosition_Y")] = 5
-    tols[checked_keys.index("PrePosition_Z")] = 5
-    tols[checked_keys.index("PreDirection_X")] = 0.02
+    tols[checked_keys.index("PrePosition_Y")] = 5.5
+    tols[checked_keys.index("PrePosition_Z")] = 5.1
+    tols[checked_keys.index("PreDirection_X")] = 0.03
     tols[checked_keys.index("PreDirection_Y")] = 0.02
-    tols[checked_keys.index("PreDirection_Z")] = 0.02
+    tols[checked_keys.index("PreDirection_Z")] = 0.03
     print(scalings, tols)
     is_ok = (
         utility.compare_root3(

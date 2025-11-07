@@ -34,15 +34,22 @@ void init_G4NistManager(py::module &);
 
 void init_G4Material(py::module &);
 
+void init_G4MaterialCutsCouple(py::module &);
+
 void init_G4Element(py::module &);
+
+void init_G4Isotope(py::module &);
 
 void init_G4IonisParamMat(py::module &);
 
 void init_G4MaterialPropertiesTable(py::module &);
 
+void init_GateMaterialMuHandler(py::module &);
+
 // surfaces
 
 void init_G4OpticalSurface(py::module &);
+
 void init_G4LogicalBorderSurface(py::module &);
 
 // run
@@ -169,6 +176,8 @@ void init_G4RegionStore(py::module &);
 // geometry/solids
 void init_G4Box(py::module &);
 
+void init_G4Ellipsoid(py::module &);
+
 void init_G4Polyhedra(py::module &);
 
 void init_G4Sphere(py::module &);
@@ -281,8 +290,11 @@ void init_GateInfo(py::module &);
 
 void init_GateVActor(py::module &);
 
+void init_GateWeightedEdepActor(py::module &);
+
 void init_GateActorManager(py::module &);
 
+// Gate filters
 void init_GateVFilter(py::module &);
 
 void init_GateParticleFilter(py::module &);
@@ -295,15 +307,18 @@ void init_GateTrackCreatorProcessFilter(py::module &);
 
 void init_GateKineticEnergyFilter(py::module &);
 
+// Gate actors
 void init_GateDoseActor(py::module &m);
-
-void init_GateTLEDoseActor(py::module &m);
 
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
 
 void init_GateProductionAndStoppingActor(py::module &m);
+
+void init_GateBeamQualityActor(py::module &m);
+
+void init_GateEmCalculatorActor(py::module &m);
 
 void init_GateARFActor(py::module &m);
 
@@ -313,11 +328,68 @@ void init_GateKillActor(py::module &);
 
 void init_GateKillAccordingProcessesActor(py::module &);
 
+void init_GateAttenuationImageActor(py::module &);
+
 void init_itk_image(py::module &);
 
 void init_GateImageNestedParameterisation(py::module &);
 
 void init_GateRepeatParameterisation(py::module &);
+
+void init_GateRunAction(py::module &);
+
+void init_GateEventAction(py::module &);
+
+void init_GateTrackingAction(py::module &);
+
+void init_GateSimulationStatisticsActor(py::module &);
+
+void init_GatePhaseSpaceActor(py::module &);
+
+// biasing
+void init_GateBOptrBremSplittingActor(py::module &m);
+
+void init_GateGammaFreeFlightOptrActor(py::module &m);
+
+void init_GateScatterSplittingFreeFlightOptrActor(py::module &m);
+
+void init_G4VBiasingOperator(py::module &m);
+
+void init_GateTLEDoseActor(py::module &m);
+
+// Gate digit
+void init_GateVDigitizerWithOutputActor(py::module &);
+
+void init_GateHitsCollectionActor(py::module &);
+
+void init_GateHitsAdderActor(py::module &);
+
+void init_GateDigitizerReadoutActor(py::module &m);
+
+void init_GateDigitizerBlurringActor(py::module &m);
+
+void init_GateDigitizerEfficiencyActor(py::module &m);
+
+void init_GateDigitizerSpatialBlurringActor(py::module &m);
+
+void init_GateDigitizerEnergyWindowsActor(py::module &m);
+
+void init_GateDigiAttributeProcessDefinedStepInVolumeActor(py::module &m);
+
+void init_GateDigitizerProjectionActor(py::module &m);
+
+void init_GateDigiAttributeManager(py::module &m);
+
+void init_GateVDigiAttribute(py::module &m);
+
+void init_GateUniqueVolumeIDManager(py::module &);
+
+void init_GateUniqueVolumeID(py::module &);
+
+void init_GateGeometryUtils(py::module &);
+
+// Gate source
+void init_GateVSource(py::module &);
 
 void init_GateSourceManager(py::module &);
 
@@ -337,47 +409,7 @@ void init_GatePhaseSpaceSource(py::module &);
 
 void init_GateGANPairSource(py::module &);
 
-void init_GateRunAction(py::module &);
-
-void init_GateEventAction(py::module &);
-
-void init_GateTrackingAction(py::module &);
-
-void init_GateSimulationStatisticsActor(py::module &);
-
-void init_GatePhaseSpaceActor(py::module &);
-
-// void init_GateComptonSplittingActor(py::module &);
-
-void init_GateOptrComptSplittingActor(py::module &m);
-
-void init_GateBOptrBremSplittingActor(py::module &m);
-
-void init_G4VBiasingOperator(py::module &m);
-
-void init_GateVDigitizerWithOutputActor(py::module &);
-
-void init_GateHitsCollectionActor(py::module &);
-
-void init_GateHitsAdderActor(py::module &);
-
-void init_GateDigitizerReadoutActor(py::module &m);
-
-void init_GateDigitizerBlurringActor(py::module &m);
-
-void init_GateDigitizerEfficiencyActor(py::module &m);
-
-void init_GateDigitizerSpatialBlurringActor(py::module &m);
-
-void init_GateDigitizerEnergyWindowsActor(py::module &m);
-
-void init_GateDigitizerProjectionActor(py::module &m);
-
-void init_GateDigiAttributeManager(py::module &m);
-
-void init_GateVDigiAttribute(py::module &m);
-
-void init_GateVSource(py::module &);
+// Gate misc
 
 void init_GateExceptionHandler(py::module &);
 
@@ -385,11 +417,9 @@ void init_GateNTuple(py::module &);
 
 void init_GateHelpers(py::module &);
 
-void init_GateUniqueVolumeIDManager(py::module &);
+void init_GateVolumeVoxelizer(py::module &);
 
-void init_GateUniqueVolumeID(py::module &);
-
-void init_GateVolumeDepthID(py::module &m);
+void init_GateImageBox(py::module &m);
 
 PYBIND11_MODULE(opengate_core, m) {
 
@@ -405,9 +435,12 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_G4NistManager(m);
   init_G4Material(m);
+  init_G4MaterialCutsCouple(m);
   init_G4Element(m);
+  init_G4Isotope(m);
   init_G4IonisParamMat(m);
   init_G4MaterialPropertiesTable(m);
+  init_GateMaterialMuHandler(m);
 
   init_G4VSteppingVerbose(m);
 
@@ -462,6 +495,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4RegionStore(m);
 
   init_G4Box(m);
+  init_G4Ellipsoid(m);
   init_G4Polyhedra(m);
   init_G4Sphere(m);
   init_G4Trap(m);
@@ -531,7 +565,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4VisAttributes(m);
 
   // interfaces
-#if DUSE_USE_VISU > 0
+#if USE_VISU > 0
   init_QMainWindow(m);
   init_G4UIExecutive(m);
   init_G4UIQt(m);
@@ -541,6 +575,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateCheckDeex(m);
   init_GateInfo(m);
   init_GateVActor(m);
+  init_GateWeightedEdepActor(m);
   init_GateActorManager(m);
   init_GateVFilter(m);
   init_GateParticleFilter(m);
@@ -566,18 +601,25 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateRunAction(m);
   init_GateEventAction(m);
   init_GateTrackingAction(m);
+
   init_GateDoseActor(m);
   init_GateTLEDoseActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateProductionAndStoppingActor(m);
+  init_GateBeamQualityActor(m);
+  init_GateEmCalculatorActor(m);
   init_GateSimulationStatisticsActor(m);
-  init_GatePhaseSpaceActor(m);
-  // init_GateComptonSplittingActor(m);
+
   init_GateBOptrBremSplittingActor(m);
-  init_GateOptrComptSplittingActor(m);
+  init_GateGammaFreeFlightOptrActor(m);
+  init_GateScatterSplittingFreeFlightOptrActor(m);
+
+  init_GatePhaseSpaceActor(m);
   init_GateHitsCollectionActor(m);
   init_GateVDigitizerWithOutputActor(m);
+  init_GateDigiAttributeManager(m);
+  init_GateVDigiAttribute(m);
   init_GateHitsAdderActor(m);
   init_GateDigitizerReadoutActor(m);
   init_GateDigitizerBlurringActor(m);
@@ -585,16 +627,19 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDigitizerSpatialBlurringActor(m);
   init_GateDigitizerEnergyWindowsActor(m);
   init_GateDigitizerProjectionActor(m);
+  init_GateDigiAttributeProcessDefinedStepInVolumeActor(m);
+
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
   init_GateKillActor(m);
   init_GateKillAccordingProcessesActor(m);
-  init_GateDigiAttributeManager(m);
-  init_GateVDigiAttribute(m);
+  init_GateAttenuationImageActor(m);
   init_GateExceptionHandler(m);
   init_GateNTuple(m);
   init_GateHelpers(m);
+  init_GateVolumeVoxelizer(m);
   init_GateUniqueVolumeIDManager(m);
   init_GateUniqueVolumeID(m);
-  init_GateVolumeDepthID(m);
+  init_GateGeometryUtils(m);
+  init_GateImageBox(m);
 }

@@ -81,13 +81,21 @@ Note that the ion will only be simulated if the decay is enabled.
 
    sim.physics_manager.enable_decay = True
 
+
+GATE also provide a ``back_to_back`` particle, which is an alias for colinear
+gamma pairs of 511 keV.
+
+.. code:: python
+
+   source.particle = "back_to_back"
+
 .. _source-position:
 
 Particle initial position
 -------------------------
 
 The positions from were the particles will be generated are defined by a shape
-(e.g. "point", "box", "sphere", "disc"), defined by several parameters ("size", "radius")
+(e.g. "point", "box", "sphere", "disc", "cylinder"), defined by several parameters ("size", "radius")
 and orientation ("rotation", "center").
 A translation relative to the ``attached_to`` volume can also be set.
 
@@ -117,6 +125,13 @@ Here are some examples (mostly from ``test010_generic_source.py``):
 
     source.position.type = "box"
     source.position.size = [4 * cm, 4 * cm, 4 * cm]
+    source.position.translation = [8 * cm, 8 * cm, 30 * cm]
+
+.. code:: python
+
+    source.position.type = "cylinder"
+    source.position.radius = 5 * mm
+    source.position.dz = 300 * mm / 2.0
     source.position.translation = [8 * cm, 8 * cm, 30 * cm]
 
 
@@ -215,6 +230,26 @@ Using ``source.direction_relative_to_attached_volume = True`` will make
 your source direction change following the rotation of that volume.
 
 
+Polarization
+------------
+
+``polarization = '[1, 0, 0]'`` assigns a polarization to primary particles (gamma).
+The polarization is defined in the particle coordinate system with the
+`Stokes parameters <https://en.wikipedia.org/wiki/Stokes_parameters>`_ [Q, U, V].
+Do not forget to use an adequate physics list. You can define the polarization as follows:
+
+   .. code:: python
+
+      source.polarization = [1, 0, 0] # linear polarization (horizontal)
+      source.polarization = [-1, 0, 0] # linear polarization (vertical)
+      source.polarization = [0, 1, 0] # linear polarization (45°)
+      source.polarization = [0, -1, 0] # linear polarization (-45°)
+      source.polarization = [0, 0, 1] # circular polarization (right)
+      source.polarization = [0, 0, -1] # circular polarization (left)
+      source.polarization = [0, 0, 0] # unpolarized
+      sim.physics_manager.physics_list_name = "G4EmLivermorePolarizedPhysics"
+
+.. autoproperty:: opengate.sources.generic.GenericSource.polarization
 
 Acceptance Angle
 ----------------
@@ -243,12 +278,24 @@ Half-life
 ---------
 
 You can instruct GATE to decrease the activity according to an exponential
-decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Exmaple:
+decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_life`. Example:
 
 .. code-block:: python
 
     source = sim.add_source('GenericSource, 'mysource')
     source.half_life = 60 * gate.g4_units.s
+
+Note1: If you set a run_timing_intervals starting at t > 0, the activity set in the source is the activity at t=0.
+
+Note2: If you do not set the half_life for an ion, G4 will use it's own value. Moreover, if you set a
+run_timing_intervals, by default you the source will decrease without taking into account the run_timing_intervals.
+To restrict the decay to the run_timing_intervals, you can set the parameter:
+
+.. code-block:: python
+
+    sim.run_timing_intervals = [[18 * sec, 28 * sec]]
+    source.user_particle_life_time = 0
+
 
 .. autoproperty:: opengate.sources.generic.GenericSource.half_life
 
@@ -328,22 +375,28 @@ normal distribution with:
 Spectra
 """""""
 
-**Discrete for gamma spectrum**
+**Discrete energy spectrum**
 
 One can configure a generic source to produce particles with energies depending on weights.
 To do so, one must provide two lists of the same size: one for energies, one for weights.
 Each energy is associated to the corresponding weight.
 Probabilities are derived from weights simply by normalizing the weights list.
 
-Several spectra are provided through the `get_rad_gamma_spectrum` function:
+1252 isotopes spectra are provided through the `get_spectrum` function:
 
 .. code:: python
 
-   spectrum = gate.sources.base.get_rad_gamma_spectrum("Lu177")
+   spectrum = gate.sources.utility.get_spectrum("Lu177", spectrum_type, database="icrp107")
 
+where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron",
+"auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra". From this list,
+only b-spectra is histogram based (see next section), the rest are discrete. ``database`` can be "icrp107" or "radar".
+
+ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`__
+with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`__.
+`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`__
 
 The source can be configured like this:
-
 
 .. code:: python
 
@@ -373,12 +426,12 @@ The produced particles will follow this pattern:
 One can configure a generic source to produce particles with energies according to a given histogram.
 Histograms are defined in the same way as `numpy`, using bin edges and histogram values.
 
-Several spectra are provided through the `get_rad_beta_spectrum` function.
-This data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDecay.html>`_ (`[direct link to the excel file] <https://www.doseinfo-radar.com/BetaSpec.zip>`_).
+Several spectra are provided through the `get_spectrum` function. You can use icrp107 data, or radar data.
+Radar data comes from `[doseinfo-radar] <https://www.doseinfo-radar.com/RADARDecay.html>`_ (`[direct link to the excel file] <https://www.doseinfo-radar.com/BetaSpec.zip>`_).
 
 .. code:: python
 
-   spectrum = gate.sources.base.get_rad_beta_spectrum("Lu177")
+   spectrum = gate.sources.utility.get_spectrum("Lu177", "beta-", database="radar")
 
 The source can be configured like this:
 
@@ -390,7 +443,7 @@ The source can be configured like this:
    source.energy.spectrum_energy_bin_edges = spectrum.energy_bin_edges
    source.energy.spectrum_weights = spectrum.weights
 
-For example, using this (which is what you get from `get_rad_beta_spectrum("Lu177")`):
+For example, using this (which is what you get from `get_spectrum("Lu177", "beta-", database="radar")`):
 
 .. code:: python
 

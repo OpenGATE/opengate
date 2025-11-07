@@ -53,7 +53,7 @@ if __name__ == "__main__":
         patient.voxel_materials,
         materials,
     ) = gate.geometry.materials.HounsfieldUnit_to_material(sim, tol, f1, f2)
-    print(f"tol = {tol} g/cm3")
+    print(f"tol = {tol/gcm3} g/cm3")
     print(f"mat : {len(patient.voxel_materials)} materials")
     patient.dump_label_image = paths.output / "test009_hu_label.mhd"
     # cuts
@@ -128,13 +128,16 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check dose")
     stats_ref = utility.read_stat_file(paths.gate_output / "stat_hu.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.15)
-    is_ok = is_ok and utility.assert_images(
-        paths.gate_output / "output_hu-Edep.mhd",
-        dose.edep.get_output_path(),
-        stats,
-        tolerance=35,
-        ignore_value_data2=0,
-        apply_ignore_mask_to_sum_check=False,  # force legacy behavior
+    is_ok = (
+        utility.assert_images(
+            paths.gate_output / "output_hu-Edep.mhd",
+            dose.edep.get_output_path(),
+            stats,
+            tolerance=35,
+            ignore_value_data2=0,
+            apply_ignore_mask_to_sum_check=False,  # force legacy behavior
+        )
+        and is_ok
     )
 
     utility.test_ok(is_ok)

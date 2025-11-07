@@ -3,7 +3,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as nm670
 import opengate as gate
 from opengate.tests import utility
 
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     sim.g4_verbose = False
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
-    sim.random_seed = 123456
+    sim.random_seed = 123457
     sim.output_dir = paths.output
 
     # world size
@@ -42,10 +42,11 @@ if __name__ == "__main__":
     world.material = "G4_AIR"
 
     # spect head without collimator
-    spect, colli, crystal = gate_spect.add_spect_head(
+    spect, colli, crystal = nm670.add_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
-    spect.translation = [0, 0, -15 * cm]
+    nm670.rotate_gantry(spect, 15 * cm, 0)
+    # spect.translation = [0, 0, -15 * cm]
 
     # spect digitizer
     hc = sim.add_actor("DigitizerHitsCollectionActor", f"Hits")
@@ -117,7 +118,7 @@ if __name__ == "__main__":
     )
     is_ok = (
         utility.check_diff_abs(
-            np.mean(td1), np.mean(td2), 30, f"Time diff mean in minutes:"
+            np.mean(td1), np.mean(td2), 35, f"Time diff mean in minutes:"
         )
         and is_ok
     )

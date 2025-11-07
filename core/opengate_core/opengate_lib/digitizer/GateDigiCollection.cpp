@@ -26,15 +26,17 @@ size_t GateDigiCollection::GetBeginOfEventIndex() const {
   return threadLocalData.Get().fBeginOfEventIndex;
 }
 
-void GateDigiCollection::SetBeginOfEventIndex(size_t index) {
+void GateDigiCollection::SetBeginOfEventIndex(size_t index) const {
   threadLocalData.Get().fBeginOfEventIndex = index;
 }
 
-void GateDigiCollection::SetBeginOfEventIndex() {
+void GateDigiCollection::SetBeginOfEventIndex() const {
   SetBeginOfEventIndex(GetSize());
 }
 
-void GateDigiCollection::SetWriteToRootFlag(bool f) { fWriteToRootFlag = f; }
+void GateDigiCollection::SetWriteToRootFlag(const bool f) {
+  fWriteToRootFlag = f;
+}
 
 void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
   fFilename = filename;
@@ -226,10 +228,16 @@ GateDigiCollection::Iterator GateDigiCollection::NewIterator() {
 std::string GateDigiCollection::DumpLastDigi() const {
   if (GetSize() == 0)
     return "";
-  std::ostringstream oss;
   auto n = GetSize() - 1;
+  return DumpDigi(n);
+}
+
+std::string GateDigiCollection::DumpDigi(int i) const {
+  if (GetSize() == 0)
+    return "";
+  std::ostringstream oss;
   for (auto *att : fDigiAttributes) {
-    oss << att->GetDigiAttributeName() << " = " << att->Dump(n) << "  ";
+    oss << att->GetDigiAttributeName() << " = " << att->Dump(i) << "  ";
   }
   return oss.str();
 }

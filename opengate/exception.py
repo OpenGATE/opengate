@@ -2,7 +2,7 @@ import inspect
 import colored
 
 import opengate_core as g4
-from .logger import log
+from .logger import logger
 
 
 class GateDeprecationError(Exception):
@@ -27,26 +27,23 @@ class GateImplementationError(Exception):
 
 color_error = colored.fore("red") + colored.style("bold")
 color_warning = colored.fore("orange_1")
-color_ok = colored.fore("green")
+color_ok = colored.fore("light_blue")
 
 
 def fatal(s):
     caller = inspect.getframeinfo(inspect.stack()[1][0])
-    ss = f"(in {caller.filename} line {caller.lineno})"
-    ss = colored.stylize(ss, color_error)
-    log.critical(ss)
-    s = colored.stylize(s, color_error)
-    log.critical(s)
+    ss = f"Fatal in {caller.filename} line {caller.lineno}"
+    logger.critical(ss)
+    logger.critical(s)
     raise Exception(s)
 
 
 def warning(s):
-    s = colored.stylize(s, color_warning)
-    log.warning(s)
+    logger.warning(s)
 
 
 def raise_except(s):
-    s = colored.stylize(s, color_error)
+    # s = colored.stylize(s, color_error)
     raise Exception(s)
 
 

@@ -12,15 +12,15 @@ GateActorManager *GateActorManager::fInstance = nullptr;
 std::vector<GateVActor *> GateActorManager::fActors;
 
 GateActorManager *GateActorManager::GetInstance() {
-  if (GateActorManager::fInstance == nullptr)
-    GateActorManager::fInstance = new GateActorManager;
-  return GateActorManager::fInstance;
+  if (fInstance == nullptr)
+    fInstance = new GateActorManager;
+  return fInstance;
 }
 
 GateActorManager::~GateActorManager() = default;
 
 void GateActorManager::AddActor(GateVActor *actor) {
-  for (auto *a : fActors) {
+  for (const auto *a : fActors) {
     if (a->GetName() == actor->GetName()) {
       std::ostringstream oss;
       oss << "Cannot add the actor '" << actor->GetName()
@@ -31,7 +31,7 @@ void GateActorManager::AddActor(GateVActor *actor) {
   fActors.push_back(actor);
 }
 
-GateVActor *GateActorManager::GetActor(std::string name) {
+GateVActor *GateActorManager::GetActor(const std::string &name) {
   for (auto *a : fActors) {
     if (a->GetName() == name)
       return a;

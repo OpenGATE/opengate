@@ -11,7 +11,7 @@ GATE is an open-source Monte Carlo simulation platform designed for modeling and
 GATE 10 introduces a Python-based interface, replacing the macro scripting of GATE 9.x, offering improved flexibility, readability, and integration with modern scientific workflows. Read our [motivation](https://opengate-python.readthedocs.io/en/master/user_guide/user_guide_intro.html).
 
 - Documentation: see the [User Guide](https://opengate-python.readthedocs.io/en/master/user_guide/index.html).
-- This current version uses [Geant4 11.2.1](https://geant4.web.cern.ch).
+- This current version uses [Geant4 11.3.2](https://geant4.web.cern.ch).
 - Compatible with Python 3.9, 3.10, 3.11, 3.12. (**Not python 3.13 yet**)
 - **Warning**: on Windows, the multithreading and Qt visualization are not (yet) available.
 
@@ -56,15 +56,6 @@ All tests are in the folder [here](https://github.com/OpenGATE/opengate/tree/mas
 ````
 pip install torch
 pip install gaga-phsp
-````
-
-**WARNING (3)** With some linux systems (not all), you may encounter an error similar to “cannot allocate memory in static TLS block”. In that case, you must add a specific path to the linker as follows:
-````
-export LD_PRELOAD=<path to libG4processes>:<path to libG4geometry>:${LD_PRELOAD}
-````
-or
-````
-export GLIBC_TUNABLES=glibc.rtld.optional_static_tls=2000000
 ````
 
 The test history can be visualized here: https://opengate.github.io/opengate_tests_results

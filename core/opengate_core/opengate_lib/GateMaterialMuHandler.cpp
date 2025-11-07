@@ -60,7 +60,6 @@ void GateMaterialMuHandler::CheckLastCall(const G4MaterialCutsCouple *couple) {
   if (!fIsInitialized) {
     Initialize();
   }
-
   if (couple != fLastCouple) {
     fLastCouple = couple;
     fLastMuTable = fCoupleTable[fLastCouple];
@@ -265,9 +264,8 @@ void GateMaterialMuHandler::ConstructMaterial(
 }
 
 void GateMaterialMuHandler::InitElementTable() {
-  const int *energyNumberList;
-  const float *data;
-
+  const int *energyNumberList = nullptr;
+  const double *data = nullptr;
   if (fDatabaseName == "NIST") {
     fElementNumber = NIST_mu_muen_data_elementNumber;
     energyNumberList = NIST_mu_muen_data_energyNumber;
@@ -276,13 +274,16 @@ void GateMaterialMuHandler::InitElementTable() {
     fElementNumber = EPDL_mu_muen_data_elementNumber;
     energyNumberList = EPDL_mu_muen_data_energyNumber;
     data = EPDL_mu_muen_data;
+  } else {
+    Fatal("GateMaterialMuHandler::InitElementTable db is '" + fDatabaseName +
+          " but must be 'NIST' or 'EPDL'");
   }
 
   fElementsTable = new GateMuTable *[fElementNumber + 1];
   int index = 0;
 
   for (int i = 0; i < fElementNumber + 1; i++) {
-    auto energyNumber = energyNumberList[i];
+    const auto energyNumber = energyNumberList[i];
     auto *table = new GateMuTable(nullptr, energyNumber);
     fElementsTable[i] = table;
 

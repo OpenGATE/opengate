@@ -138,6 +138,9 @@ void GateDoseActor::GetVoxelPosition(G4Step *step, G4ThreeVector &position,
   if (fHitType == "pre") {
     position = preGlobal;
   }
+  if (fHitType == "post") {
+    position = postGlobal;
+  }
   if (fHitType == "random") {
     auto x = G4UniformRand();
     auto direction = postGlobal - preGlobal;
@@ -245,31 +248,35 @@ void GateDoseActor::SteppingAction(G4Step *step) {
 }
 
 void GateDoseActor::EndOfEventAction(const G4Event *event) {
-
-  // flush thread local data into global image (postponed for now)
-
-  // if the user didn't set uncertainty goal, do nothing
+  // if the user didn't set an uncertainty goal, do nothing
   if (fUncertaintyGoal == 0) {
     return;
   }
 
-  // check if we reached the Nb of events for next evaluation
+  // check if we reached the Nb of events for the next evaluation
   if (NbOfEvent >= NbEventsNextCheck) {
-    // get thread idx. Ideally, only one thread should do the uncertainty
+    // flush thread local data into global image
+    // reset local data to zero is done in FlushSquaredValue
+    if (fEdepSquaredFlag) {
+      FlushSquaredValue(fThreadLocalDataEdep.Get(), cpp_edep_squared_image);
+    }
+    if (fDoseSquaredFlag) {
+      FlushSquaredValue(fThreadLocalDataDose.Get(), cpp_dose_squared_image);
+    }
+
+    // Get thread idx. Ideally, only one thread should do the uncertainty
     // calculation don't ask for thread idx if no MT
     if (!G4Threading::IsMultithreadedApplication() ||
         G4Threading::G4GetThreadId() == 0) {
       // check stop criteria
-      std::cout << "NbEventsNextCheck: " << NbEventsNextCheck << std::endl;
       double UncCurrent = ComputeMeanUncertainty();
       if (UncCurrent <= fUncertaintyGoal) {
-        // fStopRunFlag = true;
-        fSourceManager->SetRunTerminationFlag(true);
+        GateSourceManager::SetRunTerminationFlag(true);
       } else {
-        // estimate Nevents at which next check should occour
-        NbEventsNextCheck = (UncCurrent / fUncertaintyGoal) *
-                            (UncCurrent / fUncertaintyGoal) * NbOfEvent *
-                            Overshoot;
+        // estimate nb of events at which the next check should occur
+        NbEventsNextCheck = static_cast<int>((UncCurrent / fUncertaintyGoal) *
+                                             (UncCurrent / fUncertaintyGoal) *
+                                             NbOfEvent * Overshoot);
       }
     }
   }
@@ -322,7 +329,6 @@ double GateDoseActor::ComputeMeanUncertainty() {
   } else {
     mean_unc = 1.;
   }
-  std::cout << "unc: " << mean_unc << std::endl;
   return mean_unc;
 }
 
@@ -370,7 +376,7 @@ void GateDoseActor::ScoreSquaredValue(threadLocalT &data,
     auto v = data.squared_worker_flatimg[index_flat];
     {
       G4AutoLock mutex(&SetPixelMutex);
-      ImageAddValue<Image3DType>(cpp_image, index, v * v);
+      ImageAddValue<Image3DType>(cpp_image, index, v * v); // implicit flush
     }
     // new temp value
     data.squared_worker_flatimg[index_flat] = value;
@@ -388,6 +394,9 @@ void GateDoseActor::FlushSquaredValue(threadLocalT &data,
         data.squared_worker_flatimg[sub2ind(index_f)];
     ImageAddValue<Image3DType>(cpp_image, index_f, pixelValue3D * pixelValue3D);
   }
+  // reset threadlocal data to zero
+  int N_voxels = size_edep[0] * size_edep[1] * size_edep[2];
+  PrepareLocalDataForRun(data, N_voxels);
 }
 
 int GateDoseActor::EndOfRunActionMasterThread(int run_id) { return 0; }

@@ -108,11 +108,11 @@ def create_test(sim, nb_thread=1):
     stat.output_filename = "test033_stats.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
-    proj = gate_spect.add_simplified_digitizer_tc99m(
+    proj = gate_spect.add_simplified_digitizer_tc99m_OLD(
         sim, "spect1_crystal", "test033_proj_1.mhd"
     )
     proj.origin_as_image_center = False
-    proj = gate_spect.add_simplified_digitizer_tc99m(
+    proj = gate_spect.add_simplified_digitizer_tc99m_OLD(
         sim, "spect2_crystal", "test033_proj_2.mhd"
     )
     proj.origin_as_image_center = False
@@ -182,7 +182,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test033_proj_1.mhd",
-            paths.output / "test033_proj_1.mhd",
+            paths.output / "test033_proj_1_counts.mhd",
             stats,
             tolerance=68,
             axis="x",
@@ -195,7 +195,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test033_proj_2.mhd",
-            paths.output / "test033_proj_2.mhd",
+            paths.output / "test033_proj_2_counts.mhd",
             stats,
             tolerance=75,
             axis="x",

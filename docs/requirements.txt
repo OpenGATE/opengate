@@ -17,12 +17,15 @@ scipy
 matplotlib
 GitPython
 colorlog
-numpy-stl
-radioactivedecay
+meshio
+radioactivedecay>=0.6.1
 jsonpickle
 pandas
 requests
 PyYAML
+SimpleITK
+icrp107_database
+loguru
 
 requests>=2.32.2 # not directly required, pinned by Snyk to avoid a vulnerability
 urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability

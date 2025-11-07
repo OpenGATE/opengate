@@ -24,10 +24,9 @@ public:
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  // Main function called every step in attached volume
   void StartSimulationAction() override;
 
-  void BeginOfEventAction(const G4Event *event) override;
+  void PreUserTrackingAction(const G4Track *track) override;
 
   void SteppingAction(G4Step *step) override;
 
@@ -39,6 +38,7 @@ public:
   std::string fInputActorName;
   int fRussianRouletteValue;
   double fRussianRouletteFactor;
+  std::vector<int> fPlaneAxis;
   GateVDigiAttribute *fAtt_E;
   GateVDigiAttribute *fAtt_Theta;
   GateVDigiAttribute *fAtt_Phi;
@@ -49,6 +49,7 @@ public:
     double fE;
     double fTheta;
     double fPhi;
+    bool fIsFirstInteraction;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

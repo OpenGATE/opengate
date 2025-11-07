@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # sim.visu = True
     sim.check_volumes_overlap = True
     sim.number_of_threads = 1
-    # sim.random_seed = 654923
+    sim.random_seed = 654923
     sim.output_dir = paths.output
 
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # check image
     is_ok = utility.assert_images(
         paths.output_ref / "projections.mha",
-        proj.get_output_path(),
+        proj.get_output_path("counts"),
         stats=stats,
         tolerance=40,
         axis="x",

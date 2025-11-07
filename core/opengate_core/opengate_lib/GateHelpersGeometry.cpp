@@ -18,20 +18,19 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
   std::string name = phys_volume_name;
   auto pvs = G4PhysicalVolumeStore::GetInstance();
   while (name != "world") {
-    auto phys = pvs->GetVolume(name);
+    const auto *phys = pvs->GetVolume(name);
     if (phys == nullptr) {
       std::ostringstream oss;
-      oss << "The volume '" << name
+      oss << " (ComputeTransformationFromVolumeToWorld) The volume '" << name
           << "' is not found. Here is the list of volumes: ";
       auto map = pvs->GetMap();
-      for (auto m : map) {
+      for (const auto &m : map) {
         oss << m.first << " ";
       }
       oss << std::endl;
       Fatal(oss.str());
     }
     auto tr = phys->GetObjectTranslation();
-    // auto rot = *phys->GetObjectRotation();
     auto rot = phys->GetObjectRotationValue();
     rotation = rot * rotation;
     translation = rot * translation + tr;

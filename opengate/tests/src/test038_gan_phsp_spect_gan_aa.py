@@ -21,6 +21,7 @@ if __name__ == "__main__":
     gsource.direction.acceptance_angle.volumes = ["spect1"]
     gsource.direction.acceptance_angle.intersection_flag = True
     gsource.direction.acceptance_angle.normal_flag = False
+    gsource.direction.acceptance_angle.max_rejection = 20000
     gsource.direction.acceptance_angle.skip_policy = "SkipEvents"
     # gsource.batch_size = 2e4
 
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test038_gan_aa_proj.mhd",
-            paths.output / "test038_gan_aa_proj.mhd",
+            paths.output / "test038_gan_aa_proj_counts.mhd",
             tolerance=70,
             axis="x",
             sum_tolerance=2.75,

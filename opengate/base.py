@@ -20,8 +20,8 @@ from .definitions import (
     __one_indent__,
 )
 from .decorators import requires_fatal
-from .logger import log
 import traceback
+from .logger import logger
 
 
 def print_call_location():
@@ -450,9 +450,9 @@ class GateObject:
         new_instance = super(GateObject, cls).__new__(cls)
         return new_instance
 
-    def __init__(self, *args, simulation=None, **kwargs):
+    def __init__(self, *args, simulation=None, **kwargs) -> None:
         self._simulation = simulation
-        # keep internal number of raised warnings (for debug)
+        # keep the internal number of raised warnings (for debug)
         self.number_of_warnings = 0
         self._temporary_warning_cache = []
         # prefill user info with defaults
@@ -503,8 +503,7 @@ class GateObject:
 
     def __str__(self):
         ret_string = (
-            f"***\n"
-            f"{type(self).__name__} named {self.name} "
+            f"GateObject {type(self).__name__} named {self.name} "
             f"with the following parameters:\n"
         )
         for k, v in self.user_info.items():
@@ -804,15 +803,15 @@ class DynamicGateObject(GateObject):
             self.user_info["dynamic_params"] = {}
         processed_params, extra_params = self.process_dynamic_parametrisation(params)
         processed_params["extra_params"] = extra_params
-        # if user provided no name, create one
+        # if the user provided no name, create one
         if name is None:
             name = f"parametrisation_{len(self.dynamic_params)}"
         self._add_dynamic_parametrisation_to_userinfo(processed_params, name)
-        # issue debugging message
+        # issue a debugging message
         s = f"Added the following dynamic parametrisation to {type(self).__name__} '{self.name}': \n"
         for k, v in processed_params.items():
             s += f"{k}: {v}\n"
-        log.debug(s)
+        logger.debug(s)
 
     def reassign_dynamic_params_for_process(self, run_indices):
         # loop over all dynamic parametrisations of this object,

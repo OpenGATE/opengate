@@ -1,7 +1,6 @@
-.. sectnum::
-
-Generating and tracking optical photons
-========================================
+************************
+Details: Optical photons
+************************
 
 Before discussing how to use the optical photon tracking, it has to be mentioned that there are a few disadvantages in using optical transport. First, the simulation time will increase dramatically. For example, most scintillators used in PET generate in the order of 10,000 optical photons at 511 keV, which means that approximately 10,000 more particles have to be tracked for each annihilation photon that is detected. Although the tracking of optical photons is relatively fast, a simulation with optical photon tracking can easily be a factor thousand slower than one without. Finally, in order to perform optical simulations, many parameters are needed for the materials and surfaces, some of which may be difficult to determine.
 
@@ -212,7 +211,7 @@ Fluorescence / Wavelength shifting (WLS)
 
 Fluorescence is a 3 step process: The fluorophore is in an excited state after the absorption of an optical photon provided by an external source (laser, lamp). The life time of the excited state is of order of 1-10ns during which the fluorophore interacts with its environment and ends-up in a relaxed-excited state. The last step is the emission of a fluorescent photon which energy/wave length is smaller(larger) than the one of the excitation optical photon.
 
-.. image:: ../figures/OpticalFluorescence.gif
+.. image:: ../figures/optical_fluorescence.gif
 
 Gate user needs to provide four parameters/properties to define the fluorescent material: `RINDEX`, `WLSABSLENGTH`, `WLSCOMPONENT` and `WLSTIMECONSTANT`. The `WLSABSLENGTH` defines the fluorescence absorption length which is the average distance travelled by a photon before it is absorbed by the fluorophore. This distance could be very small but probably not set to 0 otherwise the photon will be absorbed immediately upon entering the fluorescent volume and fluorescent photon will appear only from the surface. The `WLSCOMPONENT` describes the emission spectrum of the fluorescent volume by giving the relative strength between different photon energies. Usually these numbers are taken from measurements (i.e. emission spectrum). The `WLSTIMECONSTANT` defines the time delay between the absorption and re-emission.
 The WLS process has an absorption spectrum and an emission spectrum. If these overlap then a WLS photon may in turn be absorpted and emitted again. If you do not want that you need to avoid such overlap. The WLS process does not distinguish between "original" photons and WLS photons:
@@ -262,7 +261,7 @@ In the case of two dielectric materials, the photon can undergo total internal r
 Defining surfaces
 ~~~~~~~~~~~~~~~~~
 
-.. image:: ../figures/Surface-definition.png
+.. image:: ../figures/surface-definition.png
 
 The photon travels through the surface between the two volumes Volume1 and Volume2. The surface between Volume1 and Volume2 is NOT the same surface as that between Volume2 and Volume1; the surface definition is directional. When there is optical transport in both directions, two surfaces should be created.
 
@@ -339,7 +338,7 @@ Background
 
 The crystal topography is obtained with atomic force microscopy (AFM). From the AFM data, the probability of reflection (1) and the reflection directions (2) are computationally determined, for incidence angles ranging from 0° to 90°. Each LUT is computed for a given surface and reflector configuration. The reflection probability in the LUT combines two cases: directly reflected photons from the crystal surface and photons that are transmitted to the reflector surface and later re-enter the crystal. The key operations of the reflection process are the following: The angle between the incident photon (Old Momentum) and the surface normal are calculated. The probability of reflection is extracted from the first LUT. A Bernoulli test determines whether the photon is reflected or transmitted. In case of reflection two angles are dcoden from the reflection direction LUT.
 
-.. image:: ../figures/FlowChartLUTModel.png
+.. image:: ../figures/flowchart_lut_model.png
 
 Old Momentum to New Momentum. The old momentum is the unit vector that describes the incident photon. The reflected/transmitted photon is the New Momentum described by two angles :math:`\phi`, :math:`\theta`.
 
@@ -348,7 +347,7 @@ UNIFIED Model
 
 The UNIFIED model allows the user to control the radiant intensity of the surface: Specular lobe, Specular spike, Backscatter spike (enhanced on very rough surfaces) and Reflectivity (Lambertian or diffuse distribution). The sum of the four constants is constrained to unity. In that model, the micro-facet normal vectors follow a Gaussian distribution defined by sigmaalpha (:math:`\sigma_{\alpha}`) given in degrees. This parameter defines the standard deviation of the Gaussian distribution of micro-facets around the average surface normal. In the case of a perfectly polished surface, the normal used by the G4BoundaryProcess is the normal to the surface.
 
-.. image:: ../figures/ReflectionTypes-and-Microfacets.png
+.. image:: ../figures/reflection_types-and-microfacets.png
 
 An example of a surface definition looks like:
 
@@ -386,7 +385,7 @@ In case the optical photon is reflected, four kinds of reflection are possible. 
 
 LAMBERTIAN (diffuse) reflection occurs when none of the other three types of reflection happens. The probability of Lambertian reflection is thus given by one minus the sum of the other three constants.
 
-.. image:: ../figures/Reflections_Specular_Diffuse_Spread.gif
+.. image:: ../figures/reflections_specular_diffuse_spread.gif
 
 When the photon is refracted, the angle of refraction is calculated from the surface normal (of the average surface for polished and of the micro facet for rough) and the refractive indices of the two media.
 
