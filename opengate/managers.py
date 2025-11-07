@@ -1343,19 +1343,19 @@ class VolumeManager(GateObject):
         print(self.dump_material_database_names())
 
 
-def setter_hook_verbose_level(sim, verbose_level):
-    # print(f"setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
-    if sim.log_handler_id == -1:
+def _setter_hook_verbose_level(self, verbose_level):
+    # print(f"_setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
+    if self.log_handler_id == -1:
         # Remove the default logger configuration
         logger.remove()
     else:
         # Remove the current logger configuration
         try:
-            logger.remove(sim.log_handler_id)
+            logger.remove(self.log_handler_id)
         except:
             pass
 
-    sim.log_handler_id = logger.add(
+    self.log_handler_id = logger.add(
         sys.stdout,
         colorize=True,
         level=verbose_level,
@@ -1414,7 +1414,7 @@ class Simulation(GateObject):
             {
                 "doc": "Gate pre-run verbosity. "
                 "Will display more or fewer messages during initialization. ",
-                "setter_hook": setter_hook_verbose_level,
+                "setter_hook": _setter_hook_verbose_level,
                 "allowed_values": [
                     "NONE",
                     "DEBUG",
@@ -1643,7 +1643,7 @@ class Simulation(GateObject):
         # init logger
         self.log_handler_id = -1
         self.log_output = ""
-        setter_hook_verbose_level(self, INFO)
+        _setter_hook_verbose_level(self, INFO)
 
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
