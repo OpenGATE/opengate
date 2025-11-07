@@ -573,6 +573,13 @@ def _setter_hook_physics_list_name(self, physics_list_name):
     return physics_list_name
 
 
+def _setter_hook_user_limits_particles(self, particle_names):
+    if not isinstance(particle_names, (list, set, tuple)):
+        return list([particle_names])
+    else:
+        return particle_names
+
+
 class PhysicsManager(GateObject):
     """
     Everything related to the physics (lists, cuts, etc.) should be here.
@@ -631,7 +638,9 @@ class PhysicsManager(GateObject):
         "user_limits_particles": (
             ["all_charged"],
             {
-                "doc": "List of particles to which UserLimits, e.g. step limiter, are applied. Default: Step limiter is applied to all charged particles (in accordance with G4 default)."
+                "doc": "List of particles to which UserLimits, e.g. step limiter, are applied. Default: Step limiter "
+                       "is applied to all charged particles (in accordance with G4 default).",
+                "setter_hook": _setter_hook_user_limits_particles,
             },
         ),
         "em_parameters": (
