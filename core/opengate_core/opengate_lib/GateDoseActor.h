@@ -26,7 +26,7 @@ public:
 
   void InitializeCpp() override;
 
-  // Main function called every step in attached volume
+  // The main function called every step in the attached volume
   void SteppingAction(G4Step *) override;
 
   // Called every time a Run starts (all threads)
@@ -67,9 +67,9 @@ public:
 
   void SetThreshEdepPerc(const double b) { fThreshEdepPerc = b; }
 
-  void SetOvershoot(const double b) { Overshoot = b; }
+  void SetOvershoot(const double b) { fOvershoot = b; }
 
-  void SetNbEventsFirstCheck(const int b) { NbEventsFirstCheck = b; }
+  void SetNbEventsFirstCheck(const int b) { fNbEventsFirstCheck = b; }
 
   std::string GetPhysicalVolumeName() const { return fPhysicalVolumeName; }
 
@@ -100,13 +100,15 @@ public:
     std::vector<int> lastid_worker_flatimg;
   };
 
-  void ScoreSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image,
-                         double value, int event_id,
-                         Image3DType::IndexType index);
+  void ScoreSquaredValue(threadLocalT &data,
+                         const Image3DType::Pointer &cpp_image, double value,
+                         int event_id, const Image3DType::IndexType &index);
 
-  void FlushSquaredValue(threadLocalT &data, Image3DType::Pointer cpp_image);
+  void FlushSquaredValues(threadLocalT &data,
+                          const Image3DType::Pointer &cpp_image);
 
-  void PrepareLocalDataForRun(threadLocalT &data, int numberOfVoxels);
+  static void PrepareLocalDataForRun(threadLocalT &data,
+                                     unsigned int numberOfVoxels);
 
   void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
                         Image3DType::IndexType &index) const;
@@ -117,7 +119,7 @@ public:
   // Option: indicate if we must compute edep squared
   bool fEdepSquaredFlag{};
 
-  // Option: Is dose to be scored?
+  // Option: Is the dose to be scored?
   bool fDoseFlag{};
   bool fDoseSquaredFlag{};
 
@@ -129,17 +131,14 @@ public:
   // Option: set target statistical uncertainty for each run
   double fUncertaintyGoal;
   double fThreshEdepPerc;
-  double Overshoot;
+  double fOvershoot;
 
-  int NbOfEvent = 0;
-  // set from python side. It will be overwritten by an estimation of the Nb of
-  // events needed to achieve the goal uncertainty.
-  int NbEventsFirstCheck;
-  int NbEventsNextCheck;
-  int NbOfThreads = 0;
-
-  double goalUncertainty;
-  double threshEdepPerc{};
+  int fNbOfEvent;
+  // set from python's side. It will be overwritten by an estimation of the
+  // number of events needed to achieve the goal uncertainty.
+  int fNbEventsFirstCheck;
+  int fNbEventsNextCheck;
+  double fGoalUncertainty;
 
   std::string fPhysicalVolumeName;
 

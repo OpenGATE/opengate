@@ -22,19 +22,19 @@ GateAcceptanceAngleManager::~GateAcceptanceAngleManager() {}
 
 void GateAcceptanceAngleManager::Initialize(
     const std::map<std::string, std::string> &user_info, bool is_valid_type) {
-  // AA is enabled if volumes is not empty and one of the flags is True
+  // AA is enabled if volumes are not empty and one of the flags is True
   // intersection_flag or normal_flag
-  // fAcceptanceAngleVolumeNames = DictGetVecStr(user_info, "volumes");
   fAcceptanceAngleVolumeNames = GetVectorFromMapString(user_info, "volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
 
   bool b2 = StrToBool(user_info.at("intersection_flag"));
   bool b3 = StrToBool(user_info.at("normal_flag"));
 
+  // do nothing it disabled
   fEnabledFlag = fEnabledFlag && (b2 || b3);
-
   if (!fEnabledFlag)
     return;
+
   // (we cannot use py::dict here as it is lost at the end of the function)
   // fAcceptanceAngleParam = DictToMap(user_info);
   auto s = user_info.at("skip_policy");

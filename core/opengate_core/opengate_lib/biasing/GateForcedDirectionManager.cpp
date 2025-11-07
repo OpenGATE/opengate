@@ -40,7 +40,7 @@ void GateForcedDirectionManager::Initialize(
   const bool b3 = StrToBool(user_info.at("normal_flag"));
   if (b2 || b3) {
     std::ostringstream oss;
-    oss << "Cannot use 'forced_direction_flag' mode with forced_direction_flag "
+    oss << "Cannot use 'forced_direction_flag' mode with intersection_flag "
            "or normal_flag";
     Fatal(oss.str());
   }
@@ -69,7 +69,6 @@ void GateForcedDirectionManager::Initialize(
 void GateForcedDirectionManager::InitializeForcedDirection() {
   if (!fEnabledFlag)
     return;
-
   // Retrieve the solid
   const auto lvs = G4LogicalVolumeStore::GetInstance();
   const auto lv =
@@ -90,8 +89,8 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
     fFDRotation = new G4RotationMatrix;
   ComputeTransformationFromWorldToVolume(fAcceptanceAngleVolumeNames[0], tr,
                                          *fFDRotation, true);
-  fFDTransformWorldToVolume = G4AffineTransform(fFDRotation, tr);
   fAARotationInverse = fFDRotation->inverse();
+  fFDTransformWorldToVolume = G4AffineTransform(fAARotationInverse, tr);
 
   // store the ID of this Run
   fFDLastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();

@@ -648,6 +648,9 @@ def subtract_volumes(
 
 
 class BoxVolume(RepeatableVolume, solids.BoxSolid):
+    # hints for IDE
+    size: list[float]
+
     """
     Volume with a box shape.
     """
@@ -696,6 +699,13 @@ class TrdVolume(RepeatableVolume, solids.TrdSolid):
 
 
 class TubsVolume(RepeatableVolume, solids.TubsSolid):
+
+    # hints for IDE
+    rmin: float
+    rmax: float
+    dz: float
+    sphi: float
+    dphi: float
     """
     Volume with a tube or cylindrical section shape.
     """

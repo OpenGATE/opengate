@@ -2004,10 +2004,10 @@ def np_img_window_level(img, window_width, window_level):
 def np_img_crop(img, crop_center, crop_width):
     c = crop_center
     w = crop_width
-    x1 = c[0] - w[0] // 2
-    x2 = c[0] + w[0] // 2
-    y1 = c[1] - w[1] // 2
-    y2 = c[1] + w[1] // 2
+    x1 = max(0, c[0] - w[0] // 2)
+    x2 = min(img.shape[2], c[0] + w[0] // 2)
+    y1 = max(0, c[1] - w[1] // 2)
+    y2 = min(img.shape[1], c[1] + w[1] // 2)
     img = img[:, y1:y2, x1:x2]
     return img, (x1, x2, y1, y2)
 
@@ -2029,26 +2029,18 @@ def np_plot_slice(
     # slice
     im = ax.imshow(img[num_slice, :, :], cmap="gray")
 
-    # prepare ticks
-    nticks = 6
-    x_step = int(np.around((crop_coord[1] - crop_coord[0]) / nticks))
-    x_ticks = np.char.mod(
-        "%.0f",
-        np.around(
-            np.arange(crop_coord[0], crop_coord[1], x_step) * spacing[0], decimals=1
-        ),
-    )
-    y_step = int(np.around((crop_coord[3] - crop_coord[2]) / nticks))
-    y_ticks = np.char.mod(
-        "%.0f",
-        np.around(
-            np.arange(crop_coord[2], crop_coord[3], y_step) * spacing[1], decimals=1
-        ),
-    )
+    nticks = 10
+    # X-axis ticks - ensures exactly nticks points
+    x_positions = np.linspace(0, crop_coord[1] - crop_coord[0], nticks)
+    x_ticks = np.char.mod("%.0f", np.around(x_positions * spacing[0], decimals=1))
+
+    # Y-axis ticks - ensures exactly nticks points
+    y_positions = np.linspace(0, crop_coord[3] - crop_coord[2], nticks)
+    y_ticks = np.char.mod("%.0f", np.around(y_positions * spacing[1], decimals=1))
 
     # ticks
-    ax.set_xticks(np.arange(0, crop_width[0], x_step), x_ticks)
-    ax.set_yticks(np.arange(0, crop_width[1], y_step), y_ticks)
+    ax.set_xticks(x_positions, x_ticks)
+    ax.set_yticks(y_positions, y_ticks)
     ax.set_xlabel("X (mm)")
     ax.set_ylabel("Y (mm)")
     return im
