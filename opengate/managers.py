@@ -639,7 +639,7 @@ class PhysicsManager(GateObject):
             ["all_charged"],
             {
                 "doc": "List of particles to which UserLimits, e.g. step limiter, are applied. Default: Step limiter "
-                       "is applied to all charged particles (in accordance with G4 default).",
+                "is applied to all charged particles (in accordance with G4 default).",
                 "setter_hook": _setter_hook_user_limits_particles,
             },
         ),
@@ -985,12 +985,14 @@ class PhysicsManager(GateObject):
         region.track_structure_em_physics = track_structure_em_physics
 
     def set_user_limits_particles(self, particle_names):
-        raise GateDeprecationError("The function set_user_limits_particles has been removed. Set the particle(s) directly via: \n"
-                                   "sim.physics_manager.user_limits_particles = XXX, \n"
-                                   "e.g.\n"
-                                   "sim.physics_manager.user_limits_particles = 'proton'\n"
-                                   "or \n"
-                                   "sim.physics_manager.user_limits_particles = ['gamma', 'electron']")
+        raise GateDeprecationError(
+            "The function set_user_limits_particles has been removed. Set the particle(s) directly via: \n"
+            "sim.physics_manager.user_limits_particles = XXX, \n"
+            "e.g.\n"
+            "sim.physics_manager.user_limits_particles = 'proton'\n"
+            "or \n"
+            "sim.physics_manager.user_limits_particles = ['gamma', 'electron']"
+        )
         # if not isinstance(particle_names, (list, set, tuple)):
         #     particle_names = list([particle_names])
         # self.user_info.user_limits_particles = particle_names
