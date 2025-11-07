@@ -1033,9 +1033,15 @@ class PhysicsManager(GateObject):
         region.user_limits["min_range"] = min_range
 
     def set_user_limits_particles(self, particle_names):
-        if not isinstance(particle_names, (list, set, tuple)):
-            particle_names = list([particle_names])
-        self.user_info.user_limits_particles = particle_names
+        raise GateDeprecationError("The function set_user_limits_particles has been removed. Set the particle(s) directly via: \n"
+                                   "sim.physics_manager.user_limits_particles = XXX, \n"
+                                   "e.g.\n"
+                                   "sim.physics_manager.user_limits_particles = 'proton'\n"
+                                   "or \n"
+                                   "sim.physics_manager.user_limits_particles = ['gamma', 'electron']")
+        # if not isinstance(particle_names, (list, set, tuple)):
+        #     particle_names = list([particle_names])
+        # self.user_info.user_limits_particles = particle_names
 
         # for pn in list(particle_names):
         #     # try to get current value to check if particle_name is eligible
