@@ -273,11 +273,16 @@ class VoxelDepositActor(ActorBase):
             if u.get_active(item="any"):
                 u.start_of_simulation()
 
-    def EndSimulationAction(self):
-        # inform actor output that this simulation is over and write data
+    def inform_user_output_about_end(self):
         for u in self.user_output.values():
             if u.get_active(item="any"):
                 u.end_of_simulation()
+
+    def EndSimulationAction(self):
+        self.inform_user_output_about_end()
+
+    def EndOfMultiProcessAction(self):
+        self.inform_user_output_about_end()
 
 
 def _setter_hook_ste_of_mean_unbiased(self, value):

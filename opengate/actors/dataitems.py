@@ -2,9 +2,16 @@ import itk
 import numpy as np
 import json
 from box import Box
+import platform
+import datetime
 
 from ..exception import fatal, warning, GateImplementationError
-from ..utility import ensure_filename_is_str, calculate_variance
+from ..utility import (
+    ensure_filename_is_str,
+    calculate_variance,
+    g4_units,
+    g4_best_unit_tuple,
+)
 from ..image import (
     sum_itk_images,
     divide_itk_images,
@@ -16,6 +23,7 @@ from ..image import (
     itk_image_from_array,
     add_constant_to_itk_image,
 )
+from ..serialization import dump_json
 
 
 class DataItem:
@@ -53,6 +61,9 @@ class DataItem:
     def data_is_none(self):
         return self.data is None
 
+    def reset_data(self):
+        raise NotImplementedError
+
     def _assert_data_is_not_none(self):
         if self.data_is_none:
             raise ValueError(
@@ -87,26 +98,38 @@ class DataItem:
                         getattr(self.data, item)(*args, **kwargs)
 
                     return hand_down
+                else:
+                    return getattr(self.data, item)
             else:
                 raise AttributeError(f"No such attribute '{item}'")
         else:
             raise AttributeError(f"No such attribute '{item}'")
 
     def merge_with(self, other):
-        """The base class does not implement merging.
+        """The base class implements merging as summation.
         Specific classes can override this, e.g. to merge mean values.
         """
-        raise NotImplementedError(
-            f"Method 'inplace_merge_with' not implemented for data item class {type(self)} "
-        )
+        try:
+            return self + other
+        except ValueError as e:
+            raise NotImplementedError(
+                f"method 'merge_with' probably not implemented for data item class {type(self)} "
+                f"because the following ValueError was encountered: \n{e}"
+            )
 
-    def inplace_merge_with(self, other):
-        """The base class does not implement merging.
+    def inplace_merge_with(self, *other):
+        """The base class implements merging as summation.
         Specific classes can override this, e.g. to merge mean values.
         """
-        raise NotImplementedError(
-            f"Method 'inplace_merge_with' not implemented for data item class {type(self)} "
-        )
+        try:
+            for o in other:
+                self.__iadd__(o)
+        except ValueError as e:
+            raise NotImplementedError(
+                f"method 'inplace_merge_with' probably not implemented for data item class {type(self)} "
+                f"because the following ValueError was encountered: \n{e}"
+            )
+        return self
 
     def write(self, *args, **kwargs):
         raise NotImplementedError(f"This is the base class. ")
@@ -124,6 +147,162 @@ class DataItem:
     @number_of_samples.setter
     def number_of_samples(self, value):
         self.meta_data["number_of_samples"] = int(value)
+
+
+class StatisticsDataItem(DataItem):
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     # super leaves data=None if no data is passed as kwarg,
+    #     # but we want to initialize with a pre-filled Box
+    #     if self.data is None:
+    #         self.reset_data()
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            if k == "track_types":
+                if len(v["value"]) > 0:
+                    s += "track_types\n"
+                    for t, n in v["value"].items():
+                        s += f"{' ' * 24}{t}: {n}\n"
+            else:
+                if v["unit"] is None:
+                    unit = ""
+                else:
+                    unit = str(v["unit"])
+                s += f"{k}{' ' * (20 - len(k))}{v['value']} {unit}\n"
+        # remove last line break
+        return s.rstrip("\n")
+
+    def set_data(self, data, **kwargs):
+        """The input data must behave like a dictionary."""
+        self.reset_data()
+        self.data.update(data)
+
+    def reset_data(self):
+        self.data = Box()
+        self.data.runs = 0
+        self.data.events = 0
+        self.data.tracks = 0
+        self.data.steps = 0
+        self.data.duration = 0
+        self.data.start_time = 0
+        self.data.stop_time = 0
+        self.data.sim_start_time = 0
+        self.data.sim_stop_time = 0
+        self.data.init = 0
+        self.data.track_types = {}
+        self.data.nb_threads = 1
+
+    def inplace_merge_with(self, *other):
+        if self.data is None:
+            self.reset_data()
+        for o in other:
+            self.data.runs += o.data.runs
+            self.data.events += o.data.events
+            self.data.steps += o.data.steps
+            self.data.tracks += o.data.tracks
+            self.data.duration += o.data.duration
+            self.data.init += o.data.init
+
+            common_entries = set(self.data.track_types.keys()).intersection(
+                o.data.track_types.keys()
+            )
+            new_entries = set(o.data.track_types.keys()).difference(
+                self.data.track_types.keys()
+            )
+            for k in common_entries:
+                self.data.track_types[k] += o.data.track_types[k]
+            for k in new_entries:
+                self.data.track_types[k] = o.data.track_types[k]
+
+            # self.data.start_time = 0
+        self.data.start_time = min([o.data.start_time for o in other])
+        self.data.stop_time = max([o.data.stop_time for o in other])
+
+        self.data.sim_start_time = min([o.data.sim_start_time for o in other])
+        self.data.sim_stop_time = max([o.data.sim_stop_time for o in other])
+
+    @property
+    def start_date_time(self):
+        return datetime.datetime.fromtimestamp(int(self.data.start_time)).strftime("%c")
+
+    @property
+    def stop_date_time(self):
+        return datetime.datetime.fromtimestamp(int(self.data.stop_time)).strftime("%c")
+
+    @property
+    def pps(self):
+        if self.data.duration != 0:
+            return int(self.data.events / (self.data.duration / g4_units.s))
+        else:
+            return 0
+
+    @property
+    def tps(self):
+        if self.data.duration != 0:
+            return int(self.data.tracks / (self.data.duration / g4_units.s))
+        else:
+            return 0
+
+    @property
+    def sps(self):
+        if self.data.duration != 0:
+            return int(self.data.steps / (self.data.duration / g4_units.s))
+        else:
+            return 0
+
+    def get_processed_output(self):
+        d = {}
+        d["runs"] = {"value": self.data.runs, "unit": None}
+        d["events"] = {"value": self.data.events, "unit": None}
+        d["tracks"] = {"value": self.data.tracks, "unit": None}
+        d["steps"] = {"value": self.data.steps, "unit": None}
+        val, unit = g4_best_unit_tuple(self.data.init, "Time")
+        d["init"] = {
+            "value": val,
+            "unit": unit,
+        }
+        val, unit = g4_best_unit_tuple(self.data.duration, "Time")
+        d["duration"] = {
+            "value": val,
+            "unit": unit,
+        }
+        d["pps"] = {"value": self.pps, "unit": None}
+        d["tps"] = {"value": self.tps, "unit": None}
+        d["sps"] = {"value": self.sps, "unit": None}
+        d["start_time"] = {
+            "value": self.data.start_time,
+            "unit": None,
+        }
+        d["stop_time"] = {
+            "value": self.data.stop_time,
+            "unit": None,
+        }
+        val, unit = g4_best_unit_tuple(self.data.sim_start_time, "Time")
+        d["sim_start_time"] = {
+            "value": val,
+            "unit": unit,
+        }
+        val, unit = g4_best_unit_tuple(self.data.sim_stop_time, "Time")
+        d["sim_stop_time"] = {
+            "value": val,
+            "unit": unit,
+        }
+        d["threads"] = {"value": self.data.nb_threads, "unit": None}
+        d["arch"] = {"value": platform.system(), "unit": None}
+        d["python"] = {"value": platform.python_version(), "unit": None}
+        d["track_types"] = {"value": self.data.track_types, "unit": None}
+        return d
+
+    def write(self, path, encoder="json", **kwargs):
+        """Override virtual method from base class."""
+        with open(path, "w+") as f:
+            if encoder == "json":
+                dump_json(self.get_processed_output(), f, indent=4)
+            else:
+                f.write(self.__str__())
 
 
 class MeanValueDataItemMixin:
@@ -537,8 +716,8 @@ class DataItemContainer(DataContainer):
                     fatal(
                         "Cannot apply inplace merge data to container "
                         "with unset (None) data items. "
-                        f"In this case, the inplace item {i} is {s_not[self.data[i] is None]} None, "
-                        f"and the other item {i} is {s_not[other.data[i] is None]} None. "
+                        f"In this case, the inplace item {i} is {s_not[self.data[i] is None]}None, "
+                        f"and the other item {i} is {s_not[other.data[i] is None]}None. "
                         f"This is likely an implementation error in GATE. "
                     )
         return self
@@ -756,6 +935,16 @@ class QuotientMeanItkImage(QuotientItkImage):
     )
 
 
+class StatisticsItemContainer(DataItemContainer):
+
+    _data_item_classes = (StatisticsDataItem,)
+    default_data_item_config = Box(
+        {
+            0: Box({"output_filename": "auto", "write_to_disk": False, "active": True}),
+        }
+    )
+
+
 def merge_data(list_of_data):
     merged_data = type(list_of_data[0])(
         list_of_data[0].belongs_to, data=list_of_data[0].data
@@ -763,13 +952,3 @@ def merge_data(list_of_data):
     for d in list_of_data[1:]:
         merged_data.inplace_merge_with(d)
     return merged_data
-
-
-available_data_container_classes = {
-    "SingleItkImage": SingleItkImage,
-    "SingleMeanItkImage": SingleMeanItkImage,
-    "QuotientMeanItkImage": QuotientMeanItkImage,
-    "SingleArray": SingleArray,
-    "DoubleArray": DoubleArray,
-    "SingleItkImageWithVariance": SingleItkImageWithVariance,
-}

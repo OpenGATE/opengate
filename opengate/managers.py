@@ -6,6 +6,7 @@ import shutil
 import weakref
 from pathlib import Path
 import io
+import multiprocessing
 
 import opengate_core as g4
 from .base import (
@@ -18,13 +19,13 @@ from .definitions import __world_name__
 from .engines import SimulationEngine
 from .exception import fatal, warning, GateDeprecationError, GateImplementationError
 from .geometry.materials import MaterialDatabase
-
 from .utility import (
     g4_units,
     indent,
     read_mac_file_to_commands,
     ensure_directory_exists,
     insert_suffix_before_extension,
+    delete_folder_contents,
 )
 from .logger import *
 
@@ -35,7 +36,10 @@ from .physics import (
     translate_particle_name_gate_to_geant4,
 )
 from .serialization import dump_json, dumps_json, loads_json, load_json
-from .processing import dispatch_to_subprocess
+from .processing import (
+    dispatch_to_subprocess,
+    MultiProcessingHandlerEqualPerRunTimingInterval,
+)
 
 from .sources.generic import SourceBase, GenericSource
 from .sources.phspsources import PhaseSpaceSource
@@ -835,9 +839,6 @@ class PhysicsManager(GateObject):
         return s
 
     def __getstate__(self):
-        # if self.simulation.verbose_getstate:
-        #     self.warn_user("Getstate PhysicsManager")
-
         # in the case of the PhysicsManager, we make a copy of super().__getstate__()
         # rather than just using super().__getstate__() (which does not make a copy).
         # Reason: physics_list_manager would become None also in the base process
@@ -1341,6 +1342,49 @@ class VolumeManager(GateObject):
         print(self.dump_material_database_names())
 
 
+class SimulationMetaData(Box):
+
+    def __init__(self, *args, simulation_output=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.warnings = []
+        self.expected_number_of_events = 0  # FIXME workaround
+        self.user_hook_log = []
+        self.current_random_seed = None
+        self.number_of_sub_processes = None
+        self.start_new_process = None
+        self.simulation_id = None
+        if simulation_output is not None:
+            self.extract_from_simulation_output(simulation_output)
+
+    def reset(self):
+        self.reset_warnings()
+        self.expected_number_of_events = 0
+        self.user_hook_log = []
+        self.current_random_seed = None
+        self.number_of_sub_processes = None
+        self.start_new_process = None
+
+    def reset_warnings(self):
+        self.warnings = []
+
+    def import_from_simulation_meta_data(self, *meta_data):
+        for m in meta_data:
+            self.warnings.extend(m.warnings)
+            self.expected_number_of_events += m.expected_number_of_events
+            self.user_hook_log.extend(m.user_hook_log)
+            if self.current_random_seed is None:
+                self.current_random_seed = m.current_random_seed
+
+    def extract_from_simulation_output(self, *sim_output):
+        for so in sim_output:
+            self.warnings.extend(so.warnings)
+            self.expected_number_of_events += so.expected_number_of_events
+            self.user_hook_log.extend(so.user_hook_log)
+            if self.current_random_seed is None:
+                self.current_random_seed = so.current_random_seed
+            self.simulation_id = so.simulation_id
+
+
 def setter_hook_verbose_level(sim, verbose_level):
     # print(f"setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
     if sim.log_handler_id == -1:
@@ -1359,7 +1403,6 @@ def setter_hook_verbose_level(sim, verbose_level):
         level=verbose_level,
         format=("{level.icon}<level>{message}</level>"),  # Message formatting
     )
-    return verbose_level
 
 
 class Simulation(GateObject):
@@ -1650,6 +1693,11 @@ class Simulation(GateObject):
         # list to store warning messages issued somewhere in the simulation
         self._user_warnings = []
 
+        self.meta_data = SimulationMetaData()
+        self.meta_data_per_process = {}
+        self.sub_process_registry = None
+        self.multi_proc_handler = None
+
         # main managers
         self.volume_manager = VolumeManager(self)
         self.source_manager = SourceManager(self)
@@ -1661,12 +1709,14 @@ class Simulation(GateObject):
         self.user_hook_after_init = None
         self.user_hook_after_init_arg = None
         self.user_hook_after_run = None
-        self.user_hook_log = None
 
-        # read-only info
-        self._current_random_seed = None
-
-        self.expected_number_of_events = None
+    def __getattr__(self, item):
+        try:
+            return self.meta_data[item]
+        except KeyError:
+            raise AttributeError(
+                f"Item {item} not found in {type(self)}, nor in the simulation meta data. "
+            )
 
     def __str__(self):
         s = (
@@ -1694,21 +1744,10 @@ class Simulation(GateObject):
     def world(self):
         return self.volume_manager.world_volume
 
-    @property
-    def current_random_seed(self):
-        return self._current_random_seed
-
-    @property
-    def warnings(self):
-        return self._user_warnings
-
-    def reset_warnings(self):
-        self._user_warnings = []
-
     def warn_user(self, message):
         # We need this specific implementation because the Simulation does not hold a reference 'simulation',
         # as required by the base class implementation of warn_user()
-        self._user_warnings.append(message)
+        self.warnings.append(message)
         super().warn_user(message)
 
     def to_dictionary(self):
@@ -1856,7 +1895,7 @@ class Simulation(GateObject):
         self.verbose_level = self.verbose_level
         return original_stdout
 
-    def _run_simulation_engine(self, start_new_process):
+    def _run_simulation_engine(self, start_new_process, process_index=None):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
         Args:
             start_new_process (bool, optional): A flag passed to the engine
@@ -1868,16 +1907,75 @@ class Simulation(GateObject):
         with SimulationEngine(self) as se:
             se.new_process = start_new_process
             se.init_only = self.init_only
+            se.process_index = process_index
             output = se.run_engine()
         return output
 
-    def run(self, start_new_process=False):
+    def run_in_process(
+        self,
+        multi_process_handler,
+        process_index,
+        output_dir,
+        avoid_write_to_disk_in_subprocess,
+    ):
+        # Important: this method is intended to run in a processes spawned off the main process.
+        # Therefore, self is actually a separate instance from the original simulation
+        # and we can safely adapt it in this process.
+
+        # adapt the output_dir
+        self.output_dir = output_dir
+        if self.random_seed != "auto":
+            self.random_seed += process_index
+
+        # adapt the run timing intervals in
+        self.run_timing_intervals = (
+            multi_process_handler.get_run_timing_intervals_for_process(process_index)
+        )
+        # adapt all dynamic volumes
+        for vol in self.volume_manager.dynamic_volumes:
+            vol.reassign_dynamic_params_for_process(
+                multi_process_handler.get_original_run_timing_indices_for_process(
+                    process_index
+                )
+            )
+
+        if avoid_write_to_disk_in_subprocess is True:
+            for actor in self.actor_manager.actors.values():
+                actor.write_to_disk = False
+
+        output = self._run_simulation_engine(True, process_index=process_index)
+        print(f"run_in_process finished in process {process_index}")
+        self.to_json_file()
+        return output
+
+    def run(
+        self,
+        start_new_process=False,
+        number_of_sub_processes=0,
+        avoid_write_to_disk_in_subprocess=True,
+        merge_after_multiprocessing=True,
+        clear_output_dir_before_run=False,
+    ):
+        global __spec__
         # if windows and MT -> fail
         if os.name == "nt" and self.multithreaded:
             fatal(
                 "Error, the multi-thread option is not available for Windows now. "
                 "Run the simulation with one thread."
             )
+
+        if number_of_sub_processes == 1:
+            start_new_process = True
+
+        self.meta_data.reset()
+        self.meta_data.number_of_sub_processes = number_of_sub_processes
+        self.meta_data.start_new_process = start_new_process
+
+        if clear_output_dir_before_run is True:
+            delete_folder_contents(self.get_output_path())
+
+        for actor in self.actor_manager.actors.values():
+            actor.reset_user_output()
 
         # prepare the subprocess
         if start_new_process is True:
@@ -1913,23 +2011,55 @@ class Simulation(GateObject):
                     source.particle_generators = s.__dict__["particle_generators"]
                     source.num_entries = s.__dict__["num_entries"]
 
+            self.meta_data.extract_from_simulation_output(output)
+
+        elif number_of_sub_processes > 1:
+            self.multi_proc_handler = MultiProcessingHandlerEqualPerRunTimingInterval(
+                name="multi_proc_handler",
+                simulation=self,
+                number_of_processes=number_of_sub_processes,
+            )
+            self.multi_proc_handler.initialize()
+            __spec__ = None
+            try:
+                multiprocessing.set_start_method("spawn")
+            except RuntimeError:
+                print(f"Could not set start method 'spawn'. __spec__ = {__spec__}")
+                pass
+            # q = multiprocessing.Queue()
+
+            self.sub_process_registry = dict(
+                [
+                    (i, {"output_dir": str(Path(self.output_dir) / f"process_{i}")})
+                    for i in range(number_of_sub_processes)
+                ]
+            )
+
+            with multiprocessing.Pool(number_of_sub_processes) as pool:
+                results = [
+                    pool.apply_async(
+                        self.run_in_process,
+                        (
+                            self.multi_proc_handler,
+                            k,
+                            v["output_dir"],
+                            avoid_write_to_disk_in_subprocess,
+                        ),
+                    )
+                    for k, v in self.sub_process_registry.items()
+                ]
+                # `.apply_async()` immediately returns AsyncResult (ApplyResult) object
+                list_of_output = [res.get() for res in results]
+            log.info("End of multiprocessing")
+
+            if merge_after_multiprocessing is True:
+                self.merge_simulations_from_multiprocessing(list_of_output)
+
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             output = self._run_simulation_engine(False)
-
-        # replace warnings by the one of the subprocess
-        self._user_warnings = output.warnings
-
-        # save the log output
-        self.log_output = output.log_output
-
-        # FIXME workaround
-        self.expected_number_of_events = output.expected_number_of_events
-
-        # store the hook log
-        self.user_hook_log = output.user_hook_log
-        self._current_random_seed = output.current_random_seed
+            self.meta_data.extract_from_simulation_output(output)
 
         if self.store_json_archive is True:
             self.to_json_file()
@@ -1956,6 +2086,54 @@ class Simulation(GateObject):
         # and for any one of the operators, we choose GateGammaFreeFlightOptrActor
         # but this cleans for all. Trust me, bro.
         g4.GateGammaFreeFlightOptrActor.ClearOperators()
+
+    def merge_simulations_from_multiprocessing(self, list_of_output):
+        """To be run after a simulation has run in a multiple subprocesses.
+        Currently, the input is a list of SimulationOutput instances,
+        but in the future the input will be a list of Simulation instances
+        (returned or recreated from the subprocesses)."""
+        if self.multi_proc_handler is None:
+            fatal(
+                "Cannot execute merge_simulations_from_multiprocessing without a multi_proc_handler. "
+            )
+
+        luts_run_index = [
+            self.multi_proc_handler.get_original_run_timing_indices_for_process(
+                o.process_index
+            )
+            for o in list_of_output
+        ]
+
+        # loop over actors in original simulation
+        for actor in self.actor_manager.actors.values():
+            actors_to_merge = [
+                o.get_actor(actor.name) for o in list_of_output
+            ]  # these are the actors from the process
+            actor.import_user_output_from_actor(
+                *actors_to_merge, luts_run_index=luts_run_index
+            )
+
+        for actor in self.actor_manager.actors.values():
+            actor.EndOfMultiProcessAction()
+
+        self.meta_data.extract_from_simulation_output(*list_of_output)
+        for i, o in enumerate(list_of_output):
+            self.meta_data_per_process[i] = SimulationMetaData(simulation_output=o)
+
+        # FIXME: temporary workaround to collect extra info from output
+        # will be implemented similar to actor.import_user_output_from_actor after source refactoring
+        for source in self.source_manager.user_info_sources.values():
+            for o in list_of_output:
+                try:
+                    s = o.get_source(source.name)
+                except:
+                    continue
+                if "fTotalSkippedEvents" in s.user_info.__dict__:
+                    if not hasattr(source, "fTotalSkippedEvents"):
+                        source.fTotalSkippedEvents = 0
+                        source.fTotalZeroEvents = 0
+                    source.fTotalSkippedEvents += s.user_info.fTotalSkippedEvents
+                    source.fTotalZeroEvents += s.user_info.fTotalZeroEvents
 
     def voxelize_geometry(
         self,

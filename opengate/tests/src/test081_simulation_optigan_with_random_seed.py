@@ -11,7 +11,7 @@ import platform
 import os
 
 if __name__ == "__main__":
-    paths = tu.get_default_test_paths(__file__, output_folder="test075_optigan")
+    paths = tu.get_default_test_paths(__file__, output_folder="test081_optigan")
 
     # create simulation
     sim = gate.Simulation()
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     ]
 
     phsp_actor.steps_to_store = "first"
-    phsp_actor.output_filename = "test075_simulation_optigan_with_random_seed_600.root"
+    phsp_actor.output_filename = "test081_simulation_optigan_with_random_seed_600.root"
 
     # add a kill actor to the crystal
     ka = sim.add_actor("KillActor", "kill_actor2")

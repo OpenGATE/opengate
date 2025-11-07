@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from box import Box
+
 import opengate as gate
 import opengate.tests.utility as utility
 
@@ -86,13 +88,16 @@ if __name__ == "__main__":
     print(stats)
 
     stats_ref = gate.actors.miscactors.SimulationStatisticsActor(name="stat_ref")
-    c = stats_ref.counts
+    c = Box()
     c.runs = 3
     c.events = 7800
     c.tracks = 37584  # 56394
     c.steps = 266582  # 217234
     # stats_ref.pps = 4059.6 3 3112.2
     c.duration = 1 / 4059.6 * 7800 * sec
+
+    stats_ref.user_output.stats.store_data("merged", c)
+
     print("-" * 80)
     is_ok = utility.assert_stats(stats, stats_ref, 0.185)
 

@@ -1,7 +1,8 @@
 import copy
 import inspect
-from box import Box
-from typing import Optional
+import uproot
+import tqdm
+import numpy as np
 import sys
 
 import opengate_core as g4
@@ -14,6 +15,7 @@ from .dataitems import (
     SingleItkImageWithVariance,
     QuotientItkImage,
     QuotientMeanItkImage,
+    StatisticsItemContainer,
     merge_data,
 )
 
@@ -436,6 +438,10 @@ class ActorOutputBase(GateObject):
     def get_output_path_as_string(self, **kwargs):
         return ensure_filename_is_str(self.get_output_path(**kwargs))
 
+    def reset_data(self):
+        self.merged_data = None
+        self.data_per_run = {}
+
     def close(self):
         if self.keep_data_in_memory is False:
             self.data_per_run = {}
@@ -460,12 +466,14 @@ class ActorOutputBase(GateObject):
             f"but it should be implemented in the specific derived class"
         )
 
+    def merge_data_from_actor_output(self, *actor_output, **kwargs):
+        raise NotImplementedError("This is the base class. ")
+
 
 class ActorOutputUsingDataItemContainer(ActorOutputBase):
     # hints for IDE
     merge_data_after_simulation: bool
     keep_data_per_run: bool
-    data_item_config: Optional[Box]
 
     user_info_defaults = {
         "merge_data_after_simulation": (
@@ -684,6 +692,19 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
                     f"Allowed values are: 'merged' or a valid run_index. "
                 )
 
+    def reset_data(self):
+        # try to delegate the reset to the data item container (and the data items in them)
+        try:
+            if self.merged_data is not None:
+                self.merged_data.reset_data()
+            for v in self.data_per_run.values():
+                if v is not None:
+                    v.reset_data()
+        # if they do not implement the reset_data() method,
+        # fallback to the simple reset from the super class
+        except NotImplementedError:
+            super().reset_data()
+
     def get_data(self, which="merged", item=0):
         container = self.get_data_container(which)
         if container is None:
@@ -780,8 +801,8 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         ]
         self.write_data(which=which, item=items)
 
-    def merge_data_from_runs(self):
-        self.merged_data = merge_data(list(self.data_per_run.values()))
+    def end_of_simulation(self, item="all", **kwargs):
+        self.write_data_if_requested(which="all", item=item)
 
     def end_of_run(self, run_index):
         if self.merge_data_after_simulation is True:
@@ -793,20 +814,36 @@ class ActorOutputUsingDataItemContainer(ActorOutputBase):
         if self.merge_data_after_simulation is True:
             self.merged_data = self.data_container_class(belongs_to=self)
 
-    def end_of_simulation(self, item="all", **kwargs):
-        try:
-            self.write_data_if_requested(item="all", **kwargs)
-        except NotImplementedError:
-            raise GateImplementationError(
-                "Unable to run end_of_simulation "
-                f"in user_output {self.name} of actor {self.belongs_to_actor.name}"
-                f"because the class does not implement a write_data_if_requested() "
-                f"and/or write_data() method. "
-                f"A developer needs to fix this. "
-            )
+    def merge_data_from_actor_output(
+        self, *actor_output, discard_existing_data=True, **kwargs
+    ):
+        run_indices_to_import = set()
+        for ao in actor_output:
+            run_indices_to_import.union(ao.data_per_run.keys())
+        which_output_per_run_index = dict(
+            [
+                (r, [ao for ao in actor_output if r in ao.data_per_run])
+                for r in run_indices_to_import
+            ]
+        )
+        for r in run_indices_to_import:
+            data_to_import = [
+                ao.data_per_run[r] for ao in which_output_per_run_index[r]
+            ]
+            if discard_existing_data is False and r in self.data_per_run:
+                data_to_import.append(self.data_per_run[r])
+            self.data_per_run[r] = merge_data(data_to_import)
+        merged_data_to_import = [
+            ao.merged_data for ao in actor_output if ao.merged_data is not None
+        ]
+        if discard_existing_data is False and self.merged_data is not None:
+            merged_data_to_import.append(self.merged_data)
+        if len(merged_data_to_import) > 0:
+            self.merged_data = merge_data(merged_data_to_import)
 
 
 class ActorOutputImage(ActorOutputUsingDataItemContainer):
+
     _default_interface_class = UserInterfaceToActorOutputImage
 
     def __init__(self, *args, **kwargs):
@@ -866,7 +903,55 @@ class ActorOutputQuotientMeanImage(ActorOutputImage):
     data_container_class = QuotientMeanItkImage
 
 
+def _setter_hook_encoder(self, value):
+    if value == "encoder":
+        self.default_suffix = "json"
+    else:
+        self.default_suffix = "txt"
+    return value
+
+
+class ActorOutputStatisticsActor(ActorOutputUsingDataItemContainer):
+    """This is a hand-crafted ActorOutput specifically for the SimulationStatisticsActor."""
+
+    _default_interface_class = UserInterfaceToActorOutputUsingDataItemContainer
+    data_container_class = StatisticsItemContainer
+
+    # hints for IDE
+    encoder: str
+
+    user_info_defaults = {
+        "encoder": (
+            "json",
+            {
+                "doc": "How should the output be encoded?",
+                "allowed_values": ("json", "legacy"),
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        self.default_suffix = "json"
+        super().__init__(*args, **kwargs)
+
+    def initialize(self):
+        output_filename = self.get_output_filename()
+        if output_filename != "" and output_filename is not None:
+            self.set_write_to_disk(True)
+        super().initialize()
+
+    # def store_data(self, data, **kwargs):
+    #     self.merged_data.update(data)
+    #
+    def __str__(self):
+        if self.merged_data is not None:
+            return self.merged_data.__str__()
+        else:
+            return "No data found. "
+
+
 class ActorOutputRoot(ActorOutputBase):
+
     # hints for IDE
     output_filename: str
     write_to_disk: bool
@@ -955,6 +1040,130 @@ class ActorOutputRoot(ActorOutputBase):
                 self.name, self.get_output_path_as_string()
             )
 
+    def merge_data_from_actor_output(
+        self, *actor_output, luts_run_index=None, **kwargs
+    ):
+        """
+        luts_run_index: a list of lookup table, one for each root file.
+        The run index in the root file to be merged serves as array index to the lookup table.
+        The value recovered from the lookup table is the new run index to be written into the merged file.
+        """
+
+        uproot.default_library = "np"
+
+        out = uproot.recreate(self.get_output_path())
+        rootfiles = [a.get_output_path() for a in actor_output]
+
+        # Previous ID values to be able to increment runIn or EventId
+        previous_id = {}
+
+        # create the dict reading all input root files
+        trees = {}  # TTree with TBranch
+        hists = {}  # Directory with THist
+        pbar = tqdm.tqdm(total=len(rootfiles))
+        for rootfile_index, rf in enumerate(rootfiles):
+            with uproot.open(rf) as root:
+                tree_names = unicity(root.keys())
+                for tree_name in tree_names:
+                    if hasattr(root[tree_name], "keys"):
+                        if tree_name not in trees:
+                            trees[tree_name] = {"rootDictType": {}, "rootDictValue": {}}
+                            hists[tree_name] = {"rootDictType": {}, "rootDictValue": {}}
+                            previous_id[tree_name] = {}
+                        for branch in root[tree_name].keys():
+                            # HISTOGRAMS
+                            if isinstance(
+                                root[tree_name], uproot.reading.ReadOnlyDirectory
+                            ):
+                                print(branch)
+                                array = root[tree_name][branch].values()
+                                if len(array) > 0:
+                                    branch_name = tree_name + "/" + branch
+                                    if isinstance(array[0], str):
+                                        array = np.zeros(len(array))
+                                    if (
+                                        branch_name
+                                        not in hists[tree_name]["rootDictType"]
+                                    ):
+                                        hists[tree_name]["rootDictType"][
+                                            branch_name
+                                        ] = root[tree_name][branch].to_numpy()
+                                        hists[tree_name]["rootDictValue"][
+                                            branch_name
+                                        ] = np.zeros(len(array))
+                                    hists[tree_name]["rootDictValue"][
+                                        branch_name
+                                    ] += array
+                            else:
+                                # ARRAYS
+                                array = root[tree_name][branch].array(library="np")
+                                if len(array) > 0 and not isinstance(
+                                    array[0], np.ndarray
+                                ):
+                                    if isinstance(array[0], str):
+                                        array = np.zeros(len(array))
+                                    if branch not in trees[tree_name]["rootDictType"]:
+                                        trees[tree_name]["rootDictType"][branch] = type(
+                                            array[0]
+                                        )
+                                        trees[tree_name]["rootDictValue"][branch] = (
+                                            np.array([])
+                                        )
+                                    if (
+                                        branch.startswith("RunID")
+                                        and luts_run_index is not None
+                                    ):
+                                        luts_run_index = np.asarray(luts_run_index)
+                                        array = luts_run_index[rootfile_index][
+                                            array.astype(int)
+                                        ]
+                                    if branch.startswith("EventID"):
+                                        if branch not in previous_id[tree_name]:
+                                            previous_id[tree_name][branch] = 0
+                                        array += previous_id[tree_name][branch]
+                                        previous_id[tree_name][branch] = max(array) + 1
+                                    trees[tree_name]["rootDictValue"][branch] = (
+                                        np.append(
+                                            trees[tree_name]["rootDictValue"][branch],
+                                            array,
+                                        )
+                                    )
+            pbar.update(1)
+        pbar.close()
+
+        # Set the dict in the output root file
+        for tree_name in trees:
+            if (
+                not trees[tree_name]["rootDictValue"] == {}
+                or not trees[tree_name]["rootDictType"] == {}
+            ):
+                # out.mktree(tree, trees[tree]["rootDictType"])
+                out[tree_name] = trees[tree_name]["rootDictValue"]
+        for hist in hists.values():
+            if len(hist["rootDictValue"]) > 0 and len(hist["rootDictType"]) > 0:
+                for branch in hist["rootDictValue"]:
+                    for i in range(len(hist["rootDictValue"][branch])):
+                        hist["rootDictType"][branch][0][i] = hist["rootDictValue"][
+                            branch
+                        ][i]
+                    out[branch[:-2]] = hist["rootDictType"][branch]
+
+
+def unicity(root_keys):
+    """
+    Return an array containing the keys of the root file only one (without the version number)
+    """
+    root_array = []
+    for key in root_keys:
+        name = key.split(";")
+        if len(name) > 2:
+            name = ";".join(name)
+        else:
+            name = name[0]
+        if name not in root_array:
+            root_array.append(name)
+    return root_array
+
 
 process_cls(ActorOutputBase)
 process_cls(ActorOutputUsingDataItemContainer)
@@ -964,4 +1173,5 @@ process_cls(ActorOutputSingleMeanImage)
 process_cls(ActorOutputSingleImageWithVariance)
 process_cls(ActorOutputQuotientImage)
 process_cls(ActorOutputQuotientMeanImage)
+process_cls(ActorOutputStatisticsActor)
 process_cls(ActorOutputRoot)
