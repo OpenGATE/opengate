@@ -110,7 +110,7 @@ if __name__ == "__main__":
     pu.authorize_repeated_volumes = True
     pu.input_digi_collection = sc.name
     pu.output_filename = sc.output_filename
-    time_window = 1000.0
+    pu.time_window = 1000.0
 
     # Timing
     sim.run_timing_intervals = [[0, 0.001 * sec]]
@@ -119,6 +119,9 @@ if __name__ == "__main__":
     print(stats)
 
     all_match = check_gate_pileup(
-        sc.output_filename, "Singles_before_pileup", "Singles_after_pileup", time_window
+        sc.output_filename,
+        "Singles_before_pileup",
+        "Singles_after_pileup",
+        pu.time_window,
     )
     utility.test_ok(all_match)
