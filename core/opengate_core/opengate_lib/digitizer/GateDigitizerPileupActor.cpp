@@ -20,7 +20,7 @@ void GateDigitizerPileupActor::InitializeUserInfo(py::dict &user_info) {
   GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
 
   // Get time window parameter in ns.
-  fTimeWindow = 1000.0; // default value
+  fTimeWindow = 0.0; // default value, no pile-up
   if (py::len(user_info) > 0 && user_info.contains("time_window")) {
     fTimeWindow = DictGetDouble(user_info, "time_window");
   }
