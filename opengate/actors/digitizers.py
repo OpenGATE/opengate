@@ -564,6 +564,12 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
                 "doc": "FIXME",
             },
         ),
+        "time_window": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
         "group_volume": (
             None,
             {
