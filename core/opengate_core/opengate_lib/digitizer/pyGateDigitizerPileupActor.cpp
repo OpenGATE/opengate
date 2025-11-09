@@ -17,5 +17,7 @@ void init_GateDigitizerPileupActor(py::module &m) {
   py::class_<GateDigitizerPileupActor,
              std::unique_ptr<GateDigitizerPileupActor, py::nodelete>,
              GateVDigitizerWithOutputActor>(m, "GateDigitizerPileupActor")
-      .def(py::init<py::dict &>());
+      .def(py::init<py::dict &>())
+      .def("SetGroupVolumeDepth",
+           &GateDigitizerPileupActor::SetGroupVolumeDepth);
 }
