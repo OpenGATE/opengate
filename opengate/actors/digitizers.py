@@ -564,6 +564,12 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
                 "doc": "FIXME",
             },
         ),
+        "group_volume": (
+            None,
+            {
+                "doc": "FIXME",
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -578,6 +584,14 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
         DigitizerBase.initialize(self)
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
+
+    def set_group_by_depth(self):
+        depth = -1
+        if self.user_info.group_volume is not None:
+            depth = self.simulation.volume_manager.get_volume(
+                self.user_info.group_volume
+            ).volume_depth_in_tree
+        self.SetGroupVolumeDepth(depth)
 
     def StartSimulationAction(self):
         DigitizerBase.StartSimulationAction(self)
