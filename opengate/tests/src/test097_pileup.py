@@ -3,56 +3,11 @@
 
 import opengate as gate
 from opengate.tests import utility
-import uproot
+from test097_pileup_helpers import check_gate_pileup
 
 green = [0, 1, 0, 1]
 gray = [0.5, 0.5, 0.5, 1]
 white = [1, 1, 1, 0.8]
-
-
-def num_singles_after_pileup(singles_tree, time_window):
-    """
-    This function calculates the number of singles remaining at the output of the pile-up actor,
-    for a given root file containing the singles that are fed into the pile-up actor.
-    The time window is specified in ns.
-    """
-    df = singles_tree.arrays(library="pd")
-    grouped = df.groupby("PreStepUniqueVolumeID")
-
-    total_num_pileup_singles = 0
-    total_num_pileup_groups = 0
-    for volume_id, group in grouped:
-        num_piledup_singles = 0
-        num_pileup_groups = 0
-        # For each volume, start with a sorted list of singles time values in ns
-        times = group["GlobalTime"].sort_values().values
-        current = 0  # index of a single that opens the current time window
-        next = 1
-        while next < len(times):
-            # Increment next until it points to the single that opens the next time window
-            while next < len(times) and times[next] <= times[current] + time_window:
-                next += 1
-            if next > current + 1:
-                # We have found a group of at least two singles in the same time window.
-                num_pileup_groups += 1
-                num_piledup_singles += next - current
-                current = next
-                next = current + 1
-            else:
-                # The time window opened by current contains only one event, proceed
-                current += 1
-                next += 1
-        total_num_pileup_singles += num_piledup_singles
-        total_num_pileup_groups += num_pileup_groups
-
-    print(f"Number of singles before pile-up is {len(df)}")
-    print(
-        f"{total_num_pileup_singles} singles are piled up in {total_num_pileup_groups} groups"
-    )
-    num_singles_remaining = len(df) - total_num_pileup_singles + total_num_pileup_groups
-
-    return num_singles_remaining
-
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test097", "test097")
@@ -161,26 +116,9 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [[0, 0.001 * sec]]
 
     sim.run()
-
     print(stats)
 
-    with uproot.open(sc.output_filename) as root_file:
-        singles_tree = root_file["Singles_before_pileup"]
-        pileup_tree = root_file["Singles_after_pileup"]
-
-    n_expected = num_singles_after_pileup(singles_tree, time_window)
-    e_expected = singles_tree.arrays(library="pd")["TotalEnergyDeposit"].sum()
-
-    print(f"Expected number of singles at output of pile-up actor is {n_expected}")
-    print(f"Expected total deposited energy is {e_expected:.03f} Mev")
-
-    n_actual = int(pileup_tree.num_entries)
-    e_actual = pileup_tree.arrays(library="pd")["TotalEnergyDeposit"].sum()
-
-    print(f"Actual number of singles at output of pile-up actor is {n_actual}")
-    print(f"Actual total deposited energy is {e_actual:.03f} MeV")
-
-    n_ok = n_actual == n_expected
-    e_ok = abs(e_actual - e_expected) / e_expected < 1e-6
-
-    utility.test_ok(n_ok and e_ok)
+    all_match = check_gate_pileup(
+        sc.output_filename, "Singles_before_pileup", "Singles_after_pileup", time_window
+    )
+    utility.test_ok(all_match)
