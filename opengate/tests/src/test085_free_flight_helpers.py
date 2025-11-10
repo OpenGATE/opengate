@@ -4,6 +4,7 @@
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.contrib.spect.spect_helpers import *
+from opengate.contrib.spect.spect_freeflight_helpers import *
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
