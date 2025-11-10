@@ -44,7 +44,7 @@ if __name__ == "__main__":
     print(stats)
 
     # uncertainty
-    uncer, _, _ = history_rel_uncertainty_from_files(
+    uncer, _, _ = compute_history_by_history_relative_uncertainty_from_files(
         paths.output / "projection_1_fd_counts.mhd",
         paths.output / "projection_1_fd_squared_counts.mhd",
         ac,

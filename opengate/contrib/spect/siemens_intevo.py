@@ -5,7 +5,7 @@ from opengate.actors.digitizers import *
 from opengate.managers import Simulation
 from opengate.utility import g4_units
 from opengate.contrib.spect.spect_helpers import (
-    get_volume_position_in_head,
+    get_volume_bounding_box_coordinate_in_frame,
     get_default_energy_windows,
 )
 from opengate.geometry.utility import get_transform_orbiting
@@ -46,9 +46,15 @@ def update_geometrical_parameters(store_to_file=False):
     for c in p.collimators:
         s = Simulation()
         spect, colli, crystal = add_spect_head(s, "spect", c, debug=True)
-        pos = get_volume_position_in_head(s, "spect", f"collimator", "min", axis=0)
-        y = get_volume_position_in_head(s, "spect", "crystal", "center", axis=0)
-        psd = get_volume_position_in_head(s, "spect", "shielding_front", "min", axis=0)
+        pos = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", f"collimator", "min", axis=0
+        )
+        y = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", "crystal", "center", axis=0
+        )
+        psd = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", "shielding_front", "min", axis=0
+        )
         p[c] = Box()
         # distance from box boundary to collimator
         p[c].collimator_position = pos
@@ -547,8 +553,12 @@ def compute_plane_position_and_distance_to_crystal_OLD(collimator_type):
     spect, colli, crystal = add_spect_head(
         temp_sim, "spect", collimator_type, debug=True
     )
-    pos = get_volume_position_in_head(temp_sim, "spect", f"collimator", "min", axis=0)
-    y = get_volume_position_in_head(temp_sim, "spect", "crystal", "center", axis=0)
+    pos = get_volume_bounding_box_coordinate_in_frame(
+        temp_sim, "spect", f"collimator", "min", axis=0
+    )
+    y = get_volume_bounding_box_coordinate_in_frame(
+        temp_sim, "spect", "crystal", "center", axis=0
+    )
     crystal_distance = -y
     psd = -spect.size[0] / 2.0 - 1 * g4_units.nm
 

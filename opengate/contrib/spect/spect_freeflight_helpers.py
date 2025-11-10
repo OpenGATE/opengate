@@ -232,74 +232,6 @@ def merge_freeflight_uncertainty(
     sitk.WriteImage(img, str(folder / output_filename))
 
 
-def merge_freeflight_old(
-    folder,
-    ref_n,
-    subfolders,  # primary, scatter, septal_penetration (or some of them)
-    num_events,
-    counts_filename="projection_0_counts.mhd",
-    squared_counts_filename="projection_0_squared_counts.mhd",
-    output_filename="relative_uncertainty_0_counts.mhd",
-):
-    # check
-    if len(subfolders) != len(num_events):
-        fatal(
-            f"merge_freeflight: subfolders and num_events must have the same length \n {subfolders} {num_events}"
-        )
-
-    # merge all counts and squared counts
-    # normalized for 1 event
-    # compute squared sum of variances
-    total_counts = None
-    total_squared_counts = None
-    total_variance = None
-    img_counts = None
-    for subfolder, n in zip(subfolders, num_events):
-        if n == 0:
-            continue
-        f = folder / subfolder
-        counts_path = f / counts_filename
-        squared_counts_path = f / squared_counts_filename
-        print(f"Reading {subfolder} with {n} events")
-        if not counts_path.exists():
-            fatal(f"merge_freeflight: {counts_path} does not exist")
-        if not squared_counts_path.exists():
-            fatal(f"merge_freeflight: {squared_counts_path} does not exist")
-        img_counts = sitk.GetArrayFromImage(sitk.ReadImage(counts_path)) / n
-        img_squared_counts = (
-            sitk.GetArrayFromImage(sitk.ReadImage(squared_counts_path)) / n
-        )
-        if total_counts is None:
-            total_counts = img_counts
-            total_squared_counts = img_squared_counts
-        else:
-            total_counts += img_counts
-            total_squared_counts += img_squared_counts
-        # current variance
-        v = (img_squared_counts - np.power(img_counts, 2)) / (n - 1) * (n**2)
-        if total_variance is None:
-            total_variance = v
-        else:
-            total_variance += v
-
-    # compute uncertainty
-    uncertainty = np.divide(
-        np.sqrt(total_variance),
-        total_counts,
-        out=np.zeros_like(total_variance),
-        where=total_counts != 0,
-    )
-
-    # scale and write images
-    total_counts *= ref_n
-    img = sitk.GetImageFromArray(total_counts)
-    img.CopyInformation(img_counts)
-    sitk.WriteImage(img, folder / counts_filename)
-    img = sitk.GetImageFromArray(uncertainty)
-    img.CopyInformation(img_counts)
-    sitk.WriteImage(img, folder / output_filename)
-
-
 def spect_freeflight_merge(
     folder,
     n_prim,
@@ -323,8 +255,10 @@ def spect_freeflight_merge(
         img = folder / prim_folder / counts_filename
         sq_img = folder / prim_folder / sq_counts_filename
         out = folder / prim_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-        _, prim, prim_squared = history_rel_uncertainty_from_files(
-            img, sq_img, n_prim, out
+        _, prim, prim_squared = (
+            compute_history_by_history_relative_uncertainty_from_files(
+                img, sq_img, n_prim, out
+            )
         )
     else:
         prim = None
@@ -335,8 +269,10 @@ def spect_freeflight_merge(
         img = folder / scatter_folder / counts_filename
         sq_img = folder / scatter_folder / sq_counts_filename
         out = folder / scatter_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-        _, scatter, scatter_squared = history_rel_uncertainty_from_files(
-            img, sq_img, n_scatter, out
+        _, scatter, scatter_squared = (
+            compute_history_by_history_relative_uncertainty_from_files(
+                img, sq_img, n_scatter, out
+            )
         )
     else:
         scatter = None
