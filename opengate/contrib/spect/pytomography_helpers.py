@@ -27,6 +27,7 @@ from pytomography.utils import compute_EW_scatter
 
 import torch
 import SimpleITK as sitk
+import itk
 import numpy as np
 import json
 from pathlib import Path
