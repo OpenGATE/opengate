@@ -1,116 +1,7 @@
-from pathlib import Path
 from opengate.contrib.spect.spect_helpers import *
+from opengate.actors.simulation_stats_helpers import *
 import json
-
-
-def history_ff_combined_rel_uncertainty(
-    vprim, vprim_squared, vscatter, vscatter_squared, n_prim, n_scatter
-):
-    """
-    Combines primary and scatter simulation results, scaling them to the number of primary histories (n_prim).
-    """
-    if vprim is None and vscatter is None:
-        raise ValueError("At least one of the primary or scattering values must be set")
-
-    # Initialize total mean and variance, scaled to n_prim events
-    mean_total = np.zeros_like(vprim if vprim is not None else vscatter)
-    variance_total = np.zeros_like(mean_total)
-
-    # --- Process Primary Component ---
-    if vprim is not None:
-        # The total contribution from primaries is just vprim itself
-        mean_total += vprim
-
-        # Calculate the variance of the total primary contribution
-        # Var(total) = n^2 * Var(mean) = n^2 * (E[x^2] - E[x]^2)/(n-1)
-        mean_prim_per_event = vprim / n_prim
-        mean_prim_sq_per_event = vprim_squared / n_prim
-        variance_of_mean_prim = (
-            mean_prim_sq_per_event - np.power(mean_prim_per_event, 2)
-        ) / (n_prim - 1)
-        variance_total += variance_of_mean_prim * (n_prim**2)
-
-    # --- Process and Scale Scatter Component ---
-    if vscatter is not None:
-        # Scale the scatter counts to be equivalent to n_prim histories
-        scaling_factor = n_prim / n_scatter
-        mean_scatter_scaled = vscatter * scaling_factor
-        mean_total += mean_scatter_scaled
-
-        # Calculate the variance of the scaled scatter contribution
-        # Var(s*X) = s^2 * Var(X)
-        mean_scatter_per_event = vscatter / n_scatter
-        mean_scatter_sq_per_event = vscatter_squared / n_scatter
-        variance_of_mean_scatter = (
-            mean_scatter_sq_per_event - np.power(mean_scatter_per_event, 2)
-        ) / (n_scatter - 1)
-        variance_total += (
-            variance_of_mean_scatter * (n_scatter**2) * (scaling_factor**2)
-        )
-
-    # --- Calculate Final Relative Uncertainty ---
-    # Based on the total scaled mean and total combined variance
-    uncert = np.divide(
-        np.sqrt(variance_total),
-        mean_total,
-        out=np.zeros_like(variance_total),
-        where=mean_total != 0,
-    )
-
-    return uncert, mean_total
-
-
-def batch_ff_combined_rel_uncertainty(
-    prim_mean, prim_uncert, scatter_mean, scatter_uncert, n_prim, n_scatter
-):
-    # combine mean
-    r = n_prim / n_scatter
-    mean = prim_mean + scatter_mean * r
-
-    # combine uncertainties
-    prim_var = np.power(prim_uncert * prim_mean, 2)
-    sc_var = np.power(scatter_uncert * scatter_mean, 2) * np.power(r, 2)
-    uncert = np.sqrt(prim_var + sc_var)
-    uncert = np.divide(
-        uncert,
-        mean,
-        out=np.zeros_like(uncert),
-        where=mean != 0,
-    )
-
-    return uncert, mean
-
-
-def spect_freeflight_merge_all_heads(
-    folder,
-    n_prim,
-    n_scatter,
-    n_target,
-    prim_folder="primary",
-    scatter_folder="scatter",
-    nb_of_heads=2,
-    counts_filename_pattern="projection_$I_counts.mhd",
-    sq_counts_filename_pattern="projection_$I_squared_counts.mhd",
-    merge_filename="projection_$I_counts.mhd",
-    rel_uncert_suffix="relative_uncertainty",
-    spr_filename="projection_$I_spr.mhd",
-    verbose=True,
-):
-    for d in range(nb_of_heads):
-        spect_freeflight_merge(
-            folder,
-            n_prim,
-            n_scatter,
-            n_target,
-            prim_folder=prim_folder,
-            scatter_folder=scatter_folder,
-            counts_filename=counts_filename_pattern.replace("$I", str(d)),
-            sq_counts_filename=sq_counts_filename_pattern.replace("$I", str(d)),
-            merge_filename=merge_filename.replace("$I", str(d)),
-            rel_uncert_suffix=rel_uncert_suffix.replace("$I", str(d)),
-            spr_filename=spr_filename.replace("$I", str(d)),
-            verbose=verbose,
-        )
+from pathlib import Path
 
 
 def merge_freeflight_uncertainty(
@@ -232,124 +123,58 @@ def merge_freeflight_uncertainty(
     sitk.WriteImage(img, str(folder / output_filename))
 
 
-def spect_freeflight_merge(
-    folder,
-    n_prim,
-    n_scatter,
-    n_target,
-    prim_folder="primary",
-    scatter_folder="scatter",
-    counts_filename="projection_0_counts.mhd",
-    sq_counts_filename="projection_0_squared_counts.mhd",
-    merge_filename="projection_0_counts.mhd",
-    rel_uncert_suffix="relative_uncertainty",
-    spr_filename="projection_0_spr.mhd",
-    verbose=True,
-):
-    # make the paths
-    prim_folder = Path(prim_folder)
-    scatter_folder = Path(scatter_folder)
+def get_unit(data):
+    u = data["unit"]
+    if u is None:
+        u = 1
+    if u == "s":
+        u = 1 / 60
+    if u == "min":
+        u = 1
+    if u == "h":
+        u = 60
+    return u
 
-    # primary
-    if n_prim > 0:
-        img = folder / prim_folder / counts_filename
-        sq_img = folder / prim_folder / sq_counts_filename
-        out = folder / prim_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-        _, prim, prim_squared = (
-            compute_history_by_history_relative_uncertainty_from_files(
-                img, sq_img, n_prim, out
-            )
-        )
-    else:
-        prim = None
-        prim_squared = None
 
-    # scatter
-    if n_scatter > 0:
-        img = folder / scatter_folder / counts_filename
-        sq_img = folder / scatter_folder / sq_counts_filename
-        out = folder / scatter_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-        _, scatter, scatter_squared = (
-            compute_history_by_history_relative_uncertainty_from_files(
-                img, sq_img, n_scatter, out
-            )
-        )
-    else:
-        scatter = None
-        scatter_squared = None
+def merge_free_flight_stats(ff_folder, subfolders, filename="stats.txt"):
 
-    # combined (combined prim/scatter is scaled to n_primary)
-    uncert, mean = history_ff_combined_rel_uncertainty(
-        prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
+    total_stats = None
+    for subfolder in subfolders:
+        ff_subfolder = ff_folder / subfolder
+        stats_file = ff_subfolder / filename
+        stats = read_stats_file(stats_file)  # stats.counts.events
+        if total_stats is None:
+            total_stats = stats
+        else:
+            total_stats = sum_stats(total_stats, stats)
+
+    # write final merged stats
+    write_stats(total_stats, ff_folder / filename)
+    stats = read_stats_file(ff_folder / filename)
+    return stats
+
+
+def compare_stats(ref_folder: Path, ff_folder: Path):
+    ref_stats_file = ref_folder / "stats.txt"
+    ff_stats_file = ff_folder / "stats.txt"
+    ref_data = read_stats_file(ref_stats_file)
+    ff_data = read_stats_file(ff_stats_file)
+
+    ref_duration_min = ref_data.counts.duration / g4_units.min
+    ff_duration_min = ff_data.counts.duration / g4_units.min
+    r = ref_duration_min / ff_duration_min
+    print(
+        f"Total Duration {ref_duration_min:.2f} min vs {ff_duration_min:.2f} min  raw speedup x {r:.2f}"
     )
-
-    # combined image
-    scaling = n_target / n_prim
-    mean = mean * scaling
-    if verbose:
-        print(f"Primary n = {n_prim}  Scatter n = {n_scatter}  Target n = {n_target}")
-        if n_scatter > 0:
-            print(f"Primary to scatter ratio = {n_prim / n_scatter}")
-        print(f"Scaling to target        = {scaling}")
-
-    # Scatter-to-Primary Ratio (SPR)
-    if n_scatter > 0:
-        vprim = (prim / n_prim) * n_target
-        vscatter = (scatter / n_scatter) * n_target
-        spr = np.divide(vscatter, vprim, out=np.zeros_like(vscatter), where=vprim != 0)
-
-    # write combined image
-    prim_img = sitk.ReadImage(img)
-    img = sitk.GetImageFromArray(mean)
-    img.CopyInformation(prim_img)
-    fn = folder / merge_filename
-    sitk.WriteImage(img, fn)
-    if verbose:
-        print(fn)
-
-    # write combined relative uncertainty
-    img = sitk.GetImageFromArray(uncert)
-    img.CopyInformation(prim_img)
-    fn = folder / f"{fn.stem}_{rel_uncert_suffix}.mhd"
-    sitk.WriteImage(img, fn)
-    if verbose:
-        print(fn)
-
-    # write SPR
-    if n_scatter > 0:
-        img = sitk.GetImageFromArray(spr)
-        img.CopyInformation(prim_img)
-        fn = folder / spr_filename
-        sitk.WriteImage(img, fn)
-        if verbose:
-            print(fn)
-
-    # open info if the file exists
-    prim_info = {}
-    if n_prim > 0:
-        prim_info_fn = folder / prim_folder / "ff_info.json"
-        if prim_info_fn.is_file():
-            with open(prim_info_fn, "r") as f:
-                prim_info = json.load(f)
-
-    # open info if the file exists
-    scatter_info = {}
-    scatter_info_fn = folder / scatter_folder / "ff_info.json"
-    if scatter_info_fn.is_file():
-        with open(scatter_info_fn, "r") as f:
-            scatter_info = json.load(f)
-    else:
-        scatter_info = {
-            "scatter_activity": 0,
-            "max_compton_level": 10,
-            "angle_tolerance": 10.0,
-            "compton_splitting_factor": 300,
-            "rayleigh_splitting_factor": 300,
-        }
-
-    # write combined information
-    info = prim_info
-    info.update(scatter_info)
-    info_fn = folder / "ff_info.json"
-    with open(info_fn, "w") as f:
-        json.dump(info, f, indent=4)
+    r = ref_data.counts.events / ff_data.counts.events
+    print(
+        f"Total events {ref_data.counts.events} vs {ff_data.counts.events}  ratio {r:.2f}"
+    )
+    r = ref_data.counts.tracks / ff_data.counts.tracks
+    print(
+        f"Total tracks {ref_data.counts.tracks} vs {ff_data.counts.tracks}  ratio {r:.2f}"
+    )
+    r = ref_data.counts.steps / ff_data.counts.steps
+    print(
+        f"Total steps {ref_data.counts.steps} vs {ff_data.counts.steps}  ratio {r:.2f}"
+    )
