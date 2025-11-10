@@ -240,10 +240,12 @@ class SPECTConfig(ConfigBase):
         self.source_config.setup_simulation(sim, phantom)
         self.acquisition_config.setup_simulation(sim, self.detector_config.head_names)
 
-    def setup_simulation_ff_primary(self, sim, sources=None, visu=False):
+    def setup_simulation_ff_primary(
+        self, sim, sources=None, visu=False, folder_name="primary"
+    ):
         # we temporarily change the output folder
         save_folder = Path(self.output_folder)
-        self.output_folder_primary = save_folder / "primary"
+        self.output_folder_primary = save_folder / folder_name
         self.output_folder = self.output_folder_primary
         # set the initial simulation
         self.source_config.total_activity = self.free_flight_config.primary_activity
@@ -417,7 +419,7 @@ class DetectorConfig(ConfigBase):
         # user param
         self.model = None
         self.collimator = None
-        self.digitizer_function = None
+        self.digitizer_function = "default"
         self.digitizer_channels = None
         self.number_of_heads = 2
         self.size = None
@@ -499,7 +501,7 @@ class DetectorConfig(ConfigBase):
             return
 
         # digit function ?
-        if self.digitizer_function is None:
+        if self.digitizer_function == "default":
             self.digitizer_function = m.add_digitizer
         self.head_names = []
         self.proj_names = []
@@ -528,23 +530,24 @@ class DetectorConfig(ConfigBase):
             )
             # set the digitizer
             dname = f"{simu_name}_digit_{i}"
-            self.digitizer_function(
-                sim,
-                crystal.name,
-                dname,
-                self.size,
-                self.spacing,
-                channels,
-                self.get_proj_base_filename(i),
-            )
-            proj = sim.actor_manager.find_actor_by_type(
-                "DigitizerProjectionActor", dname
-            )
-            # update size/spacing that may have been set in the digitizer_function
-            self.size = proj.size
-            self.spacing = proj.spacing
-            # keep the name of the projection actors
-            self.proj_names.append(proj.name)
+            if self.digitizer_function is not None:
+                self.digitizer_function(
+                    sim,
+                    crystal.name,
+                    dname,
+                    self.size,
+                    self.spacing,
+                    channels,
+                    self.get_proj_base_filename(i),
+                )
+                proj = sim.actor_manager.find_actor_by_type(
+                    "DigitizerProjectionActor", dname
+                )
+                # update size/spacing that may have been set in the digitizer_function
+                self.size = proj.size
+                self.spacing = proj.spacing
+                # keep the name of the projection actors
+                self.proj_names.append(proj.name)
 
 
 class GARFConfig(ConfigBase):
@@ -909,177 +912,3 @@ class FreeFlightConfig(ConfigBase):
         """
 
         return ff
-
-
-def spect_freeflight_merge_all_heads(
-    folder,
-    n_prim,
-    n_scatter,
-    n_target,
-    prim_folder="primary",
-    scatter_folder="scatter",
-    nb_of_heads=2,
-    counts_filename_pattern="projection_$I_counts.mhd",
-    sq_counts_filename_pattern="projection_$I_squared_counts.mhd",
-    merge_filename="projection_$I_counts.mhd",
-    rel_uncert_suffix="relative_uncertainty",
-    spr_filename="projection_$I_spr.mhd",
-    verbose=True,
-):
-    for d in range(nb_of_heads):
-        spect_freeflight_merge(
-            folder,
-            n_prim,
-            n_scatter,
-            n_target,
-            prim_folder=prim_folder,
-            scatter_folder=scatter_folder,
-            counts_filename=counts_filename_pattern.replace("$I", str(d)),
-            sq_counts_filename=sq_counts_filename_pattern.replace("$I", str(d)),
-            merge_filename=merge_filename.replace("$I", str(d)),
-            rel_uncert_suffix=rel_uncert_suffix.replace("$I", str(d)),
-            spr_filename=spr_filename.replace("$I", str(d)),
-            verbose=verbose,
-        )
-
-
-def spect_freeflight_merge(
-    folder,
-    n_prim,
-    n_scatter,
-    n_target,
-    prim_folder="primary",
-    scatter_folder="scatter",
-    counts_filename="projection_0_counts.mhd",
-    sq_counts_filename="projection_0_squared_counts.mhd",
-    merge_filename="projection_0_counts.mhd",
-    rel_uncert_suffix="relative_uncertainty",
-    spr_filename="projection_0_spr.mhd",
-    verbose=True,
-):
-    # make the paths
-    prim_folder = Path(prim_folder)
-    scatter_folder = Path(scatter_folder)
-
-    # primary
-    if n_prim > 0:
-        img = folder / prim_folder / counts_filename
-        sq_img = folder / prim_folder / sq_counts_filename
-        out = folder / prim_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-        _, prim, prim_squared = history_rel_uncertainty_from_files(
-            img, sq_img, n_prim, out
-        )
-    else:
-        prim = None
-        prim_squared = None
-
-    # scatter
-    if n_scatter > 0:
-        img = folder / scatter_folder / counts_filename
-        sq_img = folder / scatter_folder / sq_counts_filename
-        out = folder / scatter_folder / f"{img.stem}_{rel_uncert_suffix}.mhd"
-        _, scatter, scatter_squared = history_rel_uncertainty_from_files(
-            img, sq_img, n_scatter, out
-        )
-    else:
-        scatter = None
-        scatter_squared = None
-
-    # combined (combined prim/scatter is scaled to n_primary)
-    uncert, mean = history_ff_combined_rel_uncertainty(
-        prim, prim_squared, scatter, scatter_squared, n_prim, n_scatter
-    )
-
-    # combined image
-    scaling = n_target / n_prim
-    mean = mean * scaling
-    if verbose:
-        print(f"Primary n = {n_prim}  Scatter n = {n_scatter}  Target n = {n_target}")
-        if n_scatter > 0:
-            print(f"Primary to scatter ratio = {n_prim / n_scatter}")
-        print(f"Scaling to target        = {scaling}")
-
-    # Scatter-to-Primary Ratio (SPR)
-    if n_scatter > 0:
-        vprim = (prim / n_prim) * n_target
-        vscatter = (scatter / n_scatter) * n_target
-        spr = np.divide(vscatter, vprim, out=np.zeros_like(vscatter), where=vprim != 0)
-
-    # write combined image
-    prim_img = sitk.ReadImage(img)
-    img = sitk.GetImageFromArray(mean)
-    img.CopyInformation(prim_img)
-    fn = folder / merge_filename
-    sitk.WriteImage(img, fn)
-    if verbose:
-        print(fn)
-
-    # write combined relative uncertainty
-    img = sitk.GetImageFromArray(uncert)
-    img.CopyInformation(prim_img)
-    fn = folder / f"{fn.stem}_{rel_uncert_suffix}.mhd"
-    sitk.WriteImage(img, fn)
-    if verbose:
-        print(fn)
-
-    # write SPR
-    if n_scatter > 0:
-        img = sitk.GetImageFromArray(spr)
-        img.CopyInformation(prim_img)
-        fn = folder / spr_filename
-        sitk.WriteImage(img, fn)
-        if verbose:
-            print(fn)
-
-    # open info if the file exists
-    prim_info = {}
-    if n_prim > 0:
-        prim_info_fn = folder / prim_folder / "ff_info.json"
-        if prim_info_fn.is_file():
-            with open(prim_info_fn, "r") as f:
-                prim_info = json.load(f)
-
-    # open info if the file exists
-    scatter_info = {}
-    scatter_info_fn = folder / scatter_folder / "ff_info.json"
-    if scatter_info_fn.is_file():
-        with open(scatter_info_fn, "r") as f:
-            scatter_info = json.load(f)
-    else:
-        scatter_info = {
-            "scatter_activity": 0,
-            "max_compton_level": 10,
-            "angle_tolerance": 10.0,
-            "compton_splitting_factor": 300,
-            "rayleigh_splitting_factor": 300,
-        }
-
-    # write combined information
-    info = prim_info
-    info.update(scatter_info)
-    info_fn = folder / "ff_info.json"
-    with open(info_fn, "w") as f:
-        json.dump(info, f, indent=4)
-
-
-def plot_ddaa(acceptance_angle, output_filename=None):
-    # plot dd
-    a1 = acceptance_angle.angle1
-    a2 = acceptance_angle.angle2
-    d1 = acceptance_angle.distance1
-    d2 = acceptance_angle.distance2
-    distances = np.linspace(d1 / 2, d2 * 2, 200)
-    angles = [distance_dependent_angle_tolerance(a1, a2, d1, d2, d) for d in distances]
-
-    cm = g4_units.cm
-    plt.figure(figsize=(8, 6))
-    plt.plot(distances / cm, np.degrees(angles), label="Distance vs Angle")
-    plt.xlabel("Distance (cm)")
-    plt.ylabel("Angle (degrees)")
-    plt.title("Distance vs Angle Tolerance")
-    plt.grid()
-    plt.legend()
-    # plt.show()
-    if output_filename is not None:
-        plt.savefig(output_filename)
-    return plt
