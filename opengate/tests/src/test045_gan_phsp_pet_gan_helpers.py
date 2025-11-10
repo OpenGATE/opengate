@@ -104,7 +104,7 @@ def add_voxelized_phantom(sim, param):
     gate_iec.create_material(sim)
     iec.image = param.iec_vox_mhd
     iec.material = "G4_AIR"
-    labels = utility.read_json_file(param.iec_vox_json)
+    labels = actors.simulation_stats_helpers.read_json_file(param.iec_vox_json)
     # labels are not material, we assign the material belows
     # all spheres are water ; central hole is lung ; shell are plastic
     iec.voxel_materials = []

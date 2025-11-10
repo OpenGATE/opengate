@@ -55,7 +55,7 @@ def test_output(sim):
 
     stats = sim.get_actor("Stats")
     print(stats)
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
 

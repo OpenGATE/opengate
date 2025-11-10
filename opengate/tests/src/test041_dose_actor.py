@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
     # tests
     gate.exception.warning("Tests stats file")
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat2.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat2.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     gate.exception.warning("\nDifference for EDEP")

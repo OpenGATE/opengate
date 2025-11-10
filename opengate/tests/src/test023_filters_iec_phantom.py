@@ -79,7 +79,7 @@ if __name__ == "__main__":
 
     # tests
     f = paths.output_ref / "test023_stats_iec_phantom.txt"
-    stats_ref = utility.read_stat_file(f)
+    stats_ref = utility.read_stats_file(f)
     is_ok = utility.assert_stats(stat, stats_ref, 0.12)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test023_iec_phantom.mhd",

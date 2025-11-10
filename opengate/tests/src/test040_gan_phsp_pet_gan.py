@@ -6,6 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import subprocess
+
+
 import gatetools.phsp as phsp
 
 import opengate as gate
@@ -219,7 +221,7 @@ def main(dependency="test040_gan_phsp_pet_aref.py"):
     print(f"Source, nb of zerosE particles (check) : {b}")
 
     print(stats)
-    stats_ref = utility.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test040_ref_stats.txt")
     r = (stats_ref.counts.steps - stats.counts.steps) / stats_ref.counts.steps
     print(f"!!! Steps cannot be compared => was {stats.counts.steps}, {r:.2f}%")
     stats.counts.steps = stats_ref.counts.steps

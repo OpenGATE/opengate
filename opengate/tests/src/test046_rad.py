@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from box import Box
+
+
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 from opengate.tests import utility
@@ -52,8 +54,12 @@ if __name__ == "__main__":
     json.dump(digit_ns, outfile, indent=4)"""
 
     # check
-    ref_digit = utility.read_json_file(paths.output_ref / "t046_digitizer.json")
-    ref_digit_ns = utility.read_json_file(paths.output_ref / "t046_digitizer_ns.json")
+    ref_digit = actors.simulation_stats_helpers.read_json_file(
+        paths.output_ref / "t046_digitizer.json"
+    )
+    ref_digit_ns = actors.simulation_stats_helpers.read_json_file(
+        paths.output_ref / "t046_digitizer_ns.json"
+    )
     ok = digit == ref_digit
     utility.print_test(ok, f"Test channels (with scatter): {ok}")
     is_ok = is_ok and ok

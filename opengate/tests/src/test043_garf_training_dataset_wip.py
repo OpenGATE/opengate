@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     # ----------------------------------------------------------------------------------------------------------------
     gate.exception.warning("Compare stats")
-    stats_ref = utility.read_stat_file(
+    stats_ref = utility.read_stats_file(
         paths.output_ref / "test043_arf_training_dataset_stats.txt"
     )
     is_ok = utility.assert_stats(stats, stats_ref, 0.01) and is_ok

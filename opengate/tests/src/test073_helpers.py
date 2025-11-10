@@ -112,7 +112,7 @@ def compare_stats(sim, filename):
     warning("Compare stats")
     stats = sim.get_actor("stats")
     # force nb of thread to 1
-    stats_ref = utility.read_stat_file(filename)
+    stats_ref = utility.read_stats_file(filename)
     stats.counts.runs = stats_ref.counts.runs
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
     return is_ok

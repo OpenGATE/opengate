@@ -162,7 +162,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
 
     # check stats
     gate.exception.warning(f"Check stats")
-    stats_ref = utility.read_stat_file(paths.output_ref / "test033_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.steps})")
     nbt = sim.number_of_threads
     stats.counts.steps = stats_ref.counts.steps

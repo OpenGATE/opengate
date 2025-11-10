@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from scipy.spatial.transform import Rotation
+
+
 import opengate as gate
 from opengate.tests import utility
 
@@ -133,7 +135,7 @@ if __name__ == "__main__":
     print(stats)
     ref_stat_file = paths.output_ref / "t047_stats.txt"
     # stat.write(ref_stat_file) # (for reference)
-    stats_ref = utility.read_stat_file(ref_stat_file)
+    stats_ref = utility.read_stats_file(ref_stat_file)
     is_ok = utility.assert_stats(stats, stats_ref, 0.005)
 
     dose = sim.get_actor("dose")
