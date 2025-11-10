@@ -209,7 +209,7 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
 
     print(f"Number of simulated events: {stats.counts.events}")
     mode = beam1.direction.acceptance_angle.skip_policy
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat4.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
         b1 = beam1.total_skipped_events

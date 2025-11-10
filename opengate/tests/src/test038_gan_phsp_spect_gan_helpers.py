@@ -5,6 +5,8 @@ import uproot
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+
+
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate.contrib.phantoms.nemaiec as gate_iec
@@ -221,7 +223,7 @@ def analyze_results(sim, paths, all_cond):
     stats = sim.get_actor("Stats")
     print(stats)
     stats.counts.events += s.total_skipped_events
-    stats_ref = utility.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test038_ref_stats.txt")
     r = (stats_ref.counts.steps - stats.counts.steps) / stats_ref.counts.steps
     print(f"Steps cannot be compared => was {stats.counts.steps}, {r:.2f}%")
     stats.counts.steps = stats_ref.counts.steps

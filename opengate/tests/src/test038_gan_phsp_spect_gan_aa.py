@@ -53,7 +53,7 @@ if __name__ == "__main__":
     )
 
     stats = sim.get_actor("Stats")
-    stats_ref = utility.read_stat_file(paths.output_ref / "test038_gan_aa_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test038_gan_aa_stats.txt")
     # do not compare steps
     stats_ref.counts.steps = stats.counts.steps
     is_ok = utility.assert_stats(stats, stats_ref, 0.02) and is_ok

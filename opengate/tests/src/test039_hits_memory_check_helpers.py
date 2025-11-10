@@ -185,7 +185,7 @@ def test_results(sim, paths):
     stats = sim.get_actor("Stats")
     # stats.write(paths.output_ref / 'test039_stats.txt')
     print(stats)
-    stats_ref = utility.read_stat_file(paths.output_ref / "test039_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test039_stats.txt")
     stats.counts.runs = 2  # sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, 0.05)
 

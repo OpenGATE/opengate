@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # Comparison with gate simulation
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
 
     utility.test_ok(is_ok)

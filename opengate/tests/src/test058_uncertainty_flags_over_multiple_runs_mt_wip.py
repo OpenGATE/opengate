@@ -131,7 +131,7 @@ def run_simulation(n_runs, n_part_tot, n_threads, uncertainty_type="uncertainty"
     # unc_path = dose.edep_uncertainty.get_output_path()
 
     # test that the simulation didn't stop because we reached the planned number of runs
-    stats_ref = utility.read_stat_file(paths.output / "stats066.txt")
+    stats_ref = utility.read_stats_file(paths.output / "stats066.txt")
     n_runs_planned = len(run_timing_intervals) * n_threads
     n_effective_runs = stats_ref.counts.runs
     print(f"{n_runs_planned = }")
