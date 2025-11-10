@@ -159,7 +159,7 @@ def pytomography_set_energy_windows(metadata, channels):
 
 def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
     # consider sinogram for all energy windows
-    sinograms = read_projections_as_sinograms(filenames, number_of_angles)
+    sinograms = load_and_merge_multi_head_projections(filenames, number_of_angles)
     sino_arr = None
     for sinogram in sinograms:
         arr = sitk.GetArrayFromImage(sinogram)

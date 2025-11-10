@@ -10,7 +10,7 @@ from opengate.geometry.utility import (
 )
 from opengate.actors.digitizers import *
 from opengate.contrib.spect.spect_helpers import (
-    get_volume_position_in_head,
+    get_volume_bounding_box_coordinate_in_frame,
     get_default_energy_windows,
 )
 from scipy.spatial.transform import Rotation
@@ -50,9 +50,15 @@ def update_geometrical_parameters(store_to_file=False):
     for c in p.collimators:
         s = Simulation()
         spect, colli, crystal = add_spect_head(s, "spect", c, debug=True)
-        pos = get_volume_position_in_head(s, "spect", f"collimator_trd", "max", axis=2)
-        y = get_volume_position_in_head(s, "spect", "crystal", "center", axis=2)
-        psd = get_volume_position_in_head(s, "spect", "collimator_psd", "min", axis=2)
+        pos = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", f"collimator_trd", "max", axis=2
+        )
+        y = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", "crystal", "center", axis=2
+        )
+        psd = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", "collimator_psd", "min", axis=2
+        )
         p[c] = Box()
         # distance from box boundary to collimator
         p[c].collimator_position = pos
@@ -865,8 +871,12 @@ def add_digitizer_lu177_v3_OLD(sim, crystal_name, name, spectrum_channel=True):
 def compute_plane_position_and_distance_to_crystal(collimator_type):
     sim = Simulation()
     spect, colli, crystal = add_spect_head(sim, "spect", collimator_type, debug=True)
-    pos = get_volume_position_in_head(sim, "spect", "collimator_psd", "max", axis=2)
-    y = get_volume_position_in_head(sim, "spect", "crystal", "min", axis=2)
+    pos = get_volume_bounding_box_coordinate_in_frame(
+        sim, "spect", "collimator_psd", "max", axis=2
+    )
+    y = get_volume_bounding_box_coordinate_in_frame(
+        sim, "spect", "crystal", "min", axis=2
+    )
     crystal_distance = pos - y
     psd = spect.size[2] / 2.0 - pos
     return pos, crystal_distance, psd

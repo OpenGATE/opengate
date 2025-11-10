@@ -57,7 +57,9 @@ def add_fake_table(sim, name="table"):
     return table
 
 
-def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
+def get_volume_bounding_box_coordinate_in_frame(
+    sim, spect_name, vol_name, pos="max", axis=2
+):
     vol = sim.volume_manager.volumes[f"{spect_name}_{vol_name}"]
     pMin, pMax = vol.bounding_limits
     x = pMax
@@ -70,7 +72,7 @@ def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
     return x[axis]
 
 
-def extract_energy_window_sitk(
+def extract_energy_window_from_projections(
     image,
     energy_window="all",
     nb_of_energy_windows=3,
@@ -115,7 +117,7 @@ def extract_energy_window_sitk(
     return sub_image
 
 
-def extract_energy_window_from_projection_actors(
+def extract_energy_window_from_actor_files(
     projections,
     energy_window: int = "all",
     nb_of_energy_windows: int = 3,
@@ -129,7 +131,7 @@ def extract_energy_window_from_projection_actors(
     for proj in projections:
         filename = proj.get_output_path()
         img = sitk.ReadImage(filename)
-        out = extract_energy_window_sitk(
+        out = extract_energy_window_from_projections(
             img,
             energy_window=energy_window,
             nb_of_energy_windows=nb_of_energy_windows,
@@ -148,7 +150,7 @@ def extract_energy_window_from_projection_actors(
     return output_filenames
 
 
-def read_projections_as_sinograms(filenames, nb_of_gantry_angles):
+def load_and_merge_multi_head_projections(filenames, nb_of_gantry_angles):
     """
     Reads projection files from a specified folder, processes them into sinograms per
     energy window, and ensures consistency in image metadata across all projections.
@@ -226,157 +228,6 @@ def read_projections_as_sinograms(filenames, nb_of_gantry_angles):
     return sinograms
 
 
-def poisson_rel_uncertainty(np_image):
-    """
-    Uncertainty for Poisson counts is sqrt(counts) = standard deviation
-    Relative uncertainty is sqrt(counts)/counts
-    """
-    relative_uncertainty = np_image
-    uncertainty = np.sqrt(np_image)
-    relative_uncertainty = np.divide(
-        uncertainty,
-        relative_uncertainty,
-        out=np.zeros_like(relative_uncertainty),
-        where=relative_uncertainty != 0,
-    )
-    return relative_uncertainty
-
-
-def poisson_rel_uncertainty_from_files(input_filename, output_rel_uncert=None):
-    """ """
-    img = sitk.ReadImage(input_filename)
-    relative_uncertainty = sitk.GetArrayFromImage(img)
-    relative_uncertainty = poisson_rel_uncertainty(relative_uncertainty)
-    if output_rel_uncert is not None:
-        uncert = sitk.GetImageFromArray(relative_uncertainty)
-        uncert.CopyInformation(img)
-        sitk.WriteImage(uncert, output_rel_uncert)
-    return relative_uncertainty
-
-
-def batch_rel_uncertainty(np_images):
-    """
-    Computes the mean and the relative uncertainty of the given images as np arrays.
-    Parameters:
-        np_images (list of np.ndarray): List of Numpy arrays from images.
-    Returns:
-        np.ndarray: The mean image.
-        np.ndarray: The relative uncertainty image.
-    """
-    mean = None
-    nb_batch = len(np_images)
-
-    # Compute mean
-    for m in np_images:
-        if mean is None:
-            mean = m.copy()
-        else:
-            mean += m
-    mean /= nb_batch
-
-    # Compute standard deviation (variance)
-    squared = None
-    for m in np_images:
-        diff_squared = np.power(m - mean, 2)
-        if squared is None:
-            squared = diff_squared
-        else:
-            squared += diff_squared
-
-    # Compute uncertainty
-    uncert = np.sqrt(np.divide(squared, nb_batch * (nb_batch - 1)))
-
-    # Compute relative uncertainty in %
-    uncert = np.divide(uncert, mean, out=np.zeros_like(mean), where=mean != 0)
-
-    return mean, uncert
-
-
-def batch_rel_uncertainty_from_files(
-    image_filenames, mean_filename=None, rel_uncert_filename=None
-):
-    """
-    Wrapper function that reads images from file, computes relative uncertainty, and writes results to files.
-    Parameters:
-        image_filenames (list of str): List of image file paths.
-        mean_filename (str): Path to save the mean image (optional).
-        rel_uncert_filename (str): Path to save the relative uncertainty image (optional).
-    Returns:
-        np.ndarray: The mean image.
-        np.ndarray: The relative uncertainty image.
-    """
-    # Read images into Numpy arrays
-    np_images = [sitk.GetArrayFromImage(sitk.ReadImage(f)) for f in image_filenames]
-
-    # Compute mean and relative uncertainty
-    mean, uncert = batch_rel_uncertainty(np_images)
-
-    # Write results back to files if filenames are provided
-    if mean_filename is not None:
-        img = sitk.GetImageFromArray(mean)
-        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
-        sitk.WriteImage(img, str(mean_filename))
-    if rel_uncert_filename is not None:
-        img = sitk.GetImageFromArray(uncert)
-        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
-        sitk.WriteImage(img, str(rel_uncert_filename))
-
-    return mean, uncert
-
-
-def compute_efficiency_from_files(uncert_filename, duration):
-    img_ref = sitk.ReadImage(str(uncert_filename))
-    np_uncert = sitk.GetArrayFromImage(img_ref)
-    return compute_efficiency(np_uncert, duration)
-
-
-def compute_efficiency(np_uncert, duration):
-    ones = np.ones_like(np_uncert)
-    eff = np.divide(
-        ones,
-        (np_uncert * np_uncert) * duration,
-        out=np.zeros_like(np_uncert),
-        where=np_uncert != 0,
-    )
-    return eff
-
-
-def history_rel_uncertainty(np_img, np_img_squared, n):
-    mean = np_img / n
-    squared = np_img_squared / n
-    variance = (squared - np.power(mean, 2)) / (n - 1)
-    uncertainty = np.divide(
-        np.sqrt(variance),
-        mean,
-        out=np.zeros_like(variance),
-        where=mean != 0,
-    )
-    return uncertainty
-
-
-def history_rel_uncertainty_from_files(
-    img_filename,
-    img_squared_filename,
-    n,
-    output_filename=None,
-):
-    # primary
-    img = sitk.ReadImage(img_filename)
-    img_squared = sitk.ReadImage(img_squared_filename)
-    mean = sitk.GetArrayFromImage(img)
-    squared = sitk.GetArrayFromImage(img_squared)
-
-    # compute
-    uncert = history_rel_uncertainty(mean, squared, n)
-
-    if output_filename is not None:
-        img_uncert = sitk.GetImageFromArray(uncert)
-        img_uncert.CopyInformation(img)
-        sitk.WriteImage(img_uncert, output_filename)
-
-    return uncert, mean, squared
-
-
 def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
     n = radionuclide_name.lower()
     keV = g4_units.keV
@@ -434,3 +285,156 @@ def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
     if len(channels) == 0:
         raise ValueError(f"No default energy windows for {radionuclide_name}")
     return channels
+
+
+def compute_poisson_relative_uncertainty(np_image):
+    """
+    Uncertainty for Poisson counts is sqrt(counts) = standard deviation
+    Relative uncertainty is sqrt(counts)/counts
+    """
+    relative_uncertainty = np_image
+    uncertainty = np.sqrt(np_image)
+    relative_uncertainty = np.divide(
+        uncertainty,
+        relative_uncertainty,
+        out=np.zeros_like(relative_uncertainty),
+        where=relative_uncertainty != 0,
+    )
+    return relative_uncertainty
+
+
+def compute_poisson_relative_uncertainty_from_file(
+    input_filename, output_rel_uncert=None
+):
+    """ """
+    img = sitk.ReadImage(input_filename)
+    relative_uncertainty = sitk.GetArrayFromImage(img)
+    relative_uncertainty = compute_poisson_relative_uncertainty(relative_uncertainty)
+    if output_rel_uncert is not None:
+        uncert = sitk.GetImageFromArray(relative_uncertainty)
+        uncert.CopyInformation(img)
+        sitk.WriteImage(uncert, output_rel_uncert)
+    return relative_uncertainty
+
+
+def compute_batch_mean_and_relative_uncertainty(np_images):
+    """
+    Computes the mean and the relative uncertainty of the given images as np arrays.
+    Parameters:
+        np_images (list of np.ndarray): List of Numpy arrays from images.
+    Returns:
+        np.ndarray: The mean image.
+        np.ndarray: The relative uncertainty image.
+    """
+    mean = None
+    nb_batch = len(np_images)
+
+    # Compute mean
+    for m in np_images:
+        if mean is None:
+            mean = m.copy()
+        else:
+            mean += m
+    mean /= nb_batch
+
+    # Compute standard deviation (variance)
+    squared = None
+    for m in np_images:
+        diff_squared = np.power(m - mean, 2)
+        if squared is None:
+            squared = diff_squared
+        else:
+            squared += diff_squared
+
+    # Compute uncertainty
+    uncert = np.sqrt(np.divide(squared, nb_batch * (nb_batch - 1)))
+
+    # Compute relative uncertainty in %
+    uncert = np.divide(uncert, mean, out=np.zeros_like(mean), where=mean != 0)
+
+    return mean, uncert
+
+
+def compute_batch_mean_and_relative_uncertainty_from_files(
+    image_filenames, mean_filename=None, rel_uncert_filename=None
+):
+    """
+    Wrapper function that reads images from file, computes relative uncertainty, and writes results to files.
+    Parameters:
+        image_filenames (list of str): List of image file paths.
+        mean_filename (str): Path to save the mean image (optional).
+        rel_uncert_filename (str): Path to save the relative uncertainty image (optional).
+    Returns:
+        np.ndarray: The mean image.
+        np.ndarray: The relative uncertainty image.
+    """
+    # Read images into Numpy arrays
+    np_images = [sitk.GetArrayFromImage(sitk.ReadImage(f)) for f in image_filenames]
+
+    # Compute mean and relative uncertainty
+    mean, uncert = compute_batch_mean_and_relative_uncertainty(np_images)
+
+    # Write results back to files if filenames are provided
+    if mean_filename is not None:
+        img = sitk.GetImageFromArray(mean)
+        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
+        sitk.WriteImage(img, str(mean_filename))
+    if rel_uncert_filename is not None:
+        img = sitk.GetImageFromArray(uncert)
+        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
+        sitk.WriteImage(img, str(rel_uncert_filename))
+
+    return mean, uncert
+
+
+def compute_efficiency_from_files(uncert_filename, duration):
+    img_ref = sitk.ReadImage(str(uncert_filename))
+    np_uncert = sitk.GetArrayFromImage(img_ref)
+    return compute_efficiency(np_uncert, duration)
+
+
+def compute_efficiency(np_uncert, duration):
+    ones = np.ones_like(np_uncert)
+    eff = np.divide(
+        ones,
+        (np_uncert * np_uncert) * duration,
+        out=np.zeros_like(np_uncert),
+        where=np_uncert != 0,
+    )
+    return eff
+
+
+def compute_history_by_history_relative_uncertainty(np_img, np_img_squared, n):
+    mean = np_img / n
+    squared = np_img_squared / n
+    variance = (squared - np.power(mean, 2)) / (n - 1)
+    uncertainty = np.divide(
+        np.sqrt(variance),
+        mean,
+        out=np.zeros_like(variance),
+        where=mean != 0,
+    )
+    return uncertainty
+
+
+def compute_history_by_history_relative_uncertainty_from_files(
+    img_filename,
+    img_squared_filename,
+    n,
+    output_filename=None,
+):
+    # primary
+    img = sitk.ReadImage(img_filename)
+    img_squared = sitk.ReadImage(img_squared_filename)
+    mean = sitk.GetArrayFromImage(img)
+    squared = sitk.GetArrayFromImage(img_squared)
+
+    # compute
+    uncert = compute_history_by_history_relative_uncertainty(mean, squared, n)
+
+    if output_filename is not None:
+        img_uncert = sitk.GetImageFromArray(uncert)
+        img_uncert.CopyInformation(img)
+        sitk.WriteImage(img_uncert, output_filename)
+
+    return uncert, mean, squared
