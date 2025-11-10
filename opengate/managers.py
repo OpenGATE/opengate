@@ -953,11 +953,11 @@ class PhysicsManager(GateObject):
             region_name = "DefaultRegionForTheWorld"
         else:
             region_name = volume_name + "_region"
-        if region_name not in self.volumes_regions_lut:
+        if volume_name not in self.volumes_regions_lut:
             region = self.add_region(region_name)
             region.associate_volume(volume_name)
         else:
-            region = self.volumes_regions_lut[region_name]
+            region = self.volumes_regions_lut[volume_name]
         return region
 
     def get_biasing_particles_and_processes(self):
