@@ -438,3 +438,104 @@ def compute_history_by_history_relative_uncertainty_from_files(
         sitk.WriteImage(img_uncert, output_filename)
 
     return uncert, mean, squared
+
+
+def compute_zscore(ref_counts_np, test_counts_np, var_ref, var_test):
+    not_zero = (ref_counts_np != 0) & (test_counts_np != 0)
+    z_score = np.divide(
+        test_counts_np - ref_counts_np,
+        np.sqrt(var_ref + var_test),
+        out=np.zeros_like(ref_counts_np),
+        where=not_zero,
+    )
+    z_score = z_score.astype(np.float64)
+    return z_score
+
+
+def compute_zscore_from_files(
+    ref_filename,
+    test_filename,
+    ref_uncert_filename,
+    test_uncert_filename,
+    output_filename=None,
+):
+    # read data
+    img = sitk.ReadImage(ref_filename)
+    ref_counts_np = sitk.GetArrayFromImage(img)
+    test_counts_np = sitk.GetArrayFromImage(sitk.ReadImage(test_filename))
+    ref_uncert = sitk.GetArrayFromImage(sitk.ReadImage(ref_uncert_filename))
+    test_uncert = sitk.GetArrayFromImage(sitk.ReadImage(test_uncert_filename))
+
+    # compute var and zscore
+    var_ref = (ref_uncert * ref_counts_np) ** 2
+    var_test = (test_uncert * test_counts_np) ** 2
+    z_score = compute_zscore(ref_counts_np, test_counts_np, var_ref, var_test)
+
+    # write results
+    if output_filename is not None:
+        img = sitk.GetImageFromArray(z_score)
+        img.CopyInformation(img)
+        sitk.WriteImage(img, output_filename)
+
+    return z_score
+
+
+def compute_zscore_from_folders(
+    ref_folder,
+    test_folder,
+    counts_filename="projection_0_counts.mhd",
+    uncert_filename="relative_uncertainty_0_counts.mhd",
+):
+    return compute_zscore_from_files(
+        ref_folder / counts_filename,
+        test_folder / counts_filename,
+        ref_folder / uncert_filename,
+        test_folder / uncert_filename,
+        output_filename=test_folder / "zscore.mhd",
+    )
+
+
+def compute_speedup(
+    ref_uncert, test_uncert, ref_duration, test_duration, output_filename=None
+):
+    ref_eff = compute_efficiency(ref_uncert, ref_duration)
+    test_eff = compute_efficiency(test_uncert, test_duration)
+    speedup = np.divide(
+        test_eff, ref_eff, out=np.zeros_like(test_eff), where=ref_eff != 0
+    )
+    speedup = speedup.astype(np.float64)
+    return speedup
+
+
+def compute_speedup_from_files(
+    ref_uncert_filename,
+    test_uncert_filename,
+    ref_duration,
+    test_duration,
+    output_filename=None,
+):
+    img = sitk.ReadImage(ref_uncert_filename)
+    ref_uncert = sitk.GetArrayFromImage(img)
+    test_uncert = sitk.GetArrayFromImage(sitk.ReadImage(test_uncert_filename))
+    speedup = compute_speedup(ref_uncert, test_uncert, ref_duration, test_duration)
+    if output_filename is not None:
+        img_speedup = sitk.GetImageFromArray(speedup)
+        img_speedup.CopyInformation(img)
+        sitk.WriteImage(img_speedup, output_filename)
+    return speedup
+
+
+def compute_speedup_from_folders(
+    ref_folder,
+    test_folder,
+    ref_duration,
+    test_duration,
+    uncert_filename="relative_uncertainty_0_counts.mhd",
+):
+    return compute_speedup_from_files(
+        ref_folder / uncert_filename,
+        test_folder / uncert_filename,
+        ref_duration,
+        test_duration,
+        output_filename=test_folder / "speedup.mhd",
+    )
