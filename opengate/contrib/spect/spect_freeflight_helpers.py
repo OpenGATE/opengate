@@ -1,6 +1,5 @@
 from opengate.contrib.spect.spect_helpers import *
 from opengate.actors.simulation_stats_helpers import *
-import json
 from pathlib import Path
 
 
@@ -115,43 +114,33 @@ def merge_freeflight_uncertainty(
     total_counts *= ref_n
 
     img = sitk.GetImageFromArray(total_counts)
-    img.CopyInformation(template_image)  # Use the saved template
+    img.CopyInformation(template_image)
     sitk.WriteImage(img, str(folder / counts_filename))
 
     img = sitk.GetImageFromArray(uncertainty)
-    img.CopyInformation(template_image)  # Use the saved template
+    img.CopyInformation(template_image)
     sitk.WriteImage(img, str(folder / output_filename))
 
 
-def get_unit(data):
-    u = data["unit"]
-    if u is None:
-        u = 1
-    if u == "s":
-        u = 1 / 60
-    if u == "min":
-        u = 1
-    if u == "h":
-        u = 60
-    return u
-
-
 def merge_free_flight_stats(ff_folder, subfolders, filename="stats.txt"):
-
     total_stats = None
+    durations = []
     for subfolder in subfolders:
         ff_subfolder = ff_folder / subfolder
         stats_file = ff_subfolder / filename
-        stats = read_stats_file(stats_file)  # stats.counts.events
+        if not stats_file.exists():
+            continue
+        stats = read_stats_file(stats_file)
         if total_stats is None:
             total_stats = stats
         else:
             total_stats = sum_stats(total_stats, stats)
+        durations.append(stats.counts.duration)
 
     # write final merged stats
     write_stats(total_stats, ff_folder / filename)
     stats = read_stats_file(ff_folder / filename)
-    return stats
+    return stats, durations
 
 
 def compare_stats(ref_folder: Path, ff_folder: Path):
