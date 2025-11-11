@@ -24,6 +24,9 @@ public:
   void InitializeUserInfo(py::dict &user_info) override;
   void StartTracking(const G4Track *) override;
 
+  void BeginOfEventAction(const G4Event *event) override;
+  void SteppingAction(G4Step *step) override;
+
 protected:
   G4VBiasingOperation *
   ProposeNonPhysicsBiasingOperation(const G4Track *,
@@ -39,8 +42,8 @@ protected:
 
   struct threadLocal_t {
     GateGammaFreeFlightOptn *fFreeFlightOperation;
-
     bool fIsFirstTime;
+    bool fIsTrackValidForStep;
   };
   G4Cache<threadLocal_t> threadLocalData;
 };
