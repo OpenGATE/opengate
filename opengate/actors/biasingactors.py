@@ -21,6 +21,7 @@ def generic_source_default_aa():
             "forced_direction_flag": False,
             "normal_vector": [0, 0, 1],
             "normal_tolerance": 3 * g4_units.deg,
+            "min_normal_tolerance": 0,
             "normal_tolerance_min_distance": 0 * g4_units.cm,
             "distance_dependent_normal_tolerance": False,
             "angle1": 90 * g4_units.degree,
@@ -91,6 +92,12 @@ class GenericBiasingActorBase(ActorBase):
             {
                 "doc": "if the particle weight become lower than this value, the particle is killed. "
                 "Negative values are considered with minimal_weight = min double default (1e-300)"
+            },
+        ),
+        "minimal_energy": (
+            0,
+            {
+                "doc": "if the particle energy become lower than this value, the particle is killed. "
             },
         ),
     }
