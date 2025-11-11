@@ -55,7 +55,6 @@ G4VParticleChange *GateGammaFreeFlightOptn::ApplyFinalStateBiasing(
   // -- At the beginning of the operation, fOperationComplete is false.
   // -- We enter this block only ONCE per step, on the first call
   // -- to ApplyFinalStateBiasing by any of the biased processes.
-
   if (!fOperationComplete) {
 
     // -- Loop through ALL stored survival probabilities from ALL biased
@@ -69,7 +68,7 @@ G4VParticleChange *GateGammaFreeFlightOptn::ApplyFinalStateBiasing(
     fOperationComplete = true;
   }
 
-  // -- For all calls (the first and subsequent ones for this step),
+  // -- For all calls (the first and later ones for this step),
   // -- propose the same, final, correctly calculated weight.
   fParticleChange.Initialize(*track);
   fParticleChange.ProposeWeight(fProposedWeight);

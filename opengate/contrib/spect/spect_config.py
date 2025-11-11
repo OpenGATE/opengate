@@ -710,12 +710,14 @@ class FreeFlightConfig(ConfigBase):
         self.spect_config = spect_config
         # user param
         self.angle_tolerance = 6 * g4_units.deg
+        self.min_angle_tolerance = 0 * g4_units.deg
         self.forced_direction_flag = True
         self.angle_tolerance_min_distance = 6 * g4_units.cm
         self.max_compton_level = 5
         self.compton_splitting_factor = 50
         self.rayleigh_splitting_factor = 50
         self.minimal_weight = 1e-30
+        self.minimal_energy = 0
         self.primary_activity = 1 * g4_units.Bq
         self.scatter_activity = 1 * g4_units.Bq
         self.max_rejection = None
@@ -764,6 +766,16 @@ class FreeFlightConfig(ConfigBase):
         if s not in sim.g4_commands_before_init:
             sim.g4_commands_before_init.append(s)
 
+        # auto set the minimal energy (to avoid warning)
+        dc = self.spect_config.detector_config
+        channels = dc.digitizer_channels
+        if channels is not None:
+            min_e = 1e6 * g4_units.GeV
+            for c in channels:
+                if c["min"] < min_e:
+                    min_e = c["min"]
+            self.minimal_energy = min_e
+
     def get_crystal_volume_names(self):
         volume_names = [
             f"{self.spect_config.simu_name}_head_{i}_crystal"
@@ -797,6 +809,7 @@ class FreeFlightConfig(ConfigBase):
             ff.attached_to = "world"
             ff.unbiased_volumes = target_volume_names
             ff.minimal_weight = self.minimal_weight
+            ff.minimal_energy = self.minimal_energy
         else:
             ff = sim.actor_manager.get_actor(ff_name)
 
@@ -845,6 +858,9 @@ class FreeFlightConfig(ConfigBase):
             source.direction.acceptance_angle.volumes = [target_volume_names[i]]
             source.direction.acceptance_angle.normal_vector = normal_vector
             source.direction.acceptance_angle.normal_tolerance = self.angle_tolerance
+            source.direction.acceptance_angle.min_normal_tolerance = (
+                self.min_angle_tolerance
+            )
             source.direction.acceptance_angle.skip_policy = "SkipEvents"
             source.direction.acceptance_angle.normal_flag = False
             source.direction.acceptance_angle.intersection_flag = False
@@ -886,6 +902,7 @@ class FreeFlightConfig(ConfigBase):
         )
         ff.attached_to = "world"  # FIXME -> remove this, always world + ignored_vol ?
         ff.minimal_weight = self.minimal_weight
+        ff.minimal_energy = self.minimal_energy
         ff.unbiased_volumes = target_volume_names
         ff.kill_interacting_in_volumes = kill_volumes
         ff.compton_splitting_factor = self.compton_splitting_factor
