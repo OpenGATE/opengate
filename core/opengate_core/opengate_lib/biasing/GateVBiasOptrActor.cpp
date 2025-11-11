@@ -15,11 +15,12 @@ Copyright (C): OpenGATE Collaboration
 GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
                                        py::dict &user_info, const bool MT_ready)
     : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {
-  // It seems that it is needed in MT (see PreUserTrackingAction)
+  // It seems that it is necessary in MT (see PreUserTrackingAction)
   fActions.insert("PreUserTrackingAction");
-  // SteppingAction for killing when the weight is too low
-  fActions.insert("SteppingAction");
+  // SteppingAction may kill when the weight is too low (we leave this to
+  // subclasses) fActions.insert("SteppingAction");
   fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
+  fMinimalEnergy = 0;
 }
 
 GateVBiasOptrActor::~GateVBiasOptrActor() {
@@ -42,13 +43,15 @@ void GateVBiasOptrActor::ClearOperators() {
 
 void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
+
+  // minimal weight check
   fMinimalWeight = DictGetDouble(user_info, "minimal_weight");
   if (fMinimalWeight < 0) {
     fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
   }
+  DDD(fMinimalWeight);
 
   fUnbiasedVolumes = DictGetVecStr(user_info, "unbiased_volumes");
-
   // check ignored volumes
   for (auto &name : fUnbiasedVolumes) {
     const auto *v = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
@@ -58,6 +61,12 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
             fActorName);
     }
   }
+
+  fMinimalEnergy = DictGetDouble(user_info, "minimal_energy");
+  if (fMinimalEnergy < 0) {
+    fMinimalEnergy = 0;
+  }
+  DDD(fMinimalEnergy / CLHEP::keV);
 }
 
 void GateVBiasOptrActor::Configure() {
@@ -83,6 +92,15 @@ void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
   }
 }
 
+bool GateVBiasOptrActor::IsTrackValid(const G4Track *track) const {
+  // Must be inferior or equal for cases when energy is zero or weight is zero
+  if (track->GetKineticEnergy() <= fMinimalEnergy)
+    return false;
+  if (track->GetWeight() <= fMinimalWeight)
+    return false;
+  return true;
+}
+
 void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
   // Do not attach to ignored volumes
@@ -104,7 +122,5 @@ void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
 }
 
 void GateVBiasOptrActor::SteppingAction(G4Step *step) {
-  if (step->GetTrack()->GetWeight() < fMinimalWeight) {
-    step->GetTrack()->SetTrackStatus(fStopAndKill);
-  }
+  // nothing
 }

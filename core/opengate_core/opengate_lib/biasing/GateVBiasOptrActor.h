@@ -53,9 +53,12 @@ public:
   static void ClearOperators();
   static std::vector<G4VBiasingOperator *> &GetNonConstBiasingOperators();
 
+  bool IsTrackValid(const G4Track *track) const;
+
   std::vector<std::string> fUnbiasedVolumes;
   std::vector<const G4LogicalVolume *> fUnbiasedLogicalVolumes;
   double fMinimalWeight;
+  double fMinimalEnergy;
 };
 
 #endif
