@@ -3,10 +3,10 @@
 
 from box import Box
 
-
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 from opengate.tests import utility
+from opengate.utility import read_json_file
 from opengate.sources.utility import get_spectrum
 
 if __name__ == "__main__":
@@ -54,12 +54,8 @@ if __name__ == "__main__":
     json.dump(digit_ns, outfile, indent=4)"""
 
     # check
-    ref_digit = actors.simulation_stats_helpers.read_json_file(
-        paths.output_ref / "t046_digitizer.json"
-    )
-    ref_digit_ns = actors.simulation_stats_helpers.read_json_file(
-        paths.output_ref / "t046_digitizer_ns.json"
-    )
+    ref_digit = read_json_file(paths.output_ref / "t046_digitizer.json")
+    ref_digit_ns = read_json_file(paths.output_ref / "t046_digitizer_ns.json")
     ok = digit == ref_digit
     utility.print_test(ok, f"Test channels (with scatter): {ok}")
     is_ok = is_ok and ok
