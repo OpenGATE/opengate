@@ -117,6 +117,7 @@ void GateScatterSplittingFreeFlightOptrActor::StartTracking(
     const G4Track *track) {
   // A new track is being tracked
   threadLocal_t &l = threadLocalData.Get();
+  l.fIsTrackValidForStep = true;
 
   if (track->GetWeight() == 1) {
     // this is not a FF or secondary of a FF
@@ -144,6 +145,14 @@ G4VBiasingOperation *
 GateScatterSplittingFreeFlightOptrActor::ProposeOccurenceBiasingOperation(
     const G4Track *track, const G4BiasingProcessInterface *callingProcess) {
   threadLocal_t &l = threadLocalData.Get();
+
+  // Is it a valid particle?
+  if (!IsTrackValid(track)) {
+    l.fIsTrackValidForStep = false;
+    return nullptr;
+  }
+  l.fIsTrackValidForStep = true;
+
   if (track->GetWeight() != 1) {
     return l.fFreeFlightOperation;
   }
@@ -156,6 +165,10 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   // (Do NOT enter here if step in "unbiased volume" or outside the "attached
   // volume") This function is called every interaction except 'Transportation'
   threadLocal_t &l = threadLocalData.Get();
+
+  // Was it valid at the start of the step?
+  if (!l.fIsTrackValidForStep)
+    return nullptr;
 
   // If the weight is not 1, this is a FF
   if (track->GetWeight() != 1) {
@@ -180,7 +193,8 @@ GateScatterSplittingFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   }
 
   // This is not a Compton nor Rayl
-  return callingProcess->GetCurrentFinalStateBiasingOperation();
+  return callingProcess
+      ->GetCurrentFinalStateBiasingOperation(); // FIXME or nullptr ?
 }
 
 void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
@@ -188,6 +202,12 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   // (but this is usually the world), but do enter if in "unbiased volume"
   // (Go in this function every step, even Transportation)
   threadLocal_t &l = threadLocalData.Get();
+
+  if (!l.fIsTrackValidForStep) {
+    step->GetTrack()->SetTrackStatus(fStopAndKill);
+    l.fIsTrackValidForStep = true;
+    return;
+  }
 
   // Check if this is free flight. If yes, we do nothing.
   // FF tracks this particle except if it is in an unbiased volume.

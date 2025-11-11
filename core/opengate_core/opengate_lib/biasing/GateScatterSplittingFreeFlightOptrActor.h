@@ -60,6 +60,7 @@ protected:
     int fComptonInteractionCount;
     std::map<std::string, double> fBiasInformationPerThread;
     bool fCurrentTrackIsFreeFlight;
+    bool fIsTrackValidForStep;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
