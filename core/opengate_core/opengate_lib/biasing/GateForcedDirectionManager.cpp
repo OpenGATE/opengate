@@ -21,7 +21,7 @@ GateForcedDirectionManager::GateForcedDirectionManager() {
   fWeight = 1.0;
   fSolid = nullptr;
   fCosThetaMax = 0;
-  fNormalAngleTolerance = 0;
+  fMaxAngle = 0;
 }
 
 GateForcedDirectionManager::~GateForcedDirectionManager() = default;
@@ -59,11 +59,27 @@ void GateForcedDirectionManager::Initialize(
     return;
 
   fNormalVector = StrToG4ThreeVector(user_info.at("normal_vector"));
-  fNormalAngleTolerance = StrToDouble(user_info.at("normal_tolerance"));
+  fMaxAngle = StrToDouble(user_info.at("normal_tolerance"));
+
+  // Read min angle (optional, defaults to 0)
+  fMinAngle = StrToDouble(user_info.at("min_normal_tolerance"));
+
+  // Validation
+  if (fMinAngle < 0.0) {
+    Fatal("min_normal_tolerance cannot be negative.");
+  }
+  if (fMinAngle >= fMaxAngle) {
+    Fatal(
+        "min_normal_tolerance must be less than normal_tolerance (max angle).");
+  }
 
   // Precompute values
-  fSinThetaMax = std::sin(fNormalAngleTolerance);
-  fCosThetaMax = std::cos(fNormalAngleTolerance);
+  fSinThetaMin = std::sin(fMinAngle);
+  fCosThetaMin = std::cos(fMinAngle);
+  fSinThetaMax = std::sin(fMaxAngle);
+  fCosThetaMax = std::cos(fMaxAngle);
+  DDD(fMinAngle / CLHEP::deg);
+  DDD(fMaxAngle / CLHEP::deg);
 }
 
 void GateForcedDirectionManager::InitializeForcedDirection() {
@@ -104,7 +120,13 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
   fU2 = fNormalVector.cross(fU1).unit();
 
   // default weight for the angle
-  fWeight = (1.0 - fCosThetaMax) / 2.0;
+  // fWeight = (1.0 - fCosThetaMax) / 2.0;
+  fWeight = (fCosThetaMin - fCosThetaMax) / 2.0;
+  DDD(fWeight);
+  if (fWeight <= 0) {
+    Fatal("Invalid angle range. Check min/max normal_tolerance. Weight is zero "
+          "or negative.");
+  }
 }
 
 G4ThreeVector
@@ -113,7 +135,10 @@ GateForcedDirectionManager::SampleDirectionWithinCone(double &theta) const {
   const double phi = G4UniformRand() * 2 * CLHEP::pi;
 
   // Uniformly sample cos(theta) between cos(0) and cos(theta_max)
-  const double cosTheta = fCosThetaMax + G4UniformRand() * (1.0 - fCosThetaMax);
+  // const double cosTheta = fCosThetaMax + G4UniformRand() * (1.0 -
+  // fCosThetaMax);
+  const double cosTheta =
+      fCosThetaMax + G4UniformRand() * (fCosThetaMin - fCosThetaMax);
   theta = std::acos(cosTheta);
 
   // Calculate the direction vector

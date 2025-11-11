@@ -32,7 +32,8 @@ public:
   bool fEnabledFlag;
   int fFDLastRunId;
 
-  double fNormalAngleTolerance;
+  double fMaxAngle;
+  double fMinAngle;
   G4ThreeVector fNormalVector;
   G4AffineTransform fFDTransformWorldToVolume;
   G4RotationMatrix *fFDRotation;
@@ -42,6 +43,8 @@ public:
 
   double fSinThetaMax;
   double fCosThetaMax;
+  double fSinThetaMin;
+  double fCosThetaMin;
   G4ThreeVector fU1;
   G4ThreeVector fU2;
   double fWeight;
