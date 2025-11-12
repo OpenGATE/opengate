@@ -708,6 +708,7 @@ class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     }
 
     def __initcpp__(self):
+        g4.GateDoseActor.__init__(self, self.user_info)
         g4.GateTLEDoseActor.__init__(self, self.user_info)
         self.AddActions(
             {
