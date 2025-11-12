@@ -60,7 +60,7 @@ A minimal working example would be:
 
    source = sim.add_source("GenericSource", "mySource")
    source.n = [10000, 150000, 36]
-   
+
    sim.run_timing_intervals = [[0, 1 * sec], [2 * sec, 2.5 * sec], [4 * sec, 5 * sec]]
 
 Please note that sim.run_timing_intervals must have the same length as source.n.
