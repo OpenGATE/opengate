@@ -51,7 +51,7 @@ Common parameters are:
 * | ``activity``: the number (real, in Bq) of particle to emit per second.
   | The number of Geant4 Events will depend on the simulation time.
 
-If you want to start a multi-run simulation using the parameter n, you can provide a list of the number of particles to simulate for each run (see test096_multi_run_simulation_using_n_generic_source.py).
+If you want to start a multi-run simulation using the parameter n, you can provide a list of the number of particles to simulate for each run (see test096 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/test096_multi_run_simulation_using_n_generic_source.py>).
 
 A minimal working example would be:
 
