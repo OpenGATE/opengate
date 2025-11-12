@@ -78,8 +78,6 @@ void GateForcedDirectionManager::Initialize(
   fCosThetaMin = std::cos(fMinAngle);
   fSinThetaMax = std::sin(fMaxAngle);
   fCosThetaMax = std::cos(fMaxAngle);
-  DDD(fMinAngle / CLHEP::deg);
-  DDD(fMaxAngle / CLHEP::deg);
 }
 
 void GateForcedDirectionManager::InitializeForcedDirection() {
@@ -122,7 +120,6 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
   // default weight for the angle
   // fWeight = (1.0 - fCosThetaMax) / 2.0;
   fWeight = (fCosThetaMin - fCosThetaMax) / 2.0;
-  DDD(fWeight);
   if (fWeight <= 0) {
     Fatal("Invalid angle range. Check min/max normal_tolerance. Weight is zero "
           "or negative.");
