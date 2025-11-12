@@ -49,7 +49,6 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   if (fMinimalWeight < 0) {
     fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
   }
-  DDD(fMinimalWeight);
 
   fUnbiasedVolumes = DictGetVecStr(user_info, "unbiased_volumes");
   // check ignored volumes
@@ -66,7 +65,6 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   if (fMinimalEnergy < 0) {
     fMinimalEnergy = 0;
   }
-  DDD(fMinimalEnergy / CLHEP::keV);
 }
 
 void GateVBiasOptrActor::Configure() {
