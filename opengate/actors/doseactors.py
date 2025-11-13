@@ -672,6 +672,12 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         g4.GateDoseActor.EndSimulationAction(self)
         VoxelDepositActor.EndSimulationAction(self)
 
+        print("Steps per particle scored by by the dose actor:")
+        print(f"    Electrons: {self.NbStepsElectrons}")
+        print(f"    Protons: {self.NbStepsProtons}")
+        print(f"    Gammas: {self.NbStepsGammas}")
+        print(f"    Neutrons: {self.NbStepsNeutrons}")
+
 
 class TLEDoseActor(DoseActor, g4.GateTLEDoseActor):
     """TLE = Track Length Estimator"""

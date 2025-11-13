@@ -54,6 +54,10 @@ void init_GateDoseActor(py::module &m) {
       .def("GetPhysicalVolumeName", &GateDoseActor::GetPhysicalVolumeName)
       .def("SetPhysicalVolumeName", &GateDoseActor::SetPhysicalVolumeName)
       .def_readwrite("NbOfEvent", &GateDoseActor::NbOfEvent)
+      .def_readwrite("NbStepsGammas", &GateDoseActor::fNbStepsGammas)
+      .def_readwrite("NbStepsElectrons", &GateDoseActor::fNbStepsElectrons)
+      .def_readwrite("NbStepsProtons", &GateDoseActor::fNbStepsProtons)
+      .def_readwrite("NbStepsNeutrons", &GateDoseActor::fNbStepsNeutrons)
       .def_readwrite("cpp_edep_image", &GateDoseActor::cpp_edep_image)
       .def_readwrite("cpp_edep_squared_image",
                      &GateDoseActor::cpp_edep_squared_image)

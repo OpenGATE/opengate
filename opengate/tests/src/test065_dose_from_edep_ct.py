@@ -117,7 +117,7 @@ if __name__ == "__main__":
     # physics
     sim.physics_manager.physics_list_name = "FTFP_INCLXX_EMZ"
     sim.physics_manager.set_production_cut("world", "all", 1000 * km)
-    sim.physics_manager.user_limits_particles.all = True
+    sim.physics_manager.user_limits_particles = "all"
 
     # add dose actor
     dose_postprocess = sim.add_actor("DoseActor", "dose_postprocess")
