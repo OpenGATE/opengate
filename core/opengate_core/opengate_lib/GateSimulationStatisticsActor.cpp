@@ -9,8 +9,8 @@
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 // For DEBUGGING only (see below) - remove again
-#include "G4UnitsTable.hh"
 #include "G4Electron.hh"
+#include "G4UnitsTable.hh"
 #include "G4VProcess.hh"
 
 #include <chrono>
@@ -113,12 +113,11 @@ void GateSimulationStatisticsActor::PreUserTrackingAction(
     // for electrons, print which process created them
     // to check if cuts work as expected
     if (track->GetParticleDefinition() == G4Electron::Definition()) {
-      const G4VProcess* creator = track->GetCreatorProcess();
+      const G4VProcess *creator = track->GetCreatorProcess();
       const G4String proc = creator ? creator->GetProcessName() : "primary";
       const G4double ekin = track->GetKineticEnergy();
-      std::cout << "  Ek=" << G4BestUnit(ekin,"Energy")
-             << "  created by " << proc
-             << "  parentID=" << track->GetParentID() << std::endl;
+      std::cout << "  Ek=" << G4BestUnit(ekin, "Energy") << "  created by "
+                << proc << "  parentID=" << track->GetParentID() << std::endl;
     }
   }
 }
