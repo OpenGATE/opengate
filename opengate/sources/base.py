@@ -1,5 +1,5 @@
 from ..actors.base import _setter_hook_attached_to
-from ..base import GateObject, process_cls
+from ..base import GateObject, process_cls, _flatten_user_info_for_cpp
 from ..utility import g4_units
 from ..definitions import __world_name__
 
@@ -95,6 +95,24 @@ class SourceBase(GateObject):
             self.start_time = run_timing_intervals[0][0]
         if not self.end_time:
             self.end_time = run_timing_intervals[-1][1]
+
+    def InitializeUserInfo(self, user_info_dict):
+        """
+        Python override for InitializeUserInfo.
+
+        This method flattens any nested GateObject (like AngularAcceptance)
+        into a simple dictionary *before* passing it to the C++ base class.
+        This is the "surgical" fix to avoid the TypeError.
+        """
+
+        # 1. Flatten the dictionary using our new helper
+        flat_dict = _flatten_user_info_for_cpp(user_info_dict)
+
+        # 2. Call the C++ (g4.) base class method
+        #    super() will find the next InitializeUserInfo in the
+        #    Method Resolution Order (MRO), which will be the
+        #    one from the g4.Gate...Actor C++ base class.
+        super().InitializeUserInfo(flat_dict)
 
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
