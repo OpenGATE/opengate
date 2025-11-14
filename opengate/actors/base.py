@@ -3,14 +3,14 @@ from functools import wraps
 
 from ..definitions import __world_name__
 from ..exception import fatal, GateImplementationError
-from ..base import GateObject, process_cls
+from ..base import GateObject, process_cls, _flatten_user_info_for_cpp
 from ..utility import insert_suffix_before_extension
 from .actoroutput import ActorOutputRoot
 
 
 def _setter_hook_attached_to(self, attached_to):
-    """Hook to be attached to property setter of user input 'attached_to' in all actors.
-    Allows the user input 'attached_to_volume' to be volume object or a volume name.
+    """Hook to be attached to the property setter of user input 'attached_to' in all actors.
+    Allows the user input 'attached_to_volume' to be a volume object or a volume name.
     """
 
     if isinstance(attached_to, str):
@@ -40,6 +40,7 @@ def _setter_hook_attached_to(self, attached_to):
         f"or a list/tuple of volumes or volume names. "
         f"Received: {attached_to}"
     )
+    return None
 
 
 def shortcut_for_single_output_actor(func):
@@ -455,6 +456,24 @@ class ActorBase(GateObject):
         self.actor_engine = None
         # close the base GateObject
         super().close()
+
+    def InitializeUserInfo(self, user_info_dict):
+        """
+        Python override for InitializeUserInfo.
+
+        This method flattens any nested GateObject (like AngularAcceptance)
+        into a simple dictionary *before* passing it to the C++ base class.
+        This is the "surgical" fix to avoid the TypeError.
+        """
+
+        # 1. Flatten the dictionary using our new helper
+        flat_dict = _flatten_user_info_for_cpp(user_info_dict)
+
+        # 2. Call the C++ (g4.) base class method
+        #    super() will find the next InitializeUserInfo in the
+        #    Method Resolution Order (MRO), which will be the
+        #    one from the g4.Gate...Actor C++ base class.
+        super().InitializeUserInfo(flat_dict)
 
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
