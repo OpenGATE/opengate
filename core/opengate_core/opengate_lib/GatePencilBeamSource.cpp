@@ -49,7 +49,7 @@ void GatePencilBeamSource::InitializeDirection(py::dict puser_info) {
 
   // angle acceptance ?
   auto d = py::dict(puser_info["direction"]);
-  auto dd = DictToMap(d["acceptance_angle"]);
+  auto dd = DictToMap(d["angular_acceptance"]);
   auto &l = fThreadLocalDataGenericSource.Get();
   l.fAAManager = new GateAcceptanceAngleManager;
   l.fAAManager->Initialize(dd, false);
