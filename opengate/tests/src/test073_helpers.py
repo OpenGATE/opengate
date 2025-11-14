@@ -240,8 +240,8 @@ def test073_setup_sim(sim, spect_type, collimator_type):
     source.position.radius = 30 * mm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.direction.acceptance_angle.volumes = [head.name]
-    source.direction.acceptance_angle.intersection_flag = True
+    source.direction.angular_acceptance.volumes = [head.name]
+    source.direction.angular_acceptance.intersection_flag = True
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

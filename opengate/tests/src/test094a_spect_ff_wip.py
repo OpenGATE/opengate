@@ -39,7 +39,7 @@ if __name__ == "__main__":
     sc.acquisition_config.duration = 30 * g4_units.s
     sc.acquisition_config.number_of_angles = 30
 
-    sc.free_flight_config.primary_activity = 1e6 * Bq
+    sc.free_flight_config.energy_cutoff = 1e6 * Bq
     sc.free_flight_config.scatter_activity = 2e6 * Bq
     sc.free_flight_config.angle_tolerance = 15 * deg
     sc.free_flight_config.forced_direction_flag = True
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     print(stats)
 
     # combine and compute relative uncertainty
-    n_prim = sc.free_flight_config.primary_activity / Bq
+    n_prim = sc.free_flight_config.energy_cutoff / Bq
     n_scatter = sc.free_flight_config.scatter_activity / Bq
     n_ref = 1e8
     spect_freeflight_merge_all_heads(

@@ -27,16 +27,16 @@ if __name__ == "__main__":
     # free flight actor
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.unbiased_volumes = ["spect_1_crystal", "spect_2_crystal"]
+    ff.exclude_volumes = ["spect_1_crystal", "spect_2_crystal"]
     ff.kill_interacting_in_volumes = ["spect_1_crystal", "spect_2_crystal"]
     ff.compton_splitting_factor = 50
     ff.rayleigh_splitting_factor = 10
     ff.max_compton_level = 10000
-    ff.acceptance_angle.intersection_flag = True
-    ff.acceptance_angle.volumes = ["spect_1"]  # FIXME check volume exists before
-    ff.acceptance_angle.normal_flag = True
-    ff.acceptance_angle.normal_vector = [0, 0, -1]
-    ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
+    ff.angular_acceptance.intersection_flag = True
+    ff.angular_acceptance.volumes = ["spect_1"]  # FIXME check volume exists before
+    ff.angular_acceptance.normal_flag = True
+    ff.angular_acceptance.normal_vector = [0, 0, -1]
+    ff.angular_acceptance.normal_tolerance = 10 * g4_units.deg
 
     # go
     sim.run()

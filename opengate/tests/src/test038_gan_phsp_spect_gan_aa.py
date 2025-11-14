@@ -18,11 +18,11 @@ if __name__ == "__main__":
     # add AA
     gsource = sim.get_source_user_info("gaga")
     gsource.skip_policy = "SkipEvents"
-    gsource.direction.acceptance_angle.volumes = ["spect1"]
-    gsource.direction.acceptance_angle.intersection_flag = True
-    gsource.direction.acceptance_angle.normal_flag = False
-    gsource.direction.acceptance_angle.max_rejection = 20000
-    gsource.direction.acceptance_angle.skip_policy = "SkipEvents"
+    gsource.direction.angular_acceptance.volumes = ["spect1"]
+    gsource.direction.angular_acceptance.intersection_flag = True
+    gsource.direction.angular_acceptance.normal_flag = False
+    gsource.direction.angular_acceptance.max_rejection = 20000
+    gsource.direction.angular_acceptance.skip_policy = "SkipEvents"
     # gsource.batch_size = 2e4
 
     # change output names

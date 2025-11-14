@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # AA mode
     for source in sources:
-        source.direction.acceptance_angle.skip_policy = "SkipEvents"
+        source.direction.angular_acceptance.skip_policy = "SkipEvents"
 
     # go
     sim.run()

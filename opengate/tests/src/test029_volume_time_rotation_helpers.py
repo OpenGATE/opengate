@@ -59,9 +59,9 @@ def create_simulation(sim, aa_flag, paths, version):
         # s.direction.type = "iso"
         s.direction.type = "momentum"
         s.direction.momentum = [0, 1, 0]
-        s.direction.acceptance_angle.volumes = ["spect"]
-        s.direction.acceptance_angle.intersection_flag = aa_flag
-        s.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+        s.direction.angular_acceptance.volumes = ["spect"]
+        s.direction.angular_acceptance.intersection_flag = aa_flag
+        s.direction.angular_acceptance.skip_policy = "ZeroEnergy"
 
     sources = gate_iec.add_spheres_sources(
         sim,
@@ -80,9 +80,9 @@ def create_simulation(sim, aa_flag, paths, version):
         # s.direction.type = "iso"
         s.direction.type = "momentum"
         s.direction.momentum = [1, 0, 0]
-        s.direction.acceptance_angle.volumes = ["spect"]
-        s.direction.acceptance_angle.intersection_flag = aa_flag
-        s.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+        s.direction.angular_acceptance.volumes = ["spect"]
+        s.direction.angular_acceptance.intersection_flag = aa_flag
+        s.direction.angular_acceptance.skip_policy = "ZeroEnergy"
 
     # physic list
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"

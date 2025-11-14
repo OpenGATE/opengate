@@ -89,9 +89,9 @@ def create_spect_simu(
     beam1.position.translation = [0, 0, 0]
     beam1.direction.type = "iso"
     if aa_enabled:
-        beam1.direction.acceptance_angle.volumes = ["spect"]
-        beam1.direction.acceptance_angle.intersection_flag = True
-        beam1.direction.acceptance_angle.skip_policy = aa_mode
+        beam1.direction.angular_acceptance.volumes = ["spect"]
+        beam1.direction.angular_acceptance.intersection_flag = True
+        beam1.direction.angular_acceptance.skip_policy = aa_mode
     beam1.activity = activity / sim.number_of_threads
 
     beam2 = sim.add_source("GenericSource", "beam2")
@@ -103,9 +103,9 @@ def create_spect_simu(
     beam2.position.translation = [18 * cm, 0, 0]
     beam2.direction.type = "iso"
     if aa_enabled:
-        beam2.direction.acceptance_angle.volumes = ["spect"]
-        beam2.direction.acceptance_angle.intersection_flag = True
-        beam2.direction.acceptance_angle.skip_policy = aa_mode
+        beam2.direction.angular_acceptance.volumes = ["spect"]
+        beam2.direction.angular_acceptance.intersection_flag = True
+        beam2.direction.angular_acceptance.skip_policy = aa_mode
     beam2.activity = activity / sim.number_of_threads
 
     beam3 = sim.add_source("GenericSource", "beam3")
@@ -117,9 +117,9 @@ def create_spect_simu(
     beam3.position.translation = [0, 10 * cm, 0]
     beam3.direction.type = "iso"
     if aa_enabled:
-        beam3.direction.acceptance_angle.volumes = ["spect"]
-        beam3.direction.acceptance_angle.intersection_flag = True
-        beam3.direction.acceptance_angle.skip_policy = aa_mode
+        beam3.direction.angular_acceptance.volumes = ["spect"]
+        beam3.direction.angular_acceptance.intersection_flag = True
+        beam3.direction.angular_acceptance.skip_policy = aa_mode
     beam3.activity = activity / sim.number_of_threads
 
     # add stat actor
@@ -208,7 +208,7 @@ def compare_result(sim, proj, fig_name, sum_tolerance=8, version=""):
     print(f"Number of zeros events: {b1} {b2} {b3}")
 
     print(f"Number of simulated events: {stats.counts.events}")
-    mode = beam1.direction.acceptance_angle.skip_policy
+    mode = beam1.direction.angular_acceptance.skip_policy
     stats_ref = utility.read_stats_file(paths.gate_output / "stat4.txt")
 
     if mode == "SkipEvents":
