@@ -1,6 +1,6 @@
 import opengate_core as g4
 from .base import ActorBase
-from ..base import process_cls, GateObject
+from ..base import process_cls
 from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
@@ -319,7 +319,7 @@ class ScatterSplittingFreeFlightActor(
             },
         ),
         "angular_acceptance": (
-            AngularAcceptance(),  # generic_source_default_aa(),
+            generic_source_default_aa(),
             {
                 "doc": "Scattered photon will be limited to an angular acceptance. Several methods available, see XXX",
             },
@@ -371,7 +371,6 @@ class ScatterSplittingFreeFlightActor(
         )
 
 
-process_cls(AngularAcceptance)
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
 process_cls(BremsstrahlungSplittingActor)
