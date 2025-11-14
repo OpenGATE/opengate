@@ -31,6 +31,7 @@ public:
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
   int fFDLastRunId;
+  bool fIntersectionFlag;
 
   double fMaxAngle;
   double fMinAngle;
