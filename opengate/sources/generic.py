@@ -8,7 +8,7 @@ from .utility import (
     get_spectrum,
     compute_cdf_and_total_yield,
 )
-from ..actors.biasingactors import generic_source_default_aa
+from ..actors.biasingactors import generic_source_default_aa, AngularAcceptance
 from ..base import process_cls
 from ..utility import g4_units
 from ..exception import fatal, warning
@@ -41,7 +41,7 @@ def _generic_source_default_direction():
             "momentum": [0, 0, 1],
             "focus_point": [0, 0, 0],
             "sigma": [0, 0],
-            "acceptance_angle": generic_source_default_aa(),
+            "angular_acceptance": AngularAcceptance(),
             "accolinearity_flag": False,
             "accolinearity_fwhm": 0.5 * g4_units.deg,
             "histogram_theta_weights": [],
@@ -323,7 +323,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
         self.SetTAC(self.tac_times, self.tac_activities)
 
     def can_predict_number_of_events(self):
-        aa = self.direction.acceptance_angle
+        aa = self.direction.angular_acceptance
         if aa.intersection_flag or aa.normal_flag:
             if aa.skip_policy == "ZeroEnergy":
                 return True
