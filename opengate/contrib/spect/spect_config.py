@@ -245,7 +245,7 @@ class SPECTConfig(ConfigBase):
         self.output_folder_primary = save_folder / folder_name
         self.output_folder = self.output_folder_primary
         # set the initial simulation
-        self.source_config.total_activity = self.free_flight_config.primary_activity
+        self.source_config.total_activity = self.free_flight_config.energy_cutoff
         self.setup_simulation(sim, visu)
         # but keep the initial folder for further use of config
         self.output_folder = save_folder
@@ -284,7 +284,7 @@ class SPECTConfig(ConfigBase):
 
     def dump_ff_info_primary(self, filename="ff_info.json"):
         n = {
-            "primary_activity": self.free_flight_config.primary_activity / g4_units.Bq,
+            "primary_activity": self.free_flight_config.energy_cutoff / g4_units.Bq,
             "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
         }
         fn = self.output_folder_primary / filename
@@ -483,7 +483,7 @@ class DetectorConfig(ConfigBase):
         ]
         return filenames
 
-    def get_minimal_energy(self, tol=0.1):
+    def get_energy_cutoff(self, tol=0.1):
         channels = self.digitizer_channels
         if channels is not None:
             min_e = 1e6 * g4_units.GeV
@@ -660,7 +660,7 @@ class SourceConfig(ConfigBase):
         # remove gamma line lower than min energy
         if self.remove_low_energy_lines:
             dc = self.spect_config.detector_config
-            min_e = dc.get_minimal_energy()
+            min_e = dc.get_energy_cutoff()
             if min_e is not None:
                 weights = source.energy.spectrum_weights
                 ene = source.energy.spectrum_energies
@@ -748,15 +748,15 @@ class FreeFlightConfig(ConfigBase):
         self.max_compton_level = 5
         self.compton_splitting_factor = 50
         self.rayleigh_splitting_factor = 50
-        self.minimal_weight = 1e-30
-        self.minimal_energy = "auto"
+        self.weight_cutoff = 1e-30
+        self.energy_cutoff = "auto"
         self.primary_activity = 1 * g4_units.Bq
         self.scatter_activity = 1 * g4_units.Bq
         self.max_rejection = None
         # primary: do not bias in those volumes
-        self.primary_unbiased_volumes = "detector"
+        self.primary_exclude_volumes = "detector"
         # scatter options
-        self.scatter_unbiased_volumes = "detector"
+        self.scatter_exclude_volumes = "detector"
         self.scatter_kill_interacting_in_volumes = "crystal"
 
     def __str__(self):
@@ -766,12 +766,12 @@ class FreeFlightConfig(ConfigBase):
         s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
         s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
         s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
-        s += f"FreeFlight minimal_weight: {self.minimal_weight}\n"
-        s += f"FreeFlight minimal_energy: {g4_best_unit(self.minimal_energy, "Energy")}\n"
+        s += f"FreeFlight weight_cutoff: {self.weight_cutoff}\n"
+        s += f"FreeFlight energy_cutoff: {g4_best_unit(self.energy_cutoff, "Energy")}\n"
         s += f"FreeFlight primary_activity: {self.primary_activity / g4_units.Bq} Bq\n"
         s += f"FreeFlight scatter_activity: {self.scatter_activity / g4_units.Bq} Bq\n"
-        s += f"FreeFlight primary_unbiased_volumes: {self.primary_unbiased_volumes} \n"
-        s += f"FreeFlight scatter_unbiased_volumes: {self.scatter_unbiased_volumes} \n"
+        s += f"FreeFlight primary_unbiased_volumes: {self.primary_exclude_volumes} \n"
+        s += f"FreeFlight scatter_unbiased_volumes: {self.scatter_exclude_volumes} \n"
         s += f"FreeFlight scatter_kill_interacting_in_volumes: {self.scatter_kill_interacting_in_volumes} \n"
         return s
 
@@ -800,13 +800,13 @@ class FreeFlightConfig(ConfigBase):
             sim.g4_commands_before_init.append(s)
 
         # auto set the minimal energy (to avoid warning)
-        if self.minimal_energy == "auto":
+        if self.energy_cutoff == "auto":
             dc = self.spect_config.detector_config
-            e = dc.get_minimal_energy()
+            e = dc.get_energy_cutoff()
             if e is not None:
-                self.minimal_energy = dc.get_minimal_energy()
+                self.energy_cutoff = dc.get_energy_cutoff()
             else:
-                self.minimal_energy = 0 * g4_units.keV
+                self.energy_cutoff = 0 * g4_units.keV
 
     def get_crystal_volume_names(self):
         volume_names = [
@@ -824,14 +824,14 @@ class FreeFlightConfig(ConfigBase):
 
         # consider the volume where we stop applying ff
         target_volume_names = None
-        if self.primary_unbiased_volumes == "crystal":
+        if self.primary_exclude_volumes == "crystal":
             target_volume_names = self.get_crystal_volume_names()
-        elif self.primary_unbiased_volumes == "detector":
+        elif self.primary_exclude_volumes == "detector":
             target_volume_names = self.get_detector_volume_names()
         else:
             fatal(
                 f"FF primary: unknown ignored volume: "
-                f"{self.primary_unbiased_volumes}. Should be detector or crystal"
+                f"{self.primary_exclude_volumes}. Should be detector or crystal"
             )
 
         # add the ff actor (only once !)
@@ -839,37 +839,37 @@ class FreeFlightConfig(ConfigBase):
         if ff_name not in sim.actor_manager.actors:
             ff = sim.add_actor("GammaFreeFlightActor", ff_name)
             ff.attached_to = "world"
-            ff.unbiased_volumes = target_volume_names
-            ff.minimal_weight = self.minimal_weight
-            ff.minimal_energy = self.minimal_energy
+            ff.exclude_volumes = target_volume_names
+            ff.weight_cutoff = self.weight_cutoff
+            ff.energy_cutoff = self.energy_cutoff
         else:
             ff = sim.actor_manager.get_actor(ff_name)
 
         if self.forced_direction_flag:
             self.setup_forced_detection(sim, source, target_volume_names)
         else:
-            self.setup_acceptance_angle(sim, source, target_volume_names)
+            self.setup_angular_acceptance(sim, source, target_volume_names)
 
         return ff
 
-    def setup_acceptance_angle(self, sim, source, target_volume_names):
+    def setup_angular_acceptance(self, sim, source, target_volume_names):
         detector_config = self.spect_config.detector_config
         normal_vector = detector_config.get_detector_normal()
         n = self.spect_config.number_of_threads
-        source.activity = self.primary_activity / n
-        source.direction.acceptance_angle.forced_direction_flag = False
-        source.direction.acceptance_angle.skip_policy = "SkipEvents"
+        source.activity = self.energy_cutoff / n
+        source.direction.angular_acceptance.forced_direction_flag = False
+        source.direction.angular_acceptance.skip_policy = "SkipEvents"
         if self.max_rejection is not None:
-            source.direction.acceptance_angle.max_rejection = self.max_rejection
-        source.direction.acceptance_angle.volumes = target_volume_names
-        source.direction.acceptance_angle.intersection_flag = True
-        source.direction.acceptance_angle.normal_flag = True
-        source.direction.acceptance_angle.normal_vector = normal_vector
-        source.direction.acceptance_angle.normal_tolerance = self.angle_tolerance
+            source.direction.angular_acceptance.max_rejection = self.max_rejection
+        source.direction.angular_acceptance.volumes = target_volume_names
+        source.direction.angular_acceptance.intersection_flag = True
+        source.direction.angular_acceptance.normal_flag = True
+        source.direction.angular_acceptance.normal_vector = normal_vector
+        source.direction.angular_acceptance.normal_tolerance = self.angle_tolerance
         # distance dependent normal tol is very slow, dont use it
-        source.direction.acceptance_angle.distance_dependent_normal_tolerance = False
+        # source.direction.angular_acceptance.distance_dependent_normal_tolerance = False
         # minimal distance should not be used for primary
-        source.direction.acceptance_angle.normal_tolerance_min_distance = 0
+        source.direction.angular_acceptance.normal_tolerance_min_distance = 0
 
         return source
 
@@ -887,16 +887,16 @@ class FreeFlightConfig(ConfigBase):
 
         for source in sources:
             # force the direction to one single volume for each source
-            source.direction.acceptance_angle.volumes = [target_volume_names[i]]
-            source.direction.acceptance_angle.normal_vector = normal_vector
-            source.direction.acceptance_angle.normal_tolerance = self.angle_tolerance
-            source.direction.acceptance_angle.min_normal_tolerance = (
+            source.direction.angular_acceptance.volumes = [target_volume_names[i]]
+            source.direction.angular_acceptance.normal_vector = normal_vector
+            source.direction.angular_acceptance.normal_tolerance = self.angle_tolerance
+            source.direction.angular_acceptance.min_normal_tolerance = (
                 self.min_angle_tolerance
             )
-            source.direction.acceptance_angle.skip_policy = "SkipEvents"
-            source.direction.acceptance_angle.normal_flag = False
-            source.direction.acceptance_angle.intersection_flag = False
-            source.direction.acceptance_angle.forced_direction_flag = True
+            source.direction.angular_acceptance.skip_policy = "SkipEvents"
+            source.direction.angular_acceptance.normal_flag = False
+            source.direction.angular_acceptance.intersection_flag = False
+            source.direction.angular_acceptance.forced_direction_flag = True
             i += 1
         return sources
 
@@ -904,14 +904,12 @@ class FreeFlightConfig(ConfigBase):
         self.initialize(sim)
 
         target_volume_names = None
-        if self.scatter_unbiased_volumes == "crystal":
+        if self.scatter_exclude_volumes == "crystal":
             target_volume_names = self.get_crystal_volume_names()
-        elif self.scatter_unbiased_volumes == "detector":
+        elif self.scatter_exclude_volumes == "detector":
             target_volume_names = self.get_detector_volume_names()
         else:
-            fatal(
-                f"Unknown ff-scatter unbiased volume: {self.scatter_unbiased_volumes}"
-            )
+            fatal(f"Unknown ff-scatter unbiased volume: {self.scatter_exclude_volumes}")
 
         kill_volumes = []
         if self.scatter_kill_interacting_in_volumes == "crystal":
@@ -933,31 +931,31 @@ class FreeFlightConfig(ConfigBase):
             f"{self.spect_config.simu_name}_ff",
         )
         ff.attached_to = "world"  # FIXME -> remove this, always world + ignored_vol ?
-        ff.minimal_weight = self.minimal_weight
-        ff.minimal_energy = self.minimal_energy
-        ff.unbiased_volumes = target_volume_names
+        ff.weight_cutoff = self.weight_cutoff
+        ff.energy_cutoff = self.energy_cutoff
+        ff.exclude_volumes = target_volume_names
         ff.kill_interacting_in_volumes = kill_volumes
         ff.compton_splitting_factor = self.compton_splitting_factor
         ff.rayleigh_splitting_factor = self.rayleigh_splitting_factor
         ff.max_compton_level = self.max_compton_level
-        ff.acceptance_angle.intersection_flag = True
-        ff.acceptance_angle.normal_flag = True
-        ff.acceptance_angle.forced_direction_flag = False
-        ff.acceptance_angle.volumes = target_volume_names
-        ff.acceptance_angle.normal_vector = normal_vector
-        ff.acceptance_angle.normal_tolerance = self.angle_tolerance
-        ff.acceptance_angle.normal_tolerance_min_distance = (
+        ff.angular_acceptance.intersection_flag = True
+        ff.angular_acceptance.normal_flag = True
+        ff.angular_acceptance.forced_direction_flag = False
+        ff.angular_acceptance.volumes = target_volume_names
+        ff.angular_acceptance.normal_vector = normal_vector
+        ff.angular_acceptance.normal_tolerance = self.angle_tolerance
+        ff.angular_acceptance.normal_tolerance_min_distance = (
             self.angle_tolerance_min_distance
         )
-        ff.acceptance_angle.distance_dependent_normal_tolerance = False
+        ff.angular_acceptance.distance_dependent_normal_tolerance = False
 
         """ REMOVED because too slow
-        ff.acceptance_angle.distance_dependent_normal_tolerance = True
+        ff.angular_acceptance.distance_dependent_normal_tolerance = True
         tol = options.scatter_angle_tolerance
-        ff.acceptance_angle.distance1 = tol[0]
-        ff.acceptance_angle.angle1 = tol[1]
-        ff.acceptance_angle.distance2 = tol[2]
-        ff.acceptance_angle.angle2 = tol[3]
+        ff.angular_acceptance.distance1 = tol[0]
+        ff.angular_acceptance.angle1 = tol[1]
+        ff.angular_acceptance.distance2 = tol[2]
+        ff.angular_acceptance.angle2 = tol[3]
         """
 
         return ff
