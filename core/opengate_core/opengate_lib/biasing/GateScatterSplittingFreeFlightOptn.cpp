@@ -12,6 +12,7 @@ Copyright (C): OpenGATE Collaboration
 #include "G4GammaGeneralProcess.hh"
 #include "G4ParticleChangeForGamma.hh"
 #include "G4RunManager.hh"
+#include "GateScatterSplittingFreeFlightOptrActor.h"
 
 GateScatterSplittingFreeFlightOptn::GateScatterSplittingFreeFlightOptn(
     const G4String &name, double *nbTracks)
@@ -58,7 +59,7 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
     const G4BiasingProcessInterface *callingProcess, const G4Track *track,
     const G4Step *step, G4bool &) {
 
-  // This is the initial scattered Gamma
+  // This is the initially scattered Gamma
   auto *final_state =
       callingProcess->GetWrappedProcess()->PostStepDoIt(*track, *step);
   auto particle_change = dynamic_cast<G4ParticleChangeForGamma *>(final_state);
@@ -73,7 +74,6 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   // Copied from G4: "inform we take care of secondary weight (otherwise these
   // secondaries are by default given the primary weight)."
   fParticleChange.SetSecondaryWeightByProcess(true); // 'true' is needed
-  // fParticleChange.SetParentWeightByProcess(true);   // unsure ?
 
   // set the weight for the split track and the position
   const double weight = track->GetWeight() / fSplittingFactor;
@@ -88,7 +88,6 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
   G4Track templateTrack(*track);
   templateTrack.SetWeight(weight);
   templateTrack.SetPosition(position);
-  // templateTrack.SetTrackStatus(particle_change->GetTrackStatus());
 
   // Loop to split Compton gammas
   fAAManager->StartAcceptLoop();
@@ -117,6 +116,13 @@ G4VParticleChange *GateScatterSplittingFreeFlightOptn::ApplyFinalStateBiasing(
       const auto gammaTrack = new G4Track(templateTrack);
       gammaTrack->SetMomentumDirection(momentum);
       gammaTrack->SetKineticEnergy(energy);
+
+      // indicate the track is an FF scatter split
+      auto *track_info = new GateUserTrackInformation();
+      track_info->SetGateTrackInformation(
+          fActor,
+          GateScatterSplittingFreeFlightOptrActor::fThisIsAFreeFlightTrack);
+      gammaTrack->SetUserInformation(track_info);
 
       // Add the track in the stack
       fParticleChange.AddSecondary(gammaTrack);
