@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # AA mode
     for source in sources:
-        source.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+        source.direction.angular_acceptance.skip_policy = "ZeroEnergy"
 
     # go
     sim.run()

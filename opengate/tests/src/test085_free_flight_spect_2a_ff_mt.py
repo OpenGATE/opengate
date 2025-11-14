@@ -26,16 +26,16 @@ if __name__ == "__main__":
     )
 
     # FF with Acceptance Angle
-    source.direction.acceptance_angle.intersection_flag = True
-    source.direction.acceptance_angle.normal_flag = True
-    source.direction.acceptance_angle.volumes = ["spect_1"]
-    source.direction.acceptance_angle.normal_vector = [0, 0, -1]
-    source.direction.acceptance_angle.normal_tolerance = 20 * gate.g4_units.deg
+    source.direction.angular_acceptance.intersection_flag = True
+    source.direction.angular_acceptance.normal_flag = True
+    source.direction.angular_acceptance.volumes = ["spect_1"]
+    source.direction.angular_acceptance.normal_vector = [0, 0, -1]
+    source.direction.angular_acceptance.normal_tolerance = 20 * gate.g4_units.deg
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.unbiased_volumes = ["spect_1_crystal"]
+    ff.exclude_volumes = ["spect_1_crystal"]
 
     # go
     sim.run()

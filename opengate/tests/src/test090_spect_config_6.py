@@ -40,7 +40,7 @@ if __name__ == "__main__":
     sc.acquisition_config.duration = 30 * sec
     sc.acquisition_config.number_of_angles = 3
     # ff
-    sc.free_flight_config.primary_activity = 1e5 * Bq
+    sc.free_flight_config.energy_cutoff = 1e5 * Bq
     sc.free_flight_config.max_rejection = 10000
     sc.free_flight_config.angle_tolerance = 15 * deg
     sc.free_flight_config.forced_direction_flag = False

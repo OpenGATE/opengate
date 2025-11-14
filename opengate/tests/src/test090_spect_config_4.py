@@ -18,7 +18,7 @@ if __name__ == "__main__":
     cm = g4_units.cm
 
     # make it FF-FD primary
-    sc.free_flight_config.primary_activity = 1e3 * Bq
+    sc.free_flight_config.energy_cutoff = 1e3 * Bq
     sc.free_flight_config.max_rejection = 10000
     sc.free_flight_config.angle_tolerance = 15 * deg
     sc.free_flight_config.forced_direction_flag = True
