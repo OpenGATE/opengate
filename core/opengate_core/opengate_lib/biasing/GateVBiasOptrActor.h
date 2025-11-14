@@ -55,10 +55,10 @@ public:
 
   bool IsTrackValid(const G4Track *track) const;
 
-  std::vector<std::string> fUnbiasedVolumes;
+  std::vector<std::string> fExcludeVolumes;
   std::vector<const G4LogicalVolume *> fUnbiasedLogicalVolumes;
-  double fMinimalWeight;
-  double fMinimalEnergy;
+  double fWeightCutoff;
+  double fEnergyCutoff;
 };
 
 #endif

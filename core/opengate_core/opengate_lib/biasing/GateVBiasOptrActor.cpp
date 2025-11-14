@@ -19,8 +19,8 @@ GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
   fActions.insert("PreUserTrackingAction");
   // SteppingAction may kill when the weight is too low (we leave this to
   // subclasses) fActions.insert("SteppingAction");
-  fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
-  fMinimalEnergy = 0;
+  fWeightCutoff = std::numeric_limits<double>::min(); // around 2.22507e-308
+  fEnergyCutoff = 0;
 }
 
 GateVBiasOptrActor::~GateVBiasOptrActor() {
@@ -45,14 +45,14 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
 
   // minimal weight check
-  fMinimalWeight = DictGetDouble(user_info, "minimal_weight");
-  if (fMinimalWeight < 0) {
-    fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
+  fWeightCutoff = DictGetDouble(user_info, "weight_cutoff");
+  if (fWeightCutoff < 0) {
+    fWeightCutoff = std::numeric_limits<double>::min(); // around 2.22507e-308
   }
 
-  fUnbiasedVolumes = DictGetVecStr(user_info, "unbiased_volumes");
+  fExcludeVolumes = DictGetVecStr(user_info, "exclude_volumes");
   // check ignored volumes
-  for (auto &name : fUnbiasedVolumes) {
+  for (auto &name : fExcludeVolumes) {
     const auto *v = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
     fUnbiasedLogicalVolumes.push_back(v);
     if (v == nullptr) {
@@ -61,9 +61,9 @@ void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
     }
   }
 
-  fMinimalEnergy = DictGetDouble(user_info, "minimal_energy");
-  if (fMinimalEnergy < 0) {
-    fMinimalEnergy = 0;
+  fEnergyCutoff = DictGetDouble(user_info, "energy_cutoff");
+  if (fEnergyCutoff < 0) {
+    fEnergyCutoff = 0;
   }
 }
 
@@ -92,9 +92,9 @@ void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
 
 bool GateVBiasOptrActor::IsTrackValid(const G4Track *track) const {
   // Must be inferior or equal for cases when energy is zero or weight is zero
-  if (track->GetKineticEnergy() <= fMinimalEnergy)
+  if (track->GetKineticEnergy() <= fEnergyCutoff)
     return false;
-  if (track->GetWeight() <= fMinimalWeight)
+  if (track->GetWeight() <= fWeightCutoff)
     return false;
   return true;
 }
@@ -102,9 +102,9 @@ bool GateVBiasOptrActor::IsTrackValid(const G4Track *track) const {
 void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
   // Do not attach to ignored volumes
-  const auto iter = std::find(fUnbiasedVolumes.begin(), fUnbiasedVolumes.end(),
+  const auto iter = std::find(fExcludeVolumes.begin(), fExcludeVolumes.end(),
                               volume->GetName());
-  if (iter != fUnbiasedVolumes.end())
+  if (iter != fExcludeVolumes.end())
     return;
 
   // Attach to the volume
