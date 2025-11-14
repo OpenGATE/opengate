@@ -8,7 +8,7 @@ from .utility import (
     get_spectrum,
     compute_cdf_and_total_yield,
 )
-from ..actors.biasingactors import generic_source_default_aa, AngularAcceptance
+from ..actors.biasingactors import generic_source_default_aa
 from ..base import process_cls
 from ..utility import g4_units
 from ..exception import fatal, warning
@@ -41,7 +41,7 @@ def _generic_source_default_direction():
             "momentum": [0, 0, 1],
             "focus_point": [0, 0, 0],
             "sigma": [0, 0],
-            "angular_acceptance": AngularAcceptance(),
+            "angular_acceptance": generic_source_default_aa(),
             "accolinearity_flag": False,
             "accolinearity_fwhm": 0.5 * g4_units.deg,
             "histogram_theta_weights": [],
