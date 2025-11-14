@@ -7,29 +7,88 @@ from .actoroutput import ActorOutputBase
 import numpy as np
 
 
-def generic_source_default_aa():
-    # aa = Angular Acceptance
-    # this is used to control the direction of events in
-    # the generic source, but is also used in the SplitComptonActor
-    return Box(
-        {
-            "skip_policy": "SkipEvents",
-            "max_rejection": 10000,
-            "volumes": [],
-            "intersection_flag": False,
-            "normal_flag": False,
-            "forced_direction_flag": False,
-            "normal_vector": [0, 0, 1],
-            "normal_tolerance": 3 * g4_units.deg,
-            "min_normal_tolerance": 0,
-            "normal_tolerance_min_distance": 0 * g4_units.cm,
-            "distance_dependent_normal_tolerance": False,
-            "angle1": 90 * g4_units.degree,
-            "distance1": 0 * g4_units.cm,
-            "angle2": 20 * g4_units.degree,
-            "distance2": 50 * g4_units.cm,
-        }
-    )
+class AngularAcceptance(GateObject):
+    """
+    Configuration block for defining angular acceptance and
+    directional biasing for sources or biased processes.
+
+    This object inherits from GateObject to reuse the
+    user_info and serialization machinery.
+    """
+
+    # hints for IDE
+    skip_policy: str
+    max_rejection: int
+    volumes: list
+    intersection_flag: bool
+    normal_flag: bool
+    forced_direction_flag: bool
+    normal_vector: list
+    normal_tolerance: float
+    min_normal_tolerance: float
+    normal_tolerance_min_distance: float
+
+    user_info_defaults = {
+        "skip_policy": (
+            "SkipEvents",
+            {"doc": "Policy for rejected events ('SkipEvents', 'ZeroEnergy', etc.)"},
+        ),
+        "max_rejection": (
+            10000,
+            {"doc": "Maximum number of rejection loops before skipping."},
+        ),
+        "volumes": (
+            [],
+            {"doc": "List of volumes for intersection-based biasing."},
+        ),
+        "intersection_flag": (
+            False,
+            {"doc": "Enable biasing based on intersection with 'volumes'."},
+        ),
+        "normal_flag": (
+            False,
+            {"doc": "Enable biasing based on angle to 'volumes' normal."},
+        ),
+        "forced_direction_flag": (
+            False,
+            {"doc": "Force particles towards a specific direction."},
+        ),
+        "normal_vector": (
+            [0, 0, 1],
+            {"doc": "Vector to check against the volume's normal."},
+        ),
+        "normal_tolerance": (
+            3 * g4_units.deg,
+            {"doc": "Tolerance for the normal vector comparison."},
+        ),
+        "min_normal_tolerance": (
+            0,
+            {"doc": "Minimum tolerance for the normal vector comparison."},
+        ),
+        "normal_tolerance_min_distance": (
+            6 * g4_units.cm,
+            {"doc": "Minimum distance for the normal vector comparison."},
+        ),
+        "distance_dependent_normal_tolerance": (
+            False,
+            {
+                "doc": "Enable distance-dependent tolerance for the normal vector comparison."
+            },
+        ),
+    }
+
+    def __init__(self, **kwargs):
+        if "name" not in kwargs:
+            kwargs["name"] = "angular_acceptance"
+        super().__init__(**kwargs)
+
+    def initialize(self):
+        print("initialize angular acceptance: TODO check parameters")
+
+    def __str__(self):
+        # A cleaner string representation
+        s = f"AA: {self.skip_policy} ... TODO"
+        return s
 
 
 def distance_dependent_angle_tolerance(a1, a2, d1, d2, dist):
