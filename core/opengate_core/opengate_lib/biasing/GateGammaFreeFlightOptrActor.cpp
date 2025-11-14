@@ -16,6 +16,7 @@ GateGammaFreeFlightOptrActor::GateGammaFreeFlightOptrActor(py::dict &user_info)
   l.fFreeFlightOperation = nullptr;
   l.fIsFirstTime = true;
   fActions.insert("SteppingAction");
+  // fActions.insert("EndOfRunAction");
   // fActions.insert("BeginOfEventAction");
 }
 
@@ -90,14 +91,21 @@ GateGammaFreeFlightOptrActor::ProposeFinalStateBiasingOperation(
   return l.fFreeFlightOperation;
 }
 
-void GateGammaFreeFlightOptrActor::BeginOfEventAction(const G4Event *event) {}
+void GateGammaFreeFlightOptrActor::BeginOfEventAction(const G4Event *event) {
+  // not used
+}
 
 void GateGammaFreeFlightOptrActor::SteppingAction(G4Step *step) {
   threadLocal_t &l = threadLocalData.Get();
   // Was it valid at the start of the step?
   // Note: it only applies for FF particles, not analog ones
+
   if (!l.fIsTrackValidForStep) {
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fIsTrackValidForStep = true;
   }
+}
+
+void GateGammaFreeFlightOptrActor::EndOfRunAction(const G4Run *) {
+  // not used
 }

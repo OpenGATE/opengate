@@ -26,6 +26,7 @@ public:
 
   void BeginOfEventAction(const G4Event *event) override;
   void SteppingAction(G4Step *step) override;
+  void EndOfRunAction(const G4Run *) override;
 
 protected:
   G4VBiasingOperation *
