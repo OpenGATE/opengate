@@ -40,6 +40,9 @@ public:
   static int
   IsScatterInteraction(const G4BiasingProcessInterface *callingProcess);
 
+  static bool IsFreeFlight(const G4Track *track);
+  static constexpr int fThisIsAFreeFlightTrack = 666;
+
 protected:
   G4VBiasingOperation *
   ProposeNonPhysicsBiasingOperation(const G4Track *,
