@@ -56,3 +56,28 @@ void ComputeTransformationFromWorldToVolume(const std::string &phys_volume_name,
   translation = rotation * translation;
   translation = -translation;
 }
+
+bool IsStepInVolume(const G4Step *step, const std::string &volume_name) {
+  if (!step)
+    return false;
+
+  const G4StepPoint *preStepPoint = step->GetPreStepPoint();
+  if (!preStepPoint)
+    return false;
+
+  const G4TouchableHandle &touchable = preStepPoint->GetTouchableHandle();
+  if (!touchable)
+    return false;
+
+  // Traverse the touchable hierarchy upwards
+  for (G4int depth = 0; depth < touchable->GetHistoryDepth(); ++depth) {
+    const G4VPhysicalVolume *volume = touchable->GetVolume(depth);
+    if (!volume)
+      continue;
+
+    if (volume->GetName() == volume_name) {
+      return true;
+    }
+  }
+  return false;
+}

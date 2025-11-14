@@ -1,15 +1,12 @@
 import opengate as gate
 from opengate.contrib.spect.spect_helpers import *
-from opengate.actors.biasingactors import distance_dependent_angle_tolerance
 from opengate.exception import fatal
 from opengate import g4_units
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 import opengate.contrib.spect.siemens_intevo as intevo
 from opengate.image import read_image_info
-from opengate.utility import get_basename_and_extension
+from opengate.utility import get_basename_and_extension, g4_best_unit
 from opengate.sources.utility import set_source_energy_spectrum
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 import json
 from pathlib import Path
@@ -279,6 +276,8 @@ class SPECTConfig(ConfigBase):
             name = f"{self.simu_name}_source"
             source = sim.source_manager.get_source(name)
             sources = [source]
+        if len(sources) > 1:
+            fatal(f"SORRY multiple sources not implemented with FF-scatter yet")
         for source in sources:
             self.free_flight_config.setup_simulation_scatter(sim, source)
         self.dump_ff_info_scatter()
@@ -363,6 +362,9 @@ class PhantomConfig(ConfigBase):
         s += f"Phantom labels: {self.labels}"
         return s
 
+    def get_phantom_volume_name(self):
+        return f"{self.spect_config.simu_name}_phantom"
+
     def setup_simulation(self, sim):
         # can be: nothing or voxelized
         if self.image is None:
@@ -374,7 +376,7 @@ class PhantomConfig(ConfigBase):
                 phantom.translation = self.translation
             return phantom
         # insert voxelized phantom
-        phantom = sim.add_volume("Image", f"{self.spect_config.simu_name}_phantom")
+        phantom = sim.add_volume("Image", self.get_phantom_volume_name())
         phantom.image = self.image
         phantom.material = "G4_AIR"
         if self.material_db is not None:
@@ -398,7 +400,7 @@ class PhantomConfig(ConfigBase):
     def add_fake_phantom_for_visu(self, sim):
         gate.exception.warning(f"FAKE voxelized phantom for visu: {self.image}")
         img_info = read_image_info(self.image)
-        phantom = sim.add_volume("Box", f"{self.spect_config.simu_name}_phantom")
+        phantom = sim.add_volume("Box", self.get_phantom_volume_name())
         phantom.material = "G4_WATER"
         phantom.size = img_info.size * img_info.spacing
         return phantom
@@ -481,6 +483,17 @@ class DetectorConfig(ConfigBase):
         ]
         return filenames
 
+    def get_minimal_energy(self, tol=0.1):
+        channels = self.digitizer_channels
+        if channels is not None:
+            min_e = 1e6 * g4_units.GeV
+            for c in channels:
+                if c["min"] < min_e:
+                    min_e = c["min"]
+            return min_e * (1 - tol)
+        else:
+            return None
+
     def setup_simulation(self, sim):
         if self.model not in self.available_models:
             fatal(
@@ -515,6 +528,7 @@ class DetectorConfig(ConfigBase):
                     f'Unknown radionuclide: "{self.spect_config.source_config.radionuclide}"'
                 )
             channels = get_default_energy_windows(rad)
+            self.digitizer_channels = channels
 
         # create the SPECT detector for each head
         simu_name = self.spect_config.simu_name
@@ -612,6 +626,7 @@ class SourceConfig(ConfigBase):
         self.total_activity = 1 * g4_units.Bq
         # self.gaga = GAGAConfig(spect_config) # FIXME todo
         self.source_name = None
+        self.remove_low_energy_lines = True
 
     def __str__(self):
         s = f"Activity source image: {self.image}\n"
@@ -641,6 +656,23 @@ class SourceConfig(ConfigBase):
         set_source_energy_spectrum(source, self.radionuclide)
         source.particle = "gamma"
         source.activity = self.total_activity / self.spect_config.number_of_threads
+
+        # remove gamma line lower than min energy
+        if self.remove_low_energy_lines:
+            dc = self.spect_config.detector_config
+            min_e = dc.get_minimal_energy()
+            if min_e is not None:
+                weights = source.energy.spectrum_weights
+                ene = source.energy.spectrum_energies
+                index = 0
+                for e in ene:
+                    if e < min_e:
+                        weights[index] = 0.0
+                    index += 1
+                print(
+                    f"Source energy spectrum modified, lines below {g4_best_unit(min_e, 'Energy')} removed"
+                )
+
         if sim.visu is True:
             source.activity = 10 * gate.g4_units.Bq
         self.source_name = source.name
@@ -717,7 +749,7 @@ class FreeFlightConfig(ConfigBase):
         self.compton_splitting_factor = 50
         self.rayleigh_splitting_factor = 50
         self.minimal_weight = 1e-30
-        self.minimal_energy = 0
+        self.minimal_energy = "auto"
         self.primary_activity = 1 * g4_units.Bq
         self.scatter_activity = 1 * g4_units.Bq
         self.max_rejection = None
@@ -735,6 +767,7 @@ class FreeFlightConfig(ConfigBase):
         s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
         s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
         s += f"FreeFlight minimal_weight: {self.minimal_weight}\n"
+        s += f"FreeFlight minimal_energy: {g4_best_unit(self.minimal_energy, "Energy")}\n"
         s += f"FreeFlight primary_activity: {self.primary_activity / g4_units.Bq} Bq\n"
         s += f"FreeFlight scatter_activity: {self.scatter_activity / g4_units.Bq} Bq\n"
         s += f"FreeFlight primary_unbiased_volumes: {self.primary_unbiased_volumes} \n"
@@ -767,14 +800,13 @@ class FreeFlightConfig(ConfigBase):
             sim.g4_commands_before_init.append(s)
 
         # auto set the minimal energy (to avoid warning)
-        dc = self.spect_config.detector_config
-        channels = dc.digitizer_channels
-        if channels is not None:
-            min_e = 1e6 * g4_units.GeV
-            for c in channels:
-                if c["min"] < min_e:
-                    min_e = c["min"]
-            self.minimal_energy = min_e
+        if self.minimal_energy == "auto":
+            dc = self.spect_config.detector_config
+            e = dc.get_minimal_energy()
+            if e is not None:
+                self.minimal_energy = dc.get_minimal_energy()
+            else:
+                self.minimal_energy = 0 * g4_units.keV
 
     def get_crystal_volume_names(self):
         volume_names = [
