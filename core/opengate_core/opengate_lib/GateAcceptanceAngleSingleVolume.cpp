@@ -34,6 +34,7 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   const auto lv = lvs->GetVolume(fAcceptanceAngleVolumeName);
   if (!lv) {
     Fatal("Could not find logical volume named: " + fAcceptanceAngleVolumeName);
+    exit(0);
   }
   fAASolid = lv->GetSolid();
 
@@ -59,18 +60,6 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   // DistDep -> not recommended (too slow), prefer normal_tolerance_min_distance
   fDistanceDependentAngleToleranceFlag =
       StrToBool(param.at("distance_dependent_normal_tolerance"));
-  fAngle1 = StrToDouble(param.at("angle1"));
-  fAngle2 = StrToDouble(param.at("angle2"));
-  fDistance1 = StrToDouble(param.at("distance1"));
-  fDistance2 = StrToDouble(param.at("distance2"));
-  if (fDistance1 >= fDistance2) {
-    Fatal(
-        "For 'distance_dependent_normal_tolerance', Distance1 must be strictly "
-        "less than distance2 " +
-        std::to_string(fDistance1) + " " + std::to_string(fDistance2));
-  }
-  a = (1.0 / tan(fAngle1) - 1.0 / tan(fAngle2)) / (fDistance1 - fDistance2);
-  b = 1.0 / tan(fAngle2) - a * fDistance2;
 }
 
 GateAcceptanceAngleSingleVolume::~GateAcceptanceAngleSingleVolume() {
@@ -103,9 +92,13 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
       return false;
   }
   if (fNormalFlag) {
-    if (dist < fMinDistanceNormalAngleTolerance)
-      return true;
     const auto angle = fNormalVector.angle(localDirection);
+    if (dist < fMinDistanceNormalAngleTolerance) {
+      static const double fMaxAngle = 90 * CLHEP::deg; // FIXME as a parameter
+      return angle < fMaxAngle;
+      // return true;
+    }
+    // const auto angle = fNormalVector.angle(localDirection);
     return angle < fNormalAngleTolerance;
   }
   return true;
