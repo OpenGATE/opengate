@@ -122,11 +122,11 @@ class Ciosalpha:
         source.energy.histogram_weight = weights
         source.energy.histogram_energy = energy_bins
 
-        source.direction.acceptance_angle.volumes = [sourcebox.name]
-        source.direction.acceptance_angle.normal_flag = True
-        source.direction.acceptance_angle.normal_vector = [1, 0, 0]
-        source.direction.acceptance_angle.normal_tolerance = 5 * deg
-        source.direction.acceptance_angle.skip_policy = "SkipEvents"
+        source.direction.angular_acceptance.volumes = [sourcebox.name]
+        source.direction.angular_acceptance.normal_flag = True
+        source.direction.angular_acceptance.normal_vector = [1, 0, 0]
+        source.direction.angular_acceptance.normal_tolerance = 5 * deg
+        source.direction.angular_acceptance.skip_policy = "SkipEvents"
 
         return source
 
