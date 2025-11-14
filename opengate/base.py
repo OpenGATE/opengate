@@ -977,5 +977,33 @@ def create_gate_object_from_dict(dct):
     return obj
 
 
+def _flatten_user_info_for_cpp(obj):
+    """
+    Recursively flattens a user_info dict for C++ bindings.
+    Replaces GateObject instances with their internal user_info dict.
+    This is useful, for example, for AngularAcceptance parameters
+    """
+    if isinstance(obj, __gate_dictionary_objects__):
+        ret = {}
+        for k, v in obj.items():
+            ret[k] = _flatten_user_info_for_cpp(v)
+        # Return a plain dict, which C++ bindings understand
+        return ret
+    elif isinstance(obj, __gate_list_objects__):
+        ret = []
+        for e in obj:
+            ret.append(_flatten_user_info_for_cpp(e))
+        return ret
+    elif isinstance(obj, GateObject):
+        # This is the "flattening" step.
+        # It replaces the GateObject (like AngularAcceptance)
+        # with its own user_info dictionary, and recursively
+        # flattens that.
+        return _flatten_user_info_for_cpp(obj.user_info)
+    else:
+        # Base case: int, float, str, list, etc.
+        return obj
+
+
 process_cls(GateObject)
 process_cls(DynamicGateObject)
