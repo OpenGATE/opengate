@@ -36,14 +36,13 @@ void GateForcedDirectionManager::Initialize(
     return;
 
   // Check AA flags
-  const bool b2 = StrToBool(user_info.at("intersection_flag"));
+  fIntersectionFlag = StrToBool(user_info.at("intersection_flag"));
   const bool b3 = StrToBool(user_info.at("normal_flag"));
-  if (b2 || b3) {
+  /*if (b3) {
     std::ostringstream oss;
-    oss << "Cannot use 'forced_direction_flag' mode with intersection_flag "
-           "or normal_flag";
-    Fatal(oss.str());
-  }
+    oss << "Cannot use 'forced_direction_flag' mode with normal_flag equal to
+  True"; Fatal(oss.str());
+  }*/
 
   // Volumes
   fAcceptanceAngleVolumeNames = GetVectorFromMapString(user_info, "volumes");
@@ -160,16 +159,23 @@ G4ThreeVector GateForcedDirectionManager::GenerateForcedDirection(
 
   // Check for intersection with the detector plane
   const auto localPosition = fFDTransformWorldToVolume.TransformPoint(position);
-  const auto dist = fSolid->DistanceToIn(localPosition, direction);
-
-  if (dist != kInfinity) {
-    // Transform the direction in the global coordinate system
-    const auto globalDirection = fAARotationInverse * direction;
-    weight = fWeight;
-    return globalDirection;
+  if (fIntersectionFlag) {
+    const auto dist = fSolid->DistanceToIn(localPosition, direction);
+    if (dist == kInfinity) {
+      // do not intersect
+      zero_energy_flag = true;
+      weight = 0;
+      return G4ThreeVector(1, 0, 0);
+    }
   }
+
+  // Transform the direction in the global coordinate system
+  const auto globalDirection = fAARotationInverse * direction;
+  weight = fWeight;
+  return globalDirection;
+
   // Fallback strategy if no intersection is found
-  zero_energy_flag = true;
-  weight = 0;
-  return G4ThreeVector(1, 0, 0);
+  // zero_energy_flag = true;
+  // weight = 0;
+  // return G4ThreeVector(1, 0, 0);
 }
