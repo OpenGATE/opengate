@@ -10,7 +10,6 @@ import bisect
 import random
 
 import opengate_core as g4
-from .phspsources import PhaseSpaceSource
 from ..exception import fatal
 from .generic import GenericSource
 from ..image import get_info_from_image
