@@ -767,7 +767,11 @@ class FreeFlightConfig(ConfigBase):
         s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
         s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
         s += f"FreeFlight weight_cutoff: {self.weight_cutoff}\n"
-        s += f"FreeFlight energy_cutoff: {g4_best_unit(self.energy_cutoff, "Energy")}\n"
+        e = self.energy_cutoff
+        if e == "auto":
+            s += f"FreeFlight energy_cutoff: auto\n"
+        else:
+            s += f"FreeFlight energy_cutoff: {g4_best_unit(self.energy_cutoff, "Energy")}\n"
         s += f"FreeFlight primary_activity: {self.primary_activity / g4_units.Bq} Bq\n"
         s += f"FreeFlight scatter_activity: {self.scatter_activity / g4_units.Bq} Bq\n"
         s += f"FreeFlight primary_unbiased_volumes: {self.primary_exclude_volumes} \n"
