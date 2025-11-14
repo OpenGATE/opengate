@@ -1361,7 +1361,7 @@ class Simulation(GateObject):
     It contains:
     - a set of global user parameters (SimulationUserInfo)
     - user parameters for Volume, Source, Actors and Filters, Physics
-    - a list of g4 commands that will be set to G4 engine after the initialisation
+    - a list of g4 commands that will be set to the G4 engine after the initialisation
 
     There is NO Geant4 engine here, it is only a set of parameters and options.
     """

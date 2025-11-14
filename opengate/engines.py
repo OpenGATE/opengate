@@ -1245,7 +1245,7 @@ class SimulationEngine(GateSingletonFatal):
             if self.source_engine.can_predict_expected_number_of_event():
                 s2 = f"(around {n} events expected)"
             else:
-                s2 = f"(cannot predict the number of events, max is {n}, e.g. acceptance_angle is enabled)"
+                s2 = f"(cannot predict the number of events, max is {n}, e.g. angular_acceptance is enabled)"
 
         logger.info("-" * 80 + f"\nSimulation: START {s}{s2}")
 
