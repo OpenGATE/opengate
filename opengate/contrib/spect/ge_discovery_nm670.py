@@ -1005,8 +1005,8 @@ def add_source_for_arf_training_dataset(
     source.energy.type = "range"
     source.energy.min_energy = min_energy
     source.energy.max_energy = max_energy
-    source.direction.acceptance_angle.volumes = [detector_plane.name]
-    source.direction.acceptance_angle.intersection_flag = True
+    source.direction.angular_acceptance.volumes = [detector_plane.name]
+    source.direction.angular_acceptance.intersection_flag = True
 
     return source
 
