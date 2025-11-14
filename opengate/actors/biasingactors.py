@@ -1,6 +1,6 @@
 import opengate_core as g4
 from .base import ActorBase
-from ..base import process_cls
+from ..base import process_cls, GateObject
 from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
@@ -58,6 +58,9 @@ class GenericBiasingActorBase(ActorBase):
     bias_primary_only: bool
     bias_only_once: bool
     particles: list
+    exclude_volumes: list
+    weight_cutoff: float
+    energy_cutoff: float
 
     user_info_defaults = {
         "bias_primary_only": (
@@ -81,20 +84,19 @@ class GenericBiasingActorBase(ActorBase):
                 "setter_hook": _setter_hook_particles,
             },
         ),
-        "unbiased_volumes": (
+        "exclude_volumes": (
             [],
             {
                 "doc": "A list of volumes where this actor's biasing is disabled, allowing particles to be tracked with normal, unbiased physics. ",
             },
         ),
-        "minimal_weight": (
+        "weight_cutoff": (
             -1,
             {
                 "doc": "if the particle weight become lower than this value, the particle is killed. "
-                "Negative values are considered with minimal_weight = min double default (1e-300)"
             },
         ),
-        "minimal_energy": (
+        "energy_cutoff": (
             0,
             {
                 "doc": "if the particle energy become lower than this value, the particle is killed. "
@@ -178,8 +180,9 @@ class GammaFreeFlightActor(GenericBiasingActorBase, g4.GateGammaFreeFlightOptrAc
 
     # hints for IDE
     processes: list
+    particles: list
 
-    # this biased actor DO NOT work for GammaGeneralProc
+    # This biased actor DOES NOT work for GammaGeneralProc
     processes = ["compt", "phot", "conv", "Rayl"]
     particles = ["gamma"]
 
@@ -288,6 +291,12 @@ class ScatterSplittingFreeFlightActor(
 
     # hints for IDE
     processes: list
+    particles: list
+    max_compton_level: int
+    compton_splitting_factor: int
+    rayleigh_splitting_factor: int
+    angular_acceptance: Box
+    kill_interacting_in_volumes: list
 
     # user info
     user_info_defaults = {
@@ -309,10 +318,10 @@ class ScatterSplittingFreeFlightActor(
                 "doc": "All Rayleigh interactions will be split by this factor (if -1, set by splitting_factor).",
             },
         ),
-        "acceptance_angle": (
-            generic_source_default_aa(),
+        "angular_acceptance": (
+            AngularAcceptance(),  # generic_source_default_aa(),
             {
-                "doc": "See generic source",
+                "doc": "Scattered photon will be limited to an angular acceptance. Several methods available, see XXX",
             },
         ),
         "kill_interacting_in_volumes": (
@@ -362,6 +371,7 @@ class ScatterSplittingFreeFlightActor(
         )
 
 
+process_cls(AngularAcceptance)
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
 process_cls(BremsstrahlungSplittingActor)
