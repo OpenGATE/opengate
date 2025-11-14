@@ -48,7 +48,7 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   // set the angle acceptance volume if needed
   // AAManager is already set in GenericSource BUT MUST be iso direction here?
   auto d = py::dict(user_info["direction"]);
-  auto dd = DictToMap(d["acceptance_angle"]);
+  auto dd = DictToMap(d["angular_acceptance"]);
   auto &ll = GetThreadLocalDataGenericSource();
   ll.fAAManager->Initialize(dd, true);
   ll.fSPS->SetAAManager(ll.fAAManager);
