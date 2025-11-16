@@ -23,21 +23,13 @@ public:
                     const G4ThreeVector &momentum_direction) const;
 
   void UpdateTransform();
-  bool DistanceDependentToleranceTest(double angle, double dist) const;
 
 protected:
   std::string fAcceptanceAngleVolumeName;
   bool fIntersectionFlag;
   bool fNormalFlag;
   double fNormalAngleTolerance;
-  bool fDistanceDependentAngleToleranceFlag;
   double fMinDistanceNormalAngleTolerance;
-  double fAngle1;
-  double fAngle2;
-  double fDistance1;
-  double fDistance2;
-  double a;
-  double b;
   G4ThreeVector fNormalVector;
   G4AffineTransform fAATransform;
   G4RotationMatrix *fAARotation;
