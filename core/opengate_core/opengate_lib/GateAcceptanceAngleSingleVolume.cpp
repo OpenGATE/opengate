@@ -23,11 +23,6 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   fNormalFlag = false;
   fNormalAngleTolerance = 0;
   fMinDistanceNormalAngleTolerance = 0;
-  fDistanceDependentAngleToleranceFlag = false;
-  fAngle1 = 0;
-  fAngle2 = 0;
-  fDistance1 = 0;
-  fDistance2 = 0;
 
   // Retrieve the solid
   const auto lvs = G4LogicalVolumeStore::GetInstance();
@@ -56,10 +51,6 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
     Fatal("Normal angle tolerance must be strictly positive while it is " +
           std::to_string(fNormalAngleTolerance));
   }
-
-  // DistDep -> not recommended (too slow), prefer normal_tolerance_min_distance
-  fDistanceDependentAngleToleranceFlag =
-      StrToBool(param.at("distance_dependent_normal_tolerance"));
 }
 
 GateAcceptanceAngleSingleVolume::~GateAcceptanceAngleSingleVolume() {
@@ -102,15 +93,4 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     return angle < fNormalAngleTolerance;
   }
   return true;
-}
-
-bool GateAcceptanceAngleSingleVolume::DistanceDependentToleranceTest(
-    // This is very slow, (3x than other methods)
-    // We recommend not using this method
-    const double angle, const double dist) const {
-  const double tol = atan(1.0 / (a * dist + b));
-
-  if (tol < 0)
-    return true;
-  return angle < tol;
 }
