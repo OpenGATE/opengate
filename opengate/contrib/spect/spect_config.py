@@ -870,9 +870,6 @@ class FreeFlightConfig(ConfigBase):
         source.direction.angular_acceptance.normal_flag = True
         source.direction.angular_acceptance.normal_vector = normal_vector
         source.direction.angular_acceptance.normal_tolerance = self.angle_tolerance
-        # distance dependent normal tol is very slow, dont use it
-        # source.direction.angular_acceptance.distance_dependent_normal_tolerance = False
-        # minimal distance should not be used for primary
         source.direction.angular_acceptance.normal_tolerance_min_distance = 0
 
         return source
@@ -951,15 +948,5 @@ class FreeFlightConfig(ConfigBase):
         ff.angular_acceptance.normal_tolerance_min_distance = (
             self.angle_tolerance_min_distance
         )
-        ff.angular_acceptance.distance_dependent_normal_tolerance = False
-
-        """ REMOVED because too slow
-        ff.angular_acceptance.distance_dependent_normal_tolerance = True
-        tol = options.scatter_angle_tolerance
-        ff.angular_acceptance.distance1 = tol[0]
-        ff.angular_acceptance.angle1 = tol[1]
-        ff.angular_acceptance.distance2 = tol[2]
-        ff.angular_acceptance.angle2 = tol[3]
-        """
 
         return ff
