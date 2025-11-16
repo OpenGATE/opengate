@@ -4,13 +4,14 @@ from ..base import process_cls
 from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
+from ..base import UserInfoValidatorBase
+from ..exception import fatal
 import numpy as np
 
 
 def generic_source_default_aa():
-    # aa = Angular Acceptance
-    # this is used to control the direction of events in
-    # the generic source, but is also used in the SplitComptonActor
+    # This is used to control the direction of events in a generic source.
+    # It is also used in the ScatterSplittingFreeFlightActor
     return Box(
         {
             "skip_policy": "SkipEvents",
@@ -23,22 +24,30 @@ def generic_source_default_aa():
             "normal_tolerance": 3 * g4_units.deg,
             "min_normal_tolerance": 0,
             "normal_tolerance_min_distance": 0 * g4_units.cm,
-            "distance_dependent_normal_tolerance": False,
-            "angle1": 90 * g4_units.degree,
-            "distance1": 0 * g4_units.cm,
-            "angle2": 20 * g4_units.degree,
-            "distance2": 50 * g4_units.cm,
         }
     )
 
 
-def distance_dependent_angle_tolerance(a1, a2, d1, d2, dist):
-    a = (1 / np.tan(a1) - 1 / np.tan(a2)) / (d1 - d2)
-    b = 1 / np.tan(a1) - a * d1
-    tol = np.arctan(1.0 / (a * dist + b))
-    if tol < 0:
-        tol = 90 * g4_units.deg
-    return tol
+class AngularAcceptanceValidator(UserInfoValidatorBase):
+    """Validates the 'angular_acceptance' Box."""
+
+    __schema__ = set(generic_source_default_aa().keys())
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+        b = getattr(parent_obj, attr_name)
+        # check skip_policy
+        valid_policies = ["SkipEvents", "ZeroEnergy"]
+        if b.skip_policy not in valid_policies:
+            fatal(
+                f"In {context_name}: '{b.skip_policy}' is not a valid skip policy. Must be one of {valid_policies}."
+            )
+        # check normal vector
+        if b.normal_flag:
+            if len(b.normal_vector) != 3:
+                fatal(f"In {context_name}: 'normal_vector' must be a 3-vector.")
+            if np.linalg.norm(b.normal_vector) != 1:
+                fatal(f"In {context_name}: 'normal_vector' must be a unit vector.")
 
 
 def _setter_hook_particles(self, value):
@@ -129,14 +138,13 @@ class BremsstrahlungSplittingActor(
     SplitProcessActorBase, g4.GateBremsstrahlungSplittingOptrActor
 ):
     """
-    This splitting actor enables process-based splitting specifically for bremsstrahlung process. Each time a Brem
+    This splitting actor enables process-based splitting specifically for the Bremsstrahlung process. Each time a Brem
     process occurs, its behavior is modified by generating multiple secondary Brem scattering tracks
-    (splitting factor) attached to  the initial charged particle.
+    (splitting factor) attached to the initial charged particle.
 
-    This actor is not really needed as Geant4 already propose this with:
+    This actor is not really needed as Geant4 already proposes this with:
     /process/em/setSecBiasing eBrem my_region 100 50 MeV
     But we use it as a test/example.
-
     """
 
     # hints for IDE
@@ -285,7 +293,7 @@ class ScatterSplittingFreeFlightActor(
     SplitProcessActorBase, g4.GateScatterSplittingFreeFlightOptrActor
 ):
     """
-    Split Compton process for gamma. The initial gamma is tracked until it goes out of the volume.
+    Split Compton processes for gamma. The initial gamma is tracked until it goes out of the volume.
     Split gammas are tracked with free flight and Angular Acceptance
     """
 
@@ -345,6 +353,7 @@ class ScatterSplittingFreeFlightActor(
     def __init__(self, *args, **kwargs):
         SplitProcessActorBase.__init__(self, *args, **kwargs)
         self.__initcpp__()
+        self._aa_validator = AngularAcceptanceValidator()
 
     def __initcpp__(self):
         g4.GateScatterSplittingFreeFlightOptrActor.__init__(self, {"name": self.name})
@@ -355,6 +364,8 @@ class ScatterSplittingFreeFlightActor(
 
     def initialize(self):
         SplitProcessActorBase.initialize(self)
+        # Check the sub-parameters
+        self._aa_validator.validate(self, "angular_acceptance")
         if self.user_info.compton_splitting_factor == -1:
             self.user_info.compton_splitting_factor = self.user_info.splitting_factor
         if self.user_info.rayleigh_splitting_factor == -1:
