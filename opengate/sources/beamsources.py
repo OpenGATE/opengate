@@ -3,13 +3,19 @@ from box import Box
 import numpy as np
 from scipy.spatial.transform import Rotation
 import opengate_core as g4
-from .generic import GenericSource, SourceBase
+from .generic import (
+    GenericSource,
+    SourceBase,
+    DirectionValidator,
+    _direction_parameters,
+)
 from ..contrib.tps.ionbeamtherapy import (
     get_spots_from_beamset_beam,
     spots_info_from_txt,
     BeamsetInfo,
 )
 from ..base import process_cls
+from ..exception import fatal
 
 
 def _check_ph_space_params(param_v):
@@ -30,30 +36,90 @@ def _check_ph_space_params(param_v):
         raise ValueError("convergence parameter can be only 0 or 1.")
 
 
+def _pbs_direction_parameters():
+    b = _direction_parameters()
+    b.partPhSp_x = [0, 0, 0, 0]
+    b.partPhSp_y = [0, 0, 0, 0]
+    return b
+
+
+class PBSDirectionValidator(DirectionValidator):
+    """Validates the 'direction' Box for a Pencil Beam Source."""
+
+    __schema__ = set(_pbs_direction_parameters().keys())
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        # 1. Validate all the common direction parameters (theta, phi, etc.)
+        context_name = super().validate(parent_obj, attr_name, parent_context)
+
+        # 2. Validate the PBS-specific parameters
+        b = getattr(parent_obj, attr_name)
+        # Check that partPhSp_x and partPhSp_y are 4-element lists
+        if len(b.partPhSp_x) != 4:
+            fatal(
+                f"In {context_name}: 'partPhSp_x' must be a 4-element list [sigma, theta, epsilon, conv]. "
+                f"Provided: {b.partPhSp_x}"
+            )
+        if len(b.partPhSp_y) != 4:
+            fatal(
+                f"In {context_name}: 'partPhSp_y' must be a 4-element list [sigma, theta, epsilon, conv]. "
+                f"Provided: {b.partPhSp_y}"
+            )
+
+        #
+        # Run the physics checks from _check_ph_space_params
+        #
+        pi = math.pi
+        param_names = ["partPhSp_x", "partPhSp_y"]
+        for name in param_names:
+            params = b[name]
+            sigma = params[0]
+            theta = params[1]
+            epsilon = params[2]
+            conv = params[3]
+
+            if epsilon == 0:
+                fatal(f"In {context_name}.{name}: Ellipse area 'epsilon' cannot be 0.")
+            if pi * sigma * theta < epsilon:
+                fatal(
+                    f"In {context_name}.{name}: The condition 'pi * sigma * theta < epsilon' is not met. "
+                    f"Provided values: sigma = {sigma}, theta = {theta}, epsilon = {epsilon}."
+                )
+            if conv not in [0, 1]:
+                fatal(
+                    f"In {context_name}.{name}: 'conv' (convergence) parameter must be 0 or 1. "
+                    f"Provided: {conv}."
+                )
+
+        return context_name
+
+
+_pbs_dir_validator = PBSDirectionValidator()
+
+
 class IonPencilBeamSource(GenericSource, g4.GatePencilBeamSource):
     """
     Pencil Beam source
     """
 
+    user_info_defaults = {
+        "direction": (
+            _pbs_direction_parameters(),
+            {"doc": "Define the direction of the primary particles", "override": True},
+        )
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
         self.__initcpp__()
         self.position.type = "disc"
-
-        # FIXME: how to change the user_info for this new param ? -> use "override:True" entry in options dict
-
-        # additional parameters: direction
-        # sigma, theta, epsilon, conv (0: divergent, 1: convergent)
-        self.direction.partPhSp_x = [0, 0, 0, 0]
-        self.direction.partPhSp_y = [0, 0, 0, 0]
+        self._dir_validator = PBSDirectionValidator()
 
     def __initcpp__(self):
         g4.GatePencilBeamSource.__init__(self)
 
     def initialize(self, run_timing_intervals):
         GenericSource.initialize(self, run_timing_intervals)
-        _check_ph_space_params(self.direction.partPhSp_x)
-        _check_ph_space_params(self.direction.partPhSp_y)
 
 
 class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
@@ -65,7 +131,7 @@ class TreatmentPlanPBSource(SourceBase, g4.GateTreatmentPlanPBSource):
         "sorted_spot_generation": (
             False,
             {
-                "doc": "If True the source will generate primaies for each spot in the plan one by one, following "
+                "doc": "If True the source will generate primaries for each spot in the plan one by one, following "
                 "the order of the plan. Otherwise the spot to fire is randomly sampled at each event from a "
                 "probability distribution function."
             },
