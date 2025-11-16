@@ -100,7 +100,7 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfRunAction(
     l.fBiasInformationPerThread["nb_killed_gammas_exiting"] = 0;
     l.fBiasInformationPerThread["nb_killed_weight_too_low"] = 0;
 
-    // Check GeneralGammaProcess
+    // Check if GeneralGammaProcess is disabled
     if (G4EmParameters::Instance()->GeneralProcessActive()) {
       Fatal("GeneralGammaProcess is active. This do *not* work for "
             "ScatterSplittingFreeFlightActor");
@@ -117,7 +117,6 @@ void GateScatterSplittingFreeFlightOptrActor::BeginOfEventAction(
 
 bool GateScatterSplittingFreeFlightOptrActor::IsFreeFlight(
     const G4Track *track) {
-  // return track->GetWeight() != 1;
   const auto *track_info =
       static_cast<GateUserTrackInformation *>(track->GetUserInformation());
   if (track_info == nullptr)
