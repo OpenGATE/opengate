@@ -675,7 +675,7 @@ def pytomography_build_metadata_and_attenuation_map(
     metadata = pytomography_new_metadata()
 
     # set the detector orientations
-    detectors = sc.detector_config.get_heads(sim)
+    detectors = sc.detector_config.get_detectors(sim)
     verbose and print(f"Number of detectors: {len(detectors)}")
     for detector in detectors:
         pytomography_add_detector_orientation(metadata, detector)
