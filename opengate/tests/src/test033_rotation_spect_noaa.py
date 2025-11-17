@@ -12,8 +12,8 @@ if __name__ == "__main__":
 
     # AA mode
     for source in sources:
-        source.direction.angular_acceptance.intersection_flag = False
-        source.direction.angular_acceptance.normal_flag = False
+        source.direction.angular_acceptance.enable_intersection_check = False
+        source.direction.angular_acceptance.enable_angle_check = False
 
     # go
     sim.run()

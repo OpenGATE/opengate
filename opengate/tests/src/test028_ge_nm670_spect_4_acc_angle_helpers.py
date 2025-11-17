@@ -18,7 +18,7 @@ def create_spect_simu(
     number_of_threads=1,
     activity_kBq=300,
     aa_enabled=True,
-    aa_mode="SkipEnergy",
+    aa_mode="SkipEvents",
     version="",
 ):
     # main options
@@ -89,8 +89,9 @@ def create_spect_simu(
     beam1.position.translation = [0, 0, 0]
     beam1.direction.type = "iso"
     if aa_enabled:
-        beam1.direction.angular_acceptance.volumes = ["spect"]
-        beam1.direction.angular_acceptance.intersection_flag = True
+        beam1.direction.angular_acceptance.target_volumes = ["spect"]
+        beam1.direction.angular_acceptance.enable_intersection_check = True
+        beam1.direction.angular_acceptance.policy = "Rejection"
         beam1.direction.angular_acceptance.skip_policy = aa_mode
     beam1.activity = activity / sim.number_of_threads
 
@@ -103,8 +104,9 @@ def create_spect_simu(
     beam2.position.translation = [18 * cm, 0, 0]
     beam2.direction.type = "iso"
     if aa_enabled:
-        beam2.direction.angular_acceptance.volumes = ["spect"]
-        beam2.direction.angular_acceptance.intersection_flag = True
+        beam2.direction.angular_acceptance.target_volumes = ["spect"]
+        beam2.direction.angular_acceptance.enable_intersection_check = True
+        beam2.direction.angular_acceptance.policy = "Rejection"
         beam2.direction.angular_acceptance.skip_policy = aa_mode
     beam2.activity = activity / sim.number_of_threads
 
@@ -117,8 +119,9 @@ def create_spect_simu(
     beam3.position.translation = [0, 10 * cm, 0]
     beam3.direction.type = "iso"
     if aa_enabled:
-        beam3.direction.angular_acceptance.volumes = ["spect"]
-        beam3.direction.angular_acceptance.intersection_flag = True
+        beam3.direction.angular_acceptance.target_volumes = ["spect"]
+        beam3.direction.angular_acceptance.enable_intersection_check = True
+        beam3.direction.angular_acceptance.policy = "Rejection"
         beam3.direction.angular_acceptance.skip_policy = aa_mode
     beam3.activity = activity / sim.number_of_threads
 

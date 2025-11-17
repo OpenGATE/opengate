@@ -165,7 +165,7 @@ def create_simulation(sim, paths, colli="lehr", version=""):
 
     # it is possible to use acceptance angle. Not done here to check exiting phsp
     # gsource.direction.acceptance_angle.volumes = [spect1.name]
-    # gsource.direction.acceptance_angle.intersection_flag = True
+    # gsource.direction.acceptance_angle.enable_intersection_check = True
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")

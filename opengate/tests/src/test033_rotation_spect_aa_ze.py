@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     # AA mode
     for source in sources:
+        source.direction.angular_acceptance.policy = "Rejection"
         source.direction.angular_acceptance.skip_policy = "ZeroEnergy"
 
     # go
