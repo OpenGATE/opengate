@@ -31,11 +31,11 @@ public:
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
   int fFDLastRunId;
-  bool fIntersectionFlag;
+  bool fEnableIntersectionCheck;
 
-  double fMaxAngle;
-  double fMinAngle;
-  G4ThreeVector fNormalVector;
+  double fAngleToleranceMax;
+  double fAngleToleranceMin;
+  G4ThreeVector fAngleReferenceVector;
   G4AffineTransform fFDTransformWorldToVolume;
   G4RotationMatrix *fFDRotation;
   G4RotationMatrix fAARotationInverse;

@@ -21,7 +21,11 @@ GateForcedDirectionManager::GateForcedDirectionManager() {
   fWeight = 1.0;
   fSolid = nullptr;
   fCosThetaMax = 0;
-  fMaxAngle = 0;
+  fAngleToleranceMax = 0;
+  fAngleToleranceMin = 0;
+  fEnableIntersectionCheck = false;
+  fSinThetaMin = 0;
+  fCosThetaMin = 0;
 }
 
 GateForcedDirectionManager::~GateForcedDirectionManager() = default;
@@ -30,22 +34,19 @@ void GateForcedDirectionManager::Initialize(
     const std::map<std::string, std::string> &user_info,
     const bool is_valid_type) {
   // Main flag
-  fEnabledFlag =
-      StrToBool(user_info.at("forced_direction_flag")) && is_valid_type;
+  const auto s = ParamAt(user_info, "policy");
+  fEnabledFlag = s == "ForceDirection" && is_valid_type;
   if (!fEnabledFlag)
     return;
 
-  // Check AA flags
-  fIntersectionFlag = StrToBool(user_info.at("intersection_flag"));
-  const bool b3 = StrToBool(user_info.at("normal_flag"));
-  /*if (b3) {
-    std::ostringstream oss;
-    oss << "Cannot use 'forced_direction_flag' mode with normal_flag equal to
-  True"; Fatal(oss.str());
-  }*/
+  // Check if we test the intersection with the volumes
+  fEnableIntersectionCheck =
+      StrToBool(ParamAt(user_info, "enable_intersection_check"));
+  // const bool b3 = StrToBool(ParamAt(user_info, "enable_angle_check"));
 
   // Volumes
-  fAcceptanceAngleVolumeNames = GetVectorFromMapString(user_info, "volumes");
+  fAcceptanceAngleVolumeNames =
+      GetVectorFromMapString(user_info, "target_volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
 
   // (we cannot use py::dict here as it is lost at the end of the function)
@@ -57,26 +58,27 @@ void GateForcedDirectionManager::Initialize(
   if (!fEnabledFlag)
     return;
 
-  fNormalVector = StrToG4ThreeVector(user_info.at("normal_vector"));
-  fMaxAngle = StrToDouble(user_info.at("normal_tolerance"));
-
-  // Read min angle (optional, defaults to 0)
-  fMinAngle = StrToDouble(user_info.at("min_normal_tolerance"));
+  fAngleReferenceVector =
+      StrToG4ThreeVector(ParamAt(user_info, "angle_check_reference_vector"));
+  fAngleToleranceMax = StrToDouble(ParamAt(user_info, "angle_tolerance_max"));
+  fAngleToleranceMin = StrToDouble(ParamAt(user_info, "angle_tolerance_min"));
 
   // Validation
-  if (fMinAngle < 0.0) {
-    Fatal("min_normal_tolerance cannot be negative.");
+  if (fAngleToleranceMin < 0.0) {
+    DDD(fAngleToleranceMin);
+    Fatal("angle_tolerance_min cannot be negative.");
   }
-  if (fMinAngle >= fMaxAngle) {
-    Fatal(
-        "min_normal_tolerance must be less than normal_tolerance (max angle).");
+  if (fAngleToleranceMin >= fAngleToleranceMax) {
+    DDD(fAngleToleranceMin);
+    DDD(fAngleToleranceMax);
+    Fatal("angle_tolerance_min must be less than angle_tolerance_max");
   }
 
   // Precompute values
-  fSinThetaMin = std::sin(fMinAngle);
-  fCosThetaMin = std::cos(fMinAngle);
-  fSinThetaMax = std::sin(fMaxAngle);
-  fCosThetaMax = std::cos(fMaxAngle);
+  fSinThetaMin = std::sin(fAngleToleranceMin);
+  fCosThetaMin = std::cos(fAngleToleranceMin);
+  fSinThetaMax = std::sin(fAngleToleranceMax);
+  fCosThetaMax = std::cos(fAngleToleranceMax);
 }
 
 void GateForcedDirectionManager::InitializeForcedDirection() {
@@ -84,8 +86,8 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
     return;
   // Retrieve the solid
   const auto lvs = G4LogicalVolumeStore::GetInstance();
-  const auto lv =
-      lvs->GetVolume(fAcceptanceAngleVolumeNames[0]); // FIXME several vol ?
+  // (only one volume is possible)
+  const auto lv = lvs->GetVolume(fAcceptanceAngleVolumeNames[0]);
   fSolid = lv->GetSolid();
 
   // Init a navigator that will be used to find the transform
@@ -109,12 +111,17 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
   fFDLastRunId = G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID();
 
   // Generate orthogonal unit vectors to the normal
-  if (std::abs(fNormalVector.x()) > std::abs(fNormalVector.y())) {
-    fU1 = G4ThreeVector(fNormalVector.z(), 0, -fNormalVector.x()).unit();
+  if (std::abs(fAngleReferenceVector.x()) >
+      std::abs(fAngleReferenceVector.y())) {
+    fU1 =
+        G4ThreeVector(fAngleReferenceVector.z(), 0, -fAngleReferenceVector.x())
+            .unit();
   } else {
-    fU1 = G4ThreeVector(0, -fNormalVector.z(), fNormalVector.y()).unit();
+    fU1 =
+        G4ThreeVector(0, -fAngleReferenceVector.z(), fAngleReferenceVector.y())
+            .unit();
   }
-  fU2 = fNormalVector.cross(fU1).unit();
+  fU2 = fAngleReferenceVector.cross(fU1).unit();
 
   // default weight for the angle
   // fWeight = (1.0 - fCosThetaMax) / 2.0;
@@ -139,7 +146,7 @@ GateForcedDirectionManager::SampleDirectionWithinCone(double &theta) const {
 
   // Calculate the direction vector
   G4ThreeVector direction =
-      fNormalVector * cosTheta +
+      fAngleReferenceVector * cosTheta +
       std::sin(theta) * (std::cos(phi) * fU1 + std::sin(phi) * fU2);
 
   return direction;
@@ -159,7 +166,7 @@ G4ThreeVector GateForcedDirectionManager::GenerateForcedDirection(
 
   // Check for intersection with the detector plane
   const auto localPosition = fFDTransformWorldToVolume.TransformPoint(position);
-  if (fIntersectionFlag) {
+  if (fEnableIntersectionCheck) {
     const auto dist = fSolid->DistanceToIn(localPosition, direction);
     if (dist == kInfinity) {
       // do not intersect
@@ -173,9 +180,4 @@ G4ThreeVector GateForcedDirectionManager::GenerateForcedDirection(
   const auto globalDirection = fAARotationInverse * direction;
   weight = fWeight;
   return globalDirection;
-
-  // Fallback strategy if no intersection is found
-  // zero_energy_flag = true;
-  // weight = 0;
-  // return G4ThreeVector(1, 0, 0);
 }
