@@ -26,11 +26,13 @@ public:
 
 protected:
   std::string fAcceptanceAngleVolumeName;
-  bool fIntersectionFlag;
-  bool fNormalFlag;
-  double fNormalAngleTolerance;
-  double fMinDistanceNormalAngleTolerance;
-  G4ThreeVector fNormalVector;
+  bool fEnableIntersectionCheck;
+  bool fEnableAngleCheck;
+  double fAngleToleranceMax;
+  double fAngleToleranceMin;
+  double fAngleToleranceProximal;
+  double fAngleCheckProximityDistance;
+  G4ThreeVector fAngleReferenceVector;
   G4AffineTransform fAATransform;
   G4RotationMatrix *fAARotation;
   G4VSolid *fAASolid;
