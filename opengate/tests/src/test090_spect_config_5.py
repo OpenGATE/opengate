@@ -35,6 +35,7 @@ if __name__ == "__main__":
     sim = gate.Simulation()
     sim.random_seed = 666
     sc.setup_simulation(sim, visu=False)
+    print(sc)
     stats = sim.actor_manager.find_actors("stats")[0]
 
     # go
