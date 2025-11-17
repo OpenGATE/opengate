@@ -305,3 +305,17 @@ GetVectorFromMapString(const std::map<std::string, std::string> &map_input,
 
   return result;
 }
+
+std::string ParamAt(const std::map<std::string, std::string> &param,
+                    const std::string &key) {
+  if (param.find(key) == param.end()) {
+    // print all keys
+    for (auto [fst, snd] : param) {
+      DDD(fst);
+      DDD(snd);
+    }
+    DDD(key);
+    Fatal("Cannot find this key in the param list");
+  }
+  return param.at(key);
+}
