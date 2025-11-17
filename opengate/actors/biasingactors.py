@@ -5,25 +5,58 @@ from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
 from ..base import UserInfoValidatorBase
-from ..exception import fatal
+from ..exception import fatal, warning
 import numpy as np
 
 
 def generic_source_default_aa():
-    # This is used to control the direction of events in a generic source.
-    # It is also used in the ScatterSplittingFreeFlightActor
+    """
+    Defines the Angular Acceptance (AA) parameters for biasing.
+    This controls which particle directions are accepted or rejected.
+    Two main policies are available:
+    - rejection: reject the particle if any check fails. SkipEvent or ZeroEnergy.
+    - force direction: force the particle to be in a valid direction.
+    """
     return Box(
         {
-            "skip_policy": "SkipEvents",
+            # -----------------------------------------------------------------
+            # --- Global Acceptance Policy ---
+            # What to do when a particle's direction fails *any* enabled check.
+            # - "ForceDirection": Force the particle in a valid direction.
+            # - "SkipEvents": rejection, discard the event and try again.
+            # - "ZeroEnergy": rejection, keep the event, but set the particle's energy to 0.
+            "policy": "SkipEvents",
             "max_rejection": 10000,
-            "volumes": [],
-            "intersection_flag": False,
-            "normal_flag": False,
-            "forced_direction_flag": False,
-            "normal_vector": [0, 0, 1],
-            "normal_tolerance": 3 * g4_units.deg,
-            "min_normal_tolerance": 0,
-            "normal_tolerance_min_distance": 0 * g4_units.cm,
+            # -----------------------------------------------------------------
+            # --- Target Volumes ---
+            # The volume(s) that all checks are relative to.
+            "target_volumes": [],
+            # -----------------------------------------------------------------
+            # --- Deprecated Parameters ---
+            "skip_policy": None,
+            # -----------------------------------------------------------------
+            # --- Biasing Checks (can be combined) ---
+            # You can enable one or both of these. If both are enabled,
+            # the direction must pass *both* checks to be accepted.
+            # 1. Intersection Check
+            "enable_intersection_check": False,
+            # 2. Angle Check
+            "enable_angle_check": False,
+            # -----------------------------------------------------------------
+            # --- Parameters for Angle Check ---
+            # The "ideal" vector to compare the particle's direction against.
+            "angle_check_reference_vector": [0, 0, 1],
+            # --- Proximity-Based Tolerance Logic ---
+            # The cutoff distance: when the particle is closer than this, the max angle is given
+            # by 'angle_tolerance_proximal' and not by 'angle_tolerance_max'
+            # (only with policies 'SkipEvents' or 'ZeroEnergy'
+            "angle_check_proximity_distance": 6 * g4_units.cm,
+            # The tolerance to use *within* the proximity_distance
+            # (e.g., any direction "generally towards" the volume is fine).
+            "angle_tolerance_proximal": 90 * g4_units.deg,
+            # The strict tolerance to use *outside* the proximity_distance.
+            "angle_tolerance_min": 0 * g4_units.deg,
+            "angle_tolerance_max": 6 * g4_units.deg,
         }
     )
 
@@ -36,18 +69,31 @@ class AngularAcceptanceValidator(UserInfoValidatorBase):
     def validate(self, parent_obj, attr_name: str, parent_context: str = None):
         context_name = super().validate(parent_obj, attr_name, parent_context)
         b = getattr(parent_obj, attr_name)
-        # check skip_policy
-        valid_policies = ["SkipEvents", "ZeroEnergy"]
-        if b.skip_policy not in valid_policies:
+        # deprecated :
+        if b.skip_policy is not None:
+            warning(
+                f"Deprecated parameter 'skip_policy' is used in {context_name}. Please, use 'policy' instead."
+            )
+            b.policy = b.skip_policy
+        # check policy
+        valid_policies = ["ForceDirection", "SkipEvents", "ZeroEnergy"]
+        if b.policy not in valid_policies:
             fatal(
-                f"In {context_name}: '{b.skip_policy}' is not a valid skip policy. Must be one of {valid_policies}."
+                f"In {context_name}: '{b.policy}' is not a valid policy. Must be one of {valid_policies}."
             )
         # check normal vector
-        if b.normal_flag:
-            if len(b.normal_vector) != 3:
+        if b.enable_angle_check:
+            if len(b.angle_check_reference_vector) != 3:
                 fatal(f"In {context_name}: 'normal_vector' must be a 3-vector.")
-            if np.linalg.norm(b.normal_vector) != 1:
+            if np.linalg.norm(b.angle_check_reference_vector) != 1:
                 fatal(f"In {context_name}: 'normal_vector' must be a unit vector.")
+        # if FD, angle_check is ignored
+        if b.policy == "ForceDirection":
+            if not b.enable_angle_check:
+                warning(
+                    f"In {context_name}: 'enable_angle_check' is forced to True when policy is 'ForceDirection'."
+                )
+            b.enable_angle_check = True
 
 
 def _setter_hook_particles(self, value):
