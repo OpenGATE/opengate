@@ -24,11 +24,25 @@ void GateAcceptanceAngleManager::Initialize(
     const std::map<std::string, std::string> &user_info, bool is_valid_type) {
   // AA is enabled if volumes are not empty and one of the flags is True
   // intersection_flag or normal_flag
-  fAcceptanceAngleVolumeNames = GetVectorFromMapString(user_info, "volumes");
+  fAcceptanceAngleVolumeNames =
+      GetVectorFromMapString(user_info, "target_volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
-
-  bool b2 = StrToBool(user_info.at("intersection_flag"));
-  bool b3 = StrToBool(user_info.at("normal_flag"));
+  auto s = ParamAt(user_info, "policy");
+  fPolicy = AAUndefined;
+  if (s == "ForceDirection")
+    fEnabledFlag = false;
+  if (s == "ZeroEnergy")
+    fPolicy = AAZeroEnergy;
+  if (s == "SkipEvents")
+    fPolicy = AASkipEvent;
+  if (fEnabledFlag && fPolicy == AAUndefined) {
+    std::ostringstream oss;
+    oss << "Unknown '" << s << "' mode for GateAcceptanceAngleManager. "
+        << "Expected: ZeroEnergy or SkipEvents";
+    Fatal(oss.str());
+  }
+  bool b2 = StrToBool(ParamAt(user_info, "enable_intersection_check"));
+  bool b3 = StrToBool(ParamAt(user_info, "enable_angle_check"));
 
   // do nothing it disabled
   fEnabledFlag = fEnabledFlag && (b2 || b3);
@@ -37,25 +51,13 @@ void GateAcceptanceAngleManager::Initialize(
 
   // (we cannot use py::dict here as it is lost at the end of the function)
   // fAcceptanceAngleParam = DictToMap(user_info);
-  auto s = user_info.at("skip_policy");
-  fMaxNotAcceptedEvents = StrToInt(user_info.at("max_rejection"));
-
-  fPolicy = AAUndefined;
-  if (s == "ZeroEnergy")
-    fPolicy = AAZeroEnergy;
-  if (s == "SkipEvents")
-    fPolicy = AASkipEvent;
-  if (fPolicy == AAUndefined) {
-    std::ostringstream oss;
-    oss << "Unknown '" << s << "' mode for GateAcceptanceAngleManager. "
-        << "Expected: ZeroEnergy or SkipEvents";
-    Fatal(oss.str());
-  }
+  fMaxNotAcceptedEvents = StrToInt(ParamAt(user_info, "max_rejection"));
 
   // Cannot use SkipEvent with not a valid type of source
   if (!is_valid_type && fPolicy == AASkipEvent) {
     std::ostringstream oss;
-    oss << "Cannot use 'SkipEvent' mode without 'iso' or 'histogram' direction "
+    oss << "Cannot use 'SkipEvents' mode without 'iso' or 'histogram' "
+           "direction "
            "type";
     Fatal(oss.str());
   }
