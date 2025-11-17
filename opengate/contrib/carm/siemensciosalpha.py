@@ -126,7 +126,8 @@ class Ciosalpha:
         source.direction.angular_acceptance.enable_angle_check = True
         source.direction.angular_acceptance.angle_check_reference_vector = [1, 0, 0]
         source.direction.angular_acceptance.angle_tolerance_max = 5 * deg
-        source.direction.angular_acceptance.policy = "SkipEvents"
+        source.direction.angular_acceptance.policy = "Rejection"
+        source.direction.angular_acceptance.skip_policy = "SkipEvents"
 
         return source
 
