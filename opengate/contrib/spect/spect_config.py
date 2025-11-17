@@ -913,7 +913,7 @@ class FreeFlightConfig(ConfigBase):
         if e == "auto":
             s += f"FreeFlight energy_cutoff: auto\n"
         else:
-            s += f"FreeFlight energy_cutoff: {g4_best_unit(self.energy_cutoff, "Energy")}\n"
+            s += f"FreeFlight energy_cutoff: {g4_best_unit(self.energy_cutoff, 'Energy')}\n"
         s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
         s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
         s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
