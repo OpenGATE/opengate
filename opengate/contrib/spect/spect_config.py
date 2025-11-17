@@ -245,7 +245,7 @@ class SPECTConfig(ConfigBase):
         self.output_folder_primary = save_folder / folder_name
         self.output_folder = self.output_folder_primary
         # set the initial simulation
-        self.source_config.total_activity = self.free_flight_config.energy_cutoff
+        self.source_config.total_activity = self.free_flight_config.primary_activity
         self.setup_simulation(sim, visu)
         # but keep the initial folder for further use of config
         self.output_folder = save_folder
@@ -284,8 +284,9 @@ class SPECTConfig(ConfigBase):
 
     def dump_ff_info_primary(self, filename="ff_info.json"):
         n = {
-            "primary_activity": self.free_flight_config.energy_cutoff / g4_units.Bq,
-            "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
+            "primary_activity": self.free_flight_config.primary_activity / g4_units.Bq,
+            "angle_tolerance": self.free_flight_config.angle_tolerance_max
+            / g4_units.deg,
         }
         fn = self.output_folder_primary / filename
         with open(fn, "w") as f:
@@ -294,7 +295,8 @@ class SPECTConfig(ConfigBase):
     def dump_ff_info_scatter(self, filename="ff_info.json"):
         n = {
             "scatter_activity": self.free_flight_config.scatter_activity / g4_units.Bq,
-            "angle_tolerance": self.free_flight_config.angle_tolerance / g4_units.deg,
+            "angle_tolerance": self.free_flight_config.angle_tolerance_max
+            / g4_units.deg,
             "max_compton_level": self.free_flight_config.max_compton_level,
             "compton_splitting_factor": self.free_flight_config.compton_splitting_factor,
             "rayleigh_splitting_factor": self.free_flight_config.rayleigh_splitting_factor,
@@ -741,8 +743,8 @@ class FreeFlightConfig(ConfigBase):
     def __init__(self, spect_config):
         self.spect_config = spect_config
         # user param
-        self.angle_tolerance = 6 * g4_units.deg
-        self.min_angle_tolerance = 0 * g4_units.deg
+        self.angle_tolerance_max = 6 * g4_units.deg
+        self.angle_tolerance_min = 0 * g4_units.deg
         self.forced_direction_flag = True
         self.angle_tolerance_min_distance = 6 * g4_units.cm
         self.max_compton_level = 5
@@ -761,7 +763,7 @@ class FreeFlightConfig(ConfigBase):
 
     def __str__(self):
         s = f"FreeFlight FD: {self.forced_direction_flag}\n"
-        s += f"FreeFlight angle tol: {self.angle_tolerance / g4_units.deg} deg\n"
+        s += f"FreeFlight angle tol: {self.angle_tolerance_max / g4_units.deg} deg\n"
         s += f"FreeFlight angle tol min dist: {self.angle_tolerance_min_distance / g4_units.mm} mm\n"
         s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
         s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
@@ -827,7 +829,7 @@ class FreeFlightConfig(ConfigBase):
         self.initialize(sim)
 
         # consider the volume where we stop applying ff
-        target_volume_names = None
+        target_volume_names = []
         if self.primary_exclude_volumes == "crystal":
             target_volume_names = self.get_crystal_volume_names()
         elif self.primary_exclude_volumes == "detector":
@@ -849,32 +851,38 @@ class FreeFlightConfig(ConfigBase):
         else:
             ff = sim.actor_manager.get_actor(ff_name)
 
+        print(self.forced_direction_flag)
         if self.forced_direction_flag:
-            self.setup_forced_detection(sim, source, target_volume_names)
+            self.setup_source_forced_detection(sim, source, target_volume_names)
         else:
-            self.setup_angular_acceptance(sim, source, target_volume_names)
+            self.setup_source_angular_acceptance_rejection(
+                sim, source, target_volume_names
+            )
 
         return ff
 
-    def setup_angular_acceptance(self, sim, source, target_volume_names):
+    def setup_source_angular_acceptance_rejection(
+        self, sim, source, target_volume_names
+    ):
         detector_config = self.spect_config.detector_config
         normal_vector = detector_config.get_detector_normal()
         n = self.spect_config.number_of_threads
-        source.activity = self.energy_cutoff / n
-        source.direction.angular_acceptance.forced_direction_flag = False
-        source.direction.angular_acceptance.skip_policy = "SkipEvents"
-        if self.max_rejection is not None:
-            source.direction.angular_acceptance.max_rejection = self.max_rejection
-        source.direction.angular_acceptance.volumes = target_volume_names
-        source.direction.angular_acceptance.intersection_flag = True
-        source.direction.angular_acceptance.normal_flag = True
-        source.direction.angular_acceptance.normal_vector = normal_vector
-        source.direction.angular_acceptance.normal_tolerance = self.angle_tolerance
-        source.direction.angular_acceptance.normal_tolerance_min_distance = 0
+        source.activity = self.primary_activity / n
+        aa = source.direction.angular_acceptance
+        aa.target_volumes = target_volume_names
+        aa.policy = "SkipEvents"
+        aa.max_rejection = self.max_rejection
+        aa.angle_check_reference_vector = normal_vector
+        aa.enable_intersection_check = True
+        aa.enable_angle_check = True
+        aa.angle_tolerance_max = self.angle_tolerance_max
+        aa.angle_tolerance_min = self.angle_tolerance_min
+        aa.angle_check_proximity_distance = 6 * g4_units.cm
+        aa.angle_tolerance_proximal = 90 * g4_units.deg
 
         return source
 
-    def setup_forced_detection(self, sim, source, target_volume_names):
+    def setup_source_forced_detection(self, sim, source, target_volume_names):
         detector_config = self.spect_config.detector_config
 
         # need an additional source copy for each head
@@ -888,16 +896,14 @@ class FreeFlightConfig(ConfigBase):
 
         for source in sources:
             # force the direction to one single volume for each source
-            source.direction.angular_acceptance.volumes = [target_volume_names[i]]
-            source.direction.angular_acceptance.normal_vector = normal_vector
-            source.direction.angular_acceptance.normal_tolerance = self.angle_tolerance
-            source.direction.angular_acceptance.min_normal_tolerance = (
-                self.min_angle_tolerance
-            )
-            source.direction.angular_acceptance.skip_policy = "SkipEvents"
-            source.direction.angular_acceptance.normal_flag = False
-            source.direction.angular_acceptance.intersection_flag = False
-            source.direction.angular_acceptance.forced_direction_flag = True
+            aa = source.direction.angular_acceptance
+            aa.target_volumes = [target_volume_names[i]]
+            aa.policy = "ForceDirection"
+            aa.angle_check_reference_vector = normal_vector
+            aa.enable_intersection_check = True
+            aa.enable_angle_check = True
+            aa.angle_tolerance_max = self.angle_tolerance_max
+            aa.angle_tolerance_min = self.angle_tolerance_min
             i += 1
         return sources
 
@@ -926,7 +932,7 @@ class FreeFlightConfig(ConfigBase):
 
         # set the FF actor for scatter
         normal_vector = self.spect_config.detector_config.get_detector_normal()
-        g4.GateGammaFreeFlightOptrActor.ClearOperators()  # needed linux when no MT ?
+        g4.GateGammaFreeFlightOptrActor.ClearOperators()  # needed linux when no MT?
         ff = sim.add_actor(
             "ScatterSplittingFreeFlightActor",
             f"{self.spect_config.simu_name}_ff",
@@ -939,14 +945,15 @@ class FreeFlightConfig(ConfigBase):
         ff.compton_splitting_factor = self.compton_splitting_factor
         ff.rayleigh_splitting_factor = self.rayleigh_splitting_factor
         ff.max_compton_level = self.max_compton_level
-        ff.angular_acceptance.intersection_flag = True
-        ff.angular_acceptance.normal_flag = True
-        ff.angular_acceptance.forced_direction_flag = False
-        ff.angular_acceptance.volumes = target_volume_names
-        ff.angular_acceptance.normal_vector = normal_vector
-        ff.angular_acceptance.normal_tolerance = self.angle_tolerance
-        ff.angular_acceptance.normal_tolerance_min_distance = (
-            self.angle_tolerance_min_distance
-        )
+        aa = ff.angular_acceptance
+        aa.target_volumes = target_volume_names
+        aa.policy = "SkipEvents"
+        aa.enable_intersection_check = True
+        aa.enable_angle_check = True
+        aa.angle_check_reference_vector = normal_vector
+        aa.angle_tolerance_max = self.angle_tolerance_max
+        aa.angle_tolerance_min = self.angle_tolerance_min
+        aa.angle_check_proximity_distance = self.angle_tolerance_min_distance
+        aa.angle_tolerance_proximal = 90 * g4_units.deg
 
         return ff
