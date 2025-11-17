@@ -444,7 +444,7 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
     def prepare_output(self):
         SourceBase.prepare_output(self)
-        # store the output from G4 object
+        # store the output from G4 objects
         self.total_zero_events = self.GetTotalZeroEvents()
         self.total_skipped_events = self.GetTotalSkippedEvents()
 
@@ -463,8 +463,8 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
     def can_predict_number_of_events(self):
         aa = self.direction.angular_acceptance
-        if aa.enable_intersection_check or aa.enable_angle_check:
-            if aa.policy == "ZeroEnergy":
+        if aa.policy == "Rejection":
+            if aa.skip_policy == "ZeroEnergy":
                 return True
             return False
         return True
