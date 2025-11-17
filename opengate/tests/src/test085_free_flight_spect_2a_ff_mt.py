@@ -26,6 +26,8 @@ if __name__ == "__main__":
     )
 
     # FF with Acceptance Angle
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "SkipEvents"
     source.direction.angular_acceptance.enable_intersection_check = True
     source.direction.angular_acceptance.enable_angle_check = True
     source.direction.angular_acceptance.target_volumes = ["spect_1"]
