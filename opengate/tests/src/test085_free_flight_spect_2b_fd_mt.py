@@ -29,6 +29,7 @@ if __name__ == "__main__":
     source.direction.angular_acceptance.enable_intersection_check = False
     source.direction.angular_acceptance.enable_angle_check = False
     source.direction.angular_acceptance.policy = "ForceDirection"
+    source.direction.angular_acceptance.enable_angle_check = True
     source.direction.angular_acceptance.target_volumes = ["spect_1"]
     source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
     source.direction.angular_acceptance.angle_tolerance_max = 20 * gate.g4_units.deg
