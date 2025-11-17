@@ -19,10 +19,10 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   fAASolid = nullptr;
   fAANavigator = nullptr;
   fAARotation = nullptr;
-  fIntersectionFlag = false;
-  fNormalFlag = false;
-  fNormalAngleTolerance = 0;
-  fMinDistanceNormalAngleTolerance = 0;
+  fEnableIntersectionCheck = false;
+  fEnableAngleCheck = false;
+  fAngleToleranceMax = 0;
+  fAngleCheckProximityDistance = 0;
 
   // Retrieve the solid
   const auto lvs = G4LogicalVolumeStore::GetInstance();
@@ -40,16 +40,27 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   fAANavigator->SetWorldVolume(world);
 
   // parameters
-  fIntersectionFlag = StrToBool(param.at("intersection_flag"));
-  fNormalFlag = StrToBool(param.at("normal_flag"));
-  fNormalAngleTolerance = StrToDouble(param.at("normal_tolerance"));
-  fMinDistanceNormalAngleTolerance =
-      StrToDouble(param.at("normal_tolerance_min_distance"));
-  fNormalVector = StrToG4ThreeVector(param.at("normal_vector"));
+  fEnableIntersectionCheck =
+      StrToBool(ParamAt(param, "enable_intersection_check"));
+  fEnableAngleCheck = StrToBool(ParamAt(param, "enable_angle_check"));
+  fAngleCheckProximityDistance =
+      StrToDouble(ParamAt(param, "angle_check_proximity_distance"));
+  fAngleReferenceVector =
+      StrToG4ThreeVector(ParamAt(param, "angle_check_reference_vector"));
+  fAngleToleranceMax = StrToDouble(ParamAt(param, "angle_tolerance_max"));
+  fAngleToleranceMin = StrToDouble(ParamAt(param, "angle_tolerance_min"));
+  fAngleToleranceProximal =
+      StrToDouble(ParamAt(param, "angle_tolerance_proximal"));
 
-  if (fNormalAngleTolerance <= 0) {
-    Fatal("Normal angle tolerance must be strictly positive while it is " +
-          std::to_string(fNormalAngleTolerance));
+  // Validation
+  if (fAngleToleranceMin < 0.0) {
+    DDD(fAngleToleranceMin);
+    Fatal("angle_tolerance_min cannot be negative.");
+  }
+  if (fAngleToleranceMin >= fAngleToleranceMax) {
+    DDD(fAngleToleranceMin);
+    DDD(fAngleToleranceMax);
+    Fatal("angle_tolerance_min must be less than angle_tolerance_max");
   }
 }
 
@@ -76,21 +87,18 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     const G4ThreeVector &momentum_direction) const {
   const auto localDirection = (*fAARotation) * (momentum_direction);
   double dist = 0;
-  if (fIntersectionFlag) {
+  if (fEnableIntersectionCheck) {
     const auto localPosition = fAATransform.TransformPoint(position);
     dist = fAASolid->DistanceToIn(localPosition, localDirection);
     if (dist == kInfinity)
       return false;
   }
-  if (fNormalFlag) {
-    const auto angle = fNormalVector.angle(localDirection);
-    if (dist < fMinDistanceNormalAngleTolerance) {
-      static const double fMaxAngle = 90 * CLHEP::deg; // FIXME as a parameter
-      return angle < fMaxAngle;
-      // return true;
+  if (fEnableAngleCheck) {
+    const auto angle = fAngleReferenceVector.angle(localDirection);
+    if (dist < fAngleCheckProximityDistance) {
+      return angle < fAngleToleranceProximal;
     }
-    // const auto angle = fNormalVector.angle(localDirection);
-    return angle < fNormalAngleTolerance;
+    return (angle < fAngleToleranceMax) && (angle >= fAngleToleranceMin);
   }
   return true;
 }
