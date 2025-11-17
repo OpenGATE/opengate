@@ -28,9 +28,13 @@ void GateAcceptanceAngleManager::Initialize(
       GetVectorFromMapString(user_info, "target_volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
   auto s = ParamAt(user_info, "policy");
-  fPolicy = AAUndefined;
-  if (s == "ForceDirection")
+  if (s != "Rejection") {
     fEnabledFlag = false;
+    return;
+  }
+  // rejection skip policy
+  s = ParamAt(user_info, "skip_policy");
+  fPolicy = AAUndefined;
   if (s == "ZeroEnergy")
     fPolicy = AAZeroEnergy;
   if (s == "SkipEvents")
