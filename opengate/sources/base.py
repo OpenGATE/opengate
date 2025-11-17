@@ -12,6 +12,15 @@ class SourceBase(GateObject):
     Base class for all source types.
     """
 
+    # hints for IDE
+    attached_to: str
+    mother: str
+    start_time: float
+    end_time: float
+    n: int
+    activity: float
+    half_life: float
+
     user_info_defaults = {
         "attached_to": (
             __world_name__,
