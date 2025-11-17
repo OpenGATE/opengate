@@ -22,18 +22,19 @@ def generic_source_default_aa():
             # -----------------------------------------------------------------
             # --- Global Acceptance Policy ---
             # What to do when a particle's direction fails *any* enabled check.
-            # - "ForceDirection": Force the particle in a valid direction.
+            # - "ForceDirection": force the particle in a valid direction.
+            # - "Rejection": if the direction is non-valid, reject the event with the skip_policy
+            # - None or False: AA is not used
+            "policy": None,
             # - "SkipEvents": rejection, discard the event and try again.
             # - "ZeroEnergy": rejection, keep the event, but set the particle's energy to 0.
-            "policy": "SkipEvents",
+            "skip_policy": "SkipEvents",
             "max_rejection": 10000,
             # -----------------------------------------------------------------
             # --- Target Volumes ---
             # The volume(s) that all checks are relative to.
             "target_volumes": [],
             # -----------------------------------------------------------------
-            # --- Deprecated Parameters ---
-            "skip_policy": None,
             # -----------------------------------------------------------------
             # --- Biasing Checks (can be combined) ---
             # You can enable one or both of these. If both are enabled,
@@ -50,7 +51,7 @@ def generic_source_default_aa():
             # The cutoff distance: when the particle is closer than this, the max angle is given
             # by 'angle_tolerance_proximal' and not by 'angle_tolerance_max'
             # (only with policies 'SkipEvents' or 'ZeroEnergy'
-            "angle_check_proximity_distance": 6 * g4_units.cm,
+            "angle_check_proximity_distance": 0 * g4_units.cm,
             # The tolerance to use *within* the proximity_distance
             # (e.g., any direction "generally towards" the volume is fine).
             "angle_tolerance_proximal": 90 * g4_units.deg,
@@ -69,17 +70,19 @@ class AngularAcceptanceValidator(UserInfoValidatorBase):
     def validate(self, parent_obj, attr_name: str, parent_context: str = None):
         context_name = super().validate(parent_obj, attr_name, parent_context)
         b = getattr(parent_obj, attr_name)
-        # deprecated :
-        if b.skip_policy is not None:
-            warning(
-                f"Deprecated parameter 'skip_policy' is used in {context_name}. Please, use 'policy' instead."
-            )
-            b.policy = b.skip_policy
+        if b.policy is False:
+            b.policy = None
         # check policy
-        valid_policies = ["ForceDirection", "SkipEvents", "ZeroEnergy"]
+        valid_policies = [None, "ForceDirection", "Rejection"]
         if b.policy not in valid_policies:
             fatal(
                 f"In {context_name}: '{b.policy}' is not a valid policy. Must be one of {valid_policies}."
+            )
+        # check policy
+        valid_skip_policies = ["SkipEvents", "ZeroEnergy"]
+        if b.skip_policy not in valid_skip_policies:
+            fatal(
+                f"In {context_name}: '{b.skip_policy}' is not a valid policy. Must be one of {valid_skip_policies}."
             )
         # check normal vector
         if b.enable_angle_check:
@@ -90,10 +93,15 @@ class AngularAcceptanceValidator(UserInfoValidatorBase):
         # if FD, angle_check is ignored
         if b.policy == "ForceDirection":
             if not b.enable_angle_check:
-                warning(
-                    f"In {context_name}: 'enable_angle_check' is forced to True when policy is 'ForceDirection'."
+                fatal(
+                    f"In {context_name}: 'enable_angle_check' must be True when policy is 'ForceDirection'."
                 )
-            b.enable_angle_check = True
+        if b.policy == "Rejection":
+            if not b.enable_intersection_check and not b.enable_angle_check:
+                fatal(
+                    f"In {context_name}: at least one of 'enable_intersection_check' or 'enable_angle_check' "
+                    f"must be True when policy is {b.policy}."
+                )
 
 
 def _setter_hook_particles(self, value):
