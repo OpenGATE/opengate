@@ -35,7 +35,7 @@ if __name__ == "__main__":
     print(is_ok)
 
     gate.exception.warning("Compare images")
-    # read image and force change the offset to be similar to old Gate
+    # read the image and force change the offset to be similar to old Gate
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj029.mhd",

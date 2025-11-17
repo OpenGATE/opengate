@@ -240,8 +240,10 @@ def test073_setup_sim(sim, spect_type, collimator_type):
     source.position.radius = 30 * mm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.direction.angular_acceptance.volumes = [head.name]
-    source.direction.angular_acceptance.intersection_flag = True
+    source.direction.angular_acceptance.target_volumes = [head.name]
+    source.direction.angular_acceptance.enable_intersection_check = True
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "SkipEvents"
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

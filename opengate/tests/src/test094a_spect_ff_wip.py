@@ -39,9 +39,9 @@ if __name__ == "__main__":
     sc.acquisition_config.duration = 30 * g4_units.s
     sc.acquisition_config.number_of_angles = 30
 
-    sc.free_flight_config.energy_cutoff = 1e6 * Bq
+    sc.free_flight_config.primary_activity = 1e6 * Bq
     sc.free_flight_config.scatter_activity = 2e6 * Bq
-    sc.free_flight_config.angle_tolerance = 15 * deg
+    sc.free_flight_config.angle_tolerance_max = 15 * deg
     sc.free_flight_config.forced_direction_flag = True
     sc.free_flight_config.angle_tolerance_min_distance = 6 * cm
     sc.free_flight_config.max_compton_level = 5
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     # run 1: primary
     sim = gate.Simulation()
-    sc.setup_simulation_ff_primary(sim, visu=False)
+    sc.setup_simulation_ff_primary_OLD(sim, visu=False)
     sim.run(start_new_process=True)
     stats = sim.find_actors("stats")[0]
     print(stats)
@@ -63,13 +63,13 @@ if __name__ == "__main__":
     # run 2: scatter
     print()
     sim = gate.Simulation()
-    sc.setup_simulation_ff_scatter(sim, visu=False)
+    sc.setup_simulation_ff_scatter_OLD(sim, visu=False)
     sim.run(start_new_process=True)
     stats = sim.find_actors("stats")[0]
     print(stats)
 
     # combine and compute relative uncertainty
-    n_prim = sc.free_flight_config.energy_cutoff / Bq
+    n_prim = sc.free_flight_config.primary_activity / Bq
     n_scatter = sc.free_flight_config.scatter_activity / Bq
     n_ref = 1e8
     spect_freeflight_merge_all_heads(

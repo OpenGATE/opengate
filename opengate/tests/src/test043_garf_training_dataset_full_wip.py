@@ -62,8 +62,8 @@ if __name__ == "__main__":
     s1.energy.type = "range"
     s1.energy.min_energy = 0.01 * MeV
     s1.energy.max_energy = 0.154 * MeV
-    s1.direction.angular_acceptance.volumes = [detPlane.name]
-    s1.direction.angular_acceptance.intersection_flag = True
+    s1.direction.angular_acceptance.target_volumes = [detPlane.name]
+    s1.direction.angular_acceptance.enable_intersection_check = True
 
     # digitizer
     channels = [
