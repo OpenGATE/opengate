@@ -261,7 +261,7 @@ class SPECTConfig(ConfigBase):
     def __init__(self, simu_name="spect"):
         # default
         self.output_folder = Path("output")
-        self.output_basename = "projection.mhd"
+        self.projection_filename = "projection.mhd"
         self.simu_name = simu_name
         self.number_of_threads = 1
 
@@ -279,7 +279,7 @@ class SPECTConfig(ConfigBase):
     def __str__(self):
         s = f"SPECT simulation\n"
         s += f"Output folder: {self.output_folder}\n"
-        s += f"Output basename: {self.output_basename}\n"
+        s += f"Output projection: {self.projection_filename}\n"
         s += f"Nb of threads: {self.number_of_threads}\n"
         s += f"{self.detector_config}\n"
         s += f"{self.phantom_config}\n"
@@ -433,8 +433,12 @@ class PhantomConfig(ConfigBase):
         self.translation = None
 
     def __str__(self):
+        gcm3 = gate.g4_units.g_cm3
         s = f"Phantom image: {self.image}\n"
-        s += f"Phantom labels: {self.labels}"
+        s += f"Phantom labels: {self.labels}\n"
+        s += f"Phantom material: {self.material_db}\n"
+        s += f"Phantom density tol: {self.density_tol/gcm3} gcm3\n"
+        s += f"Phantom translation: {self.translation}"
         return s
 
     def validate(self):
@@ -527,7 +531,13 @@ class DetectorConfig(ConfigBase):
         s = f"Detector model: {self.model}\n"
         s += f"Detector collimator: {self.collimator}\n"
         s += f"Detector digitizer: {self.digitizer_function}\n"
-        s += f"Detector # of heads: {self.number_of_heads}"
+        s += f"Detector # of channels: {len(self.digitizer_channels)}\n"
+        s += f"Detector # of heads: {self.number_of_heads}\n"
+        s += f"Detector size: {self.size}\n"
+        s += f"Detector spacing: {self.spacing}\n"
+        s += f"Detector names: {self.head_names}\n"
+        s += f"Detector proj names: {self.proj_names}"
+        s += str(self.garf_config)
         return s
 
     def validate(self):
@@ -569,7 +579,9 @@ class DetectorConfig(ConfigBase):
         return projs
 
     def get_proj_base_filename(self, i):
-        filename, ext = get_basename_and_extension(self.spect_config.output_basename)
+        filename, ext = get_basename_and_extension(
+            self.spect_config.projection_filename
+        )
         f = f"{filename}_{i}{ext}"
         return f
 
@@ -678,10 +690,14 @@ class GARFConfig(ConfigBase):
         self.arf_actors = []
 
     def __str__(self):
-        s = f"GARF : {self.pth_filename}\n"
+        if self.pth_filename is None:
+            return ""
+        s = f"\nGARF : {self.pth_filename}\n"
         s += f"GARF image size: {self.spect_config.detector_config.size}\n"
         s += f"GARF image spacing: {self.spect_config.detector_config.spacing}\n"
-        s += f"GARF batch size: {self.batch_size}"
+        s += f"GARF batch size: {self.batch_size}\n"
+        s += f"GARF gpu mode: {self.gpu_mode}\n"
+        s += f"GARF arf actors: {self.arf_actors}"
         return s
 
     def validate(self):
@@ -736,7 +752,9 @@ class SourceConfig(ConfigBase):
     def __str__(self):
         s = f"Activity source image: {self.image}\n"
         s += f"Activity source radionuclide: {self.radionuclide}\n"
-        s += f"Activity source: {self.total_activity / gate.g4_units.Bq} Bq"
+        s += f"Activity source: {self.total_activity / gate.g4_units.Bq:.1f} Bq\n"
+        s += f"Activity source name: {self.source_name}\n"
+        s += f"Activity remove_low_energy_lines: {self.remove_low_energy_lines}"
         return s
 
     def validate(self):
@@ -889,18 +907,21 @@ class FreeFlightConfig(ConfigBase):
     def __str__(self):
         if self.mode == "analog":
             return ""
-        s = f"FreeFlight FD: {self.forced_direction_flag}\n"
-        s += f"FreeFlight angle tol: {self.angle_tolerance_max / g4_units.deg} deg\n"
-        s += f"FreeFlight angle tol min dist: {self.angle_tolerance_min_distance / g4_units.mm} mm\n"
-        s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
-        s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
-        s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
+        s = f"FreeFlight FD: {self.mode}\n"
         s += f"FreeFlight weight_cutoff: {self.weight_cutoff}\n"
         e = self.energy_cutoff
         if e == "auto":
             s += f"FreeFlight energy_cutoff: auto\n"
         else:
             s += f"FreeFlight energy_cutoff: {g4_best_unit(self.energy_cutoff, "Energy")}\n"
+        s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
+        s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
+        s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
+        for key, value in self.angular_acceptance.items():
+            if "angle_tolerance" in key:
+                s += f"FreeFlight angular_acceptance: {key} = {value/g4_units.deg:.2f} deg\n"
+            else:
+                s += f"FreeFlight angular_acceptance: {key} = {value}\n"
         return s
 
     def validate(self):
