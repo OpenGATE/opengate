@@ -3,7 +3,6 @@
 
 import opengate.contrib.pet.philipsvereos as vereos
 import opengate.contrib.pet.castor_helpers as castor
-from opengate.tests import utility
 from scipy.spatial.transform import Rotation
 from test096_pet_castor_helpers import *
 
