@@ -32,9 +32,34 @@ public:
                                             const G4Track *, const G4Step *,
                                             G4bool &) override;
 
+  // Tentative to gain time while preserving precision: all failures
+  G4VParticleChange *
+  ApplyFinalStateBiasing_V1_PostStepDoIt(const G4BiasingProcessInterface *,
+                                         const G4Track *, const G4Step *,
+                                         G4bool &);
+  G4VParticleChange *
+  ApplyFinalStateBiasing_V2_SampleSecondaries(const G4BiasingProcessInterface *,
+                                              const G4Track *, const G4Step *,
+                                              G4bool &);
+  G4VParticleChange *
+  ApplyFinalStateBiasing_V3_SampleScatter(const G4BiasingProcessInterface *,
+                                          const G4Track *, const G4Step *,
+                                          G4bool &);
+  G4VParticleChange *
+  ApplyFinalStateBiasing_V4_SampleComptonOnly(const G4BiasingProcessInterface *,
+                                              const G4Track *, const G4Step *,
+                                              G4bool &);
+
   void SetSplittingFactor(G4int splittingFactor);
   void InitializeAAManager(const std::map<std::string, std::string> &user_info);
   void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
+
+  // approximated do not use
+  double SampleCompton_Khan_method(double incidentEnergy,
+                                   G4ThreeVector &direction);
+  double SampleCompton_Butcher_method(double incidentEnergy,
+                                      G4ThreeVector &direction);
+  double SampleRayleigh(double incidentEnergy, G4ThreeVector &direction);
 
   G4int fSplittingFactor;
   G4ParticleChange fParticleChange;
