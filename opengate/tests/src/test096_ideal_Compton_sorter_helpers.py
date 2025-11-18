@@ -27,7 +27,6 @@ def create_and_run_cc_simulation():
     sim.number_of_threads = 1
 
     # units
-    m = gate.g4_units.m
     mm = gate.g4_units.mm
     cm = gate.g4_units.cm
     keV = gate.g4_units.keV
@@ -36,8 +35,8 @@ def create_and_run_cc_simulation():
     sec = gate.g4_units.s
 
     # folders
-    data_path = paths.data
     output_path = paths.output
+    sim.output_dir = output_path
 
     sim.volume_manager.material_database.add_material_weights(
         "LYSO",
