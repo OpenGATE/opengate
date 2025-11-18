@@ -1001,7 +1001,7 @@ class FreeFlightConfig(ConfigBase):
         target_volume_names = self.get_detector_volume_names()
         crystal_volume_names = self.get_crystal_volume_names()
         # set the FF actor for scatter
-        g4.GateGammaFreeFlightOptrActor.ClearOperators()  # needed linux when no MT?
+        # g4.GateGammaFreeFlightOptrActor.ClearOperators()  # needed linux when no MT?
         ff = sim.add_actor(
             "ScatterSplittingFreeFlightActor",
             f"{self.spect_config.simu_name}_ff",
@@ -1057,3 +1057,53 @@ class FreeFlightConfig(ConfigBase):
         fn = self.ff_output_folder / filename
         with open(fn, "w") as f:
             json.dump(n, f, indent=4)
+
+    def setup_simulation_septal_penetration(self, sim, sources=None):
+        # get the sources
+        if sources is None:
+            # by default, all the sources in the simulation are used
+            sources = []
+            for s in sim.source_manager.sources.values():
+                sources.append(s)
+        # set the FFAA for all sources
+        for source in sources:
+            self.setup_simulation_septal_penetration_for_one_source(sim, source)
+        # dump debug file
+        self.dump_ff_info_primary()
+
+    def setup_simulation_septal_penetration_for_one_source(self, sim, source):
+
+        # FIXME FIXME FIXME refactor with primary and option
+
+        # consider the volumes where we stop applying ff: at the entrance of the detectors
+        target_volume_names = self.get_detector_volume_names()
+        crystal_volume_names = self.get_crystal_volume_names()
+
+        # add the ff actor (only once !)
+        ff_name = f"{self.spect_config.simu_name}_ff"
+        if ff_name not in sim.actor_manager.actors:
+            ff = sim.add_actor("GammaFreeFlightActor", ff_name)
+            ff.attached_to = "world"
+            ff.weight_cutoff = self.weight_cutoff
+            ff.energy_cutoff = self.energy_cutoff
+            # we stop FF in the detector, particles became analog
+            ff.exclude_volumes = crystal_volume_names
+        else:
+            ff = sim.actor_manager.get_actor(ff_name)
+
+        # set the normal to the detector
+        detector_config = self.spect_config.detector_config
+        normal_vector = detector_config.get_detector_normal()
+        self.angular_acceptance.angle_check_reference_vector = normal_vector
+
+        # set the target volumes
+        if not self.angular_acceptance.target_volumes:
+            self.angular_acceptance.target_volumes = target_volume_names
+
+        # set the AA to the source (this is not a copy)
+        source.direction.angular_acceptance = self.angular_acceptance
+
+        # set the options for Rejection or ForceDirection
+        if self.angular_acceptance.policy == "ForceDirection":
+            self.setup_force_direction(sim, source, target_volume_names)
+        return ff
