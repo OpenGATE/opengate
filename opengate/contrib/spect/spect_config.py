@@ -925,6 +925,8 @@ class FreeFlightConfig(ConfigBase):
             f"{self.spect_config.simu_name}_head_{i}_crystal"
             for i in range(self.spect_config.detector_config.number_of_heads)
         ]
+        if self.spect_config.detector_config.garf_config.pth_filename is not None:
+            volume_names = self.get_detector_volume_names()
         return volume_names
 
     def get_detector_volume_names(self):
