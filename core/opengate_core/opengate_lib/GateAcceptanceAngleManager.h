@@ -33,6 +33,9 @@ public:
   bool TestIfAccept(const G4ThreeVector &position,
                     const G4ThreeVector &momentum_direction);
 
+  void PrepareCheck(const G4ThreeVector &position) const;
+  bool TestDirection(const G4ThreeVector &momentum_direction) const;
+
   AAPolicyType GetPolicy() const { return fPolicy; }
 
   AAPolicyType fPolicy;

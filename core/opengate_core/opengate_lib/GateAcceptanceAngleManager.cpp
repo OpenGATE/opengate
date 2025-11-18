@@ -125,3 +125,24 @@ void GateAcceptanceAngleManager::StartAcceptLoop() {
       G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID())
     InitializeAcceptanceAngle();
 }
+
+void GateAcceptanceAngleManager::PrepareCheck(
+    const G4ThreeVector &position) const {
+  if (!fEnabledFlag)
+    return;
+  for (auto *tester : fAATesters) {
+    tester->PrepareCheck(position);
+  }
+}
+
+bool GateAcceptanceAngleManager::TestDirection(
+    const G4ThreeVector &momentum_direction) const {
+  if (!fEnabledFlag)
+    return true;
+  for (const auto *tester : fAATesters) {
+    // Call the new optimized tester
+    if (tester->TestDirection(momentum_direction))
+      return true;
+  }
+  return false;
+}
