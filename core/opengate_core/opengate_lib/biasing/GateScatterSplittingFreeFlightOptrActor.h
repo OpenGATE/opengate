@@ -34,7 +34,7 @@ public:
 
   void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
-  static int IsScatterInteractionGeneralProcess(
+  static int IsScatterInteractionGeneralProcess_OLD(
       const G4BiasingProcessInterface *callingProcess);
 
   static int
