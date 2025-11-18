@@ -52,6 +52,13 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   fAngleToleranceProximal =
       StrToDouble(ParamAt(param, "angle_tolerance_proximal"));
 
+  // Pre-calculate Cosines
+  // Note: Cosine is a decreasing function on [0, Pi].
+  // So if Angle < Tolerance, then Cos(Angle) > Cos(Tolerance).
+  fCosToleranceMax = std::cos(fAngleToleranceMax);
+  fCosToleranceMin = std::cos(fAngleToleranceMin);
+  fCosToleranceProximal = std::cos(fAngleToleranceProximal);
+
   // Validation
   if (fAngleToleranceMin < 0.0) {
     DDD(fAngleToleranceMin);
@@ -80,12 +87,21 @@ void GateAcceptanceAngleSingleVolume::UpdateTransform() {
                                          *fAARotation, true);
   // It is not fully clear why the AffineTransform need the inverse
   fAATransform = G4AffineTransform(fAARotation->inverse(), tr);
+
+  // Calculate Global Reference Vector ---
+  // fAARotation represents the rotation from World to Volume.
+  // To compare in World space, we need to rotate the Local Reference Vector
+  // back to World. The inverse of a Rotation Matrix is its Transpose (or
+  // .inverse()). This is not used for the moment, maybe later to
+  fGlobalAngleReferenceVector = fAARotation->inverse() * fAngleReferenceVector;
 }
 
 bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     const G4ThreeVector &position,
     const G4ThreeVector &momentum_direction) const {
+  // Transform Momentum to Local
   const auto localDirection = (*fAARotation) * (momentum_direction);
+
   double dist = 0;
   if (fEnableIntersectionCheck) {
     const auto localPosition = fAATransform.TransformPoint(position);
@@ -93,12 +109,56 @@ bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     if (dist == kInfinity)
       return false;
   }
+
   if (fEnableAngleCheck) {
-    const auto angle = fAngleReferenceVector.angle(localDirection);
+    // Use Dot Product in Local Space
+    // No need to call acos (via .angle())
+    const double cosTheta = fAngleReferenceVector.dot(localDirection);
+
     if (dist < fAngleCheckProximityDistance) {
-      return angle < fAngleToleranceProximal;
+      return cosTheta > fCosToleranceProximal;
     }
-    return (angle < fAngleToleranceMax) && (angle >= fAngleToleranceMin);
+    return (cosTheta > fCosToleranceMax) && (cosTheta <= fCosToleranceMin);
+  }
+
+  return true;
+}
+
+void GateAcceptanceAngleSingleVolume::PrepareCheck(
+    const G4ThreeVector &position) {
+  if (fEnableIntersectionCheck) {
+    // We calculate this ONCE per step, not per split
+    fCachedLocalPosition = fAATransform.TransformPoint(position);
+  }
+}
+
+bool GateAcceptanceAngleSingleVolume::TestDirection(
+    const G4ThreeVector &momentum_direction) const {
+  // 1. Fast World-Space Angle Check
+  if (!fEnableIntersectionCheck && fEnableAngleCheck) {
+    const double cosTheta = fGlobalAngleReferenceVector.dot(momentum_direction);
+    if (fAngleCheckProximityDistance > 0)
+      return cosTheta > fCosToleranceProximal;
+    return (cosTheta > fCosToleranceMax) && (cosTheta <= fCosToleranceMin);
+  }
+
+  // 2. Local Space Check (using cached position)
+  const auto localDirection = (*fAARotation) * (momentum_direction);
+
+  double dist = 0;
+  if (fEnableIntersectionCheck) {
+    // Use the CACHED position here
+    dist = fAASolid->DistanceToIn(fCachedLocalPosition, localDirection);
+    if (dist == kInfinity)
+      return false;
+  }
+
+  if (fEnableAngleCheck) {
+    const double cosTheta = fAngleReferenceVector.dot(localDirection);
+    if (dist < fAngleCheckProximityDistance) {
+      return cosTheta > fCosToleranceProximal;
+    }
+    return (cosTheta > fCosToleranceMax) && (cosTheta <= fCosToleranceMin);
   }
   return true;
 }
