@@ -714,9 +714,9 @@ class SourceConfig(ConfigBase):
 
         # retrieve phantom
         phantom_name = self.spect_config.phantom_config.get_phantom_volume_name()
-        try:
+        if phantom_name in sim.volume_manager.volume_names:
             phantom = sim.volume_manager.get_volume(phantom_name)
-        except:
+        else:
             phantom = None
 
         # set the source
