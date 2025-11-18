@@ -9,6 +9,7 @@ Copyright (C): OpenGATE Collaboration
 #include "../GateHelpersDict.h"
 #include "../GateHelpersImage.h"
 #include "G4BiasingProcessInterface.hh"
+#include "G4Gamma.hh"
 #include "G4GammaGeneralProcess.hh"
 #include "G4ProcessManager.hh"
 #include "G4RunManager.hh"
@@ -249,7 +250,7 @@ void GateScatterSplittingFreeFlightOptrActor::SteppingAction(G4Step *step) {
   }
 
   // keep only gamma
-  if (step->GetTrack()->GetDefinition()->GetParticleName() != "gamma") {
+  if (step->GetTrack()->GetDefinition() != G4Gamma::Gamma()) {
     // kill it without mercy
     step->GetTrack()->SetTrackStatus(fStopAndKill);
     l.fBiasInformationPerThread["nb_killed_non_gamma_particles"] += 1;
@@ -267,8 +268,9 @@ void GateScatterSplittingFreeFlightOptrActor::EndOfSimulationWorkerAction(
   }
 }
 
-int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
-    const G4BiasingProcessInterface *callingProcess) {
+int GateScatterSplittingFreeFlightOptrActor::
+    IsScatterInteractionGeneralProcess_OLD(
+        const G4BiasingProcessInterface *callingProcess) {
   // If GammaGeneralProc is used, we need to retrieve the real process within
   // GetSelectedProcess (with SelectedProcess)
 
@@ -294,7 +296,7 @@ int GateScatterSplittingFreeFlightOptrActor::IsScatterInteractionGeneralProcess(
   GetSubProcessName() = phot   GetSubProcessSubType() = 12
 
   Unsure what it is:
-  GetSubProcessName() = GammaGeneralProc  GetSubProcessSubType() = 16
+  GetSubProcessName() = GammaGeneralProc GetSubProcessSubType() = 16
   */
 
   return ggp->GetSubProcessSubType();
