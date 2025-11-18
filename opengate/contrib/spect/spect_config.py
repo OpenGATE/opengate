@@ -308,74 +308,6 @@ class SPECTConfig(ConfigBase):
         self.acquisition_config.setup_simulation(sim)
         self.free_flight_config.setup_simulation(sim)
 
-    def setup_simulation_ff_primary_OLD(
-        self, sim, sources=None, visu=False, folder_name="primary"
-    ):
-        # we temporarily change the output folder
-        save_folder = Path(self.output_folder)
-        self.output_folder_primary = save_folder / folder_name
-        self.output_folder = self.output_folder_primary
-        # set the initial simulation
-        self.source_config.total_activity = self.free_flight_config.primary_activity
-        self.setup_simulation(sim, visu)
-        # but keep the initial folder for further use of config
-        self.output_folder = save_folder
-        if sources is None:
-            n = f"{self.simu_name}_source"
-            source = sim.source_manager.get_source(n)
-            sources = [source]
-        for source in sources:
-            self.free_flight_config.setup_simulation_primary(sim, source)
-        self.dump_ff_info_primary()
-
-    def setup_simulation_ff_scatter_OLD(self, sim, sources=None, visu=False):
-
-        # because primary was probably config/run before we clean the
-        # static variables from G4 to avoid issues.
-        # g4.GateGammaFreeFlightOptrActor.ClearOperators()
-
-        # we temporarily change the output folder
-        save_folder = Path(self.output_folder)
-        self.output_folder_scatter = save_folder / "scatter"
-        self.output_folder = self.output_folder_scatter
-        # set the initial simulation
-        self.source_config.total_activity = self.free_flight_config.scatter_activity
-        self.setup_simulation(sim, visu)
-        # but keep the initial folder for further use of config
-        self.output_folder = save_folder
-        if sources is None:
-            name = f"{self.simu_name}_source"
-            source = sim.source_manager.get_source(name)
-            sources = [source]
-        if len(sources) > 1:
-            fatal(f"SORRY multiple sources not implemented with FF-scatter yet")
-        for source in sources:
-            self.free_flight_config.setup_simulation_scatter(sim, source)
-        self.dump_ff_info_scatter()
-
-    def dump_ff_info_primary(self, filename="ff_info.json"):
-        n = {
-            "primary_activity": self.free_flight_config.primary_activity / g4_units.Bq,
-            "angle_tolerance": self.free_flight_config.angle_tolerance_max
-            / g4_units.deg,
-        }
-        fn = self.output_folder_primary / filename
-        with open(fn, "w") as f:
-            json.dump(n, f, indent=4)
-
-    def dump_ff_info_scatter(self, filename="ff_info.json"):
-        n = {
-            "scatter_activity": self.free_flight_config.scatter_activity / g4_units.Bq,
-            "angle_tolerance": self.free_flight_config.angle_tolerance_max
-            / g4_units.deg,
-            "max_compton_level": self.free_flight_config.max_compton_level,
-            "compton_splitting_factor": self.free_flight_config.compton_splitting_factor,
-            "rayleigh_splitting_factor": self.free_flight_config.rayleigh_splitting_factor,
-        }
-        fn = self.output_folder_scatter / filename
-        with open(fn, "w") as f:
-            json.dump(n, f, indent=4)
-
     def setup_default_simulation(self, sim, visu):
         # main options
         sim.random_seed = "auto"
@@ -531,7 +463,10 @@ class DetectorConfig(ConfigBase):
         s = f"Detector model: {self.model}\n"
         s += f"Detector collimator: {self.collimator}\n"
         s += f"Detector digitizer: {self.digitizer_function}\n"
-        s += f"Detector # of channels: {len(self.digitizer_channels)}\n"
+        if self.digitizer_channels is not None:
+            s += f"Detector # of channels: {len(self.digitizer_channels)}\n"
+        else:
+            s += f"Detector # of channels: None\n"
         s += f"Detector # of heads: {self.number_of_heads}\n"
         s += f"Detector size: {self.size}\n"
         s += f"Detector spacing: {self.spacing}\n"
@@ -904,19 +839,23 @@ class FreeFlightConfig(ConfigBase):
         self.rayleigh_splitting_factor = 100
         self.max_compton_level = 5
 
+        # computed
+        self.ff_output_folder = None
+
     def __str__(self):
         if self.mode == "analog":
             return ""
-        s = f"FreeFlight FD: {self.mode}\n"
+        s = f"FreeFlight mode: {self.mode}\n"
         s += f"FreeFlight weight_cutoff: {self.weight_cutoff}\n"
         e = self.energy_cutoff
         if e == "auto":
             s += f"FreeFlight energy_cutoff: auto\n"
         else:
             s += f"FreeFlight energy_cutoff: {g4_best_unit(self.energy_cutoff, 'Energy')}\n"
-        s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
-        s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
-        s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
+        if self.mode == "scatter":
+            s += f"FreeFlight max_compton_level: {self.max_compton_level}\n"
+            s += f"FreeFlight compton_splitting_factor: {self.compton_splitting_factor}\n"
+            s += f"FreeFlight rayleigh_splitting_factor: {self.rayleigh_splitting_factor}\n"
         for key, value in self.angular_acceptance.items():
             if "angle_tolerance" in key:
                 s += f"FreeFlight angular_acceptance: {key} = {value/g4_units.deg:.2f} deg\n"
@@ -933,9 +872,9 @@ class FreeFlightConfig(ConfigBase):
             return
 
         # set output sub folder
-        primary_output_folder = self.spect_config.output_folder / self.mode
-        os.makedirs(primary_output_folder, exist_ok=True)
-        sim.output_dir = primary_output_folder
+        self.ff_output_folder = self.spect_config.output_folder / self.mode
+        os.makedirs(self.ff_output_folder, exist_ok=True)
+        sim.output_dir = self.ff_output_folder
 
         # common parameters
         self.setup_required_parameters(sim)
@@ -1001,10 +940,11 @@ class FreeFlightConfig(ConfigBase):
                 sources.append(s)
         # set the FFAA for all sources
         for source in sources:
-            self.setup_ffaa_primary_for_one_source(sim, source)
-        # FIXME : DUMP FF FILE
+            self.setup_simulation_primary_for_one_source(sim, source)
+        # dump debug file
+        self.dump_ff_info_primary()
 
-    def setup_ffaa_primary_for_one_source(self, sim, source):
+    def setup_simulation_primary_for_one_source(self, sim, source):
         # consider the volumes where we stop applying ff: at the entrance of the detectors
         target_volume_names = self.get_detector_volume_names()
 
@@ -1034,10 +974,10 @@ class FreeFlightConfig(ConfigBase):
 
         # set the options for Rejection or ForceDirection
         if self.angular_acceptance.policy == "ForceDirection":
-            self.setup_ffaa_force_direction(sim, source, target_volume_names)
+            self.setup_force_direction(sim, source, target_volume_names)
         return ff
 
-    def setup_ffaa_force_direction(self, sim, source, target_volume_names):
+    def setup_force_direction(self, sim, source, target_volume_names):
         # We need an additional source copy for each head
         detector_config = self.spect_config.detector_config
         sources = [source]
@@ -1048,7 +988,7 @@ class FreeFlightConfig(ConfigBase):
         # We set the AA parameters for each source
         for source in sources:
             # force the direction to one single volume for each source
-            source.direction.angular_acceptance = self.angular_acceptance
+            source.direction.angular_acceptance = self.angular_acceptance.copy()
             aa = source.direction.angular_acceptance
             aa.target_volumes = [target_volume_names[i]]
             i += 1
@@ -1058,8 +998,6 @@ class FreeFlightConfig(ConfigBase):
         normal_vector = self.spect_config.detector_config.get_detector_normal()
         target_volume_names = self.get_detector_volume_names()
         crystal_volume_names = self.get_crystal_volume_names()
-        print(target_volume_names)
-        print(crystal_volume_names)
         # set the FF actor for scatter
         g4.GateGammaFreeFlightOptrActor.ClearOperators()  # needed linux when no MT?
         ff = sim.add_actor(
@@ -1081,5 +1019,39 @@ class FreeFlightConfig(ConfigBase):
         ff.angular_acceptance = self.angular_acceptance
         ff.angular_acceptance.target_volumes = target_volume_names
         ff.angular_acceptance.angle_check_reference_vector = normal_vector
+        # dump debug file
+        self.dump_ff_info_scatter()
+
+        # should we also limit the angular acceptance for the source?
+        # NOT REALLY: only possible if one head is used
 
         return ff
+
+    def dump_ff_info_primary(self, filename="ff_info.json"):
+        n = {
+            "primary_activity": self.spect_config.source_config.total_activity
+            / g4_units.Bq,
+            "angle_tolerance_max": self.angular_acceptance.angle_tolerance_max
+            / g4_units.deg,
+            "angle_tolerance_min": self.angular_acceptance.angle_tolerance_min
+            / g4_units.deg,
+        }
+        fn = self.ff_output_folder / filename
+        with open(fn, "w") as f:
+            json.dump(n, f, indent=4)
+
+    def dump_ff_info_scatter(self, filename="ff_info.json"):
+        n = {
+            "scatter_activity": self.spect_config.source_config.total_activity
+            / g4_units.Bq,
+            "angle_tolerance_max": self.angular_acceptance.angle_tolerance_max
+            / g4_units.deg,
+            "angle_tolerance_min": self.angular_acceptance.angle_tolerance_min
+            / g4_units.deg,
+            "max_compton_level": self.max_compton_level,
+            "compton_splitting_factor": self.compton_splitting_factor,
+            "rayleigh_splitting_factor": self.rayleigh_splitting_factor,
+        }
+        fn = self.ff_output_folder / filename
+        with open(fn, "w") as f:
+            json.dump(n, f, indent=4)
