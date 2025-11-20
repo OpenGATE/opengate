@@ -80,9 +80,6 @@ Tecapeek: d=1.32 g/cm3 ; n=3; state=solid
         +el: name=Carbon  ; f = 0.7619
         +el: name=Oxygen  ; f = 0.1905
 
-AluminiumEGS: d=2.702 g/cm3 ; n=1 ; state=solid
-        +el: name=Aluminium  ; n=1
-
 Nickel: d=8.908 g/cm3 ; n=1 ; state=solid
         +el: name=auto       ; n=1
 
