@@ -9,12 +9,6 @@ import SimpleITK as sitk
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-cm  = gate.g4_units.cm
-mm  = gate.g4_units.mm
-MeV = gate.g4_units.MeV
-deg = gate.g4_units.deg
-
-
 material_colors = {
     "Titanium"    :  [0.2, 0.2, 0.2, 0.6],
     "Tecapeek"    :  [1.0, 0.6, 0.2, 0.6],
@@ -45,6 +39,7 @@ def add_tubs(sim, name, mother, rmin, rmax, height, material, translation, mater
         The created volume object.
 
         """
+    mm = gate.g4_units.mm
     vol = sim.add_volume("Tubs", name)
     vol.mother = mother
     vol.rmin = rmin * mm
@@ -77,6 +72,8 @@ def add_cons(sim, name, mother, rmin1, rmax1, rmin2, rmax2, height, material, tr
     Returns:
         The created volume object.
     """
+    mm = gate.g4_units.mm
+    deg = gate.g4_units.deg
     vol = sim.add_volume("Cons", name)
     vol.mother = mother
     vol.rmin1 = rmin1 * mm
@@ -151,6 +148,7 @@ def build_ElectronFlash(sim,center_x=0, center_y=0, center_z=0, material_colors=
     Returns:
         float: The Z-coordinate (in mm) of the end of the linac structure, useful when other components has to be added.
     """
+    mm = gate.g4_units.mm
     if material_colors is None:
         material_colors = {}
 
@@ -228,6 +226,7 @@ def build_passive_collimation(sim, string_name, center_x=0, center_y=0, center_z
     Returns:
         float: The Z-coordinate (in mm) of the end position of the constructed collimator structure.
     """
+    mm = gate.g4_units.mm
     if material_colors is None:
         material_colors = {}
 
@@ -468,7 +467,8 @@ def add_source(sim, number_of_events):
     Returns:
         source: The created source object.
     """
-    spectrum_path = "utils/spectra/9Mev.txt"
+    mm = gate.g4_units.mm
+    spectrum_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "utils", "spectra", "9Mev.txt")
     source = sim.add_source("GenericSource", "source")
     source.particle = "e-"
     source.energy.type = "spectrum_discrete"

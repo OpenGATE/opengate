@@ -1,7 +1,6 @@
 import opengate as gate
 import math
-from scipy.spatial.transform import Rotation as R
-import function as fun
+import opengate.contrib.linacs.ElectronFlash.electron_flash as fun
             
 
 def test_geometry_length(_geometry_string):
