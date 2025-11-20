@@ -3,9 +3,13 @@ from test097_electron_flash_linac_helper import *
 from opengate.tests import utility
 
 if __name__ == "__main__":
-    paths = utility.get_default_test_paths(__file__, output_folder="test097_electron_flash_linac")
+    paths = utility.get_default_test_paths(
+        __file__, output_folder="test097_electron_flash_linac"
+    )
 
-    sim = create_electron_flash_simulation(paths, passive_collimation="app100", fantom="Phasespace_plane")
+    sim = create_electron_flash_simulation(
+        paths, passive_collimation="app100", fantom="Phasespace_plane"
+    )
 
     sim.run()
 
