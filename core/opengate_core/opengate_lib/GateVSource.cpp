@@ -84,7 +84,7 @@ void GateVSource::SetOrientationAccordingToAttachedVolume() {
     return;
 
   // compute global translation rotation and keep it.
-  // Will be used for example in GenericSource to change position
+  // Will be used, for example, in GenericSource to change position
   ComputeTransformationFromVolumeToWorld(
       fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
 }
