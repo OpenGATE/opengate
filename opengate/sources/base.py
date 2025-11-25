@@ -97,7 +97,7 @@ class SourceBase(GateObject):
 
     def initialize_start_end_time(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
-        # by default consider the source time start and end like the whole simulation
+        # by default, consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
         if not self.start_time:
