@@ -329,7 +329,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     if (G4Threading::IsMultithreadedApplication() &&
         G4Threading::G4GetThreadId() != 0)
       return;
-    // count the number of event already generated
+    // count the number of events already generated
     fCurrentEvent = fCurrentEvent + 1;
     // update the bar sometimes
     if (fCurrentEvent % fProgressBarStep == 0) {

@@ -47,7 +47,7 @@ public:
   unsigned long GetTotalZeroEvents() const;
 
 protected:
-  //  We cannot not use a std::unique_ptr
+  //  We cannot use a std::unique_ptr
   //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
   G4ParticleDefinition *fParticleDefinition;
   G4ThreeVector fInitializeMomentum;
