@@ -112,6 +112,15 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
       std::lower_bound(fTAC_Times.begin(), fTAC_Times.end(), time);
   const auto i = std::distance(fTAC_Times.begin(), lower);
 
+  // Exact match or first sample
+  if (i == 0) {
+      fActivity = fTAC_Activities[0];
+      return;
+  }
+
+  // Move to the lower bin edge for the interpolation
+  i -= 1
+
   // Last element ?
   if (i >= fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
@@ -120,8 +129,8 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
 
   // linear interpolation
   const double bin_time = fTAC_Times[i + 1] - fTAC_Times[i];
-  const double w1 = (time - fTAC_Times[i]) / bin_time;
-  const double w2 = (fTAC_Times[i + 1] - time) / bin_time;
+  const double w1 = (fTAC_Times[i + 1] - time) / bin_time;
+  const double w2 = (time - fTAC_Times[i]) / bin_time;
   fActivity = fTAC_Activities[i] * w1 + fTAC_Activities[i + 1] * w2;
 }
 
