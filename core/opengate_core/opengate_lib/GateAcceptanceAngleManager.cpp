@@ -45,8 +45,8 @@ void GateAcceptanceAngleManager::Initialize(
         << "Expected: ZeroEnergy or SkipEvents";
     Fatal(oss.str());
   }
-  bool b2 = StrToBool(ParamAt(user_info, "enable_intersection_check"));
-  bool b3 = StrToBool(ParamAt(user_info, "enable_angle_check"));
+  const bool b2 = StrToBool(ParamAt(user_info, "enable_intersection_check"));
+  const bool b3 = StrToBool(ParamAt(user_info, "enable_angle_check"));
 
   // do nothing it disabled
   fEnabledFlag = fEnabledFlag && (b2 || b3);
