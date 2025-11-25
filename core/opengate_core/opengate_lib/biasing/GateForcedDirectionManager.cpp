@@ -15,7 +15,6 @@
 GateForcedDirectionManager::GateForcedDirectionManager() {
   fEnabledFlag = false;
   fFDLastRunId = -1;
-  fNavigator = nullptr;
   fFDRotation = nullptr;
   fSinThetaMax = 0;
   fWeight = 1.0;
@@ -89,14 +88,6 @@ void GateForcedDirectionManager::InitializeForcedDirection() {
   // (only one volume is possible)
   const auto lv = lvs->GetVolume(fAcceptanceAngleVolumeNames[0]);
   fSolid = lv->GetSolid();
-
-  // Init a navigator that will be used to find the transform
-  const auto pvs = G4PhysicalVolumeStore::GetInstance();
-  const auto world = pvs->GetVolume("world");
-
-  if (fNavigator == nullptr)
-    fNavigator = new G4Navigator();
-  fNavigator->SetWorldVolume(world);
 
   // update transformation
   G4ThreeVector tr;
@@ -172,7 +163,7 @@ G4ThreeVector GateForcedDirectionManager::GenerateForcedDirection(
       // do not intersect
       zero_energy_flag = true;
       weight = 0;
-      return G4ThreeVector(1, 0, 0);
+      return {1, 0, 0};
     }
   }
 
