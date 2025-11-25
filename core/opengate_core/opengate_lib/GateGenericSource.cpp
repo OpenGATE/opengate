@@ -114,15 +114,15 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
 
   // Exact match or first sample
   if (i == 0) {
-      fActivity = fTAC_Activities[0];
-      return;
+    fActivity = fTAC_Activities[0];
+    return;
   }
 
   // Move to the lower bin edge for the interpolation
   i -= 1
 
-  // Last element ?
-  if (i >= fTAC_Times.size() - 1) {
+      // Last element ?
+      if (i >= fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
     return;
   }
