@@ -40,7 +40,6 @@ public:
   G4RotationMatrix *fFDRotation;
   G4RotationMatrix fAARotationInverse;
   G4VSolid *fSolid;
-  G4Navigator *fNavigator;
 
   double fSinThetaMax;
   double fCosThetaMax;
