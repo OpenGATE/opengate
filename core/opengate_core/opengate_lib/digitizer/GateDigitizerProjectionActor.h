@@ -57,8 +57,6 @@ public:
   typedef itk::Image<int, 3> ImageIDType;
   ImageType::Pointer fImage;
   ImageType::Pointer fSquaredImage;
-  ImageType::Pointer fSquaredTempImage;
-  ImageIDType::Pointer fLastEventIdImage;
   std::string fPhysicalVolumeName;
   bool fSquaredImageIsEnabled;
 
@@ -67,7 +65,7 @@ protected:
   std::vector<GateDigiCollection *> fInputDigiCollections;
   G4RotationMatrix fDetectorOrientationMatrix;
 
-  void ProcessSlice(long slice, size_t channel) const;
+  void ProcessSlice(size_t slice, size_t channel) const;
   void ScoreSquaredValue(const ImageType::IndexType &index,
                          int current_event_id, double value) const;
   void FlushSquaredValues() const;
@@ -79,6 +77,8 @@ protected:
   struct threadLocalT {
     std::vector<std::vector<G4ThreeVector> *> fInputPos;
     std::vector<std::vector<double> *> fInputWeights;
+    ImageType::Pointer fSquaredTempImage;
+    ImageIDType::Pointer fLastEventIdImage;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

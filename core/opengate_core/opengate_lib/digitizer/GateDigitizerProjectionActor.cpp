@@ -39,8 +39,6 @@ void GateDigitizerProjectionActor::InitializeUserInfo(py::dict &user_info) {
 void GateDigitizerProjectionActor::InitializeCpp() {
   fImage = ImageType::New();
   fSquaredImage = ImageType::New();
-  fSquaredTempImage = ImageType::New();
-  fLastEventIdImage = ImageIDType::New();
 }
 
 void GateDigitizerProjectionActor::SetPhysicalVolumeName(
@@ -70,21 +68,12 @@ void GateDigitizerProjectionActor::BeginOfRunActionMasterThread(int run_id) {
                                  fDetectorOrientationMatrix);
   AttachImageToVolume<ImageType>(fSquaredImage, fPhysicalVolumeName,
                                  G4ThreeVector(), fDetectorOrientationMatrix);
-  if (fSquaredImageIsEnabled) {
-    AttachImageToVolume<ImageType>(fSquaredTempImage, fPhysicalVolumeName,
-                                   G4ThreeVector(), fDetectorOrientationMatrix);
-    AttachImageToVolume<ImageIDType>(fLastEventIdImage, fPhysicalVolumeName,
-                                     G4ThreeVector(),
-                                     fDetectorOrientationMatrix);
-  }
 }
 
 void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
   auto &l = fThreadLocalData.Get();
-  const auto should_init = !(G4Threading::IsMultithreadedApplication() &&
-                             G4Threading::G4GetThreadId() != 0);
   if (run->GetRunID() == 0) {
-    // The first time here we need to initialize the input position
+    // The first time here we need to initialise the input position
     l.fInputPos.resize(fInputDigiCollectionNames.size());
     l.fInputWeights.resize(fInputDigiCollectionNames.size());
     for (int slice = 0; slice < fInputDigiCollections.size(); slice++) {
@@ -103,16 +92,26 @@ void GateDigitizerProjectionActor::BeginOfRunAction(const G4Run *run) {
       }
     }
     // Set size and allocate temporary images
-    if (fSquaredImageIsEnabled && should_init) {
-      fSquaredTempImage->SetRegions(fImage->GetLargestPossibleRegion());
-      fLastEventIdImage->SetRegions(fImage->GetLargestPossibleRegion());
-      fSquaredTempImage->Allocate();
-      fLastEventIdImage->Allocate();
+    if (fSquaredImageIsEnabled) {
+      l.fSquaredTempImage = ImageType::New();
+      l.fLastEventIdImage = ImageIDType::New();
+      l.fSquaredTempImage->SetRegions(fImage->GetLargestPossibleRegion());
+      l.fLastEventIdImage->SetRegions(fImage->GetLargestPossibleRegion());
+      l.fSquaredTempImage->Allocate();
+      l.fLastEventIdImage->Allocate();
     }
   }
-  if (fSquaredImageIsEnabled && should_init) {
-    fSquaredTempImage->FillBuffer(0.0);
-    fLastEventIdImage->FillBuffer(0);
+
+  if (fSquaredImageIsEnabled) {
+    // Each Run we need to set the new orientation to all temp images
+    AttachImageToVolume<ImageType>(l.fSquaredTempImage, fPhysicalVolumeName,
+                                   G4ThreeVector(), fDetectorOrientationMatrix);
+    AttachImageToVolume<ImageIDType>(l.fLastEventIdImage, fPhysicalVolumeName,
+                                     G4ThreeVector(),
+                                     fDetectorOrientationMatrix);
+    // end reset to 0
+    l.fSquaredTempImage->FillBuffer(0.0);
+    l.fLastEventIdImage->FillBuffer(0);
   }
 }
 
@@ -125,7 +124,7 @@ void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
   }
 }
 
-void GateDigitizerProjectionActor::ProcessSlice(const long slice,
+void GateDigitizerProjectionActor::ProcessSlice(const size_t slice,
                                                 const size_t channel) const {
   // (Note: this is called during EndOfEventAction and in a mutex scope)
   auto &l = fThreadLocalData.Get();
@@ -181,21 +180,22 @@ void GateDigitizerProjectionActor::ProcessSlice(const long slice,
 void GateDigitizerProjectionActor::ScoreSquaredValue(
     const ImageType::IndexType &index, const int current_event_id,
     const double value) const {
-  auto previous_event_id = fLastEventIdImage->GetPixel(index);
+  auto &l = fThreadLocalData.Get();
+  auto previous_event_id = l.fLastEventIdImage->GetPixel(index);
   if (previous_event_id == current_event_id) {
     // If the current event id is the same as the one at the pixel, we just sum
     // the values
     // DDD(previous_event_id);
     // DDD(value);
-    ImageAddValue<ImageType>(fSquaredTempImage, index, value);
+    ImageAddValue<ImageType>(l.fSquaredTempImage, index, value);
   } else {
     // If it is different, we square the deposited value from the last event id
     // and start accumulating for this new event.
-    const auto v = fSquaredTempImage->GetPixel(index);
+    const auto v = l.fSquaredTempImage->GetPixel(index);
     // DDD(v);
     ImageAddValue<ImageType>(fSquaredImage, index, v * v);
-    fSquaredTempImage->SetPixel(index, value);
-    fLastEventIdImage->SetPixel(index, current_event_id);
+    l.fSquaredTempImage->SetPixel(index, value);
+    l.fLastEventIdImage->SetPixel(index, current_event_id);
   }
 }
 
@@ -206,11 +206,12 @@ void GateDigitizerProjectionActor::EndOfRunAction(const G4Run *run) {
 void GateDigitizerProjectionActor::FlushSquaredValues() const {
   // When multithreading, the order is unclear, so we do it for all the threads,
   // setting to zero once one is done.
-  G4AutoLock mutex(&DigitizerProjectionActorMutex);
+  auto &l = fThreadLocalData.Get();
   itk::ImageRegionIterator<ImageType> iter1(
-      fSquaredTempImage, fSquaredTempImage->GetLargestPossibleRegion());
+      l.fSquaredTempImage, l.fSquaredTempImage->GetLargestPossibleRegion());
   itk::ImageRegionIterator<ImageType> iter2(
       fSquaredImage, fSquaredImage->GetLargestPossibleRegion());
+  G4AutoLock mutex(&DigitizerProjectionActorMutex);
   for (iter1.GoToBegin(), iter2.GoToBegin();
        !iter1.IsAtEnd() && !iter2.IsAtEnd(); ++iter1, ++iter2) {
     if (iter1.Get() != 0.0) {
