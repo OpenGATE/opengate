@@ -999,7 +999,6 @@ class FreeFlightConfig(ConfigBase):
     def setup_simulation_scatter(self, sim):
         normal_vector = self.spect_config.detector_config.get_detector_normal()
         target_volume_names = self.get_detector_volume_names()
-        crystal_volume_names = self.get_crystal_volume_names()
         # set the FF actor for scatter
         # g4.GateGammaFreeFlightOptrActor.ClearOperators()  # needed linux when no MT?
         ff = sim.add_actor(
@@ -1011,8 +1010,12 @@ class FreeFlightConfig(ConfigBase):
         ff.energy_cutoff = self.energy_cutoff
         # no splitting/scatter in the detectors, back to analog particle
         ff.exclude_volumes = target_volume_names
-        # kill primary analog particle in the crystal
-        ff.kill_interacting_in_volumes = crystal_volume_names
+        # kill primary analog particle in the detector:
+        # - when an analog primary particle scatters in the colli, we DON'T want to
+        # consider it because it was already included in the primary simulation
+        # - when a scattered analog particle also scatters in the colli, we also DON'T want
+        # to consider it because it was already considered by the splitter scatter
+        ff.kill_interacting_in_volumes = target_volume_names
         # other parameters
         ff.compton_splitting_factor = self.compton_splitting_factor
         ff.rayleigh_splitting_factor = self.rayleigh_splitting_factor
