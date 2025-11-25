@@ -557,13 +557,20 @@ class PhysicsListManager(GateObject):
         "G4OpticalPhysics",
     ]
 
-    special_physics_constructor_classes = {}
-    special_physics_constructor_classes["G4DecayPhysics"] = g4.G4DecayPhysics
-    special_physics_constructor_classes["G4RadioactiveDecayPhysics"] = (
-        g4.G4RadioactiveDecayPhysics
-    )
-    special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
-    special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
+    special_physics_constructor_classes = {
+        "G4DecayPhysics": g4.G4DecayPhysics,
+        "G4RadioactiveDecayPhysics": g4.G4RadioactiveDecayPhysics,
+        "G4OpticalPhysics": g4.G4OpticalPhysics,
+        "G4EmDNAPhysics": g4.G4EmDNAPhysics,
+        "G4EmDNAPhysics_option1": g4.G4EmDNAPhysics_option1,
+        "G4EmDNAPhysics_option2": g4.G4EmDNAPhysics_option2,
+        "G4EmDNAPhysics_option3": g4.G4EmDNAPhysics_option3,
+        "G4EmDNAPhysics_option4": g4.G4EmDNAPhysics_option4,
+        "G4EmDNAPhysics_option5": g4.G4EmDNAPhysics_option5,
+        "G4EmDNAPhysics_option6": g4.G4EmDNAPhysics_option6,
+        "G4EmDNAPhysics_option7": g4.G4EmDNAPhysics_option7,
+        "G4EmDNAPhysics_option8": g4.G4EmDNAPhysics_option8,
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1334,19 +1341,19 @@ class VolumeManager(GateObject):
         print(self.dump_material_database_names())
 
 
-def setter_hook_verbose_level(sim, verbose_level):
-    # print(f"setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
-    if sim.log_handler_id == -1:
+def _setter_hook_verbose_level(self, verbose_level):
+    # print(f"_setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
+    if self.log_handler_id == -1:
         # Remove the default logger configuration
         logger.remove()
     else:
         # Remove the current logger configuration
         try:
-            logger.remove(sim.log_handler_id)
+            logger.remove(self.log_handler_id)
         except:
             pass
 
-    sim.log_handler_id = logger.add(
+    self.log_handler_id = logger.add(
         sys.stdout,
         colorize=True,
         level=verbose_level,
@@ -1405,7 +1412,7 @@ class Simulation(GateObject):
             {
                 "doc": "Gate pre-run verbosity. "
                 "Will display more or fewer messages during initialization. ",
-                "setter_hook": setter_hook_verbose_level,
+                "setter_hook": _setter_hook_verbose_level,
                 "allowed_values": [
                     "NONE",
                     "DEBUG",
@@ -1634,7 +1641,7 @@ class Simulation(GateObject):
         # init logger
         self.log_handler_id = -1
         self.log_output = ""
-        setter_hook_verbose_level(self, INFO)
+        _setter_hook_verbose_level(self, INFO)
 
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)

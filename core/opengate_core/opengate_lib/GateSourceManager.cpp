@@ -25,6 +25,7 @@
 #include <G4UIExecutive.hh>
 #include <G4UImanager.hh>
 #include <G4UnitsTable.hh>
+#include <cmath>
 
 /* There will be one SourceManager per thread */
 
@@ -214,6 +215,8 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
   l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
+  // init the next time as the end of the interval by default
+  l.fNextSimulationTime = l.fCurrentTimeInterval.second;
   // reset abort run flag to false
   fRunTerminationFlag = false;
   // Prepare the run for all sources
@@ -235,11 +238,16 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
 void GateSourceManager::PrepareNextSource() const {
   auto &l = fThreadLocalData.Get();
   l.fNextActiveSource = nullptr;
-  const double min_time = l.fCurrentTimeInterval.first;
+  G4int nbOfRunFromTimes = fSimulationTimes.size();
+
+  double min_time = l.fCurrentTimeInterval.first;
   double max_time = l.fCurrentTimeInterval.second;
+
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    auto t = source->PrepareNextTime(l.fCurrentSimulationTime);
+    G4int numberOfSimulatedEvents = source->GetNumberOfSimulatedEvents();
+    auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
+                                     numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
       max_time = t;
       l.fNextActiveSource = source;
@@ -252,10 +260,12 @@ void GateSourceManager::PrepareNextSource() const {
 
 void GateSourceManager::CheckForNextRun() const {
   auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = false;
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
     l.fNextRunId++;
+    /*
     if (l.fNextRunId >= fSimulationTimes.size()) {
       // Sometimes, the source must clean some data in its own thread, not by
       // the master thread (for example, with a G4SingleParticleSource object)
@@ -264,6 +274,7 @@ void GateSourceManager::CheckForNextRun() const {
         source->CleanWorkerThread();
       }
     }
+    */
   }
 }
 

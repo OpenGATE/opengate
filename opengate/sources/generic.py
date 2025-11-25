@@ -422,17 +422,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
 
         # initialize
         SourceBase.initialize(self, run_timing_intervals)
-
-        if self.n > 0 and self.activity > 0:
-            fatal(
-                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
-            )
-        if self.n == 0 and self.activity == 0:
-            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
-        if self.activity > 0:
-            self.n = 0
-        if self.n > 0:
-            self.activity = 0
         # warning for non-used ?
 
         # check confine
@@ -442,18 +431,6 @@ class GenericSource(SourceBase, g4.GateGenericSource):
                     f"In source {self.name}, "
                     f"confine is used, while position.type is point ... really ?"
                 )
-
-    def check_ui_activity(self, ui):
-        # FIXME: This should rather be a function than a method
-        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
-        if ui.n > 0 and ui.activity > 0:
-            fatal(f"Cannot use both n and activity, choose one: {self.user_info}")
-        if ui.n == 0 and ui.activity == 0:
-            fatal(f"Choose either n or activity : {self.user_info}")
-        if ui.activity > 0:
-            ui.n = 0
-        if ui.n > 0:
-            ui.activity = 0
 
     def check_confine(self, ui):
         # FIXME: This should rather be a function than a method

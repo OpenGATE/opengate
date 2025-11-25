@@ -202,4 +202,38 @@ Users can modify the `MeanExcitationEnergy` of a material, and therefore the mat
     # material_of_interest is the name of the material of interest, which should be defined in GateMaterials.db located at path_to_gate_materials_db
     sim.physics_manager.material_ionisation_potential[material_of_interest] =  75.0 * eV
 
+Background information on physics lists in Geant4 and GATE
+==========================================================
+
+This section provides you with background information on the way GATE and Geant4 handle physics lists. To go in depth, you can also read the [guide from Geant4](https://geant4.web.cern.ch/documentation/dev/plg_html/PhysicsListGuide/physicslistguide.html).
+
+Geant4 knows "processes" as the basic concept (C++ class) that handles physics interactions. It groups processes that describe logically related interactions into so-called Physics Constructors. G4EmStandardPhysics is such a constructor. It groups processes that describe electromagnetic interactions. G4OpticalPhysics is another such grouping. There are also constructors related to hadron physics, or nuclear decay, etc.
+
+A physics list is a grouping at yet another logical level. It combines physics constructors, and it provides the user with functionality to combine them while attempting to keep to whole list coherent. There can only be 1 physics list per simulation. Internally, Geant4 distinguishes between physics constructors in terms of physics type and mutually excludes constructors with the same physics type. For example: a physics list can only contain physics constructor for elastic hadron physics (physics type 5). There are, however, physics constructors that can be added to a list without requiring another constructor to be removed, e.g. Optical physics, because the processes grouped in the constructor do not compete with processes from another constructor. Constructors that do not impose a compatibility check have physics type 0. Mutually exclusive constructors have physics type >0, e.g. bHadronElastic = 5, bHadronInelastic = 6, etc.
+
+Now to GATE:
+Geant4 pre-implements reference physics lists with different hadron physics constructors, and with and without additional electronic magnetic constructors (see above). It does not, however, pre-implement pure electromagnetic physics lists. To allow users to say:
+
+.. code-block:: python
+
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
+
+GATE dynamically creates a physics list class around the G4EmStandardPhysics physics constructor.
+Additionally, GATE allows users to add other physics constructors to the physics list, e.g. "G4OpticalPhysics".
+So technically, when you write:
+
+.. code-block:: python
+
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics"
+    sim.physics_manager.special_physics_constructors = ["G4OpticalPhysics"],
+
+You get a physics list created based on G4EmStandardPhysics extended by the processes from the G4OpticalPhysics constructor.
+
+If you write
+
+.. code-block:: python
+
+    sim.physics_manager.physics_list_name = "G4OpticalPhysics"
+
+You get a physics list created based on G4OpticalPhysics, that's it. No process from G4EmStandardPhysics, unless also present in the G4OpticalPhysics constructor.
 
