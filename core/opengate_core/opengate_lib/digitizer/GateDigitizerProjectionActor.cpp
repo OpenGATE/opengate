@@ -127,7 +127,7 @@ void GateDigitizerProjectionActor::EndOfEventAction(const G4Event * /*event*/) {
 void GateDigitizerProjectionActor::ProcessSlice(const size_t slice,
                                                 const size_t channel) const {
   // (Note: this is called during EndOfEventAction and in a mutex scope)
-  auto &l = fThreadLocalData.Get();
+  const auto &l = fThreadLocalData.Get();
   const auto *hc = fInputDigiCollections[channel];
   const auto index = hc->GetBeginOfEventIndex();
   const auto n = hc->GetSize() - index;
@@ -142,7 +142,6 @@ void GateDigitizerProjectionActor::ProcessSlice(const size_t slice,
   ImageType::IndexType pindex;
   const auto current_event_id =
       G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
-  // DDD(current_event_id);
 
   // loop on channels
   for (size_t i = index; i < hc->GetSize(); i++) {
@@ -180,7 +179,7 @@ void GateDigitizerProjectionActor::ProcessSlice(const size_t slice,
 void GateDigitizerProjectionActor::ScoreSquaredValue(
     const ImageType::IndexType &index, const int current_event_id,
     const double value) const {
-  auto &l = fThreadLocalData.Get();
+  const auto &l = fThreadLocalData.Get();
   auto previous_event_id = l.fLastEventIdImage->GetPixel(index);
   if (previous_event_id == current_event_id) {
     // If the current event id is the same as the one at the pixel, we just sum
@@ -200,7 +199,8 @@ void GateDigitizerProjectionActor::ScoreSquaredValue(
 }
 
 void GateDigitizerProjectionActor::EndOfRunAction(const G4Run *run) {
-  FlushSquaredValues();
+  if (fSquaredImageIsEnabled)
+    FlushSquaredValues();
 }
 
 void GateDigitizerProjectionActor::FlushSquaredValues() const {
