@@ -110,7 +110,7 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
   // Search for the time bin
   const auto lower =
       std::lower_bound(fTAC_Times.begin(), fTAC_Times.end(), time);
-  const auto i = std::distance(fTAC_Times.begin(), lower);
+  auto i = std::distance(fTAC_Times.begin(), lower);
 
   // Exact match or first sample
   if (i == 0) {
