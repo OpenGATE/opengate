@@ -121,8 +121,8 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
   // Move to the lower bin edge for the interpolation
   i -= 1;
 
-      // Last element ?
-      if (i >= fTAC_Times.size() - 1) {
+  // Last element ?
+  if (i >= fTAC_Times.size() - 1) {
     fActivity = fTAC_Activities.back();
     return;
   }
