@@ -518,6 +518,35 @@ class PhysicsEngine(EngineBase):
             ionisation.SetMeanExcitationEnergy(val)
 
 
+class ChemistryEngine(EngineBase):
+    """
+    Class that contains all the information and mechanism regarding physics
+    to actually run a simulation. It is associated with a simulation engine.
+
+    """
+
+    def __init__(self, *args):
+        super().__init__(*args)
+        # Keep a shortcut reference to the current physics_manager
+        self.chemistry_manager = self.simulation_engine.simulation.chemistry_manager
+
+        # g4 references
+        #
+
+    def close(self):
+        if self.verbose_close:
+            warning("Closing ChemistryEngine")
+        self.release_g4_references()
+        super().close()
+
+    def release_g4_references(self):
+        pass
+
+
+    def initialize(self):
+        pass
+
+
 class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
     """
     Main object to manage all actions during a simulation.
@@ -1073,6 +1102,7 @@ class SimulationEngine(GateSingletonFatal):
         self.volume_engine = VolumeEngine(self)
         self.volume_engine.create_parallel_world_engines()
         self.physics_engine = PhysicsEngine(self)
+        self.chemistry_engine = ChemistryEngine(self)
         self.source_engine = SourceEngine(self)
         self.action_engine = ActionEngine(self)
         self.actor_engine = ActorEngine(self)
@@ -1122,6 +1152,8 @@ class SimulationEngine(GateSingletonFatal):
             self.volume_engine.close()
         if self.physics_engine:
             self.physics_engine.close()
+        if self.chemistry_engine:
+            self.chemistry_engine.close()
         if self.source_engine:
             self.source_engine.close()
         if self.action_engine:
@@ -1134,6 +1166,7 @@ class SimulationEngine(GateSingletonFatal):
     def release_engines(self):
         self.volume_engine = None
         self.physics_engine = None
+        self.chemistry_engine = None
         self.source_engine = None
         self.action_engine = None
         self.actor_engine = None
