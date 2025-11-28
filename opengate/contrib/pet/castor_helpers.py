@@ -7,7 +7,7 @@ import numpy as np
 def set_hook_castor_config(sim, crystal_name, filename):
     """
     Prepare everything to create the castor config file at the init of the simulation.
-    The param structure allows to retrieve the castor config at the end of the simulation.
+    The param structure allows retrieving the castor config at the end of the simulation.
     """
     # create the param structure
     param = {
@@ -21,6 +21,7 @@ def set_hook_castor_config(sim, crystal_name, filename):
 
 
 def create_castor_config(simulation_engine, param):
+    # (note: simulation_engine is not used here but must be the first param)
     castor_config = {
         "rotation": [],
         "size": [],
