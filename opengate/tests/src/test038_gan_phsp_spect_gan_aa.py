@@ -35,7 +35,7 @@ if __name__ == "__main__":
     singles.output_filename = "test038_gan_aa_singles.root"
 
     # go
-    sim.run(start_new_process=True)
+    sim.run()  # start_new_process=True)
 
     #
     print()
