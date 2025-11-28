@@ -146,6 +146,11 @@ public:
   G4ThreeVector fTranslation;
   std::string fHitType;
 
+  int fNbStepsGammas;
+  int fNbStepsNeutrons;
+  int fNbStepsElectrons;
+  int fNbStepsProtons;
+
 protected:
   G4Cache<threadLocalT> fThreadLocalDataEdep;
   G4Cache<threadLocalT> fThreadLocalDataDose;

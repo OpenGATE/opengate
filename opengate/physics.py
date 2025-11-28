@@ -74,42 +74,44 @@ class UserLimitsPhysics(g4.G4VPhysicsConstructor):
         """
         ui = self.physics_engine.user_info_physics_manager
 
-        particle_keys_to_consider = []
-        # 'all' overrides individual settings
-        if ui.user_limits_particles["all"] is True:
-            particle_keys_to_consider = list(ui.user_limits_particles.keys())
-        else:
-            keys_to_exclude = ("all", "all_charged")
-            particle_keys_to_consider = [
-                p
-                for p, v in ui.user_limits_particles.items()
-                if v is True and p not in keys_to_exclude
-            ]
-
-        if len(particle_keys_to_consider) == 0:
+        if len(ui.user_limits_particles) == 0:
             self.physics_engine.simulation_engine.simulation.warn_user(
-                "user_limits_particles is False for all particles. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
+                "No particles selected to which UserLimits (incl. step limiter) will be applied. No tracking cuts will be applied. Use sim.physics_manager.set_user_limits_particles()."
             )
 
-        # translate to Geant4 particle names
+        # process user input parameters
+        flag_all = "all" in ui.user_limits_particles
+        flag_all_charged = "all_charged" in ui.user_limits_particles
         particles_to_consider = [
-            translate_particle_name_gate_to_geant4(k) for k in particle_keys_to_consider
+            translate_particle_name_gate_to_geant4(p)
+            for p in ui.user_limits_particles
+            if p not in ["all", "all_charged"]
         ]
 
-        for particle in g4.G4ParticleTable.GetParticleTable().GetParticleList():
+        known_g4_particles = list(
+            g4.G4ParticleTable.GetParticleTable().GetParticleList()
+        )
+        known_g4_particle_names = [p.GetParticleName() for p in known_g4_particles]
+
+        # check for consistency of particle names
+        wrong_particle_names = [
+            p for p in particles_to_consider if p not in known_g4_particle_names
+        ]
+        if len(wrong_particle_names) > 0:
+            fatal(
+                f"UserLimits were requested for the following unknown particles: {wrong_particle_names}"
+            )
+
+        for particle in known_g4_particles:
             add_step_limiter = False
             add_user_special_cuts = False
             p_name = str(particle.GetParticleName())
 
-            if p_name in particles_to_consider:
+            if flag_all or p_name in particles_to_consider:
                 add_step_limiter = True
                 add_user_special_cuts = True
-
             # this reproduces the logic of the Geant4's G4StepLimiterPhysics class
-            if (
-                ui.user_limits_particles["all_charged"] is True
-                and particle.GetPDGCharge() != 0
-            ):
+            elif flag_all_charged and particle.GetPDGCharge() != 0:
                 add_step_limiter = True
 
             if add_step_limiter is True or add_user_special_cuts is True:
