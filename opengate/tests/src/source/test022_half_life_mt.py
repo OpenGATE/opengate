@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests.src import test022_half_life
+from opengate.tests.src.source import test022_half_life
 
 
 def main():
