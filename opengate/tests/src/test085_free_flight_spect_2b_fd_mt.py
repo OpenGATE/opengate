@@ -26,17 +26,18 @@ if __name__ == "__main__":
     )
 
     # FF with Forced Direction (one single head !)
-    source.direction.acceptance_angle.intersection_flag = False
-    source.direction.acceptance_angle.normal_flag = False
-    source.direction.acceptance_angle.forced_direction_flag = True
-    source.direction.acceptance_angle.volumes = ["spect_1"]
-    source.direction.acceptance_angle.normal_vector = [0, 0, -1]
-    source.direction.acceptance_angle.normal_tolerance = 20 * gate.g4_units.deg
+    source.direction.angular_acceptance.enable_intersection_check = False
+    source.direction.angular_acceptance.enable_angle_check = False
+    source.direction.angular_acceptance.policy = "ForceDirection"
+    source.direction.angular_acceptance.enable_angle_check = True
+    source.direction.angular_acceptance.target_volumes = ["spect_1"]
+    source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
+    source.direction.angular_acceptance.angle_tolerance_max = 20 * gate.g4_units.deg
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.unbiased_volumes = ["spect_1_crystal"]
+    ff.exclude_volumes = ["spect_1_crystal"]
 
     # go
     sim.run()
@@ -44,7 +45,7 @@ if __name__ == "__main__":
     print(stats)
 
     # uncertainty
-    uncer, _, _ = history_rel_uncertainty_from_files(
+    uncer, _, _ = compute_history_by_history_relative_uncertainty_from_files(
         paths.output / "projection_1_fd_counts.mhd",
         paths.output / "projection_1_fd_squared_counts.mhd",
         ac,

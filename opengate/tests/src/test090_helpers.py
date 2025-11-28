@@ -39,7 +39,7 @@ def create_test_spect_config(paths):
 
 def check_stats_file(n, sc, stats, is_ok, threads=1):
     print(stats.get_output_path())
-    stats = utility.read_stat_file(stats.get_output_path())
+    stats = utility.read_stats_file(stats.get_output_path())
     stats.counts.runs = int(stats.counts.runs / threads)
     print(stats)
     b = stats.counts.runs == sc.acquisition_config.number_of_angles
@@ -66,7 +66,7 @@ def check_projection_files(
     axis="z",
     threads=1,
 ):
-    stats = utility.read_stat_file(stats.get_output_path())
+    stats = utility.read_stats_file(stats.get_output_path())
     stats.counts.runs = stats.counts.runs / threads
     if output_ref is None:
         output_ref = paths.output_ref

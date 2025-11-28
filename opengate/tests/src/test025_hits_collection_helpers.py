@@ -160,7 +160,7 @@ def test_simulation_results(sim):
     stats = sim.get_actor("Stats")
     print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
     stats.counts.runs = 1  # force to 1 to compare with gate result
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
 
     # Compare root files

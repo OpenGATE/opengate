@@ -22,23 +22,38 @@ public:
   bool TestIfAccept(const G4ThreeVector &position,
                     const G4ThreeVector &momentum_direction) const;
 
+  void PrepareCheck(const G4ThreeVector &position);
+
+  bool TestDirection(const G4ThreeVector &momentum_direction) const;
+
   void UpdateTransform();
-  bool DistanceDependentToleranceTest(double angle, double dist) const;
 
 protected:
   std::string fAcceptanceAngleVolumeName;
-  bool fIntersectionFlag;
-  bool fNormalFlag;
-  double fNormalAngleTolerance;
-  bool fDistanceDependentAngleToleranceFlag;
-  double fMinDistanceNormalAngleTolerance;
-  double fAngle1;
-  double fAngle2;
-  double fDistance1;
-  double fDistance2;
-  double a;
-  double b;
-  G4ThreeVector fNormalVector;
+  bool fEnableIntersectionCheck;
+  bool fEnableAngleCheck;
+
+  // Raw angles kept for debug/logging if needed
+  double fAngleToleranceMax;
+  double fAngleToleranceMin;
+  double fAngleToleranceProximal;
+  double fAngleCheckProximityDistance;
+
+  // Cached Cosines for performance
+  double fCosToleranceMax;
+  double fCosToleranceMin;
+  double fCosToleranceProximal;
+
+  // Local coordinates
+  G4ThreeVector fAngleReferenceVector;
+
+  // World coordinates (cached)
+  G4ThreeVector fGlobalAngleReferenceVector;
+
+  // Cache local position to allow PrepareCheck+TestDirection instead of
+  // TestIfAccept
+  G4ThreeVector fCachedLocalPosition;
+
   G4AffineTransform fAATransform;
   G4RotationMatrix *fAARotation;
   G4VSolid *fAASolid;

@@ -55,13 +55,17 @@ def create_simulation(sim, aa_flag, paths, version):
         s.particle = "gamma"
         s.energy.type = "mono"
         s.energy.mono = 140 * keV
-        # WARNING : to speed up, this is not a iso source,
+        # WARNING: to speed up, this is not an iso source,
         # s.direction.type = "iso"
         s.direction.type = "momentum"
         s.direction.momentum = [0, 1, 0]
-        s.direction.acceptance_angle.volumes = ["spect"]
-        s.direction.acceptance_angle.intersection_flag = aa_flag
-        s.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+        s.direction.angular_acceptance.target_volumes = ["spect"]
+        if aa_flag:
+            s.direction.angular_acceptance.enable_intersection_check = True
+            s.direction.angular_acceptance.policy = "Rejection"
+            s.direction.angular_acceptance.skip_policy = "ZeroEnergy"
+        else:
+            s.direction.angular_acceptance.policy = None
 
     sources = gate_iec.add_spheres_sources(
         sim,
@@ -80,9 +84,13 @@ def create_simulation(sim, aa_flag, paths, version):
         # s.direction.type = "iso"
         s.direction.type = "momentum"
         s.direction.momentum = [1, 0, 0]
-        s.direction.acceptance_angle.volumes = ["spect"]
-        s.direction.acceptance_angle.intersection_flag = aa_flag
-        s.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+        s.direction.angular_acceptance.target_volumes = ["spect"]
+        if aa_flag:
+            s.direction.angular_acceptance.enable_intersection_check = True
+            s.direction.angular_acceptance.policy = "Rejection"
+            s.direction.angular_acceptance.skip_policy = "ZeroEnergy"
+        else:
+            s.direction.angular_acceptance.policy = None
 
     # physic list
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"

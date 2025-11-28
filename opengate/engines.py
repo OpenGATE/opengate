@@ -65,7 +65,7 @@ class SourceEngine(EngineBase):
         self.run_timing_intervals = None
         self.current_run_interval = None
 
-        # use a progress bar ?
+        # use a progress bar?
         self.progress_bar = False
         self.expected_number_of_events = "unknown"
 
@@ -1245,7 +1245,7 @@ class SimulationEngine(GateSingletonFatal):
             if self.source_engine.can_predict_expected_number_of_event():
                 s2 = f"(around {n} events expected)"
             else:
-                s2 = f"(cannot predict the number of events, max is {n}, e.g. acceptance_angle is enabled)"
+                s2 = f"(cannot predict the number of events, max is {n}, e.g. angular_acceptance is enabled)"
 
         logger.info("-" * 80 + f"\nSimulation: START {s}{s2}")
 
@@ -1368,7 +1368,7 @@ class SimulationEngine(GateSingletonFatal):
         self.apply_all_g4_commands_before_init()
 
         # sources
-        logger.info("Simulation: initialize Source")
+        logger.info("Simulation: initialize Sources")
         self.source_engine.initialize(
             self.simulation.run_timing_intervals, self.simulation.progress_bar
         )
@@ -1395,20 +1395,20 @@ class SimulationEngine(GateSingletonFatal):
         # Note: In serial mode, SetUserInitialization() would only be needed
         # for geometry and physics, but in MT mode the fake run for worker
         # initialization needs a particle source.
-        logger.info("Simulation: initialize G4RunManager")
         if self.simulation.multithreaded is True:
+            logger.info("Simulation: initialize G4RunManager (MT mode)")
             self.g4_RunManager.InitializeWithoutFakeRun()
         else:
+            logger.info("Simulation: initialize G4RunManager")
             self.g4_RunManager.Initialize()
 
-        logger.info(
-            "Simulation: initialize PhysicsEngine after RunManager initialization"
-        )
+        logger.info("Simulation: initialize PhysicsEngine")
         self.physics_engine.initialize_after_runmanager()
         self.g4_RunManager.PhysicsHasBeenModified()
 
         # G4's MT RunManager needs an empty run to initialise workers
         if self.simulation.multithreaded is True:
+            logger.info("Simulation: initialize Workers (MT mode)")
             self.g4_RunManager.FakeBeamOn()
 
         # Actions initialisation
@@ -1417,7 +1417,7 @@ class SimulationEngine(GateSingletonFatal):
         # which is required for initialize()
         # Actors initialization (before the RunManager Initialize)
         # self.actor_engine.create_actors()  # calls the actors' constructors
-        logger.info("Simulation: initialize actors")
+        logger.info("Simulation: initialize Actors")
         self.source_engine.initialize_actors()
         self.actor_engine.initialize()
         self.filter_engine.initialize()

@@ -40,7 +40,7 @@ if __name__ == "__main__":
     stats = sim.get_actor("Stats")
 
     # Gate mac/main_2.mac
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat_2.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat_2.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     utility.test_ok(is_ok)

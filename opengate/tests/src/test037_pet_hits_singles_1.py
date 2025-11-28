@@ -51,7 +51,7 @@ if __name__ == "__main__":
     print()
     gate.exception.warning(f"Check stats")
     p = paths.gate / "output"
-    stats_ref = utility.read_stat_file(p / "stats1.txt")
+    stats_ref = utility.read_stats_file(p / "stats1.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.028)
 
     # check root hits

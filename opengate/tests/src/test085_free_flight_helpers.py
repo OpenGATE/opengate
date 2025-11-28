@@ -4,6 +4,7 @@
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.contrib.spect.spect_helpers import *
+from opengate.contrib.spect.spect_freeflight_helpers import *
 import opengate.contrib.phantoms.nemaiec as nemaiec
 from opengate.image import get_translation_to_isocenter
 from opengate.sources.utility import set_source_energy_spectrum
@@ -232,9 +233,9 @@ def compute_zscore_per_pixel(ref, ff, squared_ff, n_ref, n_ff):
 
     # compute scatter uncertainty
     if squared_ff is None:
-        sigma_ff = poisson_rel_uncertainty(ff)
+        sigma_ff = compute_poisson_relative_uncertainty(ff)
     else:
-        sigma_ff = history_rel_uncertainty(ff, squared_ff, n_ff)
+        sigma_ff = compute_history_by_history_relative_uncertainty(ff, squared_ff, n_ff)
     ff = ff * (n_ref / n_ff)
 
     # compute zscore per pixel
