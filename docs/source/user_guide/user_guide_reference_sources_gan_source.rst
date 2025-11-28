@@ -8,9 +8,9 @@ Description
 
 A Phase-Space (phsp) source typically uses a large file containing particle properties (e.g., energy, position, direction, time) to generate primary events in a simulation. This traditional phsp source can be replaced by a neural network-based particle generator that replicates similar distribution probabilities in a more compact form. GAN sources utilize Generative Adversarial Networks (GANs) trained to reproduce these particle properties based on an initial phsp. This approach, proposed in `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1>`__, can be applied across various applications:
 
-- Linac phsp: `test034 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1>`__
-- SPECT: `test038 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ and `test047 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2021] <https://doi.org/10.1088/1361-6560/abde9a>`_ and `[Saporta et al, PMB, 2022] <https://doi.org/10.1088/1361-6560/aca068>`_
-- PET: `test040 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src>`_ `[Sarrut et al, PMB, 2023] <https://doi.org/10.1088/1361-6560/acdfb1>`_
+- Linac phsp: `test034 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source>`_ `[Sarrut et al, PMB, 2019] <https://doi.org/10.1088/1361-6560/ab3fc1>`__
+- SPECT: `test038 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source>`_ and `test047 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source>`_ `[Sarrut et al, PMB, 2021] <https://doi.org/10.1088/1361-6560/abde9a>`_ and `[Saporta et al, PMB, 2022] <https://doi.org/10.1088/1361-6560/aca068>`_
+- PET: `test040 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source>`_ `[Sarrut et al, PMB, 2023] <https://doi.org/10.1088/1361-6560/acdfb1>`_
 
 Installation Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -32,7 +32,7 @@ The workflow to use a GAN source involves three main steps:
 2. Train the GAN model.
 3. Use the GAN model as a source in GATE.
 
-For Linac applications, a conventional Linac phsp can serve as the training dataset. In SPECT or PET applications, a conditional GAN is used to generate particles exiting the patient, conditioned on the activity distribution within the patient. In this case, the training dataset must include not only the particle properties at the patient exit (e.g., position and direction in a spheroid or cylinder around the patient) but also the initial emission point inside the patient (using `EventPosition` and `EventDirection`). An example can be found in `test038_gan_phsp_spect_training_dataset_mt.py`.
+For Linac applications, a conventional Linac phsp can serve as the training dataset. In SPECT or PET applications, a conditional GAN is used to generate particles exiting the patient, conditioned on the activity distribution within the patient. In this case, the training dataset must include not only the particle properties at the patient exit (e.g., position and direction in a spheroid or cylinder around the patient) but also the initial emission point inside the patient (using `EventPosition` and `EventDirection`). An example can be found in `test038_gan_phsp_spect_training_dataset_mt.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/source/test038_gan_phsp_spect_training_dataset_mt.py>`_.
 
 Training the GAN
 ^^^^^^^^^^^^^^^^

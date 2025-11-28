@@ -52,7 +52,7 @@ Common parameters are:
   | The number of Geant4 Events will depend on the simulation time.
 
 
-If you want to start a multi-run simulation using the parameter n, you can provide a list of the number of particles to simulate for each run (see `test096 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/test096_multi_run_simulation_using_n_generic_source.py>`_)
+If you want to start a multi-run simulation using the parameter n, you can provide a list of the number of particles to simulate for each run (see `test096 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source/test096_multi_run_simulation_using_n_generic_source.py>`_)
 
 A minimal working example would be:
 
