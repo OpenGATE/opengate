@@ -38,7 +38,7 @@ def check_mat(se):
     dbn = sim.volume_manager.dump_material_database_names()
     mnist = se.volume_engine.get_database_material_names("NIST")
     mdb = se.volume_engine.get_database_material_names(
-        pathFile.parent / "data" / "GateMaterials.db"
+        pathFile.parent.parent / "data" / "GateMaterials.db"
     )
     dm = se.volume_engine.dump_build_materials()
     print("Material info:")

@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.tests.src.test081_tle_helpers import add_source
+from opengate.tests.src.actors.test081_tle_helpers import add_source
 import numpy as np
 
 from opengate.tests.utility import print_test

@@ -200,11 +200,16 @@ def get_files_to_run():
         "test045_speedup",  # this is a binary (still work in progress)
     ]
     path_tests_src = Path(path_tests_src)
-    all_file_paths = [
-        file.name for file in path_tests_src.glob("test[0-9]*.py") if file.is_file()
-    ]
+    all_file_paths = []
+    for file in path_tests_src.glob("**/test[0-9]*.py"):
+        if file.is_file():
+            if file.parent.name == "src":
+                all_file_paths.append(file.name)
+            else:
+                all_file_paths.append(os.path.join(file.parent.name, file.name))
+
     # here we sort the paths
-    all_file_paths = sorted(all_file_paths)
+    all_file_paths = sorted(all_file_paths, key=lambda f: os.path.basename(f))
 
     ignore_files_containing = [
         "wip",
@@ -307,7 +312,7 @@ def select_files(files_to_run, test_id, end_id, random_tests, seed):
         end_id = int(end_id) if end_id != "all" else sys.maxsize
         files_new = []
         for f in files_to_run:
-            match = pattern.match(f)
+            match = pattern.match(os.path.basename(f))
             f_test_id = int(float(match.group(1)))
             if f_test_id >= test_id and f_test_id <= end_id:
                 files_new.append(f)
@@ -499,9 +504,9 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
         for k, shell_output_k in zip(files, runs_status_info)
     }
 
-    tests_passed = [f for f in files if dashboard_dict[f][0]]
+    tests_passed = [f for f in files if dashboard_dict[os.path.basename(f)][0]]
     tests_passed.sort()
-    tests_failed = [f for f in files if not dashboard_dict[f][0]]
+    tests_failed = [f for f in files if not dashboard_dict[os.path.basename(f)][0]]
     tests_failed.sort()
 
     n_passed = sum([k[0] for k in dashboard_dict.values()])
