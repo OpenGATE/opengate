@@ -31,7 +31,6 @@ def add_macaco1_camera(sim, name="macaco1"):
     camera = sim.add_volume("Box", f"{name}_camera")
     camera.material = "G4_AIR"
     camera.size = [4 * cm, 4 * cm, 7.6 * cm]
-    camera.translation = [0, 0, 8.3 * cm]
     camera.color = [1, 1, 1, 1]  # white
 
     # Scatterer
