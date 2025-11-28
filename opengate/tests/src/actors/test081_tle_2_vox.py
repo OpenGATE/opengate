@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import opengate as gate
 from opengate import g4_units
 from opengate.tests import utility
-from opengate.tests.src.test081_tle_helpers import (
+from opengate.tests.src.actors.test081_tle_helpers import (
     add_waterbox,
     voxelize_waterbox,
     add_source,

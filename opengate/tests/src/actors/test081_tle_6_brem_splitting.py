@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import opengate as gate
 from opengate.tests import utility
-from opengate.tests.src.test081_tle_helpers import (
+from opengate.tests.src.actors.test081_tle_helpers import (
     add_simple_waterbox,
     add_source,
 )
