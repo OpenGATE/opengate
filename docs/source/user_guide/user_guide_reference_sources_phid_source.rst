@@ -29,8 +29,7 @@ as particle name, like the “GenericSource”. Only the gammas emitted by
 atomic relaxation and isomeric transition will be created and tracked.
 The timing is taken into account by using a TAC (Time Activity Curve)
 automatically computed from the start and end time of the simulation.
-The TAC is then binned and the number of bins can be modified. See tests
-053.
+The TAC is then binned and the number of bins can be modified. See `test053 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source/>`_.
 
 .. code:: python
 
