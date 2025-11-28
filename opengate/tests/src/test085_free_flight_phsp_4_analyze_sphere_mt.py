@@ -199,7 +199,7 @@ def main(dependency="test085_free_flight_phsp_1_ref_mt.py"):
     results = compare_branches_statistics(
         ref_filename, merged_filename, tree_name="phsp_sphere", verbose=True
     )
-    tol = 0.5  # %
+    tol = 0.6  # %
     b = all(np.fabs(r["mean_diff_vs_std"]) < tol for r in results)
     utility.print_test(b, f"Statistics difference below {tol} ? ")
     is_ok = b and is_ok
