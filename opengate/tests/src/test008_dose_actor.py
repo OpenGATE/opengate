@@ -99,7 +99,7 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    stats_ref = utility.read_stat_file(ref_path / "stat.txt")
+    stats_ref = utility.read_stats_file(ref_path / "stat.txt")
     stat.counts.runs = 1  # because ref had only 1 run
     is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 

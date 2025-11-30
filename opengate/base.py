@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional, List
 from difflib import get_close_matches
 from functools import wraps
-
 from box import Box
 import sys
 
@@ -975,6 +974,69 @@ def create_gate_object_from_dict(dct):
         name=dct["user_info"]["name"]
     )
     return obj
+
+
+class UserInfoValidatorBase:
+    """
+    Base class for a validator that checks a Box
+    against a known set of parameters (a schema).
+    """
+
+    __schema__ = set()
+
+    def validate(self, parent_obj, attr_name: str, parent_context: str = None):
+        """
+        Validates an attribute on a parent object.
+
+        Args:
+            parent_obj: The object holding the config (e.g., GenericSource).
+            attr_name: The name of the attribute (e.g., "position").
+            parent_context: (Optional) The context of the parent object.
+
+        Returns:
+            str: The full context name for the validated box (e.g., "my_source.position").
+        """
+
+        # 1. Get the Box to check
+        try:
+            box_to_check = getattr(parent_obj, attr_name)
+        except AttributeError:
+            fatal(
+                f"Internal error: Validator cannot find attribute '{attr_name}' on object {parent_obj}."
+            )
+
+        # 2. Build the full context name
+        if parent_context is None:
+            # This is a top-level call
+            parent_name = getattr(parent_obj, "name", "unknown_object")
+            context_name = f"{parent_name}.{attr_name}"
+        else:
+            # This is a nested call
+            context_name = f"{parent_context}.{attr_name}"
+
+        # 3. Check for schema
+        if not self.__schema__:
+            raise NotImplementedError(
+                f"Validator class '{self.__class__.__name__}' has no __schema__ defined."
+            )
+
+        user_keys = set(box_to_check.keys())
+        valid_keys = self.__schema__
+
+        # 4. Check for unknown keys (typos)
+        unknown_keys = user_keys - valid_keys
+
+        if unknown_keys:
+            key_str = f"'{list(unknown_keys)[0]}'"
+            matches = get_close_matches(list(unknown_keys)[0], valid_keys)
+
+            msg = f"Unknown parameter {key_str} found in '{context_name}'."
+            if matches:
+                msg += f" Did you mean '{matches[0]}'?"
+            msg += f"\nValid parameters are: {sorted(list(valid_keys))}"
+            fatal(msg)
+
+        return context_name  # Return context for potential chaining
 
 
 process_cls(GateObject)

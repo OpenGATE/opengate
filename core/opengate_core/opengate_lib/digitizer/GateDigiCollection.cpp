@@ -18,9 +18,10 @@ GateDigiCollection::GateDigiCollection(const std::string &collName)
   fCurrentDigiAttributeId = 0;
   SetFilenameAndInitRoot("");
   threadLocalData.Get().fBeginOfEventIndex = 0;
+  fWriteToRootFlag = false;
 }
 
-GateDigiCollection::~GateDigiCollection() {}
+GateDigiCollection::~GateDigiCollection() = default;
 
 size_t GateDigiCollection::GetBeginOfEventIndex() const {
   return threadLocalData.Get().fBeginOfEventIndex;
@@ -38,7 +39,7 @@ void GateDigiCollection::SetWriteToRootFlag(const bool f) {
   fWriteToRootFlag = f;
 }
 
-void GateDigiCollection::SetFilenameAndInitRoot(std::string filename) {
+void GateDigiCollection::SetFilenameAndInitRoot(const std::string &filename) {
   fFilename = filename;
   if (fFilename.empty())
     SetWriteToRootFlag(false);
@@ -57,7 +58,7 @@ void GateDigiCollection::RootStartInitialization() {
   if (!fWriteToRootFlag)
     return;
   auto *am = GateDigiCollectionsRootManager::GetInstance();
-  auto id = am->DeclareNewTuple(fDigiCollectionName);
+  const auto id = am->DeclareNewTuple(fDigiCollectionName);
   fTupleId = id;
 }
 
@@ -81,7 +82,7 @@ void GateDigiCollection::RootInitializeTupleForWorker() {
 
 void GateDigiCollection::FillToRootIfNeeded(bool clear) {
   /*
-      Policy :
+      Policy:
       - can write to root or not according to the flag
       - can clear every N calls
    */
@@ -108,11 +109,11 @@ void GateDigiCollection::FillToRoot() {
     }
     am->AddNtupleRow(fTupleId);
   }
-  // required ! Cannot fill without clear
+  // required! Cannot fill without clearing
   Clear();
 }
 
-void GateDigiCollection::Clear() {
+void GateDigiCollection::Clear() const {
   for (auto *att : fDigiAttributes) {
     att->Clear();
   }
@@ -122,7 +123,7 @@ void GateDigiCollection::Clear() {
 void GateDigiCollection::Write() const {
   if (!fWriteToRootFlag)
     return;
-  auto *am = GateDigiCollectionsRootManager::GetInstance();
+  const auto *am = GateDigiCollectionsRootManager::GetInstance();
   am->Write(fTupleId);
 }
 
@@ -146,7 +147,7 @@ void GateDigiCollection::InitDigiAttributeFromName(const std::string &name) {
 }
 
 void GateDigiCollection::InitDigiAttribute(GateVDigiAttribute *att) {
-  auto name = att->GetDigiAttributeName();
+  const auto name = att->GetDigiAttributeName();
   if (fDigiAttributeMap.find(name) != fDigiAttributeMap.end()) {
     std::ostringstream oss;
     oss << "Error the branch named '" << name

@@ -64,8 +64,8 @@ if __name__ == "__main__":
     s1.energy.type = "range"
     s1.energy.min_energy = 0.01 * MeV
     s1.energy.max_energy = 0.154 * MeV
-    s1.direction.acceptance_angle.volumes = [detPlane.name]
-    s1.direction.acceptance_angle.intersection_flag = True
+    s1.direction.angular_acceptance.target_volumes = [detPlane.name]
+    s1.direction.angular_acceptance.enable_intersection_check = True
 
     # digitizer
     channels = [
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     # ----------------------------------------------------------------------------------------------------------------
     gate.exception.warning("Compare stats")
-    stats_ref = utility.read_stat_file(
+    stats_ref = utility.read_stats_file(
         paths.output_ref / "test043_arf_training_dataset_stats.txt"
     )
     is_ok = utility.assert_stats(stats, stats_ref, 0.01) and is_ok

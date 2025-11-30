@@ -27,6 +27,7 @@ from pytomography.utils import compute_EW_scatter
 
 import torch
 import SimpleITK as sitk
+import itk
 import numpy as np
 import json
 from pathlib import Path
@@ -158,7 +159,7 @@ def pytomography_set_energy_windows(metadata, channels):
 
 def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
     # consider sinogram for all energy windows
-    sinograms = read_projections_as_sinograms(filenames, number_of_angles)
+    sinograms = load_and_merge_multi_head_projections(filenames, number_of_angles)
     sino_arr = None
     for sinogram in sinograms:
         arr = sitk.GetArrayFromImage(sinogram)
@@ -674,7 +675,7 @@ def pytomography_build_metadata_and_attenuation_map(
     metadata = pytomography_new_metadata()
 
     # set the detector orientations
-    detectors = sc.detector_config.get_heads(sim)
+    detectors = sc.detector_config.get_detectors(sim)
     verbose and print(f"Number of detectors: {len(detectors)}")
     for detector in detectors:
         pytomography_add_detector_orientation(metadata, detector)

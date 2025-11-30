@@ -82,7 +82,7 @@ if __name__ == "__main__":
     sim.run()
 
     # compare stats
-    stats_ref = utility.read_stat_file(paths.output_ref / "test093_derenzo_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test093_derenzo_stats.txt")
     is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.05)
     is_ok = is_ok and utility.assert_img_sum(
         itk.imread(paths.output_ref / "test093_derenzo_edep.mhd"),

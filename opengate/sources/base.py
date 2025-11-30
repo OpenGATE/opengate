@@ -12,6 +12,15 @@ class SourceBase(GateObject):
     Base class for all source types.
     """
 
+    # hints for IDE
+    attached_to: str
+    mother: str
+    start_time: float
+    end_time: float
+    n: int
+    activity: float
+    half_life: float
+
     user_info_defaults = {
         "attached_to": (
             __world_name__,
@@ -91,7 +100,7 @@ class SourceBase(GateObject):
 
     def initialize_start_end_time(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
-        # by default consider the source time start and end like the whole simulation
+        # by default, consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
         if not self.start_time:

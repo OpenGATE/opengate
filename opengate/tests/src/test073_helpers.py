@@ -112,7 +112,7 @@ def compare_stats(sim, filename):
     warning("Compare stats")
     stats = sim.get_actor("stats")
     # force nb of thread to 1
-    stats_ref = utility.read_stat_file(filename)
+    stats_ref = utility.read_stats_file(filename)
     stats.counts.runs = stats_ref.counts.runs
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.01)
     return is_ok
@@ -240,8 +240,10 @@ def test073_setup_sim(sim, spect_type, collimator_type):
     source.position.radius = 30 * mm
     source.position.translation = [0, 0, 0]
     source.direction.type = "iso"
-    source.direction.acceptance_angle.volumes = [head.name]
-    source.direction.acceptance_angle.intersection_flag = True
+    source.direction.angular_acceptance.target_volumes = [head.name]
+    source.direction.angular_acceptance.enable_intersection_check = True
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "SkipEvents"
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")

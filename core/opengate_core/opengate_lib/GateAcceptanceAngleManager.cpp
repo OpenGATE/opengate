@@ -22,40 +22,46 @@ GateAcceptanceAngleManager::~GateAcceptanceAngleManager() {}
 
 void GateAcceptanceAngleManager::Initialize(
     const std::map<std::string, std::string> &user_info, bool is_valid_type) {
-  // AA is enabled if volumes is not empty and one of the flags is True
+  // AA is enabled if volumes are not empty and one of the flags is True
   // intersection_flag or normal_flag
-  // fAcceptanceAngleVolumeNames = DictGetVecStr(user_info, "volumes");
-  fAcceptanceAngleVolumeNames = GetVectorFromMapString(user_info, "volumes");
+  fAcceptanceAngleVolumeNames =
+      GetVectorFromMapString(user_info, "target_volumes");
   fEnabledFlag = !fAcceptanceAngleVolumeNames.empty();
-
-  bool b2 = StrToBool(user_info.at("intersection_flag"));
-  bool b3 = StrToBool(user_info.at("normal_flag"));
-
-  fEnabledFlag = fEnabledFlag && (b2 || b3);
-
-  if (!fEnabledFlag)
+  auto s = ParamAt(user_info, "policy");
+  if (s != "Rejection") {
+    fEnabledFlag = false;
     return;
-  // (we cannot use py::dict here as it is lost at the end of the function)
-  // fAcceptanceAngleParam = DictToMap(user_info);
-  auto s = user_info.at("skip_policy");
-  fMaxNotAcceptedEvents = StrToInt(user_info.at("max_rejection"));
-
+  }
+  // rejection skip policy
+  s = ParamAt(user_info, "skip_policy");
   fPolicy = AAUndefined;
   if (s == "ZeroEnergy")
     fPolicy = AAZeroEnergy;
   if (s == "SkipEvents")
     fPolicy = AASkipEvent;
-  if (fPolicy == AAUndefined) {
+  if (fEnabledFlag && fPolicy == AAUndefined) {
     std::ostringstream oss;
     oss << "Unknown '" << s << "' mode for GateAcceptanceAngleManager. "
         << "Expected: ZeroEnergy or SkipEvents";
     Fatal(oss.str());
   }
+  const bool b2 = StrToBool(ParamAt(user_info, "enable_intersection_check"));
+  const bool b3 = StrToBool(ParamAt(user_info, "enable_angle_check"));
+
+  // do nothing it disabled
+  fEnabledFlag = fEnabledFlag && (b2 || b3);
+  if (!fEnabledFlag)
+    return;
+
+  // (we cannot use py::dict here as it is lost at the end of the function)
+  // fAcceptanceAngleParam = DictToMap(user_info);
+  fMaxNotAcceptedEvents = StrToInt(ParamAt(user_info, "max_rejection"));
 
   // Cannot use SkipEvent with not a valid type of source
   if (!is_valid_type && fPolicy == AASkipEvent) {
     std::ostringstream oss;
-    oss << "Cannot use 'SkipEvent' mode without 'iso' or 'histogram' direction "
+    oss << "Cannot use 'SkipEvents' mode without 'iso' or 'histogram' "
+           "direction "
            "type";
     Fatal(oss.str());
   }
@@ -118,4 +124,25 @@ void GateAcceptanceAngleManager::StartAcceptLoop() {
   if (fAALastRunId !=
       G4RunManager::GetRunManager()->GetCurrentRun()->GetRunID())
     InitializeAcceptanceAngle();
+}
+
+void GateAcceptanceAngleManager::PrepareCheck(
+    const G4ThreeVector &position) const {
+  if (!fEnabledFlag)
+    return;
+  for (auto *tester : fAATesters) {
+    tester->PrepareCheck(position);
+  }
+}
+
+bool GateAcceptanceAngleManager::TestDirection(
+    const G4ThreeVector &momentum_direction) const {
+  if (!fEnabledFlag)
+    return true;
+  for (const auto *tester : fAATesters) {
+    // Call the new optimized tester
+    if (tester->TestDirection(momentum_direction))
+      return true;
+  }
+  return false;
 }

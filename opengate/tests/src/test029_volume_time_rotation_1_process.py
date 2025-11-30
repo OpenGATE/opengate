@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # -------------------------
     gate.exception.warning("Compare stats")
     print(stats)
-    stats_ref = utility.read_stat_file(paths.output_ref / "stats029.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "stats029.txt")
     print(
         f"Number of steps was {stats.counts.steps}, forced to the same value (because of angle acceptance). "
     )
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     print(is_ok)
 
     gate.exception.warning("Compare images")
-    # read image and force change the offset to be similar to old Gate
+    # read the image and force change the offset to be similar to old Gate
     is_ok = (
         utility.assert_images(
             paths.output_ref / "proj029.mhd",

@@ -91,12 +91,12 @@ if __name__ == "__main__":
 
     # tests
     gate.exception.warning(f"Stats filter 1")
-    stats_ref = utility.read_stat_file(f)
+    stats_ref = utility.read_stats_file(f)
     is_ok = utility.assert_stats(stat, stats_ref, 0.07)
 
     print()
     gate.exception.warning(f"Stats filter 2")
-    stats_ref = utility.read_stat_file(f2)
+    stats_ref = utility.read_stats_file(f2)
     is_ok = utility.assert_stats(stat2, stats_ref, 0.07) and is_ok
 
     is_ok = is_ok and utility.assert_images(

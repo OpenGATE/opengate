@@ -196,7 +196,7 @@ def test_spect_root(sim, paths):
     gate.exception.warning("Compare stats")
     stats = sim.get_actor("Stats")
     print(stats)
-    stats_ref = utility.read_stat_file(paths.output_ref / "stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # Compare root files
@@ -354,7 +354,7 @@ def test_spect_proj(sim, paths, proj, output_ref_folder=None, output_ref_filenam
     print(stats)
     if output_ref_folder is None:
         output_ref_folder = paths.output_ref
-    stats_ref = utility.read_stat_file(output_ref_folder / "stats.txt")
+    stats_ref = utility.read_stats_file(output_ref_folder / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # compare images with Gate

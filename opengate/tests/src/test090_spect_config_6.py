@@ -34,16 +34,18 @@ if __name__ == "__main__":
     # source
     sc.source_config.image = data_path / "iec_5mm_activity.mhd"
     sc.source_config.radionuclide = "177lu"
-    sc.source_config.total_activity = 5e4 * Bq
+    sc.source_config.total_activity = 1e5 * Bq
     # acquisition
     sc.acquisition_config.radius = 300 * mm
     sc.acquisition_config.duration = 30 * sec
     sc.acquisition_config.number_of_angles = 3
     # ff
-    sc.free_flight_config.primary_activity = 1e5 * Bq
-    sc.free_flight_config.max_rejection = 10000
-    sc.free_flight_config.angle_tolerance = 15 * deg
-    sc.free_flight_config.forced_direction_flag = False
+    sc.free_flight_config.angular_acceptance.max_rejection = 10000
+    sc.free_flight_config.angular_acceptance.angle_tolerance_max = 15 * deg
+    sc.free_flight_config.angular_acceptance.policy = "Rejection"
+    sc.free_flight_config.angular_acceptance.skip_policy = "SkipEvents"
+    sc.free_flight_config.angular_acceptance.enable_intersection_check = True
+    sc.free_flight_config.angular_acceptance.enable_angle_check = True
 
     # create the simulation
     print(sc)

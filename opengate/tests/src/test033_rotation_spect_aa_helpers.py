@@ -74,13 +74,13 @@ def create_test(sim, nb_thread=1):
     source.position.radius = 2 * mm
     source.position.translation = [0, 0, 20 * mm]
     source.direction.type = "iso"
-    source.direction.acceptance_angle.volumes = ["spect1", "spect2"]
+    source.direction.angular_acceptance.target_volumes = ["spect1", "spect2"]
     # will be set to false in noaa tests
-    source.direction.acceptance_angle.intersection_flag = True
-    source.direction.acceptance_angle.normal_flag = True
-    source.direction.acceptance_angle.normal_vector = [0, 0, -1]
-    source.direction.acceptance_angle.normal_tolerance = 10 * deg
-    source.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+    source.direction.angular_acceptance.enable_intersection_check = True
+    source.direction.angular_acceptance.enable_angle_check = True
+    source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
+    source.direction.angular_acceptance.angle_tolerance_max = 10 * deg
+    source.direction.angular_acceptance.skip_policy = "ZeroEnergy"
     source.activity = ac / sim.number_of_threads
     sources.append(source)
 
@@ -92,12 +92,12 @@ def create_test(sim, nb_thread=1):
     source2.energy.mono = 140.5 * keV
     source2.position.type = "sphere"
     source2.direction.type = "iso"
-    source2.direction.acceptance_angle.volumes = ["spect1", "spect2"]
-    source2.direction.acceptance_angle.intersection_flag = True
-    source2.direction.acceptance_angle.normal_flag = True
-    source2.direction.acceptance_angle.normal_vector = [0, 0, -1]
-    source2.direction.acceptance_angle.normal_tolerance = 10 * deg
-    source2.direction.acceptance_angle.skip_policy = "ZeroEnergy"
+    source2.direction.angular_acceptance.target_volumes = ["spect1", "spect2"]
+    source2.direction.angular_acceptance.enable_intersection_check = True
+    source2.direction.angular_acceptance.enable_angle_check = True
+    source2.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
+    source2.direction.angular_acceptance.angle_tolerance_max = 10 * deg
+    source2.direction.angular_acceptance.skip_policy = "ZeroEnergy"
     source2.activity = ac / sim.number_of_threads
     source2.position.radius = 1 * mm
     source2.position.translation = [20 * mm, 0, -20 * mm]
@@ -162,7 +162,7 @@ def evaluate_test(sim, sources, itol, ref_skipped):
 
     # check stats
     gate.exception.warning(f"Check stats")
-    stats_ref = utility.read_stat_file(paths.output_ref / "test033_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test033_stats.txt")
     print(f"Steps counts not compared (was {stats.counts.steps})")
     nbt = sim.number_of_threads
     stats.counts.steps = stats_ref.counts.steps

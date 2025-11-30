@@ -17,6 +17,8 @@
 
 namespace py = pybind11;
 
+extern G4Mutex DebugMutex;
+
 void Fatal(std::string s);
 
 void FatalKeyError(std::string s);
@@ -26,18 +28,21 @@ void FatalKeyError(std::string s);
 // debug print
 #define DDD(a)                                                                 \
   {                                                                            \
+    G4AutoLock __l__(&DebugMutex);                                             \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
-              << __func__ << ") ==> " << #a << " = [ " << (a) << " ]\n";       \
+              << __func__ << ") ==> " << #a << " = [ " << (a) << " ]"          \
+              << std::endl;                                                    \
   }
 
 // for vector
 #define DDDV(a)                                                                \
   {                                                                            \
+    G4AutoLock l(&DebugMutex);                                                 \
     std::cout << "OPENGATE [" << G4Threading::G4GetThreadId() << "] ("         \
               << __func__ << ") ==> " << #a << " (" << (a).size() << ") = ";   \
     for (auto &_i : (a))                                                       \
       std::cout << _i << " ";                                                  \
-    std::cout << "\n";                                                         \
+    std::cout << std::endl;                                                    \
   }
 
 // debug for error

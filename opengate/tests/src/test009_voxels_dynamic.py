@@ -134,7 +134,7 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     stats.counts.runs = 1
     print(
         "Setting run count to 1, although more than 1 run was used in the simulation. "
