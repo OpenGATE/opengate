@@ -192,7 +192,7 @@ Then, you can run the tests with:
 
 **Optional**
 
-Some tests (e.g. test034) needs
+Some tests (e.g. test034) needs
 `gaga-phsp <https://github.com/dsarrut/gaga-phsp>`__ which needs
 `pytorch <https://pytorch.org/>`__ that cannot really be automatically
 installed by the previous pip install (at least we don’t know how to

@@ -83,7 +83,7 @@ In the example above, the material “Lung” will be assigned to every
 voxel with a value between -900 and -100 (not including -100). Voxels
 whose value does not fall into any of the intervals are considered to
 contain the volume’s default material,
-i.e. ``patient.material = "G4_AIR"`` in the example above. If a path is
+i.e. ``patient.material = "G4_AIR"`` in the example above. If a path is
 provided as ``dump_label_image`` parameter of the image volume, an image
 will be written to the provided path containing material labels. Label 0
 stands for voxels to which the default material was assigned, and labels
@@ -91,13 +91,13 @@ greater than 1 represent all other materials, in ascending order of the
 lower interval bounds provided in ``voxel_materials``. In the example
 above, voxels with label 3 correspond to “G4_ADIPOSE_TISSUE_ICRP”,
 voxels with label 4 correspond to “G4_TISSUE_SOFT_ICRP”, and so forth.
-See test ``test009`` as an example simulation using an Image volume.
+See test `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry>`_ as an example simulation using an Image volume.
 
 The frame of reference of an Image is linked to the bounding box and
-treated like other Geant4 volumes, i.e. by default, the center of the
+treated like other Geant4 volumes, i.e. by default, the center of the
 image box is positioned at the origin of the mother volume’s frame of
 reference. Important: Currently, the origin provided by the input image
-(e.g. in the DICOM or mhd file) is ignored. If you want to place the
+(e.g. in the DICOM or mhd file) is ignored. If you want to place the
 Image volume according to the origin and rotation provided by the input
 image, you need to extract that information and set it via the
 ``translation`` and ``rotation`` parameters of the image volume. A
@@ -194,7 +194,7 @@ generation of the solid, one could look at the volume.
    #an alternative way read the volume of the generated solid
    print("same volume: ",tes.solid_info.cubic_volume)
 
-See test test067_tesselated_volume for example.
+See test test067_tesselated_volume <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test067_tesselated_volume.py>`_ for example.
 
 .. _reference-1:
 
@@ -417,7 +417,7 @@ message when trying to apply booelan operations to incompatible volumes.
 
 Boolean operations are a great tool to build complex shapes. The
 phantoms in ``opengate.contrib.phantoms`` are good examples. Also have a
-look at ``test016``. Be aware, however, that the Geant4 user guide warns
+look at `test016 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test016_bool_volumes.py>`_ . Be aware, however, that the Geant4 user guide warns
 that very extensive use of boolean operations can slow down particle
 tracking speed.
 

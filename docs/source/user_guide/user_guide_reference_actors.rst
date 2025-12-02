@@ -71,7 +71,7 @@ The number of killed particle can be retrieved printing the actor object.
     kill_actor.attached_to = kill_plane
     print(kill_actor)
 
-Refers tot the test064 for more details.
+Refers to the `test064 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test064_kill_actor_mt.py>`_ for more details.
 
 Reference
 ~~~~~~~~~
@@ -214,7 +214,7 @@ Description
 
 The LET Actor scores the fluence- (also referred to as track-) or dose averaged LET within a volume using a voxelizing parametrization identical to the Dose Actor. Hence, see the Dose Actor documentation for spatial commands like image resolution, origin etc. - the same commands apply for the LET Actor.
 
-.. note:: In most use cases of LET in literature, only a subset of particles is considered for the calculation of averaged LET, e.g. in proton radiotherapy, where often only protons are considered. Therefore, the LET actor often goes along with a particle filter. See test050 as an example.
+.. note:: In most use cases of LET in literature, only a subset of particles is considered for the calculation of averaged LET, e.g. in proton radiotherapy, where often only protons are considered. Therefore, the LET actor often goes along with a particle filter. See `test050 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test050_let_actor_letd_mt.py>`_ as an example.
 
 .. note:: Refer to test050 for a current example.
 
@@ -233,7 +233,7 @@ Description
 The REActor scores the dose-averaged relative effectiveness (RE) map within a given volume, according to `Herrmann et al., 2011 <https://pubmed.ncbi.nlm.nih.gov/21626919/>`_. Spatial options are identical to those of :class:`~.opengate.actors.doseactors.DoseActor`.
 
 
-.. note:: Refer to test087_beam_quality_actor_re for a current example.
+.. note:: Refer to `test087_beam_quality_actor_re <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test087_beam_quality_actor_re.py>`_ for a current example.
 
 The actor reads a lookup table of RE values as a function of particle and kinetic energy, by `lookup_table_path`. The kinetic energy can be in the unit of either MeV/u or MeV, while remaining consistent with `energy_per_nucleon` option.
 
@@ -280,7 +280,7 @@ The actor has the following outputs:
 - :attr:`~.opengate.actors.doseactors.RBEActor.alpha_mix`
 - :attr:`~.opengate.actors.doseactors.RBEActor.beta_mix` (if `model` is set to `LEM1lda`)
 
-The user can refer to test087_beam_quality_actor_rbe_mMKM for an example. The test case simulates the central RBE profile (shown in the following figure) and alpha_mix profile of a quasi-monoenergetic carbon ion beam in water, using the `mMKM` model and z*_1D lookup table generated with SURVIVAL (`Manganaro et al., 2018 <https://doi.org/10.1088/1361-6560/aab697>`_). The "reference" RBE profile was simulated using the same configurations, but better statistics (1e5 primaries). The "filter" :attr:`~.opengate.actors.doseactors.DoseActor.edep` profile is shown in arbituary unit to indicate the Bragg peak position, up to which the evaluation is conducted.
+The user can refer to `test087_beam_quality_actor_rbe_mMKM <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test087_beam_quality_actor_rbe_mMKM_mt.py>`_ for an example. The test case simulates the central RBE profile (shown in the following figure) and alpha_mix profile of a quasi-monoenergetic carbon ion beam in water, using the `mMKM` model and z*_1D lookup table generated with SURVIVAL (`Manganaro et al., 2018 <https://doi.org/10.1088/1361-6560/aab697>`_). The "reference" RBE profile was simulated using the same configurations, but better statistics (1e5 primaries). The "filter" :attr:`~.opengate.actors.doseactors.DoseActor.edep` profile is shown in arbituary unit to indicate the Bragg peak position, up to which the evaluation is conducted.
 
 .. image:: ../figures/test087-RBE_rbe_test.png
 
@@ -339,7 +339,7 @@ Here is the a classical way to use the TLEDoseActor :
    tle_dose_actor.size = [200, 200, 200]
    tle_dose_actor.spacing = [x / y for x, y in zip(irradiated_volume.size, tle_dose_actor.size)]
 
-Refer to test081 for more details.
+Refer to test081 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/>`_ for more details.
 
 Reference
 ~~~~~~~~~
@@ -495,7 +495,7 @@ This actor groups the hits per different volumes according to the option `group_
    # sc.policy = "EnergyWinnerPosition"
    sc.group_volume = crystal.name
 
-.. note:: This actor is only triggered at the end of an event, so the `attached_to` volume has no effect. Examples are available in test 037.
+.. note:: This actor is only triggered at the end of an event, so the `attached_to` volume has no effect. Examples are available in `test 037 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/>`_ .
 
 Reference
 ~~~~~~~~~
@@ -663,7 +663,7 @@ This module simulates detection with non-100% efficiency, which can be set as a 
    ea.input_digi_collection = "Hits"
    ea.efficiency = 0.3
 
-Refer to test057 for more details.
+Refer to `test057 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test057_digit_efficiency.py>`_ for more details.
 
 Reference
 ~~~~~~~~~
@@ -735,7 +735,7 @@ arise in multi-threaded simulations, because time progresses independently in ea
 It is important to note that the resulting coincidences are independent of the value of `chunk_size`,
 because the coincidence sorter also considers coincidences between singles in consecutive chunks.
 
-Refer to test072 for more details.
+Refer to `test072 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ for more details.
 
 CCMod offline tools
 ------------------------------------
@@ -755,7 +755,7 @@ The ``ccmod_ideal_singles`` function uses as input a PhaseSpace file that stores
 	data_singles = ccmod_ideal_singles(data)
 
 
-See test096 step1 for an example simulation that generates the PhaseSpace file.
+See `test096 step1 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ for an example simulation that generates the PhaseSpace file.
 
 Ideal coincidences
 ~~~~~~~~~~~~~~~~~~
@@ -781,7 +781,7 @@ In the following example cones are created using the "IdealTotalEnergyDeposit" a
 
 
 
-Refer to test096 step2 for more details.
+Refer to `test096 step2 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors>`_ for more details.
 
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------
@@ -801,7 +801,7 @@ The Angular Response Function (ARF) is a method designed to accelerate SPECT sim
 Step 1: Creating the Training Dataset
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The initial step involves creating a dataset for training. This can be implemented by following the example in `test043_garf_training_dataset.py`. Configure a simplified simulation to emit photons across the expected energy range (e.g., slightly above 140.5 keV for Tc99m) through the SPECT head, recording detected counts. The `ARFTrainingDatasetActor` is utilized here, with input from a detector plane positioned directly in front of the collimator. This actor stores detected counts per energy window in a ROOT file. For efficiency, a Russian roulette technique reduces the data size for photons with low detection probabilities due to large incident angles. Users must specify energy windows by referencing the name of the `DigitizerEnergyWindowsActor` associated with the SPECT system.
+The initial step involves creating a dataset for training. This can be implemented by following the example in `test043_garf_training_dataset.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test043_garf_training_dataset.py>`_ . Configure a simplified simulation to emit photons across the expected energy range (e.g., slightly above 140.5 keV for Tc99m) through the SPECT head, recording detected counts. The `ARFTrainingDatasetActor` is utilized here, with input from a detector plane positioned directly in front of the collimator. This actor stores detected counts per energy window in a ROOT file. For efficiency, a Russian roulette technique reduces the data size for photons with low detection probabilities due to large incident angles. Users must specify energy windows by referencing the name of the `DigitizerEnergyWindowsActor` associated with the SPECT system.
 
 .. code-block:: python
 
@@ -857,7 +857,7 @@ LETActor
 --------
 
 .. note::
-   Documentation TODO. Refer to test050 for current examples.
+   Documentation TODO. Refer to test050 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/actors/test050_let_actor_letd_mt.py>`_ for current examples.
 
 
 BremsstrahlungSplittingActor

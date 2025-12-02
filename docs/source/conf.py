@@ -125,6 +125,8 @@ pygments_style = None
 # }
 add_module_names = False
 
+# Enable nitpicky mode for broken references/links
+nitpicky = True
 
 # -- Options for HTML output -------------------------------------------------
 

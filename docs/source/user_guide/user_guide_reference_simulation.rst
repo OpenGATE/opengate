@@ -59,7 +59,7 @@ If you set `visu_type='qt'`, you can customize the Geant4 visualization commands
 
 .. autoproperty:: opengate.Simulation.visu_commands
 
-.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume`, the visualization displays the middle slices of the image. See `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test009_voxels_visu.py>`_ (and others).
+.. note:: When the simulation contains an :class:`opengate.geometry.volumes.ImageVolume`, the visualization displays the middle slices of the image. See `test009 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test009_voxels_visu.py>`_ (and others).
 
 VRML
 ^^^^
@@ -72,7 +72,7 @@ You can choose VRML visualization with ``sim.visu_type = "vrml"``. Opengate uses
 
 Alternatively, if you want to use an external VRML viewer, you can save a VRML file with ``sim.visu_type = "vrml_file_only"``. In such cases, the GUI is not opened, and you do not need ``pyvista``. In both cases, you need to set ``sim.visu_filename = "geant4VisuFile.wrl"`` to save the VRML file.
 
-If you want to personalize the ``pyvista`` GUI, you can set ``sim.visu_type = "vrml_file_only"`` and execute your own code in your Python script. You can find an example in `test004_simple_visu_vrml <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test004_simple_visu_vrml.py>`_ .
+If you want to personalize the ``pyvista`` GUI, you can set ``sim.visu_type = "vrml_file_only"`` and execute your own code in your Python script. You can find an example in `test004_simple_visu_vrml <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/others/test004_simple_visu_vrml.py>`_ .
 
 GDML
 ^^^^
@@ -85,7 +85,7 @@ Opengate uses ``pyg4ometry`` for the GUI, so you need to install it with:
 
 ``pip install pyg4ometry``
 
-``pyg4ometry`` uses opencascade libraries, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with ``sim.visu_type = "gdml_file_only"``. In such cases, the GUI is not open, and you do not need ``pyg4ometry``. In both cases, you need to set ``sim.visu_filename = "geant4VisuFile.gdml"`` to save the GDML file. You can find an example in `test004_simple_visu_gdml <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test004_simple_visu_gdml.py>`_ .
+``pyg4ometry`` uses opencascade libraries, so install opencascade with your package manager. If you want to use an external GDML viewer, you can save the visualization to a GDML file with ``sim.visu_type = "gdml_file_only"``. In such cases, the GUI is not open, and you do not need ``pyg4ometry``. In both cases, you need to set ``sim.visu_filename = "geant4VisuFile.gdml"`` to save the GDML file. You can find an example in `test004_simple_visu_gdml <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/others/test004_simple_visu_gdml.py>`_ .
 
 Multithreading
 --------------
