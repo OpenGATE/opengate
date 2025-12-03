@@ -33,7 +33,7 @@ void GateDigitizerPileupActor::SetGroupVolumeDepth(const int depth) {
 
 void GateDigitizerPileupActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
-  // We handle all attributes explicitly by storing their values,
+  // We handle all attributes explicitly by storing their values
   // because we need to keep singles across consecutive events.
   auto a = attributes_not_in_filler;
   for (const auto &att_name : fInputDigiCollection->GetDigiAttributeNames()) {
@@ -100,6 +100,9 @@ void GateDigitizerPileupActor::StoreAttributeValues(
     case 'U': // GateUniqueVolumeID::Pointer
       group.stored_attributes[name] = att->GetUValues()[index];
       break;
+    default:
+      DDD(type);
+      Fatal("Error GateDigitizerPileupActor while storing attribute value");
     }
   }
 }
@@ -174,7 +177,6 @@ void GateDigitizerPileupActor::ProcessPileup() {
 }
 
 void GateDigitizerPileupActor::EndOfRunAction(const G4Run *) {
-
   auto &l = fThreadLocalData.Get();
 
   // Output any unfinished groups that are still present.
@@ -192,7 +194,7 @@ void GateDigitizerPileupActor::EndOfRunAction(const G4Run *) {
 }
 
 void GateDigitizerPileupActor::FillAttributeValues(
-    const threadLocalT::PileupGroup &group) {
+    const threadLocalT::PileupGroup &group) const {
 
   fOutputEdepAttribute->FillDValue(group.total_edep);
   fOutputGlobalTimeAttribute->FillDValue(group.time);
