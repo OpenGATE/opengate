@@ -83,7 +83,7 @@ protected:
   G4Cache<threadLocalT> fThreadLocalData;
 
   void StoreAttributeValues(threadLocalT::PileupGroup &group, size_t index);
-  void FillAttributeValues(const threadLocalT::PileupGroup &group);
+  void FillAttributeValues(const threadLocalT::PileupGroup &group) const;
 };
 
 #endif // GateDigitizerPileupActor_h
