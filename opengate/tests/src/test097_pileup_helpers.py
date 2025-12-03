@@ -22,15 +22,18 @@ def pileup(singles_before_pileup: pd.DataFrame, time_window: float):
         times = group["GlobalTime"].values
 
         current = 0  # index of a single that opens the current time window
-        next = 1
-        while next < len(times):
+        next_single = 1
+        while next_single < len(times):
             # Increment next until it points to the single that opens the next time window.
-            while next < len(times) and times[next] <= times[current] + time_window:
-                next += 1
-            if next > current + 1:
+            while (
+                next_single < len(times)
+                and times[next_single] <= times[current] + time_window
+            ):
+                next_single += 1
+            if next_single > current + 1:
                 # We have found a group of at least two singles in the same time window.
                 # Find the single with the highest TotalEnergyDeposit in the time window.
-                group_slice = group.iloc[current:next]
+                group_slice = group.iloc[current:next_single]
                 max_energy_idx = group_slice["TotalEnergyDeposit"].idxmax()
                 # Create a single with the attribute values from the max energy single,
                 # except for the TotalEnergyDeposit, take the sum over all singles in the time window.
@@ -41,8 +44,8 @@ def pileup(singles_before_pileup: pd.DataFrame, time_window: float):
                 # Add the combined single to the output.
                 singles_after_pileup.setdefault(volume_id, []).append(pileup_row)
                 # Update current and next for the next time window.
-                current = next
-                next = current + 1
+                current = next_single
+                next_single = current + 1
             else:
                 # The time window opened by current contains only contains one event.
                 # Add the original single to the output unchanged.
@@ -51,7 +54,7 @@ def pileup(singles_before_pileup: pd.DataFrame, time_window: float):
                 )
                 # Update current and next for the next time window.
                 current += 1
-                next += 1
+                next_single += 1
             # If there is only one single left, add it to the output unchanged.
             if current == len(times) - 1:
                 singles_after_pileup.setdefault(volume_id, []).append(
