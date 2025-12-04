@@ -97,8 +97,6 @@ void GateVoxelizedPromptGammaTLEActor::InitializeCpp() {
 
 void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
     int run_id) {
-  // Attach the 3D volume used to
-
   // Fill the 4D volume of interest with 0 to ensure that it is well initiated
   if (fProtonTimeFlag) {
     cpp_tof_proton_image->FillBuffer(0);
@@ -112,6 +110,7 @@ void GateVoxelizedPromptGammaTLEActor::BeginOfRunActionMasterThread(
   if (fNeutronTimeFlag) {
     cpp_tof_neutron_image->FillBuffer(0);
   }
+  // Attach the 3D volume to verify if the particle is inside the ct volume
   AttachImageToVolume<Image3DType>(volume, fPhysicalVolumeName, fTranslation);
 }
 
@@ -236,7 +235,7 @@ void GateVoxelizedPromptGammaTLEActor::EndOfRunAction(const G4Run *run) {
               << std::endl;
     return;
   }
-  // scaling all the 4D voxels with th enumber of incident protons (= number of
+  // scaling all the 4D voxels with the number of incident protons (= number of
   // event)
   if (fProtonTimeFlag) {
     itk::ImageRegionIterator<ImageType> it(
@@ -273,6 +272,7 @@ int GateVoxelizedPromptGammaTLEActor::EndOfRunActionMasterThread(int run_id) {
   return 0;
 }
 
+// Standarsized Vectors For ToF weights
 void GateVoxelizedPromptGammaTLEActor::SetVector(py::array_t<double> vect_p,
                                                  py::array_t<double> vect_n) {
   fProtonVector =

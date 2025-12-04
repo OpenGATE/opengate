@@ -1,0 +1,686 @@
+[Materials]
+Air_0: d=1.21 mg/cm3; n=3
++el: name=N; f=0.755
++el: name=O; f=0.23199999999999998
++el: name=Ar; f=0.013000000000000001
+
+Lung_1: d=77.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_2: d=127.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_3: d=177.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_4: d=227.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_5: d=277.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_6: d=327.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_7: d=377.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_8: d=427.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_9: d=477.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_10: d=527.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_11: d=577.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_12: d=627.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_13: d=677.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_14: d=727.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_15: d=777.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_16: d=827.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_17: d=877.695 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+Lung_18: d=905.021 mg/cm3; n=9
++el: name=H; f=0.103
++el: name=C; f=0.10499999999999998
++el: name=N; f=0.030999999999999996
++el: name=O; f=0.749
++el: name=Na; f=0.002
++el: name=P; f=0.002
++el: name=S; f=0.0029999999999999996
++el: name=Cl; f=0.0029999999999999996
++el: name=K; f=0.002
+
+AT_AG_SI1_19: d=926.911 mg/cm3; n=7
++el: name=H; f=0.116
++el: name=C; f=0.681
++el: name=N; f=0.002
++el: name=O; f=0.198
++el: name=Na; f=0.001
++el: name=S; f=0.001
++el: name=Cl; f=0.001
+
+AT_AG_SI2_20: d=957.382 mg/cm3; n=7
++el: name=H; f=0.11300000000000002
++el: name=C; f=0.5670000000000001
++el: name=N; f=0.009000000000000001
++el: name=O; f=0.30800000000000005
++el: name=Na; f=0.0010000000000000002
++el: name=S; f=0.0010000000000000002
++el: name=Cl; f=0.0010000000000000002
+
+AT_AG_SI3_21: d=984.277 mg/cm3; n=8
++el: name=H; f=0.11
++el: name=C; f=0.45799999999999996
++el: name=N; f=0.015
++el: name=O; f=0.41100000000000003
++el: name=Na; f=0.001
++el: name=P; f=0.001
++el: name=S; f=0.002
++el: name=Cl; f=0.002
+
+AT_AG_SI4_22: d=1.01117 g/cm3 ; n=7
++el: name=H; f=0.10800000000000001
++el: name=C; f=0.35600000000000004
++el: name=N; f=0.022000000000000002
++el: name=O; f=0.509
++el: name=P; f=0.001
++el: name=S; f=0.002
++el: name=Cl; f=0.002
+
+AT_AG_SI5_23: d=1.02955 g/cm3 ; n=8
++el: name=H; f=0.106
++el: name=C; f=0.284
++el: name=N; f=0.026000000000000002
++el: name=O; f=0.578
++el: name=P; f=0.001
++el: name=S; f=0.002
++el: name=Cl; f=0.002
++el: name=K; f=0.001
+
+SoftTissus_24: d=1.05296 g/cm3 ; n=9
++el: name=H; f=0.10300000000000002
++el: name=C; f=0.134
++el: name=N; f=0.030000000000000002
++el: name=O; f=0.723
++el: name=Na; f=0.0020000000000000005
++el: name=P; f=0.0020000000000000005
++el: name=S; f=0.0020000000000000005
++el: name=Cl; f=0.0020000000000000005
++el: name=K; f=0.0020000000000000005
+
+SoftTissus_25: d=1.08817 g/cm3 ; n=9
++el: name=H; f=0.10300000000000002
++el: name=C; f=0.134
++el: name=N; f=0.030000000000000002
++el: name=O; f=0.723
++el: name=Na; f=0.0020000000000000005
++el: name=P; f=0.0020000000000000005
++el: name=S; f=0.0020000000000000005
++el: name=Cl; f=0.0020000000000000005
++el: name=K; f=0.0020000000000000005
+
+ConnectiveTissue_26: d=1.1199 g/cm3 ; n=7
++el: name=H; f=0.09400000000000001
++el: name=C; f=0.20700000000000002
++el: name=N; f=0.06200000000000001
++el: name=O; f=0.6220000000000001
++el: name=Na; f=0.006000000000000001
++el: name=S; f=0.006000000000000001
++el: name=Cl; f=0.0030000000000000005
+
+Marrow_Bone01_27: d=1.11115 g/cm3 ; n=10
++el: name=H; f=0.09499999999999997
++el: name=C; f=0.4549999999999999
++el: name=N; f=0.024999999999999994
++el: name=O; f=0.355
++el: name=Na; f=0.0009999999999999998
++el: name=P; f=0.021
++el: name=S; f=0.0009999999999999998
++el: name=Cl; f=0.0009999999999999998
++el: name=K; f=0.0009999999999999998
++el: name=Ca; f=0.045
+
+Marrow_Bone02_28: d=1.15985 g/cm3 ; n=10
++el: name=H; f=0.089
++el: name=C; f=0.4229999999999999
++el: name=N; f=0.026999999999999996
++el: name=O; f=0.363
++el: name=Na; f=0.0009999999999999998
++el: name=P; f=0.029999999999999995
++el: name=S; f=0.0009999999999999998
++el: name=Cl; f=0.0009999999999999998
++el: name=K; f=0.0009999999999999998
++el: name=Ca; f=0.06399999999999999
+
+Marrow_Bone02_29: d=1.18947 g/cm3 ; n=10
++el: name=H; f=0.089
++el: name=C; f=0.4229999999999999
++el: name=N; f=0.026999999999999996
++el: name=O; f=0.363
++el: name=Na; f=0.0009999999999999998
++el: name=P; f=0.029999999999999995
++el: name=S; f=0.0009999999999999998
++el: name=Cl; f=0.0009999999999999998
++el: name=K; f=0.0009999999999999998
++el: name=Ca; f=0.06399999999999999
+
+Marrow_Bone03_30: d=1.21909 g/cm3 ; n=10
++el: name=H; f=0.08199999999999998
++el: name=C; f=0.39099999999999985
++el: name=N; f=0.02899999999999999
++el: name=O; f=0.372
++el: name=Na; f=0.0009999999999999998
++el: name=P; f=0.03899999999999999
++el: name=S; f=0.0009999999999999998
++el: name=Cl; f=0.0009999999999999998
++el: name=K; f=0.0009999999999999998
++el: name=Ca; f=0.08299999999999999
+
+Marrow_Bone03_31: d=1.24871 g/cm3 ; n=10
++el: name=H; f=0.08199999999999998
++el: name=C; f=0.39099999999999985
++el: name=N; f=0.02899999999999999
++el: name=O; f=0.372
++el: name=Na; f=0.0009999999999999998
++el: name=P; f=0.03899999999999999
++el: name=S; f=0.0009999999999999998
++el: name=Cl; f=0.0009999999999999998
++el: name=K; f=0.0009999999999999998
++el: name=Ca; f=0.08299999999999999
+
+Marrow_Bone04_32: d=1.27833 g/cm3 ; n=10
++el: name=H; f=0.076
++el: name=C; f=0.361
++el: name=N; f=0.03
++el: name=O; f=0.37999999999999995
++el: name=Na; f=0.001
++el: name=Mg; f=0.001
++el: name=P; f=0.04699999999999999
++el: name=S; f=0.002
++el: name=Cl; f=0.001
++el: name=Ca; f=0.10099999999999998
+
+Marrow_Bone04_33: d=1.30795 g/cm3 ; n=10
++el: name=H; f=0.076
++el: name=C; f=0.361
++el: name=N; f=0.03
++el: name=O; f=0.37999999999999995
++el: name=Na; f=0.001
++el: name=Mg; f=0.001
++el: name=P; f=0.04699999999999999
++el: name=S; f=0.002
++el: name=Cl; f=0.001
++el: name=Ca; f=0.10099999999999998
+
+Marrow_Bone05_34: d=1.33757 g/cm3 ; n=9
++el: name=H; f=0.071
++el: name=C; f=0.335
++el: name=N; f=0.032
++el: name=O; f=0.387
++el: name=Na; f=0.001
++el: name=Mg; f=0.001
++el: name=P; f=0.054000000000000006
++el: name=S; f=0.002
++el: name=Ca; f=0.11699999999999999
+
+Marrow_Bone05_35: d=1.36719 g/cm3 ; n=9
++el: name=H; f=0.071
++el: name=C; f=0.335
++el: name=N; f=0.032
++el: name=O; f=0.387
++el: name=Na; f=0.001
++el: name=Mg; f=0.001
++el: name=P; f=0.054000000000000006
++el: name=S; f=0.002
++el: name=Ca; f=0.11699999999999999
+
+Marrow_Bone06_36: d=1.39681 g/cm3 ; n=9
++el: name=H; f=0.066
++el: name=C; f=0.31000000000000005
++el: name=N; f=0.033
++el: name=O; f=0.394
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0010000000000000002
++el: name=P; f=0.061000000000000006
++el: name=S; f=0.0020000000000000005
++el: name=Ca; f=0.132
+
+Marrow_Bone06_37: d=1.42642 g/cm3 ; n=9
++el: name=H; f=0.066
++el: name=C; f=0.31000000000000005
++el: name=N; f=0.033
++el: name=O; f=0.394
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0010000000000000002
++el: name=P; f=0.061000000000000006
++el: name=S; f=0.0020000000000000005
++el: name=Ca; f=0.132
+
+Marrow_Bone07_38: d=1.45604 g/cm3 ; n=9
++el: name=H; f=0.061000000000000006
++el: name=C; f=0.28700000000000003
++el: name=N; f=0.035
++el: name=O; f=0.4000000000000001
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0010000000000000002
++el: name=P; f=0.06700000000000002
++el: name=S; f=0.0020000000000000005
++el: name=Ca; f=0.14600000000000002
+
+Marrow_Bone07_39: d=1.48566 g/cm3 ; n=9
++el: name=H; f=0.061000000000000006
++el: name=C; f=0.28700000000000003
++el: name=N; f=0.035
++el: name=O; f=0.4000000000000001
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0010000000000000002
++el: name=P; f=0.06700000000000002
++el: name=S; f=0.0020000000000000005
++el: name=Ca; f=0.14600000000000002
+
+Marrow_Bone08_40: d=1.51528 g/cm3 ; n=9
++el: name=H; f=0.055999999999999994
++el: name=C; f=0.265
++el: name=N; f=0.036000000000000004
++el: name=O; f=0.405
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.073
++el: name=S; f=0.003
++el: name=Ca; f=0.159
+
+Marrow_Bone08_41: d=1.5449 g/cm3 ; n=9
++el: name=H; f=0.055999999999999994
++el: name=C; f=0.265
++el: name=N; f=0.036000000000000004
++el: name=O; f=0.405
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.073
++el: name=S; f=0.003
++el: name=Ca; f=0.159
+
+Marrow_Bone09_42: d=1.57452 g/cm3 ; n=9
++el: name=H; f=0.052
++el: name=C; f=0.246
++el: name=N; f=0.037
++el: name=O; f=0.411
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.078
++el: name=S; f=0.0029999999999999996
++el: name=Ca; f=0.16999999999999998
+
+Marrow_Bone09_43: d=1.60414 g/cm3 ; n=9
++el: name=H; f=0.052
++el: name=C; f=0.246
++el: name=N; f=0.037
++el: name=O; f=0.411
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.078
++el: name=S; f=0.0029999999999999996
++el: name=Ca; f=0.16999999999999998
+
+Marrow_Bone10_44: d=1.63376 g/cm3 ; n=9
++el: name=H; f=0.049
++el: name=C; f=0.22699999999999998
++el: name=N; f=0.038
++el: name=O; f=0.41600000000000004
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.083
++el: name=S; f=0.003
++el: name=Ca; f=0.18100000000000002
+
+Marrow_Bone10_45: d=1.66338 g/cm3 ; n=9
++el: name=H; f=0.049
++el: name=C; f=0.22699999999999998
++el: name=N; f=0.038
++el: name=O; f=0.41600000000000004
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.083
++el: name=S; f=0.003
++el: name=Ca; f=0.18100000000000002
+
+Marrow_Bone11_46: d=1.693 g/cm3 ; n=9
++el: name=H; f=0.045
++el: name=C; f=0.21
++el: name=N; f=0.039
++el: name=O; f=0.42
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.08800000000000001
++el: name=S; f=0.003
++el: name=Ca; f=0.192
+
+Marrow_Bone11_47: d=1.72262 g/cm3 ; n=9
++el: name=H; f=0.045
++el: name=C; f=0.21
++el: name=N; f=0.039
++el: name=O; f=0.42
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.08800000000000001
++el: name=S; f=0.003
++el: name=Ca; f=0.192
+
+Marrow_Bone12_48: d=1.75224 g/cm3 ; n=9
++el: name=H; f=0.042
++el: name=C; f=0.19399999999999998
++el: name=N; f=0.04
++el: name=O; f=0.425
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.092
++el: name=S; f=0.003
++el: name=Ca; f=0.201
+
+Marrow_Bone12_49: d=1.78186 g/cm3 ; n=9
++el: name=H; f=0.042
++el: name=C; f=0.19399999999999998
++el: name=N; f=0.04
++el: name=O; f=0.425
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.092
++el: name=S; f=0.003
++el: name=Ca; f=0.201
+
+Marrow_Bone13_50: d=1.81148 g/cm3 ; n=9
++el: name=H; f=0.03900000000000001
++el: name=C; f=0.17900000000000002
++el: name=N; f=0.041
++el: name=O; f=0.42900000000000005
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0020000000000000005
++el: name=P; f=0.09600000000000002
++el: name=S; f=0.0030000000000000005
++el: name=Ca; f=0.21000000000000002
+
+Marrow_Bone13_51: d=1.8411 g/cm3 ; n=9
++el: name=H; f=0.03900000000000001
++el: name=C; f=0.17900000000000002
++el: name=N; f=0.041
++el: name=O; f=0.42900000000000005
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0020000000000000005
++el: name=P; f=0.09600000000000002
++el: name=S; f=0.0030000000000000005
++el: name=Ca; f=0.21000000000000002
+
+Marrow_Bone14_52: d=1.87072 g/cm3 ; n=9
++el: name=H; f=0.036000000000000004
++el: name=C; f=0.165
++el: name=N; f=0.042
++el: name=O; f=0.43200000000000005
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.1
++el: name=S; f=0.003
++el: name=Ca; f=0.21899999999999997
+
+Marrow_Bone14_53: d=1.90034 g/cm3 ; n=9
++el: name=H; f=0.036000000000000004
++el: name=C; f=0.165
++el: name=N; f=0.042
++el: name=O; f=0.43200000000000005
++el: name=Na; f=0.001
++el: name=Mg; f=0.002
++el: name=P; f=0.1
++el: name=S; f=0.003
++el: name=Ca; f=0.21899999999999997
+
+Marrow_Bone15_54: d=1.92991 g/cm3 ; n=9
++el: name=H; f=0.034
++el: name=C; f=0.15500000000000003
++el: name=N; f=0.04200000000000001
++el: name=O; f=0.43500000000000005
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0020000000000000005
++el: name=P; f=0.10300000000000002
++el: name=S; f=0.0030000000000000005
++el: name=Ca; f=0.22500000000000003
+
+Marrow_Bone15_55: d=1.97143 g/cm3 ; n=9
++el: name=H; f=0.034
++el: name=C; f=0.15500000000000003
++el: name=N; f=0.04200000000000001
++el: name=O; f=0.43500000000000005
++el: name=Na; f=0.0010000000000000002
++el: name=Mg; f=0.0020000000000000005
++el: name=P; f=0.10300000000000002
++el: name=S; f=0.0030000000000000005
++el: name=Ca; f=0.22500000000000003
+
+AmalgamTooth_56: d=2.01308 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+AmalgamTooth_57: d=2.06308 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+AmalgamTooth_58: d=2.11308 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+AmalgamTooth_59: d=2.16308 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+AmalgamTooth_60: d=2.21308 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+AmalgamTooth_61: d=2.26308 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+AmalgamTooth_62: d=2.31308 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+AmalgamTooth_63: d=2.36009 g/cm3 ; n=4
++el: name=Cu; f=0.04
++el: name=Zn; f=0.02
++el: name=Ag; f=0.65
++el: name=Sn; f=0.29
+
+MetallImplants_64: d=2.4071 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_65: d=2.4571 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_66: d=2.5071 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_67: d=2.5571 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_68: d=2.6071 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_69: d=2.6571 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_70: d=2.7071 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_71: d=2.7571 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_72: d=2.79105 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
+MetallImplants_73: d=2.8 g/cm3 ; n=1
++el: name=Ti; f=1.0
+
