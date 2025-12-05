@@ -361,8 +361,10 @@ void GateSourceManager::InitializeVisualization() {
 #endif
   }
 
-  char **argv = new char *[1]; // Allocate 1 element
-  argv[0] = nullptr;           // Properly indicate no arguments
+  static int argc = 1;
+  static char *args[] = {(char *)"opengate", nullptr};
+  static char **argv = args;
+  argc = 1; // Reset argc in case it was modified in a previous call
 
   if (fVisualizationType == "qt") {
     fUIEx = new G4UIExecutive(1, argv, fVisualizationType);
