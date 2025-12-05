@@ -36,14 +36,15 @@ def dispatch_to_subprocess(func, *args, **kwargs):
             pass
 
     # 3. Select the Queue type based on the method
-    # If we are spawning, standard Queue is safe and faster.
-    if method_name == "spawn":
-        q = multiprocessing.Queue()
-    else:
-        # If forking, Manager is safer to avoid lock deadlocks
-        q = multiprocessing.Manager().Queue()
+    # If we are spawning, standard Queue is supposed to be safe and faster.
+    # if method_name == "spawn":
+    #    q = multiprocessing.Queue()
+    # else:
+    # If forking, Manager is safer to avoid lock deadlocks
+    # However=> we observe random crashs. So we switch to standard, safer, slower Manager.Queue
+    q = multiprocessing.Manager().Queue()
 
-    # 4. Create and start process
+    # 4. Create and start the process
     p = multiprocessing.Process(
         target=target_func, args=(q, func, *args), kwargs=kwargs
     )
