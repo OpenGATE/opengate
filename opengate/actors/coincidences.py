@@ -10,6 +10,7 @@ import logging
 import uproot
 import sys
 from opengate.contrib.root_helpers import *
+from enum import Enum, auto
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,47 @@ class CoincidenceOutputFile:
             self.file.close()
 
 
+class ResultType(Enum):
+    COINCIDENCE_PAIRS = auto()
+    COINCIDENT_SINGLES = auto()
+
+
+def cc_coincidences_sorter(
+    singles_tree, time_window, chunk_size=100000, output_file_path=None
+):
+    """
+    Sort singles and detect coincidences.
+    :param singles_tree: input tree of singles (root format)
+    :param time_window: time windows in G4 units (ns)
+    :param chunk_size: singles are processed by this chunk size
+    :param output_file_path: if provided, the coincident singles will be saved to the given file path, in root or hdf5 format depending on the file extension (.root or .hdf5).
+    :return: if output_file_path is given, the return value is None, otherwise the coincident singles are returned as a pandas DataFrame.
+
+    Chunk size is important for very large root file to avoid loading everything in memory at once
+    """
+    output_file_format = None
+    if output_file_path is not None:
+        if output_file_path.endswith(".root"):
+            output_file_format = "root"
+        elif output_file_path.endwith(".hdf5"):
+            output_file_format = "hdf5"
+        else:
+            raise ValueError("output_file_path must end with .root or .hdf5")
+    return _coincidences_sorter(
+        singles_tree,
+        time_window,
+        None,
+        None,
+        None,
+        None,
+        chunk_size,
+        ResultType.COINCIDENT_SINGLES,
+        "pd",
+        output_file_path,
+        output_file_format or "root",
+    )
+
+
 def coincidences_sorter(
     singles_tree,
     time_window,
@@ -120,7 +162,56 @@ def coincidences_sorter(
     DEV NOTES:
     1) TODO: add option allDigiOpenCoincGate=false, so far only for allDigiOpenCoincGate=true
     """
+    return _coincidences_sorter(
+        singles_tree,
+        time_window,
+        policy,
+        min_transaxial_distance,
+        transaxial_plane,
+        max_axial_distance,
+        chunk_size,
+        ResultType.COINCIDENCE_PAIRS,
+        return_type,
+        output_file_path,
+        output_file_format,
+    )
 
+
+def _extract_unique_singles(group):
+    """
+    Helper function to be used if the output must be a list of coincident singles.
+    """
+    # Create DataFrame s1 containing all columns with names ending in "1"
+    s1 = group.filter(regex="1$").copy()
+    # Remove the "1" from all column names
+    s1.columns = s1.columns.str.rstrip("1")
+    # Rename column "SingleIndex" to "CoincID"
+    s1 = s1.rename(columns={"SingleIndex": "CoincID"})
+    # Create DataFrame s2 containing all columns with names ending in "2"
+    s2 = group.filter(regex="2$").copy()
+    # Remove the "2" from all column names
+    s2.columns = s2.columns.str.rstrip("2")
+    # Insert a column that is a copy of s1's "CoincID" column
+    s2["CoincID"] = s1["CoincID"].values
+    # Keep only the first row of s1, since all rows contain the same single (the one that opened the coincidence window)
+    s1 = s1.iloc[[0]]
+    # Stack s1 and s2 on top of each other
+    return pd.concat([s1, s2], axis=0, ignore_index=True)
+
+
+def _coincidences_sorter(
+    singles_tree,
+    time_window,
+    policy,
+    min_transaxial_distance,
+    transaxial_plane,
+    max_axial_distance,
+    chunk_size=100000,
+    result_type=ResultType.COINCIDENCE_PAIRS,
+    return_type="dict",
+    output_file_path=None,
+    output_file_format="root",
+):
     # Check the availability of the necessary branches in the root file
     required_branches = {
         "EventID",
@@ -151,9 +242,14 @@ def coincidences_sorter(
         "takeWinnerIfIsGood": _take_winner_if_is_good,
         "takeWinnerIfAllAreGoods": _take_winner_if_all_are_goods,
     }
-    if policy not in policy_functions:
+    if result_type == ResultType.COINCIDENCE_PAIRS and policy not in policy_functions:
         raise ValueError(
             f"Unknown policy '{policy}', must be one of {policy_functions.keys()}"
+        )
+
+    if any((min_transaxial_distance, max_axial_distance)) and not transaxial_plane:
+        raise ValueError(
+            f"transaxial_plane must be specified when min_transaxial_distance and/or max_axial_distance is given"
         )
 
     # Check the validity of return_type or output_file_format and output_file_path.
@@ -224,13 +320,13 @@ def coincidences_sorter(
                     # All coincidences that have a SingleIndex1 value different from the last one
                     # can already be filtered, the others will be transferred to be filtered in
                     # the next iteration.
-                    coincidences_to_filter = coincidences.loc[
+                    coincidences_to_process = coincidences.loc[
                         coincidences["SingleIndex1"]
                         != coincidences["SingleIndex1"].iloc[-1]
                     ].reset_index(drop=True)
                     if coincidences_to_transfer is not None:
-                        coincidences_to_filter = pd.concat(
-                            [coincidences_to_transfer, coincidences_to_filter],
+                        coincidences_to_process = pd.concat(
+                            [coincidences_to_transfer, coincidences_to_process],
                             axis=0,
                             ignore_index=True,
                         )
@@ -238,47 +334,61 @@ def coincidences_sorter(
                         coincidences["SingleIndex1"]
                         == coincidences["SingleIndex1"].iloc[-1]
                     ].reset_index(drop=True)
-                    # Apply policy
-                    filtered_coincidences = policy_functions[policy](
-                        coincidences_to_filter,
-                        min_transaxial_distance,
-                        transaxial_plane,
-                        max_axial_distance,
-                    )
-                    # Remove the temporary SingleIndex columns
-                    filtered_coincidences = filtered_coincidences.drop(
-                        columns=["SingleIndex1", "SingleIndex2"]
-                    )
+                    if result_type == ResultType.COINCIDENCE_PAIRS:
+                        # Apply policy for multiple coincidences
+                        processed_coincidences = policy_functions[policy](
+                            coincidences_to_process,
+                            min_transaxial_distance,
+                            transaxial_plane,
+                            max_axial_distance,
+                        )
+                        # Remove the temporary SingleIndex columns
+                        processed_coincidences = processed_coincidences.drop(
+                            columns=["SingleIndex1", "SingleIndex2"]
+                        )
+                    elif result_type == ResultType.COINCIDENT_SINGLES:
+                        processed_coincidences = (
+                            coincidences_to_process.groupby("SingleIndex1")
+                            .apply(_extract_unique_singles)
+                            .reset_index(drop=True)
+                        )
                     if output_file_path:
-                        output_file.add(filtered_coincidences)
+                        output_file.add(processed_coincidences)
                     else:
-                        coincidences_to_return.append(filtered_coincidences)
+                        coincidences_to_return.append(processed_coincidences)
                     # Remove processed chunk from the left of the queue
                     queue.popleft()
                 num_singles += num_singles_in_chunk
 
             # At this point, all chunks have been read. Now process the last chunk.
-            coincidences_to_filter = _process_chunk(queue, time_window)
+            coincidences_to_process = _process_chunk(queue, time_window)
             if coincidences_to_transfer is not None:
-                coincidences_to_filter = pd.concat(
-                    [coincidences_to_transfer, coincidences_to_filter],
+                coincidences_to_process = pd.concat(
+                    [coincidences_to_transfer, coincidences_to_process],
                     axis=0,
                     ignore_index=True,
                 )
-            filtered_coincidences = policy_functions[policy](
-                coincidences_to_filter,
-                min_transaxial_distance,
-                transaxial_plane,
-                max_axial_distance,
-            )
-            # Remove the temporary SingleIndex columns
-            filtered_coincidences = filtered_coincidences.drop(
-                columns=["SingleIndex1", "SingleIndex2"]
-            )
+            if result_type == ResultType.COINCIDENCE_PAIRS:
+                processed_coincidences = policy_functions[policy](
+                    coincidences_to_process,
+                    min_transaxial_distance,
+                    transaxial_plane,
+                    max_axial_distance,
+                )
+                # Remove the temporary SingleIndex columns
+                processed_coincidences = processed_coincidences.drop(
+                    columns=["SingleIndex1", "SingleIndex2"]
+                )
+            elif result_type == ResultType.COINCIDENT_SINGLES:
+                processed_coincidences = (
+                    coincidences_to_process.groupby("SingleIndex1")
+                    .apply(_extract_unique_singles)
+                    .reset_index(drop=True)
+                )
             if output_file_path:
-                output_file.add(filtered_coincidences)
+                output_file.add(processed_coincidences)
             else:
-                coincidences_to_return.append(filtered_coincidences)
+                coincidences_to_return.append(processed_coincidences)
 
             processing_finished = True
 
@@ -528,6 +638,11 @@ def _filter_multi(coincidences):
 def _filter_goods(
     coincidences, min_transaxial_distance, transaxial_plane, max_axial_distance
 ):
+    # If transaxial_plane is None, then min_transaxial_distance and max_axial_distance are None as well.
+    # No coincidences need to be removed.
+    if not transaxial_plane:
+        return coincidences
+
     # Calculate the transaxial distance between the singles in each coincidence.
     td = _transaxial_distance(coincidences, transaxial_plane)
     # Remove coincidences of which the transaxial distance is below threshold.
