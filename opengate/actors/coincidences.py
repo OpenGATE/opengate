@@ -177,21 +177,32 @@ def coincidences_sorter(
     )
 
 
-def _decompose_coincidence_pairs(coincidence_pairs):
+def _decompose_coincidence_pairs_into_singles(coincidence_pairs):
+    # Create two DataFrames, one with the columns ending in "1", the other with "2".
     s1 = coincidence_pairs.filter(regex="1$").copy()
     s2 = coincidence_pairs.filter(regex="2$").copy()
+    # Strip the "1" and "2" from the column names, so that s1 and s2 have the same column names.
     s1.columns = s1.columns.str.rstrip("1")
     s2.columns = s2.columns.str.rstrip("2")
+    # Rename column "SingleIndex" to "CoincID" in s1 and copy it into s2.
     s1 = s1.rename(columns={"SingleIndex": "CoincID"})
     s2 = s2.drop(columns=["SingleIndex"])
     s2["CoincID"] = s1["CoincID"].values
-    s1["Duplicate"] = s1["CoincID"].eq(s1["CoincID"].shift())
-    s2["Duplicate"] = False
+    # In s1, each row with the same CoincID as the row before is marked for removal,
+    # because the single that opened the time window will appear multiple times
+    # in case of multiple coincidences in the time window.
+    s1["ToBeRemoved"] = s1["CoincID"].eq(s1["CoincID"].shift())
+    # In s2, nothing will be removed.
+    s2["ToBeRemoved"] = False
+    # Combine s1 and s2 into a single DataFrame, by interleaving their rows.
     s1.index = s1.index * 2
     s2.index = s2.index * 2 + 1
     decomposed = pd.concat([s1, s2]).sort_index().reset_index(drop=True)
-    decomposed = decomposed[~decomposed["Duplicate"]]
-    decomposed = decomposed.drop(columns=["Duplicate"])
+    # Remove the rows marked for removal, then drop the column.
+    decomposed = decomposed[~decomposed["ToBeRemoved"]]
+    decomposed = decomposed.drop(columns=["ToBeRemoved"])
+    # Renumber the CoincID so that it is monotonically increasing
+    # (while making sure that rows with identical CoincID still have identical CoincID after the renumbering).
     decomposed["CoincID"] = pd.factorize(decomposed["CoincID"])[0]
     return decomposed
 
@@ -344,8 +355,10 @@ def _coincidences_sorter(
                             columns=["SingleIndex1", "SingleIndex2"]
                         )
                     elif result_type == ResultType.COINCIDENT_SINGLES:
-                        processed_coincidences = _decompose_coincidence_pairs(
-                            coincidences_to_process
+                        processed_coincidences = (
+                            _decompose_coincidence_pairs_into_singles(
+                                coincidences_to_process
+                            )
                         )
 
                     if output_file_path:
@@ -376,7 +389,7 @@ def _coincidences_sorter(
                     columns=["SingleIndex1", "SingleIndex2"]
                 )
             elif result_type == ResultType.COINCIDENT_SINGLES:
-                processed_coincidences = _decompose_coincidence_pairs(
+                processed_coincidences = _decompose_coincidence_pairs_into_singles(
                     coincidences_to_process
                 )
 
