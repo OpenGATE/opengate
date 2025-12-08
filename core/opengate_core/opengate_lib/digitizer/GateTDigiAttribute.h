@@ -11,7 +11,6 @@
 #include "../GateHelpers.h"
 #include "../GateUniqueVolumeID.h"
 #include "GateVDigiAttribute.h"
-#include <pybind11/stl.h>
 
 template <class T> class GateTDigiAttribute : public GateVDigiAttribute {
 public:
@@ -22,6 +21,8 @@ public:
   std::vector<double> &GetDValues() override;
 
   std::vector<int> &GetIValues() override;
+
+  std::vector<int64_t> &GetLValues() override;
 
   std::vector<std::string> &GetSValues() override;
 
@@ -38,6 +39,8 @@ public:
   void FillSValue(std::string v) override;
 
   void FillIValue(int v) override;
+
+  void FillLValue(int64_t v) override;
 
   void Fill3Value(G4ThreeVector v) override;
 

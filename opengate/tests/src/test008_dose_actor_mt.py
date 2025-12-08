@@ -97,7 +97,7 @@ if __name__ == "__main__":
     print(dose_actor)
 
     # tests
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     # change the number of run to the number of threads
     stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stat, stats_ref, 0.10)

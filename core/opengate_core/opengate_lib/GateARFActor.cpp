@@ -6,6 +6,7 @@
    ------------------------------------ -------------- */
 
 #include "GateARFActor.h"
+#include "G4Gamma.hh"
 #include "G4RunManager.hh"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
@@ -13,6 +14,7 @@
 GateARFActor::GateARFActor(py::dict &user_info) : GateVActor(user_info, true) {
   fActions.insert("SteppingAction");
   fActions.insert("BeginOfRunAction");
+  fActions.insert("PreUserTrackingAction");
   fActions.insert("EndOfRunAction");
   fBatchSize = 0;
   fKeepNegativeSide = true;
@@ -44,19 +46,33 @@ void GateARFActor::EndOfRunAction(const G4Run * /*run*/) {
     // l.fPositionZ.clear();
     l.fDirectionX.clear();
     l.fDirectionY.clear();
-    // l.fDirectionZ.clear();
+    l.fDirectionZ.clear();
     l.fWeights.clear();
     l.fCurrentNumberOfHits = 0;
   }
 }
 
-void GateARFActor::SteppingAction(G4Step *step) {
+void GateARFActor::PreUserTrackingAction(const G4Track *track) {
+  GateVActor::PostUserTrackingAction(track);
   auto &l = fThreadLocalData.Get();
+  l.fIsFirstInteraction = true;
+}
+
+void GateARFActor::SteppingAction(G4Step *step) {
+  // First, only consider gammas
+  if (step->GetTrack()->GetDefinition() != G4Gamma::GammaDefinition()) {
+    return;
+  }
+  auto &l = fThreadLocalData.Get();
+  if (!l.fIsFirstInteraction) {
+    return;
+  }
 
   // get direction and transform to local
   auto *pre = step->GetPreStepPoint();
   auto dir = pre->GetMomentumDirection();
   dir = pre->GetTouchable()->GetHistory()->GetTopTransform().TransformAxis(dir);
+  dir = dir.unit();
 
   // which side of the plane ?
   if (!fKeepNegativeSide && dir[fPlaneAxis[2]] < 0)
@@ -67,7 +83,7 @@ void GateARFActor::SteppingAction(G4Step *step) {
   l.fCurrentNumberOfHits++;
   l.fDirectionX.push_back(dir[fPlaneAxis[0]]);
   l.fDirectionY.push_back(dir[fPlaneAxis[1]]);
-  // l.fDirectionZ.push_back(dir[2]); // not used
+  l.fDirectionZ.push_back(dir[fPlaneAxis[2]]);
   l.fWeights.push_back(pre->GetWeight());
 
   // get energy
@@ -89,10 +105,12 @@ void GateARFActor::SteppingAction(G4Step *step) {
     // l.fPositionZ.clear();
     l.fDirectionX.clear();
     l.fDirectionY.clear();
-    // l.fDirectionZ.clear();
+    l.fDirectionZ.clear();
     l.fWeights.clear();
     l.fCurrentNumberOfHits = 0;
   }
+
+  l.fIsFirstInteraction = false;
 }
 
 int GateARFActor::GetCurrentNumberOfHits() const {

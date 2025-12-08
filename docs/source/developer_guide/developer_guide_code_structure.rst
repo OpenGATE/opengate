@@ -113,19 +113,21 @@ on how to implement or extend a class, see
 `here <#how-a-class-in-gate-10-is-usually-set-up>`__.
 
 The GATE classes representing and a Geant4 object (or multiple Geant4
-objects combined) are meant to do multiple things: 1) Be a storage for
-user parameters. Exmample: the ``Region`` class holds the user_info
-``user_limits``, ``production_cuts``, and ``em_switches``. 2) Provide
-interface functions to manager classes (and the user) to configure the
-object or inquire about it. Examples: ``Region.associate_volume()``,
-``Region.need_step_limiter()`` 3) Provide interface functions such as
-``initialize()`` and ``close()`` to the engines to handle the Geant4
-objects. 4) Provide convenience functionality such as dumping as
-dictionary (``to_dictionary()``, ``from_dictionary()``), dump info about
-the object (e.g. ``Region.dump_production_cuts()``), clone itself. 5)
-Handle technical aspects such as pickling (for subprocesses) in a
-unified way (`via the method
-``__getstate__()`` <#implement-a-getstate-method-if-needed>`__)
+objects combined) are meant to do multiple things:
+
+-  Be a storage for user parameters. Example: the ``Region`` class holds
+   the user_info ``user_limits``, ``production_cuts``, and ``em_switches``.
+-  Provide interface functions to manager classes (and the user) to configure the
+   object or inquire about it. Examples: ``Region.associate_volume()``,
+   ``Region.need_step_limiter()``
+-  Provide interface functions such as ``initialize()`` and ``close()``
+   to the engines to handle the Geant4 objects.
+-  Provide convenience functionality such as dumping as dictionary
+   (``to_dictionary()``, ``from_dictionary()``), dump info about
+   the object (e.g. ``Region.dump_production_cuts()``), clone itself.
+-  Handle technical aspects such as pickling (for subprocesses) in a
+   unified way (via the method ``__getstate__()``
+   `here <#implement-a-getstate-method-if-needed>`__)
 
 The managers and engines, on the other hand, remain quite sleek and
 clean. For example, if you look at the ``PhysicsEngine`` class, you find

@@ -120,7 +120,7 @@ if __name__ == "__main__":
     print(stats)
 
     # tests
-    stats_ref = utility.read_stat_file(paths.output_ref / "test010_confine_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test010_confine_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
     is_ok = is_ok and utility.assert_images(
         paths.output_ref / "test010-2-edep.mhd",

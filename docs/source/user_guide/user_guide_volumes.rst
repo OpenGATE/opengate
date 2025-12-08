@@ -50,7 +50,7 @@ Most users will opt for this way of creating volumes.
 
 This second way of creating volumes is useful in cases where the volume
 is needed but should not be part of the simulation. For example, if it
-serves as basis for a `boolean operation <#boolean-volumes>`__, e.g. to
+serves as basis for a :ref:`boolean operation <boolean_vol>`, e.g. to
 be intersected with another volume.
 
 Note that the ``add_volume`` command in the second example does not
@@ -97,6 +97,7 @@ Examples of volumes
 -------------------
 
 These are examples of how to add and configure volumes in Gate. A more detailed description is in section :ref:`volumes-reference-label`.
+A test with all available volumes is available in `test0089_geometries.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test089_geometries.py>`_.
 
 .. code:: python
 
@@ -177,6 +178,8 @@ along x, y, z
 Note that the above properties are read-only - you cannot set their
 values.
 
+.. _materials_section:
+
 Materials
 ---------
 
@@ -199,6 +202,11 @@ materials. One option is via a text file which can be loaded with
 All material names defined in the “GateMaterials.db” can then be used
 for any volume. Please check the file in ``tests/data/GateMaterials.db``
 for the required format of database file.
+
+A material can also be described using isotopes. An example is available
+in ``tests/data/GateMaterials_Isotopes.db``. The format is similar to the
+one used for elements, but with the addition of a line starting with
+``[Isotopes]``.
 
 .. raw:: html
 
@@ -249,7 +257,7 @@ In this setup, the voxelized CT is placed in the primary world, representing the
 Volume voxelization
 -------------------
 
-Tools to convert any volume into voxelized image (a matrix of voxels) is provided. It is described in  `Voxelization <#voxelization>`__.
+Tools to convert any volume into voxelized image (a matrix of voxels) is provided. It is described in  :ref:`Voxelization <voxelization>`.
 
 
 Examples of complex geometries: Linac, SPECT, PET, phantoms

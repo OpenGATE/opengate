@@ -97,7 +97,7 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    stats_ref = utility.read_stat_file(paths.gate / "output" / "stat_profiling.txt")
+    stats_ref = utility.read_stats_file(paths.gate / "output" / "stat_profiling.txt")
     stats_ref.counts.runs = sim.number_of_threads
     is_ok = utility.assert_stats(stats, stats_ref, 0.1)
     is_ok = is_ok and utility.assert_images(

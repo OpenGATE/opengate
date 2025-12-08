@@ -34,6 +34,7 @@ def create_simulation(param):
     sim.verbose_level = INFO
     param.output_folder = pathlib.Path(param.output_folder)
     sim.output_dir = param.output_folder
+    sim.progress_bar = True
 
     # units
     m = g4_units.m
@@ -96,15 +97,18 @@ def create_simulation(param):
     )
 
     # cuts
-    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
+    sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
     sim.physics_manager.enable_decay = True
     sim.physics_manager.set_production_cut("world", "all", 1 * m)
-    sim.physics_manager.set_production_cut("ct", "all", 1 * mm)
+    sim.physics_manager.set_production_cut("ct", "all", 2 * mm)
 
     # add dose actor (get the same size as the source)
     source_info = read_image_info(param.activity_image)
     dose = sim.add_actor("DoseActor", "dose")
     dose.output_filename = "edep.mhd"
+    dose.dose_uncertainty.active = True
+    dose.dose_squared.active = True
+    dose.dose.active = True
     dose.attached_to = ct.name
     dose.size = source_info.size
     dose.spacing = source_info.spacing
@@ -114,9 +118,14 @@ def create_simulation(param):
     if not sim.visu:
         dose.output_coordinate_system = "attached_to_image"
     dose.hit_type = "random"
+    dose.dose_uncertainty.active = True
+    dose.dose_squared.active = True
+    dose.dose.active = True
 
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats.track_types_flag = True
+    stats.output_filename = "stats.txt"
+    stats.stats.write_to_disk = True
 
     return sim

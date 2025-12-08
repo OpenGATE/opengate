@@ -108,6 +108,64 @@ Adding following lines
 
 to the dose actor object will trigger an additional image scoring the dose. The uncertainty tag will additionally provide an uncertainty image for each of the scoring quantities. Set user_output.edep.active False to disable the edep computation and only return the dose.
 
+**Setting and Evaluating the Statistical Uncertainty Goal**
+
+This section demonstrates how to monitor and enforce a statistical uncertainty goal during a Monte Carlo simulation, particularly in dose simulations using GATE10. It includes how to define the uncertainty criteria, how often to check it, and how to evaluate the final result based on the deposited energy distribution.
+
+To ensure simulation efficiency, we may wish to stop early when a target uncertainty (e.g., 5%) is reached in the high-dose (high-edep) region.
+
+.. code-block:: python
+
+   # Target statistical uncertainty (e.g., 5%)
+   unc_goal = 0.05
+
+   # Define how "high-dose" voxels are selected: here, > 70% of max edep value
+   thresh_voxel_edep_for_unc_calc = 0.7
+
+   # Planned number of primary particles or events (e.g., 100 MBq)
+   n_planned = 100 * 1e6  # 100 million particles
+
+These parameters are then passed to the dose actor:
+
+.. code-block:: python
+
+   dose.uncertainty_goal = unc_goal # 0.05
+   dose.uncertainty_first_check_after_n_events = 0.01 * n_planned # check statistical uncertainty every 1 MBq particles
+   dose.uncertainty_voxel_edep_threshold = thresh_voxel_edep_for_unc_calc # 0.7
+
+Uncertainty is computed only in high-deposition voxels to focus on the clinically relevant region:
+
+.. code-block:: python
+
+   def calculate_mean_unc(edep_arr, unc_arr, edep_thresh_rel=0.7):
+       # Average the uncertainty values ​​over the high energy deposition areas
+       edep_max = np.amax(edep_arr)
+       mask = edep_arr > edep_max * edep_thresh_rel
+       unc_used = unc_arr[mask]
+       unc_mean = np.mean(unc_used)
+
+       return unc_mean
+
+Note: This method uses a relative threshold based on the maximum deposited energy, which may be sensitive to outliers. Consider using a percentile-based threshold for robustness if needed.
+
+At the end of the simulation, the actual mean uncertainty and the number of events used are reported:
+
+.. code-block:: python
+
+   # test that final mean uncertainty satisfies the goal uncertainty
+   edep_arr = np.asarray(dose.edep.image)
+   unc_array = np.asarray(dose.edep_uncertainty.image)
+   unc_mean = calculate_mean_unc(edep_arr, unc_array, edep_thresh_rel=thresh_voxel_edep_for_unc_calc)
+   n_effective = stats.counts.events
+
+   print(f"{unc_goal = }")
+   print(f"{unc_mean = }")
+   print(f"{n_planned = }")
+   print(f"{n_effective = }")
+   if n_effective < n_planned: print("Simulation ended early.")
+
+This can help determine if the simulation converged early due to meeting the uncertainty goal.
+
 Like any image, the output dose map will have an origin, spacing and orientation. By default, it will consider the coordinate system of the volume it is attached to, so at the center of the image volume. The user can manually change the output origin using the option `output_origin` of the DoseActor. Alternatively, if the option `img_coord_system` is set to `True`, the final output origin will be automatically computed from the image the DoseActor is attached to. This option calls the function `get_origin_wrt_images_g4_position` to compute the origin.
 
 .. image:: ../figures/image_coord_system.png
@@ -132,6 +190,8 @@ The DoseActor has the following output:
 - :attr:`~.opengate.actors.doseactors.DoseActor.dose_uncertainty`
 - :attr:`~.opengate.actors.doseactors.DoseActor.counts`
 - :attr:`~.opengate.actors.doseactors.DoseActor.density`
+
+Note: to report dose and uncertainty in radiation therapy, please refer to TG-268 report : https://aapm.onlinelibrary.wiley.com/doi/10.1002/mp.12702
 
 Reference
 ~~~~~~~~~
@@ -164,6 +224,76 @@ Reference
 
 .. autoclass:: opengate.actors.doseactors.LETActor
 
+REActor
+--------
+
+Description
+~~~~~~~~~~~
+
+The REActor scores the dose-averaged relative effectiveness (RE) map within a given volume, according to `Herrmann et al., 2011 <https://pubmed.ncbi.nlm.nih.gov/21626919/>`_. Spatial options are identical to those of :class:`~.opengate.actors.doseactors.DoseActor`.
+
+
+.. note:: Refer to test087_beam_quality_actor_re for a current example.
+
+The actor reads a lookup table of RE values as a function of particle and kinetic energy, by `lookup_table_path`. The kinetic energy can be in the unit of either MeV/u or MeV, while remaining consistent with `energy_per_nucleon` option.
+
+.. note:: Particle species with atomic number from 1 to 10 are supported.
+
+The actor has the following outputs:
+
+- :attr:`~.opengate.actors.doseactors.REActor.RE_mix`
+
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.REActor
+.. autoproperty:: opengate.actors.doseactors.REActor.RE_mix
+
+
+RBEActor
+--------
+
+Description
+~~~~~~~~~~~
+
+The RBEActor scores the relative biological effectiveness (RBE) map within a given volume. Spatial options are identical to those of :class:`~.opengate.actors.doseactors.DoseActor`. The available values for the `model` option are: `mMKM`, `LEM1lda`.
+
+- **mMKM**: The implementation of modified microdosimetric kinetic model (mMKM) was based on `Inaniwa et al., 2010 <https://doi.org/10.1088/0031-9155/55/22/008>`_. The actor reads a lookup table of saturation-corrected dose-averaged specific energy (z*_1D) values by `lookup_table_path`.
+
+- **LEM1lda**: The implementation of local effect model I with low dose approximation (LEM1lda) was based on `Krämer and Scholz, 2006 <https://doi.org/10.1088/0031-9155/51/8/001>`_. The actor reads a lookup table of initial slope (alpha_z) values by `lookup_table_path`.
+
+The format requirement of the lookup table is identical to that in :class:`~.opengate.actors.doseactors.REActor`. By default, the actor uses the radiosensitivity parameters of aerobic `HSG` cells. In order to calculate RBE using the radiosentivity parameters of `Chordoma`, the user should specify by the `cell_type` option.
+
++----------------------+-----------+-----------+
+| Available cell types | alpha_ref | beta_ref  |
++======================+===========+===========+
+| HSG                  | 0.764     | 0.0615    |
++----------------------+-----------+-----------+
+| Chordoma             | 0.1       | 0.05      |
++----------------------+-----------+-----------+
+
+The actor has the following outputs:
+
+- :attr:`~.opengate.actors.doseactors.RBEActor.rbe` (if `write_RBE_dose_image` is set to `True`, which is the default setting)
+- :attr:`~.opengate.actors.doseactors.RBEActor.rbe_dose` (if `write_RBE_dose_image` is set to `True`, which is the default setting)
+- :attr:`~.opengate.actors.doseactors.RBEActor.alpha_mix`
+- :attr:`~.opengate.actors.doseactors.RBEActor.beta_mix` (if `model` is set to `LEM1lda`)
+
+The user can refer to test087_beam_quality_actor_rbe_mMKM for an example. The test case simulates the central RBE profile (shown in the following figure) and alpha_mix profile of a quasi-monoenergetic carbon ion beam in water, using the `mMKM` model and z*_1D lookup table generated with SURVIVAL (`Manganaro et al., 2018 <https://doi.org/10.1088/1361-6560/aab697>`_). The "reference" RBE profile was simulated using the same configurations, but better statistics (1e5 primaries). The "filter" :attr:`~.opengate.actors.doseactors.DoseActor.edep` profile is shown in arbituary unit to indicate the Bragg peak position, up to which the evaluation is conducted.
+
+.. image:: ../figures/test087-RBE_rbe_test.png
+
+.. note:: This test case serves as a reference and does not prescribe specific choices or computations of lookup tables. A publication on the validation of :class:`~.opengate.actors.doseactors.RBEActor` is planned.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.doseactors.RBEActor
+.. autoproperty:: opengate.actors.doseactors.RBEActor.rbe
+.. autoproperty:: opengate.actors.doseactors.RBEActor.rbe_dose
+.. autoproperty:: opengate.actors.doseactors.RBEActor.alpha_mix
+.. autoproperty:: opengate.actors.doseactors.RBEActor.beta_mix
 
 FluenceActor
 ------------
@@ -431,7 +561,20 @@ DigitizerSpatialBlurringActor
 Description
 ~~~~~~~~~~~
 
-   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+   The blurring operation may cause points to fall outside the volume. If you want to forbud this, use the `keep_in_solid_limits` option. This will push the hits back to the closest edge of the crystal. Alternatively the `use_truncated_Gaussian` option can be used with `keep_in_solid_limits` to recreate a more realistic scenario. This option changes the common Gaussian distribution to a new truncated Gaussian that preserves the standard deviation of the distribution within the crystal. This variation is paramount when using big crystals with spatial resolution, since it is the only way to preserve the original standard deviation of the reconstructed distribution. This is useful for monolithic crystals,  but should not be used for pixelated crystals.
+
+.. code-block:: python
+
+   bc = sim.add_actor("DigitizerSpatialBlurringActor", f"Singles_{crystal.name}_SpatialBlurring")
+   bc.attached_to = hc.attached_to
+   bc.output_filename = hc.output_filename
+   bc.input_digi_collection = sc.name
+   bc.keep_in_solid_limits = True
+   bc.use_truncated_Gaussian = True
+   bc.blur_attribute = "PostPosition"
+   bc.blur_fwhm = [5*mm, 5*mm, 5*mm]
+
+
 
 Reference
 ~~~~~~~~~
@@ -534,28 +677,111 @@ Coincidences Sorter
 .. note::
    The current version of the Coincidence sorter is still a work in progress. It is only available for offline use.
 
-The Coincidence Sorter finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences:
+The Coincidence Sorter finds pairs of coincident singles within a defined time window and groups them into coincidence events. Various policies are available for handling multiple coincidences.
 
 .. code-block:: python
 
+   root_file = uproot.open("singles.root")
    singles_tree = root_file["Singles_crystal"]
    ns = gate.g4_units.nanosecond
    time_window = 3 * ns
-   policy = "keepAll"
-   minSecDiff = 1  # NOT YET IMPLEMENTED
+   policy = "takeAllGoods"
+   mm = gate.g4_units.mm
+   transaxial_plane = "xy"
+   min_transaxial_distance = 0 * mm
+   max_axial_distance = 32 * mm
 
    # Apply coincidence sorter
-   coincidences = coincidences_sorter(singles_tree, time_window, policy, minDistanceXY, maxDistanceZ, chunk_size=1000000)
+   coincidences = coincidences_sorter(
+      singles_tree,
+      time_window,
+      policy,
+      min_transaxial_distance,
+      transaxial_plane,
+      max_axial_distance,
+      chunk_size=100000,
+      return_type="dict",
+      output_file_path=None,
+      output_file_format="root",
+   )
 
-The following policies are supported:
+Coincidences with oblique lines of response can be excluded by limiting the axial distance between their two singles (`max_axial_distance`).
+Likewise, coincidences between adjacent detectors can be excluded by imposing a minimum transaxial distance (`min_transaxial_distance`).
+The `transaxial_plane` can be `"xy"`, `"yz"`, or `"xz"`, depending on the PET scanner geometry.
+Coincidences that comply with the given `max_distance_axial` and `max_distance_axial` are referred to
+as "good pairs" in the definitions below.
 
-- **takeAllGoods**: Each good pair is considered.
-- **takeWinnerOfGoods**: Only the pair with the highest energy is considered.
-- **takeWinnerIfIsGood**: If the highest energy pair is good, take it; otherwise, kill the event.
-- **keepIfOnlyOneGood**: If exactly one good pair exists, keep the multicoincidence.
+The following policies are supported to deal with multiple coincidences in the same time window:
+
 - **removeMultiples**: No multiple coincidences are accepted, even if there are good pairs.
+- **takeAllGoods**: Each good pair is considered.
+- **takeWinnerOfGoods**: From all good pairs, only the one with the highest energy is considered.
+- **takeIfOnlyOneGood**: If exactly one good pair exists, keep it, otherwise discard all pairs.
+- **takeWinnerIfIsGood**: If the highest energy pair is good, take it, otherwise discard all pairs.
+- **takeWinnerIfAllAreGoods**: If all pairs are good, then take the one with the highest energy, otherwise discard all pairs.
+
+By default, coincidences are returned from the function in a Python dictionary (`return_type="dict"`).
+Alternatively, they can be returned as a pandas DataFrame (`return_type="pd"`).
+It is also possible to specify an output file for saving the coincidences (`output_file_path`) in ROOT format,
+(`output_file_format="root"`, the default) or HDF5 format (`output_file_format="hdf5"`).
+In the case of file output, the function returns `None`.
+Saving coincidences to a file is recommended when processing large numbers of singles, to avoid running out of memory.
+
+The coincidence sorter reads singles from the `singles_tree` in groups containing `chunk_size` singles.
+Larger chunk sizes result in more efficient disk I/O but can also result in higher memory consumption.
+The coincidence sorter may internally use a larger chunk size than indicated by the `chunk_size` parameter,
+when required to correctly handle non-monotonicities of time in the singles tree. These non-monotonicities typically
+arise in multi-threaded simulations, because time progresses independently in each thread.
+It is important to note that the resulting coincidences are independent of the value of `chunk_size`,
+because the coincidence sorter also considers coincidences between singles in consecutive chunks.
 
 Refer to test072 for more details.
+
+CCMod offline tools
+------------------------------------
+A few functionalities from the Compton camera module (CCMod) have been added.
+These tools are currently available only for offline use.
+
+Ideal singles
+~~~~~~~~~~~~~
+
+The ``ccmod_ideal_singles`` function uses as input a PhaseSpace file that stores all steps  n the slected volume (Compton camera volume), including those with zero energy deposition.  The following attributes are needed : "EventID", "PostPosition_X", "PostPosition_Y", "PostPosition_Z", "ProcessDefinedStep", "PreKineticEnergy", "PostKineticEnergy", "PDGCode", "ParentID". It  filters hits with "PDGCode" = 22 and "ParentID" equals to 0 and "ProcessDefinedStep" different from "Transportation" and "Rayl". Therefore, for a gamma source, it stores only the photonic interactions (except Rayleigh) of the primary photons. In order to use this function for ion sources the "ParentID"  corresponding to the primary photons should be selected. This function also creates a new attribute "IdealTotalEnergyDeposit" using the "PreKineticEnergy" and "PostKineticEnergy"  of the photons at each interaction. Therefore, we can recover Compton and Photoelectric interactions with the correct  position and the  ideal energy deposition obtained from the energy lost by the photon in the interaction.  Position  information and "EventID" are needed for the following steps when coincidences or cones are created.
+
+.. code-block:: python
+
+	root_file = uproot.open(root_filename)
+	phSp_tree = root_file["PhaseSpace"]
+	data = phSp_tree.arrays(library="pd")
+	data_singles = ccmod_ideal_singles(data)
+
+
+See test096 step1 for an example simulation that generates the PhaseSpace file.
+
+Ideal coincidences
+~~~~~~~~~~~~~~~~~~
+The ``ccmod_ideal_coincidences`` sorts entries (hits or singles)  by eventID and groups them into coincidence events by adding a coincidence identification attribute  "CoincID". This function can be used with hits or singles (ideal or not). It adds the "CoincID" attribute to the data when more than two entries have the same eventID, and removes entries where the eventID value appears only once. The input and output are a pandas data frame.
+
+.. code-block:: python
+
+	data_coinc = ccmod_ideal_coincidences(data_singles)
+
+Create cones
+~~~~~~~~~~~~
+The ``ccmod_make_cones``  takes the pandas data frame for coincidences (i.e. with "CoincID" attribute). Attributes for position and energy must be present.
+The name of these attributes can be specified in the function. By default  "TotalEnergyDeposit", "PostPosition_X", "PostPosition_Y" and  "PostPosition_Z" are employed. This function creates a new data frame with the information needed to create Compton cones. The new attributes for each "CoincID" value (each entry) are   "Energy1" (energy of the first interaction of the coincidence), "EnergyRest" (the energy corresponding to the rest of the interactions in the coincidence), and the position of the first ("X1", "Y1", "Z1") and second  interaction ("X2", "Y2", "Z2").
+
+In the following example cones are created using the "IdealTotalEnergyDeposit" attribute instead of "TotalEnergyDeposit".
+
+
+.. code-block:: python
+
+    data_cones = ccmod_make_cones(data_coinc,energy_key_name = "IdealTotalEnergyDeposit", posX_key_name = "PostPosition_X", posY_key_name = "PostPosition_Y",posZ_key_name = "PostPosition_Z")
+
+
+
+
+
+Refer to test096 step2 for more details.
 
 ARFActor and ARFTrainingDatasetActor
 ------------------------------------
@@ -634,9 +860,8 @@ LETActor
    Documentation TODO. Refer to test050 for current examples.
 
 
-BremSplittingActor
----------------------
-
+BremsstrahlungSplittingActor
+----------------------------
 
 Description
 ~~~~~~~~~~~
@@ -658,36 +883,6 @@ To be noted that the GEANT4 command line is a more straightforward way to obtain
 Reference
 ~~~~~~~~~
 
-.. autoclass:: opengate.actors.miscactors.BremSplittingActor
+.. autoclass:: opengate.actors.biasingactors.BremsstrahlungSplittingActor
 
-ComptonSplittingActor
----------------------
-
-Description
-~~~~~~~~~~~
-
-This actor generates N particles with reduced weight whenever a Compton process occurs. The options include:
-
-.. code-block:: python
-
-   compt_splitting_actor = sim.add_actor("ComptSplittingActor", name="compt_splitting")
-   compt_splitting_actor.attached_to = W_tubs.name
-   compt_splitting_actor.splitting_factor = nb_split
-   compt_splitting_actor.russian_roulette = True
-   compt_splitting_actor.rotation_vector_director = True
-   compt_splitting_actor.vector_director = [0, 0, -1]
-
-Refer to test071 for more details.
-
-The options include:
-
-- the splitting factor: Specifies the number of splits to create.
-- A Russian Roulette to activate : Enables selective elimination based on a user-defined angle, with a probability of 1/N.
-- A Minimum Track Weight: Determines the minimum weight a track must possess before undergoing subsequent Compton splitting. To mitigate variance fluctuations or too low-weight particles, I recommend to set the minimum weight to the average weight of your track multiplied by 1/N², with N depending on your application.
-
-
-Reference
-~~~~~~~~~
-
-.. autoclass:: opengate.actors.miscactors.ComptSplittingActor
 

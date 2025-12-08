@@ -3,6 +3,8 @@
 
 from scipy.spatial.transform import Rotation
 import os
+
+
 import opengate as gate
 from opengate.tests import utility
 
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     mrad = gate.g4_units.mrad
 
     # add a material database
-    sim.volume_manager.add_material_database(paths.gate_data / "HFMaterials2014.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     #  change world size
     world = sim.world
@@ -153,7 +155,7 @@ if __name__ == "__main__":
 
     # statistics
     stat_file = "SimulationStatistic_" + folder + ".txt"
-    stats_ref = utility.read_stat_file(ref_path / stat_file)
+    stats_ref = utility.read_stats_file(ref_path / stat_file)
     is_ok = utility.assert_stats(stat, stats_ref, 0.10)
 
     # energy deposition

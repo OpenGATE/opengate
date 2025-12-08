@@ -61,8 +61,7 @@ if __name__ == "__main__":
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
-    sim.output_dir = paths.output  # FIXME (not yet)
-    sim.random_seed = "auto"
+    sim.random_seed = 123456789
     sim.check_volumes_overlap = True
     sim.output_dir = paths.output
 

@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from box import Box
-import json
+
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 from opengate.tests import utility
-from opengate.sources.base import get_rad_gamma_spectrum
+from opengate.utility import read_json_file
+from opengate.sources.utility import get_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test046")
@@ -53,8 +54,8 @@ if __name__ == "__main__":
     json.dump(digit_ns, outfile, indent=4)"""
 
     # check
-    ref_digit = json.loads(open(paths.output_ref / "t046_digitizer.json").read())
-    ref_digit_ns = json.loads(open(paths.output_ref / "t046_digitizer_ns.json").read())
+    ref_digit = read_json_file(paths.output_ref / "t046_digitizer.json")
+    ref_digit_ns = read_json_file(paths.output_ref / "t046_digitizer_ns.json")
     ok = digit == ref_digit
     utility.print_test(ok, f"Test channels (with scatter): {ok}")
     is_ok = is_ok and ok
@@ -64,13 +65,18 @@ if __name__ == "__main__":
 
     # Test 3
     print()
-    yields = [0.885, 0.172168, 1.847315, 1.0024600000000004]
+    yields = [0.8907654364665489, 0.18033, 1.8474, 1.0077]
+    tolerance = 0.01
+    st = f"(tol = {tolerance * 100:.2f} %)"
     i = 0
     for rad in radionuclides:
-        rad_spectrum = get_rad_gamma_spectrum(rad)
+        rad_spectrum = get_spectrum(rad, "gamma")
         tw = rad_spectrum["weights"].sum()
-        ok = tw == yields[i]
-        utility.print_test(ok, f"Test yield {rad}: {tw} {yields[i]} {ok}")
+        tw_d = tw / yields[i] * 100 - 100
+        ok = abs(tw_d) <= tolerance * 100
+        utility.print_test(
+            ok, f"Test yield {rad}: {tw} {yields[i]}: {tw_d:+.2f} % {st} {ok}"
+        )
         is_ok = is_ok and ok
         i += 1
 

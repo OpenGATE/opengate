@@ -3,7 +3,7 @@
 
 import os
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 import click
 import random
 import sys
@@ -15,6 +15,7 @@ from multiprocessing import Pool
 import yaml
 from box import Box
 import ast
+import hashlib
 
 from opengate.exception import fatal, colored, color_ok, color_error, color_warning
 from opengate_core.testsDataSetup import check_tests_data_folder
@@ -42,6 +43,12 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Start the last 10 tests and 1/4 of the others randomly",
 )
 @click.option(
+    "--seed",
+    "-s",
+    default="",
+    help="Seed for the random generator",
+)
+@click.option(
     "--processes_run",
     "-p",
     default="mp",
@@ -64,12 +71,13 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     "--g4_version",
     "-v",
     default="",
-    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.0",
+    help="Only for developers: overwrite the used geant4 version str to pass the check, style: v11.3.2",
 )
 def go(
     start_id,
     end_id,
     random_tests,
+    seed,
     no_log_on_fail,
     processes_run,
     run_previously_failed_jobs,
@@ -84,7 +92,7 @@ def go(
         try:
             g4_version = get_required_g4_version(path_tests_src)
         except:
-            g4_version = "v11.3.0"
+            g4_version = "v11.3.2"
     if not check_g4_version(g4_version):
         warning(f'The geant4 version "{g4_version}" is not the expected version.')
         # return 0
@@ -102,7 +110,9 @@ def go(
 
     if not run_previously_failed_jobs:
         files_to_run_avail, files_to_ignore = get_files_to_run()
-        files_to_run = select_files(files_to_run_avail, start_id, end_id, random_tests)
+        files_to_run = select_files(
+            files_to_run_avail, start_id, end_id, random_tests, seed
+        )
         download_data_at_first_run(files_to_run_avail[0])
         dashboard_dict_out = {k: [""] for k in files_to_run_avail}
     else:
@@ -177,6 +187,9 @@ def get_files_to_run():
         "test045_speedup_all_wip.py",
         "test047_gan_vox_source_cond.py",
         "test081_simulation_optigan_with_random_seed.py",
+        "test085_free_flight_mt.py",
+        "test085_free_flight_ref_mt.py",
+        "test085_free_flight_rotation.py",
     ]
     try:
         import torch
@@ -286,7 +299,7 @@ def decompose_g4_versioning(g4str):
     return g4_version
 
 
-def select_files(files_to_run, test_id, end_id, random_tests):
+def select_files(files_to_run, test_id, end_id, random_tests, seed):
     pattern = re.compile(r"^test([0-9]+)")
 
     if test_id != "all" or end_id != "all":
@@ -307,6 +320,13 @@ def select_files(files_to_run, test_id, end_id, random_tests):
     elif random_tests:
         files_new = files_to_run[-10:]
         prob = 0.25
+        if not seed == "":
+            # Convert string to a hash and then to an integer
+            hash_object = hashlib.md5(seed.encode())
+            hash_hex = hash_object.hexdigest()
+            seed_nb = int(hash_hex, 16) % (2**32)
+            random.seed(seed_nb)
+
         files = files_new + random.sample(
             files_to_run[:-10], int(prob * (len(files_to_run) - 10))
         )
@@ -377,7 +397,7 @@ def filter_files_with_dependencies(files_to_run, path_tests_src):
 
 def run_one_test_case(f, processes_run, path_tests_src):
     """
-    This function is obsolete if we don't neeed os.system(run_cmd)
+    This function is obsolete if we don't need os.system(run_cmd)
     """
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
@@ -421,8 +441,15 @@ def run_one_test_case_mp(f):
     cmd = "python " + str(path_tests_src / f)
     log = str(path_tests_src.parent / "log" / Path(f).stem) + ".log"
 
+    # Write the command as the first line in the log file
+    start = time.time()
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(log, "w") as log_file:
+        log_file.write(f"\n\nDate/Time: {current_time}\n")
+        log_file.write(f"Command: {cmd}\n\n")
+
     shell_output = subprocess.run(
-        f"{cmd} > {log} 2>&1", shell=True, check=False, capture_output=True, text=True
+        f"{cmd} >> {log} 2>&1", shell=True, check=False, capture_output=True, text=True
     )
     shell_output.log_fpath = log
     r = shell_output.returncode

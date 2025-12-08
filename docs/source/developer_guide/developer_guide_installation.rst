@@ -70,19 +70,19 @@ STEP 1 - Geant4 and Qt
 Installing QT is optional. Currently, QT visualisation is not working on
 all architectures.
 
-If you wish to use QT, you must install qt5 **before** installing Geant4
+If you wish to use QT, you must install qt6 **before** installing Geant4
 so that Geant4 can find the correct qt lib. It can be done for example
 with conda:
 
 .. code:: bash
 
-     conda install qt=5
+     conda install conda-forge::qt6-main conda-forge::qt6-3d
 
 For **Geant4**, you need to compile with the following options:
 
 .. code:: bash
 
-   git clone --branch v11.3.0 https://github.com/Geant4/geant4.git --depth 1
+   git clone --branch v11.3.2 https://github.com/Geant4/geant4.git --depth 1
    mkdir geant4.11-build
    cd geant4.11-build
    cmake -DCMAKE_CXX_FLAGS=-std=c++17 \
@@ -90,14 +90,23 @@ For **Geant4**, you need to compile with the following options:
          -DGEANT4_INSTALL_DATADIR=$HOME/software/geant4/data \
          -DGEANT4_USE_QT=ON \
          -DGEANT4_USE_OPENGL_X11=ON \
+         -DGEANT4_USE_QT_QT6=ON \
          -DGEANT4_BUILD_MULTITHREADED=ON \
          ../geant4
    make -j 32
 
 Change the QT flag (GEANT4_USE_QT) to OFF if you did not install QT.
 
-WARNING : since January 2025, `Geant4
-11.3.0 <https://geant4.web.cern.ch/download/11.3.0.html>`__ is needed.
+:note: If you use Linux OS, it's preferable to add this option.
+  It will avoid the `TLS problem <#step-5-before-running>`_ but it slows
+  your simulation by about 10%:
+
+.. code:: bash
+
+    -DGEANT4_BUILD_TLS_MODEL=global-dynamic
+
+:warning: since July 2025, `Geant4
+  11.3.2 <https://geant4.web.cern.ch/download/11.3.2.html>`__ is needed.
 
 STEP 2 - ITK
 ------------
@@ -165,8 +174,8 @@ you can encounter this kind of error:
 
    <...>/libG4particles.so: cannot allocate memory in static TLS block
 
-In such a case, in the same terminal and before to run a python script,
-export this line:
+In such a case, you can compile Geant4 using `tls option <#step-1-geant4-and-qt>`_ or in the same
+terminal and before to run a python script, export this line:
 
 .. code:: bash
 

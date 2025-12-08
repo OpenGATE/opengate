@@ -4,10 +4,10 @@
 from opengate.userhooks import check_production_cuts
 from opengate.tests.utility import (
     get_default_test_paths,
-    read_stat_file,
     assert_stats,
     test_ok,
 )
+from actors.simulation_stats_helpers import read_stats_file
 from opengate.utility import g4_units
 from opengate.logger import DEBUG, RUN
 from opengate.managers import Simulation

@@ -3,6 +3,8 @@
 
 import os
 from box import Box
+
+
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -95,8 +97,8 @@ if __name__ == "__main__":
     # tests stats file
     is_ok = True
     for o in output:
-        stats = utility.read_stat_file(paths.output / o)
-        stats_ref = utility.read_stat_file(paths.output_ref / o)
+        stats = utility.read_stats_file(paths.output / o)
+        stats_ref = utility.read_stats_file(paths.output_ref / o)
         ok = utility.assert_stats(stats, stats_ref, 0.06)
         utility.print_test(ok, f"Check {o}")
         is_ok = is_ok and ok

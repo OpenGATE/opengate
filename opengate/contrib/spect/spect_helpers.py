@@ -1,9 +1,6 @@
 import numpy as np
 import pathlib
 import SimpleITK as sitk
-import itk
-from pathlib import Path
-
 from opengate.geometry.utility import (
     translate_point_to_volume,
     vec_g4_as_np,
@@ -39,8 +36,8 @@ def add_fake_table(sim, name="table"):
     table.dz = 200 * cm / 2.0
     table.sphi = 0 * deg
     table.dphi = 70 * deg
-    table.translation = [0, 25 * cm, 0]
-    table.rotation = Rotation.from_euler("z", -125, degrees=True).as_matrix()
+    table.translation = [0, -25 * cm, 0]
+    table.rotation = Rotation.from_euler("z", 55, degrees=True).as_matrix()
     table.material = "CarbonFiber"
     table.color = white
 
@@ -60,7 +57,9 @@ def add_fake_table(sim, name="table"):
     return table
 
 
-def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
+def get_volume_bounding_box_coordinate_in_frame(
+    sim, spect_name, vol_name, pos="max", axis=2
+):
     vol = sim.volume_manager.volumes[f"{spect_name}_{vol_name}"]
     pMin, pMax = vol.bounding_limits
     x = pMax
@@ -73,12 +72,12 @@ def get_volume_position_in_head(sim, spect_name, vol_name, pos="max", axis=2):
     return x[axis]
 
 
-def extract_energy_window_itk(
-    image: itk.Image,
-    energy_window: int = "all",
-    nb_of_energy_windows: int = 3,
-    nb_of_gantries: int = 60,
-) -> itk.Image:
+def extract_energy_window_from_projections(
+    image,
+    energy_window="all",
+    nb_of_energy_windows=3,
+    nb_of_gantries=60,
+):
     """
     Extracts a given energy window from a 3D image and returns a reshaped image.
 
@@ -104,11 +103,11 @@ def extract_energy_window_itk(
 
     # Extract the relevant slices
     # (warning numpy is z,x,y, while itk is x,y,z)
-    arr = itk.GetArrayViewFromImage(image)
+    arr = sitk.GetArrayViewFromImage(image)
     sub_image_array = arr[energy_window::nb_of_energy_windows, :, :]
 
     # Convert the numpy array back to a SimpleITK image
-    sub_image = itk.GetImageFromArray(sub_image_array)
+    sub_image = sitk.GetImageFromArray(sub_image_array)
 
     # Preserve the original image metadata
     sub_image.SetSpacing(image.GetSpacing())
@@ -118,7 +117,7 @@ def extract_energy_window_itk(
     return sub_image
 
 
-def extract_energy_window_from_projection_actors(
+def extract_energy_window_from_actor_files(
     projections,
     energy_window: int = "all",
     nb_of_energy_windows: int = 3,
@@ -131,8 +130,8 @@ def extract_energy_window_from_projection_actors(
     i = 0
     for proj in projections:
         filename = proj.get_output_path()
-        img = itk.imread(filename)
-        out = extract_energy_window_itk(
+        img = sitk.ReadImage(filename)
+        out = extract_energy_window_from_projections(
             img,
             energy_window=energy_window,
             nb_of_energy_windows=nb_of_energy_windows,
@@ -146,46 +145,24 @@ def extract_energy_window_from_projection_actors(
             output_filenames.append(output_filename)
         else:
             output_filename = output_filenames[i]
-        itk.imwrite(out, output_filename)
+        sitk.WriteImage(out, output_filename)
         i += 1
     return output_filenames
 
 
-def merge_several_heads_projections(filenames):
-    output_arr = None
-    img = None
-    for filename in filenames:
-        img = itk.imread(filename)
-        arr = itk.GetArrayFromImage(img)
-        if output_arr is None:
-            output_arr = arr
-        else:
-            output_arr = np.concatenate((output_arr, arr), axis=0)
-
-    output_img = itk.GetImageFromArray(output_arr)
-    output_img.CopyInformation(img)
-    return output_img
-
-
-def read_projections_as_sinograms(
-    projections_folder, projections_filenames, nb_of_gantry_angles
-):
+def load_and_merge_multi_head_projections(filenames, nb_of_gantry_angles):
     """
     Reads projection files from a specified folder, processes them into sinograms per
     energy window, and ensures consistency in image metadata across all projections.
 
     Args:
-        projections_folder (str|Path): Path to the folder containing projection files.
-        projections_filenames : List of projection filenames to read.
+        filenames : List of projection filenames to read.
         nb_of_gantry_angles (int): Number of gantry angles in the projections.
 
     Returns:
         list[sitk.Image]: List of SimpleITK Image objects containing the sinograms per
         energy window.
     """
-    # get all filenames
-    filenames = [Path(projections_folder) / f for f in projections_filenames]
-
     # init variables
     sinograms_per_energy_window = None
     nb_of_energy_windows = None
@@ -204,6 +181,13 @@ def read_projections_as_sinograms(
             projection_spacing = img.GetSpacing()
             sinograms_per_energy_window = [None] * nb_of_energy_windows
 
+        if nb_of_energy_windows < 1:
+            raise ValueError(
+                f"nb_of_energy_windows={nb_of_energy_windows} is invalid ; "
+                f"image size is {img.GetSize()} and "
+                f"nb of angles is {nb_of_gantry_angles}"
+            )
+
         # check that size and origin are the same for all images
         if img.GetSize() != projection_size:
             raise ValueError(
@@ -218,12 +202,12 @@ def read_projections_as_sinograms(
                 f"Projections in {f} have different spacing than in {filenames[0]}"
             )
 
-        # convert to numpy array
+        # convert to a numpy array
         arr = sitk.GetArrayViewFromImage(img)
 
-        # concatenate projections for the different heads, for each energy windows
+        # concatenate projections for the different heads and for each energy window
         for ene in range(nb_of_energy_windows):
-            # this is important to make a copy here !
+            # this is important to make a copy here!
             # Otherwise, the concatenate operation may fail later
             a = arr[ene::nb_of_energy_windows, :, :].copy()
             if sinograms_per_energy_window[ene] is None:
@@ -242,3 +226,316 @@ def read_projections_as_sinograms(
         img.SetDirection(img.GetDirection())
         sinograms.append(img)
     return sinograms
+
+
+def get_default_energy_windows(radionuclide_name, spectrum_channel=False):
+    n = radionuclide_name.lower()
+    keV = g4_units.keV
+    channels = []
+
+    if "177lu" in n or "lu177" in n:
+        channels = [
+            {"name": f"spectrum", "min": 3 * keV, "max": 515 * keV},
+            {"name": f"scatter1", "min": 84.75 * keV, "max": 101.7 * keV},
+            {"name": f"peak113", "min": 101.7 * keV, "max": 124.3 * keV},
+            {"name": f"scatter2", "min": 124.3 * keV, "max": 141.25 * keV},
+            {"name": f"scatter3", "min": 145.6 * keV, "max": 187.2 * keV},
+            {"name": f"peak208", "min": 187.2 * keV, "max": 228.8 * keV},
+            {"name": f"scatter4", "min": 228.8 * keV, "max": 270.4 * keV},
+        ]
+
+    if "tc99m" in n:
+        channels = [
+            {"name": f"spectrum", "min": 3 * keV, "max": 160 * keV},
+            {"name": f"scatter", "min": 108.58 * keV, "max": 129.59 * keV},
+            {"name": f"peak140", "min": 129.59 * keV, "max": 150.61 * keV},
+        ]
+
+    if "in111" in n or "111in" in n:
+        # 15% around the peaks
+        channels = [
+            {"name": "spectrum_full", "min": 3.0 * keV, "max": 515.0 * keV},
+            {"name": "scatter_171_low", "min": 138.4525 * keV, "max": 158.4525 * keV},
+            {"name": "peak_171", "min": 158.4525 * keV, "max": 184.1475 * keV},
+            {"name": "scatter_171_high", "min": 184.1475 * keV, "max": 204.1475 * keV},
+            {"name": "scatter_245_low", "min": 206.995 * keV, "max": 226.995 * keV},
+            {"name": "peak_245", "min": 226.995 * keV, "max": 263.805 * keV},
+            {"name": "scatter_245_high", "min": 263.805 * keV, "max": 283.805 * keV},
+        ]
+
+    if "i123" in n or "123i" in n:
+        # 20% window around 159 keV peak
+        channels = [
+            {"name": "spectrum", "min": 3 * keV, "max": 200 * keV},
+            {"name": "scatter_low", "min": 125 * keV, "max": 143.1 * keV},
+            {"name": "peak159", "min": 143.1 * keV, "max": 174.9 * keV},
+            {"name": "scatter_high", "min": 174.9 * keV, "max": 195 * keV},
+        ]
+
+    if "i131" in n or "131i" in n:
+        # 20% window around 364 keV peak
+        channels = [
+            {"name": "spectrum", "min": 3 * keV, "max": 410 * keV},
+            {"name": "scatter_low", "min": 285 * keV, "max": 327.6 * keV},
+            {"name": "peak364", "min": 327.6 * keV, "max": 400.4 * keV},
+        ]
+
+    if not spectrum_channel:
+        channels.pop(0)
+    if len(channels) == 0:
+        raise ValueError(f"No default energy windows for {radionuclide_name}")
+    return channels
+
+
+def compute_poisson_relative_uncertainty(np_image):
+    """
+    Uncertainty for Poisson counts is sqrt(counts) = standard deviation
+    Relative uncertainty is sqrt(counts)/counts
+    """
+    relative_uncertainty = np_image
+    uncertainty = np.sqrt(np_image)
+    relative_uncertainty = np.divide(
+        uncertainty,
+        relative_uncertainty,
+        out=np.zeros_like(relative_uncertainty),
+        where=relative_uncertainty != 0,
+    )
+    return relative_uncertainty
+
+
+def compute_poisson_relative_uncertainty_from_file(
+    input_filename, output_rel_uncert=None
+):
+    """ """
+    img = sitk.ReadImage(input_filename)
+    relative_uncertainty = sitk.GetArrayFromImage(img)
+    relative_uncertainty = compute_poisson_relative_uncertainty(relative_uncertainty)
+    if output_rel_uncert is not None:
+        uncert = sitk.GetImageFromArray(relative_uncertainty)
+        uncert.CopyInformation(img)
+        sitk.WriteImage(uncert, output_rel_uncert)
+    return relative_uncertainty
+
+
+def compute_batch_mean_and_relative_uncertainty(np_images):
+    """
+    Computes the mean and the relative uncertainty of the given images as np arrays.
+    Parameters:
+        np_images (list of np.ndarray): List of Numpy arrays from images.
+    Returns:
+        np.ndarray: The mean image.
+        np.ndarray: The relative uncertainty image.
+    """
+    mean = None
+    nb_batch = len(np_images)
+
+    # Compute mean
+    for m in np_images:
+        if mean is None:
+            mean = m.copy()
+        else:
+            mean += m
+    mean /= nb_batch
+
+    # Compute standard deviation (variance)
+    squared = None
+    for m in np_images:
+        diff_squared = np.power(m - mean, 2)
+        if squared is None:
+            squared = diff_squared
+        else:
+            squared += diff_squared
+
+    # Compute uncertainty
+    uncert = np.sqrt(np.divide(squared, nb_batch * (nb_batch - 1)))
+
+    # Compute relative uncertainty in %
+    uncert = np.divide(uncert, mean, out=np.zeros_like(mean), where=mean != 0)
+
+    return mean, uncert
+
+
+def compute_batch_mean_and_relative_uncertainty_from_files(
+    image_filenames, mean_filename=None, rel_uncert_filename=None
+):
+    """
+    Wrapper function that reads images from file, computes relative uncertainty, and writes results to files.
+    Parameters:
+        image_filenames (list of str): List of image file paths.
+        mean_filename (str): Path to save the mean image (optional).
+        rel_uncert_filename (str): Path to save the relative uncertainty image (optional).
+    Returns:
+        np.ndarray: The mean image.
+        np.ndarray: The relative uncertainty image.
+    """
+    # Read images into Numpy arrays
+    np_images = [sitk.GetArrayFromImage(sitk.ReadImage(f)) for f in image_filenames]
+
+    # Compute mean and relative uncertainty
+    mean, uncert = compute_batch_mean_and_relative_uncertainty(np_images)
+
+    # Write results back to files if filenames are provided
+    if mean_filename is not None:
+        img = sitk.GetImageFromArray(mean)
+        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
+        sitk.WriteImage(img, str(mean_filename))
+    if rel_uncert_filename is not None:
+        img = sitk.GetImageFromArray(uncert)
+        img.CopyInformation(sitk.ReadImage(image_filenames[0]))
+        sitk.WriteImage(img, str(rel_uncert_filename))
+
+    return mean, uncert
+
+
+def compute_efficiency_from_files(uncert_filename, duration):
+    img_ref = sitk.ReadImage(str(uncert_filename))
+    np_uncert = sitk.GetArrayFromImage(img_ref)
+    return compute_efficiency(np_uncert, duration)
+
+
+def compute_efficiency(np_uncert, duration):
+    ones = np.ones_like(np_uncert)
+    eff = np.divide(
+        ones,
+        (np_uncert * np_uncert) * duration,
+        out=np.zeros_like(np_uncert),
+        where=np_uncert != 0,
+    )
+    return eff
+
+
+def compute_history_by_history_relative_uncertainty(np_img, np_img_squared, n):
+    mean = np_img / n
+    squared = np_img_squared / n
+    variance = (squared - np.power(mean, 2)) / (n - 1)
+    uncertainty = np.divide(
+        np.sqrt(variance),
+        mean,
+        out=np.zeros_like(variance),
+        where=mean != 0,
+    )
+    return uncertainty
+
+
+def compute_history_by_history_relative_uncertainty_from_files(
+    img_filename,
+    img_squared_filename,
+    n,
+    output_filename=None,
+):
+    # primary
+    img = sitk.ReadImage(img_filename)
+    img_squared = sitk.ReadImage(img_squared_filename)
+    mean = sitk.GetArrayFromImage(img)
+    squared = sitk.GetArrayFromImage(img_squared)
+
+    # compute
+    uncert = compute_history_by_history_relative_uncertainty(mean, squared, n)
+
+    if output_filename is not None:
+        img_uncert = sitk.GetImageFromArray(uncert)
+        img_uncert.CopyInformation(img)
+        sitk.WriteImage(img_uncert, output_filename)
+
+    return uncert, mean, squared
+
+
+def compute_zscore(ref_counts_np, test_counts_np, var_ref, var_test):
+    not_zero = (ref_counts_np != 0) & (test_counts_np != 0)
+    z_score = np.divide(
+        test_counts_np - ref_counts_np,
+        np.sqrt(var_ref + var_test),
+        out=np.zeros_like(ref_counts_np),
+        where=not_zero,
+    )
+    z_score = z_score.astype(np.float64)
+    return z_score
+
+
+def compute_zscore_from_files(
+    ref_filename,
+    test_filename,
+    ref_uncert_filename,
+    test_uncert_filename,
+    output_filename=None,
+):
+    # read data
+    img = sitk.ReadImage(ref_filename)
+    ref_counts_np = sitk.GetArrayFromImage(img)
+    test_counts_np = sitk.GetArrayFromImage(sitk.ReadImage(test_filename))
+    ref_uncert = sitk.GetArrayFromImage(sitk.ReadImage(ref_uncert_filename))
+    test_uncert = sitk.GetArrayFromImage(sitk.ReadImage(test_uncert_filename))
+
+    # compute var and zscore
+    var_ref = (ref_uncert * ref_counts_np) ** 2
+    var_test = (test_uncert * test_counts_np) ** 2
+    z_score = compute_zscore(ref_counts_np, test_counts_np, var_ref, var_test)
+
+    # write results
+    if output_filename is not None:
+        img = sitk.GetImageFromArray(z_score)
+        img.CopyInformation(img)
+        sitk.WriteImage(img, output_filename)
+
+    return z_score
+
+
+def compute_zscore_from_folders(
+    ref_folder,
+    test_folder,
+    counts_filename="projection_0_counts.mhd",
+    uncert_filename="relative_uncertainty_0_counts.mhd",
+):
+    return compute_zscore_from_files(
+        ref_folder / counts_filename,
+        test_folder / counts_filename,
+        ref_folder / uncert_filename,
+        test_folder / uncert_filename,
+        output_filename=test_folder / "zscore.mhd",
+    )
+
+
+def compute_speedup(
+    ref_uncert, test_uncert, ref_duration, test_duration, output_filename=None
+):
+    ref_eff = compute_efficiency(ref_uncert, ref_duration)
+    test_eff = compute_efficiency(test_uncert, test_duration)
+    speedup = np.divide(
+        test_eff, ref_eff, out=np.zeros_like(test_eff), where=ref_eff != 0
+    )
+    speedup = speedup.astype(np.float64)
+    return speedup
+
+
+def compute_speedup_from_files(
+    ref_uncert_filename,
+    test_uncert_filename,
+    ref_duration,
+    test_duration,
+    output_filename=None,
+):
+    img = sitk.ReadImage(ref_uncert_filename)
+    ref_uncert = sitk.GetArrayFromImage(img)
+    test_uncert = sitk.GetArrayFromImage(sitk.ReadImage(test_uncert_filename))
+    speedup = compute_speedup(ref_uncert, test_uncert, ref_duration, test_duration)
+    if output_filename is not None:
+        img_speedup = sitk.GetImageFromArray(speedup)
+        img_speedup.CopyInformation(img)
+        sitk.WriteImage(img_speedup, output_filename)
+    return speedup
+
+
+def compute_speedup_from_folders(
+    ref_folder,
+    test_folder,
+    ref_duration,
+    test_duration,
+    uncert_filename="relative_uncertainty_0_counts.mhd",
+):
+    return compute_speedup_from_files(
+        ref_folder / uncert_filename,
+        test_folder / uncert_filename,
+        ref_duration,
+        test_duration,
+        output_filename=test_folder / "speedup.mhd",
+    )

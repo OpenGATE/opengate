@@ -30,8 +30,9 @@ GatePhaseSpaceActor::GatePhaseSpaceActor(py::dict &user_info)
   fStoreExitingStep = false;
   fStoreEnteringStep = false;
   fStoreFirstStepInVolume = false;
-  fDebug = false;
   fStoreAbsorbedEvent = false;
+  fStoreAllSteps = false;
+  fDebug = false;
 }
 
 GatePhaseSpaceActor::~GatePhaseSpaceActor() {
@@ -45,7 +46,7 @@ void GatePhaseSpaceActor::InitializeUserInfo(py::dict &user_info) {
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");
 
-  // Special case to store event information even if the event do not step in
+  // Special case to store event information even if the event does not step in
   // the mother volume
   if (fStoreAbsorbedEvent) {
     fActions.insert("EndOfEventAction");
@@ -58,7 +59,7 @@ void GatePhaseSpaceActor::InitializeCpp() {
   fNumberOfAbsorbedEvents = 0;
 }
 
-// Called when the simulation start
+// Called when the simulation starts
 void GatePhaseSpaceActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fDigiCollectionName);
@@ -92,7 +93,7 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
   if (fStoreAbsorbedEvent) {
-    // The current event still have to be stored
+    // The current event still has to be stored
     l.fCurrentEventHasBeenStored = false;
   }
   if (fDebug) {
@@ -105,14 +106,15 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
   if (fDebug) {
-    auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    const auto id =
+        G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << "New track "
               << track->GetParticleDefinition()->GetParticleName()
-              << " eid=" << id << std::endl;
+              << track->GetTrackID() << " eid=" << id << std::endl;
   }
 }
 
-// Called every time a batch of step must be processed
+// Called every time a batch of steps must be processed
 void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   /*
    Only store if the particle enters and/or exits the volume.
@@ -131,20 +133,21 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   auto &l = fThreadLocalData.Get();
 
   // Particle enters the volume if the pre step is at the volume boundary
-  bool entering = step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
+  const bool entering =
+      step->GetPreStepPoint()->GetStepStatus() == fGeomBoundary;
 
   // Particle exits the volume if the post step is at the volume boundary or at
   // the world boundary if the phsp is attached to the world
-  bool exiting = step->GetPostStepPoint()->GetStepStatus() == fGeomBoundary ||
-                 step->GetPostStepPoint()->GetStepStatus() == fWorldBoundary;
+  const bool exiting = IsStepExitingAttachedVolume(step);
 
-  // When this is the first time we see this particle fFirstStepInVolume is true
-  // We then set it to false
-  bool first_step_in_volume = l.fFirstStepInVolume;
+  // When this is the first time we've seen this particle, fFirstStepInVolume is
+  // true We then set it to false
+  const bool first_step_in_volume = l.fFirstStepInVolume;
   l.fFirstStepInVolume = false;
 
-  // Keep or ignore ?
-  bool ok = entering && fStoreEnteringStep;
+  // Keep or ignore?
+  bool ok = fStoreAllSteps;
+  ok = ok || entering && fStoreEnteringStep;
   ok = ok || (exiting && fStoreExitingStep);
   ok = ok || (first_step_in_volume && fStoreFirstStepInVolume);
   if (!ok)
@@ -160,17 +163,18 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 
   // debug
   if (fDebug) {
-    auto s = fHits->DumpLastDigi();
-    auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    const auto s = fHits->DumpLastDigi();
+    const auto id =
+        G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     const auto *p = step->GetPreStepPoint()->GetProcessDefinedStep();
-    auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
-    auto vol_name = vol->GetName();
+    const auto *vol = step->GetPreStepPoint()->GetTouchable()->GetVolume();
+    const auto vol_name = vol->GetName();
     std::string pname = "noproc";
     if (p != nullptr)
       pname = p->GetProcessName();
     std::cout << GetName() << " "
               << step->GetTrack()->GetParticleDefinition()->GetParticleName()
-              << " hits=" << fHits->GetSize() << " [" << entering << " "
+              << /*" hits=" << fHits->GetSize() <<*/ " [" << entering << " "
               << exiting << " " << first_step_in_volume << "]"
               << " eid=" << id << " tid=" << step->GetTrack()->GetTrackID()
               << " vol=" << vol_name
@@ -185,7 +189,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 }
 
 void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
-  // For a given event, when no step never reach the phsp:
+  // For a given event, when no step never reaches the phsp:
   // if the option is on, we store a "fake" step, with the event information.
   // All other attributes will be "empty" (mostly 0)
   auto &l = fThreadLocalData.Get();
@@ -195,7 +199,7 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
 
     // Except EventPosition
     auto *att = fHits->GetDigiAttribute("EventPosition");
-    auto p = event->GetPrimaryVertex(0)->GetPosition();
+    const auto p = event->GetPrimaryVertex(0)->GetPosition();
     auto &values = att->Get3Values();
     values.back() = p;
 
@@ -207,16 +211,18 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
     // Except EventDirection
     att = fHits->GetDigiAttribute("EventDirection");
     auto &values_dir = att->Get3Values();
-    auto d = event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
+    const auto d =
+        event->GetPrimaryVertex(0)->GetPrimary(0)->GetMomentumDirection();
     values_dir.back() = d;
 
     // Except EventKineticEnergy
     att = fHits->GetDigiAttribute("EventKineticEnergy");
     auto &values_en = att->GetDValues();
-    auto e = event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
+    const auto e =
+        event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
     values_en.back() = e;
 
-    // increase the nb of absorbed events
+    // increase the number of absorbed events
     fNumberOfAbsorbedEvents++;
   }
 }

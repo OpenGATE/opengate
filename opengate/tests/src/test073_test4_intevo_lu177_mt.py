@@ -3,7 +3,7 @@
 
 from test073_helpers import *
 from opengate.tests import utility
-from opengate.sources.base import set_source_rad_energy_spectrum
+from opengate.sources.utility import set_source_energy_spectrum
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -16,24 +16,27 @@ if __name__ == "__main__":
     sim.random_seed = 123456
     sim.output_dir = paths.output
 
-    # digit
-    crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
-    digit = intevo.add_digitizer_lu177(sim, crystal.name, "digit_lu177")
-
     # add a channel 'spectrum' (which is not by default because not compatible with ARF)
     keV = gate.g4_units.keV
+    channels = intevo.get_default_energy_windows("lu177", False)
     c = {"name": "spectrum", "min": 35 * keV, "max": 588 * keV}
+    channels.append(c)
+
+    # digit
+    crystal = sim.volume_manager.get_volume(f"{head.name}_crystal")
+    digit = intevo.add_digitizer(
+        sim, crystal.name, name="digit_lu177", channels=channels
+    )
     ew = digit.find_module("energy_window")
     ew.output_filename = "output_intevo_lu177.root"
     ew.root_output.write_to_disk = True
-    ew.channels.append(c)
 
     # output
     stats.output_filename = "stats_intevo_lu177.txt"
 
     # source
     Bq = gate.g4_units.Bq
-    set_source_rad_energy_spectrum(source, "Lu177")
+    set_source_energy_spectrum(source, "Lu177", "radar")
     source.activity = 2e8 * Bq / sim.number_of_threads
 
     # start simulation
@@ -41,6 +44,8 @@ if __name__ == "__main__":
 
     # stat
     print(stats)
+
+    # FIXME ea.efficiency = 0.86481
 
     # compare stats
     ref_folder = paths.output_ref

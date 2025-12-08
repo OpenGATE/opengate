@@ -1,0 +1,34 @@
+{
+  "collimators": [
+    "lehr",
+    "megp",
+    "hegp"
+  ],
+  "lehr": {
+    "collimator_position": 61.099999999999994,
+    "half_box_size": 95.000001,
+    "crystal_distance": 81.775001,
+    "psd": 34.900001,
+    "hole_diameter": 1.5,
+    "collimator_length": 35.0,
+    "septa_thickness": 0.19999999999999996
+  },
+  "megp": {
+    "collimator_position": 84.10000000000001,
+    "half_box_size": 95.000001,
+    "crystal_distance": 81.775001,
+    "psd": 11.900001000000003,
+    "hole_diameter": 3.0,
+    "collimator_length": 58.0,
+    "septa_thickness": 1.0499999999999998
+  },
+  "hegp": {
+    "collimator_position": 92.1,
+    "half_box_size": 95.000001,
+    "crystal_distance": 81.775001,
+    "psd": 3.900001000000003,
+    "hole_diameter": 4.0,
+    "collimator_length": 66.0,
+    "septa_thickness": 1.7999999999999998
+  }
+}

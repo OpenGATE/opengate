@@ -310,8 +310,6 @@ void init_GateKineticEnergyFilter(py::module &);
 // Gate actors
 void init_GateDoseActor(py::module &m);
 
-void init_GateTLEDoseActor(py::module &m);
-
 void init_GateVoxelizedPromptGammaTLEActor(py::module &m);
 
 void init_GateVoxelizedPromptGammaAnalogActor(py::module &m);

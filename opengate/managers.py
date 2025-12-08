@@ -89,7 +89,9 @@ from .actors.doseactors import (
     BeamQualityActor,
     EmCalculatorActor,
 )
-from .actors.tleactors import TLEDoseActor, VoxelizedPromptGammaTLEActor
+
+from .actors.tleactors import VoxelizedPromptGammaTLEActor
+
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (

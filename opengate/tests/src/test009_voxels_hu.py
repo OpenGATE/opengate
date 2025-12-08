@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     # tests
     gate.exception.warning(f"Check dose")
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat_hu.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat_hu.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.15)
     is_ok = (
         utility.assert_images(

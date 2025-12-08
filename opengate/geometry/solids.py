@@ -1,7 +1,8 @@
 from box import Box
 from scipy.spatial.transform import Rotation
-import stl
 import logging
+import numpy as np
+import meshio
 
 from ..base import GateObject, process_cls, create_gate_object_from_dict
 from ..utility import g4_units
@@ -142,6 +143,9 @@ class BooleanSolid(SolidBase):
 
 
 class BoxSolid(SolidBase):
+
+    size: list[float]
+
     user_info_defaults = {
         "size": (
             [10 * g4_units.cm, 10 * g4_units.cm, 10 * g4_units.cm],
@@ -320,6 +324,38 @@ class SphereSolid(SolidBase):
         )
 
 
+class EllipsoidSolid(SolidBase):
+    user_info_defaults = {
+        "xSemiAxis": (1 * g4_units.mm, {"doc": "Semiaxis in X"}),
+        "ySemiAxis": (
+            1 * g4_units.mm,
+            {"doc": "Semiaxis in Y"},
+        ),
+        "zSemiAxis": (
+            1 * g4_units.mm,
+            {"doc": "Semiaxis in Z"},
+        ),
+        "zBottomCut": (
+            0 * g4_units.mm,
+            {"doc": "lower cut plane level, Z"},
+        ),
+        "zTopCut": (
+            0 * g4_units.mm,
+            {"doc": "upper cut plane level, Z"},
+        ),
+    }
+
+    def build_solid(self):
+        return g4.G4Ellipsoid(
+            self.name,
+            self.xSemiAxis,
+            self.ySemiAxis,
+            self.zSemiAxis,
+            self.zBottomCut,
+            self.zTopCut,
+        )
+
+
 class TrapSolid(SolidBase):
     """
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
@@ -435,6 +471,13 @@ class TubsSolid(SolidBase):
 
     """
 
+    # hints for IDE
+    rmin: float
+    rmax: float
+    dz: float
+    sphi: float
+    dphi: float
+
     user_info_defaults = {
         "rmin": (30 * g4_units.mm, {"doc": "Inner radius"}),
         "rmax": (40 * g4_units.mm, {"doc": "Outer radius"}),
@@ -452,8 +495,23 @@ class TesselatedSolid(SolidBase):
     https://geant4-userdoc.web.cern.ch/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html?highlight=tesselated#tessellated-solids
     """
 
+    file_name: str
+    origin_at_cog: bool
+    size_unit: float
+
     user_info_defaults = {
-        "file_name": ("", {"doc": "Path and file name of the STL file."}),
+        "file_name": (
+            "",
+            {"doc": "Path and file name of the mesh file."},
+        ),
+        "origin_at_cog": (
+            True,
+            {"doc": "Translate the volume so its centre of gravity is at (0, 0, 0)."},
+        ),
+        "size_unit": (
+            g4_units.mm,
+            {"doc": "Unit to interpret data in the mesh file."},
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -466,47 +524,45 @@ class TesselatedSolid(SolidBase):
         # self.g4_facets = None
         super().close()
 
-    def read_file(self):
-        try:
-            return stl.mesh.Mesh.from_file(self.file_name)
-        except Exception as e:
-            msg = (
-                f"Error in {self.type_name} called {self.name}. Could not read the file {self.file_name}. Aborting. "
-                f"The error encountered was: \n{e}"
-            )
-            fatal(msg)
-
-    def translate_mesh_to_center(self, mesh_to_translate):
-        # translate the mesh to the center of gravity
-        cog = mesh_to_translate.get_mass_properties()[1]
-        mesh_to_translate.translate(-cog)
-        return mesh_to_translate
-
     def build_solid(self):
         mm = g4_units.mm
+        unit = self.size_unit
+
+        mesh = meshio.read(self.file_name)
+        points = mesh.points
+
         # translate the mesh to the center of gravity
-        box_mesh = self.translate_mesh_to_center(self.read_file())
-        # generate the tessellated solid
+        if self.origin_at_cog:
+            centre = np.mean(points, axis=0)
+            points = [point - centre for point in points]
+
         tessellated_solid = g4.G4TessellatedSolid(self.name)
-        # create an array of facets
-        # self.g4_facets = []
-        for vertex in box_mesh.vectors:
-            # Create the new facet
-            # ABSOLUTE =0
-            # RELATIVE =1
-            g4_facet = g4.G4TriangularFacet(
-                vec_np_as_g4(vertex[0]),
-                vec_np_as_g4(vertex[1]),
-                vec_np_as_g4(vertex[2]),
-                g4.G4FacetVertexType.ABSOLUTE,
-            )
-            tessellated_solid.AddFacet(g4_facet)
-            # self.g4_facets.append(g4_facet)
+        if "triangle" in mesh.cells_dict:
+            for triangle in mesh.cells_dict["triangle"]:
+                g4_facet = g4.G4TriangularFacet(
+                    vec_np_as_g4(points[triangle[0]] * unit),
+                    vec_np_as_g4(points[triangle[1]] * unit),
+                    vec_np_as_g4(points[triangle[2]] * unit),
+                    g4.G4FacetVertexType.ABSOLUTE,
+                )
+                tessellated_solid.AddFacet(g4_facet)
+
+        if "quad" in mesh.cells_dict:
+            for quad in mesh.cells_dict["quad"]:
+                g4_facet = g4.G4QuadrangularFacet(
+                    vec_np_as_g4(points[quad[0]] * unit),
+                    vec_np_as_g4(points[quad[1]] * unit),
+                    vec_np_as_g4(points[quad[2]] * unit),
+                    vec_np_as_g4(points[quad[3]] * unit),
+                    g4.G4FacetVertexType.ABSOLUTE,
+                )
+                tessellated_solid.AddFacet(g4_facet)
 
         # set the solid closed
         tessellated_solid.SetSolidClosed(True)
         logger.debug(
-            f"Created tesselated volume '{self.name}' with a volume of {tessellated_solid.GetCubicVolume() / mm**3} mm3"
+            f"Created tesselated volume '{self.name}'"
+            f"with a volume of {tessellated_solid.GetCubicVolume() * unit**3 / mm**3} mm³"
         )
 
         return tessellated_solid
@@ -528,11 +584,18 @@ class ImageSolid(SolidBase):
         self.g4_solid_y = None
         self.g4_solid_z = None
 
+        self.slice_xy = None
+        self.slice_xz = None
+        self.slice_yz = None
+
     def __getstate__(self):
         return_dict = super().__getstate__()
         return_dict["g4_solid_x"] = None
         return_dict["g4_solid_y"] = None
         return_dict["g4_solid_z"] = None
+        return_dict["slice_xy"] = None
+        return_dict["slice_xz"] = None
+        return_dict["slice_yz"] = None
         return return_dict
 
     def close(self):
@@ -543,6 +606,9 @@ class ImageSolid(SolidBase):
         self.g4_solid_x = None
         self.g4_solid_y = None
         self.g4_solid_z = None
+        self.slice_xy = None
+        self.slice_xz = None
+        self.slice_yz = None
 
     @requires_fatal("half_size_mm")
     @requires_fatal("half_spacing")
@@ -565,9 +631,13 @@ class ImageSolid(SolidBase):
             self.half_spacing[1],
             self.half_spacing[2],
         )
-        self.g4_solid = g4.G4Box(
-            self.name, self.half_size_mm[0], self.half_size_mm[1], self.half_size_mm[2]
-        )
+
+        image_dict = {
+            "name": self.name,
+            "half_size_mm": self.half_size_mm,
+            "size": (self.half_size_mm / self.half_spacing).astype(int),
+        }
+        self.g4_solid = g4.GateImageBox(image_dict)
 
 
 process_cls(SolidBase)
@@ -577,6 +647,7 @@ process_cls(HexagonSolid)
 process_cls(ConsSolid)
 process_cls(PolyhedraSolid)
 process_cls(SphereSolid)
+process_cls(EllipsoidSolid)
 process_cls(TrapSolid)
 process_cls(TrdSolid)
 process_cls(TubsSolid)

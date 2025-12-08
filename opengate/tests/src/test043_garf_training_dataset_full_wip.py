@@ -62,15 +62,15 @@ if __name__ == "__main__":
     s1.energy.type = "range"
     s1.energy.min_energy = 0.01 * MeV
     s1.energy.max_energy = 0.154 * MeV
-    s1.direction.acceptance_angle.volumes = [detPlane.name]
-    s1.direction.acceptance_angle.intersection_flag = True
+    s1.direction.angular_acceptance.target_volumes = [detPlane.name]
+    s1.direction.angular_acceptance.enable_intersection_check = True
 
     # digitizer
     channels = [
         {"name": f"scatter_{spect.name}", "min": 114 * keV, "max": 126 * keV},
         {"name": f"peak140_{spect.name}", "min": 126 * keV, "max": 154 * keV},
     ]
-    cc = gate_spect.add_digitizer_energy_windows(sim, crystal_name, channels)
+    cc = gate_spect.add_digitizer_energy_windows_OLD(sim, crystal_name, channels)
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")

@@ -74,7 +74,7 @@ public:
 
   void SetWriteToRootFlag(bool f);
 
-  void SetFilenameAndInitRoot(std::string filename);
+  void SetFilenameAndInitRoot(const std::string &filename);
 
   std::string GetFilename() const { return fFilename; }
 
@@ -86,7 +86,7 @@ public:
 
   size_t GetSize() const override;
 
-  void Clear();
+  void Clear() const;
 
   std::vector<GateVDigiAttribute *> &GetDigiAttributes() {
     return fDigiAttributes;
@@ -104,13 +104,15 @@ public:
 
   std::string DumpLastDigi() const;
 
+  std::string DumpDigi(int i) const;
+
   Iterator NewIterator();
 
   size_t GetBeginOfEventIndex() const;
 
-  void SetBeginOfEventIndex(size_t index);
+  void SetBeginOfEventIndex(size_t index) const;
 
-  void SetBeginOfEventIndex();
+  void SetBeginOfEventIndex() const;
 
 protected:
   // Can only be created by GateDigiCollectionManager

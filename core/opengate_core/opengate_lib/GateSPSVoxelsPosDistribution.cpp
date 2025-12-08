@@ -19,23 +19,22 @@ GateSPSVoxelsPosDistribution::GateSPSVoxelsPosDistribution() {
   fGlobalRotation = G4RotationMatrix();
 }
 
-void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(VD vz,
-                                                                     VD2 vy,
-                                                                     VD3 vx) {
-  // Warning : this is a COPY of all cumulative distribution functions
+void GateSPSVoxelsPosDistribution::SetCumulativeDistributionFunction(
+    const VD &vz, const VD2 &vy, const VD3 &vx) {
+  // Warning: this is a COPY of all cumulative distribution functions
   fCDFZ = vz;
   fCDFY = vy;
   fCDFX = vx;
 }
 
 G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
-  // G4UniformRand : default boundaries ]0.1[ for operator()().
+  // G4UniformRand: default boundaries ]0.1[ for operator()().
 
   // Get Cumulative Distribution Function for Z
   auto i = 0;
   do {
     auto p = G4UniformRand();
-    auto lower = std::lower_bound(fCDFZ.begin(), fCDFZ.end(), p);
+    const auto lower = std::lower_bound(fCDFZ.begin(), fCDFZ.end(), p);
     i = std::distance(fCDFZ.begin(), lower);
   } while (i >= (int)fCDFX.size());
 
@@ -43,7 +42,7 @@ G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
   auto j = 0;
   do {
     auto p = G4UniformRand();
-    auto lower = std::lower_bound(fCDFY[i].begin(), fCDFY[i].end(), p);
+    const auto lower = std::lower_bound(fCDFY[i].begin(), fCDFY[i].end(), p);
     j = std::distance(fCDFY[i].begin(), lower);
   } while (j >= (int)fCDFX[i].size());
 
@@ -51,14 +50,15 @@ G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
   auto k = 0;
   do {
     auto p = G4UniformRand();
-    auto lower = std::lower_bound(fCDFX[i][j].begin(), fCDFX[i][j].end(), p);
+    const auto lower =
+        std::lower_bound(fCDFX[i][j].begin(), fCDFX[i][j].end(), p);
     k = std::distance(fCDFX[i][j].begin(), lower);
   } while (k >= (int)fCDFX[i][j].size());
 
   // convert to physical coordinate
   // (warning to the numpy order Z Y X)
-  itk::Index<3> index = {k, j, i};
-  itk::Point<double, 3> point;
+  const itk::Index<3> index = {k, j, i};
+  itk::Point<double> point;
   cpp_image->TransformIndexToPhysicalPoint(index, point);
 
   // random position within a voxel
@@ -66,44 +66,10 @@ G4ThreeVector GateSPSVoxelsPosDistribution::VGenerateOne() {
   point[1] += (G4UniformRand() - 0.5) * cpp_image->GetSpacing()[1];
   point[2] += (G4UniformRand() - 0.5) * cpp_image->GetSpacing()[2];
 
-  // convert to G4 vector and move according to mother volume
+  // convert to G4 vector and move it according to mother volume
   G4ThreeVector position(point[0], point[1], point[2]);
   position = fGlobalRotation * position +
              fGlobalTranslation; // not global only according to mother ?
 
   return position;
-}
-
-std::vector<int> GateSPSVoxelsPosDistribution::VGenerateOneDebug() {
-  // G4UniformRand : default boundaries ]0.1[ for operator()().
-
-  // Get Cumulative Distribution Function for Z
-  auto i = 0;
-  do {
-    auto p = G4UniformRand();
-    auto lower = std::lower_bound(fCDFZ.begin(), fCDFZ.end(), p);
-    i = std::distance(fCDFZ.begin(), lower);
-  } while (i >= (int)fCDFX.size());
-
-  // Get Cumulative Distribution Function for Y, knowing Z
-  auto j = 0;
-  do {
-    auto p = G4UniformRand();
-    auto lower = std::lower_bound(fCDFY[i].begin(), fCDFY[i].end(), p);
-    j = std::distance(fCDFY[i].begin(), lower);
-  } while (j >= (int)fCDFX[i].size());
-
-  // Get Cumulative Distribution Function for X, knowing X and Y
-  auto k = 0;
-  do {
-    auto p = G4UniformRand();
-    auto lower = std::lower_bound(fCDFX[i][j].begin(), fCDFX[i][j].end(), p);
-    k = std::distance(fCDFX[i][j].begin(), lower);
-  } while (k >= (int)fCDFX[i][j].size());
-
-  // convert to physical coordinate
-  // (warning to the numpy order Z Y X)
-  std::vector<int> index = {k, j, i};
-
-  return index;
 }

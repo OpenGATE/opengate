@@ -18,10 +18,12 @@ if __name__ == "__main__":
     # add AA
     gsource = sim.get_source_user_info("gaga")
     gsource.skip_policy = "SkipEvents"
-    gsource.direction.acceptance_angle.volumes = ["spect1"]
-    gsource.direction.acceptance_angle.intersection_flag = True
-    gsource.direction.acceptance_angle.normal_flag = False
-    gsource.direction.acceptance_angle.skip_policy = "SkipEvents"
+    gsource.direction.angular_acceptance.target_volumes = ["spect1"]
+    gsource.direction.angular_acceptance.enable_intersection_check = True
+    gsource.direction.angular_acceptance.enable_angle_check = False
+    gsource.direction.angular_acceptance.max_rejection = 20000
+    gsource.direction.angular_acceptance.policy = "Rejection"
+    gsource.direction.angular_acceptance.skip_policy = "SkipEvents"
     # gsource.batch_size = 2e4
 
     # change output names
@@ -33,7 +35,7 @@ if __name__ == "__main__":
     singles.output_filename = "test038_gan_aa_singles.root"
 
     # go
-    sim.run(start_new_process=True)
+    sim.run()  # start_new_process=True)
 
     #
     print()
@@ -52,7 +54,7 @@ if __name__ == "__main__":
     )
 
     stats = sim.get_actor("Stats")
-    stats_ref = utility.read_stat_file(paths.output_ref / "test038_gan_aa_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test038_gan_aa_stats.txt")
     # do not compare steps
     stats_ref.counts.steps = stats.counts.steps
     is_ok = utility.assert_stats(stats, stats_ref, 0.02) and is_ok
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     is_ok = (
         utility.assert_images(
             paths.output_ref / "test038_gan_aa_proj.mhd",
-            paths.output / "test038_gan_aa_proj.mhd",
+            paths.output / "test038_gan_aa_proj_counts.mhd",
             tolerance=70,
             axis="x",
             sum_tolerance=2.75,
