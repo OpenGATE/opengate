@@ -110,6 +110,9 @@ public:
   static void PrepareLocalDataForRun(threadLocalT &data,
                                      unsigned int numberOfVoxels);
 
+  void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
+                        Image3DType::IndexType &index) const;
+
   // Option: indicate we must convert to dose to water
   bool fToWaterFlag{};
 
