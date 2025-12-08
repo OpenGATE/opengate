@@ -64,7 +64,7 @@ if __name__ == "__main__":
     # Gate mac/main_4.mac
     f = paths.gate_output / "stat_5.txt"
     print("Reference file", f)
-    stats_ref = utility.read_stat_file(f)
+    stats_ref = utility.read_stats_file(f)
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.13)
 
     utility.test_ok(is_ok)

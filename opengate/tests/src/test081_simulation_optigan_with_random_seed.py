@@ -6,6 +6,7 @@
 import opengate as gate
 import opengate.tests.utility as tu
 from opengate.contrib.optical.optigan import OptiGAN
+import platform
 
 import os
 
@@ -92,7 +93,10 @@ if __name__ == "__main__":
     # Option 1:
     # Call OptiGAN class with input_phsp_actor set to the correct phase space actor
     # Output will be saved in the folder specified via sim.output_dir
-    optigan = OptiGAN(input_phsp_actor=phsp_actor)
+    device = "auto"
+    if platform.system() == "Darwin":
+        device = "cpu"
+    optigan = OptiGAN(input_phsp_actor=phsp_actor, torch_device=device)
 
     # -------
 
@@ -107,7 +111,7 @@ if __name__ == "__main__":
     # otherwise, output will be saved under the current directory where the script resides
 
     # use
-    help(optigan)
+    # help(optigan)
     # for an explanation of the input parameters
     # -------
 

@@ -21,25 +21,24 @@ void ComputeTransformationFromVolumeToWorld(const std::string &phys_volume_name,
     const auto *phys = pvs->GetVolume(name);
     if (phys == nullptr) {
       std::ostringstream oss;
-      oss << "The volume '" << name
+      oss << " (ComputeTransformationFromVolumeToWorld) The volume '" << name
           << "' is not found. Here is the list of volumes: ";
       auto map = pvs->GetMap();
-      for (auto m : map) {
+      for (const auto &m : map) {
         oss << m.first << " ";
       }
       oss << std::endl;
       Fatal(oss.str());
-    } else {
-      auto tr = phys->GetObjectTranslation();
-      auto rot = phys->GetObjectRotationValue();
-      rotation = rot * rotation;
-      translation = rot * translation + tr;
-      // Warning, the world can be a parallel world
-      if (phys->GetMotherLogical() == nullptr)
-        name = "world";
-      else
-        name = phys->GetMotherLogical()->GetName();
     }
+    auto tr = phys->GetObjectTranslation();
+    auto rot = phys->GetObjectRotationValue();
+    rotation = rot * rotation;
+    translation = rot * translation + tr;
+    // Warning, the world can be a parallel world
+    if (phys->GetMotherLogical() == nullptr)
+      name = "world";
+    else
+      name = phys->GetMotherLogical()->GetName();
   }
 }
 
@@ -56,4 +55,29 @@ void ComputeTransformationFromWorldToVolume(const std::string &phys_volume_name,
   rotation.invert();
   translation = rotation * translation;
   translation = -translation;
+}
+
+bool IsStepInVolume(const G4Step *step, const std::string &volume_name) {
+  if (!step)
+    return false;
+
+  const G4StepPoint *preStepPoint = step->GetPreStepPoint();
+  if (!preStepPoint)
+    return false;
+
+  const G4TouchableHandle &touchable = preStepPoint->GetTouchableHandle();
+  if (!touchable)
+    return false;
+
+  // Traverse the touchable hierarchy upwards
+  for (G4int depth = 0; depth < touchable->GetHistoryDepth(); ++depth) {
+    const G4VPhysicalVolume *volume = touchable->GetVolume(depth);
+    if (!volume)
+      continue;
+
+    if (volume->GetName() == volume_name) {
+      return true;
+    }
+  }
+  return false;
 }

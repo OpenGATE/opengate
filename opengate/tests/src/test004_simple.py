@@ -4,11 +4,11 @@
 from opengate.userhooks import check_production_cuts
 from opengate.tests.utility import (
     get_default_test_paths,
-    read_stat_file,
     assert_stats,
     test_ok,
 )
 from opengate.utility import g4_units
+from opengate.actors.simulation_stats_helpers import *
 from opengate.logger import DEBUG, RUN
 from opengate.managers import Simulation
 
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # Comparison with gate simulation
     # gate_test4_simulation_stats_actor
     # Gate mac/main.mac
-    stats_ref = read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = read_stats_file(paths.gate_output / "stat.txt")
     is_ok = assert_stats(stats, stats_ref, tolerance=0.01)
 
     test_ok(is_ok)

@@ -30,6 +30,7 @@ from ..actors.dynamicactors import (
 )
 from .materials import create_density_img, write_material_database
 from opengate.serialization import dump_json
+from opengate.utility import g4_units
 
 
 def _setter_hook_user_info_rotation(self, rotation_user):
@@ -647,6 +648,9 @@ def subtract_volumes(
 
 
 class BoxVolume(RepeatableVolume, solids.BoxSolid):
+    # hints for IDE
+    size: list[float]
+
     """
     Volume with a box shape.
     """
@@ -695,6 +699,13 @@ class TrdVolume(RepeatableVolume, solids.TrdSolid):
 
 
 class TubsVolume(RepeatableVolume, solids.TubsSolid):
+
+    # hints for IDE
+    rmin: float
+    rmax: float
+    dz: float
+    sphi: float
+    dphi: float
     """
     Volume with a tube or cylindrical section shape.
     """
@@ -702,8 +713,7 @@ class TubsVolume(RepeatableVolume, solids.TubsSolid):
 
 class TesselatedVolume(RepeatableVolume, solids.TesselatedSolid):
     """
-    Volume based on a mesh volume
-    by reading an STL file.
+    Volume based on a mesh volume by reading a mesh file.
     """
 
 
@@ -872,6 +882,7 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_y = None
         self.g4_logical_z = None
         self.g4_voxel_param = None
+        self.g4_vis_attributes_logical_slices = None
 
     def __getstate__(self):
         return_dict = super().__getstate__()
@@ -882,6 +893,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         return_dict["g4_logical_y"] = None
         return_dict["g4_logical_z"] = None
         return_dict["g4_voxel_param"] = None
+        return_dict["g4_vis_attributes_logical_slices"] = None
+        return_dict["slice_xy"] = None
+        return_dict["slice_xz"] = None
+        return_dict["slice_yz"] = None
         return return_dict
 
     def close(self):
@@ -896,6 +911,10 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_physical_y = None
         self.g4_physical_z = None
         self.g4_voxel_param = None
+        self.g4_vis_attributes_logical_slices = None
+        self.slice_xy = None
+        self.slice_xz = None
+        self.slice_yz = None
 
     @property
     def itk_image(self):
@@ -987,9 +1006,34 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.half_spacing = 0.5 * self.spacing
         self.construct_material()
         self.construct_solid()
+        self.construct_slices()
         self.construct_logical_volume()
         self.g4_voxel_param = self.create_image_parametrisation()
         self.construct_physical_volume()
+
+    def construct_slices(self):
+        image_array = itk.GetArrayFromImage(self.itk_image)
+        min_pixel = np.min(image_array)
+        interval_pixel = np.max(image_array) - min_pixel
+        self.slice_xy = (
+            image_array[int(self.size_pix[2] / 2), :, :] - min_pixel
+        ) / interval_pixel
+        self.slice_xy = list(self.slice_xy.reshape(1, -1)[0])
+        self.slice_xz = (
+            image_array[:, int(self.size_pix[1] / 2), :] - min_pixel
+        ) / interval_pixel
+        self.slice_xz = list(self.slice_xz.reshape(1, -1)[0])
+        self.slice_yz = (
+            image_array[:, :, int(self.size_pix[0] / 2)] - min_pixel
+        ) / interval_pixel
+        self.slice_yz = list(self.slice_yz.reshape(1, -1)[0])
+        image_dict = {
+            "slice_xy": self.slice_xy,
+            "slice_xz": self.slice_xz,
+            "slice_yz": self.slice_yz,
+        }
+        self.g4_solid.SetSlices(image_dict)
+        self.volume_manager.solid_with_texture_init.append(self.g4_solid)
 
     def construct_physical_volume(self):
         super().construct_physical_volume()
@@ -1036,6 +1080,11 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
         self.g4_logical_z = g4.G4LogicalVolume(
             self.g4_solid_z, self.g4_material, self.name + "_log_Z"
         )
+        self.g4_vis_attributes_logical_slices = g4.G4VisAttributes()
+        self.g4_vis_attributes_logical_slices.SetVisibility(bool(False))
+        self.g4_logical_x.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        self.g4_logical_y.SetVisAttributes(self.g4_vis_attributes_logical_slices)
+        self.g4_logical_z.SetVisAttributes(self.g4_vis_attributes_logical_slices)
 
     def create_material_to_label_lut(self, material=None, voxel_materials=None):
         if voxel_materials is None:
@@ -1074,17 +1123,19 @@ class ImageVolume(VolumeBase, solids.ImageSolid):
     def create_attenuation_image(self, database, energy):
         # convert all materials to mu
         label_to_mu = {}
-        mu_handler = g4.GateMaterialMuHandler.GetInstance(database, 200)  # max in MeV
+        mu_handler = g4.GateMaterialMuHandler.GetInstance(
+            database, 200 * g4_units.MeV
+        )  # max in MeV
         prod_cuts_table = g4.G4ProductionCutsTable.GetProductionCutsTable()
         for i in range(prod_cuts_table.GetTableSize()):
             couple = prod_cuts_table.GetMaterialCutsCouple(i)
             mat_name = str(couple.GetMaterial().GetName())
             label = self.material_to_label_lut[mat_name]
-            mu = mu_handler.GetMu(couple, energy)
+            mu = mu_handler.GetMu(couple, energy / g4_units.MeV)
             label_to_mu[label] = mu
 
         arr = itk.GetArrayViewFromImage(self.label_image)
-        mu_arr = arr.copy().astype("float")
+        mu_arr = arr.copy().astype("float32")
         for label, mu in label_to_mu.items():
             mu_arr[mu_arr == label] = mu
         itk_mu_img = itk.GetImageFromArray(mu_arr)

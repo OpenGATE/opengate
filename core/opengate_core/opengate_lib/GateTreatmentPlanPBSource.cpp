@@ -3,6 +3,7 @@
 #include "G4ParticleTable.hh"
 #include "G4RandomTools.hh"
 #include "GateHelpersDict.h"
+#include "GateHelpersGeometry.h"
 #include <G4UnitsTable.hh>
 
 GateTreatmentPlanPBSource::GateTreatmentPlanPBSource() : GateVSource() {
@@ -84,7 +85,9 @@ double GateTreatmentPlanPBSource::CalcNextTime(double current_simulation_time) {
 }
 
 double
-GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time) {
+GateTreatmentPlanPBSource::PrepareNextTime(double current_simulation_time,
+                                           double NumberOfGeneratedEvents) {
+
   if (current_simulation_time < fStartTime) {
     return fStartTime;
   }
@@ -188,11 +191,24 @@ void GateTreatmentPlanPBSource::UpdatePositionSPS(
   // update local translation and rotation
   auto &ll = GetThreadLocalDataTPSource();
   auto &l = fThreadLocalData.Get();
-  fLocalTranslation = localTransl;
-  fLocalRotation = localRot; // ConvertToG4RotationMatrix(localRot);
 
-  // update global rotation
-  GateVSource::SetOrientationAccordingToAttachedVolume();
+  l.fGlobalTranslation = localTransl;
+  l.fGlobalRotation = localRot; // ConvertToG4RotationMatrix(localRot);
+
+  //   // update global rotation
+  //   GateVSource::SetOrientationAccordingToAttachedVolume();
+
+  // No change in the translation rotation if mother is the world
+  if (fAttachedToVolumeName == "world") {
+    // set it to the vertex
+    ll.fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);
+    return;
+  }
+
+  // compute global translation rotation.
+  // l.fGlobalTranslation and l.fGlobalRotation values are updated here.
+  ComputeTransformationFromVolumeToWorld(
+      fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
 
   // set it to the vertex
   ll.fSPS_PB->SetSourceRotTransl(l.fGlobalTranslation, l.fGlobalRotation);

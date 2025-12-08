@@ -19,27 +19,25 @@ class GateSPSVoxelsPosDistribution : public GateSPSPosDistribution {
 public:
   GateSPSVoxelsPosDistribution();
 
-  virtual ~GateSPSVoxelsPosDistribution() {}
+  ~GateSPSVoxelsPosDistribution() override {}
 
   // Cannot inherit from GenerateOne
-  virtual G4ThreeVector VGenerateOne();
-
-  // DEBUG
-  std::vector<int> VGenerateOneDebug();
+  G4ThreeVector VGenerateOne() override;
 
   // typedef for vector of vector
   typedef std::vector<double> VD;
   typedef std::vector<VD> VD2;
   typedef std::vector<std::vector<VD>> VD3;
 
-  void SetCumulativeDistributionFunction(VD vz, VD2 vy, VD3 vx);
+  void SetCumulativeDistributionFunction(const VD &vz, const VD2 &vy,
+                                         const VD3 &vx);
 
   // Image type is 3D float by default (the pixel data are not used
   // nor even allocated. Only useful to convert pixel coordinates
   // to physical coordinates.
   typedef itk::Image<float, 3> ImageType;
 
-  // The image is accessible from py side
+  // The image is accessible from the python side
   ImageType::Pointer cpp_image;
 
   // FIXME : thread local ??

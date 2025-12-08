@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.visu = False
+    sim.visu_type = "qt"
     sim.number_of_threads = 1
     sim.check_volumes_overlap = False
     sim.output_dir = paths.output
@@ -33,9 +34,8 @@ if __name__ == "__main__":
     sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect, colli, crystal = gate_spect.add_spect_head(sim, "spect", debug=False)
-    psd = 6.11 * cm
-    spect.translation = [0, 0, -(20 * cm + psd)]
+    spect, colli, crystal = nm670.add_spect_head(sim, "spect", debug=False)
+    nm670.rotate_gantry(spect, 20 * cm, 0)
 
     # waterbox
     waterbox = sim.add_volume("Box", "waterbox")
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     beam1.position.radius = 3 * cm
     beam1.position.translation = [0, 0, 0 * cm]
     beam1.direction.type = "momentum"
-    beam1.direction.momentum = [0, 0, -1]
+    beam1.direction.momentum = [0, 1, 0]
     beam1.activity = activity / sim.number_of_threads
 
     # add stat actor
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     print(stats)
     print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
     stats.counts.runs = 1  # force to 1
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat1.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat1.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.02)
 
     utility.test_ok(is_ok)

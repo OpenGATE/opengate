@@ -127,7 +127,7 @@ GATE 10
 
 .. code-block:: python
 
-    def add_spiral_insert(sim, mother, name, rmin=0 * mm, rmax=1 * mm, dz=40 * cm, material="Aluminium", translation=[0 * mm, 0 * mm, 0 * mm], color=yellow):
+    def add_spiral_insert(sim, mother, name, rmin=0 * mm, rmax=1 * mm, dz=20 * cm, material="Aluminium", translation=[0 * mm, 0 * mm, 0 * mm], color=yellow):
       spiral_insert = sim.add_volume("Tubs", name=name)
       spiral_insert.mother = mother.name
       spiral_insert.rmin = rmin
@@ -142,7 +142,7 @@ GATE 10
       spiral = sim.add_volume("Tubs", name="Spiral")
       spiral.rmin = 0 * cm
       spiral.rmax = 10 * cm
-      spiral.dz = 40 * cm
+      spiral.dz = 20 * cm
       spiral.material = "Water"
       spiral.color = yellow
 

@@ -1,22 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import itk
-import numpy as np
-
 import opengate as gate
-import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
+import opengate.contrib.spect.ge_discovery_nm670 as nm670
 from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
-from pathlib import Path
 
 
-def create_spect_simu(sim, paths, number_of_threads=1, version=""):
+def create_spect_simu(sim, paths, number_of_threads=1):
     # main options
     sim.g4_verbose = False
-    sim.visu = False
+    # sim.visu = True
+    sim.visu_type = "qt"
     sim.number_of_threads = number_of_threads
-    sim.random_seed = 123456
+    sim.random_seed = 12345678
+    # sim.random_seed = "auto"
     sim.output_dir = paths.output
 
     # units
@@ -32,11 +30,10 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     sim.world.material = "G4_AIR"
 
     # spect head (debug mode = very small collimator)
-    spect, colli, crystal = gate_spect.add_spect_head(
+    spect, colli, crystal = nm670.add_spect_head(
         sim, "spect", collimator_type=False, debug=False
     )
-    psd = 6.11 * cm
-    spect.translation = [0, 0, -(20 * cm + psd)]
+    nm670.rotate_gantry(spect, 20 * cm, 0)
 
     # waterbox
     waterbox = sim.add_volume("Box", "waterbox")
@@ -80,7 +77,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     beam1.position.radius = 3 * cm
     beam1.position.translation = [0, 0, 0 * cm]
     beam1.direction.type = "momentum"
-    beam1.direction.momentum = [0, 0, -1]
+    beam1.direction.momentum = [0, 1, 0]
     # beam1.direction.type = 'iso'
     beam1.activity = activity / sim.number_of_threads
 
@@ -92,7 +89,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     beam2.position.radius = 3 * cm
     beam2.position.translation = [18 * cm, 0, 0]
     beam2.direction.type = "momentum"
-    beam2.direction.momentum = [0, 0, -1]
+    beam2.direction.momentum = [0, 1, 0]
     # beam2.direction.type = 'iso'
     beam2.activity = activity / sim.number_of_threads
 
@@ -104,13 +101,14 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     beam3.position.radius = 1 * cm
     beam3.position.translation = [0, 10 * cm, 0]
     beam3.direction.type = "momentum"
-    beam3.direction.momentum = [0, 0, -1]
+    beam3.direction.momentum = [0, 1, 0]
     # beam3.direction.type = 'iso'
     beam3.activity = activity / sim.number_of_threads
 
     # add stat actor
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
     stats_actor.track_types_flag = True
+    stats_actor.output_filename = "stats.txt"
 
     # hits collection
     hc = sim.add_actor("DigitizerHitsCollectionActor", "Hits")
@@ -120,7 +118,7 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
             crystal = v
     hc.attached_to = crystal.name
     print("Crystal :", crystal.name)
-    hc.output_filename = f"test028{version}.root"
+    hc.output_filename = "test028.root"
     print(hc.output_filename)
     hc.attributes = [
         "PostPosition",
@@ -173,8 +171,9 @@ def create_spect_simu(sim, paths, number_of_threads=1, version=""):
     return spect
 
 
-def test_add_proj(sim, fname_suffix):
+def test_add_proj(sim):
     mm = gate.g4_units.mm
+    crystal = None
     for k, v in sim.volume_manager.volumes.items():
         if "crystal" in k:
             crystal = v
@@ -185,45 +184,47 @@ def test_add_proj(sim, fname_suffix):
     proj.input_digi_collections = ["spectrum", "scatter", "peak140", "spectrum"]
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.size = [128, 128]
-    # proj.plane = 'XY' # not implemented yet # FIXME
-    proj.output_filename = f"proj028{fname_suffix}.mhd"
+    proj.output_filename = f"proj028.mhd"
     # by default, the origin of the images are centered
     # set to False here to keep compatible with previous version
-    proj.origin_as_image_center = False
+    # proj.origin_as_image_center = False
     return proj
 
 
-def test_spect_hits(sim, paths, version="2"):
+def test_spect_root(sim, paths):
     # stat
     gate.exception.warning("Compare stats")
     stats = sim.get_actor("Stats")
     print(stats)
-    print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
-    stats.counts.runs = 1  # force to 1
-    stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # Compare root files
     print()
     gate.exception.warning("Compare hits")
-    gate_file = paths.gate_output / f"hits{version}.root"
+    ref_file = paths.output_ref / "test028.root"
     hc_file = sim.get_actor("Hits").get_output_path()
-    print(hc_file)
+    print(ref_file, hc_file)
     checked_keys = [
-        {"k1": "posX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
-        {"k1": "posY", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
-        {"k1": "posZ", "k2": "PostPosition_Z", "tol": 0.9, "scaling": 1},
-        {"k1": "edep", "k2": "TotalEnergyDeposit", "tol": 0.001, "scaling": 1},
-        {"k1": "time", "k2": "GlobalTime", "tol": 0.01, "scaling": 1e-9},
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
+        {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
+        {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.9, "scaling": 1},
+        {
+            "k1": "TotalEnergyDeposit",
+            "k2": "TotalEnergyDeposit",
+            "tol": 0.001,
+            "scaling": 1,
+        },
+        {"k1": "GlobalTime", "k2": "GlobalTime", "tol": 1.5e7, "scaling": 1},
     ]
     is_ok = (
         utility.compare_root2(
-            gate_file,
+            ref_file,
             hc_file,
             "Hits",
             "Hits",
             checked_keys,
-            paths.output / f"test028_{version}_hits.png",
+            paths.output / "test028_hits.png",
             n_tol=4,
         )
         and is_ok
@@ -232,22 +233,26 @@ def test_spect_hits(sim, paths, version="2"):
     # Compare root files
     print()
     gate.exception.warning("Compare singles")
-    gate_file = paths.gate_output / f"hits{version}.root"
     hc_file = sim.get_actor("Singles").get_output_path()
     checked_keys = [
-        {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.8, "scaling": 1},
-        {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.2, "scaling": 1},
-        {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.001, "scaling": 1},
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.8, "scaling": 1},
+        {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 1.3, "scaling": 1},
+        {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.6, "scaling": 1},
+        {
+            "k1": "TotalEnergyDeposit",
+            "k2": "TotalEnergyDeposit",
+            "tol": 0.001,
+            "scaling": 1,
+        },
     ]
     is_ok = (
         utility.compare_root2(
-            gate_file,
+            ref_file,
             hc_file,
             "Singles",
             "Singles",
             checked_keys,
-            paths.output / f"test028_{version}_singles.png",
+            paths.output / "test028_singles.png",
         )
         and is_ok
     )
@@ -275,7 +280,7 @@ def test_spect_hits(sim, paths, version="2"):
             "Singles",
             "spectrum",
             checked_keys,
-            paths.output / f"test028_{version}_spectrum.png",
+            paths.output / "test028_spectrum.png",
             n_tol=0.01,
         )
         and is_ok
@@ -284,21 +289,27 @@ def test_spect_hits(sim, paths, version="2"):
     # Compare root files
     print()
     gate.exception.warning("Compare scatter")
+    ref_file = paths.output_ref / "test028.root"
     hc_file = sim.get_actor("EnergyWindows").get_output_path()
     checked_keys = [
-        {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 20, "scaling": 1},
-        {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 15, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 1.8, "scaling": 1},
-        {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.2, "scaling": 1},
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 13, "scaling": 1},
+        {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 5, "scaling": 1},
+        {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 8, "scaling": 1},
+        {
+            "k1": "TotalEnergyDeposit",
+            "k2": "TotalEnergyDeposit",
+            "tol": 0.2,
+            "scaling": 1,
+        },
     ]
     is_ok = (
         utility.compare_root2(
-            gate_file,
+            ref_file,
             hc_file,
             "scatter",
             "scatter",
             checked_keys,
-            paths.output / f"test028_{version}_scatter.png",
+            paths.output / "test028_scatter.png",
             n_tol=15,
         )
         and is_ok
@@ -307,21 +318,27 @@ def test_spect_hits(sim, paths, version="2"):
     # Compare root files
     print()
     gate.exception.warning("Compare peak")
+    ref_file = paths.output_ref / "test028.root"
     hc_file = sim.get_actor("EnergyWindows").get_output_path()
     checked_keys = [
-        {"k1": "globalPosX", "k2": "PostPosition_X", "tol": 1.7, "scaling": 1},
-        {"k1": "globalPosY", "k2": "PostPosition_Y", "tol": 1, "scaling": 1},
-        {"k1": "globalPosZ", "k2": "PostPosition_Z", "tol": 0.21, "scaling": 1},
-        {"k1": "energy", "k2": "TotalEnergyDeposit", "tol": 0.1, "scaling": 1},
+        {"k1": "PostPosition_X", "k2": "PostPosition_X", "tol": 1.1, "scaling": 1},
+        {"k1": "PostPosition_Y", "k2": "PostPosition_Y", "tol": 0.4, "scaling": 1},
+        {"k1": "PostPosition_Z", "k2": "PostPosition_Z", "tol": 0.4, "scaling": 1},
+        {
+            "k1": "TotalEnergyDeposit",
+            "k2": "TotalEnergyDeposit",
+            "tol": 0.1,
+            "scaling": 1,
+        },
     ]
     is_ok = (
         utility.compare_root2(
-            gate_file,
+            ref_file,
             hc_file,
             "peak140",
             "peak140",
             checked_keys,
-            paths.output / f"test028_{version}_peak.png",
+            paths.output / "test028_peak.png",
             n_tol=2.1,
         )
         and is_ok
@@ -330,63 +347,35 @@ def test_spect_hits(sim, paths, version="2"):
     return is_ok
 
 
-def test_spect_proj(sim, paths, proj, version="3"):
+def test_spect_proj(sim, paths, proj, output_ref_folder=None, output_ref_filename=None):
     print()
     stats = sim.get_actor("Stats")
-    stats.counts.runs = 1  # force to 1 to compare with gate result
+    stats.user_output.stats.merged_data.runs = 1  # force to 1 to compare with MT
     print(stats)
-    stats_ref = utility.read_stat_file(paths.gate_output / f"stat{version}.txt")
+    if output_ref_folder is None:
+        output_ref_folder = paths.output_ref
+    stats_ref = utility.read_stats_file(output_ref_folder / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.025)
 
     # compare images with Gate
     print()
-    print("Compare images (old spacing/origin)")
-    # read image and force change the offset to be similar to old Gate
-    fname = sim.get_actor("Projection").get_output_path("counts")
-    fname_stem = Path(fname).stem
-    fname_offset = fname_stem + "_offset.mhd"
-    img = itk.imread(str(paths.output / fname))
-    spacing = np.array(proj.counts.image.GetSpacing())  # user_info.spacing)
-    origin = spacing / 2.0
-    origin[2] = 0.5
-    spacing[2] = 1
-    img.SetSpacing(spacing)
-    img.SetOrigin(origin)
-    itk.imwrite(img, str(paths.output / fname_offset))
+    print("Compare images with ref")
+    fn = proj.get_output_path("counts")
+    if output_ref_filename is None:
+        output_ref_filename = paths.output_ref / fn.name
+    print(fn)
+    print(output_ref_filename)
     is_ok = (
         utility.assert_images(
-            paths.gate_output / f"projection{version}.mhd",
-            paths.output / fname_offset,
+            output_ref_folder / output_ref_filename,
+            fn,
             stats,
             tolerance=16,
             ignore_value_data2=0,
-            axis="y",
-            fig_name=paths.output / f"proj028_{version}_offset.png",
-            sum_tolerance=1.6,
-            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
+            axis="x",
+            fig_name=paths.output / f"{fn.stem}.png",
+            sum_tolerance=6,
         )
         and is_ok
     )
-
-    # compare images with Gate
-    if version == "3_blur":
-        return is_ok
-    print()
-    print("Compare images (new spacing/origin")
-    # read image and force change the offset to be similar to old Gate
-    is_ok = (
-        utility.assert_images(
-            paths.output_ref / "proj028_ref.mhd",
-            paths.output / fname,
-            stats,
-            tolerance=14,
-            ignore_value_data2=0,
-            axis="y",
-            fig_name=paths.output / f"proj028_{version}_no_offset.png",
-            sum_tolerance=1.5,
-            apply_ignore_mask_to_sum_check=False,  # reproduce legacy behavior of assert_images
-        )
-        and is_ok
-    )
-
     return is_ok

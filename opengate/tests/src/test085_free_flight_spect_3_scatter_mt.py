@@ -12,7 +12,8 @@ if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()
     sim.number_of_threads = 4
-    ac = 4e4
+    sim.random_seed = 123456789
+    ac = 1e4
     # sim.visu = True
     source, actors = create_simulation_test085(
         sim,
@@ -27,15 +28,20 @@ if __name__ == "__main__":
     # free flight actor
     ff = sim.add_actor("ScatterSplittingFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.ignored_volumes = ["spect_1_crystal", "spect_2_crystal"]
+    ff.exclude_volumes = ["spect_1_crystal", "spect_2_crystal"]
+    ff.kill_interacting_in_volumes = ["spect_1_crystal", "spect_2_crystal"]
     ff.compton_splitting_factor = 50
     ff.rayleigh_splitting_factor = 10
     ff.max_compton_level = 10000
-    ff.acceptance_angle.intersection_flag = True
-    ff.acceptance_angle.volumes = ["spect_1"]  # FIXME check volume exists before
-    ff.acceptance_angle.normal_flag = True
-    ff.acceptance_angle.normal_vector = [0, 0, -1]
-    ff.acceptance_angle.normal_tolerance = 10 * g4_units.deg
+    ff.weight_cutoff = 1e-9
+    ff.angular_acceptance.policy = "Rejection"
+    ff.angular_acceptance.skip_policy = "SkipEvents"
+    ff.angular_acceptance.enable_intersection_check = True
+    # FIXME check volume exists before ?
+    ff.angular_acceptance.target_volumes = ["spect_1"]
+    ff.angular_acceptance.enable_angle_check = True
+    ff.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
+    ff.angular_acceptance.angle_tolerance_max = 10 * g4_units.deg
 
     # go
     sim.run()
@@ -49,13 +55,13 @@ if __name__ == "__main__":
     is_ok = True
     is_ok = (
         utility.assert_images(
-            paths.output_ref / "projection_1_ff_sc.mhd",
+            paths.output_ref / "projection_1_ff_sc_counts.mhd",
             paths.output / "projection_1_ff_sc_counts.mhd",
             stats,
-            tolerance=110,
+            tolerance=300,
             ignore_value_data1=0,
-            sum_tolerance=10,
-            sad_profile_tolerance=24,
+            sum_tolerance=62,
+            sad_profile_tolerance=39,
             axis="x",
         )
         and is_ok

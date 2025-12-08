@@ -16,6 +16,7 @@
 #include <G4VUserPrimaryGeneratorAction.hh>
 #include <G4VisExecutive.hh>
 
+#include "GateImageBox.h"
 #include "GateUserEventInformation.h"
 #include "GateVActor.h"
 #include "GateVSource.h"
@@ -23,7 +24,7 @@
 
 using namespace indicators;
 
-// Temporary: later option will be used to control the verbosity
+// Temporary: later options will be used to control the verbosity
 class UIsessionSilent : public G4UIsession {
 public:
   G4int ReceiveG4cout(const G4String & /*coutString*/) override { return 0; }
@@ -33,7 +34,7 @@ public:
 
 /*
  * The source manager manages a set of sources.
- * There will be one copy per thread + one for the Master thread
+ * There will be one copy per thread plus one for the Master thread
  * Only the master thread call StartMasterThread
  *
  * The Geant4 fEngine will call GeneratePrimaries for all threads
@@ -65,11 +66,11 @@ public:
   // Return a source
   GateVSource *FindSourceByName(const std::string &name) const;
 
-  // [available on py side] start the simulation, master thread only
+  // [available on py side] start the simulation master thread only
   void StartMasterThread();
 
-  // Initialize a new Run
-  void PrepareRunToStart(int run_id) const;
+  // Initialise a new Run
+  void PrepareRunToStart(int run_id);
 
   // Called by G4 fEngine
   void GeneratePrimaries(G4Event *event) override;
@@ -84,6 +85,8 @@ public:
 
   void InitializeProgressBar();
 
+  void RegisterImageBox(GateImageBox *g4Solid);
+
   bool IsEndOfSimulationForWorker() const;
 
   void StartVisualization() const;
@@ -92,9 +95,10 @@ public:
 
   void ComputeExpectedNumberOfEvents();
 
-  void SetRunTerminationFlag(bool flag);
+  static void SetRunTerminationFlag(bool flag);
 
-  // bool fRunTerminationFlag = false;
+  // fRunTerminationFlag should not be thread local
+  static bool fRunTerminationFlag;
   bool fVisualizationFlag;
   bool fVisualizationVerboseFlag;
   std::string fVisualizationType;
@@ -108,9 +112,9 @@ public:
   long int fProgressBarStep;
   long int fCurrentEvent;
 
-  // The following variables must be local to each threads
+  // The following variables must be local to each thread
   struct threadLocalT {
-    // Will be used by thread to initialize a new Run
+    // Will be used by thread to initialise a new Run
     bool fStartNewRun;
     int fNextRunId;
 
@@ -138,14 +142,17 @@ public:
   // List of managed sources
   std::vector<GateVSource *> fSources;
 
+  // List of GateImageBox
+  std::vector<GateImageBox *> fImageBoxes;
+
   // List of actors (for PreRunMaster callback)
   std::vector<GateVActor *> fActors;
 
   // List of run time intervals
   TimeIntervals fSimulationTimes;
 
-  // static verbose level
-  static int fVerboseLevel;
+  // verbose level
+  int fVerboseLevel;
 
   // Options (visualisation for example)
   py::dict fOptions;

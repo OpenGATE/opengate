@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # gate_test10
     # Gate mac/main.mac
     # Current version is two times slower :(
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     print("-" * 80)
     is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.05)
     is_ok = is_ok and utility.assert_images(

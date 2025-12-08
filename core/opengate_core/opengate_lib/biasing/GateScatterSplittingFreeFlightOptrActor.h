@@ -34,11 +34,14 @@ public:
 
   void SetInvolvedBiasActor(GateVBiasOptrActor *actor) { fActor = actor; }
 
-  static int IsScatterInteractionGeneralProcess(
+  static int IsScatterInteractionGeneralProcess_OLD(
       const G4BiasingProcessInterface *callingProcess);
 
   static int
   IsScatterInteraction(const G4BiasingProcessInterface *callingProcess);
+
+  static bool IsFreeFlight(const G4Track *track);
+  static constexpr int fThisIsAFreeFlightTrack = 666;
 
 protected:
   G4VBiasingOperation *
@@ -60,9 +63,12 @@ protected:
     int fComptonInteractionCount;
     std::map<std::string, double> fBiasInformationPerThread;
     bool fCurrentTrackIsFreeFlight;
+    bool fIsTrackValidForStep;
   };
   G4Cache<threadLocal_t> threadLocalData;
 
+  std::vector<std::string> fKillVolumes;
+  std::vector<const G4LogicalVolume *> fKillLogicalVolumes;
   std::map<std::string, double> fBiasInformation;
   int fComptonSplittingFactor;
   int fRayleighSplittingFactor;

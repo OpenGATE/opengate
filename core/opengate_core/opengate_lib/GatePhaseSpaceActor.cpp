@@ -46,7 +46,7 @@ void GatePhaseSpaceActor::InitializeUserInfo(py::dict &user_info) {
   fStoreAbsorbedEvent = DictGetBool(user_info, "store_absorbed_event");
   fDebug = DictGetBool(user_info, "debug");
 
-  // Special case to store event information even if the event do not step in
+  // Special case to store event information even if the event does not step in
   // the mother volume
   if (fStoreAbsorbedEvent) {
     fActions.insert("EndOfEventAction");
@@ -59,7 +59,7 @@ void GatePhaseSpaceActor::InitializeCpp() {
   fNumberOfAbsorbedEvents = 0;
 }
 
-// Called when the simulation start
+// Called when the simulation starts
 void GatePhaseSpaceActor::StartSimulationAction() {
   fHits = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
       fDigiCollectionName);
@@ -93,7 +93,7 @@ void GatePhaseSpaceActor::BeginOfEventAction(const G4Event * /*event*/) {
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
   if (fStoreAbsorbedEvent) {
-    // The current event still have to be stored
+    // The current event still has to be stored
     l.fCurrentEventHasBeenStored = false;
   }
   if (fDebug) {
@@ -106,14 +106,15 @@ void GatePhaseSpaceActor::PreUserTrackingAction(const G4Track *track) {
   auto &l = fThreadLocalData.Get();
   l.fFirstStepInVolume = true;
   if (fDebug) {
-    auto id = G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
+    const auto id =
+        G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
     std::cout << "New track "
               << track->GetParticleDefinition()->GetParticleName()
               << track->GetTrackID() << " eid=" << id << std::endl;
   }
 }
 
-// Called every time a batch of step must be processed
+// Called every time a batch of steps must be processed
 void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   /*
    Only store if the particle enters and/or exits the volume.
@@ -139,12 +140,12 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
   // the world boundary if the phsp is attached to the world
   const bool exiting = IsStepExitingAttachedVolume(step);
 
-  // When this is the first time we see this particle fFirstStepInVolume is true
-  // We then set it to false
+  // When this is the first time we've seen this particle, fFirstStepInVolume is
+  // true We then set it to false
   const bool first_step_in_volume = l.fFirstStepInVolume;
   l.fFirstStepInVolume = false;
 
-  // Keep or ignore ?
+  // Keep or ignore?
   bool ok = fStoreAllSteps;
   ok = ok || entering && fStoreEnteringStep;
   ok = ok || (exiting && fStoreExitingStep);
@@ -188,7 +189,7 @@ void GatePhaseSpaceActor::SteppingAction(G4Step *step) {
 }
 
 void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
-  // For a given event, when no step never reach the phsp:
+  // For a given event, when no step never reaches the phsp:
   // if the option is on, we store a "fake" step, with the event information.
   // All other attributes will be "empty" (mostly 0)
   auto &l = fThreadLocalData.Get();
@@ -221,7 +222,7 @@ void GatePhaseSpaceActor::EndOfEventAction(const G4Event *event) {
         event->GetPrimaryVertex(0)->GetPrimary(0)->GetKineticEnergy();
     values_en.back() = e;
 
-    // increase the nb of absorbed events
+    // increase the number of absorbed events
     fNumberOfAbsorbedEvents++;
   }
 }

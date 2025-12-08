@@ -25,12 +25,11 @@
 #include <G4UIExecutive.hh>
 #include <G4UImanager.hh>
 #include <G4UnitsTable.hh>
+#include <cmath>
 
 /* There will be one SourceManager per thread */
 
-// Initialisation of static variable
-int GateSourceManager::fVerboseLevel = 0;
-bool fRunTerminationFlag = false;
+bool GateSourceManager::fRunTerminationFlag = false;
 
 GateSourceManager::GateSourceManager() {
   fUIEx = nullptr;
@@ -52,13 +51,14 @@ GateSourceManager::GateSourceManager() {
   fExpectedNumberOfEvents = 0;
   fProgressBarStep = 1000;
   fCurrentEvent = 0;
+  fRunTerminationFlag = false;
 }
 
 GateSourceManager::~GateSourceManager() {
   // fUIEx is already deleted
 }
 
-void GateSourceManager::SetRunTerminationFlag(const bool flag) {
+void GateSourceManager::SetRunTerminationFlag(bool flag) {
   fRunTerminationFlag = flag;
 }
 
@@ -169,7 +169,7 @@ void GateSourceManager::StartMasterThread() {
 void GateSourceManager::InitializeProgressBar() {
   if (!fProgressBarFlag)
     return;
-  // (the expected number is computed by all thread)
+  // (all threads compute the expected number of events)
   ComputeExpectedNumberOfEvents();
 
   // the progress bar is only for one thread (id ==0)
@@ -205,7 +205,7 @@ long int GateSourceManager::GetExpectedNumberOfEvents() const {
   return fExpectedNumberOfEvents;
 }
 
-void GateSourceManager::PrepareRunToStart(int run_id) const {
+void GateSourceManager::PrepareRunToStart(int run_id) {
   /*
    In MT mode, this function (PrepareRunToStart) is called
    by Master thread AND by workers
@@ -215,6 +215,8 @@ void GateSourceManager::PrepareRunToStart(int run_id) const {
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
   l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
+  // init the next time as the end of the interval by default
+  l.fNextSimulationTime = l.fCurrentTimeInterval.second;
   // reset abort run flag to false
   fRunTerminationFlag = false;
   // Prepare the run for all sources
@@ -227,7 +229,7 @@ void GateSourceManager::PrepareRunToStart(int run_id) const {
     return;
   }
   l.fStartNewRun = false;
-  Log(LogLevel_RUN, "Starting run {} ({})\n", run_id,
+  Log(LogLevel_RUN, fVerboseLevel, "Starting run {} ({})\n", run_id,
       G4Threading::IsMasterThread() == TRUE
           ? "master"
           : std::to_string(G4Threading::G4GetThreadId()));
@@ -236,34 +238,43 @@ void GateSourceManager::PrepareRunToStart(int run_id) const {
 void GateSourceManager::PrepareNextSource() const {
   auto &l = fThreadLocalData.Get();
   l.fNextActiveSource = nullptr;
-  const double min_time = l.fCurrentTimeInterval.first;
+  G4int nbOfRunFromTimes = fSimulationTimes.size();
+
+  double min_time = l.fCurrentTimeInterval.first;
   double max_time = l.fCurrentTimeInterval.second;
+
   // Ask all sources their next time, keep the closest one
   for (auto *source : fSources) {
-    auto t = source->PrepareNextTime(l.fCurrentSimulationTime);
+    G4int numberOfSimulatedEvents = source->GetNumberOfSimulatedEvents();
+    auto t = source->PrepareNextTime(l.fCurrentSimulationTime,
+                                     numberOfSimulatedEvents);
     if ((t >= min_time) && (t < max_time)) {
       max_time = t;
       l.fNextActiveSource = source;
       l.fNextSimulationTime = t;
     }
   }
-  // If no next time in the current interval, active source is NULL
+  // If no next time in the current interval,
+  // the next active source is nullptr
 }
 
 void GateSourceManager::CheckForNextRun() const {
   auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = false;
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
     l.fNextRunId++;
+    /*
     if (l.fNextRunId >= fSimulationTimes.size()) {
       // Sometimes, the source must clean some data in its own thread, not by
-      // the master thread (for example with a G4SingleParticleSource object)
+      // the master thread (for example, with a G4SingleParticleSource object)
       // The CleanThread method is used for that.
       for (auto *source : fSources) {
         source->CleanWorkerThread();
       }
     }
+    */
   }
 }
 
@@ -299,16 +310,16 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
       std::string t = G4BestUnit(l.fCurrentSimulationTime, "Time");
       std::string e = G4BestUnit(prim->GetKineticEnergy(), "Energy");
       std::string s = l.fNextActiveSource->fName;
-      Log(LogLevel_EVENT, "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n",
-          event->GetEventID(), t,
-          prim->GetParticleDefinition()->GetParticleName(), e,
+      Log(LogLevel_EVENT, fVerboseLevel,
+          "Event {} {} {} {} {:.2f} {:.2f} {:.2f} ({})\n", event->GetEventID(),
+          t, prim->GetParticleDefinition()->GetParticleName(), e,
           event->GetPrimaryVertex(0)->GetPosition()[0],
           event->GetPrimaryVertex(0)->GetPosition()[1],
           event->GetPrimaryVertex(0)->GetPosition()[2], s);
     }
   }
 
-  // Add user information ?
+  // Add user information?
   if (fUserEventInformationFlag) {
     // the user info is deleted by the event destructor, so
     // we need to create a new one everytime
@@ -329,7 +340,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     if (G4Threading::IsMultithreadedApplication() &&
         G4Threading::G4GetThreadId() != 0)
       return;
-    // count the number of event already generated
+    // count the number of events already generated
     fCurrentEvent = fCurrentEvent + 1;
     // update the bar sometimes
     if (fCurrentEvent % fProgressBarStep == 0) {
@@ -342,6 +353,13 @@ void GateSourceManager::InitializeVisualization() {
   if (!fVisualizationFlag || (fVisualizationType == "gdml") ||
       (fVisualizationType == "gdml_file_only"))
     return;
+
+  if (fVisualizationFlag && (fVisualizationType == "qt")) {
+#if USE_VISU == 0
+    fVisualizationFlag = false;
+    return;
+#endif
+  }
 
   char **argv = new char *[1]; // Allocate 1 element
   argv[0] = nullptr;           // Properly indicate no arguments
@@ -374,6 +392,19 @@ void GateSourceManager::InitializeVisualization() {
     G4VisManager::GetInstance()->SetVerboseLevel("all");
   else
     G4VisManager::GetInstance()->SetVerboseLevel("quit");
+
+  // Add the image to the g4_solids Need to be done after GL init
+  /*#ifdef GATEIMAGEBOX_USE_OPENGL
+    if (fVisualizationType == "qt") {
+      for (auto *g4_solid : fImageBoxes) {
+        g4_solid->InitialiseSlice();
+      }
+    }
+  #endif*/
+}
+
+void GateSourceManager::RegisterImageBox(GateImageBox *g4_solid) {
+  fImageBoxes.push_back(g4_solid);
 }
 
 void GateSourceManager::StartVisualization() const {

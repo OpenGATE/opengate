@@ -58,7 +58,7 @@ if __name__ == "__main__":
     # gate_test5_proton
     # Gate mac/main.mac
     print("-" * 80)
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.155)
 
     utility.test_ok(is_ok)

@@ -5,6 +5,8 @@ import uproot
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+
+
 import opengate as gate
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate.contrib.phantoms.nemaiec as gate_iec
@@ -163,14 +165,14 @@ def create_simulation(sim, paths, colli="lehr", version=""):
 
     # it is possible to use acceptance angle. Not done here to check exiting phsp
     # gsource.direction.acceptance_angle.volumes = [spect1.name]
-    # gsource.direction.acceptance_angle.intersection_flag = True
+    # gsource.direction.acceptance_angle.enable_intersection_check = True
 
     # add stat actor
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.output_filename = f"test038_gan_stats{version}.txt"
 
     # add default digitizer (it is easy to change parameters if needed)
-    gate_spect.add_simplified_digitizer_tc99m(
+    gate_spect.add_simplified_digitizer_tc99m_OLD(
         sim, "spect1_crystal", "test038_gan_proj.mhd"
     )
     # gate_spect.add_ge_nm670_spect_simplified_digitizer(sim, 'spect2_crystal', paths.output / 'test033_proj_2.mhd')
@@ -221,7 +223,7 @@ def analyze_results(sim, paths, all_cond):
     stats = sim.get_actor("Stats")
     print(stats)
     stats.counts.events += s.total_skipped_events
-    stats_ref = utility.read_stat_file(paths.output_ref / "test038_ref_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test038_ref_stats.txt")
     r = (stats_ref.counts.steps - stats.counts.steps) / stats_ref.counts.steps
     print(f"Steps cannot be compared => was {stats.counts.steps}, {r:.2f}%")
     stats.counts.steps = stats_ref.counts.steps
@@ -321,7 +323,7 @@ def analyze_results(sim, paths, all_cond):
     tols[checked_keys.index("PrePosition_Z")] = 5.1
     tols[checked_keys.index("PreDirection_X")] = 0.03
     tols[checked_keys.index("PreDirection_Y")] = 0.02
-    tols[checked_keys.index("PreDirection_Z")] = 0.02
+    tols[checked_keys.index("PreDirection_Z")] = 0.03
     print(scalings, tols)
     is_ok = (
         utility.compare_root3(

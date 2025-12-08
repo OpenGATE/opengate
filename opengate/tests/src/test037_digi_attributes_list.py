@@ -20,9 +20,9 @@ if __name__ == "__main__":
         att = am.GetDigiAttributeByName(a)
         print(att.GetDigiAttributeName(), att.GetDigiAttributeType())
 
-    n = 50
+    n = 52
     is_ok = len(nlist) == n
 
-    utility.print_test(is_ok, f"Done for {n} attributes.")
+    utility.print_test(is_ok, f"Done for {n} vs {len(nlist)} attributes.")
 
     utility.test_ok(is_ok)

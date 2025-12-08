@@ -29,5 +29,12 @@ void init_G4VSolid(py::module &m) {
       .def("BoundingLimits", &G4VSolid::BoundingLimits)
       .def("GetCubicVolume", &G4VSolid::GetCubicVolume)
       .def("GetSurfaceArea", &G4VSolid::GetSurfaceArea)
+      .def("GetEntityType", &G4VSolid::GetEntityType)
+      .def("IsFaceted", &G4VSolid::IsFaceted)
+      .def("GetNumOfConstituents", &G4VSolid::GetNumOfConstituents)
+      .def("GetConstituentSolid",
+           [](G4VSolid &s, G4int no) -> G4VSolid * {
+             return s.GetConstituentSolid(no);
+           })
       .def("GetPointOnSurface", &G4VSolid::GetPointOnSurface);
 }

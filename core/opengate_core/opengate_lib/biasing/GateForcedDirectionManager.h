@@ -16,7 +16,8 @@ public:
 
   ~GateForcedDirectionManager();
 
-  void Initialize(py::dict user_info, bool is_valid_type);
+  void Initialize(const std::map<std::string, std::string> &user_info,
+                  bool is_valid_type);
 
   void InitializeForcedDirection();
 
@@ -27,21 +28,23 @@ public:
 
   G4ThreeVector SampleDirectionWithinCone(double &theta) const;
 
-  std::map<std::string, std::string> fAcceptanceAngleParam;
   std::vector<std::string> fAcceptanceAngleVolumeNames;
   bool fEnabledFlag;
   int fFDLastRunId;
+  bool fEnableIntersectionCheck;
 
-  double fNormalAngleTolerance;
-  G4ThreeVector fNormalVector;
+  double fAngleToleranceMax;
+  double fAngleToleranceMin;
+  G4ThreeVector fAngleReferenceVector;
   G4AffineTransform fFDTransformWorldToVolume;
   G4RotationMatrix *fFDRotation;
   G4RotationMatrix fAARotationInverse;
   G4VSolid *fSolid;
-  G4Navigator *fNavigator;
 
   double fSinThetaMax;
   double fCosThetaMax;
+  double fSinThetaMin;
+  double fCosThetaMin;
   G4ThreeVector fU1;
   G4ThreeVector fU2;
   double fWeight;

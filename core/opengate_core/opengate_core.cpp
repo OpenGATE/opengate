@@ -374,6 +374,8 @@ void init_GateDigitizerSpatialBlurringActor(py::module &m);
 
 void init_GateDigitizerEnergyWindowsActor(py::module &m);
 
+void init_GateDigiAttributeProcessDefinedStepInVolumeActor(py::module &m);
+
 void init_GateDigitizerProjectionActor(py::module &m);
 
 void init_GateDigiAttributeManager(py::module &m);
@@ -384,7 +386,7 @@ void init_GateUniqueVolumeIDManager(py::module &);
 
 void init_GateUniqueVolumeID(py::module &);
 
-void init_GateVolumeDepthID(py::module &m);
+void init_GateGeometryUtils(py::module &);
 
 // Gate source
 void init_GateVSource(py::module &);
@@ -416,6 +418,8 @@ void init_GateNTuple(py::module &);
 void init_GateHelpers(py::module &);
 
 void init_GateVolumeVoxelizer(py::module &);
+
+void init_GateImageBox(py::module &m);
 
 PYBIND11_MODULE(opengate_core, m) {
 
@@ -561,7 +565,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4VisAttributes(m);
 
   // interfaces
-#if DUSE_USE_VISU > 0
+#if USE_VISU > 0
   init_QMainWindow(m);
   init_G4UIExecutive(m);
   init_G4UIQt(m);
@@ -623,6 +627,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDigitizerSpatialBlurringActor(m);
   init_GateDigitizerEnergyWindowsActor(m);
   init_GateDigitizerProjectionActor(m);
+  init_GateDigiAttributeProcessDefinedStepInVolumeActor(m);
 
   init_GateARFActor(m);
   init_GateARFTrainingDatasetActor(m);
@@ -635,5 +640,6 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateVolumeVoxelizer(m);
   init_GateUniqueVolumeIDManager(m);
   init_GateUniqueVolumeID(m);
-  init_GateVolumeDepthID(m);
+  init_GateGeometryUtils(m);
+  init_GateImageBox(m);
 }

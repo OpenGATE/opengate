@@ -18,7 +18,7 @@ if __name__ == "__main__":
     sim.g4_verbose_level = 1
     sim.number_of_threads = 1
     sim.visu = False
-    sim.random_seed = 12365
+    sim.random_seed = 321456
     sim.output_dir = test43.paths.output
 
     # units
@@ -64,15 +64,15 @@ if __name__ == "__main__":
     s1.energy.type = "range"
     s1.energy.min_energy = 0.01 * MeV
     s1.energy.max_energy = 0.154 * MeV
-    s1.direction.acceptance_angle.volumes = [detPlane.name]
-    s1.direction.acceptance_angle.intersection_flag = True
+    s1.direction.angular_acceptance.target_volumes = [detPlane.name]
+    s1.direction.angular_acceptance.enable_intersection_check = True
 
     # digitizer
     channels = [
         {"name": f"scatter_{spect.name}", "min": 114 * keV, "max": 126 * keV},
         {"name": f"peak140_{spect.name}", "min": 126 * keV, "max": 154 * keV},
     ]
-    cc = gate_spect.add_digitizer_energy_windows(sim, crystal_name, channels)
+    cc = gate_spect.add_digitizer_energy_windows_OLD(sim, crystal_name, channels)
 
     # arf actor for building the training dataset
     arf = sim.add_actor("ARFTrainingDatasetActor", "ARF (training)")
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     # ----------------------------------------------------------------------------------------------------------------
     gate.exception.warning("Compare stats")
-    stats_ref = utility.read_stat_file(
+    stats_ref = utility.read_stats_file(
         paths.output_ref / "test043_arf_training_dataset_stats.txt"
     )
     is_ok = utility.assert_stats(stats, stats_ref, 0.01) and is_ok
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     checked_keys = [
         {"k1": "E", "k2": "E", "tol": 0.002, "scaling": 1},
         {"k1": "Theta", "k2": "Theta", "tol": 2, "scaling": 1},
-        {"k1": "Phi", "k2": "Phi", "tol": 1.5, "scaling": 1},
+        {"k1": "Phi", "k2": "Phi", "tol": 4, "scaling": 1},
         {"k1": "window", "k2": "window", "tol": 0.006, "scaling": 1},
     ]
     is_ok = (

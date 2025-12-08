@@ -3,6 +3,8 @@
 
 import itk
 import numpy as np
+
+
 import opengate.contrib.spect.ge_discovery_nm670 as gate_spect
 import opengate as gate
 import test043_garf_helpers as test43
@@ -51,7 +53,7 @@ if __name__ == "__main__":
         {"name": f"scatter_{spect.name}", "min": 114 * keV, "max": 126 * keV},
         {"name": f"peak140_{spect.name}", "min": 126 * keV, "max": 154 * keV},
     ]
-    proj = gate_spect.add_digitizer(sim, crystal_name, channels)
+    proj = gate_spect.add_digitizer_OLD(sim, crystal_name, channels)
     proj.spacing = [4.41806 * mm, 4.41806 * mm]
     proj.output_filename = test43.paths.output / "test043_projection_analog.mhd"
 
@@ -78,7 +80,7 @@ if __name__ == "__main__":
     # tests
     print()
     gate.exception.warning("Tests stats file")
-    stats_ref = utility.read_stat_file(test43.paths.gate_output / "stats_analog.txt")
+    stats_ref = utility.read_stats_file(test43.paths.gate_output / "stats_analog.txt")
     stats.counts.runs = 1  # force to one run (ref only have 1 thread)
     is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 

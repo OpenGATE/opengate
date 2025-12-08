@@ -87,7 +87,7 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    stats_ref = utility.read_stat_file(
+    stats_ref = utility.read_stats_file(
         ref_path / "test010_generic_source_angular_distribution_stats_ref.txt"
     )
     is_ok = utility.assert_stats(stat, stats_ref, 0.11)

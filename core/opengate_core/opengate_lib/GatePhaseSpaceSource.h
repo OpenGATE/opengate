@@ -32,8 +32,6 @@ public:
 
   void PrepareNextRun() override;
 
-  double PrepareNextTime(double current_simulation_time) override;
-
   void GeneratePrimaries(G4Event *event,
                          double current_simulation_time) override;
 
@@ -47,6 +45,8 @@ public:
 
   bool ParticleIsPrimary() const;
 
+  G4ParticleMomentum GenerateRandomDirection();
+
   void GenerateBatchOfParticles();
 
   G4ParticleTable *fParticleTable;
@@ -55,6 +55,7 @@ public:
   bool fGlobalFag;
   bool fUseParticleTypeFromFile;
   bool fVerbose;
+  G4bool fIsotropicMomentum;
 
   void SetPDGCodeBatch(const py::array_t<std::int32_t> &fPDGCode) const;
 

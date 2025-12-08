@@ -3,6 +3,8 @@
 
 from scipy.spatial.transform import Rotation
 import os
+
+
 import opengate as gate
 from opengate.tests import utility
 
@@ -160,7 +162,7 @@ def main():
 
     # statistics
     stat_file = "SimulationStatistic_" + folder + ".txt"
-    stats_ref = utility.read_stat_file(ref_path / stat_file)
+    stats_ref = utility.read_stats_file(ref_path / stat_file)
     is_ok = utility.assert_stats(stat, stats_ref, 0.15)
 
     # energy deposition

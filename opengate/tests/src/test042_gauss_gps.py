@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from scipy.spatial.transform import Rotation
+
+
 import opengate as gate
 from opengate.tests import utility
 
@@ -118,7 +120,7 @@ if __name__ == "__main__":
     # tests
     print()
     gate.exception.warning("Tests stats file")
-    stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.14)
 
     print()

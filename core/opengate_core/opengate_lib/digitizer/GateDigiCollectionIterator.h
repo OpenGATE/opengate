@@ -10,8 +10,6 @@
 
 #include "G4TouchableHistory.hh"
 #include "GateDigiCollection.h"
-#include <cstddef>
-#include <iterator>
 
 /*
  Used to iterate along a DigiCollection.
@@ -26,6 +24,8 @@ public:
   void TrackAttribute(const std::string &name, double **value);
 
   void TrackAttribute(const std::string &name, int **value);
+
+  void TrackAttribute(const std::string &name, int64_t **value);
 
   void TrackAttribute(const std::string &name, G4ThreeVector **value);
 
@@ -50,6 +50,9 @@ public:
 
   std::vector<int **> fIAttributes;
   std::vector<std::vector<int> *> fIAttributesVector;
+
+  std::vector<int64_t **> fLAttributes;
+  std::vector<std::vector<int64_t> *> fLAttributesVector;
 
   std::vector<G4ThreeVector **> f3Attributes;
   std::vector<std::vector<G4ThreeVector> *> f3AttributesVector;

@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # main options
     sim.g4_verbose = False
     sim.visu = False
+    sim.visu_type = "qt"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.output_dir = paths.output
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     stats = sim.get_actor("Stats")
     print(stats)
-    stats_ref = utility.read_stat_file(paths.gate / "stats.txt")
+    stats_ref = utility.read_stats_file(paths.gate / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     gate.exception.warning(f"Check dose")

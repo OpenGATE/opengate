@@ -147,7 +147,7 @@ def _setter_hook_image_spacing(self, image_spacing):
 class ARFActor(ActorBase, g4.GateARFActor):
     """
     The ARF Actor is attached to a volume.
-    Every time a particle enter, it considers the energy and the direction of the particle.
+    Every time a particle reaches the volume, it considers the energy and the direction of the particle.
     It runs the neural network model to provide the probability of detection in all energy windows.
 
     Output is an ITK image that can be retrieved with self.output_image
@@ -213,8 +213,12 @@ class ARFActor(ActorBase, g4.GateARFActor):
     }
 
     user_output_config = {
-        "arf_projection": {
+        "counts": {
             "actor_output_class": ActorOutputSingleImage,
+        },
+        "squared_counts": {
+            "actor_output_class": ActorOutputSingleImage,
+            "active": False,
         },
     }
 
@@ -237,6 +241,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.image_plane_size_mm = None
         self.output_image = None
         self.output_array = None
+        self.output_squared_array = None
         self.output_size = None
         self.nb_ene = None
 
@@ -277,6 +282,10 @@ class ARFActor(ActorBase, g4.GateARFActor):
 
         self.output_array = np.zeros(self.output_size, dtype=np.float64)
 
+        # squared image ?
+        if self.user_output.squared_counts.get_active():
+            self.output_squared_array = np.zeros(self.output_size, dtype=np.float64)
+
         # initialize C++ side
         self.InitializeUserInfo(self.user_info)
         self.InitializeCpp()
@@ -303,8 +312,7 @@ class ARFActor(ActorBase, g4.GateARFActor):
         self.model_data = self.nn["model_data"]
 
     def initialize_device(self):
-        # which device for GARF : cpu cuda mps ?
-        # we recommend CPU only
+        # which device for GARF: cpu cuda mps?
         current_gpu_mode, current_gpu_device = garf.helpers.get_gpu_device(
             self.gpu_mode
         )
@@ -344,33 +352,27 @@ class ARFActor(ActorBase, g4.GateARFActor):
             self.arf_build_image_from_projected_points(actor)
 
     def arf_build_image_from_projected_points(self, actor):
-
-        # get values from cpp side
+        # get values from the cpp side
         energy = np.array(actor.GetEnergy())
         pos_x = np.array(actor.GetPositionX())
         pos_y = np.array(actor.GetPositionY())
         dir_x = np.array(actor.GetDirectionX())
         dir_y = np.array(actor.GetDirectionY())
+        dir_z = np.array(actor.GetDirectionZ())
         weights = np.array(actor.GetWeights())
 
         # do nothing if no hits
         if energy.size == 0:
             return
 
-        # convert direction in angles
-        degree = g4_units.degree
-        theta = np.arccos(dir_y) / degree
-        phi = np.arccos(dir_x) / degree
+        # (do NOT use plane_axis here, it is included in GateARFActor)
 
-        # update
-        self.batch_nb += 1
-        self.detected_particles += energy.shape[0]
-
-        # build the data
+        # build the data by passing direction vectors, NOT angles
+        px_base = (pos_x, pos_y, dir_x, dir_y, dir_z, energy)
         if len(weights) == 0:
-            px = np.column_stack((pos_x, pos_y, theta, phi, energy))
+            px = np.column_stack(px_base)
         else:
-            px = np.column_stack((pos_x, pos_y, theta, phi, energy, weights))
+            px = np.column_stack(px_base + (weights,))
         self.debug_nb_hits_before += len(px)
 
         # verbose current batch
@@ -398,6 +400,13 @@ class ARFActor(ActorBase, g4.GateARFActor):
             garf.image_from_coordinates_add_numpy(
                 img, u, v, w_pred, self.enable_hit_slice
             )
+            # squared ?
+            if self.user_output.squared_counts.get_active():
+                w_pred_squared = w_pred * w_pred
+                img = self.output_squared_array[s : s + self.nb_ene]
+                garf.image_from_coordinates_add_numpy(
+                    img, u, v, w_pred_squared, self.enable_hit_slice
+                )
             self.debug_nb_hits += u.shape[0]
 
     def EndOfRunActionMasterThread(self, run_index):
@@ -426,8 +435,18 @@ class ARFActor(ActorBase, g4.GateARFActor):
         castImageFilter.SetInput(output_image)
         castImageFilter.Update()
         output_image = castImageFilter.GetOutput()
-        self.user_output["arf_projection"].store_data("merged", output_image)
-        # unsure why return 0 ?
+        self.user_output["counts"].store_data("merged", output_image)
+
+        # squared ?
+        if self.user_output.squared_counts.get_active():
+            output_image = itk.image_from_array(self.output_squared_array)
+            castImageFilter = itk.CastImageFilter[InputImageType, OutputImageType].New()
+            castImageFilter.SetInput(output_image)
+            castImageFilter.Update()
+            output_image = castImageFilter.GetOutput()
+            self.user_output["squared_counts"].store_data("merged", output_image)
+
+        # unsure why return 0?
         return 0
 
     def EndSimulationAction(self):
@@ -436,7 +455,9 @@ class ARFActor(ActorBase, g4.GateARFActor):
         # process the remaining elements in the batch
         # self.apply()
         # warning('SHOULD call apply here ???')
-        self.user_output["arf_projection"].write_data_if_requested(which="merged")
+        self.user_output["counts"].write_data_if_requested(which="merged")
+        if self.user_output.squared_counts.get_active():
+            self.user_output["squared_counts"].write_data_if_requested(which="merged")
 
 
 process_cls(ARFActor)

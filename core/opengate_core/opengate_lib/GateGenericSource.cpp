@@ -110,7 +110,16 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
   // Search for the time bin
   const auto lower =
       std::lower_bound(fTAC_Times.begin(), fTAC_Times.end(), time);
-  const auto i = std::distance(fTAC_Times.begin(), lower);
+  auto i = std::distance(fTAC_Times.begin(), lower);
+
+  // Exact match or first sample
+  if (i == 0) {
+    fActivity = fTAC_Activities[0];
+    return;
+  }
+
+  // Move to the lower bin edge for the interpolation
+  i -= 1;
 
   // Last element ?
   if (i >= fTAC_Times.size() - 1) {
@@ -120,46 +129,27 @@ void GateGenericSource::UpdateActivityWithTAC(const double time) {
 
   // linear interpolation
   const double bin_time = fTAC_Times[i + 1] - fTAC_Times[i];
-  const double w1 = (time - fTAC_Times[i]) / bin_time;
-  const double w2 = (fTAC_Times[i + 1] - time) / bin_time;
+  const double w1 = (fTAC_Times[i + 1] - time) / bin_time;
+  const double w2 = (time - fTAC_Times[i]) / bin_time;
   fActivity = fTAC_Activities[i] * w1 + fTAC_Activities[i + 1] * w2;
 }
 
-double
-GateGenericSource::PrepareNextTime(const double current_simulation_time) {
+double GateGenericSource::PrepareNextTime(const double current_simulation_time,
+                                          double NumberOfGeneratedEvents) {
   auto &ll = GetThreadLocalDataGenericSource();
   // initialization of the effective event time (it can be in the
   // future according to the current_simulation_time)
   if (ll.fEffectiveEventTime < current_simulation_time) {
     ll.fEffectiveEventTime = current_simulation_time;
   }
-  UpdateActivity(ll.fEffectiveEventTime);
   fTotalSkippedEvents += ll.fCurrentSkippedEvents; // FIXME lock ?
   fTotalZeroEvents += ll.fCurrentZeroEvents;
   ll.fCurrentZeroEvents = 0;
   const auto cse = ll.fCurrentSkippedEvents;
   ll.fCurrentSkippedEvents = 0;
 
-  // if MaxN is below zero, we check the time
-  if (fMaxN <= 0) {
-    if (ll.fEffectiveEventTime < fStartTime)
-      return fStartTime;
-    if (ll.fEffectiveEventTime >= fEndTime)
-      return -1;
-
-    // get next time according to current fActivity
-    const double next_time = CalcNextTime(ll.fEffectiveEventTime);
-    if (next_time >= fEndTime)
-      return -1;
-    return next_time;
-  }
-
-  // check according to t MaxN
-  auto &l = GetThreadLocalData();
-  if (l.fNumberOfGeneratedEvents + cse >= fMaxN) {
-    return -1;
-  }
-  return fStartTime;
+  return GateVSource::PrepareNextTime(ll.fEffectiveEventTime,
+                                      NumberOfGeneratedEvents + cse);
 }
 
 void GateGenericSource::PrepareNextRun() {
@@ -477,7 +467,7 @@ void GateGenericSource::InitializeDirection(py::dict puser_info) {
 
   // set the angle acceptance volume if needed
   const auto d = py::dict(puser_info["direction"]);
-  const auto dd = py::dict(d["acceptance_angle"]);
+  auto dd = DictToMap(d["angular_acceptance"]);
   const auto is_valid_type =
       ang->GetDistType() == "iso" || ang->GetDistType() == "user";
   ll.fAAManager = new GateAcceptanceAngleManager;

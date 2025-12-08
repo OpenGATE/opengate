@@ -41,7 +41,7 @@ public:
   explicit GateVBiasOptrActor(const std::string &name, py::dict &user_info,
                               bool MT_ready = false);
 
-  ~GateVBiasOptrActor() override = default;
+  ~GateVBiasOptrActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
   void Configure() override;
@@ -53,8 +53,12 @@ public:
   static void ClearOperators();
   static std::vector<G4VBiasingOperator *> &GetNonConstBiasingOperators();
 
-  std::vector<std::string> fIgnoredVolumes;
-  double fMinimalWeight;
+  bool IsTrackValid(const G4Track *track) const;
+
+  std::vector<std::string> fExcludeVolumes;
+  std::vector<const G4LogicalVolume *> fUnbiasedLogicalVolumes;
+  double fWeightCutoff;
+  double fEnergyCutoff;
 };
 
 #endif

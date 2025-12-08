@@ -76,7 +76,7 @@ if __name__ == "__main__":
     stats.track_types_flag = True
     try:
         stats.mother = "nothing"
-        is_ok = False and is_ok
+        is_ok = False
     except GateDeprecationError as e:
         print("Exception caught: ", e)
         pass
@@ -91,17 +91,19 @@ if __name__ == "__main__":
     sim.run(start_new_process=True)
 
     found_warning_about_waterbox_mohter = False
+    print(sim.warnings)
     for w in sim.warnings:
         if "mohter" in w:
             found_warning_about_waterbox_mohter = True
             break
     is_ok = is_ok and found_warning_about_waterbox_mohter
-
     print(
         f"(after run) Number of warnings for stats object: {stats.number_of_warnings}"
     )
+
     b = stats.number_of_warnings == 1
     print_test(b, f"No additional warning should be raised")
     is_ok = is_ok and b
 
+    print(is_ok)
     test_ok(is_ok)

@@ -68,7 +68,7 @@ if __name__ == "__main__":
     sim.run()
 
     # compare stats
-    stats_ref = utility.read_stat_file(paths.output_ref / "test015_iec_2_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test015_iec_2_stats.txt")
     is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.03)
 
     # compare images

@@ -11,7 +11,6 @@
 #include <G4DataVector.hh>
 #include <G4RotationMatrix.hh>
 #include <G4ThreeVector.hh>
-#include <iostream>
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
@@ -71,6 +70,15 @@ bool StrToBool(const std::string &s);
 
 double StrToDouble(const std::string &s);
 
+int StrToInt(const std::string &s);
+
 G4ThreeVector StrToG4ThreeVector(const std::string &s);
+
+std::vector<std::string>
+GetVectorFromMapString(const std::map<std::string, std::string> &map_input,
+                       const std::string &key);
+
+std::string ParamAt(const std::map<std::string, std::string> &param,
+                    const std::string &key);
 
 #endif // OPENGATE_CORE_OPENGATEHELPERSDICT_H

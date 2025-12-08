@@ -112,6 +112,7 @@ void init_G4VPhysicalVolume(py::module &m) {
       .def("GetCopyNo", &G4VPhysicalVolume::GetCopyNo)
       .def("IsMany", &G4VPhysicalVolume::IsMany)
       .def("IsReplicated", &G4VPhysicalVolume::IsReplicated)
+      .def("GetInstanceID", &G4VPhysicalVolume::GetInstanceID)
       .def("IsParameterised", &G4VPhysicalVolume::IsParameterised)
       .def("GetMultiplicity", &G4VPhysicalVolume::GetMultiplicity)
       .def("GetParameterisation", &G4VPhysicalVolume::GetParameterisation,

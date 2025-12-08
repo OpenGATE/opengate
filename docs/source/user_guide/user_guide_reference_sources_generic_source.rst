@@ -285,6 +285,18 @@ decay by setting the parameter :attr:`~.opengate.sources.base.SourceBase.half_li
     source = sim.add_source('GenericSource, 'mysource')
     source.half_life = 60 * gate.g4_units.s
 
+Note1: If you set a run_timing_intervals starting at t > 0, the activity set in the source is the activity at t=0.
+
+Note2: If you do not set the half_life for an ion, G4 will use it's own value. Moreover, if you set a
+run_timing_intervals, by default you the source will decrease without taking into account the run_timing_intervals.
+To restrict the decay to the run_timing_intervals, you can set the parameter:
+
+.. code-block:: python
+
+    sim.run_timing_intervals = [[18 * sec, 28 * sec]]
+    source.user_particle_life_time = 0
+
+
 .. autoproperty:: opengate.sources.generic.GenericSource.half_life
 
 Time Activity Curves (TAC)
@@ -377,12 +389,12 @@ Probabilities are derived from weights simply by normalizing the weights list.
    spectrum = gate.sources.utility.get_spectrum("Lu177", spectrum_type, database="icrp107")
 
 where ``spectrum_type`` is one of "gamma", "beta-", "beta+", "alpha", "X", "neutron",
-"auger", "IE", "alpha recoil", "anihilation", "fission", "betaD", "b-spectra". From this list,
+"auger", "IE", "alpha recoil", "annihilation", "fission", "betaD", "b-spectra". From this list,
 only b-spectra is histogram based (see next section), the rest are discrete. ``database`` can be "icrp107" or "radar".
 
-ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`
-with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`.
-`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`
+ICRP107 data comes from `[ICRP, 2008. Nuclear Decay Data for Dosimetric Calculations. ICRP Publication 107. Ann. ICRP 38] <https://www.icrp.org/publication.asp?id=ICRP%20Publication%20107>`__
+with the data from the `[Supplemental material] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3>`__.
+`[Direct link to the zipped data] <https://journals.sagepub.com/doi/suppl/10.1177/ANIB_38_3/suppl_file/P107JAICRP_38_3_Nuclear_Decay_Data_suppl_data.zip>`__
 
 The source can be configured like this:
 

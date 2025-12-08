@@ -426,37 +426,13 @@ def get_random_folder_name(size=8, create=True):
         if not directory.exists():
             print(f"Creating output folder {r}")
             directory.mkdir(parents=True, exist_ok=True)
-        if not directory.isdir():
+        if not directory.is_dir():
             fatal(f"Error, while creating {r}.")
     return r
 
 
 def get_rnd_seed(seed):
     return RandomState(MT19937(SeedSequence(seed)))
-
-
-def DDF():
-    """
-    Debug print current Function name
-    """
-    print("--> Entering", inspect.stack()[1][3])
-
-
-def DD(arg):
-    """
-    Debug print variable name and its value
-    """
-    frame = inspect.currentframe()
-    try:
-        context = inspect.getframeinfo(frame.f_back).code_context
-        caller_lines = "".join([line.strip() for line in context])
-        m = re.search(r"DD\s*\((.+?)\);*$", caller_lines)
-        if m:
-            caller_lines = m.group(1)
-            # end if
-        print(caller_lines, "=", arg)
-    finally:
-        del frame
 
 
 def print_dic(dic):
@@ -512,7 +488,7 @@ def get_library_path():
         return "unknown"
 
     files = os.listdir(path)
-    lib_ext = "dll" if os.name == "nt" else "so"
+    lib_ext = "pyd" if os.name == "nt" else "so"
     libs = [file for file in files if file.endswith(f".{lib_ext}")]
     if len(libs) == 0:
         return "unknown"

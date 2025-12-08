@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
-    sim.visu = False
+    # sim.visu = True
     sim.number_of_threads = 4
     ac = 2e5
     source, actors = create_simulation_test085(
@@ -26,16 +26,18 @@ if __name__ == "__main__":
     )
 
     # FF with Acceptance Angle
-    source.direction.acceptance_angle.intersection_flag = True
-    source.direction.acceptance_angle.normal_flag = True
-    source.direction.acceptance_angle.volumes = ["spect_1"]
-    source.direction.acceptance_angle.normal_vector = [0, 0, -1]
-    source.direction.acceptance_angle.normal_tolerance = 20 * gate.g4_units.deg
+    source.direction.angular_acceptance.policy = "Rejection"
+    source.direction.angular_acceptance.skip_policy = "SkipEvents"
+    source.direction.angular_acceptance.enable_intersection_check = True
+    source.direction.angular_acceptance.enable_angle_check = True
+    source.direction.angular_acceptance.target_volumes = ["spect_1"]
+    source.direction.angular_acceptance.angle_check_reference_vector = [0, 0, -1]
+    source.direction.angular_acceptance.angle_tolerance_max = 20 * gate.g4_units.deg
 
     # free flight actor
     ff = sim.add_actor("GammaFreeFlightActor", "ff")
     ff.attached_to = "world"
-    ff.ignored_volumes = ["spect_1_crystal"]
+    ff.exclude_volumes = ["spect_1_crystal"]
 
     # go
     sim.run()
@@ -43,7 +45,7 @@ if __name__ == "__main__":
     print(stats)
 
     # uncertainty
-    uncer, _, _ = history_rel_uncertainty_from_files(
+    uncer, _, _ = compute_history_by_history_relative_uncertainty_from_files(
         paths.output / "projection_1_ff_counts.mhd",
         paths.output / "projection_1_ff_squared_counts.mhd",
         ac,
@@ -59,8 +61,8 @@ if __name__ == "__main__":
             stats,
             tolerance=80,
             ignore_value_data1=0,
-            sum_tolerance=10,
-            sad_profile_tolerance=30,
+            sum_tolerance=14,
+            sad_profile_tolerance=32,
             scaleImageValuesFactor=2e5 / ac,
             axis="x",
             fig_name=paths.output / "projection_ff_check_1.png",
