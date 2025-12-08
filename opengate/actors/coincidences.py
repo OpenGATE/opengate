@@ -201,9 +201,6 @@ def _decompose_coincidence_pairs_into_singles(coincidence_pairs):
     # Remove the rows marked for removal, then drop the column.
     decomposed = decomposed[~decomposed["ToBeRemoved"]]
     decomposed = decomposed.drop(columns=["ToBeRemoved"])
-    # Renumber the CoincID so that it is monotonically increasing
-    # (while making sure that rows with identical CoincID still have identical CoincID after the renumbering).
-    decomposed["CoincID"] = pd.factorize(decomposed["CoincID"])[0]
     return decomposed
 
 
