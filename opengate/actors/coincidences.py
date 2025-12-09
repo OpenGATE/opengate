@@ -112,6 +112,7 @@ def cc_coincidences_sorter(
     return _coincidences_sorter(
         singles_tree,
         time_window,
+        False,
         None,
         None,
         None,
@@ -135,6 +136,7 @@ def coincidences_sorter(
     return_type="dict",
     output_file_path=None,
     output_file_format="root",
+    allDigiOpenCoincGate=True,
 ):
     """
     Sort singles and detect coincidences.
@@ -165,6 +167,7 @@ def coincidences_sorter(
     return _coincidences_sorter(
         singles_tree,
         time_window,
+        allDigiOpenCoincGate,
         policy,
         min_transaxial_distance,
         transaxial_plane,
@@ -207,6 +210,7 @@ def _decompose_coincidence_pairs_into_singles(coincidence_pairs):
 def _coincidences_sorter(
     singles_tree,
     time_window,
+    allDigiOpenCoincGate,
     policy,
     min_transaxial_distance,
     transaxial_plane,
@@ -339,6 +343,21 @@ def _coincidences_sorter(
                         coincidences["SingleIndex1"]
                         == coincidences["SingleIndex1"].iloc[-1]
                     ].reset_index(drop=True)
+
+                    if not allDigiOpenCoincGate:
+                        # If one single opens a time window, then the following singles which are inside this time window
+                        # cannot open a time window of their own.
+                        # This means that, if a single's index appears in the column "SingleIndex2", then we won't consider
+                        # coincidences where the same index appears in the column "SingleIndex1".
+                        # Remove rows from coincidences_to_process where the "SingleIndex1" value is present in
+                        # the "SingleIndex2" of any row.
+                        indices_to_remove = coincidences_to_process[
+                            "SingleIndex1"
+                        ].isin(coincidences_to_process["SingleIndex2"])
+                        coincidences_to_process = coincidences_to_process[
+                            ~indices_to_remove
+                        ].reset_index(drop=True)
+
                     if result_type == ResultType.COINCIDENCE_PAIRS:
                         # Apply policy for multiple coincidences
                         processed_coincidences = policy_functions[policy](
@@ -374,6 +393,15 @@ def _coincidences_sorter(
                     axis=0,
                     ignore_index=True,
                 )
+
+            if not allDigiOpenCoincGate:
+                indices_to_remove = coincidences_to_process["SingleIndex1"].isin(
+                    coincidences_to_process["SingleIndex2"]
+                )
+                coincidences_to_process = coincidences_to_process[
+                    ~indices_to_remove
+                ].reset_index(drop=True)
+
             if result_type == ResultType.COINCIDENCE_PAIRS:
                 processed_coincidences = policy_functions[policy](
                     coincidences_to_process,
