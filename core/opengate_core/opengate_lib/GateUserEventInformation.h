@@ -21,7 +21,7 @@ public:
 
   void Print() const override;
 
-  std::string GetParticleName(G4int track_id);
+  std::string GetParticleName(G4int track_id) const;
 
   void BeginOfEventAction(const G4Event *event);
 
