@@ -96,3 +96,8 @@ CeBr3: d=5.1 g/cm3 ; n=2
 LaBr3_VLC: d=5.06 g/cm3 ; n=2
       	+el: name=Bromine;    n=3
 	+el: name=Lanthanum;  n=1
+
+PCB: d=1.20 g/cm3 ; n=3
+	+el: name=Hydrogen;    n=8
+	+el: name=Carbon;  n=5
+	+el: name=Oxygen;  n=2
