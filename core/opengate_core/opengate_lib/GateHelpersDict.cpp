@@ -17,6 +17,14 @@ void DictCheckKey(py::dict &user_info, const std::string &key) {
   FatalKeyError("Cannot find the key '" + key + "' in the list of keys: " + c);
 }
 
+G4DataVector *VectorToG4DataVector(std::vector<double> data) {
+  G4DataVector *vec = new G4DataVector(); // data.size()
+  for (int i = 0; i < data.size(); i++) {
+    vec->insertAt(i, data[i]);
+  }
+  return vec;
+}
+
 std::vector<std::vector<double>> DictGetVecofVecDouble(py::dict &user_info,
                                                        const std::string &key) {
   DictCheckKey(user_info, key);
@@ -189,15 +197,16 @@ void CheckIsIn(const std::string &s, std::vector<std::string> &v) {
         "' in the list of possible values: " + c);
 }
 
-std::map<std::string, std::string> DictToMap(py::dict &user_info) {
+std::map<std::string, std::string> DictToMap(const py::dict &user_info) {
   std::map<std::string, std::string> map;
   for (auto p : user_info) {
-    map[py::str(p.first)] = py::str(p.second);
+    // copy the strings
+    map[std::string(py::str(p.first))] = std::string(py::str(p.second));
   }
   return map;
 }
 
-bool StrToBool(std::string &s) {
+bool StrToBool(const std::string &s) {
   if (s == "True")
     return true;
   if (s == "False")
@@ -207,13 +216,47 @@ bool StrToBool(std::string &s) {
   return false; // to avoid warning
 }
 
-double StrToDouble(std::string &s) { return atof(s.c_str()); }
+double StrToDouble(const std::string &s) {
+  try {
+    std::istringstream ss(s);
+    ss.imbue(std::locale("C"));
+    double result;
+    ss >> result;
 
-G4ThreeVector StrToG4ThreeVector(std::string &s) {
+    if (ss.fail() || !ss.eof()) {
+      throw std::runtime_error(
+          "Invalid input string: cannot convert to double " + s);
+    }
+
+    return result;
+  } catch (const std::invalid_argument &) {
+    throw std::runtime_error("Invalid input string: cannot convert to double " +
+                             s);
+  } catch (const std::out_of_range &) {
+    throw std::runtime_error(
+        "Out of range: the value is out of range to store in a double " + s);
+  }
+}
+
+int StrToInt(const std::string &s) {
+  std::locale::global(std::locale("C"));
+  try {
+    return std::stoi(s);
+  } catch (const std::invalid_argument &) {
+    throw std::runtime_error(
+        "Invalid input string: cannot convert to integer " + s);
+  } catch (const std::out_of_range &) {
+    throw std::runtime_error(
+        "Out of range: the value is out of range to store in an integer " + s);
+  }
+}
+
+G4ThreeVector StrToG4ThreeVector(const std::string &s) {
   G4ThreeVector n;
-  std::replace(s.begin(), s.end(), '[', ' ');
-  std::replace(s.begin(), s.end(), ']', ' ');
-  std::istringstream f(s);
+  std::string ls = s;
+  std::replace(ls.begin(), ls.end(), '[', ' ');
+  std::replace(ls.begin(), ls.end(), ']', ' ');
+  std::istringstream f(ls);
   std::string v;
   int i = 0;
   while (getline(f, v, ',')) {
@@ -221,4 +264,58 @@ G4ThreeVector StrToG4ThreeVector(std::string &s) {
     i += 1;
   }
   return n;
+}
+
+std::vector<std::string>
+GetVectorFromMapString(const std::map<std::string, std::string> &map_input,
+                       const std::string &key) {
+  std::vector<std::string> result;
+
+  const auto it = map_input.find(key);
+  if (it == map_input.end() || it->second.empty()) {
+    return result;
+  }
+
+  std::string value = it->second;
+  // Remove leading '[' and trailing ']'
+  if (value.front() == '[' && value.back() == ']') {
+    value = value.substr(1, value.length() - 2);
+  }
+
+  size_t pos = 0;
+  while (pos < value.length()) {
+    // Find the next quote
+    pos = value.find('\'', pos);
+    if (pos == std::string::npos)
+      break;
+
+    // Find the closing quote
+    const size_t end = value.find('\'', pos + 1);
+    if (end == std::string::npos)
+      break;
+
+    // Extract the string between quotes
+    std::string item = value.substr(pos + 1, end - pos - 1);
+    if (!item.empty()) {
+      result.push_back(item);
+    }
+
+    pos = end + 1;
+  }
+
+  return result;
+}
+
+std::string ParamAt(const std::map<std::string, std::string> &param,
+                    const std::string &key) {
+  if (param.find(key) == param.end()) {
+    // print all keys
+    for (auto [fst, snd] : param) {
+      DDD(fst);
+      DDD(snd);
+    }
+    DDD(key);
+    Fatal("Cannot find this key in the param list");
+  }
+  return param.at(key);
 }

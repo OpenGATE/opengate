@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # tests
     print()
     print()
-    stats_ref = utility.read_stat_file(paths.output_ref / f"{sim_name}.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / f"{sim_name}.txt")
     is_ok = utility.assert_stats(stat, stats_ref, 0.01)
 
     utility.test_ok(is_ok)

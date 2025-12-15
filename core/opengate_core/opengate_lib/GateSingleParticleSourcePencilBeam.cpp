@@ -18,6 +18,14 @@ GateSingleParticleSourcePencilBeam::GateSingleParticleSourcePencilBeam(
   mSYPhi = {0, 0, 0, 0};
 }
 
+GateSingleParticleSourcePencilBeam::~GateSingleParticleSourcePencilBeam() {
+  delete fPositionGenerator;
+  delete fDirectionGenerator;
+  delete fEnergyGenerator;
+  delete mGaussian2DXTheta;
+  delete mGaussian2DYPhi;
+}
+
 void GateSingleParticleSourcePencilBeam::SetPBSourceParam(
     std::vector<double> x_param, std::vector<double> y_param) {
 

@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+
+
 import opengate as gate
 import test049_pet_digit_blurring_helpers as t49
 from opengate.tests import utility
@@ -66,7 +68,7 @@ if __name__ == "__main__":
     print()
     gate.exception.warning(f"Check stats")
     p = paths.gate_output
-    stats_ref = utility.read_stat_file(p / "stats_blur2.txt")
+    stats_ref = utility.read_stats_file(p / "stats_blur2.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.03)
 
     # check root singles

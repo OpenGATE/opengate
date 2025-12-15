@@ -9,8 +9,6 @@
 #define GateDigitizerGaussianBlurringActor_h
 
 #include "../GateVActor.h"
-#include "GateDigiCollection.h"
-#include "GateDigiCollectionIterator.h"
 #include "GateHelpersDigitizer.h"
 #include "GateTDigiAttribute.h"
 #include "GateVDigitizerWithOutputActor.h"
@@ -47,9 +45,21 @@ protected:
 
   void BlurCurrentThreeVectorValue();
 
+  double ComputeTruncatedGaussianSigma(G4double mu, G4double sigma,
+                                       G4double lowLimit, G4double highLimit);
+
+  static double ComputeEdgeCorrectedSigma(G4double mu, G4double sigma,
+                                          G4double lowLimit,
+                                          G4double highLimit);
+
+  static G4double pdf(G4double x);
+
+  static G4double cdf(G4double x);
+
   std::string fBlurAttributeName;
   G4ThreeVector fBlurSigma3;
   bool fKeepInSolidLimits;
+  bool fUseTruncatedGaussian;
   GateVDigiAttribute *fOutputBlurAttribute{};
   G4AffineTransform fWorldToVolume;
   G4AffineTransform fVolumeToWorld;
@@ -58,7 +68,8 @@ protected:
   struct threadLocalT {
     GateUniqueVolumeID::Pointer *fVolumeId;
     G4ThreeVector *fAtt3Value{};
-    G4Navigator *fNavigator = nullptr;
+    bool fSolidExtentIsUpdated = false;
+    G4double fXmin, fXmax, fYmin, fYmax, fZmin, fZmax;
   };
   G4Cache<threadLocalT> fThreadLocalData;
 };

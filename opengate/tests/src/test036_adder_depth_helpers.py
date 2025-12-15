@@ -143,7 +143,7 @@ def create_simulation(geom, paths, version):
     sc.output_filename = hc.output_filename
 
     sec = gate.g4_units.second
-    sim.running_verbose_level = 2
+    sim.running_verbose_level = gate.logger.RUN
     # sim.run_timing_intervals = [[0, 0.33 * sec], [0.33 * sec, 0.66 * sec], [0.66 * sec, 1 * sec]]
     sim.run_timing_intervals = [[0, 1 * sec]]
 
@@ -174,7 +174,7 @@ def test_output(sim, paths):
     print(stats)
     print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
     stats.counts.runs = 1  # force to 1
-    stats_ref = utility.read_stat_file(paths.gate_output / "stats.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # root compare HITS

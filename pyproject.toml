@@ -40,6 +40,7 @@ novis = ["opengate-core-novis"]
 opengate_tests = "opengate.bin.opengate_tests:go"
 opengate_info = "opengate.bin.opengate_info:go"
 opengate_visu = "opengate.bin.opengate_visu:go"
+opengate_plot_volume_info = "opengate.bin.opengate_plot_volume_info:go"
 opengate_photon_attenuation_mixture = "opengate.bin.opengate_photon_attenuation_mixture:go"
 opengate_photon_attenuation_image = "opengate.bin.opengate_photon_attenuation_image:go"
 

@@ -97,7 +97,7 @@ if __name__ == "__main__":
     print(dose2)
 
     # tests
-    stats_ref = utility.read_stat_file(paths.output_ref / "test023_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test023_stats.txt")
     is_ok = utility.assert_stats(stat, stats_ref, 0.8)
 
     print()

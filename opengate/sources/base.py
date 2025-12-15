@@ -1,146 +1,25 @@
-from box import Box
-import os
-import pathlib
 import numpy as np
-import json
 
 from ..actors.base import _setter_hook_attached_to
 from ..base import GateObject, process_cls
 from ..utility import g4_units
-from ..exception import fatal
 from ..definitions import __world_name__
-
-gate_source_path = pathlib.Path(__file__).parent.resolve()
-
-# http://www.lnhb.fr/nuclear-data/module-lara/
-all_beta_plus_radionuclides = [
-    "F18",
-    "Ga68",
-    "Zr89",
-    "Na22",
-    "C11",
-    "N13",
-    "O15",
-    "Rb82",
-]
-
-
-def read_beta_plus_spectra(rad_name):
-    """
-    read the file downloaded from LNHB
-    there are 15 lines-long header to skip
-    first column is E(keV)
-    second column is dNtot/dE b+
-    WARNING : bins width is not uniform (need to scale for density)
-    """
-    filename = (
-        f"{gate_source_path}/beta_plus_spectra/{rad_name}/beta+_{rad_name}_tot.bs"
-    )
-    data = np.genfromtxt(filename, usecols=(0, 1), skip_header=15, dtype=float)
-    return data
-
-
-def compute_bins_density(bins):
-    """
-    Given a list of (energy) bins center, compute the width of each bin.
-    """
-    lower = np.roll(bins, 1)
-    lower[0] = 0
-    upper = bins
-    dx = upper - lower
-    return dx
-
-
-def get_rad_yield(rad_name):
-    if not rad_name in all_beta_plus_radionuclides:
-        return 1.0
-    data = read_beta_plus_spectra(rad_name)
-    ene = data[:, 0] / 1000  # convert from KeV to MeV
-    proba = data[:, 1]
-    cdf, total = compute_cdf_and_total_yield(proba, ene)
-    total = total * 1000  # (because was in MeV)
-    return total
-
-
-def compute_cdf_and_total_yield(data, bins):
-    """
-    Compute the CDF (Cumulative Density Function) of a list of non-uniform energy bins
-    with associated probability.
-    Also return the total probability.
-    """
-    dx = compute_bins_density(bins)
-    p = data * dx
-    total = p.sum()
-    cdf = np.cumsum(p) / total
-    return cdf, total
-
-
-def get_rad_gamma_spectrum(rad):
-    path = (
-        pathlib.Path(os.path.dirname(__file__))
-        / ".."
-        / "data"
-        / "rad_gamma_spectrum.json"
-    )
-    with open(path, "r") as f:
-        data = json.load(f)
-
-    # consider lower case
-    data = {key.lower(): value for key, value in data.items()}
-    rad = rad.lower()
-
-    if rad not in data:
-        fatal(f"get_rad_gamma_spectrum: {path} does not contain data for ion {rad}")
-
-    # select data for specific ion
-    data = Box(data[rad])
-
-    data.energies = np.array(data.energies) * g4_units.MeV
-    data.weights = np.array(data.weights)
-
-    return data
-
-
-def get_rad_beta_spectrum(rad: str):
-    path = (
-        pathlib.Path(os.path.dirname(__file__))
-        / ".."
-        / "data"
-        / "rad_beta_spectrum.json"
-    )
-    with open(path, "r") as f:
-        data = json.load(f)
-
-    if rad not in data:
-        fatal(f"get_rad_beta_spectrum: {path} does not contain data for ion {rad}")
-
-    # select data for specific ion
-    data = Box(data[rad])
-
-    bin_edges = data.energy_bin_edges
-    n = len(bin_edges) - 1
-    energies = [(bin_edges[i] + bin_edges[i + 1]) / 2 for i in range(n)]
-
-    data.energy_bin_edges = np.array(data.energy_bin_edges) * g4_units.MeV
-    data.weights = np.array(data.weights)
-    data.energies = np.array(energies)
-
-    return data
-
-
-def set_source_rad_energy_spectrum(source, rad):
-    rad_spectrum = get_rad_gamma_spectrum(rad)
-
-    source.particle = "gamma"
-    source.energy.type = "spectrum_discrete"
-    source.energy.spectrum_weights = rad_spectrum.weights
-    source.energy.spectrum_energies = rad_spectrum.energies
+from ..exception import fatal, warning
 
 
 class SourceBase(GateObject):
     """
     Base class for all source types.
     """
+
+    # hints for IDE
+    attached_to: str
+    mother: str
+    start_time: float
+    end_time: float
+    n: int
+    activity: float
+    half_life: float
 
     user_info_defaults = {
         "attached_to": (
@@ -221,7 +100,7 @@ class SourceBase(GateObject):
 
     def initialize_start_end_time(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
-        # by default consider the source time start and end like the whole simulation
+        # by default, consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
         if not self.start_time:
@@ -231,7 +110,8 @@ class SourceBase(GateObject):
 
     def initialize(self, run_timing_intervals):
         self.initialize_start_end_time(run_timing_intervals)
-        # this will initialize and set user_info to the cpp side
+        # this will initialise and set user_info to the cpp side
+        self.check_ui_activity(self.user_info)
         self.InitializeUserInfo(self.user_info)
 
     def add_to_source_manager(self, source_manager):
@@ -242,6 +122,27 @@ class SourceBase(GateObject):
 
     def can_predict_number_of_events(self):
         return True
+
+    def check_ui_activity(self, ui):
+        # FIXME: This should rather be a function than a method
+        # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
+        # Old fix_me do not knwo if it's still valid
+        if np.array([ui.n]).shape == (1,):
+            ui.n = np.array([ui.n], dtype=int)
+        else:
+            ui.n = np.array(ui.n, dtype=int)
+        if (ui.activity == 0) and (len(ui.n) != len(self.run_timing_intervals)):
+            fatal(f"source.n and run_timing_intervals do not have the same length.")
+        if np.any(ui.n > 0) and ui.activity > 0:
+            fatal(
+                f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
+            )
+        if np.all(ui.n == 0) and ui.activity == 0:
+            fatal(f"You must set one of the two parameters 'n' or 'activity'.")
+        if ui.activity > 0:
+            ui.n = np.array(np.zeros(len(self.run_timing_intervals), dtype=int))
+        if np.any(ui.n > 0):
+            ui.activity = 0
 
 
 process_cls(SourceBase)

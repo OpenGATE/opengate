@@ -127,7 +127,7 @@ if __name__ == "__main__":
     print()
     gate.exception.warning(f"Check stats")
     print(stats)
-    stats_ref = utility.read_stat_file(paths.output_ref / "test040_ref_stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "test040_ref_stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.01)
 
     # 426760*2*0.8883814158496728 = 758251.3

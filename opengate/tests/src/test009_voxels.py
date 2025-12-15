@@ -113,7 +113,7 @@ if __name__ == "__main__":
     print(dose_actor)
 
     # tests
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
     is_ok = utility.assert_stats(stats_actor, stats_ref, 0.15)
     is_ok = is_ok and utility.assert_images(
         paths.gate_output / "output-Edep.mhd",

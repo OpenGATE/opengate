@@ -71,7 +71,10 @@ if __name__ == "__main__":
     dose_actor = sim.add_actor("DoseActor", "dose_actor")
     # let the actor score other quantities additional to edep (default)
     dose_actor.edep_uncertainty.active = True
+    dose_actor.edep_squared.active = True
     dose_actor.dose.active = True
+    dose_actor.dose_uncertainty.active = True
+    dose_actor.dose_squared.active = True
     # set the filename once for the actor
     # a suffix will be added automatically for each output,
     # i.e. _edep, _edep_uncertainty, _dose
@@ -97,7 +100,7 @@ if __name__ == "__main__":
 
     # tests
     gate.exception.warning("Tests stats file")
-    stats_ref = utility.read_stat_file(paths.gate_output / "stat2.txt")
+    stats_ref = utility.read_stats_file(paths.gate_output / "stat2.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     gate.exception.warning("\nDifference for EDEP")
@@ -112,7 +115,7 @@ if __name__ == "__main__":
         and is_ok
     )
 
-    gate.exception.warning("\nDifference for uncertainty")
+    gate.exception.warning("\nDifference for EDEP uncertainty")
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Edep-Uncertainty.mhd",
@@ -124,11 +127,47 @@ if __name__ == "__main__":
         and is_ok
     )
 
+    gate.exception.warning("\nDifference for EDEP square")
+    is_ok = (
+        utility.assert_images(
+            paths.gate_output / "output2-Edep-Squared.mhd",
+            dose_actor.edep_squared.get_output_path(),
+            stats,
+            tolerance=10,
+            ignore_value_data2=0,
+        )
+        and is_ok
+    )
+
     gate.exception.warning("\nDifference for dose in Gray")
     is_ok = (
         utility.assert_images(
             paths.gate_output / "output2-Dose.mhd",
             dose_actor.dose.get_output_path(),
+            stats,
+            tolerance=10,
+            ignore_value_data2=0,
+        )
+        and is_ok
+    )
+
+    gate.exception.warning("\nDifference for dose uncertainty")
+    is_ok = (
+        utility.assert_images(
+            paths.gate_output / "output2-Dose-Uncertainty.mhd",
+            dose_actor.dose_uncertainty.get_output_path(),
+            stats,
+            tolerance=30,
+            ignore_value_data2=0,
+        )
+        and is_ok
+    )
+
+    gate.exception.warning("\nDifference for Does square")
+    is_ok = (
+        utility.assert_images(
+            paths.gate_output / "output2-Dose-Squared.mhd",
+            dose_actor.dose_squared.get_output_path(),
             stats,
             tolerance=10,
             ignore_value_data2=0,

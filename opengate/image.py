@@ -62,9 +62,12 @@ def create_3d_image(
 def create_3d_image_of_histogram(
     size, spacing, bins, origin=None, pixel_type="float", allocate=True
 ):
-    size.append(bins)
-    spacing.append(1.0)
-    if origin is not None:
+    if len(size) != 4:
+        size.append(bins)
+        spacing.append(1.0)
+    else:
+        size[3] = bins
+    if (origin is not None) and (len(origin) != 4):
         origin.append(0.0)
     return create_4d_image(size, spacing, origin, pixel_type, allocate)
 
@@ -288,8 +291,12 @@ def compute_image_3D_CDF(image):
 
     :param image: itk image
     """
-    # consider image as np array
-    array = itk.array_view_from_image(image)
+    # consider the image as a np array
+    # WARNING: cannot use array_view_from_image here because it seems to lead to
+    # a segfault in some cases (linux + multithread + multiple sources)
+    # It is unclear why, but for now we use array_from_image that copy the data
+    # array = itk.array_view_from_image(image)
+    array = itk.array_from_image(image)
 
     # normalize
     array = array / np.sum(array)
@@ -305,7 +312,7 @@ def compute_image_3D_CDF(image):
         for j in range(array.shape[1]):  # Y
             # cumulated sum along X axis
             t = np.cumsum(array[i][j])
-            # normalise if last value (sum) is not zero
+            # normalise if the last value (sum) is not zero
             if t[-1] != 0:
                 t = t / t[-1]
             cdf_x[i].append(t)
@@ -326,7 +333,7 @@ def compute_image_3D_CDF(image):
 
 
 def scale_itk_image(img, scale):
-    imgarr = itk.array_view_from_image(img)
+    imgarr = itk.array_from_image(img)
     imgarr = imgarr * scale
     # this is important to use the corrected function to deal with 1D images
     # img2 = itk.image_from_array(imgarr)
@@ -340,6 +347,7 @@ def divide_itk_images(
 ):
     imgarr1 = itk.array_view_from_image(img1_numerator)
     imgarr2 = itk.array_view_from_image(img2_denominator)
+    # print(imgarr1.dtype, imgarr1.dtype)
     if imgarr1.shape != imgarr2.shape:
         fatal(
             f"Cannot divide images of different shape. Found {imgarr1.shape} vs. {imgarr2.shape}."
@@ -361,9 +369,17 @@ def sum_itk_images(itk_image_list):
     for itk_image in itk_image_list[1:]:
         array = itk.GetArrayFromImage(itk_image)
         summed_image = np.add(summed_image, array)
-    image = itk.GetImageFromArray(summed_image)
+    image = itk_image_from_array(summed_image)
     image.CopyInformation(itk_image_list[0])
     return image
+
+
+def add_constant_to_itk_image(img, constant):
+    imgarr = itk.array_view_from_image(img).copy()
+    imgarr += constant
+    img2 = itk_image_from_array(imgarr)
+    img2.CopyInformation(img)
+    return img2
 
 
 def multiply_itk_images(images):
@@ -513,12 +529,16 @@ def resample_itk_image_like(img, like_img, default_pixel_value, linear=True):
     return resampled_img
 
 
-def resample_itk_image(image, size, spacing, default_pixel_value, linear=True):
+def resample_itk_image(
+    image, size, spacing, default_pixel_value, linear=True, translation=None
+):
     # create a temporary image
     like = create_3d_image(size, spacing, allocate=False)
-    # position the image such as the center is the same than the initial image
+    # position the image such as the centre is the same as the initial image
     info1 = get_info_from_image(like)
     center1 = info1.size / 2.0 * info1.spacing + info1.origin - info1.spacing / 2.0
+    if translation is not None:
+        center1 += translation
     info2 = get_info_from_image(image)
     center2 = info2.size / 2.0 * info2.spacing + info2.origin - info2.spacing / 2.0
     tr = center2 - center1

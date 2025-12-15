@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # print results
     print()
     print(stats)
-    stats_ref = utility.read_stat_file(paths.output_ref / "stats.txt")
+    stats_ref = utility.read_stats_file(paths.output_ref / "stats.txt")
     is_ok = utility.assert_stats(stats, stats_ref, 0.10)
 
     # dose comparison

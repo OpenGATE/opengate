@@ -50,14 +50,14 @@ protected:
   double fBlurResolution;
   double fBlurSlope;
 
-  // This member store the function used to blur (Gaussian, InverseSquare etc)
+  // This member stores the function used to blur (Gaussian, InverseSquare etc)
   std::function<double(double)> fBlurValue;
 
-  double GaussianBlur(double value);
+  double GaussianBlur(double value) const;
 
-  double InverseSquare(double value);
+  double InverseSquare(double value) const;
 
-  double Linear(double value);
+  double Linear(double value) const;
 
   // During computation (thread local)
   struct threadLocalT {

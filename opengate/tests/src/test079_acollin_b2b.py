@@ -23,15 +23,13 @@ import matplotlib.pyplot as plt
 test_key = "p7"
 # The number of events simulated to validate the distribution of acolineaity in each
 # cases.
-number_Events = 10_000
+number_Events = 10000
 default_accolinearity = 0.5 * deg
 # Default acolin. FWHM is 0.5 deg, so here we also test with another value.
 custom_acolin_FWHM = 0.55 * deg
 
-#########################################################################################
-# Main : We use this to launch the test
-#########################################################################################
-if __name__ == "__main__":
+
+def create_sim(output_filename, accolinearity_flag=None, accolinearity_fwhm=None):
     paths = tu.get_default_test_paths(__file__, output_folder="test079")
 
     # Define core of the simulation, including physics
@@ -52,8 +50,12 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 5 * mm
     source.direction.type = "iso"
+    if accolinearity_flag:
+        source.direction.accolinearity_flag = accolinearity_flag
+    if accolinearity_fwhm:
+        source.direction.accolinearity_fwhm = accolinearity_fwhm
 
-    print("default accolinearity")
+    print("accolinearity")
     print(f"accolinearity_flag = {source.direction.accolinearity_flag}")
     print(
         f"accolinearity_fwhm = {source.direction.accolinearity_fwhm/gate.g4_units.deg} deg"
@@ -66,27 +68,33 @@ if __name__ == "__main__":
 
     # add phase actor
     phsp = setup_actor(sim, "phsp", wb.name)
-    phsp.output_filename = paths.output / f"annihilation_photons_{test_key}.root"
-    root_filename_no_acolin = phsp.output_filename
+    phsp.output_filename = output_filename
 
-    # # go, colin case
+    return sim
+
+
+#########################################################################################
+# Main : We use this to launch the test
+#########################################################################################
+if __name__ == "__main__":
+    paths = tu.get_default_test_paths(__file__, output_folder="test079")
+
+    root_filename_no_acolin = paths.output / f"annihilation_photons_{test_key}.root"
+    sim = create_sim(root_filename_no_acolin)
     sim.run(start_new_process=True)
 
     # # Now, activate acolin.
-    phsp.output_filename = (
+    root_filename_default_acolin = (
         paths.output / f"annihilation_photons_with_acolin_{test_key}.root"
     )
-    root_filename_default_acolin = phsp.output_filename
-    source.direction.accolinearity_flag = True
+    sim = create_sim(root_filename_default_acolin, True)
     sim.run(start_new_process=True)
 
     # # Now, custom acolin case
-    phsp.output_filename = (
+    root_filename_custom_acolin = (
         paths.output / f"annihilation_photons_with_acolin_55_{test_key}.root"
     )
-    root_filename_custom_acolin = phsp.output_filename
-    source.direction.accolinearity_flag = True
-    source.direction.accolinearity_fwhm = custom_acolin_FWHM
+    sim = create_sim(root_filename_custom_acolin, True, custom_acolin_FWHM)
     sim.run(start_new_process=True)
 
     # test: without acolinearity, should be mostly colinear

@@ -78,6 +78,7 @@ if __name__ == "__main__":
     dose.spacing = [2 * mm, 2 * mm, 2 * mm]
     dose.translation = [2 * mm, 3 * mm, -2 * mm]
     dose.edep_uncertainty.active = True
+    dose.edep_squared.active = True
     dose.hit_type = "random"
     dose.output_coordinate_system = "local"
     dose.output_filename = "test.nii.gz"
@@ -98,7 +99,7 @@ if __name__ == "__main__":
     print(dose)
 
     # tests
-    stats_ref = utility.read_stat_file(ref_path / "stat.txt")
+    stats_ref = utility.read_stats_file(ref_path / "stat.txt")
     stat.counts.runs = 1  # because ref had only 1 run
     is_ok = utility.assert_stats(stat, stats_ref, 0.11)
 
@@ -111,6 +112,19 @@ if __name__ == "__main__":
             tolerance=13,
             ignore_value_data2=0,
             sum_tolerance=2.5,
+        )
+        and is_ok
+    )
+
+    print("\nDifference for Square")
+    is_ok = (
+        utility.assert_images(
+            ref_path / "output-Edep-Squared.mhd",
+            dose.edep_squared.get_output_path(),
+            stat,
+            tolerance=8,
+            ignore_value_data2=0,
+            sum_tolerance=1.5,
         )
         and is_ok
     )

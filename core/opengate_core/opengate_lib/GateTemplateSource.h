@@ -8,7 +8,7 @@
 #ifndef GateTemplateSource_h
 #define GateTemplateSource_h
 
-#include "GateAcceptanceAngleTesterManager.h"
+#include "GateAcceptanceAngleManager.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
@@ -31,8 +31,6 @@ public:
   ~GateTemplateSource() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
-
-  double PrepareNextTime(double current_simulation_time) override;
 
   void PrepareNextRun() override;
 

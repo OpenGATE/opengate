@@ -305,14 +305,15 @@ class ActorBase(GateObject):
         docstring += "\n"
         return docstring
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         GateObject.__init__(self, *args, **kwargs)
-        self.actor_engine = (
-            None  # this is set by the actor engine during initialization
-        )
+        # the actor engine is set by the actor engine during initialization
+        self.actor_engine = None
         self.user_output = Box()
         self.interfaces_to_user_output = Box()
         self._init_user_output_instance()
+        # the mother of the volume the actor is attached to will be automatically set
+        self.mother_attached_to = None
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -442,16 +443,34 @@ class ActorBase(GateObject):
         return self.simulation.volume_manager.get_volume(self.attached_to)
 
     def close(self):
+        # first, Close the cpp part of the actor
+        self.Close()
+        # close all outputs
         for uo in self.user_output.values():
             uo.close()
+        # remove the g4 objects and the actor engine pointer
         for v in self.__dict__:
             if "g4_" in v:
                 self.__dict__[v] = None
         self.actor_engine = None
+        # close the base GateObject
         super().close()
 
     def initialize(self):
         """This base class method initializes common settings and should be called in all inheriting classes."""
+
+        # set the mother of the attached_to volume to the actor
+        # but only if attached to a single volume.
+        if isinstance(self.attached_to, str):
+            vol = self.simulation.volume_manager.get_volume(self.attached_to)
+            self.mother_attached_to = vol.mother
+            if vol.mother is None:
+                # the mother of the world is the world (sic)
+                self.mother_attached_to = __world_name__
+        else:
+            self.mother_attached_to = "None"
+        # set the name of the attached_to mother volume to cpp
+        self.SetMotherAttachedToVolumeName(self.mother_attached_to)
 
         any_active = False
         for p in self._existing_properties_to_interfaces:

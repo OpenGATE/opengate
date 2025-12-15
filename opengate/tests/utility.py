@@ -1,29 +1,27 @@
-import json
 import itk
 import numpy as np
 import os
-import random
-import string
 import colored
 from box import Box, BoxList
 import scipy
 import pathlib
 import uproot
 import sys
+import shutil
 from pathlib import Path
 from matplotlib.ticker import StrMethodFormatter
 from matplotlib.patches import Circle
+import io
 import gatetools.phsp
 
 from ..utility import (
-    g4_units,
     ensure_filename_is_str,
     insert_suffix_before_extension,
     LazyModuleLoader,
 )
 from ..exception import fatal, color_error, color_ok
 from ..image import get_info_from_image, itk_image_from_array, write_itk_image
-from ..actors.miscactors import SimulationStatisticsActor
+from opengate.actors.simulation_stats_helpers import *
 
 plt = LazyModuleLoader("matplotlib.pyplot")
 
@@ -49,76 +47,11 @@ def test_ok(is_ok=False, exceptions=None):
         sys.exit(-1)
 
 
-def read_stat_file(filename, encoder=None):
-    if encoder == "json":
-        return read_stat_file_json(filename)
-    if encoder == "legacy":
-        return read_stat_file_legacy(filename)
-    # guess if it is json or not
-    try:
-        return read_stat_file_json(filename)
-    except ValueError:
-        pass
-    return read_stat_file_legacy(filename)
-
-
-def read_stat_file_json(filename):
-    with open(filename, "r") as f:
-        data = json.load(f)
-    r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
-    counts = {}
-    for k, d in data.items():
-        counts[k] = d["value"]
-    stat = SimulationStatisticsActor(name=r)
-    stat.user_output.stats.store_data(counts)
-    return stat
-
-
-def read_stat_file_legacy(filename):
-    p = os.path.abspath(filename)
-    with open(p, "r") as f:
-        lines = f.readlines()
-    r = "".join(random.choices(string.ascii_lowercase + string.digits, k=20))
-    stat = SimulationStatisticsActor(name=r)
-    counts = Box()
-    read_track = False
-    for line in lines:
-        if "NumberOfRun" in line:
-            counts.runs = int(line[len("# NumberOfRun    =") :])
-        if "NumberOfEvents" in line:
-            counts.events = int(line[len("# NumberOfEvents = ") :])
-        if "NumberOfTracks" in line:
-            counts.tracks = int(line[len("# NumberOfTracks =") :])
-        if "NumberOfSteps" in line:
-            counts.steps = int(line[len("# NumberOfSteps  =") :])
-        sec = g4_units.s
-        if "ElapsedTimeWoInit" in line:
-            counts.duration = float(line[len("# ElapsedTimeWoInit     =") :]) * sec
-        if read_track:
-            w = line.split()
-            name = w[1]
-            value = w[3]
-            counts.track_types[name] = value
-        if "Track types:" in line:
-            read_track = True
-            stat.track_types_flag = True
-            counts.track_types = {}
-        if "Date" in line:
-            counts.start_time = line[len("# Date                       =") :]
-        if "Threads" in line:
-            a = line[len("# Threads                    =") :]
-            try:
-                counts.nb_threads = int(a)
-            except:
-                counts.nb_threads = "?"
-    stat.user_output.stats.store_data(counts)
-    return stat
-
-
 def print_test(b, s):
     s += f" --> OK? {b}"
     if b:
-        print(s)
+        color = color_ok
+        print(colored.stylize(s, color))
     else:
         color = color_error
         print(colored.stylize(s, color))
@@ -255,8 +188,8 @@ def plot_img_axis(ax, img, label, axis="z"):
 def plot_img_z(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 1)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 1)
     x = np.arange(len(y)) * img.GetSpacing()[2]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -266,8 +199,8 @@ def plot_img_z(ax, img, label):
 def plot_img_y(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 2)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 2)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[1]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -277,8 +210,8 @@ def plot_img_y(ax, img, label):
 def plot_img_x(ax, img, label):
     # get data in np (warning Z and X inverted in np)
     data = itk.GetArrayViewFromImage(img)
-    y = np.sum(data, 1)
-    y = np.sum(y, 0)
+    y = np.nansum(data, 1)
+    y = np.nansum(y, 0)
     x = np.arange(len(y)) * img.GetSpacing()[0]
     ax.plot(x, y, label=label)
     ax.legend()
@@ -323,6 +256,7 @@ def assert_images(
     sad_profile_tolerance=None,
     img_threshold=0,
     test_sad=True,
+    slice_id=None,
 ):
     # read image and info (size, spacing, etc.)
     ref_filename1 = ensure_filename_is_str(ref_filename1)
@@ -335,6 +269,14 @@ def assert_images(
     is_ok = assert_images_properties(info1, info2)
 
     # check pixels contents, global stats
+    if slice_id is not None:
+        data1 = itk.GetArrayFromImage(img1)[slice_id]
+        data2 = itk.GetArrayFromImage(img2)[slice_id]
+        data1 = np.expand_dims(data1, axis=0)
+        data2 = np.expand_dims(data2, axis=0)
+        img1 = itk.GetImageFromArray(data1)
+        img2 = itk.GetImageFromArray(data2)
+
     data1 = itk.GetArrayViewFromImage(img1).ravel()
     data2 = itk.GetArrayViewFromImage(img2).ravel()
 
@@ -382,6 +324,10 @@ def assert_images(
     s = np.sum(d2)
     d1 = d1 / s
     d2 = d2 / s
+    if len(d2) == 0:
+        print_test(False, f"Error, the second image is empty (or only contains zero?")
+        is_ok = False
+
     if test_sad:
         # sum of absolute difference (in %)
         sad = np.fabs(d1 - d2).sum() * 100
@@ -447,6 +393,7 @@ def assert_filtered_imagesprofile1D(
     fig_name=None,
     sum_tolerance=5,
     plt_ylim=None,
+    eval_quantity="",
 ):
     # read image and info (size, spacing etc)
     ref_filter_filename1 = ensure_filename_is_str(ref_filter_filename1)
@@ -472,6 +419,7 @@ def assert_filtered_imagesprofile1D(
     L_filter = range(max_ind)
     d1 = data1[L_filter]
     d2 = data2[L_filter]
+    print(d2)
 
     # normalise by event
     if stats is not None:
@@ -503,7 +451,7 @@ def assert_filtered_imagesprofile1D(
     ax[1].plot(xV[:max_ind], (d2 / d1 - 1) * 100, "o", label="test/ref")
     ax[0].set_xlabel("x [mm]")
     ax[1].set_xlabel("x [mm]")
-    ax[0].set_ylabel("LET")
+    ax[0].set_ylabel(f"{eval_quantity}")
     ax[0].set_ylim(
         [np.amin([np.amin(d2), 0]), np.ceil(np.amax([np.amax(d1), np.amax(d2)]) * 1.1)]
     )
@@ -881,6 +829,14 @@ def compare_root(root1, root2, branch1, branch2, checked_keys, img):
     return is_ok
 
 
+def file_size_str(file_size):
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if file_size < 1024.0:
+            return f"{file_size:.2f} {unit}"
+            break
+        file_size /= 1024.0
+
+
 def compare_root3(
     root1,
     root2,
@@ -895,6 +851,10 @@ def compare_root3(
     hits_tol=6,
     nb_bins=200,
 ):
+
+    s1 = root1_size = os.path.getsize(root1)
+    s2 = root1_size = os.path.getsize(root2)
+
     hits1 = uproot.open(root1)[branch1]
     hits1_n = hits1.num_entries
     hits1 = hits1.arrays(library="numpy")
@@ -903,8 +863,12 @@ def compare_root3(
     hits2_n = hits2.num_entries
     hits2 = hits2.arrays(library="numpy")
 
-    print(f"Reference tree: {os.path.basename(root1)} n={hits1_n}")
-    print(f"Current tree:   {os.path.basename(root2)} n={hits2_n}")
+    print(
+        f"Reference tree: {os.path.basename(root1)} n={hits1_n}  {file_size_str(s1)} {root1} "
+    )
+    print(
+        f"Current tree:   {os.path.basename(root2)} n={hits2_n}  {file_size_str(s2)} {root2} "
+    )
     diff = rel_diff(float(hits1_n), float(hits2_n))
     b = np.fabs(diff) < hits_tol
     is_ok = print_test(b, f"Difference: {hits1_n} {hits2_n} {diff:.2f}%")
@@ -917,9 +881,9 @@ def compare_root3(
         scalings2 = [1] * len(keys2)
 
     if keys1 is None:
-        keys1 = hits1.keys()
+        keys1 = list(hits1.keys())
     if keys2 is None:
-        keys2 = hits2.keys()
+        keys2 = list(hits2.keys())
 
     # keys1, keys2, scalings, tols = get_keys_correspondence(checked_keys)
     is_ok = (
@@ -1012,14 +976,87 @@ def open_root_as_np(root_file, tree_name):
 
 
 # https://stackoverflow.com/questions/4527942/comparing-two-dictionaries-and-checking-how-many-key-value-pairs-are-equal
-def dict_compare(d1, d2):
-    d1_keys = set(d1.keys())
-    d2_keys = set(d2.keys())
+def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
+    """
+    Compare two dictionaries with a tolerance for float values and optional keys to ignore.
+
+    Args:
+        d1, d2: Dictionaries to compare
+        tolerance: Float tolerance for float values
+        ignored_keys: List of keys that are optional
+        parent_key: Internal use for tracking nested key path
+    """
+    ignored_keys = set() if ignored_keys is None else set(ignored_keys)
+
+    # Get all keys excluding optional ones
+    d1_keys = set(d1.keys()) - ignored_keys
+    d2_keys = set(d2.keys()) - ignored_keys
     shared_keys = d1_keys.intersection(d2_keys)
     added = d1_keys - d2_keys
     removed = d2_keys - d1_keys
-    modified = {o: (d1[o], d2[o]) for o in shared_keys if d1[o] != d2[o]}
-    same = set(o for o in shared_keys if d1[o] == d2[o])
+
+    # Print added and removed keys (only for non-optional keys)
+    if added and not parent_key:
+        print("Keys added in d1:", added)
+    if removed and not parent_key:
+        print("Keys removed in d2:", removed)
+
+    def compare_arrays(arr1, arr2, key):
+        """Compare two arrays and print differences with indices"""
+        if isinstance(arr1, list) and isinstance(arr2, list):
+            if len(arr1) != len(arr2):
+                print(
+                    f"{key}: Arrays have different lengths ({len(arr1)} vs {len(arr2)})"
+                )
+                return False
+
+            is_equal = True
+            for i, (v1, v2) in enumerate(zip(arr1, arr2)):
+                if isinstance(v1, list) and isinstance(v2, list):
+                    if not compare_arrays(v1, v2, f"{key}[{i}]"):
+                        is_equal = False
+                elif isinstance(v1, float) and isinstance(v2, float):
+                    if abs(v1 - v2) > tolerance:
+                        print(f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+                        is_equal = False
+                elif v1 != v2:
+                    print(f"{key}[{i}] : {v1} vs {v2}")
+                    is_equal = False
+            return is_equal
+        return arr1 == arr2
+
+    # Modified comparison logic with tolerance for floats
+    def values_equal(v1, v2, key):
+        full_key = f"{parent_key}->{key}" if parent_key else key
+
+        if key in ignored_keys:
+            return True
+
+        if isinstance(v1, dict) and isinstance(v2, dict):
+            _, _, nested_modified, _ = dict_compare(
+                v1, v2, tolerance, ignored_keys, full_key
+            )
+            return len(nested_modified) == 0
+        elif isinstance(v1, list) and isinstance(v2, list):
+            return compare_arrays(v1, v2, full_key)
+        elif isinstance(v1, float) and isinstance(v2, float):
+            if abs(v1 - v2) > tolerance:
+                print(f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+                return False
+            return True
+        else:
+
+            if v1 != v2:
+                print(f"{full_key} : {v1} vs {v2}")
+            return v1 == v2
+
+    # Check all shared keys (including optional ones for modification tracking)
+    all_shared_keys = set(d1.keys()).intersection(set(d2.keys()))
+    modified = {
+        o: (d1[o], d2[o]) for o in all_shared_keys if not values_equal(d1[o], d2[o], o)
+    }
+    same = set(o for o in all_shared_keys if values_equal(d1[o], d2[o], o))
+
     return added, removed, modified, same
 
 
@@ -1849,10 +1886,10 @@ def np_img_window_level(img, window_width, window_level):
 def np_img_crop(img, crop_center, crop_width):
     c = crop_center
     w = crop_width
-    x1 = c[0] - w[0] // 2
-    x2 = c[0] + w[0] // 2
-    y1 = c[1] - w[1] // 2
-    y2 = c[1] + w[1] // 2
+    x1 = max(0, c[0] - w[0] // 2)
+    x2 = min(img.shape[2], c[0] + w[0] // 2)
+    y1 = max(0, c[1] - w[1] // 2)
+    y2 = min(img.shape[1], c[1] + w[1] // 2)
     img = img[:, y1:y2, x1:x2]
     return img, (x1, x2, y1, y2)
 
@@ -1874,26 +1911,18 @@ def np_plot_slice(
     # slice
     im = ax.imshow(img[num_slice, :, :], cmap="gray")
 
-    # prepare ticks
-    nticks = 6
-    x_step = int(np.around((crop_coord[1] - crop_coord[0]) / nticks))
-    x_ticks = np.char.mod(
-        "%.0f",
-        np.around(
-            np.arange(crop_coord[0], crop_coord[1], x_step) * spacing[0], decimals=1
-        ),
-    )
-    y_step = int(np.around((crop_coord[3] - crop_coord[2]) / nticks))
-    y_ticks = np.char.mod(
-        "%.0f",
-        np.around(
-            np.arange(crop_coord[2], crop_coord[3], y_step) * spacing[1], decimals=1
-        ),
-    )
+    nticks = 10
+    # X-axis ticks - ensures exactly nticks points
+    x_positions = np.linspace(0, crop_coord[1] - crop_coord[0], nticks)
+    x_ticks = np.char.mod("%.0f", np.around(x_positions * spacing[0], decimals=1))
+
+    # Y-axis ticks - ensures exactly nticks points
+    y_positions = np.linspace(0, crop_coord[3] - crop_coord[2], nticks)
+    y_ticks = np.char.mod("%.0f", np.around(y_positions * spacing[1], decimals=1))
 
     # ticks
-    ax.set_xticks(np.arange(0, crop_width[0], x_step), x_ticks)
-    ax.set_yticks(np.arange(0, crop_width[1], y_step), y_ticks)
+    ax.set_xticks(x_positions, x_ticks)
+    ax.set_yticks(y_positions, y_ticks)
     ax.set_xlabel("X (mm)")
     ax.set_ylabel("Y (mm)")
     return im
@@ -1911,6 +1940,56 @@ def np_plot_slice_v_line(ax, vline, crop_center, crop_width):
     c = int(vline - (crop_center[0] - crop_width[0] / 2))
     y = [c] * len(x)
     ax.plot(y, x, color="r")
+
+
+def np_plot_slice_h_box(ax, hline, crop_center, crop_width, width):
+    """Draw a horizontal box on the slice with the same width as the profile plot"""
+    from matplotlib.patches import Rectangle
+
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+
+    if width == 0:
+        # If width is 0, draw a single line
+        x = np.arange(0, crop_width[0])
+        y = [c] * len(x)
+        ax.plot(x, y, color="r", linewidth=1)
+    else:
+        # Draw a filled rectangle with transparency
+        rect = Rectangle(
+            (0, c - width - 0.5),
+            crop_width[0] - 1,
+            2 * width,
+            linewidth=0,
+            edgecolor="none",
+            facecolor="r",
+            alpha=0.3,
+        )
+        ax.add_patch(rect)
+
+
+def np_plot_slice_v_box(ax, vline, crop_center, crop_width, width):
+    """Draw a vertical box on the slice with the same width as the profile plot"""
+    from matplotlib.patches import Rectangle
+
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+
+    if width == 0:
+        # If width is 0, draw a single line
+        x = np.arange(0, crop_width[1])
+        y = [c] * len(x)
+        ax.plot(y, x, color="r", linewidth=1)
+    else:
+        # Draw a filled rectangle with transparency
+        rect = Rectangle(
+            (c - width - 0.5, 0),
+            2 * width,
+            crop_width[1] - 1,
+            linewidth=0,
+            edgecolor="none",
+            facecolor="r",
+            alpha=0.3,
+        )
+        ax.add_patch(rect)
 
 
 def add_colorbar(imshow, window_level, window_width):
@@ -1935,7 +2014,9 @@ def np_plot_integrated_profile(
     ax.plot(values, profile, label=label)
 
 
-def np_plot_profile_X(ax, img, hline, num_slice, crop_center, crop_width, label, width):
+def np_plot_profile_X_old(
+    ax, img, hline, num_slice, crop_center, crop_width, label, width
+):
     c = int(hline - (crop_center[1] - crop_width[1] / 2))
     img, _ = np_img_crop(img, crop_center, crop_width)
     if width == 0:
@@ -1947,7 +2028,9 @@ def np_plot_profile_X(ax, img, hline, num_slice, crop_center, crop_width, label,
     ax.plot(x, y, label=label)
 
 
-def np_plot_profile_Y(ax, img, vline, num_slice, crop_center, crop_width, label, width):
+def np_plot_profile_Y_old(
+    ax, img, vline, num_slice, crop_center, crop_width, label, width
+):
     c = int(vline - (crop_center[0] - crop_width[0] / 2))
     img, _ = np_img_crop(img, crop_center, crop_width)
     if width == 0:
@@ -1957,6 +2040,38 @@ def np_plot_profile_Y(ax, img, vline, num_slice, crop_center, crop_width, label,
     x = np.mean(img, axis=1)
     y = np.arange(0, len(x))
     ax.plot(y, x, label=label)
+
+
+def np_plot_profile_X(
+    ax, img, hline, num_slice, crop_center, crop_width, label, width, spacing
+):
+    c = int(hline - (crop_center[1] - crop_width[1] / 2))
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, c : c + 1, :]
+    else:
+        img = img[num_slice, c - width : c + width, :]
+    y = np.mean(img, axis=0)
+    # Convert pixel indices to physical coordinates (mm)
+    x = np.arange(0, len(y)) * spacing[0] + crop_coord[0] * spacing[0]
+    ax.plot(x, y, label=label)
+    ax.set_xlabel("X (mm)")
+
+
+def np_plot_profile_Y(
+    ax, img, vline, num_slice, crop_center, crop_width, label, width, spacing
+):
+    c = int(vline - (crop_center[0] - crop_width[0] / 2))
+    img, crop_coord = np_img_crop(img, crop_center, crop_width)
+    if width == 0:
+        img = img[num_slice, :, c : c + 1]
+    else:
+        img = img[num_slice, :, c - width : c + width]
+    y = np.mean(img, axis=1)
+    # Convert pixel indices to physical coordinates (mm)
+    x = np.arange(0, len(y)) * spacing[1] + crop_coord[2] * spacing[1]
+    ax.plot(x, y, label=label)
+    ax.set_xlabel("Y (mm)")
 
 
 def np_get_circle_mean_value(img, center, radius):
@@ -1987,7 +2102,7 @@ def add_border(ax, border_color, border_width):
         spine.set_linewidth(border_width)
 
 
-def plot_compare_profile(ref_names, test_names, options):
+def plot_compare_slice_profile(ref_names, test_names, options):
     # options
     scaling = options.scaling
     n_slice = options.n_slice
@@ -2024,10 +2139,10 @@ def plot_compare_profile(ref_names, test_names, options):
         last = np_plot_slice(
             ax[0][i * n + 1], img_test[i], n_slice, ww, wl, c, w, spacing
         )
-        np_plot_slice_h_line(ax[0][i * n], hline, c, w)
-        np_plot_slice_h_line(ax[0][i * n + 1], hline, c, w)
-        np_plot_slice_v_line(ax[0][i * n], vline, c, w)
-        np_plot_slice_v_line(ax[0][i * n + 1], vline, c, w)
+        np_plot_slice_h_box(ax[0][i * n], hline, c, w, wi)
+        np_plot_slice_h_box(ax[0][i * n + 1], hline, c, w, wi)
+        np_plot_slice_v_box(ax[0][i * n], vline, c, w, wi)
+        np_plot_slice_v_box(ax[0][i * n + 1], vline, c, w, wi)
 
     # Add colorbar to the figure
     add_colorbar(last, wl, ww)
@@ -2037,10 +2152,26 @@ def plot_compare_profile(ref_names, test_names, options):
     ltest = f"{lab_test} (horizontal)"
     for i in range(len(img_ref)):
         np_plot_profile_X(
-            ax[1][i * n], img_ref[i], hline, n_slice, c, w, lref, width=wi
+            ax[1][i * n],
+            img_ref[i],
+            hline,
+            n_slice,
+            c,
+            w,
+            lref,
+            width=wi,
+            spacing=spacing,
         )
         np_plot_profile_X(
-            ax[1][i * n], img_test[i], hline, n_slice, c, w, ltest, width=wi
+            ax[1][i * n],
+            img_test[i],
+            hline,
+            n_slice,
+            c,
+            w,
+            ltest,
+            width=wi,
+            spacing=spacing,
         )
         ax[1][i * n].legend()
 
@@ -2048,10 +2179,26 @@ def plot_compare_profile(ref_names, test_names, options):
     ltest = f"{lab_test} (vertical)"
     for i in range(len(img_ref)):
         np_plot_profile_Y(
-            ax[1][i * n + 1], img_ref[i], vline, n_slice, c, w, lref, width=wi
+            ax[1][i * n + 1],
+            img_ref[i],
+            vline,
+            n_slice,
+            c,
+            w,
+            lref,
+            width=wi,
+            spacing=spacing,
         )
         np_plot_profile_Y(
-            ax[1][i * n + 1], img_test[i], vline, n_slice, c, w, ltest, width=wi
+            ax[1][i * n + 1],
+            img_test[i],
+            vline,
+            n_slice,
+            c,
+            w,
+            ltest,
+            width=wi,
+            spacing=spacing,
         )
         ax[1][i * n + 1].legend()
 
@@ -2077,3 +2224,42 @@ def get_image_1d_profile(filename, axis, offset=(0, 0)):
         pdd_y = img_arr[int(s[0] / 2) + offset[0], int(s[1] / 2) + offset[1], :]
         pdd_x = np.arange(0, s[2] * spacing[0], spacing[0])
     return pdd_x, pdd_y
+
+
+def delete_folder_contents(folder_path):
+    # Check if the folder exists
+    if os.path.exists(folder_path):
+        # Iterate through the folder contents
+        for item in os.listdir(folder_path):
+            item_path = os.path.join(folder_path, item)
+            # Check if it's a file and delete it
+            if os.path.isfile(item_path) or os.path.islink(item_path):
+                os.unlink(item_path)  # Remove file or symbolic link
+            # Check if it's a directory and delete it
+            elif os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+        print(f"Contents of '{folder_path}' have been deleted.")
+    else:
+        print(f"The folder '{folder_path}' does not exist.")
+
+
+def capture_stdout(command, *args, **kwargs):
+    # Define a function that captures stdout
+    # Save the original stdout
+    original_stdout = sys.stdout
+    # Create a buffer to capture output
+    captured_output = io.StringIO()
+
+    try:
+        # Redirect stdout to the buffer
+        sys.stdout = captured_output
+        # Execute the command
+        command(*args, **kwargs)
+    finally:
+        # Restore the original stdout
+        sys.stdout = original_stdout
+
+    # Get the output from the buffer and return it
+    print("here", captured_output)
+    print("here", captured_output.getvalue())
+    return captured_output.getvalue()

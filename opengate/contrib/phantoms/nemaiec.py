@@ -3,6 +3,7 @@ import itk
 import numpy as np
 import math
 
+from opengate import utility
 import opengate.geometry.volumes
 from opengate.utility import fatal, g4_units
 from opengate.geometry.volumes import unite_volumes
@@ -52,7 +53,7 @@ def add_iec_phantom(
     # Inside space for the water, same as the shell, with 3 mm less
     thickness = 3 * mm
     thickness_z = 10 * mm
-    interior, top_interior, c = add_iec_body(
+    interior, top_interior, _ = add_iec_body(
         simulation, f"{name}_interior", thickness, thickness_z
     )
     interior.mother = iec.name
@@ -634,7 +635,7 @@ def add_iec_phantom_vox_FIXME_TO_REMOVE(sim, name, image_filename, labels_filena
     iec = sim.add_volume("Image", name)
     iec.image = image_filename
     iec.material = "IEC_PLASTIC"
-    labels = json.loads(open(labels_filename).read())
+    labels = utility.read_json_file(labels_filename)
     iec.voxel_materials = []
     create_material(sim)
     material_list = {}
@@ -656,3 +657,32 @@ def add_iec_phantom_vox_FIXME_TO_REMOVE(sim, name, image_filename, labels_filena
         m = [labels[l]["label"], labels[l]["label"] + 1, mat]
         iec.voxel_materials.append(m)
     return iec, material_list
+
+
+def create_iec_phantom_source_vox(
+    image_filename, labels_filename, source_filename, activities=None
+):
+    if activities is None:
+        activities = {
+            "iec_sphere_10mm": 1.0,
+            "iec_sphere_13mm": 1.0,
+            "iec_sphere_17mm": 1.0,
+            "iec_sphere_22mm": 1.0,
+            "iec_sphere_28mm": 1.0,
+            "iec_sphere_37mm": 1.0,
+        }
+
+    img = itk.imread(image_filename)
+    labels = utility.read_json_file(labels_filename)
+    img_arr = itk.GetArrayViewFromImage(img)
+
+    for label in labels:
+        l = labels[label]["label"]
+        if "sphere" in label and "shell" not in label:
+            img_arr[img_arr == l] = activities[label]
+        else:
+            img_arr[img_arr == l] = 0
+
+    # The coordinate system is different from IEC analytical volume
+    # 35mm should be added in Y
+    itk.imwrite(img, source_filename)

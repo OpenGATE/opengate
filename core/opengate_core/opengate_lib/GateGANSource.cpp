@@ -46,9 +46,9 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
   fMass = fParticleDefinition->GetPDGMass();
 
   // set the angle acceptance volume if needed
-  // AAManager is already set in GenericSource BUT MUST be iso direction here ?
+  // AAManager is already set in GenericSource BUT MUST be iso direction here?
   auto d = py::dict(user_info["direction"]);
-  auto dd = py::dict(d["acceptance_angle"]);
+  auto dd = DictToMap(d["angular_acceptance"]);
   auto &ll = GetThreadLocalDataGenericSource();
   ll.fAAManager->Initialize(dd, true);
   ll.fSPS->SetAAManager(ll.fAAManager);
@@ -63,7 +63,7 @@ void GateGANSource::InitializeUserInfo(py::dict &user_info) {
 
   if (fSkipEnergyPolicy == SEPolicyType::AAUndefined) {
     std::ostringstream oss;
-    oss << "Unknown '" << s << "' mode for GateAcceptanceAngleTesterManager. "
+    oss << "Unknown '" << s << "' mode for GateAcceptanceAngleManager. "
         << "Expected: ZeroEnergy or SkipEvents";
     Fatal(oss.str());
   }
@@ -121,14 +121,14 @@ void GateGANSource::GenerateBatchOfParticles() {
   // (does not seem needed)
   // py::gil_scoped_acquire acquire;
 
-  // This function (fGenerator) is defined on Python side
-  // It fills all values needed for the particles (position, dir, energy, etc)
-  // Alternative: build vector of G4ThreeVector in GenerateBatchOfParticles ?
+  // This function (fGenerator) is defined on the Python side
+  // It fills all values needed for the particles (position, dir, energy, etc.)
+  // Alternative: build vector of G4ThreeVector in GenerateBatchOfParticles?
   // (unsure if it is faster)
   fGenerator(this);
   fCurrentIndex = 0;
 
-  // Then, we need to get the exact number of particle in the batch.
+  // Then, we need to get the exact number of particles in the batch.
   // It depends on what is managed by the GAN
   if (fPosition_is_set_by_GAN) {
     fCurrentBatchSize = fPositionX.size();
@@ -333,14 +333,14 @@ void GateGANSource::GenerateOnePrimaryWithAA(G4Event *event,
     // check AA
     bool accept_angle = l.fAAManager->TestIfAccept(position, direction);
 
-    if (!accept_angle && l.fAAManager->GetPolicy() ==
-                             GateAcceptanceAngleTesterManager::AAZeroEnergy) {
+    if (!accept_angle &&
+        l.fAAManager->GetPolicy() == GateAcceptanceAngleManager::AAZeroEnergy) {
       energy = 0;
       cont = false;
       continue; // stop here
     }
-    if (!accept_angle && l.fAAManager->GetPolicy() ==
-                             GateAcceptanceAngleTesterManager::AASkipEvent) {
+    if (!accept_angle &&
+        l.fAAManager->GetPolicy() == GateAcceptanceAngleManager::AASkipEvent) {
       l.fCurrentSkippedEvents++;
       fCurrentIndex++;
       continue; // no need to check energy now

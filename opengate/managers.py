@@ -1,12 +1,11 @@
-import sys
-import logging
+import copy
 from typing import Optional, List, Union
 from box import Box
 from anytree import RenderTree, LoopError
 import shutil
-import os
 import weakref
 from pathlib import Path
+import io
 
 import opengate_core as g4
 from .base import (
@@ -27,8 +26,8 @@ from .utility import (
     ensure_directory_exists,
     insert_suffix_before_extension,
 )
-from . import logger
-from .logger import global_log
+from .logger import *
+
 from .physics import (
     Region,
     OpticalSurface,
@@ -62,6 +61,7 @@ from .geometry.volumes import (
     VolumeBase,
     BoxVolume,
     SphereVolume,
+    EllipsoidVolume,
     TrapVolume,
     ImageVolume,
     TubsVolume,
@@ -77,13 +77,21 @@ from .geometry.volumes import (
 )
 from .actors.filters import get_filter_class, FilterBase, filter_classes
 from .actors.base import ActorBase
+
 from .actors.doseactors import (
     DoseActor,
+    TLEDoseActor,
     LETActor,
     FluenceActor,
     ProductionAndStoppingActor,
+    RBEActor,
+    REActor,
+    BeamQualityActor,
+    EmCalculatorActor,
 )
-from .actors.tleactors import TLEDoseActor, VoxelizedPromptGammaTLEActor
+
+from .actors.tleactors import VoxelizedPromptGammaTLEActor
+
 from .actors.dynamicactors import DynamicGeometryActor
 from .actors.arfactors import ARFActor, ARFTrainingDatasetActor
 from .actors.miscactors import (
@@ -94,9 +102,9 @@ from .actors.miscactors import (
 )
 from .actors.biasingactors import (
     GenericBiasingActorBase,
-    ComptSplittingActor,
-    BremSplittingActor,
-    FreeFlightActor,
+    BremsstrahlungSplittingActor,
+    GammaFreeFlightActor,
+    ScatterSplittingFreeFlightActor,
 )
 from .actors.digitizers import (
     DigitizerAdderActor,
@@ -108,6 +116,7 @@ from .actors.digitizers import (
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
     PhaseSpaceActor,
+    DigiAttributeProcessDefinedStepInVolumeActor,
 )
 
 particle_names_Gate_to_G4 = {
@@ -125,6 +134,10 @@ actor_types = {
     "VoxelizedPromptGammaTLEActor": VoxelizedPromptGammaTLEActor,
     "LETActor": LETActor,
     "ProductionAndStoppingActor": ProductionAndStoppingActor,
+    "RBEActor": RBEActor,
+    "REActor": REActor,
+    "BeamQualityActor": BeamQualityActor,
+    "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
     # misc
     "AttenuationImageActor": AttenuationImageActor,
@@ -144,10 +157,11 @@ actor_types = {
     "DigitizerProjectionActor": DigitizerProjectionActor,
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
+    "DigiAttributeProcessDefinedStepInVolumeActor": DigiAttributeProcessDefinedStepInVolumeActor,
     # biasing
-    "BremSplittingActor": BremSplittingActor,
-    "ComptSplittingActor": ComptSplittingActor,
-    "FreeFlightActor": FreeFlightActor,
+    "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
+    "GammaFreeFlightActor": GammaFreeFlightActor,
+    "ScatterSplittingFreeFlightActor": ScatterSplittingFreeFlightActor,
 }
 
 
@@ -280,7 +294,7 @@ class SourceManager(GateObject):
 
     def __str__(self):
         """
-        str only dump the user info on a single line
+        str only dumps the user info on a single line
         """
         v = [v.name for v in self.sources.values()]
         s = f'{" ".join(v)} ({len(self.sources)})'
@@ -305,6 +319,7 @@ class SourceManager(GateObject):
                 f"Cannot find the source {source_name}. "
                 f"Sources included in this simulation are: {list(self.sources.keys())}"
             )
+            return None  # to avoid warning
 
     def add_source(self, source, name):
         new_source = None
@@ -329,6 +344,26 @@ class SourceManager(GateObject):
         # return the volume if it has not been passed as input, i.e. it was created here
         if new_source is not source:
             return new_source
+        return source
+
+    def add_source_copy(self, origin_source_name, copied_source_name):
+        # get the source to copy
+        orig = self.get_source(origin_source_name)
+        # get its type name
+        cls_name = type(orig).__name__
+        # create the new source
+        new_source = self.add_source(cls_name, copied_source_name)
+        # copy all elements except its name
+        new_source.user_info = copy.deepcopy(orig.user_info)
+        new_source.user_info.name = copied_source_name
+        return new_source
+
+    def remove_source(self, source_name):
+        if not source_name in self.sources:
+            fatal(
+                f"In 'remove_source', the source {source_name} is not in the list of sources: {self.sources}"
+            )
+        self.sources.pop(source_name)
 
     def _create_source(self, source_type, name):
         cls = None
@@ -343,6 +378,10 @@ class SourceManager(GateObject):
         return cls(name=name, simulation=self.simulation)
 
     def initialize_before_g4_engine(self):
+        if len(self.sources) == 0:
+            self.simulation.warn_user(
+                "No configured source, no particle will be generated."
+            )
         for source in self.sources.values():
             if source.initialize_source_before_g4_engine:
                 source.initialize_source_before_g4_engine(source)
@@ -451,6 +490,44 @@ class ActorManager(GateObject):
         if new_actor is not actor:
             return new_actor
 
+    def find_actors(self, sub_str, case_sensitive=False):
+        # find all actors that contain this substring
+        actors = []
+        if not case_sensitive:
+            sub_str = sub_str.lower()
+        for actor in self.actors.values():
+            name = actor.name
+            if not case_sensitive:
+                name = name.lower()
+            if sub_str in name:
+                actors.append(actor)
+        return actors
+
+    def find_actors_by_type(self, type_name, sub_str=None, case_sensitive=False):
+        # find all actors of a given type
+        actors = []
+        if not case_sensitive and sub_str is not None:
+            sub_str = sub_str.lower()
+        for actor in self.actors.values():
+            if actor.type_name == type_name:
+                if sub_str is None:
+                    actors.append(actor)
+                else:
+                    name = actor.name
+                    if not case_sensitive:
+                        name = name.lower()
+                    if sub_str in name:
+                        actors.append(actor)
+        return actors
+
+    def find_actor_by_type(self, type_name, sub_str=None, case_sensitive=False):
+        actors = self.find_actors_by_type(type_name, sub_str, case_sensitive)
+        if len(actors) == 1:
+            return actors[0]
+        else:
+            fatal(f'Found {len(actors)} actors of type "{type_name}". Expected 1.')
+            return None
+
     def remove_actor(self, name):
         self.actors.pop(name)
 
@@ -484,13 +561,20 @@ class PhysicsListManager(GateObject):
         "G4OpticalPhysics",
     ]
 
-    special_physics_constructor_classes = {}
-    special_physics_constructor_classes["G4DecayPhysics"] = g4.G4DecayPhysics
-    special_physics_constructor_classes["G4RadioactiveDecayPhysics"] = (
-        g4.G4RadioactiveDecayPhysics
-    )
-    special_physics_constructor_classes["G4OpticalPhysics"] = g4.G4OpticalPhysics
-    special_physics_constructor_classes["G4EmDNAPhysics"] = g4.G4EmDNAPhysics
+    special_physics_constructor_classes = {
+        "G4DecayPhysics": g4.G4DecayPhysics,
+        "G4RadioactiveDecayPhysics": g4.G4RadioactiveDecayPhysics,
+        "G4OpticalPhysics": g4.G4OpticalPhysics,
+        "G4EmDNAPhysics": g4.G4EmDNAPhysics,
+        "G4EmDNAPhysics_option1": g4.G4EmDNAPhysics_option1,
+        "G4EmDNAPhysics_option2": g4.G4EmDNAPhysics_option2,
+        "G4EmDNAPhysics_option3": g4.G4EmDNAPhysics_option3,
+        "G4EmDNAPhysics_option4": g4.G4EmDNAPhysics_option4,
+        "G4EmDNAPhysics_option5": g4.G4EmDNAPhysics_option5,
+        "G4EmDNAPhysics_option6": g4.G4EmDNAPhysics_option6,
+        "G4EmDNAPhysics_option7": g4.G4EmDNAPhysics_option7,
+        "G4EmDNAPhysics_option8": g4.G4EmDNAPhysics_option8,
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -676,6 +760,12 @@ class PhysicsManager(GateObject):
             {
                 "doc": "Dict of material_name:energy_value, such that: sim.physics_manager.mean_energy_per_ion_pair['IEC_PLASTIC'] = 5.0 * eV. "
                 "Mostly used for using acolinearity during annihilation in some materials"
+            },
+        ),
+        "material_ionisation_potential": (
+            Box(),
+            {
+                "doc": "Dict of material_name:energy_value, such that: sim.physics_manager.material_ionisation_potential['IEC_PLASTIC'] = 5.0 * eV. "
             },
         ),
         # "processes_to_bias": (
@@ -1003,6 +1093,7 @@ class VolumeManager(GateObject):
     volume_types = {
         "BoxVolume": BoxVolume,
         "SphereVolume": SphereVolume,
+        "EllipsoidVolume": EllipsoidVolume,
         "TrapVolume": TrapVolume,
         "ImageVolume": ImageVolume,
         "TubsVolume": TubsVolume,
@@ -1047,6 +1138,11 @@ class VolumeManager(GateObject):
 
         # database of materials
         self.material_database = MaterialDatabase()
+
+        # List of ImageBox solids
+        # They need to be init after the creation of OpenGL
+        # Store them to init them later
+        self.solid_with_texture_init = []
 
     def reset(self):
         self.__init__(self.simulation)
@@ -1118,6 +1214,19 @@ class VolumeManager(GateObject):
                     f"Cannot find volume {volume_name}. "
                     f"Volumes included in this simulation are: {self.volumes.keys()}"
                 )
+
+    def find_volumes(self, sub_str, case_sensitive=False):
+        # find all volumes that contains this substring
+        volumes = []
+        if not case_sensitive:
+            sub_str = sub_str.lower()
+        for actor in self.volumes.values():
+            name = actor.name
+            if not case_sensitive:
+                name = name.lower()
+            if sub_str in name:
+                volumes.append(actor)
+        return volumes
 
     def update_volume_tree_if_needed(self):
         if self._need_tree_update is True:
@@ -1236,14 +1345,25 @@ class VolumeManager(GateObject):
         print(self.dump_material_database_names())
 
 
-def setter_hook_verbose_level(self, verbose_level):
-    try:
-        level = int(verbose_level)
-    except ValueError:
-        level = getattr(logging, verbose_level)
-    global_log.setLevel(level)
-    # return verbose_level
-    return level
+def _setter_hook_verbose_level(self, verbose_level):
+    # print(f"_setter_hook_verbose_level to ", sim.log_handler_id, verbose_level)
+    if self.log_handler_id == -1:
+        # Remove the default logger configuration
+        logger.remove()
+    else:
+        # Remove the current logger configuration
+        try:
+            logger.remove(self.log_handler_id)
+        except:
+            pass
+
+    self.log_handler_id = logger.add(
+        sys.stdout,
+        colorize=True,
+        level=verbose_level,
+        format=("{level.icon}<level>{message}</level>"),  # Message formatting
+    )
+    return verbose_level
 
 
 class Simulation(GateObject):
@@ -1252,13 +1372,14 @@ class Simulation(GateObject):
     It contains:
     - a set of global user parameters (SimulationUserInfo)
     - user parameters for Volume, Source, Actors and Filters, Physics
-    - a list of g4 commands that will be set to G4 engine after the initialization
+    - a list of g4 commands that will be set to the G4 engine after the initialisation
 
     There is NO Geant4 engine here, it is only a set of parameters and options.
     """
 
     # hints for IDE
     verbose_level: int
+    log_sink: str
     verbose_close: bool
     verbose_getstate: bool
     running_verbose_level: int
@@ -1280,7 +1401,7 @@ class Simulation(GateObject):
     run_timing_intervals: List[List[float]]
     output_dir: Path
     store_json_archive: bool
-    json_archive_filename: Path
+    json_archive_filename: str
     store_input_files: bool
     g4_commands_before_init: List[str]
     g4_commands_after_init: List[str]
@@ -1295,15 +1416,27 @@ class Simulation(GateObject):
             {
                 "doc": "Gate pre-run verbosity. "
                 "Will display more or fewer messages during initialization. ",
-                "allowed_values": (
+                "setter_hook": _setter_hook_verbose_level,
+                "allowed_values": [
                     "NONE",
-                    "INFO",
                     "DEBUG",
-                    logger.NONE,
-                    logger.INFO,
-                    logger.DEBUG,
-                ),
-                "setter_hook": setter_hook_verbose_level,
+                    "INFO",
+                    "WARNING",
+                    "CRITICAL",
+                    NONE,
+                    DEBUG,
+                    INFO,
+                    WARNING,
+                    CRITICAL,
+                ],
+            },
+        ),
+        "log_sink": (
+            None,
+            {
+                "doc": "Log sink. "
+                "If None, the default logger sys.stdout will be used. "
+                "If 'str', the logger output will be available after the simulation in sim.log_output"
             },
         ),
         "verbose_close": (
@@ -1318,7 +1451,7 @@ class Simulation(GateObject):
             0,
             {
                 "doc": "Gate verbosity while the simulation is running.",
-                # "allowed_values": (0, logger.RUN, logger.EVENT),  # FIXME
+                "allowed_values": (0, RUN, EVENT),
             },
         ),
         "g4_verbose_level": (
@@ -1505,16 +1638,17 @@ class Simulation(GateObject):
 
     def __init__(self, name="simulation", **kwargs):
         """
-        Main members are:
+        The main members are:
         - managers of volumes, physics, sources, actors and filters
         - the Geant4 objects will be only built during initialisation in SimulationEngine
         """
-        # default (INFO level)
-        global_log.setLevel(12)
+        # init logger
+        self.log_handler_id = -1
+        self.log_output = ""
+        _setter_hook_verbose_level(self, INFO)
 
         # The Simulation instance should not hold a reference to itself (cycle)
         kwargs.pop("simulation", None)
-        setter_hook_verbose_level(self, "INFO")
         super().__init__(name=name, **kwargs)
 
         # list to store warning messages issued somewhere in the simulation
@@ -1595,19 +1729,11 @@ class Simulation(GateObject):
         self.actor_manager.from_dictionary(d["actor_manager"])
 
     def to_json_string(self):
-        warning(
-            "******************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            "******************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be dumped as JSON")
         return dumps_json(self.to_dictionary())
 
     def to_json_file(self, directory=None, filename=None):
-        warning(
-            "******************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be dumped as JSON.   *\n"
-            "******************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be dumped as JSON.")
         d = self.to_dictionary()
         if filename is None:
             filename = self.json_archive_filename
@@ -1619,19 +1745,11 @@ class Simulation(GateObject):
             self.copy_input_files(directory, dct=d)
 
     def from_json_string(self, json_string):
-        warning(
-            "**********************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            "**********************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be reloaded from JSON.")
         self.from_dictionary(loads_json(json_string))
 
     def from_json_file(self, path):
-        warning(
-            "**********************************************************************************\n"
-            "*   WARNING: Only parts of the simulation can currently be reloaded from JSON.   *\n"
-            "**********************************************************************************\n"
-        )
+        warning("Only parts of the simulation can currently be reloaded from JSON.")
         with open(path, "r") as f:
             self.from_dictionary(load_json(f))
 
@@ -1723,6 +1841,9 @@ class Simulation(GateObject):
     def get_actor(self, name):
         return self.actor_manager.get_actor(name)
 
+    def find_actors(self, sub_str, case_sensitive=False):
+        return self.actor_manager.find_actors(sub_str, case_sensitive)
+
     def add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
 
@@ -1730,17 +1851,22 @@ class Simulation(GateObject):
     def multithreaded(self):
         return self.number_of_threads > 1 or self.force_multithread_mode
 
+    def initialize_logger(self):
+        original_stdout = sys.stdout
+        self.log_output = io.StringIO()
+        if self.log_sink == "str":
+            sys.stdout = self.log_output
+        # reinstall the logger (for subprocesses)
+        self.verbose_level = self.verbose_level
+        return original_stdout
+
     def _run_simulation_engine(self, start_new_process):
         """Method that creates a simulation engine in a context (with ...) and runs a simulation.
-
         Args:
-            q (:obj: queue, optional) : A queue object to which simulation output can be added if run in a subprocess.
-                The dispatching function needs to extract the output from the queue.
-            start_new_process (bool, optional) : A flag passed to the engine
+            start_new_process (bool, optional): A flag passed to the engine
                 so it knows if it is running in a subprocess.
-
         Returns:
-            :obj:SimulationOutput : The output of the simulation run.
+            obj:SimulationOutput : The output of the simulation run.
         """
 
         with SimulationEngine(self) as se:
@@ -1757,7 +1883,7 @@ class Simulation(GateObject):
                 "Run the simulation with one thread."
             )
 
-        # prepare sub process
+        # prepare the subprocess
         if start_new_process is True:
             """Important: put:
                 if __name__ == '__main__':
@@ -1765,10 +1891,10 @@ class Simulation(GateObject):
             https://britishgeologicalsurvey.github.io/science/python-forking-vs-spawn/
             """
 
-            global_log.info("Dispatching simulation to subprocess ...")
+            logger.info("Dispatching simulation to subprocess ...")
             output = dispatch_to_subprocess(self._run_simulation_engine, True)
 
-            # Recover output from unpickled actors coming from sub-process queue
+            # Recover output from unpickled actors coming from the subprocess queue
             for actor in self.actor_manager.actors.values():
                 actor.recover_user_output(output.get_actor(actor.name))
 
@@ -1787,13 +1913,20 @@ class Simulation(GateObject):
                 if "total_zero_events" in s.__dict__:
                     source.total_zero_events = s.__dict__["total_zero_events"]
                     source.total_skipped_events = s.__dict__["total_skipped_events"]
+                if "particle_generators" in s.__dict__:
+                    source.particle_generators = s.__dict__["particle_generators"]
+                    source.num_entries = s.__dict__["num_entries"]
 
         else:
             # Nothing special to do if the simulation engine ran in the native python process
             # because everything is already in place.
             output = self._run_simulation_engine(False)
 
-        self._user_warnings.extend(output.warnings)
+        # replace warnings by the one of the subprocess
+        self._user_warnings = output.warnings
+
+        # save the log output
+        self.log_output = output.log_output
 
         # FIXME workaround
         self.expected_number_of_events = output.expected_number_of_events
@@ -1809,14 +1942,24 @@ class Simulation(GateObject):
         if self.volume_manager.material_database is None:
             self.volume_manager.material_database = MaterialDatabase()
 
-        if len(self.warnings) > 0:
-            print("*" * 20)
-            print(f"{len(self.warnings)} warnings occurred in this simulation: \n")
-            for i, w in enumerate(self.warnings):
-                print(f"{i+1}) " + "-" * 10)
-                print(w)
-                print()
-            print("*" * 20)
+        # print the warnings (if the logger level is ok)
+        if log_level(self.log_handler_id) < WARNING:
+            if len(self.warnings) > 0:
+                if len(self.warnings) == 1:
+                    warning(f"One warning occurred in this simulation:")
+                else:
+                    warning(
+                        f"{len(self.warnings)} warnings occurred in this simulation:"
+                    )
+                for i, w in enumerate(self.warnings):
+                    warning(f"({i+1}) {w}")
+
+        # For all biasing operators inheriting from G4VBiasingOperator,
+        # we need to clean the global static variable "fOperators" once everything is done
+        #  to be able to start another simulation. This should be only once,
+        # and for any one of the operators, we choose GateGammaFreeFlightOptrActor
+        # but this cleans for all. Trust me, bro.
+        g4.GateGammaFreeFlightOptrActor.ClearOperators()
 
     def voxelize_geometry(
         self,
@@ -1830,7 +1973,7 @@ class Simulation(GateObject):
 
     def initialize_source_before_g4_engine(self):
         """
-        Some sources need to perform computation once everything is defined in user_info but *before* the
+        Some sources need to perform computation once everything is defined in user_info, but *before* the
         initialization of the G4 engine starts. This can be done via this function.
         """
         self.source_manager.initialize_before_g4_engine()
