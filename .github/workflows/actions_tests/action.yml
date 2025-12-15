@@ -1,0 +1,84 @@
+
+name: ci_test_wheel
+runs:
+  using: "composite"
+  steps:
+  - name: Run tests
+    shell: bash {0}
+    run: |
+         rm -rf $GITHUB_WORKSPACE/*
+  - uses: actions/download-artifact@v4
+    with:
+      pattern: dist-*
+      merge-multiple: true
+      path: dist/
+  - name: Set up Python ${{ matrix.python-version }}
+    uses: actions/setup-python@v5
+    with:
+      python-version: ${{ matrix.python-version }}
+  - name: Run tests
+    shell: bash {0}
+    run: |
+          if [[ ${{ matrix.python-version }} == "3.10" ]]; then
+            export PYTHONFOLDER="cp310-cp310"
+          elif [[ ${{ matrix.python-version }} == "3.11" ]]; then
+            export PYTHONFOLDER="cp311-cp311"
+          elif [[ ${{ matrix.python-version }} == "3.12" ]]; then
+            export PYTHONFOLDER="cp312-cp312"
+          elif [[ ${{ matrix.python-version }} == "3.13" ]]; then
+            export PYTHONFOLDER="cp313-cp313"
+          fi
+          if [[ ${{ matrix.os }} == "ubuntu-24.04" ]]; then
+            export OSNAME="manylinux"
+            export PLATFORM="x86_"
+            pip install torch --extra-index-url https://download.pytorch.org/whl/cpu
+          elif [[ ${{ matrix.os }} == "macos-15" ]]; then
+            export OSNAME="macosx"
+            export PLATFORM="arm"
+            which python
+            python --version
+            pip install torch
+          elif [[ ${{ matrix.os }} == "windows-2025" ]]; then
+            export OSNAME="win"
+            export PLATFORM="amd"
+            pip install torch
+          fi
+          pip install SimpleITK
+          pip install "gaga_phsp>=0.7.6"
+          pip install pytomography
+          pip install dist/opengate_core-*-${PYTHONFOLDER}-${OSNAME}*_${PLATFORM}64.whl
+          pip install dist/opengate-*.whl
+          export GIT_SSL_NO_VERIFY=1
+          if [[ ${{ matrix.os }} == "ubuntu-24.04" ]]; then
+              path=`opengate_library_path.py -p site_packages`
+              export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
+          fi
+          if [[ ${{ matrix.os }} == "windows-2025" ]]; then
+              path=`opengate_library_path.py -p site_packages`
+              export LD_LIBRARY_PATH="${path}/opengate_core.libs":${LD_LIBRARY_PATH}
+              export PATH="${path}\\opengate_core.libs":${PATH}
+          fi
+          dashboard_path=`opengate_library_path.py -p tests`
+          pip freeze
+          sha=${{ github.sha }}
+          sha=$sha$OSNAME$PYTHONFOLDER
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+              OutputTest=$(opengate_tests)
+          else
+              OutputTest=$(opengate_tests -r -s $sha)
+          fi
+          echo "$OutputTest"
+          ls $dashboard_path/../output_dashboard/
+          cp -r $dashboard_path/../output_dashboard .
+          OutputTest=$(echo "$OutputTest" | tail -1)
+          if [[ "$OutputTest" != "True" ]]; then
+              exit -1
+          else
+              exit 0
+          fi
+  - name: Upload results
+    uses: actions/upload-artifact@v4
+    if: always()
+    with:
+      name: results_json-${{ matrix.os }}-${{ matrix.python-version }}
+      path: output_dashboard/dashboard_output*.json

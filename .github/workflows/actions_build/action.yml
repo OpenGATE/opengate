@@ -1,0 +1,90 @@
+
+name: ci_build_wheel
+inputs:
+  os:
+    required: true
+  python-version:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Get OS version
+      id: get-os-version
+      shell: bash -l {0}
+      run: |
+        if [[ ${{ inputs.os }} == "ubuntu-24.04" ]] || [[ ${{ inputs.os }} == "ubuntu-24.04-arm" ]]; then
+            varOS=`cat /etc/os-release | grep "VERSION=" | grep -oP '(?<=\").*?(?=\")'`
+            varOS=($varOS)
+            varOS=${varOS[0]}
+            if [[ ${{ inputs.os }} == "ubuntu-24.04-arm" ]]; then
+                varOS="${varOS}-arm"
+            else
+                varOS="${varOS}-intel"
+            fi
+            echo "release=${varOS}" >> $GITHUB_OUTPUT
+        elif [[ ${{ inputs.os }} == "macos-15" ]] || [[ ${{ inputs.os }} == "macos-15-intel" ]]; then
+            varOS=$(sw_vers -productVersion)
+            if [[ ${{ inputs.os }} == "macos-15-intel" ]]; then
+                varOS="${varOS}-intel"
+            else
+                varOS="${varOS}-m1"
+            fi
+            echo "release=${varOS}" >> $GITHUB_OUTPUT
+        else
+            varOS=`windows`
+            if [[ ${{ inputs.os }} == "windows-2025" ]]; then
+                varOS="${varOS}-intel"
+            else
+                varOS="${varOS}-arm"
+            fi
+            echo "release=${varOS}" >> $GITHUB_OUTPUT
+        fi
+    - name: Cache modules
+      id: cache_opengate_core_dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/software
+        key: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
+        restore-keys: ${{ runner.os }}-${{ steps.get-os-version.outputs.release }}_geant4_${{ env.GEANT4_VERSION }}_itk_${{ env.ITK_VERSION }}_build
+    - uses: conda-incubator/setup-miniconda@v3
+      if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel') || (inputs.os == 'windows-2025') || (inputs.os == 'windows-11-arm')
+      with:
+          miniconda-version: "latest"
+          auto-update-conda: true
+          activate-environment: opengate_core
+          python-version: ${{ inputs.python-version }}
+    - name: Set up Homebrew
+      if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+    - name: Create opengate_core Wheel Linux
+      if: (inputs.os == 'ubuntu-24.04') || (inputs.os == 'ubuntu-24.04-arm')
+      env:
+        MATRIX_OS: ${{ inputs.os }}
+        MATRIX_PYTHON_VERSION: ${{ inputs.python-version }}
+      shell: bash -l {0}
+      run: |
+          export > $GITHUB_WORKSPACE/env_dump.txt
+          bash $GITHUB_WORKSPACE/.github/workflows/actions_build/ci_build_wheel_ubuntu.sh
+    - name: Create opengate_core Wheel Mac
+      if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
+      env:
+        MATRIX_OS: ${{ inputs.os }}
+        MATRIX_CACHE: ${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}
+      shell: bash -l {0}
+      run: |
+          export > $GITHUB_WORKSPACE/env_dump.txt
+          bash $GITHUB_WORKSPACE/.github/workflows/actions_build/ci_build_wheel_macos.sh
+    - name: Create opengate_core Wheel Windows
+      if: (inputs.os == 'windows-2025') || (inputs.os == 'windows-11-arm')
+      env:
+        MATRIX_CACHE: ${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}
+        MATRIX_PYTHON_VERSION: ${{ inputs.python-version }}
+      shell: bash -l {0}
+      run: |
+          export > $GITHUB_WORKSPACE\\env_dump.txt
+          bash $GITHUB_WORKSPACE\\.github\\workflows\\actions_build\\ci_build_wheel_windows.sh
