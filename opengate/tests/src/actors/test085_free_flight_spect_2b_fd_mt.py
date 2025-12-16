@@ -27,7 +27,6 @@ if __name__ == "__main__":
 
     # FF with Forced Direction (one single head !)
     source.direction.angular_acceptance.enable_intersection_check = False
-    source.direction.angular_acceptance.enable_angle_check = False
     source.direction.angular_acceptance.policy = "ForceDirection"
     source.direction.angular_acceptance.enable_angle_check = True
     source.direction.angular_acceptance.target_volumes = ["spect_1"]
