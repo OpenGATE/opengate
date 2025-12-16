@@ -707,7 +707,14 @@ def compare_trees(
 
 def get_default_test_paths(f, gate_folder=None, output_folder=None):
     p = Box()
-    p.current = pathlib.Path(f).parent.resolve()
+    p.current = pathlib.Path(f).parent
+    if p.current.name == "src":
+        p.current = p.current.resolve()
+    else:
+        p.current = next(
+            (par for par in p.current.parents if par.name == "src")
+        ).resolve()
+
     # data
     p.data = (p.current.parent / "data").resolve()
     # gate
