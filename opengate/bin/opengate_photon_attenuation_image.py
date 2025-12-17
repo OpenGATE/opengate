@@ -38,8 +38,23 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Gate material database (if needed)",
 )
 @click.option("--verbose", "-v", is_flag=True, default=False, help="Verbose output")
+@click.option(
+    "--mm",
+    is_flag=True,
+    default=False,
+    help="Change unit to mm^-1 instead of default cm^-1",
+)
 def go(
-    image, labels, output, energy, size, spacing, material_database, database, verbose
+    image,
+    labels,
+    output,
+    energy,
+    size,
+    spacing,
+    material_database,
+    database,
+    verbose,
+    mm,
 ):
     """
     This function processes an input image to generate an attenuation map based on provided specifications and parameters.
@@ -89,6 +104,10 @@ def go(
         database=database,
         verbose=verbose,
     )
+    if mm:
+        arr = itk.array_view_from_image(image)
+        arr = arr * 10
+        image = itk.image_from_array(arr)
 
     verbose and print(f"Finished computing mu in {output}")
     itk.imwrite(image, output)
