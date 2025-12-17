@@ -112,6 +112,9 @@ jobs:
         fi
         git submodule update --init --recursive
     - uses: ./.github/workflows/actions_build
+      with:
+        os: ${{ matrix.os }}
+        python-version: ${{ matrix.python-version }}
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
