@@ -97,7 +97,7 @@ Examples of volumes
 -------------------
 
 These are examples of how to add and configure volumes in Gate. A more detailed description is in section :ref:`volumes-reference-label`.
-A test with all available volumes is available in `test0089_geometries.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/test089_geometries.py>`_.
+A test with all available volumes is available in `test0089_geometries.py <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test089_geometries.py>`_.
 
 .. code:: python
 
@@ -145,7 +145,7 @@ nested volumes. The volume hierarchy can be inspected with the function
    b1_b.mother = b1
    sim.volume_manager.dump_volume_tree()
 
-Take a look at ``test007`` as example for simple volumes.
+Take a look at `test007 <https://github.com/OpenGATE/opengate/blob/master/opengate/tests/src/geometry/test007_volumes.py>`_ as example for simple volumes.
 
 Utility properties
 ------------------
@@ -267,6 +267,6 @@ Examples of complex nested geometries, partly relying on boolean and
 repeat operations, can be found in the subpackages
 ``opengate.contrib.pet``, ``opengate.contrib.spect``,
 ``opengate.contrib.linacs``, ``opengate.contrib.phantoms``. Also have a
-look at some of the tests that use these geometries, e.g. ``test015``
+look at some of the tests that use these geometries, e.g. ``test015``
 (iec phantom), ``test019`` (linac Elekta), ``test028`` (SPECT GE NM670),
 ``test037`` (Philips Vereos PET).

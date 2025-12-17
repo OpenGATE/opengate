@@ -28,7 +28,7 @@ Propose a pull request:
    request. You should see a checkbox below on the right side saying
    “Allow edits and access to secrets by maintainers”. Please tick it.
    In this way, we can directly commit changes into your branch - of
-   course we’ll be in touch with you. ​
+   course we’ll be in touch with you.
 
 More info about `Pull Requests on
 github <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests>`__.
@@ -42,7 +42,7 @@ Therefore, we have a large set of tests which are regularly run. If you
 propose new features or make changes to the inner workings of Gate,
 please create a little test simulation that goes with it. It should be
 imlpemented in such a way that it checks whether the feature works as
-expected. This might be a check of Geant4 parameters, e.g. if production
+expected. This might be a check of Geant4 parameters, e.g. if production
 cuts are set correctly, or based on simulation outcome, such as a dose
 maps or a particle phase space. Best is to look at the folder ``tests``
 in the source code.
