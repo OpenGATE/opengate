@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests import utility
-import SimpleITK as sitk
+import os
 import subprocess
-import os, sys
+import sys
+
+import SimpleITK as sitk
+
+from opengate.tests import utility
 
 
 def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
-
     paths = utility.get_default_test_paths(
         __file__, None, output_folder="test085_spect"
     )
