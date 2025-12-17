@@ -220,9 +220,9 @@ def root_split_tree_by_branch(
                 )
 
             with uproot.recreate(high_val_path) as high_file:
-                high_file[tree_name] = high_val_events
+                high_file.mktree(tree_name, high_val_events)
             with uproot.recreate(low_val_path) as low_file:
-                low_file[tree_name] = low_val_events
+                low_file.mktree(tree_name, low_val_events)
 
         if verbose:
             logger.info(f"Successfully wrote high-value events to '{high_val_path}'.")
@@ -286,7 +286,7 @@ def root_merge_trees(
         merged_data = ak.concatenate(all_data_to_merge)
 
         with uproot.recreate(output_path) as output_file:
-            output_file[tree_name] = merged_data
+            output_file.mktree(tree_name, merged_data)
 
         if verbose:
             logger.info(
