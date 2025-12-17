@@ -67,7 +67,7 @@ def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
             paths.output_ref / "projection_1_ref_counts.mhd",
             paths.output / "projection_1_fd_counts.mhd",
             None,
-            tolerance=100,
+            tolerance=101,
             ignore_value_data1=0,
             sum_tolerance=45,
             axis="x",

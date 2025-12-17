@@ -3,6 +3,25 @@ from opengate.actors.simulation_stats_helpers import *
 from pathlib import Path
 
 
+def merge_freeflight_uncertainty_for_all_heads(
+    folder, ref_n, subfolders, num_events, num_heads, verbose=False
+):
+    for head in range(num_heads):
+        counts_filename = f"projection_{head}_counts.mhd"
+        squared_counts_filename = f"projection_{head}_squared_counts.mhd"
+        output_filename = f"relative_uncertainty_{head}_counts.mhd"
+        merge_freeflight_uncertainty(
+            folder,
+            ref_n,
+            subfolders,
+            num_events,
+            counts_filename=counts_filename,
+            squared_counts_filename=squared_counts_filename,
+            output_filename=output_filename,
+            verbose=verbose,
+        )
+
+
 def merge_freeflight_uncertainty(
     folder,
     ref_n,
