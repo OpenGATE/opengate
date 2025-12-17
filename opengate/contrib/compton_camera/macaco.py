@@ -35,13 +35,13 @@ def add_macaco1_camera(sim, name="macaco1"):
     camera.mother = sim.world
     camera.material = "G4_AIR"
     camera.size = [16 * cm, 40 * cm, 7.6 * cm]
-    camera.translation = [0, 0, 8.3 * cm]
+    camera.translation = [0, 0, 0 * cm]
     camera.color = [0.1, 0.1, 0.1, 0.1]
 
     # Scatterer
     holder1 = sim.add_volume("Box", f"{name}_Holder1")
     holder1.mother = camera.name
-    holder1.material = "G4_PLASTIC_SC_VINYLTOLUENE"
+    holder1.material = "Plastic"
     holder1.size = [6.2 * cm, 6.2 * cm, 0.56 * cm]
     holder1.translation = [0, 0, -2.74 * cm]
     holder1.color = [0.1, 0.1, 0.1, 0.9]
@@ -56,7 +56,7 @@ def add_macaco1_camera(sim, name="macaco1"):
     pcb_scatt.mother = camera.name
     pcb_scatt.material = "PCB"
     pcb_scatt.size = [10.89 * cm, 20.7 * cm, 0.4 * cm]
-    pcb_scatt.translation = [0, 6.25 * cm, -2.26 * cm]
+    pcb_scatt.translation = [0, 6.25 * cm, -2.46 * cm]
     pcb_scatt.color = [0.0, 0.5, 0.0, 0.9]
 
     sipm_scatt = sim.add_volume("Box", f"{name}_SiPMScatt")
@@ -76,7 +76,7 @@ def add_macaco1_camera(sim, name="macaco1"):
     # Absorber
     holder2 = sim.add_volume("Box", f"{name}_Holder2")
     holder2.mother = camera.name
-    holder2.material = "G4_PLASTIC_SC_VINYLTOLUENE"
+    holder2.material = "Plastic"
     holder2.size = [8.0 * cm, 8.0 * cm, 1.06 * cm]
     holder2.translation = [0, 0, 2.51 * cm]
     holder2.color = [0.1, 0.1, 0.1, 0.9]
