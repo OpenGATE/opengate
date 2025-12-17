@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     # start simulation
     # sim.g4_commands_after_init.append("/run/verbose 1")
-    sim.run()
+    sim.run(start_new_process=True)
 
     print(stats)
     utility.test_ok(True)
