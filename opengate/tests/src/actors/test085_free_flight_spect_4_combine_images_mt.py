@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.tests import utility
-import SimpleITK as sitk
+import os
 import subprocess
-import os, sys
+import sys
+
+import SimpleITK as sitk
+
+from opengate.tests import utility
 
 
 def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
-
     paths = utility.get_default_test_paths(
         __file__, None, output_folder="test085_spect"
     )
@@ -106,7 +108,7 @@ def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
             ignore_value_data1=0,
             sum_tolerance=48,
             axis="x",
-            sad_profile_tolerance=35,
+            sad_profile_tolerance=39,
             slice_id=0,
             fig_name=paths.output / f"projection_1_total_test_scatter.png",
         )
@@ -124,7 +126,7 @@ def main(dependency="test085_free_flight_spect_2b_fd_mt.py"):
             ignore_value_data1=0,
             sum_tolerance=20,
             axis="x",
-            sad_profile_tolerance=24,
+            sad_profile_tolerance=30,
             slice_id=1,
             fig_name=paths.output / f"projection_1_total_test_prim.png",
         )

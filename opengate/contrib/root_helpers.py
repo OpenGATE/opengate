@@ -1,11 +1,13 @@
-import uproot
-import numpy as np
-import awkward as ak
-import matplotlib.pyplot as plt
+import logging
 import os
 from pathlib import Path
+
+import awkward as ak
+import matplotlib.pyplot as plt
+import numpy as np
+import uproot
 from scipy.stats import chi2_contingency
-import logging
+
 from opengate.exception import raise_except
 
 # Get a logger for this specific module. This is the standard practice for libraries.
@@ -220,9 +222,9 @@ def root_split_tree_by_branch(
                 )
 
             with uproot.recreate(high_val_path) as high_file:
-                high_file[tree_name] = high_val_events
+                high_file.mktree(tree_name, high_val_events)
             with uproot.recreate(low_val_path) as low_file:
-                low_file[tree_name] = low_val_events
+                low_file.mktree(tree_name, low_val_events)
 
         if verbose:
             logger.info(f"Successfully wrote high-value events to '{high_val_path}'.")
@@ -260,7 +262,6 @@ def root_merge_trees(
     try:
         all_data_to_merge = []
         for trees in _root_open_trees_safely(file_paths, tree_name):
-
             first_branches = set(trees[0].keys())
             for i, tree in enumerate(trees[1:], 1):
                 if set(tree.keys()) != first_branches:
@@ -286,7 +287,7 @@ def root_merge_trees(
         merged_data = ak.concatenate(all_data_to_merge)
 
         with uproot.recreate(output_path) as output_file:
-            output_file[tree_name] = merged_data
+            output_file.mktree(tree_name, merged_data)
 
         if verbose:
             logger.info(
@@ -768,7 +769,7 @@ def compare_branches_zscore(
                         r["outliers"][branch] = outlier_bins
                         for b_idx in outlier_bins:
                             print(
-                                f"    - Bin {b_idx} [{bin_edges[b_idx]:.3g}, {bin_edges[b_idx+1]:.3g}]: z = {z_scores[b_idx]:.2f}"
+                                f"    - Bin {b_idx} [{bin_edges[b_idx]:.3g}, {bin_edges[b_idx + 1]:.3g}]: z = {z_scores[b_idx]:.2f}"
                             )
 
     except Exception as e:
