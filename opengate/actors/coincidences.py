@@ -643,7 +643,7 @@ def ccmod_ideal_singles(data):
     )
     df = filter_pandas_tree(
         df, branch_name="ProcessDefinedStep", value="Rayl", accepted=False
-    )  # Check but I think that this process did not generate a pulse
+    ).copy()
 
     # Create a new branch  with ideal energy info
     df["IdealTotalEnergyDeposit"] = df["PreKineticEnergy"] - df["PostKineticEnergy"]
@@ -668,7 +668,7 @@ def ccmod_ideal_coincidences(df):
     # create a new attribute CoincID that groups hits from the same coincidence. We can have more that two hits/pulses in a coincidence oe
     nSingles = df["EventID"].value_counts()
     # keep only events with more than one nSingles
-    df = df[df["EventID"].isin(nSingles[nSingles > 1].index)]
+    df = df[df["EventID"].isin(nSingles[nSingles > 1].index)].copy()
     # Assign CoincIDs starting from 0, in order of first appearance).
     df["CoincID"] = pd.factorize(df["EventID"])[0]
 
