@@ -107,7 +107,10 @@ def go(
     if mm:
         arr = itk.array_view_from_image(image)
         arr = arr * 10
-        image = itk.image_from_array(arr)
+        new_image = itk.image_from_array(arr)
+        new_image.SetSpacing(image.GetSpacing())
+        new_image.SetOrigin(image.GetOrigin())
+        image = new_image
 
     verbose and print(f"Finished computing mu in {output}")
     itk.imwrite(image, output)
