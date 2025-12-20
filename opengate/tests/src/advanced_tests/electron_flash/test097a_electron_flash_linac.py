@@ -1,5 +1,6 @@
-import opengate as gate
 from test097_electron_flash_linac_helper import *
+
+import opengate as gate
 from opengate.tests import utility
 
 # test_ElectronFlash_dose_app40.py

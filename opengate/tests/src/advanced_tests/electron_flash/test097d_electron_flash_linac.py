@@ -1,7 +1,7 @@
-import opengate as gate
 from test097_electron_flash_linac_helper import *
+
+import opengate as gate
 from opengate.tests import utility
-from opengate.contrib.linacs.ElectronFlash.electron_flash import *
 
 # test MB slit
 
@@ -13,7 +13,9 @@ if __name__ == "__main__":
         __file__, output_folder="test097_electron_flash_linac"
     )
 
-    sim = create_electron_flash_simulation(paths, passive_collimation="shaper40")
+    sim = create_electron_flash_simulation(
+        paths, passive_collimation="shaper40", fantom="WaterBox"
+    )
 
     sim.run()
 

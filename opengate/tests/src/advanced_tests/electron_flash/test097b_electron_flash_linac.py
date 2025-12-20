@@ -1,8 +1,7 @@
-import opengate as gate
-from opengate.tests.src.test088_emcalc_actor import is_ok
 from test097_electron_flash_linac_helper import *
+
+import opengate as gate
 from opengate.tests import utility
-from opengate.contrib.linacs.ElectronFlash.electron_flash import *
 
 # test_ElectronFlash_dose_app100
 
@@ -16,7 +15,9 @@ if __name__ == "__main__":
         __file__, output_folder="test097_electron_flash_linac"
     )
 
-    sim = create_electron_flash_simulation(paths, passive_collimation="app100")
+    sim = create_electron_flash_simulation(
+        paths, passive_collimation="app100", fantom="WaterBox"
+    )
 
     sim.run()
 

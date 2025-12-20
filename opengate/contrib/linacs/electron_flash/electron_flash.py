@@ -1,9 +1,12 @@
-import opengate as gate
-import numpy as np
-import os, sys, logging
-from scipy.spatial.transform import Rotation as R
-import SimpleITK as sitk
+import logging
+import os
+import sys
 
+import numpy as np
+import SimpleITK as sitk
+from scipy.spatial.transform import Rotation as R
+
+import opengate as gate
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -776,8 +779,6 @@ def add_source(sim, number_of_events):
     )
     source.position.type = "disc"
     source.position.radius = 3 * mm
-    source.position.sigma_r = 0.8 * mm
-    source.position.centre = [0, 0, 0]
 
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]

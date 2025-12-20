@@ -1,6 +1,7 @@
-import opengate as gate
 import math
-import opengate.contrib.linacs.ElectronFlash.electron_flash as fun
+
+import opengate as gate
+import opengate.contrib.linacs.electron_flash.electron_flash as fun
 
 
 def test_geometry_length(_geometry_string):

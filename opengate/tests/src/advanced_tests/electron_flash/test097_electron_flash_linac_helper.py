@@ -85,10 +85,10 @@ def create_electron_flash_simulation(paths, passive_collimation, fantom):
     # =====================================================
     # PHANTOMS
     # =====================================================
-    if fantom == "Waterbox":
+    if fantom == "WaterBox":
         dosephantom = fun.build_dosephantombox(
             sim,
-            "Waterbox",
+            "WaterBox",
             "Water",
             center_z=app_end + dim_z / 2,
             dimension_x=dim_x,
@@ -98,7 +98,7 @@ def create_electron_flash_simulation(paths, passive_collimation, fantom):
         )
 
         dose = sim.add_actor("DoseActor", "dose")
-        dose.attached_to = "Waterbox"
+        dose.attached_to = "WaterBox"
         dose.output_filename = "dose_test_" + passive_collimation + ".mhd"
         dose.hit_type = "random"
         dose.size = [120, 120, 30]  # Number of voxels
