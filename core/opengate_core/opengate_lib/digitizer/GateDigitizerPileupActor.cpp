@@ -104,7 +104,7 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
 
   const auto vol_hash = volume->get()->GetIdUpToDepthAsHash(fGroupVolumeDepth);
 
-  // Look up the window based
+  // Look up the window based on volume hash
   auto it = windows.find(vol_hash);
   if (it != windows.end()) {
     // Return a reference to the existing PileupWindow object for the volume.
@@ -156,7 +156,7 @@ void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
   while (!window.digiIter.IsAtEnd()) {
     const auto current_edep = *l.edep;
     // Remember the value and index of the highest deposited energy so far.
-    if (!highest_edep || current_edep > highest_edep) {
+    if (!highest_edep.has_value() || current_edep > highest_edep.value()) {
       highest_edep = current_edep;
       highest_edep_index = window.digiIter.fIndex;
     }
