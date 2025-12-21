@@ -7,6 +7,9 @@
 
 #include "GateDigitizerPileupActor.h"
 #include "../GateHelpersDict.h"
+#include "GateDigiCollectionManager.h"
+#include "GateHelpersDigitizer.h"
+#include <memory>
 
 GateDigitizerPileupActor::GateDigitizerPileupActor(py::dict &user_info)
     : GateVDigitizerWithOutputActor(user_info, false) {
@@ -17,14 +20,15 @@ GateDigitizerPileupActor::GateDigitizerPileupActor(py::dict &user_info)
 GateDigitizerPileupActor::~GateDigitizerPileupActor() = default;
 
 void GateDigitizerPileupActor::InitializeUserInfo(py::dict &user_info) {
-  GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
 
+  GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
   // Get time window parameter in ns.
   fTimeWindow = 0.0; // default value, no pile-up
   if (py::len(user_info) > 0 && user_info.contains("time_window")) {
     fTimeWindow = DictGetDouble(user_info, "time_window");
   }
   fGroupVolumeDepth = -1;
+  fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
 }
 
 void GateDigitizerPileupActor::SetGroupVolumeDepth(const int depth) {
@@ -33,193 +37,137 @@ void GateDigitizerPileupActor::SetGroupVolumeDepth(const int depth) {
 
 void GateDigitizerPileupActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
-  // We handle all attributes explicitly by storing their values
-  // because we need to keep singles across consecutive events.
-  auto a = attributes_not_in_filler;
-  for (const auto &att_name : fInputDigiCollection->GetDigiAttributeNames()) {
-    a.push_back(att_name);
-  }
 
+  auto a = attributes_not_in_filler;
+  a.push_back("TotalEnergyDeposit");
   GateVDigitizerWithOutputActor::DigitInitialize(a);
 
-  // Get output attribute pointers
+  // Get output attribute pointer
   fOutputEdepAttribute =
       fOutputDigiCollection->GetDigiAttribute("TotalEnergyDeposit");
-  fOutputGlobalTimeAttribute =
-      fOutputDigiCollection->GetDigiAttribute("GlobalTime");
-  fOutputVolumeIDAttribute =
-      fOutputDigiCollection->GetDigiAttribute("PreStepUniqueVolumeID");
 
   // Set up pointers to track specific attributes
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &l = fThreadLocalData.Get();
 
-  lr.fInputIter = fInputDigiCollection->NewIterator();
-  lr.fInputIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
   lr.fInputIter.TrackAttribute("GlobalTime", &l.time);
   lr.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
 }
 
-void GateDigitizerPileupActor::BeginOfRunAction(const G4Run *run) {
-  GateVDigitizerWithOutputActor::BeginOfRunAction(run);
-}
-
-void GateDigitizerPileupActor::StoreAttributeValues(
-    threadLocalT::PileupGroup &group, size_t index) {
-  // Clear previous values
-  group.stored_attributes.clear();
-
-  // Store values from all attributes in the input collection
-  for (auto *att : fInputDigiCollection->GetDigiAttributes()) {
-    auto name = att->GetDigiAttributeName();
-    auto type = att->GetDigiAttributeType();
-
-    // Skip the attributes we handle explicitly
-    if (name == "TotalEnergyDeposit" || name == "GlobalTime" ||
-        name == "PreStepUniqueVolumeID") {
-      continue;
-    }
-
-    // Store value based on type
-    switch (type) {
-    case 'D': // double
-      group.stored_attributes[name] = att->GetDValues()[index];
-      break;
-    case 'I': // int
-      group.stored_attributes[name] = att->GetIValues()[index];
-      break;
-    case 'L': // int64_t
-      group.stored_attributes[name] = att->GetLValues()[index];
-      break;
-    case 'S': // string
-      group.stored_attributes[name] = att->GetSValues()[index];
-      break;
-    case '3': // G4ThreeVector
-      group.stored_attributes[name] = att->Get3Values()[index];
-      break;
-    case 'U': // GateUniqueVolumeID::Pointer
-      group.stored_attributes[name] = att->GetUValues()[index];
-      break;
-    default:
-      DDD(type);
-      Fatal("Error GateDigitizerPileupActor while storing attribute value");
-    }
-  }
-}
-
 void GateDigitizerPileupActor::EndOfEventAction(const G4Event *) {
-  ProcessPileup();
-
-  // Create output singles from piled-up groups of input singles.
-
-  auto &l = fThreadLocalData.Get();
-
-  for (auto &[volume_id, groups] : l.volume_groups) {
-    if (!groups.empty()) {
-      // Handle all groups, except the last one, because the last group may
-      // still get contributions from upcoming events.
-      for (auto it = groups.begin(); it != std::prev(groups.end()); ++it) {
-        FillAttributeValues(*it);
-      }
-      groups.erase(groups.begin(), std::prev(groups.end()));
-    }
-  }
-}
-
-void GateDigitizerPileupActor::ProcessPileup() {
-
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &l = fThreadLocalData.Get();
-  auto &iter = lr.fInputIter;
+  auto &inputIter = lr.fInputIter;
 
-  iter.GoToBegin();
-  while (!iter.IsAtEnd()) {
+  inputIter.GoToBegin();
+  while (!inputIter.IsAtEnd()) {
+    // Look up or create the pile-up window object for the volume to which the
+    // current digi belongs.
+    auto &window = GetPileupWindowForVolume(l.volID);
 
     const auto current_time = *l.time;
-    const auto current_edep = *l.edep;
-    const auto current_vol =
-        l.volID->get()->GetIdUpToDepthAsHash(fGroupVolumeDepth);
-    const auto current_index = iter.fIndex;
-
-    bool added_to_existing_group = false;
-    auto &groups = l.volume_groups[current_vol];
-    if (groups.size() > 0) {
-      auto &group = groups.back();
-      if (std::abs(current_time - group.first_time) <= fTimeWindow) {
-        // Accumulate deposited energy of all singles in the same time window.
-        group.total_edep += current_edep;
-        // Keep the attributes of the highest energy single.
-        if (current_edep > group.highest_edep) {
-          group.highest_edep = current_edep;
-          group.time = current_time;
-          // Store all other attribute values from this single.
-          StoreAttributeValues(group, current_index);
-        }
-        added_to_existing_group = true;
-      }
+    if (window.digis->GetSize() == 0) {
+      // The window has no digis yet: make the window start at the time of the
+      // current digi.
+      window.startTime = current_time;
+    } else if (current_time - window.startTime > fTimeWindow) {
+      // The current digi is beyond the time window: process the digis that are
+      // currently in the window, then make the window start at the time of the
+      // current digi.
+      ProcessPileupWindow(window);
+      window.startTime = current_time;
     }
 
-    // If not added to an existing group, create a new group.
-    if (!added_to_existing_group) {
-      typename threadLocalT::PileupGroup new_group;
-      new_group.total_edep = current_edep;
-      new_group.highest_edep = current_edep;
-      new_group.first_time = current_time;
-      new_group.time = current_time;
-      new_group.volume_id = *l.volID;
-      // Store all other attribute values from this single
-      StoreAttributeValues(new_group, current_index);
-      groups.push_back(new_group);
-    }
+    // Add the current digi to the window.
+    window.fillerIn->Fill(inputIter.fIndex);
 
-    iter++;
+    inputIter++;
   }
 }
 
 void GateDigitizerPileupActor::EndOfRunAction(const G4Run *) {
   auto &l = fThreadLocalData.Get();
-
-  // Output any unfinished groups that are still present.
-  for (auto &[volume_id, groups] : l.volume_groups) {
-    if (!groups.empty()) {
-      for (auto &group : groups) {
-        FillAttributeValues(group);
-      }
-      groups.erase(groups.begin(), groups.end());
-    }
+  for (auto &[_vol_hash, window] : l.fVolumePileupWindows) {
+    ProcessPileupWindow(window);
   }
-
   // Make sure everything is output into the root file.
   fOutputDigiCollection->FillToRootIfNeeded(true);
 }
 
-void GateDigitizerPileupActor::FillAttributeValues(
-    const threadLocalT::PileupGroup &group) const {
+GateDigitizerPileupActor::PileupWindow &
+GateDigitizerPileupActor::GetPileupWindowForVolume(
+    GateUniqueVolumeID::Pointer *volume) {
+  // This function looks up the PileupWindow object for the given volume. If it
+  // does not yet exist for the volume, it creates a PileupWindow.
 
-  fOutputEdepAttribute->FillDValue(group.total_edep);
-  fOutputGlobalTimeAttribute->FillDValue(group.time);
-  fOutputVolumeIDAttribute->FillUValue(group.volume_id);
+  const auto vol_hash = volume->get()->GetIdUpToDepthAsHash(fGroupVolumeDepth);
+  auto &l = fThreadLocalData.Get();
 
-  // Fill all other stored attributes
-  for (const auto &[name, value] : group.stored_attributes) {
-    auto *att = fOutputDigiCollection->GetDigiAttribute(name);
-    std::visit(
-        [att](auto &&arg) {
-          using T = std::decay_t<decltype(arg)>;
-          if constexpr (std::is_same_v<T, double>) {
-            att->FillDValue(arg);
-          } else if constexpr (std::is_same_v<T, int>) {
-            att->FillIValue(arg);
-          } else if constexpr (std::is_same_v<T, int64_t>) {
-            att->FillLValue(arg);
-          } else if constexpr (std::is_same_v<T, std::string>) {
-            att->FillSValue(arg);
-          } else if constexpr (std::is_same_v<T, G4ThreeVector>) {
-            att->Fill3Value(arg);
-          } else if constexpr (std::is_same_v<T, GateUniqueVolumeID::Pointer>) {
-            att->FillUValue(arg);
-          }
-        },
-        value);
+  // Look up the window based
+  auto it = l.fVolumePileupWindows.find(vol_hash);
+  if (it != l.fVolumePileupWindows.end()) {
+    // Return a reference to the existing PileupWindow object for the volume.
+    return it->second;
+  } else {
+    // A PileupWindow object does not yet exist for this volume: create one.
+    PileupWindow window;
+    const auto vol_id = volume->get()->GetIdUpToDepth(fGroupVolumeDepth);
+    // Create a GateDigiCollection for this volume, as a temporary storage for
+    // digis that belong to the same time window (the name must be unique).
+    window.digis = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
+        GetName() + "_" + vol_id);
+    window.digis->InitDigiAttributesFromCopy(fInputDigiCollection);
+    // Create an iterator to be used when digis will be combined into one digi,
+    // due to pile-up.
+    window.digiIter = window.digis->NewIterator();
+    window.digiIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
+    // Create a filler to copy all digi attributes from the input collection
+    // into the collection of the window.
+    window.fillerIn = std::make_unique<GateDigiAttributesFiller>(
+        fInputDigiCollection, window.digis,
+        window.digis->GetDigiAttributeNames());
+    // Create a filler to copy digi attributes from the collection of the window
+    // to the output collection (used for the digis that will result from
+    // pile-up).
+    auto filler_out_attributes = window.digis->GetDigiAttributeNames();
+    filler_out_attributes.erase("TotalEnergyDeposit");
+    window.fillerOut = std::make_unique<GateDigiAttributesFiller>(
+        window.digis, fOutputDigiCollection, filler_out_attributes);
+
+    // Store the PileupWindow in the map and return a reference.
+    l.fVolumePileupWindows[vol_hash] = std::move(window);
+    return l.fVolumePileupWindows[vol_hash];
   }
+}
+
+void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
+  // This function simulates pile-up by combining the digis in the given window
+  // into one digi.
+  auto &l = fThreadLocalData.Get();
+
+  std::optional<double> highest_edep{};
+  double total_edep = 0.0;
+  size_t highest_edep_index = 0;
+
+  // Iterate over all digis in the window from the beginning.
+  window.digiIter.Reset();
+  while (!window.digiIter.IsAtEnd()) {
+    const auto current_edep = *l.edep;
+    // Remember the value and index of the highest deposited energy so far.
+    if (!highest_edep || current_edep > highest_edep) {
+      highest_edep = current_edep;
+      highest_edep_index = window.digiIter.fIndex;
+    }
+    // Accumulate all deposited energy values.
+    total_edep += current_edep;
+    window.digiIter++;
+  }
+
+  // The resulting pile-up digi gets the total edep value as its edep value.
+  fOutputEdepAttribute->FillDValue(total_edep);
+  // All the other attribute values are taken from the digi with the highest
+  // edep.
+  window.fillerOut->Fill(highest_edep_index);
+  // Remove all processed digis from the window.
+  window.digis->Clear();
 }
