@@ -12,8 +12,8 @@
 #include <G4Cache.hh>
 #include <G4Navigator.hh>
 #include <map>
+#include <memory>
 #include <pybind11/stl.h>
-#include <variant>
 
 namespace py = pybind11;
 
@@ -24,16 +24,11 @@ namespace py = pybind11;
 class GateDigitizerPileupActor : public GateVDigitizerWithOutputActor {
 
 public:
-  // Constructor
   explicit GateDigitizerPileupActor(py::dict &user_info);
 
-  // Destructor
   ~GateDigitizerPileupActor() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
-
-  // Called every time a Run starts (all threads)
-  void BeginOfRunAction(const G4Run *run) override;
 
   // Called every time an Event ends (all threads)
   void EndOfEventAction(const G4Event *event) override;
@@ -51,39 +46,37 @@ protected:
   int fGroupVolumeDepth;
   double fTimeWindow;
 
-  // Output attribute pointers
+  // Output attribute pointer
   GateVDigiAttribute *fOutputEdepAttribute{};
-  GateVDigiAttribute *fOutputGlobalTimeAttribute{};
-  GateVDigiAttribute *fOutputVolumeIDAttribute{};
 
-  void ProcessPileup();
+  // Struct for storing digis in one particular volume which belong to the same
+  // time window.
+  struct PileupWindow {
+    // Time at which the time window opens.
+    double startTime{};
+    // Collection of digis in the same time window.
+    GateDigiCollection *digis;
+    // Iterator used to loop over the digis for simulating pile-up.
+    GateDigiCollectionIterator digiIter;
+    // Filler used to copy digi attributes from the input collection into the
+    // window.
+    std::unique_ptr<GateDigiAttributesFiller> fillerIn;
+    // Filler used to copy the pile-up digi from the window into the output
+    // collection.
+    std::unique_ptr<GateDigiAttributesFiller> fillerOut;
+  };
 
-  // During computation (thread local)
+  PileupWindow &GetPileupWindowForVolume(GateUniqueVolumeID::Pointer *volume);
+  void ProcessPileupWindow(PileupWindow &window);
+
   struct threadLocalT {
-    double *edep;
-    double *time;
     GateUniqueVolumeID::Pointer *volID;
+    double *time;
+    double *edep;
 
-    // Storage for piled up singles
-    struct PileupGroup {
-      double highest_edep;
-      double total_edep;
-      double first_time;
-      double time;
-      GateUniqueVolumeID::Pointer volume_id;
-
-      using AttributeValue =
-          std::variant<double, int, int64_t, std::string, G4ThreeVector,
-                       GateUniqueVolumeID::Pointer>;
-      std::map<std::string, AttributeValue> stored_attributes;
-    };
-
-    std::map<uint64_t, std::vector<PileupGroup>> volume_groups;
+    std::map<uint64_t, PileupWindow> fVolumePileupWindows;
   };
   G4Cache<threadLocalT> fThreadLocalData;
-
-  void StoreAttributeValues(threadLocalT::PileupGroup &group, size_t index);
-  void FillAttributeValues(const threadLocalT::PileupGroup &group) const;
 };
 
 #endif // GateDigitizerPileupActor_h
