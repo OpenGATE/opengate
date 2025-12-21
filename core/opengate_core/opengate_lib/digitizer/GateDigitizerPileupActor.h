@@ -66,7 +66,10 @@ protected:
     std::unique_ptr<GateDigiAttributesFiller> fillerOut;
   };
 
-  PileupWindow &GetPileupWindowForVolume(GateUniqueVolumeID::Pointer *volume);
+  PileupWindow &
+  GetPileupWindowForCurrentVolume(GateUniqueVolumeID::Pointer *volume,
+                                  std::map<uint64_t, PileupWindow> &windows);
+
   void ProcessPileupWindow(PileupWindow &window);
 
   struct threadLocalT {
