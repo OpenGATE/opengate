@@ -63,7 +63,8 @@ void GateDigitizerPileupActor::EndOfEventAction(const G4Event *) {
   while (!inputIter.IsAtEnd()) {
     // Look up or create the pile-up window object for the volume to which the
     // current digi belongs.
-    auto &window = GetPileupWindowForVolume(l.volID);
+    auto &window =
+        GetPileupWindowForCurrentVolume(l.volID, l.fVolumePileupWindows);
 
     const auto current_time = *l.time;
     if (window.digis->GetSize() == 0) {
@@ -95,17 +96,17 @@ void GateDigitizerPileupActor::EndOfRunAction(const G4Run *) {
 }
 
 GateDigitizerPileupActor::PileupWindow &
-GateDigitizerPileupActor::GetPileupWindowForVolume(
-    GateUniqueVolumeID::Pointer *volume) {
+GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
+    GateUniqueVolumeID::Pointer *volume,
+    std::map<uint64_t, PileupWindow> &windows) {
   // This function looks up the PileupWindow object for the given volume. If it
   // does not yet exist for the volume, it creates a PileupWindow.
 
   const auto vol_hash = volume->get()->GetIdUpToDepthAsHash(fGroupVolumeDepth);
-  auto &l = fThreadLocalData.Get();
 
   // Look up the window based
-  auto it = l.fVolumePileupWindows.find(vol_hash);
-  if (it != l.fVolumePileupWindows.end()) {
+  auto it = windows.find(vol_hash);
+  if (it != windows.end()) {
     // Return a reference to the existing PileupWindow object for the volume.
     return it->second;
   } else {
@@ -120,7 +121,8 @@ GateDigitizerPileupActor::GetPileupWindowForVolume(
     // Create an iterator to be used when digis will be combined into one digi,
     // due to pile-up.
     window.digiIter = window.digis->NewIterator();
-    window.digiIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
+    window.digiIter.TrackAttribute("TotalEnergyDeposit",
+                                   &fThreadLocalData.Get().edep);
     // Create a filler to copy all digi attributes from the input collection
     // into the collection of the window.
     window.fillerIn = std::make_unique<GateDigiAttributesFiller>(
@@ -135,8 +137,8 @@ GateDigitizerPileupActor::GetPileupWindowForVolume(
         window.digis, fOutputDigiCollection, filler_out_attributes);
 
     // Store the PileupWindow in the map and return a reference.
-    l.fVolumePileupWindows[vol_hash] = std::move(window);
-    return l.fVolumePileupWindows[vol_hash];
+    windows[vol_hash] = std::move(window);
+    return windows[vol_hash];
   }
 }
 
