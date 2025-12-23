@@ -13,13 +13,16 @@ class GateTimeSorter {
 public:
   GateTimeSorter() = default;
 
-  void Init(const std::string &name, GateDigiCollection *input,
-            GateDigiCollection *output);
+  void Init(GateDigiCollection *input);
 
-  void SetDelay(double delay);
+  void SetSortingWindow(double duration);
   void SetMaxSize(size_t size);
 
+  std::unique_ptr<GateDigiAttributesFiller>
+  CreateFiller(GateDigiCollection *destination);
+  GateDigiCollection::Iterator &OutputIterator();
   void Process();
+  void MarkOutputAsProcessed();
   void Flush();
 
 private:
@@ -44,15 +47,23 @@ private:
     std::unique_ptr<GateDigiAttributesFiller> fillerSwap;
   };
 
-  GateDigiCollectionIterator fInputIter;
-  double *fTime;
-  double fDelay{1000.0}; // nanoseconds
+  double fSortingWindow{1000.0}; // nanoseconds
   size_t fMaxSize{100'000};
+
+  GateDigiCollection *fInputCollection;
+  GateDigiCollectionIterator fInputIter;
+
+  GateDigiCollection *fOutputCollection;
+  GateDigiCollectionIterator fOutputIter;
+
+  double *fTime;
+
   bool fInitialized{false};
   bool fProcessingStarted{false};
   bool fFlushed{false};
   std::optional<double> fMostRecentTimeArrived;
   std::optional<double> fMostRecentTimeDeparted;
+
   std::unique_ptr<TimeSortedStorage> fCurrentStorage;
   std::unique_ptr<TimeSortedStorage> fFutureStorage;
 };
