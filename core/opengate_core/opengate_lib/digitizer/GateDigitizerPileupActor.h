@@ -80,8 +80,6 @@ protected:
     double *edep;
 
     GateTimeSorter fTimeSorter;
-    GateDigiCollection *fTimeSortedDigis;
-    GateDigiCollectionIterator fTimeSortedDigiIterator;
     std::map<uint64_t, PileupWindow> fVolumePileupWindows;
   };
   G4Cache<threadLocalT> fThreadLocalData;
