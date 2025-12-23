@@ -50,14 +50,10 @@ void GateDigitizerPileupActor::DigitInitialize(
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &l = fThreadLocalData.Get();
 
-  l.fTimeSortedDigis =
-      GateDigiCollectionManager::GetInstance()->NewDigiCollection(GetName() +
-                                                                  "_sorted");
-  l.fTimeSortedDigis->InitDigiAttributesFromCopy(fInputDigiCollection);
-  l.fTimeSortedDigiIterator = l.fTimeSortedDigis->NewIterator();
-  l.fTimeSortedDigiIterator.TrackAttribute("GlobalTime", &l.time);
-  l.fTimeSortedDigiIterator.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
-  l.fTimeSorter.Init(GetName(), fInputDigiCollection, l.fTimeSortedDigis);
+  l.fTimeSorter.Init(fInputDigiCollection);
+  l.fTimeSorter.OutputIterator().TrackAttribute("GlobalTime", &l.time);
+  l.fTimeSorter.OutputIterator().TrackAttribute("PreStepUniqueVolumeID",
+                                                &l.volID);
 }
 
 void GateDigitizerPileupActor::EndOfEventAction(const G4Event *) {
@@ -108,9 +104,7 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     // Create a filler to copy all digi attributes from the sorted collection
     // into the collection of the window.
     auto &l = fThreadLocalData.Get();
-    window.fillerIn = std::make_unique<GateDigiAttributesFiller>(
-        l.fTimeSortedDigis, window.digis,
-        window.digis->GetDigiAttributeNames());
+    window.fillerIn = l.fTimeSorter.CreateFiller(window.digis);
     // Create a filler to copy digi attributes from the collection of the window
     // to the output collection (used for the digis that will result from
     // pile-up).
@@ -127,7 +121,7 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
 
 void GateDigitizerPileupActor::ProcessTimeSortedDigis() {
   auto &l = fThreadLocalData.Get();
-  auto &iter = l.fTimeSortedDigiIterator;
+  auto &iter = l.fTimeSorter.OutputIterator();
   iter.GoToBegin();
   while (!iter.IsAtEnd()) {
     // Look up or create the pile-up window object for the volume to which the
@@ -153,7 +147,7 @@ void GateDigitizerPileupActor::ProcessTimeSortedDigis() {
 
     iter++;
   }
-  l.fTimeSortedDigis->SetBeginOfEventIndex(iter.fIndex);
+  l.fTimeSorter.MarkOutputAsProcessed();
 }
 
 void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
