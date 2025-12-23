@@ -50,44 +50,26 @@ void GateDigitizerPileupActor::DigitInitialize(
   auto &lr = fThreadLocalVDigitizerData.Get();
   auto &l = fThreadLocalData.Get();
 
-  lr.fInputIter.TrackAttribute("GlobalTime", &l.time);
-  lr.fInputIter.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
+  l.fTimeSortedDigis =
+      GateDigiCollectionManager::GetInstance()->NewDigiCollection(GetName() +
+                                                                  "_sorted");
+  l.fTimeSortedDigis->InitDigiAttributesFromCopy(fInputDigiCollection);
+  l.fTimeSortedDigiIterator = l.fTimeSortedDigis->NewIterator();
+  l.fTimeSortedDigiIterator.TrackAttribute("GlobalTime", &l.time);
+  l.fTimeSortedDigiIterator.TrackAttribute("PreStepUniqueVolumeID", &l.volID);
+  l.fTimeSorter.Init(GetName(), fInputDigiCollection, l.fTimeSortedDigis);
 }
 
 void GateDigitizerPileupActor::EndOfEventAction(const G4Event *) {
-  auto &lr = fThreadLocalVDigitizerData.Get();
   auto &l = fThreadLocalData.Get();
-  auto &inputIter = lr.fInputIter;
-
-  inputIter.GoToBegin();
-  while (!inputIter.IsAtEnd()) {
-    // Look up or create the pile-up window object for the volume to which the
-    // current digi belongs.
-    auto &window =
-        GetPileupWindowForCurrentVolume(l.volID, l.fVolumePileupWindows);
-
-    const auto current_time = *l.time;
-    if (window.digis->GetSize() == 0) {
-      // The window has no digis yet: make the window start at the time of the
-      // current digi.
-      window.startTime = current_time;
-    } else if (current_time - window.startTime > fTimeWindow) {
-      // The current digi is beyond the time window: process the digis that are
-      // currently in the window, then make the window start at the time of the
-      // current digi.
-      ProcessPileupWindow(window);
-      window.startTime = current_time;
-    }
-
-    // Add the current digi to the window.
-    window.fillerIn->Fill(inputIter.fIndex);
-
-    inputIter++;
-  }
+  l.fTimeSorter.Process();
+  ProcessTimeSortedDigis();
 }
 
 void GateDigitizerPileupActor::EndOfRunAction(const G4Run *) {
   auto &l = fThreadLocalData.Get();
+  l.fTimeSorter.Flush();
+  ProcessTimeSortedDigis();
   for (auto &[_vol_hash, window] : l.fVolumePileupWindows) {
     ProcessPileupWindow(window);
   }
@@ -123,10 +105,11 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     window.digiIter = window.digis->NewIterator();
     window.digiIter.TrackAttribute("TotalEnergyDeposit",
                                    &fThreadLocalData.Get().edep);
-    // Create a filler to copy all digi attributes from the input collection
+    // Create a filler to copy all digi attributes from the sorted collection
     // into the collection of the window.
+    auto &l = fThreadLocalData.Get();
     window.fillerIn = std::make_unique<GateDigiAttributesFiller>(
-        fInputDigiCollection, window.digis,
+        l.fTimeSortedDigis, window.digis,
         window.digis->GetDigiAttributeNames());
     // Create a filler to copy digi attributes from the collection of the window
     // to the output collection (used for the digis that will result from
@@ -140,6 +123,37 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     windows[vol_hash] = std::move(window);
     return windows[vol_hash];
   }
+}
+
+void GateDigitizerPileupActor::ProcessTimeSortedDigis() {
+  auto &l = fThreadLocalData.Get();
+  auto &iter = l.fTimeSortedDigiIterator;
+  iter.GoToBegin();
+  while (!iter.IsAtEnd()) {
+    // Look up or create the pile-up window object for the volume to which the
+    // current digi belongs.
+    auto &window =
+        GetPileupWindowForCurrentVolume(l.volID, l.fVolumePileupWindows);
+
+    const auto current_time = *l.time;
+    if (window.digis->GetSize() == 0) {
+      // The window has no digis yet: make the window start at the time of the
+      // current digi.
+      window.startTime = current_time;
+    } else if (current_time - window.startTime > fTimeWindow) {
+      // The current digi is beyond the time window: process the digis that are
+      // currently in the window, then make the window start at the time of the
+      // current digi.
+      ProcessPileupWindow(window);
+      window.startTime = current_time;
+    }
+
+    // Add the current digi to the window.
+    window.fillerIn->Fill(iter.fIndex);
+
+    iter++;
+  }
+  l.fTimeSortedDigis->SetBeginOfEventIndex(iter.fIndex);
 }
 
 void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
