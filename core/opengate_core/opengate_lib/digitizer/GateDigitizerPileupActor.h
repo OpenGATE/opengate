@@ -8,6 +8,7 @@
 #ifndef GateDigitizerPileupActor_h
 #define GateDigitizerPileupActor_h
 
+#include "GateTimeSorter.h"
 #include "GateVDigitizerWithOutputActor.h"
 #include <G4Cache.hh>
 #include <G4Navigator.hh>
@@ -70,6 +71,7 @@ protected:
   GetPileupWindowForCurrentVolume(GateUniqueVolumeID::Pointer *volume,
                                   std::map<uint64_t, PileupWindow> &windows);
 
+  void ProcessTimeSortedDigis();
   void ProcessPileupWindow(PileupWindow &window);
 
   struct threadLocalT {
@@ -77,6 +79,9 @@ protected:
     double *time;
     double *edep;
 
+    GateTimeSorter fTimeSorter;
+    GateDigiCollection *fTimeSortedDigis;
+    GateDigiCollectionIterator fTimeSortedDigiIterator;
     std::map<uint64_t, PileupWindow> fVolumePileupWindows;
   };
   G4Cache<threadLocalT> fThreadLocalData;
