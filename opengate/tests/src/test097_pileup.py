@@ -70,13 +70,21 @@ if __name__ == "__main__":
     crystal.material = "LYSO"
     crystal.color = green
 
-    source = sim.add_source("GenericSource", "b2b")
-    source.particle = "back_to_back"
-    source.activity = 10 * 1e6 * Bq
-    source.position.type = "sphere"
-    source.position.radius = 0.5 * 1e-15 * mm
-    source.direction.theta = [90 * deg, 90 * deg]
-    source.direction.phi = [0, 360 * deg]
+    source1 = sim.add_source("GenericSource", "b2b_1")
+    source1.particle = "back_to_back"
+    source1.activity = 5 * 1e6 * Bq
+    source1.position.type = "point"
+    source1.position.translation = [100 * mm, 0, 0]
+    source1.direction.theta = [90 * deg, 90 * deg]
+    source1.direction.phi = [0, 360 * deg]
+
+    source2 = sim.add_source("GenericSource", "b2b_2")
+    source2.particle = "back_to_back"
+    source2.activity = 5 * 1e6 * Bq
+    source1.position.translation = [-100 * mm, 0, 0]
+    source2.position.type = "point"
+    source2.direction.theta = [90 * deg, 90 * deg]
+    source2.direction.phi = [0, 360 * deg]
 
     # Physics
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option3"
