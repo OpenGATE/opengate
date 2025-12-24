@@ -38,6 +38,9 @@ private:
   };
 
   struct TimeSortedStorage {
+    TimeSortedStorage(GateDigiCollection *input, GateDigiCollection *output,
+                      const std::string &name_suffix);
+
     GateDigiCollection *digis;
     std::priority_queue<TimedDigiIndex, std::vector<TimedDigiIndex>,
                         std::greater<TimedDigiIndex>>
@@ -61,6 +64,7 @@ private:
   bool fInitialized{false};
   bool fProcessingStarted{false};
   bool fFlushed{false};
+  bool fSortingWindowWarningIssued{false};
   std::optional<double> fMostRecentTimeArrived;
   std::optional<double> fMostRecentTimeDeparted;
 
