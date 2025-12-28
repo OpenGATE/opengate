@@ -22,10 +22,11 @@ GateDigitizerPileupActor::~GateDigitizerPileupActor() = default;
 void GateDigitizerPileupActor::InitializeUserInfo(py::dict &user_info) {
 
   GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
-  // Get pile-up time parameter in ns.
-  fPileupTime = 0.0; // default value, no pile-up
   if (py::len(user_info) > 0 && user_info.contains("pileup_time")) {
-    fPileupTime = DictGetDouble(user_info, "pileup_time");
+    fPileupTime = DictGetDouble(user_info, "pileup_time"); // nanoseconds
+  }
+  if (py::len(user_info) > 0 && user_info.contains("sorting_time")) {
+    fSortingTime = DictGetDouble(user_info, "sorting_time"); // nanoseconds
   }
   fGroupVolumeDepth = -1;
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
@@ -54,6 +55,7 @@ void GateDigitizerPileupActor::DigitInitialize(
   l.fTimeSorter.OutputIterator().TrackAttribute("GlobalTime", &l.time);
   l.fTimeSorter.OutputIterator().TrackAttribute("PreStepUniqueVolumeID",
                                                 &l.volID);
+  l.fTimeSorter.SetSortingWindow(fSortingTime);
   l.fTimeSorter.SetMaxSize(fClearEveryNEvents);
 }
 
