@@ -44,8 +44,8 @@ protected:
       const std::vector<std::string> &attributes_not_in_filler) override;
 
   // User parameters
+  double fPileupTime;
   int fGroupVolumeDepth;
-  double fTimeWindow;
 
   // Output attribute pointer
   GateVDigiAttribute *fOutputEdepAttribute{};
