@@ -49,7 +49,9 @@ protected:
   int fGroupVolumeDepth;
 
   // Output attribute pointer
+  GateVDigiAttribute *fOutputTimeAttribute{};
   GateVDigiAttribute *fOutputEdepAttribute{};
+  GateVDigiAttribute *fOutputPosAttribute{};
 
   // Struct for storing digis in one particular volume which belong to the same
   // time window.
@@ -79,6 +81,7 @@ protected:
     GateUniqueVolumeID::Pointer *volID;
     double *time;
     double *edep;
+    G4ThreeVector *pos;
 
     GateTimeSorter fTimeSorter;
     std::map<uint64_t, PileupWindow> fVolumePileupWindows;
