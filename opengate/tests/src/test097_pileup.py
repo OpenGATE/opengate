@@ -115,12 +115,12 @@ if __name__ == "__main__":
 
     # Pile-up
     pu = sim.add_actor("DigitizerPileupActor", "Singles_after_pileup")
-    pu.attached_to = hc.attached_to
-    pu.authorize_repeated_volumes = True
     pu.input_digi_collection = sc.name
-    pu.output_filename = sc.output_filename
+    pu.group_volume = crystal.name
+    pu.authorize_repeated_volumes = True
     pu.pileup_time = 2000.0 * ns
     pu.clear_every = 1e4
+    pu.output_filename = sc.output_filename
 
     # Timing
     sim.run_timing_intervals = [[0, 0.001 * sec]]
