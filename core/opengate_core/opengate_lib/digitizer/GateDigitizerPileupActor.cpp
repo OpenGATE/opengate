@@ -54,6 +54,7 @@ void GateDigitizerPileupActor::DigitInitialize(
   l.fTimeSorter.OutputIterator().TrackAttribute("GlobalTime", &l.time);
   l.fTimeSorter.OutputIterator().TrackAttribute("PreStepUniqueVolumeID",
                                                 &l.volID);
+  l.fTimeSorter.SetMaxSize(fClearEveryNEvents);
 }
 
 void GateDigitizerPileupActor::EndOfEventAction(const G4Event *) {

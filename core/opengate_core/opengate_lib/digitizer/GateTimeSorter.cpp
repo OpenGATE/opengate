@@ -126,8 +126,7 @@ void GateTimeSorter::Process() {
       if (!fSortingWindowWarningIssued) {
         std::cout << "The digis in " << fInputCollection->GetName()
                   << " have non-monotonicities in the GlobalTime attribute "
-                     "that exceed "
-                     "the sorting window ("
+                     "that exceed the sorting window ("
                   << fSortingWindow
                   << " ns). Please increase the sorting window to avoid "
                      "dropped digis";
@@ -206,15 +205,21 @@ void GateTimeSorter::Prune() {
   // cleared.
   // 3. The two instances of TimeSortedStorage are swapped.
 
+  // Step 1
+  GateDigiAttributesFiller transferFiller(
+      fCurrentStorage->digis, fFutureStorage->digis,
+      fCurrentStorage->digis->GetDigiAttributeNames());
   auto &sortedIndices = fCurrentStorage->sortedIndices;
   while (!sortedIndices.empty()) {
     const auto timed_index = sortedIndices.top();
     sortedIndices.pop();
     const size_t digiIndex = fFutureStorage->digis->GetSize();
     const double digiTime = timed_index.time;
-    fCurrentStorage->fillerSwap->Fill(timed_index.index);
+    transferFiller.Fill(timed_index.index);
     fFutureStorage->sortedIndices.push({digiIndex, digiTime});
   }
+  // Step 2
   fCurrentStorage->digis->Clear();
+  // Step 3
   std::swap(fCurrentStorage, fFutureStorage);
 }
