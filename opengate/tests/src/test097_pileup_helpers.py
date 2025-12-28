@@ -40,12 +40,15 @@ def pileup(singles_before_pileup: pd.DataFrame, time_window: float):
                 group_slice = group.iloc[current:next_single]
                 max_energy_idx = group_slice["TotalEnergyDeposit"].idxmax()
                 # Create a single with the attribute values from the max energy single,
-                # except for the TotalEnergyDeposit, take the sum over all singles in the time window.
+                # except for the TotalEnergyDeposit, GlobalTime and PostPosition.
                 pileup_row = group.loc[max_energy_idx].copy()
+                # Energy is the sum of energies of all contributing singles.
                 pileup_row["TotalEnergyDeposit"] = group_slice[
                     "TotalEnergyDeposit"
                 ].sum()
+                # Time is taken from the first contributing single.
                 pileup_row["GlobalTime"] = group_slice["GlobalTime"].iloc[0]
+                # PostPosition is the energy-weighted sum of positions from all contributing singles.
                 pileup_row["PostPosition_X"] = (
                     group_slice["PostPosition_X"] * group_slice["TotalEnergyDeposit"]
                 ).sum() / group_slice["TotalEnergyDeposit"].sum()
