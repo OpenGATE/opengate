@@ -64,6 +64,7 @@ private:
   bool fProcessingStarted{false};
   bool fFlushed{false};
   bool fSortingWindowWarningIssued{false};
+  size_t fNumDroppedDigi{};
   std::optional<double> fMostRecentTimeArrived;
   std::optional<double> fMostRecentTimeDeparted;
 
