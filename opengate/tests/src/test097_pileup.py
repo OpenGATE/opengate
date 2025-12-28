@@ -120,8 +120,7 @@ if __name__ == "__main__":
     pu.input_digi_collection = sc.name
     pu.output_filename = sc.output_filename
     pu.pileup_time = 2000.0 * ns
-    pu.clear_every = 1e3
-    # pu.skip_attributes = ["PreStepUniqueVolumeID"]
+    pu.clear_every = 1e4
 
     # Timing
     sim.run_timing_intervals = [[0, 0.001 * sec]]
