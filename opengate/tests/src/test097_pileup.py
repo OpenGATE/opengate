@@ -22,6 +22,7 @@ if __name__ == "__main__":
     # Units
     mm = gate.g4_units.mm
     sec = gate.g4_units.s
+    ns = gate.g4_units.ns
     keV = gate.g4_units.keV
     Bq = gate.g4_units.Bq
     gcm3 = gate.g4_units.g_cm3
@@ -118,7 +119,9 @@ if __name__ == "__main__":
     pu.authorize_repeated_volumes = True
     pu.input_digi_collection = sc.name
     pu.output_filename = sc.output_filename
-    pu.time_window = 1000.0
+    pu.pileup_time = 2000.0 * ns
+    pu.clear_every = 1e3
+    # pu.skip_attributes = ["PreStepUniqueVolumeID"]
 
     # Timing
     sim.run_timing_intervals = [[0, 0.001 * sec]]
@@ -130,6 +133,6 @@ if __name__ == "__main__":
         sc.output_filename,
         "Singles_before_pileup",
         "Singles_after_pileup",
-        pu.time_window,
+        pu.pileup_time,
     )
     utility.test_ok(all_match)

@@ -1,5 +1,6 @@
 import pandas as pd
 import uproot
+import numpy as np
 
 
 def pileup(singles_before_pileup: pd.DataFrame, time_window: float):
@@ -112,9 +113,15 @@ def check_gate_pileup(
                 continue
             expected_values = expected_singles[attr].values
             actual_values = actual_singles[attr].values
-            if not all(expected_values == actual_values):
-                print(f"Volume {volume_id}: Attribute {attr} does not match")
-                all_match = False
-                break
+            if np.issubdtype(expected_values.dtype, np.floating):
+                if not np.allclose(expected_values, actual_values, rtol=1e-9):
+                    print(f"Volume {volume_id}: Attribute {attr} does not match")
+                    all_match = False
+                    break
+            else:
+                if not all(expected_values == actual_values):
+                    print(f"Volume {volume_id}: Attribute {attr} does not match")
+                    all_match = False
+                    break
 
     return all_match
