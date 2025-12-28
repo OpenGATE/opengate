@@ -546,18 +546,6 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
                 "doc": "Digi collection to be used as input.",
             },
         ),
-        "skip_attributes": (
-            [],
-            {
-                "doc": "Attributes to be omitted from the output.",
-            },
-        ),
-        "clear_every": (
-            1e5,
-            {
-                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
-            },
-        ),
         "pileup_time": (
             0,
             {
@@ -568,6 +556,12 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
             None,
             {
                 "doc": "Name of the volume in which digis are piled up.",
+            },
+        ),
+        "clear_every": (
+            1e5,
+            {
+                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
             },
         ),
         "sorting_time": (
@@ -601,6 +595,7 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
 
     def StartSimulationAction(self):
         DigitizerBase.StartSimulationAction(self)
+        self.set_group_by_depth()
         g4.GateDigitizerPileupActor.StartSimulationAction(self)
 
     def EndSimulationAction(self):
