@@ -536,7 +536,8 @@ class DigitizerBlurringActor(DigitizerWithRootOutput, g4.GateDigitizerBlurringAc
 
 class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor):
     """
-    TODO documentation
+    Dititizer module for simulating pile-up
+    (combining singles that occur close to each other in time, in the same volume).
     """
 
     user_info_defaults = {
