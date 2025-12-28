@@ -22,10 +22,10 @@ GateDigitizerPileupActor::~GateDigitizerPileupActor() = default;
 void GateDigitizerPileupActor::InitializeUserInfo(py::dict &user_info) {
 
   GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
-  // Get time window parameter in ns.
-  fTimeWindow = 0.0; // default value, no pile-up
-  if (py::len(user_info) > 0 && user_info.contains("time_window")) {
-    fTimeWindow = DictGetDouble(user_info, "time_window");
+  // Get pile-up time parameter in ns.
+  fPileupTime = 0.0; // default value, no pile-up
+  if (py::len(user_info) > 0 && user_info.contains("pileup_time")) {
+    fPileupTime = DictGetDouble(user_info, "pileup_time");
   }
   fGroupVolumeDepth = -1;
   fInputDigiCollectionName = DictGetStr(user_info, "input_digi_collection");
@@ -91,6 +91,7 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     // A PileupWindow object does not yet exist for this volume: create one.
     PileupWindow window;
     const auto vol_id = volume->get()->GetIdUpToDepth(fGroupVolumeDepth);
+    auto &l = fThreadLocalData.Get();
     // Create a GateDigiCollection for this volume, as a temporary storage for
     // digis that belong to the same time window (the name must be unique).
     window.digis = GateDigiCollectionManager::GetInstance()->NewDigiCollection(
@@ -99,11 +100,9 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     // Create an iterator to be used when digis will be combined into one digi,
     // due to pile-up.
     window.digiIter = window.digis->NewIterator();
-    window.digiIter.TrackAttribute("TotalEnergyDeposit",
-                                   &fThreadLocalData.Get().edep);
+    window.digiIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
     // Create a filler to copy all digi attributes from the sorted collection
     // into the collection of the window.
-    auto &l = fThreadLocalData.Get();
     window.fillerIn = l.fTimeSorter.CreateFiller(window.digis);
     // Create a filler to copy digi attributes from the collection of the window
     // to the output collection (used for the digis that will result from
@@ -134,7 +133,7 @@ void GateDigitizerPileupActor::ProcessTimeSortedDigis() {
       // The window has no digis yet: make the window start at the time of the
       // current digi.
       window.startTime = current_time;
-    } else if (current_time - window.startTime > fTimeWindow) {
+    } else if (current_time - window.startTime > fPileupTime) {
       // The current digi is beyond the time window: process the digis that are
       // currently in the window, then make the window start at the time of the
       // current digi.
