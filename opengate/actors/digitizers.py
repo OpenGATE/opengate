@@ -570,6 +570,12 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
                 "doc": "Time interval during which digis are buffered for time-sorting",
             },
         ),
+        "skip_attributes": (
+            [],
+            {
+                "doc": "Attributes to be omitted from the output.",
+            },
+        ),
     }
 
     def __init__(self, *args, **kwargs):
