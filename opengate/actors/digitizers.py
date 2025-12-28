@@ -540,40 +540,40 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
     """
 
     user_info_defaults = {
-        "attributes": (
-            [],
-            {
-                "doc": "Attributes to be considered. ",
-            },
-        ),
         "input_digi_collection": (
             "Singles",
             {
-                "doc": "Digi collection to be used as input. ",
+                "doc": "Digi collection to be used as input.",
             },
         ),
         "skip_attributes": (
             [],
             {
-                "doc": "FIXME",
+                "doc": "Attributes to be omitted from the output.",
             },
         ),
         "clear_every": (
             1e5,
             {
-                "doc": "FIXME",
+                "doc": "The memory consumed by the actor is minimized after having processed the specified amount of digis",
             },
         ),
-        "time_window": (
-            None,
+        "pileup_time": (
+            0,
             {
-                "doc": "FIXME",
+                "doc": "Time interval during which consecutive digis are piled up into one digi.",
             },
         ),
         "group_volume": (
             None,
             {
-                "doc": "FIXME",
+                "doc": "Name of the volume in which digis are piled up.",
+            },
+        ),
+        "sorting_time": (
+            1e3,
+            {
+                "doc": "Time interval during which digis are buffered for time-sorting",
             },
         ),
     }

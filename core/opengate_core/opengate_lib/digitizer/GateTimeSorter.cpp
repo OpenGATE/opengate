@@ -123,13 +123,14 @@ void GateTimeSorter::Process() {
         (digiTime < *fMostRecentTimeDeparted)) {
       // The digi is dropped, in order to be able to guarantee monotonous
       // GlobalTime in the output collection.
+      ++fNumDroppedDigi;
       if (!fSortingWindowWarningIssued) {
         std::cout << "The digis in " << fInputCollection->GetName()
                   << " have non-monotonicities in the GlobalTime attribute "
-                     "that exceed the sorting window ("
+                     "that exceed the sorting time ("
                   << fSortingWindow
                   << " ns). Please increase the sorting window to avoid "
-                     "dropped digis";
+                     "dropped digis\n";
         fSortingWindowWarningIssued = true;
       }
     } else {
@@ -194,6 +195,12 @@ void GateTimeSorter::Flush() {
   }
   Prune();
   fFlushed = true;
+  if (fNumDroppedDigi > 0) {
+    std::cout << fNumDroppedDigi
+              << " digis have been dropped while time-sorting. Please increase "
+                 "the sorting time to a value higher than "
+              << fSortingWindow << " ns\n";
+  }
 }
 
 void GateTimeSorter::Prune() {

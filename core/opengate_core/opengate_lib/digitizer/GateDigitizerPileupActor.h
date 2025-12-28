@@ -45,6 +45,7 @@ protected:
 
   // User parameters
   double fPileupTime;
+  double fSortingTime;
   int fGroupVolumeDepth;
 
   // Output attribute pointer
