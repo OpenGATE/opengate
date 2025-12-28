@@ -47,7 +47,6 @@ private:
         sortedIndices;
     std::unique_ptr<GateDigiAttributesFiller> fillerIn;
     std::unique_ptr<GateDigiAttributesFiller> fillerOut;
-    std::unique_ptr<GateDigiAttributesFiller> fillerSwap;
   };
 
   double fSortingWindow{1000.0}; // nanoseconds
