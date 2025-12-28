@@ -40,12 +40,16 @@ void GateDigitizerPileupActor::DigitInitialize(
     const std::vector<std::string> &attributes_not_in_filler) {
 
   auto a = attributes_not_in_filler;
+  a.push_back("GlobalTime");
   a.push_back("TotalEnergyDeposit");
+  a.push_back("PostPosition");
   GateVDigitizerWithOutputActor::DigitInitialize(a);
 
   // Get output attribute pointer
+  fOutputTimeAttribute = fOutputDigiCollection->GetDigiAttribute("GlobalTime");
   fOutputEdepAttribute =
       fOutputDigiCollection->GetDigiAttribute("TotalEnergyDeposit");
+  fOutputPosAttribute = fOutputDigiCollection->GetDigiAttribute("PostPosition");
 
   // Set up pointers to track specific attributes
   auto &lr = fThreadLocalVDigitizerData.Get();
@@ -103,7 +107,9 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     // Create an iterator to be used when digis will be combined into one digi,
     // due to pile-up.
     window.digiIter = window.digis->NewIterator();
+    window.digiIter.TrackAttribute("GlobalTime", &l.time);
     window.digiIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
+    window.digiIter.TrackAttribute("PostPosition", &l.pos);
     // Create a filler to copy all digi attributes from the sorted collection
     // into the collection of the window.
     window.fillerIn = l.fTimeSorter.CreateFiller(window.digis);
@@ -111,7 +117,9 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     // to the output collection (used for the digis that will result from
     // pile-up).
     auto filler_out_attributes = window.digis->GetDigiAttributeNames();
+    filler_out_attributes.erase("GlobalTime");
     filler_out_attributes.erase("TotalEnergyDeposit");
+    filler_out_attributes.erase("PostPosition");
     window.fillerOut = std::make_unique<GateDigiAttributesFiller>(
         window.digis, fOutputDigiCollection, filler_out_attributes);
 
@@ -157,14 +165,23 @@ void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
   // into one digi.
   auto &l = fThreadLocalData.Get();
 
+  std::optional<double> first_time{};
   std::optional<double> highest_edep{};
   double total_edep = 0.0;
   size_t highest_edep_index = 0;
+  G4ThreeVector weighted_position;
 
   // Iterate over all digis in the window from the beginning.
+
   window.digiIter.Reset();
   while (!window.digiIter.IsAtEnd()) {
     const auto current_edep = *l.edep;
+    const auto current_time = *l.time;
+    const auto current_pos = *l.pos;
+    // Remember the time of the first digi.
+    if (!first_time) {
+      first_time = current_time;
+    }
     // Remember the value and index of the highest deposited energy so far.
     if (!highest_edep.has_value() || current_edep > highest_edep.value()) {
       highest_edep = current_edep;
@@ -172,11 +189,19 @@ void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
     }
     // Accumulate all deposited energy values.
     total_edep += current_edep;
+    // Accumulate the energy-weighted position.
+    weighted_position += current_pos * current_edep;
     window.digiIter++;
   }
+  weighted_position /= total_edep;
 
-  // The resulting pile-up digi gets the total edep value as its edep value.
+  // The resulting pile-up digi gets:
+  // - the time of the first contributing digi.
+  fOutputTimeAttribute->FillDValue(*first_time);
+  // - the total edep value.
   fOutputEdepAttribute->FillDValue(total_edep);
+  // - the energy-weighted position.
+  fOutputPosAttribute->Fill3Value(weighted_position);
   // All the other attribute values are taken from the digi with the highest
   // edep.
   window.fillerOut->Fill(highest_edep_index);
