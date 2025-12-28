@@ -9,8 +9,11 @@ def pileup(singles_before_pileup: pd.DataFrame, time_window: float):
     The singles_before_pileup are in a pandas DataFrame.
     It returns a dict in which the keys are volume IDs, and the values are a pandas DataFrame
     representing the singles for that volume ID after pile-up.
-    Each single after pile-up has a TotalEnergyDeposit equal to the sum of all singles in the same time window.
-    The other attributes of a single after pile-up are taken from the single in the time window that has the
+    Each single after pile-up has:
+    - GlobalTime taken from the first contributing single.
+    - TotalEnergyDeposit equal to the sum of all singles in the same time window.
+    - PostPosition equal to the energy-weighted position of all contributing singles.
+    The other attributes are taken from the single in the time window that has the
     highest TotalEnergyDeposit.
     """
     df = singles_before_pileup  # df for DataFrame
@@ -42,6 +45,16 @@ def pileup(singles_before_pileup: pd.DataFrame, time_window: float):
                 pileup_row["TotalEnergyDeposit"] = group_slice[
                     "TotalEnergyDeposit"
                 ].sum()
+                pileup_row["GlobalTime"] = group_slice["GlobalTime"].iloc[0]
+                pileup_row["PostPosition_X"] = (
+                    group_slice["PostPosition_X"] * group_slice["TotalEnergyDeposit"]
+                ).sum() / group_slice["TotalEnergyDeposit"].sum()
+                pileup_row["PostPosition_Y"] = (
+                    group_slice["PostPosition_Y"] * group_slice["TotalEnergyDeposit"]
+                ).sum() / group_slice["TotalEnergyDeposit"].sum()
+                pileup_row["PostPosition_Z"] = (
+                    group_slice["PostPosition_Z"] * group_slice["TotalEnergyDeposit"]
+                ).sum() / group_slice["TotalEnergyDeposit"].sum()
                 # Add the combined single to the output.
                 singles_after_pileup.setdefault(volume_id, []).append(pileup_row)
                 # Update current and next for the next time window.
