@@ -94,7 +94,7 @@ def cc_digitizer(sim, Scatt, Abs, output_path):
 
     time_fwhm = 10 * ns
     time_sigma = time_fwhm / 2.355
-    
+
     time_scatt = sim.add_actor("DigitizerBlurringActor", "TimeBlurScatt")
     time_scatt.attached_to = Scatt.name
     time_scatt.input_digi_collection = scatt_collection
@@ -119,19 +119,23 @@ def cc_digitizer(sim, Scatt, Abs, output_path):
     thr_scatt = sim.add_actor("DigitizerEnergyWindowsActor", "ThrScatt")
     thr_scatt.attached_to = Scatt.name
     thr_scatt.input_digi_collection = scatt_collection
-    thr_scatt.channels = [{"name": thr_scatt.name, "min": threshold_min, "max": threshold_max}]
+    thr_scatt.channels = [
+        {"name": thr_scatt.name, "min": threshold_min, "max": threshold_max}
+    ]
     scatt_collection = thr_scatt.name
 
     thr_abs = sim.add_actor("DigitizerEnergyWindowsActor", "ThrAbs")
     thr_abs.attached_to = Abs.name
     thr_abs.input_digi_collection = abs_collection
-    thr_abs.channels = [{"name": thr_abs.name, "min": threshold_min, "max": threshold_max}]
+    thr_abs.channels = [
+        {"name": thr_abs.name, "min": threshold_min, "max": threshold_max}
+    ]
 
-    #Saving root files to device (for later analysis)
+    # Saving root files to device (for later analysis)
     scatt_file = output_path / f"{thr_scatt.name}.root"
-    abs_file   = output_path / f"{thr_abs.name}.root"
+    abs_file = output_path / f"{thr_abs.name}.root"
 
     thr_scatt.output_filename = str(scatt_file)
-    thr_abs.output_filename   = str(abs_file)
+    thr_abs.output_filename = str(abs_file)
 
     return scatt_file, abs_file
