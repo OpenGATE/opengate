@@ -677,8 +677,6 @@ DigitizerPileupActor
 Description
 ~~~~~~~~~~~
 
-The  combines singles
-
 Pile‑up occurs when multiple detector interactions happen within a time interval shorter than the resolving/shaping time,
 so their pulses overlap and cannot be distinguished as separate events.
 The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` simulates this by combining singles in the same volume
@@ -697,6 +695,8 @@ Currently, the following rules apply:
   * remaining attributes values are taken from the single with the highest deposited energy value
 
 In the future, policies may be added to modify the way in which the attributes of the resulting single are calculated.
+
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` can currently only be used in single-threaded simulations.
 
 .. code-block:: python
 
