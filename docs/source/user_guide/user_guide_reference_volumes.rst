@@ -391,7 +391,7 @@ combine compatible volumes. For example:
    t.dz = 15 * cm
 
    combined_b_s = gate.geometry.volumes.unite_volumes(b, s, translation=[0, 1 * cm, 5 * cm])
-   final_vol = gate.geometry.volumes.subtract(combined_b_s, t, rotation=Rotation.from_euler("x", 3, degrees=True).as_matrix())
+   final_vol = gate.geometry.volumes.subtract_volumes(combined_b_s, t, rotation=Rotation.from_euler("x", 3, degrees=True).as_matrix())
 
    final_vol.translation = [5 * cm, 5 * cm, 5 * cm]
    final_vol.mother = "world"
