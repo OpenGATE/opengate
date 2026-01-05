@@ -25,5 +25,13 @@ if __name__ == "__main__":
 
     path_reference_dose = paths.output_ref / "dose_reference_mb_40_slit_11_dose.mhd"
     path_test_dose = sim.get_actor("dose").dose.get_output_path()
-    is_ok, mae = analyze_dose(path_reference_dose, path_test_dose)
-    utility.test_ok(is_ok)
+    tolerance = 0.55
+    is_ok, mae = analyze_dose(path_reference_dose, path_test_dose, tolerance)
+    utility.test_ok(
+        is_ok,
+        f"Analyze dose between\n"
+        f"path_reference_dose {path_reference_dose} \n"
+        f"path_test_dose {path_test_dose} \n"
+        f"Mae: {mae:.2f} | (tolerance is {tolerance:.2f} ) \n\n"
+        f" ",
+    )

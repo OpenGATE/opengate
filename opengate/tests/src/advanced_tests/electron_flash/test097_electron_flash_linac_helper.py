@@ -29,7 +29,7 @@ def create_electron_flash_simulation(paths, passive_collimation, fantom):
     sim.random_engine = "MersenneTwister"
     sim.random_seed = 18101996
     sim.output_dir = paths.output
-    sim.number_of_threads = 3
+    sim.number_of_threads = 1
     sim.progress_bar = True
     if sim.visu:
         sim.number_of_threads = 1
@@ -145,10 +145,10 @@ def create_electron_flash_simulation(paths, passive_collimation, fantom):
     return sim
 
 
-def analyze_dose(path_reference_dose, path_test_dose):
+def analyze_dose(path_reference_dose, path_test_dose, tolerance=0.03):
     reference_pdd = fun.obtain_pdd_from_image(path_reference_dose)
     test_pdd = fun.obtain_pdd_from_image(path_test_dose)
-    is_ok, mae = fun.evaluate_pdd_similarity(reference_pdd, test_pdd)
+    is_ok, mae = fun.evaluate_pdd_similarity(reference_pdd, test_pdd, tolerance)
     return (is_ok, mae)
 
 
