@@ -695,8 +695,8 @@ DigitizerPileupActor
 Description
 ~~~~~~~~~~~
 
-Pile‑up occurs when multiple detector interactions happen within a time interval shorter than the resolving/shaping time,
-so their pulses overlap and cannot be distinguished as separate events.
+Pile‑up occurs when multiple detector interactions happen within a time interval shorter than the resolving/shaping time. As a result,
+their pulses overlap and cannot be distinguished as separate events.
 The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` simulates this by combining singles in the same volume
 (set by `group_volume`) if they occur in a time interval set by `pileup_time`.
 
@@ -704,13 +704,13 @@ Currently, the following rules apply:
 
 * The first single occurring after a time period of at least `pileup_time` without singles opens a time window of duration `pileup_time`.
 * Any additional single occurring in that time window is merged with the other singles in that window.
-  These additional singles to not alter the end of the time window (non-paralyzable behavior).
+  These additional singles do not alter the end of the time window (non-paralyzable behavior).
 * The resulting combined single has the following attribute values:
 
   * `GlobalTime`: same value as the first single in the window
   * `TotalEnergyDeposit`: sum of the values of all singles in the window
   * `PostPosition`: energy-weighted sum of positions of all singles in the window
-  * remaining attributes values are taken from the single with the highest deposited energy value
+  * remaining attribute values are taken from the single with the highest deposited energy value
 
 In the future, policies may be added to modify the way in which the attributes of the resulting single are calculated.
 
