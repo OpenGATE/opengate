@@ -12,7 +12,9 @@ The Philips Vereos Digital PET model can be included in your simulation using th
 
 .. code-block:: python
 
+    import opengate as gate
     import opengate.contrib.pet.philipsvereos as pet_vereos
+    sim = gate.Simulation()
     pet = pet_vereos.add_pet(sim, "my_pet")
 
 
@@ -30,9 +32,11 @@ To include the Siemens Biograph Vision PET model in your simulation, use the fol
 
 .. code-block:: python
 
+    import opengate as gate
     import opengate.contrib.pet.siemensbiograph as pet_biograph
+    sim = gate.Simulation()
     pet = pet_biograph.add_pet(sim, "my_pet")
-    singles = pet_biograph.add_digitizer(sim, pet.name, "singles.root", "Singles")
+    singles = pet_biograph.add_digitizer(sim, pet.name, "singles.root", hits_name="Hits", singles_name="Singles")
 
 
 This command will include the whole PET head as described in `[Salvadori2024, PMB] <http://doi.org/10.1088/1361-6560/ad638c>`_ or `[O'Briain 2022 MedPhys] <http://doi.org/10.1002/mp.16032>`_.
