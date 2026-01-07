@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import pathlib
+
+from scipy.spatial.transform import Rotation
+
 import opengate as gate
 from opengate.tests import utility
-from scipy.spatial.transform import Rotation
-import pathlib
 
 
 def user_hook_volume(simulation_engine):
@@ -53,14 +55,15 @@ def check_mat(se):
     assert len(mnist) == 309  # Geant4 11.1
     assert mdb == [
         "Vacuum",
+        "Tecapeek",
         "Nickel",
         "Gold",
         "Carbon",
         "Copper",
         "Aluminium",
+        "AluminiumEGS",
         "Titanium",
         "Beryllium",
-        "AluminiumEGS",
         "Uranium",
         "Silicon",
         "Zinc",

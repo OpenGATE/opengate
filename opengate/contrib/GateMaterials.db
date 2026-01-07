@@ -68,6 +68,18 @@ Uranium:    S= U   ; Z= 92. ; A= 238.03  g/mole
 Vacuum: d=0.000001 mg/cm3 ; n=1
         +el: name=Hydrogen   ; n=1
 
+Air: d=1.29 mg/cm3 ; n=4 ; state=gas
+        +el: name=Nitrogen   ; f=0.755268
+        +el: name=Oxygen     ; f=0.231781
+        +el: name=Argon      ; f=0.012827
+        +el: name=Carbon     ; f=0.000124
+
+
+Tecapeek: d=1.32 g/cm3 ; n=3; state=solid
+        +el: name=Hydrogen; f = 0.0476
+        +el: name=Carbon  ; f = 0.7619
+        +el: name=Oxygen  ; f = 0.1905
+
 Nickel: d=8.908 g/cm3 ; n=1 ; state=solid
         +el: name=auto       ; n=1
 
