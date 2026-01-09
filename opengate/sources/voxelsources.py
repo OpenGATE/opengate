@@ -85,5 +85,11 @@ class VoxelSource(GenericSource, g4.GateVoxelSource):
         # the GenericSource verification
         GenericSource.initialize(self, run_timing_intervals)
 
+class VoxelizedPromptGammaTLESource(GenericSource, g4.GateVoxelSource):
+    """
+    VoxelizedPromptGammaTLESource = 3D PG distribution.
+    Sampled with cumulative distribution functions.
+    """
 
 process_cls(VoxelSource)
+process_cls(VoxelizedPromptGammaTLESource)
