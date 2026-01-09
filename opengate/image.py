@@ -59,6 +59,36 @@ def create_3d_image(
     return img
 
 
+def create_3d_image_of_histogram(
+    size, spacing, bins, origin=None, pixel_type="float", allocate=True
+):
+    if len(size) != 4:
+        size.append(bins)
+        spacing.append(1.0)
+    else:
+        size[3] = bins
+    if (origin is not None) and (len(origin) != 4):
+        origin.append(0.0)
+    return create_4d_image(size, spacing, origin, pixel_type, allocate)
+
+
+def create_4d_image(size, spacing, origin=None, pixel_type="float", allocate=True):
+    dim = 4
+    pixel_type = itk.ctype(pixel_type)
+    image_type = itk.Image[pixel_type, dim]
+    img = image_type.New()
+    region = itk.ImageRegion[dim]()
+    region.SetSize([int(s) for s in size])
+    region.SetIndex([0, 0, 0, 0])
+    img.SetRegions(region)
+    img.SetSpacing(spacing)
+    if origin is not None:
+        img.SetOrigin(origin)
+    if allocate:
+        img.Allocate()
+    return img
+
+
 def create_image_like(like_image, allocate=True, pixel_type=""):
     # TODO fix pixel_type -> copy from image rather than argument
     info = get_info_from_image(like_image)

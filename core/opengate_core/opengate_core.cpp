@@ -310,6 +310,10 @@ void init_GateKineticEnergyFilter(py::module &);
 // Gate actors
 void init_GateDoseActor(py::module &m);
 
+void init_GateVoxelizedPromptGammaTLEActor(py::module &m);
+
+void init_GateVoxelizedPromptGammaAnalogActor(py::module &m);
+
 void init_GateFluenceActor(py::module &m);
 
 void init_GateLETActor(py::module &m);
@@ -402,6 +406,8 @@ void init_GateTemplateSource(py::module &);
 void init_GatePencilBeamSource(py::module &m);
 
 void init_GateVoxelSource(py::module &);
+
+void init_GateVoxelizedPromptGammaTLESource(py::module &);
 
 void init_GateGANSource(py::module &);
 
@@ -593,6 +599,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateTemplateSource(m);
   init_GatePencilBeamSource(m);
   init_GateVoxelSource(m);
+  init_GateVoxelizedPromptGammaTLESource(m);
   init_GateGANSource(m);
   init_GatePhaseSpaceSource(m);
   init_GateGANPairSource(m);
@@ -604,6 +611,8 @@ PYBIND11_MODULE(opengate_core, m) {
 
   init_GateDoseActor(m);
   init_GateTLEDoseActor(m);
+  init_GateVoxelizedPromptGammaTLEActor(m);
+  init_GateVoxelizedPromptGammaAnalogActor(m);
   init_GateFluenceActor(m);
   init_GateLETActor(m);
   init_GateProductionAndStoppingActor(m);

@@ -178,7 +178,10 @@ class VoxelDepositActor(ActorBase):
         origin = -size * spacing / 2.0 + spacing / 2.0
 
         translation = np.array(self.translation)
-        origin_local = Rotation.from_matrix(self.rotation).apply(origin) + translation
+        # the slicing "[:3]" is required for 4D images (3D image of histograms)
+        origin_local = (
+            Rotation.from_matrix(self.rotation).apply(origin[:3]) + translation[:3]
+        )
 
         # image centered at (0,0,0), no rotation
         if self.output_coordinate_system is None:
@@ -190,6 +193,9 @@ class VoxelDepositActor(ActorBase):
         # image centered at self.translation and rotated by self.rotation,
         # i.e. in the reference frame of the volume to which the actor is attached.
         elif self.output_coordinate_system in ("local",):
+            if size.shape != origin_local.shape:
+                # special case for 4D images
+                origin_local = np.append(origin_local, [0])
             self.user_output[which_output].set_image_properties(
                 run_index, origin=origin_local.tolist(), rotation=self.rotation
             )

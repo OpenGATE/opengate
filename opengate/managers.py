@@ -39,7 +39,7 @@ from .processing import dispatch_to_subprocess
 
 from .sources.generic import SourceBase, GenericSource
 from .sources.phspsources import PhaseSpaceSource
-from .sources.voxelsources import VoxelSource
+from .sources.voxelsources import VoxelSource, VoxelizedPromptGammaTLESource
 from .sources.gansources import GANSource, GANPairsSource
 from .sources.beamsources import IonPencilBeamSource, TreatmentPlanPBSource
 from .sources.phidsources import PhotonFromIonDecaySource
@@ -54,6 +54,7 @@ source_types = {
     "IonPencilBeamSource": IonPencilBeamSource,
     "PhotonFromIonDecaySource": PhotonFromIonDecaySource,
     "TreatmentPlanPBSource": TreatmentPlanPBSource,
+    "VoxelizedPromptGammaTLESource": VoxelizedPromptGammaTLESource,
 }
 
 from .geometry.volumes import (
@@ -87,6 +88,11 @@ from .actors.doseactors import (
     REActor,
     BeamQualityActor,
     EmCalculatorActor,
+)
+
+from .actors.pgactors import (
+    VoxelizedPromptGammaTLEActor,
+    VoxelizedPromptGammaAnalogActor,
 )
 
 from .actors.dynamicactors import DynamicGeometryActor
@@ -136,6 +142,8 @@ actor_types = {
     "EmCalculatorActor": EmCalculatorActor,
     "FluenceActor": FluenceActor,
     # misc
+    "VoxelizedPromptGammaTLEActor": VoxelizedPromptGammaTLEActor,
+    "VoxelizedPromptGammaAnalogActor": VoxelizedPromptGammaAnalogActor,
     "AttenuationImageActor": AttenuationImageActor,
     "SimulationStatisticsActor": SimulationStatisticsActor,
     "KillActor": KillActor,

@@ -6,6 +6,7 @@ import sys
 
 import opengate_core as g4
 from ..base import GateObject, process_cls
+from ..image import create_3d_image_of_histogram
 from ..utility import insert_suffix_before_extension, ensure_filename_is_str
 from ..exception import warning, fatal, GateImplementationError
 from .dataitems import (
@@ -845,8 +846,22 @@ class ActorOutputImage(ActorOutputUsingDataItemContainer):
         )
 
 
+class ActorOutputImageOfHistogram(ActorOutputImage):
+    def create_image_of_histograms(
+        self, run_index, size, spacing, bins, origin=None, **kwargs
+    ):
+        if run_index not in self.data_per_run:
+            self.data_per_run[run_index] = self.data_container_class(belongs_to=self)
+        img = create_3d_image_of_histogram(size, spacing, bins, origin, **kwargs)
+        self.data_per_run[run_index].set_data(img)
+
+
 # concrete classes usable in Actors:
 class ActorOutputSingleImage(ActorOutputImage):
+    data_container_class = SingleItkImage
+
+
+class ActorOutputSingleImageOfHistogram(ActorOutputImageOfHistogram):
     data_container_class = SingleItkImage
 
 
@@ -960,6 +975,7 @@ process_cls(ActorOutputBase)
 process_cls(ActorOutputUsingDataItemContainer)
 process_cls(ActorOutputImage)
 process_cls(ActorOutputSingleImage)
+process_cls(ActorOutputSingleImageOfHistogram)
 process_cls(ActorOutputSingleMeanImage)
 process_cls(ActorOutputSingleImageWithVariance)
 process_cls(ActorOutputQuotientImage)
