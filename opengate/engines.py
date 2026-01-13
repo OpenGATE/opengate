@@ -415,6 +415,30 @@ class PhysicsEngine(EngineBase):
             for (
                 vol
             ) in self.simulation_engine.simulation.volume_manager.volumes.values():
+                if hasattr(vol, "voxel_materials"):
+                    materials = [m[2] for m in vol.voxel_materials]
+                    materials.append(vol.material)
+                    for i in materials:
+                        for mat in g4.G4Material.GetMaterialTable:
+                            if str(mat.GetName()) == i:
+                                mat_prop = load_optical_properties_from_xml(
+                                    self.physics_manager.optical_properties_file,
+                                    mat.GetName(),
+                                )
+                                if mat_prop is not None:
+                                    self.g4_optical_material_tables[
+                                        str(mat.GetName())
+                                    ] = create_g4_optical_properties_table(mat_prop)
+                                    mat.SetMaterialPropertiesTable(
+                                        self.g4_optical_material_tables[
+                                            str(mat.GetName())
+                                        ]
+                                    )
+                                else:
+                                    self.simulation_engine.warn_user(
+                                        f"Could not load the optical material properties for material {mat.GetName()} "
+                                        f"found in volume {vol.name} from file {self.physics_manager.optical_properties_file}"
+                                    )
                 material_name = vol.g4_material.GetName()
                 material_properties = load_optical_properties_from_xml(
                     self.physics_manager.optical_properties_file, material_name
