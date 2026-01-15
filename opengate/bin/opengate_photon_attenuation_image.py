@@ -106,7 +106,7 @@ def go(
     )
     if mm:
         arr = itk.array_view_from_image(image)
-        arr = arr * 10
+        arr = arr / 10
         new_image = itk.image_from_array(arr)
         new_image.SetSpacing(image.GetSpacing())
         new_image.SetOrigin(image.GetOrigin())
