@@ -23,7 +23,7 @@ conda list
 which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
-pip install wget colored
+pip install wget colored setuptools
 pip install wheel delocate
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
