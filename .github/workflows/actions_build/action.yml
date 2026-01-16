@@ -74,6 +74,7 @@ runs:
       if: (inputs.os == 'macos-15') || (inputs.os == 'macos-15-intel')
       env:
         MATRIX_OS: ${{ inputs.os }}
+        MATRIX_PYTHON_VERSION: ${{ inputs.python-version }}
         MATRIX_CACHE: ${{ steps.cache_opengate_core_dependencies.outputs.cache-hit }}
       shell: bash -l {0}
       run: |
