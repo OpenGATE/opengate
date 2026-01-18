@@ -18,6 +18,7 @@ public:
   void SetSortingWindow(double duration);
   void SetMaxSize(size_t size);
 
+  GateDigiCollection *OutputCollection() const;
   std::unique_ptr<GateDigiAttributesFiller>
   CreateFiller(GateDigiCollection *destination);
   GateDigiCollection::Iterator &OutputIterator();

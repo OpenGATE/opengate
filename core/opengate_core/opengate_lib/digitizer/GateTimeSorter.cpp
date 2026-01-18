@@ -82,6 +82,10 @@ void GateTimeSorter::SetMaxSize(size_t maxSize) {
   fMaxSize = maxSize;
 }
 
+GateDigiCollection *GateTimeSorter::OutputCollection() const {
+  return fOutputCollection;
+}
+
 std::unique_ptr<GateDigiAttributesFiller>
 GateTimeSorter::CreateFiller(GateDigiCollection *destination) {
   // Creates a GateDigiAttributesFiller from the TimeSorter's output collection
