@@ -380,6 +380,8 @@ void init_GateDigiAttributeProcessDefinedStepInVolumeActor(py::module &m);
 
 void init_GateDigitizerProjectionActor(py::module &m);
 
+void init_GateCoincidenceSorterActor(py::module &m);
+
 void init_GateDigiAttributeManager(py::module &m);
 
 void init_GateVDigiAttribute(py::module &m);
@@ -630,6 +632,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_GateDigitizerSpatialBlurringActor(m);
   init_GateDigitizerEnergyWindowsActor(m);
   init_GateDigitizerProjectionActor(m);
+  init_GateCoincidenceSorterActor(m);
   init_GateDigiAttributeProcessDefinedStepInVolumeActor(m);
 
   init_GateARFActor(m);

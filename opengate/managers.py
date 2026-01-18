@@ -113,6 +113,7 @@ from .actors.digitizers import (
     DigitizerEnergyWindowsActor,
     DigitizerHitsCollectionActor,
     DigitizerPileupActor,
+    CoincidenceSorterActor,
     PhaseSpaceActor,
     DigiAttributeProcessDefinedStepInVolumeActor,
 )
@@ -155,6 +156,7 @@ actor_types = {
     "DigitizerEnergyWindowsActor": DigitizerEnergyWindowsActor,
     "DigitizerHitsCollectionActor": DigitizerHitsCollectionActor,
     "DigitizerPileupActor": DigitizerPileupActor,
+    "CoincidenceSorterActor": CoincidenceSorterActor,
     "DigiAttributeProcessDefinedStepInVolumeActor": DigiAttributeProcessDefinedStepInVolumeActor,
     # biasing
     "BremsstrahlungSplittingActor": BremsstrahlungSplittingActor,
