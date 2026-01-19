@@ -4,7 +4,6 @@
 import test036_adder_depth_helpers as t036
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, "gate_test036_adder_depth", "test036"

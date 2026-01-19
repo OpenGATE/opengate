@@ -5,7 +5,6 @@ import opengate as gate
 from test061_user_event_info_helpers import create_simulation, analyse
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test061")
 

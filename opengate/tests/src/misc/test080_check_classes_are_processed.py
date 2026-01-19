@@ -4,7 +4,6 @@ from opengate.devtools import find_unprocessed_gateobject_classes
 from opengate.exception import GateImplementationError
 import opengate.tests.utility as utility
 
-
 if __name__ == "__main__":
     is_ok = True
     exceptions = []

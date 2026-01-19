@@ -4,7 +4,6 @@
 from test053_phid_helpers2 import *
 import opengate as gate
 
-
 if __name__ == "__main__":
     paths = get_default_test_paths(__file__, "", output_folder="test053")
 
