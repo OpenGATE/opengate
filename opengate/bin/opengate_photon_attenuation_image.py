@@ -3,7 +3,6 @@
 
 import click
 import itk
-
 from opengate import g4_units
 from opengate.contrib.dose.photon_attenuation_image_helpers import (
     create_photon_attenuation_image,
@@ -39,12 +38,26 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
     help="Gate material database (if needed)",
 )
 @click.option("--verbose", "-v", is_flag=True, default=False, help="Verbose output")
+@click.option(
+    "--mm",
+    is_flag=True,
+    default=False,
+    help="Change unit to mm^-1 instead of default cm^-1",
+)
 def go(
-    image, labels, output, energy, size, spacing, material_database, database, verbose
+    image,
+    labels,
+    output,
+    energy,
+    size,
+    spacing,
+    material_database,
+    database,
+    verbose,
+    mm,
 ):
     """
     This function processes an input image to generate an attenuation map based on provided specifications and parameters.
-    The command-line interface (CLI) is used to specify options such as input image, output filename, labels, energy, size, spacing, and database type. Verbose mode can also be toggled for additional output information during execution.
 
     Parameters:
     - image: Input image filename (required).
@@ -91,6 +104,13 @@ def go(
         database=database,
         verbose=verbose,
     )
+    if mm:
+        arr = itk.array_view_from_image(image)
+        arr = arr / 10
+        new_image = itk.image_from_array(arr)
+        new_image.SetSpacing(image.GetSpacing())
+        new_image.SetOrigin(image.GetOrigin())
+        image = new_image
 
     verbose and print(f"Finished computing mu in {output}")
     itk.imwrite(image, output)

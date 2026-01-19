@@ -27,6 +27,13 @@ def go(input, vrml, gdml, qt):
         print("Choose between vrml or gdml")
         return ()
 
+    if not vrml and not gdml:
+        if "vrml" in input:
+            vrml = True
+        else:
+            print("Choose either vrml or gdml")
+            return ()
+
     if vrml:
         try:
             import pyvista

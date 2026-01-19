@@ -15,11 +15,17 @@ Copyright (C): OpenGATE Collaboration
 GateVBiasOptrActor::GateVBiasOptrActor(const std::string &name,
                                        py::dict &user_info, const bool MT_ready)
     : G4VBiasingOperator(name), GateVActor(user_info, MT_ready) {
-  // It seems that it is needed in MT (see PreUserTrackingAction)
+  // It seems that it is necessary in MT (see PreUserTrackingAction)
   fActions.insert("PreUserTrackingAction");
-  // SteppingAction for killing when the weight is too low
-  fActions.insert("SteppingAction");
-  fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
+  // SteppingAction may kill when the weight is too low (we leave this to
+  // subclasses) fActions.insert("SteppingAction");
+  fWeightCutoff = std::numeric_limits<double>::min(); // around 2.22507e-308
+  fEnergyCutoff = 0;
+}
+
+GateVBiasOptrActor::~GateVBiasOptrActor() {
+  // Unsure if it is needed
+  ClearOperators();
 }
 
 std::vector<G4VBiasingOperator *> &
@@ -37,21 +43,27 @@ void GateVBiasOptrActor::ClearOperators() {
 
 void GateVBiasOptrActor::InitializeUserInfo(py::dict &user_info) {
   GateVActor::InitializeUserInfo(user_info);
-  fMinimalWeight = DictGetDouble(user_info, "minimal_weight");
-  if (fMinimalWeight < 0) {
-    fMinimalWeight = std::numeric_limits<double>::min(); // around 2.22507e-308
+
+  // minimal weight check
+  fWeightCutoff = DictGetDouble(user_info, "weight_cutoff");
+  if (fWeightCutoff < 0) {
+    fWeightCutoff = std::numeric_limits<double>::min(); // around 2.22507e-308
   }
 
-  fUnbiasedVolumes = DictGetVecStr(user_info, "unbiased_volumes");
-
+  fExcludeVolumes = DictGetVecStr(user_info, "exclude_volumes");
   // check ignored volumes
-  for (auto &name : fUnbiasedVolumes) {
+  for (auto &name : fExcludeVolumes) {
     const auto *v = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
     fUnbiasedLogicalVolumes.push_back(v);
     if (v == nullptr) {
       Fatal("Cannot find ignored volume: " + name + " in the actor " +
             fActorName);
     }
+  }
+
+  fEnergyCutoff = DictGetDouble(user_info, "energy_cutoff");
+  if (fEnergyCutoff < 0) {
+    fEnergyCutoff = 0;
   }
 }
 
@@ -78,12 +90,21 @@ void GateVBiasOptrActor::PreUserTrackingAction(const G4Track *track) {
   }
 }
 
+bool GateVBiasOptrActor::IsTrackValid(const G4Track *track) const {
+  // Must be inferior or equal for cases when energy is zero or weight is zero
+  if (track->GetKineticEnergy() <= fEnergyCutoff)
+    return false;
+  if (track->GetWeight() <= fWeightCutoff)
+    return false;
+  return true;
+}
+
 void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
     G4LogicalVolume *volume) {
   // Do not attach to ignored volumes
-  const auto iter = std::find(fUnbiasedVolumes.begin(), fUnbiasedVolumes.end(),
+  const auto iter = std::find(fExcludeVolumes.begin(), fExcludeVolumes.end(),
                               volume->GetName());
-  if (iter != fUnbiasedVolumes.end())
+  if (iter != fExcludeVolumes.end())
     return;
 
   // Attach to the volume
@@ -99,7 +120,5 @@ void GateVBiasOptrActor::AttachAllLogicalDaughtersVolumes(
 }
 
 void GateVBiasOptrActor::SteppingAction(G4Step *step) {
-  if (step->GetTrack()->GetWeight() < fMinimalWeight) {
-    step->GetTrack()->SetTrackStatus(fStopAndKill);
-  }
+  // nothing
 }

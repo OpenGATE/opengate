@@ -19,21 +19,17 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   fAASolid = nullptr;
   fAANavigator = nullptr;
   fAARotation = nullptr;
-  fIntersectionFlag = false;
-  fNormalFlag = false;
-  fNormalAngleTolerance = 0;
-  fMinDistanceNormalAngleTolerance = 0;
-  fDistanceDependentAngleToleranceFlag = false;
-  fAngle1 = 0;
-  fAngle2 = 0;
-  fDistance1 = 0;
-  fDistance2 = 0;
+  fEnableIntersectionCheck = false;
+  fEnableAngleCheck = false;
+  fAngleToleranceMax = 0;
+  fAngleCheckProximityDistance = 0;
 
   // Retrieve the solid
   const auto lvs = G4LogicalVolumeStore::GetInstance();
   const auto lv = lvs->GetVolume(fAcceptanceAngleVolumeName);
   if (!lv) {
     Fatal("Could not find logical volume named: " + fAcceptanceAngleVolumeName);
+    exit(0);
   }
   fAASolid = lv->GetSolid();
 
@@ -44,33 +40,35 @@ GateAcceptanceAngleSingleVolume::GateAcceptanceAngleSingleVolume(
   fAANavigator->SetWorldVolume(world);
 
   // parameters
-  fIntersectionFlag = StrToBool(param.at("intersection_flag"));
-  fNormalFlag = StrToBool(param.at("normal_flag"));
-  fNormalAngleTolerance = StrToDouble(param.at("normal_tolerance"));
-  fMinDistanceNormalAngleTolerance =
-      StrToDouble(param.at("normal_tolerance_min_distance"));
-  fNormalVector = StrToG4ThreeVector(param.at("normal_vector"));
+  fEnableIntersectionCheck =
+      StrToBool(ParamAt(param, "enable_intersection_check"));
+  fEnableAngleCheck = StrToBool(ParamAt(param, "enable_angle_check"));
+  fAngleCheckProximityDistance =
+      StrToDouble(ParamAt(param, "angle_check_proximity_distance"));
+  fAngleReferenceVector =
+      StrToG4ThreeVector(ParamAt(param, "angle_check_reference_vector"));
+  fAngleToleranceMax = StrToDouble(ParamAt(param, "angle_tolerance_max"));
+  fAngleToleranceMin = StrToDouble(ParamAt(param, "angle_tolerance_min"));
+  fAngleToleranceProximal =
+      StrToDouble(ParamAt(param, "angle_tolerance_proximal"));
 
-  if (fNormalAngleTolerance <= 0) {
-    Fatal("Normal angle tolerance must be strictly positive while it is " +
-          std::to_string(fNormalAngleTolerance));
-  }
+  // Pre-calculate Cosines
+  // Note: Cosine is a decreasing function on [0, Pi].
+  // So if Angle < Tolerance, then Cos(Angle) > Cos(Tolerance).
+  fCosToleranceMax = std::cos(fAngleToleranceMax);
+  fCosToleranceMin = std::cos(fAngleToleranceMin);
+  fCosToleranceProximal = std::cos(fAngleToleranceProximal);
 
-  // DistDep -> not recommended (too slow), prefer normal_tolerance_min_distance
-  fDistanceDependentAngleToleranceFlag =
-      StrToBool(param.at("distance_dependent_normal_tolerance"));
-  fAngle1 = StrToDouble(param.at("angle1"));
-  fAngle2 = StrToDouble(param.at("angle2"));
-  fDistance1 = StrToDouble(param.at("distance1"));
-  fDistance2 = StrToDouble(param.at("distance2"));
-  if (fDistance1 >= fDistance2) {
-    Fatal(
-        "For 'distance_dependent_normal_tolerance', Distance1 must be strictly "
-        "less than distance2 " +
-        std::to_string(fDistance1) + " " + std::to_string(fDistance2));
+  // Validation
+  if (fAngleToleranceMin < 0.0) {
+    DDD(fAngleToleranceMin);
+    Fatal("angle_tolerance_min cannot be negative.");
   }
-  a = (1.0 / tan(fAngle1) - 1.0 / tan(fAngle2)) / (fDistance1 - fDistance2);
-  b = 1.0 / tan(fAngle2) - a * fDistance2;
+  if (fAngleToleranceMin >= fAngleToleranceMax) {
+    DDD(fAngleToleranceMin);
+    DDD(fAngleToleranceMax);
+    Fatal("angle_tolerance_min must be less than angle_tolerance_max");
+  }
 }
 
 GateAcceptanceAngleSingleVolume::~GateAcceptanceAngleSingleVolume() {
@@ -89,35 +87,78 @@ void GateAcceptanceAngleSingleVolume::UpdateTransform() {
                                          *fAARotation, true);
   // It is not fully clear why the AffineTransform need the inverse
   fAATransform = G4AffineTransform(fAARotation->inverse(), tr);
+
+  // Calculate Global Reference Vector ---
+  // fAARotation represents the rotation from World to Volume.
+  // To compare in World space, we need to rotate the Local Reference Vector
+  // back to World. The inverse of a Rotation Matrix is its Transpose (or
+  // .inverse()). This is not used for the moment, maybe later to
+  fGlobalAngleReferenceVector = fAARotation->inverse() * fAngleReferenceVector;
 }
 
 bool GateAcceptanceAngleSingleVolume::TestIfAccept(
     const G4ThreeVector &position,
     const G4ThreeVector &momentum_direction) const {
+  // Transform Momentum to Local
   const auto localDirection = (*fAARotation) * (momentum_direction);
+
   double dist = 0;
-  if (fIntersectionFlag) {
+  if (fEnableIntersectionCheck) {
     const auto localPosition = fAATransform.TransformPoint(position);
     dist = fAASolid->DistanceToIn(localPosition, localDirection);
     if (dist == kInfinity)
       return false;
   }
-  if (fNormalFlag) {
-    if (dist < fMinDistanceNormalAngleTolerance)
-      return true;
-    const auto angle = fNormalVector.angle(localDirection);
-    return angle < fNormalAngleTolerance;
+
+  if (fEnableAngleCheck) {
+    // Use Dot Product in Local Space
+    // No need to call acos (via .angle())
+    const double cosTheta = fAngleReferenceVector.dot(localDirection);
+
+    if (dist < fAngleCheckProximityDistance) {
+      return cosTheta > fCosToleranceProximal;
+    }
+    return (cosTheta > fCosToleranceMax) && (cosTheta <= fCosToleranceMin);
   }
+
   return true;
 }
 
-bool GateAcceptanceAngleSingleVolume::DistanceDependentToleranceTest(
-    // This is very slow, (3x than other methods)
-    // We recommend not using this method
-    const double angle, const double dist) const {
-  const double tol = atan(1.0 / (a * dist + b));
+void GateAcceptanceAngleSingleVolume::PrepareCheck(
+    const G4ThreeVector &position) {
+  if (fEnableIntersectionCheck) {
+    // We calculate this ONCE per step, not per split
+    fCachedLocalPosition = fAATransform.TransformPoint(position);
+  }
+}
 
-  if (tol < 0)
-    return true;
-  return angle < tol;
+bool GateAcceptanceAngleSingleVolume::TestDirection(
+    const G4ThreeVector &momentum_direction) const {
+  // 1. Fast World-Space Angle Check
+  if (!fEnableIntersectionCheck && fEnableAngleCheck) {
+    const double cosTheta = fGlobalAngleReferenceVector.dot(momentum_direction);
+    if (fAngleCheckProximityDistance > 0)
+      return cosTheta > fCosToleranceProximal;
+    return (cosTheta > fCosToleranceMax) && (cosTheta <= fCosToleranceMin);
+  }
+
+  // 2. Local Space Check (using cached position)
+  const auto localDirection = (*fAARotation) * (momentum_direction);
+
+  double dist = 0;
+  if (fEnableIntersectionCheck) {
+    // Use the CACHED position here
+    dist = fAASolid->DistanceToIn(fCachedLocalPosition, localDirection);
+    if (dist == kInfinity)
+      return false;
+  }
+
+  if (fEnableAngleCheck) {
+    const double cosTheta = fAngleReferenceVector.dot(localDirection);
+    if (dist < fAngleCheckProximityDistance) {
+      return cosTheta > fCosToleranceProximal;
+    }
+    return (cosTheta > fCosToleranceMax) && (cosTheta <= fCosToleranceMin);
+  }
+  return true;
 }

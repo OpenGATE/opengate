@@ -47,10 +47,24 @@ Common parameters are:
 * | ``rotation``: a 3×3 rotation matrix.
   | Rotation of the volume with respect to the attached volume.
   | We advocate the use of `scipy.spatial.transform.Rotation` to manage the rotation matrix.
-* | ``n``: the number (integer) of particles to emit (the number of Geant4 Events).
+* | ``n``: the number (integer or a list) of particles to emit (the number of Geant4 Events).
 * | ``activity``: the number (real, in Bq) of particle to emit per second.
   | The number of Geant4 Events will depend on the simulation time.
 
+
+If you want to start a multi-run simulation using the parameter n, you can provide a list of the number of particles to simulate for each run (see `test096 <https://github.com/OpenGATE/opengate/tree/master/opengate/tests/src/source/test096_multi_run_simulation_using_n_generic_source.py>`_)
+
+A minimal working example would be:
+
+.. code:: python
+
+   source = sim.add_source("GenericSource", "mySource")
+   source.n = [10000, 150000, 36]
+
+   sim.run_timing_intervals = [[0, 1 * sec], [2 * sec, 2.5 * sec], [4 * sec, 5 * sec]]
+
+Please note that sim.run_timing_intervals must have the same length as source.n.
+By default, all particles of a given run will be emitted at a timestamp equal to the minimum time of the corresponding timing interval.
 
 Coordinate system
 -----------------

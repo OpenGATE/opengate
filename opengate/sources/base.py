@@ -12,6 +12,15 @@ class SourceBase(GateObject):
     Base class for all source types.
     """
 
+    # hints for IDE
+    attached_to: str
+    mother: str
+    start_time: float
+    end_time: float
+    n: int
+    activity: float
+    half_life: float
+
     user_info_defaults = {
         "attached_to": (
             __world_name__,
@@ -91,7 +100,7 @@ class SourceBase(GateObject):
 
     def initialize_start_end_time(self, run_timing_intervals):
         self.run_timing_intervals = run_timing_intervals
-        # by default consider the source time start and end like the whole simulation
+        # by default, consider the source time start and end like the whole simulation
         # Start: start time of the first run
         # End: end time of the last run
         if not self.start_time:
@@ -114,30 +123,26 @@ class SourceBase(GateObject):
     def can_predict_number_of_events(self):
         return True
 
-
     def check_ui_activity(self, ui):
         # FIXME: This should rather be a function than a method
         # FIXME: self actually holds the parameters n and activity, but the ones from ui are used here.
         # Old fix_me do not knwo if it's still valid
         if np.array([ui.n]).shape == (1,):
-            ui.n = np.array([ui.n],dtype = int)
-        else :
+            ui.n = np.array([ui.n], dtype=int)
+        else:
             ui.n = np.array(ui.n, dtype=int)
         if (ui.activity == 0) and (len(ui.n) != len(self.run_timing_intervals)):
-            fatal(
-                f"source.n and run_timing_intervals do not have the same length."
-            )
-        if np.any(ui.n  > 0) and ui.activity > 0:
+            fatal(f"source.n and run_timing_intervals do not have the same length.")
+        if np.any(ui.n > 0) and ui.activity > 0:
             fatal(
                 f"Cannot use both the two parameters 'n' and 'activity' at the same time. "
             )
         if np.all(ui.n == 0) and ui.activity == 0:
             fatal(f"You must set one of the two parameters 'n' or 'activity'.")
         if ui.activity > 0:
-            ui.n = np.array(np.zeros(len(self.run_timing_intervals),dtype = int))
+            ui.n = np.array(np.zeros(len(self.run_timing_intervals), dtype=int))
         if np.any(ui.n > 0):
             ui.activity = 0
-
 
 
 process_cls(SourceBase)

@@ -200,11 +200,13 @@ def get_files_to_run():
         "test045_speedup",  # this is a binary (still work in progress)
     ]
     path_tests_src = Path(path_tests_src)
-    all_file_paths = [
-        file.name for file in path_tests_src.glob("test[0-9]*.py") if file.is_file()
-    ]
+    all_file_paths = []
+    for file in path_tests_src.glob("**/test[0-9]*.py"):
+        if file.is_file():
+            all_file_paths.append(str(file.relative_to(path_tests_src)))
+
     # here we sort the paths
-    all_file_paths = sorted(all_file_paths)
+    all_file_paths = sorted(all_file_paths, key=lambda f: os.path.basename(f))
 
     ignore_files_containing = [
         "wip",
@@ -307,7 +309,7 @@ def select_files(files_to_run, test_id, end_id, random_tests, seed):
         end_id = int(end_id) if end_id != "all" else sys.maxsize
         files_new = []
         for f in files_to_run:
-            match = pattern.match(f)
+            match = pattern.match(os.path.basename(f))
             f_test_id = int(float(match.group(1)))
             if f_test_id >= test_id and f_test_id <= end_id:
                 files_new.append(f)
@@ -381,7 +383,7 @@ def analyze_scripts(file_dir, files):
 def filter_files_with_dependencies(files_to_run, path_tests_src):
     files_dependence_dict = analyze_scripts(path_tests_src, files_to_run)
     files_needed_for_other_tests = [
-        needed_file
+        os.path.join(os.path.dirname(file), needed_file)
         for file, needed_file in files_dependence_dict.items()
         if needed_file
     ]
@@ -402,7 +404,7 @@ def run_one_test_case(f, processes_run, path_tests_src):
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
     cmd = "python " + str(path_tests_src / f)
-    log = str(path_tests_src.parent / "log" / f) + ".log"
+    log = str(path_tests_src.parent / "log" / os.path.basename(f)) + ".log"
     if processes_run == "legacy":
         r = os.system(f"{cmd} > {log} 2>&1")
         shell_output = Box({"returncode": r, "log_fpath": log})
@@ -439,7 +441,7 @@ def run_one_test_case_mp(f):
     start = time.time()
     print(f"Running: {f:<46}  ", end="")
     cmd = "python " + str(path_tests_src / f)
-    log = str(path_tests_src.parent / "log" / Path(f).stem) + ".log"
+    log = str(path_tests_src.parent / "log" / Path(os.path.basename(f)).stem) + ".log"
 
     # Write the command as the first line in the log file
     start = time.time()
@@ -499,9 +501,9 @@ def status_summary_report(runs_status_info, files, no_log_on_fail):
         for k, shell_output_k in zip(files, runs_status_info)
     }
 
-    tests_passed = [f for f in files if dashboard_dict[f][0]]
+    tests_passed = [f for f in files if dashboard_dict[os.path.basename(f)][0]]
     tests_passed.sort()
-    tests_failed = [f for f in files if not dashboard_dict[f][0]]
+    tests_failed = [f for f in files if not dashboard_dict[os.path.basename(f)][0]]
     tests_failed.sort()
 
     n_passed = sum([k[0] for k in dashboard_dict.values()])

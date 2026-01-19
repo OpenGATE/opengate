@@ -27,9 +27,9 @@ from pytomography.utils import compute_EW_scatter
 
 import torch
 import SimpleITK as sitk
+import itk
 import numpy as np
 import json
-import os
 from pathlib import Path
 
 
@@ -159,7 +159,7 @@ def pytomography_set_energy_windows(metadata, channels):
 
 def pytomography_create_sinogram(filenames, number_of_angles, output_filename):
     # consider sinogram for all energy windows
-    sinograms = read_projections_as_sinograms(filenames, number_of_angles)
+    sinograms = load_and_merge_multi_head_projections(filenames, number_of_angles)
     sino_arr = None
     for sinogram in sinograms:
         arr = sitk.GetArrayFromImage(sinogram)
@@ -224,12 +224,12 @@ def pytomography_set_attenuation_data(
 
     # check attenuation_filename must be mhd/raw
     attenuation_filename = Path(attenuation_filename)
-    if attenuation_filename.suffix != ".mhd":
-        fatal(
-            f"Attenuation file must be mhd/raw, while the "
-            f"extension is {attenuation_filename.suffix} ({attenuation_filename})"
-        )
-    raw_filename = attenuation_filename.with_suffix(".raw")
+    # if attenuation_filename.suffix != ".mhd":
+    #    fatal(
+    #        f"Attenuation file must be mhd/raw, while the "
+    #        f"extension is {attenuation_filename.suffix} ({attenuation_filename})"
+    #    )
+    raw_filename = attenuation_filename  # .with_suffix(".raw")
 
     # read attenuation image
     attenuation_image = sitk.ReadImage(attenuation_filename)
@@ -307,7 +307,8 @@ def pytomography_read_projections(metadata, folder=None):
     image_file = geometry_meta["source_file"]
     if folder is None:
         folder = Path(metadata["folder"])
-    projections = np.fromfile(folder / image_file, dtype=np.float32)
+    projections_img = sitk.ReadImage(str(folder / image_file))
+    projections = sitk.GetArrayFromImage(projections_img).astype(np.float32)
     projections = projections.reshape(number_of_energy_windows, *proj_meta.shape)
     projections = torch.tensor(projections).to(pytomography.device)
     return projections
@@ -538,7 +539,8 @@ def get_attenuation_map_from_json(metadata):
     imagefile = attenuation_meta["source_file"]
     if imagefile is None:
         return None
-    amap = np.fromfile(os.path.join(metadata["folder"], imagefile), dtype=np.float32)
+    amap_img = sitk.ReadImage(str(metadata["folder"] / imagefile))
+    amap = sitk.GetArrayFromImage(amap_img).astype(np.float32)
     amap = amap.reshape((dimension_x, dimension_y, dimension_z))
 
     # rotation from gate to pytomo
@@ -673,7 +675,8 @@ def pytomography_build_metadata_and_attenuation_map(
     metadata = pytomography_new_metadata()
 
     # set the detector orientations
-    detectors = sc.detector_config.get_heads(sim)
+    detectors = sc.detector_config.get_detectors(sim)
+    verbose and print(f"Number of detectors: {len(detectors)}")
     for detector in detectors:
         pytomography_add_detector_orientation(metadata, detector)
     nb_proj = metadata["Projection Geometry Data"]["number_of_projections"]
@@ -710,7 +713,7 @@ def pytomography_build_metadata_and_attenuation_map(
     )
     verbose and print(f"Build sinogram with shape {sino.shape} in {o}")
     # set the raw data only for pytomography
-    metadata["Projection Geometry Data"]["source_file"] = "sinogram.raw"
+    metadata["Projection Geometry Data"]["source_file"] = "sinogram.mhd"
 
     # PSF correction "Detector Physics Data"
     dpd = metadata["Detector Physics Data"]

@@ -78,4 +78,7 @@ std::vector<std::string>
 GetVectorFromMapString(const std::map<std::string, std::string> &map_input,
                        const std::string &key);
 
+std::string ParamAt(const std::map<std::string, std::string> &param,
+                    const std::string &key);
+
 #endif // OPENGATE_CORE_OPENGATEHELPERSDICT_H

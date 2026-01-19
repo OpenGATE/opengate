@@ -215,6 +215,8 @@ void GateSourceManager::PrepareRunToStart(int run_id) {
   l.fCurrentTimeInterval = fSimulationTimes[run_id];
   // set the current time
   l.fCurrentSimulationTime = l.fCurrentTimeInterval.first;
+  // init the next time as the end of the interval by default
+  l.fNextSimulationTime = l.fCurrentTimeInterval.second;
   // reset abort run flag to false
   fRunTerminationFlag = false;
   // Prepare the run for all sources
@@ -258,6 +260,7 @@ void GateSourceManager::PrepareNextSource() const {
 
 void GateSourceManager::CheckForNextRun() const {
   auto &l = fThreadLocalData.Get();
+  l.fStartNewRun = false;
   if (l.fNextActiveSource == nullptr || fRunTerminationFlag) {
     G4RunManager::GetRunManager()->AbortRun(true); // FIXME true or false ?
     l.fStartNewRun = true;
@@ -337,7 +340,7 @@ void GateSourceManager::GeneratePrimaries(G4Event *event) {
     if (G4Threading::IsMultithreadedApplication() &&
         G4Threading::G4GetThreadId() != 0)
       return;
-    // count the number of event already generated
+    // count the number of events already generated
     fCurrentEvent = fCurrentEvent + 1;
     // update the bar sometimes
     if (fCurrentEvent % fProgressBarStep == 0) {
@@ -358,8 +361,10 @@ void GateSourceManager::InitializeVisualization() {
 #endif
   }
 
-  char **argv = new char *[1]; // Allocate 1 element
-  argv[0] = nullptr;           // Properly indicate no arguments
+  static int argc = 1;
+  static char *args[] = {(char *)"opengate", nullptr};
+  static char **argv = args;
+  argc = 1; // Reset argc in case it was modified in a previous call
 
   if (fVisualizationType == "qt") {
     fUIEx = new G4UIExecutive(1, argv, fVisualizationType);

@@ -5,14 +5,10 @@ from opengate.actors.digitizers import *
 from opengate.managers import Simulation
 from opengate.utility import g4_units
 from opengate.contrib.spect.spect_helpers import (
-    get_volume_position_in_head,
+    get_volume_bounding_box_coordinate_in_frame,
     get_default_energy_windows,
 )
 from opengate.geometry.utility import get_transform_orbiting
-from opengate.contrib.spect.spect_helpers import (
-    get_mu_from_xraylib,
-    calculate_theta_max_angle,
-)
 from box import Box
 import json
 
@@ -50,9 +46,15 @@ def update_geometrical_parameters(store_to_file=False):
     for c in p.collimators:
         s = Simulation()
         spect, colli, crystal = add_spect_head(s, "spect", c, debug=True)
-        pos = get_volume_position_in_head(s, "spect", f"collimator", "min", axis=0)
-        y = get_volume_position_in_head(s, "spect", "crystal", "center", axis=0)
-        psd = get_volume_position_in_head(s, "spect", "shielding_front", "min", axis=0)
+        pos = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", f"collimator", "min", axis=0
+        )
+        y = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", "crystal", "center", axis=0
+        )
+        psd = get_volume_bounding_box_coordinate_in_frame(
+            s, "spect", "shielding_front", "min", axis=0
+        )
         p[c] = Box()
         # distance from box boundary to collimator
         p[c].collimator_position = pos
@@ -551,8 +553,12 @@ def compute_plane_position_and_distance_to_crystal_OLD(collimator_type):
     spect, colli, crystal = add_spect_head(
         temp_sim, "spect", collimator_type, debug=True
     )
-    pos = get_volume_position_in_head(temp_sim, "spect", f"collimator", "min", axis=0)
-    y = get_volume_position_in_head(temp_sim, "spect", "crystal", "center", axis=0)
+    pos = get_volume_bounding_box_coordinate_in_frame(
+        temp_sim, "spect", f"collimator", "min", axis=0
+    )
+    y = get_volume_bounding_box_coordinate_in_frame(
+        temp_sim, "spect", "crystal", "center", axis=0
+    )
     crystal_distance = -y
     psd = -spect.size[0] / 2.0 - 1 * g4_units.nm
 
@@ -614,8 +620,8 @@ def add_source_for_arf_training_dataset(
     source.energy.type = "range"
     source.energy.min_energy = min_energy
     source.energy.max_energy = max_energy
-    source.direction.acceptance_angle.volumes = [detector_plane.name]
-    source.direction.acceptance_angle.intersection_flag = True
+    source.direction.angular_acceptance.target_volumes = [detector_plane.name]
+    source.direction.angular_acceptance.enable_intersection_check = True
 
     return source
 
@@ -790,22 +796,3 @@ def add_digitizer(
     ).as_matrix()
 
     return digitizer
-
-
-def calculate_collimator_acceptance_angle(collimator_type, energy, prob_threshold):
-    p = get_geometrical_parameters()
-    hole_diameter = p[collimator_type].hole_diameter
-    collimator_length = p[collimator_type].collimator_length
-    septa_thickness = p[collimator_type].septa_thickness
-
-    mu_lead_cm = get_mu_from_xraylib("Pb", energy)
-    print(
-        f"collimator_type: {collimator_type}, energy: {energy} keV, mu_lead_cm: {mu_lead_cm} cm-1"
-    )
-    print(f"collimator septa thicnkess {septa_thickness} mm")
-    theta_max = calculate_theta_max_angle(
-        hole_diameter, collimator_length, septa_thickness, mu_lead_cm
-    )
-    print(f"theta_max: {theta_max} deg")
-
-    return theta_max

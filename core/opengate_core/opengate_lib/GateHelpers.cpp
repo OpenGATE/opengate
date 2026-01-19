@@ -17,6 +17,7 @@
 
 const int LogLevel_RUN = 20;
 const int LogLevel_EVENT = 50;
+G4Mutex DebugMutex = G4MUTEX_INITIALIZER;
 
 void Fatal(std::string s) {
   std::ostringstream oss;

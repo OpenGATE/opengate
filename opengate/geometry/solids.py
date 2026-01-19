@@ -143,6 +143,9 @@ class BooleanSolid(SolidBase):
 
 
 class BoxSolid(SolidBase):
+
+    size: list[float]
+
     user_info_defaults = {
         "size": (
             [10 * g4_units.cm, 10 * g4_units.cm, 10 * g4_units.cm],
@@ -467,6 +470,13 @@ class TubsSolid(SolidBase):
     http://geant4-userdoc.web.cern.ch/geant4-userdoc/UsersGuides/ForApplicationDeveloper/html/Detector/Geometry/geomSolids.html
 
     """
+
+    # hints for IDE
+    rmin: float
+    rmax: float
+    dz: float
+    sphi: float
+    dphi: float
 
     user_info_defaults = {
         "rmin": (30 * g4_units.mm, {"doc": "Inner radius"}),

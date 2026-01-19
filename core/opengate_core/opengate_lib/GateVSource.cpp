@@ -59,8 +59,9 @@ void GateVSource::UpdateActivity(double time) {
 
 double GateVSource::CalcNextTime(double current_simulation_time) {
   double next_time = current_simulation_time;
-  if ((fMaxN <= 0)){
-    next_time = current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
+  if ((fMaxN <= 0)) {
+    next_time =
+        current_simulation_time - log(G4UniformRand()) * (1.0 / fActivity);
   }
   return next_time;
 }
@@ -106,7 +107,7 @@ void GateVSource::SetOrientationAccordingToAttachedVolume() {
     return;
 
   // compute global translation rotation and keep it.
-  // Will be used for example in GenericSource to change position
+  // Will be used, for example, in GenericSource to change position
   ComputeTransformationFromVolumeToWorld(
       fAttachedToVolumeName, l.fGlobalTranslation, l.fGlobalRotation, false);
 }

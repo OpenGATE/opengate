@@ -435,30 +435,6 @@ def get_rnd_seed(seed):
     return RandomState(MT19937(SeedSequence(seed)))
 
 
-def DDF():
-    """
-    Debug print current Function name
-    """
-    print("--> Entering", inspect.stack()[1][3])
-
-
-def DD(arg):
-    """
-    Debug print variable name and its value
-    """
-    frame = inspect.currentframe()
-    try:
-        context = inspect.getframeinfo(frame.f_back).code_context
-        caller_lines = "".join([line.strip() for line in context])
-        m = re.search(r"DD\s*\((.+?)\);*$", caller_lines)
-        if m:
-            caller_lines = m.group(1)
-            # end if
-        print(caller_lines, "=", arg)
-    finally:
-        del frame
-
-
 def print_dic(dic):
     print(json.dumps(dic, indent=4, default=str))
 
