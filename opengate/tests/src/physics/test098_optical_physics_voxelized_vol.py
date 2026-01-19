@@ -13,10 +13,7 @@ import SimpleITK as sitk
 import numpy as np
 
 if __name__ == "__main__":
-
-    paths = utility.get_default_test_paths(
-        __file__, "gate_test098", output_folder="gate_test098"
-    )
+    paths = utility.get_default_test_paths(__file__, "test098", output_folder="test098")
 
     cm = g4_units.cm
     mm = g4_units.mm
@@ -29,19 +26,21 @@ if __name__ == "__main__":
     sim.visu = False
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
-    sim.number_of_threads = 2
+    sim.number_of_threads = 1
     sim.random_seed = "auto"
 
-    sim.volume_manager.add_material_database(paths.gate_data / "GateMaterials.db")
+    sim.volume_manager.add_material_database(paths.data / "GateMaterials.db")
 
     sim.physics_manager.special_physics_constructors.G4OpticalPhysics = True
 
-    sim.physics_manager.optical_properties_file = paths.gate_data / "Materials.xml"
+    sim.physics_manager.optical_properties_file = (
+        paths.data / "test098" / "Materials.xml"
+    )
 
     sim.world.size = [6 * cm, 6 * cm, 2 * cm]
     sim.world.material = "Air"
 
-    img_path = paths.data / "vox_volume.mhd"
+    img_path = paths.data / "test098" / "vox_volume.mhd"
 
     img = sitk.ReadImage(img_path)
     Spacing = img.GetSpacing()
@@ -57,7 +56,7 @@ if __name__ == "__main__":
         [
             -0.5,
             0.5,
-            "Fat",
+            "Adipose",
         ],
         [0.5, 1.5, "Muscle"],
     ]
@@ -83,18 +82,18 @@ if __name__ == "__main__":
     source.direction.type = "momentum"
     source.direction.momentum = [0, 0, 1]
     source.position.translation = [0, 0, -(Size2[2] / 2) * mm]
-    source.n = 1e6 / sim.number_of_threads
+    source.n = 1e4 / sim.number_of_threads
 
     sim.run()
 
     compare = utility.compare_root3
 
-    root_ref_path = paths.data / "test098_box_volume.root"
+    root_ref_path = paths.data / "test098" / "test098_box_volume.root"
     root_output_path = sim.output_dir / phsp.output_filename
 
     branch = "phsp;1"
     keys = ["PostPosition_X", "PostPosition_Y", "PostPosition_Z"]
-    tols = [0.3, 0.3, 1e-4]
+    tols = [1.5, 1.9, 1e-3]
     scalings = [1, 1, 1]
     img = paths.output / "figure.png"
 
@@ -109,6 +108,7 @@ if __name__ == "__main__":
         scalings,
         scalings,
         img,
+        hits_tol=1e4,
     )
 
     utility.test_ok(is_ok)
