@@ -35,11 +35,11 @@
 #include "G4VEnergyLossProcess.hh"
 #include "GateAcceptanceAngleManager.h"
 #include "GateAcceptanceAngleSingleVolume.h"
+#include "GateDoseActor.h"
 #include "GateLastVertexSource.h"
 #include "GateLastVertexSplittingDataContainer.h"
 #include "GateSimulationStatisticsActor.h"
 #include "GateVActor.h"
-#include "GateDoseActor.h"
 #include "tree.hh"
 #include "tree_util.hh"
 #include <iostream>
@@ -147,8 +147,8 @@ public:
                   tree<LastVertexDataContainer>::pre_order_iterator it,
                   tree<LastVertexDataContainer>::pre_order_iterator end);
   inline long GetNumberOfKilledParticles() { return fRemovedParticle; }
-  inline long GetNumberOfReplayedEvents() { return fNumberOfReplayedEvent;}
-  inline long GetNumberOfEvents() { return fNumberOfEvent;}
+  inline long GetNumberOfReplayedEvents() { return fNumberOfReplayedEvent; }
+  inline long GetNumberOfEvents() { return fNumberOfEvent; }
   inline long GetNumberOfReplayedParticles() {
     return fNumberOfReplayedParticle;
   }
