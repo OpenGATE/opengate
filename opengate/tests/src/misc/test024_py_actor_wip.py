@@ -4,7 +4,6 @@
 import opengate as gate
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     # create the simulation
     sim = gate.Simulation()

@@ -5,7 +5,6 @@ import test060_phsp_source_helpers as t
 import opengate as gate
 from opengate.tests import utility
 
-
 paths = utility.get_default_test_paths(
     __file__, "test060_PhsSource_ParticleName_direct", output_folder="test060"
 )

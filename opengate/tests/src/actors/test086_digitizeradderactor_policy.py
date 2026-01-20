@@ -7,7 +7,6 @@ from opengate.actors.coincidences import coincidences_sorter
 from opengate.exception import GateImplementationError
 import opengate.tests.utility as utility
 
-
 g_cm3 = gate.g4_units.g_cm3
 mm = gate.g4_units.mm
 Bq = gate.g4_units.Bq

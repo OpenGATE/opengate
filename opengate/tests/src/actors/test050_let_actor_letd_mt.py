@@ -5,7 +5,6 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     do_debug = False
     paths = utility.get_default_test_paths(

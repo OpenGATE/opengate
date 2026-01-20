@@ -5,7 +5,6 @@ import opengate as gate
 import test049_pet_digit_blurring_helpers as t49
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test049_pet_blur", "test049")
 

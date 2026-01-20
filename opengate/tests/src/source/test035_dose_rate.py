@@ -6,7 +6,6 @@ from box import Box
 from opengate.contrib.dose.doserate import create_simulation
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test035")
     dr_data = paths.data / "dose_rate_data"

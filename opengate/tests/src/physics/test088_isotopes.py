@@ -6,7 +6,6 @@ import uproot
 import numpy as np
 import opengate.tests.utility as utility
 
-
 g_cm3 = gate.g4_units.g_cm3
 mm = gate.g4_units.mm
 cm = gate.g4_units.cm

@@ -17,7 +17,6 @@ from ..image import compute_image_3D_CDF
 from ..utility import LazyModuleLoader
 from ..base import process_cls
 
-
 #
 torch = LazyModuleLoader("torch")
 gaga = LazyModuleLoader("gaga_phsp")

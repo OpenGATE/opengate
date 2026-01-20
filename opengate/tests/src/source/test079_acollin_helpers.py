@@ -8,7 +8,6 @@ from collections import defaultdict
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 
-
 #########################################################################################
 # Constants
 #########################################################################################

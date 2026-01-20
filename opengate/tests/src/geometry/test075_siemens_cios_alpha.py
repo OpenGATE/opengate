@@ -5,7 +5,6 @@ import opengate as gate
 from opengate.contrib.carm.siemensciosalpha import Ciosalpha
 from scipy.spatial.transform import Rotation
 
-
 if __name__ == "__main__":
     # paths
     # paths = utility.get_default_test_paths(__file__, output_folder="test075_siemens_cios_alpha")
