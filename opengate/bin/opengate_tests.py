@@ -198,6 +198,8 @@ def get_files_to_run():
 
     ignored_tests = [
         "test045_speedup",  # this is a binary (still work in progress)
+        "test096_pet_castor_ref.py",  # test for castor compatibility
+        "test096_pet_castor_coinc.py",  # test for castor compatibility
     ]
     path_tests_src = Path(path_tests_src)
     all_file_paths = []
