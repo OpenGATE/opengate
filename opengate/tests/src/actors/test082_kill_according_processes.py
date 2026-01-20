@@ -115,6 +115,7 @@ if __name__ == "__main__":
         "PreDirection",
         "PDGCode",
     ]
+
     name_phsp = "test082_" + phsp.name + ".root"
     phsp.output_filename = name_phsp
 
@@ -135,8 +136,8 @@ if __name__ == "__main__":
     # # go !
     sim.run()
     #
-    phsp = uproot.open(str(output_path) + "/test082_PhaseSpace.root" + ":PhaseSpace")
 
+    phsp = uproot.open(str(output_path) + "/test082_PhaseSpace.root" + ":PhaseSpace")
     df = phsp.arrays()
     is_ok = test082_test(df)
     #
