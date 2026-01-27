@@ -42,6 +42,7 @@ shape (‘box’, ‘sphere’, ‘point’, ‘disc’), defined by several par
 are defined with ‘iso’, ‘momentum’, ‘focused’ and ‘histogram’. The energy
 can be defined by a single value (‘mono’) or Gaussian (‘gauss’).
 
+Available shapes are: "sphere", "point", "box", "disc" and "cylinder".
 
 .. _source-particle-type:
 
