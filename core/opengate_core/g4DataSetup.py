@@ -1,27 +1,29 @@
 import os
-import shutil
-import tarfile
 import platform
+import shutil
 import sys
-import requests
-from time import sleep
+import tarfile
 from pathlib import Path
+from time import sleep
+
+import requests
 
 # Data for Geant4
-# Geant4 11.3.2
+# Geant4 11.4.0
 data_packages = {
     "G4NEUTRONHPDATA": "https://cern.ch/geant4-data/datasets/G4NDL.4.7.1.tar.gz",
-    "G4LEDATA": "https://cern.ch/geant4-data/datasets/G4EMLOW.8.6.1.tar.gz",
-    "G4LEVELGAMMADATA": "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.6.1.tar.gz",
+    "G4LEDATA": "https://cern.ch/geant4-data/datasets/G4EMLOW.8.8.tar.gz",
+    "G4LEVELGAMMADATA": "https://cern.ch/geant4-data/datasets/G4PhotonEvaporation.6.1.2.tar.gz",
     "G4RADIOACTIVEDATA": "https://cern.ch/geant4-data/datasets/G4RadioactiveDecay.6.1.2.tar.gz",
-    "G4PARTICLEXSDATA": "https://cern.ch/geant4-data/datasets/G4PARTICLEXS.4.1.tar.gz",
+    "G4PARTICLEXSDATA": "https://cern.ch/geant4-data/datasets/G4PARTICLEXS.4.2.tar.gz",
     "G4PIIDATA": "https://cern.ch/geant4-data/datasets/G4PII.1.3.tar.gz",
     "G4REALSURFACEDATA": "https://cern.ch/geant4-data/datasets/G4RealSurface.2.2.tar.gz",
     "G4SAIDXSDATA": "https://cern.ch/geant4-data/datasets/G4SAIDDATA.2.0.tar.gz",
     "G4ABLADATA": "https://cern.ch/geant4-data/datasets/G4ABLA.3.3.tar.gz",
-    "G4INCLDATA": "https://cern.ch/geant4-data/datasets/G4INCL.1.2.tar.gz",
+    "G4INCLDATA": "https://cern.ch/geant4-data/datasets/G4INCL.1.3.tar.gz",
     "G4ENSDFSTATEDATA": "https://cern.ch/geant4-data/datasets/G4ENSDFSTATE.3.0.tar.gz",
-    "G4CHANNELINGDATA": "https://cern.ch/geant4-data/datasets/G4CHANNELING.1.0.tar.gz",
+    "G4CHANNELINGDATA": "https://cern.ch/geant4-data/datasets/G4CHANNELING.2.0.tar.gz",
+    "G4PARTICLEHPDATA": "https://cern.ch/geant4-data/datasets/G4TENDL.1.4.tar.gz",  # optional but necessary for charged particles
 }
 
 
@@ -166,20 +168,21 @@ def get_g4_data_folder() -> Path:
 # Return Geant4 data path:
 def get_g4_data_paths() -> dict:
     data_location = get_g4_data_folder()
-    # 11.3.2
+    # 11.4.0
     g4_data_path = {
         "G4NEUTRONHPDATA": data_location / "G4NDL4.7.1",
-        "G4LEDATA": data_location / "G4EMLOW8.6.1",
-        "G4LEVELGAMMADATA": data_location / "PhotonEvaporation6.1",
+        "G4LEDATA": data_location / "G4EMLOW8.8",
+        "G4LEVELGAMMADATA": data_location / "PhotonEvaporation6.1.2",
         "G4RADIOACTIVEDATA": data_location / "RadioactiveDecay6.1.2",
-        "G4PARTICLEXSDATA": data_location / "G4PARTICLEXS4.1",
+        "G4PARTICLEXSDATA": data_location / "G4PARTICLEXS4.2",
         "G4PIIDATA": data_location / "G4PII1.3",
         "G4REALSURFACEDATA": data_location / "RealSurface2.2",
         "G4SAIDXSDATA": data_location / "G4SAIDDATA2.0",
         "G4ABLADATA": data_location / "G4ABLA3.3",
-        "G4INCLDATA": data_location / "G4INCL1.2",
+        "G4INCLDATA": data_location / "G4INCL1.3",
         "G4ENSDFSTATEDATA": data_location / "G4ENSDFSTATE3.0",
-        "G4CHANNELINGDATA": data_location / "G4CHANNELING1.0",
+        "G4CHANNELINGDATA": data_location / "G4CHANNELING2.0",
+        "G4PARTICLEHPDATA": data_location / "G4TENDL1.4",
     }
     return g4_data_path
 
