@@ -293,6 +293,7 @@ def _coincidences_sorter(
     processing_finished = False
     start = time.time()
     time_lost = 0
+    allow_intra_volume_coincidences = result_type == ResultType.COINCIDENT_SINGLES
     while (
         not processing_finished
         and num_chunk_size_increases < max_num_chunk_size_increases
@@ -320,7 +321,9 @@ def _coincidences_sorter(
                 queue.append(chunk_pd)
                 # Process a chunk, unless only one has been read so far
                 if len(queue) > 1:
-                    coincidences = _process_chunk(queue, time_window)
+                    coincidences = _process_chunk(
+                        queue, time_window, allow_intra_volume_coincidences
+                    )
                     # Before filtering coincidences, we want to make sure that we have all
                     # coincidences that belong to the same time window (same SingleIndex1 value).
                     # When processing the next chunk of singles, we may still find one or more
@@ -386,7 +389,9 @@ def _coincidences_sorter(
                 num_singles += num_singles_in_chunk
 
             # At this point, all chunks have been read. Now process the last chunk.
-            coincidences_to_process = _process_chunk(queue, time_window)
+            coincidences_to_process = _process_chunk(
+                queue, time_window, allow_intra_volume_coincidences
+            )
             if coincidences_to_transfer is not None:
                 coincidences_to_process = pd.concat(
                     [coincidences_to_transfer, coincidences_to_process],
@@ -457,7 +462,7 @@ def _coincidences_sorter(
             return coincidences_to_return
 
 
-def _process_chunk(queue, time_window):
+def _process_chunk(queue, time_window, allow_intra_volume_coincidences):
     """
     Processes singles in the chunk queue[0],
     possibly transferring some of those singles to the next chunk queue[1].
@@ -479,7 +484,9 @@ def _process_chunk(queue, time_window):
             raise ChunkSizeTooSmallError
 
     # Find coincidences in the current chunk
-    coincidences = _run_coincidence_detection_in_chunk(chunk, time_window)
+    coincidences = _run_coincidence_detection_in_chunk(
+        chunk, time_window, allow_intra_volume_coincidences
+    )
 
     if next_chunk is not None:
         # If there are singles in the current chunk that are beyond t_min
@@ -500,17 +507,20 @@ def _process_chunk(queue, time_window):
     return coincidences
 
 
-def _run_coincidence_detection_in_chunk(chunk, time_window):
+def _run_coincidence_detection_in_chunk(
+    chunk, time_window, allow_intra_volume_coincidences
+):
     """
     Detects coincidences between singles in the given chunk, excluding coincidences
     between singles in the same volume.
     """
-    # Add a temporary column containing hash values of the strings identifying the volumes,
-    # to assist in excluding coincidences between singles in the same volume
-    # (calculating and comparing hash values is much faster than comparing strings).
-    chunk["VolumeIDHash"] = pd.util.hash_pandas_object(
-        chunk["PreStepUniqueVolumeID"], index=False
-    )
+    if not allow_intra_volume_coincidences:
+        # Add a temporary column containing hash values of the strings identifying the volumes,
+        # to assist in excluding coincidences between singles in the same volume
+        # (calculating and comparing hash values is much faster than comparing strings).
+        chunk["VolumeIDHash"] = pd.util.hash_pandas_object(
+            chunk["PreStepUniqueVolumeID"], index=False
+        )
     time_np = chunk["GlobalTime"].to_numpy()
     # Sort the time values chronologically (singles in the chunk may not be in chronological order).
     time_np_sorted_indices = np.argsort(time_np)
@@ -555,12 +565,13 @@ def _run_coincidence_detection_in_chunk(chunk, time_window):
     coincidences = pd.concat([coincidence_singles1, coincidence_singles2], axis=1)[
         interleaved_columns
     ]
-    # Remove coincidences between singles in the same volume.
-    coincidences = coincidences.loc[
-        coincidences["VolumeIDHash1"] != coincidences["VolumeIDHash2"]
-    ].reset_index(drop=True)
-    # Remove the temporary volume ID hash columns.
-    coincidences = coincidences.drop(columns=["VolumeIDHash1", "VolumeIDHash2"])
+    if not allow_intra_volume_coincidences:
+        # Remove coincidences between singles in the same volume.
+        coincidences = coincidences.loc[
+            coincidences["VolumeIDHash1"] != coincidences["VolumeIDHash2"]
+        ].reset_index(drop=True)
+        # Remove the temporary volume ID hash columns.
+        coincidences = coincidences.drop(columns=["VolumeIDHash1", "VolumeIDHash2"])
 
     return coincidences
 
