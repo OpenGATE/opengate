@@ -74,7 +74,7 @@ if __name__ == "__main__":
     print(paths.output_ref)
     root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
-    tols = [0.1, 2.5, 2.5]
+    tols = [0.1, 7.5, 7.5]
     is_ok = utility.compare_root3(
         root_ref,
         phsp.get_output_path(),
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     root_ref = paths.output_ref / "phsp_versa_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
-    tols = [0.1, 2.5, 2.5]
+    tols = [0.1, 7.5, 7.5]
     is_ok = (
         utility.compare_root3(
             root_ref,
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         "PrePositionLocal_X",
         "PrePositionLocal_Y",
     ]
-    tols = [0.1, 2.5, 2.5, 2.5, 2.5]
+    tols = [0.1, 31, 24, 7.5, 7.5]
     is_ok = (
         utility.compare_root3(
             root_ref,

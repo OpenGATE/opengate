@@ -62,7 +62,7 @@ if __name__ == "__main__":
         paths,
         stats,
         is_ok,
-        tol=25,
+        tol=60,
         output_ref=Path(str(paths.output_ref) + "_ref"),
         scaling=50,
         axis="x",

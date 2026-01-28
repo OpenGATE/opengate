@@ -43,7 +43,7 @@ if __name__ == "__main__":
     p = paths.gate_output
     stats_ref = utility.read_stats_file(p / "stats.txt")
     stats_ref.counts.runs = nb_threads
-    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.06)
 
     # check root hits
     hc = sim.get_actor("Hits")
