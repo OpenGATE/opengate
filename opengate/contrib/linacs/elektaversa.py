@@ -51,9 +51,14 @@ def add_patient_dependent_linac_box(sim, linac_name):
     small_linac_box = sim.add_volume("Box", f"{linac_name}_patient_dependent_box")
     small_linac_box.mother = linac.name
     small_linac_box.size = [85 * cm, 85 * cm, 25 * cm]
-    small_linac_box.translation = [0, 0, linac.size[2] / 2 - 30.01 * cm - small_linac_box.size[2] / 2]
-    small_linac_box.color = [0,0,0,0.5]
+    small_linac_box.translation = [
+        0,
+        0,
+        linac.size[2] / 2 - 30.01 * cm - small_linac_box.size[2] / 2,
+    ]
+    small_linac_box.color = [0, 0, 0, 0.5]
     return small_linac_box
+
 
 def add_linac_materials(sim):
     contrib_paths = get_contrib_path() / "linacs"
@@ -652,10 +657,14 @@ def add_mlc(sim, linac_name, volume_name):
         "X", -np.arctan(3.25 / 349.3), degrees=False
     ).as_matrix()
     mlc.rotation = mlc_bank_rotation
-    mlc.size = [volume.size[0] - 2*cm, 16.2 * cm, 95 * mm]
+    mlc.size = [volume.size[0] - 2 * cm, 16.2 * cm, 95 * mm]
     mlc.translation = np.array([0, 0, z_linac / 2 - center_mlc])
-    if volume_name ==  f"{linac_name}_patient_dependent_box" :
-        mlc.translation = [0, 0, -volume.translation[2] + linac.size[2] / 2 - 349.3 * mm - 3.5 * mm]
+    if volume_name == f"{linac_name}_patient_dependent_box":
+        mlc.translation = [
+            0,
+            0,
+            -volume.translation[2] + linac.size[2] / 2 - 349.3 * mm - 3.5 * mm,
+        ]
     mlc.mother = volume_name
     # mlc.color = [0.5,0.3,0.9,0.4]
 
@@ -754,11 +763,14 @@ def trap_g4_param(
     obj.phi = phi
 
 
-def add_jaws(sim, linac_name,volume_name):
-    return [add_jaw(sim,linac_name, volume_name, "left"), add_jaw(sim,linac_name, volume_name, "right")]
+def add_jaws(sim, linac_name, volume_name):
+    return [
+        add_jaw(sim, linac_name, volume_name, "left"),
+        add_jaw(sim, linac_name, volume_name, "right"),
+    ]
 
 
-def add_jaw(sim, linac_name,volume_name, side):
+def add_jaw(sim, linac_name, volume_name, side):
     nm = g4_units.nm
     mm = g4_units.mm
     um = g4_units.um
@@ -1168,7 +1180,9 @@ def add_jaw(sim, linac_name,volume_name, side):
         jaw_box.translation += np.array([0, jaw_y / 2, 0])
         jaw_box.rotation = rot_jaw
     if volume_name == f"{linac_name}_patient_dependent_box":
-        jaw_box.translation[2] = -volume.translation[2] + linac.size[2] / 2 - 470 * mm - 3.5 * mm
+        jaw_box.translation[2] = (
+            -volume.translation[2] + linac.size[2] / 2 - 470 * mm - 3.5 * mm
+        )
     return jaw_box
 
 
@@ -1589,27 +1603,37 @@ def define_pos_mlc_jaws_rectangular_field(
     return pos_x_leaves, pos_y_jaws
 
 
-
-def add_linac_side_shielding(sim,linac_name,bias_volume_name,inner_ring_name,type="all"):
+def add_linac_side_shielding(
+    sim, linac_name, bias_volume_name, inner_ring_name, type="all"
+):
 
     for idx in range(4):
         if type == "bottom":
             add_linac_side_bottom_shielding(sim, bias_volume_name, inner_ring_name, idx)
-        if type == "top" :
-            add_linac_side_top_shielding(sim,linac_name,bias_volume_name,idx)
-        if type == "all" :
+        if type == "top":
+            add_linac_side_top_shielding(sim, linac_name, bias_volume_name, idx)
+        if type == "all":
             add_linac_side_bottom_shielding(sim, bias_volume_name, inner_ring_name, idx)
             add_linac_side_top_shielding(sim, linac_name, bias_volume_name, idx)
 
 
-def add_linac_side_top_shielding(sim,linac_name,bias_volume_name,idx):
+def add_linac_side_top_shielding(sim, linac_name, bias_volume_name, idx):
     cm = g4_units.cm
     nm = g4_units.nm
     bias_volume = sim.volume_manager.get_volume(bias_volume_name)
     bsp = sim.volume_manager.get_volume(f"{linac_name}_back_scatter_plate")
-    ztop_sheet_size = bsp.translation[2] - bias_volume.translation[2] - bias_volume.size[2] / 2 - 1 * nm
-    z_translation = bias_volume.translation[2] + bias_volume.size[2] / 2 + ztop_sheet_size / 2 + 1 * nm
-
+    ztop_sheet_size = (
+        bsp.translation[2]
+        - bias_volume.translation[2]
+        - bias_volume.size[2] / 2
+        - 1 * nm
+    )
+    z_translation = (
+        bias_volume.translation[2]
+        + bias_volume.size[2] / 2
+        + ztop_sheet_size / 2
+        + 1 * nm
+    )
 
     traps = sim.volume_manager.add_volume("Trap", "trap_top" + str(idx))
     traps.mother = linac_name
@@ -1634,24 +1658,26 @@ def add_linac_side_top_shielding(sim,linac_name,bias_volume_name,idx):
 
     if idx == 1:
         rot = 45
-        t_x = - np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
+        t_x = -np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
         t_y = np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
 
     if idx == 2:
-        rot = - 135
+        rot = -135
         t_x = np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
-        t_y = - np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
+        t_y = -np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
 
     if idx == 3:
         rot = 135
-        t_x = - np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
-        t_y = - np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
+        t_x = -np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
+        t_y = -np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
 
     traps_rot = Rotation.from_euler("Z", rot, degrees=True).as_matrix()
     traps.translation = [t_x, t_y, z_translation]
     traps.rotation = traps_rot
 
-    traps_to_remove = sim.volume_manager.add_volume("Trap", "trap_top_to_remove" + str(idx))
+    traps_to_remove = sim.volume_manager.add_volume(
+        "Trap", "trap_top_to_remove" + str(idx)
+    )
     traps_to_remove.mother = traps.name
     trap_g4_param(
         traps_to_remove,
@@ -1671,71 +1697,74 @@ def add_linac_side_top_shielding(sim,linac_name,bias_volume_name,idx):
     traps_to_remove.color = [1, 1, 1, 1]
 
 
-def add_linac_side_bottom_shielding(sim, mother_name,inner_ring_name, idx):
+def add_linac_side_bottom_shielding(sim, mother_name, inner_ring_name, idx):
     cm = g4_units.cm
     mother_volume = sim.volume_manager.get_volume(mother_name)
     inner_ring = sim.volume_manager.get_volume(inner_ring_name)
-    traps = sim.volume_manager.add_volume("Trap", "trap_bottom"+str(idx))
+    traps = sim.volume_manager.add_volume("Trap", "trap_bottom" + str(idx))
     traps.mother = mother_name
-    z_ring_pos = (mother_volume.size[2]/2 + (inner_ring.translation[2] + inner_ring.dz))
+    z_ring_pos = mother_volume.size[2] / 2 + (inner_ring.translation[2] + inner_ring.dz)
     dim1 = 10
     dim2 = 6
     dim3 = 4
     trap_g4_param(
         traps,
-        dim3 * cm/ 2,
-        dim1 / 2*cm,
-        dim3 * cm/ 2,
-        dim1/2 *cm,
-        dim2 / 2*cm,
-        dim2/ 2*cm,
-        (mother_volume.size[2] - z_ring_pos)/ 2,
+        dim3 * cm / 2,
+        dim1 / 2 * cm,
+        dim3 * cm / 2,
+        dim1 / 2 * cm,
+        dim2 / 2 * cm,
+        dim2 / 2 * cm,
+        (mother_volume.size[2] - z_ring_pos) / 2,
     )
 
-    if idx == 0 :
+    if idx == 0:
         rot = -45
         t_x = np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
-        t_y = np.sin(np.pi/4)*(30-dim2/2)*cm
+        t_y = np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
 
-    if idx == 1 :
+    if idx == 1:
         rot = 45
-        t_x =  - np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
-        t_y = np.sin(np.pi/4)*(30-dim2/2)*cm
+        t_x = -np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
+        t_y = np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
 
-    if idx == 2 :
-        rot = - 135
+    if idx == 2:
+        rot = -135
         t_x = np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
-        t_y = - np.sin(np.pi/4)*(30-dim2/2)*cm
+        t_y = -np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
 
-    if idx == 3 :
-        rot =  135
-        t_x =  - np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
-        t_y = - np.sin(np.pi/4)*(30-dim2/2)*cm
+    if idx == 3:
+        rot = 135
+        t_x = -np.cos(np.pi / 4) * (30 - dim2 / 2) * cm
+        t_y = -np.sin(np.pi / 4) * (30 - dim2 / 2) * cm
 
     traps_rot = Rotation.from_euler("Z", rot, degrees=True).as_matrix()
-    traps.translation = [t_x,t_y,z_ring_pos/2]
+    traps.translation = [t_x, t_y, z_ring_pos / 2]
     traps.rotation = traps_rot
 
-    traps_to_remove = sim.volume_manager.add_volume("Trap", "trap_bottom_to_remove"+str(idx))
+    traps_to_remove = sim.volume_manager.add_volume(
+        "Trap", "trap_bottom_to_remove" + str(idx)
+    )
     traps_to_remove.mother = traps.name
     trap_g4_param(
         traps_to_remove,
-        0.75* dim3 * cm / 2,
-        0.75*dim1 / 2 * cm,
-        0.75*dim3 * cm / 2,
-        0.75*dim1 / 2 * cm,
-        0.75*dim2 / 2 * cm,
-        0.75*dim2 / 2 * cm,
-        0.95*traps.dz,
+        0.75 * dim3 * cm / 2,
+        0.75 * dim1 / 2 * cm,
+        0.75 * dim3 * cm / 2,
+        0.75 * dim1 / 2 * cm,
+        0.75 * dim2 / 2 * cm,
+        0.75 * dim2 / 2 * cm,
+        0.95 * traps.dz,
     )
 
-    traps_to_remove.translation = [0,0,-(traps.dz - traps_to_remove.dz)]
-    traps.color = [0.4,0.6,0.8,0.9]
+    traps_to_remove.translation = [0, 0, -(traps.dz - traps_to_remove.dz)]
+    traps.color = [0.4, 0.6, 0.8, 0.9]
     traps.material = "PbSb4"
     traps_to_remove.material = "G4_AIR"
-    traps_to_remove.color = [1,1,1,1]
+    traps_to_remove.color = [1, 1, 1, 1]
 
-def add_bottom_shielding(sim,linac_name,bias_volume_name):
+
+def add_bottom_shielding(sim, linac_name, bias_volume_name):
     cm = g4_units.cm
     mm = g4_units.mm
     nm = g4_units.nm
@@ -1743,32 +1772,46 @@ def add_bottom_shielding(sim,linac_name,bias_volume_name):
 
     z_beginning_box = linac.size[2] / 2 - 30.01 * cm
     bias_volume = sim.volume_manager.get_volume(bias_volume_name)
-    steel_external_circle = sim.volume_manager.add_volume("Tubs", "steel_external_circle")
+    steel_external_circle = sim.volume_manager.add_volume(
+        "Tubs", "steel_external_circle"
+    )
     steel_external_circle.rmin = 23 * cm
     steel_external_circle.rmax = 25 * cm
     steel_external_circle.dz = 1 * cm / 2
     steel_external_circle.material = "flattening_filter_material_stain_steel"
     steel_external_circle.mother = bias_volume.name
-    steel_external_circle.translation = [0, 0, -bias_volume.size[2] / 2 + steel_external_circle.dz]
+    steel_external_circle.translation = [
+        0,
+        0,
+        -bias_volume.size[2] / 2 + steel_external_circle.dz,
+    ]
     steel_external_circle.color = [0.5, 0.3, 0.6, 0.7]
 
-    steel_sheet = sim.volume_manager.add_volume("Tubs","steel_sheet")
+    steel_sheet = sim.volume_manager.add_volume("Tubs", "steel_sheet")
     steel_sheet.rmin = 0
-    steel_sheet.rmax = 25*cm
-    steel_sheet.dz = 5*mm/2
-    steel_sheet.translation = [0,0,-bias_volume.size[2]/2 + steel_sheet.dz +  2*steel_external_circle.dz]
+    steel_sheet.rmax = 25 * cm
+    steel_sheet.dz = 5 * mm / 2
+    steel_sheet.translation = [
+        0,
+        0,
+        -bias_volume.size[2] / 2 + steel_sheet.dz + 2 * steel_external_circle.dz,
+    ]
     steel_sheet.material = "flattening_filter_material_stain_steel"
     steel_sheet.mother = bias_volume.name
-    steel_sheet.color = [0.5,0.3,0.6,0.7]
-
-
+    steel_sheet.color = [0.5, 0.3, 0.6, 0.7]
 
     inner_pb_ring = sim.volume_manager.add_volume("Tubs", "inner_pb_ring")
     inner_pb_ring.rmin = 0
     inner_pb_ring.rmax = 30 * cm
     inner_pb_ring.dz = 5 * mm / 2
-    inner_pb_ring.translation = [0, 0, -bias_volume.size[
-        2] / 2 + 2*steel_sheet.dz + 2*steel_external_circle.dz + inner_pb_ring.dz]
+    inner_pb_ring.translation = [
+        0,
+        0,
+        -bias_volume.size[2] / 2
+        + 2 * steel_sheet.dz
+        + 2 * steel_external_circle.dz
+        + inner_pb_ring.dz,
+    ]
     inner_pb_ring.material = "PbSb4"
     inner_pb_ring.mother = bias_volume.name
     inner_pb_ring.color = [0.69, 0.58, 0.32, 0.67]
@@ -1786,60 +1829,101 @@ def add_bottom_shielding(sim,linac_name,bias_volume_name):
     return inner_pb_ring
 
 
-def add_linac_side_pb_sheets(sim,linac_name,bias_volume_name,type= "all",lead_thickness = 4):
+def add_linac_side_pb_sheets(
+    sim, linac_name, bias_volume_name, type="all", lead_thickness=4
+):
     cm = g4_units.cm
     nm = g4_units.nm
     linac = sim.volume_manager.get_volume(linac_name)
     bias_volume = sim.volume_manager.get_volume(bias_volume_name)
     bsp = sim.volume_manager.get_volume(f"{linac_name}_back_scatter_plate")
-    ztop_sheet_size = bsp.translation[2] - bias_volume.translation[2]  - bias_volume.size[2]/2 - 1 *nm
+    ztop_sheet_size = (
+        bsp.translation[2]
+        - bias_volume.translation[2]
+        - bias_volume.size[2] / 2
+        - 1 * nm
+    )
 
     if type == "top" or type == "all":
 
-        pb_sheet_top_mlc = sim.volume_manager.add_volume("Box","lead_sheet_top_mlc")
-        pb_sheet_top_mlc.size = [23 * cm, lead_thickness/2 * cm, ztop_sheet_size]
-        z_translation = bias_volume.translation[2] + bias_volume.size[2] / 2 + pb_sheet_top_mlc.size[2] / 2 + 1 * nm
-        pb_sheet_top_mlc.translation = [0, - 9 * cm - pb_sheet_top_mlc.size[1] / 2, z_translation]
+        pb_sheet_top_mlc = sim.volume_manager.add_volume("Box", "lead_sheet_top_mlc")
+        pb_sheet_top_mlc.size = [23 * cm, lead_thickness / 2 * cm, ztop_sheet_size]
+        z_translation = (
+            bias_volume.translation[2]
+            + bias_volume.size[2] / 2
+            + pb_sheet_top_mlc.size[2] / 2
+            + 1 * nm
+        )
+        pb_sheet_top_mlc.translation = [
+            0,
+            -9 * cm - pb_sheet_top_mlc.size[1] / 2,
+            z_translation,
+        ]
         pb_sheet_top_mlc.mother = linac_name
         pb_sheet_top_mlc.color = [0.1, 0.6, 0.8, 0.7]
         pb_sheet_top_mlc.material = "PbSb4"
 
-
-        pb_sheet_top = sim.volume_manager.add_volume("Box","lead_sheet_top")
+        pb_sheet_top = sim.volume_manager.add_volume("Box", "lead_sheet_top")
         pb_sheet_top.size = [23 * cm, lead_thickness * cm, ztop_sheet_size]
-        z_translation =  bias_volume.translation[2] + bias_volume.size[2]/2 + pb_sheet_top.size[2]/2 +1*nm
-        pb_sheet_top.translation = [0, -16 * cm + -pb_sheet_top.size[1] / 2, z_translation]
+        z_translation = (
+            bias_volume.translation[2]
+            + bias_volume.size[2] / 2
+            + pb_sheet_top.size[2] / 2
+            + 1 * nm
+        )
+        pb_sheet_top.translation = [
+            0,
+            -16 * cm + -pb_sheet_top.size[1] / 2,
+            z_translation,
+        ]
         pb_sheet_top.mother = linac_name
         pb_sheet_top.color = [0.1, 0.6, 0.8, 0.7]
         pb_sheet_top.material = "PbSb4"
 
         pb_sheet_roof_mlc = sim.volume_manager.add_volume("Box", "lead_sheet_roof_mlc")
-        y_size =  -  pb_sheet_top.translation[1]  +  pb_sheet_top_mlc.translation[1] - pb_sheet_top_mlc.size[1]/2 - pb_sheet_top.size[1]/2
-        pb_sheet_roof_mlc.size = [23 * cm, y_size, lead_thickness/2 * cm]
-        pb_sheet_roof_mlc.translation = [0, pb_sheet_top_mlc.translation[1] - pb_sheet_top_mlc.size[1]/2-pb_sheet_roof_mlc.size[1]/2, bsp.translation[2] - pb_sheet_roof_mlc.size[2]/2]
+        y_size = (
+            -pb_sheet_top.translation[1]
+            + pb_sheet_top_mlc.translation[1]
+            - pb_sheet_top_mlc.size[1] / 2
+            - pb_sheet_top.size[1] / 2
+        )
+        pb_sheet_roof_mlc.size = [23 * cm, y_size, lead_thickness / 2 * cm]
+        pb_sheet_roof_mlc.translation = [
+            0,
+            pb_sheet_top_mlc.translation[1]
+            - pb_sheet_top_mlc.size[1] / 2
+            - pb_sheet_roof_mlc.size[1] / 2,
+            bsp.translation[2] - pb_sheet_roof_mlc.size[2] / 2,
+        ]
         pb_sheet_roof_mlc.mother = linac.name
         pb_sheet_roof_mlc.color = [0.1, 0.6, 0.8, 0.7]
         pb_sheet_roof_mlc.material = "PbSb4"
 
     if type == "bottom" or type == "all":
         pb_sheet_bottom = sim.volume_manager.add_volume("Box", "lead_sheet_bottom")
-        pb_sheet_bottom.size = [23*cm,lead_thickness*cm,11.6*cm]
-        pb_sheet_bottom.translation = [0,- 16*cm  - pb_sheet_bottom.size[1]/2,bias_volume.size[2]/2 - pb_sheet_bottom.size[2]/2]
+        pb_sheet_bottom.size = [23 * cm, lead_thickness * cm, 11.6 * cm]
+        pb_sheet_bottom.translation = [
+            0,
+            -16 * cm - pb_sheet_bottom.size[1] / 2,
+            bias_volume.size[2] / 2 - pb_sheet_bottom.size[2] / 2,
+        ]
         pb_sheet_bottom.mother = bias_volume.name
-        pb_sheet_bottom.color = [0.1,0.6,0.8,0.7]
+        pb_sheet_bottom.color = [0.1, 0.6, 0.8, 0.7]
         pb_sheet_bottom.material = "PbSb4"
 
 
-def add_linac_shielding(sim,linac_name,bias_volume_name,type="all",lead_thickness=4):
+def add_linac_shielding(
+    sim, linac_name, bias_volume_name, type="all", lead_thickness=4
+):
     linac = sim.volume_manager.get_volume(linac_name)
-    add_linac_side_pb_sheets(sim,linac.name,bias_volume_name,type,lead_thickness=lead_thickness)
-    if type == "bottom" or type =="all":
-        inner_pb_ring = add_bottom_shielding(sim,linac.name,bias_volume_name)
-        add_linac_side_shielding(sim, linac_name, bias_volume_name, inner_pb_ring.name, type="all")
-
-
-
-
+    add_linac_side_pb_sheets(
+        sim, linac.name, bias_volume_name, type, lead_thickness=lead_thickness
+    )
+    if type == "bottom" or type == "all":
+        inner_pb_ring = add_bottom_shielding(sim, linac.name, bias_volume_name)
+        add_linac_side_shielding(
+            sim, linac_name, bias_volume_name, inner_pb_ring.name, type="all"
+        )
 
 
 def field(mlc, jaws, pos_x_leaves, pos_y_jaws):

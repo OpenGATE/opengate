@@ -84,10 +84,10 @@ if __name__ == "__main__":
     linac.material = "G4_Galactic"
 
     # jaws
-    jaws = versa.add_jaws(sim, linac.name,linac.name)
+    jaws = versa.add_jaws(sim, linac.name, linac.name)
 
     # mlc
-    mlc = versa.add_mlc(sim, linac.name,linac.name)
+    mlc = versa.add_mlc(sim, linac.name, linac.name)
     mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
     mlc_box.material = "G4_Galactic"
     x_field = np.random.randint(10, 20, 1)[0] * cm

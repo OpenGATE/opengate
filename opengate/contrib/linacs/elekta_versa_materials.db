@@ -24,7 +24,7 @@ Antimony:   S=Sb  ; Z= 51.; A= 121.76 g/mole
 PbSb4: d = 11.3 g/cm3; n=2; state=solid
         +el:  name= Lead; f=0.2984
         +el:  name= Antimony; f=0.7016
- 
+
 Gate_lead: d=11.35 g/cm3 ; n=1; state=solid
         +el: name=Lead ; n=1
 
