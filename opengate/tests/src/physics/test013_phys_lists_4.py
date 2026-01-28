@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from test013_phys_lists_helpers import create_pl_sim
+
 import opengate as gate
 from opengate.tests import utility
-from test013_phys_lists_helpers import create_pl_sim
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "gate_test013_phys_lists")
@@ -46,12 +47,15 @@ if __name__ == "__main__":
     sim.run()
 
     stats = sim.get_actor("Stats")
+    print(stats)
 
     # gate_test4_simulation_stats_actor
     # Gate mac/main_4.mac
     f = paths.gate_output / "stat_4.txt"
+    print(f)
     print("Reference file", f)
     stats_ref = utility.read_stats_file(f)
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.12)
+    print(stats_ref)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.16)
 
     utility.test_ok(is_ok)

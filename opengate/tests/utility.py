@@ -1,27 +1,29 @@
+import io
+import os
+import pathlib
+import shutil
+import sys
+from pathlib import Path
+
+import colored
+import gatetools.phsp
 import itk
 import numpy as np
-import os
-import colored
-from box import Box, BoxList
 import scipy
-import pathlib
 import uproot
-import sys
-import shutil
-from pathlib import Path
-from matplotlib.ticker import StrMethodFormatter
+from box import Box, BoxList
 from matplotlib.patches import Circle
-import io
-import gatetools.phsp
+from matplotlib.ticker import StrMethodFormatter
 
+from opengate.actors.simulation_stats_helpers import *
+
+from ..exception import color_error, color_ok, fatal
+from ..image import get_info_from_image, itk_image_from_array, write_itk_image
 from ..utility import (
+    LazyModuleLoader,
     ensure_filename_is_str,
     insert_suffix_before_extension,
-    LazyModuleLoader,
 )
-from ..exception import fatal, color_error, color_ok
-from ..image import get_info_from_image, itk_image_from_array, write_itk_image
-from opengate.actors.simulation_stats_helpers import *
 
 plt = LazyModuleLoader("matplotlib.pyplot")
 

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import opengate as gate
-import uproot
+import os
+
 import numpy as np
+import uproot
+
+import opengate as gate
 import opengate.tests.utility as utility
 
 g_cm3 = gate.g4_units.g_cm3

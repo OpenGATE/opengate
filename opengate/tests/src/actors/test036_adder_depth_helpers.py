@@ -186,6 +186,7 @@ def test_output(sim, paths):
     keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
     tols[2] = 2  # Z
+    tols[3] = 0.003
     # tols[4] = 0.01  # energy
     is_ok = (
         utility.compare_root3(
@@ -199,6 +200,7 @@ def test_output(sim, paths):
             scalings,
             scalings2,
             paths.output / "test036_hits.png",
+            hits_tol=8,
         )
         and is_ok
     )

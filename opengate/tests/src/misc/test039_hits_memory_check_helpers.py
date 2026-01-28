@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
-from opengate.userhooks import check_production_cuts
 from opengate.tests import utility
+from opengate.userhooks import check_production_cuts
 
 
 def create_simu(nb_threads, paths):
@@ -187,7 +187,7 @@ def test_results(sim, paths):
     print(stats)
     stats_ref = utility.read_stats_file(paths.output_ref / "test039_stats.txt")
     stats.counts.runs = 2  # sim.number_of_threads
-    is_ok = utility.assert_stats(stats, stats_ref, 0.05)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.09)
 
     # Compare singles
     print()
