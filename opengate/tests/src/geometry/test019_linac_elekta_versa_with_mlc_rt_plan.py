@@ -180,10 +180,10 @@ if __name__ == "__main__":
 
     # jaws
 
-    jaws = versa.add_jaws(sim, linac.name)
+    jaws = versa.add_jaws(sim, linac.name,linac.name)
 
     # mlc
-    mlc = versa.add_mlc(sim, linac.name)
+    mlc = versa.add_mlc(sim, linac.name,linac.name)
     mlc_box = sim.volume_manager.get_volume(f"linac_box_mlc")
     mlc_box.material = "G4_Galactic"
     # add alpha source :
