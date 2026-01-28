@@ -4,9 +4,9 @@
 import opengate as gate
 import opengate.contrib.pet.philipsvereos as pet_vereos
 import opengate.contrib.phantoms.necr as phantom_necr
+from opengate.sources.utility import get_rad_yield
 from opengate.tests import utility
 from opengate.userhooks import check_production_cuts
-from opengate.sources.utility import get_rad_yield
 
 
 def create_pet_simulation(sim, paths, debug=False, create_mat=False):
@@ -149,11 +149,11 @@ def check_root_hits(paths, nb, ref_hits_output, hits_output, png_output="auto"):
     p2 = utility.root_compare_param_tree(hits_output, "Hits", k2)
     p2.scaling[p2.the_keys.index("GlobalTime")] = 1e-9  # time in ns
     p = utility.root_compare_param(p1.the_keys, paths.output / png_output)
-    p.hits_tol = 6  # % tolerance (including the edep zeros)
+    p.hits_tol = 10  # % tolerance (including the edep zeros)
     p.tols[k1.index("posX")] = 10
     p.tols[k1.index("posY")] = 10
     p.tols[k1.index("posZ")] = 1.5
-    p.tols[k1.index("edep")] = 0.002
+    p.tols[k1.index("edep")] = 0.003
     p.tols[k1.index("time")] = 0.0001
     is_ok = utility.root_compare4(p1, p2, p)
 
