@@ -2,6 +2,7 @@
 
 set -e -x
 echo ${PYTHONFOLDER}
+ls -l /opt/python/
 cd /home/core/
 export PATH=/software/cmake/cmake/bin/:${PATH}
 source /software/geant4/bin/geant4make.sh
