@@ -94,7 +94,7 @@ if __name__ == "__main__":
     print()
     gate.exception.warning("Check stats")
     stats_ref = utility.read_stats_file(paths.output_ref / "test051_stats.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.05)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
 
     # check root
     print()

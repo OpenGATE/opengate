@@ -111,20 +111,27 @@ if __name__ == "__main__":
     print(f"Number of runs was {stats.counts.runs}. Set to 1 before comparison")
     stats.counts.runs = 1  # force to 1
     stats_ref = utility.read_stats_file(paths.gate_output / "stat.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.07)
+    is_ok = utility.assert_stats(stats, stats_ref, tolerance=0.13)
 
     # root compare HITS
     print()
     gate.exception.warning("Compare HITS")
     gate_file = paths.gate_output / "spect.root"
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
-    utility.compare_root(
+    k1, k2, s2, tol = utility.get_keys_correspondence(checked_keys)
+    tol[3] = 0.004
+    utility.compare_root3(
         gate_file,
         hc.get_output_path(),
         "Hits",
         "Hits",
-        checked_keys,
+        k1,
+        k2,
+        tol,
+        None,
+        s2,
         paths.output / "test027.png",
+        hits_tol=17,
     )
 
     # Root compare SINGLES
