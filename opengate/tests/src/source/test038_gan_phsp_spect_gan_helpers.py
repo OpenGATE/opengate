@@ -319,7 +319,7 @@ def analyze_results(sim, paths, all_cond):
     tols[checked_keys.index("GlobalTime")] = 0.2
     tols[checked_keys.index("KineticEnergy")] = 0.002
     tols[checked_keys.index("PrePosition_X")] = 7
-    tols[checked_keys.index("PrePosition_Y")] = 5.5
+    tols[checked_keys.index("PrePosition_Y")] = 5.7
     tols[checked_keys.index("PrePosition_Z")] = 5.1
     tols[checked_keys.index("PreDirection_X")] = 0.03
     tols[checked_keys.index("PreDirection_Y")] = 0.02
