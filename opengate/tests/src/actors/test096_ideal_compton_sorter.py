@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from opengate.actors.coincidences import ccmod_ideal_singles
-from opengate.actors.coincidences import ccmod_ideal_coincidences
-from opengate.actors.coincidences import ccmod_make_cones
+from opengate.actors.coincidences import *
 import uproot
 import numpy as np
 import pandas as pd
-from test096_ideal_Compton_sorter_helpers import *
+from test096_ideal_compton_sorter_helpers import *
 
 
 def main():
