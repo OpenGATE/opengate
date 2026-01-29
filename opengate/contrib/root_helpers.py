@@ -159,7 +159,7 @@ def root_read_tree(root_file_path, tree_name="phsp"):
     return tree
 
 
-def root_write_tree_old(output_file, tree_name, branch_types, branch_data):
+def root_write_tree(output_file, tree_name, branch_types, branch_data):
     # Ensure all arrays in branch_data are high-level ak.Array or numpy
     formatted_data = {
         k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
