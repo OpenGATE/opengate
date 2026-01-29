@@ -222,11 +222,19 @@ def root_split_tree_by_branch(
             all_branches = tree.arrays()
 
             mask = all_branches[branch_name] > threshold
-            # high_val_events = all_branches[mask]
-            # low_val_events = all_branches[~mask]
-            # Wrap in ak.Array to ensure compatibility with uproot 5+
-            high_val_events = ak.Array(all_branches[mask])
-            low_val_events = ak.Array(all_branches[~mask])
+
+            # 1. Apply mask
+            high_val_events = all_branches[mask]
+            low_val_events = all_branches[~mask]
+
+            # 2. Convert to dictionary of arrays
+            # This forces uproot to write branches explicitly, bypassing the failing format check.
+            high_val_dict = {
+                field: high_val_events[field] for field in high_val_events.fields
+            }
+            low_val_dict = {
+                field: low_val_events[field] for field in low_val_events.fields
+            }
 
             if verbose:
                 logger.info(f"Read {len(all_branches)} total events.")
@@ -238,11 +246,22 @@ def root_split_tree_by_branch(
                 )
 
             with uproot.recreate(high_val_path) as high_file:
-                # high_file.mktree(tree_name, high_val_events)
-                high_file[tree_name] = high_val_events
+                if len(high_val_events) > 0:
+                    high_file[tree_name] = high_val_dict
+                else:
+                    # Handle empty case safely if needed, or just write empty dict
+                    high_file.mktree(
+                        tree_name,
+                        {k: high_val_events[k].type for k in high_val_events.fields},
+                    )
             with uproot.recreate(low_val_path) as low_file:
-                # low_file.mktree(tree_name, low_val_events)
-                low_file[tree_name] = low_val_events
+                if len(low_val_events) > 0:
+                    low_file[tree_name] = low_val_dict
+                else:
+                    low_file.mktree(
+                        tree_name,
+                        {k: low_val_events[k].type for k in low_val_events.fields},
+                    )
 
         if verbose:
             logger.info(f"Successfully wrote high-value events to '{high_val_path}'.")
@@ -303,12 +322,12 @@ def root_merge_trees(
                     )
 
         merged_data = ak.concatenate(all_data_to_merge)
-        # Explicitly ensure it's a high-level array for the writer
-        merged_data = ak.Array(merged_data)
+
+        # Convert to dictionary for writing
+        merged_dict = {field: merged_data[field] for field in merged_data.fields}
 
         with uproot.recreate(output_path) as output_file:
-            # output_file.mktree(tree_name, merged_data)
-            output_file[tree_name] = merged_data
+            output_file[tree_name] = merged_dict
 
         if verbose:
             logger.info(
