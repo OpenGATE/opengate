@@ -172,7 +172,7 @@ def root_write_tree_old(output_file, tree_name, branch_types, branch_data):
     tree.extend(formatted_data)
 
 
-def root_write_tree(output_file, tree_name, branch_types, branch_data):
+def root_write_tree_old(output_file, tree_name, branch_types, branch_data):
     """
     Must be used like :
     with uproot.recreate(output_filename) as output_file:
