@@ -147,7 +147,7 @@ def root_tree_get_branch(tree, branch_name, library="np"):
     return tree[branch_name].array(library=library)
 
 
-def root_read_tree(root_file_path, tree_name="phsp"):
+def root_read_tree_old(root_file_path, tree_name="phsp"):
     # if not exists, raise_except
     if not Path(root_file_path).exists():
         raise_except(f"Error: File '{root_file_path}' not found.")
@@ -157,6 +157,19 @@ def root_read_tree(root_file_path, tree_name="phsp"):
             raise_except(f"Error: TTree '{tree_name}' not found in {root_file_path}.")
         tree = file[tree_name]
     return tree
+
+
+def root_write_tree(output_file, tree_name, branch_types, branch_data):
+    # Ensure all arrays in branch_data are high-level ak.Array or numpy
+    formatted_data = {
+        k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
+        for k, v in branch_data.items()
+    }
+
+    # Step 1: Create the empty tree
+    tree = output_file.mktree(tree_name, branch_types)
+    # Step 2: Fill the tree
+    tree.extend(formatted_data)
 
 
 def root_write_tree(output_file, tree_name, branch_types, branch_data):
@@ -209,8 +222,11 @@ def root_split_tree_by_branch(
             all_branches = tree.arrays()
 
             mask = all_branches[branch_name] > threshold
-            high_val_events = all_branches[mask]
-            low_val_events = all_branches[~mask]
+            # high_val_events = all_branches[mask]
+            # low_val_events = all_branches[~mask]
+            # Wrap in ak.Array to ensure compatibility with uproot 5+
+            high_val_events = ak.Array(all_branches[mask])
+            low_val_events = ak.Array(all_branches[~mask])
 
             if verbose:
                 logger.info(f"Read {len(all_branches)} total events.")
@@ -287,6 +303,8 @@ def root_merge_trees(
                     )
 
         merged_data = ak.concatenate(all_data_to_merge)
+        # Explicitly ensure it's a high-level array for the writer
+        merged_data = ak.Array(merged_data)
 
         with uproot.recreate(output_path) as output_file:
             # output_file.mktree(tree_name, merged_data)
