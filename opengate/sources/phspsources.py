@@ -160,10 +160,17 @@ class PhaseSpaceSourceGenerator:
                 if np.issubdtype(batch[key].dtype, np.integer):
                     batch[key] = batch[key].astype(np.int32)
 
+        # Get keys safely whether batch is a dict or a structured array
+        batch_keys = (
+            batch.dtype.names
+            if (hasattr(batch, "dtype") and batch.dtype.names)
+            else batch.keys()
+        )
+
         # set particle type
         if source.particle == "" or source.particle is None:
             # check if the keys for PDGCode are in the root file
-            if source.PDGCode_key not in batch:
+            if source.PDGCode_key not in batch_keys:
                 fatal(
                     f"PhaseSpaceSource: no PDGCode key ({source.PDGCode_key}) "
                     f"in the phsp file and no source.particle"
