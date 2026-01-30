@@ -207,8 +207,13 @@ class PhaseSpaceSourceGenerator:
             batch[source.direction_key_z] = points[:, 2].astype(np.float32)
 
         # set weight
+        batch_keys = (
+            batch.dtype.names
+            if (hasattr(batch, "dtype") and batch.dtype.names)
+            else batch.keys()
+        )
         if source.weight_key != "" and source.weight_key is not None:
-            if source.weight_key not in batch:
+            if source.weight_key not in batch_keys:
                 fatal(
                     f"PhaseSpaceSource: no Weight key ({source.weight_key}) in the phsp file."
                 )
@@ -231,7 +236,7 @@ class PhaseSpaceSourceGenerator:
         source.SetEnergyBatch(batch[source.energy_key])
 
         # set PDGCode
-        if source.PDGCode_key in batch:
+        if source.PDGCode_key in batch_keys:
             source.SetPDGCodeBatch(batch[source.PDGCode_key])
         # set weight
         source.SetWeightBatch(batch[source.weight_key])
@@ -239,7 +244,7 @@ class PhaseSpaceSourceGenerator:
         if source.verbose:
             print("PhaseSpaceSourceGenerator: batch generated: ")
             print("particle name: ", source.particle)
-            if source.PDGCode_key in batch:
+            if source.PDGCode_key in batch_keys:
                 print("source.fPDGCode: ", batch[source.PDGCode_key])
             print("source.fEnergy: ", batch[source.energy_key])
             print("source.fWeight: ", batch[source.weight_key])
