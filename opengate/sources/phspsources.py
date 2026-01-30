@@ -143,8 +143,16 @@ class PhaseSpaceSourceGenerator:
         batch = self.batch
         self.current_index += current_batch_size
 
+        # Determine how to get keys depending on if batch is a Dict or a Numpy Structured Array
+        if hasattr(batch, "dtype") and batch.dtype.names:
+            # It is a structured numpy array
+            keys = batch.dtype.names
+        else:
+            # It is a dictionary
+            keys = batch
+
         # ensure encoding is float32
-        for key in batch:
+        for key in keys:
             # Convert to float32 if the array contains floating-point values
             if np.issubdtype(batch[key].dtype, np.floating):
                 batch[key] = batch[key].astype(np.float32)
