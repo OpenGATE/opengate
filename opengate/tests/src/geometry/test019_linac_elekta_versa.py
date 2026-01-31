@@ -14,12 +14,12 @@ if __name__ == "__main__":
 
     # main options
     sim.g4_verbose = False
-    sim.visu = False
+    # sim.visu = True
     sim.visu_type = "vrml"
     sim.check_volumes_overlap = False
     sim.number_of_threads = 1
     sim.output_dir = paths.output
-    sim.random_seed = 123456789
+    sim.random_seed = 12345678
     sim.check_volumes_overlap = True
     sim.output_dir = paths.output
     sim.progress_bar = True
