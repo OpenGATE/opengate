@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  GEANT4_VERSION: 'v11.3.2'
+  GEANT4_VERSION: 'v11.4.0'
   ITK_VERSION: 'v5.4.4'
 
 jobs:
@@ -226,7 +226,7 @@ jobs:
 
 #  ssh_session:
 #    env:
-#      GEANT4_VERSION: 'v11.3.2'
+#      GEANT4_VERSION: 'v11.4.0'
 #      ITK_VERSION: 'v5.4.4'
 #    runs-on: macos-13
 #    steps:

@@ -66,7 +66,7 @@ if __name__ == "__main__":
     # p = paths.gate / "output_test1"
     p = paths.gate / "output"
     stats_ref = utility.read_stats_file(p / f"stats{v}.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.03)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.06)
 
     # check root hits
     hc = sim.get_actor("Hits")

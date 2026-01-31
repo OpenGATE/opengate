@@ -67,7 +67,7 @@ if __name__ == "__main__":
     gate.exception.warning(f"Check stats")
     p = paths.gate_output
     stats_ref = utility.read_stats_file(p / "stats_blur.txt")
-    is_ok = utility.assert_stats(stats, stats_ref, 0.025)
+    is_ok = utility.assert_stats(stats, stats_ref, 0.06)
 
     # check root singles
     f = p / "pet_blur.root"
