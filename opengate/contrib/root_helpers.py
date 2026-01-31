@@ -174,6 +174,19 @@ def root_read_tree(root_file_path, tree_name="phsp"):
 
 
 def root_write_tree(output_file, tree_name, branch_types, branch_data):
+    # Ensure all arrays in branch_data are high-level ak.Array or numpy
+    formatted_data = {
+        k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
+        for k, v in branch_data.items()
+    }
+
+    # Step 1: Create the empty tree
+    tree = output_file.mktree(tree_name, branch_types)
+    # Step 2: Fill the tree
+    tree.extend(formatted_data)
+
+
+def root_write_tree_old(output_file, tree_name, branch_types, branch_data):
     """
     Must be used like :
     with uproot.recreate(output_filename) as output_file:
@@ -223,6 +236,8 @@ def root_split_tree_by_branch(
             all_branches = tree.arrays()
 
             mask = all_branches[branch_name] > threshold
+
+            # 1. Apply mask
             high_val_events = all_branches[mask]
             low_val_events = all_branches[~mask]
 
