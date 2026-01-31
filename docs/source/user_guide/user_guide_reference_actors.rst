@@ -671,6 +671,51 @@ Reference
 .. autoclass:: opengate.actors.digitizers.DigitizerEfficiencyActor
 
 
+DigitizerPileupActor
+--------------------
+
+Description
+~~~~~~~~~~~
+
+Pile‑up occurs when multiple detector interactions happen within a time interval shorter than the resolving/shaping time. As a result,
+their pulses overlap and cannot be distinguished as separate events.
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` simulates this by combining singles in the same volume
+(set by `group_volume`) if they occur in a time interval set by `pileup_time`.
+
+Currently, the following rules apply:
+
+* The first single occurring after a time period of at least `pileup_time` without singles opens a time window of duration `pileup_time`.
+* Any additional single occurring in that time window is merged with the other singles in that window.
+  These additional singles do not alter the end of the time window (non-paralyzable behavior).
+* The resulting combined single has the following attribute values:
+
+  * `GlobalTime`: same value as the first single in the window
+  * `TotalEnergyDeposit`: sum of the values of all singles in the window
+  * `PostPosition`: energy-weighted sum of positions of all singles in the window
+  * remaining attribute values are taken from the single with the highest deposited energy value
+
+In the future, policies may be added to modify the way in which the attributes of the resulting single are calculated.
+
+The :class:`~.opengate.actors.digitizers.DigitizerPileupActor` can currently only be used in single-threaded simulations.
+
+.. code-block:: python
+
+    pu = sim.add_actor("DigitizerPileupActor", "Singles_with_pileup")
+    pu.input_digi_collection = "Singles"
+    pu.group_volume = crystal.name
+    pu.authorize_repeated_volumes = True
+    pu.pileup_time = 100.0 * ns
+    pu.output_filename = "singles.root"
+
+Refer to test097 for an example.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.DigitizerPileupActor
+
+
+
 Coincidences Sorter
 -------------------
 
