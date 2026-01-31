@@ -30,53 +30,7 @@ def _root_open_trees_safely(paths, tree_name):
 def _is_branch_numeric(branch):
     """Checks if a TBranch or RField contains a simple, plottable numeric type."""
 
-    # 1. Try to get typename from 'interpretation' (Standard TBranch behavior)
-    interp = getattr(branch, "interpretation", None)
-    if interp:
-        tname = getattr(interp, "typename", None)
-        if tname:
-            return tname in (
-                "bool",
-                "int8",
-                "int16",
-                "int32",
-                "int64",
-                "uint8",
-                "uint16",
-                "uint32",
-                "uint64",
-                "float32",
-                "float64",
-                "double",
-            )
-
-    # 2. Try to get typename directly (RField/NTuple behavior)
-    # This handles the object types causing your current crash.
-    tname = getattr(branch, "typename", None)
-    if tname:
-        return tname in (
-            "bool",
-            "int8",
-            "int16",
-            "int32",
-            "int64",
-            "uint8",
-            "uint16",
-            "uint32",
-            "uint64",
-            "float32",
-            "float64",
-            "double",
-        )
-
-    # 3. If we can't determine the type, assume it's not a numeric branch we can plot.
-    return False
-
-
-def _is_branch_numeric_old(branch):
-    """Checks if a TBranch contains a simple, plottable numeric type."""
-    # ... (content is unchanged)
-    return branch.interpretation.typename in (
+    valid_types = (
         "bool",
         "int8",
         "int16",
@@ -90,6 +44,20 @@ def _is_branch_numeric_old(branch):
         "float64",
         "double",
     )
+
+    # 1. Try Standard TBranch behavior (has .interpretation.typename)
+    interp = getattr(branch, "interpretation", None)
+    if interp:
+        tname = getattr(interp, "typename", None)
+        if tname and tname in valid_types:
+            return True
+
+    # 2. Try RField/NTuple behavior (has .typename directly)
+    tname = getattr(branch, "typename", None)
+    if tname and tname in valid_types:
+        return True
+
+    return False
 
 
 def _get_common_numeric_branches(trees, ignore_branches=None):
