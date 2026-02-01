@@ -5,6 +5,7 @@ from test085_free_flight_helpers import *
 from opengate.tests import utility
 from opengate.contrib.root_helpers import *
 from opengate.sources.utility import *
+import gc
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, None, output_folder="test085_phsp")
@@ -30,6 +31,11 @@ if __name__ == "__main__":
 
     rad_spectrum = get_spectrum("tc99m", "gamma", "radar")
     print(rad_spectrum)
+
+    # Force destruction of the simulation to trigger
+    # the merging/closing of ROOT files in MT mode before reading them.
+    del sim
+    gc.collect()
 
     # split tree
     ref_root = paths.output_ref / "phsp_sphere_ref.root"
