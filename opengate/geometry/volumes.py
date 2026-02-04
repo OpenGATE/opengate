@@ -531,6 +531,10 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.name, min_range
         )
 
+    def add_field(field: fields.FieldBase)
+        self.volume_manager.fields.update({field.name: field})
+        self.g4_field_manager = None
+
 
 class RepeatableVolume(VolumeBase):
     def get_repetition_name_from_index(self, index):
