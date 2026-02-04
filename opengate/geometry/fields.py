@@ -36,7 +36,7 @@ class MagneticField(FieldBase):
         super().__init__(*args, **kwargs)
         self.field_type = "MagneticField"
 
-        self.g4_field = g4.G4UniformMagneticField(g4.G4ThreeVector(1*g4_units.tesla, 0, 0))
+        self.g4_field = g4.G4UniformMagField(g4.G4ThreeVector(1*g4_units.tesla, 0, 0))
         self.g4_equation_of_motion = None
         self.g4_integrator_stepper = None
         self.g4_chord_finder = None

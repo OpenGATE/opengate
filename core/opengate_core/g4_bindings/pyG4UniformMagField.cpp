@@ -9,12 +9,13 @@
 
 namespace py = pybind11;
 
-#include "G4UniformMagneticField.hh"
+#include "G4UniformMagField.hh"
 
-void init_G4UniformMagneticField(py::module &m) {
-  py::class_<G4UniformMagneticField, std::unique_ptr<G4UniformMagneticField, py::nodelete>>(
-      m, "G4UniformMagneticField")
+void init_G4UniformMagField(py::module &m) {
+  py::class_<G4UniformMagField, std::unique_ptr<G4UniformMagField, py::nodelete>>(
+      m, "G4UniformMagField")
 
     .def(py::init<const G4ThreeVector &>())
     // TODO: add other methods
+    ;
 }
