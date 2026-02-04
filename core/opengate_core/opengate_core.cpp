@@ -177,6 +177,8 @@ void init_G4FieldManager(py::module &);
 
 void init_G4Field(py::module &);
 
+void init_G4MagneticField(py::module &);
+
 void init_G4Mag_UsualEqRhs(py::module &);
 
 void init_G4ChordFinder(py::module &);
