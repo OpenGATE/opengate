@@ -135,7 +135,7 @@ protected:
   void UpdateEffectiveEventTime(double current_simulation_time,
                                 unsigned long skipped_particle);
 protected:
-  std::unique_ptr<GatePositroniumDecayModel> pModel;
+  std::unique_ptr<GateGammaEmissionModel> pModel;
   //std::unique_ptr<GatePositroniumSourceMessenger> pMessenger;
   ModelKind fModelKind = ModelKind::NotDefined;
 
