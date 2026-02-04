@@ -18,6 +18,9 @@
 #include <locale>
 #include <numeric>
 
+#include "GatePositroniumDecayModel.h"
+#include "GatePositroniumDecayModelParams.h"
+
 GatePositroniumSource::GatePositroniumSource() : GateVSource() {
   fA = 0;
   fZ = 0;
@@ -29,6 +32,8 @@ GatePositroniumSource::GatePositroniumSource() : GateVSource() {
   fDirectionRelativeToAttachedVolume = false;
   fUserParticleLifeTime = -1;
   fBackToBackMode = false;
+
+  
 }
 
 GatePositroniumSource::~GatePositroniumSource() {
@@ -74,6 +79,15 @@ void GatePositroniumSource::SetTAC(const std::vector<double> &times,
 void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
+
+  PositroniumDecayModelParams params;
+  params.fFractions={1};
+  params.fLifetimes={0.1244f};
+  params.fDecayKind={PositroniumDecayKind::k2Gamma};
+  params.fPromptGammaProbabilities = {0.0f};
+  params.fPromptGammaEnergy = {0.0f};
+
+  pModel = std::make_unique<GatePositroniumDecayModel>(params);
 
   // weight
   fWeight = DictGetDouble(user_info, "weight");
@@ -215,61 +229,76 @@ void GatePositroniumSource::UpdateEffectiveEventTime(
 void GatePositroniumSource::GeneratePrimaries(G4Event *event,
                                           double current_simulation_time) {
   auto &ll = GetThreadLocalDataGenericSource();
-  // Generic ion cannot be created at initialization.
-  // It must be created the first time we get there
-  if (ll.fInitGenericIon) {
-    auto *ion_table = G4IonTable::GetIonTable();
-    auto *ion = ion_table->GetIon(fZ, fA, fE);
-    ll.fSPS->SetParticleDefinition(ion);
-    SetLifeTime(ion);
-    ll.fInitGenericIon = false; // only the first time
-  }
-
-  // Confine cannot be initialized at initialization (because need all volumes
-  // to be created) It must be set here, the first time we get there
-  if (ll.fInitConfine) {
-    auto *pos = ll.fSPS->GetPosDist();
-    pos->ConfineSourceToVolume(fConfineVolume);
-    ll.fInitConfine = false;
-  }
-
-  // sample the particle properties with SingleParticleSource
-  // (acceptance angle is included)
-  ll.fSPS->SetParticleTime(current_simulation_time);
-  ll.fSPS->GeneratePrimaryVertex(event);
-
-  // update the time according to skipped events
-  ll.fEffectiveEventTime = current_simulation_time;
-  if (ll.fAAManager->IsEnabled()) {
-    if (ll.fAAManager->GetPolicy() ==
-        GateAcceptanceAngleTesterManager::AASkipEvent) {
-      UpdateEffectiveEventTime(current_simulation_time,
-                               ll.fAAManager->GetNumberOfNotAcceptedEvents());
-      ll.fCurrentSkippedEvents = ll.fAAManager->GetNumberOfNotAcceptedEvents();
-      event->GetPrimaryVertex(0)->SetT0(ll.fEffectiveEventTime);
-    } else {
-      ll.fCurrentZeroEvents =
-          ll.fAAManager->GetNumberOfNotAcceptedEvents(); // 1 or 0
-    }
-  }
-
-  // weight ?
-  if (fWeight > 0) {
-    if (fWeightSigma < 0) {
-      for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
-        event->GetPrimaryVertex(i)->SetWeight(fWeight);
-      }
-    } else { // weight is Gaussian
-      for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
-        double w = G4RandGauss::shoot(fWeight, fWeightSigma);
-        event->GetPrimaryVertex(i)->SetWeight(w);
-      }
-    }
-  }
+  //G4ThreeVector particle_position = GetPosDist()->GenerateOne();
+  //ChangeParticlePositionRelativeToAttachedVolume(particle_position);
+  G4ThreeVector vect;
+  std::cout << "before GeneratePrimaryVertices" << std::endl;
+  pModel->GeneratePrimaryVertices(event, current_simulation_time, vect);
+  std::cout << "GeneratePrimaryVertices" << std::endl;
+ 
 
   auto &l = GetThreadLocalData();
   l.fNumberOfGeneratedEvents++;
 }
+
+//void GatePositroniumSource::GeneratePrimaries(G4Event *event,
+                                          //double current_simulation_time) {
+  //auto &ll = GetThreadLocalDataGenericSource();
+  //// Generic ion cannot be created at initialization.
+  //// It must be created the first time we get there
+  //if (ll.fInitGenericIon) {
+    //auto *ion_table = G4IonTable::GetIonTable();
+    //auto *ion = ion_table->GetIon(fZ, fA, fE);
+    //ll.fSPS->SetParticleDefinition(ion);
+    //SetLifeTime(ion);
+    //ll.fInitGenericIon = false; // only the first time
+  //}
+
+  //// Confine cannot be initialized at initialization (because need all volumes
+  //// to be created) It must be set here, the first time we get there
+  //if (ll.fInitConfine) {
+    //auto *pos = ll.fSPS->GetPosDist();
+    //pos->ConfineSourceToVolume(fConfineVolume);
+    //ll.fInitConfine = false;
+  //}
+
+  //// sample the particle properties with SingleParticleSource
+  //// (acceptance angle is included)
+  //ll.fSPS->SetParticleTime(current_simulation_time);
+  //ll.fSPS->GeneratePrimaryVertex(event);
+
+  //// update the time according to skipped events
+  //ll.fEffectiveEventTime = current_simulation_time;
+  //if (ll.fAAManager->IsEnabled()) {
+    //if (ll.fAAManager->GetPolicy() ==
+        //GateAcceptanceAngleTesterManager::AASkipEvent) {
+      //UpdateEffectiveEventTime(current_simulation_time,
+                               //ll.fAAManager->GetNumberOfNotAcceptedEvents());
+      //ll.fCurrentSkippedEvents = ll.fAAManager->GetNumberOfNotAcceptedEvents();
+      //event->GetPrimaryVertex(0)->SetT0(ll.fEffectiveEventTime);
+    //} else {
+      //ll.fCurrentZeroEvents =
+          //ll.fAAManager->GetNumberOfNotAcceptedEvents(); // 1 or 0
+    //}
+  //}
+
+  //// weight ?
+  //if (fWeight > 0) {
+    //if (fWeightSigma < 0) {
+      //for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
+        //event->GetPrimaryVertex(i)->SetWeight(fWeight);
+      //}
+    //} else { // weight is Gaussian
+      //for (auto i = 0; i < event->GetNumberOfPrimaryVertex(); i++) {
+        //double w = G4RandGauss::shoot(fWeight, fWeightSigma);
+        //event->GetPrimaryVertex(i)->SetWeight(w);
+      //}
+    //}
+  //}
+
+  //auto &l = GetThreadLocalData();
+  //l.fNumberOfGeneratedEvents++;
+//}
 
 void GatePositroniumSource::InitializeParticle(py::dict &user_info) {
   auto &ll = fThreadLocalDataGenericSource.Get();
