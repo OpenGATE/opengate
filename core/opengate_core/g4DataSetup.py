@@ -3,6 +3,7 @@ import platform
 import shutil
 import sys
 import tarfile
+import urllib.request
 from pathlib import Path
 from time import sleep
 
@@ -24,6 +25,7 @@ data_packages = {
     "G4ENSDFSTATEDATA": "https://cern.ch/geant4-data/datasets/G4ENSDFSTATE.3.0.tar.gz",
     "G4CHANNELINGDATA": "https://cern.ch/geant4-data/datasets/G4CHANNELING.2.0.tar.gz",
     "G4PARTICLEHPDATA": "https://cern.ch/geant4-data/datasets/G4TENDL.1.4.tar.gz",  # optional but necessary for charged particles
+    "G4LENDDATA": "ftp://gdo142.ucllnl.org/LEND_GNDS2.0/LEND_GNDS2.0_ENDF.BVII.1.tar.gz",  # optional but necessary for neutrons with ShieldingLEND
 }
 
 
@@ -62,12 +64,15 @@ def download_with_resume(url, out, retries=5, delay=10):
 
     for attempt in range(retries):
         try:
-            with requests.get(url, headers=headers, stream=True) as r:
-                r.raise_for_status()
-                with open(temp_file, "ab") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
+            if "ftp" in url:
+                urllib.request.urlretrieve(url, temp_file)
+            else:
+                with requests.get(url, headers=headers, stream=True) as r:
+                    r.raise_for_status()
+                    with open(temp_file, "ab") as f:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            if chunk:
+                                f.write(chunk)
             os.rename(temp_file, str(out))
             print(f"Downloaded {url} successfully.")
             return
@@ -183,6 +188,7 @@ def get_g4_data_paths() -> dict:
         "G4ENSDFSTATEDATA": data_location / "G4ENSDFSTATE3.0",
         "G4CHANNELINGDATA": data_location / "G4CHANNELING2.0",
         "G4PARTICLEHPDATA": data_location / "G4TENDL1.4",
+        "G4LENDDATA": data_location / "LEND_GNDS2.0_ENDF.BVII.1",
     }
     return g4_data_path
 
