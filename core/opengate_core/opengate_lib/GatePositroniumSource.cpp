@@ -246,8 +246,10 @@ void GatePositroniumSource::GeneratePrimaries(G4Event *event,
   ll.fSPS->SetParticleTime(current_simulation_time);
   //ll.fSPS->GeneratePrimaryVertex(event);
   auto vertex = ll.fSPS->GetPosDist()->VGenerateOne();
-  std::cout << "before GeneratePrimaryVertices" << std::endl;
-  pModel->GeneratePrimaryVertices(event, current_simulation_time, vertex);
+  std::cout << "vertex:"<< vertex.x()<<","<< vertex.y()<< ","<< vertex.z()<< std::endl;
+  std::cout << "time:"<< current_simulation_time<< std::endl;
+  auto number_of_vertices = pModel->GeneratePrimaryVertices(event, current_simulation_time, vertex);
+  std::cout << "number_of_vertices :"<< number_of_vertices << std::endl;
 
   auto &l = GetThreadLocalData();
   l.fNumberOfGeneratedEvents++;
