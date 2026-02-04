@@ -179,6 +179,8 @@ void init_G4Field(py::module &);
 
 void init_G4MagneticField(py::module &);
 
+void init_G4UniformMagneticField(py::module &);
+
 void init_G4Mag_UsualEqRhs(py::module &);
 
 void init_G4ChordFinder(py::module &);
@@ -509,6 +511,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4FieldManager(m);
   init_G4Field(m);
   init_G4MagneticField(m);
+  init_G4UniformMagneticField(m);
   init_G4Mag_UsualEqRhs(m);
   init_G4ChordFinder(m);
   init_G4ClassicalRK4(m);
