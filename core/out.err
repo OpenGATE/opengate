@@ -1,0 +1,181 @@
+  Running command installing build dependencies
+  Using pip 25.3 from /home/marc/anaconda3/envs/opengate/lib/python3.10/site-packages/pip (python 3.10)
+  Collecting setuptools>=67
+    Obtaining dependency information for setuptools>=67 from https://files.pythonhosted.org/packages/94/b8/f1f62a5e3c0ad2ff1d189590bfa4c46b4f3b6e49cef6f26c6ee4e575394d/setuptools-80.10.2-py3-none-any.whl.metadata
+    Using cached setuptools-80.10.2-py3-none-any.whl.metadata (6.6 kB)
+  Collecting pybind11>=2.10.0
+    Obtaining dependency information for pybind11>=2.10.0 from https://files.pythonhosted.org/packages/cd/8a/37362fc2b949d5f733a8b0f2ff51ba423914cabefe69f1d1b6aab710f5fe/pybind11-3.0.1-py3-none-any.whl.metadata
+    Using cached pybind11-3.0.1-py3-none-any.whl.metadata (10.0 kB)
+  Collecting wheel
+    Obtaining dependency information for wheel from https://files.pythonhosted.org/packages/87/22/b76d483683216dde3d67cba61fb2444be8d5be289bf628c13fc0fd90e5f9/wheel-0.46.3-py3-none-any.whl.metadata
+    Using cached wheel-0.46.3-py3-none-any.whl.metadata (2.4 kB)
+  Collecting packaging>=24.0 (from wheel)
+    Obtaining dependency information for packaging>=24.0 from https://files.pythonhosted.org/packages/b7/b9/c538f279a4e237a006a2c98387d081e9eb060d203d8ed34467cc0f0b9b53/packaging-26.0-py3-none-any.whl.metadata
+    Using cached packaging-26.0-py3-none-any.whl.metadata (3.3 kB)
+  Using cached setuptools-80.10.2-py3-none-any.whl (1.1 MB)
+  Using cached pybind11-3.0.1-py3-none-any.whl (293 kB)
+  Using cached wheel-0.46.3-py3-none-any.whl (30 kB)
+  Using cached packaging-26.0-py3-none-any.whl (74 kB)
+  Installing collected packages: setuptools, pybind11, packaging, wheel
+    Creating /tmp/pip-build-env-z86q3yal/overlay/bin
+    changing mode of /tmp/pip-build-env-z86q3yal/overlay/bin/pybind11-config to 775
+    changing mode of /tmp/pip-build-env-z86q3yal/overlay/bin/wheel to 775
+
+  Successfully installed packaging-26.0 pybind11-3.0.1 setuptools-80.10.2 wheel-0.46.3
+  Running command Checking if build backend supports build_editable
+  Running command Getting requirements to build editable
+  Warning: 'classifiers' should be a list, got type 'tuple'
+  /tmp/pip-build-env-z86q3yal/overlay/lib/python3.10/site-packages/setuptools/dist.py:765: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+  !!
+
+          ********************************************************************************
+          Please consider removing the following classifiers in favor of a SPDX license expression:
+
+          License :: OSI Approved :: Apache Software License
+
+          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+          ********************************************************************************
+
+  !!
+    self._finalize_license_expression()
+  running egg_info
+  writing opengate_core.egg-info/PKG-INFO
+  writing dependency_links to opengate_core.egg-info/dependency_links.txt
+  writing requirements to opengate_core.egg-info/requires.txt
+  writing top-level names to opengate_core.egg-info/top_level.txt
+  reading manifest file 'opengate_core.egg-info/SOURCES.txt'
+  reading manifest template 'MANIFEST.in'
+  warning: no files found matching '*' under directory 'opengate_core/plugins'
+  writing manifest file 'opengate_core.egg-info/SOURCES.txt'
+  Running command Preparing editable metadata (pyproject.toml)
+  Warning: 'classifiers' should be a list, got type 'tuple'
+  /tmp/pip-build-env-z86q3yal/overlay/lib/python3.10/site-packages/setuptools/dist.py:765: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+  !!
+
+          ********************************************************************************
+          Please consider removing the following classifiers in favor of a SPDX license expression:
+
+          License :: OSI Approved :: Apache Software License
+
+          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+          ********************************************************************************
+
+  !!
+    self._finalize_license_expression()
+  running dist_info
+  creating /tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info
+  writing /tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info/PKG-INFO
+  writing dependency_links to /tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info/dependency_links.txt
+  writing requirements to /tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info/requires.txt
+  writing top-level names to /tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info/top_level.txt
+  writing manifest file '/tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info/SOURCES.txt'
+  reading manifest file '/tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info/SOURCES.txt'
+  reading manifest template 'MANIFEST.in'
+  warning: no files found matching '*' under directory 'opengate_core/plugins'
+  writing manifest file '/tmp/pip-modern-metadata-x2n5t1_6/opengate_core.egg-info/SOURCES.txt'
+  creating '/tmp/pip-modern-metadata-x2n5t1_6/opengate_core-10.0.3.dist-info'
+  Running command Building editable for opengate-core (pyproject.toml)
+  Warning: 'classifiers' should be a list, got type 'tuple'
+  /tmp/pip-build-env-z86q3yal/overlay/lib/python3.10/site-packages/setuptools/dist.py:765: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+  !!
+
+          ********************************************************************************
+          Please consider removing the following classifiers in favor of a SPDX license expression:
+
+          License :: OSI Approved :: Apache Software License
+
+          See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+          ********************************************************************************
+
+  !!
+    self._finalize_license_expression()
+  running editable_wheel
+  creating /tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info
+  writing /tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info/PKG-INFO
+  writing dependency_links to /tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info/dependency_links.txt
+  writing requirements to /tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info/requires.txt
+  writing top-level names to /tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info/top_level.txt
+  writing manifest file '/tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info/SOURCES.txt'
+  reading manifest file '/tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info/SOURCES.txt'
+  reading manifest template 'MANIFEST.in'
+  warning: no files found matching '*' under directory 'opengate_core/plugins'
+  writing manifest file '/tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core.egg-info/SOURCES.txt'
+  creating '/tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core-10.0.3.dist-info'
+  creating /tmp/pip-ephem-wheel-cache-t3ju3t1g/wheels/06/24/d1/fa1e6a1c906a39cac845eb6577fdcf05fde3a51980ad8984d8/tmp_s5k5ydb/.tmp-n8b9d4r9/opengate_core-10.0.3.dist-info/WHEEL
+  running build_py
+  running build_ext
+  -- OPENGATE - Geant4 version 11.3.2
+  -- OPENGATE - Geant4 is compiled with MT (MultiThread)
+  -- OPENGATE - Geant4 is compiled with QT
+  CMake Warning (dev) at /usr/share/cmake-3.28/Modules/FindOpenGL.cmake:381 (message):
+    Policy CMP0072 is not set: FindOpenGL prefers GLVND by default when
+    available.  Run "cmake --help-policy CMP0072" for policy details.  Use the
+    cmake_policy command to set the policy and suppress this warning.
+
+    FindOpenGL found both a legacy GL library:
+
+      OPENGL_gl_LIBRARY: /usr/lib/x86_64-linux-gnu/libGL.so
+
+    and GLVND libraries for OpenGL and GLX:
+
+      OPENGL_opengl_LIBRARY: /usr/lib/x86_64-linux-gnu/libOpenGL.so
+      OPENGL_glx_LIBRARY: /usr/lib/x86_64-linux-gnu/libGLX.so
+
+    OpenGL_GL_PREFERENCE has not been set to "GLVND" or "LEGACY", so for
+    compatibility with CMake 3.10 and below the legacy GL library will be used.
+  Call Stack (most recent call first):
+    CMakeLists.txt:39 (find_package)
+  This warning is for project developers.  Use -Wno-dev to suppress it.
+
+  -- pybind11 v2.13.6
+  -- OPENGATE - ITK version = 5.2.1
+  -- Module support is disabled.
+  -- Version: 9.1.1
+  -- Build type: Release
+  -- Configuring done (0.2s)
+  CMake Warning at external/pybind11/tools/pybind11Tools.cmake:181 (add_library):
+    Cannot generate a safe runtime search path for target opengate_core because
+    files in some directories may conflict with libraries in implicit
+    directories:
+
+      runtime library [libGL.so.1] in /usr/lib/x86_64-linux-gnu may be hidden by files in:
+        /home/marc/anaconda3/envs/opengate/lib
+      runtime library [libexpat.so.1] in /usr/lib/x86_64-linux-gnu may be hidden by files in:
+        /home/marc/anaconda3/envs/opengate/lib
+
+    Some of these libraries may not be found correctly.
+  Call Stack (most recent call first):
+    CMakeLists.txt:72 (pybind11_add_module)
+
+
+  -- Generating done (0.0s)
+  -- Build files have been written to: /home/marc/GitHub/opengate/core/build/cmake.linux-x86_64-cpython-3.10
+  [  0%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4Navigator.cpp.o
+  [  0%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4MagneticField.cpp.o
+  [  1%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4NavigationHistory.cpp.o
+  [  1%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4MultiUnion.cpp.o
+  [  1%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4NistManager.cpp.o
+  [  2%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4OpticalSurface.cpp.o
+  [  2%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PVParameterised.cpp.o
+  [  3%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PVPlacement.cpp.o
+  [  3%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PVReplica.cpp.o
+  [  3%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ParallelWorldPhysics.cpp.o
+  [  4%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ParticleDefinition.cpp.o
+  [  4%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ParticleGun.cpp.o
+  [  4%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ParticleTable.cpp.o
+  [  5%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PhysListFactory.cpp.o
+  [  5%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PhysicalVolumeStore.cpp.o
+  [  5%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PhysicsFreeVector.cpp.o
+  [  6%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PixeCrossSectionHandler.cpp.o
+  [  6%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PixeShellDataSet.cpp.o
+  [  6%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4Polyhedra.cpp.o
+  [  7%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4PrimaryVertex.cpp.o
+  [  7%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ProcessManager.cpp.o
+  [  7%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ProcessTable.cpp.o
+  [  8%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ProcessVector.cpp.o
+  [  8%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ProductionCuts.cpp.o
+  [  8%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4ProductionCutsTable.cpp.o
+  [  9%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4QuadrangularFacet.cpp.o
+  [  9%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4RadioactiveDecay.cpp.o
+  [  9%] Building CXX object CMakeFiles/opengate_core.dir/opengate_core/g4_bindings/pyG4Region.cpp.o
+ERROR: Operation cancelled by user

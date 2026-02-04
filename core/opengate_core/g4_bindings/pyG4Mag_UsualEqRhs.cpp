@@ -10,13 +10,14 @@
 namespace py = pybind11;
 
 #include "G4Mag_UsualEqRhs.hh"
+#include "G4MagneticField.hh"
 
 void init_G4Mag_UsualEqRhs(py::module &m) {
   py::class_<G4Mag_UsualEqRhs, std::unique_ptr<G4Mag_UsualEqRhs, py::nodelete>>(
       m, "G4Mag_UsualEqRhs")
 
     .def(py::init<G4MagneticField *>())
-    .def("EvaluateRhsGivenB", &G4Mag_UsualEqRhs::EvaluateRhsGivenB);
+    .def("EvaluateRhsGivenB", &G4Mag_UsualEqRhs::EvaluateRhsGivenB)
     .def("SetChargeMomentumMass", &G4Mag_UsualEqRhs::SetChargeMomentumMass);
 
 }

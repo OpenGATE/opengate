@@ -9,16 +9,18 @@
 
 namespace py = pybind11;
 
+#include "G4Field.hh"
 #include "G4MagneticField.hh"
 
 void init_G4MagneticField(py::module &m) {
-  py::class_<G4MagneticField, std::unique_ptr<G4MagneticField, py::nodelete>>(
+  // G4MagneticField is an abstract class with pure virtual function:
+  // - GetFieldValue()
+  // Therefore, it cannot be instantiated directly from Python.
+  py::class_<G4MagneticField, G4Field, std::unique_ptr<G4MagneticField, py::nodelete>>(
       m, "G4MagneticField")
 
-    .def(py::init<>())
-    .def(py::init<G4MagneticField&>())
+    // No constructors - abstract class cannot be instantiated
 
-    .def("DoesFieldChangeEnergy", &DoesFieldChangeEnergy);
-    .def("GetFieldValue", &GetFieldValue);
+    .def("DoesFieldChangeEnergy", &G4MagneticField::DoesFieldChangeEnergy);
 
 }

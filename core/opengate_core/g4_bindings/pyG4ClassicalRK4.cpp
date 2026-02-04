@@ -15,6 +15,6 @@ void init_G4ClassicalRK4(py::module &m) {
   py::class_<G4ClassicalRK4, std::unique_ptr<G4ClassicalRK4, py::nodelete>>(
       m, "G4ClassicalRK4")
 
-    .def(py::init<G4EquationOfMotion*, G4int>())
+    .def(py::init<G4EquationOfMotion*, G4int>());
 
 }
