@@ -28,6 +28,8 @@ class BeamlineModel:
         # convergence
         self.conv_x = 0
         self.conv_y = 0
+        # MU/N primaries conversion. Don't modify if the plan is already in N primaries
+        self.MU_to_N_coeffs = [1]
 
     def _polynomial_map(self, base, coeff):
         # coeff are given with decreasing degree (coeff[0]->max degree)
@@ -60,3 +62,6 @@ class BeamlineModel:
 
     def get_epsilon_y(self, energy):
         return self._polynomial_map(energy, self.epsilon_y_coeffs)
+
+    def get_n_primaries_from_MU(self, energy):
+        return self._polynomial_map(energy, self.MU_to_N_coeffs)
