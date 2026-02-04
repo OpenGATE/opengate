@@ -831,10 +831,11 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
             field.construct()
             for volume_name in field.attached_to:
                 volume_obj = self.volume_manager.get_volume(volume_name)
-                volume_obj.g4_field_manager.SetDetectorField(field.g4_field)
-                volume_obj.g4_field_manager.SetChordFinder(field.g4_chord_finder)
+                volume_obj.g4_field_manager = g4.G4FieldManager(
+                    field.g4_field, field.g4_chord_finder, True
+                )
                 # TODO: add accuracy parameter settings
-                volume_obj.logical_volume.SetFieldManager(
+                volume_obj.g4_logical_volume.SetFieldManager(
                     volume_obj.g4_field_manager, True
                 )
 
