@@ -14,6 +14,7 @@
 GatePositroniumDecayChannel::GatePositroniumDecayChannel(const G4String& parentName, G4double BR)
 {
   G4int daughters_number = 0;
+  std::cout << "GatePositroniumDecayChannel:"<< parentName<< std::endl;
 
   if (parentName == kParaPositroniumName) {
     daughters_number = kParaPositroniumAnnihilationGammasNumber;
@@ -24,6 +25,11 @@ GatePositroniumDecayChannel::GatePositroniumDecayChannel(const G4String& parentN
     fPositroniumKind =
         GatePositroniumDecayChannel::PositroniumKind::OrthoPositronium;
   } else {
+//WK: only temporarly
+    std::cout << "I set it up for ParaPositronium" << std::endl;
+    daughters_number = kParaPositroniumAnnihilationGammasNumber;
+    fPositroniumKind =
+        GatePositroniumDecayChannel::PositroniumKind::ParaPositronium;
 #ifdef G4VERBOSE
     if (GetVerboseLevel() > 0) {
       G4cout << "GatePositroniumDecayChannel:: constructor :";
