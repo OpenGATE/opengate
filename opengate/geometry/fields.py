@@ -1,6 +1,7 @@
 from ..base import GateObject
 
 import opengate_core as g4
+from ..utility import g4_units
 
 
 
@@ -35,9 +36,15 @@ class MagneticField(FieldBase):
         super().__init__(*args, **kwargs)
         self.field_type = "MagneticField"
 
+        self.g4_field = g4.G4UniformMagneticField(g4.G4ThreeVector(1*g4_units.tesla, 0, 0))
         self.g4_equation_of_motion = None
         self.g4_integrator_stepper = None
         self.g4_chord_finder = None
+
+    def construct(self) -> None:
+        self.g4_equation_of_motion = g4.G4Mag_UsualEqRhs(self.g4_field)
+        self.g4_integrator_stepper = g4.G4ClassicalRK4(self.g4_equation_of_motion)
+        self.g4_chord_finder = g4.G4ChordFinder(self.g4_field, 1e-2 * g4_units.mm, self.g4_integrator_stepper)
 
     def close(self) -> None:
         self.g4_chord_finder = None

@@ -6,6 +6,7 @@ import weakref
 from box import Box
 from anytree import PreOrderIter
 
+from networkx import volume
 import opengate_core as g4
 from .exception import fatal, warning, GateImplementationError
 from .decorators import requires_fatal, requires_warning
@@ -825,6 +826,18 @@ class VolumeEngine(g4.G4VUserDetectorConstruction, EngineBase):
         self.simulation_engine.actor_engine.register_sensitive_detectors(
             self.volume_manager.world_volume.name,
         )
+
+        for field_name, field in self.simulation_engine.simulation.volume_manager.fields.items():
+            field.construct()
+            for volume_name in field.attached_to:
+                volume = self.volume_manager.get_volume(volume_name)
+                field_manager = g4.G4FieldManager()
+                field_manager.SetDetectorField(field.g4_field)
+                field_manager.SetChordFinder(field.g4_chord_finder)
+                # TODO: add accuracy parameter settings
+                volume.logical_volume.SetFieldManager(
+                    field_manager, True
+                )
 
     def get_volume(self, name):
         return self.volume_manager.get_volume(name)
