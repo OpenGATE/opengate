@@ -51,3 +51,5 @@ phid_gammas = "opengate.bin.phid_gammas:go"
 phid_tac = "opengate.bin.phid_tac:go"
 phid_atomic_relaxation = "opengate.bin.phid_atomic_relaxation:go"
 phid_isomeric_transition = "opengate.bin.phid_isomeric_transition:go"
+
+protonct = "opengate.bin.protonct:go"
