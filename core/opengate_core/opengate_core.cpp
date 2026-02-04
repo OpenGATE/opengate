@@ -181,11 +181,19 @@ void init_G4MagneticField(py::module &);
 
 void init_G4UniformMagField(py::module &);
 
+void init_G4EquationOfMotion(py::module &);
+
+void init_G4Mag_EqRhs(py::module &);
+
 void init_G4Mag_UsualEqRhs(py::module &);
 
-void init_G4ChordFinder(py::module &);
+void init_G4MagIntegratorStepper(py::module &);
+
+void init_G4MagErrorStepper(py::module &);
 
 void init_G4ClassicalRK4(py::module &);
+
+void init_G4ChordFinder(py::module &);
 
 // geometry/solids
 void init_G4Box(py::module &);
@@ -512,9 +520,13 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Field(m);
   init_G4MagneticField(m);
   init_G4UniformMagField(m);
+  init_G4EquationOfMotion(m);
+  init_G4Mag_EqRhs(m);
   init_G4Mag_UsualEqRhs(m);
-  init_G4ChordFinder(m);
+  init_G4MagIntegratorStepper(m);
+  init_G4MagErrorStepper(m);
   init_G4ClassicalRK4(m);
+  init_G4ChordFinder(m);
 
   init_G4Box(m);
   init_G4Ellipsoid(m);
