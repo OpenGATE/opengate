@@ -9,7 +9,7 @@ class FieldBase(GateObject):
     # Base class for electric and magnetic fields
 
     field_type: str
-    attached_to: list[str]
+    attached_to: list[str] = []
 
     g4_field: g4.G4Field
 
@@ -26,6 +26,7 @@ class FieldBase(GateObject):
 class MagneticField(FieldBase):
     # Base class for electric and magnetic fields
 
+    g4_field: g4.G4UniformMagField
     g4_equation_of_motion: g4.G4Mag_UsualEqRhs
     g4_integrator_stepper: g4.G4MagIntegratorStepper
     g4_chord_finder: g4.G4ChordFinder
@@ -43,7 +44,7 @@ class MagneticField(FieldBase):
 
     def construct(self) -> None:
         self.g4_equation_of_motion = g4.G4Mag_UsualEqRhs(self.g4_field)
-        self.g4_integrator_stepper = g4.G4ClassicalRK4(self.g4_equation_of_motion)
+        self.g4_integrator_stepper = g4.G4ClassicalRK4(self.g4_equation_of_motion, 6)
         self.g4_chord_finder = g4.G4ChordFinder(self.g4_field, 1e-2 * g4_units.mm, self.g4_integrator_stepper)
 
     def close(self) -> None:

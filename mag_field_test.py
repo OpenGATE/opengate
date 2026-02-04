@@ -27,7 +27,13 @@ if __name__ == "__main__":
     box = sim.add_volume("BoxVolume", "box")
     box.size = [1 * gate.g4_units.m, 1 * gate.g4_units.m, 1 * gate.g4_units.m]
     box.material = "G4_Galactic"
-    box.mother_volume = world
+    box.mother = "world"
+
+    field = gate.geometry.fields.MagneticField(name="b_field")
+    box.add_field(field)
+
+    print(f"Fields in volume manager: {sim.volume_manager.fields}")
+    print(f"Fields in box volume: {box.g4_field_manager}")
 
     sim.run()
 

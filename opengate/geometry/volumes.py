@@ -23,6 +23,7 @@ from .utility import (
 )
 from ..decorators import requires_fatal, requires_attribute_fatal
 from ..definitions import __world_name__, __gate_list_objects__
+from .fields import FieldBase
 from ..actors.dynamicactors import (
     VolumeImageChanger,
     VolumeTranslationChanger,
@@ -216,6 +217,8 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # this list contains all physical volumes (in case of repeated volume)
         self.g4_physical_volumes = []
         self.g4_material = None
+        self.g4_field_manager = None
+
 
     def close(self):
         self.release_g4_references()
@@ -531,10 +534,9 @@ class VolumeBase(DynamicGateObject, NodeMixin):
             self.name, min_range
         )
 
-    def add_field(field: fields.FieldBase)
+    def add_field(self, field: FieldBase):
+        field.attached_to.append(self.name)
         self.volume_manager.fields.update({field.name: field})
-        self.g4_field_manager = None
-
 
 class RepeatableVolume(VolumeBase):
     def get_repetition_name_from_index(self, index):
