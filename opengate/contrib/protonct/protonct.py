@@ -4,12 +4,14 @@ from scipy.spatial.transform import Rotation
 import opengate as gate
 
 
-def protonct(output,
-             projections=720,
-             protons_per_projection=1000,
-             seed=None,
-             visu=False,
-             verbose=False):
+def protonct(
+    output,
+    projections=720,
+    protons_per_projection=1000,
+    seed=None,
+    visu=False,
+    verbose=False,
+):
 
     # Units
     nm = gate.g4_units.nm
@@ -32,16 +34,16 @@ def protonct(output,
     sim.progress_bar = verbose
     sim.number_of_threads = 1
 
-    sim.run_timing_intervals = [[j * sec, (j + 1) * sec]
-                                for j in range(projections)]
+    sim.run_timing_intervals = [[j * sec, (j + 1) * sec] for j in range(projections)]
 
     # Misc
     yellow = [1, 1, 0, 0.5]
     blue = [0, 0, 1, 0.5]
 
     # Geometry
-    sim.volume_manager.add_material_database(gate.utility.get_contrib_path() /
-                                             "GateMaterials.db")
+    sim.volume_manager.add_material_database(
+        gate.utility.get_contrib_path() / "GateMaterials.db"
+    )
     sim.world.material = "Vacuum"
     sim.world.size = [4 * m, 4 * m, 4 * m]
     sim.world.color = [0, 0, 0, 0]
@@ -56,21 +58,19 @@ def protonct(output,
         spiral.dz = 40 * cm
         spiral.material = "Water"
         spiral.color = blue
-        spiral.rotation = Rotation.from_euler("yz", [90, 90],
-                                              degrees=True).as_matrix()
+        spiral.rotation = Rotation.from_euler("yz", [90, 90], degrees=True).as_matrix()
 
         # Spiral rotation
         tr, rot = gate.geometry.utility.volume_orbiting_transform(
-            "y", 0, 360, projections, spiral.translation, spiral.rotation)
+            "y", 0, 360, projections, spiral.translation, spiral.rotation
+        )
         spiral.add_dynamic_parametrisation(translation=tr, rotation=rot)
 
         # Spiral inserts
         sradius = 4
         radius = list(range(0, 100 - sradius // 2, sradius))
         sangle = 139
-        angles = [
-            math.radians(a) for a in range(0, sangle * len(radius), sangle)
-        ]
+        angles = [math.radians(a) for a in range(0, sangle * len(radius), sangle)]
         posx = [radius[i] * math.cos(angles[i]) for i in range(len(radius))]
         posy = [radius[i] * math.sin(angles[i]) for i in range(len(radius))]
 
