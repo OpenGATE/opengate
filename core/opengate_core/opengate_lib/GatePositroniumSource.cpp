@@ -229,13 +229,25 @@ void GatePositroniumSource::UpdateEffectiveEventTime(
 void GatePositroniumSource::GeneratePrimaries(G4Event *event,
                                           double current_simulation_time) {
   auto &ll = GetThreadLocalDataGenericSource();
+  //if (ll.fInitGenericIon) {
+    //auto *ion_table = G4IonTable::GetIonTable();
+    //auto *ion = ion_table->GetIon(fZ, fA, fE);
+    //ll.fSPS->SetParticleDefinition(ion);
+    //SetLifeTime(ion);
+    ////auto *ion_table = G4IonTable::GetIonTable();
+    ////auto *ion = ion_table->GetIon(fZ, fA, fE);
+    ////ll.fSPS->SetParticleDefinition(ion);
+    ////SetLifeTime(ion);
+    //ll.fInitGenericIon = false; // only the first time
+  //}
+  //
   //G4ThreeVector particle_position = GetPosDist()->GenerateOne();
   //ChangeParticlePositionRelativeToAttachedVolume(particle_position);
-  G4ThreeVector vect;
+  ll.fSPS->SetParticleTime(current_simulation_time);
+  //ll.fSPS->GeneratePrimaryVertex(event);
+  auto vertex = ll.fSPS->GetPosDist()->VGenerateOne();
   std::cout << "before GeneratePrimaryVertices" << std::endl;
-  pModel->GeneratePrimaryVertices(event, current_simulation_time, vect);
-  std::cout << "GeneratePrimaryVertices" << std::endl;
- 
+  pModel->GeneratePrimaryVertices(event, current_simulation_time, vertex);
 
   auto &l = GetThreadLocalData();
   l.fNumberOfGeneratedEvents++;
