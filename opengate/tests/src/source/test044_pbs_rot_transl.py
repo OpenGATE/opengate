@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from scipy.spatial.transform import Rotation
 import os
 
+from scipy.spatial.transform import Rotation
 
 import opengate as gate
 from opengate.tests import utility
@@ -25,7 +25,7 @@ def main():
     # for loop
     start = -500
     spacing = 100
-    end = -start + spacing
+    end = -start
     planePositionsV = range(start, end, spacing)
 
     # create the simulation
