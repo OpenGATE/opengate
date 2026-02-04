@@ -8,16 +8,29 @@
 #ifndef GatePositroniumSource_h
 #define GatePositroniumSource_h
 
+//#include <memory>
+
 #include "GateAcceptanceAngleTesterManager.h"
 #include "GateSingleParticleSource.h"
 #include "GateVSource.h"
 #include <pybind11/stl.h>
+
+#include "GatePositroniumDecayModel.h"
 
 namespace py = pybind11;
 
 class GatePositroniumSource : public GateVSource {
 
 public:
+  enum class ModelKind {
+    NotDefined,
+    ParaPositronium,
+    OrthoPositronium,
+    Positronium
+  };
+
+public:
+
   GatePositroniumSource();
 
   ~GatePositroniumSource() override;
@@ -44,6 +57,8 @@ public:
   unsigned long GetTotalSkippedEvents() const;
   unsigned long GetTotalZeroEvents() const;
 
+  /// 
+  
 protected:
   //  We cannot not use a std::unique_ptr
   //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
@@ -119,6 +134,11 @@ protected:
 
   void UpdateEffectiveEventTime(double current_simulation_time,
                                 unsigned long skipped_particle);
+protected:
+  std::unique_ptr<GatePositroniumDecayModel> pModel;
+  //std::unique_ptr<GatePositroniumSourceMessenger> pMessenger;
+  ModelKind fModelKind = ModelKind::NotDefined;
+
 };
 
 #endif // GatePositroniumSource_h
