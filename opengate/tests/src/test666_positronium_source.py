@@ -54,37 +54,9 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 2 * mm
     # source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
-    # source.direction.type = "momentum"
-    # source.direction.momentum = [0, -1, 0]
-    # source.energy.type = "mono"
-    # source.energy.mono = 1 * MeV
 
     # print(sim.physics_manager.dump_available_physics_lists())
 
-    # source = sim.add_source("PositroniumSource", "s3")
-    # source.particle = "proton"
-    # source.activity = 10000 * Bq / sim.number_of_threads
-    # source.position.type = "box"
-    # source.position.size = [4 * cm, 4 * cm, 4 * cm]
-    # source.position.translation = [8 * cm, 8 * cm, 30 * cm]
-    # source.direction.type = "focused"
-    # source.direction.focus_point = [1 * cm, 2 * cm, 3 * cm]
-    # source.energy.type = "gauss"
-    # source.energy.mono = 140 * MeV
-    # source.energy.sigma_gauss = 10 * MeV
-
-    # source = sim.add_source("PositroniumSource", "s4")
-    # source.particle = "proton"
-    # source.activity = 10000 * Bq / sim.number_of_threads
-    # source.position.type = "box"
-    # source.position.size = [4 * cm, 4 * cm, 4 * cm]
-    # source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
-    # # source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
-    # source.position.rotation = Rotation.identity().as_matrix()
-    # source.direction.type = "iso"
-    # source.energy.type = "gauss"
-    # source.energy.mono = 80 * MeV
-    # source.energy.sigma_gauss = 1 * MeV
 
     # actors
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
@@ -110,10 +82,8 @@ if __name__ == "__main__":
     ]
     ta2.debug =True
     ta2.steps_to_store = "first"
-    ta2.output_filename = "b2b.root"
+    ta2.output_filename = "output_positrionium.root"
 
-    # run the simulation once with no particle in the phsp
-    # source.direction.momentum = [0, 0, 1]
 
 
     # sim.g4_commands_after_init.append("/tracking/verbose 0")
