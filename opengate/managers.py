@@ -18,6 +18,7 @@ from .definitions import __world_name__
 from .engines import SimulationEngine
 from .exception import fatal, warning, GateDeprecationError, GateImplementationError
 from .geometry.materials import MaterialDatabase
+from .geometry.fields import FieldBase
 
 from .utility import (
     g4_units,
@@ -1139,6 +1140,9 @@ class VolumeManager(GateObject):
         # They need to be init after the creation of OpenGL
         # Store them to init them later
         self.solid_with_texture_init = []
+
+        # fields
+        self.fields: dict[str, FieldBase] = {}
 
     def reset(self):
         self.__init__(self.simulation)
