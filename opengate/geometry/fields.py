@@ -15,6 +15,11 @@ class FieldBase(GateObject):
     # TODO: implement the user info defaults
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.g4_field = None
+
+    def close(self) -> None:
+        self.g4_field = None
+        super().close()
 
 
 class MagneticField(FieldBase):
@@ -24,12 +29,21 @@ class MagneticField(FieldBase):
     g4_integrator_stepper: g4.G4MagIntegratorStepper
     g4_chord_finder: g4.G4ChordFinder
 
-    user_info_defaults = {
-        ""
-    }
+    # TODO: implement the user info defaults
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.field_type = "MagneticField"
+
+        self.g4_equation_of_motion = None
+        self.g4_integrator_stepper = None
+        self.g4_chord_finder = None
+
+    def close(self) -> None:
+        self.g4_chord_finder = None
+        self.g4_integrator_stepper = None
+        self.g4_equation_of_motion = None
+        super().close()
+
 
 
