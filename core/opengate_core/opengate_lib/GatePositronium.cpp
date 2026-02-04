@@ -14,7 +14,8 @@
 
 GatePositronium::GatePositronium(const G4String& name, G4double life_time): fName(name), fLifeTime(life_time)
 {
-  pDecayChannel = new GatePositroniumDecayChannel("pPs", 1);
+  //pDecayChannel = new GatePositroniumDecayChannel("pPs", 0.1);
+  pDecayChannel = new GatePositroniumDecayChannel("gamma", 0.1);
   //G4ParticleTable::GetParticleTable()->DumpTable();
   //G4ParticleDefinition *positronium_def = G4ParticleTable::GetParticleTable()->FindParticle(name);
   //if (positronium_def==nullptr) {

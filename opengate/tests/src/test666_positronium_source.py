@@ -3,6 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+
 from scipy.spatial.transform import Rotation
 
 if __name__ == "__main__":
@@ -13,6 +14,8 @@ if __name__ == "__main__":
 
     # create the simulation
     sim = gate.Simulation()
+    sim.physics_manager.physics_list_name = 'G4EmLivermorePolarizedPhysics'
+    sim.physics_manager.enable_decay = True
 
     # main options
     sim.g4_verbose = False
@@ -43,7 +46,7 @@ if __name__ == "__main__":
     # test sources
     source = sim.add_source("PositroniumSource", "source1")
     source.particle = "gamma"
-    source.activity = 10000 * Bq / sim.number_of_threads
+    source.activity = 1000 * Bq / sim.number_of_threads
     source.position.type = "sphere"
     source.position.radius = 5 * mm
     source.position.translation = [-3 * cm, 30 * cm, -3 * cm]
@@ -52,56 +55,62 @@ if __name__ == "__main__":
     source.energy.type = "mono"
     source.energy.mono = 1 * MeV
 
-    source = sim.add_source("PositroniumSource", "source2")
-    source.particle = "proton"
-    source.activity = 10000 * Bq / sim.number_of_threads
-    source.position.type = "disc"
-    source.position.radius = 5 * mm
-    source.position.translation = [6 * cm, 5 * cm, -30 * cm]
-    # source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
-    source.position.rotation = Rotation.identity().as_matrix()
-    source.direction.type = "momentum"
-    source.direction.momentum = [0, 0, 1]
-    source.energy.type = "gauss"
-    source.energy.mono = 140 * MeV
-    source.energy.sigma_gauss = 10 * MeV
+    # print(sim.physics_manager.dump_available_physics_lists())
 
-    source = sim.add_source("PositroniumSource", "s3")
-    source.particle = "proton"
-    source.activity = 10000 * Bq / sim.number_of_threads
-    source.position.type = "box"
-    source.position.size = [4 * cm, 4 * cm, 4 * cm]
-    source.position.translation = [8 * cm, 8 * cm, 30 * cm]
-    source.direction.type = "focused"
-    source.direction.focus_point = [1 * cm, 2 * cm, 3 * cm]
-    source.energy.type = "gauss"
-    source.energy.mono = 140 * MeV
-    source.energy.sigma_gauss = 10 * MeV
+    # source = sim.add_source("PositroniumSource", "s3")
+    # source.particle = "proton"
+    # source.activity = 10000 * Bq / sim.number_of_threads
+    # source.position.type = "box"
+    # source.position.size = [4 * cm, 4 * cm, 4 * cm]
+    # source.position.translation = [8 * cm, 8 * cm, 30 * cm]
+    # source.direction.type = "focused"
+    # source.direction.focus_point = [1 * cm, 2 * cm, 3 * cm]
+    # source.energy.type = "gauss"
+    # source.energy.mono = 140 * MeV
+    # source.energy.sigma_gauss = 10 * MeV
 
-    source = sim.add_source("PositroniumSource", "s4")
-    source.particle = "proton"
-    source.activity = 10000 * Bq / sim.number_of_threads
-    source.position.type = "box"
-    source.position.size = [4 * cm, 4 * cm, 4 * cm]
-    source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
-    # source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
-    source.position.rotation = Rotation.identity().as_matrix()
-    source.direction.type = "iso"
-    source.energy.type = "gauss"
-    source.energy.mono = 80 * MeV
-    source.energy.sigma_gauss = 1 * MeV
+    # source = sim.add_source("PositroniumSource", "s4")
+    # source.particle = "proton"
+    # source.activity = 10000 * Bq / sim.number_of_threads
+    # source.position.type = "box"
+    # source.position.size = [4 * cm, 4 * cm, 4 * cm]
+    # source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
+    # # source.position.rotation = Rotation.from_euler('x', 45, degrees=True).as_matrix()
+    # source.position.rotation = Rotation.identity().as_matrix()
+    # source.direction.type = "iso"
+    # source.energy.type = "gauss"
+    # source.energy.mono = 80 * MeV
+    # source.energy.sigma_gauss = 1 * MeV
 
     # actors
     stats_actor = sim.add_actor("SimulationStatisticsActor", "Stats")
+    stats_actor.track_types_flag = True
 
-    # src_info = sim.add_actor('SourceInfoActor', 'src_info')
-    # src_info.filename = 'output/sources.root'
+    # PhaseSpace Actor
+    ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
+    ta2.attached_to = waterbox.name
+    ta2.attributes = [
+        "KineticEnergy",
+        "PostPosition",
+        "PrePosition",
+        "PrePositionLocal",
+        "ParticleName",
+        "PreDirection",
+        "PreDirectionLocal",
+        "PostDirection",
+        "TimeFromBeginOfEvent",
+        "GlobalTime",
+        "LocalTime",
+        "EventPosition",
+        "PDGCode",
+    ]
+    ta2.debug =True 
+    ta2.output_filename = "testblabla.root"
 
-    dose = sim.add_actor("DoseActor", "dose")
-    dose.output_filename = "test010.mhd"
-    dose.attached_to = waterbox
-    dose.size = [50, 50, 50]
-    dose.spacing = [4 * mm, 4 * mm, 4 * mm]
+    # run the simulation once with no particle in the phsp
+    source.direction.momentum = [0, 0, 1]
+
+
 
     # verbose
     sim.g4_commands_after_init.append("/tracking/verbose 0")
@@ -118,21 +127,5 @@ if __name__ == "__main__":
 
     # # get results
     print(stats_actor)
-    print(dose)
-
-    # # gate_test10
-    # # Gate mac/main.mac
-    # # Current version is two times slower :(
-    # stats_ref = utility.read_stat_file(paths.gate_output / "stat.txt")
-    # print("-" * 80)
-    # is_ok = utility.assert_stats(stats_actor, stats_ref, tolerance=0.05)
-    # is_ok = is_ok and utility.assert_images(
-        # paths.gate_output / "output-Edep.mhd",
-        # dose.edep.get_output_path(),
-        # stats_actor,
-        # tolerance=30,
-        # ignore_value_data2=0,
-        # apply_ignore_mask_to_sum_check=False,  # force legacy behavior
-    # )
 
     # utility.test_ok(is_ok)
