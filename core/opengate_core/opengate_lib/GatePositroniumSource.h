@@ -15,7 +15,7 @@
 #include "GateVSource.h"
 #include <pybind11/stl.h>
 
-#include "GatePositroniumDecayModel.h"
+#include "GateGammaEmissionModel.h"
 
 namespace py = pybind11;
 
