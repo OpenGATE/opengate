@@ -173,6 +173,8 @@ void init_G4Region(py::module &);
 
 void init_G4RegionStore(py::module &);
 
+void init_G4FieldManager(py::module &);
+
 // geometry/solids
 void init_G4Box(py::module &);
 
