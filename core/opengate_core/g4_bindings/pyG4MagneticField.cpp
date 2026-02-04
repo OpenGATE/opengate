@@ -16,10 +16,9 @@ void init_G4MagneticField(py::module &m) {
       m, "G4MagneticField")
 
     .def(py::init<>())
-    .def(py::init<G4MagneticField&*>())
+    .def(py::init<G4MagneticField&>())
 
     .def("DoesFieldChangeEnergy", &DoesFieldChangeEnergy);
     .def("GetFieldValue", &GetFieldValue);
-    
 
 }
