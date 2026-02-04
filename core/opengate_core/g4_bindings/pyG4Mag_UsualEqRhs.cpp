@@ -9,11 +9,14 @@
 
 namespace py = pybind11;
 
+#include "G4EquationOfMotion.hh"
+#include "G4Mag_EqRhs.hh"
 #include "G4Mag_UsualEqRhs.hh"
 #include "G4MagneticField.hh"
 
 void init_G4Mag_UsualEqRhs(py::module &m) {
-  py::class_<G4Mag_UsualEqRhs, std::unique_ptr<G4Mag_UsualEqRhs, py::nodelete>>(
+  // G4Mag_UsualEqRhs inherits from G4Mag_EqRhs which inherits from G4EquationOfMotion
+  py::class_<G4Mag_UsualEqRhs, G4Mag_EqRhs, std::unique_ptr<G4Mag_UsualEqRhs, py::nodelete>>(
       m, "G4Mag_UsualEqRhs")
 
     .def(py::init<G4MagneticField *>())
