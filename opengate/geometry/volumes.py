@@ -186,6 +186,13 @@ class VolumeBase(DynamicGateObject, NodeMixin):
                 "type": bool,
             },
         ),
+        "field": (
+            None,
+            {
+                "doc": "Name of the field attached to this volume.",
+                "type": str,
+            },
+        ),
     }
 
     def __init__(self, *args, template=None, **kwargs):
@@ -218,6 +225,9 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self.g4_physical_volumes = []
         self.g4_material = None
         self.g4_field_manager = None
+
+        # Field attached to this volume (only one allowed)
+        self.field = None
 
 
     def close(self):
@@ -535,6 +545,12 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         )
 
     def add_field(self, field: FieldBase):
+        if self.field is not None:
+            fatal(
+                f"Volume '{self.name}' already has a field attached ('{self.field}'). "
+                f"A volume can only have one field. Remove the existing field first."
+            )
+        self.field = field.name
         field.attached_to.append(self.name)
         self.volume_manager.fields.update({field.name: field})
 
