@@ -545,8 +545,8 @@ for k in range(num_crystals_per_module):
     source.activity = activity_per_subset # Ensure activity is divided per crystal
     source.half_life = 3.78e10 * u.year   # Half-life of Lu176
 
-    # 2. Define the general Source Shape 
-    # Note: The shape defines the generation area. 'Confine' then rejects 
+    # 2. Define the general Source Shape
+    # Note: The shape defines the generation area. 'Confine' then rejects
     # any particles generated outside the specific volume geometry.
     source.position.type = "cylinder"
     source.position.radius = r_max
