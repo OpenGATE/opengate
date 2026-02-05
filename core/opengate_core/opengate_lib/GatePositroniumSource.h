@@ -35,7 +35,6 @@ public:
 
   ~GatePositroniumSource() override;
 
-  void CleanWorkerThread() override;
 
   void InitializeUserInfo(py::dict &user_info) override;
 
@@ -45,34 +44,17 @@ public:
 
   void GeneratePrimaries(G4Event *event, double time) override;
 
-  void SetEnergyCDF(const std::vector<double> &cdf);
-
-  void SetProbabilityCDF(const std::vector<double> &cdf);
-
-  void SetTAC(const std::vector<double> &times,
-              const std::vector<double> &activities);
-
-  void InitializeBackToBackMode(py::dict &user_info);
-
-  unsigned long GetTotalSkippedEvents() const;
-  unsigned long GetTotalZeroEvents() const;
-
-  /// 
   
 protected:
+  unsigned long fNumberOfGeneratedEvents;
+  //
   //  We cannot not use a std::unique_ptr
   //  (or maybe by controlling the deletion during the CleanWorkerThread ?)
   G4ParticleDefinition *fParticleDefinition;
   G4ThreeVector fInitializeMomentum;
   G4ThreeVector fInitializeFocusPoint;
   G4ThreeVector fInitTranslation;
-  G4String fangType;
-  double fUserParticleLifeTime;
 
-  // Time Curve Activity
-  std::vector<double> fTAC_Times;
-  std::vector<double> fTAC_Activities;
-  void UpdateActivityWithTAC(double time);
 
   // generic ion is controlled separately
   // (maybe initialized once Run is started)
@@ -83,12 +65,6 @@ protected:
   double fWeight;
   double fWeightSigma;
 
-  // back to back source
-  bool fBackToBackMode;
-
-  // Force the rotation of momentum and focal point to follow rotation of the
-  // source, eg: needed for motion actor
-  bool fDirectionRelativeToAttachedVolume;
 
   // thread local structure
   struct threadLocalGenericSource {
@@ -102,41 +78,24 @@ protected:
   };
   G4Cache<threadLocalGenericSource> fThreadLocalDataGenericSource;
 
-  // sum of all threads
-  unsigned long fTotalSkippedEvents = 0;
-  unsigned long fTotalZeroEvents = 0;
-
   threadLocalGenericSource &GetThreadLocalDataGenericSource();
 
-  // if confine is used, must be defined after the initialization
-  // bool fInitConfine;
-  std::string fConfineVolume;
-
-  // for beta plus CDF
-  std::vector<double> fEnergyCDF;
-  std::vector<double> fProbabilityCDF;
 
   virtual void InitializeParticle(py::dict &user_info);
 
   virtual void CreateSPS();
 
-  virtual void InitializeIon(py::dict &user_info);
 
-  virtual void SetLifeTime(G4ParticleDefinition *p);
+  //virtual void SetLifeTime(G4ParticleDefinition *p);
 
-  virtual void InitializePosition(py::dict user_info);
+  //virtual void InitializePosition(py::dict user_info);
 
-  virtual void InitializeDirection(py::dict user_info);
+  //virtual void InitializeDirection(py::dict user_info);
 
-  virtual void InitializeEnergy(py::dict user_info);
+  //virtual void InitializeEnergy(py::dict user_info);
 
-  void UpdateActivity(double time) override;
-
-  void UpdateEffectiveEventTime(double current_simulation_time,
-                                unsigned long skipped_particle);
 protected:
   std::unique_ptr<GateGammaEmissionModel> pModel;
-  //std::unique_ptr<GatePositroniumSourceMessenger> pMessenger;
   ModelKind fModelKind = ModelKind::NotDefined;
 
 };

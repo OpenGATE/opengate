@@ -14,6 +14,7 @@ deg = gate.g4_units.deg
 mm = gate.g4_units.mm
 m = gate.g4_units.m
 cm = gate.g4_units.cm
+ns = gate.g4_units.ns
 
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
@@ -27,8 +28,8 @@ if __name__ == "__main__":
     # sim.physics_manager.enable_decay = True
 
     # main options
-    # sim.g4_verbose = True 
-    sim.g4_verbose = False 
+    # sim.g4_verbose = True
+    sim.g4_verbose = False
     sim.g4_verbose_level = 1
     # sim.visu = True
     sim.visu_type = "vrml"
@@ -54,7 +55,12 @@ if __name__ == "__main__":
     source.position.type = "sphere"
     source.position.radius = 2 * mm
     source.bla=7.
-    # source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
+
+    source.positronium_fractions =[0.4, 0.3, 0.2, 0.1]
+    source.positronium_lifetimes =[0.122 *ns, 2*ns, 5*ns, 12*ns]
+    source.decay_kinds =["k2Gamma", "k2Gamma", "k3Gamma", "k2Gamma"]
+    source.prompt_photon_probabilities =[0.1, 1., 1.,0.5]
+    source.prompt_photon_energies =[1.244 *MeV, 1*MeV, 1.2*MeV, 2*MeV]
 
     # print(sim.physics_manager.dump_available_physics_lists())
 
