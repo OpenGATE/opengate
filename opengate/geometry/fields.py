@@ -152,3 +152,25 @@ class UniformMagneticField(MagneticField):
             g4.G4ThreeVector(*self.field_vector)
         )
 
+
+class QuadrupoleMagneticField(MagneticField):
+    """Quadrupole magnetic field with gradient."""
+
+    # hints for IDE
+    gradient: float
+
+    user_info_defaults = {
+        "gradient": (
+            0,
+            {
+                "doc": "Field gradient in Tesla/meter.",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def _create_field(self) -> None:
+        """Create the quadrupole magnetic field."""
+        self.g4_field = g4.G4QuadrupoleMagField(self.gradient)

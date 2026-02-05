@@ -181,6 +181,8 @@ void init_G4MagneticField(py::module &);
 
 void init_G4UniformMagField(py::module &);
 
+void init_G4QuadrupoleMagField(py::module &);
+
 void init_G4EquationOfMotion(py::module &);
 
 void init_G4Mag_EqRhs(py::module &);
@@ -520,6 +522,7 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Field(m);
   init_G4MagneticField(m);
   init_G4UniformMagField(m);
+  init_G4QuadrupoleMagField(m);
   init_G4EquationOfMotion(m);
   init_G4Mag_EqRhs(m);
   init_G4Mag_UsualEqRhs(m);
