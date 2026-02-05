@@ -237,7 +237,7 @@ class VoxelizedPromptGammaAnalogActor(
             },
         ),
         "energyrange": (
-            200 * g4_units.MeV,
+            10 * g4_units.MeV,
             {
                 "doc": "Range of the histogram in MeV",
             },
