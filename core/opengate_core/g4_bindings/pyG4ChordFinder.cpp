@@ -17,11 +17,11 @@ namespace py = pybind11;
 void init_G4ChordFinder(py::module &m) {
   py::class_<G4ChordFinder, std::unique_ptr<G4ChordFinder, py::nodelete>>(
       m, "G4ChordFinder")
+
     .def(py::init<G4VIntegrationDriver *>())
-    .def(py::init<G4MagneticField*, G4double, G4MagIntegratorStepper*, G4int>(),
-         py::arg("itsMagField"),
-         py::arg("stepMinimum") = 1.0e-2,
-         py::arg("pItsStepper") = nullptr,
-         py::arg("stepperDriverChoice") = 2)  // kTemplatedStepperType = 2
+    .def(py::init<G4MagneticField*, G4double, G4MagIntegratorStepper*, G4int>())
+
+    .def("SetDeltaChord", &G4ChordFinder::SetDeltaChord)
     ;
+
 }

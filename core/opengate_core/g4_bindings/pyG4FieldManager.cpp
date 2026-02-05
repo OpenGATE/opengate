@@ -34,7 +34,7 @@ void init_G4FieldManager(py::module &m) {
     .def("CreateChordFinder", &G4FieldManager::CreateChordFinder)
     .def("SetChordFinder", &G4FieldManager::SetChordFinder)
     .def("GetChordFinder", py::overload_cast<>(&G4FieldManager::GetChordFinder),
-        py::return_value_policy::reference_internal)    // TODO: check if this makes sense
+        py::return_value_policy::reference_internal)
 
     .def("ConfigureForTrack", &G4FieldManager::ConfigureForTrack)
 
@@ -58,5 +58,6 @@ void init_G4FieldManager(py::module &m) {
 
     .def("GetMaxAcceptedEpsilon", &G4FieldManager::GetMaxAcceptedEpsilon)
     .def("SetMaxAcceptedEpsilon", &G4FieldManager::SetMaxAcceptedEpsilon)
+
     ;
 }
