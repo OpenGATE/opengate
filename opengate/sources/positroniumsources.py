@@ -162,6 +162,8 @@ class PositroniumSource(SourceBase, g4.GatePositroniumSource):
             _positronium_source_default_energy(),
             {"doc": "Define the energy of the primary particles"},
             ),
+        "bla":(-1,
+          {"doc": "FIXME "}),
     }
 
     # user_info_defaults = {
