@@ -547,10 +547,44 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
                 "doc": "Digi collection to be used as input.",
             },
         ),
-        "pileup_time": (
+        "time_window": (
             0,
             {
-                "doc": "Time interval during which consecutive digis are piled up into one digi.",
+                "doc": "Time window during which consecutive digis are merged into a single digi",
+            },
+        ),
+        "time_window_policy": (
+            "NonParalyzable",
+            {
+                "doc": "Policy controlling how the pileup window is updated when new digis occur. "
+                + "NonParalyzable: the time window is fixed and does not change when new digis occur. "
+                + "Paralyzable: the time window is extended each time a new digi occurs within the current time window. "
+                + "EnergyWinnerParalyzable: the time window is extended when a new digi occurs within the current time window, "
+                + "if this digi has a higher energy than the previous digis in current the window.",
+                "allowed_values": (
+                    "NonParalyzable",
+                    "Paralyzable",
+                    "EnergyWinnerParalyzable",
+                ),
+            },
+        ),
+        "position_attribute_policy": (
+            "EnergyWeightedCentroid",
+            {
+                "doc": "Policy used to determine the PostPosition attribute of the piled-up digi. "
+                + "EnergyWinner: the position of the digi with the highest energy is used. "
+                + "EnergyWeightedCentroid: the position is the energy-weighted centroid of all piled-up digis.",
+                "allowed_values": ("EnergyWinner", "EnergyWeightedCentroid"),
+            },
+        ),
+        "attribute_policy": (
+            "First",
+            {
+                "doc": "Policy used to determine the value of all attributes of the piled-up digi other than TotalEnergyDeposit and PostPosition. "
+                + "First: the attribute value of the first digi is used. "
+                + "EnergyWinner: the attribute value of the digi with the highest energy is used. "
+                + "Last: the attribute value of the last digi is used.",
+                "allowed_values": ("First", "EnergyWinner", "Last"),
             },
         ),
         "group_volume": (
