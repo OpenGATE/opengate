@@ -1,22 +1,26 @@
-import opengate as gate
-import numpy as np
-import click
-import VMAT_MC as t
-import time
-import os, sys, glob, shutil
+import glob
 import json
+import os
+import shutil
+import sys
+import time
 
-# @click.option('--file', default='/home/mjacquet/Documents/Simulation_RT_plan/patient_data/IGR/AGORL_CLB_P1toP20/AGORL_P1/RP.1.2.752.243.1.1.20200108145259306.1700.75605.dcm', help='Pathname to the .xml filenames')
-# @click.option('--file', default='./data/DICOM/2.16.840.1.114337.1.20808.1660037786.0.dcm', help='Pathname to the .xml filenames')
+import click
+import numpy as np
+import VMAT_MC as t
+
+import opengate as gate
+
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-@click.command()
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--nt", default=1, help="number of thread")
 @click.option("--nb_part", default=1, help="Number_of_particle_to_simulate")
 @click.option(
     "--dcm_file",
     default="./data/Patients_IGR/P1/RTPlan_P1.dcm",
-    help="Pathname to the .dcm filenames",
+    help="Pathname to the .dcm RT plan filename",
 )
 @click.option(
     "--arc_id",
@@ -24,15 +28,21 @@ import json
     help="ID of the beam sequence to reproduce. If None, all the beam sequences will be simulated",
 )
 @click.option(
-    "--path_img", default="./data/Patients_IGR/P1/", help="img to put in the simulation"
+    "--path_img",
+    default="./data/Patients_IGR/P1/",
+    help="Folder containing images for the simulation",
 )
-@click.option("--img", default="CT_P1_40mm.mhd", help="img to put in the simulation")
-@click.option("--output_name", default="water_tank.mhd", help="Dose actor name")
-@click.option("--path_output", default="./output", help="Dose actor name")
+@click.option(
+    "--img", default="CT_P1_40mm.mhd", help="Filename of the image for the simulation"
+)
+@click.option("--output_name", default="water_tank.mhd", help="Output filename")
+@click.option(
+    "--path_output", default="./output", help="Folder containing output files"
+)
 @click.option(
     "--path_phsp",
     default="/home/mjacquet/Documents/phsp/",
-    help="path of the phsp_source",
+    help="Folder containing the phsp_source file",
 )
 @click.option(
     "--phsp_name", default="phsp_6.4MeV_sx_1.15_sy_0.8.root", help="phsp source name"
@@ -64,7 +74,6 @@ import json
     default=4,
     help="the thickness in cm of the lead part above the jaw",
 )
-@click.option("--json_input", default=True, help="use a json to define all the input")
 @click.option(
     "--json_name",
     default="./data/header.json",
@@ -88,11 +97,13 @@ def launch_simulation(
     ratio,
     shielding,
     lead_thickness,
-    json_input,
     json_name,
 ):
+    """
+    Run Monte Carlo simulation to compute dose map
+    """
     nb_jobs = 1
-    if json_input:
+    if os.path.isfile(json_name):
         f = open(f"./{json_name}")
         json_file = json.load(f)
         print(json_file)

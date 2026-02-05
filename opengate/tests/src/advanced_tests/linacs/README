@@ -1,0 +1,7 @@
+wget http://www.creatis.insa-lyon.fr/~baudier/data_advanced_test_linac.zip
+unzip data_advanced_test_linac.zip
+rm -f data_advanced_test_linac.zip
+mkdir output
+python launch_VMAT_MC.py --json_name data_advanced_test_linac/header.json
+python MC_renorm_dose.py --path data_advanced_test_linac
+

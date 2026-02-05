@@ -241,7 +241,6 @@ def init_simulation(
             sim, world.name, path_img, img, rt_plan_parameters, do_tle=False
         )
     if mode == "TLE":
-        print("lol")
         add_patient_image(
             sim,
             world.name,

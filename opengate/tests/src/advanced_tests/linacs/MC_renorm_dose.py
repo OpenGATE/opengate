@@ -1,13 +1,17 @@
-import numpy as np
-import matplotlib.pyplot as plt
+import glob
+import json
+import os
+import sys
+
+import click
 import itk
-import os, sys, glob
+import matplotlib.pyplot as plt
+import numpy as np
+import pymedphys
+from box import Box
+
 import opengate
 from opengate.contrib.linacs import dicomrtplan as rtplan
-from box import Box
-import click
-import json
-import pymedphys
 
 
 def isocenter_area_norm_factor(array, isocenter_idx, size):
@@ -63,9 +67,16 @@ class MC_img:
         )
 
 
-@click.command()
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
+
+
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.option("--path", default="./data", help="path to the patient folder")
 def norm_img(path):
+    """
+    Normalise Monte Carlo dose map regarding the TPS
+    """
+
     the_path = path
     init_path = os.getcwd()
     folder_list = [the_path]
