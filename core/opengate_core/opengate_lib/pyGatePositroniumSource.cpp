@@ -18,9 +18,9 @@ void init_GatePositroniumSource(py::module &m) {
       //.def_readonly("fNumberOfGeneratedEvents",
       //              &GatePositroniumSource::fNumberOfGeneratedEvents)
       .def("InitializeUserInfo", &GatePositroniumSource::InitializeUserInfo)
-      .def("SetEnergyCDF", &GatePositroniumSource::SetEnergyCDF)
-      .def("SetProbabilityCDF", &GatePositroniumSource::SetProbabilityCDF)
+      //.def("SetEnergyCDF", &GatePositroniumSource::SetEnergyCDF)
+      //.def("SetProbabilityCDF", &GatePositroniumSource::SetProbabilityCDF)
       .def("GetTotalSkippedEvents", &GatePositroniumSource::GetTotalSkippedEvents)
-      .def("GetTotalZeroEvents", &GatePositroniumSource::GetTotalZeroEvents)
-      .def("SetTAC", &GatePositroniumSource::SetTAC);
+      .def("GetTotalZeroEvents", &GatePositroniumSource::GetTotalZeroEvents);
+      //.def("SetTAC", &GatePositroniumSource::SetTAC);
 }
