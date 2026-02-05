@@ -6,36 +6,15 @@ import opengate_core as g4
 from ..utility import g4_units
 
 
+# ! =========== TODO'S ===========
+# ! - create the possibility of choosing the stepper type and equation type
+# ! -
+# ! -
+# ! -
+# ! =============================
 
-class FieldBase(GateObject, ABC):
+class FieldBase(GateObject):
     """Base class for electric and magnetic fields."""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-        self.g4_field = None
-
-        self.attached_to = []
-        self._field_changes_energy = False
-
-    @property
-    def field_changes_energy(self) -> bool:
-        """Whether the field changes particle energy (False for magnetic, True for others)."""
-        return self._field_changes_energy
-
-    @abstractmethod
-    def create_field_manager(self) -> g4.G4FieldManager:
-        """Construct the field and return a configured G4FieldManager."""
-        pass
-
-    def close(self) -> None:
-        self.g4_field = None
-        self.attached_to = []
-        super().close()
-
-
-class MagneticField(FieldBase):
-    """Base class for magnetic fields."""
 
     # hints for IDE
     step_minimum: float
@@ -83,6 +62,33 @@ class MagneticField(FieldBase):
             },
         ),
     }
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.g4_field = None
+
+        self.attached_to = []
+        self._field_changes_energy = False
+
+    @property
+    def field_changes_energy(self) -> bool:
+        """Whether the field changes particle energy (False for magnetic, True for others)."""
+        return self._field_changes_energy
+
+    def create_field_manager(self) -> g4.G4FieldManager:
+        """Construct the field and return a configured G4FieldManager."""
+        msg = "create_field_manager() must be implemented in subclasses."
+        raise NotImplementedError(msg)
+
+    def close(self) -> None:
+        self.g4_field = None
+        self.attached_to = []
+        super().close()
+
+
+class MagneticField(FieldBase):
+    """Base class for magnetic fields."""
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
