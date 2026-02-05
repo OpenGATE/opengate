@@ -53,6 +53,7 @@ if __name__ == "__main__":
     source.activity = 1000 * Bq / sim.number_of_threads
     source.position.type = "sphere"
     source.position.radius = 2 * mm
+    source.bla=7.
     # source.position.translation = [-3 * cm, -3 * cm, -3 * cm]
 
     # print(sim.physics_manager.dump_available_physics_lists())
