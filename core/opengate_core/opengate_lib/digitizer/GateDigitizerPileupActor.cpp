@@ -22,9 +22,46 @@ GateDigitizerPileupActor::~GateDigitizerPileupActor() = default;
 void GateDigitizerPileupActor::InitializeUserInfo(py::dict &user_info) {
 
   GateVDigitizerWithOutputActor::InitializeUserInfo(user_info);
-  if (py::len(user_info) > 0 && user_info.contains("pileup_time")) {
-    fPileupTime = DictGetDouble(user_info, "pileup_time"); // nanoseconds
+  if (py::len(user_info) > 0 && user_info.contains("time_window")) {
+    fTimeWindow = DictGetDouble(user_info, "time_window"); // nanoseconds
   }
+  if (py::len(user_info) > 0 && user_info.contains("time_window_policy")) {
+    const auto policy_str = DictGetStr(user_info, "time_window_policy");
+    if (policy_str == "NonParalyzable") {
+      fTimeWindowPolicy = TimeWindowPolicy::NonParalyzable;
+    } else if (policy_str == "Paralyzable") {
+      fTimeWindowPolicy = TimeWindowPolicy::Paralyzable;
+    } else if (policy_str == "EnergyWinnerParalyzable") {
+      fTimeWindowPolicy = TimeWindowPolicy::EnergyWinnerParalyzable;
+    } else {
+      Fatal("Unknown time window policy '" + policy_str + "'");
+    }
+  }
+  if (py::len(user_info) > 0 &&
+      user_info.contains("position_attribute_policy")) {
+    const auto policy_str = DictGetStr(user_info, "position_attribute_policy");
+    if (policy_str == "EnergyWinner") {
+      fPositionAttributePolicy = PositionAttributePolicy::EnergyWinner;
+    } else if (policy_str == "EnergyWeightedCentroid") {
+      fPositionAttributePolicy =
+          PositionAttributePolicy::EnergyWeightedCentroid;
+    } else {
+      Fatal("Unknown position attribute policy '" + policy_str + "'");
+    }
+  }
+  if (py::len(user_info) > 0 && user_info.contains("attribute_policy")) {
+    const auto policy_str = DictGetStr(user_info, "attribute_policy");
+    if (policy_str == "First") {
+      fAttributePolicy = AttributePolicy::First;
+    } else if (policy_str == "EnergyWinner") {
+      fAttributePolicy = AttributePolicy::EnergyWinner;
+    } else if (policy_str == "Last") {
+      fAttributePolicy = AttributePolicy::Last;
+    } else {
+      Fatal("Unknown attribute policy '" + policy_str + "'");
+    }
+  }
+
   if (py::len(user_info) > 0 && user_info.contains("sorting_time")) {
     fSortingTime = DictGetDouble(user_info, "sorting_time"); // nanoseconds
   }
@@ -57,6 +94,7 @@ void GateDigitizerPileupActor::DigitInitialize(
 
   l.fTimeSorter.Init(fInputDigiCollection);
   l.fTimeSorter.OutputIterator().TrackAttribute("GlobalTime", &l.time);
+  l.fTimeSorter.OutputIterator().TrackAttribute("TotalEnergyDeposit", &l.edep);
   l.fTimeSorter.OutputIterator().TrackAttribute("PreStepUniqueVolumeID",
                                                 &l.volID);
   l.fTimeSorter.SetSortingWindow(fSortingTime);
@@ -107,7 +145,6 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     // Create an iterator to be used when digis will be combined into one digi,
     // due to pile-up.
     window.digiIter = window.digis->NewIterator();
-    window.digiIter.TrackAttribute("GlobalTime", &l.time);
     window.digiIter.TrackAttribute("TotalEnergyDeposit", &l.edep);
     window.digiIter.TrackAttribute("PostPosition", &l.pos);
     // Create a filler to copy all digi attributes from the sorted collection
@@ -117,7 +154,6 @@ GateDigitizerPileupActor::GetPileupWindowForCurrentVolume(
     // to the output collection (used for the digis that will result from
     // pile-up).
     auto filler_out_attributes = window.digis->GetDigiAttributeNames();
-    filler_out_attributes.erase("GlobalTime");
     filler_out_attributes.erase("TotalEnergyDeposit");
     filler_out_attributes.erase("PostPosition");
     window.fillerOut = std::make_unique<GateDigiAttributesFiller>(
@@ -140,16 +176,33 @@ void GateDigitizerPileupActor::ProcessTimeSortedDigis() {
         GetPileupWindowForCurrentVolume(l.volID, l.fVolumePileupWindows);
 
     const auto current_time = *l.time;
+    const auto current_edep = *l.edep;
     if (window.digis->GetSize() == 0) {
       // The window has no digis yet: make the window start at the time of the
-      // current digi.
+      // current digi and remember the current edep as highest.
       window.startTime = current_time;
-    } else if (current_time - window.startTime > fPileupTime) {
+      window.highestEdep = current_edep;
+    } else if (current_time - window.startTime > fTimeWindow) {
       // The current digi is beyond the time window: process the digis that are
       // currently in the window, then make the window start at the time of the
-      // current digi.
+      // current digi and remember the current edep as highest.
       ProcessPileupWindow(window);
       window.startTime = current_time;
+      window.highestEdep = current_edep;
+    }
+
+    if (fTimeWindowPolicy == TimeWindowPolicy::Paralyzable) {
+      // In Paralyzable mode, extend the time window to start at the time of
+      // the current digi.
+      window.startTime = current_time;
+    } else if (fTimeWindowPolicy == TimeWindowPolicy::EnergyWinnerParalyzable) {
+      // In EnergyWinnerParalyzable mode, extend the time window only if
+      // the current digi has higher energy than the highest-energy
+      // digi so far.
+      if (current_edep > window.highestEdep) {
+        window.startTime = current_time;
+        window.highestEdep = current_edep;
+      }
     }
 
     // Add the current digi to the window.
@@ -165,46 +218,65 @@ void GateDigitizerPileupActor::ProcessPileupWindow(PileupWindow &window) {
   // into one digi.
   auto &l = fThreadLocalData.Get();
 
-  std::optional<double> first_time{};
   std::optional<double> highest_edep{};
   double total_edep = 0.0;
+  std::optional<size_t> first_index;
   size_t highest_edep_index = 0;
+  size_t last_index = 0;
   G4ThreeVector weighted_position;
+  G4ThreeVector highest_edep_position;
 
   // Iterate over all digis in the window from the beginning.
 
   window.digiIter.Reset();
   while (!window.digiIter.IsAtEnd()) {
     const auto current_edep = *l.edep;
-    const auto current_time = *l.time;
     const auto current_pos = *l.pos;
-    // Remember the time of the first digi.
-    if (!first_time) {
-      first_time = current_time;
+    // Remember the index of the first digi.
+    if (!first_index) {
+      first_index = window.digiIter.fIndex;
     }
+    // Remember the index of the last digi.
+    last_index = window.digiIter.fIndex;
     // Remember the value and index of the highest deposited energy so far.
     if (!highest_edep.has_value() || current_edep > highest_edep.value()) {
       highest_edep = current_edep;
       highest_edep_index = window.digiIter.fIndex;
+      highest_edep_position = current_pos;
     }
     // Accumulate all deposited energy values.
     total_edep += current_edep;
-    // Accumulate the energy-weighted position.
-    weighted_position += current_pos * current_edep;
+
+    if (fPositionAttributePolicy ==
+        PositionAttributePolicy::EnergyWeightedCentroid) {
+      // Accumulate the energy-weighted position.
+      weighted_position += current_pos * current_edep;
+    }
     window.digiIter++;
   }
-  weighted_position /= total_edep;
+  if (fPositionAttributePolicy ==
+      PositionAttributePolicy::EnergyWeightedCentroid) {
+    weighted_position /= total_edep;
+  }
 
   // The resulting pile-up digi gets:
-  // - the time of the first contributing digi.
-  fOutputTimeAttribute->FillDValue(*first_time);
   // - the total edep value.
   fOutputEdepAttribute->FillDValue(total_edep);
-  // - the energy-weighted position.
-  fOutputPosAttribute->Fill3Value(weighted_position);
-  // All the other attribute values are taken from the digi with the highest
-  // edep.
-  window.fillerOut->Fill(highest_edep_index);
+  // - the position according to the position attribute policy.
+  if (fPositionAttributePolicy == PositionAttributePolicy::EnergyWinner) {
+    fOutputPosAttribute->Fill3Value(highest_edep_position);
+  } else if (fPositionAttributePolicy ==
+             PositionAttributePolicy::EnergyWeightedCentroid) {
+    fOutputPosAttribute->Fill3Value(weighted_position);
+  }
+  // All the other attribute values are according to the attribute policy.
+  if (fAttributePolicy == AttributePolicy::First) {
+    window.fillerOut->Fill(*first_index);
+  } else if (fAttributePolicy == AttributePolicy::EnergyWinner) {
+    window.fillerOut->Fill(highest_edep_index);
+  } else if (fAttributePolicy == AttributePolicy::Last) {
+    window.fillerOut->Fill(last_index);
+  }
   // Remove all processed digis from the window.
   window.digis->Clear();
 }

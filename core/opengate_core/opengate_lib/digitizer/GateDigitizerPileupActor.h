@@ -40,11 +40,22 @@ public:
   void SetGroupVolumeDepth(int depth);
 
 protected:
+  enum class TimeWindowPolicy {
+    NonParalyzable,
+    Paralyzable,
+    EnergyWinnerParalyzable
+  };
+  enum class PositionAttributePolicy { EnergyWinner, EnergyWeightedCentroid };
+  enum class AttributePolicy { First, EnergyWinner, Last };
+
   void DigitInitialize(
       const std::vector<std::string> &attributes_not_in_filler) override;
 
   // User parameters
-  double fPileupTime;
+  double fTimeWindow;
+  TimeWindowPolicy fTimeWindowPolicy;
+  AttributePolicy fAttributePolicy;
+  PositionAttributePolicy fPositionAttributePolicy;
   double fSortingTime;
   int fGroupVolumeDepth;
 
@@ -58,6 +69,8 @@ protected:
   struct PileupWindow {
     // Time at which the time window opens.
     double startTime{};
+    // Higehst energy deposit in the window.
+    double highestEdep{};
     // Collection of digis in the same time window.
     GateDigiCollection *digis;
     // Iterator used to loop over the digis for simulating pile-up.

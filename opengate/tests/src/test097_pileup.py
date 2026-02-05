@@ -3,7 +3,12 @@
 
 import opengate as gate
 from opengate.tests import utility
-from test097_pileup_helpers import check_gate_pileup
+from test097_pileup_helpers import (
+    check_gate_pileup,
+    TimeWindowPolicy,
+    PositionAttributePolicy,
+    AttributePolicy,
+)
 
 green = [0, 1, 0, 1]
 gray = [0.5, 0.5, 0.5, 1]
@@ -118,20 +123,48 @@ if __name__ == "__main__":
     pu.input_digi_collection = sc.name
     pu.group_volume = crystal.name
     pu.authorize_repeated_volumes = True
-    pu.pileup_time = 2000.0 * ns
+    pu.time_window = 2000.0 * ns
     pu.clear_every = 1e4
     pu.output_filename = sc.output_filename
 
     # Timing
     sim.run_timing_intervals = [[0, 0.001 * sec]]
 
-    sim.run()
-    print(stats)
+    all_tests_ok = True
 
-    all_match = check_gate_pileup(
-        sc.output_filename,
-        "Singles_before_pileup",
-        "Singles_after_pileup",
-        pu.pileup_time,
-    )
-    utility.test_ok(all_match)
+    for twp in [
+        TimeWindowPolicy.NonParalyzable,
+        TimeWindowPolicy.Paralyzable,
+        TimeWindowPolicy.EnergyWinnerParalyzable,
+    ]:
+        for pap in [
+            PositionAttributePolicy.EnergyWeightedCentroid,
+            PositionAttributePolicy.EnergyWinner,
+        ]:
+            for ap in [
+                AttributePolicy.First,
+                AttributePolicy.EnergyWinner,
+                AttributePolicy.Last,
+            ]:
+                pu.time_window_policy = twp.name
+                pu.position_attribute_policy = pap.name
+                pu.attribute_policy = ap.name
+                # print(f"Running pileup test with {twp}, {pap}, {ap}")
+
+                sim.run(start_new_process=True)
+
+                all_match = check_gate_pileup(
+                    sc.output_filename,
+                    "Singles_before_pileup",
+                    "Singles_after_pileup",
+                    pu.time_window,
+                    twp,
+                    pap,
+                    ap,
+                )
+
+                if not all_match:
+                    print(f"Pileup test failed for {twp}, {pap}, {ap}")
+                    all_tests_ok = False
+
+    utility.test_ok(all_tests_ok)
