@@ -90,20 +90,22 @@ class PositroniumSource(SourceBase, g4.GatePositroniumSource):
     positroniumSource close to the G4 SPS, but a bit simpler.
     The G4 source created by this class is GatePositroniumSource.
     """
+    # source.positronium_lifetimes =[0.122 *ns, 2*ns, 5*ns, 12*ns]
+    # source.decay_kinds =["k2Gamma", "k2Gamma", "k3Gamma", "k2Gamma"]
+    # source.prompt_photon_probabilities =[0.1, 1., 1.,0.5]
+    # source.prompt_photon_energies =[1.244 *MeV, 1*MeV, 1.2*MeV, 2*MeV]
 
-    # hints for IDE
-    particle: str
-    ion: Box
-    weight: float
-    weight_sigma: float
-    user_particle_life_time: float
-    tac_times: list
-    tac_activities: list
-    direction_relative_to_attached_volume: bool
-    position: Box
-    direction: Box
-    energy: Box
     user_info_defaults = {
+        "positronium_fractions":([],
+          {"doc": "FIXME "}),
+        "positronium_lifetimes":([],
+          {"doc": "FIXME "}),
+        "decay_kinds":([],
+          {"doc": "FIXME "}),
+        "prompt_photon_probabilities":([],
+          {"doc": "FIXME "}),
+        "prompt_photon_energies":([],
+          {"doc": "FIXME "}),
         "particle": (
           "gamma",
           {
@@ -394,8 +396,8 @@ class PositroniumSource(SourceBase, g4.GatePositroniumSource):
     def prepare_output(self):
         SourceBase.prepare_output(self)
         # store the output from G4 object
-        self.total_zero_events = self.GetTotalZeroEvents()
-        self.total_skipped_events = self.GetTotalSkippedEvents()
+        # self.total_zero_events = self.GetTotalZeroEvents()
+        # self.total_skipped_events = self.GetTotalSkippedEvents()
 
     def update_tac_activity(self):
         if self.tac_times is None and self.tac_activities is None:
