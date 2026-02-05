@@ -62,24 +62,26 @@ void GatePositroniumSource::CreateSPS() {
   l.fSPS = new GateSingleParticleSource(fAttachedToVolumeName);
 }
 
-void GatePositroniumSource::SetEnergyCDF(const std::vector<double> &cdf) {
-  fEnergyCDF = cdf;
-}
+//void GatePositroniumSource::SetEnergyCDF(const std::vector<double> &cdf) {
+  //fEnergyCDF = cdf;
+//}
 
-void GatePositroniumSource::SetProbabilityCDF(const std::vector<double> &cdf) {
-  fProbabilityCDF = cdf;
-}
+//void GatePositroniumSource::SetProbabilityCDF(const std::vector<double> &cdf) {
+  //fProbabilityCDF = cdf;
+//}
 
-void GatePositroniumSource::SetTAC(const std::vector<double> &times,
-                               const std::vector<double> &activities) {
-  fTAC_Times = times;
-  fTAC_Activities = activities;
-}
+//void GatePositroniumSource::SetTAC(const std::vector<double> &times,
+                               //const std::vector<double> &activities) {
+  //fTAC_Times = times;
+  //fTAC_Activities = activities;
+//}
 
 void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
   GateVSource::InitializeUserInfo(user_info);
   CreateSPS();
 
+  auto bla =  DictGetDouble(user_info, "bla");
+  std::cout << "bla:"<<bla << std::endl;
   PositroniumDecayModelParams params;
   params.fFractions={0.4, 0.6};
   params.fLifetimes={0.1244f, 2.f};
