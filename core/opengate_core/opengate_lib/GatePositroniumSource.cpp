@@ -81,11 +81,11 @@ void GatePositroniumSource::InitializeUserInfo(py::dict &user_info) {
   CreateSPS();
 
   PositroniumDecayModelParams params;
-  params.fFractions={1};
-  params.fLifetimes={0.1244f};
-  params.fDecayKind={PositroniumDecayKind::k2Gamma};
-  params.fPromptGammaProbabilities = {0.0f};
-  params.fPromptGammaEnergy = {0.0f};
+  params.fFractions={0.4, 0.6};
+  params.fLifetimes={0.1244f, 2.f};
+  params.fDecayKind={PositroniumDecayKind::k2Gamma, PositroniumDecayKind::k2Gamma};
+  params.fPromptGammaProbabilities = {0.0f, 0.0f};
+  params.fPromptGammaEnergy = {0.0f, 0.0f};
 
   pModel = std::make_unique<GatePositroniumDecayModel>(params);
 
