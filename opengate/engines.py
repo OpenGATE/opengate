@@ -6,7 +6,6 @@ import weakref
 from box import Box
 from anytree import PreOrderIter
 
-from networkx import volume
 import opengate_core as g4
 from .exception import fatal, warning, GateImplementationError
 from .decorators import requires_fatal, requires_warning
