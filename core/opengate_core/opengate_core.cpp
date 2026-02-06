@@ -103,6 +103,16 @@ void init_G4Step(py::module &);
 
 void init_G4StepPoint(py::module &);
 
+
+// Geant4-DNA
+
+void init_G4VUserChemistryList(py::module &);
+
+void init_G4MoleculeTable(py::module &);
+
+void init_G4DNAChemistryManager(py::module &);
+
+
 // processes/electromagnetic/utils
 
 void init_G4EmParameters(py::module &);
@@ -476,6 +486,10 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4Track(m);
   init_G4Step(m);
   init_G4UserSteppingAction(m);
+
+  init_G4VUserChemistryList(m);
+  init_G4MoleculeTable(m);
+  init_G4DNAChemistryManager(m);
 
   init_G4VSolid(m);
   init_G4VFacet(m);
