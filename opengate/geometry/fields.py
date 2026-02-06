@@ -6,7 +6,7 @@ from ..utility import g4_units
 # ! ======= KNOWN TODO'S ========
 # ! - implement the possibility of choosing the stepper type and equation type
 # ! - bind the sextupole magnetic field geant4 implementation
-# ! -
+# ! - implement mapped fields (e.g., from a CSV file)
 # ! -
 # ! =============================
 
