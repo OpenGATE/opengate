@@ -531,7 +531,7 @@ class ChemistryEngine(EngineBase):
         self.chemistry_manager = self.simulation_engine.simulation.chemistry_manager
 
         # g4 references
-        #
+        self.g4_dna_chemistry_manager = None
 
     def close(self):
         if self.verbose_close:
@@ -544,7 +544,7 @@ class ChemistryEngine(EngineBase):
 
 
     def initialize(self):
-        pass
+        self.g4_dna_chemistry_manager = g4.G4DNAChemistryManager.Instance()
 
 
 class ActionEngine(g4.G4VUserActionInitialization, EngineBase):
