@@ -21,7 +21,8 @@ void init_G4EqMagElectricField(py::module &m) {
 
       .def(py::init<G4ElectroMagneticField *>())
 
-      .def("SetChargeMomentumMass", &G4EqMagElectricField::SetChargeMomentumMass)
+      .def("SetChargeMomentumMass",
+           &G4EqMagElectricField::SetChargeMomentumMass)
 
       ;
 }

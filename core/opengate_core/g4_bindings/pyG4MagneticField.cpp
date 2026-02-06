@@ -14,8 +14,9 @@ namespace py = pybind11;
 #include "G4MagneticField.hh"
 
 /*
- * Trampoline class to allow Python to override GetFieldValue for magnetic fields.
- * Inherits from G4MagneticField which already implements DoesFieldChangeEnergy() = false.
+ * Trampoline class to allow Python to override GetFieldValue for magnetic
+ * fields. Inherits from G4MagneticField which already implements
+ * DoesFieldChangeEnergy() = false.
  *
  * The GetFieldValue method receives a point (x, y, z, t) and must return
  * the magnetic field vector (Bx, By, Bz) at that point.
@@ -42,14 +43,14 @@ public:
 
         if (py::len(result) != 3) {
           throw std::invalid_argument(
-              "GetFieldValue for G4MagneticField must return exactly 3 components [Bx, By, Bz]");
+              "GetFieldValue for G4MagneticField must return exactly 3 "
+              "components [Bx, By, Bz]");
         }
 
         py::list bfield_list = result.cast<py::list>();
         Bfield[0] = bfield_list[0].cast<G4double>();
         Bfield[1] = bfield_list[1].cast<G4double>();
         Bfield[2] = bfield_list[2].cast<G4double>();
-
       }
     }
     // If no override, Bfield remains unmodified (caller should initialize)
@@ -59,8 +60,8 @@ public:
 void init_G4MagneticField(py::module &m) {
 
   py::class_<G4MagneticField, G4Field, PyG4MagneticField,
-             std::unique_ptr<G4MagneticField, py::nodelete>>(
-      m, "G4MagneticField")
+             std::unique_ptr<G4MagneticField, py::nodelete>>(m,
+                                                             "G4MagneticField")
 
       .def(py::init<>())
 
@@ -68,4 +69,3 @@ void init_G4MagneticField(py::module &m) {
 
       ;
 }
-

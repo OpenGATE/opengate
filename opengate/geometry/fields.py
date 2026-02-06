@@ -112,13 +112,13 @@ class MagneticField(FieldBase):
         self.g4_equation_of_motion = g4.G4Mag_UsualEqRhs(self.g4_field)
         self.g4_integrator_stepper = g4.G4ClassicalRK4(
             self.g4_equation_of_motion,
-            6,      # number of variables for magnetic field = 6 (x,y,z + px,py,pz)
+            6,  # number of variables for magnetic field = 6 (x,y,z + px,py,pz)
         )
         self.g4_integration_driver = g4.G4MagInt_Driver(
             self.step_minimum,
             self.g4_integrator_stepper,
-            6,      # number of variables for magnetic field = 6 (x,y,z + px,py,pz)
-            0,      # no verbosity
+            6,  # number of variables for magnetic field = 6 (x,y,z + px,py,pz)
+            0,  # no verbosity
         )
         self.g4_chord_finder = g4.G4ChordFinder(self.g4_integration_driver)
         self.g4_chord_finder.SetDeltaChord(self.delta_chord)
@@ -162,9 +162,7 @@ class UniformMagneticField(MagneticField):
 
     def _create_field(self) -> None:
         """Create the uniform magnetic field."""
-        self.g4_field = g4.G4UniformMagField(
-            g4.G4ThreeVector(*self.field_vector)
-        )
+        self.g4_field = g4.G4UniformMagField(g4.G4ThreeVector(*self.field_vector))
 
 
 class QuadrupoleMagneticField(MagneticField):
@@ -211,9 +209,7 @@ class CustomMagneticField(MagneticField):
     def _create_field(self) -> None:
         """Create the custom magnetic field using the Python trampoline."""
         if self.field_function is None:
-            raise ValueError(
-                "field_function must be provided for CustomMagneticField"
-            )
+            raise ValueError("field_function must be provided for CustomMagneticField")
 
         # Check if the function returns 3 components
         test_point = [0, 0, 0, 0]
@@ -261,14 +257,14 @@ class ElectroMagneticField(FieldBase):
         self.g4_equation_of_motion = g4.G4EqMagElectricField(self.g4_field)
         self.g4_integrator_stepper = g4.G4ClassicalRK4(
             self.g4_equation_of_motion,
-            8,      # number of variables for electromagnetic field = 8 (x,y,z + px,py,pz + t + E)
+            8,  # number of variables for electromagnetic field = 8 (x,y,z + px,py,pz + t + E)
         )
 
         self.g4_integration_driver = g4.G4MagInt_Driver(
             self.step_minimum,
             self.g4_integrator_stepper,
-            8,      # number of variables for electromagnetic field = 8 (x,y,z + px,py,pz + t + E)
-            0
+            8,  # number of variables for electromagnetic field = 8 (x,y,z + px,py,pz + t + E)
+            0,
         )
 
         self.g4_chord_finder = g4.G4ChordFinder(self.g4_integration_driver)
@@ -346,9 +342,7 @@ class CustomElectricField(ElectricField):
     def _create_field(self) -> None:
         """Create the custom electric field using the Python trampoline."""
         if self.field_function is None:
-            raise ValueError(
-                "field_function must be provided for CustomElectricField"
-            )
+            raise ValueError("field_function must be provided for CustomElectricField")
 
         # Check if the function returns 3 components
         test_point = [0, 0, 0, 0]
@@ -470,4 +464,3 @@ class CustomElectroMagneticField(ElectroMagneticField):
                 return True
 
         self.g4_field = _PyElectroMagneticField(self.field_function)
-

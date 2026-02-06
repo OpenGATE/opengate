@@ -14,13 +14,15 @@ namespace py = pybind11;
 
 void init_G4UniformMagField(py::module &m) {
 
-  py::class_<G4UniformMagField, G4MagneticField, std::unique_ptr<G4UniformMagField, py::nodelete>>(
+  py::class_<G4UniformMagField, G4MagneticField,
+             std::unique_ptr<G4UniformMagField, py::nodelete>>(
       m, "G4UniformMagField")
 
-    .def(py::init<const G4ThreeVector &>())
+      .def(py::init<const G4ThreeVector &>())
 
-    .def("SetFieldValue", py::overload_cast<const G4ThreeVector &>(&G4UniformMagField::SetFieldValue))
-    .def("GetConstantFieldValue", &G4UniformMagField::GetConstantFieldValue)
+      .def("SetFieldValue", py::overload_cast<const G4ThreeVector &>(
+                                &G4UniformMagField::SetFieldValue))
+      .def("GetConstantFieldValue", &G4UniformMagField::GetConstantFieldValue)
 
-    ;
+      ;
 }

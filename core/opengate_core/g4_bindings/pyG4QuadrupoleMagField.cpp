@@ -14,11 +14,11 @@ namespace py = pybind11;
 
 void init_G4QuadrupoleMagField(py::module &m) {
 
-  py::class_<G4QuadrupoleMagField, G4MagneticField, std::unique_ptr<G4QuadrupoleMagField, py::nodelete>>(
+  py::class_<G4QuadrupoleMagField, G4MagneticField,
+             std::unique_ptr<G4QuadrupoleMagField, py::nodelete>>(
       m, "G4QuadrupoleMagField")
 
-  .def(py::init<G4double>())
+      .def(py::init<G4double>())
 
-  ;
-
+      ;
 }

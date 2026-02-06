@@ -229,7 +229,6 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         # Field attached to this volume (only one allowed)
         self.field = None
 
-
     def close(self):
         self.release_g4_references()
         self.volume_engine = None
@@ -553,6 +552,7 @@ class VolumeBase(DynamicGateObject, NodeMixin):
         self.field = field.name
         field.attached_to.append(self.name)
         self.volume_manager.fields.update({field.name: field})
+
 
 class RepeatableVolume(VolumeBase):
     def get_repetition_name_from_index(self, index):

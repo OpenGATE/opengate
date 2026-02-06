@@ -13,7 +13,8 @@ namespace py = pybind11;
 
 void init_G4VIntegrationDriver(py::module &m) {
 
-  py::class_<G4VIntegrationDriver, std::unique_ptr<G4VIntegrationDriver, py::nodelete>>(
+  py::class_<G4VIntegrationDriver,
+             std::unique_ptr<G4VIntegrationDriver, py::nodelete>>(
       m, "G4VIntegrationDriver")
 
       .def("SetEquationOfMotion", &G4VIntegrationDriver::SetEquationOfMotion)

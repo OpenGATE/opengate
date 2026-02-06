@@ -28,7 +28,8 @@ public:
   // Inherit the constructors
   using G4Field::G4Field;
 
-  void GetFieldValue(const G4double Point[4], G4double *fieldArr) const override {
+  void GetFieldValue(const G4double Point[4],
+                     G4double *fieldArr) const override {
     py::gil_scoped_acquire gil;
 
     // Convert Point to Python list
@@ -46,7 +47,8 @@ public:
       if (!result.is_none()) {
         py::list field_list = result.cast<py::list>();
         size_t n = py::len(field_list);
-        for (size_t i = 0; i < n && i < G4Field::MAX_NUMBER_OF_COMPONENTS; ++i) {
+        for (size_t i = 0; i < n && i < G4Field::MAX_NUMBER_OF_COMPONENTS;
+             ++i) {
           fieldArr[i] = field_list[i].cast<G4double>();
         }
       }
@@ -54,11 +56,7 @@ public:
   }
 
   G4bool DoesFieldChangeEnergy() const override {
-    PYBIND11_OVERRIDE_PURE(
-        G4bool,
-        G4Field,
-        DoesFieldChangeEnergy
-    );
+    PYBIND11_OVERRIDE_PURE(G4bool, G4Field, DoesFieldChangeEnergy);
   }
 };
 
