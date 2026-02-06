@@ -15,11 +15,10 @@ namespace py = pybind11;
 
 void init_G4ClassicalRK4(py::module &m) {
   // G4ClassicalRK4 inherits from G4MagErrorStepper
-  py::class_<G4ClassicalRK4, G4MagErrorStepper, std::unique_ptr<G4ClassicalRK4, py::nodelete>>(
-      m, "G4ClassicalRK4")
+  py::class_<G4ClassicalRK4, G4MagErrorStepper,
+             std::unique_ptr<G4ClassicalRK4, py::nodelete>>(m, "G4ClassicalRK4")
 
-    .def(py::init<G4EquationOfMotion*, G4int>())
+      .def(py::init<G4EquationOfMotion *, G4int>())
 
-    ;
-
+      ;
 }

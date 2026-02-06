@@ -9,18 +9,20 @@
 
 namespace py = pybind11;
 
-#include "G4MagIntegratorStepper.hh"
 #include "G4EquationOfMotion.hh"
+#include "G4MagIntegratorStepper.hh"
 
 void init_G4MagIntegratorStepper(py::module &m) {
 
-  py::class_<G4MagIntegratorStepper, std::unique_ptr<G4MagIntegratorStepper, py::nodelete>>(
+  py::class_<G4MagIntegratorStepper,
+             std::unique_ptr<G4MagIntegratorStepper, py::nodelete>>(
       m, "G4MagIntegratorStepper")
 
+      .def("GetNumberOfVariables",
+           &G4MagIntegratorStepper::GetNumberOfVariables)
+      .def("GetNumberOfStateVariables",
+           &G4MagIntegratorStepper::GetNumberOfStateVariables)
+      .def("IntegratorOrder", &G4MagIntegratorStepper::IntegratorOrder)
 
-    .def("GetNumberOfVariables", &G4MagIntegratorStepper::GetNumberOfVariables)
-    .def("GetNumberOfStateVariables", &G4MagIntegratorStepper::GetNumberOfStateVariables)
-    .def("IntegratorOrder", &G4MagIntegratorStepper::IntegratorOrder)
-
-    ;
+      ;
 }

@@ -18,10 +18,9 @@ void init_G4ChordFinder(py::module &m) {
   py::class_<G4ChordFinder, std::unique_ptr<G4ChordFinder, py::nodelete>>(
       m, "G4ChordFinder")
 
-    .def(py::init<G4VIntegrationDriver *>())
-    .def(py::init<G4MagneticField*, G4double, G4MagIntegratorStepper*, G4int>())
+      .def(py::init<G4VIntegrationDriver *>())
+      .def(py::init<G4MagneticField *, G4double, G4MagIntegratorStepper *,
+                    G4int>())
 
-    .def("SetDeltaChord", &G4ChordFinder::SetDeltaChord)
-    ;
-
+      .def("SetDeltaChord", &G4ChordFinder::SetDeltaChord);
 }

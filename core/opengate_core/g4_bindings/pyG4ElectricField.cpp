@@ -13,8 +13,9 @@ namespace py = pybind11;
 #include "G4ElectricField.hh"
 #include "G4ElectroMagneticField.hh"
 
-// Trampoline class to allow Python to override GetFieldValue for electric fields.
-// Inherits from G4ElectricField which already implements DoesFieldChangeEnergy() = true.
+// Trampoline class to allow Python to override GetFieldValue for electric
+// fields. Inherits from G4ElectricField which already implements
+// DoesFieldChangeEnergy() = true.
 class PyG4ElectricField : public G4ElectricField {
 public:
   using G4ElectricField::G4ElectricField;
@@ -39,7 +40,8 @@ public:
 
         if (py::len(field_list) != 3) {
           throw std::invalid_argument(
-              "GetFieldValue for G4ElectricField must return exactly 3 components [Ex, Ey, Ez]");
+              "GetFieldValue for G4ElectricField must return exactly 3 "
+              "components [Ex, Ey, Ez]");
         }
 
         // User returned [Ex, Ey, Ez]
@@ -49,13 +51,9 @@ public:
         field[3] = field_list[0].cast<G4double>();
         field[4] = field_list[1].cast<G4double>();
         field[5] = field_list[2].cast<G4double>();
-
       }
-
     }
-
   }
-
 };
 
 void init_G4ElectricField(py::module &m) {
@@ -68,6 +66,5 @@ void init_G4ElectricField(py::module &m) {
 
       .def("DoesFieldChangeEnergy", &G4ElectricField::DoesFieldChangeEnergy)
 
-    ;
-
+      ;
 }

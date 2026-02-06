@@ -14,8 +14,9 @@ namespace py = pybind11;
 
 void init_G4MagErrorStepper(py::module &m) {
 
-  py::class_<G4MagErrorStepper, G4MagIntegratorStepper, std::unique_ptr<G4MagErrorStepper, py::nodelete>>(
+  py::class_<G4MagErrorStepper, G4MagIntegratorStepper,
+             std::unique_ptr<G4MagErrorStepper, py::nodelete>>(
       m, "G4MagErrorStepper")
 
-    ;
+      ;
 }

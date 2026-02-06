@@ -13,7 +13,6 @@ namespace py = pybind11;
 #include "G4ElectroMagneticField.hh"
 #include "G4Field.hh"
 
-
 // Trampoline class to allow Python to override GetFieldValue for
 // electromagnetic fields.
 class PyG4ElectroMagneticField : public G4ElectroMagneticField {
@@ -41,23 +40,20 @@ public:
 
         if (n != 6) {
           throw std::invalid_argument(
-              "GetFieldValue for G4ElectroMagneticField must return exactly 6 components [Bx, By, Bz, Ex, Ey, Ez]");
+              "GetFieldValue for G4ElectroMagneticField must return exactly 6 "
+              "components [Bx, By, Bz, Ex, Ey, Ez]");
         }
 
         for (size_t i = 0; i < n && i < 6; ++i) {
           field[i] = field_list[i].cast<G4double>();
         }
-
       }
     }
   }
 
   G4bool DoesFieldChangeEnergy() const override {
-    PYBIND11_OVERRIDE_PURE(
-        G4bool,
-        G4ElectroMagneticField,
-        DoesFieldChangeEnergy
-    );
+    PYBIND11_OVERRIDE_PURE(G4bool, G4ElectroMagneticField,
+                           DoesFieldChangeEnergy);
   }
 };
 

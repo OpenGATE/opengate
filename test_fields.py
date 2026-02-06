@@ -91,10 +91,10 @@ if __name__ == "__main__":
     ]
 
     source.direction.partPhSp_x = [
-    2.3335754 * mm,
-    2.3335754 * mrad,
-    0.00078728 * mm * mrad,
-    0.,
+        2.3335754 * mm,
+        2.3335754 * mrad,
+        0.00078728 * mm * mrad,
+        0.0,
     ]
     source.direction.partPhSp_y = [
         1.96433431 * mm,

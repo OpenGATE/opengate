@@ -1163,7 +1163,6 @@ class VolumeManager(GateObject):
         # fields
         self.fields: dict[str, FieldBase] = {}
 
-
     def reset(self):
         self.__init__(self.simulation)
 
