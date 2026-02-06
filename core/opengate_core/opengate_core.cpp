@@ -179,9 +179,15 @@ void init_G4Field(py::module &);
 
 void init_G4MagneticField(py::module &);
 
+void init_G4ElectroMagneticField(py::module &);
+
+void init_G4ElectricField(py::module &);
+
 void init_G4UniformMagField(py::module &);
 
 void init_G4QuadrupoleMagField(py::module &);
+
+void init_G4UniformElectricField(py::module &);
 
 void init_G4EquationOfMotion(py::module &);
 
@@ -189,11 +195,17 @@ void init_G4Mag_EqRhs(py::module &);
 
 void init_G4Mag_UsualEqRhs(py::module &);
 
+void init_G4EqMagElectricField(py::module &);
+
 void init_G4MagIntegratorStepper(py::module &);
 
 void init_G4MagErrorStepper(py::module &);
 
 void init_G4ClassicalRK4(py::module &);
+
+void init_G4VIntegrationDriver(py::module &);
+
+void init_G4MagInt_Driver(py::module &);
 
 void init_G4ChordFinder(py::module &);
 
@@ -521,14 +533,20 @@ PYBIND11_MODULE(opengate_core, m) {
   init_G4FieldManager(m);
   init_G4Field(m);
   init_G4MagneticField(m);
+  init_G4ElectroMagneticField(m);
+  init_G4ElectricField(m);
   init_G4UniformMagField(m);
   init_G4QuadrupoleMagField(m);
+  init_G4UniformElectricField(m);
   init_G4EquationOfMotion(m);
   init_G4Mag_EqRhs(m);
   init_G4Mag_UsualEqRhs(m);
+  init_G4EqMagElectricField(m);
   init_G4MagIntegratorStepper(m);
   init_G4MagErrorStepper(m);
   init_G4ClassicalRK4(m);
+  init_G4VIntegrationDriver(m);
+  init_G4MagInt_Driver(m);
   init_G4ChordFinder(m);
 
   init_G4Box(m);
