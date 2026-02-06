@@ -37,7 +37,7 @@ public:
       py::object result = override(pyPoint);
       if (!result.is_none()) {
         py::list field_list = result.cast<py::list>();
-        size_t n = py::len(field_list)
+        size_t n = py::len(field_list);
 
         if (n != 6) {
           throw std::invalid_argument(
