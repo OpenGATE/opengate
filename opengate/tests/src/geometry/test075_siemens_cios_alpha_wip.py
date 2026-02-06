@@ -4,7 +4,35 @@
 import opengate as gate
 from opengate.contrib.carm.siemensciosalpha import Ciosalpha
 from scipy.spatial.transform import Rotation
+import numpy as np
 
+"""----------------------------------------------------------------"""
+""" WARNING WARNING WARNING
+
+    SpekPy is not compatible with numpy 2.x
+
+    The following code patches numpy arange function to force conversion to scalar even if it's a 1-element array
+
+"""
+# Save the original arange function
+original_arange = np.arange
+
+
+def patched_arange(*args, **kwargs):
+    # Helper to force conversion to scalar even if it's a 1-element array
+    def force_scalar(x):
+        if isinstance(x, (np.ndarray, list)):
+            return np.asarray(x).item(0) if np.size(x) > 0 else x
+        return x
+
+    # Clean the positional arguments (start, stop, step)
+    new_args = [force_scalar(arg) for arg in args]
+    return original_arange(*new_args, **kwargs)
+
+
+# Apply the patch
+np.arange = patched_arange
+"""----------------------------------------------------------------"""
 
 if __name__ == "__main__":
     # paths

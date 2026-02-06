@@ -5,7 +5,6 @@ import opengate as gate
 import opengate.contrib.phantoms.nemaiec as gate_iec
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", "test038")
 

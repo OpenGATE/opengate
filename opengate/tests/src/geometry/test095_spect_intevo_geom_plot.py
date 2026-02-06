@@ -5,7 +5,6 @@ from opengate.tests import utility
 from test095_spect_helpers import *
 import json
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(
         __file__, gate_folder="", output_folder="test095"

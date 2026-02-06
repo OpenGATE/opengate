@@ -8,6 +8,7 @@ Hard-wire tables extracted from NIST (J. Hubbell and S.M. Seltzer).
 Adaptation of the Matlab PhotonAttenuation package written by Jarek Tuszynski.
 @author: vilches
 """
+
 import numpy as np
 from scipy.interpolate import interp1d, pchip_interpolate
 import re

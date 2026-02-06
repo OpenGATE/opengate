@@ -5,7 +5,6 @@ import opengate as gate
 import test028_ge_nm670_spect_2_helpers as test028
 from opengate.tests import utility
 
-
 if __name__ == "__main__":
     paths = utility.get_default_test_paths(__file__, "", output_folder="test028_hits")
 

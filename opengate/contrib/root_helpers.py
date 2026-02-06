@@ -28,9 +28,9 @@ def _root_open_trees_safely(paths, tree_name):
 
 
 def _is_branch_numeric(branch):
-    """Checks if a TBranch contains a simple, plottable numeric type."""
-    # ... (content is unchanged)
-    return branch.interpretation.typename in (
+    """Checks if a TBranch or RField contains a simple, plottable numeric type."""
+
+    valid_types = (
         "bool",
         "int8",
         "int16",
@@ -44,6 +44,20 @@ def _is_branch_numeric(branch):
         "float64",
         "double",
     )
+
+    # 1. Try Standard TBranch behavior (has .interpretation.typename)
+    interp = getattr(branch, "interpretation", None)
+    if interp:
+        tname = getattr(interp, "typename", None)
+        if tname and tname in valid_types:
+            return True
+
+    # 2. Try RField/NTuple behavior (has .typename directly)
+    tname = getattr(branch, "typename", None)
+    if tname and tname in valid_types:
+        return True
+
+    return False
 
 
 def _get_common_numeric_branches(trees, ignore_branches=None):
@@ -160,6 +174,19 @@ def root_read_tree(root_file_path, tree_name="phsp"):
 
 
 def root_write_tree(output_file, tree_name, branch_types, branch_data):
+    # Ensure all arrays in branch_data are high-level ak.Array or numpy
+    formatted_data = {
+        k: (ak.Array(v) if not isinstance(v, np.ndarray) else v)
+        for k, v in branch_data.items()
+    }
+
+    # Step 1: Create the empty tree
+    tree = output_file.mktree(tree_name, branch_types)
+    # Step 2: Fill the tree
+    tree.extend(formatted_data)
+
+
+def root_write_tree_old(output_file, tree_name, branch_types, branch_data):
     """
     Must be used like :
     with uproot.recreate(output_filename) as output_file:
@@ -209,8 +236,21 @@ def root_split_tree_by_branch(
             all_branches = tree.arrays()
 
             mask = all_branches[branch_name] > threshold
+
+            # 1. Apply mask
             high_val_events = all_branches[mask]
             low_val_events = all_branches[~mask]
+
+            # Convert to dictionary of arrays
+            # Wrap with ak.Array() to ensure high-level format for Uproot
+            high_val_dict = {
+                field: ak.Array(high_val_events[field])
+                for field in high_val_events.fields
+            }
+            low_val_dict = {
+                field: ak.Array(low_val_events[field])
+                for field in low_val_events.fields
+            }
 
             if verbose:
                 logger.info(f"Read {len(all_branches)} total events.")
@@ -222,9 +262,9 @@ def root_split_tree_by_branch(
                 )
 
             with uproot.recreate(high_val_path) as high_file:
-                high_file.mktree(tree_name, high_val_events)
+                high_file[tree_name] = high_val_dict
             with uproot.recreate(low_val_path) as low_file:
-                low_file.mktree(tree_name, low_val_events)
+                low_file[tree_name] = low_val_dict
 
         if verbose:
             logger.info(f"Successfully wrote high-value events to '{high_val_path}'.")
@@ -286,8 +326,14 @@ def root_merge_trees(
 
         merged_data = ak.concatenate(all_data_to_merge)
 
+        # Convert to dictionary of arrays
+        # Wrap with ak.Array() to ensure high-level format for Uproot
+        merged_dict = {
+            field: ak.Array(merged_data[field]) for field in merged_data.fields
+        }
+
         with uproot.recreate(output_path) as output_file:
-            output_file.mktree(tree_name, merged_data)
+            output_file[tree_name] = merged_dict
 
         if verbose:
             logger.info(

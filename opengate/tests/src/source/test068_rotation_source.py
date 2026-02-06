@@ -7,7 +7,6 @@ from scipy.spatial.transform import Rotation
 import numpy as np
 import uproot
 
-
 # The test generates three different generic sources, momentum, focused and iso, which are attached to a plan.
 # The plan is randomly rotated, and we verify that the generated particles have a direction which is in accordance
 # with the applied rotations and the transmissions.

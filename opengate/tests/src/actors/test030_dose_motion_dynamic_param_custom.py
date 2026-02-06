@@ -20,7 +20,7 @@ def print_face():
     print("**** ^^^   ^^^ ****")
     print("****  O     O  ****")
     print("****     L     ****")
-    print("****  \_____/  ****")
+    print("****  \\_____/  ****")
     print("****     V     ****")
     print("*******************")
 
@@ -148,7 +148,8 @@ if __name__ == "__main__":
     sim.run_timing_intervals = [
         (i * interval_length, (i + 1) * interval_length) for i in range(n)
     ]
-    gantry_angles_deg = [i * 20 for i in range(n)]
+    # Wrap in brackets to create shape (N, 1) for newer scipy
+    gantry_angles_deg = [[i * 20] for i in range(n)]
     # use a helper function
     (
         dynamic_translations,
