@@ -130,41 +130,64 @@ if __name__ == "__main__":
     # Timing
     sim.run_timing_intervals = [[0, 0.001 * sec]]
 
+    test_all_parameter_combinations = False
+
+    if test_all_parameter_combinations:
+        tested_parameter_combinations = []
+        for twp in [
+            TimeWindowPolicy.NonParalyzable,
+            TimeWindowPolicy.Paralyzable,
+            TimeWindowPolicy.EnergyWinnerParalyzable,
+        ]:
+            for pap in [
+                PositionAttributePolicy.EnergyWeightedCentroid,
+                PositionAttributePolicy.EnergyWinner,
+            ]:
+                for ap in [
+                    AttributePolicy.First,
+                    AttributePolicy.EnergyWinner,
+                    AttributePolicy.Last,
+                ]:
+                    tested_parameter_combinations.append((twp, pap, ap))
+    else:
+        tested_parameter_combinations = [
+            # Default
+            (
+                TimeWindowPolicy.NonParalyzable,
+                PositionAttributePolicy.EnergyWeightedCentroid,
+                AttributePolicy.First,
+            ),
+            # GATE 9 behavior
+            (
+                TimeWindowPolicy.EnergyWinnerParalyzable,
+                PositionAttributePolicy.EnergyWinner,
+                AttributePolicy.EnergyWinner,
+            ),
+        ]
+
     all_tests_ok = True
 
-    for twp in [
-        TimeWindowPolicy.NonParalyzable,
-        TimeWindowPolicy.Paralyzable,
-        TimeWindowPolicy.EnergyWinnerParalyzable,
-    ]:
-        for pap in [
-            PositionAttributePolicy.EnergyWeightedCentroid,
-            PositionAttributePolicy.EnergyWinner,
-        ]:
-            for ap in [
-                AttributePolicy.First,
-                AttributePolicy.EnergyWinner,
-                AttributePolicy.Last,
-            ]:
-                pu.time_window_policy = twp.name
-                pu.position_attribute_policy = pap.name
-                pu.attribute_policy = ap.name
-                # print(f"Running pileup test with {twp}, {pap}, {ap}")
+    for c in tested_parameter_combinations:
+        twp, pap, ap = c
 
-                sim.run(start_new_process=True)
+        pu.time_window_policy = twp.name
+        pu.position_attribute_policy = pap.name
+        pu.attribute_policy = ap.name
 
-                all_match = check_gate_pileup(
-                    sc.output_filename,
-                    "Singles_before_pileup",
-                    "Singles_after_pileup",
-                    pu.time_window,
-                    twp,
-                    pap,
-                    ap,
-                )
+        sim.run(start_new_process=True)
 
-                if not all_match:
-                    print(f"Pileup test failed for {twp}, {pap}, {ap}")
-                    all_tests_ok = False
+        all_match = check_gate_pileup(
+            sc.output_filename,
+            "Singles_before_pileup",
+            "Singles_after_pileup",
+            pu.time_window,
+            twp,
+            pap,
+            ap,
+        )
+
+        if not all_match:
+            print(f"Pileup test failed for {twp}, {pap}, {ap}")
+            all_tests_ok = False
 
     utility.test_ok(all_tests_ok)

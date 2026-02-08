@@ -560,7 +560,7 @@ class DigitizerPileupActor(DigitizerWithRootOutput, g4.GateDigitizerPileupActor)
                 + "NonParalyzable: the time window is fixed and does not change when new digis occur. "
                 + "Paralyzable: the time window is extended each time a new digi occurs within the current time window. "
                 + "EnergyWinnerParalyzable: the time window is extended when a new digi occurs within the current time window, "
-                + "if this digi has a higher energy than the previous digis in current the window.",
+                + "if this digi has a higher energy than the previous digis in the current window.",
                 "allowed_values": (
                     "NonParalyzable",
                     "Paralyzable",

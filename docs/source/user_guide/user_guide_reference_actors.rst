@@ -714,9 +714,9 @@ The actor applies the following rules to combine singles:
   * EnergyWeightedCentroid (default): energy-weighted centroid of all singles in the window
   * EnergyWinner: position of the single with the highest deposited energy in the window
 * All other attribute values of the resulting combined single are determined by the value of `attribute_policy`:
-   * First (default): attribute values are taken from the first single in the window
-   * EnergyWinner: attribute values are taken from the single with the highest deposited energy in the window
-   * Last: attribute values are taken from the last single in the window
+   * First (default): attribute values are taken from the first single in the window.
+   * EnergyWinner: attribute values are taken from the single with the highest deposited energy in the window.
+   * Last: attribute values are taken from the last single in the window.
 
 To obtain the same pile-up behavior as in GATE 9, set the following options:
 
