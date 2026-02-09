@@ -129,16 +129,16 @@ def estimate_nb_of_event(dicom_file, median_nb_part):
     return total_nb_event
 
 
-
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
-@click.option("--path", default="./data_advanced_test_linac/", help="path to the patient folder")
+@click.option(
+    "--path", default="./data_advanced_test_linac/", help="path to the patient folder"
+)
 @click.option("--path_output", default="./output/", help="path to the patient folder")
-
 def gamma_index_comparison(path, path_output):
-# ############# path and file name to modify ##############
+    # ############# path and file name to modify ##############
     tle = True
     CT_name = "CT.mhd"
     TPS_name = "TPS.mhd"
