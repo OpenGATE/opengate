@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import json
 import pymedphys
+import click
 
 
 class voxelised_dose:
@@ -128,106 +129,55 @@ def estimate_nb_of_event(dicom_file, median_nb_part):
     return total_nb_event
 
 
-plt.rc("font", family="sans-serif", serif="DejaVu Sans")
-plt.rcParams.update({"font.size": 20})
-plt.rc("text", usetex=True)
-plt.rcParams["text.latex.preamble"] = r"\boldmath\usepackage{amsmath}\usepackage{bm}"
+
+CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
-############# simulation parameters to modify ##############
-stats_ratio_according_to_PC_to_cluster_speed_ratio = 1
-speed_ratio = 15
-sampling = 4
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option("--path", default="./data_advanced_test_linac/", help="path to the patient folder")
+@click.option("--path_output", default="./output/", help="path to the patient folder")
 
-path = f"./data"
-path_output = f"./output"
-
-os.chdir(path)
-folder_list = []
-folder_list.append(path)
-
+def gamma_index_comparison(path, path_output):
 # ############# path and file name to modify ##############
-#
-for pname in folder_list:
-
     tle = True
-    f = open(f"./header.json")
-    json = json.load(f)
     CT_name = "CT.mhd"
     TPS_name = "TPS.mhd"
     RTplan_name = "rt_plan.dcm"
     CT_mask_name = "mask.mhd"
 
     if tle:
-
         MC_dose_name = "MC-tle-norm-dose.mhd"
     else:
-        MC_dose_name = "MC-tle-norm-dose.mhd"
-
-    path_output = f"../output"
-    if tle:
-        folder_list = sorted(
-            glob.glob(f"{path_output}/tle-stats_file*", recursive=True)
-        )
-    else:
-        folder_list = sorted(
-            glob.glob(f"{path_output}/tle-stats_file*", recursive=True)
-        )
-    print(folder_list)
-
-    #
-    isocenter = get_single_isocenter(f"./{RTplan_name}", 0.01)
-    print(isocenter)
-    if tle:
-        img_dose_name_list = sorted(
-            glob.glob("../output/*tle-norm-dose*.mhd", recursive=True)
-        )
-    else:
-        img_dose_name_list = sorted(
-            glob.glob("../output/*norm-dose*.mhd", recursive=True)
-        )
-    print(img_dose_name_list)
-    CT_mask_path = f"./{CT_mask_name}"
+        MC_dose_name = "MC-norm-dose.mhd"
+    isocenter = get_single_isocenter(f"{path}/{RTplan_name}", 0.01)
+    CT_mask_path = f"{path}/{CT_mask_name}"
     CT_mask = voxelised_dose(CT_mask_path)
     structuring_element = np.ones((3, 3, 3))
-    for i in range(1):
-        CT_mask.dose = ndimage.binary_erosion(
-            CT_mask.dose, structure=structuring_element
-        )
 
-    CT_path = f"./{CT_name}"
+    CT_mask.dose = ndimage.binary_erosion(CT_mask.dose, structure=structuring_element)
+
+    CT_path = f"{path}/{CT_name}"
     CT = voxelised_dose(CT_path)
     CT.dose = CT.dose * CT_mask.dose
     CT.dose[CT.dose == 0] -= 1024
 
-    TPS_path = f"./{TPS_name}"
+    TPS_path = f"{path}/{TPS_name}"
     TPS = voxelised_dose(TPS_path)
     TPS.dose = TPS.dose * CT_mask.dose
     spacing = TPS.information.spacing
-    volume = spacing[0] * spacing[1] * spacing[2]
 
-    MC_dose_path = f"../output/{MC_dose_name}"
+    MC_dose_path = f"{path_output}/{MC_dose_name}"
     MC_dose = voxelised_dose(MC_dose_path)
     MC_dose.dose = MC_dose.dose * CT_mask.dose
 
     MC_dose.z = MC_dose.z[::-1]
     x = MC_dose.x - isocenter[0]
-    y = MC_dose.y - isocenter[1]
     z = -(MC_dose.z - isocenter[2])
     idx = 40
-
-    x_ref = TPS.x
-    y_ref = TPS.y
-    z_ref = TPS.z
-
-    x_eval = MC_dose.x
-    y_eval = MC_dose.y
-    z_eval = MC_dose.z
 
     axes_reference = (MC_dose.x, MC_dose.y, MC_dose.z)
     axes_evaluation = (MC_dose.x, MC_dose.y, MC_dose.z)
 
-    # print(axes_evaluation,axes_reference)
     dose_reference = TPS.dose
     dose_evaluation = MC_dose.dose
 
@@ -251,14 +201,13 @@ for pname in folder_list:
     )
     valid_gamma = gamma[~np.isnan(gamma)]
     pass_ratio = np.sum(valid_gamma <= 1) / len(valid_gamma)
-    print(pass_ratio)
 
     height = 20
     width = height / 2
     fig1, ax1 = plt.subplots(2, 1)
     fig1.set_size_inches(width, height)
     fig1.subplots_adjust(
-        left=0, bottom=0.086, right=0.99, top=0.986, wspace=0.2, hspace=0.193
+        left=0.15, bottom=0.086, right=0.99, top=0.986, wspace=0.2, hspace=0.193
     )
     norm = mcolors.LogNorm(vmin=0.03, vmax=70)
 
@@ -279,7 +228,7 @@ for pname in folder_list:
         alpha=0.6,
     )
     cbar = fig1.colorbar(cax2, ax=ax1[0])
-    cbar.set_label(label=r"\textbf{Dose[\%]}", fontsize=16)
+    cbar.set_label(label="Dose[%]", fontsize=16)
 
     #
     cax = ax1[1].imshow(
@@ -299,11 +248,15 @@ for pname in folder_list:
         alpha=0.6,
     )
     cbar = fig1.colorbar(cax2, ax=ax1[1], pad=0.04)
-    cbar.set_label(label=r"\textbf{Dose[\%]}", fontsize=16)
+    cbar.set_label(label="Dose[%]", fontsize=16)
 
-    ax1[0].set(ylabel=r"\textbf{Y position [mm]}")
-    ax1[1].set(ylabel=r"\textbf{Y position [mm]}", xlabel=r"\textbf{X position [mm]}")
+    ax1[0].set(ylabel="Y position [mm]")
+    ax1[1].set(ylabel="Y position [mm]", xlabel="X position [mm]")
     ax1[0].axes.get_xaxis().set_visible(False)
-    fig1.savefig("../output/MC_vs_TPS_dose.pdf")
+    fig1.savefig(f"{path_output}/MC_vs_TPS_dose.pdf")
     is_ok = pass_ratio > 0.6
     utility.test_ok(is_ok)
+
+
+if __name__ == "__main__":
+    gamma_index_comparison()
