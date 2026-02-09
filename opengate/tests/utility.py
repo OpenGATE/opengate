@@ -1025,8 +1025,13 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
                     if not compare_arrays(v1, v2, f"{key}[{i}]"):
                         is_equal = False
                 elif isinstance(v1, float) and isinstance(v2, float):
-                    if abs(v1 - v2) > tolerance:
-                        print(f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+                    r = np.divide(
+                        abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0)
+                    )
+                    if r > tolerance:
+                        print(
+                            f"{key}[{i}] : {v1} vs {v2} (diff: {abs(v1 - v2)}, {r*100} %)"
+                        )
                         is_equal = False
                 elif v1 != v2:
                     print(f"{key}[{i}] : {v1} vs {v2}")
@@ -1049,8 +1054,11 @@ def dict_compare(d1, d2, tolerance=1e-6, ignored_keys=None, parent_key=""):
         elif isinstance(v1, list) and isinstance(v2, list):
             return compare_arrays(v1, v2, full_key)
         elif isinstance(v1, float) and isinstance(v2, float):
-            if abs(v1 - v2) > tolerance:
-                print(f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)})")
+            r = np.divide(abs(v1 - v2), v1, out=np.zeros_like(v1), where=(v1 != 0))
+            if r > tolerance:
+                print(
+                    f"{full_key} : {v1} vs {v2} (diff: {abs(v1 - v2)}) (diff: {r*100} %)"
+                )
                 return False
             return True
         else:
