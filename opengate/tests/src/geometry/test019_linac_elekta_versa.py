@@ -38,10 +38,16 @@ if __name__ == "__main__":
     # add a linac
     linac = versa.add_linac(sim, "versa")
     translation = [50 * mm, 12 * mm, 29 * mm]
+    # translation = [0 * mm, 0 * mm, 0 * mm]
     versa.translation_from_sad(sim, linac.name, translation, sad=1000)
     versa.rotation_around_user_point(
         sim, linac.name, "ZY", [38, 28], [224 * mm, -47 * mm, 456 * mm]
     )
+
+    # "phsp_versa_no_tr_no_rot.root"
+    # versa.rotation_around_user_point(
+    #    sim, linac.name, "ZY", [0, 0], [224 * mm, -47 * mm, 456 * mm]
+    # )
 
     # add linac e- source
     source = versa.add_electron_source(sim, linac.name, 6.49 * MeV, 1 * mm, 0.5 * mm)
@@ -63,6 +69,11 @@ if __name__ == "__main__":
     phsp = versa.add_phase_space_actor(sim, plane.name)
     phsp.output_filename = "phsp_versa.root"
 
+    # for reference :
+    # phsp.output_filename =  paths.output_ref / "phsp_versa_no_tr_no_rot.root"
+    # phsp.output_filename =  paths.output_ref / "phsp_versa_tr_no_rot.root"
+    # phsp.output_filename =  paths.output_ref / "phsp_versa_tr_rot.root"
+
     # start simulation
     sim.run()
 
@@ -74,7 +85,7 @@ if __name__ == "__main__":
     print(paths.output_ref)
     root_ref = paths.output_ref / "phsp_versa_no_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
-    tols = [0.1, 7.5, 7.5]
+    tols = [0.1, 2.5, 2.5]
     is_ok = utility.compare_root3(
         root_ref,
         phsp.get_output_path(),
@@ -91,7 +102,7 @@ if __name__ == "__main__":
 
     root_ref = paths.output_ref / "phsp_versa_tr_no_rot.root"
     keys = ["KineticEnergy", "PrePositionLocal_X", "PrePositionLocal_Y"]
-    tols = [0.1, 7.5, 7.5]
+    tols = [0.1, 2.5, 2.5]
     is_ok = (
         utility.compare_root3(
             root_ref,
@@ -117,7 +128,8 @@ if __name__ == "__main__":
         "PrePositionLocal_X",
         "PrePositionLocal_Y",
     ]
-    tols = [0.1, 31, 24, 7.5, 7.5]
+    tols = [0.1, 2.5, 2.5, 2.5, 2.5]
+    # tols = [0.1, 31, 24, 7.5, 7.5]
     is_ok = (
         utility.compare_root3(
             root_ref,
