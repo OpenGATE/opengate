@@ -1,12 +1,15 @@
 import opengate_core as g4
+import opengate as gate
 from .base import ActorBase
 from ..base import process_cls
 from box import Box
 from ..utility import g4_units
 from .actoroutput import ActorOutputBase
+from anytree import RenderTree
 from ..base import UserInfoValidatorBase
 from ..exception import fatal, warning
 import numpy as np
+import itk
 
 
 def generic_source_default_aa():
@@ -436,9 +439,188 @@ class ScatterSplittingFreeFlightActor(
         )
 
 
+class ActorOutputLastVertexInteractionSplittingActor(ActorOutputBase):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.number_of_replayed_events = 0
+        self.number_of_events = 0
+
+    def get_processed_output(self):
+        d = {}
+        d["replayed_particles"] = self.number_of_replayed_events
+        d["nb_events"] = self.number_of_events
+        return d
+
+    def __str__(self):
+        s = ""
+        for k, v in self.get_processed_output().items():
+            s = k + ": " + str(v)
+            s += "\n"
+        return s
+
+
+class LastVertexInteractionSplittingActor(
+    ActorBase, g4.GateLastVertexInteractionSplittingActor
+):
+    """Specific VRT which do not use the generic biaising. This splitting actor proposes an interaction splitting at the last particle vertex before the exit
+     of the biased volume.  This actor can be usefull for application where collimation are important,
+    such as in medical LINAC (Linear Accelerator) simulations or radiation shielding.
+    """
+
+    # hints for IDE
+    splitting_factor: int
+    batch_size: int
+    nb_of_max_batch_per_event: int
+
+    user_info_defaults = {
+        "splitting_factor": (
+            1,
+            {
+                "doc": "Defines the number of particles exiting at each split process. Unlike other split actors, this splitting factor counts particles that actually exit, not just those generated.",
+            },
+        ),
+        "batch_size": (
+            1,
+            {
+                "doc": "Defines a batch of number of processes to regenerate. The optimal value depends on the collimation setup; for example, a batch_size of 10 works well for LINAC head configurations.",
+            },
+        ),
+        "nb_of_max_batch_per_event": (
+            500,
+            {
+                "doc": "Defines a maximum number of attempt to enable the particles to exit. Useful to avoid an important loss of time for extremely rare events",
+            },
+        ),
+        "acceptance_angle": (
+            generic_source_default_aa(),
+            {
+                "doc": "See generic source",
+            },
+        ),
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self._add_user_output(
+            ActorOutputLastVertexInteractionSplittingActor, "last_vertex_output"
+        )
+        self.__initcpp__()
+        self.list_of_volume_name = []
+
+    def __initcpp__(self):
+        g4.GateLastVertexInteractionSplittingActor.__init__(self, {"name": self.name})
+        self.AddActions(
+            {
+                "BeginOfRunAction",
+                "BeginOfEventAction",
+                "PreUserTrackingAction",
+                "SteppingAction",
+                "PostUserTrackingAction",
+                "EndOfEventAction",
+                "EndOfRunAction",
+                "EndSimulationAction",
+            }
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+        volume_tree = self.simulation.volume_manager.get_volume_tree()
+        dico_of_volume_tree = {}
+        for pre, _, node in RenderTree(volume_tree):
+            dico_of_volume_tree[str(node.name)] = node
+        volume_name = self.user_info.attached_to
+        while volume_name != "world":
+            node = dico_of_volume_tree[volume_name]
+            volume_name = node.mother
+            self.list_of_volume_name.append(volume_name)
+        self.fListOfVolumeAncestor = self.list_of_volume_name
+
+    def EndSimulationAction(self):
+        self.user_output.last_vertex_output.number_of_events = self.GetNumberOfEvents()
+        self.user_output.last_vertex_output.number_of_replayed_events = (
+            self.GetNumberOfReplayedEvents()
+        )
+        print("Number of replayed Events: ", self.GetNumberOfReplayedEvents())
+        print("Number of killed particle:", self.GetNumberOfKilledParticles())
+
+    def __str__(self):
+        s = self.user_output["last_vertex_output"].__str__()
+        return s
+
+    def UncertaintyCalculation(self, N, uncertainty_file, file, squared_file):
+        img = itk.imread(file)
+        array = itk.GetArrayFromImage(img)
+
+        squared_img = itk.imread(squared_file)
+        squared_array = itk.GetArrayFromImage(squared_img)
+
+        unc_dose_array = np.sqrt(1 / (N - 1) * (squared_array / N - (array / N) ** 2))
+        unc_dose_array = unc_dose_array / (array / N)
+
+        new_uncertainty_img = itk.GetImageFromArray(unc_dose_array)
+        new_uncertainty_img.CopyInformation(img)
+        itk.imwrite(new_uncertainty_img, uncertainty_file)
+
+    def CorrectDoseUncertainty(self):
+        actors = self.simulation.actor_manager.actors
+        output_dir = self.simulation.output_dir
+        for key in actors.keys():
+            actor = actors[key]
+            if hasattr(actor, "dose_uncertainty"):
+                N = self.user_output.last_vertex_output.number_of_events
+                t_N = N - self.user_output.last_vertex_output.number_of_replayed_events
+                if (
+                    actor.dose_uncertainty.active == True
+                    and actor.dose_squared.active == True
+                ):
+                    uncertainty_file = (
+                        output_dir + actor.edep_uncertainty.output_filename
+                    )
+                    file = output_dir + actor.dose.output_filename
+                    squared_file = output_dir + actor.dose_squared.output_filename
+                    self.UncertaintyCalculation(
+                        t_N, uncertainty_file, file, squared_file
+                    )
+                elif (
+                    actor.edep_uncertainty.active == True
+                    and actor.edep_squared.active == True
+                ):
+                    uncertainty_file = (
+                        output_dir + actor.edep_uncertainty.output_filename
+                    )
+                    file = output_dir + actor.edep.output_filename
+                    squared_file = output_dir + actor.edep_squared.output_filename
+                    self.UncertaintyCalculation(
+                        t_N, uncertainty_file, file, squared_file
+                    )
+
+    # def retrieveDoseActors(self):
+    #     actors = self.simulation.actor_manager.actors
+    #     VoxelDepositActorSubClasses = self.retrieveVoxelDepositActorSubClasses(gate.actors.doseactors.VoxelDepositActor)
+    #     print(VoxelDepositActorSubClasses)
+    #     for key in actors.keys():
+    #         print(type(actors[key]))
+    #         if type(actors[key]) in VoxelDepositActorSubClasses:
+    #             print(actors[key])
+    #
+    #
+    #
+    # def retrieveVoxelDepositActorSubClasses(self,cls):
+    #     result = []
+    #     for sub in cls.__subclasses__():
+    #         result.append(sub)
+    #         result.extend(self.retrieveVoxelDepositActorSubClasses(sub))  # récursif
+    #     return result
+
+
 process_cls(GenericBiasingActorBase)
 process_cls(SplitProcessActorBase)
 process_cls(BremsstrahlungSplittingActor)
 process_cls(GammaFreeFlightActor)
 process_cls(ActorOutputScatterSplittingFreeFlightActor)
 process_cls(ScatterSplittingFreeFlightActor)
+process_cls(LastVertexInteractionSplittingActor)
+process_cls(ActorOutputLastVertexInteractionSplittingActor)

@@ -39,7 +39,7 @@ def add_empty_linac_box(sim, linac_name, sad=1000):
     linac.material = "G4_AIR"
     linac.size = [1 * m, 1 * m, 0.52 * m]
     translation_linac_box = np.array([0 * mm, 0, sad - linac.size[2] / 2 + 3.5 * mm])
-    # Isocenter begin at the end of the target, That's why 3.5 mm is added.
+    # Isocenter start from the end of the target, That's why 3.5 mm is added.
     linac.translation = translation_linac_box
     linac.color = [1, 1, 1, 0]
     return linac
@@ -426,8 +426,16 @@ def add_mirror(sim, linac_name):
 def enable_brem_splitting(sim, linac_name, splitting_factor):
     # create a region
     linac_target = sim.volume_manager.get_volume(f"{linac_name}_target")
+    linac_target_support_top = sim.volume_manager.get_volume(
+        f"{linac_name}_target_support_top"
+    )
+    linac_target_support_bottom = sim.volume_manager.get_volume(
+        f"{linac_name}_target_support_bottom"
+    )
     region_linac = sim.physics_manager.add_region(name=f"{linac_target.name}_region")
     region_linac.associate_volume(linac_target)
+    region_linac.associate_volume(linac_target_support_top)
+    region_linac.associate_volume(linac_target_support_bottom)
     # set the brem splitting
     s = f"/process/em/setSecBiasing eBrem {region_linac.name} {splitting_factor} 50 MeV"
     sim.g4_commands_after_init.append(s)
@@ -539,7 +547,8 @@ def mlc_leaf(linac_name):
     interleaf_gap = 0.09 * mm
     leaf_length = 155 * mm
     leaf_height = 90 * mm
-    leaf_mean_width = 1.76 * mm
+    # leaf_mean_width = 1.76 * mm
+    leaf_mean_width = 1.69 * mm
     tongues_length = 0.8 * mm
 
     cyl = volumes.TubsVolume(name=f"{linac_name}_cylinder_leaf")
@@ -552,8 +561,10 @@ def mlc_leaf(linac_name):
     trap_leaf = volumes.TrapVolume(name=f"{linac_name}_trap_leaf")
     dz = leaf_height / 2
     dy1 = leaf_length / 2
-    dx1 = 1.94 * mm / 2
-    dx3 = 1.58 * mm / 2
+    # dx1 = 1.94 * mm / 2
+    # dx3 = 1.58 * mm / 2
+    dx1 = 1.91 * mm / 2
+    dx3 = 1.47 * mm / 2
     theta = 0
 
     alpha1 = 0
@@ -583,11 +594,13 @@ def mlc_leaf(linac_name):
     dy1 = leaf_length / 2
 
     ##FIXME I need to remove 2 um to the tongues to avoid an overleap between leaves
-    dx1 = (interleaf_gap - 2.2 * 10 ** (-3) * mm) / 2
+    # dx1 = (interleaf_gap - 2.2 * 10 ** (-3) * mm) / 2
+    dx1 = (interleaf_gap - 3.3 * 10 ** (-3) * mm) / 2
     dx3 = dx1
     alpha1 = 0
     alpha2 = alpha1
-    theta = np.arctan((1.58 * mm - 1.94 * mm) * 0.5 / leaf_height)
+    # theta = np.arctan((1.58 * mm - 1.94 * mm) * 0.5 / leaf_height)
+    theta = np.arctan((1.47 * mm - 1.91 * mm) * 0.5 / leaf_height)
     phi = 0
     dy2 = dy1
     dx2 = dx1
@@ -624,17 +637,19 @@ def add_mlc(sim, linac_name):
     z_linac = linac.size[2]
     center_mlc = 349.3 * mm + 3.5 * mm
     interleaf_gap = 0.09 * mm
-    leaf_width = 1.76 * mm
+    # leaf_width = 1.76 * mm
+    leaf_width = 1.69 * mm
     leaf_lenght = 155 * mm
     nb_leaf = 160
-    rotation_angle = np.arctan((1.94 * mm - 1.58 * mm) * 0.5 / leaf_height)
+    # rotation_angle = np.arctan((1.94 * mm - 1.58 * mm) * 0.5 / leaf_height)
+    rotation_angle = np.arctan((1.91 * mm - 1.47 * mm) * 0.5 / leaf_height)
 
     mlc = sim.add_volume("Box", f"{linac_name}_mlc")
     mlc_bank_rotation = Rotation.from_euler(
-        "X", np.arctan(3.25 / 349.3), degrees=False
+        "X", -np.arctan(3.25 / 349.3), degrees=False
     ).as_matrix()
     mlc.rotation = mlc_bank_rotation
-    mlc.size = [linac.size[0] - 2 * cm, linac.size[1] - 2 * cm, 100 * mm]
+    mlc.size = [linac.size[0] - 2 * cm, linac.size[1] - 2 * cm, 95 * mm]
     mlc.translation = np.array([0, 0, z_linac / 2 - center_mlc])
     mlc.mother = linac_name
     mlc.color = [0, 0, 0, 0]
@@ -1565,6 +1580,33 @@ def define_pos_mlc_jaws_rectangular_field(
     )
 
     return pos_x_leaves, pos_y_jaws
+
+
+def add_mlc_leaves_shift(pos_x_leaves, sad, shift, gap=0):
+    mm = g4_units.mm
+    center_mlc = 349.3 * mm
+    center_jaws = 470.5 * mm
+    jaws_height = 77 * mm
+    center_curve_mlc = center_mlc - 7.5 * mm
+    mlc_position, mlc_offset = retrieve_offset_data_to_apply("from thales", "mlc")
+    f_interp_offset_mlc = scipy.interpolate.interp1d(
+        mlc_position, mlc_offset, kind="cubic"
+    )
+
+    ##FIXME :  the aperture related to a constant MLC shift seems to have around a 1% of error, I empirically corrected it
+    ## but potentially still to be improved
+
+    aperture_left = 0.99 * shift + gap / 2
+    aperture_right = 0.99 * shift - gap / 2
+    x_aperture_1 = (center_curve_mlc / sad) * (
+        aperture_left - f_interp_offset_mlc(aperture_left)
+    )
+    x_aperture_2 = (center_curve_mlc / sad) * (
+        aperture_right - f_interp_offset_mlc(-aperture_right)
+    )
+    pos_x_leaves[0:80] += x_aperture_2
+    pos_x_leaves[80:160] += x_aperture_1
+    return pos_x_leaves
 
 
 def field(mlc, jaws, pos_x_leaves, pos_y_jaws):
