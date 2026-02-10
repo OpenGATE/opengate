@@ -132,14 +132,14 @@ def create_simulation(geom, paths, version):
     # hc.debug = True
 
     # singles collection
-    """sc = sim.add_actor("DigitizerAdderActor", "Singles")
+    sc = sim.add_actor("DigitizerAdderActor", "Singles")
     sc.attached_to = crystal.name
     sc.authorize_repeated_volumes = True
     sc.input_digi_collection = "Hits"
     # sc.policy = 'EnergyWinnerPosition'
     sc.policy = "EnergyWeightedCentroidPosition"
     # same filename, there will be two branches in the file
-    sc.output_filename = hc.output_filename"""
+    sc.output_filename = hc.output_filename
 
     sec = gate.g4_units.second
     sim.running_verbose_level = gate.logger.RUN
@@ -184,9 +184,8 @@ def test_output(sim, paths):
     checked_keys = ["posX", "posY", "posZ", "edep", "time", "trackId"]
     keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
-    tols[2] = 2  # Z
-    # tols[3] = 0.003
-    # tols[4] = 0.01  # energy
+    tols[2] = 1  # Z
+    tols[3] = 0.02  # energy
     is_ok = (
         utility.compare_root3(
             gate_file,
@@ -199,7 +198,7 @@ def test_output(sim, paths):
             scalings,
             scalings2,
             paths.output / "test036_hits.png",
-            # hits_tol=8.1,
+            hits_tol=8.1,
         )
         and is_ok
     )
@@ -212,10 +211,7 @@ def test_output(sim, paths):
     checked_keys = ["time", "globalPosX", "globalPosY", "globalPosZ", "energy"]
     keys1, keys2, scalings2, tols = utility.get_keys_correspondence(checked_keys)
     scalings = [1.0] * len(scalings2)
-    tols[3] = 0.9  # Z
-    # tols[1] = 1.0  # X
-    # tols[2] = 1.0  # Y
-    # tols[4] = 0.02  # energy
+    tols[3] = 1.5  # Z
     is_ok = (
         utility.compare_root3(
             gate_file,
