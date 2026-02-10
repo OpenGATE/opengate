@@ -358,12 +358,8 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         "score_in": (
             "material",
             {
-                "doc": """The score_in command allows to convert the LET from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the LET to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
+                "doc": """The score_in command allows to convert the Dose or Edep from the material, which is defined in the geometry, to any user defined material. Note, that this does not change the material definition in the geometry. The default value is 'material', which means that no conversion is performed and the LET to the local material is scored. You can use any material defined in the simulation or pre-defined by Geant4 such as 'G4_WATER', which may be one of the most use cases of this functionality.
                 """,
-                "allowed_values": (
-                    "material",
-                    "G4_WATER",
-                ),
             },
         ),
         "ste_of_mean": (
@@ -567,8 +563,7 @@ class DoseActor(VoxelDepositActor, g4.GateDoseActor):
         )
         # item=0 is the default
         self.SetCountsFlag(self.user_output.counts.get_active())
-        # C++ side has a boolean toWaterFlag and self.score_in == "water" yields True/False
-        self.SetToWaterFlag(self.score_in == "G4_WATER")
+        self.SetScoreInMaterial(self.score_in)
 
         # variables for stop on uncertainty functionality
         if self.uncertainty_goal is None:

@@ -43,9 +43,9 @@ public:
   // Called every time a Run ends (all threads)
   void EndOfRunAction(const G4Run *run) override;
 
-  bool GetToWaterFlag() const { return fToWaterFlag; }
+  std::string GetScoreInMaterial() const { return fScoreInMaterial; }
 
-  void SetToWaterFlag(const bool b) { fToWaterFlag = b; }
+  void SetScoreInMaterial(const std::string b) { fScoreInMaterial = b; }
 
   bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
 
@@ -113,8 +113,8 @@ public:
   void GetVoxelPosition(G4Step *step, G4ThreeVector &position, bool &isInside,
                         Image3DType::IndexType &index) const;
 
-  // Option: indicate we must convert to dose to water
-  bool fToWaterFlag{};
+  // Option: indicate we convert dose to dose in this material
+  std::string fScoreInMaterial{};
 
   // Option: indicate if we must compute edep squared
   bool fEdepSquaredFlag{};
@@ -146,6 +146,7 @@ public:
   std::string fHitType;
 
 protected:
+  bool fScoreInOtherMaterial;
   G4Cache<threadLocalT> fThreadLocalDataEdep;
   G4Cache<threadLocalT> fThreadLocalDataDose;
 };
