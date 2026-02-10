@@ -19,6 +19,6 @@ if __name__ == "__main__":
     sim.run()
 
     # check
-    is_ok = test033.evaluate_test(sim, sources, 28, 5913808)
+    is_ok = test033.evaluate_test(sim, sources, 10, 5913808)
 
     utility.test_ok(is_ok)
