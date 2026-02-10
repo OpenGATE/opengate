@@ -25,7 +25,7 @@ def main():
     # for loop
     start = -500
     spacing = 100
-    end = -start
+    end = -start + spacing
     planePositionsV = range(start, end, spacing)
 
     # create the simulation
