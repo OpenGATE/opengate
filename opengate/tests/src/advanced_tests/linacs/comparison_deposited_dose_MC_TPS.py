@@ -1,17 +1,20 @@
-import numpy as np
-import os, glob
-from scipy import ndimage
+import glob
+import json
+import os
 from pathlib import Path
+
+import click
+import itk
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import numpy as np
 import pydicom
+import pymedphys
+from box import Box
+from scipy import ndimage
+
 from opengate.contrib.linacs import dicomrtplan as rtplan
 from opengate.tests import utility
-import itk
-from box import Box
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import json
-import pymedphys
-import click
 
 
 class voxelised_dose:

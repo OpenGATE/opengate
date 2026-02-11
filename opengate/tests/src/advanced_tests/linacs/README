@@ -4,4 +4,6 @@ rm -f data_advanced_test_linac.zip
 mkdir output
 python launch_VMAT_MC.py --json_name data_advanced_test_linac/header.json
 python MC_renorm_dose.py --path data_advanced_test_linac
+python comparison_deposited_dose_MC_TPS.py --path data_advanced_test_linac data_advanced_test_linac --path_output output
 
+For the moment the test in comparison_deposited_dose_MC_TPS is a gamma index of 2%/2mm with 0.6 (60%) of passing rate between the gate dose and the TPS. Maybe chage the RAM for VIP
