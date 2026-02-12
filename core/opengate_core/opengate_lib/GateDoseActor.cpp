@@ -6,7 +6,6 @@
    ------------------------------------ -------------- */
 
 #include "G4Electron.hh"
-#include "G4EmCalculator.hh"
 #include "G4Gamma.hh"
 #include "G4NistManager.hh"
 #include "G4ParticleDefinition.hh"
@@ -73,6 +72,13 @@ void GateDoseActor::InitializeCpp() {
     cpp_counts_image = Image3DType::New();
   }
   fScoreInOtherMaterial = (fScoreInMaterial == "material") ? false : true;
+
+  if (fConstantSPRMaterialFlag) {
+    // Initialize the cache
+    auto material =
+        G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
+    fSPRCache.Initialize(material, fConstEnergyForSPR);
+  }
 }
 
 void GateDoseActor::BeginOfRunActionMasterThread(int run_id) {
@@ -194,26 +200,8 @@ void GateDoseActor::SteppingAction(G4Step *step) {
     double dose;
 
     if (fScoreInOtherMaterial) {
-      auto *current_material = step->GetPreStepPoint()->GetMaterial();
-      double dedx_cut = DBL_MAX;
-      double dedx_currstep = 0., dedx_material = 0.;
-      const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
-      static G4Material *material =
-          G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
-      auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
-      auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
-      auto energy = (energy1 + energy2) / 2;
-      if (p == G4Gamma::Gamma())
-        p = G4Electron::Electron();
-      auto &emc = fThreadLocalDataEdep.Get().emcalc;
-      dedx_currstep =
-          emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
-      dedx_material = emc.ComputeTotalDEDX(energy, p, material, dedx_cut);
-      if (dedx_currstep == 0 || dedx_material == 0) {
-        edep = 0.;
-      } else {
-        edep *= (dedx_material / dedx_currstep);
-      }
+      auto spr = CalculateSPR(step);
+      edep *= spr;
     }
 
     if (fDoseFlag || fDoseSquaredFlag) {
@@ -430,4 +418,33 @@ double GateDoseActor::GetMaxValueOfImage(Image3DType::Pointer imageP) {
     }
   }
   return max;
+}
+
+double GateDoseActor::CalculateSPR(G4Step *step) {
+  double spr = 0;
+  auto *current_material = step->GetPreStepPoint()->GetMaterial();
+  const G4ParticleDefinition *p = step->GetTrack()->GetParticleDefinition();
+
+  if (fConstantSPRMaterialFlag) {
+    spr = fSPRCache.FindOrCalculateSTR(p, current_material);
+    return spr;
+  }
+
+  double dedx_cut = DBL_MAX;
+  double dedx_currstep = 0., dedx_material = 0.;
+  static G4Material *material =
+      G4NistManager::Instance()->FindOrBuildMaterial(fScoreInMaterial);
+  auto energy1 = step->GetPreStepPoint()->GetKineticEnergy();
+  auto energy2 = step->GetPostStepPoint()->GetKineticEnergy();
+  auto energy = (energy1 + energy2) / 2;
+  if (p == G4Gamma::Gamma())
+    p = G4Electron::Electron();
+  auto &emc = fThreadLocalDataEdep.Get().emcalc;
+  dedx_currstep = emc.ComputeTotalDEDX(energy, p, current_material, dedx_cut);
+  dedx_material = emc.ComputeTotalDEDX(energy, p, material, dedx_cut);
+  if (dedx_currstep != 0 || dedx_material != 0) {
+    spr = dedx_material / dedx_currstep;
+  }
+
+  return spr;
 }

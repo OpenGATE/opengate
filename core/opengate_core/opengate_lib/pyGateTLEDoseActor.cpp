@@ -47,6 +47,12 @@ void init_GateTLEDoseActor(py::module &m) {
       .def("SetDoseSquaredFlag", &GateTLEDoseActor::SetDoseSquaredFlag)
       .def("GetScoreInMaterial", &GateTLEDoseActor::GetScoreInMaterial)
       .def("SetScoreInMaterial", &GateTLEDoseActor::SetScoreInMaterial)
+      .def("GetConstantSPRMaterialFlag",
+           &GateTLEDoseActor::GetConstantSPRMaterialFlag)
+      .def("SetConstantSPRMaterialFlag",
+           &GateTLEDoseActor::SetConstantSPRMaterialFlag)
+      .def("GetConstEnergyForSPR", &GateTLEDoseActor::GetConstEnergyForSPR)
+      .def("SetConstEnergyForSPR", &GateTLEDoseActor::SetConstEnergyForSPR)
       .def("GetCountsFlag", &GateTLEDoseActor::GetCountsFlag)
       .def("SetCountsFlag", &GateTLEDoseActor::SetCountsFlag)
       .def("GetPhysicalVolumeName", &GateTLEDoseActor::GetPhysicalVolumeName)

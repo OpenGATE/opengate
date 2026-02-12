@@ -11,6 +11,7 @@
 #include "G4Cache.hh"
 #include "G4EmCalculator.hh"
 #include "G4VPrimitiveScorer.hh"
+#include "GateSPRCache.h"
 #include "GateVActor.h"
 #include "itkImage.h"
 
@@ -46,6 +47,16 @@ public:
   std::string GetScoreInMaterial() const { return fScoreInMaterial; }
 
   void SetScoreInMaterial(const std::string b) { fScoreInMaterial = b; }
+
+  bool GetConstantSPRMaterialFlag() const { return fConstantSPRMaterialFlag; }
+
+  void SetConstantSPRMaterialFlag(const bool b) {
+    fConstantSPRMaterialFlag = b;
+  }
+
+  double GetConstEnergyForSPR() const { return fConstEnergyForSPR; }
+
+  void SetConstEnergyForSPR(const double b) { fConstEnergyForSPR = b; }
 
   bool GetEdepSquaredFlag() const { return fEdepSquaredFlag; }
 
@@ -115,6 +126,7 @@ public:
 
   // Option: indicate we convert dose to dose in this material
   std::string fScoreInMaterial{};
+  double fConstEnergyForSPR;
 
   // Option: indicate if we must compute edep squared
   bool fEdepSquaredFlag{};
@@ -132,6 +144,7 @@ public:
   double fUncertaintyGoal;
   double fThreshEdepPerc;
   double fOvershoot;
+  bool fConstantSPRMaterialFlag;
 
   int fNbOfEvent;
   // set from python's side. It will be overwritten by an estimation of the
@@ -149,6 +162,8 @@ protected:
   bool fScoreInOtherMaterial;
   G4Cache<threadLocalT> fThreadLocalDataEdep;
   G4Cache<threadLocalT> fThreadLocalDataDose;
+  GateSPRCache fSPRCache;
+  double CalculateSPR(G4Step *step);
 };
 
 #endif // GateDoseActor_h
