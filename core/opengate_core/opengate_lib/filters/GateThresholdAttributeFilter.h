@@ -8,11 +8,10 @@
 #ifndef GateThresholdAttributeFilter_h
 #define GateThresholdAttributeFilter_h
 
+#include "../digitizer/GateDigiCollectionManager.h"
+#include "../digitizer/GateTDigiAttribute.h"
 #include "G4Step.hh"
-#include "G4Track.hh"
 #include "GateVFilter.h"
-#include "digitizer/GateDigiCollectionManager.h"
-#include "digitizer/GateTDigiAttribute.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

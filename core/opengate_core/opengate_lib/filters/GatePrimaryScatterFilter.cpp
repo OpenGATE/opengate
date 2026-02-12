@@ -6,10 +6,10 @@
    -------------------------------------------------- */
 
 #include "GatePrimaryScatterFilter.h"
+#include "../GateHelpers.h"
+#include "../GateHelpersDict.h"
 #include "G4RunManager.hh"
 #include "G4Step.hh"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
 
 int IsUnscatteredPrimary(const G4Step *step) {
   /*

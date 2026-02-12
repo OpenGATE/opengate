@@ -6,8 +6,8 @@
    -------------------------------------------------- */
 
 #include "GateKineticEnergyFilter.h"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
+#include "../GateHelpers.h"
+#include "../GateHelpersDict.h"
 
 void GateKineticEnergyFilter::InitializeUserInfo(py::dict &user_info) {
   fEnergyMin = DictGetDouble(user_info, "energy_min");
