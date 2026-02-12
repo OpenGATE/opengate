@@ -8,7 +8,7 @@
 #ifndef GateVActor_h
 #define GateVActor_h
 
-#include "GateVFilter.h"
+#include "filters/GateVFilter.h"
 #include <G4Event.hh>
 #include <G4Run.hh>
 #include <G4VPrimitiveScorer.hh>
