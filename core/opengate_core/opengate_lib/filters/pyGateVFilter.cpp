@@ -10,7 +10,7 @@
 
 namespace py = pybind11;
 
-#include "GateHelpers.h"
+#include "../GateHelpers.h"
 #include "GateVFilter.h"
 
 /*

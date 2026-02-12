@@ -6,7 +6,7 @@
    -------------------------------------------------- */
 
 #include "GateParticleFilter.h"
-#include "GateHelpersDict.h"
+#include "../GateHelpersDict.h"
 
 void GateParticleFilter::InitializeUserInfo(py::dict &user_info) {
   fParticleName = DictGetStr(user_info, "particle");

@@ -6,10 +6,10 @@
    -------------------------------------------------- */
 
 #include "GateThresholdAttributeFilter.h"
+#include "../GateHelpers.h"
+#include "../GateHelpersDict.h"
+#include "../digitizer/GateDigiAttributeManager.h"
 #include "G4UnitsTable.hh"
-#include "GateHelpers.h"
-#include "GateHelpersDict.h"
-#include "digitizer/GateDigiAttributeManager.h"
 
 GateThresholdAttributeFilter::GateThresholdAttributeFilter() : GateVFilter() {}
 
