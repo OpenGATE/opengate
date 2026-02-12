@@ -33,7 +33,8 @@ GateDigiAttributeLastProcessDefinedStepInVolume::
   fActor = actor;
 }
 
-std::string GateDigiAttributeLastProcessDefinedStepInVolume::GetProcessDefinedStepInVolume(
+std::string
+GateDigiAttributeLastProcessDefinedStepInVolume::GetProcessDefinedStepInVolume(
     const G4Step *step) const {
   // retrieve the nb stored in the att
   const std::string n = fActor->GetLastProcess();

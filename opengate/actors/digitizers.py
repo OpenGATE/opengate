@@ -1282,8 +1282,7 @@ class DigiAttributeLastProcessDefinedStepInVolumeActor(
     This actor is not intended to be used directly by the user.
     """
 
-    user_info_defaults = {
-    }
+    user_info_defaults = {}
 
     def __init__(self, *args, **kwargs):
         ActorBase.__init__(self, *args, **kwargs)
@@ -1301,7 +1300,9 @@ class DigiAttributeLastProcessDefinedStepInVolumeActor(
 
     def StartSimulationAction(self):
         ActorBase.StartSimulationAction(self)
-        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.StartSimulationAction(self)
+        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.StartSimulationAction(
+            self
+        )
 
 
 class LastProcessDefinedStepInVolumeAttribute:

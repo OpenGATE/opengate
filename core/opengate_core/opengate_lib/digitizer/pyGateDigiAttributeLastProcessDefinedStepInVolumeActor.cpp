@@ -14,9 +14,10 @@ namespace py = pybind11;
 
 void init_GateDigiAttributeLastProcessDefinedStepInVolumeActor(py::module &m) {
 
-  py::class_<GateDigiAttributeLastProcessDefinedStepInVolumeActor,
-             std::unique_ptr<GateDigiAttributeLastProcessDefinedStepInVolumeActor,
-                             py::nodelete>,
-             GateVActor>(m, "GateDigiAttributeLastProcessDefinedStepInVolumeActor")
+  py::class_<
+      GateDigiAttributeLastProcessDefinedStepInVolumeActor,
+      std::unique_ptr<GateDigiAttributeLastProcessDefinedStepInVolumeActor,
+                      py::nodelete>,
+      GateVActor>(m, "GateDigiAttributeLastProcessDefinedStepInVolumeActor")
       .def(py::init<py::dict &>());
 }
