@@ -1272,6 +1272,59 @@ class ProcessDefinedStepInVolumeAttribute:
         fatal(f"Cannot change dynamically the volume name")
 
 
+class DigiAttributeLastProcessDefinedStepInVolumeActor(
+    ActorBase, g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor
+):
+    """
+    This actor is use when the user create a ProcessDefinedStepAttribute.
+    The actor is automatically created and use to store how many time a given process (process_name)
+    occur in a given volume (attached_to).
+    This actor is not intended to be used directly by the user.
+    """
+
+    user_info_defaults = {
+    }
+
+    def __init__(self, *args, **kwargs):
+        ActorBase.__init__(self, *args, **kwargs)
+        self.__initcpp__()
+
+    def __initcpp__(self):
+        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.__init__(
+            self, self.user_info
+        )
+
+    def initialize(self):
+        ActorBase.initialize(self)
+        self.InitializeUserInfo(self.user_info)
+        self.InitializeCpp()
+
+    def StartSimulationAction(self):
+        ActorBase.StartSimulationAction(self)
+        g4.GateDigiAttributeLastProcessDefinedStepInVolumeActor.StartSimulationAction(self)
+
+
+class LastProcessDefinedStepInVolumeAttribute:
+    """ """
+
+    def __init__(self, sim, volume_name):
+        self.name = f"LastOccuringProcess__{volume_name}"
+        self.actor = sim.add_actor(
+            "DigiAttributeLastProcessDefinedStepInVolumeActor", self.name
+        )
+        self._volume_name = volume_name
+        self.actor.attached_to = volume_name
+        # self.actor.priority = 1  # FIXME before other
+
+    @property
+    def volume_name(self):
+        return self._volume_name
+
+    @volume_name.setter
+    def volume_name(self, value):
+        fatal(f"Cannot change dynamically the volume name")
+
+
 process_cls(DigitizerBase)
 process_cls(DigitizerWithRootOutput)
 process_cls(DigitizerAdderActor)
@@ -1284,3 +1337,4 @@ process_cls(DigitizerProjectionActor)
 process_cls(DigitizerReadoutActor)
 process_cls(PhaseSpaceActor)
 process_cls(DigiAttributeProcessDefinedStepInVolumeActor)
+process_cls(DigiAttributeLastProcessDefinedStepInVolumeActor)
