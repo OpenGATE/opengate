@@ -118,6 +118,7 @@ def check_mat(se):
         "Polyethylene",
         "PVC",
         "SS304",
+        "NBK7",
         "PTFE",
         "LYSO",
         "LYSO-Ce-Hilger",
