@@ -6,15 +6,13 @@
    -------------------------------------------------- */
 
 #include "GateVActor.h"
-
-#include <G4LogicalVolumeStore.hh>
-
-#include "G4SDManager.hh"
 #include "GateActorManager.h"
 #include "GateHelpers.h"
 #include "GateHelpersDict.h"
 #include "GateMultiFunctionalDetector.h"
 #include "GateSourceManager.h"
+#include <G4LogicalVolumeStore.hh>
+#include <G4SDManager.hh>
 
 GateVActor::GateVActor(py::dict &user_info, bool MT_ready)
     : G4VPrimitiveScorer(DictGetStr(user_info, "name")) {
@@ -110,14 +108,14 @@ bool GateVActor::HasAction(const std::string &action) {
 bool GateVActor::IsSensitiveDetector() { return HasAction("SteppingAction"); };
 
 void GateVActor::PreUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
+  for (const auto f : fFilters) {
     if (!f->Accept(track))
       return;
   }
 }
 
 void GateVActor::PostUserTrackingAction(const G4Track *track) {
-  for (auto f : fFilters) {
+  for (const auto f : fFilters) {
     if (!f->Accept(track))
       return;
   }
@@ -143,7 +141,7 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
   // if the operator is AND, we perform the SteppingAction only if ALL filters
   // are true (If only one is false, we stop and return)
   if (fOperatorIsAnd) {
-    for (auto f : fFilters) {
+    for (const auto f : fFilters) {
       if (!f->Accept(step))
         return true;
     }
@@ -151,7 +149,7 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
     return true;
   }
   // if the operator is OR, we accept as soon as one filter is OK
-  for (auto f : fFilters) {
+  for (const auto f : fFilters) {
     if (f->Accept(step)) {
       SteppingAction(step);
       return true;
