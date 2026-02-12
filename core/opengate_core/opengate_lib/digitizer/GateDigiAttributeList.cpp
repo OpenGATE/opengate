@@ -5,9 +5,9 @@
    See LICENSE.md for further details
    -------------------------------------------------- */
 
-#include "../GatePrimaryScatterFilter.h"
 #include "../GateUniqueVolumeIDManager.h"
 #include "../GateUserEventInformation.h"
+#include "../filters/GatePrimaryScatterFilter.h"
 #include "G4Run.hh"
 #include "G4RunManager.hh"
 #include "G4Step.hh"
