@@ -3,7 +3,7 @@
 import site
 import os
 import click
-import importlib.util
+import importlib.util as pkgutil
 from pathlib import Path
 
 
@@ -36,7 +36,7 @@ def return_tests_path():
         mypath = pathFile.parent / "tests" / "src"
     else:
         mypath = (
-            Path(importlib.util.find_spec("opengate").origin).resolve().parent
+            Path(pkgutil.find_spec("opengate").origin).resolve().parent
             / "tests"
             / "src"
         )
