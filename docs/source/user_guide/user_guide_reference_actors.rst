@@ -446,15 +446,33 @@ In this example, the actor is attached to (attached_to option) several volumes (
 
 Attribute correspondence with Gate 9.X for Hits and Singles:
 
-+----------------------------+-------------------------+
-| Gate 9.X                   | Gate 10                 |
-+============================+=========================+
-| edep or energy             | TotalEnergyDeposit      |
-+----------------------------+-------------------------+
-| posX/Y/Z of globalPosX/Y/Z | PostPosition_X/Y/Z      |
-+----------------------------+-------------------------+
-| time                       | GlobalTime              |
-+----------------------------+-------------------------+
++----------------------------+---------------------------------------+
+| Gate 9.X                   | Gate 10                               |
++============================+=======================================+
+| edep or energy             | TotalEnergyDeposit                    |
++----------------------------+---------------------------------------+
+| posX/Y/Z or globalPosX/Y/Z | PostPosition_X/Y/Z or Position_X/Y/Z  |
++----------------------------+---------------------------------------+
+| time                       | GlobalTime                            |
++----------------------------+---------------------------------------+
+| PDGEncoding                | PDGCode                               |
++----------------------------+---------------------------------------+
+| parentID                   | ParentID                              |
++----------------------------+---------------------------------------+
+| momDirX/Y/Z                | PostDirection_X/Y/Z                   |
++----------------------------+---------------------------------------+
+| localPosX/Y/Z              | PostPositionLocal_X/Y/Z               |
++----------------------------+---------------------------------------+
+| runID                      | RunID                                 |
++----------------------------+---------------------------------------+
+| stepLength                 | StepLength                            |
++----------------------------+---------------------------------------+
+| processName                | TrackCreatorProcess                   |
++----------------------------+---------------------------------------+
+| trackID                    | TrackID                               |
++----------------------------+---------------------------------------+
+| trackLength                | TrackLength                           |
++----------------------------+---------------------------------------+
 
 At the end of the simulation, the list of hits can be written as a root file and/or used by subsequent digitizer modules (see next sections). The Root output is optional, if the output name is None nothing will be written. Note that, like in Gate, every hit with zero deposited energy is ignored. If you need them, you should probably use a PhaseSpaceActor. Several tests using DigitizerHitsCollectionActor are proposed: test025, test028, test035, etc.
 

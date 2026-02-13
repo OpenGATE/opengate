@@ -14,10 +14,19 @@ Nitrogen:   S=N    ; Z=  7. ; A=  14.006 g/mole
 Phosphorus: S= P   ; Z= 15. ; A=  30.974 g/mole
 Sulfur:     S=S    ; Z= 16. ; A=  32.065 g/mole
 Silicon:    S=Si   ; Z= 14. ; A=  28.085 g/mole
+Lead:       S=Pb  ; Z= 82. ; A= 207.2   g/mole
+Antimony:   S=Sb  ; Z= 51.; A= 121.76 g/mole
 
 
 
 [Materials]
+
+PbSb4: d = 11.3 g/cm3; n=2; state=solid
+        +el:  name= Lead; f=0.2984
+        +el:  name= Antimony; f=0.7016
+
+Gate_lead: d=11.35 g/cm3 ; n=1; state=solid
+        +el: name=Lead ; n=1
 
 Tungsten: d=19.3 g/cm3 ; n=1 ; state=solid
 	+el: name=auto ; n=1

@@ -522,3 +522,37 @@ Reference
 
 .. autoclass:: opengate.sources.generic.GenericSource
 
+
+Confined source to the repeated volumes
+---------------------------------------
+As a result of the repetition function, the name of the volume will change from <given_name> to <given_name>_rep_k, where k represents the index in repetition. In addition, each activity can confine one to a repeated volume. To do the confinement in this case, make sure that each repeated volume has one confined activity.
+
+This example confines a Lu176 source within a crystal volumes with repeatation of 3x3x1 in a module:
+
+# Assumption: 'crystal' is the name of the volume that was repeated.
+# Since the repeat is 3x3x1, there are 9 unique volumes created.
+num_crystals_per_module = 9
+
+# Loop over the 9 unique positions of the crystal
+for k in range(num_crystals_per_module):
+    # Generate unique names for the source and the target volume
+    source_name = f"Lu176_Source_{k}"
+    target_volume = f"crystal_rep_{k}" # Matches the internal GATE naming for repeats
+
+    # 1. Create the Source
+    source = sim.add_source("GenericSource", source_name)
+    source.particle = "ion 71 176"      # Lutetium-176
+    source.activity = activity_per_subset # Ensure activity is divided per crystal
+    source.half_life = 3.78e10 * u.year   # Half-life of Lu176
+
+    # 2. Define the general Source Shape
+    # Note: The shape defines the generation area. 'Confine' then rejects
+    # any particles generated outside the specific volume geometry.
+    source.position.type = "cylinder"
+    source.position.radius = r_max
+    source.position.min_radius = r_min
+    source.position.dz = z_len / 2.0
+    source.position.translation = [0. * mm, 0. * mm, 0. * mm]
+
+    # 3. Confine the source to the specific crystal index
+    source.position.confine = target_volume
