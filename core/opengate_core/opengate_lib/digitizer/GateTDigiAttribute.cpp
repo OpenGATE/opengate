@@ -295,11 +295,9 @@ GateTDigiAttribute<GateUniqueVolumeID::Pointer>::GetUValues() {
   return threadLocalData.Get().fValues;
 }
 
-#if defined(WIN32) || defined(_WIN32) ||                                       \
-    defined(__WIN32) && !defined(__CYGWIN__)
-template GateTDigiAttribute<double>;
-template GateTDigiAttribute<int>;
-template GateTDigiAttribute<std::string>;
-template GateTDigiAttribute<G4ThreeVector>;
-template GateTDigiAttribute<GateUniqueVolumeID::Pointer>;
-#endif
+template class GateTDigiAttribute<double>;
+template class GateTDigiAttribute<int>;
+template class GateTDigiAttribute<int64_t>;
+template class GateTDigiAttribute<std::string>;
+template class GateTDigiAttribute<G4ThreeVector>;
+template class GateTDigiAttribute<GateUniqueVolumeID::Pointer>;
