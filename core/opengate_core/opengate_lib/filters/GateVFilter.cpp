@@ -6,12 +6,15 @@
    -------------------------------------------------- */
 
 #include "GateVFilter.h"
+#include "../GateHelpersDict.h"
 
 GateVFilter::GateVFilter() = default;
 
 GateVFilter::~GateVFilter() = default;
 
-void GateVFilter::InitializeUserInfo(py::dict &) {}
+void GateVFilter::InitializeUserInfo(py::dict &user_info) {
+  fName = DictGetStr(user_info, "name");
+}
 
 bool GateVFilter::Accept(const G4Run *) const { return true; }
 
