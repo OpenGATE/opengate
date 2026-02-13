@@ -140,6 +140,20 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
 
   // if the operator is AND, we perform the SteppingAction only if ALL filters
   // are true (If only one is false, we stop and return)
+  // DDD("Vactor ProcessHits");
+  // DDD(fActorName);
+  // DDD(fFilters.size());
+  for (const auto f : fFilters) {
+    // FIXME to change to only one !
+    // DDD(f->fName);
+    if (!f->Accept(step))
+      return true;
+  }
+  // DD("calling stepping action ");
+  SteppingAction(step);
+  return true;
+
+  /*
   if (fOperatorIsAnd) {
     for (const auto f : fFilters) {
       if (!f->Accept(step))
@@ -154,7 +168,7 @@ G4bool GateVActor::ProcessHits(G4Step *step, G4TouchableHistory *) {
       SteppingAction(step);
       return true;
     }
-  }
+  }*/
   return true;
 }
 
