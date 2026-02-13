@@ -31,6 +31,8 @@ public:
   virtual bool Accept(const G4Track *track) const;
 
   virtual bool Accept(G4Step *step) const;
+
+  std::string fName;
 };
 
 #endif // GateVFilter_h
