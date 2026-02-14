@@ -26,17 +26,15 @@ class FilterBase(GateObject):
         if "name" not in kwargs:
             kwargs["name"] = f"filter_{uuid.uuid4()}"
         super().__init__(*args, **kwargs)
-        sim.add_filter(self, self.name)
+        sim.filter_manager.add_filter(self)
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
 
     def initialize(self):
-        print("FilterBase initialize")
         self.InitializeUserInfo(self.user_info)
 
     def __setstate__(self, state):
-        print("FilterBase __setstate__ before initcpp")
         self.__dict__ = state
         self.__initcpp__()
 
@@ -80,6 +78,10 @@ class GateFilter:
         self.sim = sim
 
     def __call__(self, attribute_name):
+        return AttributeProxy(self.sim, attribute_name)
+
+    def __getattr__(self, attribute_name):
+        # Supports the new F.ParticleName syntax
         return AttributeProxy(self.sim, attribute_name)
 
 
@@ -182,6 +184,13 @@ class AttributeProxy:
         # Create the contains filter and wrap it in a NOT
         return ~self.contains(value)
 
+    def __invert__(self):
+        fatal(
+            f'Syntax Error: Misplaced "~". You cannot invert an attribute proxy directly.\n'
+            f'Correct: ~(F.{self.name} == "value")\n'
+            f'Wrong:   ~F.{self.name} == "value"'
+        )
+
 
 class BooleanFilter(FilterBase, g4.GateBooleanFilter):
     user_info_defaults = {
@@ -202,26 +211,6 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
 
     def __initcpp__(self):
         g4.GateBooleanFilter.__init__(self)
-
-        # def initialize(self):
-        #    print("BooleanFilter initialize")
-        """# 1. Initialize the children first so their C++ attributes are ready
-        if "filters" in self.user_info:
-            for f in self.user_info["filters"]:
-                print('filter to init', f)
-                # If it's a GateObject (Python side), call its initialize
-                #if hasattr(f, "initialize"):
-                    #f.initialize()
-
-        # 2. Convert Python filter objects to C++ pointers for the user_info dict
-        # This is crucial so the C++ side gets the actual GateVFilter* pointers
-        #cpp_filters = [f if not hasattr(f, "g4_obj") else f.g4_obj for f in self.filters]
-        #self.user_info["filters"] = cpp_filters
-        print('here')"""
-
-        # 3. Initialize the C++ side of this BooleanFilter
-
-    #   super().initialize()
 
 
 class ParticleFilter(FilterBase, g4.GateParticleFilter):
@@ -365,57 +354,43 @@ class AttributeComparisonFilter(FilterBase):
     }
 
     def __init__(self, sim, *args, **kwargs):
-        print("AttributeComparisonFilter (generic) init")
+        if "name" not in kwargs:
+            att = kwargs["attribute"]
+            vmax = kwargs.get("value_max", "")
+            vmin = kwargs.get("value_min", "")
+            kwargs["name"] = f"filter_{att}_{vmin}_{vmax}{uuid.uuid4()}"
         FilterBase.__init__(self, sim, *args, **kwargs)
-        print(self.user_info.value_min)
         self.__initcpp__()
-        # sim.add_filter(self, self.name)
-        # print("after add filter")
 
     def __new__(cls, *args, **kwargs):
-        print("AttributeComparisonFilter new")
-
         # If the user is calling the factory, choose the correct subclass
         if cls is AttributeComparisonFilter:
             val = kwargs.get("value_min")
             if isinstance(val, str):
-                print("string")
                 cls = AttributeFilterString
             elif isinstance(val, int):
-                print("int")
                 cls = AttributeFilterInt
             else:
                 # Default to Double for floats or unspecified types
-                print("double")
                 cls = AttributeFilterDouble
-
-        print("here")
         # Create an instance of the chosen class
         return super().__new__(cls)
 
     def initialize(self):
-        print("AttributeComparisonFilter initialize")
-        print(self.user_info)
         if self.user_info.attribute is None:
             fatal(f"The parameter 'attribute' is required for filter '{self.name}'.")
         super().initialize()
-        print("AttributeComparisonFilter initialize done", self.user_info.name)
 
 
 class AttributeFilterDouble(AttributeComparisonFilter, g4.GateAttributeFilterDouble):
     def __init__(self, sim, *args, **kwargs):
-        print("AttributeFilterDouble init")
         AttributeComparisonFilter.__init__(self, sim, *args, **kwargs)
 
     def __initcpp__(self):
-        print("AttributeFilterDouble init cpp")
         g4.GateAttributeFilterDouble.__init__(self)
-        print("AttributeFilterDouble init cpp done")
 
     def initialize(self):
-        print("AttributeFilterDouble initialize", self.user_info.name)
         super().initialize()
-        print("AttributeFilterDouble initialize done", self.user_info.name)
 
 
 class AttributeFilterInt(AttributeComparisonFilter, g4.GateAttributeFilterInt):
@@ -426,9 +401,7 @@ class AttributeFilterInt(AttributeComparisonFilter, g4.GateAttributeFilterInt):
         g4.GateAttributeFilterInt.__init__(self)
 
     def initialize(self):
-        print("AttributeFilterInt initialize", self.user_info.name)
         super().initialize()
-        print("AttributeFilterInt initialize done", self.user_info.name)
 
 
 class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterString):
@@ -443,9 +416,7 @@ class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterStr
         g4.GateAttributeFilterString.__init__(self)
 
     def initialize(self):
-        print("AttributeFilterString initialize", self.user_info.name)
         super().initialize()
-        print("AttributeFilterString initialize done", self.user_info.name)
 
 
 # Registry update
