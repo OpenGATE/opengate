@@ -217,22 +217,22 @@ class FilterManager:
 
     def __init__(self, simulation):
         self.simulation = simulation
-        self.user_info_filters = {}
+        # self.user_info_filters = {}
         self.filters = {}
 
     def __str__(self):
-        v = [v.name for v in self.user_info_filters.values()]
-        s = f'{" ".join(v)} ({len(self.user_info_filters)})'
+        v = [v.name for v in self.filters.values()]
+        s = f'{" ".join(v)} ({len(self.filters)})'
         return s
 
-    @property
-    def available_filters(self):
-        return list(filter_classes.keys())
+    # @property
+    # def available_filters(self):
+    #    return list(filter_classes.keys())
 
     def dump(self):
-        n = len(self.user_info_filters)
+        n = len(self.filters)
         s = f"Number of filters: {n}"
-        for Filter in self.user_info_filters.values():
+        for Filter in self.filters.values():
             if n > 1:
                 a = "\n" + "-" * 20
             else:
@@ -250,11 +250,14 @@ class FilterManager:
                 f"list of Filters: {self.filters}"
             )
 
-    def add_filter(self, filt, name=None):
+    def add_filter(self, filter):
+        self.filters[filter.name] = filter
+
+    def add_filter_deprecated(self, filt, name=None):
         if isinstance(filt, str):
             if name is None:
                 fatal("You must provide a name for the filter.")
-            new_filter = self.create_filter(filt, name)
+            new_filter = self.create_filter_deprecated(filt, name)
         elif isinstance(filt, FilterBase):
             new_filter = filt
         else:
@@ -267,7 +270,7 @@ class FilterManager:
         if new_filter is not filt:
             return new_filter
 
-    def create_filter(self, filter_type, name):
+    def create_filter_deprecated(self, filter_type, name):
         return get_filter_class(filter_type)(name=name, simulation=self.simulation)
 
 
@@ -1840,8 +1843,11 @@ class Simulation(GateObject):
     def find_actors(self, sub_str, case_sensitive=False):
         return self.actor_manager.find_actors(sub_str, case_sensitive)
 
-    def add_filter(self, filter_type, name):
+    def _add_filter(self, filter_type, name):
         return self.filter_manager.add_filter(filter_type, name)
+
+    def add_filter(self, filter_type, name):
+        fatal(f"add_filter is deprecated, use my_actor.filter = my_filter")
 
     @property
     def multithreaded(self):
