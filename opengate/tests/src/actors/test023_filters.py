@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import opengate as gate
+from opengate.actors.filters import GateFilter
 from opengate.tests import utility
 
 if __name__ == "__main__":
@@ -43,43 +44,27 @@ if __name__ == "__main__":
     source.direction.type = "iso"
     source.activity = 30000 * Bq
 
-    # filter : keep e- only
-    fp = sim.add_filter("ParticleFilter", "fp")
-    fp.particle = "e-"
-
-    # add dose actor
+    # add dose actor, e- only
+    F = GateFilter(sim)
     dose1 = sim.add_actor("DoseActor", "dose1")
     dose1.output_filename = "test023.mhd"
     dose1.attached_to = waterbox
     dose1.size = [100, 100, 100]
     dose1.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose1.filters.append(fp)
+    dose1.filter = F.ParticleName == "e-"
 
-    # add dose actor, without e- (to check)
-    fe = sim.add_filter("ParticleFilter", "fe")
-    fe.particle = "e-"
-    fe.policy = "reject"
-    print(dir(fe))
-
+    # add dose actor, without e-
     dose2 = sim.add_actor("DoseActor", "dose2")
     dose2.output_filename = "test023-noe.mhd"
     dose2.attached_to = waterbox
     dose2.size = [100, 100, 100]
     dose2.spacing = [2 * mm, 2 * mm, 2 * mm]
-    dose2.filters.append(fe)
-
-    """fe = sim.add_filter("ParticleFilter", "f")
-    fe.particle = "gamma"
-    fe.policy = "reject"
-    dose2.filters.append(fe)"""
+    dose2.filter = ~(F.ParticleName == "e-")
 
     # add stat actor (only gamma)
-    fg = sim.add_filter("ParticleFilter", "fg")
-    fg.particle = "gamma"
-
     stat = sim.add_actor("SimulationStatisticsActor", "Stats")
     stat.track_types_flag = True
-    stat.filters.append(fg)
+    stat.filter = F.ParticleName == "gamma"
 
     print("Filters: ", sim.filter_manager)
     print(sim.filter_manager.dump())
