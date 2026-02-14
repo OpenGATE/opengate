@@ -15,14 +15,11 @@
 
 template <typename T> class GateAttributeComparisonFilter : public GateVFilter {
 public:
-  GateAttributeComparisonFilter() : GateVFilter() {
-    DDD("GateAttributeComparisonFilter constructor");
-  }
+  GateAttributeComparisonFilter();
 
   void InitializeUserInfo(py::dict &user_info) override;
 
-  // Implementation for G4Step
-  bool Accept(const G4Track *track) const override;
+  // Implementation of Accept for Step
   bool Accept(G4Step *step) const override;
 
   std::string fAttributeName;
@@ -34,7 +31,7 @@ public:
   GateTDigiAttribute<T> *fAttribute{nullptr};
 };
 
-// Typedefs for common use cases in Gate 10
+// Typedefs for common use cases
 using GateAttributeFilterDouble = GateAttributeComparisonFilter<double>;
 using GateAttributeFilterInt = GateAttributeComparisonFilter<int>;
 

@@ -20,7 +20,7 @@ void make_attribute_filter_binding(py::module &m, const char *name) {
 }
 
 void init_GateAttributeComparisonFilter(py::module &m) {
-  // These names must match what you use in filters.py (e.g.,
+  // These names must match the names in filters.py (e.g.,
   // g4.GateAttributeFilterDouble)
   make_attribute_filter_binding<double>(m, "GateAttributeFilterDouble");
   make_attribute_filter_binding<int>(m, "GateAttributeFilterInt");
