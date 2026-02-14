@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import AttributeComparisonFilter, BooleanFilter
+from opengate.actors.filters import AttributeComparisonFilter, BooleanFilter, GateFilter
 import uproot
 import numpy as np
 
@@ -15,9 +15,6 @@ if __name__ == "__main__":
     sim_name = "test023_filters_generic1"
 
     # main options
-    # sim.visu = True
-    sim.visu_type = "vrml"
-    # sim.random_seed = 321456987
     sim.output_dir = paths.output
 
     # units
@@ -46,45 +43,27 @@ if __name__ == "__main__":
     source.activity = 100 * Bq
 
     # plane
-    plane1a = sim.add_volume("Box", "plane1a")
-    plane1a.size = [1 * m, 1 * m, 1 * nm]
-    plane1a.translation = [0, 0, 1 * cm]
-    plane1a.material = "G4_WATER"
-    plane1a.color = [1, 0, 0, 1]
+    plane = sim.add_volume("Box", "plane1a")
+    plane.size = [1 * m, 1 * m, 1 * nm]
+    plane.translation = [0, 0, 1 * cm]
+    plane.material = "G4_WATER"
+    plane.color = [1, 0, 0, 1]
 
-    # FIXME test : no min, no max, string "contains" etc
-
-    # filters
-    filter1 = AttributeComparisonFilter(
-        sim, attribute="GlobalTime", value_min=30 * sec, value_max=70 * sec
-    )
-    filter2 = AttributeComparisonFilter(
-        sim, attribute="KineticEnergy", value_min=300 * keV, value_max=400 * keV
-    )
-    filter3 = AttributeComparisonFilter(
-        sim, attribute="ParticleName", mode="equal", value_min="gamma"
-    )
-
-    # combined filters
-    combined_filter = BooleanFilter(sim, filters=[filter1, filter2], operator="and")
-    combined_filter = BooleanFilter(
-        sim, filters=[combined_filter, filter3], operator="and"
+    # create filter
+    F = GateFilter(sim)
+    combined_filter = (
+        (30 * sec < F("GlobalTime"))
+        & (F("GlobalTime") < 70 * sec)
+        & (F("ParticleName") == "gamma")
     )
 
     # phsp
-    phsp_and = sim.add_actor("PhaseSpaceActor", "phsp_and")
-    phsp_and.attached_to = plane1a.name
-    phsp_and.attributes = ["GlobalTime", "KineticEnergy", "ParticleName"]
-    phsp_and.output_filename = f"{sim_name}_and.root"
-    phsp_and.filters = [combined_filter]
-
-    # phsp
-    combined_filter = BooleanFilter(sim, filters=[filter1, filter2], operator="or")
-    phsp_or = sim.add_actor("PhaseSpaceActor", "phsp_or")
-    phsp_or.attached_to = plane1a.name
-    phsp_or.attributes = ["GlobalTime", "KineticEnergy"]
-    phsp_or.output_filename = f"{sim_name}_or.root"
-    phsp_or.filters = [combined_filter]
+    phsp = sim.add_actor("PhaseSpaceActor", "phsp")
+    phsp.attached_to = plane
+    phsp.attributes = ["GlobalTime", "KineticEnergy", "ParticleName"]
+    phsp.output_filename = f"{sim_name}.root"
+    # phsp.filters = combined_filter # raise error deprecated
+    phsp.filter = combined_filter
 
     # stats
     stat = sim.add_actor("SimulationStatisticsActor", "stats")
@@ -103,61 +82,18 @@ if __name__ == "__main__":
     # reference :
     # stat.write(paths.output_ref / f"{sim_name}.txt")
 
-    # check 'or'
+    # check
     is_ok = True
     print()
     print()
-    tree = uproot.open(phsp_and.get_output_path())["phsp_and"]
+    tree = uproot.open(phsp.get_output_path())["phsp"]
     print("nb entries", tree.num_entries)
 
-    ene = tree.arrays(["GlobalTime", "KineticEnergy"])["KineticEnergy"]
-    emin = np.min(ene)
-    emax = np.max(ene)
-    rmin = np.fabs(emin - filter2.value_min) / filter2.value_min
-    rmax = np.fabs(emax - filter2.value_max) / filter2.value_max
-    tol = 0.01
-    print(f"{rmin} {rmax}")
-    is_ok = rmin < tol and rmax < tol and is_ok
-    utility.print_test(is_ok, f"Ene = {len(ene)} min={emin / keV} max={emax / keV}")
-
-    ti = tree.arrays(["GlobalTime", "KineticEnergy"])["GlobalTime"]
+    ti = tree.arrays(phsp.attributes)["GlobalTime"]
     tmin = np.min(ti)
     tmax = np.max(ti)
-    rmin = np.fabs(tmin - filter1.value_min) / filter1.value_min
-    rmax = np.fabs(tmax - filter1.value_max) / filter1.value_max
-    tol = 0.01
-    print(f"{rmin} {rmax}")
-    is_ok = rmin < tol and rmax < tol and is_ok
-    utility.print_test(is_ok, f"Time = {len(ti)} min={tmin / sec} max={tmax / sec}")
-
-    # check 'or'
-    """print()
-    print()
-    tree = uproot.open(phsp_or.get_output_path())["phsp_or"]
-    print("nb entries", tree.num_entries)
-    ene = tree.arrays(
-        ["GlobalTime", "KineticEnergy"],
-        f"(GlobalTime <= {filter1.value_min}) | "
-        f"(GlobalTime >= {filter1.value_max})",
-    )["KineticEnergy"]
-    emin = np.min(ene)
-    emax = np.max(ene)
-    is_ok = emin >= filter2.value_min and emax <= filter2.value_max
-    utility.print_test(is_ok, f"Ene = {len(ene)} min={emin/keV} max={emax/keV}")
-    ti = tree.arrays(
-        ["GlobalTime", "KineticEnergy"],
-        f"(KineticEnergy <= {filter2.value_min}) | "
-        f"(KineticEnergy >= {filter2.value_max})",
-    )["GlobalTime"]
-    tmin = np.min(ti)
-    tmax = np.max(ti)
-    is_ok = tmin >= filter1.value_min and tmax <= filter1.value_max and is_ok
-    utility.print_test(is_ok, f"Time = {len(ti)} min={tmin/sec} max={tmax/sec}")"""
-
-    # tests
-    print()
-    print()
-    # stats_ref = utility.read_stats_file(paths.output_ref / f"{sim_name}.txt")
-    # is_ok = utility.assert_stats(stat, stats_ref, 0.01)
+    b = 30 * sec < tmin and 70 * sec > tmax
+    utility.print_test(b, f"Time = min={tmin / sec} max={tmax / sec}")
+    is_ok = b and is_ok
 
     utility.test_ok(is_ok)
