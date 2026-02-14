@@ -12,15 +12,12 @@ class FilterBase(GateObject):
     """
 
     # hints for IDE
-    policy: str
+    policy: str  # deprecated
 
     user_info_defaults = {
         "policy": (
-            "accept",  # FIXME TO REMOVE !!
-            {
-                "doc": "How should the item be handled?",
-                "allowed_values": ["accept", "reject"],
-            },
+            None,
+            {"deprecated": "Use boolean filter"},
         ),
     }
 
