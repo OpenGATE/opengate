@@ -52,9 +52,9 @@ if __name__ == "__main__":
     # create filter
     F = GateFilter(sim)
     combined_filter = (
-        (30 * sec < F("GlobalTime"))
-        & (F("GlobalTime") < 70 * sec)
-        & (F("ParticleName") == "gamma")
+        (30 * sec < F.GlobalTime)
+        & (F.GlobalTime < 70 * sec)
+        & (F.ParticleName == "gamma")
     )
 
     # phsp
