@@ -3,7 +3,7 @@
 
 import opengate as gate
 from opengate.tests import utility
-from opengate.actors.filters import AttributeComparisonFilter, BooleanFilter, GateFilter
+from opengate.actors.filters import GateFilter
 import uproot
 import numpy as np
 
