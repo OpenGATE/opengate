@@ -87,8 +87,9 @@ class ActorBase(GateObject):
 
     # hints for IDE
     attached_to: str
-    filters: list
-    filters_boolean_operator: str
+    filter: str
+    filters: list  # deprecated
+    filters_boolean_operator: str  # deprecated
     priority: int
 
     user_info_defaults = {
@@ -105,21 +106,19 @@ class ActorBase(GateObject):
                 "deprecated": "The user input parameter 'mother' is deprecated. Use 'attached_to' instead. ",
             },
         ),
-        "filters": (
-            [],
+        "filter": (
+            None,
             {
-                "doc": "Filters used by this actor. ",
+                "doc": "Filter used by this actor: the acti is only triggered if the filter accepts the step",
             },
+        ),
+        "filters": (
+            None,
+            {"deprecated": "Use '.filter' not '.filters'."},
         ),
         "filters_boolean_operator": (
             "and",
-            {
-                "doc": "Boolean operator to join multiple filters of this actor. ",
-                "allowed_values": (
-                    "and",
-                    "or",
-                ),
-            },
+            {"deprecated": "Use filters composition instead."},
         ),
         "priority": (
             100,
@@ -314,6 +313,7 @@ class ActorBase(GateObject):
         self._init_user_output_instance()
         # the mother of the volume the actor is attached to will be automatically set
         self.mother_attached_to = None
+        self.fFilter = None
 
     def __initcpp__(self):
         """Nothing to do in the base class."""
@@ -482,12 +482,14 @@ class ActorBase(GateObject):
         for k, v in self.user_output.items():
             v.initialize()
 
-        # initialize filters
+        # initialize filter
         try:
-            self.fFilters = self.filters
+            print("set filter", self.name)
+            self.fFilter = self.filter
+            print(self.fFilter)
         except AttributeError:
             fatal(
-                f"Implementation error: Unable to set the attribute 'fFilters' in actor '{self.name}' "
+                f"Implementation error: Unable to set the attribute 'fFilter' in actor '{self.name}' "
                 f"(actor type: {self.type_name}). "
                 f"Does the actor class somehow inherit from GateVActor (as it should)?"
             )
