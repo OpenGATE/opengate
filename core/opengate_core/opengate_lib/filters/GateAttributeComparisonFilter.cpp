@@ -19,13 +19,10 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
   fAttributeName = DictGetStr(user_info, "attribute");
   fValueMin =
       DictGetStr(user_info, "value_min"); // Use "value" as the search string
-  DDD(fAttributeName);
-  DDD(fValueMin);
 
   // search mode: "contains" or "equal" or "start"
   fSearchMode =
       user_info.contains("mode") ? DictGetStr(user_info, "mode") : "equal";
-  DDD(fSearchMode);
 
   auto *dgm = GateDigiAttributeManager::GetInstance();
   auto *att = dgm->GetDigiAttribute(fAttributeName);
@@ -33,7 +30,7 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
       dgm->CopyDigiAttribute(att));
 }
 
-// Specialized implementation for std::string (Equality instead of Range)
+// Specialised implementation for std::string (Equality instead of Range)
 template <>
 bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const {
   fAttribute->ProcessHits(step);

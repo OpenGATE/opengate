@@ -40,14 +40,6 @@ template <typename T>
       fIncludeMin = user_info["include_min"].cast<bool>();
       fIncludeMax = user_info["include_max"].cast<bool>();
 
-      DDD("init GateAttributeComparisonFilter");
-      DDD(fName);
-      DDD(fAttributeName);
-      DDD(fValueMin);
-      DDD(fValueMax);
-      DDD(fIncludeMin);
-      DDD(fIncludeMax);
-
       // We create a copy for thread safety during the simulation
       auto *dgm = GateDigiAttributeManager::GetInstance();
       auto *att = dgm->GetDigiAttribute(fAttributeName);
