@@ -484,9 +484,7 @@ class ActorBase(GateObject):
 
         # initialize filter
         try:
-            print("set filter", self.name)
             self.fFilter = self.filter
-            print(self.fFilter)
         except AttributeError:
             fatal(
                 f"Implementation error: Unable to set the attribute 'fFilter' in actor '{self.name}' "
