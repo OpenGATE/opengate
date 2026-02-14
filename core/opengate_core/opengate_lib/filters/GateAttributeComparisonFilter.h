@@ -10,7 +10,6 @@
 
 #include "../GateHelpersDict.h"
 #include "../digitizer/GateTDigiAttribute.h"
-#include "G4Step.hh"
 #include "GateVFilter.h"
 
 template <typename T> class GateAttributeComparisonFilter : public GateVFilter {
