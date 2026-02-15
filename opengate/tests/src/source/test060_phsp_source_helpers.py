@@ -7,6 +7,7 @@ import gatetools.phsp as phsp
 import opengate as gate
 from opengate.tests import utility
 from pathlib import Path
+from opengate.actors.filters import GateFilter
 
 # units
 m = gate.g4_units.m
@@ -90,9 +91,9 @@ def create_test_phs(
     new_joined_path = os.path.join(directory_path, base_filename + new_extension)
     ta1.output_filename = new_joined_path
     ta1.debug = False
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = particle
-    ta1.filters.append(f)
+    F = GateFilter(sim)
+    f = F.ParticleName == particle
+    ta1.filter = f
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
@@ -110,7 +111,7 @@ def create_test_phs(
     )
     ta2.output_filename = new_joined_path
     ta2.debug = False
-    ta2.filters.append(f)
+    ta2.filter = f
 
     # PhaseSpace Actor
     ta3 = sim.add_actor("PhaseSpaceActor", "PhaseSpace3")
@@ -129,7 +130,7 @@ def create_test_phs(
     )
     ta3.output_filename = new_joined_path
     ta3.debug = False
-    ta3.filters.append(f)
+    ta3.filter = f
 
     # PhaseSpace Actor
     ta4 = sim.add_actor("PhaseSpaceActor", "PhaseSpace4")
@@ -148,7 +149,7 @@ def create_test_phs(
     )
     ta4.output_filename = new_joined_path
     ta4.debug = False
-    ta4.filters.append(f)
+    ta4.filter = f
 
     # sim.physics_manager.physics_list_name = "FTFP_BERT"
     sim.physics_manager.physics_list_name = "QGSP_BIC_EMZ"
