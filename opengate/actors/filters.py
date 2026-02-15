@@ -80,9 +80,13 @@ class GateFilter:
     def __call__(self, attribute_name):
         return AttributeProxy(self.sim, attribute_name)
 
-    def __getattr__(self, attribute_name):
-        # Supports the new F.ParticleName syntax
-        return AttributeProxy(self.sim, attribute_name)
+    def __getattr__(self, name):
+        # 1. Special case: If the user asks for the Unscattered flag
+        if name == "UnscatteredPrimaryFlag":
+            return UnscatteredPrimaryFilter(self.sim)
+
+        # 2. Default: Return a proxy for generic attribute comparison
+        return AttributeProxy(self.sim, name)
 
 
 class AttributeProxy:
@@ -213,55 +217,6 @@ class BooleanFilter(FilterBase, g4.GateBooleanFilter):
         g4.GateBooleanFilter.__init__(self)
 
 
-class ParticleFilter(FilterBase, g4.GateParticleFilter):
-    # hints for IDE
-    particle: str
-
-    user_info_defaults = {
-        "particle": (
-            "",
-            {
-                "doc": "Name of the particle to which this filter is applied.",
-            },
-        ),
-    }
-
-    def __init__(self, *args, **kwargs):
-        FilterBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateParticleFilter.__init__(self)
-
-
-class KineticEnergyFilter(FilterBase, g4.GateKineticEnergyFilter):
-    # hints for IDE
-    energy_min: float
-    energy_max: float
-
-    user_info_defaults = {
-        "energy_min": (
-            0,
-            {
-                "doc": "Lower kinetic energy bound.",
-            },
-        ),
-        "energy_max": (
-            sys.float_info.max,
-            {
-                "doc": "Upper kinetic energy bound.",
-            },
-        ),
-    }
-
-    def __init__(self, *args, **kwargs):
-        FilterBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateKineticEnergyFilter.__init__(self)  # no argument in cpp side
-
-
 class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
     # hints for IDE
     process_name: str
@@ -283,50 +238,6 @@ class TrackCreatorProcessFilter(FilterBase, g4.GateTrackCreatorProcessFilter):
         g4.GateTrackCreatorProcessFilter.__init__(self)  # no argument in cpp side
 
 
-class ThresholdAttributeFilter(FilterBase, g4.GateThresholdAttributeFilter):
-    # hints for IDE
-    value_min: float
-    value_max: float
-    attribute: Optional[str]
-
-    user_info_defaults = {
-        "value_min": (
-            0,
-            {
-                "doc": "Lower bound. ",
-            },
-        ),
-        "value_max": (
-            sys.float_info.max,
-            {
-                "doc": "Upper bound. ",
-            },
-        ),
-        "attribute": (
-            None,
-            {
-                "doc": "Attribute name to be considered. ",
-            },
-        ),
-    }
-
-    # FIXME required test dans initialize
-
-    def __init__(self, *args, **kwargs):
-        FilterBase.__init__(self, *args, **kwargs)
-        self.__initcpp__()
-
-    def __initcpp__(self):
-        g4.GateThresholdAttributeFilter.__init__(self)
-
-    def initialize(self):
-        if self.attribute is None:
-            fatal(
-                f"The user input parameter 'attribute' is not set but required in filter '{self.name}'."
-            )
-        super().initialize()
-
-
 class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):
 
     def __init__(self, *args, **kwargs):
@@ -338,6 +249,18 @@ class UnscatteredPrimaryFilter(FilterBase, g4.GateUnscatteredPrimaryFilter):
 
     def initialize(self):
         super().initialize()
+
+    # Allow syntax: F.UnscatteredPrimaryFlag == True
+    def __eq__(self, other):
+        if isinstance(other, bool):
+            return self if other else ~self
+        return NotImplemented
+
+    # Allow syntax: F.UnscatteredPrimaryFlag != False
+    def __ne__(self, other):
+        if isinstance(other, bool):
+            return ~self if other else self
+        return NotImplemented
 
 
 class AttributeComparisonFilter(FilterBase):
@@ -421,10 +344,7 @@ class AttributeFilterString(AttributeComparisonFilter, g4.GateAttributeFilterStr
 
 # Registry update
 filter_classes = {
-    "ParticleFilter": ParticleFilter,
-    "KineticEnergyFilter": KineticEnergyFilter,
     "TrackCreatorProcessFilter": TrackCreatorProcessFilter,
-    "ThresholdAttributeFilter": ThresholdAttributeFilter,
     "UnscatteredPrimaryFilter": UnscatteredPrimaryFilter,
     "AttributeFilterDouble": AttributeFilterDouble,
     "AttributeFilterInt": AttributeFilterInt,
@@ -443,10 +363,7 @@ def get_filter_class(f):
 
 
 process_cls(FilterBase)
-process_cls(ParticleFilter)
-process_cls(KineticEnergyFilter)
 process_cls(TrackCreatorProcessFilter)
-process_cls(ThresholdAttributeFilter)
 process_cls(UnscatteredPrimaryFilter)
 process_cls(AttributeFilterDouble)
 process_cls(AttributeFilterInt)
