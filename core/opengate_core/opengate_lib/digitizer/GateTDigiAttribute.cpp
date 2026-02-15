@@ -106,6 +106,10 @@ const std::vector<T> &GateTDigiAttribute<T>::GetValues() const {
   return threadLocalData.Get().fValues;
 }
 
+template <class T> T GateTDigiAttribute<T>::GetSingleValue() const {
+  return threadLocalData.Get().fSingleValue;
+}
+
 template <class T>
 void GateTDigiAttribute<T>::Fill(GateVDigiAttribute *input, size_t index) {
   // we assume that the given GateVDigiAttribute has the same type
@@ -198,55 +202,85 @@ void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillDigiWithEmptyValue() {
 }
 
 template <> void GateTDigiAttribute<double>::FillDValue(double value) {
-  threadLocalData.Get().fValues.push_back(value);
+  // threadLocalData.Get().fValues.push_back(value);
+  if (fSingleValueMode) {
+    threadLocalData.Get().fSingleValue = value;
+  } else {
+    threadLocalData.Get().fValues.push_back(value);
+  }
 }
 
 template <>
 void GateTDigiAttribute<std::string>::FillSValue(std::string value) {
-  threadLocalData.Get().fValues.push_back(value);
+  // threadLocalData.Get().fValues.push_back(value);
+  if (fSingleValueMode) {
+    threadLocalData.Get().fSingleValue = value;
+  } else {
+    threadLocalData.Get().fValues.push_back(value);
+  }
 }
 
 template <> void GateTDigiAttribute<int>::FillIValue(int value) {
-  threadLocalData.Get().fValues.push_back(value);
+  // threadLocalData.Get().fValues.push_back(value);
+  if (fSingleValueMode) {
+    threadLocalData.Get().fSingleValue = value;
+  } else {
+    threadLocalData.Get().fValues.push_back(value);
+  }
 }
 
 template <> void GateTDigiAttribute<int64_t>::FillLValue(int64_t value) {
-  threadLocalData.Get().fValues.push_back(value);
+  // threadLocalData.Get().fValues.push_back(value);
+  if (fSingleValueMode) {
+    threadLocalData.Get().fSingleValue = value;
+  } else {
+    threadLocalData.Get().fValues.push_back(value);
+  }
 }
 
 template <>
 void GateTDigiAttribute<G4ThreeVector>::Fill3Value(G4ThreeVector value) {
-  threadLocalData.Get().fValues.push_back(value);
+  // threadLocalData.Get().fValues.push_back(value);
+  if (fSingleValueMode) {
+    threadLocalData.Get().fSingleValue = value;
+  } else {
+    threadLocalData.Get().fValues.push_back(value);
+  }
 }
 
 template <>
 void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillUValue(
     GateUniqueVolumeID::Pointer value) {
-  threadLocalData.Get().fValues.push_back(value);
+  // threadLocalData.Get().fValues.push_back(value);
+  if (fSingleValueMode) {
+    threadLocalData.Get().fSingleValue = value;
+  } else {
+    threadLocalData.Get().fValues.push_back(value);
+  }
 }
 
 template <> void GateTDigiAttribute<double>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  auto v = threadLocalData.Get().fValues[index];
+  const auto v = threadLocalData.Get().fValues[index];
   ram->FillNtupleDColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <> void GateTDigiAttribute<int>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  auto v = threadLocalData.Get().fValues[index];
+  const auto v = threadLocalData.Get().fValues[index];
   ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <> void GateTDigiAttribute<int64_t>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  auto v = threadLocalData.Get().fValues[index];
+  const auto v = threadLocalData.Get().fValues[index];
   ram->FillNtupleIColumn(fTupleId, fDigiAttributeId, v);
 }
 
 template <>
 void GateTDigiAttribute<std::string>::FillToRoot(size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  auto v = threadLocalData.Get().fValues[index];
+  const auto v = threadLocalData.Get().fValues[index];
   ram->FillNtupleSColumn(fTupleId, fDigiAttributeId, v);
 }
 
@@ -263,7 +297,7 @@ template <>
 void GateTDigiAttribute<GateUniqueVolumeID::Pointer>::FillToRoot(
     size_t index) const {
   auto *ram = G4RootAnalysisManager::Instance();
-  auto v = threadLocalData.Get().fValues[index]->fID;
+  const auto v = threadLocalData.Get().fValues[index]->fID;
   ram->FillNtupleSColumn(fTupleId, fDigiAttributeId, v);
 }
 
