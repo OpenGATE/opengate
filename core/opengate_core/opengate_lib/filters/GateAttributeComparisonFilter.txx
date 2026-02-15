@@ -58,16 +58,15 @@ template <typename T>
 template <typename T>
    bool GateAttributeComparisonFilter<T>::Accept(G4Step *step) const {
       fAttribute->ProcessHits(step);
-      // Get the first value (e.g., KineticEnergy at the start of step)
+      // Get the first single value
       const auto value = fAttribute->GetSingleValue();
       bool result = true;
 
-     if (fIncludeMin) { if (value < fValueMin) result = false; }
-     else { if (value <= fValueMin) result = false; }
+      if (fIncludeMin) { if (value < fValueMin) result = false; }
+      else { if (value <= fValueMin) result = false; }
 
-     if (fIncludeMax) { if (value > fValueMax) result = false; }
-     else { if (value >= fValueMax) result = false; }
+      if (fIncludeMax) { if (value > fValueMax) result = false; }
+      else { if (value >= fValueMax) result = false; }
 
-      //fAttribute->Clear();
       return result;
    }
