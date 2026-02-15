@@ -5,6 +5,7 @@ import opengate as gate
 import uproot
 import numpy as np
 import opengate.tests.utility as utility
+from opengate.actors.filters import GateFilter
 
 g_cm3 = gate.g4_units.g_cm3
 mm = gate.g4_units.mm
@@ -75,9 +76,8 @@ def create_simu(material):
     ]
     phsp.output_filename = "ps.root"
     phsp.steps_to_store = "exiting"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "neutron"
-    phsp.filters.append(f)
+    F = GateFilter(sim)
+    phsp.filter = F.ParticleName == "neutron"
 
     # run
     sim.run(start_new_process=True)
