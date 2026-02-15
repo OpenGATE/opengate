@@ -75,7 +75,7 @@ crystal_det.material = "Vacuum"
 crystal_det.color    = [0, 0, 1, 0]
 crystal_det.translation = get_grid_repetition([4, 1, 9], [4 * mm, 0.0 * mm, 4 * mm])
 
-# # ---------- Crystal Layer (Active Material) ----------
+# # ---------- Crystal Layer (Active Material) same size as crystal_det ----------
 # NOTE: This is the final layer of the geometry definition.
 # It is defined as a single volume (no repetition here) inside the 'crystal' volume.
 # We use THIS volume ('crystal_layer') for source confinement.
