@@ -46,7 +46,6 @@ bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const {
     result = (val.rfind(fValueMin, 0) == 0);
   }
 
-  // fAttribute->Clear();
   return result;
 }
 
