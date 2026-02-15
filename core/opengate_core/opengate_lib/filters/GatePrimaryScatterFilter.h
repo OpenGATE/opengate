@@ -18,15 +18,11 @@ class GateUnscatteredPrimaryFilter : public GateVFilter {
 public:
   GateUnscatteredPrimaryFilter() : GateVFilter() {}
 
-  void InitializeUserInfo(py::dict &user_info) override;
-
   // To avoid gcc -Woverloaded-virtual
   // https://stackoverflow.com/questions/9995421/gcc-woverloaded-virtual-warnings
   using GateVFilter::Accept;
 
   bool Accept(G4Step *step) const override;
-
-  std::string fPolicy;
 };
 
 int IsUnscatteredPrimary(const G4Step *step);
