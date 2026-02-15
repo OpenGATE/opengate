@@ -4,6 +4,7 @@
 from scipy.spatial.transform import Rotation
 import opengate as gate
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 
 if __name__ == "__main__":
     do_debug = False
@@ -79,10 +80,6 @@ if __name__ == "__main__":
     source.n = numPartSimTest
     # source.activity = 100 * kBq
 
-    # filter : keep proton
-    # f = sim.add_filter("ParticleFilter", "f")
-    # f.particle = "proton"
-
     size = [50, 1, 1]
     spacing = [2.0 * mm, 60.0 * mm, 60.0 * mm]
 
@@ -133,21 +130,14 @@ if __name__ == "__main__":
     LETActor_primaries.averaging_method = "dose_average"
 
     # # add dose actor, without e- (to check)
-    fe = sim.add_filter("ParticleFilter", "f")
-    fe.particle = "proton"
-    fe.policy = "accept"
-    LETActor_primaries.filters.append(fe)
-    print(fe)
-
+    F = GateFilter(sim)
+    LETActor_primaries.filter = F.ParticleName == "proton"
     fName_ref_IDD = "IDD__Proton_Energy1MeVu_RiFiout-Edep.mhd"
     print(paths)
+
     # add stat actor
     stats = sim.add_actor("SimulationStatisticsActor", "stats")
     stats.track_types_flag = True
-    # stats.filters.append(f)
-
-    print("Filters: ", sim.filter_manager)
-    # print(sim.filter_manager.dump())
 
     # start simulation
     sim.run()
