@@ -28,27 +28,25 @@ void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
   auto *att = dgm->GetDigiAttribute(fAttributeName);
   fAttribute = dynamic_cast<GateTDigiAttribute<std::string> *>(
       dgm->CopyDigiAttribute(att));
+  fAttribute->SetSingleValueMode(true);
 }
 
 // Specialised implementation for std::string (Equality instead of Range)
 template <>
 bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const {
   fAttribute->ProcessHits(step);
-  const auto &values = fAttribute->GetValues();
+  const auto val = fAttribute->GetSingleValue();
   bool result = false;
 
-  if (!values.empty()) {
-    const std::string &val = values[0];
-    if (fSearchMode == "equal") {
-      result = (val == fValueMin);
-    } else if (fSearchMode == "contains") {
-      result = (val.find(fValueMin) != std::string::npos);
-    } else if (fSearchMode == "start") {
-      result = (val.rfind(fValueMin, 0) == 0);
-    }
+  if (fSearchMode == "equal") {
+    result = (val == fValueMin);
+  } else if (fSearchMode == "contains") {
+    result = (val.find(fValueMin) != std::string::npos);
+  } else if (fSearchMode == "start") {
+    result = (val.rfind(fValueMin, 0) == 0);
   }
 
-  fAttribute->Clear();
+  // fAttribute->Clear();
   return result;
 }
 

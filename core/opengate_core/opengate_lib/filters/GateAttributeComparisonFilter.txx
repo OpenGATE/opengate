@@ -45,6 +45,7 @@ template <typename T>
       auto *att = dgm->GetDigiAttribute(fAttributeName);
       auto *vatt = dgm->CopyDigiAttribute(att);
       fAttribute = dynamic_cast<GateTDigiAttribute<T> *>(vatt);
+      fAttribute->SetSingleValueMode(true);
 
       // Basic safety check for the cast
       if (!fAttribute) {
@@ -58,18 +59,15 @@ template <typename T>
    bool GateAttributeComparisonFilter<T>::Accept(G4Step *step) const {
       fAttribute->ProcessHits(step);
       // Get the first value (e.g., KineticEnergy at the start of step)
-      const auto &values = fAttribute->GetValues();
+      const auto value = fAttribute->GetSingleValue();
       bool result = true;
 
-      if (!values.empty()) {
-         T value = values[0];
-         if (fIncludeMin) { if (value < fValueMin) result = false; }
-         else { if (value <= fValueMin) result = false; }
+     if (fIncludeMin) { if (value < fValueMin) result = false; }
+     else { if (value <= fValueMin) result = false; }
 
-         if (fIncludeMax) { if (value > fValueMax) result = false; }
-         else { if (value >= fValueMax) result = false; }
-      }
+     if (fIncludeMax) { if (value > fValueMax) result = false; }
+     else { if (value >= fValueMax) result = false; }
 
-      fAttribute->Clear();
+      //fAttribute->Clear();
       return result;
    }
