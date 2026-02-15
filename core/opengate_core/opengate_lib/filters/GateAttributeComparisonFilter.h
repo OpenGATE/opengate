@@ -33,6 +33,19 @@ public:
 // Typedefs for common use cases
 using GateAttributeFilterDouble = GateAttributeComparisonFilter<double>;
 using GateAttributeFilterInt = GateAttributeComparisonFilter<int>;
+using GateAttributeFilterString = GateAttributeComparisonFilter<std::string>;
+
+// --------------------------------------------------------------------
+// NEW: Explicit Specialization Declarations
+// This tells the compiler NOT to instantiate the generic .txx version
+// for std::string, preventing the LNK2005 error on Windows.
+template <>
+void GateAttributeComparisonFilter<std::string>::InitializeUserInfo(
+    py::dict &user_info);
+
+template <>
+bool GateAttributeComparisonFilter<std::string>::Accept(G4Step *step) const;
+// --------------------------------------------------------------------
 
 #include "GateAttributeComparisonFilter.txx"
 
