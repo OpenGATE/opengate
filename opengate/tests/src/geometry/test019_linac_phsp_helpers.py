@@ -7,6 +7,7 @@ import opengate.contrib.linacs.elektasynergy as gate_linac
 import gatetools.phsp as phsp
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
+from opengate.actors.filters import GateFilter
 
 paths = utility.get_default_test_paths(
     __file__, "gate_test019_linac_phsp", output_folder="test019"
@@ -92,9 +93,8 @@ def init_test019(nt, version):
     ta2.output_filename = f"test019_hits_{version}.root"
     ta2.debug = False
     ta2.steps_to_store = "exiting"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    ta2.filters.append(f)
+    F = GateFilter(sim)
+    ta2.filter = F.ParticleName == "gamma"
 
     # phys
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
@@ -267,9 +267,8 @@ def create_simu_test019_phsp_source(sim, version):
     ta1.output_filename = "test019_hits_phsp_source_local{version}.root"
     ta1.debug = False
     ta1.steps_to_store = "exiting"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    ta1.filters.append(f)
+    F = GateFilter(sim)
+    ta1.filter = F.ParticleName == "gamma"
 
     # PhaseSpace Actor
     ta2 = sim.add_actor("PhaseSpaceActor", "PhaseSpace2")
@@ -291,9 +290,7 @@ def create_simu_test019_phsp_source(sim, version):
     ]
     ta2.output_filename = "test019_hits_phsp_source_global{version}.root"
     ta2.debug = False
-    f = sim.add_filter("ParticleFilter", "f2")
-    f.particle = "gamma"
-    ta2.filters.append(f)
+    ta2.filter = F.ParticleName == "gamma"
 
     # phys
     sim.physics_manager.physics_list_name = "G4EmStandardPhysics_option4"
