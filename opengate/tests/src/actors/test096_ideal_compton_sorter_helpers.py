@@ -5,6 +5,7 @@
 
 import opengate as gate
 from opengate.tests import utility
+from opengate.actors.filters import GateFilter
 
 # colors
 red = [1, 0, 0, 1]
@@ -102,9 +103,8 @@ def create_and_run_cc_simulation():
     ]
     ta2.output_filename = output_path / "PhaseSpace.root"
     ta2.steps_to_store = "allsteps"
-    f = sim.add_filter("ParticleFilter", "f")
-    f.particle = "gamma"
-    ta2.filters.append(f)
+    F = GateFilter(sim)
+    ta2.filter = F.ParticleName == "gamma"
 
     # check overlap
     sim.check_volumes_overlap = True
