@@ -11,11 +11,14 @@ brew install --force --verbose --overwrite \
              ccache \
              fftw \
              libomp \
+             llvm \
              xquartz \
              xerces-c \
              wget  || true
 brew uninstall --ignore-dependencies libxext
 brew uninstall --ignore-dependencies libx11
+export CC=/usr/local/opt/llvm/bin/clang
+export CXX=/usr/local/opt/llvm/bin/clang++
 export LDFLAGS="-L/usr/local/opt/llvm/lib"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
@@ -25,7 +28,7 @@ which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delocate
-pip install -U pip wheel setuptools
+pip install -U pip wheel setuptools blosc2
 # pip install "tables>=3.11" # Replace when tables 3.11 is released
 if [[ ${MATRIX_PYTHON_VERSION} == "3.14" ]]; then
     pip install git+https://github.com/PyTables/PyTables.git

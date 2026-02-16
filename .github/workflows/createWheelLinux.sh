@@ -2,6 +2,7 @@
 
 set -e -x
 echo ${PYTHONFOLDER}
+echo ${MATRIX_PYTHON_VERSION}
 ls -l /opt/python/
 cd /home/core/
 export PATH=/software/cmake/cmake/bin/:${PATH}
