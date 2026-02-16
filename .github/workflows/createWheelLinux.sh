@@ -12,6 +12,7 @@ mkdir opengate_core/plugins
 cp -r /lib64/qt6/plugins/platforms/* opengate_core/plugins/
 cp -r /lib64/qt6/plugins/imageformats opengate_core/plugins/
 /opt/python/${PYTHONFOLDER}/bin/pip install -U pip wget colored wheel setuptools
+apt-get install -y --no-install-recommends libhdf5-dev
 /opt/python/${PYTHONFOLDER}/bin/pip install git+https://github.com/PyTables/PyTables.git
 /opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
 archi=`uname -m`
