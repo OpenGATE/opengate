@@ -11,6 +11,7 @@ which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wheel wget colored
+pip install git+https://github.com/PyTables/PyTables.git
 if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
     pip install cibuildwheel==2.21.1
 else
