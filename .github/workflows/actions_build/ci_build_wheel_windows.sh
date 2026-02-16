@@ -5,7 +5,7 @@ source $GITHUB_WORKSPACE/env_dump.txt
 source $CONDA/Scripts/activate opengate_core
 conda info
 conda install cmake==3.31.2
-conda install h5py
+conda install h5py python-blosc2
 cmake --version
 conda list
 which python
