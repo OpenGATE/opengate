@@ -341,8 +341,9 @@ def get_filter_class(f):
 
 
 process_cls(FilterBase)
+process_cls(BooleanFilter)
 process_cls(UnscatteredPrimaryFilter)
+process_cls(AttributeComparisonFilter)
 process_cls(AttributeFilterDouble)
 process_cls(AttributeFilterInt)
 process_cls(AttributeFilterString)
-process_cls(BooleanFilter)
