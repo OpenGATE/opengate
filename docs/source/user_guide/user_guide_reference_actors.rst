@@ -485,6 +485,73 @@ Reference
 
 .. autoclass:: opengate.actors.digitizers.DigitizerHitsCollectionActor
 
+ProcessDefinedStepInVolumeAttribute
+-----------------------------------
+
+Description
+~~~~~~~~~~~
+
+This is a helper class used to define a custom attribute for hits-related actors (such as :class:`~.opengate.actors.digitizers.PhaseSpaceActor` or :class:`~.opengate.actors.digitizers.DigitizerHitsCollectionActor`).
+
+It creates a new integer attribute that **counts** the number of times a particle has undergone a specific physics process (e.g. Compton, Rayleigh) within a specific volume.
+
+* **Value:** The attribute contains the cumulative number of interactions of the defined type that the track has experienced in the volume up to the current step.
+
+This is useful for analyzing particle history, for example, to determine how many times a detected photon has scattered in a collimator or patient.
+
+Usage
+~~~~~
+
+To use it, you must instantiate the class with the simulation object, the process name (as defined in Geant4), and the volume name. The instance provides a ``.name`` property that must be added to the actor's attribute list.
+
+.. code-block:: python
+
+   from opengate.actors.digitizers import ProcessDefinedStepInVolumeAttribute
+
+   # 1. Define the custom attributes
+   # Count "compt" (Compton scattering) interactions in volume "Waterbox1"
+   att_compt = ProcessDefinedStepInVolumeAttribute(sim, "compt", "Waterbox1")
+
+   # Count "Rayl" (Rayleigh scattering) interactions in volume "world"
+   att_rayl = ProcessDefinedStepInVolumeAttribute(sim, "Rayl", "world")
+
+   # 2. Create the actor (e.g. PhaseSpace)
+   phsp = sim.add_actor("PhaseSpaceActor", "PhaseSpace")
+   phsp.attached_to = "Detector"
+
+   # 3. Add the custom attributes to the list
+   phsp.attributes = [
+       "KineticEnergy",
+       "PrePosition",
+       "EventID",
+       att_compt.name,  # Add the custom counter here
+       att_rayl.name
+   ]
+
+Filtering
+~~~~~~~~~
+
+Once defined, this custom attribute behaves like any other standard attribute (e.g. ``KineticEnergy``). This means you can use it in a filter to select specific particles.
+
+.. code-block:: python
+
+   # Create a filter using the custom attribute name
+   # Example: Keep only particles that have undergone at least one Compton scatter in the waterbox
+   F = gate.GateFilter(sim)
+   phsp.filter = F(att_compt.name) > 0
+
+.. note::
+   * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
+   * **Volume Name:** Must be the name of a volume existing in the simulation.
+
+.. note::
+   * **Process Name:** Must match the internal Geant4 process name (e.g., ``compt``, ``phot``, ``Rayl``, ``eBrem``).
+   * **Volume Name:** Must be the name of a volume existing in the simulation.
+
+Reference
+~~~~~~~~~
+
+.. autoclass:: opengate.actors.digitizers.ProcessDefinedStepInVolumeAttribute
 
 DigitizerAdderActor
 -----------------------
