@@ -5,19 +5,20 @@ source $GITHUB_WORKSPACE/env_dump.txt
 source $CONDA/Scripts/activate opengate_core
 conda info
 conda install cmake==3.31.2
-conda install h5py python-blosc2
+conda install h5py
 cmake --version
 conda list
 which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored
-pip install -U pip wheel setuptools
-pip install git+https://github.com/PyTables/PyTables.git
+pip install -U pip wheel setuptools blosc2
 if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
     pip install cibuildwheel==2.21.1
+    pip install tables
 else
     pip install cibuildwheel==3.3.0
+    pip install git+https://github.com/PyTables/PyTables.git
 fi
 which pip
 mkdir -p $HOME/software

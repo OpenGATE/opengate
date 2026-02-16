@@ -13,7 +13,11 @@ cp -r /lib64/qt6/plugins/platforms/* opengate_core/plugins/
 cp -r /lib64/qt6/plugins/imageformats opengate_core/plugins/
 /opt/python/${PYTHONFOLDER}/bin/pip install -U pip wget colored wheel setuptools blosc2
 yum -y install hdf5-devel
-/opt/python/${PYTHONFOLDER}/bin/pip install git+https://github.com/PyTables/PyTables.git
+if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
+    /opt/python/${PYTHONFOLDER}/bin/pip install tables
+else
+    /opt/python/${PYTHONFOLDER}/bin/pip install git+https://github.com/PyTables/PyTables.git
+fi
 /opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
 archi=`uname -m`
 if [ "$(uname -m)" = "aarch64" ]; then

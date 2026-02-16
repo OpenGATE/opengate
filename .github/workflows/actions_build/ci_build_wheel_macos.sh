@@ -20,13 +20,17 @@ export LDFLAGS="-L/usr/local/opt/llvm/lib"
 export CPPFLAGS="-I/usr/local/opt/llvm/include -fopenmp"
 conda info
 conda list
-conda install h5py python-blosc2
+conda install h5py
 which python
 python --version
 export PATH="/usr/local/miniconda/envs/opengate_core/bin/:$PATH"
 pip install wget colored delocate
-pip install -U pip wheel setuptools
-pip install git+https://github.com/PyTables/PyTables.git
+pip install -U pip wheel setuptools blosc2
+if [[ ${MATRIX_PYTHON_VERSION} == "3.10" ]]; then
+    pip install tables
+else
+    pip install git+https://github.com/PyTables/PyTables.git
+fi
 if [[ ${MATRIX_OS} == "macos-15-intel" ]]; then
     conda install conda-forge::qt6-main conda-forge::qt6-3d
 else
