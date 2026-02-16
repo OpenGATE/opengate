@@ -2,6 +2,8 @@
 
 set -e -x
 echo ${PYTHONFOLDER}
+echo $(which pip)
+echo $(which python)
 cd /home/core/
 export PATH=/software/cmake/cmake/bin/:${PATH}
 source /software/geant4/bin/geant4make.sh
@@ -10,8 +12,10 @@ export CMAKE_PREFIX_PATH=/software/geant4/bin:/software/itk/bin/:${CMAKE_PREFIX_
 mkdir opengate_core/plugins
 cp -r /lib64/qt6/plugins/platforms/* opengate_core/plugins/
 cp -r /lib64/qt6/plugins/imageformats opengate_core/plugins/
-/opt/python/${PYTHONFOLDER}/bin/pip install wget colored setuptools
-/opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
+#/opt/python/${PYTHONFOLDER}/bin/pip install wget colored setuptools
+#/opt/python/${PYTHONFOLDER}/bin/python setup.py sdist bdist_wheel
+pip install wget colored setuptools
+python setup.py sdist bdist_wheel
 archi=`uname -m`
 if [ "$(uname -m)" = "aarch64" ]; then
   auditwheel repair /home/core/dist/*.whl -w /software/wheelhouse/ --plat "manylinux_2_34_aarch64"
